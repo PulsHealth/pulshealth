@@ -168,6 +168,11 @@ public struct WorkoutEnrichmentState: Codable, Sendable, Equatable {
 /// Persists sync configuration and per-type state (anchors, counters) as an
 /// atomically-written JSON file in Application Support. An actor so concurrent
 /// per-type sync tasks can update state safely.
+///
+/// The file is protected until first unlock and excluded from backup
+/// (`ProtectedStateFile`). It never contains the bearer token: the token lives
+/// in the `TokenStore` (the Keychain in production) and is only ever held in
+/// memory on `configuration.authToken`.
 public actor SyncStateStore {
     public private(set) var configuration: SyncConfiguration
     public private(set) var typeStates: [String: TypeSyncState]
@@ -183,6 +188,10 @@ public actor SyncStateStore {
     public let deviceID: String
 
     private let fileURL: URL
+    private let tokenStore: TokenStore
+    /// Set when the last hand-off to the token store failed, so the next
+    /// configuration write retries instead of assuming the token is safe.
+    private var tokenStoreDirty = false
     private let logger = Logger(subsystem: PulsLog.subsystem, category: "state")
     private var saveTask: Task<Void, Never>?
 
@@ -232,12 +241,19 @@ public actor SyncStateStore {
         }
     }
 
-    public init(directory: URL? = nil) {
+    /// - Parameters:
+    ///   - directory: Where `sync-state.json` lives; Application Support by default.
+    ///   - tokenStore: Where the bearer token lives; the app Keychain by default.
+    ///     Tests and throwaway engines pass an `InMemoryTokenStore`.
+    public init(directory: URL? = nil, tokenStore: TokenStore? = nil) {
         let dir = directory ?? FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("PulsHealthSync", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        ProtectedStateFile.prepareDirectory(dir)
         self.fileURL = dir.appendingPathComponent("sync-state.json")
+        let tokenStore = tokenStore ?? KeychainTokenStore()
+        self.tokenStore = tokenStore
+        let logger = Logger(subsystem: PulsLog.subsystem, category: "state")
 
         var loaded: PersistedState?
         if let data = try? Data(contentsOf: fileURL) {
@@ -251,11 +267,34 @@ public actor SyncStateStore {
                 let quarantine = fileURL.appendingPathExtension(
                     "corrupt-\(Int(Date().timeIntervalSince1970))")
                 try? FileManager.default.moveItem(at: fileURL, to: quarantine)
-                Logger(subsystem: PulsLog.subsystem, category: "state").error(
+                ProtectedStateFile.protect(quarantine)
+                logger.error(
                     "Sync state file undecodable (\(error)); moved aside as \(quarantine.lastPathComponent) and starting fresh")
             }
         }
-        if let decoded = loaded {
+        if var decoded = loaded {
+            var rewrite = false
+            if let legacyToken = decoded.configuration.authToken {
+                // One-time migration: builds before the Keychain store kept the
+                // token in this file. Move it out and rewrite the file without
+                // it. If the Keychain refuses, the file keeps the token for now
+                // and the migration retries on the next launch — losing the
+                // token would stall every sync until the user re-enters it.
+                do {
+                    try tokenStore.setToken(legacyToken)
+                    rewrite = true
+                    logger.notice("Moved the bearer token out of sync-state.json into the token store")
+                } catch {
+                    tokenStoreDirty = true
+                    logger.error("Token store rejected the legacy token; leaving it in the state file for now: \(error)")
+                }
+            } else {
+                do {
+                    decoded.configuration.authToken = try tokenStore.token()
+                } catch {
+                    logger.error("Could not read the bearer token from the token store: \(error)")
+                }
+            }
             self.configuration = decoded.configuration
             self.typeStates = decoded.typeStates
             self.aggregateStates = decoded.aggregateStates
@@ -263,6 +302,11 @@ public actor SyncStateStore {
             self.workoutRoutesState = decoded.workoutRoutesState
             self.workoutStreamsState = decoded.workoutStreamsState
             self.deviceID = decoded.deviceID
+            if rewrite {
+                // Can't call the isolated persistNow() from the nonisolated
+                // init; the shared writer strips the token the same way.
+                Self.writeSnapshot(decoded, to: fileURL, logger: logger)
+            }
         } else {
             self.configuration = SyncConfiguration()
             self.typeStates = [:]
@@ -271,6 +315,10 @@ public actor SyncStateStore {
             self.workoutRoutesState = WorkoutEnrichmentState()
             self.workoutStreamsState = WorkoutEnrichmentState()
             self.deviceID = UUID().uuidString
+            // A fresh file, but the Keychain may still hold a token from a
+            // previous install of the same bundle — reuse it, exactly as the
+            // old file-based token would have survived a state reset.
+            self.configuration.authToken = (try? tokenStore.token()) ?? nil
         }
     }
 
@@ -286,9 +334,24 @@ public actor SyncStateStore {
 
     // MARK: - Writes
 
+    /// Replace the configuration. The token goes to the token store; the file
+    /// gets everything else.
     public func setConfiguration(_ config: SyncConfiguration) {
+        if config.authToken != configuration.authToken || tokenStoreDirty {
+            storeToken(config.authToken)
+        }
         configuration = config
         persist()
+    }
+
+    private func storeToken(_ token: String?) {
+        do {
+            try tokenStore.setToken(token)
+            tokenStoreDirty = false
+        } catch {
+            tokenStoreDirty = true
+            logger.error("Could not write the bearer token to the token store: \(error)")
+        }
     }
 
     public func update(_ identifier: String, _ mutate: @Sendable (inout TypeSyncState) -> Void) {
@@ -651,9 +714,20 @@ public actor SyncStateStore {
             aggregateStates: aggregateStates, activitySummaryState: activitySummaryState,
             workoutRoutesState: workoutRoutesState, workoutStreamsState: workoutStreamsState
         )
+        Self.writeSnapshot(snapshot, to: fileURL, logger: logger)
+    }
+
+    /// The one path to disk. The token is stripped here (belt and braces —
+    /// `SyncConfiguration` refuses to encode it anyway) and the file is written
+    /// atomically with protection and backup exclusion.
+    private nonisolated static func writeSnapshot(
+        _ snapshot: PersistedState, to url: URL, logger: Logger
+    ) {
+        var snapshot = snapshot
+        snapshot.configuration.authToken = nil
         do {
             let data = try JSONEncoder.puls.encode(snapshot)
-            try data.write(to: fileURL, options: .atomic)
+            try ProtectedStateFile.write(data, to: url)
         } catch {
             logger.error("Failed to persist sync state: \(error)")
         }

@@ -45,7 +45,7 @@ public actor SyncEventLog {
         let dir = directory ?? FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("PulsHealthSync", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        ProtectedStateFile.prepareDirectory(dir)
         self.fileURL = dir.appendingPathComponent("event-log.json")
         if let data = try? Data(contentsOf: fileURL),
            let decoded = try? JSONDecoder.puls.decode([SyncEvent].self, from: data) {
@@ -107,7 +107,7 @@ public actor SyncEventLog {
             try? await Task.sleep(for: .seconds(1))
             saveTask = nil
             if let data = try? JSONEncoder.puls.encode(events) {
-                try? data.write(to: fileURL, options: .atomic)
+                try? ProtectedStateFile.write(data, to: fileURL)
             }
         }
     }
