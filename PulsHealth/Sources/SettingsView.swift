@@ -142,8 +142,11 @@ struct SettingsView: View {
         .alert("Start initial backfill?", isPresented: $confirmBackfill) {
             Button("Start Backfill") {
                 Task {
-                    await apply()
-                    await model.startBackfill()
+                    // A server/user change defers the apply to the fresh-vs-
+                    // keep prompt; the backfill is then part of "start fresh".
+                    if await apply() {
+                        await model.startBackfill()
+                    }
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -167,15 +170,66 @@ struct SettingsView: View {
         }
     }
 
-    private func apply() async {
+    /// False when the apply was deferred to the server-change prompt.
+    @discardableResult
+    private func apply() async -> Bool {
         model.config.serverURL = URL(string: serverURLText.trimmingCharacters(in: .whitespacesAndNewlines))
         var token = tokenText.trimmingCharacters(in: .whitespacesAndNewlines)
         if let value = token.split(separator: "=", maxSplits: 1).last, token.hasPrefix("PULS_TOKEN=") {
             token = String(value)
         }
         model.config.authToken = token.isEmpty ? nil : token
-        await model.applyConfiguration()
+        return await model.applyConfiguration()
     }
+}
+
+/// The fresh-vs-keep prompt raised when Save & Apply (from Settings, the User
+/// page or the Data Types tab) would point the sync at a different server or
+/// user ID than the stored anchors and watermarks were earned against.
+/// Attached at the root so it appears whichever tab the apply came from.
+struct ServerChangePrompt: ViewModifier {
+    @Environment(AppModel.self) private var model
+
+    func body(content: Content) -> some View {
+        content.alert(
+            model.pendingServerChange?.serverChanged == false
+                ? "Sync as a different user?" : "Sync to a different server?",
+            isPresented: Binding(
+                get: { model.pendingServerChange != nil },
+                // An alert only closes through its buttons, and each of them
+                // clears the pending change itself; the binding's own
+                // dismissal must not race ahead and cancel the choice.
+                set: { _ in }
+            )
+        ) {
+            Button("Start Fresh (Recommended)") { model.confirmServerChange(startFresh: true) }
+            Button("Keep Progress") { model.confirmServerChange(startFresh: false) }
+            Button("Cancel", role: .cancel) { model.cancelServerChange() }
+        } message: {
+            Text(Self.message(for: model.pendingServerChange))
+        }
+    }
+
+    static func message(for change: ServerIdentityChange?) -> String {
+        guard let change else { return "" }
+        let what = change.serverChanged && change.userChanged
+            ? "The server and user ID changed"
+            : change.serverChanged ? "The server changed" : "The user ID changed"
+        let target = change.userChanged && !change.serverChanged
+            ? "the server treats a new user ID as a different person, so nothing synced so far counts for it"
+            : "your sync progress belongs to the previous server"
+        return """
+        \(what) (\(change.summary)) — \(target).
+
+        Start fresh re-syncs all history from the start date (recommended). \
+        Keep progress sends only new data from here on, and the new target \
+        never receives anything older.
+        """
+    }
+}
+
+extension View {
+    func serverChangePrompt() -> some View { modifier(ServerChangePrompt()) }
 }
 
 /// Edits the active user's identity (name/email/dob/sex). Every field starts
