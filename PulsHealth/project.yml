@@ -18,6 +18,10 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+      # Privacy manifest (required-reason API declarations); must ship at the
+      # bundle root, so it is a resource rather than a source.
+      - path: PrivacyInfo.xcprivacy
+        buildPhase: resources
     dependencies:
       - package: PulsHealthSync
     configFiles:

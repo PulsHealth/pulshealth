@@ -39,6 +39,10 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
   ranges), everything else stays HTTPS-only — with the matching
   `NSLocalNetworkUsageDescription`. Settings enforces the same rule before a
   URL can be saved or tested.
+- `PrivacyInfo.xcprivacy` (bundle root, listed as a resource in `project.yml`):
+  no tracking, no collected data, and the one required-reason API the app uses
+  — `UserDefaults` (CA92.1, the app's own flags). The `PulsHealthSync` package
+  ships its own manifest for the same API (background-task schedule status).
 - Usage strings declare read-only HealthKit access (the app never writes health data).
 
 ## Source map
