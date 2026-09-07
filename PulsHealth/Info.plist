@@ -27,10 +27,17 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSHealthShareUsageDescription</key>
 	<string>PulsHealth reads your health data to sync it to your personal self-hosted database.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>PulsHealth does not write health data.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>PulsHealth connects to the health server you configure, which may be on your local network.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>processing</string>

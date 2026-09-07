@@ -10,8 +10,11 @@ struct TypeDetailView: View {
     private var state: TypeSyncState { status.state }
     private var isActivitySummary: Bool { HealthTypeCatalog.isActivitySummary(status.id) }
 
+    /// Reconciliation needs a kind the engine can digest *and* a server that
+    /// advertises `digest` + `uuids`; unknown capabilities hide the control.
     private var supportsReconciliation: Bool {
         [.quantity, .category, .workout].contains(status.descriptor.kind)
+            && model.serverSupportsReconciliation
     }
 
     var body: some View {
@@ -67,28 +70,34 @@ struct TypeDetailView: View {
                 }
             }
 
-            Section("Server") {
-                if let stats = model.serverStats[status.id] {
-                    LabeledContent("Rows on server") {
-                        Text(Int(stats.rows).formatted()).monospacedDigit()
+            // Server-side rows come from GET /v1/stats, which only a server
+            // advertising `stats` offers; a past reconciliation stays visible.
+            if model.serverSupportsStats || state.lastReconcileAt != nil {
+                Section("Server") {
+                    if model.serverSupportsStats {
+                        if let stats = model.serverStats[status.id] {
+                            LabeledContent("Rows on server") {
+                                Text(Int(stats.rows).formatted()).monospacedDigit()
+                            }
+                            LabeledContent("Batches received", value: Int(stats.batches).formatted())
+                            LabeledContent("Earliest row", value: stats.earliest?.formatted() ?? "—")
+                            LabeledContent("Latest row", value: stats.latest?.formatted() ?? "—")
+                            if let at = stats.lastBatchAt {
+                                LabeledContent("Last batch", value: "\(at.formatted()) (\(at.relativeString))")
+                            }
+                        } else if let error = model.serverStatsError {
+                            Text("Stats unavailable: \(error)").font(.caption).foregroundStyle(.secondary)
+                        } else {
+                            Text("No rows for this type yet").foregroundStyle(.secondary)
+                        }
                     }
-                    LabeledContent("Batches received", value: Int(stats.batches).formatted())
-                    LabeledContent("Earliest row", value: stats.earliest?.formatted() ?? "—")
-                    LabeledContent("Latest row", value: stats.latest?.formatted() ?? "—")
-                    if let at = stats.lastBatchAt {
-                        LabeledContent("Last batch", value: "\(at.formatted()) (\(at.relativeString))")
-                    }
-                } else if let error = model.serverStatsError {
-                    Text("Stats unavailable: \(error)").font(.caption).foregroundStyle(.secondary)
-                } else {
-                    Text("No rows for this type yet").foregroundStyle(.secondary)
-                }
-                if let at = state.lastReconcileAt {
-                    LabeledContent("Last reconciliation") {
-                        VStack(alignment: .trailing) {
-                            Text(at.relativeString)
-                            if let summary = state.lastReconcileSummary {
-                                Text(summary).font(.caption).foregroundStyle(.secondary)
+                    if let at = state.lastReconcileAt {
+                        LabeledContent("Last reconciliation") {
+                            VStack(alignment: .trailing) {
+                                Text(at.relativeString)
+                                if let summary = state.lastReconcileSummary {
+                                    Text(summary).font(.caption).foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
@@ -142,7 +151,10 @@ struct TypeDetailView: View {
             }
         }
         .navigationTitle(status.descriptor.displayName)
-        .task { await model.refreshServerStats() }
+        .task { if model.serverSupportsStats { await model.refreshServerStats() } }
+        .onChange(of: model.serverSupportsStats) { _, supported in
+            if supported { Task { await model.refreshServerStats() } }
+        }
         .confirmationDialog(
             isActivitySummary
                 ? "Recompute all \(status.descriptor.displayName) data from the start date? Existing days are safely updated on the server."

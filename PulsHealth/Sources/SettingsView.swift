@@ -10,6 +10,29 @@ struct SettingsView: View {
     @State private var confirmBackfill = false
     @State private var validatingAggregates = false
     @State private var aggregateValidationResult: String?
+    @State private var testingConnection = false
+    /// Outcome of the last Test Connection for the values currently entered;
+    /// cleared whenever either field changes.
+    @State private var connectionTest: ConnectionTestResult?
+
+    /// Validation of the entered URL; nil while the field is empty (an empty
+    /// URL is allowed — it un-configures the server).
+    private var serverURLValidation: Result<URL, ServerURLValidation.Failure>? {
+        let trimmed = serverURLText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : ServerURLValidation.validate(trimmed)
+    }
+
+    private var validatedServerURL: URL? {
+        if case .success(let url) = serverURLValidation { return url }
+        return nil
+    }
+
+    private var serverURLIssue: String? {
+        if case .failure(let failure) = serverURLValidation { return failure.errorDescription }
+        return nil
+    }
+
+    private var enteredToken: String { Self.normalizeToken(tokenText) }
 
     var body: some View {
         @Bindable var model = model
@@ -28,12 +51,36 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            Section("Server") {
+            Section {
                 TextField("https://your-host:8080", text: $serverURLText)
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                if let issue = serverURLIssue {
+                    Label(issue, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
                 SecureField("Bearer token", text: $tokenText)
+                Button {
+                    runConnectionTest()
+                } label: {
+                    HStack {
+                        Text(testingConnection ? "Testing Connection…" : "Test Connection")
+                        if testingConnection {
+                            Spacer()
+                            ProgressView()
+                        }
+                    }
+                }
+                .disabled(testingConnection || validatedServerURL == nil || enteredToken.isEmpty)
+                if let result = connectionTest {
+                    ConnectionTestResultRow(result: result)
+                }
+            } header: {
+                Text("Server")
+            } footer: {
+                Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them.")
             }
 
             Section("Sync window") {
@@ -65,7 +112,7 @@ struct SettingsView: View {
                 Button("Save & Apply") {
                     Task { await apply() }
                 }
-                    .disabled(URL(string: serverURLText) == nil && !serverURLText.isEmpty)
+                    .disabled(serverURLIssue != nil)
             }
 
             Section("Backfill") {
@@ -131,6 +178,8 @@ struct SettingsView: View {
             serverURLText = model.config.serverURL?.absoluteString ?? ""
             tokenText = model.config.authToken ?? ""
         }
+        .onChange(of: serverURLText) { connectionTest = nil }
+        .onChange(of: tokenText) { connectionTest = nil }
         .alert("Reset all anchors?", isPresented: $confirmResetAll) {
             Button("Reset All", role: .destructive) {
                 Task { await model.resetAll() }
@@ -167,14 +216,76 @@ struct SettingsView: View {
         }
     }
 
-    private func apply() async {
-        model.config.serverURL = URL(string: serverURLText.trimmingCharacters(in: .whitespacesAndNewlines))
-        var token = tokenText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let value = token.split(separator: "=", maxSplits: 1).last, token.hasPrefix("PULS_TOKEN=") {
-            token = String(value)
+    /// Runs the connection test against the *entered* URL and token — not the
+    /// saved ones — and persists nothing; only the result row changes.
+    private func runConnectionTest() {
+        guard let url = validatedServerURL else { return }
+        let token = enteredToken
+        testingConnection = true
+        connectionTest = nil
+        Task {
+            connectionTest = await model.testConnection(url: url, token: token)
+            testingConnection = false
         }
+    }
+
+    private func apply() async {
+        // Save & Apply is disabled while the URL is invalid; an empty field
+        // clears the server.
+        model.config.serverURL = validatedServerURL
+        let token = enteredToken
         model.config.authToken = token.isEmpty ? nil : token
         await model.applyConfiguration()
+    }
+
+    /// Accepts a pasted `PULS_TOKEN=…` line from the server's `.env` as well as
+    /// the bare token.
+    private static func normalizeToken(_ text: String) -> String {
+        var token = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if token.hasPrefix("PULS_TOKEN="), let value = token.split(separator: "=", maxSplits: 1).last {
+            token = String(value)
+        }
+        return token
+    }
+}
+
+/// Icon + one-liner for a `ConnectionTestResult`, plus the advertised feature
+/// list on success so it is visible why (say) reconciliation is offered or not.
+private struct ConnectionTestResultRow: View {
+    let result: ConnectionTestResult
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(result.message)
+                if case .ok(let capabilities) = result, !capabilities.features.isEmpty {
+                    Text("Features: \(capabilities.features.sorted().joined(separator: ", "))")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .font(.caption)
+        } icon: {
+            Image(systemName: symbol).foregroundStyle(color)
+        }
+    }
+
+    private var symbol: String {
+        switch result {
+        case .ok: "checkmark.circle.fill"
+        case .okNoCapabilities: "checkmark.circle"
+        case .tokenRejected: "lock.slash"
+        case .unsupportedProtocol: "exclamationmark.triangle.fill"
+        case .unreachable: "wifi.exclamationmark"
+        case .serverError: "exclamationmark.octagon.fill"
+        }
+    }
+
+    private var color: Color {
+        switch result {
+        case .ok, .okNoCapabilities: .green
+        case .unsupportedProtocol: .orange
+        case .tokenRejected, .unreachable, .serverError: .red
+        }
     }
 }
 

@@ -37,6 +37,14 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSHealthShareUsageDescription: PulsHealth reads your health data to sync it to your personal self-hosted database.
         NSHealthUpdateUsageDescription: PulsHealth does not write health data.
+        # The server may live on the LAN (a NAS, a Raspberry Pi) — reachable over
+        # plain http only with this ATS exception, which is scoped to local
+        # hosts (unqualified names, *.local, private IP ranges) and leaves
+        # every other connection HTTPS-only. Talking to such a host also
+        # triggers the local-network permission prompt, hence the description.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: PulsHealth connects to the health server you configure, which may be on your local network.
         BGTaskSchedulerPermittedIdentifiers:
           - com.puls.healthsync.catchup
           - com.puls.PulsHealth.backfill.*
