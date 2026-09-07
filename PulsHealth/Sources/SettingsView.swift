@@ -234,12 +234,18 @@ extension View {
 
 /// Edits the active user's identity (name/email/dob/sex). Every field starts
 /// unset — nothing about the person is assumed — and each may be left that way.
-/// The user_id is stable and shown read-only. Saving pushes the configuration
-/// to the engine so the next batch syncs as this user and updates the server's
-/// `users` row.
+/// The user ID lives under Advanced: it is stable across reinstalls and only
+/// needs changing when several people share one server. Saving pushes the
+/// configuration to the engine so the next batch syncs as this user and
+/// updates the server's `users` row; a changed ID goes through the same
+/// fresh-vs-keep prompt as a server change.
 struct UserView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    @State private var userIDText = ""
+    @State private var userIDLoaded = false
+
+    private var userIDValid: Bool { AppModel.normalizedUserID(userIDText) != nil }
 
     var body: some View {
         @Bindable var model = model
@@ -290,11 +296,28 @@ struct UserView: View {
             }
 
             Section {
-                LabeledContent("User ID", value: model.config.userID)
-                    .textSelection(.enabled)
-                    .font(.footnote)
+                TextField("User ID (UUID)", text: $userIDText)
+                    .font(.footnote.monospaced())
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .onChange(of: userIDText) { _, text in
+                        // Only a valid UUID reaches the draft; an in-progress
+                        // edit leaves the applied ID untouched.
+                        if let normalized = AppModel.normalizedUserID(text) {
+                            model.config.userID = normalized
+                        }
+                    }
+                if !userIDValid {
+                    Text("Not a valid UUID (8-4-4-4-12 hex digits). The previous ID stays in effect until this is fixed.")
+                        .font(.caption).foregroundStyle(.red)
+                }
+                Button("Generate New ID") {
+                    userIDText = UUID().uuidString.lowercased()
+                }
+            } header: {
+                Text("Advanced")
             } footer: {
-                Text("This ID tags every row stored for you on the server and is stable across reinstalls. If several people share one server, each should sync under a distinct ID — editing it here is planned.")
+                Text("Every row stored for you on the server is tagged with this ID, and it survives reinstalls. If several people share one server, each should sync under a distinct ID. Changing it makes the server treat you as a different person, so saving asks whether to re-sync all history under the new ID or keep going with only new data.")
             }
 
             Section {
@@ -302,9 +325,15 @@ struct UserView: View {
                     Task { await model.applyConfiguration() }
                     dismiss()
                 }
+                .disabled(!userIDValid)
             }
         }
         .navigationTitle("User")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            guard !userIDLoaded else { return }
+            userIDLoaded = true
+            userIDText = model.config.userID
+        }
     }
 }
