@@ -437,6 +437,14 @@ final class AppModel {
         await applyConfiguration(syncNewTypes: true)
     }
 
+    /// Validates a user ID edit: a UUID in any case or nil. Normalized to
+    /// lowercase to match `PulsDefaultUser.id`; the server treats the ID
+    /// case-insensitively but the stored identity compares lowercased.
+    nonisolated static func normalizedUserID(_ text: String) -> String? {
+        UUID(uuidString: text.trimmingCharacters(in: .whitespacesAndNewlines))
+            .map { $0.uuidString.lowercased() }
+    }
+
     /// Before applying, reset the watermark of any aggregate whose server
     /// identity or start date changed in the draft: that describes a different
     /// series, so the next sync must recompute it from scratch (the server
