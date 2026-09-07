@@ -286,12 +286,36 @@ tailscale serve --bg --https=8444 http://localhost:8081
 
 ## API
 
+The wire format is versioned — the Puls Sync Protocol, currently **1**. A
+client declares the version twice: as `"schemaVersion": 1` (integer) in the
+batch header and as the `X-Puls-Protocol: 1` request header on every call.
+Both are optional: a request carrying neither comes from a client that
+predates versioning and is read with version-1 semantics. This server speaks
+`[1]`. A batch whose `schemaVersion` or `X-Puls-Protocol` names any other
+version, or whose two declarations disagree, is refused before decompression,
+parsing, or any database work with HTTP 400 and the fixed body
+
+```json
+{"error":"unsupported protocol version","supportedVersions":[1]}
+```
+
+and is recorded in `ingest_rejections` (stage `protocol`). The app never
+retries a 4xx, so this is the response it turns into a "server speaks a
+different protocol version" message instead of stalling silently. Servers
+older than this one ignore both declarations (unknown header fields and
+request headers are tolerated), so a versioned client can still talk to them.
+
 - `POST /v1/batches` — gzipped NDJSON batch. Line order: header, then samples,
   then deletions, then workout-route lines (`routeCount`), then workout-series
   lines (`seriesCount`), then aggregate lines (`aggregateCount`), then
   activity-summary lines (`activitySummaryCount`), then an optional profile line
   (`profileCount` 0 or 1). All counts past `deletionCount` are optional and
-  default to 0 for old clients.
+  default to 0 for old clients. The header also carries `schemaVersion` (the
+  protocol version, above) and `clientVersion` (free text such as
+  `"0.1.0 (1)"`, logged on the per-batch line, never stored); both are
+  optional. A header-only batch — every count 0 — is valid and returns
+  all-zero counts: the app sends one with `reason` `manual` as its connection
+  probe against receivers that have no `/v1/capabilities`.
   `Authorization: Bearer $PULS_TOKEN`. The `X-User-ID` header (a UUID) attributes
   every row in the batch to that user (a `users` row); absent, it defaults to the
   seeded default user. Two optional wake-correlation headers are also recorded on
@@ -350,6 +374,13 @@ tailscale serve --bg --https=8444 http://localhost:8081
   (auth required).
 - `GET /v1/routes/{uuid}/metrics` — intra-workout metric streams for the route
   (auth required).
+- `GET /v1/capabilities` — what this receiver speaks (auth required, so the
+  app's "Test connection" step validates URL and token together here, before
+  the first upload; a wrong token is a 401):
+  `{"protocolVersions":[1],"features":["batches","stats","digest","uuids","aggregates","activitySummaries","routes","series","profile"],"server":"puls-ingest","version":"<git commit or dev>"}`.
+  `version` is the image's `BUILD_COMMIT` build arg (compose passes
+  `DEPLOY_COMMIT`); a plain `go run` reports `dev`. A receiver without this
+  endpoint is probed with an empty batch instead (see `POST /v1/batches`).
 - `GET /healthz` — liveness + DB ping (no auth).
 
 Every authenticated ingest read accepts the same optional `X-User-ID` UUID as
@@ -406,7 +437,7 @@ shared databases.
 source .env
 
 cat > /tmp/puls-fixture.ndjson <<'EOF'
-{"batchID":"0a4fdc4e-9f3b-4f7e-9a64-0c2f7a1b9d11","deviceID":"curl-test","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"sampleCount":2,"deletionCount":1,"aggregateCount":1,"activitySummaryCount":1}
+{"batchID":"0a4fdc4e-9f3b-4f7e-9a64-0c2f7a1b9d11","deviceID":"curl-test","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"schemaVersion":1,"clientVersion":"curl","sampleCount":2,"deletionCount":1,"aggregateCount":1,"activitySummaryCount":1}
 {"uuid":"7f3e2b9a-1c4d-4e5f-8a6b-9c0d1e2f3a4b","type":"HKQuantityTypeIdentifierHeartRate","kind":"quantity","start":1718000000000,"end":1718000005000,"value":62.5,"unit":"count/min","sourceName":"Apple Watch","sourceBundleID":"com.apple.health","sourceVersion":"10.0","device":"Apple Watch","metadata":{"HKMetadataKeyHeartRateMotionContext":1}}
 {"uuid":"8a4f3c0b-2d5e-4f6a-9b7c-0d1e2f3a4b5c","type":"HKQuantityTypeIdentifierHeartRate","kind":"quantity","start":1718000010000,"end":1718000015000,"value":64.0,"unit":"count/min","sourceName":"Apple Watch","sourceBundleID":"com.apple.health","sourceVersion":"10.0"}
 {"deleted":{"uuid":"9b5a4d1c-3e6f-4a7b-8c8d-1e2f3a4b5c6d","type":"HKQuantityTypeIdentifierHeartRate"}}
@@ -419,6 +450,7 @@ gzip -c /tmp/puls-fixture.ndjson | curl -sS \
   -H "Authorization: Bearer $PULS_TOKEN" \
   -H "Content-Type: application/x-ndjson" \
   -H "Content-Encoding: gzip" \
+  -H "X-Puls-Protocol: 1" \
   -H "X-Batch-ID: 0a4fdc4e-9f3b-4f7e-9a64-0c2f7a1b9d11" \
   -H "X-User-ID: 5ea4d000-0000-4000-8000-000000000001" \
   -H "X-Wake-ID: 11111111-2222-4333-8444-555555555555" \
@@ -427,6 +459,19 @@ gzip -c /tmp/puls-fixture.ndjson | curl -sS \
 # → {"accepted":2,"deleted":0,"duplicates":0,"routePoints":0,"seriesPoints":0,"aggregateSamples":1,"activitySummaries":1}
 # Run it again → {"accepted":0,"deleted":0,"duplicates":2,"routePoints":0,"seriesPoints":0,"aggregateSamples":0,"activitySummaries":0}
 #   (the batch ID is reserved before health-data mutations, so a retry exits early)
+# Send it with -H "X-Puls-Protocol: 2" (or "schemaVersion":2 in the header line)
+#   → HTTP 400 {"error":"unsupported protocol version","supportedVersions":[1]}
+
+curl -s -H "Authorization: Bearer $PULS_TOKEN" http://localhost:8080/v1/capabilities
+# → {"protocolVersions":[1],"features":["batches","stats","digest","uuids","aggregates","activitySummaries","routes","series","profile"],"server":"puls-ingest","version":"…"}
+
+# The app's connection probe for a receiver without /v1/capabilities: a
+# header-only batch (fresh batchID each time, every count 0, reason "manual").
+printf '%s\n' '{"batchID":"1b2c3d4e-5f60-4718-8293-a4b5c6d7e8f9","deviceID":"curl-test","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"schemaVersion":1,"clientVersion":"curl","sampleCount":0,"deletionCount":0}' \
+  | gzip -c | curl -sS -X POST http://localhost:8080/v1/batches \
+  -H "Authorization: Bearer $PULS_TOKEN" -H "Content-Encoding: gzip" -H "X-Puls-Protocol: 1" \
+  --data-binary @-
+# → {"accepted":0,"deleted":0,"duplicates":0,"routePoints":0,"seriesPoints":0,"aggregateSamples":0,"activitySummaries":0}
 
 curl -s -H "Authorization: Bearer $PULS_TOKEN" http://localhost:8080/v1/stats | python3 -m json.tool
 ```

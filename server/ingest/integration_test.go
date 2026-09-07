@@ -1230,7 +1230,7 @@ func TestIntegration_WakeTelemetryColumns(t *testing.T) {
 
 	// An upload with no wake context (curl, reconciliation) stores NULLs.
 	bareID := fmt.Sprintf("%08x-00a3-4000-8000-%012x", run>>32, run&0xffffffffffff)
-	bareBody := fmt.Sprintf(`{"batchID":"%s","deviceID":"itest","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"sampleCount":0,"deletionCount":0}
+	bareBody := fmt.Sprintf(`{"batchID":"%s","deviceID":"itest","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"schemaVersion":1,"clientVersion":"itest","sampleCount":0,"deletionCount":0}
 `, bareID)
 	bareBatch, err := ParseBatch(strings.NewReader(bareBody))
 	if err != nil {

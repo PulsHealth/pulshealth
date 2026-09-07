@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -38,6 +39,15 @@ type BatchHeader struct {
 	SeriesCount          int     `json:"seriesCount"`          // optional; 0 for old clients
 	ActivitySummaryCount int     `json:"activitySummaryCount"` // optional; 0 for old clients
 	ProfileCount         int     `json:"profileCount"`         // optional; 0 or 1
+	// SchemaVersion is the wire-format version the client encoded this batch
+	// with (PROTO-1). Nil (absent or null) is a client that predates
+	// versioning and is read with version-1 semantics; any value outside
+	// supportedProtocolVersions fails ParseBatch with a *ProtocolVersionError
+	// before a single data line is read.
+	SchemaVersion *int `json:"schemaVersion"`
+	// ClientVersion is free text identifying the sender, e.g. "0.1.0 (1)".
+	// Optional; logged per batch, never stored.
+	ClientVersion string `json:"clientVersion"`
 }
 
 type TemporalContext struct {
@@ -328,6 +338,82 @@ func wrapParseErr(err error, format string, args ...any) error {
 	return &ParseError{msg: fmt.Sprintf(format, args...), cause: err}
 }
 
+// ProtocolVersion is the wire-format version this server speaks: the NDJSON
+// header's schemaVersion and the X-Puls-Protocol request header both name it.
+// Bump it (and extend supportedProtocolVersions) only together with the
+// protocol spec; a client that declares a version outside the supported set
+// is refused before any decompression or database work with a fixed
+// negotiation body so it can explain the mismatch instead of stalling.
+const ProtocolVersion = 1
+
+// supportedProtocolVersions is what GET /v1/capabilities advertises and what
+// the 400 negotiation body reports as supportedVersions.
+var supportedProtocolVersions = []int{ProtocolVersion}
+
+// ProtocolVersionError marks a request whose declared wire-format version this
+// server does not speak. It is a client-side failure like ParseError (400),
+// but the handler answers it with the fixed negotiation body rather than the
+// error text; the text goes to ingest_rejections and the log.
+type ProtocolVersionError struct {
+	// Source names where the version came from: the "schemaVersion" header
+	// field or the "X-Puls-Protocol" request header.
+	Source  string
+	Version string
+}
+
+func (e *ProtocolVersionError) Error() string {
+	return fmt.Sprintf("unsupported protocol version: %s %s (supported versions %v)",
+		e.Source, e.Version, supportedProtocolVersions)
+}
+
+// checkProtocolVersion accepts v when this server speaks it.
+func checkProtocolVersion(source string, v int) error {
+	for _, s := range supportedProtocolVersions {
+		if v == s {
+			return nil
+		}
+	}
+	return &ProtocolVersionError{Source: source, Version: strconv.Itoa(v)}
+}
+
+// parseProtocolHeader interprets an X-Puls-Protocol request header. Empty is
+// a client that predates versioning (nil, nil). Anything this server does not
+// speak — a non-integer included — is a *ProtocolVersionError.
+func parseProtocolHeader(value string) (*int, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil, nil
+	}
+	v, err := strconv.Atoi(value)
+	if err != nil {
+		return nil, &ProtocolVersionError{Source: "X-Puls-Protocol", Version: strconv.Quote(value)}
+	}
+	if err := checkProtocolVersion("X-Puls-Protocol", v); err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
+// reconcileProtocolVersions returns the version a batch was sent under once
+// both the request header and the body header (each optional, each already
+// checked against the supported set) are known. Both present and disagreeing
+// is a client bug and is refused like an unsupported version; either alone
+// wins; neither is a legacy client, read as ProtocolVersion.
+func reconcileProtocolVersions(header, body *int) (int, error) {
+	switch {
+	case header != nil && body != nil && *header != *body:
+		return 0, &ProtocolVersionError{
+			Source:  "X-Puls-Protocol",
+			Version: fmt.Sprintf("%d disagrees with schemaVersion %d", *header, *body),
+		}
+	case body != nil:
+		return *body, nil
+	case header != nil:
+		return *header, nil
+	}
+	return ProtocolVersion, nil
+}
+
 // Accepted epoch-millisecond range for every wire timestamp: 0001-01-01 to
 // 9999-12-31T23:59:59.999Z. HealthKit cannot produce anything outside it,
 // Postgres date/timestamptz casts accept all of it, and rejecting the rest
@@ -432,6 +518,14 @@ func ParseBatch(r io.Reader) (*Batch, error) {
 	var b Batch
 	if err := scanUnmarshal(sc, sc.Bytes(), &b.Header); err != nil {
 		return nil, wrapParseErr(err, "invalid batch header: %v", err)
+	}
+	// Version before anything else: a header from a future version may not
+	// even carry the fields validated below, and the negotiation error is the
+	// one such a client can act on.
+	if v := b.Header.SchemaVersion; v != nil {
+		if err := checkProtocolVersion("schemaVersion", *v); err != nil {
+			return nil, err
+		}
 	}
 	if !isUUID(b.Header.BatchID) {
 		return nil, parseErrf("invalid batch header: batchID %q is not a UUID", b.Header.BatchID)
