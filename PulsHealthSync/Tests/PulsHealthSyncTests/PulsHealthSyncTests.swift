@@ -171,16 +171,22 @@ import Testing
             samples: (0..<10).map(makeSample),
             deletions: [SyncDeletion(uuid: UUID(), type: "HKQuantityTypeIdentifierHeartRate")]
         )
-        let data = try BatchSerializer.ndjson(for: batch)
+        let data = try BatchSerializer.ndjson(for: batch, clientVersion: "1.2.3 (45)")
         let lines = String(decoding: data, as: UTF8.self)
             .split(separator: "\n", omittingEmptySubsequences: true)
         #expect(lines.count == 1 + 10 + 1)
 
         let header = try JSONDecoder.puls.decode(
             BatchSerializer.Header.self, from: Data(lines[0].utf8))
+        #expect(header.schemaVersion == PulsProtocol.version)
+        #expect(header.clientVersion == "1.2.3 (45)")
         #expect(header.sampleCount == 10)
         #expect(header.deletionCount == 1)
         #expect(header.type == "HKQuantityTypeIdentifierHeartRate")
+        // The raw line is what a receiver sees: an integer, not a string.
+        let headerJSON = try JSONSerialization.jsonObject(with: Data(lines[0].utf8)) as! [String: Any]
+        #expect(headerJSON["schemaVersion"] as? Int == 1)
+        #expect(headerJSON["clientVersion"] as? String == "1.2.3 (45)")
 
         let first = try JSONDecoder.puls.decode(SyncSample.self, from: Data(lines[1].utf8))
         #expect(first == batch.samples[0])
@@ -481,6 +487,7 @@ import Testing
         #expect(!TransportError.serverError(status: 401, body: "").isRetryable)
         #expect(TransportError.network(URLError(.timedOut)).isRetryable)
         #expect(!TransportError.notConfigured.isRetryable)
+        #expect(!TransportError.unsupportedProtocol(supportedVersions: [2]).isRetryable)
     }
 
     @Test func readRequestsCarryConfiguredUserID() {
@@ -493,6 +500,7 @@ import Testing
         let request = client.makeRequest(path: "v1/uuids", query: ["type": "steps"])
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer secret")
         #expect(request.value(forHTTPHeaderField: "X-User-ID") == userID)
+        #expect(request.value(forHTTPHeaderField: "X-Puls-Protocol") == "1")
         #expect(request.url?.absoluteString == "https://example.test/v1/uuids?type=steps")
     }
 }
@@ -738,6 +746,9 @@ import Testing
         let header = try JSONDecoder.puls.decode(BatchSerializer.Header.self, from: Data(legacy.utf8))
         #expect(header.seriesCount == 0)
         #expect(header.profileCount == 0)
+        // Pre-versioning headers: schema 0, unknown client.
+        #expect(header.schemaVersion == 0)
+        #expect(header.clientVersion == "unknown")
     }
 }
 
