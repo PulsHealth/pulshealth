@@ -316,9 +316,10 @@ extension HealthSyncEngine {
                 payloads = try await enricher.routePayloads(for: workout)
             } catch {
                 if SeriesEnricher.isPhaseAbortingError(error) { throw error }
+                // No sample UUID in the log: it is persisted and exported.
                 await eventLog.log(
                     .warn, type: typeID,
-                    "Workout route unavailable for \(workout.uuid.uuidString): \(error) — skipping routes for this workout")
+                    "Workout route unavailable for a \(workout.workoutActivityType.rawValue) workout ending \(workout.endDate.formatted(date: .numeric, time: .omitted)): \(error) — skipping routes for this workout")
                 payloads = []
             }
             return Self.packByPointBudget(payloads, budget: budget).map {

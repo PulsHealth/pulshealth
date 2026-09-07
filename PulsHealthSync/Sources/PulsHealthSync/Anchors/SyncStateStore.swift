@@ -391,9 +391,19 @@ public actor SyncStateStore {
         }
     }
 
+    /// `lastError` text: scrubbed of the bearer token, URL queries and control
+    /// characters and capped, because it is written to disk and exported with
+    /// diagnostics (a server error body can be a whole HTML page).
+    private func errorText(_ error: Error) -> String {
+        ErrorScrubber.describe(
+            error, limit: ErrorScrubber.persistedLimit,
+            secrets: [configuration.authToken].compactMap { $0 })
+    }
+
     public func recordError(identifier: String, error: Error) {
+        let text = errorText(error)
         update(identifier) { s in
-            s.lastError = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+            s.lastError = text
             s.lastErrorAt = Date()
         }
     }
@@ -465,8 +475,9 @@ public actor SyncStateStore {
     }
 
     public func recordAggregateError(configID: UUID, error: Error) {
+        let text = errorText(error)
         updateAggregate(configID) { s in
-            s.lastError = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+            s.lastError = text
             s.lastErrorAt = Date()
         }
     }
@@ -541,8 +552,9 @@ public actor SyncStateStore {
     }
 
     public func recordActivitySummaryError(error: Error) {
+        let text = errorText(error)
         updateActivitySummary { s in
-            s.lastError = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+            s.lastError = text
             s.lastErrorAt = Date()
         }
     }
@@ -621,8 +633,9 @@ public actor SyncStateStore {
     }
 
     public func recordWorkoutEnrichmentError(_ kind: WorkoutEnrichmentKind, error: Error) {
+        let text = errorText(error)
         updateWorkoutEnrichment(kind) { s in
-            s.lastError = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+            s.lastError = text
             s.lastErrorAt = Date()
         }
     }

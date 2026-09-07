@@ -53,7 +53,12 @@ public actor SyncEventLog {
         }
     }
 
+    /// Record an event. The message is scrubbed first (`ErrorScrubber`): this
+    /// buffer is persisted and exported through the diagnostics share sheet,
+    /// so a bearer token, a URL query or a raw server error page must not
+    /// survive in it even when an interpolated error carried one.
     public func log(_ level: SyncEvent.Level, type: String? = nil, _ message: String) {
+        let message = ErrorScrubber.scrub(message, limit: ErrorScrubber.eventLimit)
         let event = SyncEvent(level: level, type: type, message: message)
         events.append(event)
         if events.count > Self.capacity {

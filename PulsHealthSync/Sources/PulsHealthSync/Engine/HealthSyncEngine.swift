@@ -713,6 +713,8 @@ public actor HealthSyncEngine {
                 hkSamples.compactMap { ($0 as? HKHeartbeatSeriesSample).map { ($0.uuid, $0) } },
                 uniquingKeysWith: { a, _ in a }
             )
+            var unreadable = 0
+            var lastError: Error?
             for i in samples.indices {
                 guard let series = byUUID[samples[i].uuid] else { continue }
                 do {
@@ -724,10 +726,16 @@ public actor HealthSyncEngine {
                     // and re-fail the same page on every wake forever, so the
                     // row goes up with the empty trace the mapper initialised.
                     if SeriesEnricher.isPhaseAbortingError(error) { throw error }
-                    await eventLog.log(
-                        .warn, type: descriptor.identifier,
-                        "Heartbeat series \(samples[i].uuid.uuidString) unreadable: \(error) — uploading without beats")
+                    unreadable += 1
+                    lastError = error
                 }
+            }
+            if unreadable > 0, let lastError {
+                // Counted, not named: the event log is persisted and exported,
+                // and must not carry sample UUIDs.
+                await eventLog.log(
+                    .warn, type: descriptor.identifier,
+                    "\(unreadable) of \(samples.count) heartbeat series unreadable (\(lastError)) — uploading without beats")
             }
             return WorkoutEnrichment()
         case .ecg:
@@ -735,16 +743,22 @@ public actor HealthSyncEngine {
                 hkSamples.compactMap { ($0 as? HKElectrocardiogram).map { ($0.uuid, $0) } },
                 uniquingKeysWith: { a, _ in a }
             )
+            var unreadable = 0
+            var lastError: Error?
             for i in samples.indices {
                 guard let ecg = byUUID[samples[i].uuid] else { continue }
                 do {
                     samples[i].ecg?.voltagesUV = try await enricher.voltagesUV(for: ecg)
                 } catch {
                     if SeriesEnricher.isPhaseAbortingError(error) { throw error }
-                    await eventLog.log(
-                        .warn, type: descriptor.identifier,
-                        "ECG \(samples[i].uuid.uuidString) voltages unreadable: \(error) — uploading without the trace")
+                    unreadable += 1
+                    lastError = error
                 }
+            }
+            if unreadable > 0, let lastError {
+                await eventLog.log(
+                    .warn, type: descriptor.identifier,
+                    "\(unreadable) of \(samples.count) ECG voltage traces unreadable (\(lastError)) — uploading without the trace")
             }
             return WorkoutEnrichment()
         case .workout:
