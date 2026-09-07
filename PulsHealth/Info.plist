@@ -4,8 +4,8 @@
 <dict>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.puls.healthsync.catchup</string>
-		<string>com.puls.PulsHealth.backfill.*</string>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).healthsync.catchup</string>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).backfill.*</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>

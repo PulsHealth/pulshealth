@@ -520,6 +520,29 @@ import Testing
         ) == "com.puls.PulsHealth.backfill.run")
     }
 
+    @Test func catchupIdentifierDerivesFromBundleIdentifier() {
+        // Info.plist lists `$(PRODUCT_BUNDLE_IDENTIFIER).healthsync.catchup`;
+        // the scheduler must derive the same string from the same bundle ID.
+        #expect(BackgroundSyncScheduler.catchupTaskIdentifier(
+            bundleIdentifier: "com.puls.PulsHealth") == "com.puls.PulsHealth.healthsync.catchup")
+        #expect(BackgroundSyncScheduler.catchupTaskIdentifier(
+            bundleIdentifier: "org.example.Fork") == "org.example.Fork.healthsync.catchup")
+        // No main bundle (tests, tools): the historical literal.
+        #expect(BackgroundSyncScheduler.catchupTaskIdentifier(bundleIdentifier: nil)
+            == "com.puls.healthsync.catchup")
+        #expect(BackgroundSyncScheduler.catchupTaskIdentifier(bundleIdentifier: "")
+            == "com.puls.healthsync.catchup")
+    }
+
+    @Test func schedulerUsesInjectedIdentifiers() {
+        let scheduler = BackgroundSyncScheduler(
+            engine: HealthSyncEngine(),
+            catchupTaskIdentifier: "org.example.Fork.healthsync.catchup",
+            backfillTaskIdentifier: "org.example.Fork.backfill.run")
+        #expect(scheduler.catchupTaskIdentifier == "org.example.Fork.healthsync.catchup")
+        #expect(scheduler.backfillTaskIdentifier == "org.example.Fork.backfill.run")
+    }
+
     @Test func taskCompletionGateHasExactlyOneWinner() async {
         let gate = BackgroundTaskCompletionGate()
         let outcomes = await withTaskGroup(

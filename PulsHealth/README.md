@@ -31,9 +31,15 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
   template works as-is. Forks distributing their own build must also change
   `bundleIdPrefix` in `project.yml` and must not ship under the PulsHealth name
   (see `TRADEMARK.md` at the repo root).
-- `UIBackgroundModes: processing`; permitted BG task IDs `com.puls.healthsync.catchup`
-  and the `com.puls.PulsHealth.backfill.*` wildcard, which permits the concrete
-  `com.puls.PulsHealth.backfill.run` continued-processing task on iOS 26.
+- `UIBackgroundModes: processing`; the permitted BG task IDs are derived from
+  the bundle ID — `$(PRODUCT_BUNDLE_IDENTIFIER).healthsync.catchup` and the
+  `$(PRODUCT_BUNDLE_IDENTIFIER).backfill.*` wildcard (Xcode expands build
+  settings in Info.plist values, so the built app carries
+  `com.puls.PulsHealth.healthsync.catchup` and `com.puls.PulsHealth.backfill.*`,
+  the latter permitting the concrete `….backfill.run` continued-processing
+  task on iOS 26). `BackgroundSyncScheduler` derives the same strings from
+  `Bundle.main.bundleIdentifier`, so a fork with its own bundle ID changes
+  nothing here.
 - App Transport Security: `NSAllowsLocalNetworking` only — plain `http://` is
   reachable for local-network hosts (unqualified names, `*.local`, private IP
   ranges), everything else stays HTTPS-only — with the matching

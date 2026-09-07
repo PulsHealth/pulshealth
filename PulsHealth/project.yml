@@ -49,9 +49,13 @@ targets:
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         NSLocalNetworkUsageDescription: PulsHealth connects to the health server you configure, which may be on your local network.
+        # Background task identifiers derive from the bundle ID (Xcode expands
+        # build settings in Info.plist values), matching what
+        # BackgroundSyncScheduler registers, so a fork with its own bundle ID
+        # needs no edit here.
         BGTaskSchedulerPermittedIdentifiers:
-          - com.puls.healthsync.catchup
-          - com.puls.PulsHealth.backfill.*
+          - $(PRODUCT_BUNDLE_IDENTIFIER).healthsync.catchup
+          - $(PRODUCT_BUNDLE_IDENTIFIER).backfill.*
         UIBackgroundModes:
           - processing
         ITSAppUsesNonExemptEncryption: false
