@@ -78,8 +78,10 @@ struct BenchmarkView: View {
         benchmarkTask = Task {
             let tmp = FileManager.default.temporaryDirectory
                 .appendingPathComponent("puls-benchmark-\(UUID())", isDirectory: true)
+            // Throwaway state: an in-memory token store keeps the benchmark's
+            // engine away from the app's Keychain item.
             let engine = HealthSyncEngine(
-                store: SyncStateStore(directory: tmp),
+                store: SyncStateStore(directory: tmp, tokenStore: InMemoryTokenStore()),
                 eventLog: SyncEventLog(directory: tmp)
             )
             var benchConfig = config
