@@ -56,8 +56,15 @@ const (
 	// Enhanced workout: richer per-type stats, events, sub-activities.
 	workoutSampleRich = `{"uuid":"33333333-3333-4333-8333-333333333333","type":"HKWorkoutTypeIdentifier","kind":"workout","start":1718000000000,"end":1718003600500,"workout":{"activityType":"running","duration":3600.5,"totalEnergyKcal":450.2,"totalDistanceMeters":8046.7,"statistics":{"HKQuantityTypeIdentifierHeartRate":152.0},"statisticsDetail":{"HKQuantityTypeIdentifierHeartRate":{"min":98.0,"avg":152.0,"max":178.0},"HKQuantityTypeIdentifierActiveEnergyBurned":{"sum":450.2}},"events":[{"type":"lap","start":1718001800000},{"type":"segment","start":1718000000000,"end":1718001800000}],"activities":[{"activityType":"running","start":1718000000000,"end":1718003600500,"duration":3600.5,"statistics":{"HKQuantityTypeIdentifierHeartRate":{"avg":152.0,"max":178.0}}}]}}`
 
-	// Full header with every optional count.
-	hdrLineFull = `{"batchID":"6f1c1f1e-2a3b-4c5d-8e9f-0a1b2c3d4e5f","deviceID":"dev-1","type":"HKWorkoutTypeIdentifier","reason":"incremental","exportedAt":1718000000000,"sampleCount":%d,"deletionCount":%d,"routeCount":%d,"aggregateCount":%d,"seriesCount":%d,"profileCount":%d}`
+	// Full header with every optional count, as a versioned client sends it.
+	hdrLineFull = `{"batchID":"6f1c1f1e-2a3b-4c5d-8e9f-0a1b2c3d4e5f","deviceID":"dev-1","type":"HKWorkoutTypeIdentifier","reason":"incremental","exportedAt":1718000000000,"schemaVersion":1,"clientVersion":"0.1.0 (1)","sampleCount":%d,"deletionCount":%d,"routeCount":%d,"aggregateCount":%d,"seriesCount":%d,"profileCount":%d}`
+
+	// Versioned header with the schemaVersion left to the test.
+	hdrLineVersioned = `{"batchID":"6f1c1f1e-2a3b-4c5d-8e9f-0a1b2c3d4e5f","deviceID":"dev-1","type":"HKQuantityTypeIdentifierHeartRate","reason":"incremental","exportedAt":1718000000000,"schemaVersion":%s,"clientVersion":"0.1.0 (1)","sampleCount":%d,"deletionCount":%d}`
+
+	// The app's connection probe for a receiver without /v1/capabilities: a
+	// header-only batch, every count zero, reason "manual".
+	probeLine = `{"batchID":"6f1c1f1e-2a3b-4c5d-8e9f-0a1b2c3d4e5f","deviceID":"dev-1","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"schemaVersion":1,"clientVersion":"0.1.0 (1)","sampleCount":0,"deletionCount":0,"routeCount":0,"seriesCount":0,"aggregateCount":0,"activitySummaryCount":0,"profileCount":0}`
 
 	seriesLine = `{"series":{"workoutUUID":"33333333-3333-4333-8333-333333333333","type":"HKQuantityTypeIdentifierHeartRate","unit":"count/min","points":[{"t":1718000001000,"value":120.0},{"t":1718000002000,"value":135.5}]}}`
 
@@ -134,6 +141,9 @@ func TestParseBatch_EnhancedWorkout(t *testing.T) {
 	if len(b.Samples) != 1 || len(b.Routes) != 1 || len(b.Series) != 1 || b.Profile == nil {
 		t.Fatalf("counts: samples=%d routes=%d series=%d profile=%v",
 			len(b.Samples), len(b.Routes), len(b.Series), b.Profile != nil)
+	}
+	if b.Header.SchemaVersion == nil || *b.Header.SchemaVersion != 1 || b.Header.ClientVersion != "0.1.0 (1)" {
+		t.Errorf("schemaVersion = %v, clientVersion = %q", b.Header.SchemaVersion, b.Header.ClientVersion)
 	}
 
 	w := b.Samples[0].Workout
@@ -1241,6 +1251,11 @@ func TestHandleBatch_RespondsBeforeRecordingRejection(t *testing.T) {
 			req.Header.Set("X-Wake-ID", "not-a-uuid")
 			return req
 		}},
+		{"protocol", http.StatusBadRequest, func(t *testing.T, _ *fakeStore) *http.Request {
+			req := httptest.NewRequest("POST", "/v1/batches", strings.NewReader(ndjson(t, 0, 0)))
+			req.Header.Set("X-Puls-Protocol", "2")
+			return req
+		}},
 		{"insert", http.StatusInternalServerError, func(t *testing.T, fs *fakeStore) *http.Request {
 			fs.insertErr = errors.New("boom")
 			return httptest.NewRequest("POST", "/v1/batches", strings.NewReader(ndjson(t, 0, 0)))
@@ -1318,5 +1333,324 @@ func TestIsRetryableTxError(t *testing.T) {
 		if isRetryableTxError(err) {
 			t.Errorf("isRetryableTxError(%v) = true, want false", err)
 		}
+	}
+}
+
+// --- Protocol version negotiation (PROTO-1) and capabilities (PROTO-6) ---
+
+func intPtr(v int) *int { return &v }
+
+// versioned builds a one-sample-slot body whose header declares schemaVersion
+// as the given JSON literal.
+func versioned(t *testing.T, schemaVersion string, lines ...string) string {
+	t.Helper()
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf(hdrLineVersioned, schemaVersion, len(lines), 0))
+	for _, l := range lines {
+		sb.WriteString("\n")
+		sb.WriteString(l)
+	}
+	sb.WriteString("\n")
+	return sb.String()
+}
+
+func TestParseBatch_SchemaVersion(t *testing.T) {
+	cases := []struct {
+		name    string
+		body    string
+		want    *int
+		wantErr string // substring of the ProtocolVersionError; "" means accepted
+	}{
+		{"legacy header without schemaVersion", ndjson(t, 0, 0), nil, ""},
+		{"explicit null is legacy", versioned(t, "null"), nil, ""},
+		{"version 1", versioned(t, "1", hrSample), intPtr(1), ""},
+		{"version 2", versioned(t, "2", hrSample), nil, "schemaVersion 2"},
+		{"version 0", versioned(t, "0"), nil, "schemaVersion 0"},
+		// The version is checked before anything else in the header: a
+		// future client whose header no longer carries today's required
+		// fields still gets the negotiation error, not "missing batchID".
+		{"version checked before the rest of the header", `{"schemaVersion":7}` + "\n", nil, "schemaVersion 7"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			b, err := ParseBatch(strings.NewReader(tc.body))
+			if tc.wantErr != "" {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				}
+				var pve *ProtocolVersionError
+				if !errors.As(err, &pve) {
+					t.Fatalf("error %T (%v), want *ProtocolVersionError", err, err)
+				}
+				if !strings.Contains(err.Error(), tc.wantErr) || !strings.Contains(err.Error(), "supported versions [1]") {
+					t.Fatalf("error = %q, want it to mention %q and the supported set", err, tc.wantErr)
+				}
+				if got := batchParseStatus(err); got != http.StatusBadRequest {
+					t.Fatalf("status = %d, want 400", got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ParseBatch: %v", err)
+			}
+			switch {
+			case tc.want == nil && b.Header.SchemaVersion != nil:
+				t.Fatalf("schemaVersion = %d, want absent", *b.Header.SchemaVersion)
+			case tc.want != nil && (b.Header.SchemaVersion == nil || *b.Header.SchemaVersion != *tc.want):
+				t.Fatalf("schemaVersion = %v, want %d", b.Header.SchemaVersion, *tc.want)
+			}
+		})
+	}
+}
+
+func TestParseProtocolHeader(t *testing.T) {
+	cases := []struct {
+		in      string
+		want    *int
+		wantErr bool
+	}{
+		{"", nil, false},
+		{"1", intPtr(1), false},
+		{" 1 ", intPtr(1), false},
+		{"2", nil, true},
+		{"0", nil, true},
+		{"-1", nil, true},
+		{"abc", nil, true},
+		{"1.0", nil, true},
+	}
+	for _, tc := range cases {
+		got, err := parseProtocolHeader(tc.in)
+		if tc.wantErr {
+			var pve *ProtocolVersionError
+			if !errors.As(err, &pve) {
+				t.Errorf("%q: error %T (%v), want *ProtocolVersionError", tc.in, err, err)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("%q: unexpected error %v", tc.in, err)
+			continue
+		}
+		switch {
+		case tc.want == nil && got != nil:
+			t.Errorf("%q: got %d, want nil", tc.in, *got)
+		case tc.want != nil && (got == nil || *got != *tc.want):
+			t.Errorf("%q: got %v, want %d", tc.in, got, *tc.want)
+		}
+	}
+}
+
+func TestReconcileProtocolVersions(t *testing.T) {
+	cases := []struct {
+		header, body *int
+		want         int
+		wantErr      bool
+	}{
+		{nil, nil, 1, false},
+		{intPtr(1), nil, 1, false},
+		{nil, intPtr(1), 1, false},
+		{intPtr(1), intPtr(1), 1, false},
+		{intPtr(1), intPtr(2), 0, true},
+		{intPtr(2), intPtr(1), 0, true},
+	}
+	for _, tc := range cases {
+		got, err := reconcileProtocolVersions(tc.header, tc.body)
+		if tc.wantErr {
+			var pve *ProtocolVersionError
+			if !errors.As(err, &pve) {
+				t.Errorf("header=%v body=%v: error %T (%v), want *ProtocolVersionError", tc.header, tc.body, err, err)
+			}
+			continue
+		}
+		if err != nil || got != tc.want {
+			t.Errorf("header=%v body=%v: got %d, %v; want %d", tc.header, tc.body, got, err, tc.want)
+		}
+	}
+}
+
+func postBatch(t *testing.T, srv *Server, body string, headers map[string]string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest("POST", "/v1/batches", gzipBody(t, body))
+	req.Header.Set("Authorization", "Bearer secret")
+	req.Header.Set("Content-Type", "application/x-ndjson")
+	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("X-Batch-ID", "6f1c1f1e-2a3b-4c5d-8e9f-0a1b2c3d4e5f")
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	rec := httptest.NewRecorder()
+	srv.routes().ServeHTTP(rec, req)
+	return rec
+}
+
+// A version this server does not speak — in the body, in the request header,
+// or the two contradicting each other — is a 400 with the fixed negotiation
+// body, costs no database work, and is recorded like any other rejection.
+func TestHandleBatch_UnsupportedProtocolVersion(t *testing.T) {
+	const wantBody = `{"error":"unsupported protocol version","supportedVersions":[1]}`
+	cases := []struct {
+		name       string
+		body       string
+		header     string // X-Puls-Protocol; "" omits it
+		wantMsg    string // substring of the recorded rejection message
+		bodyUnread bool   // rejected on the request header alone
+	}{
+		{"schemaVersion 2 in body", versioned(t, "2", hrSample), "", "schemaVersion 2", false},
+		{"X-Puls-Protocol 2", ndjson(t, 1, 0, hrSample), "2", "X-Puls-Protocol 2", true},
+		{"body 1 header 2", versioned(t, "1", hrSample), "2", "X-Puls-Protocol 2", true},
+		{"body 2 header 1", versioned(t, "2", hrSample), "1", "schemaVersion 2", false},
+		{"header not an integer", ndjson(t, 1, 0, hrSample), "1.0", `X-Puls-Protocol "1.0"`, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fs := &fakeStore{insertRes: IngestResult{Accepted: 1}}
+			headers := map[string]string{}
+			if tc.header != "" {
+				headers["X-Puls-Protocol"] = tc.header
+			}
+			rec := postBatch(t, newTestServer(fs), tc.body, headers)
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+			}
+			if got := strings.TrimSpace(rec.Body.String()); got != wantBody {
+				t.Fatalf("body = %s, want %s", got, wantBody)
+			}
+			if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
+				t.Errorf("Content-Type = %q", ct)
+			}
+			if fs.gotBatch != nil {
+				t.Fatal("InsertBatch was called for a rejected protocol version")
+			}
+			if len(fs.rejections) != 1 {
+				t.Fatalf("rejections = %d, want 1", len(fs.rejections))
+			}
+			rej := fs.rejections[0]
+			if rej.Stage != "protocol" || rej.Status != http.StatusBadRequest {
+				t.Errorf("rejection = %+v, want stage protocol / 400", rej)
+			}
+			if !strings.Contains(rej.ErrorMessage, tc.wantMsg) {
+				t.Errorf("rejection message = %q, want it to mention %q", rej.ErrorMessage, tc.wantMsg)
+			}
+			if tc.bodyUnread && rej.Bytes != 0 {
+				t.Errorf("rejection bytes = %d, want 0: the body must not be read when the request header is refused", rej.Bytes)
+			}
+		})
+	}
+}
+
+// Every combination that names version 1 — or names nothing, as clients that
+// predate versioning do — is accepted.
+func TestHandleBatch_ProtocolVersionOneAccepted(t *testing.T) {
+	cases := []struct {
+		name   string
+		body   string
+		header string
+	}{
+		{"legacy body, no header", ndjson(t, 1, 0, hrSample), ""},
+		{"schemaVersion 1, no header", versioned(t, "1", hrSample), ""},
+		{"legacy body, header 1", ndjson(t, 1, 0, hrSample), "1"},
+		{"schemaVersion 1, header 1", versioned(t, "1", hrSample), "1"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fs := &fakeStore{insertRes: IngestResult{Accepted: 1}}
+			headers := map[string]string{}
+			if tc.header != "" {
+				headers["X-Puls-Protocol"] = tc.header
+			}
+			rec := postBatch(t, newTestServer(fs), tc.body, headers)
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+			}
+			if fs.gotBatch == nil || len(fs.gotBatch.Samples) != 1 {
+				t.Fatalf("store got batch = %+v", fs.gotBatch)
+			}
+			if len(fs.rejections) != 0 {
+				t.Fatalf("rejections = %+v, want none", fs.rejections)
+			}
+		})
+	}
+}
+
+// The app's fallback connection probe (for receivers without
+// /v1/capabilities) is a header-only batch: every count zero, reason
+// "manual". It must parse, reach the store, and come back 200 with all-zero
+// counts so the app can tell "reachable and authenticated" from a 4xx.
+func TestHandleBatch_ConnectionProbe(t *testing.T) {
+	fs := &fakeStore{}
+	rec := postBatch(t, newTestServer(fs), probeLine+"\n", map[string]string{"X-Puls-Protocol": "1"})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var resp map[string]int64
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"accepted", "deleted", "duplicates", "routePoints", "seriesPoints", "aggregateSamples", "activitySummaries"} {
+		v, ok := resp[key]
+		if !ok || v != 0 {
+			t.Errorf("resp[%q] = %d (present %v), want 0", key, v, ok)
+		}
+	}
+	if len(resp) != 7 {
+		t.Errorf("resp = %v, want exactly the seven count keys", resp)
+	}
+	b := fs.gotBatch
+	if b == nil {
+		t.Fatal("InsertBatch was not called")
+	}
+	if len(b.Samples)+len(b.Deletions)+len(b.Routes)+len(b.Series)+len(b.Aggregates)+len(b.ActivitySummaries) != 0 || b.Profile != nil {
+		t.Errorf("probe batch carried data lines: %+v", b)
+	}
+	if b.Header.Reason != "manual" || b.Header.SchemaVersion == nil || *b.Header.SchemaVersion != 1 || b.Header.ClientVersion != "0.1.0 (1)" {
+		t.Errorf("probe header = %+v", b.Header)
+	}
+	if len(fs.rejections) != 0 {
+		t.Errorf("rejections = %+v, want none", fs.rejections)
+	}
+}
+
+func TestHandleCapabilities(t *testing.T) {
+	srv := newTestServer(&fakeStore{})
+
+	for _, auth := range []string{"", "Bearer wrong", "secret"} {
+		req := httptest.NewRequest("GET", "/v1/capabilities", nil)
+		if auth != "" {
+			req.Header.Set("Authorization", auth)
+		}
+		rec := httptest.NewRecorder()
+		srv.routes().ServeHTTP(rec, req)
+		if rec.Code != http.StatusUnauthorized {
+			t.Errorf("auth %q: status = %d, want 401", auth, rec.Code)
+		}
+	}
+
+	req := httptest.NewRequest("GET", "/v1/capabilities", nil)
+	req.Header.Set("Authorization", "Bearer secret")
+	rec := httptest.NewRecorder()
+	srv.routes().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
+		t.Errorf("Content-Type = %q", ct)
+	}
+	const want = `{"protocolVersions":[1],"features":["batches","stats","digest","uuids","aggregates","activitySummaries","routes","series","profile"],"server":"puls-ingest","version":"dev"}`
+	if got := strings.TrimSpace(rec.Body.String()); got != want {
+		t.Fatalf("body = %s\nwant   %s", got, want)
+	}
+}
+
+func TestServerVersion(t *testing.T) {
+	old := buildVersion
+	t.Cleanup(func() { buildVersion = old })
+
+	buildVersion = ""
+	if got := serverVersion(); got != "dev" {
+		t.Errorf("serverVersion() with no build commit = %q, want dev", got)
+	}
+	buildVersion = "0123abcd"
+	if got := serverVersion(); got != "0123abcd" {
+		t.Errorf("serverVersion() = %q, want the build commit", got)
 	}
 }

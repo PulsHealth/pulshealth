@@ -33,6 +33,43 @@ const (
 	insertDeadline = 5 * time.Minute
 )
 
+// buildVersion identifies this build in GET /v1/capabilities. The Dockerfile
+// sets it to the git commit via -ldflags "-X main.buildVersion=…"; a plain
+// `go build` / `go run` leaves it empty and reports "dev".
+var buildVersion string
+
+func serverVersion() string {
+	if buildVersion == "" {
+		return "dev"
+	}
+	return buildVersion
+}
+
+// capabilityFeatures lists what this receiver implements beyond accepting a
+// batch, so a client (or a person pointing the app at a server) can tell an
+// endpoint-complete reference server from a minimal receiver that only takes
+// uploads. Names are protocol vocabulary: keep them stable and append only.
+var capabilityFeatures = []string{
+	"batches", "stats", "digest", "uuids", "aggregates",
+	"activitySummaries", "routes", "series", "profile",
+}
+
+// capabilities is the GET /v1/capabilities body (PROTO-6).
+type capabilities struct {
+	ProtocolVersions []int    `json:"protocolVersions"`
+	Features         []string `json:"features"`
+	Server           string   `json:"server"`
+	Version          string   `json:"version"`
+}
+
+// protocolRejection is the fixed 400 body for a version this server does not
+// speak (PROTO-1). The app never retries a 4xx, so this is the one response
+// it can turn into a useful message; keep the shape stable.
+type protocolRejection struct {
+	Error             string `json:"error"`
+	SupportedVersions []int  `json:"supportedVersions"`
+}
+
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
@@ -153,6 +190,7 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("GET /v1/routes", s.auth(s.handleRoutes))
 	mux.HandleFunc("GET /v1/routes/{uuid}", s.auth(s.handleRoute))
 	mux.HandleFunc("GET /v1/routes/{uuid}/metrics", s.auth(s.handleRouteMetrics))
+	mux.HandleFunc("GET /v1/capabilities", s.auth(s.handleCapabilities))
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
 	return mux
 }
@@ -208,6 +246,16 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	headerBatchID := r.Header.Get("X-Batch-ID")
 
+	// Protocol negotiation comes before the body is touched: a client
+	// speaking a version this server does not understand costs no
+	// decompression, parsing, or database work, and gets the one response it
+	// can act on.
+	headerVersion, err := parseProtocolHeader(r.Header.Get("X-Puls-Protocol"))
+	if err != nil {
+		s.rejectProtocol(w, r, err, 0)
+		return
+	}
+
 	cr := &countingReader{r: http.MaxBytesReader(w, r.Body, maxWireBody)}
 	var body io.Reader = cr
 	switch enc := r.Header.Get("Content-Encoding"); enc {
@@ -232,11 +280,21 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 	batch, err := ParseBatch(decodedBody)
 	parseDur := time.Since(start)
 	if err != nil {
+		var pve *ProtocolVersionError
+		if errors.As(err, &pve) {
+			s.rejectProtocol(w, r, err, cr.n)
+			return
+		}
 		status := batchParseStatus(err)
 		s.log.Warn("batch rejected",
 			"batch_id", headerBatchID, "err", err.Error(), "bytes", cr.n)
 		writeJSON(w, status, map[string]string{"error": err.Error()})
 		s.recordBatchRejection(r, status, "parse", err.Error(), cr.n)
+		return
+	}
+	protocol, err := reconcileProtocolVersions(headerVersion, batch.Header.SchemaVersion)
+	if err != nil {
+		s.rejectProtocol(w, r, err, cr.n)
 		return
 	}
 	if headerBatchID != "" && !strings.EqualFold(headerBatchID, batch.Header.BatchID) {
@@ -294,6 +352,8 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 		"user_id", batch.Header.UserID,
 		"wake_id", batch.Header.WakeID,
 		"trigger", batch.Header.Trigger,
+		"protocol", protocol,
+		"client_version", batch.Header.ClientVersion,
 		"type", batch.Header.Type,
 		"reason", batch.Header.Reason,
 		"samples", len(batch.Samples),
@@ -324,6 +384,19 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 		"aggregateSamples":  res.AggregateSamples,
 		"activitySummaries": res.ActivitySummaries,
 	})
+}
+
+// rejectProtocol answers an unsupported or contradictory protocol version with
+// the fixed negotiation body. The descriptive error goes to the log and
+// ingest_rejections (stage "protocol"), not to the client.
+func (s *Server) rejectProtocol(w http.ResponseWriter, r *http.Request, err error, bodyBytes int64) {
+	s.log.Warn("batch rejected",
+		"batch_id", r.Header.Get("X-Batch-ID"), "err", err.Error(), "bytes", bodyBytes)
+	writeJSON(w, http.StatusBadRequest, protocolRejection{
+		Error:             "unsupported protocol version",
+		SupportedVersions: supportedProtocolVersions,
+	})
+	s.recordBatchRejection(r, http.StatusBadRequest, "protocol", err.Error(), bodyBytes)
 }
 
 // recordBatchRejection is intentionally best-effort: observability must never
@@ -366,6 +439,10 @@ func batchParseStatus(err error) int {
 	}
 	var pe *ParseError
 	if errors.As(err, &pe) {
+		return http.StatusBadRequest
+	}
+	var pve *ProtocolVersionError
+	if errors.As(err, &pve) {
 		return http.StatusBadRequest
 	}
 	return http.StatusInternalServerError
@@ -596,6 +673,19 @@ func intParam(value, name string) (int, error) {
 		return 0, fmt.Errorf("invalid %s: must be an integer", name)
 	}
 	return n, nil
+}
+
+// handleCapabilities lets a client discover what this receiver speaks before
+// it uploads anything. It sits behind bearer auth on purpose: the app's "Test
+// connection" step uses it to validate URL and token together, and a 401
+// here is the earliest possible signal of a mistyped token.
+func (s *Server) handleCapabilities(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, capabilities{
+		ProtocolVersions: supportedProtocolVersions,
+		Features:         capabilityFeatures,
+		Server:           "puls-ingest",
+		Version:          serverVersion(),
+	})
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
