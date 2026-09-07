@@ -21,6 +21,9 @@ struct RootView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
         }
+        // Save & Apply on Settings, the User page, or the Data Types bar can
+        // all raise the server/user-change prompt; show it above every tab.
+        .serverChangePrompt()
     }
 }
 
