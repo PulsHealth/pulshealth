@@ -1,0 +1,569 @@
+import Foundation
+import HealthKit
+import os
+
+// MARK: - Bucket math (pure, testable without HealthKit)
+
+/// Bucket-boundary math for one aggregate series: boundaries are `anchor + N ×
+/// interval`, always computed via `Calendar` so day/week/month buckets stay
+/// correct across DST transitions and month-length changes.
+struct AggregateBucketing: Sendable {
+    var anchor: Date
+    var intervalValue: Int
+    var intervalUnit: AggregateIntervalUnit
+    var calendar: Calendar
+
+    init(
+        anchor: Date, intervalValue: Int, intervalUnit: AggregateIntervalUnit,
+        calendar: Calendar = .current
+    ) {
+        self.anchor = anchor
+        self.intervalValue = max(1, intervalValue)
+        self.intervalUnit = intervalUnit
+        self.calendar = calendar
+    }
+
+    private var approximateSeconds: TimeInterval {
+        Double(intervalValue) * intervalUnit.approximateSeconds
+    }
+
+    /// Start of bucket `index` (bucket 0 starts at the anchor).
+    func start(ofBucket index: Int) -> Date {
+        guard index != 0 else { return anchor }
+        return calendar.date(
+            byAdding: intervalUnit.dateComponents(value: intervalValue, times: index),
+            to: anchor
+        ) ?? anchor.addingTimeInterval(Double(index) * approximateSeconds)
+    }
+
+    /// Index of the bucket containing `date` (start ≤ date < next start).
+    /// O(1): estimate by approximate length, then correct for calendar drift.
+    func index(of date: Date) -> Int {
+        var i = Int((date.timeIntervalSince(anchor) / approximateSeconds).rounded(.down))
+        while start(ofBucket: i) > date { i -= 1 }
+        while start(ofBucket: i + 1) <= date { i += 1 }
+        return i
+    }
+
+    /// Largest bucket boundary at or before `date`, clamped to the anchor.
+    func floorBoundary(_ date: Date) -> Date {
+        date <= anchor ? anchor : start(ofBucket: index(of: date))
+    }
+
+    /// Bucket-aligned chunks covering [from, to), each at most `maxBuckets`
+    /// buckets so years of small buckets never become one giant query/upload.
+    /// `to` is expected to be a bucket boundary; `from` is floored to one.
+    func chunks(
+        from: Date, to: Date, maxBuckets: Int = AggregateSchedule.maxBucketsPerChunk
+    ) -> [DateInterval] {
+        guard to > anchor, from < to else { return [] }
+        let first = max(0, index(of: max(from, anchor)))
+        let end = index(of: to) // `to` is a boundary: the bucket starting there is excluded
+        guard end > first else { return [] }
+        var out: [DateInterval] = []
+        var i = first
+        while i < end {
+            let j = Swift.min(i + maxBuckets, end)
+            out.append(DateInterval(start: start(ofBucket: i), end: start(ofBucket: j)))
+            i = j
+        }
+        return out
+    }
+
+    /// Split a bucket-aligned chunk into two smaller bucket-aligned chunks.
+    /// Returns nil when the chunk is already one bucket wide.
+    func split(_ chunk: DateInterval) -> (DateInterval, DateInterval)? {
+        let first = index(of: chunk.start)
+        let end = index(of: chunk.end)
+        let count = end - first
+        guard count > 1 else { return nil }
+        let mid = start(ofBucket: first + count / 2)
+        guard mid > chunk.start, mid < chunk.end else { return nil }
+        return (
+            DateInterval(start: chunk.start, end: mid),
+            DateInterval(start: mid, end: chunk.end)
+        )
+    }
+}
+
+/// Window policy for aggregate recomputes. Statistics queries have no anchors,
+/// so progress is a watermark plus a trailing lookback that re-covers buckets
+/// late-arriving Watch data may have changed.
+enum AggregateSchedule {
+    static let maxBucketsPerChunk = 2_000
+    /// Full-series recompute cadence — repairs edits/deletes older than the lookback.
+    static let fullRecomputeInterval: TimeInterval = 30 * 86_400
+
+    static func lookback(intervalSeconds: TimeInterval) -> TimeInterval {
+        max(7 * 86_400, 3 * intervalSeconds)
+    }
+
+    /// The settled window to (re)compute this run, or nil when nothing has
+    /// settled yet. `to` is the last fully-elapsed bucket boundary at least
+    /// `settleDelay` old; `from` trails the watermark by the lookback (or the
+    /// start date on a full pass / first run).
+    static func window(
+        startDate: Date,
+        computedThrough: Date?,
+        fullPass: Bool,
+        fullRecomputeThrough: Date? = nil,
+        settleDelay: TimeInterval,
+        now: Date,
+        bucketing: AggregateBucketing,
+        intervalSeconds: TimeInterval
+    ) -> (from: Date, to: Date)? {
+        let to = bucketing.floorBoundary(now.addingTimeInterval(-settleDelay))
+        let from: Date
+        if fullPass, let fullRecomputeThrough {
+            // Initial and later scheduled full passes use a separate durable
+            // cursor because the normal high-water mark may already be near now.
+            from = max(startDate, fullRecomputeThrough)
+        } else if !fullPass, let computedThrough {
+            from = max(startDate, computedThrough.addingTimeInterval(
+                -lookback(intervalSeconds: intervalSeconds)))
+        } else {
+            from = startDate
+        }
+        guard from < to else { return nil }
+        return (from, to)
+    }
+}
+
+/// Migration helper for state written before durable full-pass markers existed.
+/// In that schema, `lastFullRecomputeAt == nil` plus a non-nil high-water mark
+/// can only mean the initial full pass was interrupted after making progress.
+enum FullRecomputeMigration {
+    static func legacyInitialCursor(
+        computedThrough: Date?,
+        lastFullRecomputeAt: Date?,
+        fullRecomputeStartedAt: Date?
+    ) -> Date? {
+        guard fullRecomputeStartedAt == nil, lastFullRecomputeAt == nil else { return nil }
+        return computedThrough
+    }
+}
+
+// MARK: - Engine integration
+
+extension HealthSyncEngine {
+    /// Run every enabled aggregate config, `maxConcurrentTypes` at a time.
+    /// Called after raw syncs by `syncAllEnabled`, and directly by the app.
+    public func syncAllAggregates(reason: SyncReason = .incremental) async {
+        let config = await store.configuration
+        let configs = config.aggregates.filter(\.enabled)
+        guard !configs.isEmpty else { return }
+
+        await withTaskGroup(of: Void.self) { group in
+            var iterator = configs.makeIterator()
+            var inFlight = 0
+            func addNext(_ group: inout TaskGroup<Void>) {
+                if let next = iterator.next() {
+                    inFlight += 1
+                    group.addTask { await self.syncAggregate(configID: next.id, reason: reason) }
+                }
+            }
+            for _ in 0..<max(1, config.maxConcurrentTypes) { addNext(&group) }
+            while inFlight > 0 {
+                await group.next()
+                inFlight -= 1
+                addNext(&group)
+            }
+        }
+        notifyChanged()
+    }
+
+    /// Every enabled aggregate config for one type — what an observer fire runs.
+    public func syncAggregates(forType identifier: String, reason: SyncReason = .incremental) async {
+        let configs = await store.configuration.aggregates
+            .filter { $0.enabled && $0.typeIdentifier == identifier }
+        for config in configs {
+            await syncAggregate(configID: config.id, reason: reason)
+        }
+    }
+
+    /// Recompute + upload one aggregate config. Overlap-guarded like `sync(type:)`.
+    public func syncAggregate(configID: UUID, reason: SyncReason = .incremental) async {
+        let key = "agg:\(configID.uuidString)"
+        guard !activeSyncs.contains(key) else {
+            pendingResync.insert(key)
+            return
+        }
+        activeSyncs.insert(key)
+        defer { activeSyncs.remove(key) }
+
+        var nextReason = reason
+        repeat {
+            await runAggregateSync(configID: configID, reason: nextReason)
+            nextReason = .incremental
+        } while pendingResync.remove(key) != nil
+    }
+
+    private func runAggregateSync(configID: UUID, reason: SyncReason) async {
+        let config = await store.configuration
+        guard let agg = config.aggregates.first(where: { $0.id == configID }), agg.enabled else {
+            return
+        }
+        let typeID = agg.typeIdentifier
+        guard let descriptor = HealthTypeCatalog.descriptor(for: typeID),
+              descriptor.kind == .quantity else {
+            await eventLog.log(.error, type: typeID, "Aggregate \(agg.summaryLabel): not a quantity type")
+            return
+        }
+        // Re-validate even though the UI only offers legal functions: an illegal
+        // option×aggregation-style combo raises an ObjC exception inside
+        // HealthKit (a crash, not a catchable Swift error).
+        guard HealthTypeCatalog.allowedAggregateFunctions(for: typeID).contains(agg.function) else {
+            await eventLog.log(
+                .error, type: typeID,
+                "Aggregate \(agg.summaryLabel): \(agg.function.rawValue) is not supported by this type's aggregation style — skipping"
+            )
+            return
+        }
+        await ensureTransport()
+        guard let transport else {
+            await eventLog.log(.error, type: typeID, "No transport configured — set server URL and token")
+            return
+        }
+
+        let calendar = Calendar.current
+        let startDate = agg.startDate ?? config.startDate
+        let anchor = calendar.startOfDay(for: startDate)
+        let bucketing = AggregateBucketing(
+            anchor: anchor, intervalValue: agg.intervalValue,
+            intervalUnit: agg.intervalUnit, calendar: calendar
+        )
+
+        let now = Date()
+        var state = await store.aggregateState(for: configID)
+        let fullPassDue = state.computedThrough == nil
+            || state.lastFullRecomputeAt.map {
+                now.timeIntervalSince($0) > AggregateSchedule.fullRecomputeInterval
+            } ?? true
+        let fullPass = state.fullRecomputeStartedAt != nil || fullPassDue
+        if fullPass, state.fullRecomputeStartedAt == nil {
+            let legacyCursor = FullRecomputeMigration.legacyInitialCursor(
+                computedThrough: state.computedThrough,
+                lastFullRecomputeAt: state.lastFullRecomputeAt,
+                fullRecomputeStartedAt: state.fullRecomputeStartedAt)
+            await store.beginAggregateFullRecompute(
+                configID: configID, at: now, resumeThrough: legacyCursor)
+            state = await store.aggregateState(for: configID)
+        }
+        guard let window = AggregateSchedule.window(
+            startDate: anchor,
+            computedThrough: state.computedThrough,
+            fullPass: fullPass,
+            fullRecomputeThrough: state.fullRecomputeThrough,
+            settleDelay: agg.settleDelay,
+            now: now,
+            bucketing: bucketing,
+            intervalSeconds: agg.approximateIntervalSeconds
+        ) else {
+            // The last acked chunk may already have reached this run's settled
+            // boundary before interruption, leaving only completion to persist.
+            if fullPass {
+                await store.markAggregateFullRecompute(configID: configID, at: now)
+            }
+            return // nothing settled yet
+        }
+
+        let chunks = bucketing.chunks(from: window.from, to: window.to)
+        guard !chunks.isEmpty else {
+            if fullPass { await store.markAggregateFullRecompute(configID: configID, at: now) }
+            return
+        }
+
+        let runStart = ContinuousClock.now
+        var totalBuckets = 0
+
+        do {
+            let quantityType = HKQuantityType(HKQuantityTypeIdentifier(rawValue: typeID))
+            for chunk in chunks {
+                try Task.checkCancellation()
+                totalBuckets += try await computeAndUploadAggregateChunk(
+                    config: agg, configID: configID, quantityType: quantityType,
+                    unit: descriptor.unit, reason: reason, transport: transport,
+                    calendar: calendar, anchor: anchor, chunk: chunk
+                )
+                notifyChanged()
+            }
+            if fullPass {
+                await store.markAggregateFullRecompute(configID: configID, at: now)
+            }
+            let elapsed = (ContinuousClock.now - runStart).seconds
+            await eventLog.log(
+                .info, type: typeID,
+                "Aggregate \(agg.summaryLabel): \(totalBuckets) buckets in \(chunks.count) batch(es), \(String(format: "%.1f", elapsed))s\(fullPass ? " (full recompute)" : "")"
+            )
+        } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
+            await store.recordAggregateError(configID: configID, error: SyncError.authorizationNotDetermined)
+            await eventLog.log(.error, type: typeID, "Aggregate \(agg.summaryLabel): Health access not determined")
+        } catch let error as HKError where error.code == .errorDatabaseInaccessible {
+            // Device locked — expected in background; watermark untouched.
+            await eventLog.log(.warn, type: typeID, "Aggregate \(agg.summaryLabel): Health database locked — will retry on next wake")
+        } catch is CancellationError {
+            // Background time expired mid-series; the watermark sits at the last
+            // acked chunk and the next wake resumes. Not a failure.
+            await eventLog.log(.debug, type: typeID, "Aggregate \(agg.summaryLabel): cancelled — will resume on next wake")
+        } catch {
+            await store.recordAggregateError(configID: configID, error: error)
+            await eventLog.log(.error, type: typeID, "Aggregate \(agg.summaryLabel) failed: \(error)")
+        }
+        notifyChanged()
+    }
+
+    /// Compute and upload one aggregate chunk. On HealthKit's internal missing
+    /// data-source error, retry with the same statistics API over smaller
+    /// bucket-aligned windows and advance the watermark after each successful
+    /// subwindow.
+    private func computeAndUploadAggregateChunk(
+        config: AggregateConfig,
+        configID: UUID,
+        quantityType: HKQuantityType,
+        unit: HKUnit?,
+        reason: SyncReason,
+        transport: any SyncTransport,
+        calendar: Calendar,
+        anchor: Date,
+        chunk: DateInterval
+    ) async throws -> Int {
+        do {
+            let rows = try await computeBucketsOnce(
+                config: config, quantityType: quantityType, unit: unit,
+                queryAnchor: anchor, calendar: calendar, chunk: chunk
+            )
+            try await uploadAggregateRows(
+                rows, config: config, configID: configID, reason: reason,
+                transport: transport, chunk: chunk
+            )
+            return rows.count
+        } catch {
+            guard Self.isHealthKitMissingDataSourceError(error) else { throw error }
+            await eventLog.log(
+                .warn, type: config.typeIdentifier,
+                "Aggregate \(config.summaryLabel): HealthKit statistics data-source cache unavailable — retrying with smaller HealthKit statistics windows"
+            )
+            let bucketing = AggregateBucketing(
+                anchor: anchor, intervalValue: config.intervalValue,
+                intervalUnit: config.intervalUnit, calendar: calendar
+            )
+            return try await computeAndUploadRecoveringFromMissingDataSource(
+                config: config, configID: configID, quantityType: quantityType,
+                unit: unit, reason: reason, transport: transport,
+                canonicalAnchor: anchor, bucketing: bucketing,
+                calendar: calendar, chunk: chunk, originalError: error
+            )
+        }
+    }
+
+    private func computeAndUploadRecoveringFromMissingDataSource(
+        config: AggregateConfig,
+        configID: UUID,
+        quantityType: HKQuantityType,
+        unit: HKUnit?,
+        reason: SyncReason,
+        transport: any SyncTransport,
+        canonicalAnchor: Date,
+        bucketing: AggregateBucketing,
+        calendar: Calendar,
+        chunk: DateInterval,
+        originalError: Error
+    ) async throws -> Int {
+        do {
+            let rows = try await computeBucketsOnce(
+                config: config, quantityType: quantityType, unit: unit,
+                queryAnchor: Self.retryAnchor(for: config, canonicalAnchor: canonicalAnchor, chunk: chunk),
+                calendar: calendar, chunk: chunk
+            )
+            try await uploadAggregateRows(
+                rows, config: config, configID: configID, reason: reason,
+                transport: transport, chunk: chunk
+            )
+            return rows.count
+        } catch {
+            guard Self.isHealthKitMissingDataSourceError(error) else { throw error }
+            guard let (left, right) = bucketing.split(chunk) else { throw originalError }
+            let leftCount = try await computeAndUploadRecoveringFromMissingDataSource(
+                config: config, configID: configID, quantityType: quantityType,
+                unit: unit, reason: reason, transport: transport,
+                canonicalAnchor: canonicalAnchor, bucketing: bucketing,
+                calendar: calendar, chunk: left, originalError: error
+            )
+            let rightCount = try await computeAndUploadRecoveringFromMissingDataSource(
+                config: config, configID: configID, quantityType: quantityType,
+                unit: unit, reason: reason, transport: transport,
+                canonicalAnchor: canonicalAnchor, bucketing: bucketing,
+                calendar: calendar, chunk: right, originalError: error
+            )
+            return leftCount + rightCount
+        }
+    }
+
+    private func uploadAggregateRows(
+        _ rows: [AggregateSampleRow],
+        config: AggregateConfig,
+        configID: UUID,
+        reason: SyncReason,
+        transport: any SyncTransport,
+        chunk: DateInterval
+    ) async throws {
+        let batch = SyncBatch(
+            deviceID: store.deviceID,
+            type: config.typeIdentifier,
+            reason: reason,
+            samples: [],
+            deletions: [],
+            aggregates: rows
+        )
+        let uploadResult = try await transport.upload(batch)
+        await store.recordAggregateUpload(
+            configID: configID,
+            newComputedThrough: chunk.end,
+            buckets: rows.count,
+            bytes: uploadResult.bytesSent
+        )
+        await reportWakeBatch(
+            type: "agg:\(config.typeIdentifier)", samples: rows.count,
+            deletions: 0, bytes: uploadResult.bytesSent)
+    }
+
+    private nonisolated static func retryAnchor(
+        for config: AggregateConfig,
+        canonicalAnchor: Date,
+        chunk: DateInterval
+    ) -> Date {
+        // For month buckets, re-anchoring on a later boundary can change later
+        // month boundaries when the original day does not exist in every month.
+        config.intervalUnit == .month ? canonicalAnchor : chunk.start
+    }
+
+    /// HealthKit can fail statistics queries with Code=3 and this description
+    /// when its private cached data-source metadata is missing. The recovery path
+    /// still uses HealthKit statistics; it only changes anchor/window shape.
+    nonisolated static func isHealthKitMissingDataSourceError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == "com.apple.healthkit"
+            && nsError.code == 3
+            && nsError.localizedDescription.localizedCaseInsensitiveContains("no data source available")
+    }
+
+    private func computeBucketsOnce(
+        config: AggregateConfig,
+        quantityType: HKQuantityType,
+        unit: HKUnit?,
+        queryAnchor: Date,
+        calendar: Calendar,
+        chunk: DateInterval
+    ) async throws -> [AggregateSampleRow] {
+        var predicate = HKQuery.predicateForSamples(
+            withStart: chunk.start, end: chunk.end, options: .strictStartDate
+        )
+        if let model = config.deviceFilter.deviceModelString {
+            predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                predicate,
+                HKQuery.predicateForObjects(
+                    withDeviceProperty: HKDevicePropertyKeyModel, allowedValues: [model]
+                ),
+            ])
+        }
+        let queryDescriptor = HKStatisticsCollectionQueryDescriptor(
+            predicate: HKSamplePredicate.quantitySample(type: quantityType, predicate: predicate),
+            options: config.function.statisticsOption,
+            anchorDate: queryAnchor,
+            intervalComponents: config.intervalComponents
+        )
+        let collection = try await queryDescriptor.result(for: healthStore)
+
+        var rows: [AggregateSampleRow] = []
+        let function = config.function
+        let unitString = config.unitString
+        // enumerateStatistics yields a statistics object for every interval in
+        // range, including empty ones; the bucket at chunk.end is filtered out.
+        collection.enumerateStatistics(from: chunk.start, to: chunk.end) { stat, _ in
+            guard stat.startDate >= chunk.start, stat.startDate < chunk.end else { return }
+            rows.append(AggregateSampleRow(
+                type: config.typeIdentifier,
+                function: function,
+                intervalValue: config.intervalValue,
+                intervalUnit: config.intervalUnit,
+                deviceFilter: config.deviceFilter,
+                bucketStart: stat.startDate,
+                bucketEnd: stat.endDate,
+                bucketStartContext: .deviceCurrent(for: stat.startDate, timeZone: calendar.timeZone),
+                bucketEndContext: .deviceCurrent(for: stat.endDate, timeZone: calendar.timeZone),
+                value: Self.value(from: stat, function: function, unit: unit),
+                unit: unitString
+            ))
+        }
+        return rows
+    }
+
+    private nonisolated static func value(
+        from stat: HKStatistics, function: AggregateFunction, unit: HKUnit?
+    ) -> Double? {
+        if function == .duration {
+            return stat.duration()?.doubleValue(for: .second())
+        }
+        let quantity: HKQuantity?
+        switch function {
+        case .sum: quantity = stat.sumQuantity()
+        case .average: quantity = stat.averageQuantity()
+        case .min: quantity = stat.minimumQuantity()
+        case .max: quantity = stat.maximumQuantity()
+        case .mostRecent: quantity = stat.mostRecentQuantity()
+        case .duration: quantity = nil
+        }
+        guard let quantity, let unit, quantity.is(compatibleWith: unit) else { return nil }
+        return quantity.doubleValue(for: unit)
+    }
+
+    // MARK: - Debug matrix validation
+
+    /// Executes a one-day statistics query for every quantity type × allowed
+    /// function and returns failure descriptions. The option×style legality
+    /// check happens inside HealthKit at query time and surfaces as an ObjC
+    /// exception (process crash) rather than a Swift error — so run this from
+    /// the debug UI after catalog changes or on a new iOS release: surviving
+    /// the call IS the pass signal for legality; returned strings are softer
+    /// errors (auth etc.) for context.
+    public func validateAggregateFunctionMatrix() async -> [String] {
+        var failures: [String] = []
+        var combos = 0
+        let end = Date()
+        let start = end.addingTimeInterval(-86_400)
+        for descriptor in HealthTypeCatalog.quantityTypes {
+            let functions = HealthTypeCatalog.allowedAggregateFunctions(for: descriptor.identifier)
+            if functions.isEmpty {
+                failures.append("\(descriptor.identifier): no allowed functions (unknown aggregation style)")
+                continue
+            }
+            let quantityType = HKQuantityType(
+                HKQuantityTypeIdentifier(rawValue: descriptor.identifier))
+            for function in functions {
+                combos += 1
+                let queryDescriptor = HKStatisticsCollectionQueryDescriptor(
+                    predicate: HKSamplePredicate.quantitySample(
+                        type: quantityType,
+                        predicate: HKQuery.predicateForSamples(
+                            withStart: start, end: end, options: .strictStartDate)
+                    ),
+                    options: function.statisticsOption,
+                    anchorDate: start,
+                    intervalComponents: DateComponents(hour: 1)
+                )
+                do {
+                    _ = try await queryDescriptor.result(for: healthStore)
+                } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
+                    continue // query was accepted; auth just isn't granted — legality verified
+                } catch {
+                    failures.append("\(descriptor.identifier) × \(function.rawValue): \(error)")
+                }
+            }
+        }
+        await eventLog.log(
+            failures.isEmpty ? .info : .error,
+            "Aggregate matrix validation: \(combos) combos executed, \(failures.count) failures"
+        )
+        return failures
+    }
+}

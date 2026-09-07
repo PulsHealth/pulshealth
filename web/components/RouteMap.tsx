@@ -1,0 +1,120 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import "leaflet/dist/leaflet.css";
+import type { RoutePoint } from "@/lib/types";
+import { getTileSpec, readMapStyle, MAP_STYLE_EVENT, type MapStyleId } from "@/lib/mapStyles";
+
+// Leaflet touches `window` at import time, so it's loaded dynamically inside
+// the effect (never during SSR). Markers use circleMarker so there are no
+// bundler-broken default icon assets to ship. The basemap follows the user's
+// saved style (lib/mapStyles) and swaps live when the style or theme changes.
+export function RouteMap({
+  route,
+  color,
+  height = 440,
+}: {
+  route: RoutePoint[];
+  color: string;
+  height?: number;
+}) {
+  const elRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<import("leaflet").Map | null>(null);
+  const tileRef = useRef<import("leaflet").TileLayer | null>(null);
+  const lRef = useRef<typeof import("leaflet") | null>(null);
+  const styleRef = useRef<MapStyleId>("auto");
+  const [styleId, setStyleId] = useState<MapStyleId>("auto");
+
+  // Track the saved style and react to changes from the settings page
+  // (same-tab custom event) and other tabs (storage event).
+  useEffect(() => {
+    setStyleId(readMapStyle());
+    const onChange = () => setStyleId(readMapStyle());
+    window.addEventListener(MAP_STYLE_EVENT, onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener(MAP_STYLE_EVENT, onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  }, []);
+
+  // (Re)point the active tile layer at the resolved style. Reads from refs so
+  // it's safe to call from the MutationObserver's stale closure.
+  function applyTiles() {
+    const L = lRef.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+    const spec = getTileSpec(styleRef.current, isDark);
+    if (tileRef.current) map.removeLayer(tileRef.current);
+    tileRef.current = L.tileLayer(spec.url, {
+      subdomains: spec.subdomains ?? "abc",
+      attribution: spec.attribution,
+      maxZoom: spec.maxZoom,
+    }).addTo(map);
+    tileRef.current.bringToBack();
+  }
+
+  // Build the map once per route.
+  useEffect(() => {
+    if (!elRef.current || route.length < 2) return;
+    let cancelled = false;
+    let themeObserver: MutationObserver | null = null;
+
+    (async () => {
+      const L = await import("leaflet");
+      if (cancelled || !elRef.current) return;
+      lRef.current = L;
+
+      const latlngs: [number, number][] = route.map((p) => [p.lat, p.lon]);
+      const map = L.map(elRef.current, {
+        zoomControl: true,
+        attributionControl: true,
+        scrollWheelZoom: false, // don't hijack page scroll; click to zoom
+      });
+      mapRef.current = map;
+
+      applyTiles();
+
+      // Casing under the line for contrast over busy map tiles.
+      L.polyline(latlngs, { color: "#000", weight: 7, opacity: 0.25, lineJoin: "round" }).addTo(map);
+      const line = L.polyline(latlngs, { color, weight: 4, opacity: 0.95, lineJoin: "round" }).addTo(map);
+
+      const dot = (fill: string) =>
+        ({ radius: 7, color: "#fff", weight: 2.5, fillColor: fill, fillOpacity: 1 }) as const;
+      L.circleMarker(latlngs[0], dot("#30d158")).bindTooltip("Start").addTo(map);
+      L.circleMarker(latlngs[latlngs.length - 1], dot("#ff453a")).bindTooltip("Finish").addTo(map);
+
+      map.fitBounds(line.getBounds(), { padding: [28, 28] });
+
+      // Re-tile on theme change so the "auto" style keeps matching.
+      themeObserver = new MutationObserver(() => applyTiles());
+      themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    })();
+
+    return () => {
+      cancelled = true;
+      themeObserver?.disconnect();
+      mapRef.current?.remove();
+      mapRef.current = null;
+      tileRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route, color]);
+
+  // Swap tiles when the chosen style changes.
+  useEffect(() => {
+    styleRef.current = styleId;
+    applyTiles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [styleId]);
+
+  return (
+    <div
+      ref={elRef}
+      role="region"
+      aria-label="Workout route map"
+      style={{ height, width: "100%", borderRadius: 14, overflow: "hidden", border: "1px solid var(--border)", zIndex: 0 }}
+    />
+  );
+}

@@ -1,0 +1,155 @@
+name: pulshealth
+
+# Bounded json-file logs for the application containers. Ingest logs a line
+# per batch and every rejection, and nothing else on the host prunes: without
+# a cap, a busy month fills the disk that holds the only copy of the data.
+# Not applied to `db`: keep the database service definition minimal and
+# change it deliberately — Compose recreates the container on any change to
+# it (the data volume survives, but treat db edits as their own step).
+x-app-logging: &app-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
+
+services:
+  db:
+    image: timescale/timescaledb-ha:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?set in .env}
+      API_DB_PASSWORD: ${API_DB_PASSWORD:?set in .env}
+      # Calendar zone for every daily view (metric_daily, Grafana daily
+      # panels, the api's local-day ranges). Must match the phone's zone; set
+      # it in .env BEFORE first start — db/init/013_time_zone.sh stores it on
+      # the database (ALTER DATABASE … SET; re-run to change it later).
+      PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
+    volumes:
+      - db_data:/home/postgres/pgdata/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      # Localhost only — never exposed beyond the host.
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  ingest:
+    build:
+      context: ./ingest
+      args:
+        BUILD_COMMIT: ${DEPLOY_COMMIT:-unknown}
+    restart: unless-stopped
+    logging: *app-logging
+    environment:
+      # Defaults to the superuser so an unchanged .env keeps working. Once the
+      # scoped `ingest` role exists (db/init/099_read_roles.sh re-run with
+      # INGEST_DB_PASSWORD), set INGEST_DB_USER=ingest and INGEST_DB_PASSWORD
+      # in .env and `docker compose up -d ingest` — see server/README.md.
+      DATABASE_URL: postgres://${INGEST_DB_USER:-postgres}:${INGEST_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/postgres?sslmode=disable
+      PULS_TOKEN: ${PULS_TOKEN:?set in .env}
+      LISTEN_ADDR: ":8080"
+    ports:
+      # Loopback only. Put a TLS-terminating proxy in front of it (reverse
+      # proxy, Tailscale Serve/Funnel, VPN) — the phone must reach this port
+      # over HTTPS, never plaintext.
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ./api
+      args:
+        BUILD_COMMIT: ${DEPLOY_COMMIT:-unknown}
+    restart: unless-stopped
+    logging: *app-logging
+    environment:
+      DATABASE_URL: postgres://api_reader:${API_DB_PASSWORD}@db:5432/postgres?sslmode=disable
+      PULS_API_TOKEN: ${PULS_API_TOKEN:?set in .env}
+      LISTEN_ADDR: ":8081"
+      # Same viewer user as the web container; the API used to hardcode the
+      # seeded default regardless of this setting.
+      PULS_USER_ID: ${PULS_USER_ID:-5ea4d000-0000-4000-8000-000000000001}
+      # Same calendar zone as the database (see the db service). The api
+      # refuses to start on an unknown zone name.
+      PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
+    ports:
+      # Loopback only: expose it through an authenticated HTTPS proxy (e.g.
+      # Tailscale Serve). Do not publish the bearer-token surface on the LAN.
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    # Next.js health viewer. Reads Postgres directly over the internal
+    # network as the read-only `grafana` role — same data Grafana sees.
+    # Build context is the sibling web/ dir (../web relative to this file),
+    # so build from a checkout that contains both server/ and web/.
+    build:
+      context: ../web
+      args:
+        BUILD_COMMIT: ${DEPLOY_COMMIT:-unknown}
+    restart: unless-stopped
+    logging: *app-logging
+    environment:
+      DATABASE_URL: postgres://grafana:${GRAFANA_DB_PASSWORD}@db:5432/postgres?sslmode=disable
+      PULS_USER_ID: ${PULS_USER_ID:-5ea4d000-0000-4000-8000-000000000001}
+      PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
+    ports:
+      # 3000 is Grafana. Default to loopback; to reach the (unauthenticated)
+      # viewer from other machines set WEB_BIND_ADDR to a private interface,
+      # e.g. the host's Tailscale IPv4, rather than 0.0.0.0.
+      - "${WEB_BIND_ADDR:-127.0.0.1}:3001:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  grafana:
+    # Pinned: a :latest pull to Grafana 13 silently broke datasource
+    # provisioning (legacy top-level `database:` key removed). Bump
+    # deliberately and retest the dashboard after upgrades.
+    image: grafana/grafana:13.0.2
+    restart: unless-stopped
+    logging: *app-logging
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?set in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD}
+      # Recipient of every alert (provisioning/alerting/contact-points.yml).
+      GRAFANA_ALERT_EMAIL: ${GRAFANA_ALERT_EMAIL:-alerts@example.com}
+      # Alert delivery. Defaults to off so a deploy never fails on a missing
+      # app password: rules still evaluate and the dashboard still turns red,
+      # only the email leg is inert. Flip GRAFANA_SMTP_ENABLED to true in .env
+      # once GRAFANA_SMTP_PASSWORD holds a Gmail app password (see .env.example).
+      GF_SMTP_ENABLED: ${GRAFANA_SMTP_ENABLED:-false}
+      GF_SMTP_HOST: ${GRAFANA_SMTP_HOST:-smtp.gmail.com:587}
+      GF_SMTP_USER: ${GRAFANA_SMTP_USER:-}
+      GF_SMTP_PASSWORD: ${GRAFANA_SMTP_PASSWORD:-}
+      GF_SMTP_FROM_ADDRESS: ${GRAFANA_SMTP_FROM:-${GRAFANA_SMTP_USER:-}}
+      GF_SMTP_FROM_NAME: PulsHealth
+      GF_SMTP_STARTTLS_POLICY: MandatoryStartTLS
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      # Loopback only, like ingest and the API: this is an admin login whose
+      # datasource can read every table including users (name/email/DOB).
+      # Reach it from elsewhere through an HTTPS proxy, e.g.
+      # `tailscale serve --bg --https=8443 http://localhost:3000`.
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
+  grafana_data:

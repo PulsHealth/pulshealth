@@ -1,0 +1,20 @@
+apiVersion: 1
+
+datasources:
+  - name: TimescaleDB
+    type: postgres
+    uid: puls-tsdb
+    access: proxy
+    url: db:5432
+    user: grafana
+    isDefault: true
+    editable: false
+    secureJsonData:
+      password: $GRAFANA_DB_PASSWORD
+    jsonData:
+      # Grafana ≥ 11.4 ignores the legacy top-level `database:` key — the
+      # database MUST be set here or panels fail with "no default database".
+      database: postgres
+      sslmode: disable
+      postgresVersion: 1700
+      timescaledb: true

@@ -1,0 +1,60 @@
+name: Backend implementer question
+description: You are writing your own receiver for the sync protocol and something is unclear or does not work.
+labels: [protocol]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The app posts gzip NDJSON batches to `POST /v1/batches` with a bearer token; any HTTP server that
+        accepts them can be a backend. Until the spec lands in `docs/protocol/`, the reference is the
+        **API** section of `server/README.md` (line types, headers, limits, the curl example) and the parser
+        in `server/ingest/parse.go`. Questions about gaps in that description are exactly what this
+        template is for: they turn into spec text.
+  - type: input
+    id: language
+    attributes:
+      label: Language and stack of your receiver
+      placeholder: "Python / FastAPI writing to SQLite"
+    validations:
+      required: true
+  - type: dropdown
+    id: topic
+    attributes:
+      label: What is this about?
+      options:
+        - Transport (headers, gzip, limits, status codes, retries)
+        - Batch header or line types (samples, deletions, routes, series, aggregates, activity summaries, profile)
+        - Units, timestamps, or type identifiers
+        - Idempotency and upsert rules (UUID no-op, aggregate and activity-summary overwrite, null clears)
+        - Optional read endpoints (`/v1/stats`, `/v1/digest`, `/v1/uuids`)
+        - Something the app did that the documentation did not predict
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question or problem
+      description: What did you expect from the documentation, and what did the app actually send or do?
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Example lines
+      description: Decompressed NDJSON lines that illustrate it, with health values and identifiers redacted or replaced. A batch header plus one or two lines is usually enough.
+      render: json
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: The commit the app was built from, or the version under Settings → About.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I read the API section of `server/README.md` and looked at `server/ingest/parse.go`.
+          required: true
+        - label: I redacted tokens, hostnames, and personal health values from the example.
+          required: true

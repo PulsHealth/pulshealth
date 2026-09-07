@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pulshealth-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Validate server and web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: 1.26.6
+          cache-dependency-path: |
+            server/api/go.sum
+            server/ingest/go.sum
+
+      - name: Validate Go services
+        shell: bash
+        run: |
+          set -euo pipefail
+          for module in server/ingest server/api; do
+            (
+              cd "$module"
+              go mod verify
+              go vet ./...
+              go test -race -count=1 ./...
+            )
+          done
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Validate web
+        working-directory: web
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Validate Compose, workflows and shell scripts
+        env:
+          # Validation-only placeholders: `docker compose config` refuses to
+          # render without the `${VAR:?}` secrets. Nothing is started.
+          POSTGRES_PASSWORD: validation-only
+          PULS_TOKEN: validation-only
+          PULS_API_TOKEN: validation-only
+          GRAFANA_PASSWORD: validation-only
+          GRAFANA_DB_PASSWORD: validation-only
+          API_DB_PASSWORD: validation-only
+          DEPLOY_COMMIT: ${{ github.sha }}
+        run: |
+          docker compose -f server/docker-compose.yml config --quiet
+          for script in server/db/init/*.sh scripts/*.sh; do
+            bash -n "$script"
+          done
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          if ! command -v shellcheck >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y shellcheck
+          fi
+          shellcheck server/db/init/*.sh scripts/*.sh
+
+  # Upstream advisories are reported here, visibly red, but this job is meant
+  # to stay OUT of any required-status-check list: a new advisory in a
+  # transitive npm or Go dependency must not block an unrelated fix from
+  # merging. Treat a red run as a prompt to bump the dependency in its own PR.
+  advisories:
+    name: Dependency advisories (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: 1.26.6
+          cache-dependency-path: |
+            server/api/go.sum
+            server/ingest/go.sum
+
+      - name: govulncheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install golang.org/x/vuln/cmd/govulncheck@v1.6.0
+          for module in server/ingest server/api; do
+            (cd "$module" && "$(go env GOPATH)/bin/govulncheck" ./...)
+          done
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: npm audit
+        working-directory: web
+        run: |
+          npm ci --ignore-scripts
+          npm audit --omit=dev --audit-level=high
+
+  # The public-tree gate: no tracked file may carry owner-specific or
+  # private-infrastructure content (tailnet hostnames, personal mailboxes,
+  # home directories, an Apple Team ID, the retired private deploy tooling).
+  # Patterns are identifier classes, never literal values — see the script.
+  public-tree:
+    name: Public tree gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Scan tracked files for private content
+        run: scripts/check-public-tree.sh
