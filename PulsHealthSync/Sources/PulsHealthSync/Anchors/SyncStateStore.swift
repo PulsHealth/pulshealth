@@ -184,6 +184,9 @@ public actor SyncStateStore {
     public private(set) var workoutRoutesState: WorkoutEnrichmentState
     /// Watermark/counters for the late workout-stream enrichment phase.
     public private(set) var workoutStreamsState: WorkoutEnrichmentState
+    /// The server and user every anchor and watermark above was earned
+    /// against. Nil until a server URL has been applied. See `ServerIdentity`.
+    public private(set) var serverIdentity: ServerIdentity?
     /// Stable per-install ID sent with every batch.
     public let deviceID: String
 
@@ -203,6 +206,7 @@ public actor SyncStateStore {
         var activitySummaryState: ActivitySummaryState
         var workoutRoutesState: WorkoutEnrichmentState
         var workoutStreamsState: WorkoutEnrichmentState
+        var serverIdentity: ServerIdentity?
 
         init(
             configuration: SyncConfiguration,
@@ -211,7 +215,8 @@ public actor SyncStateStore {
             aggregateStates: [String: AggregateSyncState],
             activitySummaryState: ActivitySummaryState,
             workoutRoutesState: WorkoutEnrichmentState,
-            workoutStreamsState: WorkoutEnrichmentState
+            workoutStreamsState: WorkoutEnrichmentState,
+            serverIdentity: ServerIdentity?
         ) {
             self.configuration = configuration
             self.typeStates = typeStates
@@ -220,6 +225,7 @@ public actor SyncStateStore {
             self.activitySummaryState = activitySummaryState
             self.workoutRoutesState = workoutRoutesState
             self.workoutStreamsState = workoutStreamsState
+            self.serverIdentity = serverIdentity
         }
 
         // The whole file is loaded with `try?` — a synthesized decoder would
@@ -238,6 +244,7 @@ public actor SyncStateStore {
                 WorkoutEnrichmentState.self, forKey: .workoutRoutesState) ?? WorkoutEnrichmentState()
             workoutStreamsState = try c.decodeIfPresent(
                 WorkoutEnrichmentState.self, forKey: .workoutStreamsState) ?? WorkoutEnrichmentState()
+            serverIdentity = try c.decodeIfPresent(ServerIdentity.self, forKey: .serverIdentity)
         }
     }
 
@@ -295,12 +302,20 @@ public actor SyncStateStore {
                     logger.error("Could not read the bearer token from the token store: \(error)")
                 }
             }
+            if decoded.serverIdentity == nil,
+               let adopted = ServerIdentity(configuration: decoded.configuration) {
+                // A state file from before identities were recorded: whatever
+                // progress it holds was earned against the server it names.
+                decoded.serverIdentity = adopted
+                rewrite = true
+            }
             self.configuration = decoded.configuration
             self.typeStates = decoded.typeStates
             self.aggregateStates = decoded.aggregateStates
             self.activitySummaryState = decoded.activitySummaryState
             self.workoutRoutesState = decoded.workoutRoutesState
             self.workoutStreamsState = decoded.workoutStreamsState
+            self.serverIdentity = decoded.serverIdentity
             self.deviceID = decoded.deviceID
             if rewrite {
                 // Can't call the isolated persistNow() from the nonisolated
@@ -314,6 +329,7 @@ public actor SyncStateStore {
             self.activitySummaryState = ActivitySummaryState()
             self.workoutRoutesState = WorkoutEnrichmentState()
             self.workoutStreamsState = WorkoutEnrichmentState()
+            self.serverIdentity = nil
             self.deviceID = UUID().uuidString
             // A fresh file, but the Keychain may still hold a token from a
             // previous install of the same bundle — reuse it, exactly as the
@@ -336,11 +352,23 @@ public actor SyncStateStore {
 
     /// Replace the configuration. The token goes to the token store; the file
     /// gets everything else.
-    public func setConfiguration(_ config: SyncConfiguration) {
+    ///
+    /// The server identity is recorded from `config` unless applying it would
+    /// abandon progress earned against a different server or user
+    /// (`serverIdentityChange(applying:)` non-nil) and the caller has not
+    /// passed `confirmServerIdentity` — the app asks the user first (start
+    /// fresh, or keep progress) and confirms afterwards. Until then the stored
+    /// identity stays put, so a launch after an interrupted change still sees
+    /// the mismatch and can ask again.
+    public func setConfiguration(_ config: SyncConfiguration, confirmServerIdentity: Bool = false) {
+        let change = serverIdentityChange(applying: config)
         if config.authToken != configuration.authToken || tokenStoreDirty {
             storeToken(config.authToken)
         }
         configuration = config
+        if change == nil || confirmServerIdentity, let applied = ServerIdentity(configuration: config) {
+            serverIdentity = applied
+        }
         persist()
     }
 
@@ -352,6 +380,47 @@ public actor SyncStateStore {
             tokenStoreDirty = true
             logger.error("Could not write the bearer token to the token store: \(error)")
         }
+    }
+
+    // MARK: - Server identity
+
+    /// Pure comparison behind `serverIdentityChange(applying:)`: true when both
+    /// identities are present and differ. Nothing stored, or a configuration
+    /// without a server URL, is never a change.
+    public nonisolated static func serverIdentityChanged(
+        stored: ServerIdentity?, applied: ServerIdentity?
+    ) -> Bool {
+        guard let stored, let applied else { return false }
+        return stored != applied
+    }
+
+    /// True when any anchor or watermark has been earned — i.e. there is
+    /// progress a server change could strand.
+    public var hasSyncProgress: Bool {
+        typeStates.values.contains { $0.anchorData != nil || $0.totalSamplesExported > 0 }
+            || aggregateStates.values.contains { $0.computedThrough != nil }
+            || activitySummaryState.computedThrough != nil
+            || workoutRoutesState.computedThrough != nil
+            || workoutStreamsState.computedThrough != nil
+    }
+
+    /// The change applying `config` would make to the recorded server identity,
+    /// or nil when it is the same server and user, no identity is recorded yet,
+    /// or there is no progress to strand. A non-nil result means the caller
+    /// should ask before `setConfiguration(_:confirmServerIdentity:)`.
+    public func serverIdentityChange(applying config: SyncConfiguration) -> ServerIdentityChange? {
+        guard let stored = serverIdentity,
+              let applied = ServerIdentity(configuration: config),
+              Self.serverIdentityChanged(stored: stored, applied: applied),
+              hasSyncProgress else { return nil }
+        return ServerIdentityChange(from: stored, to: applied)
+    }
+
+    /// The mismatch, if any, between the recorded identity and the persisted
+    /// configuration itself — the state a launch finds after a change was
+    /// applied but never confirmed.
+    public func pendingServerIdentityChange() -> ServerIdentityChange? {
+        serverIdentityChange(applying: configuration)
     }
 
     public func update(_ identifier: String, _ mutate: @Sendable (inout TypeSyncState) -> Void) {
@@ -725,7 +794,8 @@ public actor SyncStateStore {
         let snapshot = PersistedState(
             configuration: configuration, typeStates: typeStates, deviceID: deviceID,
             aggregateStates: aggregateStates, activitySummaryState: activitySummaryState,
-            workoutRoutesState: workoutRoutesState, workoutStreamsState: workoutStreamsState
+            workoutRoutesState: workoutRoutesState, workoutStreamsState: workoutStreamsState,
+            serverIdentity: serverIdentity
         )
         Self.writeSnapshot(snapshot, to: fileURL, logger: logger)
     }
