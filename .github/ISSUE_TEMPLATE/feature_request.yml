@@ -1,0 +1,52 @@
+name: Feature request
+description: Propose a change or an addition.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check `docs/open-source-plan.md` first: it lists what is already planned, what has been decided,
+        and what is deliberately out of scope (a hosted service, Android, writing to HealthKit, native
+        non-HTTP sinks in the app). A request that overlaps the plan is still welcome — say which item it
+        relates to.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - iOS app
+        - Swift package (sync engine, transports, encoding)
+        - Sync protocol (wire format)
+        - Reference server (ingest, product API, schema)
+        - Web viewer or Grafana
+        - AI integration (MCP, export)
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do that you cannot do today, and why does it matter?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should change? If it touches the wire format, remember it changes on both the app and the server side at once.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other ways to get the same result, including ones outside this project.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked the plan and existing issues for overlap.
+          required: true

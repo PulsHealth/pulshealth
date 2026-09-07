@@ -1,0 +1,19 @@
+// PulsHealth — local (per-developer) build settings. TEMPLATE.
+//
+// Copy this file to Local.xcconfig, next to it. Running `xcodegen` does this
+// for you the first time (project.yml's preGenCommand), so a fresh clone
+// generates and builds without any manual step.
+//
+// Local.xcconfig is gitignored: it is the one place for settings that belong
+// to you rather than to the project. Never commit a team ID.
+//
+// DEVELOPMENT_TEAM — your Apple Developer Team ID (ten characters, shown at
+//   https://developer.apple.com/account under Membership). Required for
+//   device builds: the HealthKit and background-delivery entitlements need a
+//   paid developer team. Simulator builds need no team — leave it empty.
+//
+// Forks that distribute their own build must also change the bundle
+// identifier (options.bundleIdPrefix in project.yml) and must not ship under
+// the PulsHealth name — see TRADEMARK.md at the repository root.
+
+DEVELOPMENT_TEAM =

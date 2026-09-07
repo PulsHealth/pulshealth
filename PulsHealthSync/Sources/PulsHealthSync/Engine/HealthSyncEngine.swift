@@ -1,0 +1,1132 @@
+import Foundation
+import HealthKit
+import os
+
+/// Live, per-type view of sync progress: persisted counters plus in-flight activity.
+public struct TypeSyncStatus: Identifiable, Sendable {
+    public var id: String { state.identifier }
+    public var descriptor: HealthTypeDescriptor
+    public var state: TypeSyncState
+    public var activity: Activity
+    /// Samples/second over the current backfill run, if one is active.
+    public var currentRate: Double?
+    /// Estimated seconds remaining for this type's backfill, if estimable.
+    public var estimatedSecondsRemaining: Double?
+
+    public enum Activity: String, Sendable {
+        case idle
+        case backfilling
+        case syncing
+        case failed
+    }
+}
+
+/// Orchestrates all syncing: authorization, parallel backfill, observer-driven
+/// incremental sync, and stats. One instance per app.
+public actor HealthSyncEngine {
+    public let store: SyncStateStore
+    public let eventLog: SyncEventLog
+    /// Durable per-wake telemetry: when the app got execution time, why, and what
+    /// it did with it. Powers the Background Activity screen and the diagnostics export.
+    public let wakeLog: WakeLog
+
+    // Internal (not private) so the AggregateSync extension shares the same
+    // health store, transport, and overlap guards.
+    let healthStore = HKHealthStore()
+    var transport: SyncTransport?
+    /// Read-side client for /v1/stats and the reconciliation endpoints.
+    private var apiClient: ServerAPIClient?
+    private var observerQuery: HKObserverQuery?
+    /// Types (and "agg:<uuid>" aggregate-config keys) with a sync currently
+    /// running (prevents overlapping runs per type/config).
+    var activeSyncs: Set<String> = []
+    /// Keys asked to sync while a run was active — re-run when the active one finishes.
+    var pendingResync: Set<String> = []
+    // Internal (not private) so the ActivitySummarySync extension can mark the
+    // rings type busy while it runs (same rationale as activeSyncs above).
+    var activities: [String: TypeSyncStatus.Activity] = [:]
+    // Internal (not private) so the MergedSync extension can keep per-type
+    // backfill progress in step while pages from several types share an upload.
+    var backfillRuns: [String: BackfillRun] = [:]
+    private var changeContinuations: [UUID: AsyncStream<Void>.Continuation] = [:]
+    private let logger = Logger(subsystem: PulsLog.subsystem, category: "engine")
+
+    /// Observer deliveries gathered but not yet run. HealthKit does not hand out
+    /// one callback per change — production telemetry recorded bursts of up to
+    /// 93 callbacks inside five seconds — so callbacks are accumulated here and
+    /// run as one wake instead of 93. See `enqueueObserverUpdate`.
+    private var pendingObserverTypes: Set<String> = []
+    private var pendingObserverCompletions: [ObserverCompletion] = []
+    private var observerFlushTask: Task<Void, Never>?
+    /// Cached from the configuration so the burst path never has to await the
+    /// state actor between mutating the two pending collections above.
+    private var observerCoalesceWindow: TimeInterval = 2.0
+
+    /// HealthKit's completion handler isn't statically Sendable but is
+    /// documented safe to call from any thread; box it to cross the actor hop.
+    struct ObserverCompletion: @unchecked Sendable {
+        let finish: () -> Void
+    }
+
+    struct BackfillRun {
+        var startedAt: ContinuousClock.Instant
+        var samplesThisRun: Int = 0
+        var estimatedTotal: Int?
+    }
+
+    public init(store: SyncStateStore? = nil, eventLog: SyncEventLog? = nil, wakeLog: WakeLog? = nil) {
+        self.store = store ?? SyncStateStore()
+        self.eventLog = eventLog ?? SyncEventLog()
+        self.wakeLog = wakeLog ?? WakeLog()
+    }
+
+    // MARK: - Wake lifecycle
+
+    /// Open a wake: record it durably and log it. Run the wake's work inside
+    /// `WakeScope.$current.withValue(context)` so every nested sync task and the
+    /// transport see it, then call `finishWake`. Used by every entry point that
+    /// gives the engine execution time (observer, background tasks, foreground,
+    /// manual).
+    public func beginWake(_ trigger: WakeTrigger, detail: String? = nil) async -> WakeContext {
+        let context = WakeContext(trigger: trigger)
+        await registerWake(context, detail: detail)
+        return context
+    }
+
+    /// Register a pre-created wake context. Background-task entry points build the
+    /// `WakeContext` synchronously (so both the work task and the expiration
+    /// handler can close over the same id) and register it here once the task runs.
+    public func registerWake(_ context: WakeContext, detail: String? = nil) async {
+        await wakeLog.begin(context, detail: detail)
+        await eventLog.log(.info, "Wake [\(context.trigger.rawValue)] started" + (detail.map { " — \($0)" } ?? ""))
+    }
+
+    /// Close a wake opened with `beginWake`, recording its outcome.
+    public func finishWake(_ context: WakeContext, outcome: WakeRecord.Outcome = .completed) async {
+        let finished = await wakeLog.finish(wakeID: context.id, outcome: outcome)
+        if let finished {
+            await eventLog.log(.info, "Wake [\(context.trigger.rawValue)] \(outcome.rawValue) — \(finished.summary)")
+        }
+        notifyChanged()
+    }
+
+    /// Attribute one uploaded batch to the wake currently in scope, if any. No-op
+    /// for work not running under a wake (e.g. reconciliation, tests).
+    func reportWakeBatch(type: String, samples: Int, deletions: Int, bytes: Int) async {
+        guard let wake = WakeScope.current else { return }
+        await wakeLog.record(
+            wakeID: wake.id, type: type, samples: samples, deletions: deletions, bytes: bytes)
+    }
+
+    // MARK: - Configuration
+
+    public func configure(_ config: SyncConfiguration) async {
+        await store.setConfiguration(config)
+        await store.pruneAggregateStates(keeping: Set(config.aggregates.map(\.id)))
+        observerCoalesceWindow = max(0, config.observerCoalesceWindow)
+        buildTransport(from: config)
+        notifyChanged()
+    }
+
+    /// Whether HealthKit can be read right now. False means the device is
+    /// locked: every query would fail with `errorDatabaseInaccessible`, so
+    /// callers should skip rather than burn a wake on ~80 doomed queries.
+    public func isHealthDataAccessible() async -> Bool {
+        await ProtectedData.isAvailable
+    }
+
+    private func buildTransport(from config: SyncConfiguration) {
+        if let url = config.serverURL, let token = config.authToken {
+            transport = HTTPSyncTransport(baseURL: url, authToken: token, userID: config.userID)
+            apiClient = ServerAPIClient(baseURL: url, authToken: token, userID: config.userID)
+        } else {
+            transport = nil
+            apiClient = nil
+        }
+    }
+
+    /// The transport lives only in memory, but the server URL and token persist
+    /// in the state store — rebuild it on demand so cold launches (background
+    /// task wake-ups especially) can sync without waiting for `configure`.
+    func ensureTransport() async {
+        // Never clobber a transport injected via `setTransport` (tests/benchmark).
+        guard transport == nil else { return }
+        buildTransport(from: await store.configuration)
+    }
+
+    /// Server-side per-type aggregates, for comparing against device counters.
+    public func serverStats() async throws -> [TypeServerStats] {
+        await ensureTransport()
+        guard let apiClient else { throw TransportError.notConfigured }
+        return try await apiClient.stats()
+    }
+
+    /// Test/benchmark hook: swap the upload destination.
+    public func setTransport(_ transport: SyncTransport?) {
+        self.transport = transport
+    }
+
+    /// Read-authorization object types for the given catalog identifiers: the
+    /// bulk-readable sample types plus `HKActivitySummaryType` (an HKObjectType,
+    /// not an HKSampleType, so it can't ride the sample-type path) when the
+    /// activity-rings type is among them.
+    private func readAuthorizationTypes(
+        for identifiers: [String], includeRoutes: Bool
+    ) -> Set<HKObjectType> {
+        var read = Set<HKObjectType>(HealthTypeCatalog.bulkReadAuthorizationSampleTypes(
+            for: identifiers, includeWorkoutRoutes: includeRoutes
+        ).map { $0 as HKObjectType })
+        if identifiers.contains(where: HealthTypeCatalog.isActivitySummary) {
+            read.insert(HKObjectType.activitySummaryType())
+        }
+        // HealthKit derives HRV from beat-to-beat intervals, so it refuses to
+        // authorize the heartbeat series unless HRV SDNN read auth rides along:
+        // a heartbeat-only read set raises an uncatchable NSInvalidArgumentException
+        // ("Authorization for …HeartRateVariabilitySDNN should also be requested
+        // when requesting authorization to read …HeartbeatSeries") — and not just
+        // from requestAuthorization but from statusForAuthorizationRequest too,
+        // which the per-type authorizationNeeded(for:) probe hits. Pair them in
+        // every auth/status path. (The full-catalog path already carries SDNN as a
+        // normal quantity type; this guarantees it for scoped/per-type requests.)
+        if identifiers.contains(HealthTypeCatalog.heartbeatSeriesIdentifier) {
+            read.insert(HKQuantityType(.heartRateVariabilitySDNN))
+        }
+        return read
+    }
+
+    public func requestAuthorization() async throws {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            throw SyncError.healthDataUnavailable
+        }
+        let config = await store.configuration
+        let types = readAuthorizationTypes(
+            for: HealthTypeCatalog.all.map(\.identifier),
+            includeRoutes: config.includeWorkoutRoutes)
+        try await healthStore.requestAuthorization(toShare: [], read: types)
+        await eventLog.log(.info, "HealthKit read authorization requested for \(types.count) types")
+    }
+
+    /// Medications use HealthKit's per-object authorization: the user picks which
+    /// medications the app may read. Call when the medication dose type is enabled.
+    @available(iOS 26.0, *)
+    public func requestMedicationAuthorization() async throws {
+        for type in HealthTypeCatalog.perObjectReadAuthorizationObjectTypes
+        where type.requiresPerObjectAuthorization() {
+            try await healthStore.requestPerObjectReadAuthorization(for: type, predicate: nil)
+        }
+        await eventLog.log(.info, "Per-object medication authorization requested")
+    }
+
+    /// Request read authorization for the given catalog types only (plus workout
+    /// routes when workouts are included). Used to prompt for just-enabled types
+    /// without dragging the whole catalog into the sheet.
+    public func requestAuthorization(for identifiers: [String]) async throws {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            throw SyncError.healthDataUnavailable
+        }
+        let includeRoutes = await store.configuration.includeWorkoutRoutes
+        let types = readAuthorizationTypes(for: identifiers, includeRoutes: includeRoutes)
+        guard !types.isEmpty else { return }
+        try await healthStore.requestAuthorization(toShare: [], read: types)
+        await eventLog.log(.info, "HealthKit read authorization requested for \(types.count) enabled types")
+    }
+
+    /// True when iOS would still show the permission sheet for some catalog type —
+    /// i.e. at least one type's read authorization is not yet determined. Queries
+    /// against such types throw `errorAuthorizationNotDetermined`, so the app
+    /// should offer to (re-)request access.
+    public func authorizationNeeded() async -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else { return false }
+        // Per-object-authorization types (medications) are disallowed in bulk
+        // authorization APIs — passing one raises an ObjC exception, not a Swift
+        // error. Same filter as requestAuthorization().
+        let config = await store.configuration
+        let types = readAuthorizationTypes(
+            for: HealthTypeCatalog.all.map(\.identifier),
+            includeRoutes: config.includeWorkoutRoutes)
+        let status = try? await healthStore.statusForAuthorizationRequest(toShare: [], read: types)
+        return status == .shouldRequest
+    }
+
+    /// Like `authorizationNeeded()`, but scoped to the given catalog types (plus
+    /// workout routes when workouts are included).
+    public func authorizationNeeded(for identifiers: [String]) async -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else { return false }
+        let includeRoutes = await store.configuration.includeWorkoutRoutes
+        let types = readAuthorizationTypes(for: identifiers, includeRoutes: includeRoutes)
+        guard !types.isEmpty else { return false }
+        let status = try? await healthStore.statusForAuthorizationRequest(toShare: [], read: types)
+        return status == .shouldRequest
+    }
+
+    // MARK: - Status for the app
+
+    /// Whether a run is in flight for `key`: a raw type identifier, the rings
+    /// key, `"agg:<uuid>"`, or `"workout-enrich:<kind>"`.
+    public func isSyncing(_ key: String) -> Bool { activeSyncs.contains(key) }
+
+    /// Reset a type's anchor and counters (or the rings watermark). Refused,
+    /// returning false, while that type is syncing: the running pass captured
+    /// its state at start, and its next `recordUploadedBatch` would re-persist
+    /// the *current* anchor over the reset with `backfillComplete == false` —
+    /// the "backfill" then drains immediately, marks itself complete, and
+    /// history is never re-exported, with no error anywhere. Holding the busy
+    /// key for the duration also parks any run that starts meanwhile.
+    @discardableResult
+    public func resetType(_ identifier: String) async -> Bool {
+        let isRings = HealthTypeCatalog.isActivitySummary(identifier)
+        let key = isRings ? "activitySummary" : identifier
+        guard !activeSyncs.contains(key) else { return false }
+        activeSyncs.insert(key)
+        defer { activeSyncs.remove(key) }
+        if isRings {
+            await store.resetActivitySummary()
+        } else {
+            await store.resetType(identifier)
+        }
+        notifyChanged()
+        return true
+    }
+
+    /// Clear an aggregate config's watermark. Refused while it is computing,
+    /// for the same reason as `resetType`: `recordAggregateUpload` takes
+    /// `max(existing, new)`, so a reset under a running series degrades
+    /// "recompute everything" into an ordinary incremental run.
+    @discardableResult
+    public func resetAggregate(configID: UUID) async -> Bool {
+        let key = "agg:\(configID.uuidString)"
+        guard !activeSyncs.contains(key) else { return false }
+        activeSyncs.insert(key)
+        defer { activeSyncs.remove(key) }
+        await store.resetAggregate(configID: configID)
+        notifyChanged()
+        return true
+    }
+
+    /// Reset every anchor and watermark. Refused while anything is running.
+    @discardableResult
+    public func resetAll() async -> Bool {
+        guard activeSyncs.isEmpty else { return false }
+        await store.resetAll()
+        notifyChanged()
+        return true
+    }
+
+    public func snapshot() async -> [TypeSyncStatus] {
+        let config = await store.configuration
+        var out: [TypeSyncStatus] = []
+        for id in config.enabledTypes.sorted() {
+            guard let descriptor = HealthTypeCatalog.descriptor(for: id) else { continue }
+            // Activity summaries keep their progress in a dedicated singleton
+            // watermark, not a per-type TypeSyncState — project it onto the same
+            // shape so the per-type dashboard row shows real counters.
+            if HealthTypeCatalog.isActivitySummary(id) {
+                let s = await store.activitySummaryState
+                var state = TypeSyncState(identifier: id)
+                state.backfillComplete = s.computedThrough != nil
+                state.totalSamplesExported = s.totalDaysUploaded
+                state.totalBatchesUploaded = s.totalBatchesUploaded
+                state.totalBytesUploaded = s.totalBytesUploaded
+                state.latestExported = s.computedThrough
+                state.lastSyncAt = s.lastComputedAt
+                state.lastError = s.lastError
+                state.lastErrorAt = s.lastErrorAt
+                out.append(TypeSyncStatus(
+                    descriptor: descriptor, state: state,
+                    activity: activities[id] ?? (s.lastError != nil ? .failed : .idle)))
+                continue
+            }
+            let state = await store.state(for: id)
+            var status = TypeSyncStatus(
+                descriptor: descriptor, state: state,
+                activity: activities[id] ?? (state.lastError != nil ? .failed : .idle)
+            )
+            if let run = backfillRuns[id] {
+                let elapsed = (ContinuousClock.now - run.startedAt).seconds
+                if elapsed > 1, run.samplesThisRun > 0 {
+                    let rate = Double(run.samplesThisRun) / elapsed
+                    status.currentRate = rate
+                    if let total = run.estimatedTotal, total > run.samplesThisRun {
+                        status.estimatedSecondsRemaining = Double(total - run.samplesThisRun) / rate
+                    }
+                }
+            }
+            out.append(status)
+        }
+        return out
+    }
+
+    /// Fires whenever any type's status changes; the UI re-reads `snapshot()`.
+    public func changes() -> AsyncStream<Void> {
+        let id = UUID()
+        return AsyncStream { continuation in
+            changeContinuations[id] = continuation
+            continuation.onTermination = { [weak self] _ in
+                Task { await self?.removeChangeContinuation(id) }
+            }
+        }
+    }
+
+    private func removeChangeContinuation(_ id: UUID) {
+        changeContinuations[id] = nil
+    }
+
+    func notifyChanged() {
+        for c in changeContinuations.values { c.yield(()) }
+    }
+
+    // MARK: - Backfill
+
+    /// Run a full sync of every enabled type, `maxConcurrentTypes` at a time,
+    /// then every enabled aggregate config. Each type pages independently and
+    /// persists its anchor after every uploaded batch, so this is fully
+    /// resumable at batch granularity.
+    public func syncAllEnabled(reason: SyncReason = .backfill) async {
+        let config = await store.configuration
+        // Activity summaries aren't anchored/sample-based — they ride their own
+        // HKActivitySummaryQuery path, so keep them out of syncTypes.
+        let sampleIDs = config.enabledTypes.sorted().filter { !HealthTypeCatalog.isActivitySummary($0) }
+        let activitySummaryEnabled = config.enabledTypes.contains(HealthTypeCatalog.activitySummaryIdentifier)
+        let hasAggregates = config.aggregates.contains(where: \.enabled)
+        guard !sampleIDs.isEmpty || hasAggregates || activitySummaryEnabled else {
+            await eventLog.log(.warn, "syncAllEnabled called with no enabled types")
+            return
+        }
+        // Bail before the sweep rather than during it. iOS runs the catch-up
+        // BGProcessingTask when the device is idle — overnight, locked — where
+        // HealthKit is unreadable, so this used to walk ~80 types and log a
+        // warning for every one of them, several times a night, for nothing.
+        // Anchors and watermarks are untouched; the next unlocked run catches up.
+        guard await ProtectedData.isAvailable else {
+            await eventLog.log(
+                .info,
+                "Device locked — HealthKit is unreadable; skipping \(reason.rawValue) sync of \(sampleIDs.count) types")
+            return
+        }
+        await syncTypes(sampleIDs, reason: reason)              // phase 1 (workouts: basic only)
+        if hasAggregates {
+            await syncAllAggregates(reason: reason)             // phase 2
+        }
+        if activitySummaryEnabled {
+            await syncActivitySummary(reason: reason)           // phase 3
+        }
+        // Phases 4 & 5 (LAST): enrich the now-uploaded workout rows — routes
+        // first, then the heavier intra-workout streams. Only when workouts are
+        // raw-synced (the basic rows must exist server-side for the UUID join);
+        // each phase also self-gates on its config flag.
+        if sampleIDs.contains(HealthTypeCatalog.workoutIdentifier) {
+            await syncWorkoutRoutes(reason: reason)             // phase 4 (routes)
+            await syncWorkoutStreams(reason: reason)            // phase 5 (streams)
+        }
+    }
+
+    /// Run a full sync of the given types, `maxConcurrentTypes` at a time.
+    ///
+    /// Incremental runs take the merged path (see `MergedSync`): their pages are
+    /// small — a median of 7 samples — so the per-request round trip, not the
+    /// data, is the cost. Backfill keeps the per-type path, where pages are full
+    /// and running four independent type pipelines overlaps query and upload
+    /// better than a fetch-all-then-upload-all pass would.
+    public func syncTypes(_ ids: [String], reason: SyncReason = .backfill) async {
+        guard !ids.isEmpty else { return }
+        if reason == .incremental {
+            await eventLog.log(.info, "Starting incremental sync of \(ids.count) types (merged batches)")
+            await syncTypesMerged(ids, reason: reason)
+            await eventLog.log(.info, "Completed incremental sync of \(ids.count) types")
+            notifyChanged()
+            return
+        }
+        let config = await store.configuration
+        await eventLog.log(.info, "Starting \(reason.rawValue) sync of \(ids.count) types (\(config.maxConcurrentTypes) concurrent)")
+        let signpostID = PulsLog.signposter.makeSignpostID()
+        let signpostState = PulsLog.signposter.beginInterval("syncAll", id: signpostID)
+        defer { PulsLog.signposter.endInterval("syncAll", signpostState) }
+
+        await withTaskGroup(of: Void.self) { group in
+            var iterator = ids.makeIterator()
+            var inFlight = 0
+            func addNext(_ group: inout TaskGroup<Void>) {
+                if let id = iterator.next() {
+                    inFlight += 1
+                    group.addTask { await self.sync(type: id, reason: reason) }
+                }
+            }
+            for _ in 0..<max(1, config.maxConcurrentTypes) { addNext(&group) }
+            while inFlight > 0 {
+                await group.next()
+                inFlight -= 1
+                addNext(&group)
+            }
+        }
+        await eventLog.log(.info, "Completed \(reason.rawValue) sync of \(ids.count) types")
+        notifyChanged()
+    }
+
+    /// Sync one type: anchored-query pages until drained, uploading each page.
+    public func sync(type identifier: String, reason: SyncReason = .incremental) async {
+        guard !activeSyncs.contains(identifier) else {
+            // A run is in flight; remember to go again so we don't miss data the
+            // observer told us about mid-run.
+            pendingResync.insert(identifier)
+            return
+        }
+        activeSyncs.insert(identifier)
+        defer { activeSyncs.remove(identifier) }
+
+        var nextReason = reason
+        repeat {
+            await runSync(type: identifier, reason: nextReason)
+            nextReason = .incremental
+        } while pendingResync.remove(identifier) != nil
+    }
+
+    /// Upload the settings-backed user identity without waiting for a workout.
+    /// This is intentionally a standalone, profile-only batch: profile edits are
+    /// independent of HealthKit sample availability and should take effect when
+    /// the user taps Save & Apply.
+    public func syncProfile(reason: SyncReason = .manual) async throws {
+        await ensureTransport()
+        guard let transport else { throw TransportError.notConfigured }
+        let config = await store.configuration
+        let profile = config.userProfilePayload
+        let batch = SyncBatch(
+            deviceID: store.deviceID,
+            type: HealthTypeCatalog.workoutIdentifier,
+            reason: reason,
+            samples: [],
+            deletions: [],
+            profile: profile
+        )
+        let result = try await transport.upload(batch)
+        await reportWakeBatch(type: "profile", samples: 0, deletions: 0, bytes: result.bytesSent)
+        await eventLog.log(.info, "User profile uploaded")
+    }
+
+    private func runSync(type identifier: String, reason: SyncReason) async {
+        guard let descriptor = HealthTypeCatalog.descriptor(for: identifier),
+              let sampleType = descriptor.sampleType else {
+            await eventLog.log(.error, type: identifier, "Unknown type identifier")
+            return
+        }
+        await ensureTransport()
+        guard let transport else {
+            await eventLog.log(.error, type: identifier, "No transport configured — set server URL and token")
+            return
+        }
+
+        let config = await store.configuration
+        let initialState = await store.state(for: identifier)
+        let isBackfill = !initialState.backfillComplete
+        activities[identifier] = isBackfill ? .backfilling : .syncing
+        if isBackfill, backfillRuns[identifier] == nil {
+            let days = max(1, Calendar.current.dateComponents(
+                [.day], from: config.startDate, to: Date()).day ?? 1)
+            backfillRuns[identifier] = BackfillRun(
+                startedAt: .now,
+                estimatedTotal: descriptor.estimatedSamplesPerDay * days
+            )
+        }
+        notifyChanged()
+
+        let signpostID = PulsLog.signposter.makeSignpostID()
+        let interval = PulsLog.signposter.beginInterval("syncType", id: signpostID, "\(identifier)")
+        defer { PulsLog.signposter.endInterval("syncType", interval) }
+
+        let runStart = ContinuousClock.now
+        var pages = 0
+        var totalSamples = 0
+        var totalDeletions = 0
+
+        do {
+            var anchor = try decodeAnchor(initialState.anchorData)
+            let predicate = HKSamplePredicate<HKSample>.sample(
+                type: sampleType,
+                predicate: HKQuery.predicateForSamples(
+                    withStart: config.startDate, end: nil, options: .strictStartDate
+                )
+            )
+
+            while true {
+                try Task.checkCancellation()
+                let queryStart = ContinuousClock.now
+                let queryDescriptor = HKAnchoredObjectQueryDescriptor(
+                    predicates: [predicate], anchor: anchor, limit: config.batchSize
+                )
+                let result = try await queryDescriptor.result(for: healthStore)
+                let queryDuration = (ContinuousClock.now - queryStart).seconds
+
+                var samples = result.addedSamples.compactMap {
+                    SampleMapper.map($0, descriptor: descriptor)
+                }
+                // Phase 1 defers the expensive per-workout route/series fetches to
+                // the dedicated route/stream phases (see WorkoutEnrichmentSync) so
+                // basic data isn't starved waiting on enrichment queries. The
+                // workout row (incl. enhanced stats/events/activities/effort) and
+                // the profile line still go now; routes/series arrive in later
+                // batches keyed on the workout UUID — fully idempotent server-side.
+                let enrichment = try await enrich(
+                    &samples, from: result.addedSamples, descriptor: descriptor,
+                    includeRoutes: config.includeWorkoutRoutes,
+                    includeEnhanced: config.includeWorkoutEnhancedData,
+                    userProfile: config.userProfilePayload,
+                    deferEnrichment: true
+                )
+                let deletions = result.deletedObjects.map {
+                    SyncDeletion(uuid: $0.uuid, type: identifier)
+                }
+                let newAnchor = result.newAnchor
+
+                let newAnchorData = try encodeAnchor(newAnchor)
+                if samples.isEmpty && deletions.isEmpty {
+                    // Drained. Persist the final anchor so observer-triggered syncs
+                    // start from here. Clear any stale error: the query just
+                    // executed successfully, so a prior auth-not-determined error
+                    // (e.g. recorded before the grant) no longer holds. Without this,
+                    // a 0-sample type never reaches recordUploadedBatch — the only
+                    // other place lastError is cleared — and the error sticks forever.
+                    await store.update(identifier) {
+                        $0.anchorData = newAnchorData
+                        $0.lastSyncAt = Date()
+                        $0.lastError = nil
+                    }
+                    break
+                }
+
+                let batch = SyncBatch(
+                    deviceID: store.deviceID,
+                    type: identifier,
+                    reason: reason,
+                    samples: samples,
+                    deletions: deletions,
+                    routes: enrichment.routes,
+                    series: enrichment.series,
+                    profile: enrichment.profile
+                )
+                let uploadResult = try await transport.upload(batch)
+
+                let dates = samples.map(\.start)
+                let latency: TimeInterval? = (reason == .incremental)
+                    ? samples.map { Date().timeIntervalSince($0.end) }.min()
+                    : nil
+                await store.recordUploadedBatch(
+                    identifier: identifier,
+                    newAnchorData: newAnchorData,
+                    samples: samples.count,
+                    deletions: deletions.count,
+                    bytes: uploadResult.bytesSent,
+                    sampleDateRange: dates.isEmpty ? nil
+                        : (dates.min()! ... dates.max()!),
+                    duration: queryDuration + uploadResult.duration,
+                    latency: latency
+                )
+                await reportWakeBatch(
+                    type: identifier, samples: samples.count,
+                    deletions: deletions.count, bytes: uploadResult.bytesSent)
+
+                pages += 1
+                totalSamples += samples.count
+                totalDeletions += deletions.count
+                anchor = newAnchor
+                backfillRuns[identifier]?.samplesThisRun += samples.count
+                await eventLog.log(
+                    .debug, type: identifier,
+                    "Page \(pages): \(samples.count) samples, \(deletions.count) deletions — query \(String(format: "%.2f", queryDuration))s, upload \(String(format: "%.2f", uploadResult.duration))s (\(uploadResult.bytesSent) B)"
+                )
+                notifyChanged()
+
+                // A short page means we've drained what HealthKit had. Compare raw
+                // result counts, not mapped counts — mapping can drop samples.
+                if result.addedSamples.count + result.deletedObjects.count < config.batchSize {
+                    break
+                }
+            }
+
+            if isBackfill {
+                await store.markBackfillComplete(identifier)
+                backfillRuns[identifier] = nil
+            }
+            let elapsed = (ContinuousClock.now - runStart).seconds
+            if totalSamples + totalDeletions > 0 {
+                let rate = Double(totalSamples) / max(elapsed, 0.001)
+                await eventLog.log(
+                    .info, type: identifier,
+                    "\(reason.rawValue) sync done: \(totalSamples) samples, \(totalDeletions) deletions in \(String(format: "%.1f", elapsed))s (\(Int(rate))/s, \(pages) pages)"
+                )
+            }
+            activities[identifier] = .idle
+        } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
+            activities[identifier] = .failed
+            backfillRuns[identifier] = nil
+            await store.recordError(identifier: identifier, error: SyncError.authorizationNotDetermined)
+            await eventLog.log(.error, type: identifier, "Health access not determined — grant access from the Dashboard")
+        } catch let error as HKError where error.code == .errorDatabaseInaccessible {
+            // Device locked: the Health DB is Protected-Unless-Open and relocks
+            // ~10 min after lock. Expected during background runs — not a failure;
+            // the anchor is untouched and the next wake/foreground catches up.
+            activities[identifier] = .idle
+            await eventLog.log(.warn, type: identifier, "Health database locked (device locked) — will retry on next wake")
+        } catch is CancellationError {
+            // Background time expired (BG task expiration handler cancels the
+            // sync task). Not a failure: the anchor sits at the last acked page
+            // and the next wake resumes from there. Recording it as an error
+            // would show every routine expiration as a failed type.
+            activities[identifier] = .idle
+            await eventLog.log(.debug, type: identifier, "Sync cancelled — will resume on next wake")
+        } catch {
+            activities[identifier] = .failed
+            backfillRuns[identifier] = nil
+            await store.recordError(identifier: identifier, error: error)
+            await eventLog.log(.error, type: identifier, "Sync failed: \(error)")
+        }
+        notifyChanged()
+    }
+
+    /// Secondary data attached to a workout batch: GPS routes, intra-workout
+    /// quantity-series streams, and the user profile (DOB/sex for HR zones).
+    struct WorkoutEnrichment {
+        var routes: [RoutePayload] = []
+        var series: [WorkoutSeriesPayload] = []
+        var profile: ProfilePayload?
+    }
+
+    /// Runs the follow-up queries series-style samples need (beats, voltages,
+    /// routes, streams, effort scores) and returns the workout-batch enrichment.
+    /// `includeEnhanced` gates the enhanced workout data (series streams, per-type
+    /// detail stats, events, sub-activities, profile); when false, only the basic
+    /// workout payload is sent.
+    ///
+    /// `deferEnrichment` skips the two expensive per-workout queries — GPS routes
+    /// and intra-workout series — so phase-1 workout batches stay lightweight; the
+    /// dedicated route/stream phases fetch and upload them afterwards. Heartbeat
+    /// and ECG enrichment (which decorate the sample row itself, not separate
+    /// lines) and the cheap, settings-derived profile are unaffected.
+    // Internal so MergedSync can run the same enrichment before packing.
+    func enrich(
+        _ samples: inout [SyncSample], from hkSamples: [HKSample],
+        descriptor: HealthTypeDescriptor, includeRoutes: Bool, includeEnhanced: Bool,
+        userProfile: ProfilePayload, deferEnrichment: Bool = false
+    ) async throws -> WorkoutEnrichment {
+        let enricher = SeriesEnricher(healthStore: healthStore)
+        switch descriptor.kind {
+        case .heartbeatSeries:
+            let byUUID = Dictionary(
+                hkSamples.compactMap { ($0 as? HKHeartbeatSeriesSample).map { ($0.uuid, $0) } },
+                uniquingKeysWith: { a, _ in a }
+            )
+            for i in samples.indices {
+                guard let series = byUUID[samples[i].uuid] else { continue }
+                do {
+                    samples[i].heartbeats = try await enricher.heartbeats(for: series)
+                } catch {
+                    // A locked store or cancellation fails the page (anchor
+                    // untouched, retried next wake). Anything else is one
+                    // unreadable series; failing the page for it would re-query
+                    // and re-fail the same page on every wake forever, so the
+                    // row goes up with the empty trace the mapper initialised.
+                    if SeriesEnricher.isPhaseAbortingError(error) { throw error }
+                    await eventLog.log(
+                        .warn, type: descriptor.identifier,
+                        "Heartbeat series \(samples[i].uuid.uuidString) unreadable: \(error) — uploading without beats")
+                }
+            }
+            return WorkoutEnrichment()
+        case .ecg:
+            let byUUID = Dictionary(
+                hkSamples.compactMap { ($0 as? HKElectrocardiogram).map { ($0.uuid, $0) } },
+                uniquingKeysWith: { a, _ in a }
+            )
+            for i in samples.indices {
+                guard let ecg = byUUID[samples[i].uuid] else { continue }
+                do {
+                    samples[i].ecg?.voltagesUV = try await enricher.voltagesUV(for: ecg)
+                } catch {
+                    if SeriesEnricher.isPhaseAbortingError(error) { throw error }
+                    await eventLog.log(
+                        .warn, type: descriptor.identifier,
+                        "ECG \(samples[i].uuid.uuidString) voltages unreadable: \(error) — uploading without the trace")
+                }
+            }
+            return WorkoutEnrichment()
+        case .workout:
+            let byUUID = Dictionary(
+                hkSamples.compactMap { ($0 as? HKWorkout).map { ($0.uuid, $0) } },
+                uniquingKeysWith: { a, _ in a }
+            )
+            var enrichment = WorkoutEnrichment()
+            for i in samples.indices {
+                guard let workout = byUUID[samples[i].uuid] else { continue }
+                // Routes are best-effort: a workout without route access (or
+                // without GPS) just uploads with no points. Deferred in phase 1
+                // (the route phase owns the fetch).
+                if includeRoutes, !deferEnrichment {
+                    enrichment.routes += (try? await enricher.routePayloads(for: workout)) ?? []
+                }
+                if includeEnhanced {
+                    // Full intra-workout curves (HR/power/cadence/speed/…), best-effort.
+                    // Deferred in phase 1 (the stream phase owns the fetch); the
+                    // enhanced fields baked into the row by the mapper still ship now.
+                    if !deferEnrichment {
+                        enrichment.series += try await enricher.seriesPayloads(for: workout)
+                    }
+                } else if var detail = samples[i].workout {
+                    // Enhanced capture off: drop the enhanced fields the mapper
+                    // always builds, leaving the basic payload.
+                    detail.statisticsDetail = nil
+                    detail.events = nil
+                    detail.activities = nil
+                    samples[i].workout = detail
+                }
+                if #available(iOS 18.0, *) {
+                    // Effort scores predate enhanced data — keep merging them into
+                    // the flat stats regardless of the enhanced toggle.
+                    let effort = await enricher.effortScores(for: workout)
+                    if !effort.isEmpty, var detail = samples[i].workout {
+                        detail.statistics = (detail.statistics ?? [:])
+                            .merging(effort) { existing, _ in existing }
+                        if includeEnhanced {
+                            var sd = detail.statisticsDetail ?? [:]
+                            for (id, value) in effort where sd[id] == nil {
+                                sd[id] = WorkoutStat(avg: value, max: value)
+                            }
+                            detail.statisticsDetail = sd
+                        }
+                        samples[i].workout = detail
+                    }
+                }
+            }
+            // The user's identity/characteristics come from settings (the User
+            // page), not HealthKit, so the profile line matches what the user
+            // configured. Sent only with enhanced workout data.
+            if includeEnhanced, !userProfile.isEmpty { enrichment.profile = userProfile }
+            return enrichment
+        case .quantity, .category, .stateOfMind, .medicationDose, .activitySummary:
+            return WorkoutEnrichment()
+        }
+    }
+
+    // MARK: - Reconciliation
+
+    /// Compare per-month UUID digests against the server and repair drift:
+    /// re-upload samples the server is missing, send deletions for orphans the
+    /// device no longer has (HealthKit purges deletion tombstones, so observer
+    /// syncs alone can miss deletes).
+    public func reconcile(type identifier: String) async throws -> ReconciliationReport {
+        guard let descriptor = HealthTypeCatalog.descriptor(for: identifier),
+              let sampleType = descriptor.sampleType else {
+            throw SyncError.unknownType(identifier)
+        }
+        guard [.quantity, .category, .workout].contains(descriptor.kind) else {
+            throw SyncError.reconciliationUnsupported(identifier)
+        }
+        await ensureTransport()
+        guard let transport, let apiClient else { throw TransportError.notConfigured }
+
+        let config = await store.configuration
+        let now = Date()
+        var report = ReconciliationReport(type: identifier)
+        var repairedWorkoutSamples = false
+        await eventLog.log(.info, type: identifier, "Reconciliation started")
+
+        let serverWindows = try await apiClient.digests(
+            type: identifier, from: config.startDate, to: now)
+        let serverByWindow = Dictionary(
+            serverWindows.map { ($0.window, $0) }, uniquingKeysWith: { a, _ in a })
+
+        for window in ReconcileDigest.monthWindows(from: config.startDate, to: now) {
+            try Task.checkCancellation()
+            let predicate = HKSamplePredicate<HKSample>.sample(
+                type: sampleType,
+                predicate: HKQuery.predicateForSamples(
+                    withStart: window.start, end: window.end, options: .strictStartDate
+                )
+            )
+            let local = try await HKSampleQueryDescriptor(
+                predicates: [predicate], sortDescriptors: []
+            ).result(for: healthStore)
+            let localByUUID = Dictionary(
+                local.map { ($0.uuid, $0) }, uniquingKeysWith: { a, _ in a })
+            let server = serverByWindow[window.monthStart]
+            report.windowsChecked += 1
+
+            if localByUUID.isEmpty && (server?.rows ?? 0) == 0 { continue }
+            if let server, server.rows == Int64(localByUUID.count),
+               server.digest == ReconcileDigest.hexDigest(of: localByUUID.keys) {
+                continue
+            }
+            report.windowsMismatched += 1
+
+            let serverUUIDs = try await apiClient.uuids(
+                type: identifier, from: window.start, to: window.end)
+            var samples: [SyncSample] = []
+            for (uuid, hkSample) in localByUUID where !serverUUIDs.contains(uuid) {
+                guard var dto = SampleMapper.map(hkSample, descriptor: descriptor) else { continue }
+                var page = [dto]
+                _ = try await enrich(
+                    &page, from: [hkSample], descriptor: descriptor,
+                    includeRoutes: config.includeWorkoutRoutes,
+                    includeEnhanced: config.includeWorkoutEnhancedData,
+                    userProfile: config.userProfilePayload,
+                    deferEnrichment: true
+                )
+                dto = page[0]
+                samples.append(dto)
+            }
+            let deletions = serverUUIDs.subtracting(localByUUID.keys)
+                .map { SyncDeletion(uuid: $0, type: identifier) }
+            guard !samples.isEmpty || !deletions.isEmpty else { continue }
+
+            // Chunk by the configured batch size so a badly drifted month doesn't
+            // become one giant upload.
+            var pendingSamples = samples[...]
+            var pendingDeletions = deletions[...]
+            repeat {
+                let batch = SyncBatch(
+                    deviceID: store.deviceID,
+                    type: identifier,
+                    reason: .reconciliation,
+                    samples: Array(pendingSamples.prefix(config.batchSize)),
+                    deletions: Array(pendingDeletions.prefix(config.batchSize))
+                )
+                pendingSamples = pendingSamples.dropFirst(config.batchSize)
+                pendingDeletions = pendingDeletions.dropFirst(config.batchSize)
+                _ = try await transport.upload(batch)
+            } while !pendingSamples.isEmpty || !pendingDeletions.isEmpty
+
+            report.samplesReuploaded += samples.count
+            report.orphanDeletionsSent += deletions.count
+            if descriptor.kind == .workout, !samples.isEmpty {
+                repairedWorkoutSamples = true
+            }
+            await eventLog.log(
+                .warn, type: identifier,
+                "Reconciled \(Self.windowLabel(window.monthStart)): +\(samples.count) samples, -\(deletions.count) orphans"
+            )
+        }
+
+        // A repaired workout may be older than both enrichment phases' normal
+        // lookback and high-water marks. Force enabled phases through a complete,
+        // point-budgeted pass. Requests remain pending across an already-active
+        // phase and start at its next guarded boundary.
+        if repairedWorkoutSamples {
+            var forcedKinds: [WorkoutEnrichmentKind] = []
+            if config.includeWorkoutRoutes { forcedKinds.append(.routes) }
+            if config.includeWorkoutEnhancedData { forcedKinds.append(.streams) }
+
+            // Persist every enabled phase before starting either one. In
+            // particular, termination during a route pass must not lose the
+            // stream pass that reconciliation also requested.
+            await store.requestForcedWorkoutEnrichmentFullRecompute(Set(forcedKinds))
+            for kind in forcedKinds {
+                await runGuardedWorkoutEnrichment(
+                    kind, reason: .reconciliation, queueResyncWhenActive: false)
+            }
+        }
+
+        await store.recordReconciliation(identifier: identifier, summary: report.summary)
+        await eventLog.log(.info, type: identifier, "Reconciliation finished: \(report.summary)")
+        notifyChanged()
+        return report
+    }
+
+    private static func windowLabel(_ date: Date) -> String {
+        let comps = ReconcileDigest.utcCalendar.dateComponents([.year, .month], from: date)
+        return String(format: "%04d-%02d", comps.year ?? 0, comps.month ?? 0)
+    }
+
+    // MARK: - Real-time observation
+
+    /// Register one multi-type observer query + per-type background delivery for
+    /// every observed type (raw-sync enabled ∪ referenced by an enabled aggregate
+    /// config). One query for all types (instead of one per type) so a single
+    /// background wake batches every change since the last wake — each wake
+    /// counts against the system's delivery budget.
+    ///
+    /// Call this on every app launch (in `application(_:didFinishLaunchingWithOptions:)`
+    /// or App init) — iOS relaunches the app in the background when new data arrives
+    /// and the observer must already be registered when the update is delivered.
+    public func startObserving() async {
+        stopObserving()
+
+        let config = await store.configuration
+        var typeToIdentifier: [HKSampleType: String] = [:]
+        for id in config.observedTypeIdentifiers {
+            guard !HealthTypeCatalog.usesPerObjectAuthorization(id) else { continue }
+            if let sampleType = HealthTypeCatalog.descriptor(for: id)?.sampleType {
+                typeToIdentifier[sampleType] = id
+            }
+        }
+        guard !typeToIdentifier.isEmpty else { return }
+        let queryDescriptors = typeToIdentifier.keys.map {
+            HKQueryDescriptor(sampleType: $0, predicate: nil)
+        }
+        let typeMap = typeToIdentifier
+
+        observerCoalesceWindow = max(0, config.observerCoalesceWindow)
+
+        let query = HKObserverQuery(queryDescriptors: queryDescriptors) {
+            [weak self] _, updatedTypes, completionHandler, error in
+            let completion = ObserverCompletion(finish: completionHandler)
+            guard let self else {
+                completion.finish()
+                return
+            }
+            // Sendable: HKSampleType is Sendable; map to identifiers immediately.
+            let updated = (updatedTypes ?? Set(typeMap.keys)).compactMap { typeMap[$0] }
+            Task {
+                if let error {
+                    await self.eventLog.log(.error, "Observer error: \(error)")
+                    completion.finish()
+                    return
+                }
+                // Deliberately no sync here. HealthKit fires this handler many
+                // times in a row for one logical change (up to 93 times in five
+                // seconds in production), and doing the work inline made every
+                // one of those a separate wake with its own queries and its own
+                // tiny upload. Hand it to the coalescer instead.
+                await self.enqueueObserverUpdate(types: updated, completion: completion)
+            }
+        }
+        healthStore.execute(query)
+        observerQuery = query
+        await eventLog.log(.info, "Observer query registered for \(typeMap.count) types")
+
+        for (sampleType, identifier) in typeToIdentifier {
+            do {
+                // .immediate is a request, not a guarantee — HealthKit silently
+                // enforces per-type maximums (e.g. steps is at most hourly).
+                try await healthStore.enableBackgroundDelivery(for: sampleType, frequency: .immediate)
+            } catch {
+                await eventLog.log(.warn, type: identifier, "Background delivery unavailable: \(error) — foreground observation only")
+            }
+        }
+    }
+
+    /// Add one observer delivery to the current burst, arming the flush if this
+    /// is the burst's first callback.
+    ///
+    /// The deadline is set by the *first* callback and deliberately never
+    /// extended by later ones: a self-restarting timer would let an unbroken
+    /// stream of callbacks postpone the work indefinitely. Anything arriving
+    /// after the flush simply forms the next (small) burst.
+    private func enqueueObserverUpdate(types: [String], completion: ObserverCompletion) {
+        pendingObserverTypes.formUnion(types)
+        pendingObserverCompletions.append(completion)
+
+        guard observerCoalesceWindow > 0 else {
+            Task { await self.flushObserverUpdates() }
+            return
+        }
+        guard observerFlushTask == nil else { return }
+        let window = observerCoalesceWindow
+        observerFlushTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(window))
+            // stopObserving() cancels this task and releases the pending
+            // completions itself; a cancelled flush must not run, or it would
+            // nil out a newer burst's flush task and flush that burst early.
+            guard !Task.isCancelled else { return }
+            await self?.flushObserverUpdates()
+        }
+    }
+
+    /// Run everything the burst reported as one wake, then release every
+    /// completion handler it collected.
+    private func flushObserverUpdates() async {
+        observerFlushTask = nil
+        let types = pendingObserverTypes
+        let completions = pendingObserverCompletions
+        pendingObserverTypes = []
+        pendingObserverCompletions = []
+        // HealthKit stops waking the app entirely after three unacknowledged
+        // deliveries, so every exit path has to release these.
+        defer { for completion in completions { completion.finish() } }
+        guard !types.isEmpty else { return }
+        await runObserverWake(types: types, deliveries: completions.count)
+    }
+
+    private func runObserverWake(types: Set<String>, deliveries: Int) async {
+        let sorted = types.sorted()
+
+        // A locked device means HealthKit is unreadable: each type would fail
+        // with errorDatabaseInaccessible and log a warning, which is where ~260
+        // wasted queries a day were going. Record the wake so the skip stays
+        // visible in Background Activity, but do no work — the anchors are
+        // untouched, so the next unlocked wake collects exactly this data.
+        guard await ProtectedData.isAvailable else {
+            let wake = await beginWake(
+                .observer, detail: "\(sorted.count) type(s) — device locked, skipped")
+            await finishWake(wake, outcome: .skippedLocked)
+            return
+        }
+
+        var detail = "\(sorted.count) type(s): \(sorted.joined(separator: ", "))"
+        if deliveries > 1 { detail += " — coalesced from \(deliveries) deliveries" }
+        let wake = await beginWake(.observer, detail: detail)
+        let rawEnabled = await store.configuration.enabledTypes
+        await WakeScope.$current.withValue(wake) {
+            // One merged pass over the raw types, so a burst touching many types
+            // produces a couple of full uploads rather than one tiny upload each.
+            await syncTypesMerged(sorted.filter { rawEnabled.contains($0) }, reason: .incremental)
+            // Aggregate-only types are observed too and must not get a
+            // raw-sample sync, only their aggregate recomputes.
+            await withTaskGroup(of: Void.self) { group in
+                for identifier in sorted {
+                    group.addTask {
+                        await self.syncAggregates(forType: identifier, reason: .incremental)
+                    }
+                }
+            }
+            await refreshActivitySummaryIfStale()
+        }
+        await finishWake(wake)
+    }
+
+    public func stopObserving() {
+        observerFlushTask?.cancel()
+        observerFlushTask = nil
+        // Releasing these is not optional: HealthKit counts an unacknowledged
+        // delivery against the app whether or not the query is still running.
+        for completion in pendingObserverCompletions { completion.finish() }
+        pendingObserverCompletions = []
+        pendingObserverTypes = []
+        if let query = observerQuery {
+            healthStore.stop(query)
+            observerQuery = nil
+        }
+    }
+
+    public func disableBackgroundDelivery() async {
+        try? await healthStore.disableAllBackgroundDelivery()
+    }
+
+    // MARK: - Anchor codec
+
+    nonisolated func decodeAnchor(_ data: Data?) throws -> HKQueryAnchor? {
+        guard let data else { return nil }
+        return try NSKeyedUnarchiver.unarchivedObject(ofClass: HKQueryAnchor.self, from: data)
+    }
+
+    nonisolated func encodeAnchor(_ anchor: HKQueryAnchor?) throws -> Data? {
+        guard let anchor else { return nil }
+        return try NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true)
+    }
+}
+
+public enum SyncError: Error, LocalizedError {
+    case healthDataUnavailable
+    case authorizationNotDetermined
+    case unknownType(String)
+    case reconciliationUnsupported(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .healthDataUnavailable:
+            return "HealthKit is not available on this device"
+        case .authorizationNotDetermined:
+            return "Health access not granted — tap Grant Health Access on the Dashboard"
+        case .unknownType(let identifier):
+            return "Unknown type identifier: \(identifier)"
+        case .reconciliationUnsupported(let identifier):
+            return "Reconciliation only covers quantity, category, and workout types (\(identifier))"
+        }
+    }
+}

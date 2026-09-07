@@ -1,0 +1,18 @@
+apiVersion: 1
+
+# Email delivery is configured on the Grafana container itself via GF_SMTP_*
+# (see docker-compose.yml and .env.example). Until GRAFANA_SMTP_ENABLED is true
+# and an app password is set, rules still evaluate and the dashboard still turns
+# red — only the email leg is inert.
+contactPoints:
+  - orgId: 1
+    name: puls-email
+    receivers:
+      - uid: puls-email-primary
+        type: email
+        settings:
+          # GRAFANA_ALERT_EMAIL from .env (docker-compose.yml defaults it to
+          # alerts@example.com so the contact point always has a recipient).
+          addresses: $GRAFANA_ALERT_EMAIL
+          singleEmail: true
+        disableResolveMessage: false

@@ -1,0 +1,1267 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "postgres",
+          "uid": "puls-tsdb"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Workouts",
+        "target": {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT w.start_ts AS time, w.end_ts AS timeend, w.activity_type AS text, 'workout' AS tags FROM workouts w WHERE w.user_id = '${user}'::uuid AND $__timeFilter(w.start_ts)",
+          "refId": "Anno"
+        }
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [
+        "ops"
+      ],
+      "targetBlank": false,
+      "title": "Ops",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": 3600000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT h.bucket AS time, sum(h.avg_value * h.n) / nullif(sum(h.n), 0) AS \"avg\", min(h.min_value) AS \"min\", max(h.max_value) AS \"max\" FROM quantity_rollups h JOIN sample_types t USING (type_id) WHERE h.user_id = '${user}'::uuid AND t.identifier='HKQuantityTypeIdentifierHeartRate' AND $__timeFilter(h.bucket) GROUP BY h.bucket ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Heart Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT md.day::timestamptz AS time, md.value AS steps FROM metric_daily md WHERE md.user_id = '${user}'::uuid AND md.identifier='HKQuantityTypeIdentifierStepCount' AND $__timeFilter(md.day) ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Daily Steps",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT b.bucket_start AS time, replace(t.identifier, 'HKQuantityTypeIdentifier', '') || ' · ' || s.agg_func || ' · ' || s.interval_value || ' ' || s.interval_unit || ' · ' || s.device_filter AS metric, b.value AS value FROM aggregate_samples b JOIN aggregate_series s USING (series_id) JOIN sample_types t USING (type_id) WHERE b.user_id = '${user}'::uuid AND s.series_id IN ($agg_series) AND $__timeFilter(b.bucket_start) ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Device Aggregates",
+      "type": "timeseries",
+      "description": "On-device HKStatisticsCollectionQuery buckets (authoritative: HealthKit dedupes Watch+iPhone overlap). Pick series in the Aggregate series dropdown; a watch-only vs iphone-only pair of the same type showing different values verifies the device filter on real hardware."
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": 3600000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time_bucket('${bucket}'::interval, r.bucket, '${tz}') AS time, sum(r.sum_value) AS \"sum\", sum(r.avg_value * r.n) / nullif(sum(r.n), 0) AS \"avg\", min(r.min_value) AS \"min\", max(r.max_value) AS \"max\" FROM quantity_rollups r JOIN sample_types t USING (type_id) WHERE r.user_id = '${user}'::uuid AND t.identifier = '${metric}' AND $__timeFilter(r.bucket) GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Metric Explorer — $metric",
+      "type": "timeseries",
+      "description": "Any synced quantity type from the hourly rollup; sum is additive, avg is sample-count weighted when re-bucketing to days."
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 70,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineWidth": 0,
+            "spanNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 3,
+      "options": {
+        "alignValue": "left",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "showValue": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT c.start_ts AS time, CASE c.value WHEN 0 THEN 'In Bed' WHEN 1 THEN 'Asleep' WHEN 2 THEN 'Awake' WHEN 3 THEN 'Core' WHEN 4 THEN 'Deep' WHEN 5 THEN 'REM' ELSE 'Other' END AS stage FROM category_samples c JOIN sample_types t USING (type_id) WHERE c.user_id = '${user}'::uuid AND t.identifier='HKCategoryTypeIdentifierSleepAnalysis' AND $__timeFilter(c.start_ts) ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Sleep Stages",
+      "type": "state-timeline"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time_bucket('1 day', c.start_ts - INTERVAL '6 hours', '${tz}') + INTERVAL '6 hours' AS time, CASE c.value WHEN 1 THEN 'Asleep' WHEN 3 THEN 'Core' WHEN 4 THEN 'Deep' WHEN 5 THEN 'REM' END AS metric, sum(extract(epoch FROM (c.end_ts - c.start_ts))) / 60 AS value FROM category_samples c JOIN sample_types t USING (type_id) WHERE c.user_id = '${user}'::uuid AND t.identifier = 'HKCategoryTypeIdentifierSleepAnalysis' AND c.value IN (1, 3, 4, 5) AND $__timeFilter(c.start_ts) GROUP BY 1, 2 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Sleep Stage Minutes per Night",
+      "type": "timeseries",
+      "description": "Asleep minutes per night by stage ('In Bed' excluded). Nights split at 06:00 local, so a sleep ending after midnight counts toward the evening it started."
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH daily AS (SELECT time_bucket('1 day', r.bucket, '${tz}') AS day, sum(r.avg_value * r.n) / nullif(sum(r.n), 0) AS v FROM quantity_rollups r JOIN sample_types t USING (type_id) WHERE r.user_id = '${user}'::uuid AND t.identifier = 'HKQuantityTypeIdentifierRestingHeartRate' AND $__timeFilter(r.bucket) GROUP BY 1) SELECT day AS time, v AS \"daily\", avg(v) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS \"7-day avg\" FROM daily ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Resting Heart Rate — 7-day trend",
+      "type": "timeseries",
+      "description": "7-day average is computed over the visible range; the first week is partial."
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH daily AS (SELECT time_bucket('1 day', r.bucket, '${tz}') AS day, sum(r.avg_value * r.n) / nullif(sum(r.n), 0) AS v FROM quantity_rollups r JOIN sample_types t USING (type_id) WHERE r.user_id = '${user}'::uuid AND t.identifier = 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN' AND $__timeFilter(r.bucket) GROUP BY 1) SELECT day AS time, v AS \"daily\", avg(v) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS \"7-day avg\" FROM daily ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "HRV (SDNN) — 7-day trend",
+      "type": "timeseries",
+      "description": "7-day average is computed over the visible range; the first week is partial."
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT w.start_ts AS \"start\", w.activity_type AS \"activity\", round((w.duration_s / 60)::numeric, 1) AS \"minutes\", round(w.energy_kcal::numeric) AS \"kcal\", round((w.distance_m / 1000.0)::numeric, 2) AS \"km\", s.name AS \"source\" FROM workouts w LEFT JOIN sources s USING (source_id) WHERE w.user_id = '${user}'::uuid AND $__timeFilter(w.start_ts) ORDER BY w.start_ts DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Workouts",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "description": "GPS trace of the workout picked in the Route dropdown (only workouts with route data are listed).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "red",
+            "mode": "fixed"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "id": 14,
+      "options": {
+        "basemap": {
+          "config": {},
+          "name": "Layer 0",
+          "type": "default"
+        },
+        "controls": {
+          "mouseWheelZoom": true,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "red"
+                },
+                "opacity": 0.7,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 3,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "location": {
+              "mode": "auto"
+            },
+            "name": "Route",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "fit",
+          "lat": 0,
+          "lon": 0,
+          "zoom": 15
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT p.lat, p.lon FROM workout_route_points p WHERE p.user_id = '${user}'::uuid AND p.workout_uuid = nullif('${workout}', '')::uuid ORDER BY p.ts",
+          "refId": "A"
+        }
+      ],
+      "title": "Workout Route",
+      "type": "geomap"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "points",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none",
+          "min": -1,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 41
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT m.start_ts AS time, m.kind AS metric, m.valence AS value FROM state_of_mind m WHERE m.user_id = '${user}'::uuid AND $__timeFilter(m.start_ts) ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "State of Mind (valence)",
+      "type": "timeseries",
+      "description": "HKStateOfMind valence: −1 (very unpleasant) to +1 (very pleasant), one series per kind (momentary emotion / daily mood)."
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 41
+      },
+      "id": 16,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT d.start_ts AS \"time\", d.medication, d.status, d.dose_quantity AS \"dose\", d.dose_unit AS \"unit\" FROM medication_dose_events d WHERE d.user_id = '${user}'::uuid AND $__timeFilter(d.start_ts) ORDER BY d.start_ts DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Medication Doses",
+      "type": "table"
+    }
+  ],
+  "refresh": "15m",
+  "schemaVersion": 39,
+  "tags": [
+    "health",
+    "healthkit"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "postgres",
+          "uid": "puls-tsdb"
+        },
+        "definition": "SELECT puls_time_zone()",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Time zone",
+        "multi": false,
+        "name": "tz",
+        "options": [],
+        "query": "SELECT puls_time_zone()",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "postgres",
+          "uid": "puls-tsdb"
+        },
+        "definition": "SELECT coalesce(nullif(name, ''), nullif(email, ''), id::text) AS __text, id::text AS __value FROM users ORDER BY 1, 2",
+        "hide": 0,
+        "includeAll": false,
+        "label": "User",
+        "multi": false,
+        "name": "user",
+        "options": [],
+        "query": "SELECT coalesce(nullif(name, ''), nullif(email, ''), id::text) AS __text, id::text AS __value FROM users ORDER BY 1, 2",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "HeartRate",
+          "value": "HKQuantityTypeIdentifierHeartRate"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "puls-tsdb"
+        },
+        "definition": "SELECT replace(t.identifier, 'HKQuantityTypeIdentifier', '') AS __text, t.identifier AS __value FROM sample_types t WHERE t.identifier LIKE 'HKQuantityType%' AND EXISTS (SELECT 1 FROM quantity_rollups r WHERE r.type_id = t.type_id AND r.user_id = '${user}'::uuid) ORDER BY 1",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Metric",
+        "multi": false,
+        "name": "metric",
+        "options": [],
+        "query": "SELECT replace(t.identifier, 'HKQuantityTypeIdentifier', '') AS __text, t.identifier AS __value FROM sample_types t WHERE t.identifier LIKE 'HKQuantityType%' AND EXISTS (SELECT 1 FROM quantity_rollups r WHERE r.type_id = t.type_id AND r.user_id = '${user}'::uuid) ORDER BY 1",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "1 hour",
+          "value": "1 hour"
+        },
+        "includeAll": false,
+        "label": "Bucket",
+        "multi": false,
+        "name": "bucket",
+        "options": [
+          {
+            "selected": true,
+            "text": "1 hour",
+            "value": "1 hour"
+          },
+          {
+            "selected": false,
+            "text": "1 day",
+            "value": "1 day"
+          }
+        ],
+        "query": "1 hour, 1 day",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "puls-tsdb"
+        },
+        "definition": "SELECT replace(t.identifier, 'HKQuantityTypeIdentifier', '') || ' · ' || s.agg_func || ' · ' || s.interval_value || ' ' || s.interval_unit || ' · ' || s.device_filter AS __text, s.series_id AS __value FROM aggregate_series s JOIN sample_types t USING (type_id) WHERE EXISTS (SELECT 1 FROM aggregate_samples b WHERE b.series_id = s.series_id AND b.user_id = '${user}'::uuid) ORDER BY 1",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Aggregate series",
+        "multi": true,
+        "name": "agg_series",
+        "options": [],
+        "query": "SELECT replace(t.identifier, 'HKQuantityTypeIdentifier', '') || ' · ' || s.agg_func || ' · ' || s.interval_value || ' ' || s.interval_unit || ' · ' || s.device_filter AS __text, s.series_id AS __value FROM aggregate_series s JOIN sample_types t USING (type_id) WHERE EXISTS (SELECT 1 FROM aggregate_samples b WHERE b.series_id = s.series_id AND b.user_id = '${user}'::uuid) ORDER BY 1",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "puls-tsdb"
+        },
+        "definition": "SELECT to_char(w.start_ts AT TIME ZONE '${tz}', 'YYYY-MM-DD HH24:MI') || ' · ' || w.activity_type AS __text, w.uuid::text AS __value FROM workouts w WHERE w.user_id = '${user}'::uuid AND EXISTS (SELECT 1 FROM workout_route_points p WHERE p.workout_uuid = w.uuid AND p.user_id = w.user_id) ORDER BY w.start_ts DESC LIMIT 100",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Route",
+        "multi": false,
+        "name": "workout",
+        "options": [],
+        "query": "SELECT to_char(w.start_ts AT TIME ZONE '${tz}', 'YYYY-MM-DD HH24:MI') || ' · ' || w.activity_type AS __text, w.uuid::text AS __value FROM workouts w WHERE w.user_id = '${user}'::uuid AND EXISTS (SELECT 1 FROM workout_route_points p WHERE p.workout_uuid = w.uuid AND p.user_id = w.user_id) ORDER BY w.start_ts DESC LIMIT 100",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "PulsHealth",
+  "uid": "puls-health",
+  "version": 1,
+  "weekStart": ""
+}

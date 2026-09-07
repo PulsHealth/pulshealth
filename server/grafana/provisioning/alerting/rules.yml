@@ -1,0 +1,261 @@
+apiVersion: 1
+
+# Four rules, layered by how fast they notice and how sure they are.
+#
+# Thresholds are derived from 60 days of production `batches` history rather
+# than guessed — see server/README.md ("Alerting"). The 2026-08-13 outage was
+# fully visible on the ops dashboard for 28 hours and nobody was looking, so
+# these exist to push rather than display.
+groups:
+  - orgId: 1
+    name: ingest-health
+    folder: PulsHealth
+    interval: 5m
+    rules:
+      # Fast detector. During the 2026-08-13 outage the server logged ~85
+      # rejections/hour (~42 per 30 min), while the long-standing benign
+      # "context canceled" class runs 1-2 per *month*. A threshold of 10 sits
+      # in the empty space between the two, so this fires ~10 minutes into a
+      # real breakage and never on the background noise.
+      - uid: puls-ingest-rejections
+        title: Ingest is rejecting batches
+        condition: C
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: puls-tsdb
+            model:
+              refId: A
+              datasource: { type: postgres, uid: puls-tsdb }
+              format: table
+              rawQuery: true
+              rawSql: |
+                SELECT count(*)::float8 AS rejections
+                FROM ingest_rejections
+                WHERE received_at > now() - interval '30 minutes'
+          - refId: B
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              reducer: last
+              settings: { mode: dropNN }
+          - refId: C
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [10] }
+        # The staleness rule below owns the "database unreachable" case; keeping
+        # this one quiet on NoData avoids two emails for one failure.
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: critical
+        annotations:
+          summary: The phone is uploading but the server is refusing the data.
+          description: >-
+            More than 10 batches rejected in the last 30 minutes. Anchors do not
+            advance on a 5xx, so nothing is lost yet and the backlog will drain
+            once the server accepts writes again. Check:
+            docker compose logs ingest | grep "batch insert failed"
+            and the Recent Rejected Batches panel on the PulsHealth Ops dashboard.
+
+      # Slow detector for the one failure the rate rule cannot see. A page the
+      # server deterministically rejects (a 4xx: an unknown line type after a
+      # client-first deploy, an oversized line, a value out of range) is
+      # re-sent once per wake — about once an hour — and that type never
+      # advances. One rejection an hour never reaches the >10/30 min threshold
+      # above. The client mints a new batch id per attempt, so identical
+      # rejections are recognised by their error text: the same 4xx message
+      # in three or more distinct hours of the last six is a stuck page, not
+      # noise.
+      - uid: puls-ingest-stuck-page
+        title: A batch is stuck on a rejected page
+        condition: C
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: puls-tsdb
+            model:
+              refId: A
+              datasource: { type: postgres, uid: puls-tsdb }
+              format: table
+              rawQuery: true
+              rawSql: |
+                SELECT count(*)::float8 AS stuck_pages
+                FROM (
+                  SELECT error_message
+                  FROM ingest_rejections
+                  WHERE status BETWEEN 400 AND 499
+                    AND received_at > now() - interval '6 hours'
+                  GROUP BY error_message
+                  HAVING count(DISTINCT date_trunc('hour', received_at)) >= 3
+                ) repeated
+          - refId: B
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              reducer: last
+              settings: { mode: dropNN }
+          - refId: C
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: warning
+        annotations:
+          summary: The server keeps rejecting the same page; that type is not advancing.
+          description: >-
+            The same 4xx rejection message has recurred in at least three
+            distinct hours of the last six. The client does not retry 4xx and
+            its anchor stays put, so the affected type is stalled until the
+            server (or the client) is fixed. Find the message in
+            ingest_rejections (Recent Rejected Batches panel) and match it to a
+            batch type via the X-Wake-ID / wake_id column.
+        isPaused: false
+
+      # Backstop for "the phone stopped talking entirely", which produces no
+      # rejections at all. 14h is measured, not guessed: over 60 days of normal
+      # operation (excluding the outage) only 2 gaps exceeded 14h, while 12h
+      # would have produced 7 false alarms and 10h would have produced 22.
+      # The real outage ran 28h, so this catches that class at the halfway mark.
+      - uid: puls-ingest-stalled
+        title: Ingest stalled
+        condition: C
+        for: 30m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: puls-tsdb
+            model:
+              refId: A
+              datasource: { type: postgres, uid: puls-tsdb }
+              format: table
+              rawQuery: true
+              rawSql: |
+                SELECT extract(epoch FROM (now() - max(received_at)))::float8 AS age
+                FROM batches
+          - refId: B
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              reducer: last
+              settings: { mode: dropNN }
+          - refId: C
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [50400] }
+        # An unreachable database is itself an outage worth an email.
+        noDataState: Alerting
+        execErrState: Alerting
+        labels:
+          severity: critical
+        annotations:
+          summary: No health data has reached the server in over 14 hours.
+          description: >-
+            Either the phone is not syncing (Background App Refresh off, app
+            force-quit, no network) or ingest is down. Open the app to force a
+            foreground sync; if data flows immediately the background path is
+            the problem, not the server.
+        isPaused: false
+
+      # This is the rule that would have prevented the 2026-08-13 outage
+      # outright. smallint identity columns cap at 32767 and the table's row
+      # count tells you nothing about how close the sequence is.
+      #
+      # Not 80%: sources_source_id_seq legitimately sits at ~90% with
+      # unreclaimable gaps (its live ids scatter up to 29459, so RESTART would
+      # collide), and a permanently-firing rule is a rule people mute. At 95%
+      # the fixed ~0/day burn never trips it, while a reintroduced leak at the
+      # old ~500/day rate fires with roughly three days of runway left.
+      - uid: puls-sequence-exhaustion
+        title: Lookup sequence near exhaustion
+        condition: C
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: puls-tsdb
+            model:
+              refId: A
+              datasource: { type: postgres, uid: puls-tsdb }
+              format: table
+              rawQuery: true
+              rawSql: |
+                SELECT max(100.0 * last_value / max_value)::float8 AS pct_used
+                FROM pg_sequences
+                WHERE max_value <= 32767
+          - refId: B
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: A
+              reducer: last
+              settings: { mode: dropNN }
+          - refId: C
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              datasource: { type: __expr__, uid: __expr__ }
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [95] }
+        # pg_sequences.last_value reads NULL without SELECT on the sequences
+        # (099_read_roles.sh grants it), so without the grant this query
+        # returns NULL → the reducer drops it → NoData → Alerting. Do not
+        # coalesce the NULL to 0: that made a missing grant look like 0 % used
+        # and the rule permanently OK — silently inert for exactly the outage
+        # it exists to catch. On a database created before the grant existed,
+        # re-run 099_read_roles.sh (or GRANT it by hand, see server/README.md).
+        noDataState: Alerting
+        execErrState: Alerting
+        labels:
+          severity: warning
+        annotations:
+          summary: A smallint identity sequence is within 5% of its 32767 ceiling.
+          description: >-
+            When it hits the ceiling every insert fails with SQLSTATE 2200H and
+            ingest stops completely. Check which one with:
+            SELECT sequencename, last_value, max_value FROM pg_sequences
+            WHERE max_value <= 32767 ORDER BY last_value DESC;
+            If the table's row count is far below last_value, something is
+            burning nextval on conflicts again - see ensureTypes in
+            server/ingest/store.go.
+        isPaused: false

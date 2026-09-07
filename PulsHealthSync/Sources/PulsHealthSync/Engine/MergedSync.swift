@@ -1,0 +1,468 @@
+import Foundation
+import HealthKit
+
+// Multi-type batching for incremental sync.
+//
+// `sync(type:)` uploads one type's page per request. That is right for a
+// backfill, where every page is full and the four concurrent type-runs keep the
+// network busy. It is badly wrong for observer-driven incremental sync, where
+// production telemetry over 2026-06-14..2026-08-13 measured:
+//
+//   * 94% of sync wall time spent in upload, 6% in the HealthKit queries
+//   * a median page of 7 samples / 1.2 KB that still cost ~1.5s of round trip
+//   * 83% of pages carrying under 50 samples, moving 10.6% of the data while
+//     consuming 79% of all upload time
+//
+// The cost is per-request, not per-sample, so the fix is fewer requests: fetch
+// one page per type, pack the small ones together, and upload the packs.
+//
+// Anchor-after-ack is preserved exactly (see CLAUDE.md). A page is never split
+// across batches, so each type's anchor advances after the single upload that
+// carried its data was acked. When a batch fails, every anchor in it stays put
+// and those types drop out of the run; the next run re-queries from the same
+// anchor and re-sends the same samples, which is safe because every insert is
+// ON CONFLICT DO NOTHING on sample UUID.
+extension HealthSyncEngine {
+
+    /// One anchored page per type, packed into as few uploads as the sample
+    /// budget allows, repeating until every type is drained.
+    ///
+    /// Overlap semantics match `sync(type:)`: a type already syncing is not
+    /// started again, it is marked for a follow-up run instead.
+    func syncTypesMerged(_ ids: [String], reason: SyncReason) async {
+        var claimed: [String] = []
+        for id in ids {
+            if activeSyncs.contains(id) {
+                // A run is in flight; remember to go again so we don't miss data
+                // the observer told us about mid-run.
+                pendingResync.insert(id)
+            } else {
+                activeSyncs.insert(id)
+                claimed.append(id)
+            }
+        }
+        guard !claimed.isEmpty else { return }
+        defer { for id in claimed { activeSyncs.remove(id) } }
+
+        var round = claimed
+        var nextReason = reason
+        while !round.isEmpty {
+            await runMergedSync(round, reason: nextReason)
+            nextReason = .incremental
+            round = claimed.filter { pendingResync.remove($0) != nil }
+        }
+    }
+
+    // MARK: - One run
+
+    private func runMergedSync(_ ids: [String], reason: SyncReason) async {
+        await ensureTransport()
+        guard let transport else {
+            await eventLog.log(.error, "No transport configured — set server URL and token")
+            return
+        }
+        let config = await store.configuration
+        // A page is at most `batchSize`; keeping the pack budget at least that
+        // large is what guarantees a page never has to be split across batches.
+        let budget = max(config.maxMergedBatchSamples, config.batchSize)
+
+        // In-memory cursor per type. Seeded from the persisted anchor and only
+        // advanced past a page the server has acked, so a failed upload leaves
+        // the type exactly where the last durable anchor put it.
+        var cursors: [String: HKQueryAnchor?] = [:]
+        var pending: [String] = []
+        for id in ids {
+            guard let descriptor = HealthTypeCatalog.descriptor(for: id),
+                  descriptor.sampleType != nil else {
+                await eventLog.log(.error, type: id, "Unknown type identifier")
+                continue
+            }
+            let state = await store.state(for: id)
+            do {
+                cursors[id] = try decodeAnchor(state.anchorData)
+            } catch {
+                await eventLog.log(.error, type: id, "Sync failed: \(error)")
+                continue
+            }
+            let isBackfill = !state.backfillComplete
+            activities[id] = isBackfill ? .backfilling : .syncing
+            pending.append(id)
+        }
+        guard !pending.isEmpty else { return }
+        notifyChanged()
+
+        let runStart = ContinuousClock.now
+        var uploads = 0
+        var totalSamples = 0
+        var totalDeletions = 0
+        /// Types HealthKit confirmed it had nothing more for, and whose last
+        /// page (if any) was acked. Only these may be marked backfill-complete:
+        /// a type dropped by a failed upload, a locked database, or
+        /// cancellation has *not* been fully read, and claiming otherwise would
+        /// permanently skip its remaining history.
+        var drainedCleanly: Set<String> = []
+
+        while !pending.isEmpty, !Task.isCancelled {
+            var carried: Set<String> = []
+            // Pages held between fetch and upload, flushed once they add up to a
+            // full batch. Fetching every pending type before uploading anything
+            // would be simpler, but on a wide sweep (79 types, up to 1,000
+            // samples each) that is tens of thousands of samples resident at
+            // once — far too much for the memory a background wake gets. Here
+            // the buffer only grows with real data and never holds much more
+            // than one batch plus one wave.
+            var buffer: [MergedPage] = []
+            var buffered = 0
+
+            var queue = pending
+            let wave = max(1, config.maxConcurrentTypes)
+            while !queue.isEmpty, !Task.isCancelled {
+                let batchOfTypes = Array(queue.prefix(wave))
+                queue.removeFirst(batchOfTypes.count)
+                let pages = await fetchPages(batchOfTypes, cursors: cursors, config: config)
+                    .compactMap { $0 }
+
+                for page in pages {
+                    // An empty page means the type is drained: persist the final
+                    // anchor so the next run starts here, and clear any stale
+                    // error — the query just succeeded, so an older
+                    // authorization failure no longer holds.
+                    if page.isEmpty {
+                        await store.update(page.identifier) {
+                            $0.anchorData = page.newAnchorData
+                            $0.lastSyncAt = Date()
+                            $0.lastError = nil
+                        }
+                        drainedCleanly.insert(page.identifier)
+                    } else {
+                        buffer.append(page)
+                        buffered += page.count
+                    }
+                }
+                if buffered >= budget {
+                    let flushed = await flush(
+                        buffer, budget: budget, keepPartial: true,
+                        reason: reason, transport: transport, config: config)
+                    buffer = flushed.leftover
+                    buffered = buffer.reduce(0) { $0 + $1.count }
+                    uploads += flushed.uploads
+                    totalSamples += flushed.samples
+                    totalDeletions += flushed.deletions
+                    carried.formUnion(flushed.carried)
+                    drainedCleanly.formUnion(flushed.drained)
+                    for (id, anchor) in flushed.cursors { cursors[id] = anchor }
+                }
+            }
+            let flushed = await flush(
+                buffer, budget: budget, keepPartial: false,
+                reason: reason, transport: transport, config: config)
+            uploads += flushed.uploads
+            totalSamples += flushed.samples
+            totalDeletions += flushed.deletions
+            carried.formUnion(flushed.carried)
+            drainedCleanly.formUnion(flushed.drained)
+            for (id, anchor) in flushed.cursors { cursors[id] = anchor }
+
+            // Only types whose page both acked and came back full go again.
+            pending = pending.filter { carried.contains($0) }
+        }
+
+        for id in ids where activities[id] != .failed {
+            if drainedCleanly.contains(id), !(await store.state(for: id)).backfillComplete {
+                await store.markBackfillComplete(id)
+                backfillRuns[id] = nil
+            }
+            activities[id] = .idle
+        }
+        let elapsed = (ContinuousClock.now - runStart).seconds
+        if totalSamples + totalDeletions > 0 {
+            let rate = Double(totalSamples) / max(elapsed, 0.001)
+            await eventLog.log(
+                .info,
+                "\(reason.rawValue) sync done: \(totalSamples) samples, \(totalDeletions) deletions across \(ids.count) type(s) in \(String(format: "%.1f", elapsed))s (\(Int(rate))/s, \(uploads) upload(s))"
+            )
+        }
+        notifyChanged()
+    }
+
+    /// What one flush moved, returned rather than mutated in place: a nested
+    /// async function that captured the run's counters across a suspension
+    /// point is exactly the shape Swift 6 rejects as a data race.
+    struct FlushResult {
+        var leftover: [MergedPage] = []
+        var uploads = 0
+        var samples = 0
+        var deletions = 0
+        /// Acked and still has more pages waiting.
+        var carried: Set<String> = []
+        /// Acked and HealthKit had nothing further.
+        var drained: Set<String> = []
+        var cursors: [String: HKQueryAnchor] = [:]
+    }
+
+    /// Upload whole packs out of the buffer. `keepPartial` hands back a final
+    /// under-budget pack so the next wave can top it up rather than sending a
+    /// half-empty request; the last flush of a run takes it as-is.
+    private func flush(
+        _ buffer: [MergedPage], budget: Int, keepPartial: Bool,
+        reason: SyncReason, transport: SyncTransport, config: SyncConfiguration
+    ) async -> FlushResult {
+        var result = FlushResult()
+        guard !buffer.isEmpty else { return result }
+
+        var toSend = Self.pack(buffer, budget: budget)
+        if keepPartial, let last = toSend.last,
+           last.reduce(0, { $0 + $1.count }) < budget {
+            toSend.removeLast()
+            result.leftover = last
+        }
+        for pack in toSend {
+            guard await upload(pack, reason: reason, transport: transport, config: config)
+            else { continue }
+            result.uploads += 1
+            for page in pack {
+                result.samples += page.samples.count
+                result.deletions += page.deletions.count
+                result.cursors[page.identifier] = page.newAnchor
+                if page.drained {
+                    result.drained.insert(page.identifier)
+                } else {
+                    result.carried.insert(page.identifier)
+                }
+            }
+        }
+        return result
+    }
+
+    // MARK: - Fetch
+
+    /// One page per type, at most `maxConcurrentTypes` queries in flight.
+    /// A type that throws is logged, marked, and dropped from the run; it never
+    /// takes the other types down with it.
+    private func fetchPages(
+        _ ids: [String], cursors: [String: HKQueryAnchor?], config: SyncConfiguration
+    ) async -> [MergedPage?] {
+        var out: [MergedPage?] = []
+        await withTaskGroup(of: MergedPage?.self) { group in
+            var iterator = ids.makeIterator()
+            var inFlight = 0
+            func addNext(_ group: inout TaskGroup<MergedPage?>) {
+                guard let id = iterator.next() else { return }
+                inFlight += 1
+                let anchor = cursors[id] ?? nil
+                group.addTask {
+                    await self.fetchPage(id, anchor: anchor, config: config)
+                }
+            }
+            for _ in 0..<max(1, config.maxConcurrentTypes) { addNext(&group) }
+            while inFlight > 0 {
+                if let page = await group.next() { out.append(page) }
+                inFlight -= 1
+                addNext(&group)
+            }
+        }
+        return out
+    }
+
+    private func fetchPage(
+        _ identifier: String, anchor: HKQueryAnchor?, config: SyncConfiguration
+    ) async -> MergedPage? {
+        guard let descriptor = HealthTypeCatalog.descriptor(for: identifier),
+              let sampleType = descriptor.sampleType else { return nil }
+        let queryStart = ContinuousClock.now
+        do {
+            let predicate = HKSamplePredicate<HKSample>.sample(
+                type: sampleType,
+                predicate: HKQuery.predicateForSamples(
+                    withStart: config.startDate, end: nil, options: .strictStartDate
+                )
+            )
+            let queryDescriptor = HKAnchoredObjectQueryDescriptor(
+                predicates: [predicate], anchor: anchor, limit: config.batchSize
+            )
+            let result = try await queryDescriptor.result(for: healthStore)
+            let queryDuration = (ContinuousClock.now - queryStart).seconds
+
+            var samples = result.addedSamples.compactMap {
+                SampleMapper.map($0, descriptor: descriptor)
+            }
+            // Same phase-1 enrichment the per-type path runs: heartbeat/ECG
+            // decoration and the profile go now, the expensive per-workout
+            // route and stream fetches are left to their own later phases.
+            let enrichment = try await enrich(
+                &samples, from: result.addedSamples, descriptor: descriptor,
+                includeRoutes: config.includeWorkoutRoutes,
+                includeEnhanced: config.includeWorkoutEnhancedData,
+                userProfile: config.userProfilePayload,
+                deferEnrichment: true
+            )
+            let deletions = result.deletedObjects.map {
+                SyncDeletion(uuid: $0.uuid, type: identifier)
+            }
+            // Compare raw result counts, not mapped counts: mapping can drop
+            // samples, and a short raw page is what proves HealthKit is drained.
+            let drained = result.addedSamples.count + result.deletedObjects.count < config.batchSize
+            return MergedPage(
+                identifier: identifier,
+                samples: samples,
+                deletions: deletions,
+                newAnchor: result.newAnchor,
+                newAnchorData: try encodeAnchor(result.newAnchor),
+                enrichment: enrichment,
+                queryDuration: queryDuration,
+                drained: drained
+            )
+        } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
+            activities[identifier] = .failed
+            backfillRuns[identifier] = nil
+            await store.recordError(identifier: identifier, error: SyncError.authorizationNotDetermined)
+            await eventLog.log(.error, type: identifier, "Health access not determined — grant access from the Dashboard")
+            return nil
+        } catch let error as HKError where error.code == .errorDatabaseInaccessible {
+            // Device locked: the Health DB relocks ~10 min after lock. Expected
+            // during background runs — not a failure; the anchor is untouched
+            // and the next wake/foreground catches up.
+            activities[identifier] = .idle
+            await eventLog.log(.warn, type: identifier, "Health database locked (device locked) — will retry on next wake")
+            return nil
+        } catch is CancellationError {
+            // Background time expired; the anchor is untouched and the outer
+            // loop polls Task.isCancelled. Not a failure.
+            activities[identifier] = .idle
+            return nil
+        } catch {
+            activities[identifier] = .failed
+            backfillRuns[identifier] = nil
+            await store.recordError(identifier: identifier, error: error)
+            await eventLog.log(.error, type: identifier, "Sync failed: \(error)")
+            return nil
+        }
+    }
+
+    // MARK: - Pack
+
+    /// Greedily fill batches to `budget` samples+deletions, never splitting a
+    /// page. A page at or over the budget travels alone rather than being cut,
+    /// which is what keeps one page tied to exactly one ack.
+    static func pack(_ pages: [MergedPage], budget: Int) -> [[MergedPage]] {
+        var packs: [[MergedPage]] = []
+        var current: [MergedPage] = []
+        var currentCount = 0
+        // Largest first so small pages fill the gaps left by big ones instead of
+        // each starting a batch of its own.
+        for page in pages.sorted(by: { $0.count > $1.count }) {
+            if !current.isEmpty, currentCount + page.count > budget {
+                packs.append(current)
+                current = []
+                currentCount = 0
+            }
+            current.append(page)
+            currentCount += page.count
+        }
+        if !current.isEmpty { packs.append(current) }
+        return packs
+    }
+
+    // MARK: - Upload
+
+    /// Upload one pack and, on ack, advance every contained type's anchor.
+    /// Returns false when the upload failed, in which case no anchor moved.
+    private func upload(
+        _ pack: [MergedPage], reason: SyncReason,
+        transport: SyncTransport, config: SyncConfiguration
+    ) async -> Bool {
+        guard !pack.isEmpty else { return true }
+
+        let batch = SyncBatch(
+            deviceID: store.deviceID,
+            // The header type is a label only — the server registers types from
+            // the sample lines themselves and merely stores this in
+            // `batches.type_identifier`. Name the biggest contributor so the
+            // column stays meaningful for a single-type batch (unchanged from
+            // before) and informative for a merged one.
+            type: pack.max(by: { $0.count < $1.count })?.identifier ?? pack[0].identifier,
+            reason: reason,
+            samples: pack.flatMap(\.samples),
+            deletions: pack.flatMap(\.deletions),
+            routes: pack.flatMap(\.enrichment.routes),
+            series: pack.flatMap(\.enrichment.series),
+            profile: pack.compactMap(\.enrichment.profile).first
+        )
+
+        do {
+            let result = try await transport.upload(batch)
+            // Split the measured cost across the pages that shared the request
+            // so per-type stats stay comparable with the unmerged path. Bytes
+            // go by share of the payload rather than evenly, so a 900-sample
+            // page is not credited the same as the 7-sample page riding along
+            // with it.
+            let units = max(1, pack.reduce(0) { $0 + $1.count })
+            for page in pack {
+                let share = result.bytesSent * page.count / units
+                let dates = page.samples.map(\.start)
+                let latency: TimeInterval? = (reason == .incremental)
+                    ? page.samples.map { Date().timeIntervalSince($0.end) }.min()
+                    : nil
+                await store.recordUploadedBatch(
+                    identifier: page.identifier,
+                    newAnchorData: page.newAnchorData,
+                    samples: page.samples.count,
+                    deletions: page.deletions.count,
+                    bytes: share,
+                    sampleDateRange: dates.isEmpty ? nil : (dates.min()! ... dates.max()!),
+                    duration: page.queryDuration + result.duration / Double(pack.count),
+                    latency: latency
+                )
+                await reportWakeBatch(
+                    type: page.identifier, samples: page.samples.count,
+                    deletions: page.deletions.count, bytes: share)
+                backfillRuns[page.identifier]?.samplesThisRun += page.samples.count
+            }
+            let types = pack.count == 1
+                ? pack[0].identifier
+                : "\(pack.count) types"
+            await eventLog.log(
+                .debug,
+                "Merged upload: \(batch.samples.count) samples, \(batch.deletions.count) deletions from \(types) — \(String(format: "%.2f", result.duration))s (\(result.bytesSent) B)"
+            )
+            notifyChanged()
+            return true
+        } catch is CancellationError {
+            // Anchors stay put for every type in the pack (nothing was acked);
+            // background time simply ran out. The next wake re-queries them.
+            for page in pack { activities[page.identifier] = .idle }
+            await eventLog.log(.debug, "Merged upload of \(pack.count) type(s) cancelled — will resume on next wake")
+            notifyChanged()
+            return false
+        } catch {
+            // Anchors stay put for every type in the pack; the pages will be
+            // re-queried and re-sent next run.
+            for page in pack {
+                activities[page.identifier] = .failed
+                await store.recordError(identifier: page.identifier, error: error)
+            }
+            await eventLog.log(
+                .error,
+                "Merged upload of \(pack.count) type(s) failed: \(error)"
+            )
+            notifyChanged()
+            return false
+        }
+    }
+}
+
+/// One anchored-query page, held until it can be packed into an upload.
+struct MergedPage {
+    let identifier: String
+    var samples: [SyncSample]
+    var deletions: [SyncDeletion]
+    let newAnchor: HKQueryAnchor
+    let newAnchorData: Data?
+    let enrichment: HealthSyncEngine.WorkoutEnrichment
+    let queryDuration: TimeInterval
+    /// HealthKit returned a short page: nothing more for this type right now.
+    let drained: Bool
+
+    var count: Int { samples.count + deletions.count }
+    var isEmpty: Bool { samples.isEmpty && deletions.isEmpty }
+}

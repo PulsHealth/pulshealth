@@ -1,0 +1,546 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type Store struct {
+	pool *pgxpool.Pool
+	// Every read is scoped to this user (PULS_USER_ID, default the seeded
+	// user). Multi-user reads are a later feature; for now one deployment
+	// serves one person.
+	userID string
+	// The calendar zone the daily endpoints bucket in (PULS_TIME_ZONE, loaded
+	// once at startup in main.go). It must match the phone's zone and the
+	// database's puls.time_zone setting, which metric_daily uses for the same
+	// day boundaries.
+	loc *time.Location
+}
+
+func NewStore(pool *pgxpool.Pool, userID string, loc *time.Location) *Store {
+	if loc == nil {
+		loc = time.UTC
+	}
+	return &Store{pool: pool, userID: userID, loc: loc}
+}
+
+func (st *Store) Ping(ctx context.Context) error { return st.pool.Ping(ctx) }
+
+type Profile struct {
+	UserID        string  `json:"userID"`
+	Name          *string `json:"name"`
+	Email         *string `json:"email"`
+	DateOfBirth   *int64  `json:"dateOfBirth"`
+	BiologicalSex *string `json:"biologicalSex"`
+}
+
+type CatalogType struct {
+	Identifier    string  `json:"identifier"`
+	Kind          string  `json:"kind"`
+	Unit          *string `json:"unit"`
+	Rows          int64   `json:"rows"`
+	RawRows       int64   `json:"rawRows"`
+	AggregateRows int64   `json:"aggregateRows"`
+	Earliest      *int64  `json:"earliest"`
+	Latest        *int64  `json:"latest"`
+}
+
+type LatestMetric struct {
+	Identifier string   `json:"identifier"`
+	Unit       *string  `json:"unit"`
+	Value      *float64 `json:"value"`
+	Timestamp  int64    `json:"timestamp"`
+}
+
+type DailyPoint struct {
+	Date  string   `json:"date"`
+	Value *float64 `json:"value"`
+}
+
+type DailyMetric struct {
+	Identifier string       `json:"identifier"`
+	Unit       *string      `json:"unit"`
+	Days       []DailyPoint `json:"days"`
+}
+
+type ActivityDay struct {
+	Date            string   `json:"date"`
+	MoveKcal        *float64 `json:"moveKcal"`
+	MoveGoalKcal    *float64 `json:"moveGoalKcal"`
+	ExerciseMin     *float64 `json:"exerciseMin"`
+	ExerciseGoalMin *float64 `json:"exerciseGoalMin"`
+	StandHours      *float64 `json:"standHours"`
+	StandGoalHours  *float64 `json:"standGoalHours"`
+	MoveMode        *int     `json:"moveMode"`
+	MoveTimeMin     *float64 `json:"moveTimeMin"`
+	MoveTimeGoalMin *float64 `json:"moveTimeGoalMin"`
+}
+
+type WorkoutFilters struct {
+	Start        *time.Time
+	End          *time.Time
+	ActivityType string
+	Limit        int
+	Offset       int
+}
+
+type WorkoutSummary struct {
+	UUID             string   `json:"uuid"`
+	ActivityType     string   `json:"activityType"`
+	Start            int64    `json:"start"`
+	End              int64    `json:"end"`
+	DurationS        *float64 `json:"durationS"`
+	DistanceM        *float64 `json:"distanceM"`
+	EnergyKcal       *float64 `json:"energyKcal"`
+	HasRoute         bool     `json:"hasRoute"`
+	AvailableMetrics []string `json:"availableMetrics"`
+}
+
+type WorkoutStatDetail struct {
+	Min *float64 `json:"min,omitempty"`
+	Avg *float64 `json:"avg,omitempty"`
+	Max *float64 `json:"max,omitempty"`
+	Sum *float64 `json:"sum,omitempty"`
+}
+
+type WorkoutDetail struct {
+	WorkoutSummary
+	StatisticsDetail map[string]WorkoutStatDetail `json:"statisticsDetail,omitempty"`
+	Events           []map[string]any             `json:"events,omitempty"`
+	Activities       []map[string]any             `json:"activities,omitempty"`
+}
+
+func (st *Store) Profile(ctx context.Context) (*Profile, error) {
+	row := st.pool.QueryRow(ctx, `
+		SELECT id::text, name, email,
+		       (extract(epoch FROM (dob::timestamp AT TIME ZONE 'UTC')) * 1000)::bigint,
+		       biological_sex
+		FROM users
+		WHERE id = $1`, st.userID)
+
+	var profile Profile
+	if err := row.Scan(
+		&profile.UserID,
+		&profile.Name,
+		&profile.Email,
+		&profile.DateOfBirth,
+		&profile.BiologicalSex,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &profile, nil
+}
+
+func (st *Store) CatalogTypes(ctx context.Context) ([]CatalogType, error) {
+	rows, err := st.pool.Query(ctx, `
+		WITH per_table AS (
+			SELECT st.identifier, st.kind, st.unit,
+			       count(*)::bigint AS raw_rows, 0::bigint AS aggregate_rows,
+			       (extract(epoch FROM min(q.start_ts)) * 1000)::bigint AS earliest,
+			       (extract(epoch FROM max(q.start_ts)) * 1000)::bigint AS latest
+			FROM quantity_samples q
+			JOIN sample_types st USING (type_id)
+			WHERE q.user_id = $1
+			GROUP BY st.identifier, st.kind, st.unit
+			UNION ALL
+			SELECT st.identifier, st.kind, st.unit, count(*)::bigint, 0::bigint,
+			       (extract(epoch FROM min(c.start_ts)) * 1000)::bigint,
+			       (extract(epoch FROM max(c.start_ts)) * 1000)::bigint
+			FROM category_samples c
+			JOIN sample_types st USING (type_id)
+			WHERE c.user_id = $1
+			GROUP BY st.identifier, st.kind, st.unit
+			UNION ALL
+			SELECT 'HKWorkoutTypeIdentifier', 'workout', NULL::text, count(*)::bigint, 0::bigint,
+			       (extract(epoch FROM min(start_ts)) * 1000)::bigint,
+			       (extract(epoch FROM max(start_ts)) * 1000)::bigint
+			FROM workouts
+			WHERE user_id = $1
+			HAVING count(*) > 0
+			UNION ALL
+			SELECT 'HKDataTypeIdentifierHeartbeatSeries', 'heartbeatSeries', NULL::text, count(*)::bigint, 0::bigint,
+			       (extract(epoch FROM min(start_ts)) * 1000)::bigint,
+			       (extract(epoch FROM max(start_ts)) * 1000)::bigint
+			FROM heartbeat_series
+			WHERE user_id = $1
+			HAVING count(*) > 0
+			UNION ALL
+			SELECT 'HKDataTypeIdentifierElectrocardiogram', 'ecg', NULL::text, count(*)::bigint, 0::bigint,
+			       (extract(epoch FROM min(start_ts)) * 1000)::bigint,
+			       (extract(epoch FROM max(start_ts)) * 1000)::bigint
+			FROM ecg_samples
+			WHERE user_id = $1
+			HAVING count(*) > 0
+			UNION ALL
+			SELECT 'HKDataTypeIdentifierStateOfMind', 'stateOfMind', NULL::text, count(*)::bigint, 0::bigint,
+			       (extract(epoch FROM min(start_ts)) * 1000)::bigint,
+			       (extract(epoch FROM max(start_ts)) * 1000)::bigint
+			FROM state_of_mind
+			WHERE user_id = $1
+			HAVING count(*) > 0
+			UNION ALL
+			SELECT 'HKMedicationDoseEventTypeIdentifierMedicationDoseEvent', 'medicationDose', NULL::text, count(*)::bigint, 0::bigint,
+			       (extract(epoch FROM min(start_ts)) * 1000)::bigint,
+			       (extract(epoch FROM max(start_ts)) * 1000)::bigint
+			FROM medication_dose_events
+			WHERE user_id = $1
+			HAVING count(*) > 0
+			UNION ALL
+			SELECT 'HKActivitySummaryTypeIdentifier', 'activitySummary', NULL::text, count(*)::bigint, 0::bigint,
+			       (extract(epoch FROM (min(date)::timestamp AT TIME ZONE 'UTC')) * 1000)::bigint,
+			       (extract(epoch FROM (max(date)::timestamp AT TIME ZONE 'UTC')) * 1000)::bigint
+			FROM activity_summaries
+			WHERE user_id = $1
+			HAVING count(*) > 0
+			UNION ALL
+			SELECT st.identifier, st.kind, st.unit, 0::bigint, count(*)::bigint,
+			       (extract(epoch FROM min(a.bucket_start)) * 1000)::bigint,
+			       (extract(epoch FROM max(a.bucket_start)) * 1000)::bigint
+			FROM aggregate_samples a
+			JOIN aggregate_series s USING (series_id)
+			JOIN sample_types st USING (type_id)
+			WHERE a.user_id = $1
+			GROUP BY st.identifier, st.kind, st.unit
+		)
+		SELECT identifier, kind, unit,
+		       sum(raw_rows + aggregate_rows)::bigint AS rows,
+		       sum(raw_rows)::bigint AS raw_rows,
+		       sum(aggregate_rows)::bigint AS aggregate_rows,
+		       min(earliest) AS earliest,
+		       max(latest) AS latest
+		FROM per_table
+		GROUP BY identifier, kind, unit
+		ORDER BY identifier`, st.userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]CatalogType, 0)
+	for rows.Next() {
+		var ct CatalogType
+		if err := rows.Scan(
+			&ct.Identifier,
+			&ct.Kind,
+			&ct.Unit,
+			&ct.Rows,
+			&ct.RawRows,
+			&ct.AggregateRows,
+			&ct.Earliest,
+			&ct.Latest,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, ct)
+	}
+	return out, rows.Err()
+}
+
+func (st *Store) LatestMetrics(ctx context.Context, types []string) ([]LatestMetric, error) {
+	rows, err := st.pool.Query(ctx, `
+		SELECT DISTINCT ON (st.identifier)
+		       st.identifier, st.unit, q.value::float8,
+		       (extract(epoch FROM q.start_ts) * 1000)::bigint AS t
+		FROM quantity_samples q
+		JOIN sample_types st ON st.type_id = q.type_id
+		WHERE q.user_id = $1
+		  AND st.identifier = ANY($2::text[])
+		ORDER BY st.identifier, q.start_ts DESC`, st.userID, types)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	byType := make(map[string]LatestMetric, len(types))
+	for rows.Next() {
+		var metric LatestMetric
+		if err := rows.Scan(&metric.Identifier, &metric.Unit, &metric.Value, &metric.Timestamp); err != nil {
+			return nil, err
+		}
+		byType[metric.Identifier] = metric
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	out := make([]LatestMetric, 0, len(byType))
+	for _, identifier := range types {
+		if metric, ok := byType[identifier]; ok {
+			out = append(out, metric)
+		}
+	}
+	return out, nil
+}
+
+func (st *Store) DailyMetrics(ctx context.Context, types []string, start, end time.Time) ([]DailyMetric, error) {
+	startDay, endDay, err := localDayRange(start, end, st.loc)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := st.pool.Query(ctx, `
+		SELECT md.identifier, st.unit, md.day::text, md.value::float8
+		FROM metric_daily md
+		JOIN sample_types st ON st.type_id = md.type_id
+		WHERE md.day >= $1::date
+		  AND md.day < $2::date
+		  AND md.user_id = $3
+		  AND md.identifier = ANY($4::text[])
+		ORDER BY md.identifier, md.day`, startDay, endDay, st.userID, types)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	byType := make(map[string]*DailyMetric, len(types))
+	order := make([]string, 0, len(types))
+	for rows.Next() {
+		var (
+			identifier string
+			unit       *string
+			day        string
+			value      *float64
+		)
+		if err := rows.Scan(&identifier, &unit, &day, &value); err != nil {
+			return nil, err
+		}
+		metric, ok := byType[identifier]
+		if !ok {
+			metric = &DailyMetric{Identifier: identifier, Unit: unit}
+			byType[identifier] = metric
+			order = append(order, identifier)
+		}
+		metric.Days = append(metric.Days, DailyPoint{Date: day, Value: value})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	out := make([]DailyMetric, 0, len(order))
+	for _, identifier := range types {
+		if metric, ok := byType[identifier]; ok {
+			out = append(out, *metric)
+		}
+	}
+	return out, nil
+}
+
+func (st *Store) ActivitySummary(ctx context.Context, start, end time.Time) ([]ActivityDay, error) {
+	startDay, endDay, err := localDayRange(start, end, st.loc)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := st.pool.Query(ctx, `
+		SELECT date::text, move_kcal::float8, move_goal_kcal::float8,
+		       exercise_min::float8, exercise_goal_min::float8,
+		       stand_hours::float8, stand_goal_hours::float8, move_mode,
+		       move_time_min::float8, move_time_goal_min::float8
+		FROM activity_summaries
+		WHERE user_id = $1
+		  AND date >= $2::date AND date < $3::date
+		ORDER BY date`, st.userID, startDay, endDay)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]ActivityDay, 0)
+	for rows.Next() {
+		var day ActivityDay
+		if err := rows.Scan(
+			&day.Date,
+			&day.MoveKcal,
+			&day.MoveGoalKcal,
+			&day.ExerciseMin,
+			&day.ExerciseGoalMin,
+			&day.StandHours,
+			&day.StandGoalHours,
+			&day.MoveMode,
+			&day.MoveTimeMin,
+			&day.MoveTimeGoalMin,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, day)
+	}
+	return out, rows.Err()
+}
+
+func (st *Store) Workouts(ctx context.Context, filters WorkoutFilters) ([]WorkoutSummary, error) {
+	rows, err := st.pool.Query(ctx, `
+		SELECT w.uuid::text, w.activity_type, w.start_ts, w.end_ts,
+		       w.duration_s::float8, w.distance_m::float8, w.energy_kcal::float8,
+		       EXISTS (SELECT 1 FROM workout_route_points r WHERE r.workout_uuid = w.uuid AND r.user_id = w.user_id) AS has_route,
+		       COALESCE(metric_streams.available_metrics, ARRAY[]::text[]) AS available_metrics
+		FROM workouts w
+		LEFT JOIN LATERAL (
+		  SELECT array_agg(DISTINCT st.identifier ORDER BY st.identifier) AS available_metrics
+		  FROM workout_series_points wsp
+		  JOIN sample_types st ON st.type_id = wsp.type_id
+		  WHERE wsp.workout_uuid = w.uuid
+		    AND wsp.user_id = w.user_id
+		) metric_streams ON TRUE
+		WHERE w.user_id = $1
+		  AND ($2::timestamptz IS NULL OR w.start_ts >= $2)
+		  AND ($3::timestamptz IS NULL OR w.start_ts < $3)
+		  AND ($4::text = '' OR w.activity_type = $4)
+		ORDER BY w.start_ts DESC, w.uuid DESC
+		LIMIT $5 OFFSET $6`,
+		st.userID,
+		filters.Start,
+		filters.End,
+		filters.ActivityType,
+		filters.Limit,
+		filters.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]WorkoutSummary, 0)
+	for rows.Next() {
+		summary, err := scanWorkoutSummary(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, summary)
+	}
+	return out, rows.Err()
+}
+
+func (st *Store) Workout(ctx context.Context, uuid string) (*WorkoutDetail, error) {
+	row := st.pool.QueryRow(ctx, `
+		SELECT w.uuid::text, w.activity_type, w.start_ts, w.end_ts,
+		       w.duration_s::float8, w.distance_m::float8, w.energy_kcal::float8,
+		       EXISTS (SELECT 1 FROM workout_route_points r WHERE r.workout_uuid = w.uuid AND r.user_id = w.user_id) AS has_route,
+		       COALESCE(metric_streams.available_metrics, ARRAY[]::text[]) AS available_metrics,
+		       w.stats_detail, w.events, w.activities
+		FROM workouts w
+		LEFT JOIN LATERAL (
+		  SELECT array_agg(DISTINCT st.identifier ORDER BY st.identifier) AS available_metrics
+		  FROM workout_series_points wsp
+		  JOIN sample_types st ON st.type_id = wsp.type_id
+		  WHERE wsp.workout_uuid = w.uuid
+		    AND wsp.user_id = w.user_id
+		) metric_streams ON TRUE
+		WHERE w.user_id = $1
+		  AND w.uuid = $2`, st.userID, uuid)
+
+	var (
+		summary         WorkoutSummary
+		statsDetailJSON []byte
+		eventsJSON      []byte
+		activitiesJSON  []byte
+	)
+	if err := scanWorkoutSummaryRow(row, &summary, &statsDetailJSON, &eventsJSON, &activitiesJSON); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	detail := &WorkoutDetail{WorkoutSummary: summary}
+	if len(statsDetailJSON) > 0 {
+		if err := json.Unmarshal(statsDetailJSON, &detail.StatisticsDetail); err != nil {
+			return nil, fmt.Errorf("decode stats_detail: %w", err)
+		}
+	}
+	if len(eventsJSON) > 0 {
+		if err := json.Unmarshal(eventsJSON, &detail.Events); err != nil {
+			return nil, fmt.Errorf("decode events: %w", err)
+		}
+	}
+	if len(activitiesJSON) > 0 {
+		if err := json.Unmarshal(activitiesJSON, &detail.Activities); err != nil {
+			return nil, fmt.Errorf("decode activities: %w", err)
+		}
+	}
+	return detail, nil
+}
+
+func scanWorkoutSummary(scanner interface {
+	Scan(dest ...any) error
+}) (WorkoutSummary, error) {
+	var (
+		summary    WorkoutSummary
+		start, end time.Time
+	)
+	if err := scanner.Scan(
+		&summary.UUID,
+		&summary.ActivityType,
+		&start,
+		&end,
+		&summary.DurationS,
+		&summary.DistanceM,
+		&summary.EnergyKcal,
+		&summary.HasRoute,
+		&summary.AvailableMetrics,
+	); err != nil {
+		return WorkoutSummary{}, err
+	}
+	summary.Start = start.UTC().UnixMilli()
+	summary.End = end.UTC().UnixMilli()
+	return summary, nil
+}
+
+func scanWorkoutSummaryRow(
+	row pgx.Row,
+	summary *WorkoutSummary,
+	statsDetailJSON, eventsJSON, activitiesJSON *[]byte,
+) error {
+	var start, end time.Time
+	if err := row.Scan(
+		&summary.UUID,
+		&summary.ActivityType,
+		&start,
+		&end,
+		&summary.DurationS,
+		&summary.DistanceM,
+		&summary.EnergyKcal,
+		&summary.HasRoute,
+		&summary.AvailableMetrics,
+		statsDetailJSON,
+		eventsJSON,
+		activitiesJSON,
+	); err != nil {
+		return err
+	}
+	summary.Start = start.UTC().UnixMilli()
+	summary.End = end.UTC().UnixMilli()
+	return nil
+}
+
+// localDayRange returns the inclusive first and exclusive last calendar day
+// (YYYY-MM-DD, in loc) touched by the instant range [start, end).
+func localDayRange(start, end time.Time, loc *time.Location) (string, string, error) {
+	if !end.After(start) {
+		return "", "", fmt.Errorf("end must be after start")
+	}
+	if loc == nil {
+		loc = time.UTC
+	}
+
+	startLocal := start.In(loc)
+	lastTouchedLocal := end.Add(-time.Nanosecond).In(loc)
+	exclusiveEndLocal := time.Date(
+		lastTouchedLocal.Year(),
+		lastTouchedLocal.Month(),
+		lastTouchedLocal.Day(),
+		0, 0, 0, 0,
+		loc,
+	).AddDate(0, 0, 1)
+
+	return startLocal.Format("2006-01-02"), exclusiveEndLocal.Format("2006-01-02"), nil
+}

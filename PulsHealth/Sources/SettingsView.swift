@@ -1,0 +1,256 @@
+import SwiftUI
+import PulsHealthSync
+
+struct SettingsView: View {
+    @Environment(AppModel.self) private var model
+    @State private var serverURLText = ""
+    @State private var tokenText = ""
+    @State private var loaded = false
+    @State private var confirmResetAll = false
+    @State private var confirmBackfill = false
+    @State private var validatingAggregates = false
+    @State private var aggregateValidationResult: String?
+
+    var body: some View {
+        @Bindable var model = model
+        Form {
+            Section("User") {
+                NavigationLink {
+                    UserView()
+                } label: {
+                    LabeledContent(model.config.userName?.isEmpty == false
+                        ? model.config.userName! : "User") {
+                        Text(model.config.userEmail ?? "")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Text("All synced data is stored under this user. Change it before the initial backfill.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Server") {
+                TextField("https://your-host:8080", text: $serverURLText)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                SecureField("Bearer token", text: $tokenText)
+            }
+
+            Section("Sync window") {
+                DatePicker(
+                    "Export data from",
+                    selection: $model.config.startDate,
+                    in: ...Date(),
+                    displayedComponents: .date
+                )
+                Text("The initial backfill exports everything from this date forward. Changing it later only affects types whose anchors are reset.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Performance") {
+                Stepper(
+                    "Concurrent types: \(model.config.maxConcurrentTypes)",
+                    value: $model.config.maxConcurrentTypes, in: 1...8
+                )
+                Picker("Batch size", selection: $model.config.batchSize) {
+                    ForEach([250, 500, 1_000, 2_000, 5_000], id: \.self) {
+                        Text($0.formatted()).tag($0)
+                    }
+                }
+                Text("Defaults (4 types, 1,000/batch) are the field-tested sweet spot. Use the benchmark in Diagnostics to tune for your network.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                Button("Save & Apply") {
+                    Task { await apply() }
+                }
+                    .disabled(URL(string: serverURLText) == nil && !serverURLText.isEmpty)
+            }
+
+            Section("Backfill") {
+                Button("Start Initial Backfill") { confirmBackfill = true }
+                    .disabled(!model.configured || model.backfillActive)
+                if model.backfillActive {
+                    HStack {
+                        ProgressView().controlSize(.small)
+                        Text("Sync in progress…").foregroundStyle(.secondary)
+                        if let eta = model.backfillRemaining {
+                            Spacer()
+                            Text("ETA \(eta.shortDuration)")
+                        }
+                    }
+                }
+                Text("Keep the app in the foreground and the device plugged in for the fastest backfill. Progress is saved after every batch — it's safe to interrupt.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                NavigationLink("Run Throughput Benchmark") { BenchmarkView() }
+                Button {
+                    runAggregateValidation()
+                } label: {
+                    if validatingAggregates {
+                        HStack {
+                            Text("Validating Aggregate Functions…")
+                            Spacer()
+                            ProgressView()
+                        }
+                    } else {
+                        Text("Validate Aggregate Functions")
+                    }
+                }
+                .disabled(validatingAggregates)
+                if let result = aggregateValidationResult {
+                    Text(result)
+                        .font(.caption)
+                        .foregroundStyle(result.hasPrefix("All") ? Color.secondary : .red)
+                }
+                Button("Reset All Anchors", role: .destructive) { confirmResetAll = true }
+                    .disabled(model.anySyncActive)
+            } header: {
+                Text("Diagnostics")
+            } footer: {
+                Text("Validation runs every type × aggregate-function combo against HealthKit. A crash here means the allowed-function table needs fixing; listed failures (also in the Log) are softer errors like missing authorization.")
+            }
+
+            Section("About") {
+                LabeledContent("Engine", value: "PulsHealthSync")
+                LabeledContent(
+                    "Background delivery",
+                    value: "immediate (per-type caps apply)"
+                )
+                Text("Real-time expectations: data written directly on this iPhone arrives in seconds. Steps/energy are throttled by iOS to roughly hourly. Apple Watch data must first sync to the phone, which iOS schedules opportunistically — typically minutes, sometimes hours. Opening this app forces a catch-up.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Settings")
+        .onAppear {
+            guard !loaded else { return }
+            loaded = true
+            serverURLText = model.config.serverURL?.absoluteString ?? ""
+            tokenText = model.config.authToken ?? ""
+        }
+        .alert("Reset all anchors?", isPresented: $confirmResetAll) {
+            Button("Reset All", role: .destructive) {
+                Task { await model.resetAll() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Re-exports everything from the start date for all enabled types.")
+        }
+        .alert("Start initial backfill?", isPresented: $confirmBackfill) {
+            Button("Start Backfill") {
+                Task {
+                    await apply()
+                    await model.startBackfill()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Exports \(model.config.enabledTypes.count) data types from \(model.config.startDate.formatted(date: .abbreviated, time: .omitted)) onward.")
+        }
+    }
+
+    private func runAggregateValidation() {
+        validatingAggregates = true
+        aggregateValidationResult = nil
+        Task {
+            let failures = await model.engine.validateAggregateFunctionMatrix()
+            for failure in failures {
+                await model.engine.eventLog.log(.error, failure)
+            }
+            aggregateValidationResult = failures.isEmpty
+                ? "All type × function combinations passed."
+                : "\(failures.count) failure\(failures.count == 1 ? "" : "s") — details in the Log tab."
+            validatingAggregates = false
+        }
+    }
+
+    private func apply() async {
+        model.config.serverURL = URL(string: serverURLText.trimmingCharacters(in: .whitespacesAndNewlines))
+        var token = tokenText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let value = token.split(separator: "=", maxSplits: 1).last, token.hasPrefix("PULS_TOKEN=") {
+            token = String(value)
+        }
+        model.config.authToken = token.isEmpty ? nil : token
+        await model.applyConfiguration()
+    }
+}
+
+/// Edits the active user's identity (name/email/dob/sex). Every field starts
+/// unset — nothing about the person is assumed — and each may be left that way.
+/// The user_id is stable and shown read-only. Saving pushes the configuration
+/// to the engine so the next batch syncs as this user and updates the server's
+/// `users` row.
+struct UserView: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        @Bindable var model = model
+        Form {
+            Section("Identity") {
+                TextField("Name", text: Binding(
+                    get: { model.config.userName ?? "" },
+                    set: { model.config.userName = $0.isEmpty ? nil : $0 }
+                ))
+                .textContentType(.name)
+                TextField("Email", text: Binding(
+                    get: { model.config.userEmail ?? "" },
+                    set: { model.config.userEmail = $0.isEmpty ? nil : $0 }
+                ))
+                .textContentType(.emailAddress)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            }
+
+            Section("Characteristics") {
+                if let dob = model.config.userDateOfBirth {
+                    DatePicker("Date of birth", selection: Binding(
+                        get: { model.config.userDateOfBirth ?? dob },
+                        set: { model.config.userDateOfBirth = $0 }
+                    ), in: ...Date(), displayedComponents: .date)
+                    Button("Clear date of birth", role: .destructive) {
+                        model.config.userDateOfBirth = nil
+                    }
+                } else {
+                    LabeledContent("Date of birth") {
+                        Button("Set") {
+                            // Seed the picker with a plausible adult age; the
+                            // user adjusts from there.
+                            model.config.userDateOfBirth = Calendar.current.date(
+                                byAdding: .year, value: -30, to: Date()) ?? Date()
+                        }
+                    }
+                }
+                Picker("Biological sex", selection: $model.config.userBiologicalSex) {
+                    Text("Not set").tag(String?.none)
+                    Text("Female").tag(String?.some("female"))
+                    Text("Male").tag(String?.some("male"))
+                    Text("Other").tag(String?.some("other"))
+                }
+                Text("Optional. Date of birth and sex feed derived metrics like heart-rate zones; leave them unset and those metrics are simply not computed.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                LabeledContent("User ID", value: model.config.userID)
+                    .textSelection(.enabled)
+                    .font(.footnote)
+            } footer: {
+                Text("This ID tags every row stored for you on the server and is stable across reinstalls. If several people share one server, each should sync under a distinct ID — editing it here is planned.")
+            }
+
+            Section {
+                Button("Save & Apply") {
+                    Task { await model.applyConfiguration() }
+                    dismiss()
+                }
+            }
+        }
+        .navigationTitle("User")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}

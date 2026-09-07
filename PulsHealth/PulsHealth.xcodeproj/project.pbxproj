@@ -1,0 +1,540 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0B976143BDED19F9BB5EAF88 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BAA75796C2151D1F07F1D7F7 /* Assets.xcassets */; };
+		1D8053D9E4BCEB906412DF68 /* TypeConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 268BC8EC74CDACFB48A1BB97 /* TypeConfigView.swift */; };
+		45B266473F51FD120845BFE9 /* AggregateMatrixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79ECAC8C9814747A671EE3E0 /* AggregateMatrixTests.swift */; };
+		5F71D2F7D62975E12B673F9A /* TypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D90F1C484FD2BED789DF2C3 /* TypePickerView.swift */; };
+		7432754E6E95C5555B1FC190 /* BackgroundActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A8C7CF1D7F99BE0E5A884AD /* BackgroundActivityView.swift */; };
+		82EED3C7EFD10FB714EC8337 /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680CD6E2C783C2AD37EE3E80 /* LogView.swift */; };
+		8984FA9BE7498DB93F87C4E6 /* BenchmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F3247050F0B1269493631F /* BenchmarkView.swift */; };
+		A3E2E16381025D46F1B2018F /* PulsHealthApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D201971AA70059C54540EC58 /* PulsHealthApp.swift */; };
+		A90665ABC48D15F252F199A9 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1111670BCC9FE5EC24B2764 /* AppModel.swift */; };
+		B624D2D103671807A61EFAE2 /* PulsHealthSync in Frameworks */ = {isa = PBXBuildFile; productRef = 6A64BD3A5BA7A171D3FD3AA1 /* PulsHealthSync */; };
+		BA3F3DFCE6A0CAF60DB6759C /* PulsHealthSync in Frameworks */ = {isa = PBXBuildFile; productRef = 0966FB15F2EC61D305318684 /* PulsHealthSync */; };
+		CB8B427A52F11A08A8BDCCF5 /* TypeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C6D44DC52C84590F824482 /* TypeDetailView.swift */; };
+		D7600BFAFC5A7AB4E283BCC0 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2001AE89B5DA476C0D16B82 /* RootView.swift */; };
+		E78D74F0745C045A92543A4D /* ExceptionCatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 38F5A8F3FD4F34BF377C454F /* ExceptionCatcher.m */; };
+		E9ECB4AD16277DCAB5A6519A /* TypeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81AB34DFE52561BBDBC0E460 /* TypeStyle.swift */; };
+		F13EE7D01C1C695DF4204D6B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFA5F0064EC6B2ABAD74C9DB /* SettingsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		11E2D6A5F76D8A64EEBDDC8F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4DF4065F940DEB9964D9040F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6F5C98AFCC44B450533F1286;
+			remoteInfo = PulsHealth;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1893254E18853534A6172777 /* PulsHealth.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PulsHealth.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A8C7CF1D7F99BE0E5A884AD /* BackgroundActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundActivityView.swift; sourceTree = "<group>"; };
+		25C6D44DC52C84590F824482 /* TypeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeDetailView.swift; sourceTree = "<group>"; };
+		268BC8EC74CDACFB48A1BB97 /* TypeConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeConfigView.swift; sourceTree = "<group>"; };
+		2C270F9C442B133B95AEF321 /* ExceptionCatcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExceptionCatcher.h; sourceTree = "<group>"; };
+		38F3247050F0B1269493631F /* BenchmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkView.swift; sourceTree = "<group>"; };
+		38F5A8F3FD4F34BF377C454F /* ExceptionCatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ExceptionCatcher.m; sourceTree = "<group>"; };
+		607F7F31D859E136483B0A0E /* PulsHealthSync */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PulsHealthSync; path = ../PulsHealthSync; sourceTree = SOURCE_ROOT; };
+		65EFE7896F0EC8C8ADF08EDB /* PulsHealthHostedTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PulsHealthHostedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		680CD6E2C783C2AD37EE3E80 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
+		79ECAC8C9814747A671EE3E0 /* AggregateMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AggregateMatrixTests.swift; sourceTree = "<group>"; };
+		7D90F1C484FD2BED789DF2C3 /* TypePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePickerView.swift; sourceTree = "<group>"; };
+		81AB34DFE52561BBDBC0E460 /* TypeStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeStyle.swift; sourceTree = "<group>"; };
+		9CFEF4E6CCB7ED18620C8DC2 /* Local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig; sourceTree = "<group>"; };
+		BAA75796C2151D1F07F1D7F7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C1111670BCC9FE5EC24B2764 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		CFA5F0064EC6B2ABAD74C9DB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D2001AE89B5DA476C0D16B82 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		D201971AA70059C54540EC58 /* PulsHealthApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulsHealthApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		10D5C375AEDFC898CC579D35 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B624D2D103671807A61EFAE2 /* PulsHealthSync in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24389CA7EBE866885D737235 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BA3F3DFCE6A0CAF60DB6759C /* PulsHealthSync in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		17D36EAF017D9A5D930757B0 = {
+			isa = PBXGroup;
+			children = (
+				46FFC10F863E9C664C1F2877 /* Config */,
+				BC040B12BD794BFC9C7EA605 /* HostedTests */,
+				8895D43453B6CDBF91290573 /* Packages */,
+				C4037B913DA0DB1A8DE196C5 /* Sources */,
+				8ED14270D04AC4DDE28B5252 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		46FFC10F863E9C664C1F2877 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				9CFEF4E6CCB7ED18620C8DC2 /* Local.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		8895D43453B6CDBF91290573 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				607F7F31D859E136483B0A0E /* PulsHealthSync */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		8ED14270D04AC4DDE28B5252 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1893254E18853534A6172777 /* PulsHealth.app */,
+				65EFE7896F0EC8C8ADF08EDB /* PulsHealthHostedTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BC040B12BD794BFC9C7EA605 /* HostedTests */ = {
+			isa = PBXGroup;
+			children = (
+				79ECAC8C9814747A671EE3E0 /* AggregateMatrixTests.swift */,
+				2C270F9C442B133B95AEF321 /* ExceptionCatcher.h */,
+				38F5A8F3FD4F34BF377C454F /* ExceptionCatcher.m */,
+			);
+			path = HostedTests;
+			sourceTree = "<group>";
+		};
+		C4037B913DA0DB1A8DE196C5 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				C1111670BCC9FE5EC24B2764 /* AppModel.swift */,
+				BAA75796C2151D1F07F1D7F7 /* Assets.xcassets */,
+				1A8C7CF1D7F99BE0E5A884AD /* BackgroundActivityView.swift */,
+				38F3247050F0B1269493631F /* BenchmarkView.swift */,
+				680CD6E2C783C2AD37EE3E80 /* LogView.swift */,
+				D201971AA70059C54540EC58 /* PulsHealthApp.swift */,
+				D2001AE89B5DA476C0D16B82 /* RootView.swift */,
+				CFA5F0064EC6B2ABAD74C9DB /* SettingsView.swift */,
+				268BC8EC74CDACFB48A1BB97 /* TypeConfigView.swift */,
+				25C6D44DC52C84590F824482 /* TypeDetailView.swift */,
+				7D90F1C484FD2BED789DF2C3 /* TypePickerView.swift */,
+				81AB34DFE52561BBDBC0E460 /* TypeStyle.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6F5C98AFCC44B450533F1286 /* PulsHealth */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C43FFDE6C06258A79444205C /* Build configuration list for PBXNativeTarget "PulsHealth" */;
+			buildPhases = (
+				46B9A3617DA36C18B48A9039 /* Sources */,
+				0F6A4BB1B32020E228CA9FDF /* Resources */,
+				10D5C375AEDFC898CC579D35 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PulsHealth;
+			packageProductDependencies = (
+				6A64BD3A5BA7A171D3FD3AA1 /* PulsHealthSync */,
+			);
+			productName = PulsHealth;
+			productReference = 1893254E18853534A6172777 /* PulsHealth.app */;
+			productType = "com.apple.product-type.application";
+		};
+		794B394BD9B9F3539F95E908 /* PulsHealthHostedTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1E188E1BAD2F794EE28874A1 /* Build configuration list for PBXNativeTarget "PulsHealthHostedTests" */;
+			buildPhases = (
+				A8D9BFC976CA921D20B0929F /* Sources */,
+				24389CA7EBE866885D737235 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				817A6202D09BCECBC9D8803A /* PBXTargetDependency */,
+			);
+			name = PulsHealthHostedTests;
+			packageProductDependencies = (
+				0966FB15F2EC61D305318684 /* PulsHealthSync */,
+			);
+			productName = PulsHealthHostedTests;
+			productReference = 65EFE7896F0EC8C8ADF08EDB /* PulsHealthHostedTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4DF4065F940DEB9964D9040F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					6F5C98AFCC44B450533F1286 = {
+						DevelopmentTeam = KLBNA2WWFB;
+						ProvisioningStyle = Automatic;
+					};
+					794B394BD9B9F3539F95E908 = {
+						DevelopmentTeam = KLBNA2WWFB;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 0F4F4450227EC5443A004B87 /* Build configuration list for PBXProject "PulsHealth" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 17D36EAF017D9A5D930757B0;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				32B0F841F7DF237589B0E39A /* XCLocalSwiftPackageReference "../PulsHealthSync" */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6F5C98AFCC44B450533F1286 /* PulsHealth */,
+				794B394BD9B9F3539F95E908 /* PulsHealthHostedTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0F6A4BB1B32020E228CA9FDF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0B976143BDED19F9BB5EAF88 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		46B9A3617DA36C18B48A9039 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A90665ABC48D15F252F199A9 /* AppModel.swift in Sources */,
+				7432754E6E95C5555B1FC190 /* BackgroundActivityView.swift in Sources */,
+				8984FA9BE7498DB93F87C4E6 /* BenchmarkView.swift in Sources */,
+				82EED3C7EFD10FB714EC8337 /* LogView.swift in Sources */,
+				A3E2E16381025D46F1B2018F /* PulsHealthApp.swift in Sources */,
+				D7600BFAFC5A7AB4E283BCC0 /* RootView.swift in Sources */,
+				F13EE7D01C1C695DF4204D6B /* SettingsView.swift in Sources */,
+				1D8053D9E4BCEB906412DF68 /* TypeConfigView.swift in Sources */,
+				CB8B427A52F11A08A8BDCCF5 /* TypeDetailView.swift in Sources */,
+				5F71D2F7D62975E12B673F9A /* TypePickerView.swift in Sources */,
+				E9ECB4AD16277DCAB5A6519A /* TypeStyle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A8D9BFC976CA921D20B0929F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				45B266473F51FD120845BFE9 /* AggregateMatrixTests.swift in Sources */,
+				E78D74F0745C045A92543A4D /* ExceptionCatcher.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		817A6202D09BCECBC9D8803A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6F5C98AFCC44B450533F1286 /* PulsHealth */;
+			targetProxy = 11E2D6A5F76D8A64EEBDDC8F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		127450952DD0CD01B1B5AB0C /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9CFEF4E6CCB7ED18620C8DC2 /* Local.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.puls.PulsHealthHostedTests;
+				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = HostedTests/ExceptionCatcher.h;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PulsHealth.app/PulsHealth";
+			};
+			name = Release;
+		};
+		3543C0E9398D9F64BD538BB8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9CFEF4E6CCB7ED18620C8DC2 /* Local.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PulsHealth.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.puls.PulsHealth;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		611BFB6873CA45CAAF902112 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		7932470D623401AF45E04522 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9CFEF4E6CCB7ED18620C8DC2 /* Local.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.puls.PulsHealthHostedTests;
+				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = HostedTests/ExceptionCatcher.h;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PulsHealth.app/PulsHealth";
+			};
+			name = Debug;
+		};
+		7E649359D7A7BFA9FD9084ED /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9CFEF4E6CCB7ED18620C8DC2 /* Local.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PulsHealth.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.puls.PulsHealth;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		A765BB91EF831C1834E086FA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0F4F4450227EC5443A004B87 /* Build configuration list for PBXProject "PulsHealth" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				611BFB6873CA45CAAF902112 /* Debug */,
+				A765BB91EF831C1834E086FA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1E188E1BAD2F794EE28874A1 /* Build configuration list for PBXNativeTarget "PulsHealthHostedTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7932470D623401AF45E04522 /* Debug */,
+				127450952DD0CD01B1B5AB0C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C43FFDE6C06258A79444205C /* Build configuration list for PBXNativeTarget "PulsHealth" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3543C0E9398D9F64BD538BB8 /* Debug */,
+				7E649359D7A7BFA9FD9084ED /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		32B0F841F7DF237589B0E39A /* XCLocalSwiftPackageReference "../PulsHealthSync" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../PulsHealthSync;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0966FB15F2EC61D305318684 /* PulsHealthSync */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PulsHealthSync;
+		};
+		6A64BD3A5BA7A171D3FD3AA1 /* PulsHealthSync */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PulsHealthSync;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 4DF4065F940DEB9964D9040F /* Project object */;
+}

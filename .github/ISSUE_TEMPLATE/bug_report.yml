@@ -1,0 +1,95 @@
+name: Bug report
+description: Something in the app, the Swift package, the reference server, or the web viewer misbehaves.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Before filing, please read the **FAQ** in the root README
+        (https://github.com/PulsHealth/pulshealth#faq): data that arrives late — steps, active
+        energy, and distance up to an hour behind; anything recorded on an Apple Watch minutes
+        to hours behind; nothing syncing overnight while the phone is locked — is almost always
+        iOS behaviour rather than a bug in PulsHealth.
+
+        Do **not** paste your bearer token, server hostname, or health values you do not want
+        public. Redact them.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - iOS app (PulsHealth)
+        - Swift package (PulsHealthSync)
+        - Ingest server (server/ingest)
+        - Product API (server/api)
+        - Web viewer (web)
+        - Database schema or Grafana (server/db, server/grafana)
+        - Docker Compose stack
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you saw, and what you expected instead. Steps to reproduce if you have them.
+    validations:
+      required: true
+  - type: input
+    id: ios-version
+    attributes:
+      label: iOS version
+      description: Settings → General → About → iOS Version. Include the build number if you have it.
+      placeholder: "26.5 (23F77)"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: iPhone model
+      placeholder: "iPhone 16 Pro"
+    validations:
+      required: true
+  - type: dropdown
+    id: watch
+    attributes:
+      label: Apple Watch paired?
+      description: Watch data reaches the iPhone on Apple's schedule, not the app's; this changes what "late" means.
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: App or package version
+      description: The commit you built from (`git rev-parse --short HEAD`), or the version shown under Settings → About.
+      placeholder: "abc1234"
+  - type: input
+    id: server-version
+    attributes:
+      label: Server version
+      description: The commit the server stack was built from, or the image tag once images exist. Write "not applicable" for app-only bugs or "own receiver" if you run your own backend.
+      placeholder: "abc1234"
+  - type: textarea
+    id: background-activity
+    attributes:
+      label: What the Background Activity and Log screens show
+      description: |
+        In the app, Log → Background Activity shows every wake (trigger, duration, outcome such as
+        `completed`, `expired`, `interrupted`, or `skipped (locked)`) and the Log tab shows the event
+        stream; both have an export/share action. Paste the relevant lines here, redacted. For server
+        problems, add `docker compose logs ingest` (or `api`, `web`) output around the time of the bug.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I read the FAQ in the README and this is not one of the documented iOS behaviours.
+          required: true
+        - label: I searched existing issues.
+          required: true
+        - label: I removed tokens, hostnames, and any health values I do not want to be public.
+          required: true
