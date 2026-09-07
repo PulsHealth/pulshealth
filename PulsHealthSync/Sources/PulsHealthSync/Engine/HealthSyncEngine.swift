@@ -120,8 +120,13 @@ public actor HealthSyncEngine {
 
     // MARK: - Configuration
 
-    public func configure(_ config: SyncConfiguration) async {
-        await store.setConfiguration(config)
+    /// Apply a configuration. Check `serverIdentityChange(applying:)` first: a
+    /// configuration that points at a different server or user should be
+    /// applied only after the user has chosen to start fresh (`resetAll()`
+    /// beforehand) or keep progress, and then with `confirmServerIdentity`
+    /// so the store records the new identity as the one its progress belongs to.
+    public func configure(_ config: SyncConfiguration, confirmServerIdentity: Bool = false) async {
+        await store.setConfiguration(config, confirmServerIdentity: confirmServerIdentity)
         await store.pruneAggregateStates(keeping: Set(config.aggregates.map(\.id)))
         observerCoalesceWindow = max(0, config.observerCoalesceWindow)
         buildTransport(from: config)
@@ -310,6 +315,21 @@ public actor HealthSyncEngine {
         await store.resetAll()
         notifyChanged()
         return true
+    }
+
+    /// Whether applying `config` would point the stored progress at a different
+    /// server or user (see `ServerIdentity`). Non-nil means: ask the user
+    /// before `configure` — start fresh (`resetAll()` then `configure(_:
+    /// confirmServerIdentity: true)`) or keep progress (`configure` with the
+    /// confirmation alone).
+    public func serverIdentityChange(applying config: SyncConfiguration) async -> ServerIdentityChange? {
+        await store.serverIdentityChange(applying: config)
+    }
+
+    /// A mismatch between the persisted configuration and the recorded server
+    /// identity — left behind when a change was applied but never confirmed.
+    public func pendingServerIdentityChange() async -> ServerIdentityChange? {
+        await store.pendingServerIdentityChange()
     }
 
     public func snapshot() async -> [TypeSyncStatus] {
