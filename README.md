@@ -18,10 +18,10 @@ protocol and an MCP server for AI tools are being written.
 > - The app is **not on the App Store yet.** You build it from source with a
 >   paid Apple Developer team (the HealthKit background-delivery entitlement
 >   requires one).
-> - The wire protocol is **not yet versioned or published as a spec.** It is
->   documented in `server/README.md` and defined by the code; a versioned
->   "Puls Sync Protocol" with JSON Schema and conformance fixtures is planned
->   under `docs/protocol/`.
+> - The wire protocol, the **Puls Sync Protocol v1**, is specified in
+>   [`docs/protocol/`](docs/protocol/README.md) with JSON Schema and a
+>   fixture corpus, but it is young: expect clarifications, and report gaps
+>   through the "Backend implementer question" issue template.
 > - **Schema migrations are manual.** `server/db/init/` applies only to an
 >   empty database volume; later changes are applied by hand.
 > - **No backup service** ships with the stack. Your Postgres volume is the
@@ -38,7 +38,8 @@ protocol and an MCP server for AI tools are being written.
 | **`PulsHealthSync`** | [`PulsHealthSync/`](PulsHealthSync/README.md) | Swift package (iOS 17+, Swift 6 strict concurrency, zero dependencies): anchored-query sync engine, on-device aggregates, activity rings, background scheduling, HTTP transport, NDJSON encoding. Embeddable in other apps. |
 | **Reference server** | [`server/`](server/README.md) | Docker Compose stack: TimescaleDB, Go ingest API, Go product API (OpenAPI 3.1), Grafana with provisioned dashboards and alert rules. |
 | **Web viewer** | [`web/`](web/README.md) | Next.js viewer (activity rings, trends, workouts, catalog) reading Postgres directly. |
-| **Coming** | `docs/protocol/`, `server/mcp/` | The Puls Sync Protocol specification, JSON Schema, and conformance fixtures; a read-only MCP server over the product API for Claude, ChatGPT, Cursor, and similar tools. |
+| **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
+| **Coming** | `server/mcp/` | A read-only MCP server over the product API for Claude, ChatGPT, Cursor, and similar tools. |
 
 For the database data model, table guide, and query patterns (including how
 to avoid iPhone + Watch double counting), see
@@ -94,10 +95,10 @@ curl -s localhost:8080/healthz   # → {"db":true,"ok":true}
 
 Everything binds to loopback: ingest on `8080`, the product API on `8081`,
 Grafana on `3000`, the web viewer on `3001`, Postgres on `5432`. The phone
-must reach the ingest port over **HTTPS** — put a TLS-terminating reverse
-proxy in front of it, or a VPN/overlay network that provides HTTPS, and note
-its URL. (iOS App Transport Security blocks plain `http://` from the app
-today; a local-network exception is on the roadmap.) `server/README.md`
+must reach the ingest port over **HTTPS** unless the server is on the local
+network (plain `http://` to a LAN address works) — put a TLS-terminating
+reverse proxy in front of it, or a VPN/overlay network that provides HTTPS,
+and note its URL. `server/README.md`
 covers configuration, schema changes on a live database, the optional scoped
 database role for ingest, and Grafana.
 
@@ -197,20 +198,35 @@ advances the anchor; **4xx** is never retried (anchors stay put, so nothing
 is lost, but that type stalls until the server accepts it); **5xx**, **429**,
 and network errors are retried with exponential backoff (2, 4, 8, 16 s,
 jittered; one retry when running inside a background observer wake) under a
-60 s request timeout. Retried batches are no-ops server-side. The full
-description, limits, and a runnable `curl` example are in the API section of
-[`server/README.md`](server/README.md).
+60 s request timeout. Retried batches are no-ops server-side. The normative
+description is the [Puls Sync Protocol v1](docs/protocol/README.md); the
+reference server's limits and a runnable `curl` example are in the API
+section of [`server/README.md`](server/README.md).
 
 ### Bring your own backend
 
 The app posts to a URL; the reference stack is one receiver, not the only
 one. A receiver needs to accept the batch, deduplicate samples by UUID,
 upsert aggregate buckets and activity summaries by their identity, and return
-2xx. The optional read endpoints (`/v1/stats`, `/v1/digest`, `/v1/uuids`) back
-the app's server-count and reconciliation screens and can be left out. Until
-the versioned spec lands, `server/README.md` and `server/ingest/parse.go` are
-the reference; the "Backend implementer question" issue template is the place
-to ask about gaps — those answers become spec text.
+2xx. Everything it must do is in the **Puls Sync Protocol v1** under
+[`docs/protocol/`](docs/protocol/README.md): the transport and retry
+contract, every line type with a JSON Schema, the canonical units, the
+idempotency rules, a minimal-receiver checklist, and a fixture corpus with
+the counts a reference server returns.
+
+- [`examples/receivers/python-sqlite/`](examples/receivers/python-sqlite/README.md)
+  is a complete receiver in one standard-library Python file writing to
+  SQLite — copy it, or read it alongside the spec. Its `smoke_test.py` posts
+  the whole corpus to **any** receiver URL and checks the responses.
+- [`tools/protocol-check/`](tools/protocol-check/) validates captured
+  batches against the schemas and the framing rules.
+- The optional read endpoints (`/v1/capabilities`, `/v1/stats`, `/v1/digest`,
+  `/v1/uuids`) back the app's connection test, server-count, and
+  reconciliation screens and can be left out; the app probes a receiver
+  without `/v1/capabilities` with an empty batch.
+
+Gaps in the spec go in the "Backend implementer question" issue template;
+those answers become spec text.
 
 ## Performance expectations
 
