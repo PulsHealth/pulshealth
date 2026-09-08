@@ -21,7 +21,8 @@ import (
 // Every row is written to the socket as it is produced — the response has no
 // Content-Length, so net/http frames it with Transfer-Encoding: chunked and
 // the file starts arriving before the query has finished. Nothing accumulates
-// in a buffer beyond one flush window.
+// in a buffer beyond one flush window: the header row is pushed on its own,
+// and after that every exportFlushRows rows.
 //
 // The two unbounded datasets (raw samples, workouts) read through the store's
 // streaming variants (StreamSamples, StreamWorkouts) and hold one row at a
@@ -87,6 +88,12 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	rows := 0
 	err = encoder.Begin(dataset.Columns)
 	if err == nil {
+		// Push the header row (CSV) and the status line on their own, before
+		// the first row is read: the download then starts — and a proxy
+		// commits to the 200 — even when the scan is slow to produce a row.
+		err = flush(encoder, control)
+	}
+	if err == nil {
 		err = dataset.Rows(r.Context(), func(values []any) error {
 			if err := encoder.Row(values); err != nil {
 				return err
@@ -104,7 +111,9 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// The 200 and some rows are already on the wire, so the only honest
 		// signal left is an incomplete transfer: abort the response rather
-		// than close the chunked body cleanly on a short file.
+		// than close the chunked body cleanly on a short file. net/http
+		// recognises ErrAbortHandler, drops the connection without a stack
+		// trace, and the client's read fails.
 		s.log.Error("export failed mid-stream", "dataset", dataset.Name, "rows", rows, "err", err.Error())
 		panic(http.ErrAbortHandler)
 	}
@@ -473,36 +482,42 @@ func csvCell(value any) string {
 }
 
 // jsonlEncoder writes one JSON object per line, keys in column order, so a
-// line reads like the object the JSON endpoint would have returned.
+// line reads like the object the JSON endpoint would have returned. JSONL has
+// no header line, so Begin only prepares the keys.
 type jsonlEncoder struct {
-	w       *bufio.Writer
-	columns []string
-	line    []byte
+	w *bufio.Writer
+	// The column names already quoted as JSON strings, so a million-row
+	// export encodes each key once rather than once per row.
+	keys [][]byte
+	line []byte
 }
 
 func (e *jsonlEncoder) Begin(columns []string) error {
-	e.columns = columns
+	e.keys = make([][]byte, len(columns))
+	for i, column := range columns {
+		key, err := json.Marshal(column)
+		if err != nil {
+			return err
+		}
+		e.keys[i] = key
+	}
 	return nil
 }
 
 func (e *jsonlEncoder) Row(values []any) error {
-	if len(values) != len(e.columns) {
-		return fmt.Errorf("export row has %d values for %d columns", len(values), len(e.columns))
+	if len(values) != len(e.keys) {
+		return fmt.Errorf("export row has %d values for %d columns", len(values), len(e.keys))
 	}
 	e.line = append(e.line[:0], '{')
 	for i, value := range values {
 		if i > 0 {
 			e.line = append(e.line, ',')
 		}
-		key, err := json.Marshal(e.columns[i])
-		if err != nil {
-			return err
-		}
 		encoded, err := json.Marshal(jsonValue(value))
 		if err != nil {
 			return err
 		}
-		e.line = append(e.line, key...)
+		e.line = append(e.line, e.keys[i]...)
 		e.line = append(e.line, ':')
 		e.line = append(e.line, encoded...)
 	}

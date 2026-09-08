@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -349,32 +350,43 @@ func TestExportRequiresTheToken(t *testing.T) {
 	}
 }
 
-// The response is chunked and the rows leave the server before the scan has
-// finished — that is the whole point of the endpoint — and a failure once
-// the body is on the wire aborts the transfer rather than closing a short
-// file cleanly.
+// The response is chunked and it really streams — that is the whole point of
+// the endpoint. The scan is held at two points, so each assertion can only
+// pass if the bytes left the server while the handler was still inside it:
+// the header row before a single data row exists, then a flush window of rows
+// before the scan has finished. Finally, a failure once the body is on the
+// wire aborts the transfer rather than closing a short file cleanly.
 func TestExportStreamsChunkedAndAbortsOnAMidStreamFailure(t *testing.T) {
 	t.Parallel()
 
-	// A store whose scan emits one row, blocks until the test has read it,
-	// then fails.
-	released := make(chan struct{})
+	var (
+		headerRead = make(chan struct{}) // closed once the test holds the header row
+		rowsRead   = make(chan struct{}) // closed once it holds the first flush window
+	)
 	failing := &streamingStore{
 		fakeStore: fakeStore{},
 		workoutRows: func(fn func(WorkoutSummary) error) error {
-			if err := fn(WorkoutSummary{
-				UUID: "55555555-5555-4555-8555-555555555555", ActivityType: "HKWorkoutActivityTypeWalking",
-				Start: exportStartMS, End: exportEndMS, AvailableMetrics: []string{},
-			}); err != nil {
-				return err
+			// Not one row is produced until the test has read the header, so
+			// a header on the wire can only have come from the flush that
+			// follows it.
+			<-headerRead
+			for i := 0; i < exportFlushRows; i++ {
+				if err := fn(exportTestWorkout(i)); err != nil {
+					return err
+				}
 			}
-			<-released
+			<-rowsRead
 			return errors.New("the database went away")
 		},
 	}
 	srv := exportServer(t, failing)
 	server := httptest.NewServer(srv.routes())
 	defer server.Close()
+	// The blocked scan must not outlive the test if an assertion fails early.
+	defer func() {
+		safeClose(headerRead)
+		safeClose(rowsRead)
+	}()
 
 	req, err := http.NewRequest(http.MethodGet, server.URL+"/v1/export?format=csv&dataset=workouts&"+exportRange, nil)
 	if err != nil {
@@ -394,27 +406,53 @@ func TestExportStreamsChunkedAndAbortsOnAMidStreamFailure(t *testing.T) {
 		t.Errorf("TransferEncoding = %v, want chunked", resp.TransferEncoding)
 	}
 
-	// The header row and the first data row are readable while the handler
-	// is still inside the scan.
+	// The header row arrives before the scan has produced anything.
 	reader := csv.NewReader(resp.Body)
 	header, err := reader.Read()
 	if err != nil {
-		t.Fatalf("reading the header row: %v", err)
+		t.Fatalf("reading the header row before the first data row exists: %v", err)
 	}
 	if header[0] != "uuid" {
 		t.Errorf("header = %v", header)
 	}
-	row, err := reader.Read()
-	if err != nil {
-		t.Fatalf("reading the first row while the scan is still running: %v", err)
-	}
-	if row[0] != "55555555-5555-4555-8555-555555555555" {
-		t.Errorf("row = %v", row)
-	}
+	close(headerRead)
 
-	close(released)
+	// One flush window of rows arrives while the handler is still inside the
+	// scan, in order.
+	for i := 0; i < exportFlushRows; i++ {
+		row, err := reader.Read()
+		if err != nil {
+			t.Fatalf("reading row %d while the scan is still running: %v", i, err)
+		}
+		if want := exportTestWorkout(i).UUID; row[0] != want {
+			t.Fatalf("row %d = %v, want uuid %s", i, row, want)
+		}
+	}
+	close(rowsRead)
+
 	if _, err := io.ReadAll(resp.Body); err == nil {
 		t.Error("the rest of the body read cleanly; a mid-stream failure must break the transfer")
+	}
+}
+
+// exportTestWorkout is the n-th row of the streaming fixture, with a uuid
+// that names its position.
+func exportTestWorkout(n int) WorkoutSummary {
+	return WorkoutSummary{
+		UUID:         fmt.Sprintf("55555555-5555-4555-8555-%012d", n),
+		ActivityType: "HKWorkoutActivityTypeWalking",
+		Start:        exportStartMS, End: exportEndMS,
+		AvailableMetrics: []string{},
+	}
+}
+
+// safeClose closes ch unless it is closed already, so a deferred release
+// cannot panic after the test closed the channel itself.
+func safeClose(ch chan struct{}) {
+	select {
+	case <-ch:
+	default:
+		close(ch)
 	}
 }
 
