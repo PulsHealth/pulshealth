@@ -3,15 +3,16 @@
 # in the checkout:
 #
 #   server/backup/restore.sh <dump file>                   # a path on this machine
-#   server/backup/restore.sh puls-20260908T031500Z.dump    # a name in the backups volume
+#   server/backup/restore.sh puls-20260908T031500Z.dump    # a name in the backup store
 #   make restore FILE=<either of the above>
 #
-#   --yes           skip the confirmation prompt (for scripted drills)
-#   --keep-running  leave the app services stopped afterwards
-#   --build         bring the stack back up from this checkout rather than the
-#                   published images (server/compose.build.yml) — the same
-#                   choice `scripts/bootstrap.sh --build` makes, and the same
-#                   PULS_BOOTSTRAP_BUILD=1 environment variable turns it on
+#   --yes        skip the confirmation prompt (for scripted drills)
+#   --no-start   leave the app services stopped when the restore finishes,
+#                instead of bringing the stack back up
+#   --build      bring the stack back up from this checkout rather than the
+#                published images (server/compose.build.yml) — the same
+#                choice `scripts/bootstrap.sh --build` makes, and the same
+#                PULS_BOOTSTRAP_BUILD=1 environment variable turns it on
 #
 # THIS DESTROYS THE CURRENT CONTENTS OF THE DATABASE. Everything in the `public`
 # schema is dropped and replaced by the dump. There is no undo and no second
@@ -55,7 +56,7 @@ server_dir=$root/server
 env_file=$server_dir/.env
 
 opt_yes=0
-opt_keep_running=0
+opt_no_start=0
 # Same environment switch as scripts/bootstrap.sh, so an install that runs from
 # source restores without remembering a second flag.
 case ${PULS_BOOTSTRAP_BUILD:-} in
@@ -77,14 +78,17 @@ step() {
   printf '\n==> %s\n' "$*"
 }
 
+# The synopsis at the top of this file — everything above the "What it does"
+# section, un-commented. Derived from the text rather than a hard-coded line
+# range, so editing the header cannot silently start printing the wrong thing.
 usage() {
-  sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
+  awk 'NR > 1 { if (!/^#/ || /^# What it does/) exit; sub(/^# ?/, ""); print }' "$0"
 }
 
 while (($# > 0)); do
   case $1 in
     --yes|-y) opt_yes=1; shift ;;
-    --keep-running) opt_keep_running=1; shift ;;
+    --no-start) opt_no_start=1; shift ;;
     --build) opt_build=1; shift ;;
     -h|--help) usage; exit 0 ;;
     -*) usage >&2; die "unknown option: $1" ;;
@@ -131,10 +135,10 @@ db_psql() {
 
 # --- where the dump comes from ------------------------------------------------
 #
-# Either a file on this machine, or the name of one in the `backups` volume, in
-# which case a throwaway container streams it out. Either way it arrives on
-# dump_source's stdout, so the restore is one pipeline and nothing is staged in
-# a temporary file.
+# Either a file on this machine, or the name of one in the backup store (the
+# `backups` volume, or PULS_BACKUP_DIR), in which case a throwaway container
+# streams it out. Either way it arrives on dump_source's stdout, so the restore
+# is one pipeline and nothing is staged in a temporary file.
 
 if [[ -f $dump_arg ]]; then
   source_kind=host
@@ -143,7 +147,7 @@ elif [[ $dump_arg != */* ]]; then
   source_kind=volume
   dump_name=$dump_arg
 else
-  die "$dump_arg: no such file. For a dump inside the backups volume give just its name (\`make backup-list\` shows them)."
+  die "$dump_arg: no such file. For a dump inside the backup store give just its name (\`make backup-list\` shows them)."
 fi
 
 dump_source() {
@@ -168,11 +172,11 @@ compose exec -T db pg_isready -U postgres -d postgres >/dev/null 2>&1 \
   || die "the database did not become ready; look at: docker compose logs db"
 
 step "Checking the dump"
-[[ $source_kind != volume ]] || note "Reading $dump_name from the backups volume."
+[[ $source_kind != volume ]] || note "Reading $dump_name from the backup store."
 # A truncated file, a plain-SQL dump or the wrong file entirely fails here,
 # while the current database is still intact.
 if ! dump_source | compose exec -T db pg_restore --list >/dev/null 2>&1; then
-  die "$dump_name is not a readable pg_dump custom-format archive"
+  die "$dump_name could not be read as a pg_dump custom-format archive. If you gave a name from the backup store, the line above says whether it is there at all (\`make backup-list\`)."
 fi
 note "$dump_name is a readable custom-format archive."
 
@@ -216,7 +220,7 @@ step "Restoring $dump_name"
 db_psql -c "SELECT timescaledb_pre_restore()" >/dev/null
 restore_status=0
 dump_source | compose exec -T -e PGPASSWORD="$pgpass" db \
-  pg_restore --no-owner --no-privileges --exit-on-error --dbname postgres || restore_status=$?
+  pg_restore --no-owner --no-privileges --exit-on-error -U postgres --dbname postgres || restore_status=$?
 # post_restore must run whatever happened, or the database is left in restoring
 # mode with its background workers off.
 db_psql -c "SELECT timescaledb_post_restore()" >/dev/null
@@ -226,8 +230,8 @@ db_psql -c "SELECT timescaledb_post_restore()" >/dev/null
 step "Refreshing planner statistics"
 db_psql -c "ANALYZE" >/dev/null
 
-if [[ $opt_keep_running == 1 ]]; then
-  note "App services left stopped (--keep-running). Bring them back with: docker compose up -d"
+if [[ $opt_no_start == 1 ]]; then
+  note "App services left stopped (--no-start). Bring them back with: docker compose up -d"
   exit 0
 fi
 

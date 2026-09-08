@@ -5,7 +5,7 @@
 # and `migrate`, so pg_dump always matches the server version — and is started
 # only when its profile is enabled:
 #
-#   docker compose --profile backup up -d          # scheduled dumps
+#   docker compose --profile backup up -d backup   # scheduled dumps
 #   docker compose run --rm backup once            # one dump now (`make backup`)
 #   docker compose run --rm backup list            # what is in the store
 #   docker compose run --rm backup cat <name>      # copy one out on stdout
@@ -46,9 +46,25 @@ log() {
   printf '%s backup: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
 }
 
+# The header comment of this file, un-commented: `backup.sh help`. Derived from
+# the text rather than a hard-coded line range, so editing the header cannot
+# silently start printing code.
+usage() {
+  awk 'NR > 1 { if (!/^#/) exit; sub(/^# ?/, ""); print }' "$0"
+}
+
+# A misconfiguration: nothing this container does will work, so stop.
 die() {
-  printf '%s backup: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2
+  warn "$*"
   exit 1
+}
+
+# A failure of this run only. In `once` mode the caller turns it into a
+# non-zero exit; in the scheduled loop the container stays up and tries again
+# at the next interval, because a database that is briefly unreachable (a
+# restart, a slow start-up) must not leave the schedule permanently dead.
+warn() {
+  printf '%s backup: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2
 }
 
 # "24h" / "90m" / "3600s" / "3600" -> seconds.
@@ -70,15 +86,15 @@ parse_interval() {
 
 check_dir() {
   mkdir -p "$backup_dir" 2>/dev/null || true
-  [[ -d $backup_dir ]] || die "$backup_dir does not exist and could not be created"
-  [[ -w $backup_dir ]] || die "$backup_dir is not writable by uid $(id -u). If it is a host directory (PULS_BACKUP_DIR), make it writable by that uid."
+  [[ -d $backup_dir ]] || { warn "$backup_dir does not exist and could not be created"; return 1; }
+  [[ -w $backup_dir ]] || { warn "$backup_dir is not writable by uid $(id -u). If it is a host directory (PULS_BACKUP_DIR), make it writable by that uid."; return 1; }
 }
 
 # One dump. Written to .part and renamed only after pg_restore has confirmed it
 # can read the archive, so a truncated file is never mistaken for a backup and
 # never survives to be pruned in favour of something newer.
 take_dump() {
-  check_dir
+  check_dir || return 1
   local stamp file part started elapsed size
   stamp=$(date -u +%Y%m%dT%H%M%SZ)
   file="$backup_dir/${prefix}${stamp}.dump"
@@ -91,11 +107,13 @@ take_dump() {
   # a dump cannot grow information back.
   if ! pg_dump --format=custom --file="$part"; then
     rm -f "$part"
-    die "pg_dump failed"
+    warn "pg_dump failed; no dump was written"
+    return 1
   fi
   if ! pg_restore --list "$part" >/dev/null 2>&1; then
     rm -f "$part"
-    die "the dump just written is not a readable archive; discarded"
+    warn "the dump just written is not a readable archive; discarded"
+    return 1
   fi
   chmod 600 "$part"
   mv "$part" "$file"
@@ -164,8 +182,15 @@ run_loop() {
 
   log "scheduled dumps every $interval_spec into $backup_dir, keeping $keep_days days"
   while :; do
-    take_dump
-    prune
+    # A failed dump is logged and retried at the next interval rather than
+    # killing the container: `restart: unless-stopped` would otherwise turn a
+    # database that is momentarily down into a restart loop, and pruning is
+    # skipped so a run that produced nothing cannot age anything out.
+    if take_dump; then
+      prune
+    else
+      warn "dump failed; retrying at the next interval"
+    fi
     log "next dump in $interval_spec"
     sleep "$interval" &
     sleep_pid=$!
@@ -175,12 +200,10 @@ run_loop() {
 
 case ${1:-loop} in
   loop) run_loop ;;
-  once) take_dump; prune ;;
+  once) take_dump || exit 1; prune ;;
   list) list_dumps ;;
   prune) prune ;;
   cat) shift; cat_dump "$@" ;;
-  -h|--help|help)
-    sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'
-    ;;
+  -h|--help|help) usage ;;
   *) die "unknown command '$1' (loop | once | list | prune | cat <name>)" ;;
 esac
