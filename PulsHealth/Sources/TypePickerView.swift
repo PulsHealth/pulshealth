@@ -1,6 +1,28 @@
 import SwiftUI
 import PulsHealthSync
 
+/// Named starting selections. `common` is what the Data Types menu's "Enable
+/// Common Set" applies and what first-run onboarding preselects, so the two
+/// cannot drift apart.
+enum TypePresets {
+    static let common: Set<String> = [
+        "HKQuantityTypeIdentifierStepCount",
+        "HKQuantityTypeIdentifierHeartRate",
+        "HKQuantityTypeIdentifierRestingHeartRate",
+        "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+        "HKQuantityTypeIdentifierActiveEnergyBurned",
+        "HKQuantityTypeIdentifierBasalEnergyBurned",
+        "HKQuantityTypeIdentifierDistanceWalkingRunning",
+        "HKQuantityTypeIdentifierAppleExerciseTime",
+        "HKQuantityTypeIdentifierRespiratoryRate",
+        "HKQuantityTypeIdentifierOxygenSaturation",
+        "HKQuantityTypeIdentifierVO2Max",
+        "HKQuantityTypeIdentifierBodyMass",
+        "HKCategoryTypeIdentifierSleepAnalysis",
+        HealthTypeCatalog.workoutIdentifier,
+    ]
+}
+
 /// Data Types tab, structured like Apple Health's Browse screen: a category
 /// list with colored icons that drills into per-category toggle pages, plus
 /// search across every type.
@@ -102,22 +124,7 @@ struct TypePickerView: View {
     }
 
     private func enableCommon() {
-        model.config.enabledTypes = [
-            "HKQuantityTypeIdentifierStepCount",
-            "HKQuantityTypeIdentifierHeartRate",
-            "HKQuantityTypeIdentifierRestingHeartRate",
-            "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
-            "HKQuantityTypeIdentifierActiveEnergyBurned",
-            "HKQuantityTypeIdentifierBasalEnergyBurned",
-            "HKQuantityTypeIdentifierDistanceWalkingRunning",
-            "HKQuantityTypeIdentifierAppleExerciseTime",
-            "HKQuantityTypeIdentifierRespiratoryRate",
-            "HKQuantityTypeIdentifierOxygenSaturation",
-            "HKQuantityTypeIdentifierVO2Max",
-            "HKQuantityTypeIdentifierBodyMass",
-            "HKCategoryTypeIdentifierSleepAnalysis",
-            HealthTypeCatalog.workoutIdentifier,
-        ]
+        model.config.enabledTypes = TypePresets.common
     }
 
     private func enableAll() {

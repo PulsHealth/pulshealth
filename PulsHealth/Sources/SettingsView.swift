@@ -14,6 +14,7 @@ struct SettingsView: View {
     /// Outcome of the last Test Connection for the values currently entered;
     /// cleared whenever either field changes.
     @State private var connectionTest: ConnectionTestResult?
+    @State private var showScanner = false
 
     /// Validation of the entered URL; nil while the field is empty (an empty
     /// URL is allowed — it un-configures the server).
@@ -77,10 +78,15 @@ struct SettingsView: View {
                 if let result = connectionTest {
                     ConnectionTestResultRow(result: result)
                 }
+                Button {
+                    showScanner = true
+                } label: {
+                    Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
+                }
             } header: {
                 Text("Server")
             } footer: {
-                Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them.")
+                Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them. Scanning fills all three values from the QR code the server prints (`make pairing`); Save & Apply still has to be tapped.")
             }
 
             Section("Sync window") {
@@ -153,6 +159,7 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(result.hasPrefix("All") ? Color.secondary : .red)
                 }
+                Button("Show Onboarding Again") { model.restartOnboarding() }
                 Button("Reset All Anchors", role: .destructive) { confirmResetAll = true }
                     .disabled(model.anySyncActive)
             } header: {
@@ -180,6 +187,16 @@ struct SettingsView: View {
         }
         .onChange(of: serverURLText) { connectionTest = nil }
         .onChange(of: tokenText) { connectionTest = nil }
+        .sheet(isPresented: $showScanner) {
+            // A scanned code fills the fields (and the draft's user ID); it
+            // never applies anything on its own — Save & Apply still runs the
+            // server/user-change prompt if the target moved.
+            PairingScannerView { payload in
+                serverURLText = payload.serverURL.absoluteString
+                tokenText = payload.token
+                model.config.userID = payload.userID
+            }
+        }
         .alert("Reset all anchors?", isPresented: $confirmResetAll) {
             Button("Reset All", role: .destructive) {
                 Task { await model.resetAll() }
@@ -256,7 +273,8 @@ struct SettingsView: View {
 
 /// Icon + one-liner for a `ConnectionTestResult`, plus the advertised feature
 /// list on success so it is visible why (say) reconciliation is offered or not.
-private struct ConnectionTestResultRow: View {
+/// Shared with the onboarding flow's server step.
+struct ConnectionTestResultRow: View {
     let result: ConnectionTestResult
 
     var body: some View {

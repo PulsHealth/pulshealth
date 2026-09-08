@@ -41,6 +41,10 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSHealthShareUsageDescription: PulsHealth reads your health data to sync it to your personal self-hosted database.
         NSHealthUpdateUsageDescription: PulsHealth does not write health data.
+        # Onboarding (and Settings → Server) can read the pairing QR code the
+        # server prints instead of making the user type a URL, a token and a
+        # UUID. Nothing else uses the camera and no frame is ever stored.
+        NSCameraUsageDescription: Scan the pairing code shown by your PulsHealth server.
         # The server may live on the LAN (a NAS, a Raspberry Pi) — reachable over
         # plain http only with this ATS exception, which is scoped to local
         # hosts (unqualified names, *.local, private IP ranges) and leaves

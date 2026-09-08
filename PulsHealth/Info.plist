@@ -32,6 +32,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Scan the pairing code shown by your PulsHealth server.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>PulsHealth reads your health data to sync it to your personal self-hosted database.</string>
 	<key>NSHealthUpdateUsageDescription</key>
