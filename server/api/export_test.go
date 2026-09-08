@@ -518,6 +518,12 @@ func TestExportRefusesMoreThanTheConcurrencyLimit(t *testing.T) {
 		t.Errorf("error = %q", body["error"])
 	}
 
+	// A request that cannot stream never takes a slot, so a burst of
+	// malformed ones cannot 503 the real ones.
+	if bad := getExport(t, srv, "format=parquet&dataset=workouts&"+exportRange); bad.Code != http.StatusBadRequest {
+		t.Errorf("a bad request while every slot is busy = %d, want 400", bad.Code)
+	}
+
 	// A slot freed by a finished export is reusable.
 	releaseAll()
 	for i := 0; i < maxConcurrentExports; i++ {

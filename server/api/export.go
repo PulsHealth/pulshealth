@@ -79,17 +79,6 @@ type exportDataset struct {
 }
 
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
-	// Taken before anything touches the database, and held until the last
-	// byte is written.
-	if !s.acquireExport() {
-		w.Header().Set("Retry-After", "60")
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": fmt.Sprintf("at most %d exports may run at once; retry shortly", maxConcurrentExports),
-		})
-		return
-	}
-	defer s.releaseExport()
-
 	format, err := exportFormatFor(r.URL.Query().Get("format"))
 	if err != nil {
 		s.writeStoreError(w, err, "export")
@@ -100,6 +89,20 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		s.writeStoreError(w, err, "export")
 		return
 	}
+
+	// The slot is taken here — after everything that can 400, before the
+	// first byte — and held to the last one. A rejected request must not
+	// consume one, or a burst of malformed requests would 503 the real ones;
+	// what the limit protects is the connection a download holds while the
+	// client reads, and only a request that gets this far ever holds one.
+	if !s.acquireExport() {
+		w.Header().Set("Retry-After", "60")
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": fmt.Sprintf("at most %d exports may run at once; retry shortly", maxConcurrentExports),
+		})
+		return
+	}
+	defer s.releaseExport()
 
 	w.Header().Set("Content-Type", format.contentType)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q",
