@@ -30,8 +30,11 @@ it is where the sync protocol is written.
 >   `ghcr.io/pulshealth/{ingest,api,mcp,web}`, but nothing is there until the
 >   first `v*` release. Until then, build them from the checkout:
 >   `scripts/bootstrap.sh --build` (then `make dev-up`).
-> - **No backup service** ships with the stack. Your Postgres volume is the
->   only copy of your data unless you add one.
+> - **Backups are opt-in and off by default.** The stack ships a `backup`
+>   service, but it only runs when you enable its profile
+>   (`docker compose --profile backup up -d backup`, or `make backup` for one
+>   dump). Until then your Postgres volume is the only copy of your data.
+>   Nothing verifies a backup except the restore drill in `server/README.md`.
 >
 > Decisions, requirements, and phases are in
 > [`docs/open-source-plan.md`](docs/open-source-plan.md).
@@ -382,7 +385,10 @@ No. The app requests read access only, and its usage strings say so.
   `PULS_TOKEN`; whoever holds it can upload and delete data for any user ID.
   Per-device tokens bound to a user are planned. The token is currently kept
   in the app's sync-state file rather than the Keychain; moving it is a
-  pre-1.0 requirement.
+  pre-1.0 requirement. Guessing it is slow, at least: ingest rate-limits
+  **failed** authentications per client IP (10 per minute, `429` with
+  `Retry-After` after that) and never throttles a request that presents the
+  right token — `server/README.md`, "Rate limiting".
 - **Put the ingest endpoint behind TLS.** Every service binds to loopback by
   default; expose only the ingest port, and only through a TLS-terminating
   proxy or a VPN. The one exception is `scripts/bootstrap.sh --lan`
@@ -394,15 +400,22 @@ No. The app requests read access only, and its usage strings say so.
   serves.** Its Compose service binds to loopback like the API; publish it
   only over HTTPS, and keep the client config files that hold the token out
   of version control. `docs/ai.md` has the details.
-- **The web viewer is unauthenticated.** It is a read-only page over your
-  health database with no login. Its bind address is the access control:
-  keep `WEB_BIND_ADDR` on loopback or a private network, never `0.0.0.0`.
+- **The web viewer's login is optional.** Set `WEB_AUTH_PASSWORD` and every
+  page asks for it over HTTP Basic (any username; `/api/healthz` stays open
+  for health checks); `scripts/bootstrap.sh` generates one on a fresh install
+  and prints it. Leave it empty and the viewer is a read-only page over your
+  health database with no login at all. Either way the bind address still
+  matters — Basic auth sends the password on every request — so keep
+  `WEB_BIND_ADDR` on loopback or a private network, never `0.0.0.0`.
 - **The database holds identifiable data** (name, email, date of birth, sex
   next to the samples). Ingest connects as the scoped DML-only `ingest`
   role, never as the superuser (`server/README.md`, "The scoped `ingest`
   role").
-- **There are no backups** unless you add them. Take a `pg_dump` before any
-  schema change.
+- **Backups exist but are off** until you enable the `backup` profile
+  (`server/README.md`, "Backup & restore"). Turn them on, point
+  `PULS_BACKUP_DIR` at a disk that is not this one, take a `make backup`
+  before any schema change, and run the restore drill once — nothing else
+  verifies that your dumps are restorable.
 
 Found a vulnerability? Report it privately — see [`SECURITY.md`](SECURITY.md).
 

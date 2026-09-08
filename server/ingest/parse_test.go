@@ -693,7 +693,7 @@ func (f *fakeStore) RouteMetrics(_ context.Context, userID, uuid string) ([]Rout
 func (f *fakeStore) Ping(context.Context) error { return nil }
 
 func newTestServer(fs *fakeStore) *Server {
-	return &Server{store: fs, token: "secret", log: slog.New(slog.NewJSONHandler(io.Discard, nil))}
+	return newServer(fs, "secret", false, slog.New(slog.NewJSONHandler(io.Discard, nil)))
 }
 
 func gzipBody(t *testing.T, s string) *bytes.Buffer {
