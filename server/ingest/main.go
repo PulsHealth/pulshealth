@@ -93,6 +93,17 @@ func run(logger *slog.Logger) error {
 	if addr == "" {
 		addr = ":8080"
 	}
+	// Off by default: X-Forwarded-For is set by whoever sends the request,
+	// so believing it without a proxy in front would let one attacker look
+	// like an unlimited number of clients to the auth-failure limiter.
+	trustProxyHeaders := false
+	if raw := os.Getenv("TRUST_PROXY_HEADERS"); raw != "" {
+		parsed, err := strconv.ParseBool(raw)
+		if err != nil {
+			return fmt.Errorf("TRUST_PROXY_HEADERS must be true or false, got %q", raw)
+		}
+		trustProxyHeaders = parsed
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -103,7 +114,10 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
-	srv := &Server{store: NewStore(pool), token: token, log: logger}
+	srv := newServer(NewStore(pool), token, trustProxyHeaders, logger)
+	logger.Info("auth failure limiting",
+		"burst", authFailureBurst, "per_minute", authFailurePerMinute,
+		"trust_proxy_headers", trustProxyHeaders)
 
 	httpSrv := &http.Server{
 		Addr:              addr,
@@ -179,6 +193,23 @@ type Server struct {
 	store ingester
 	token string
 	log   *slog.Logger
+
+	// Per-client-IP token bucket charged by failed authentications only
+	// (see ratelimit.go).
+	authFailures *failureLimiter
+	// Whether X-Forwarded-For may be believed when identifying a client;
+	// false unless TRUST_PROXY_HEADERS says a proxy owns that header.
+	trustProxyHeaders bool
+}
+
+func newServer(store ingester, token string, trustProxyHeaders bool, log *slog.Logger) *Server {
+	return &Server{
+		store:             store,
+		token:             token,
+		log:               log,
+		authFailures:      newFailureLimiter(),
+		trustProxyHeaders: trustProxyHeaders,
+	}
 }
 
 func (s *Server) routes() http.Handler {
@@ -195,10 +226,29 @@ func (s *Server) routes() http.Handler {
 	return mux
 }
 
+// auth gates every /v1 route on the shared bearer token, and gates the token
+// check itself on the caller's auth-failure budget. A client that presents the
+// right token is never throttled, however many requests it makes — a backfill
+// is thousands of them. A client that keeps getting it wrong runs out of
+// budget and is refused before the comparison happens, which is what makes
+// this a brute-force limit rather than a different error code.
 func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ip := clientIP(r, s.trustProxyHeaders)
+		if ok, retryAfter := s.authFailures.allow(ip, time.Now()); !ok {
+			seconds := int(retryAfter.Seconds())
+			if seconds < 1 {
+				seconds = 1
+			}
+			s.log.Warn("auth attempts throttled",
+				"ip", ip, "path", r.URL.Path, "retry_after_s", seconds)
+			w.Header().Set("Retry-After", strconv.Itoa(seconds))
+			writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many failed authentications"})
+			return
+		}
 		got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if !ok || subtle.ConstantTimeCompare([]byte(got), []byte(s.token)) != 1 {
+			s.authFailures.recordFailure(ip, time.Now())
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
 		}

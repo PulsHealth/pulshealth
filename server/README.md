@@ -104,15 +104,25 @@ comments). Beyond the passwords and tokens, two settings deserve attention:
   defaults it to `alerts@example.com` so the contact point always has an
   address; set it to your own. Mail only leaves once SMTP is configured — see
   "Alerting".
-- `WEB_BIND_ADDR` — the web viewer is unauthenticated and defaults to
-  loopback. To reach it from other machines bind it to a private interface
-  (a VPN/tailnet address), never `0.0.0.0`.
+- `WEB_AUTH_PASSWORD` — the web viewer's login. Set it and every page asks
+  for it over HTTP Basic (any username; `/api/healthz` stays open so health
+  checks keep working); empty, the viewer has no login at all and says so in
+  `docker compose logs web`. `scripts/bootstrap.sh` generates one on a fresh
+  install and prints it with the pairing block. See `web/README.md`,
+  "Access control".
+- `WEB_BIND_ADDR` — where the viewer's port is published; defaults to
+  loopback. Basic auth is a password prompt, not TLS, so this still matters:
+  to reach the viewer from other machines bind it to a private interface (a
+  VPN/tailnet address), never `0.0.0.0`.
 - `INGEST_BIND_ADDR` — where ingest's port 8080 is published; defaults to
   loopback, which is right whenever a TLS proxy sits in front of it.
   `0.0.0.0` — what `scripts/bootstrap.sh --lan` writes — publishes it on
   every interface so a phone on the same Wi-Fi can sync to plain
   `http://<this host's LAN IP>:8080` with no proxy at all. See "Exposing the
   server" for the trade-off.
+- `TRUST_PROXY_HEADERS` — whether ingest believes `X-Forwarded-For` when
+  attributing a failed authentication to a client. Default `false`. Turn it
+  on only behind a proxy that owns that header — see "Rate limiting".
 - `PULS_VERSION` — which image tag the four app services run (`latest` when
   unset); `PULS_PUBLIC_URL` — the URL the pairing block should carry instead
   of the LAN address (read by `scripts/bootstrap.sh` only). See "Images and
@@ -138,9 +148,10 @@ adds a schema file applies it before the code that depends on it comes up.
 If a migration fails, the app services are not started and `docker compose
 up` reports `dependency failed to start`; the containers from the previous
 revision are left running as they were. Fix the cause and `docker compose
-up -d` again. **Take a `pg_dump` before upgrading**: the stack ships no
-backup service (see "Backup & restore"), so the live volume is the only
-copy. Re-applying the schema from scratch means dropping the volume
+up -d` again. **Take a backup before upgrading** — `make backup`, or a
+`pg_dump` by hand: the backup service is opt-in (see "Backup & restore"), so
+until you turn it on the live volume is the only copy. Re-applying the schema
+from scratch means dropping the volume
 (`docker compose down -v && docker compose up -d`), which **destroys all data
 irrecoverably**.
 
@@ -173,7 +184,7 @@ release (`PULS_VERSION=1.2.3`) makes upgrades deliberate: bump it, then
 service runs first and applies any schema files the new release brought, and
 the app containers start only after it exits 0. Migrations are forward-only,
 so going back to an older image after a release that migrated the schema is
-not supported — take a `pg_dump` before upgrading. The database image is
+not supported — take a `make backup` before upgrading. The database image is
 versioned separately (`x-db-image` in `docker-compose.yml`; see "Upgrading
 the database image").
 
@@ -286,7 +297,7 @@ roles:
   ships.
 - **Upgrade the extension yourself, deliberately** — in a fresh session
   (`psql -X`, first statement) with no app service connected, after a
-  `pg_dump`; extension updates are one-way:
+  `make backup`; extension updates are one-way:
 
   ```bash
   docker compose stop ingest api web grafana
@@ -373,6 +384,57 @@ app. Create it with `openssl rand -hex 32` (or let `scripts/bootstrap.sh`
 do it), put it in `.env`, and paste the same value into PulsHealth's server
 settings — the pairing block (`make pairing`) shows it next to the URL and
 user ID.
+
+### Rate limiting
+
+One static token on a published port is guessable, so ingest throttles **failed
+authentications** per client IP. Each address gets a token bucket holding **10
+failures**, refilling at **10 per minute**. While the bucket has tokens a wrong
+token answers `401` as before; once it is empty every attempt from that address
+answers
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 7
+
+{"error":"too many failed authentications"}
+```
+
+and the server logs `auth attempts throttled` with the address, the path and
+the wait. Two properties matter:
+
+- **A correct token is never throttled.** Only failures draw from the bucket, so
+  a backfill — thousands of authenticated uploads in a row — never touches it,
+  and neither does a device that has simply been syncing for months.
+- **An exhausted address is refused *before* the token is compared.** Charging a
+  failure but still answering `401`/`200` would leave the guessing rate
+  untouched and only change the status code; refusing first is what makes this
+  a brute-force limit. The cost is that a client sharing an address with an
+  attacker waits too — buckets are small and refill in a minute, and a client
+  that never fails never has a bucket at all.
+
+Memory is bounded: only failures create an entry, entries that have refilled
+and gone idle for ten minutes are forgotten, and a hard cap of 10,000 tracked
+addresses drops the least recently seen first, so an attacker rotating IPv6
+source addresses cannot grow the table.
+
+The limit is keyed on the TCP peer address. If a proxy terminates TLS in front
+of ingest, every request appears to come from the proxy and one attacker
+exhausts the shared bucket for everyone. Set **`TRUST_PROXY_HEADERS=true`** in
+`.env` in that case and ingest keys on the first entry of `X-Forwarded-For`
+instead. Only do that when the proxy is the *only* route to port 8080 and it
+overwrites the header (reverse proxies, Tailscale Serve/Funnel do): the header
+is otherwise set by whoever sends the request, and believing it lets a single
+attacker look like an unlimited number of clients. Leave it at the default
+`false` for `INGEST_BIND_ADDR=0.0.0.0` on a LAN.
+
+Docker's userland proxy can also rewrite the source address to the bridge
+gateway on some hosts. If `docker compose logs ingest` shows every throttled
+client as the same `172.x.x.1`, that is what happened: have the TLS proxy in
+front set `X-Forwarded-For` and turn `TRUST_PROXY_HEADERS` on.
+
+The rate limit is not a substitute for a good token. `openssl rand -hex 32` is
+256 bits; ten guesses a minute will not find it either way.
 
 ### Rotating secrets
 
@@ -791,15 +853,172 @@ empty recipient — check the contact point shows your address.
 
 ## Backup & restore
 
-**The reference stack ships no backups.** Nothing in this repo dumps, copies,
-or verifies the database: the live Postgres volume is the only copy of the
-data until you add something yourself. A nightly `pg_dump` on the host copied
-off the machine is the minimum; at the very least take one by hand before any
-schema change (see "Deploying and upgrading").
+**The stack has a backup service, and it is off until you turn it on.** Until
+you do, the live Postgres volume is the only copy of your data: a dead disk, a
+bad migration or a `docker compose down -v` loses everything, irrecoverably.
+Turning it on is one command.
 
-If you add backups, note that TimescaleDB restores require
-`timescaledb_pre_restore()` / `timescaledb_post_restore()` and **never**
-`pg_restore -j`.
+```bash
+# One dump, right now — do this before any schema change or upgrade.
+make backup
+
+# Dumps on a schedule (default: every 24h, keeping 14 days). Naming the
+# service starts only it (and db): the running app containers are left alone.
+cd server && docker compose --profile backup up -d backup
+
+make backup-list                     # what is in the store
+make restore FILE=<name or path>     # put one back (destroys the current data)
+```
+
+`docker compose --profile backup up -d` with no service named would also
+(re)start everything else, which on an install that builds from the checkout
+means Compose tries to pull `ghcr.io/pulshealth/*` and fails; add
+`-f compose.build.yml` there, or just name `backup` as above.
+
+`backup` is a Compose service behind the **`backup` profile**, so a plain
+`docker compose up -d` never starts it and the stack is unchanged for anyone
+who does not ask. It runs `backup/backup.sh` in the same pinned TimescaleDB
+image as `db` and `migrate`, so `pg_dump` always matches the server version.
+
+Each run writes `puls-<UTC timestamp>.dump` with `pg_dump --format=custom`
+(compressed), checks the archive is readable with `pg_restore --list`, and only
+then renames it into place — a truncated dump is never mistaken for a backup.
+Then it deletes dumps older than `PULS_BACKUP_KEEP_DAYS`, **never the newest
+one**, however old: "the schedule stopped six weeks ago" must not also mean
+"and then it deleted your last copy".
+
+`pg_dump` prints a warning about circular foreign keys on `continuous_agg`
+every run. That is TimescaleDB's own catalog and the hint applies to
+`--data-only` dumps; these are full dumps, and they restore.
+
+### Settings
+
+| `.env` | Default | What |
+|---|---|---|
+| `PULS_BACKUP_INTERVAL` | `24h` | Between scheduled dumps. `24h`, `90m`, `3600s`, or bare seconds; minimum 60s. |
+| `PULS_BACKUP_KEEP_DAYS` | `14` | Delete dumps older than this. `0` keeps everything. |
+| `PULS_BACKUP_DIR` | (the `backups` volume) | Where dumps go. Set it to a path and they land there instead. |
+
+**Point `PULS_BACKUP_DIR` at something that is not this disk.** Left unset,
+dumps go to the `backups` Docker volume — which lives on the same disk as the
+database, so it protects you from a bad migration or a dropped table and not
+from a dead drive. An external disk, a NAS mount, or a directory something else
+replicates is the version worth having. Note also that `docker compose down -v`
+removes the `backups` volume along with `db_data`: with dumps on a host path,
+that command cannot take them with it.
+
+The schedule is a sleep loop in the container, not cron: the image ships no
+cron daemon, so cron would mean installing packages at container start for one
+timer. The trade-off is that the schedule is relative to when the container
+started, not to the wall clock — restarting the stack shifts the dump time. If
+you want 03:00 exactly, leave the profile off and call `make backup` from the
+host's own cron or systemd timer.
+
+Nothing verifies your backups except the drill below. Run it once, on purpose,
+before you need it.
+
+### Restoring
+
+`server/backup/restore.sh` (`make restore FILE=…`) **replaces the contents of
+the database** — everything synced since the dump was taken is gone, and there
+is no undo. `FILE` is either a path on the host or, for a dump already in the
+backup store, just its name as `make backup-list` shows it (a throwaway
+container streams it out; nothing is staged in a temporary file). Extra flags
+go through `ARGS`, e.g. `make restore FILE=… ARGS="--yes --build"`:
+
+| Flag | What |
+|---|---|
+| `--yes` | Skip the "type restore to continue" prompt. For scripted drills. |
+| `--build` | Bring the stack back up from this checkout (`compose.build.yml`) rather than the published images. `PULS_BOOTSTRAP_BUILD=1` sets it too, so an install that runs from source needs no second flag. |
+| `--no-start` | Leave the app services stopped when the restore finishes, instead of bringing the stack back up. `docker compose up -d` when you are ready. |
+
+It does, in order: start `db` and verify the archive is readable *before*
+anything is destroyed; stop `ingest`, `api`, `mcp`, `web` and `grafana`; drop
+and recreate the `public` schema while TimescaleDB is still live so its event
+triggers dismantle hypertable chunks and continuous aggregates properly;
+reinstall the extension (it lives in `public`, so the drop takes it too);
+`timescaledb_pre_restore()`; `pg_restore --no-owner --no-privileges`
+**single-threaded**; `timescaledb_post_restore()`; `ANALYZE`; and finally
+`docker compose up -d`, where `migrate` recreates the `grafana`, `api_reader`
+and `ingest` roles from `.env` and puts their grants back.
+
+The check in the first step is the important one: a truncated file, a
+plain-SQL dump, the wrong file entirely, or a name that is not in the store at
+all is refused **before** anything is dropped, and the live database is left as
+it was.
+
+Three TimescaleDB rules the script exists to enforce, if you ever restore by
+hand: `timescaledb_pre_restore()`/`timescaledb_post_restore()` around the
+restore, **never** `pg_restore -j` (parallel restore reorders work in ways
+restoring mode does not tolerate), and drop the old schema *before*
+`pre_restore`, not after, or the extension catalog ends up describing tables
+that no longer exist.
+
+### The restore drill
+
+A backup you have never restored is a hypothesis. Run this once, on purpose,
+on a scratch install — not the one holding your data — so the first time you
+use `restore.sh` is not the day you need it.
+
+```bash
+scripts/bootstrap.sh --build            # a stack with something in it
+# ...sync a batch from the app, or use the curl fixture in
+#    "Verify ingest with curl" — give it a value you will recognise
+
+make backup                             # → puls-<timestamp>.dump
+make backup-list
+
+# Destroy the database, keeping the dump. (Not `down -v`: that removes the
+# backups volume too.)
+make down
+docker volume rm pulshealth_db_data
+
+make restore FILE=puls-<timestamp>.dump ARGS="--yes --build"
+```
+
+Then check what came back: `docker compose ps` (six services up, `db`
+healthy), `docker compose logs migrate` (it should apply nothing — see below),
+and the rows you recognise, through `GET /v1/stats`, the viewer, or `psql`.
+
+**What the run on 2026-09-08 reported** — a throwaway stack on Docker Desktop,
+seeded through the curl fixture with two heart-rate samples, three step-count
+samples, one aggregate bucket, one activity summary, one deletion and a
+profile line, then dumped, `db_data` deleted, and restored into the empty
+volume:
+
+- Every count identical either side of the wipe: `quantity_samples` 5,
+  `aggregate_samples` 1, `activity_summaries` 1, `deleted_samples` 1,
+  `users` 1, `batches` 2, `sources` 2, `sample_types` 2, `category_labels`
+  256, `schema_migrations` 13 — and the values themselves, down to the
+  profile's name, email and date of birth.
+- The three hypertables (`quantity_samples`, `workout_route_points`,
+  `workout_series_points`), the `quantity_rollups` continuous aggregate and
+  the `metric_daily` view all rebuilt and querying; `timescaledb` 2.29.2 and
+  `timescaledb_toolkit` 1.26.0 back at the same versions.
+- `migrate` reporting **`0 applied, 0 rerun, 13 skipped, 2 script(s) ran`**:
+  the schema came from the dump, and only the role and time-zone scripts
+  re-ran. The `grafana`, `api_reader` and `ingest` roles were back with their
+  grants (`ingest`: SELECT/INSERT/UPDATE/DELETE, `grafana`: SELECT), and
+  `puls_time_zone()` still returned the zone from `.env` — the restore itself
+  skips owners and privileges, so this step is what puts them back.
+- All six services healthy afterwards, and the pipeline live again: ingest
+  accepted a *new* sample, re-posting the seeded batch answered
+  `"duplicates":2`, `GET /v1/profile` served the restored identity, and the
+  viewer rendered the restored data behind its Basic-auth prompt.
+
+A second pass restored a dump from a **host path** with `--no-start`, after
+inserting a `users` row that the dump did not contain: the row was gone
+afterwards and the app services stayed down until `docker compose up -d` —
+i.e. the restore replaces the database rather than merging into it.
+
+Also confirmed, because they are the parts you only find out about later:
+pruning deletes dumps older than `PULS_BACKUP_KEEP_DAYS` but **keeps the
+newest even when it is older than the window**; `PULS_BACKUP_KEEP_DAYS=0`
+deletes nothing; dumps written to a `PULS_BACKUP_DIR` host directory arrive
+owned by that directory's owner, mode `600`; `docker compose stop backup`
+returns immediately rather than waiting out the kill timeout; and a garbage
+file, or a name that is not in the store, is refused with the database
+untouched.
 
 ## Development
 

@@ -311,11 +311,25 @@ outside this repository — nothing here assumes a particular machine.
   `docker compose run --rm migrate baseline`. `099_read_roles.sh`
   (roles/passwords) and `013_time_zone.sh` (`PULS_TIME_ZONE`) re-run on
   every start, so rotating a database password or changing the zone is
-  "edit `.env`, `docker compose up -d`". Still treat DDL on a live database
-  as one-way: there is no backup service.
-- The reference stack has no backup service yet (SRV-9 in the plan). The
-  Postgres volume is the only copy of the data — a disk failure, a bad
-  migration or a dropped volume loses everything.
+  "edit `.env`, `docker compose up -d`". Treat DDL on a live database as
+  one-way and take a `make backup` first.
+- **Backups are opt-in and off by default.** `server/backup/backup.sh` runs as
+  the `backup` Compose service behind the `backup` **profile**, so a plain
+  `docker compose up -d` does not start it and the stack is unchanged for
+  anyone who does not ask for it: `docker compose --profile backup up -d backup`
+  for a schedule, `make backup` for one dump now, `make restore FILE=…`
+  (`server/backup/restore.sh`) to put one back. Until it is turned on the
+  Postgres volume is the only copy of the data. Dumps default to the `backups`
+  Docker volume — same disk as the database, so `PULS_BACKUP_DIR` pointing
+  somewhere else is the version that survives losing the machine, and it is
+  also what `docker compose down -v` cannot delete. **Nothing verifies a
+  backup but the restore drill in `server/README.md`** — the one recorded
+  there was run against a throwaway stack, not the maintainer's data.
+  TimescaleDB restore rules the script enforces and hand-restores must too:
+  `timescaledb_pre_restore()`/`timescaledb_post_restore()` around the restore,
+  never `pg_restore -j`, and drop the old `public` schema *before*
+  `pre_restore` (dropping it takes the extension with it — reinstall it before
+  calling `pre_restore`).
 - The ingest container connects as the scoped DML-only `ingest` role:
   `INGEST_DB_USER` defaults to `ingest`, `INGEST_DB_PASSWORD` is required,
   and `099_read_roles.sh` keeps the role's password equal to it on every
@@ -329,9 +343,24 @@ outside this repository — nothing here assumes a particular machine.
   directly, which works because the app's ATS exception permits plain HTTP
   to local-network hosts (`ServerURLValidation.isLocalNetworkHost`). Keep
   the two rules in step, and keep the loopback default.
-- The product API host mapping stays on `127.0.0.1`; the `web` viewer has no
-  authentication, so it binds to `WEB_BIND_ADDR` (default `127.0.0.1`) and
-  belongs behind a private network or an authenticating proxy. `web` connects
-  to Postgres over the internal docker network as the read-only `grafana` role
-  (`DATABASE_URL` built from `GRAFANA_DB_PASSWORD` in `.env`), so it never
-  needs the SSH-tunnel/`DATABASE_URL` dance used for local `npm run dev`.
+- The product API host mapping stays on `127.0.0.1`. The `web` viewer's login
+  is **optional and off unless `WEB_AUTH_PASSWORD` is set** (`web/proxy.ts`,
+  Next 16's middleware convention, over the pure helpers in `web/lib/auth.ts`;
+  HTTP Basic, any username, `/api/healthz` exempt so health checks work,
+  constant-time compare, nothing about an attempt logged). `scripts/bootstrap.sh`
+  generates one on a fresh `.env` and prints it; an `.env` written before the
+  key existed keeps the old open behaviour, and the container's startup log
+  says which mode it is in. It is a password prompt, not TLS, so `web` still
+  binds to `WEB_BIND_ADDR` (default `127.0.0.1`) and belongs behind a private
+  network or an HTTPS proxy. `web` connects to Postgres over the internal
+  docker network as the read-only `grafana` role (`DATABASE_URL` built from
+  `GRAFANA_DB_PASSWORD` in `.env`), so it never needs the
+  SSH-tunnel/`DATABASE_URL` dance used for local `npm run dev`.
+- **Ingest throttles failed authentications, never successful ones**
+  (`server/ingest/ratelimit.go`): a per-client-IP token bucket, 10 failures
+  with a 10/minute refill, `429` + `Retry-After` once empty — and the refusal
+  happens *before* the token comparison, or the limit would only change the
+  status code an attacker sees rather than their guessing rate. A backfill is
+  thousands of authenticated requests, so successes must never draw from the
+  bucket. The client is the TCP peer address unless `TRUST_PROXY_HEADERS=true`
+  declares a proxy that owns `X-Forwarded-For`.

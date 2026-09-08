@@ -48,12 +48,42 @@ dot shows **Live data** (green), **Demo data** (amber), or **Database unavailabl
 
 ## Access control
 
-There is none. The viewer has no login and no per-request authentication: whoever
-can reach the port can read every health record of the configured user. Keep it
-on a private bind address (the compose stack binds it to `WEB_BIND_ADDR`, default
-`127.0.0.1`), reach it over an SSH tunnel or a private overlay network, or put
-it behind a reverse proxy that authenticates. Never expose it directly to the
-internet.
+**`WEB_AUTH_PASSWORD` is a password prompt in front of the whole viewer.** Set
+it and every route asks for HTTP Basic credentials; leave it empty and the
+viewer has no login at all, exactly as it always did.
+
+```bash
+WEB_AUTH_PASSWORD="$(openssl rand -hex 12)"   # in server/.env
+docker compose up -d web
+```
+
+`scripts/bootstrap.sh` generates one on a fresh install and prints it with the
+pairing block (`make pairing` re-prints it). Details:
+
+- **Any username is accepted** — there is one viewer and one secret, and a
+  rejected username would only be a way to lock yourself out. Type anything.
+- **`/api/healthz` stays open**, so container health checks and deploy probes
+  keep working without credentials. Everything else, including static assets,
+  goes through the check.
+- The comparison is constant-time (both sides SHA-256'd, then compared
+  branch-free), and nothing about a failed attempt is logged — the
+  `Authorization` header holds the password, and a near-miss in a log file is
+  still a password in a log file.
+- The container says which mode it is in at startup:
+  `docker compose logs web | grep puls-web`.
+- **To turn it off**, empty the value in `.env` and `docker compose up -d web`.
+- There is **no logout** (that is Basic auth); close the browser or use a
+  private window.
+
+The implementation is `proxy.ts` (Next.js 16's middleware convention) over the
+pure helpers in `lib/auth.ts`, which `lib/auth.test.ts` covers.
+
+**This is not a substitute for the bind address.** Basic auth sends the password
+on every request, in the clear unless something terminates TLS in front. The
+compose stack still binds the viewer to `WEB_BIND_ADDR` (default `127.0.0.1`);
+to reach it from other machines, use a private overlay network (Tailscale, a
+VPN), an SSH tunnel, or an HTTPS reverse proxy — never `0.0.0.0` on an
+untrusted network, and never directly on the internet.
 
 ## What's here
 
