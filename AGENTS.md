@@ -63,18 +63,22 @@ subsystem. The list, so you know when to go and read it:
   `X-User-ID` header, never in the NDJSON body.
 - **Canonical units** — one unit per type, converted before encoding; never
   send raw device units.
+- **One type vocabulary** — `HealthTypeCatalog.swift` is the only hand-written
+  list of types; `docs/protocol/catalog.json` and `web/lib/catalog.generated.ts`
+  are rendered from it and are never hand-edited.
 - **Epoch milliseconds everywhere** — wire format, state files, query
   parameters. Not ISO 8601.
 - **Wire-format changes touch both sides** — see the next section.
-- **Aggregates overwrite; raw samples never do** — and activity rings upsert
-  by local calendar date, which is stored straight through, never UTC-shifted.
+- **Aggregates overwrite; raw samples never do.**
+- **Activity rings upsert by date and are not samples** — the local calendar
+  day is stored straight through, never UTC-shifted.
 - **A locked device means HealthKit is unreadable** — background paths must
   check and skip cleanly rather than report failure.
 - **Incremental sync merges types into one batch; a page is never split
   across batches.**
-- **Schema changes are new, immutable migration files** — an applied file's
-  checksum is enforced; only a file whose first line is `-- puls:rerun` is
-  re-applied.
+- **The schema is applied by the `migrate` service, never by hand** — new DDL
+  is a new numbered file, an applied file's checksum is enforced, and only a
+  file whose first line is `-- puls:rerun` is re-applied.
 - **Actors** — `HealthSyncEngine`, `SyncStateStore` and `SyncEventLog` are
   actors under Swift 6 strict concurrency; views reach them through the
   `@MainActor` `AppModel`.
