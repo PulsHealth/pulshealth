@@ -17,6 +17,15 @@ const (
 	defaultWorkoutLimit = 50
 	maxWorkoutLimit     = 200 // the product API's own cap
 	maxWorkoutEvents    = 200
+	// Raw samples are heavy — a month of heart rate is hundreds of
+	// thousands of rows — so get_samples asks for a modest page by default
+	// and the product API bounds both the page and the span.
+	defaultSampleLimit = 500
+	maxSampleLimit     = 5000 // the product API's own cap
+	maxSampleDays      = 31   // the product API's own cap
+	// Downsampling bounds for get_workout_series, matching the API's.
+	defaultSeriesPoints = 500
+	maxSeriesPoints     = 5000
 )
 
 // service holds what every tool needs: the product API and the calendar
@@ -41,8 +50,9 @@ func (s *service) localNow() time.Time { return s.now().In(s.loc) }
 const serverInstructions = `Read-only access to one person's Apple Health data, synced by the PulsHealth app to a server they run. ` +
 	`Start with list_available_types: it lists which HealthKit types have data, how current they are, today's date and the server's time zone. ` +
 	`Read the pulshealth://guide resource for units, the iPhone-plus-Watch double-counting rule and which tool answers which question. ` +
-	`Dates are YYYY-MM-DD in the server's time zone; daily values are already deduplicated across devices, so never sum raw samples yourself. ` +
-	`Say which days have no data instead of treating them as zero.`
+	`Dates are YYYY-MM-DD in the server's time zone; daily values are already deduplicated across devices, so never sum raw samples yourself ` +
+	`(get_samples returns undeduplicated records on purpose). Sleep has its own tool, get_sleep, and each night is dated by the day the ` +
+	`person woke up. Say which days have no data instead of treating them as zero.`
 
 // newServer builds the MCP server with every tool, resource and prompt.
 func (s *service) newServer(version string) *mcp.Server {
@@ -84,6 +94,10 @@ func (s *service) addTools(server *mcp.Server) {
 	mcp.AddTool(server, readOnlyTool("get_activity_rings", "Activity rings", descGetActivityRings), s.getActivityRings)
 	mcp.AddTool(server, readOnlyTool("list_workouts", "Workouts", descListWorkouts), s.listWorkouts)
 	mcp.AddTool(server, readOnlyTool("get_workout", "Workout detail", descGetWorkout), s.getWorkout)
+	mcp.AddTool(server, readOnlyTool("get_sleep", "Sleep", descGetSleep), s.getSleep)
+	mcp.AddTool(server, readOnlyTool("get_samples", "Raw samples", descGetSamples), s.getSamples)
+	mcp.AddTool(server, readOnlyTool("get_workout_series", "Workout streams", descGetWorkoutSeries), s.getWorkoutSeries)
+	mcp.AddTool(server, readOnlyTool("get_state_of_mind", "State of Mind", descGetStateOfMind), s.getStateOfMind)
 }
 
 // Tool descriptions are written for the model: they name units, say how
@@ -118,8 +132,8 @@ const descGetDailyMetrics = `One value per local calendar day for each requested
 	`Each value comes from the on-device HealthKit daily aggregate when the phone synced one — HealthKit already removes the overlap ` +
 	`between iPhone and Apple Watch — and otherwise from a single-source rollup, so it never double counts the way a naive sum of raw ` +
 	`samples does. Values are in the type's canonical unit ("%" is a fraction). Days without data are omitted, not zero. ` +
-	`Only quantity types the phone aggregates daily appear here (list_available_types shows aggregate_rows > 0); category types such ` +
-	`as sleep are not available through this tool yet. Weekly or monthly figures: fetch the days and add or average them yourself.`
+	`Only quantity types the phone aggregates daily appear here (list_available_types shows aggregate_rows > 0); for sleep use ` +
+	`get_sleep, which knows about nights and stages. Weekly or monthly figures: fetch the days and add or average them yourself.`
 
 const descGetActivityRings = `Apple Watch Activity rings for each local calendar day in an inclusive date range (start_date and ` +
 	`end_date as YYYY-MM-DD in the server's time zone; equal for a single day; at most 366 days per call): move_kcal against ` +
@@ -142,7 +156,50 @@ const descGetWorkout = `Detail for one workout by uuid (from list_workouts): the
 	`(count/min) or HKQuantityTypeIdentifierRunningPower (W), sum for cumulative ones such as HKQuantityTypeIdentifierActiveEnergyBurned ` +
 	`(kcal) or HKQuantityTypeIdentifierDistanceWalkingRunning (m) — then events (pauses, resumes, laps, segments, markers; at most 200 ` +
 	`returned, events_truncated says if more exist) and activities (the parts of a multi-sport workout, each with its own statistics). ` +
-	`Timestamps are ISO 8601 in the server's zone. Second-by-second streams and the GPS route are not exposed through this server.`
+	`Timestamps are ISO 8601 in the server's zone. For the second-by-second curves behind those statistics use get_workout_series; ` +
+	`the GPS route is not exposed through this server.`
+
+const descGetSleep = `Sleep for each night in an inclusive date range (start_date and end_date as YYYY-MM-DD in the server's time ` +
+	`zone; equal for a single night; at most 366 days per call). This is the tool for any sleep question. Each row is one sleep ` +
+	`session dated by the day the person WOKE UP, the way Apple Health does it: a night from 22:40 on the 20th to 06:30 on the 21st ` +
+	`is dated 2026-09-21. Samples more than three hours apart start a new session, so a daytime nap comes back as its own row on the ` +
+	`same date — check start and end (ISO 8601) before calling a row "last night". All durations are MINUTES: in_bed_min (time in ` +
+	`bed, often absent because only some devices record it), asleep_min (actual sleep = core + deep + REM + unspecified), and a ` +
+	`stages breakdown of core_min, deep_min, rem_min, unspecified_min and awake_min. in_bed_min is 0 when nothing recorded it. ` +
+	`awake_min is time awake during the night and is ` +
+	`NOT part of asleep_min; unspecified_min is sleep an iPhone or a third-party app recorded without stage detail. A person can wear ` +
+	`an Apple Watch and run a sleep app at once, so several sources record the same night: the values are never summed across them — ` +
+	`in_bed_min is the largest single source's total, and asleep_min with its stages come together from the one source that recorded ` +
+	`the most sleep. sources counts how many contributed. Nights with no data are simply absent; say so rather than reporting zero.`
+
+const descGetSamples = `The individual HealthKit records of ONE type in a date range — the raw samples behind the daily numbers. ` +
+	`start_date and end_date are inclusive YYYY-MM-DD in the server's time zone, at most 31 days per call; type is one identifier ` +
+	`such as HKQuantityTypeIdentifierHeartRate or HKCategoryTypeIdentifierSleepAnalysis (list_available_types shows which exist). ` +
+	`Reach for this only when the individual readings matter — every blood-pressure entry, when exactly the heart rate spiked, each ` +
+	`logged symptom. IMPORTANT: these samples are NOT deduplicated. An iPhone and an Apple Watch both record steps, distance and ` +
+	`energy for the same minutes, so adding these values up roughly double counts; for any total or average use get_daily_metrics, ` +
+	`which returns the deduplicated daily truth. A quantity sample has value in the type's canonical unit (unit is on the response; ` +
+	`"%" is a fraction) and a category sample has an integer value with its HealthKit label, e.g. "Asleep Core". Each sample also ` +
+	`carries source (which device or app wrote it) and start/end as ISO 8601. Samples come back oldest first; limit defaults to 500 ` +
+	`and caps at 5000, and when next_offset is present there are more — pass it as offset to page.`
+
+const descGetWorkoutSeries = `The second-by-second streams recorded during one workout, by uuid (from list_workouts): heart rate, ` +
+	`running or cycling power, speed, cadence and whatever else the watch recorded. Use it to describe how a workout unfolded — where ` +
+	`the heart rate climbed, how hard the intervals were, whether the pace faded — where get_workout only gives the min/avg/max ` +
+	`summary. Pass types (comma-free list of HealthKit identifiers, from the workout's available_metrics) to fetch just one or two ` +
+	`streams; omit it for all of them. Each series has its canonical unit and points as [seconds_after_the_workout_start, value] ` +
+	`pairs, so [0, 98] means 98 at the very start and [600, 151] means 151 ten minutes in. Long streams are downsampled by averaging ` +
+	`into equal time buckets, keeping the true first and last reading: max_points defaults to 500 and caps at 5000, total_points says ` +
+	`how many were actually recorded and downsampled says whether averaging happened. Ask for fewer points when you only need the shape.`
+
+const descGetStateOfMind = `State of Mind entries — the moods and emotions logged by hand in the Health or Mindfulness app (iOS 18+) ` +
+	`— for an inclusive date range (start_date and end_date as YYYY-MM-DD in the server's time zone; at most 366 days per call). ` +
+	`Each entry has kind (momentaryEmotion, a feeling in the moment, or dailyMood, how the whole day felt), valence from -1.0 (very ` +
+	`unpleasant) through 0 (neutral) to +1.0 (very pleasant), valence_classification (Apple's band for that number: veryUnpleasant, ` +
+	`unpleasant, slightlyUnpleasant, neutral, slightlyPleasant, pleasant, veryPleasant), labels (the feelings picked, e.g. calm, ` +
+	`stressed, grateful) and associations (what they were about, e.g. work, family, health). Entries are ordered oldest first with ` +
+	`date and timestamp (ISO 8601). These are self-reported and sparse — most days have none, and absence means "not logged", never ` +
+	`"felt neutral". They are the person's own words about their feelings: report them plainly and do not diagnose.`
 
 // Inputs. jsonschema tags become the property descriptions the model reads;
 // fields without omitempty are required.
@@ -172,6 +229,20 @@ type workoutsInput struct {
 
 type workoutInput struct {
 	UUID string `json:"uuid" jsonschema:"The workout's uuid exactly as returned by list_workouts"`
+}
+
+type samplesInput struct {
+	Type      string `json:"type" jsonschema:"Exactly one HealthKit identifier, e.g. HKQuantityTypeIdentifierHeartRate or HKCategoryTypeIdentifierSleepAnalysis. list_available_types shows which exist"`
+	StartDate string `json:"start_date" jsonschema:"First day of the range, inclusive, as YYYY-MM-DD in the server's time zone"`
+	EndDate   string `json:"end_date" jsonschema:"Last day of the range, inclusive, as YYYY-MM-DD; equal to start_date for a single day. At most 31 days per call"`
+	Limit     int    `json:"limit,omitempty" jsonschema:"Maximum number of samples to return, 1 to 5000; default 500"`
+	Offset    int    `json:"offset,omitempty" jsonschema:"Number of samples to skip, for paging: pass the previous call's next_offset"`
+}
+
+type workoutSeriesInput struct {
+	UUID      string   `json:"uuid" jsonschema:"The workout's uuid exactly as returned by list_workouts"`
+	Types     []string `json:"types,omitempty" jsonschema:"HealthKit identifiers to fetch, from the workout's available_metrics. Optional; omit for every recorded stream"`
+	MaxPoints int      `json:"max_points,omitempty" jsonschema:"Maximum points per series after downsampling, 1 to 5000; default 500"`
 }
 
 // Outputs. Every tool returns one compact JSON object as text; field names
@@ -282,6 +353,89 @@ type workoutOutput struct {
 	Events          []map[string]any             `json:"events,omitempty"`
 	EventsTruncated bool                         `json:"events_truncated,omitempty"`
 	Activities      []map[string]any             `json:"activities,omitempty"`
+}
+
+type sleepOutput struct {
+	TimeZone  string       `json:"time_zone"`
+	StartDate string       `json:"start_date"`
+	EndDate   string       `json:"end_date"`
+	Nights    []sleepNight `json:"nights"`
+}
+
+// sleepNight carries minutes in every duration, named accordingly.
+type sleepNight struct {
+	Date        string          `json:"date"`
+	Start       string          `json:"start"`
+	End         string          `json:"end"`
+	InBedMin    float64         `json:"in_bed_min"`
+	AsleepMin   float64         `json:"asleep_min"`
+	Stages      sleepStageBreak `json:"stages"`
+	SourceCount int             `json:"sources"`
+}
+
+type sleepStageBreak struct {
+	CoreMin        float64 `json:"core_min"`
+	DeepMin        float64 `json:"deep_min"`
+	REMMin         float64 `json:"rem_min"`
+	UnspecifiedMin float64 `json:"unspecified_min"`
+	AwakeMin       float64 `json:"awake_min"`
+}
+
+type samplesOutput struct {
+	TimeZone   string        `json:"time_zone"`
+	Type       string        `json:"type"`
+	Kind       string        `json:"kind"`
+	Unit       *string       `json:"unit,omitempty"`
+	StartDate  string        `json:"start_date"`
+	EndDate    string        `json:"end_date"`
+	Samples    []sampleEntry `json:"samples"`
+	NextOffset *int          `json:"next_offset,omitempty"`
+}
+
+type sampleEntry struct {
+	UUID   string   `json:"uuid"`
+	Start  string   `json:"start"`
+	End    string   `json:"end"`
+	Value  *float64 `json:"value"`
+	Label  *string  `json:"label,omitempty"`
+	Source *string  `json:"source,omitempty"`
+}
+
+type workoutSeriesOutput struct {
+	TimeZone  string        `json:"time_zone"`
+	UUID      string        `json:"uuid"`
+	Start     string        `json:"start"`
+	End       string        `json:"end"`
+	MaxPoints int           `json:"max_points"`
+	Series    []seriesEntry `json:"series"`
+}
+
+// seriesEntry renders one stream. Points are [seconds after the workout's
+// start, value] so the model can read them without converting epochs.
+type seriesEntry struct {
+	Type           string       `json:"type"`
+	Unit           *string      `json:"unit,omitempty"`
+	TotalPoints    int          `json:"total_points"`
+	ReturnedPoints int          `json:"returned_points"`
+	Downsampled    bool         `json:"downsampled"`
+	Points         [][2]float64 `json:"points"`
+}
+
+type stateOfMindOutput struct {
+	TimeZone  string             `json:"time_zone"`
+	StartDate string             `json:"start_date"`
+	EndDate   string             `json:"end_date"`
+	Entries   []stateOfMindEntry `json:"entries"`
+}
+
+type stateOfMindEntry struct {
+	Date                  string   `json:"date"`
+	Timestamp             string   `json:"timestamp"`
+	Kind                  string   `json:"kind"`
+	Valence               *float64 `json:"valence,omitempty"`
+	ValenceClassification *string  `json:"valence_classification,omitempty"`
+	Labels                []string `json:"labels,omitempty"`
+	Associations          []string `json:"associations,omitempty"`
 }
 
 // jsonResult renders v as one compact JSON text block. Handlers use Out=any
@@ -577,6 +731,181 @@ func (s *service) getWorkout(ctx context.Context, _ *mcp.CallToolRequest, in wor
 	}
 	out.Events = s.humanizeTimes(events)
 	out.Activities = s.humanizeTimes(d.Activities)
+	return jsonResult(out)
+}
+
+func (s *service) getSleep(ctx context.Context, _ *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
+	win, err := newDayWindow(in.StartDate, in.EndDate, s.loc, maxDaysPerCall)
+	if err != nil {
+		return nil, nil, err
+	}
+	nights, err := s.api.SleepDaily(ctx, win.StartMS, win.EndMS)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := sleepOutput{
+		TimeZone:  s.loc.String(),
+		StartDate: win.StartDate,
+		EndDate:   win.EndDate,
+		Nights:    make([]sleepNight, 0, len(nights)),
+	}
+	for _, n := range nights {
+		out.Nights = append(out.Nights, sleepNight{
+			Date:      n.Date,
+			Start:     formatInstant(n.Start, s.loc),
+			End:       formatInstant(n.End, s.loc),
+			InBedMin:  round4(n.InBedMinutes),
+			AsleepMin: round4(n.AsleepMinutes),
+			Stages: sleepStageBreak{
+				CoreMin:        round4(n.Stages.Core),
+				DeepMin:        round4(n.Stages.Deep),
+				REMMin:         round4(n.Stages.REM),
+				UnspecifiedMin: round4(n.Stages.Unspecified),
+				AwakeMin:       round4(n.Stages.Awake),
+			},
+			SourceCount: n.Sources,
+		})
+	}
+	return jsonResult(out)
+}
+
+func (s *service) getSamples(ctx context.Context, _ *mcp.CallToolRequest, in samplesInput) (*mcp.CallToolResult, any, error) {
+	typ := strings.TrimSpace(in.Type)
+	if typ == "" {
+		return nil, nil, errors.New("type must name one HealthKit identifier, e.g. HKQuantityTypeIdentifierHeartRate")
+	}
+	win, err := newDayWindow(in.StartDate, in.EndDate, s.loc, maxSampleDays)
+	if err != nil {
+		return nil, nil, err
+	}
+	limit := in.Limit
+	if limit == 0 {
+		limit = defaultSampleLimit
+	}
+	if limit < 0 {
+		return nil, nil, errors.New("limit must be at least 1")
+	}
+	if limit > maxSampleLimit {
+		limit = maxSampleLimit
+	}
+	if in.Offset < 0 {
+		return nil, nil, errors.New("offset must be at least 0")
+	}
+
+	page, err := s.api.Samples(ctx, typ, win.StartMS, win.EndMS, limit, in.Offset)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := samplesOutput{
+		TimeZone:  s.loc.String(),
+		Type:      page.Type,
+		Kind:      page.Kind,
+		Unit:      page.Unit,
+		StartDate: win.StartDate,
+		EndDate:   win.EndDate,
+		Samples:   make([]sampleEntry, 0, len(page.Samples)),
+	}
+	for _, sample := range page.Samples {
+		out.Samples = append(out.Samples, sampleEntry{
+			UUID:   sample.UUID,
+			Start:  formatInstant(sample.Start, s.loc),
+			End:    formatInstant(sample.End, s.loc),
+			Value:  round4Ptr(sample.Value),
+			Label:  sample.Label,
+			Source: sample.Source,
+		})
+	}
+	// A full page means there may be more; a short one is the end.
+	if len(page.Samples) == limit {
+		next := page.NextOffset
+		out.NextOffset = &next
+	}
+	return jsonResult(out)
+}
+
+func (s *service) getWorkoutSeries(ctx context.Context, _ *mcp.CallToolRequest, in workoutSeriesInput) (*mcp.CallToolResult, any, error) {
+	uuid := strings.ToLower(strings.TrimSpace(in.UUID))
+	if !isUUID(uuid) {
+		return nil, nil, fmt.Errorf("uuid %q is not a workout uuid; pass one exactly as returned by list_workouts", in.UUID)
+	}
+	var types []string
+	if len(in.Types) > 0 {
+		var err error
+		if types, err = normalizeTypes(in.Types); err != nil {
+			return nil, nil, err
+		}
+	}
+	maxPoints := in.MaxPoints
+	if maxPoints == 0 {
+		maxPoints = defaultSeriesPoints
+	}
+	if maxPoints < 0 {
+		return nil, nil, errors.New("max_points must be at least 1")
+	}
+	if maxPoints > maxSeriesPoints {
+		maxPoints = maxSeriesPoints
+	}
+
+	resp, err := s.api.WorkoutSeries(ctx, uuid, types, maxPoints)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := workoutSeriesOutput{
+		TimeZone:  s.loc.String(),
+		UUID:      resp.UUID,
+		Start:     formatInstant(resp.Start, s.loc),
+		End:       formatInstant(resp.End, s.loc),
+		MaxPoints: resp.MaxPoints,
+		Series:    make([]seriesEntry, 0, len(resp.Series)),
+	}
+	for _, series := range resp.Series {
+		entry := seriesEntry{
+			Type:           series.Type,
+			Unit:           series.Unit,
+			TotalPoints:    series.TotalPoints,
+			ReturnedPoints: len(series.Points),
+			Downsampled:    series.TotalPoints > len(series.Points),
+			Points:         make([][2]float64, 0, len(series.Points)),
+		}
+		for _, p := range series.Points {
+			// Seconds after the workout start, so the model reads the shape
+			// of the stream without decoding epoch milliseconds.
+			entry.Points = append(entry.Points, [2]float64{
+				round4(float64(p.T-resp.Start) / 1000),
+				round4(p.V),
+			})
+		}
+		out.Series = append(out.Series, entry)
+	}
+	return jsonResult(out)
+}
+
+func (s *service) getStateOfMind(ctx context.Context, _ *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
+	win, err := newDayWindow(in.StartDate, in.EndDate, s.loc, maxDaysPerCall)
+	if err != nil {
+		return nil, nil, err
+	}
+	entries, err := s.api.StateOfMind(ctx, win.StartMS, win.EndMS)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := stateOfMindOutput{
+		TimeZone:  s.loc.String(),
+		StartDate: win.StartDate,
+		EndDate:   win.EndDate,
+		Entries:   make([]stateOfMindEntry, 0, len(entries)),
+	}
+	for _, e := range entries {
+		out.Entries = append(out.Entries, stateOfMindEntry{
+			Date:                  e.Date,
+			Timestamp:             formatInstant(e.Timestamp, s.loc),
+			Kind:                  e.Kind,
+			Valence:               round4Ptr(e.Valence),
+			ValenceClassification: e.ValenceClassification,
+			Labels:                e.Labels,
+			Associations:          e.Associations,
+		})
+	}
 	return jsonResult(out)
 }
 

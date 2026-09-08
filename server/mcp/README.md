@@ -22,6 +22,10 @@ prompts) see [`docs/ai.md`](../../docs/ai.md).
 | `get_activity_rings(start_date, end_date)` | Move / Exercise / Stand values and goals per day. |
 | `list_workouts(start_date?, end_date?, activity_type?, limit?, offset?)` | Workout summaries, newest first. |
 | `get_workout(uuid)` | Per-type statistics, events, and multi-sport parts of one workout. |
+| `get_workout_series(uuid, types?, max_points?)` | The second-by-second streams inside one workout, downsampled. |
+| `get_sleep(start_date, end_date)` | One row per night — asleep, in bed and stage minutes — dated by the day of waking. |
+| `get_samples(type, start_date, end_date, limit?, offset?)` | Individual records of one type, raw and undeduplicated. At most 31 days. |
+| `get_state_of_mind(start_date, end_date)` | Logged moods: valence, classification, labels, associations. |
 
 Resources: `pulshealth://guide` (the embedded [`guide.md`](guide.md), written
 for the model: data model, units, the iPhone + Watch double-counting rule,

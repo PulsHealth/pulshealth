@@ -417,3 +417,263 @@ func TestGetWorkout(t *testing.T) {
 }
 
 func itoa(ms int64) string { return strconv.FormatInt(ms, 10) }
+
+func TestGetSleep(t *testing.T) {
+	f := newFakeAPI(t)
+	f.respond("/v1/sleep/daily", http.StatusOK, fixtureSleep)
+	s := f.service(t, "Europe/Berlin")
+	ctx := context.Background()
+
+	var out sleepOutput
+	res, _, err := s.getSleep(ctx, nil, rangeInput{StartDate: "2026-09-21", EndDate: "2026-09-21"})
+	resultJSON(t, res, err, &out)
+
+	// One inclusive local day maps to that day's [midnight, midnight) range.
+	q := f.lastQuery(t, "/v1/sleep/daily")
+	wantStart := time.Date(2026, 9, 20, 22, 0, 0, 0, time.UTC).UnixMilli()
+	wantEnd := time.Date(2026, 9, 21, 22, 0, 0, 0, time.UTC).UnixMilli()
+	if q.Get("start") != itoa(wantStart) || q.Get("end") != itoa(wantEnd) {
+		t.Errorf("start/end = %s/%s, want %d/%d", q.Get("start"), q.Get("end"), wantStart, wantEnd)
+	}
+
+	if out.TimeZone != "Europe/Berlin" || out.StartDate != "2026-09-21" || out.EndDate != "2026-09-21" {
+		t.Errorf("echoed range = %s %s..%s", out.TimeZone, out.StartDate, out.EndDate)
+	}
+	if len(out.Nights) != 1 {
+		t.Fatalf("nights = %+v", out.Nights)
+	}
+	n := out.Nights[0]
+	// The night is dated by its wake-up day even though it began the evening
+	// before, and its instants read as local time.
+	if n.Date != "2026-09-21" || n.Start != "2026-09-20T22:30:00+02:00" || n.End != "2026-09-21T06:30:00+02:00" {
+		t.Errorf("night = %+v", n)
+	}
+	if n.InBedMin != 480 || n.AsleepMin != 460 || n.SourceCount != 2 {
+		t.Errorf("night totals = %+v (asleep_min should be rounded)", n)
+	}
+	if n.Stages != (sleepStageBreak{CoreMin: 340, DeepMin: 60, REMMin: 60, AwakeMin: 10}) {
+		t.Errorf("stages = %+v", n.Stages)
+	}
+	// Every stage key is present, zeroes included, so "no REM" is visible.
+	var generic struct {
+		Nights []map[string]any `json:"nights"`
+	}
+	resultJSON(t, res, err, &generic)
+	stages, ok := generic.Nights[0]["stages"].(map[string]any)
+	if !ok || stages["unspecified_min"] != 0.0 || len(stages) != 5 {
+		t.Errorf("stages json = %v", generic.Nights[0]["stages"])
+	}
+}
+
+func TestGetSleep_ValidatesBeforeCalling(t *testing.T) {
+	f := newFakeAPI(t)
+	s := f.service(t, "UTC")
+	ctx := context.Background()
+
+	_, _, err := s.getSleep(ctx, nil, rangeInput{StartDate: "2026-09-08", EndDate: "2026-09-07"})
+	wantToolError(t, err, "end_date 2026-09-07 is before start_date 2026-09-08")
+
+	_, _, err = s.getSleep(ctx, nil, rangeInput{StartDate: "2025-01-01", EndDate: "2026-09-07"})
+	wantToolError(t, err, "at most 366 days")
+
+	if calls := f.callsTo("/v1/sleep/daily"); len(calls) != 0 {
+		t.Errorf("invalid input reached the API: %v", calls)
+	}
+
+	f.respond("/v1/sleep/daily", http.StatusBadRequest, map[string]string{"error": "range covers 400 days; at most 366 days per request"})
+	_, _, err = s.getSleep(ctx, nil, rangeInput{StartDate: "2026-09-01", EndDate: "2026-09-07"})
+	wantToolError(t, err, "400", "at most 366 days per request")
+}
+
+func TestGetSamples(t *testing.T) {
+	f := newFakeAPI(t)
+	f.respond("/v1/samples", http.StatusOK, fixtureSamples)
+	s := f.service(t, "Europe/Berlin")
+	ctx := context.Background()
+
+	t.Run("defaults and shape", func(t *testing.T) {
+		var out samplesOutput
+		res, _, err := s.getSamples(ctx, nil, samplesInput{
+			Type: " HKCategoryTypeIdentifierSleepAnalysis ", StartDate: "2026-09-20", EndDate: "2026-09-21",
+		})
+		resultJSON(t, res, err, &out)
+
+		q := f.lastQuery(t, "/v1/samples")
+		if q.Get("type") != "HKCategoryTypeIdentifierSleepAnalysis" || q.Get("limit") != "500" || q.Get("offset") != "0" {
+			t.Errorf("query = %v", q)
+		}
+		if out.Kind != "category" || out.StartDate != "2026-09-20" || out.EndDate != "2026-09-21" {
+			t.Errorf("out = %+v", out)
+		}
+		if len(out.Samples) != 1 {
+			t.Fatalf("samples = %+v", out.Samples)
+		}
+		sample := out.Samples[0]
+		if sample.Start != "2026-09-20T22:40:00+02:00" || *sample.Value != 3 || *sample.Label != "Asleep Core" || *sample.Source != "Apple Watch" {
+			t.Errorf("sample = %+v", sample)
+		}
+		// A short page is the end of the data, so no paging hint.
+		if out.NextOffset != nil {
+			t.Errorf("next_offset = %v, want none for a short page", *out.NextOffset)
+		}
+	})
+
+	t.Run("a full page offers the next offset", func(t *testing.T) {
+		var out samplesOutput
+		res, _, err := s.getSamples(ctx, nil, samplesInput{
+			Type: "HKCategoryTypeIdentifierSleepAnalysis", StartDate: "2026-09-20", EndDate: "2026-09-21", Limit: 1,
+		})
+		resultJSON(t, res, err, &out)
+		if out.NextOffset == nil || *out.NextOffset != 1 {
+			t.Errorf("next_offset = %v, want 1", out.NextOffset)
+		}
+	})
+
+	t.Run("clamps the limit", func(t *testing.T) {
+		if _, _, err := s.getSamples(ctx, nil, samplesInput{
+			Type: "HKCategoryTypeIdentifierSleepAnalysis", StartDate: "2026-09-20", EndDate: "2026-09-21", Limit: 999999,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if q := f.lastQuery(t, "/v1/samples"); q.Get("limit") != itoa(maxSampleLimit) {
+			t.Errorf("limit = %q, want %d", q.Get("limit"), maxSampleLimit)
+		}
+	})
+}
+
+func TestGetSamples_ValidatesBeforeCalling(t *testing.T) {
+	f := newFakeAPI(t)
+	s := f.service(t, "UTC")
+	ctx := context.Background()
+	const typ = "HKQuantityTypeIdentifierHeartRate"
+
+	_, _, err := s.getSamples(ctx, nil, samplesInput{Type: "  ", StartDate: "2026-09-01", EndDate: "2026-09-07"})
+	wantToolError(t, err, "type must name one HealthKit identifier")
+
+	// The 31-day cap is the API's; the tool rejects a longer span itself.
+	_, _, err = s.getSamples(ctx, nil, samplesInput{Type: typ, StartDate: "2026-08-01", EndDate: "2026-09-07"})
+	wantToolError(t, err, "at most 31 days")
+
+	_, _, err = s.getSamples(ctx, nil, samplesInput{Type: typ, StartDate: "2026-09-07", EndDate: "2026-09-01"})
+	wantToolError(t, err, "before start_date")
+
+	_, _, err = s.getSamples(ctx, nil, samplesInput{Type: typ, StartDate: "2026-09-01", EndDate: "2026-09-07", Limit: -1})
+	wantToolError(t, err, "limit must be at least 1")
+
+	_, _, err = s.getSamples(ctx, nil, samplesInput{Type: typ, StartDate: "2026-09-01", EndDate: "2026-09-07", Offset: -1})
+	wantToolError(t, err, "offset must be at least 0")
+
+	if calls := f.callsTo("/v1/samples"); len(calls) != 0 {
+		t.Errorf("invalid input reached the API: %v", calls)
+	}
+
+	// Exactly 31 days is fine.
+	f.respond("/v1/samples", http.StatusOK, SamplesPage{Type: typ, Kind: "quantity", Samples: []Sample{}})
+	if _, _, err := s.getSamples(ctx, nil, samplesInput{Type: typ, StartDate: "2026-08-08", EndDate: "2026-09-07"}); err != nil {
+		t.Errorf("31 days rejected: %v", err)
+	}
+}
+
+func TestGetWorkoutSeries(t *testing.T) {
+	f := newFakeAPI(t)
+	f.respond("/v1/workouts/"+workoutUUID+"/series", http.StatusOK, fixtureSeries())
+	s := f.service(t, "Europe/Berlin")
+	ctx := context.Background()
+
+	t.Run("defaults and offsets", func(t *testing.T) {
+		var out workoutSeriesOutput
+		res, _, err := s.getWorkoutSeries(ctx, nil, workoutSeriesInput{UUID: strings.ToUpper(workoutUUID)})
+		resultJSON(t, res, err, &out)
+
+		q := f.lastQuery(t, "/v1/workouts/"+workoutUUID+"/series")
+		if q.Get("maxPoints") != "500" || q.Has("types") {
+			t.Errorf("query = %v", q)
+		}
+		if out.UUID != workoutUUID || out.Start != "2026-09-06T07:30:00+02:00" {
+			t.Errorf("out = %+v", out)
+		}
+		if len(out.Series) != 1 {
+			t.Fatalf("series = %+v", out.Series)
+		}
+		series := out.Series[0]
+		if series.Type != "HKQuantityTypeIdentifierHeartRate" || *series.Unit != "count/min" {
+			t.Errorf("series = %+v", series)
+		}
+		if series.TotalPoints != 2700 || series.ReturnedPoints != 4 || !series.Downsampled {
+			t.Errorf("counts = %+v", series)
+		}
+		// Points are [seconds after the workout start, value], rounded.
+		want := [][2]float64{{0, 98}, {60, 120.5}, {120, 151}, {180, 143}}
+		for i, p := range series.Points {
+			if p != want[i] {
+				t.Errorf("point %d = %v, want %v", i, p, want[i])
+			}
+		}
+	})
+
+	t.Run("types filter and max_points clamp", func(t *testing.T) {
+		if _, _, err := s.getWorkoutSeries(ctx, nil, workoutSeriesInput{
+			UUID:      workoutUUID,
+			Types:     []string{"HKQuantityTypeIdentifierHeartRate", " ", "HKQuantityTypeIdentifierRunningPower", "HKQuantityTypeIdentifierHeartRate"},
+			MaxPoints: 999999,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		q := f.lastQuery(t, "/v1/workouts/"+workoutUUID+"/series")
+		if q.Get("types") != "HKQuantityTypeIdentifierHeartRate,HKQuantityTypeIdentifierRunningPower" {
+			t.Errorf("types = %q (blanks and duplicates should be dropped)", q.Get("types"))
+		}
+		if q.Get("maxPoints") != itoa(maxSeriesPoints) {
+			t.Errorf("maxPoints = %q, want %d", q.Get("maxPoints"), maxSeriesPoints)
+		}
+	})
+
+	t.Run("rejects bad input before calling", func(t *testing.T) {
+		_, _, err := s.getWorkoutSeries(ctx, nil, workoutSeriesInput{UUID: "yesterday's run"})
+		wantToolError(t, err, "is not a workout uuid")
+
+		_, _, err = s.getWorkoutSeries(ctx, nil, workoutSeriesInput{UUID: workoutUUID, MaxPoints: -5})
+		wantToolError(t, err, "max_points must be at least 1")
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		other := "ffffffff-ffff-4fff-8fff-ffffffffffff"
+		f.respond("/v1/workouts/"+other+"/series", http.StatusNotFound, map[string]string{"error": "workout not found"})
+		_, _, err := s.getWorkoutSeries(ctx, nil, workoutSeriesInput{UUID: other})
+		wantToolError(t, err, "404", "workout not found")
+	})
+}
+
+func TestGetStateOfMind(t *testing.T) {
+	f := newFakeAPI(t)
+	f.respond("/v1/state-of-mind", http.StatusOK, fixtureStateOfMind)
+	s := f.service(t, "Europe/Berlin")
+	ctx := context.Background()
+
+	var out stateOfMindOutput
+	res, _, err := s.getStateOfMind(ctx, nil, rangeInput{StartDate: "2026-09-06", EndDate: "2026-09-06"})
+	resultJSON(t, res, err, &out)
+
+	q := f.lastQuery(t, "/v1/state-of-mind")
+	wantStart := time.Date(2026, 9, 5, 22, 0, 0, 0, time.UTC).UnixMilli()
+	wantEnd := time.Date(2026, 9, 6, 22, 0, 0, 0, time.UTC).UnixMilli()
+	if q.Get("start") != itoa(wantStart) || q.Get("end") != itoa(wantEnd) {
+		t.Errorf("start/end = %s/%s, want %d/%d", q.Get("start"), q.Get("end"), wantStart, wantEnd)
+	}
+	if len(out.Entries) != 1 {
+		t.Fatalf("entries = %+v", out.Entries)
+	}
+	e := out.Entries[0]
+	if e.Date != "2026-09-06" || e.Timestamp != "2026-09-06T19:00:00+02:00" || e.Kind != "momentaryEmotion" {
+		t.Errorf("entry = %+v", e)
+	}
+	if *e.Valence != 0.5 || *e.ValenceClassification != "slightlyPleasant" {
+		t.Errorf("valence = %v / %v (should be rounded)", e.Valence, e.ValenceClassification)
+	}
+	if strings.Join(e.Labels, ",") != "calm,grateful" || strings.Join(e.Associations, ",") != "family" {
+		t.Errorf("labels/associations = %v / %v", e.Labels, e.Associations)
+	}
+
+	_, _, err = s.getStateOfMind(ctx, nil, rangeInput{StartDate: "2025-01-01", EndDate: "2026-09-07"})
+	wantToolError(t, err, "at most 366 days")
+}
