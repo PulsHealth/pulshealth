@@ -180,7 +180,13 @@ claude mcp add pulshealth -s user \
 Remote clients connect to the Compose `mcp` service over HTTPS with
 `PULS_MCP_TOKEN`. Config snippets for every client, the remote-connector
 recipe, demo prompts and the security notes are in
-[`docs/ai.md`](docs/ai.md).
+[`docs/ai.md`](docs/ai.md) — which also covers ChatGPT, which takes a
+different route: importing the API's `/openapi.json` as a custom GPT Action,
+with caveats worth reading first.
+
+For a whole range as a *file* rather than an answer in a chat,
+`GET /v1/export` streams any dataset as CSV or JSONL and `tools/puls-export`
+is a small CLI for it: [`docs/export.md`](docs/export.md).
 
 ## How syncing works
 
@@ -450,6 +456,10 @@ and server in step are in [`CONTRIBUTING.md`](CONTRIBUTING.md). `CLAUDE.md`
 lists the invariants (anchor-after-ack, canonical units, epoch-ms
 everywhere, upsert vs. never-overwrite) and the HealthKit gotchas; it is
 written for AI coding agents and is worth reading regardless.
+[`AGENTS.md`](AGENTS.md) is the shorter orientation for an automated
+contributor — components, where the authoritative facts live, and the test
+command for every suite — and [`llms.txt`](llms.txt) indexes the
+documentation for a model reading the repository cold.
 
 ### Tuning
 

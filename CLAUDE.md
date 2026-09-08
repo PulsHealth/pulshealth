@@ -9,6 +9,13 @@ Personal HealthKit → self-hosted Postgres sync. Four components, each with its
 | `PulsHealth/` | SwiftUI app wrapping the library (dashboard, type picker, settings, log, benchmark) | `PulsHealth/README.md` |
 | `server/` | Docker Compose: Go ingest/product APIs + PostgreSQL 17/TimescaleDB + Grafana | `server/README.md` |
 | `server/mcp/` | Go MCP server (stdio + streamable HTTP) giving AI assistants read-only tools over the product API; talks only to the API, never Postgres | `server/mcp/README.md`, `docs/ai.md` |
+| `tools/puls-export/` | Standalone Go module: CLI for the product API's `GET /v1/export` (streamed CSV/JSONL). Its own `go.mod`, stdlib only | `docs/export.md` |
+
+[`AGENTS.md`](AGENTS.md) is the short, tool-agnostic version of this file for
+an automated contributor (components, where the authoritative facts live, the
+test command for each suite); [`llms.txt`](llms.txt) indexes the
+documentation. Both point back here for the invariants below rather than
+restating them — keep it that way.
 
 ## Build & test
 
@@ -49,6 +56,7 @@ make dev-up                                    # thereafter (compose.build.yml)
 cd server/ingest && go vet ./... && go test ./...
 cd ../api && go vet ./... && go test ./...
 cd ../mcp && go vet ./... && go test ./...   # MCP server; tests run against an httptest fake of the product API
+cd ../../tools/puls-export && go vet ./... && go test ./...   # export CLI (own module, no deps)
 
 # Server integration tests (gated on DATABASE_URL; schema must be applied)
 cd server && docker compose up -d migrate      # db + schema, nothing else
