@@ -149,8 +149,8 @@ On the server:
 
 ```bash
 cd server
-openssl rand -hex 32            # → PULS_MCP_TOKEN in .env
-docker compose up -d --build mcp
+openssl rand -hex 32            # → PULS_MCP_TOKEN in .env (scripts/bootstrap.sh generates it)
+docker compose up -d mcp        # pulls ghcr.io/pulshealth/mcp; `make dev-up` builds it from the checkout
 curl -s localhost:8082/healthz  # → {"api":true,"ok":true}
 ```
 

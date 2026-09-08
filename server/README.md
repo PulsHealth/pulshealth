@@ -1,27 +1,32 @@
 # PulsHealth Server
 
 Self-hosted ingestion stack for Apple HealthKit data exported by the
-PulsHealth iOS app. Four app containers plus PostgreSQL and a one-shot schema
-migrator via Docker Compose:
+PulsHealth iOS app. Four published app images plus Grafana, PostgreSQL and a
+one-shot schema migrator via Docker Compose:
 
 | Service | Image | Port | Purpose |
 |---|---|---|---|
 | `db` | `timescale/timescaledb-ha:pg17.11-ts2.29.2` (pinned — see "Upgrading the database image") | 127.0.0.1:5432 | PostgreSQL 17 + TimescaleDB |
 | `migrate` | same pinned image as `db` (one-shot) | — | Applies `db/migrations/` before the app services start, on every `docker compose up -d` (see "Schema migrations") |
-| `ingest` | built from `ingest/` (Go, distroless) | 127.0.0.1:8080 | HTTP ingest API — expose it through a TLS-terminating proxy of your choice (Tailscale Serve/Funnel is one option; see "Exposing the server"); connects as the scoped DML-only `ingest` role (see "The scoped `ingest` role") |
-| `api` | built from `api/` (Go, distroless) | 127.0.0.1:8081 | Product read API for downstream apps |
+| `ingest` | `ghcr.io/pulshealth/ingest:${PULS_VERSION:-latest}` (Go, distroless; source in `ingest/`) | `${INGEST_BIND_ADDR:-127.0.0.1}:8080` | HTTP ingest API — expose it through a TLS-terminating proxy of your choice, or on your own LAN with `INGEST_BIND_ADDR=0.0.0.0` (see "Exposing the server"); connects as the scoped DML-only `ingest` role (see "The scoped `ingest` role") |
+| `api` | `ghcr.io/pulshealth/api:${PULS_VERSION:-latest}` (Go, distroless; `api/`) | 127.0.0.1:8081 | Product read API for downstream apps |
+| `mcp` | `ghcr.io/pulshealth/mcp:${PULS_VERSION:-latest}` (Go, distroless; `mcp/`) | 127.0.0.1:8082 | Read-only MCP server for AI assistants over the product API (`docs/ai.md`) |
 | `grafana` | `grafana/grafana:13.0.2` (pinned — 13.x provisioning is version-sensitive) | 127.0.0.1:3000 | Dashboards (reach them through the same kind of TLS proxy, e.g. Tailscale Serve on `:8443`) |
-| `web` | built from `../web/` (Next.js standalone) | `${WEB_BIND_ADDR:-127.0.0.1}:3001` | Web health viewer — reads the DB directly as the read-only `grafana` role |
+| `web` | `ghcr.io/pulshealth/web:${PULS_VERSION:-latest}` (Next.js standalone; `../web/`) | `${WEB_BIND_ADDR:-127.0.0.1}:3001` | Web health viewer — reads the DB directly as the read-only `grafana` role |
 
-The `web` service builds from the sibling `../web/` directory (a Next.js app),
+The four app images are pulled from `ghcr.io/pulshealth` by default (see
+"Images and versions"); the `compose.build.yml` overlay builds them from the
+checkout instead. The `web` one builds from the sibling `../web/` directory,
 so build from a checkout that contains both `server/` and `web/`.
 
 ```
 server/
-├── docker-compose.yml
-├── .env.example          # copy to .env, fill in secrets
+├── docker-compose.yml    # the stack: pulls the published images
+├── compose.build.yml     # developer overlay: build the app images from here
+├── .env.example          # copy to .env, fill in secrets (scripts/bootstrap.sh does it)
 ├── api/                  # Go product read API + Dockerfile
 ├── ingest/               # Go ingest server + Dockerfile
+├── mcp/                  # Go MCP server + Dockerfile
 ├── db/migrate.sh         # schema migrator, run by the `migrate` service
 ├── db/migrations/        # numbered schema files it applies, in order
 ├── grafana/              # provisioned datasource + dashboard
@@ -29,16 +34,27 @@ server/
 
 ## Setup
 
+The fast path is the bootstrap script at the repository root: it creates
+`.env` with every secret generated, starts the stack, waits for ingest and
+prints the pairing block for the app (URL, token, user ID, QR code). It is
+safe to re-run, and `--print-pairing` (`make pairing`) re-prints the block.
+
+```bash
+scripts/bootstrap.sh --time-zone Europe/Berlin    # the root README's "Quickstart" has the rest
+```
+
+By hand, it is:
+
 ```bash
 cd server
 cp .env.example .env
 # Generate secrets (run once per variable):
 openssl rand -hex 32
-# Edit .env: POSTGRES_PASSWORD, PULS_TOKEN, PULS_API_TOKEN, GRAFANA_PASSWORD,
-# GRAFANA_DB_PASSWORD, API_DB_PASSWORD, INGEST_DB_PASSWORD — and PULS_TIME_ZONE
-# (see "Configuration" below).
+# Edit .env: POSTGRES_PASSWORD, PULS_TOKEN, PULS_API_TOKEN, PULS_MCP_TOKEN,
+# GRAFANA_PASSWORD, GRAFANA_DB_PASSWORD, API_DB_PASSWORD, INGEST_DB_PASSWORD —
+# and PULS_TIME_ZONE (see "Configuration" below).
 
-docker compose up -d --build         # db → migrate (schema) → ingest, api, web, grafana
+docker compose up -d                 # pulls the images; db → migrate (schema) → ingest, api, mcp, web, grafana
 docker compose logs migrate          # one line per schema file: applied / skipped / rerun
 curl -s localhost:8080/healthz       # → {"db":true,"ok":true}
 curl -s localhost:8081/healthz       # → {"db":true,"ok":true}
@@ -46,7 +62,11 @@ curl -s localhost:8081/healthz       # → {"db":true,"ok":true}
 
 That is the whole install: the `migrate` service creates the schema on an
 empty volume, records what it applied, and every app service waits for it
-to finish. The same command upgrades a running install later.
+to finish. The same command, after a `docker compose pull`, upgrades a
+running install later. To run the code in this checkout instead of the
+published images, add the developer overlay —
+`docker compose -f docker-compose.yml -f compose.build.yml up -d --build`,
+or `make dev-up` at the repository root.
 
 ### Configuration
 
@@ -87,30 +107,92 @@ comments). Beyond the passwords and tokens, two settings deserve attention:
 - `WEB_BIND_ADDR` — the web viewer is unauthenticated and defaults to
   loopback. To reach it from other machines bind it to a private interface
   (a VPN/tailnet address), never `0.0.0.0`.
+- `INGEST_BIND_ADDR` — where ingest's port 8080 is published; defaults to
+  loopback, which is right whenever a TLS proxy sits in front of it.
+  `0.0.0.0` — what `scripts/bootstrap.sh --lan` writes — publishes it on
+  every interface so a phone on the same Wi-Fi can sync to plain
+  `http://<this host's LAN IP>:8080` with no proxy at all. See "Exposing the
+  server" for the trade-off.
+- `PULS_VERSION` — which image tag the four app services run (`latest` when
+  unset); `PULS_PUBLIC_URL` — the URL the pairing block should carry instead
+  of the LAN address (read by `scripts/bootstrap.sh` only). See "Images and
+  versions" and "Exposing the server".
 
 ## Deploying and upgrading
 
 The reference stack is plain Docker Compose; there is no deploy tooling in the
-repo. To upgrade a running install, pull the new revision and rebuild:
+repo. A running install upgrades by moving to newer images:
 
 ```bash
-git pull
-cd server && docker compose up -d --build
+git pull                                         # newer compose file and migrations
+cd server
+# optional: pin the release in .env, e.g. PULS_VERSION=1.3.0 (default: latest)
+docker compose pull && docker compose up -d      # or, at the repository root: make pull up
 docker compose logs migrate                      # what the schema step did
 curl -s localhost:8080/healthz && curl -s localhost:8081/healthz
 ```
 
 `docker compose up -d` always runs the `migrate` service before it
-(re)starts `ingest`, `api`, `web` and `grafana`, so a revision that adds a
-schema file applies it before the code that depends on it comes up. If a
-migration fails, the app services are not started and `docker compose up`
-reports `dependency failed to start`; the containers from the previous
+(re)starts `ingest`, `api`, `mcp`, `web` and `grafana`, so a revision that
+adds a schema file applies it before the code that depends on it comes up.
+If a migration fails, the app services are not started and `docker compose
+up` reports `dependency failed to start`; the containers from the previous
 revision are left running as they were. Fix the cause and `docker compose
 up -d` again. **Take a `pg_dump` before upgrading**: the stack ships no
 backup service (see "Backup & restore"), so the live volume is the only
 copy. Re-applying the schema from scratch means dropping the volume
 (`docker compose down -v && docker compose up -d`), which **destroys all data
 irrecoverably**.
+
+### Images and versions
+
+The four app services run images published from this repository:
+
+| Service | Image | Reports its build as |
+|---|---|---|
+| `ingest` | `ghcr.io/pulshealth/ingest` | `version` in `GET /v1/capabilities` |
+| `api` | `ghcr.io/pulshealth/api` | — |
+| `mcp` | `ghcr.io/pulshealth/mcp` | `--version`, and `serverInfo` on MCP `initialize` |
+| `web` | `ghcr.io/pulshealth/web` | — |
+
+`.github/workflows/release.yml` builds all four for `linux/amd64` and
+`linux/arm64` (natively, one runner per architecture, merged into a single
+manifest list) and every image carries the commit it was built from as the
+`org.opencontainers.image.revision` label. The tags:
+
+- On a git tag `vX.Y.Z`: the exact version (`1.2.3`), a floating `1.2`, and
+  `latest`. `latest` and `1.2` move only for non-prerelease tags, so a
+  `v1.3.0-rc1` publishes `1.3.0-rc1` and nothing else floats onto it.
+- On a manual run of the workflow (`workflow_dispatch`, e.g. from `main`
+  before the first tag): the tag given as input, or the short commit SHA.
+  Never `latest`.
+
+`PULS_VERSION` in `.env` selects the tag; unset, it is `latest`. Pinning a
+release (`PULS_VERSION=1.2.3`) makes upgrades deliberate: bump it, then
+`docker compose pull && docker compose up -d` (`make pull up`). The `migrate`
+service runs first and applies any schema files the new release brought, and
+the app containers start only after it exits 0. Migrations are forward-only,
+so going back to an older image after a release that migrated the schema is
+not supported — take a `pg_dump` before upgrading. The database image is
+versioned separately (`x-db-image` in `docker-compose.yml`; see "Upgrading
+the database image").
+
+To run what is in the checkout — a local change, a branch under review, or
+a fresh clone before any image has been published — add the developer
+overlay, which puts the `build:` blocks back and tags the results
+`pulshealth-<service>:dev` so they never masquerade as a published version:
+
+```bash
+cd server && docker compose -f docker-compose.yml -f compose.build.yml up -d --build
+# or, at the repository root:
+make dev-up                                      # sets DEPLOY_COMMIT from git
+scripts/bootstrap.sh --build                     # the bootstrap flow, building instead of pulling
+```
+
+A plain `docker compose up -d` afterwards switches the containers back to
+the `ghcr.io/pulshealth` images (pulling them if needed). Every pull request
+builds the four images for `linux/amd64` in CI (`images` job in `ci.yml`),
+so a broken Dockerfile fails there rather than at release time.
 
 ### Schema migrations
 
@@ -287,17 +369,46 @@ drop the volume, let `migrate` rebuild the schema, and resync from the app.
 ### The token
 
 `PULS_TOKEN` is a single static bearer token shared by the server and the iOS
-app. Create it with `openssl rand -hex 32`, put it in `.env`, and paste the
-same value into PulsHealth's server settings. Rotate by changing `.env`,
-running `docker compose up -d ingest`, and updating the app.
+app. Create it with `openssl rand -hex 32` (or let `scripts/bootstrap.sh`
+do it), put it in `.env`, and paste the same value into PulsHealth's server
+settings — the pairing block (`make pairing`) shows it next to the URL and
+user ID.
+
+### Rotating secrets
+
+`scripts/bootstrap.sh` never regenerates an existing `.env`: the app holds
+`PULS_TOKEN` and the database volume holds `POSTGRES_PASSWORD`, so a fresh
+set of secrets would strand both. Rotate one value at a time instead:
+
+| Secret | How |
+|---|---|
+| `PULS_TOKEN` | Edit `.env`, `docker compose up -d ingest`, paste the new token into the app (`make pairing` shows it). |
+| `PULS_API_TOKEN`, `PULS_MCP_TOKEN` | Edit `.env`, `docker compose up -d api mcp`, update the API consumers and AI clients (`docs/ai.md`). |
+| `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` | Edit `.env`, `docker compose up -d`: `migrate` re-runs `099_read_roles.sh`, which sets the roles' passwords to the new values, and the containers restart with them. |
+| `POSTGRES_PASSWORD` | The superuser password lives in the database, not in `.env`: `docker compose exec db psql -U postgres -c "ALTER USER postgres PASSWORD '<new>'"` first, then edit `.env` and `docker compose up -d`. |
+| `GRAFANA_PASSWORD` | Read at Grafana's first start only; change it in Grafana's own UI (or `docker compose exec grafana grafana cli admin reset-admin-password <new>`), then update `.env` to match. |
 
 ## Exposing the server
 
-The phone has to reach the ingest API over HTTPS. Every service binds to
-loopback, so nothing is reachable until you put a TLS-terminating proxy in
-front of it — and that is the only supported way to expose it. **Never open
-port 8080 to the internet and never serve it over plaintext**: the bearer
-token is a second layer behind TLS, not a substitute for it.
+The phone has to reach ingest's port 8080. There are two supported ways, and
+`scripts/bootstrap.sh` builds the pairing block for either:
+
+- **On your own LAN, in plain HTTP.** Set `INGEST_BIND_ADDR=0.0.0.0` in
+  `.env` (`scripts/bootstrap.sh --lan`) and `docker compose up -d`; the phone
+  uses `http://<this host's LAN IP>:8080`. The app accepts plain `http://`
+  only for local-network hosts (`localhost`, `*.local`, `10.x`,
+  `172.16–31.x`, `192.168.x`), so this works on the same Wi-Fi and nowhere
+  else. The trade-off is that the traffic is readable by anything on that
+  network and the bearer token is the only thing between it and your health
+  data: use it on a network you control, never a shared one, and keep the
+  default loopback bind everywhere else.
+- **From anywhere, over HTTPS.** Keep ingest on loopback (the default) and
+  put a TLS-terminating proxy in front of it. **Never open port 8080 to the
+  internet and never serve it over plaintext beyond your LAN**: the bearer
+  token is a second layer behind TLS, not a substitute for it. Tell the
+  bootstrap script the proxy's URL (`scripts/bootstrap.sh --url
+  https://<host>`, stored as `PULS_PUBLIC_URL`) and the pairing block and QR
+  code carry it.
 
 Any reverse proxy that terminates TLS works (Caddy, nginx, Traefik, a cloud
 tunnel). The easiest path is Tailscale: install it on the server and on your
@@ -640,6 +751,10 @@ If you add backups, note that TimescaleDB restores require
 `pg_restore -j`.
 
 ## Development
+
+Run the stack from the checkout with the build overlay (`make dev-up` at
+the repository root, or `docker compose -f docker-compose.yml -f
+compose.build.yml up -d --build` here); see "Images and versions".
 
 ```bash
 cd ingest

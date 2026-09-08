@@ -31,6 +31,14 @@ cd PulsHealth && xcodegen && xcodebuild build -scheme PulsHealth \
 cd PulsHealth && xcodebuild test -scheme PulsHealth \
   -destination 'platform=iOS Simulator,name=iPhone 17'
 
+# The whole stack. `scripts/bootstrap.sh` (SRV-4) creates server/.env with
+# generated secrets, starts it and prints the pairing block; `make up/down/
+# logs/ps/migrate/baseline/pairing` wrap Compose from the repository root.
+# docker-compose.yml PULLS ghcr.io/pulshealth/{ingest,api,mcp,web} — to run
+# the code in the checkout, add the build overlay:
+scripts/bootstrap.sh --build                   # first run, from source
+make dev-up                                    # thereafter (compose.build.yml)
+
 # Server unit tests (no DB needed)
 cd server/ingest && go vet ./... && go test ./...
 cd ../api && go vet ./... && go test ./...
@@ -252,9 +260,25 @@ The reference stack (`server/docker-compose.yml`) runs on any Docker host;
 production operations (host, deploy pipeline, rollback, monitoring) live
 outside this repository — nothing here assumes a particular machine.
 
-- CI is `.github/workflows/ci.yml` (Go vet/tests, lint, shellcheck and
-  `scripts/check-public-tree.sh`) plus `ios-ci.yml` for the Swift side. There
-  is no deploy workflow in this repo.
+- **The four app services run published images, not local builds.**
+  `server/docker-compose.yml` carries `image:
+  ghcr.io/pulshealth/<name>:${PULS_VERSION:-latest}` and no `build:` block;
+  `server/compose.build.yml` is the developer overlay that puts the build
+  blocks back (tagging `pulshealth-<service>:dev` so a local build never
+  looks like a release). Anything that changes a Dockerfile, a build context
+  or a build arg has to change all three of: that overlay, the `images` job
+  in `ci.yml`, and the build matrix in `release.yml`. `PULS_VERSION` in
+  `.env` picks the tag; upgrading is bump it, then `docker compose pull &&
+  docker compose up -d` (`make pull up`), with `migrate` running first.
+- CI is `.github/workflows/ci.yml` (Go vet/tests, lint, shellcheck,
+  `scripts/check-public-tree.sh`, `docker compose config` over **both**
+  compose variants, and an `images` job that builds all four images for
+  `linux/amd64` without pushing) plus `ios-ci.yml` for the Swift side.
+  `release.yml` publishes to `ghcr.io/pulshealth` on `v*` tags and on
+  `workflow_dispatch` (which never moves `latest`), building each platform
+  on its own native runner — `ubuntu-24.04` and `ubuntu-24.04-arm` — and
+  merging the digests into one manifest list. There is no deploy workflow in
+  this repo.
 - Schema changes ride the `migrate` service (see the invariant above):
   `docker compose up -d` applies pending files before the app services
   start, and a database created before the service existed needs a one-time
@@ -272,6 +296,13 @@ outside this repository — nothing here assumes a particular machine.
   start. It never holds the superuser password; `INGEST_DB_USER=postgres`
   with the superuser password in `INGEST_DB_PASSWORD` is the documented,
   discouraged way back.
+- Ingest publishes port 8080 on `${INGEST_BIND_ADDR:-127.0.0.1}`, the
+  loopback default assuming a TLS proxy in front. `scripts/bootstrap.sh
+  --lan` is the only thing that writes `0.0.0.0`, and only on request: it
+  trades TLS for a phone on the same Wi-Fi reaching `http://<LAN IP>:8080`
+  directly, which works because the app's ATS exception permits plain HTTP
+  to local-network hosts (`ServerURLValidation.isLocalNetworkHost`). Keep
+  the two rules in step, and keep the loopback default.
 - The product API host mapping stays on `127.0.0.1`; the `web` viewer has no
   authentication, so it binds to `WEB_BIND_ADDR` (default `127.0.0.1`) and
   belongs behind a private network or an authenticating proxy. `web` connects

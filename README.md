@@ -23,8 +23,13 @@ it is where the sync protocol is written.
 >   [`docs/protocol/`](docs/protocol/README.md) with JSON Schema and a
 >   fixture corpus, but it is young: expect clarifications, and report gaps
 >   through the "Backend implementer question" issue template.
-> - **Schema migrations are manual.** `server/db/init/` applies only to an
->   empty database volume; later changes are applied by hand.
+> - **Schema migrations are automatic** (the `migrate` service applies
+>   `server/db/migrations/` on every start), but an install created before
+>   it existed needs a one-time `make baseline` — see `server/README.md`.
+> - **The container images are not published yet.** Compose pulls
+>   `ghcr.io/pulshealth/{ingest,api,mcp,web}`, but nothing is there until the
+>   first `v*` release. Until then, build them from the checkout:
+>   `scripts/bootstrap.sh --build` (then `make dev-up`).
 > - **No backup service** ships with the stack. Your Postgres volume is the
 >   only copy of your data unless you add one.
 >
@@ -69,41 +74,51 @@ the batch format can stand in for the reference stack — see
 
 ### Server
 
-You need a Linux (or macOS) box with Docker and Docker Compose.
+You need a Linux (or macOS) box with Docker (and its Compose plugin),
+`openssl` and `curl`. `qrencode` is optional: with it the pairing QR code is
+drawn in the terminal (`brew install qrencode` / `apt install qrencode`).
 
 ```bash
 git clone https://github.com/PulsHealth/pulshealth.git
-cd pulshealth/server
-cp .env.example .env
+cd pulshealth
+scripts/bootstrap.sh --time-zone Europe/Berlin   # the zone your phone lives in
 ```
 
-Edit `.env`:
+That one command creates `server/.env` with every secret generated, starts
+the stack — `docker compose up -d`, which pulls the published images from
+`ghcr.io/pulshealth` and runs the `migrate` service (schema) before anything
+else — waits for ingest to answer, and prints a **pairing block**: the URL
+the phone should use, the bearer token, the user ID, and a QR code encoding
+all three. Leave `--time-zone` out and it uses the host's zone and says so;
+every daily view buckets by this calendar, so it must match the phone's.
+`make pairing` prints the block again whenever you need it.
 
-1. Generate a value for each of the seven secrets — `POSTGRES_PASSWORD`,
-   `PULS_TOKEN`, `PULS_API_TOKEN`, `PULS_MCP_TOKEN`, `GRAFANA_PASSWORD`,
-   `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD` — with `openssl rand -hex 32`
-   (run it once per secret). `PULS_TOKEN` is the one the phone will use;
-   `PULS_MCP_TOKEN` is for AI clients (see [Use it with AI](#use-it-with-ai)).
-2. Set `PULS_TIME_ZONE` to the IANA zone your phone lives in (for example
-   `Europe/Berlin`). Every daily view buckets by this calendar, and it is
-   stored on the database at first start, so set it **before** starting.
+Where the phone reaches the server is the one decision left to you:
 
-Then:
+- **Same Wi-Fi, nothing else to set up:** `scripts/bootstrap.sh --lan` binds
+  ingest to every interface (`INGEST_BIND_ADDR=0.0.0.0`), and the pairing
+  block carries `http://<this host's LAN IP>:8080` — the app accepts plain
+  `http://` for local-network addresses. That is plaintext on your LAN with
+  the token as the only protection: fine on a network you control, nowhere
+  else.
+- **From anywhere:** put a TLS-terminating proxy or Tailscale Serve/Funnel
+  in front of port 8080 (`server/README.md`, "Exposing the server") and
+  hand its URL to the script: `scripts/bootstrap.sh --url
+  https://health.example.net`. Ingest stays on loopback and the QR code
+  carries the HTTPS URL.
 
-```bash
-docker compose up -d --build
-curl -s localhost:8080/healthz   # → {"db":true,"ok":true}
-```
-
-Everything binds to loopback: ingest on `8080`, the product API on `8081`,
-the MCP server on `8082`, Grafana on `3000`, the web viewer on `3001`,
-Postgres on `5432`. The phone
-must reach the ingest port over **HTTPS** unless the server is on the local
-network (plain `http://` to a LAN address works) — put a TLS-terminating
-reverse proxy in front of it, or a VPN/overlay network that provides HTTPS,
-and note its URL. `server/README.md`
-covers configuration, schema changes on a live database, the optional scoped
+Everything else binds to loopback: the product API on `8081`, the MCP server
+on `8082`, Grafana on `3000`, the web viewer on `3001`, Postgres on `5432`.
+Re-running `scripts/bootstrap.sh` is safe — it never regenerates secrets —
+and `make up`, `make down`, `make logs`, `make ps` wrap Compose (`make help`
+lists the rest). Upgrading is `make pull up`; `server/README.md` covers
+"Images and versions", configuration, schema migrations, the scoped
 database role for ingest, and Grafana.
+
+**Building from source instead** — after a change in `server/` or `web/`, or
+before the first images are published: `make dev-up` (or
+`scripts/bootstrap.sh --build`) builds the four app images from the checkout
+through the `server/compose.build.yml` overlay.
 
 ### App
 
@@ -123,8 +138,10 @@ generated project is too), select your device, and run. In the app:
 
 1. Grant Health access when asked (the app is read-only; it never writes to
    HealthKit).
-2. **Settings → Server:** enter the HTTPS URL of your ingest endpoint and the
-   `PULS_TOKEN` value from `.env`.
+2. **Settings → Server:** enter the server URL and token from the pairing
+   block (`make pairing` re-prints it; the QR code encodes the same values
+   for the app's scan-to-pair flow, APP-9 on the roadmap), then tap
+   **Test Connection**.
 3. **Data Types:** pick what to sync (a "Common" preset covers the usual
    types) and tap Apply. Types with no history sync from your chosen start
    date; the dashboard shows per-type progress, rate, and ETA.
@@ -368,7 +385,10 @@ No. The app requests read access only, and its usage strings say so.
   pre-1.0 requirement.
 - **Put the ingest endpoint behind TLS.** Every service binds to loopback by
   default; expose only the ingest port, and only through a TLS-terminating
-  proxy or a VPN. Never publish the product API, Grafana, or Postgres on a
+  proxy or a VPN. The one exception is `scripts/bootstrap.sh --lan`
+  (`INGEST_BIND_ADDR=0.0.0.0`): plain HTTP for a phone on the same Wi-Fi,
+  with the token as the only protection — for a network you control, never
+  a shared one. Never publish the product API, Grafana, or Postgres on a
   public interface.
 - **The MCP server's tokens are read access to everything the product API
   serves.** Its Compose service binds to loopback like the API; publish it
@@ -378,8 +398,9 @@ No. The app requests read access only, and its usage strings say so.
   health database with no login. Its bind address is the access control:
   keep `WEB_BIND_ADDR` on loopback or a private network, never `0.0.0.0`.
 - **The database holds identifiable data** (name, email, date of birth, sex
-  next to the samples). Ingest connects as the Postgres superuser unless you
-  opt in to the scoped `ingest` role described in `server/README.md`.
+  next to the samples). Ingest connects as the scoped DML-only `ingest`
+  role, never as the superuser (`server/README.md`, "The scoped `ingest`
+  role").
 - **There are no backups** unless you add them. Take a `pg_dump` before any
   schema change.
 
@@ -419,6 +440,9 @@ cd ../mcp      && go vet ./... && go test ./...
 
 # Web
 cd web && npm ci && npm run lint && npm run typecheck && npm test && npm run build
+
+# The whole stack from this checkout (server/compose.build.yml overlay)
+make dev-up
 ```
 
 Integration tests, the Compose validation, and the rules that keep the app
