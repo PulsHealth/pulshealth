@@ -30,8 +30,11 @@ it is where the sync protocol is written.
 >   `ghcr.io/pulshealth/{ingest,api,mcp,web}`, but nothing is there until the
 >   first `v*` release. Until then, build them from the checkout:
 >   `scripts/bootstrap.sh --build` (then `make dev-up`).
-> - **No backup service** ships with the stack. Your Postgres volume is the
->   only copy of your data unless you add one.
+> - **Backups are opt-in and off by default.** The stack ships a `backup`
+>   service, but it only runs when you enable its profile
+>   (`docker compose --profile backup up -d`, or `make backup` for one dump).
+>   Until then your Postgres volume is the only copy of your data. Nothing
+>   verifies a backup except the restore drill in `server/README.md`.
 >
 > Decisions, requirements, and phases are in
 > [`docs/open-source-plan.md`](docs/open-source-plan.md).
@@ -408,8 +411,11 @@ No. The app requests read access only, and its usage strings say so.
   next to the samples). Ingest connects as the scoped DML-only `ingest`
   role, never as the superuser (`server/README.md`, "The scoped `ingest`
   role").
-- **There are no backups** unless you add them. Take a `pg_dump` before any
-  schema change.
+- **Backups exist but are off** until you enable the `backup` profile
+  (`server/README.md`, "Backup & restore"). Turn them on, point
+  `PULS_BACKUP_DIR` at a disk that is not this one, take a `make backup`
+  before any schema change, and run the restore drill once — nothing else
+  verifies that your dumps are restorable.
 
 Found a vulnerability? Report it privately — see [`SECURITY.md`](SECURITY.md).
 

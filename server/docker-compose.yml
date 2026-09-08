@@ -245,6 +245,55 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  backup:
+    # Opt-in database backups (SRV-9). Behind the `backup` profile, so a plain
+    # `docker compose up -d` does not start it and the stack is unchanged for
+    # anyone who does not ask:
+    #
+    #   docker compose --profile backup up -d      # scheduled dumps
+    #   docker compose run --rm backup once        # one dump now (`make backup`)
+    #   docker compose run --rm backup list        # what is in the store
+    #
+    # Same pinned image as db and migrate, so pg_dump always matches the
+    # server version. Restoring is server/backup/restore.sh (`make restore
+    # FILE=…`) — read it before you need it. See server/README.md,
+    # "Backup & restore".
+    image: *db-image
+    profiles: ["backup"]
+    restart: unless-stopped
+    logging: *app-logging
+    entrypoint: ["bash", "/puls/backup.sh"]
+    # Root so the dump directory is writable whether it is the named volume
+    # (created root-owned, since the image has no /backups) or a host
+    # directory; the script hands each finished dump to the directory's owner.
+    user: root
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGDATABASE: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      BACKUP_DIR: /backups
+      # Time between dumps: 24h, 90m, 3600s or bare seconds. The schedule is
+      # relative to when the container started, not to the wall clock — see
+      # the note in backup.sh about why this is a sleep loop and not cron.
+      PULS_BACKUP_INTERVAL: ${PULS_BACKUP_INTERVAL:-24h}
+      # Dumps older than this are deleted after each run; 0 keeps everything.
+      # The newest dump is never deleted, however old it is.
+      PULS_BACKUP_KEEP_DAYS: ${PULS_BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backup/backup.sh:/puls/backup.sh:ro
+      # PULS_BACKUP_DIR unset (the default) leaves this as the `backups` named
+      # volume below. Set it to a path — an external disk, a NAS mount, an
+      # absolute or ./relative directory — and dumps land there instead, which
+      # is the only version of this that survives losing the machine.
+      - ${PULS_BACKUP_DIR:-backups}:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   db_data:
   grafana_data:
+  # Only created when the `backup` profile is used and PULS_BACKUP_DIR is unset.
+  backups:

@@ -801,15 +801,121 @@ empty recipient — check the contact point shows your address.
 
 ## Backup & restore
 
-**The reference stack ships no backups.** Nothing in this repo dumps, copies,
-or verifies the database: the live Postgres volume is the only copy of the
-data until you add something yourself. A nightly `pg_dump` on the host copied
-off the machine is the minimum; at the very least take one by hand before any
-schema change (see "Deploying and upgrading").
+**The stack has a backup service, and it is off until you turn it on.** Until
+you do, the live Postgres volume is the only copy of your data: a dead disk, a
+bad migration or a `docker compose down -v` loses everything, irrecoverably.
+Turning it on is one command.
 
-If you add backups, note that TimescaleDB restores require
-`timescaledb_pre_restore()` / `timescaledb_post_restore()` and **never**
-`pg_restore -j`.
+```bash
+# One dump, right now — do this before any schema change or upgrade.
+make backup
+
+# Dumps on a schedule (default: every 24h, keeping 14 days).
+cd server && docker compose --profile backup up -d
+
+make backup-list                     # what is in the store
+make restore FILE=<name or path>     # put one back (destroys the current data)
+```
+
+`backup` is a Compose service behind the **`backup` profile**, so a plain
+`docker compose up -d` never starts it and the stack is unchanged for anyone
+who does not ask. It runs `backup/backup.sh` in the same pinned TimescaleDB
+image as `db` and `migrate`, so `pg_dump` always matches the server version.
+
+Each run writes `puls-<UTC timestamp>.dump` with `pg_dump --format=custom`
+(compressed), checks the archive is readable with `pg_restore --list`, and only
+then renames it into place — a truncated dump is never mistaken for a backup.
+Then it deletes dumps older than `PULS_BACKUP_KEEP_DAYS`, **never the newest
+one**, however old: "the schedule stopped six weeks ago" must not also mean
+"and then it deleted your last copy".
+
+`pg_dump` prints a warning about circular foreign keys on `continuous_agg`
+every run. That is TimescaleDB's own catalog and the hint applies to
+`--data-only` dumps; these are full dumps, and they restore.
+
+### Settings
+
+| `.env` | Default | What |
+|---|---|---|
+| `PULS_BACKUP_INTERVAL` | `24h` | Between scheduled dumps. `24h`, `90m`, `3600s`, or bare seconds; minimum 60s. |
+| `PULS_BACKUP_KEEP_DAYS` | `14` | Delete dumps older than this. `0` keeps everything. |
+| `PULS_BACKUP_DIR` | (the `backups` volume) | Where dumps go. Set it to a path and they land there instead. |
+
+**Point `PULS_BACKUP_DIR` at something that is not this disk.** Left unset,
+dumps go to the `backups` Docker volume — which lives on the same disk as the
+database, so it protects you from a bad migration or a dropped table and not
+from a dead drive. An external disk, a NAS mount, or a directory something else
+replicates is the version worth having. Note also that `docker compose down -v`
+removes the `backups` volume along with `db_data`: with dumps on a host path,
+that command cannot take them with it.
+
+The schedule is a sleep loop in the container, not cron: the image ships no
+cron daemon, so cron would mean installing packages at container start for one
+timer. The trade-off is that the schedule is relative to when the container
+started, not to the wall clock — restarting the stack shifts the dump time. If
+you want 03:00 exactly, leave the profile off and call `make backup` from the
+host's own cron or systemd timer.
+
+Nothing verifies your backups except the drill below. Run it once, on purpose,
+before you need it.
+
+### Restoring
+
+`server/backup/restore.sh` (`make restore FILE=…`) **replaces the contents of
+the database** — everything synced since the dump was taken is gone, and there
+is no undo. It asks for confirmation unless you pass `--yes`. `FILE` is either
+a path on the host or, for a dump in the `backups` volume, just its name as
+`make backup-list` shows it.
+
+It does, in order: start `db` and verify the archive is readable *before*
+anything is destroyed; stop `ingest`, `api`, `mcp`, `web` and `grafana`; drop
+and recreate the `public` schema while TimescaleDB is still live so its event
+triggers dismantle hypertable chunks and continuous aggregates properly;
+reinstall the extension (it lives in `public`, so the drop takes it too);
+`timescaledb_pre_restore()`; `pg_restore --no-owner --no-privileges`
+**single-threaded**; `timescaledb_post_restore()`; `ANALYZE`; and finally
+`docker compose up -d`, where `migrate` recreates the `grafana`, `api_reader`
+and `ingest` roles from `.env` and puts their grants back. Add `--build` if
+your install runs the images built from the checkout rather than the published
+ones.
+
+Three TimescaleDB rules the script exists to enforce, if you ever restore by
+hand: `timescaledb_pre_restore()`/`timescaledb_post_restore()` around the
+restore, **never** `pg_restore -j` (parallel restore reorders work in ways
+restoring mode does not tolerate), and drop the old schema *before*
+`pre_restore`, not after, or the extension catalog ends up describing tables
+that no longer exist.
+
+### The restore drill
+
+Verified end to end on 2026-09-08 against a throwaway stack. Do this yourself
+once — on a scratch install, not the one holding your data:
+
+```bash
+scripts/bootstrap.sh --build            # a stack with something in it
+# ...sync a batch, or use the curl fixture in "Verify ingest with curl"
+
+make backup                             # → puls-<timestamp>.dump
+make backup-list
+
+# Destroy the database, keeping the dump. (Not `down -v`: that removes the
+# backups volume too.)
+make down
+docker volume rm pulshealth_db_data
+
+make restore FILE=puls-<timestamp>.dump ARGS="--yes --build"
+```
+
+What that run reported: the schema and all rows back (`quantity_samples`,
+`aggregate_samples`, `activity_summaries`, `users`, `batches`,
+`schema_migrations` counts identical); the `quantity_samples`,
+`workout_route_points` and `workout_series_points` hypertables and the
+`quantity_rollups` continuous aggregate rebuilt, with `metric_daily` querying;
+`migrate` reporting `0 applied, 0 rerun, 13 skipped, 2 script(s) ran` — the
+schema came from the dump, and only the role and time-zone scripts re-ran; the
+`grafana`, `api_reader` and `ingest` roles and their grants back;
+`puls_time_zone()` intact; and all six services healthy, with
+`GET /v1/stats` serving the restored samples.
 
 ## Development
 
