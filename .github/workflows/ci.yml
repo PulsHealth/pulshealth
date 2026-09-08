@@ -54,6 +54,7 @@ jobs:
         working-directory: web
         run: |
           npm ci
+          npm run check:catalog
           npm run lint
           npm run typecheck
           npm test
