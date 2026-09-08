@@ -84,11 +84,13 @@ context for judging what is.
 - **One bearer token.** The ingest server accepts a single static
   `PULS_TOKEN`. Anyone who holds it can upload, delete, and (via the
   reconciliation endpoints) enumerate samples. The `X-User-ID` header selects
-  the user without further authentication. Per-device tokens bound to a user
-  are on the roadmap.
-- **The token lives on the phone.** Today it is stored in the app's sync-state
-  file, not the Keychain. Moving it to the Keychain with file protection is a
-  pre-1.0 requirement.
+  the user without further authentication, so the token is the whole boundary
+  between users on one server. Failed authentications are rate-limited per
+  client IP, which slows guessing but does not change what a leaked token
+  grants. Per-device tokens bound to a user are on the roadmap.
+- **The token lives on the phone.** It is held in the Keychain, accessible
+  after the first unlock so background syncs still run, and the sync-state and
+  log files carry file protection and are excluded from device backups.
 - **TLS is yours to provide.** Every service binds to loopback by default. The
   phone must reach the ingest port over HTTPS through a TLS-terminating
   reverse proxy or a VPN; the token is only a second layer.
