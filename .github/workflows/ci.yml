@@ -73,11 +73,15 @@ jobs:
           PULS_MCP_TOKEN: validation-only
           DEPLOY_COMMIT: ${{ github.sha }}
         run: |
-          # Both ways the stack is run: pulling the published images, and the
-          # developer overlay that builds them from the checkout.
+          # Every way the stack is run: pulling the published images, the
+          # developer overlay that builds them from the checkout, and the
+          # opt-in `backup` profile (which a plain `up -d` never starts, so
+          # nothing else would render it).
           docker compose -f server/docker-compose.yml config --quiet
           docker compose -f server/docker-compose.yml -f server/compose.build.yml config --quiet
-          for script in server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh; do
+          docker compose -f server/docker-compose.yml --profile backup config --quiet
+          scripts=(server/db/migrate.sh server/db/migrations/*.sh server/backup/*.sh scripts/*.sh)
+          for script in "${scripts[@]}"; do
             bash -n "$script"
           done
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
@@ -85,7 +89,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y shellcheck
           fi
-          shellcheck server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh
+          shellcheck "${scripts[@]}"
 
   # The four app images build for linux/amd64 (no push) so a broken
   # Dockerfile fails a pull request instead of the next release. Same
