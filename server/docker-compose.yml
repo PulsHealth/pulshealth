@@ -87,6 +87,33 @@ services:
       db:
         condition: service_healthy
 
+  mcp:
+    # Read-only MCP server for AI assistants (docs/ai.md). It talks only to
+    # the product API over the internal network — never to Postgres — and
+    # serves the streamable HTTP transport at /mcp behind PULS_MCP_TOKEN.
+    # The same binary runs in stdio mode on a laptop for Claude Desktop,
+    # Claude Code or Cursor; this service is the remote-connector path.
+    build:
+      context: ./mcp
+      args:
+        BUILD_COMMIT: ${DEPLOY_COMMIT:-unknown}
+    restart: unless-stopped
+    logging: *app-logging
+    environment:
+      PULS_API_URL: http://api:8081
+      PULS_API_TOKEN: ${PULS_API_TOKEN:?set in .env}
+      PULS_MCP_TOKEN: ${PULS_MCP_TOKEN:?set in .env}
+      # Every date the tools speak is a calendar day in this zone; the
+      # product API does not report its own, so the two must agree.
+      PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
+    ports:
+      # Loopback only: the token grants read access to the health data, so
+      # publish it only through an HTTPS proxy, like the API (e.g.
+      # `tailscale serve --bg --https=8445 http://localhost:8082`).
+      - "127.0.0.1:8082:8082"
+    depends_on:
+      - api
+
   web:
     # Next.js health viewer. Reads Postgres directly over the internal
     # network as the read-only `grafana` role — same data Grafana sees.
