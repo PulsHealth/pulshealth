@@ -76,7 +76,17 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `AggregateSampleRow`) + `Serialization/NDJSONEncoder.swift` on the client must
   stay in lockstep with `server/ingest/parse.go` + `store.go` and the schema in
   `server/db/init/`. Update the fixtures in `parse_test.go` and the curl example
-  in `server/README.md` too. Deploy server-first: an old server 400s batches
+  in `server/README.md` too. **The protocol documents change in the same PR:**
+  `docs/protocol/README.md` (the Puls Sync Protocol spec), the JSON Schemas in
+  `docs/protocol/schema/`, and the fixture corpus in `docs/protocol/fixtures/`
+  (with `.expected.json` counts); `tools/protocol-check` runs the corpus against
+  the schemas in CI and `examples/receivers/python-sqlite/smoke_test.py` posts
+  it to the Python reference receiver, so both fail until they agree. The
+  header's `schemaVersion` (and `X-Puls-Protocol`) is bumped **only for
+  incompatible changes** — anything a v1 receiver written from the spec would
+  reject, which includes new sample kinds and new line types; new optional
+  fields, new type identifiers, and new read endpoints are additive and keep
+  the number. Deploy server-first: an old server 400s batches
   carrying new line types (the client doesn't retry 4xx and its anchors/watermarks
   stay put, so nothing is lost — but syncing stalls until the server updates).
 - **Aggregates overwrite; raw samples never do.** Aggregate buckets (per-type

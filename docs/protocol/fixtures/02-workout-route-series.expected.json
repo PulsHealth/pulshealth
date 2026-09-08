@@ -1,0 +1,14 @@
+{
+  "scenario": "Workout with a GPS route chunk and an intra-workout series chunk",
+  "notes": "One workout sample with per-type statistics, events, and a sub-activity; one route line with two GPS fixes (the second with explicit-null optional fields); one heart-rate series line with two points. Route and series lines reference the workout by UUID.",
+  "status": 200,
+  "response": {
+    "accepted": 1,
+    "deleted": 0,
+    "duplicates": 0,
+    "routePoints": 2,
+    "seriesPoints": 2,
+    "aggregateSamples": 0,
+    "activitySummaries": 0
+  }
+}

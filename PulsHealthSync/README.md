@@ -47,11 +47,23 @@ Sources/PulsHealthSync/
 │                                    tication protection + backup exclusion for every
 │                                    state file (sync-state, event-log, wake-log).
 ├── Transport/
+│   ├── PulsProtocol.swift           Protocol version (`PulsProtocol.version`, the
+│   │                                X-Puls-Protocol header, clientVersion) and
+│   │                                ServerCapabilities (GET /v1/capabilities DTO).
 │   ├── SyncTransport.swift          Transport protocol + HTTPSyncTransport: gzip NDJSON
 │   │                                POST /v1/batches, bearer auth, exponential backoff
-│   │                                (4 retries, jittered; 4xx never retried, except 429).
-│   │                                TransportError text is scrubbed (ErrorScrubber).
-│   ├── ServerAPIClient.swift        Read side: GET /v1/stats, /v1/digest, /v1/uuids.
+│   │                                (4 retries, jittered; 4xx never retried, except 429),
+│   │                                probe() (header-only batch), and TransportError
+│   │                                incl. `unsupportedProtocol`; its text is scrubbed
+│   │                                (ErrorScrubber) before it is shown or logged.
+│   ├── ServerAPIClient.swift        Read side: GET /v1/capabilities, /v1/stats,
+│   │                                /v1/digest, /v1/uuids.
+│   ├── ConnectionTest.swift         ConnectionTester: capabilities → probe fallback,
+│   │                                classified into ConnectionTestResult (ok, no
+│   │                                capabilities, token rejected, unsupported
+│   │                                protocol, unreachable, server error).
+│   ├── ServerURLValidation.swift    URL rules mirroring ATS: https anywhere, http only
+│   │                                for local-network hosts.
 │   └── DiagnosticTransports.swift   DryRunTransport (benchmark, discards output) and
 │                                    InstrumentedTransport (per-batch timing capture).
 ├── Models/
@@ -102,9 +114,12 @@ handler and its work task can't clobber each other's outcome.
 Tests (`Tests/PulsHealthSyncTests/`, Swift Testing): catalog integrity (unique
 identifiers, unit parsing), serialization (NDJSON line structure, gzip framing
 + CRC, metadata round-trip), the state store (token migration and Keychain
-hand-off, server-identity change detection and reset, scrubbed error text).
-HealthKit itself isn't mockable, so engine behavior is exercised in the app via
-the benchmark and diagnostics screens.
+hand-off, server-identity change detection and reset, scrubbed error text), and
+the protocol surface (`ProtocolTests.swift`: header version fields, request
+headers, protocol-rejection parsing, capabilities decoding, URL validation, and
+the connection test end to end against an in-process `URLProtocol`). HealthKit
+itself isn't mockable, so engine behavior is exercised in the app via the
+benchmark and diagnostics screens.
 
 ## Secrets and state at rest
 
@@ -135,7 +150,42 @@ confirmation, so a launch after an interrupted change finds the mismatch again
 Error text that is persisted or logged goes through `ErrorScrubber`: bearer and
 basic credentials, URL query strings and the configured token are redacted,
 control characters dropped, and `lastError` is capped at 120 characters. The
-event log never names sample UUIDs.
+event log never names sample UUIDs. This covers every `TransportError`,
+including a server's rejection body and the `unsupportedProtocol` message.
+
+## Wire protocol version
+
+The wire format is versioned so a receiver can refuse what it does not
+understand instead of mis-storing it, and so a server can tell which app build
+produced a batch.
+
+- **Batch header.** The first NDJSON line of every batch carries
+  `"schemaVersion": 1` (an integer, `PulsProtocol.version`) and
+  `"clientVersion": "<marketing version> (<build>)"` (`"unknown"` when the
+  host bundle has no version), ahead of the existing `batchID` / `deviceID` /
+  `type` / `reason` / `exportedAt` / per-line-type counts.
+- **Request header.** Every request — batch uploads and the read endpoints
+  alike — carries `X-Puls-Protocol: 1`.
+- **Rejection.** A server that does not accept the version answers HTTP 400
+  with `{"error":"unsupported protocol version","supportedVersions":[…]}`.
+  Both transports parse that body into `TransportError.unsupportedProtocol`
+  (never retried) so the app can say "this server does not support this app
+  version" rather than surfacing a bare 400. Any other 400 stays a
+  `serverError` with its body.
+- **Capabilities.** `GET /v1/capabilities` (bearer auth) answers
+  `{"protocolVersions":[1],"features":[…],"server":"…","version":"…"}`. The
+  reference server advertises `batches`, `stats`, `digest`, `uuids`,
+  `aggregates`, `activitySummaries`, `routes`, `series`, `profile`. The
+  endpoint is optional: a third-party receiver may answer 404/405, and every
+  field but `protocolVersions` may be omitted. The app hides reconciliation
+  unless `digest` and `uuids` are both advertised, and server statistics
+  unless `stats` is; unknown capabilities hide both.
+- **Connection test.** `ConnectionTester` calls capabilities first; if the
+  endpoint is missing it POSTs a header-only batch (`type` `"probe"`, `reason`
+  `"manual"`, every count 0) with no retries — any 2xx is success. 401/403 is
+  reported as a rejected token, a network failure as unreachable with the
+  cause (TLS, DNS, timeout, refused, ATS), anything else as a server error.
+  Nothing about the test is persisted.
 
 ## How a sync runs
 

@@ -57,6 +57,13 @@ private func makeDir() -> URL {
         // "\(error)" must not fall back to the enum dump with the raw body.
         #expect("\(error)" == described)
         #expect(String(describing: error) == described)
+
+        // The protocol rejection carries integers only, but it must take the
+        // same scrubbed path when interpolated.
+        let rejected = TransportError.unsupportedProtocol(supportedVersions: [2, 3])
+        #expect("\(rejected)" == rejected.errorDescription)
+        #expect("\(rejected)".contains("server protocol 2, 3"))
+        #expect(!"\(rejected)".contains("supportedVersions"))
     }
 
     @Test func persistedLastErrorIsScrubbedAndRedactsTheConfiguredToken() async throws {

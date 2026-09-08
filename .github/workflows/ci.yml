@@ -81,6 +81,35 @@ jobs:
           fi
           shellcheck server/db/init/*.sh scripts/*.sh
 
+  # The protocol corpus: every fixture in docs/protocol/fixtures must validate
+  # against the JSON Schemas in docs/protocol/schema, and the Python reference
+  # receiver must accept the corpus with the expected counts. Both fail when
+  # the wire format changes on one side only.
+  protocol:
+    name: Protocol schemas, fixtures and reference receiver
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: 1.26.6
+          cache-dependency-path: tools/protocol-check/go.sum
+
+      - name: Validate the fixture corpus against the schemas
+        working-directory: tools/protocol-check
+        run: |
+          go mod verify
+          go vet ./...
+          go test -race -count=1 ./...
+          go run . ../../docs/protocol/fixtures/*.ndjson
+
+      - name: Smoke-test the Python reference receiver with the corpus
+        run: python3 examples/receivers/python-sqlite/smoke_test.py
+
   # Upstream advisories are reported here, visibly red, but this job is meant
   # to stay OUT of any required-status-check list: a new advisory in a
   # transitive npm or Go dependency must not block an unrelated fix from

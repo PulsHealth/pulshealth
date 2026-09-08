@@ -12,6 +12,12 @@ let package = Package(
     targets: [
         .target(
             name: "PulsHealthSync",
+            // Privacy manifest: the package's UserDefaults use (background-task
+            // schedule status) is a required-reason API, and SPM targets carry
+            // their own PrivacyInfo.xcprivacy for App Store scanning.
+            resources: [
+                .copy("Resources/PrivacyInfo.xcprivacy"),
+            ],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]
