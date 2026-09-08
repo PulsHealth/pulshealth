@@ -377,47 +377,78 @@ func (st *Store) ActivitySummary(ctx context.Context, start, end time.Time) ([]A
 	return out, rows.Err()
 }
 
-func (st *Store) Workouts(ctx context.Context, filters WorkoutFilters) ([]WorkoutSummary, error) {
-	rows, err := st.pool.Query(ctx, `
-		SELECT w.uuid::text, w.activity_type, w.start_ts, w.end_ts,
-		       w.duration_s::float8, w.distance_m::float8, w.energy_kcal::float8,
-		       EXISTS (SELECT 1 FROM workout_route_points r WHERE r.workout_uuid = w.uuid AND r.user_id = w.user_id) AS has_route,
-		       COALESCE(metric_streams.available_metrics, ARRAY[]::text[]) AS available_metrics
-		FROM workouts w
-		LEFT JOIN LATERAL (
-		  SELECT array_agg(DISTINCT st.identifier ORDER BY st.identifier) AS available_metrics
-		  FROM workout_series_points wsp
-		  JOIN sample_types st ON st.type_id = wsp.type_id
-		  WHERE wsp.workout_uuid = w.uuid
-		    AND wsp.user_id = w.user_id
-		) metric_streams ON TRUE
-		WHERE w.user_id = $1
-		  AND ($2::timestamptz IS NULL OR w.start_ts >= $2)
-		  AND ($3::timestamptz IS NULL OR w.start_ts < $3)
-		  AND ($4::text = '' OR w.activity_type = $4)
-		ORDER BY w.start_ts DESC, w.uuid DESC
-		LIMIT $5 OFFSET $6`,
+// workoutSummarySQL is the one query behind both /v1/workouts and the
+// workouts export. LIMIT takes NULL for "no limit" (nullableLimit), which is
+// what the export passes.
+const workoutSummarySQL = `
+	SELECT w.uuid::text, w.activity_type, w.start_ts, w.end_ts,
+	       w.duration_s::float8, w.distance_m::float8, w.energy_kcal::float8,
+	       EXISTS (SELECT 1 FROM workout_route_points r WHERE r.workout_uuid = w.uuid AND r.user_id = w.user_id) AS has_route,
+	       COALESCE(metric_streams.available_metrics, ARRAY[]::text[]) AS available_metrics
+	FROM workouts w
+	LEFT JOIN LATERAL (
+	  SELECT array_agg(DISTINCT st.identifier ORDER BY st.identifier) AS available_metrics
+	  FROM workout_series_points wsp
+	  JOIN sample_types st ON st.type_id = wsp.type_id
+	  WHERE wsp.workout_uuid = w.uuid
+	    AND wsp.user_id = w.user_id
+	) metric_streams ON TRUE
+	WHERE w.user_id = $1
+	  AND ($2::timestamptz IS NULL OR w.start_ts >= $2)
+	  AND ($3::timestamptz IS NULL OR w.start_ts < $3)
+	  AND ($4::text = '' OR w.activity_type = $4)
+	ORDER BY w.start_ts DESC, w.uuid DESC
+	LIMIT $5::bigint OFFSET $6`
+
+// StreamWorkouts calls fn once per workout matching filters, newest first,
+// never holding more than one row. A Limit of zero or less means every
+// match — what the export passes; Workouts passes the endpoint's page size.
+// fn's error stops the scan and comes back unchanged.
+func (st *Store) StreamWorkouts(ctx context.Context, filters WorkoutFilters, fn func(WorkoutSummary) error) error {
+	rows, err := st.pool.Query(ctx, workoutSummarySQL,
 		st.userID,
 		filters.Start,
 		filters.End,
 		filters.ActivityType,
-		filters.Limit,
+		nullableLimit(filters.Limit),
 		filters.Offset,
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
-	out := make([]WorkoutSummary, 0)
 	for rows.Next() {
 		summary, err := scanWorkoutSummary(rows)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		out = append(out, summary)
+		if err := fn(summary); err != nil {
+			return err
+		}
 	}
-	return out, rows.Err()
+	return rows.Err()
+}
+
+func (st *Store) Workouts(ctx context.Context, filters WorkoutFilters) ([]WorkoutSummary, error) {
+	out := make([]WorkoutSummary, 0)
+	if err := st.StreamWorkouts(ctx, filters, func(summary WorkoutSummary) error {
+		out = append(out, summary)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// nullableLimit renders a row limit for SQL: zero or less becomes NULL,
+// which Postgres reads as "no limit" — how the export asks for a whole
+// range without a second copy of the query.
+func nullableLimit(limit int) *int {
+	if limit <= 0 {
+		return nil
+	}
+	return &limit
 }
 
 func (st *Store) Workout(ctx context.Context, uuid string) (*WorkoutDetail, error) {

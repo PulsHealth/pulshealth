@@ -47,6 +47,12 @@ type apiStore interface {
 	Samples(context.Context, SampleFilters) (*SamplesPage, error)
 	WorkoutSeries(context.Context, string, []string, int) (*WorkoutSeriesResponse, error)
 	StateOfMind(context.Context, time.Time, time.Time) ([]StateOfMindEntry, error)
+	// The export's paths: the type behind /v1/samples resolved on its own,
+	// so a bad identifier is a 400 before the download starts, and the two
+	// row-at-a-time scans a whole range is streamed through.
+	SampleType(context.Context, string) (SampleMeta, error)
+	StreamSamples(context.Context, SampleMeta, SampleFilters, func(Sample) error) error
+	StreamWorkouts(context.Context, WorkoutFilters, func(WorkoutSummary) error) error
 }
 
 type Server struct {
@@ -178,23 +184,52 @@ func connectWithRetry(ctx context.Context, url string, logger *slog.Logger) (*pg
 	}
 }
 
+// route is one entry of the router. path is the same route as an OpenAPI
+// path, which is what lets TestOpenAPIDescribesTheRouter compare the two:
+// an endpoint added here but not to the document in docs.go (or the other
+// way round) fails the build rather than shipping an OpenAPI document that
+// lies to a generated client.
+type route struct {
+	// The http.ServeMux pattern, e.g. "GET /v1/samples".
+	pattern string
+	// The OpenAPI path, e.g. "/v1/samples".
+	path    string
+	handler http.HandlerFunc
+	// Whether the bearer token is required; the discovery endpoints are open
+	// and carry "security": [] in the document.
+	auth bool
+}
+
+func (s *Server) apiRoutes() []route {
+	return []route{
+		{"GET /{$}", "/", s.handleIndex, false},
+		{"GET /docs", "/docs", s.handleDocs, false},
+		{"GET /openapi.json", "/openapi.json", s.handleOpenAPI, false},
+		{"GET /healthz", "/healthz", s.handleHealthz, false},
+		{"GET /v1/profile", "/v1/profile", s.handleProfile, true},
+		{"GET /v1/catalog/types", "/v1/catalog/types", s.handleCatalogTypes, true},
+		{"GET /v1/metrics/latest", "/v1/metrics/latest", s.handleLatestMetrics, true},
+		{"GET /v1/metrics/daily", "/v1/metrics/daily", s.handleDailyMetrics, true},
+		{"GET /v1/activity/summary", "/v1/activity/summary", s.handleActivitySummary, true},
+		{"GET /v1/workouts", "/v1/workouts", s.handleWorkouts, true},
+		{"GET /v1/workouts/{uuid}", "/v1/workouts/{uuid}", s.handleWorkout, true},
+		{"GET /v1/workouts/{uuid}/series", "/v1/workouts/{uuid}/series", s.handleWorkoutSeries, true},
+		{"GET /v1/sleep/daily", "/v1/sleep/daily", s.handleSleepDaily, true},
+		{"GET /v1/samples", "/v1/samples", s.handleSamples, true},
+		{"GET /v1/state-of-mind", "/v1/state-of-mind", s.handleStateOfMind, true},
+		{"GET /v1/export", "/v1/export", s.handleExport, true},
+	}
+}
+
 func (s *Server) routes() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /{$}", s.handleIndex)
-	mux.HandleFunc("GET /docs", s.handleDocs)
-	mux.HandleFunc("GET /openapi.json", s.handleOpenAPI)
-	mux.HandleFunc("GET /healthz", s.handleHealthz)
-	mux.HandleFunc("GET /v1/profile", s.auth(s.handleProfile))
-	mux.HandleFunc("GET /v1/catalog/types", s.auth(s.handleCatalogTypes))
-	mux.HandleFunc("GET /v1/metrics/latest", s.auth(s.handleLatestMetrics))
-	mux.HandleFunc("GET /v1/metrics/daily", s.auth(s.handleDailyMetrics))
-	mux.HandleFunc("GET /v1/activity/summary", s.auth(s.handleActivitySummary))
-	mux.HandleFunc("GET /v1/workouts", s.auth(s.handleWorkouts))
-	mux.HandleFunc("GET /v1/workouts/{uuid}", s.auth(s.handleWorkout))
-	mux.HandleFunc("GET /v1/workouts/{uuid}/series", s.auth(s.handleWorkoutSeries))
-	mux.HandleFunc("GET /v1/sleep/daily", s.auth(s.handleSleepDaily))
-	mux.HandleFunc("GET /v1/samples", s.auth(s.handleSamples))
-	mux.HandleFunc("GET /v1/state-of-mind", s.auth(s.handleStateOfMind))
+	for _, rt := range s.apiRoutes() {
+		handler := rt.handler
+		if rt.auth {
+			handler = s.auth(handler)
+		}
+		mux.HandleFunc(rt.pattern, handler)
+	}
 	return mux
 }
 
