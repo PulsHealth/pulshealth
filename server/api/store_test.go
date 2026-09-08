@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -49,13 +51,87 @@ func losAngelesLocation() (*time.Location, error) {
 	return time.LoadLocation("America/Los_Angeles")
 }
 
-func writeIntegrationStore(t *testing.T) (*Store, context.Context, func()) {
+// writeIntegrationStore is integrationStore plus a second pool that may
+// write fixture rows. The store under test reads through DATABASE_URL —
+// point that at the read-only api_reader role to exercise its grants — and
+// fixtures go through ADMIN_DATABASE_URL (the superuser), which falls back
+// to DATABASE_URL so a suite run entirely as the superuser keeps working.
+func writeIntegrationStore(t *testing.T) (*Store, *pgxpool.Pool, context.Context, func()) {
 	t.Helper()
 
 	if os.Getenv("PULS_API_WRITE_INTEGRATION_TESTS") != "1" {
 		t.Skip("PULS_API_WRITE_INTEGRATION_TESTS is not set to 1; skipping integration test that writes fixture rows")
 	}
-	return integrationStore(t)
+	store, ctx, cleanup := integrationStore(t)
+
+	adminURL := os.Getenv("ADMIN_DATABASE_URL")
+	if adminURL == "" {
+		adminURL = os.Getenv("DATABASE_URL")
+	}
+	admin, err := pgxpool.New(ctx, adminURL)
+	if err != nil {
+		cleanup()
+		t.Fatalf("pgxpool.New(admin): %v", err)
+	}
+	if err := admin.Ping(ctx); err != nil {
+		admin.Close()
+		cleanup()
+		t.Fatalf("admin.Ping: %v", err)
+	}
+	return store, admin, ctx, func() {
+		admin.Close()
+		cleanup()
+	}
+}
+
+// ensureSampleType returns the type_id of identifier, inserting it with the
+// given kind and unit when the database has never seen it; the returned
+// func removes it again only if this call created it.
+func ensureSampleType(t *testing.T, ctx context.Context, admin *pgxpool.Pool, identifier, kind string, unit *string) (int16, func()) {
+	t.Helper()
+	var typeID int16
+	err := admin.QueryRow(ctx, `SELECT type_id FROM sample_types WHERE identifier = $1`, identifier).Scan(&typeID)
+	if err == nil {
+		return typeID, func() {}
+	}
+	if err := admin.QueryRow(ctx, `
+		INSERT INTO sample_types (identifier, kind, unit) VALUES ($1, $2, $3)
+		RETURNING type_id`, identifier, kind, unit).Scan(&typeID); err != nil {
+		t.Fatalf("insert sample_types %s: %v", identifier, err)
+	}
+	return typeID, func() {
+		_, _ = admin.Exec(context.Background(), `DELETE FROM sample_types WHERE type_id = $1`, typeID)
+	}
+}
+
+// sleepValue looks a sleep stage's integer value up by its HealthKit enum
+// name, so the fixtures never hardcode category integers.
+func sleepValue(t *testing.T, ctx context.Context, admin *pgxpool.Pool, enumName string) int16 {
+	t.Helper()
+	var value int16
+	if err := admin.QueryRow(ctx, `
+		SELECT value FROM category_labels WHERE type_identifier = $1 AND enum_name = $2`,
+		sleepTypeIdentifier, enumName).Scan(&value); err != nil {
+		t.Fatalf("category_labels has no %s: %v", enumName, err)
+	}
+	return value
+}
+
+func insertSource(t *testing.T, ctx context.Context, admin *pgxpool.Pool, name string) (int16, func()) {
+	t.Helper()
+	var id int16
+	if err := admin.QueryRow(ctx, `
+		INSERT INTO sources (name, bundle_id, version) VALUES ($1, 'test', '1')
+		RETURNING source_id`, name).Scan(&id); err != nil {
+		t.Fatalf("insert source %s: %v", name, err)
+	}
+	return id, func() {
+		_, _ = admin.Exec(context.Background(), `DELETE FROM sources WHERE source_id = $1`, id)
+	}
+}
+
+func fixtureUUID(prefix string, suffix int64, n int) string {
+	return fmt.Sprintf("%s-%04x-4000-8000-%012d", prefix, n, suffix%1_000_000_000_000)
 }
 
 func TestLocalDayRangeUsesLosAngelesDates(t *testing.T) {
@@ -210,7 +286,7 @@ func TestIntegrationActivitySummaryEmptyRangeIsNonNil(t *testing.T) {
 }
 
 func TestIntegrationActivitySummaryUsesTouchedLocalDays(t *testing.T) {
-	store, ctx, cleanup := writeIntegrationStore(t)
+	store, admin, ctx, cleanup := writeIntegrationStore(t)
 	defer cleanup()
 
 	loc, err := losAngelesLocation()
@@ -220,7 +296,7 @@ func TestIntegrationActivitySummaryUsesTouchedLocalDays(t *testing.T) {
 	firstDay := time.Date(2099, 9, 17, 0, 0, 0, 0, loc)
 	secondDay := firstDay.AddDate(0, 0, 1)
 	defer func() {
-		_, _ = store.pool.Exec(
+		_, _ = admin.Exec(
 			context.Background(),
 			`DELETE FROM activity_summaries WHERE user_id = $1 AND date IN ($2::date, $3::date)`,
 			defaultUserID,
@@ -229,7 +305,7 @@ func TestIntegrationActivitySummaryUsesTouchedLocalDays(t *testing.T) {
 		)
 	}()
 
-	if _, err := store.pool.Exec(ctx, `
+	if _, err := admin.Exec(ctx, `
 		INSERT INTO activity_summaries (user_id, date, move_kcal)
 		VALUES ($1, $2::date, 100), ($1, $3::date, 200)`,
 		defaultUserID,
@@ -277,27 +353,27 @@ func TestIntegrationWorkoutsEmptyFilterIsNonNil(t *testing.T) {
 }
 
 func TestIntegrationDailyMetricsFixture(t *testing.T) {
-	store, ctx, cleanup := writeIntegrationStore(t)
+	store, admin, ctx, cleanup := writeIntegrationStore(t)
 	defer cleanup()
 
 	suffix := time.Now().UTC().UnixNano()
 	identifier := fmt.Sprintf("HKQuantityTypeIdentifierCodexDailyMetrics%d", suffix)
 
 	var typeID int16
-	if err := store.pool.QueryRow(ctx, `
+	if err := admin.QueryRow(ctx, `
 		INSERT INTO sample_types (identifier, kind, unit)
 		VALUES ($1, 'quantity', 'count')
 		RETURNING type_id`, identifier).Scan(&typeID); err != nil {
 		t.Fatalf("insert sample_types: %v", err)
 	}
 	defer func() {
-		_, _ = store.pool.Exec(context.Background(), `DELETE FROM aggregate_samples WHERE series_id IN (SELECT series_id FROM aggregate_series WHERE type_id = $1)`, typeID)
-		_, _ = store.pool.Exec(context.Background(), `DELETE FROM aggregate_series WHERE type_id = $1`, typeID)
-		_, _ = store.pool.Exec(context.Background(), `DELETE FROM sample_types WHERE type_id = $1`, typeID)
+		_, _ = admin.Exec(context.Background(), `DELETE FROM aggregate_samples WHERE series_id IN (SELECT series_id FROM aggregate_series WHERE type_id = $1)`, typeID)
+		_, _ = admin.Exec(context.Background(), `DELETE FROM aggregate_series WHERE type_id = $1`, typeID)
+		_, _ = admin.Exec(context.Background(), `DELETE FROM sample_types WHERE type_id = $1`, typeID)
 	}()
 
 	var seriesID int16
-	if err := store.pool.QueryRow(ctx, `
+	if err := admin.QueryRow(ctx, `
 		INSERT INTO aggregate_series (type_id, agg_func, interval_value, interval_unit, device_filter, unit)
 		VALUES ($1, 'sum', 1, 'day', 'all', 'count')
 		RETURNING series_id`, typeID).Scan(&seriesID); err != nil {
@@ -310,7 +386,7 @@ func TestIntegrationDailyMetricsFixture(t *testing.T) {
 	}
 	dayStart := time.Date(2099, 7, 3, 0, 0, 0, 0, loc)
 	dayEnd := dayStart.Add(24 * time.Hour)
-	if _, err := store.pool.Exec(ctx, `
+	if _, err := admin.Exec(ctx, `
 		INSERT INTO aggregate_samples (series_id, bucket_start, bucket_end, value, user_id)
 		VALUES ($1, $2, $3, $4, $5)`,
 		seriesID, dayStart, dayEnd, 123.0, defaultUserID,
@@ -355,7 +431,7 @@ func TestIntegrationDailyMetricsFixture(t *testing.T) {
 }
 
 func TestIntegrationWorkoutFixture(t *testing.T) {
-	store, ctx, cleanup := writeIntegrationStore(t)
+	store, admin, ctx, cleanup := writeIntegrationStore(t)
 	defer cleanup()
 
 	suffix := time.Now().UTC().UnixNano()
@@ -366,20 +442,20 @@ func TestIntegrationWorkoutFixture(t *testing.T) {
 	end := start.Add(45 * time.Minute)
 
 	var typeID int16
-	if err := store.pool.QueryRow(ctx, `
+	if err := admin.QueryRow(ctx, `
 		INSERT INTO sample_types (identifier, kind, unit)
 		VALUES ($1, 'quantity', 'count/min')
 		RETURNING type_id`, identifier).Scan(&typeID); err != nil {
 		t.Fatalf("insert sample_types: %v", err)
 	}
 	defer func() {
-		_, _ = store.pool.Exec(context.Background(), `DELETE FROM workout_route_points WHERE workout_uuid IN ($1, $2)`, workoutUUID, workoutUUID2)
-		_, _ = store.pool.Exec(context.Background(), `DELETE FROM workout_series_points WHERE workout_uuid IN ($1, $2)`, workoutUUID, workoutUUID2)
-		_, _ = store.pool.Exec(context.Background(), `DELETE FROM workouts WHERE uuid IN ($1, $2)`, workoutUUID, workoutUUID2)
-		_, _ = store.pool.Exec(context.Background(), `DELETE FROM sample_types WHERE type_id = $1`, typeID)
+		_, _ = admin.Exec(context.Background(), `DELETE FROM workout_route_points WHERE workout_uuid IN ($1, $2)`, workoutUUID, workoutUUID2)
+		_, _ = admin.Exec(context.Background(), `DELETE FROM workout_series_points WHERE workout_uuid IN ($1, $2)`, workoutUUID, workoutUUID2)
+		_, _ = admin.Exec(context.Background(), `DELETE FROM workouts WHERE uuid IN ($1, $2)`, workoutUUID, workoutUUID2)
+		_, _ = admin.Exec(context.Background(), `DELETE FROM sample_types WHERE type_id = $1`, typeID)
 	}()
 
-	if _, err := store.pool.Exec(ctx, `
+	if _, err := admin.Exec(ctx, `
 		INSERT INTO workouts (uuid, activity_type, start_ts, end_ts, duration_s, energy_kcal, distance_m, user_id, stats_detail, events, activities)
 		VALUES ($1, 'HKWorkoutActivityTypeRunning', $2, $3, 2700, 500, 6000, $4,
 		        '{"`+identifier+`":{"avg":68,"max":175}}'::jsonb,
@@ -389,21 +465,21 @@ func TestIntegrationWorkoutFixture(t *testing.T) {
 	); err != nil {
 		t.Fatalf("insert workout: %v", err)
 	}
-	if _, err := store.pool.Exec(ctx, `
+	if _, err := admin.Exec(ctx, `
 		INSERT INTO workouts (uuid, activity_type, start_ts, end_ts, duration_s, user_id)
 		VALUES ($1, 'HKWorkoutActivityTypeRunning', $2, $3, 2700, $4)`,
 		workoutUUID2, start, end, defaultUserID,
 	); err != nil {
 		t.Fatalf("insert tied-start workout: %v", err)
 	}
-	if _, err := store.pool.Exec(ctx, `
+	if _, err := admin.Exec(ctx, `
 		INSERT INTO workout_series_points (workout_uuid, type_id, ts, value, user_id)
 		VALUES ($1, $2, $3, $4, $5)`,
 		workoutUUID, typeID, start.Add(5*time.Minute), 68.0, defaultUserID,
 	); err != nil {
 		t.Fatalf("insert workout_series_points: %v", err)
 	}
-	if _, err := store.pool.Exec(ctx, `
+	if _, err := admin.Exec(ctx, `
 		INSERT INTO workout_route_points (workout_uuid, ts, lat, lon, user_id)
 		VALUES ($1, $2, $3, $4, $5)`,
 		workoutUUID, start.Add(2*time.Minute), 37.0, -122.0, defaultUserID,
@@ -453,5 +529,445 @@ func TestIntegrationWorkoutFixture(t *testing.T) {
 	}
 	if firstPage[0].UUID != workoutUUID2 || secondPage[0].UUID != workoutUUID {
 		t.Fatalf("tied-start UUID order = %q,%q, want %q,%q", firstPage[0].UUID, secondPage[0].UUID, workoutUUID2, workoutUUID)
+	}
+}
+
+// wantRequestError asserts err is a requestError (a 400 to the caller) whose
+// message mentions each fragment.
+func wantRequestError(t *testing.T, err error, fragments ...string) {
+	t.Helper()
+	var reqErr *requestError
+	if !errors.As(err, &reqErr) {
+		t.Fatalf("error = %v (%T), want a *requestError", err, err)
+	}
+	for _, fragment := range fragments {
+		if !strings.Contains(reqErr.Error(), fragment) {
+			t.Errorf("error %q does not mention %q", reqErr, fragment)
+		}
+	}
+}
+
+// insertSleepSample writes one HKCategoryTypeIdentifierSleepAnalysis row,
+// looking its integer value up by HealthKit enum name.
+func insertSleepSample(
+	t *testing.T, ctx context.Context, admin *pgxpool.Pool,
+	typeID, sourceID int16, uuid, enumName string, start, end time.Time,
+) {
+	t.Helper()
+	if _, err := admin.Exec(ctx, `
+		INSERT INTO category_samples (uuid, type_id, start_ts, end_ts, value, source_id, user_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		uuid, typeID, start, end, sleepValue(t, ctx, admin, enumName), sourceID, defaultUserID,
+	); err != nil {
+		t.Fatalf("insert sleep sample %s: %v", enumName, err)
+	}
+}
+
+// A night recorded twice: an iPhone logs the in-bed window and a stage-less
+// "asleep" interval while the Watch logs stages. It crosses local midnight,
+// which is the case wake-up-day attribution has to get right, and a nap the
+// next afternoon must come back as its own row on the same date.
+func TestIntegrationSleepDailyAcrossMidnightFromTwoSources(t *testing.T) {
+	store, admin, ctx, cleanup := writeIntegrationStore(t)
+	defer cleanup()
+
+	loc, err := losAngelesLocation()
+	if err != nil {
+		t.Fatalf("losAngelesLocation: %v", err)
+	}
+	suffix := time.Now().UTC().UnixNano()
+	typeID, dropType := ensureSampleType(t, ctx, admin, sleepTypeIdentifier, "category", nil)
+	defer dropType()
+	watch, dropWatch := insertSource(t, ctx, admin, fmt.Sprintf("CodexWatch%d", suffix))
+	defer dropWatch()
+	phone, dropPhone := insertSource(t, ctx, admin, fmt.Sprintf("CodexPhone%d", suffix))
+	defer dropPhone()
+
+	local := func(day, hhmm string) time.Time {
+		ts, err := time.ParseInLocation("2006-01-02 15:04", day+" "+hhmm, loc)
+		if err != nil {
+			t.Fatalf("parse %s %s: %v", day, hhmm, err)
+		}
+		return ts
+	}
+
+	var uuids []string
+	n := 0
+	add := func(sourceID int16, enumName, startDay, startAt, endDay, endAt string) {
+		n++
+		uuid := fixtureUUID("cccccccc", suffix, n)
+		uuids = append(uuids, uuid)
+		insertSleepSample(t, ctx, admin, typeID, sourceID, uuid, enumName,
+			local(startDay, startAt), local(endDay, endAt))
+	}
+	defer func() {
+		_, _ = admin.Exec(context.Background(), `DELETE FROM category_samples WHERE uuid = ANY($1)`, uuids)
+	}()
+
+	// iPhone: the scheduled in-bed window and 450 minutes of stage-less sleep.
+	add(phone, "HKCategoryValueSleepAnalysisInBed", "2099-09-20", "22:30", "2099-09-21", "06:30")
+	add(phone, "HKCategoryValueSleepAnalysisAsleepUnspecified", "2099-09-20", "22:45", "2099-09-21", "06:15")
+	// Watch: 460 minutes of staged sleep plus ten minutes awake.
+	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", "2099-09-20", "22:40", "2099-09-21", "01:00")
+	add(watch, "HKCategoryValueSleepAnalysisAsleepDeep", "2099-09-21", "01:00", "2099-09-21", "02:00")
+	add(watch, "HKCategoryValueSleepAnalysisAsleepREM", "2099-09-21", "02:00", "2099-09-21", "03:00")
+	add(watch, "HKCategoryValueSleepAnalysisAwake", "2099-09-21", "03:00", "2099-09-21", "03:10")
+	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", "2099-09-21", "03:10", "2099-09-21", "06:30")
+	// An afternoon nap, more than three hours after waking.
+	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", "2099-09-21", "14:00", "2099-09-21", "15:00")
+
+	nights, err := store.SleepDaily(ctx, local("2099-09-21", "00:00"), local("2099-09-22", "00:00"))
+	if err != nil {
+		t.Fatalf("SleepDaily: %v", err)
+	}
+	if len(nights) != 2 {
+		t.Fatalf("nights = %#v, want the night and the nap", nights)
+	}
+
+	night := nights[0]
+	if night.Date != "2099-09-21" {
+		t.Errorf("date = %q, want the wake-up day 2099-09-21", night.Date)
+	}
+	if night.Start != local("2099-09-20", "22:30").UnixMilli() || night.End != local("2099-09-21", "06:30").UnixMilli() {
+		t.Errorf("night bounds = %d..%d", night.Start, night.End)
+	}
+	if night.InBedMinutes != 480 {
+		t.Errorf("inBedMinutes = %v, want the phone's 480", night.InBedMinutes)
+	}
+	if night.AsleepMinutes != 460 {
+		t.Errorf("asleepMinutes = %v, want the Watch's 460 (not 460+450)", night.AsleepMinutes)
+	}
+	if night.Stages != (SleepStages{Core: 340, Deep: 60, REM: 60, Awake: 10}) {
+		t.Errorf("stages = %+v", night.Stages)
+	}
+	if night.Sources != 2 {
+		t.Errorf("sources = %d, want 2", night.Sources)
+	}
+
+	if nap := nights[1]; nap.Date != "2099-09-21" || nap.AsleepMinutes != 60 || nap.Sources != 1 {
+		t.Errorf("nap = %+v", nap)
+	}
+
+	// The evening the night began is not a wake-up day, so it has no row.
+	before, err := store.SleepDaily(ctx, local("2099-09-20", "00:00"), local("2099-09-21", "00:00"))
+	if err != nil {
+		t.Fatalf("SleepDaily (previous day): %v", err)
+	}
+	for _, candidate := range before {
+		if candidate.Date == "2099-09-20" && candidate.AsleepMinutes > 0 {
+			t.Errorf("the night was also reported on the day it started: %+v", candidate)
+		}
+	}
+
+	if _, err := store.SleepDaily(ctx, local("2098-01-01", "00:00"), local("2099-09-22", "00:00")); err == nil {
+		t.Error("a range over 366 days was accepted")
+	} else {
+		wantRequestError(t, err, "at most 366 days")
+	}
+}
+
+func TestIntegrationSamplesQuantityAndCategory(t *testing.T) {
+	store, admin, ctx, cleanup := writeIntegrationStore(t)
+	defer cleanup()
+
+	suffix := time.Now().UTC().UnixNano()
+	unit := "count/min"
+	quantityType := fmt.Sprintf("HKQuantityTypeIdentifierCodexSamples%d", suffix)
+	quantityID, dropQuantity := ensureSampleType(t, ctx, admin, quantityType, "quantity", &unit)
+	defer dropQuantity()
+	sleepID, dropSleep := ensureSampleType(t, ctx, admin, sleepTypeIdentifier, "category", nil)
+	defer dropSleep()
+	workoutType := fmt.Sprintf("HKWorkoutTypeIdentifierCodex%d", suffix)
+	_, dropWorkoutType := ensureSampleType(t, ctx, admin, workoutType, "workout", nil)
+	defer dropWorkoutType()
+	sourceID, dropSource := insertSource(t, ctx, admin, fmt.Sprintf("CodexSampleSource%d", suffix))
+	defer dropSource()
+
+	start := time.Date(2099, 8, 1, 10, 0, 0, 0, time.UTC)
+	var quantityUUIDs []string
+	for i := 0; i < 3; i++ {
+		uuid := fixtureUUID("dddddddd", suffix, i)
+		quantityUUIDs = append(quantityUUIDs, uuid)
+		if _, err := admin.Exec(ctx, `
+			INSERT INTO quantity_samples (uuid, type_id, start_ts, end_ts, value, source_id, user_id)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+			uuid, quantityID, start.Add(time.Duration(i)*time.Minute), start.Add(time.Duration(i)*time.Minute),
+			60.0+float64(i), sourceID, defaultUserID,
+		); err != nil {
+			t.Fatalf("insert quantity sample: %v", err)
+		}
+	}
+	sleepUUID := fixtureUUID("eeeeeeee", suffix, 0)
+	insertSleepSample(t, ctx, admin, sleepID, sourceID, sleepUUID,
+		"HKCategoryValueSleepAnalysisAsleepDeep", start, start.Add(30*time.Minute))
+	defer func() {
+		bg := context.Background()
+		_, _ = admin.Exec(bg, `DELETE FROM quantity_samples WHERE uuid = ANY($1) AND start_ts >= $2`, quantityUUIDs, start)
+		_, _ = admin.Exec(bg, `DELETE FROM category_samples WHERE uuid = $1`, sleepUUID)
+	}()
+
+	window := SampleFilters{Start: start.Add(-time.Minute), End: start.Add(time.Hour), Limit: 10}
+
+	t.Run("quantity", func(t *testing.T) {
+		f := window
+		f.Type = quantityType
+		page, err := store.Samples(ctx, f)
+		if err != nil {
+			t.Fatalf("Samples: %v", err)
+		}
+		if page.Kind != "quantity" || page.Unit == nil || *page.Unit != unit {
+			t.Errorf("page = %+v", page)
+		}
+		if len(page.Samples) != 3 || page.NextOffset != 3 {
+			t.Fatalf("samples = %d, nextOffset = %d", len(page.Samples), page.NextOffset)
+		}
+		first := page.Samples[0]
+		if first.Value == nil || *first.Value != 60 || first.Start != start.UnixMilli() {
+			t.Errorf("first sample = %+v", first)
+		}
+		if first.Source == nil || !strings.HasPrefix(*first.Source, "CodexSampleSource") {
+			t.Errorf("source = %v", first.Source)
+		}
+		if first.Label != nil {
+			t.Errorf("a quantity sample carries a label: %v", *first.Label)
+		}
+		// Ordered by start time, so the values run 60, 61, 62.
+		for i, sample := range page.Samples {
+			if sample.Value == nil || *sample.Value != 60+float64(i) {
+				t.Errorf("sample %d = %+v, want ordering by start", i, sample)
+			}
+		}
+	})
+
+	t.Run("paging", func(t *testing.T) {
+		f := window
+		f.Type, f.Limit = quantityType, 2
+		first, err := store.Samples(ctx, f)
+		if err != nil {
+			t.Fatalf("Samples page 1: %v", err)
+		}
+		f.Offset = first.NextOffset
+		second, err := store.Samples(ctx, f)
+		if err != nil {
+			t.Fatalf("Samples page 2: %v", err)
+		}
+		if len(first.Samples) != 2 || first.NextOffset != 2 {
+			t.Fatalf("page 1 = %d samples, nextOffset %d", len(first.Samples), first.NextOffset)
+		}
+		if len(second.Samples) != 1 || second.NextOffset != 3 {
+			t.Fatalf("page 2 = %d samples, nextOffset %d", len(second.Samples), second.NextOffset)
+		}
+		if second.Samples[0].UUID == first.Samples[0].UUID {
+			t.Error("the second page repeats the first")
+		}
+	})
+
+	t.Run("category decodes its label", func(t *testing.T) {
+		f := window
+		f.Type = sleepTypeIdentifier
+		page, err := store.Samples(ctx, f)
+		if err != nil {
+			t.Fatalf("Samples: %v", err)
+		}
+		if page.Kind != "category" {
+			t.Fatalf("kind = %q", page.Kind)
+		}
+		var found *Sample
+		for i := range page.Samples {
+			if page.Samples[i].UUID == sleepUUID {
+				found = &page.Samples[i]
+			}
+		}
+		if found == nil {
+			t.Fatalf("the fixture sample is missing from %d samples", len(page.Samples))
+		}
+		if found.Label == nil || *found.Label != "Asleep Deep" {
+			t.Errorf("label = %v, want the category_labels text", found.Label)
+		}
+		if found.Value == nil {
+			t.Error("a category sample must carry its integer value too")
+		}
+	})
+
+	t.Run("rejects types it cannot serve", func(t *testing.T) {
+		f := window
+		f.Type = "HKQuantityTypeIdentifierDefinitelyMissingForIntegrationTest"
+		_, err := store.Samples(ctx, f)
+		wantRequestError(t, err, "unknown type")
+
+		f.Type = workoutType
+		_, err = store.Samples(ctx, f)
+		wantRequestError(t, err, "workout")
+	})
+}
+
+func TestIntegrationWorkoutSeriesFiltersAndDownsamples(t *testing.T) {
+	store, admin, ctx, cleanup := writeIntegrationStore(t)
+	defer cleanup()
+
+	suffix := time.Now().UTC().UnixNano()
+	bpm, watts := "count/min", "W"
+	heartType := fmt.Sprintf("HKQuantityTypeIdentifierCodexSeriesHR%d", suffix)
+	heartID, dropHeart := ensureSampleType(t, ctx, admin, heartType, "quantity", &bpm)
+	defer dropHeart()
+	powerType := fmt.Sprintf("HKQuantityTypeIdentifierCodexSeriesPower%d", suffix)
+	powerID, dropPower := ensureSampleType(t, ctx, admin, powerType, "quantity", &watts)
+	defer dropPower()
+
+	workoutUUID := fixtureUUID("abababab", suffix, 1)
+	start := time.Date(2099, 8, 2, 9, 0, 0, 0, time.UTC)
+	end := start.Add(30 * time.Minute)
+	defer func() {
+		bg := context.Background()
+		_, _ = admin.Exec(bg, `DELETE FROM workout_series_points WHERE workout_uuid = $1`, workoutUUID)
+		_, _ = admin.Exec(bg, `DELETE FROM workouts WHERE uuid = $1`, workoutUUID)
+	}()
+	if _, err := admin.Exec(ctx, `
+		INSERT INTO workouts (uuid, activity_type, start_ts, end_ts, duration_s, user_id)
+		VALUES ($1, 'HKWorkoutActivityTypeRunning', $2, $3, 1800, $4)`,
+		workoutUUID, start, end, defaultUserID,
+	); err != nil {
+		t.Fatalf("insert workout: %v", err)
+	}
+	// 101 heart-rate points, one every ten seconds, rising 100..200.
+	const points = 101
+	for i := 0; i < points; i++ {
+		if _, err := admin.Exec(ctx, `
+			INSERT INTO workout_series_points (workout_uuid, type_id, ts, value, user_id)
+			VALUES ($1, $2, $3, $4, $5)`,
+			workoutUUID, heartID, start.Add(time.Duration(i)*10*time.Second), 100.0+float64(i), defaultUserID,
+		); err != nil {
+			t.Fatalf("insert heart-rate point: %v", err)
+		}
+	}
+	if _, err := admin.Exec(ctx, `
+		INSERT INTO workout_series_points (workout_uuid, type_id, ts, value, user_id)
+		VALUES ($1, $2, $3, $4, $5)`,
+		workoutUUID, powerID, start.Add(time.Minute), 240.0, defaultUserID,
+	); err != nil {
+		t.Fatalf("insert power point: %v", err)
+	}
+
+	all, err := store.WorkoutSeries(ctx, workoutUUID, nil, 500)
+	if err != nil {
+		t.Fatalf("WorkoutSeries: %v", err)
+	}
+	if all == nil {
+		t.Fatal("response is nil for an existing workout")
+	}
+	if len(all.Series) != 2 {
+		t.Fatalf("series = %+v, want both streams", all.Series)
+	}
+	var heart *WorkoutSeries
+	for i := range all.Series {
+		if all.Series[i].Type == heartType {
+			heart = &all.Series[i]
+		}
+	}
+	if heart == nil {
+		t.Fatalf("the heart-rate stream is missing: %+v", all.Series)
+	}
+	if heart.Unit == nil || *heart.Unit != bpm {
+		t.Errorf("unit = %v, want %q from sample_types", heart.Unit, bpm)
+	}
+	if heart.TotalPoints != points || len(heart.Points) != points {
+		t.Errorf("points = %d of %d, want all %d under the cap", len(heart.Points), heart.TotalPoints, points)
+	}
+
+	// Downsampled, the endpoints survive verbatim and the shape is kept.
+	small, err := store.WorkoutSeries(ctx, workoutUUID, []string{heartType}, 11)
+	if err != nil {
+		t.Fatalf("WorkoutSeries (downsampled): %v", err)
+	}
+	if len(small.Series) != 1 || small.Series[0].Type != heartType {
+		t.Fatalf("types filter = %+v", small.Series)
+	}
+	got := small.Series[0]
+	if got.TotalPoints != points || len(got.Points) != 11 {
+		t.Fatalf("downsampled to %d points of %d, want 11", len(got.Points), got.TotalPoints)
+	}
+	if got.Points[0].V != 100 || got.Points[10].V != 200 {
+		t.Errorf("endpoints = %v .. %v, want the true first and last reading", got.Points[0], got.Points[10])
+	}
+	if got.Points[0].T != start.UnixMilli() {
+		t.Errorf("first point at %d, want the first reading's instant %d", got.Points[0].T, start.UnixMilli())
+	}
+	for i := 1; i < len(got.Points); i++ {
+		if got.Points[i].T <= got.Points[i-1].T || got.Points[i].V <= got.Points[i-1].V {
+			t.Fatalf("not monotonic at %d: %v -> %v", i, got.Points[i-1], got.Points[i])
+		}
+	}
+
+	missing, err := store.WorkoutSeries(ctx, fixtureUUID("bcbcbcbc", suffix, 2), nil, 500)
+	if err != nil {
+		t.Fatalf("WorkoutSeries (unknown): %v", err)
+	}
+	if missing != nil {
+		t.Errorf("an unknown workout returned %+v, want nil", missing)
+	}
+}
+
+func TestIntegrationStateOfMind(t *testing.T) {
+	store, admin, ctx, cleanup := writeIntegrationStore(t)
+	defer cleanup()
+
+	loc, err := losAngelesLocation()
+	if err != nil {
+		t.Fatalf("losAngelesLocation: %v", err)
+	}
+	suffix := time.Now().UTC().UnixNano()
+	// 23:30 local on the 3rd is already the 4th in UTC: the row must be
+	// dated by the server's zone, not by UTC.
+	late := time.Date(2099, 10, 3, 23, 30, 0, 0, loc)
+	morning := time.Date(2099, 10, 3, 8, 0, 0, 0, loc)
+
+	first := fixtureUUID("fafafafa", suffix, 1)
+	second := fixtureUUID("fafafafa", suffix, 2)
+	defer func() {
+		_, _ = admin.Exec(context.Background(), `DELETE FROM state_of_mind WHERE uuid = ANY($1)`, []string{first, second})
+	}()
+	if _, err := admin.Exec(ctx, `
+		INSERT INTO state_of_mind (uuid, start_ts, end_ts, kind, valence, valence_class, labels, associations, user_id)
+		VALUES ($1, $2, $2, 'momentaryEmotion', 0.5, 'slightlyPleasant', ARRAY['calm','grateful'], ARRAY['family'], $4),
+		       ($3, $5, $5, 'dailyMood', -0.25, 'slightlyUnpleasant', NULL, NULL, $4)`,
+		first, morning, second, defaultUserID, late,
+	); err != nil {
+		t.Fatalf("insert state_of_mind: %v", err)
+	}
+
+	dayStart := time.Date(2099, 10, 3, 0, 0, 0, 0, loc)
+	entries, err := store.StateOfMind(ctx, dayStart, dayStart.Add(24*time.Hour))
+	if err != nil {
+		t.Fatalf("StateOfMind: %v", err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("entries = %#v, want both", entries)
+	}
+	if entries[0].UUID != first || entries[1].UUID != second {
+		t.Errorf("order = %s, %s, want oldest first", entries[0].UUID, entries[1].UUID)
+	}
+	e := entries[0]
+	if e.Date != "2099-10-03" || e.Timestamp != morning.UnixMilli() || e.Kind != "momentaryEmotion" {
+		t.Errorf("entry = %+v", e)
+	}
+	if e.Valence == nil || *e.Valence != 0.5 || e.ValenceClassification == nil || *e.ValenceClassification != "slightlyPleasant" {
+		t.Errorf("valence = %v / %v", e.Valence, e.ValenceClassification)
+	}
+	if strings.Join(e.Labels, ",") != "calm,grateful" || strings.Join(e.Associations, ",") != "family" {
+		t.Errorf("labels/associations = %v / %v", e.Labels, e.Associations)
+	}
+	// The late entry stays on its local day even though it is the 4th in UTC.
+	if entries[1].Date != "2099-10-03" {
+		t.Errorf("late entry date = %q, want the local day 2099-10-03", entries[1].Date)
+	}
+	// NULL arrays come back empty, never nil, so JSON renders [].
+	if entries[1].Labels == nil || len(entries[1].Labels) != 0 {
+		t.Errorf("labels = %#v, want an empty slice", entries[1].Labels)
+	}
+
+	if _, err := store.StateOfMind(ctx, time.Date(2098, 1, 1, 0, 0, 0, 0, loc), dayStart); err == nil {
+		t.Error("a range over 366 days was accepted")
+	} else {
+		wantRequestError(t, err, "at most 366 days")
 	}
 }

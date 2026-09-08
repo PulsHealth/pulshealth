@@ -78,11 +78,22 @@ const productAPIDocsHTML = `<!doctype html>
       <tr><td><code>GET</code></td><td><code>/v1/activity/summary</code></td><td><code>start=ms&amp;end=ms</code></td><td>Activity rings by day.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/workouts</code></td><td><code>start?</code>, <code>end?</code>, <code>activityType?</code>, <code>limit?</code>, <code>offset?</code></td><td>Workout summaries and pagination offset.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/workouts/{uuid}</code></td><td></td><td>Workout detail, available metrics, statistics, events, and activities.</td></tr>
+      <tr><td><code>GET</code></td><td><code>/v1/workouts/{uuid}/series</code></td><td><code>types?</code>, <code>maxPoints?</code></td><td>Intra-workout streams (heart rate, power, speed, &hellip;) as <code>[t, value]</code> pairs, downsampled.</td></tr>
+      <tr><td><code>GET</code></td><td><code>/v1/sleep/daily</code></td><td><code>start=ms&amp;end=ms</code></td><td>One row per night, attributed to the wake-up day, with stage minutes.</td></tr>
+      <tr><td><code>GET</code></td><td><code>/v1/samples</code></td><td><code>type</code>, <code>start=ms&amp;end=ms</code>, <code>limit?</code>, <code>offset?</code></td><td>Raw samples of one quantity or category type.</td></tr>
+      <tr><td><code>GET</code></td><td><code>/v1/state-of-mind</code></td><td><code>start=ms&amp;end=ms</code></td><td>State of Mind entries: valence, labels, associations.</td></tr>
     </tbody>
   </table>
 
+  <h2>Sleep</h2>
+  <p><code>/v1/sleep/daily</code> returns one row per sleep session. A session is attributed to the local calendar day it <em>ends</em> on — the wake-up day, matching Apple Health — and samples more than three hours apart start a new session, so a nap gets its own row. All durations are minutes.</p>
+  <p>An iPhone, an Apple Watch and a third-party app can all record the same night. The endpoint never sums them: <code>inBedMinutes</code> is the highest single-source in-bed total, and <code>asleepMinutes</code> plus the whole <code>stages</code> breakdown come together from the one source that recorded the most sleep (ties go to the source with more stage detail). <code>sources</code> counts how many contributed. <code>asleepMinutes</code> is core + deep + REM + unspecified; <code>stages.awake</code> is time awake during the session and is not part of it. This mirrors the web viewer's daily sleep series.</p>
+
+  <h2>Raw samples</h2>
+  <p><code>/v1/samples</code> serves individual HealthKit records for exactly one type, ordered by start time, at most 31 days per request (<code>limit</code> defaults to 1000, caps at 5000; page with <code>nextOffset</code>). Unlike <code>/v1/metrics/daily</code> these are <strong>not</strong> deduplicated: if an iPhone and an Apple Watch both recorded the same minutes, both rows come back. A quantity sample carries <code>value</code> in the page's canonical <code>unit</code>; a category sample carries the integer <code>value</code> and its HealthKit <code>label</code>.</p>
+
   <h2>Conventions</h2>
-  <p>All timestamps are epoch milliseconds (0 to 253402300799999; anything else is a <code>400</code>). Workout ranges are <code>[start, end)</code> on the workout start time. The daily endpoints (<code>/v1/metrics/daily</code>, <code>/v1/activity/summary</code>) return every local calendar day — in the server's configured zone, <code>PULS_TIME_ZONE</code> — that overlaps <code>[start, end)</code>, so a range that touches one minute of a day returns that whole day. Empty result sets return empty arrays.</p>
+  <p>All timestamps are epoch milliseconds (0 to 253402300799999; anything else is a <code>400</code>). Workout ranges are <code>[start, end)</code> on the workout start time. The daily endpoints (<code>/v1/metrics/daily</code>, <code>/v1/activity/summary</code>) return every local calendar day — in the server's configured zone, <code>PULS_TIME_ZONE</code> — that overlaps <code>[start, end)</code>, so a range that touches one minute of a day returns that whole day. <code>/v1/sleep/daily</code> and <code>/v1/state-of-mind</code> use those same local days and reject ranges over 366 days. Empty result sets return empty arrays.</p>
 </main>
 </body>
 </html>
@@ -202,6 +213,93 @@ const productAPIOpenAPIJSON = `{
             }
           }
         ]
+      },
+      "SleepStages": {
+        "type": "object",
+        "description": "Minutes per stage, from the single source that recorded the most sleep. asleepMinutes is core + deep + rem + unspecified; awake is time awake during the session and is not part of it.",
+        "properties": {
+          "core": { "type": "number" },
+          "deep": { "type": "number" },
+          "rem": { "type": "number" },
+          "unspecified": { "type": "number" },
+          "awake": { "type": "number" }
+        }
+      },
+      "SleepNight": {
+        "type": "object",
+        "description": "One sleep session, attributed to the local calendar day it ended on (the wake-up day). Overlapping sources are never summed: inBedMinutes is the highest single-source total and asleepMinutes plus stages come from the source with the most sleep.",
+        "properties": {
+          "date": { "type": "string", "format": "date", "description": "Local wake-up day." },
+          "start": { "type": "integer", "format": "int64" },
+          "end": { "type": "integer", "format": "int64" },
+          "inBedMinutes": { "type": "number" },
+          "asleepMinutes": { "type": "number" },
+          "stages": { "$ref": "#/components/schemas/SleepStages" },
+          "sources": { "type": "integer", "description": "Distinct sources that contributed samples to this session." }
+        }
+      },
+      "Sample": {
+        "type": "object",
+        "properties": {
+          "uuid": { "type": "string", "format": "uuid" },
+          "start": { "type": "integer", "format": "int64" },
+          "end": { "type": "integer", "format": "int64" },
+          "value": { "type": ["number", "null"], "description": "Quantity value in the page's canonical unit, or the category type's integer enum value." },
+          "label": { "type": ["string", "null"], "description": "Category types only: the HealthKit name of value." },
+          "source": { "type": ["string", "null"] }
+        }
+      },
+      "SamplesPage": {
+        "type": "object",
+        "description": "Raw HealthKit samples of one type, ordered by start time. Not deduplicated across devices.",
+        "properties": {
+          "type": { "type": "string" },
+          "kind": { "type": "string", "enum": ["quantity", "category"] },
+          "unit": { "type": ["string", "null"] },
+          "samples": { "type": "array", "items": { "$ref": "#/components/schemas/Sample" } },
+          "nextOffset": { "type": "integer", "description": "Offset to pass for the next page; a short page means the end." }
+        }
+      },
+      "WorkoutSeries": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "unit": { "type": ["string", "null"] },
+          "totalPoints": { "type": "integer", "description": "Points recorded before downsampling." },
+          "points": {
+            "type": "array",
+            "description": "[epoch milliseconds, value] pairs, ordered by time.",
+            "items": {
+              "type": "array",
+              "prefixItems": [{ "type": "integer", "format": "int64" }, { "type": "number" }],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        }
+      },
+      "WorkoutSeriesResponse": {
+        "type": "object",
+        "properties": {
+          "uuid": { "type": "string", "format": "uuid" },
+          "start": { "type": "integer", "format": "int64" },
+          "end": { "type": "integer", "format": "int64" },
+          "maxPoints": { "type": "integer" },
+          "series": { "type": "array", "items": { "$ref": "#/components/schemas/WorkoutSeries" } }
+        }
+      },
+      "StateOfMindEntry": {
+        "type": "object",
+        "properties": {
+          "uuid": { "type": "string", "format": "uuid" },
+          "date": { "type": "string", "format": "date", "description": "Local calendar day of the entry." },
+          "timestamp": { "type": "integer", "format": "int64" },
+          "kind": { "type": "string", "description": "momentaryEmotion or dailyMood." },
+          "valence": { "type": ["number", "null"], "description": "-1 (very unpleasant) to +1 (very pleasant)." },
+          "valenceClassification": { "type": ["string", "null"], "description": "Apple's band for valence, e.g. slightlyPleasant." },
+          "labels": { "type": "array", "items": { "type": "string" }, "description": "Feelings picked, e.g. calm, stressed." },
+          "associations": { "type": "array", "items": { "type": "string" }, "description": "What they are about, e.g. work, family." }
+        }
       }
     }
   },
@@ -292,6 +390,53 @@ const productAPIOpenAPIJSON = `{
         "summary": "Workout detail",
         "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
         "responses": { "200": { "description": "Workout detail", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutDetail" } } } }, "400": { "description": "Invalid UUID" }, "404": { "description": "Workout not found" } }
+      }
+    },
+    "/v1/workouts/{uuid}/series": {
+      "get": {
+        "summary": "Intra-workout streams",
+        "description": "Per-second curves recorded during the workout, each downsampled to at most maxPoints points by bucket-averaging while keeping the first and last point.",
+        "parameters": [
+          { "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "types", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers; omit for every recorded stream." },
+          { "name": "maxPoints", "in": "query", "required": false, "schema": { "type": "integer", "default": 500, "maximum": 5000 } }
+        ],
+        "responses": { "200": { "description": "Workout series", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutSeriesResponse" } } } }, "400": { "description": "Invalid UUID or parameters" }, "404": { "description": "Workout not found" } }
+      }
+    },
+    "/v1/sleep/daily": {
+      "get": {
+        "summary": "Sleep nights",
+        "description": "One row per sleep session, attributed to the local calendar day it ended on. Sessions are split on gaps over three hours, and every local day overlapping [start, end) is covered.",
+        "parameters": [
+          { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
+          { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
+        ],
+        "responses": { "200": { "description": "Sleep nights", "content": { "application/json": { "schema": { "type": "object", "properties": { "nights": { "type": "array", "items": { "$ref": "#/components/schemas/SleepNight" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" } }
+      }
+    },
+    "/v1/samples": {
+      "get": {
+        "summary": "Raw samples of one type",
+        "description": "Individual HealthKit records, ordered by start time, not deduplicated across devices. The range is [start, end) on the sample start time and may not exceed 31 days.",
+        "parameters": [
+          { "name": "type", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Exactly one HealthKit identifier (see /v1/catalog/types)." },
+          { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
+          { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 1000, "maximum": 5000 } },
+          { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": { "200": { "description": "Samples", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SamplesPage" } } } }, "400": { "description": "Unknown type, a non-sample type, or a range over 31 days" } }
+      }
+    },
+    "/v1/state-of-mind": {
+      "get": {
+        "summary": "State of Mind entries",
+        "parameters": [
+          { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
+          { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
+        ],
+        "responses": { "200": { "description": "Entries", "content": { "application/json": { "schema": { "type": "object", "properties": { "entries": { "type": "array", "items": { "$ref": "#/components/schemas/StateOfMindEntry" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" } }
       }
     }
   }
