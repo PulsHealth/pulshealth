@@ -64,6 +64,13 @@ struct OnboardingView: View {
                     }
                 }
         }
+        // A pushed detail belongs to the step that pushed it. The Data Types
+        // step is the real picker, so it can be two levels deep (category →
+        // per-type config) when the footer's Back/Continue fires — and the
+        // footer sits outside the stack, so without this the pushed screen
+        // stayed on top of the next step's content. Re-identifying the stack
+        // per step drops whatever it had pushed.
+        .id(step)
         .safeAreaInset(edge: .bottom) { footer }
         .interactiveDismissDisabled()
         .onAppear {
@@ -352,6 +359,10 @@ struct OnboardingView: View {
                 && enteredToken.isEmpty {
                 return "I'll Set This Up Later"
             }
+            // An unusable URL cannot be carried forward — `commitServerFields`
+            // would store nothing and the typed text would vanish without a
+            // word. Fix it, or clear the field to skip the step outright.
+            if serverURLIssue != nil { return nil }
             if connectionTest?.isSuccess == true { return nil }
             return connectionTest == nil ? "Continue Without Testing" : "Continue Anyway"
         case .health:
@@ -432,9 +443,9 @@ struct OnboardingView: View {
         return nil
     }
 
-    private var enteredToken: String {
-        tokenText.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
+    /// Same rules as Settings, so a `PULS_TOKEN=…` line pasted straight out of
+    /// the server's `.env` works here too.
+    private var enteredToken: String { ServerTokenField.normalize(tokenText) }
 
     private var serverSummary: String {
         guard let url = validatedServerURL else { return "Not set" }

@@ -33,7 +33,7 @@ struct SettingsView: View {
         return nil
     }
 
-    private var enteredToken: String { Self.normalizeToken(tokenText) }
+    private var enteredToken: String { ServerTokenField.normalize(tokenText) }
 
     var body: some View {
         @Bindable var model = model
@@ -260,9 +260,14 @@ struct SettingsView: View {
         return await model.applyConfiguration()
     }
 
+}
+
+/// The bearer-token field's input rules, shared by Settings and the first-run
+/// flow so both accept the same things.
+enum ServerTokenField {
     /// Accepts a pasted `PULS_TOKEN=…` line from the server's `.env` as well as
     /// the bare token.
-    private static func normalizeToken(_ text: String) -> String {
+    static func normalize(_ text: String) -> String {
         var token = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if token.hasPrefix("PULS_TOKEN="), let value = token.split(separator: "=", maxSplits: 1).last {
             token = String(value)
