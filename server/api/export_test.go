@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -309,6 +310,40 @@ func msString(d time.Duration) string {
 	return strconv.FormatInt(d.Milliseconds(), 10)
 }
 
+// limit and offset belong to the JSON endpoint's paging, not to an export.
+// They are therefore neither honoured nor validated: a limit /v1/samples
+// would reject is ignored here, and the whole range still comes back.
+func TestExportIgnoresThePagingParameters(t *testing.T) {
+	t.Parallel()
+
+	unit := "count/min"
+	store := &fakeStore{samples: &SamplesPage{
+		Type: "HKQuantityTypeIdentifierHeartRate", Kind: "quantity", Unit: &unit,
+		Samples: []Sample{
+			{UUID: "11111111-1111-4111-8111-111111111111", Start: exportStartMS, End: exportStartMS, Value: ptrFloat64(61)},
+			{UUID: "22222222-2222-4222-8222-222222222222", Start: exportStartMS + 1, End: exportStartMS + 1, Value: ptrFloat64(62)},
+		},
+	}}
+	srv := exportServer(t, store)
+
+	rec := getExport(t, srv,
+		"format=csv&dataset=samples&type=HKQuantityTypeIdentifierHeartRate&limit=0&offset=-5&"+exportRange)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body %s — paging must not be validated here", rec.Code, rec.Body.String())
+	}
+	records, err := csv.NewReader(strings.NewReader(rec.Body.String())).ReadAll()
+	if err != nil {
+		t.Fatalf("the body is not CSV: %v", err)
+	}
+	if len(records) != 3 {
+		t.Fatalf("records = %#v, want a header and both samples", records)
+	}
+	// A zero Limit is what the store reads as "the whole range".
+	if store.lastSamples.Limit != 0 || store.lastSamples.Offset != 0 {
+		t.Errorf("filters = %+v, want no paging", store.lastSamples)
+	}
+}
+
 // A bad type is the store's 400, and it must arrive before the download
 // starts: the response has to be a JSON error, not a CSV file with a header
 // row and nothing under it.
@@ -432,6 +467,66 @@ func TestExportStreamsChunkedAndAbortsOnAMidStreamFailure(t *testing.T) {
 
 	if _, err := io.ReadAll(resp.Body); err == nil {
 		t.Error("the rest of the body read cleanly; a mid-stream failure must break the transfer")
+	}
+}
+
+// An export holds a database connection for as long as the download takes,
+// so only maxConcurrentExports may be in flight; the next one is refused at
+// once rather than queued behind them.
+func TestExportRefusesMoreThanTheConcurrencyLimit(t *testing.T) {
+	t.Parallel()
+
+	var (
+		inFlight    = make(chan struct{}, maxConcurrentExports)
+		release     = make(chan struct{})
+		releaseOnce sync.Once
+	)
+	releaseAll := func() { releaseOnce.Do(func() { close(release) }) }
+	defer releaseAll()
+
+	srv := exportServer(t, &streamingStore{
+		workoutRows: func(func(WorkoutSummary) error) error {
+			inFlight <- struct{}{}
+			<-release
+			return nil
+		},
+	})
+
+	// Fill every slot and leave the handlers parked inside their scans.
+	done := make(chan int, maxConcurrentExports)
+	for i := 0; i < maxConcurrentExports; i++ {
+		go func() {
+			done <- getExport(t, srv, "format=csv&dataset=workouts&"+exportRange).Code
+		}()
+	}
+	for i := 0; i < maxConcurrentExports; i++ {
+		<-inFlight
+	}
+
+	rec := getExport(t, srv, "format=csv&dataset=workouts&"+exportRange)
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want 503 while every slot is busy; body %s", rec.Code, rec.Body.String())
+	}
+	if rec.Header().Get("Retry-After") == "" {
+		t.Error("no Retry-After on the 503")
+	}
+	var body map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("body is not the usual error JSON: %v", err)
+	}
+	if !strings.Contains(body["error"], "exports may run at once") {
+		t.Errorf("error = %q", body["error"])
+	}
+
+	// A slot freed by a finished export is reusable.
+	releaseAll()
+	for i := 0; i < maxConcurrentExports; i++ {
+		if code := <-done; code != http.StatusOK {
+			t.Fatalf("a parked export finished with %d", code)
+		}
+	}
+	if rec := getExport(t, srv, "format=csv&dataset=workouts&"+exportRange); rec.Code != http.StatusOK {
+		t.Fatalf("status = %d after the slots were released, want 200", rec.Code)
 	}
 }
 
