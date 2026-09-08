@@ -1,6 +1,6 @@
 # CLAUDE.md — agent guide for Puls
 
-Personal HealthKit → self-hosted Postgres sync. Three components, each with its own README
+Personal HealthKit → self-hosted Postgres sync. Four components, each with its own README
 (architecture, wire format, performance numbers live there — read them before deep work):
 
 | Path | What | Docs |
@@ -8,6 +8,7 @@ Personal HealthKit → self-hosted Postgres sync. Three components, each with it
 | `PulsHealthSync/` | Swift package (iOS 17+, Swift 6 strict concurrency): sync engine, transport, NDJSON encoding | `PulsHealthSync/README.md` |
 | `PulsHealth/` | SwiftUI app wrapping the library (dashboard, type picker, settings, log, benchmark) | `PulsHealth/README.md` |
 | `server/` | Docker Compose: Go ingest/product APIs + PostgreSQL 17/TimescaleDB + Grafana | `server/README.md` |
+| `server/mcp/` | Go MCP server (stdio + streamable HTTP) giving AI assistants read-only tools over the product API; talks only to the API, never Postgres | `server/mcp/README.md`, `docs/ai.md` |
 
 ## Build & test
 
@@ -33,6 +34,7 @@ cd PulsHealth && xcodebuild test -scheme PulsHealth \
 # Server unit tests (no DB needed)
 cd server/ingest && go vet ./... && go test ./...
 cd ../api && go vet ./... && go test ./...
+cd ../mcp && go vet ./... && go test ./...   # MCP server; tests run against an httptest fake of the product API
 
 # Server integration tests (gated on DATABASE_URL; schema must be applied)
 cd server && docker compose up -d migrate      # db + schema, nothing else
@@ -216,6 +218,13 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   guards the deletion path.
 - Reconciliation (digest/UUID repair) covers only quantity/category/workout kinds.
 - The ingest container is distroless: no shell, debug via `docker compose logs ingest`.
+- `server/mcp` is a read-only client of the product API (`server/api/docs.go`
+  is its contract) and must stay one: no database URL, no writes, every tool
+  annotated read-only. Its tool descriptions and embedded `guide.md` spell
+  out units, the time-zone rule and the double-counting rule for the model —
+  update them with any change to the API's shapes. `PULS_TIME_ZONE` must be
+  handed to it separately (the API does not report its zone). In stdio mode
+  stdout is the transport: never print to it; logs go to stderr.
 - Grafana datasource UID `puls-tsdb` is hardcoded in dashboard JSON — keep it stable.
 - Debounces are intentional: state persist 250 ms, event-log save 1 s. Data Types
   edits are not debounced — they are staged in `AppModel.config` and reach the

@@ -8,9 +8,10 @@ HealthKit and streams every sample — a full historical backfill first, then
 continuous near-real-time updates — as gzip NDJSON to an HTTP endpoint you
 configure. Nothing is sent anywhere else. This repository also ships a
 reference backend for it (PostgreSQL 17 + TimescaleDB, a Go ingest server, a
-read-only product API with an OpenAPI document, Grafana dashboards, and a web
-viewer) that runs with one `docker compose up`, and it is where the sync
-protocol and an MCP server for AI tools are being written.
+read-only product API with an OpenAPI document, Grafana dashboards, a web
+viewer, and an MCP server so Claude, Cursor and other AI assistants can
+answer questions from your data) that runs with one `docker compose up`, and
+it is where the sync protocol is written.
 
 > **Pre-release.** This is usable today by people comfortable with Xcode and
 > Docker, and honest about what is missing:
@@ -39,7 +40,7 @@ protocol and an MCP server for AI tools are being written.
 | **Reference server** | [`server/`](server/README.md) | Docker Compose stack: TimescaleDB, Go ingest API, Go product API (OpenAPI 3.1), Grafana with provisioned dashboards and alert rules. |
 | **Web viewer** | [`web/`](web/README.md) | Next.js viewer (activity rings, trends, workouts, catalog) reading Postgres directly. |
 | **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
-| **Coming** | `server/mcp/` | A read-only MCP server over the product API for Claude, ChatGPT, Cursor, and similar tools. |
+| **MCP server** | [`server/mcp/`](server/mcp/README.md) | Read-only MCP server over the product API for Claude Desktop, Claude Code, Cursor and remote connectors: daily metrics, rings, workouts, latest readings, with an embedded guide for the model. Setup in [`docs/ai.md`](docs/ai.md). |
 
 For the database data model, table guide, and query patterns (including how
 to avoid iPhone + Watch double counting), see
@@ -78,10 +79,11 @@ cp .env.example .env
 
 Edit `.env`:
 
-1. Generate a value for each of the six secrets — `POSTGRES_PASSWORD`,
-   `PULS_TOKEN`, `PULS_API_TOKEN`, `GRAFANA_PASSWORD`, `GRAFANA_DB_PASSWORD`,
-   `API_DB_PASSWORD` — with `openssl rand -hex 32` (run it once per secret).
-   `PULS_TOKEN` is the one the phone will use.
+1. Generate a value for each of the seven secrets — `POSTGRES_PASSWORD`,
+   `PULS_TOKEN`, `PULS_API_TOKEN`, `PULS_MCP_TOKEN`, `GRAFANA_PASSWORD`,
+   `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD` — with `openssl rand -hex 32`
+   (run it once per secret). `PULS_TOKEN` is the one the phone will use;
+   `PULS_MCP_TOKEN` is for AI clients (see [Use it with AI](#use-it-with-ai)).
 2. Set `PULS_TIME_ZONE` to the IANA zone your phone lives in (for example
    `Europe/Berlin`). Every daily view buckets by this calendar, and it is
    stored on the database at first start, so set it **before** starting.
@@ -94,7 +96,8 @@ curl -s localhost:8080/healthz   # → {"db":true,"ok":true}
 ```
 
 Everything binds to loopback: ingest on `8080`, the product API on `8081`,
-Grafana on `3000`, the web viewer on `3001`, Postgres on `5432`. The phone
+the MCP server on `8082`, Grafana on `3000`, the web viewer on `3001`,
+Postgres on `5432`. The phone
 must reach the ingest port over **HTTPS** unless the server is on the local
 network (plain `http://` to a LAN address works) — put a TLS-terminating
 reverse proxy in front of it, or a VPN/overlay network that provides HTTPS,
@@ -133,6 +136,34 @@ Several people on one server: give each phone its own user ID under
 **Settings → User** (the default is a fixed UUID so a reinstall keeps its
 identity), and set `PULS_USER_ID` on the server to choose which user the
 product API and web viewer show.
+
+## Use it with AI
+
+The stack includes a read-only [MCP](https://modelcontextprotocol.io) server
+(`server/mcp/`) so an AI assistant can answer questions from your data:
+"how many steps did I average last week", "compare my runs this month to
+last month", "did I close my rings yesterday". It talks only to the product
+API, returns deduplicated daily values with their units, and carries a
+guide for the model on the data's traps (iPhone + Watch double counting,
+cumulative versus discrete metrics, the time-zone rule). Sleep is not
+exposed yet — the assistant will say so.
+
+Local clients (Claude Desktop, Claude Code, Cursor) run the binary in stdio
+mode against your API; for example, in Claude Code:
+
+```bash
+go build -o pulshealth-mcp ./server/mcp
+claude mcp add pulshealth -s user \
+  -e PULS_API_URL=https://<your-api-host>:8444 \
+  -e PULS_API_TOKEN=<PULS_API_TOKEN from server/.env> \
+  -e PULS_TIME_ZONE=Europe/Berlin \
+  -- "$PWD/pulshealth-mcp"
+```
+
+Remote clients connect to the Compose `mcp` service over HTTPS with
+`PULS_MCP_TOKEN`. Config snippets for every client, the remote-connector
+recipe, demo prompts and the security notes are in
+[`docs/ai.md`](docs/ai.md).
 
 ## How syncing works
 
@@ -339,6 +370,10 @@ No. The app requests read access only, and its usage strings say so.
   default; expose only the ingest port, and only through a TLS-terminating
   proxy or a VPN. Never publish the product API, Grafana, or Postgres on a
   public interface.
+- **The MCP server's tokens are read access to everything the product API
+  serves.** Its Compose service binds to loopback like the API; publish it
+  only over HTTPS, and keep the client config files that hold the token out
+  of version control. `docs/ai.md` has the details.
 - **The web viewer is unauthenticated.** It is a read-only page over your
   health database with no login. Its bind address is the access control:
   keep `WEB_BIND_ADDR` on loopback or a private network, never `0.0.0.0`.
@@ -380,6 +415,7 @@ cd PulsHealth && xcodebuild test -scheme PulsHealth \
 # Server unit tests (no database needed)
 cd server/ingest && go vet ./... && go test ./...
 cd ../api      && go vet ./... && go test ./...
+cd ../mcp      && go vet ./... && go test ./...
 
 # Web
 cd web && npm ci && npm run lint && npm run typecheck && npm test && npm run build

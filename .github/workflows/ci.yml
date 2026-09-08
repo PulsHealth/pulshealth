@@ -28,12 +28,13 @@ jobs:
           cache-dependency-path: |
             server/api/go.sum
             server/ingest/go.sum
+            server/mcp/go.sum
 
       - name: Validate Go services
         shell: bash
         run: |
           set -euo pipefail
-          for module in server/ingest server/api; do
+          for module in server/ingest server/api server/mcp; do
             (
               cd "$module"
               go mod verify
@@ -69,6 +70,7 @@ jobs:
           GRAFANA_DB_PASSWORD: validation-only
           API_DB_PASSWORD: validation-only
           INGEST_DB_PASSWORD: validation-only
+          PULS_MCP_TOKEN: validation-only
           DEPLOY_COMMIT: ${{ github.sha }}
         run: |
           docker compose -f server/docker-compose.yml config --quiet
@@ -232,13 +234,14 @@ jobs:
           cache-dependency-path: |
             server/api/go.sum
             server/ingest/go.sum
+            server/mcp/go.sum
 
       - name: govulncheck
         shell: bash
         run: |
           set -euo pipefail
           go install golang.org/x/vuln/cmd/govulncheck@v1.6.0
-          for module in server/ingest server/api; do
+          for module in server/ingest server/api server/mcp; do
             (cd "$module" && "$(go env GOPATH)/bin/govulncheck" ./...)
           done
 
