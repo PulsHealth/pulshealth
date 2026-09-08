@@ -639,11 +639,46 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
 - `GET /v1/activity/summary?start=...&end=...`
 - `GET /v1/workouts?start=...&end=...&limit=50&offset=0`
 - `GET /v1/workouts/{uuid}`
+- `GET /v1/workouts/{uuid}/series?types=...&maxPoints=500`
+- `GET /v1/sleep/daily?start=...&end=...`
+- `GET /v1/samples?type=...&start=...&end=...&limit=1000&offset=0`
+- `GET /v1/state-of-mind?start=...&end=...`
 - `GET /healthz`
+
+`/v1/sleep/daily` returns one row per sleep session rather than one per
+calendar day: a session is attributed to the local day it **ends** on (the
+wake-up day, as Apple Health does it) and samples more than three hours apart
+start a new session, so a nap is its own row. Durations are minutes.
+Overlapping sources are never summed — an iPhone, a Watch and a third-party
+app can all record the same night, so `inBedMinutes` is the highest
+single-source total and `asleepMinutes` with the whole `stages` breakdown come
+together from the source that recorded the most sleep, the same
+highest-single-source rule the web viewer's sleep series uses. Sleep values
+are decoded through `category_labels`, so a stage is never a bare integer.
+
+`/v1/samples` serves the raw records of exactly one quantity or category type,
+ordered by start time, at most 31 days per request (`limit` defaults to 1000
+and caps at 5000; page with `nextOffset`). These are **not** deduplicated
+across devices — that is what `/v1/metrics/daily` is for. An unknown
+identifier, a non-sample kind, or a longer range is a `400`.
+
+`/v1/workouts/{uuid}/series` reads `workout_series_points` and downsamples
+each stream by bucket-averaging while keeping the true first and last point
+(`maxPoints` defaults to 500, caps at 5000); `totalPoints` says how many were
+recorded. `/v1/state-of-mind` returns logged State of Mind entries, at most
+366 days per request.
+
+Two of these endpoints need `SELECT` on `sources` and `category_labels`, which
+`db/migrations/099_read_roles.sh` grants to `api_reader`. That script runs on
+every `docker compose up -d`, so an existing install picks the grants up on
+its next migrate run — no manual step.
 
 Fixture-writing integration tests for this service require
 `PULS_API_WRITE_INTEGRATION_TESTS=1` and should not be run against live or
-shared databases.
+shared databases. They read through `DATABASE_URL` and write fixtures through
+`ADMIN_DATABASE_URL` (falling back to `DATABASE_URL`), so pointing
+`DATABASE_URL` at `api_reader` and `ADMIN_DATABASE_URL` at the superuser
+exercises the role's grants as well as the queries.
 
 ### Verify ingest with curl
 

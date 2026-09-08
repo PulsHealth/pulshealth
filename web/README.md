@@ -102,7 +102,8 @@ web/
 ├── app/                 # routes (server components query Postgres directly)
 ├── components/          # Sidebar, ActivityRings, TrendChart, Sparkline, MetricCard …
 └── lib/
-    ├── catalog.ts       # 79 HealthKit types — ported from PulsHealthSync (names/units/groups)
+    ├── catalog.generated.ts  # GENERATED from ../docs/protocol/catalog.json (npm run gen:catalog)
+    ├── catalog.ts       # the web catalog: generated core + web-only overlay, GROUPS, lookups
     ├── queries.ts       # the single per-user data API; local demo fallback
     ├── db.ts            # pg pool (server-only)
     ├── demo.ts          # deterministic synthetic data
@@ -128,9 +129,18 @@ so the live headline does not depend on aggregate refresh or bucket-settlement t
 Instantaneous types average with a min–max band. Activity rings require the selected
 user's summary for the actual current local date.
 
-The catalog in `lib/catalog.ts` is a hand-maintained mirror of
-`PulsHealthSync/Sources/PulsHealthSync/Models/HealthTypeCatalog.swift` — if you add
-a type there, mirror it here to surface it in the UI. There is no drift test yet.
+**The catalog is generated, not mirrored.** `lib/catalog.generated.ts` is
+rendered by `npm run gen:catalog` (`scripts/gen-catalog.mjs`, no dependencies)
+from the published type vocabulary `../docs/protocol/catalog.json`, which the
+PulsHealthSync package tests render from the Swift `HealthTypeCatalog` — the
+one place identifiers, kinds, canonical units, groups and display names are
+defined (see `../docs/protocol/catalog.md`). `lib/catalog.ts` merges that core
+with a web-only overlay (name overrides) and exposes `CATALOG`, `GROUPS`,
+`GROUP_LABELS` and the lookups. To add a type, add it to the Swift catalog,
+regenerate the JSON there, run `npm run gen:catalog` here and commit both
+generated files; never edit them by hand. `npm run check:catalog` (run in CI)
+fails when the generated file is stale, and `lib/catalog.test.ts` pins the
+merged catalog to the JSON.
 
 ## Notes
 

@@ -128,6 +128,99 @@ type WorkoutFilters struct {
 	Offset       int
 }
 
+// SleepStages is the per-stage minutes of a SleepNight.
+type SleepStages struct {
+	Core        float64 `json:"core"`
+	Deep        float64 `json:"deep"`
+	REM         float64 `json:"rem"`
+	Unspecified float64 `json:"unspecified"`
+	Awake       float64 `json:"awake"`
+}
+
+// SleepNight is one entry of GET /v1/sleep/daily: one sleep session,
+// attributed to the local day it ended on.
+type SleepNight struct {
+	Date          string      `json:"date"`
+	Start         int64       `json:"start"`
+	End           int64       `json:"end"`
+	InBedMinutes  float64     `json:"inBedMinutes"`
+	AsleepMinutes float64     `json:"asleepMinutes"`
+	Stages        SleepStages `json:"stages"`
+	Sources       int         `json:"sources"`
+}
+
+// Sample is one raw HealthKit record of GET /v1/samples.
+type Sample struct {
+	UUID   string   `json:"uuid"`
+	Start  int64    `json:"start"`
+	End    int64    `json:"end"`
+	Value  *float64 `json:"value"`
+	Label  *string  `json:"label"`
+	Source *string  `json:"source"`
+}
+
+// SamplesPage is the envelope of GET /v1/samples.
+type SamplesPage struct {
+	Type       string   `json:"type"`
+	Kind       string   `json:"kind"`
+	Unit       *string  `json:"unit"`
+	Samples    []Sample `json:"samples"`
+	NextOffset int      `json:"nextOffset"`
+}
+
+// SeriesPoint is one [epoch milliseconds, value] pair of a WorkoutSeries.
+// The API sends it as a two-element array.
+type SeriesPoint struct {
+	T int64
+	V float64
+}
+
+func (p *SeriesPoint) UnmarshalJSON(b []byte) error {
+	var raw []float64
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if len(raw) != 2 {
+		return fmt.Errorf("series point %s: want [t, value]", string(b))
+	}
+	p.T = int64(raw[0])
+	p.V = raw[1]
+	return nil
+}
+
+func (p SeriesPoint) MarshalJSON() ([]byte, error) {
+	return json.Marshal([2]any{p.T, p.V})
+}
+
+// WorkoutSeries is one type's stream within a workout.
+type WorkoutSeries struct {
+	Type        string        `json:"type"`
+	Unit        *string       `json:"unit"`
+	TotalPoints int           `json:"totalPoints"`
+	Points      []SeriesPoint `json:"points"`
+}
+
+// WorkoutSeriesResponse is GET /v1/workouts/{uuid}/series.
+type WorkoutSeriesResponse struct {
+	UUID      string          `json:"uuid"`
+	Start     int64           `json:"start"`
+	End       int64           `json:"end"`
+	MaxPoints int             `json:"maxPoints"`
+	Series    []WorkoutSeries `json:"series"`
+}
+
+// StateOfMindEntry is one entry of GET /v1/state-of-mind.
+type StateOfMindEntry struct {
+	UUID                  string   `json:"uuid"`
+	Date                  string   `json:"date"`
+	Timestamp             int64    `json:"timestamp"`
+	Kind                  string   `json:"kind"`
+	Valence               *float64 `json:"valence"`
+	ValenceClassification *string  `json:"valenceClassification"`
+	Labels                []string `json:"labels"`
+	Associations          []string `json:"associations"`
+}
+
 // APIError is a non-2xx answer from the product API. It surfaces to the
 // model as a tool error carrying the status, so the assistant can say what
 // went wrong (token rejected, workout not found, ...) instead of guessing.
@@ -320,6 +413,69 @@ func (c *APIClient) Workout(ctx context.Context, uuid string) (*WorkoutDetail, e
 		return nil, err
 	}
 	return &d, nil
+}
+
+// SleepDaily is GET /v1/sleep/daily?start=ms&end=ms. Like the other daily
+// endpoints it covers every local day overlapping [start, end); a night is
+// returned on the day it ended.
+func (c *APIClient) SleepDaily(ctx context.Context, startMS, endMS int64) ([]SleepNight, error) {
+	q := url.Values{
+		"start": {strconv.FormatInt(startMS, 10)},
+		"end":   {strconv.FormatInt(endMS, 10)},
+	}
+	var out struct {
+		Nights []SleepNight `json:"nights"`
+	}
+	if err := c.get(ctx, "/v1/sleep/daily", q, &out); err != nil {
+		return nil, err
+	}
+	return out.Nights, nil
+}
+
+// Samples is GET /v1/samples for one type. The range is [start, end) on the
+// sample start time and the API caps it at 31 days.
+func (c *APIClient) Samples(ctx context.Context, typ string, startMS, endMS int64, limit, offset int) (*SamplesPage, error) {
+	q := url.Values{
+		"type":   {typ},
+		"start":  {strconv.FormatInt(startMS, 10)},
+		"end":    {strconv.FormatInt(endMS, 10)},
+		"limit":  {strconv.Itoa(limit)},
+		"offset": {strconv.Itoa(offset)},
+	}
+	var out SamplesPage
+	if err := c.get(ctx, "/v1/samples", q, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// WorkoutSeries is GET /v1/workouts/{uuid}/series. An empty types slice asks
+// for every recorded stream.
+func (c *APIClient) WorkoutSeries(ctx context.Context, uuid string, types []string, maxPoints int) (*WorkoutSeriesResponse, error) {
+	q := url.Values{"maxPoints": {strconv.Itoa(maxPoints)}}
+	if len(types) > 0 {
+		q.Set("types", strings.Join(types, ","))
+	}
+	var out WorkoutSeriesResponse
+	if err := c.get(ctx, "/v1/workouts/"+url.PathEscape(uuid)+"/series", q, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// StateOfMind is GET /v1/state-of-mind?start=ms&end=ms.
+func (c *APIClient) StateOfMind(ctx context.Context, startMS, endMS int64) ([]StateOfMindEntry, error) {
+	q := url.Values{
+		"start": {strconv.FormatInt(startMS, 10)},
+		"end":   {strconv.FormatInt(endMS, 10)},
+	}
+	var out struct {
+		Entries []StateOfMindEntry `json:"entries"`
+	}
+	if err := c.get(ctx, "/v1/state-of-mind", q, &out); err != nil {
+		return nil, err
+	}
+	return out.Entries, nil
 }
 
 // Healthz probes the API's unauthenticated liveness endpoint, which also

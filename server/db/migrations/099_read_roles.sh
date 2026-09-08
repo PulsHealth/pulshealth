@@ -119,9 +119,15 @@ GRANT SELECT ON ALL TABLES IN SCHEMA _timescaledb_internal TO grafana;
 ALTER DEFAULT PRIVILEGES IN SCHEMA _timescaledb_internal GRANT SELECT ON TABLES TO grafana;
 
 -- Keep product API credentials scoped to the exact current query surface.
+-- `sources` names the device or app behind a raw sample and `category_labels`
+-- decodes a category sample's integer value; both joined by /v1/samples and
+-- /v1/sleep/daily. An install created before those endpoints picks the two up
+-- on its next migrate run, because this file runs every time.
 GRANT SELECT ON TABLE
   users,
+  sources,
   sample_types,
+  category_labels,
   quantity_samples,
   category_samples,
   workouts,
@@ -176,7 +182,9 @@ BEGIN
   IF EXISTS (
     WITH expected_public(nspname, relname, privilege_type, is_grantable) AS (VALUES
       ('public', 'users', 'SELECT', false),
+      ('public', 'sources', 'SELECT', false),
       ('public', 'sample_types', 'SELECT', false),
+      ('public', 'category_labels', 'SELECT', false),
       ('public', 'quantity_samples', 'SELECT', false),
       ('public', 'category_samples', 'SELECT', false),
       ('public', 'workouts', 'SELECT', false),
