@@ -49,7 +49,9 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
   no tracking, no collected data, and the one required-reason API the app uses
   — `UserDefaults` (CA92.1, the app's own flags). The `PulsHealthSync` package
   ships its own manifest for the same API (background-task schedule status).
-- Usage strings declare read-only HealthKit access (the app never writes health data).
+- Usage strings declare read-only HealthKit access (the app never writes health
+  data) and camera access for one purpose only — reading the pairing QR code
+  (`NSCameraUsageDescription`).
 
 ## Source map
 
@@ -63,6 +65,21 @@ Sources/
 │                         authorization (incl. iOS 26 per-object medication auth).
 ├── RootView.swift        TabView (Dashboard / Data Types / Log / Settings) +
 │                         DashboardView: totals, ETA, per-type rows, Sync Now.
+│                         Presents OnboardingView over everything on a first run.
+├── OnboardingView.swift  First run, five steps: what the app does and where the
+│                         data goes; the server (scan the pairing QR or type it,
+│                         then Test Connection — Continue needs a passing test,
+│                         or an explicit "Continue Anyway" with a warning);
+│                         Health access; the data types (the real TypePickerView,
+│                         preselected with TypePresets.common); a summary whose
+│                         button applies everything and starts the backfill.
+│                         Nothing reaches the engine before that last tap.
+│                         Settings → Diagnostics → "Show Onboarding Again"
+│                         replays it (with a Close button) for testing.
+├── PairingScannerView.swift  AVFoundation QR sheet feeding PairingPayload.parse.
+│                         Used by onboarding and Settings → Server. Handles
+│                         not-yet-asked, denied, and no-camera, each with a
+│                         "Type It Instead" way out; no frame is ever stored.
 ├── TypePickerView.swift  ~80 types grouped by category; Common/All/None presets.
 │                         Quantity rows link into TypeConfigView; other kinds keep
 │                         plain toggles.
@@ -106,6 +123,13 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 
 ## Behavior notes
 
+- A fresh install opens straight into the first-run flow; an install that
+  already has a server, enabled types, or a previous Apply never sees it (the
+  decision is `AppModel.showsOnboarding` — see the invariant in the root
+  `CLAUDE.md`). What the app promises the user on that first screen is stated
+  formally in [`docs/privacy-policy.md`](../docs/privacy-policy.md), and the
+  App Store material that repeats it is in
+  [`docs/appstore/`](../docs/appstore/README.md).
 - The most reliable sync trigger iOS offers is app-open: every foregrounding runs a
   full incremental pass, and re-reads the server's `GET /v1/capabilities` (kept
   in memory only) to decide which server-dependent controls to show.

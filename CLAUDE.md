@@ -199,6 +199,26 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
 - **iOS version gates.** State of Mind / effort scores / sleep apnea are
   `#available(iOS 18, *)`; medication doses and `BGContinuedProcessingTask` are
   `#available(iOS 26, *)`. Keep new type support gated the same way.
+- **First run only, and it applies nothing until the last step.**
+  `OnboardingView` covers `RootView` when `AppModel.showsOnboarding` is true:
+  decided synchronously in `init` from the durable `onboardingCompleted` and
+  `authorizationRequested` flags (so a fresh launch never flashes an
+  unconfigured dashboard), then corrected in `startBody` once the stored
+  configuration is known — an install with a server, types, or a prior Apply is
+  configured and must **never** be sent through it. Every step edits the same
+  staged `model.config` the Data Types tab edits; only the final step calls
+  `finishOnboarding()` → `applyConfiguration(syncNewTypes: true)`, the same
+  path as Save & Apply. The type step embeds the real `TypePickerView` rather
+  than a copy, so it can push detail screens the footer knows nothing about —
+  that is why the `NavigationStack` carries `.id(step)`; removing it leaves a
+  pushed category sitting on top of the next step.
+- **The published privacy claims are load-bearing.**
+  `docs/privacy-policy.md` and `docs/appstore/` state as fact that the app has
+  zero third-party dependencies, sends data only to the configured server,
+  never writes HealthKit, keeps the token in the Keychain, and stores no health
+  samples on the device. A change to any of those — a dependency, a new
+  outbound request, a new permission, a new on-disk store — has to update those
+  documents in the same pull request. `docs/appstore/README.md` has the table.
 
 ## Gotchas
 
