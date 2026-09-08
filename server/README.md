@@ -113,6 +113,9 @@ comments). Beyond the passwords and tokens, two settings deserve attention:
   every interface so a phone on the same Wi-Fi can sync to plain
   `http://<this host's LAN IP>:8080` with no proxy at all. See "Exposing the
   server" for the trade-off.
+- `TRUST_PROXY_HEADERS` — whether ingest believes `X-Forwarded-For` when
+  attributing a failed authentication to a client. Default `false`. Turn it
+  on only behind a proxy that owns that header — see "Rate limiting".
 - `PULS_VERSION` — which image tag the four app services run (`latest` when
   unset); `PULS_PUBLIC_URL` — the URL the pairing block should carry instead
   of the LAN address (read by `scripts/bootstrap.sh` only). See "Images and
@@ -373,6 +376,57 @@ app. Create it with `openssl rand -hex 32` (or let `scripts/bootstrap.sh`
 do it), put it in `.env`, and paste the same value into PulsHealth's server
 settings — the pairing block (`make pairing`) shows it next to the URL and
 user ID.
+
+### Rate limiting
+
+One static token on a published port is guessable, so ingest throttles **failed
+authentications** per client IP. Each address gets a token bucket holding **10
+failures**, refilling at **10 per minute**. While the bucket has tokens a wrong
+token answers `401` as before; once it is empty every attempt from that address
+answers
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 7
+
+{"error":"too many failed authentications"}
+```
+
+and the server logs `auth attempts throttled` with the address, the path and
+the wait. Two properties matter:
+
+- **A correct token is never throttled.** Only failures draw from the bucket, so
+  a backfill — thousands of authenticated uploads in a row — never touches it,
+  and neither does a device that has simply been syncing for months.
+- **An exhausted address is refused *before* the token is compared.** Charging a
+  failure but still answering `401`/`200` would leave the guessing rate
+  untouched and only change the status code; refusing first is what makes this
+  a brute-force limit. The cost is that a client sharing an address with an
+  attacker waits too — buckets are small and refill in a minute, and a client
+  that never fails never has a bucket at all.
+
+Memory is bounded: only failures create an entry, entries that have refilled
+and gone idle for ten minutes are forgotten, and a hard cap of 10,000 tracked
+addresses drops the least recently seen first, so an attacker rotating IPv6
+source addresses cannot grow the table.
+
+The limit is keyed on the TCP peer address. If a proxy terminates TLS in front
+of ingest, every request appears to come from the proxy and one attacker
+exhausts the shared bucket for everyone. Set **`TRUST_PROXY_HEADERS=true`** in
+`.env` in that case and ingest keys on the first entry of `X-Forwarded-For`
+instead. Only do that when the proxy is the *only* route to port 8080 and it
+overwrites the header (reverse proxies, Tailscale Serve/Funnel do): the header
+is otherwise set by whoever sends the request, and believing it lets a single
+attacker look like an unlimited number of clients. Leave it at the default
+`false` for `INGEST_BIND_ADDR=0.0.0.0` on a LAN.
+
+Docker's userland proxy can also rewrite the source address to the bridge
+gateway on some hosts. If `docker compose logs ingest` shows every throttled
+client as the same `172.x.x.1`, that is what happened: have the TLS proxy in
+front set `X-Forwarded-For` and turn `TRUST_PROXY_HEADERS` on.
+
+The rate limit is not a substitute for a good token. `openssl rand -hex 32` is
+256 bits; ten guesses a minute will not find it either way.
 
 ### Rotating secrets
 

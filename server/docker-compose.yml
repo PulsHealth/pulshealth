@@ -102,6 +102,14 @@ services:
       DATABASE_URL: postgres://${INGEST_DB_USER:-ingest}:${INGEST_DB_PASSWORD:?set in .env}@db:5432/postgres?sslmode=disable
       PULS_TOKEN: ${PULS_TOKEN:?set in .env}
       LISTEN_ADDR: ":8080"
+      # Whether to believe X-Forwarded-For when identifying the client an
+      # auth-failure budget belongs to. Only true when a proxy that
+      # overwrites that header is the ONLY way to reach port 8080 — a
+      # reverse proxy or Tailscale Serve/Funnel. Left false (the default),
+      # every client is identified by the TCP peer address, which is right
+      # for INGEST_BIND_ADDR=0.0.0.0 and for a proxy on the same host that
+      # does not rewrite the header. See server/README.md, "Rate limiting".
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
     ports:
       # Loopback by default. Put a TLS-terminating proxy in front of it
       # (reverse proxy, Tailscale Serve/Funnel, VPN) — the phone must reach

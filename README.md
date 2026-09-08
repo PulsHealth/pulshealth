@@ -382,7 +382,10 @@ No. The app requests read access only, and its usage strings say so.
   `PULS_TOKEN`; whoever holds it can upload and delete data for any user ID.
   Per-device tokens bound to a user are planned. The token is currently kept
   in the app's sync-state file rather than the Keychain; moving it is a
-  pre-1.0 requirement.
+  pre-1.0 requirement. Guessing it is slow, at least: ingest rate-limits
+  **failed** authentications per client IP (10 per minute, `429` with
+  `Retry-After` after that) and never throttles a request that presents the
+  right token — `server/README.md`, "Rate limiting".
 - **Put the ingest endpoint behind TLS.** Every service binds to loopback by
   default; expose only the ingest port, and only through a TLS-terminating
   proxy or a VPN. The one exception is `scripts/bootstrap.sh --lan`
