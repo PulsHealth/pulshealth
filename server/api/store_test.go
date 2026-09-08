@@ -541,6 +541,19 @@ func TestIntegrationWorkoutFixture(t *testing.T) {
 	if firstPage[0].UUID != workoutUUID2 || secondPage[0].UUID != workoutUUID {
 		t.Fatalf("tied-start UUID order = %q,%q, want %q,%q", firstPage[0].UUID, secondPage[0].UUID, workoutUUID2, workoutUUID)
 	}
+
+	// The export path: a zero Limit is "no limit", so both tied workouts
+	// come back from one scan in the same order the paged reads produced.
+	var streamed []string
+	if err := store.StreamWorkouts(ctx, WorkoutFilters{Start: &rangeStart, End: &rangeEnd}, func(w WorkoutSummary) error {
+		streamed = append(streamed, w.UUID)
+		return nil
+	}); err != nil {
+		t.Fatalf("StreamWorkouts: %v", err)
+	}
+	if len(streamed) != 2 || streamed[0] != workoutUUID2 || streamed[1] != workoutUUID {
+		t.Fatalf("streamed = %#v, want %q then %q", streamed, workoutUUID2, workoutUUID)
+	}
 }
 
 // wantRequestError asserts err is a requestError (a 400 to the caller) whose
@@ -791,6 +804,43 @@ func TestIntegrationSamplesQuantityAndCategory(t *testing.T) {
 		}
 		if second.Samples[0].UUID == first.Samples[0].UUID {
 			t.Error("the second page repeats the first")
+		}
+	})
+
+	// The export path: a zero Limit means every row in the range, and an
+	// error from the callback stops the scan at once.
+	t.Run("streams the whole range without a limit", func(t *testing.T) {
+		f := window
+		f.Type, f.Limit = quantityType, 0
+		meta, err := store.SampleType(ctx, quantityType)
+		if err != nil {
+			t.Fatalf("SampleType: %v", err)
+		}
+		if meta.Kind != "quantity" || meta.Unit == nil || *meta.Unit != unit {
+			t.Fatalf("meta = %+v", meta)
+		}
+
+		var streamed []Sample
+		if err := store.StreamSamples(ctx, meta, f, func(s Sample) error {
+			streamed = append(streamed, s)
+			return nil
+		}); err != nil {
+			t.Fatalf("StreamSamples: %v", err)
+		}
+		if len(streamed) != 3 {
+			t.Fatalf("streamed %d samples, want all 3", len(streamed))
+		}
+
+		stop := errors.New("stop")
+		seen := 0
+		if err := store.StreamSamples(ctx, meta, f, func(Sample) error {
+			seen++
+			return stop
+		}); !errors.Is(err, stop) {
+			t.Fatalf("StreamSamples error = %v, want the callback's own error", err)
+		}
+		if seen != 1 {
+			t.Fatalf("callback ran %d times after returning an error, want 1", seen)
 		}
 	})
 

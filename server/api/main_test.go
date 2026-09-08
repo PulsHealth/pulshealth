@@ -27,15 +27,19 @@ type fakeStore struct {
 	calls    struct {
 		catalog int
 	}
-	// The arguments of the most recent samples / series call, so handler
-	// tests can assert on what the parsers produced.
-	lastSamples SampleFilters
-	lastSeries  struct {
+	// The arguments of the most recent samples / workouts / series call, so
+	// handler tests can assert on what the parsers produced.
+	lastSamples  SampleFilters
+	lastWorkouts WorkoutFilters
+	lastSeries   struct {
 		uuid      string
 		types     []string
 		maxPoints int
 	}
 	err error
+	// Fails only SampleType, so an export test can make the type lookup a
+	// 400 without failing every other call.
+	sampleTypeErr error
 }
 
 func (f *fakeStore) SleepDaily(context.Context, time.Time, time.Time) ([]SleepNight, error) {
@@ -54,6 +58,49 @@ func (f *fakeStore) Samples(_ context.Context, filters SampleFilters) (*SamplesP
 		return &SamplesPage{Type: filters.Type, Kind: "quantity", Samples: []Sample{}, NextOffset: filters.Offset}, nil
 	}
 	return f.samples, nil
+}
+
+func (f *fakeStore) SampleType(_ context.Context, identifier string) (SampleMeta, error) {
+	if f.sampleTypeErr != nil {
+		return SampleMeta{}, f.sampleTypeErr
+	}
+	if f.err != nil {
+		return SampleMeta{}, f.err
+	}
+	meta := SampleMeta{Type: identifier, TypeID: 1, Kind: "quantity"}
+	if f.samples != nil {
+		meta.Kind, meta.Unit = f.samples.Kind, f.samples.Unit
+	}
+	return meta, nil
+}
+
+func (f *fakeStore) StreamSamples(_ context.Context, meta SampleMeta, filters SampleFilters, fn func(Sample) error) error {
+	f.lastSamples = filters
+	if f.err != nil {
+		return f.err
+	}
+	if f.samples == nil {
+		return nil
+	}
+	for _, sample := range f.samples.Samples {
+		if err := fn(sample); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (f *fakeStore) StreamWorkouts(_ context.Context, filters WorkoutFilters, fn func(WorkoutSummary) error) error {
+	f.lastWorkouts = filters
+	if f.err != nil {
+		return f.err
+	}
+	for _, workout := range f.workouts {
+		if err := fn(workout); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (f *fakeStore) WorkoutSeries(_ context.Context, uuid string, types []string, maxPoints int) (*WorkoutSeriesResponse, error) {
