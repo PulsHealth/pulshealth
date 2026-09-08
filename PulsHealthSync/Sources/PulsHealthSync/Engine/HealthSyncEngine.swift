@@ -161,6 +161,15 @@ public actor HealthSyncEngine {
         return try await apiClient.stats()
     }
 
+    /// What the configured server advertises on `GET /v1/capabilities`. A
+    /// server without the endpoint throws `TransportError.serverError` 404/405;
+    /// callers treat that as "no features" (see `ConnectionTester`).
+    public func serverCapabilities() async throws -> ServerCapabilities {
+        await ensureTransport()
+        guard let apiClient else { throw TransportError.notConfigured }
+        return try await apiClient.capabilities()
+    }
+
     /// Test/benchmark hook: swap the upload destination.
     public func setTransport(_ transport: SyncTransport?) {
         self.transport = transport

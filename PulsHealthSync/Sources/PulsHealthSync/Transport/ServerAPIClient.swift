@@ -18,8 +18,9 @@ public struct DigestWindow: Codable, Sendable, Equatable {
     public var digest: String
 }
 
-/// Read-side client for the ingest server's JSON endpoints (stats, reconciliation).
-/// Uploads go through `SyncTransport`; this client only ever GETs.
+/// Read-side client for the ingest server's JSON endpoints (capabilities,
+/// stats, reconciliation). Uploads go through `SyncTransport`; this client
+/// only ever GETs.
 public struct ServerAPIClient: Sendable {
     public var baseURL: URL
     public var authToken: String
@@ -37,6 +38,12 @@ public struct ServerAPIClient: Sendable {
         self.authToken = authToken
         self.userID = userID
         self.session = session
+    }
+
+    /// `GET /v1/capabilities`. Optional for receivers: a server without it
+    /// answers 404/405 (surfaced as `TransportError.serverError`).
+    public func capabilities() async throws -> ServerCapabilities {
+        try await get("v1/capabilities", query: [:])
     }
 
     public func stats() async throws -> [TypeServerStats] {
@@ -68,8 +75,7 @@ public struct ServerAPIClient: Sendable {
             throw TransportError.network(URLError(.badServerResponse))
         }
         guard (200..<300).contains(http.statusCode) else {
-            throw TransportError.serverError(status: http.statusCode, body: String(
-                data: data.prefix(512), encoding: .utf8) ?? "")
+            throw TransportError.fromResponse(status: http.statusCode, body: data)
         }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .millisecondsSince1970
@@ -77,7 +83,8 @@ public struct ServerAPIClient: Sendable {
     }
 
     /// Shared request builder for every GET. Internal so tests can verify that
-    /// adding a read endpoint cannot accidentally bypass user scoping.
+    /// adding a read endpoint cannot accidentally bypass user scoping or the
+    /// protocol-version header.
     func makeRequest(path: String, query: [String: String]) -> URLRequest {
         var components = URLComponents(
             url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false
@@ -88,6 +95,7 @@ public struct ServerAPIClient: Sendable {
         }
         var request = URLRequest(url: components.url!)
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(String(PulsProtocol.version), forHTTPHeaderField: PulsProtocol.headerField)
         request.setValue(userID, forHTTPHeaderField: "X-User-ID")
         return request
     }

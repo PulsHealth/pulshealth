@@ -58,19 +58,37 @@ public struct BackgroundTaskScheduleStatus: Codable, Sendable, Equatable {
 ///
 /// Requires in the app target:
 ///  - "Background Modes" capability with "Background processing"
-///  - Info.plist `BGTaskSchedulerPermittedIdentifiers` containing `taskIdentifier`
+///  - Info.plist `BGTaskSchedulerPermittedIdentifiers` containing
+///    `catchupTaskIdentifier` and the `backfillPermittedIdentifier` wildcard
 ///  - `register()` called before app launch finishes.
+///
+/// Task identifiers derive from the app's bundle identifier
+/// (`<bundle id>.healthsync.catchup`, `<bundle id>.backfill.run`) so a fork
+/// that ships under its own bundle ID needs no code change — its Info.plist
+/// lists `$(PRODUCT_BUNDLE_IDENTIFIER).healthsync.catchup` and
+/// `$(PRODUCT_BUNDLE_IDENTIFIER).backfill.*`. Pass explicit identifiers to
+/// override the derivation.
 public final class BackgroundSyncScheduler: Sendable {
-    public static let taskIdentifier = "com.puls.healthsync.catchup"
-    /// iOS 26 continued-processing identifiers must be `<bundle id>.<context>.*`;
-    /// the wildcard goes in `BGTaskSchedulerPermittedIdentifiers`.
-    public static var backfillWildcardIdentifier: String {
-        continuedBackfillPermittedIdentifier(bundleIdentifier: Bundle.main.bundleIdentifier ?? "app")
-    }
-    public static var backfillTaskIdentifier: String {
-        continuedBackfillRegistrationIdentifier(bundleIdentifier: Bundle.main.bundleIdentifier ?? "app")
+    /// Identifier of the periodic catch-up `BGProcessingTask`.
+    public let catchupTaskIdentifier: String
+    /// Identifier the iOS 26 continued-processing backfill registers and submits.
+    public let backfillTaskIdentifier: String
+
+    /// Bundle identifier the derivations fall back to when the main bundle has
+    /// none (unit tests, command-line hosts); matches the reference app's.
+    public static let fallbackBundleIdentifier = "com.puls.PulsHealth"
+
+    /// Catch-up identifier for a bundle ID. Nil/empty (no main bundle) keeps
+    /// the historical literal `com.puls.healthsync.catchup`.
+    public static func catchupTaskIdentifier(bundleIdentifier: String?) -> String {
+        guard let bundleIdentifier, !bundleIdentifier.isEmpty else {
+            return "com.puls.healthsync.catchup"
+        }
+        return "\(bundleIdentifier).healthsync.catchup"
     }
 
+    /// iOS 26 continued-processing identifiers must be `<bundle id>.<context>.*`;
+    /// the wildcard goes in `BGTaskSchedulerPermittedIdentifiers`.
     public static func continuedBackfillPermittedIdentifier(bundleIdentifier: String) -> String {
         "\(bundleIdentifier).backfill.*"
     }
@@ -79,19 +97,38 @@ public final class BackgroundSyncScheduler: Sendable {
         "\(bundleIdentifier).backfill.run"
     }
 
+    /// Identifiers derived from `Bundle.main`, the defaults `init` uses.
+    public static var defaultCatchupTaskIdentifier: String {
+        catchupTaskIdentifier(bundleIdentifier: Bundle.main.bundleIdentifier)
+    }
+    public static var defaultBackfillTaskIdentifier: String {
+        continuedBackfillRegistrationIdentifier(
+            bundleIdentifier: Bundle.main.bundleIdentifier ?? fallbackBundleIdentifier)
+    }
+    public static var defaultBackfillPermittedIdentifier: String {
+        continuedBackfillPermittedIdentifier(
+            bundleIdentifier: Bundle.main.bundleIdentifier ?? fallbackBundleIdentifier)
+    }
+
     private let engine: HealthSyncEngine
     private let logger = Logger(subsystem: PulsLog.subsystem, category: "background")
     private let statusLock = NSLock()
     private static let statusDefaultsKey = "PulsHealthSync.backgroundTaskScheduleStatus"
 
-    public init(engine: HealthSyncEngine) {
+    public init(
+        engine: HealthSyncEngine,
+        catchupTaskIdentifier: String = BackgroundSyncScheduler.defaultCatchupTaskIdentifier,
+        backfillTaskIdentifier: String = BackgroundSyncScheduler.defaultBackfillTaskIdentifier
+    ) {
         self.engine = engine
+        self.catchupTaskIdentifier = catchupTaskIdentifier
+        self.backfillTaskIdentifier = backfillTaskIdentifier
     }
 
     /// Must run before `application(_:didFinishLaunchingWithOptions:)` returns.
     public func register() {
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: Self.taskIdentifier, using: nil
+            forTaskWithIdentifier: catchupTaskIdentifier, using: nil
         ) { [self] task in
             guard let task = task as? BGProcessingTask else { return }
             handle(task)
@@ -103,7 +140,7 @@ public final class BackgroundSyncScheduler: Sendable {
     public func ensureScheduled(earliestIn interval: TimeInterval = 4 * 3600) async {
         let pendingDate: Date? = await withCheckedContinuation { continuation in
             BGTaskScheduler.shared.getPendingTaskRequests { requests in
-                let date = requests.first(where: { $0.identifier == Self.taskIdentifier })?.earliestBeginDate
+                let date = requests.first(where: { $0.identifier == self.catchupTaskIdentifier })?.earliestBeginDate
                 continuation.resume(returning: date)
             }
         }
@@ -123,7 +160,7 @@ public final class BackgroundSyncScheduler: Sendable {
     }
 
     public func scheduleNext(earliestIn interval: TimeInterval = 4 * 3600) {
-        let request = BGProcessingTaskRequest(identifier: Self.taskIdentifier)
+        let request = BGProcessingTaskRequest(identifier: catchupTaskIdentifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: interval)
         request.requiresNetworkConnectivity = true
         request.requiresExternalPower = false
@@ -241,7 +278,7 @@ public final class BackgroundSyncScheduler: Sendable {
     @available(iOS 26.0, *)
     public func registerContinuedBackfill() {
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: Self.backfillTaskIdentifier, using: nil
+            forTaskWithIdentifier: backfillTaskIdentifier, using: nil
         ) { [self] task in
             guard let task = task as? BGContinuedProcessingTask else { return }
             handleContinuedBackfill(task)
@@ -254,7 +291,7 @@ public final class BackgroundSyncScheduler: Sendable {
     @available(iOS 26.0, *)
     public func startContinuedBackfill() -> Bool {
         let request = BGContinuedProcessingTaskRequest(
-            identifier: Self.backfillTaskIdentifier,
+            identifier: backfillTaskIdentifier,
             title: "Syncing health history",
             subtitle: "Uploading to your server"
         )

@@ -10,8 +10,16 @@ import Compression
 /// ({"activitySummary": ...}), then an optional profile line ({"profile": ...}).
 /// NDJSON lets the server stream-parse huge batches without building a giant array,
 /// and gzip cuts health-sample JSON ~10x on the wire.
+///
+/// The header opens with `schemaVersion` (`PulsProtocol.version`) and
+/// `clientVersion` (the app's marketing version and build) so a receiver can
+/// reject a wire format it does not understand and attribute batches to builds.
 enum BatchSerializer {
     struct Header: Codable {
+        /// Wire-format version; 0 when decoding a header written before versioning.
+        var schemaVersion: Int
+        /// "<marketing version> (<build>)" of the producing app, or "unknown".
+        var clientVersion: String
         var batchID: UUID
         var deviceID: String
         var type: String
@@ -30,6 +38,8 @@ enum BatchSerializer {
         // server's zero default).
         init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: CodingKeys.self)
+            schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 0
+            clientVersion = try c.decodeIfPresent(String.self, forKey: .clientVersion) ?? "unknown"
             batchID = try c.decode(UUID.self, forKey: .batchID)
             deviceID = try c.decode(String.self, forKey: .deviceID)
             type = try c.decode(String.self, forKey: .type)
@@ -45,11 +55,14 @@ enum BatchSerializer {
         }
 
         init(
+            schemaVersion: Int = PulsProtocol.version, clientVersion: String,
             batchID: UUID, deviceID: String, type: String, reason: SyncReason,
             exportedAt: Date, sampleCount: Int, deletionCount: Int,
             routeCount: Int, aggregateCount: Int, seriesCount: Int,
             activitySummaryCount: Int, profileCount: Int
         ) {
+            self.schemaVersion = schemaVersion
+            self.clientVersion = clientVersion
             self.batchID = batchID
             self.deviceID = deviceID
             self.type = type
@@ -89,13 +102,15 @@ enum BatchSerializer {
         var activitySummary: ActivitySummaryRow
     }
 
-    static func ndjson(for batch: SyncBatch) throws -> Data {
+    /// `clientVersion` defaults to the host app's version; tests pin it.
+    static func ndjson(for batch: SyncBatch, clientVersion: String = PulsProtocol.clientVersion) throws -> Data {
         let encoder = JSONEncoder.puls
         let newline = Data([0x0A])
         var out = Data()
         out.reserveCapacity(batch.samples.count * 220 + 256)
 
         let header = Header(
+            clientVersion: clientVersion,
             batchID: batch.batchID, deviceID: batch.deviceID, type: batch.type,
             reason: batch.reason, exportedAt: batch.exportedAt,
             sampleCount: batch.samples.count, deletionCount: batch.deletions.count,

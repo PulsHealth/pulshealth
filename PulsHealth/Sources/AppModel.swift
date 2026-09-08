@@ -26,6 +26,13 @@ final class AppModel {
     private(set) var serverStats: [String: TypeServerStats] = [:]
     private(set) var serverStatsError: String?
     private(set) var reconciling: Set<String> = []
+    /// What the configured server advertised on its last successful
+    /// `GET /v1/capabilities` — in memory only, refreshed after a successful
+    /// connection test and on every foreground while a server is configured.
+    /// Nil means unknown (never fetched, or the server has no such endpoint),
+    /// and unknown hides the feature-gated UI: reconciliation needs `digest`
+    /// + `uuids`, the per-type server rows need `stats`.
+    private(set) var serverCapabilities: ServerCapabilities?
     /// The live editing draft bound by the Data Types and Settings screens.
     var config = SyncConfiguration()
     /// Snapshot of what's actually been pushed to the engine. The Data Types
@@ -395,6 +402,10 @@ final class AppModel {
         // loaded the persisted config, in which case the guard below would see
         // the empty default and skip the launch sync.
         await start()
+        if trigger == "foreground" {
+            // Off the sync's critical path: capabilities only gate UI.
+            Task { await refreshServerCapabilities() }
+        }
         // observedTypeIdentifiers: an aggregate-only setup (no raw types) still syncs.
         guard !isSyncingAll, config.serverURL != nil,
               !config.observedTypeIdentifiers.isEmpty else { return }
@@ -517,6 +528,54 @@ final class AppModel {
         }
         await engine.eventLog.log(.warn, "All anchors reset")
         await refresh()
+    }
+
+    // MARK: - Server capabilities
+
+    /// Reconciliation compares `GET /v1/digest` and `GET /v1/uuids`; both must
+    /// be advertised. Unknown capabilities hide the controls.
+    var serverSupportsReconciliation: Bool {
+        serverCapabilities?.supportsReconciliation ?? false
+    }
+
+    /// The per-type "Server" rows come from `GET /v1/stats`.
+    var serverSupportsStats: Bool {
+        serverCapabilities?.supportsStats ?? false
+    }
+
+    /// Re-reads the configured server's capabilities. A definitive "no such
+    /// endpoint" (404/405, or a body that is not capabilities JSON) clears the
+    /// last answer; a transient failure (offline, 5xx) keeps it, so a flaky
+    /// network does not make the reconciliation controls flicker.
+    func refreshServerCapabilities() async {
+        guard config.serverURL != nil, config.authToken != nil else {
+            serverCapabilities = nil
+            return
+        }
+        do {
+            serverCapabilities = try await engine.serverCapabilities()
+        } catch TransportError.serverError(let status, _) where status == 404 || status == 405 {
+            serverCapabilities = nil
+        } catch is DecodingError {
+            serverCapabilities = nil
+        } catch {
+            // Transient: keep the last known capabilities.
+        }
+    }
+
+    /// Tests a server URL + token *without saving them* — the Settings screen
+    /// calls this with the entered, not-yet-applied values. Nothing is
+    /// persisted; a successful answer only refreshes the in-memory
+    /// capabilities so the feature gates reflect the server just tested.
+    func testConnection(url: URL, token: String) async -> ConnectionTestResult {
+        let deviceID = await engine.store.deviceID
+        let tester = ConnectionTester(
+            baseURL: url, authToken: token, userID: config.userID, deviceID: deviceID)
+        let result = await tester.run()
+        if case .ok(let capabilities) = result {
+            serverCapabilities = capabilities
+        }
+        return result
     }
 
     // MARK: - Aggregates
