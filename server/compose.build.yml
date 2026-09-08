@@ -1,0 +1,49 @@
+# Developer overlay for docker-compose.yml: build the four app images from
+# this checkout instead of pulling ghcr.io/pulshealth/*. Everything else
+# (db, migrate, grafana, ports, environment) comes from the base file.
+#
+#   cd server
+#   docker compose -f docker-compose.yml -f compose.build.yml up -d --build
+#   # or, from the repository root: make dev-up
+#
+# The images are tagged pulshealth-<service>:dev rather than the ghcr name
+# so a local build never masquerades as a published version: a plain
+# `docker compose up -d` afterwards goes back to ghcr.io/pulshealth/*
+# (pulling when needed), and `make dev-up` comes back to these.
+#
+# DEPLOY_COMMIT is surfaced by ingest (GET /v1/capabilities "version") and
+# the MCP server (--version / serverInfo) and stamped on every image as the
+# org.opencontainers.image.revision label; `make dev-up` sets it from git.
+# Keep the contexts and args in step with the `images` matrix in
+# .github/workflows/ci.yml and release.yml, which build the same Dockerfiles.
+
+services:
+  ingest:
+    image: pulshealth-ingest:dev
+    build:
+      context: ./ingest
+      args:
+        BUILD_COMMIT: ${DEPLOY_COMMIT:-unknown}
+
+  api:
+    image: pulshealth-api:dev
+    build:
+      context: ./api
+      args:
+        BUILD_COMMIT: ${DEPLOY_COMMIT:-unknown}
+
+  mcp:
+    image: pulshealth-mcp:dev
+    build:
+      context: ./mcp
+      args:
+        BUILD_COMMIT: ${DEPLOY_COMMIT:-unknown}
+
+  web:
+    image: pulshealth-web:dev
+    # The sibling web/ directory: build from a checkout that contains both
+    # server/ and web/.
+    build:
+      context: ../web
+      args:
+        BUILD_COMMIT: ${DEPLOY_COMMIT:-unknown}
