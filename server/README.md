@@ -581,6 +581,7 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
 - `GET /v1/sleep/daily?start=...&end=...`
 - `GET /v1/samples?type=...&start=...&end=...&limit=1000&offset=0`
 - `GET /v1/state-of-mind?start=...&end=...`
+- `GET /v1/export?format=csv|jsonl&dataset=...&start=...&end=...`
 - `GET /healthz`
 
 `/v1/sleep/daily` returns one row per sleep session rather than one per
@@ -605,6 +606,21 @@ each stream by bucket-averaging while keeping the true first and last point
 (`maxPoints` defaults to 500, caps at 5000); `totalPoints` says how many were
 recorded. `/v1/state-of-mind` returns logged State of Mind entries, at most
 366 days per request.
+
+`/v1/export` returns a whole range as a **file** — streamed CSV or JSONL,
+`Content-Disposition: attachment` — instead of a JSON document, for a
+spreadsheet or a notebook. `dataset` is one of `daily_metrics`, `samples`,
+`workouts`, `sleep`, `activity`, `state_of_mind`, each taking the same filters
+as the endpoint it comes from and capped the same way (31 days for `samples`,
+366 for the rest). The rows go out as they are read, so the response is
+chunked and nothing is buffered to the size of the export. `tools/puls-export`
+is a small CLI for it. Columns, formats and the failure modes are in
+[`docs/export.md`](../docs/export.md).
+
+```bash
+curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
+  "http://localhost:8081/v1/export?format=csv&dataset=sleep&start=1767225600000&end=1798761600000"
+```
 
 Two of these endpoints need `SELECT` on `sources` and `category_labels`, which
 `db/migrations/099_read_roles.sh` grants to `api_reader`. That script runs on
