@@ -92,11 +92,15 @@ context for judging what is.
 - **TLS is yours to provide.** Every service binds to loopback by default. The
   phone must reach the ingest port over HTTPS through a TLS-terminating
   reverse proxy or a VPN; the token is only a second layer.
-- **The web viewer is unauthenticated by design.** It is a read-only page over
-  the health database with no login. It must never be exposed on a public
-  interface. Its bind address is the access control; keep `WEB_BIND_ADDR` on
-  loopback or a private network.
+- **The web viewer has no login unless you give it one.** It is a read-only
+  page over the health database. Setting `WEB_AUTH_PASSWORD` puts it behind
+  HTTP Basic authentication; with the variable unset it is open to anyone who
+  can reach the port. Either way its bind address is the primary access
+  control, so keep `WEB_BIND_ADDR` on loopback or a private network.
 - **Health data at rest.** The database holds identifiable data (name, email,
-  date of birth, sex) alongside samples. Ingest connects as the Postgres
-  superuser unless you opt in to the scoped `ingest` role described in
-  `server/README.md`. There are no backups unless you add them.
+  date of birth, sex) alongside samples. Ingest connects as the scoped
+  DML-only `ingest` role, which cannot create or drop objects; set
+  `INGEST_DB_USER=postgres` to fall back to the superuser. Backups are opt-in
+  and off by default: enable the `backup` Compose profile, and run the restore
+  drill in `server/README.md` yourself, because nothing else verifies that
+  your dumps restore.
