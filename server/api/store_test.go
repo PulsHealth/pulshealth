@@ -134,6 +134,17 @@ func fixtureUUID(prefix string, suffix int64, n int) string {
 	return fmt.Sprintf("%s-%04x-4000-8000-%012d", prefix, n, suffix%1_000_000_000_000)
 }
 
+// fixtureDay puts a run's fixtures on their own far-future day, so a second
+// run — or rows someone seeded by hand — is unlikely to land on the same
+// dates. Each caller passes a different year, which keeps the tests apart
+// from one another as well. Days are drawn from a summer window because
+// America/Los_Angeles has no DST transition in it: a night that spans one
+// would be an hour shorter than the wall clock says and break the minute
+// arithmetic the sleep fixtures assert on.
+func fixtureDay(year int, loc *time.Location, suffix int64) time.Time {
+	return time.Date(year, 6, 1, 0, 0, 0, 0, loc).AddDate(0, 0, int(suffix%80))
+}
+
 func TestLocalDayRangeUsesLosAngelesDates(t *testing.T) {
 	loc, err := losAngelesLocation()
 	if err != nil {
@@ -583,6 +594,11 @@ func TestIntegrationSleepDailyAcrossMidnightFromTwoSources(t *testing.T) {
 	phone, dropPhone := insertSource(t, ctx, admin, fmt.Sprintf("CodexPhone%d", suffix))
 	defer dropPhone()
 
+	// The night runs from the evening of eve into the morning of wake.
+	eve := fixtureDay(2090, loc, suffix).Format("2006-01-02")
+	wake := fixtureDay(2090, loc, suffix).AddDate(0, 0, 1).Format("2006-01-02")
+	after := fixtureDay(2090, loc, suffix).AddDate(0, 0, 2).Format("2006-01-02")
+
 	local := func(day, hhmm string) time.Time {
 		ts, err := time.ParseInLocation("2006-01-02 15:04", day+" "+hhmm, loc)
 		if err != nil {
@@ -605,30 +621,41 @@ func TestIntegrationSleepDailyAcrossMidnightFromTwoSources(t *testing.T) {
 	}()
 
 	// iPhone: the scheduled in-bed window and 450 minutes of stage-less sleep.
-	add(phone, "HKCategoryValueSleepAnalysisInBed", "2099-09-20", "22:30", "2099-09-21", "06:30")
-	add(phone, "HKCategoryValueSleepAnalysisAsleepUnspecified", "2099-09-20", "22:45", "2099-09-21", "06:15")
+	add(phone, "HKCategoryValueSleepAnalysisInBed", eve, "22:30", wake, "06:30")
+	add(phone, "HKCategoryValueSleepAnalysisAsleepUnspecified", eve, "22:45", wake, "06:15")
 	// Watch: 460 minutes of staged sleep plus ten minutes awake.
-	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", "2099-09-20", "22:40", "2099-09-21", "01:00")
-	add(watch, "HKCategoryValueSleepAnalysisAsleepDeep", "2099-09-21", "01:00", "2099-09-21", "02:00")
-	add(watch, "HKCategoryValueSleepAnalysisAsleepREM", "2099-09-21", "02:00", "2099-09-21", "03:00")
-	add(watch, "HKCategoryValueSleepAnalysisAwake", "2099-09-21", "03:00", "2099-09-21", "03:10")
-	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", "2099-09-21", "03:10", "2099-09-21", "06:30")
+	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", eve, "22:40", wake, "01:00")
+	add(watch, "HKCategoryValueSleepAnalysisAsleepDeep", wake, "01:00", wake, "02:00")
+	add(watch, "HKCategoryValueSleepAnalysisAsleepREM", wake, "02:00", wake, "03:00")
+	add(watch, "HKCategoryValueSleepAnalysisAwake", wake, "03:00", wake, "03:10")
+	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", wake, "03:10", wake, "06:30")
 	// An afternoon nap, more than three hours after waking.
-	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", "2099-09-21", "14:00", "2099-09-21", "15:00")
+	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", wake, "14:00", wake, "15:00")
 
-	nights, err := store.SleepDaily(ctx, local("2099-09-21", "00:00"), local("2099-09-22", "00:00"))
+	nights, err := store.SleepDaily(ctx, local(wake, "00:00"), local(after, "00:00"))
 	if err != nil {
 		t.Fatalf("SleepDaily: %v", err)
 	}
-	if len(nights) != 2 {
-		t.Fatalf("nights = %#v, want the night and the nap", nights)
+	// Locate this run's two rows rather than assuming the database holds
+	// nothing else on these dates.
+	var night, nap *SleepNight
+	nightAt, napAt := local(eve, "22:30").UnixMilli(), local(wake, "14:00").UnixMilli()
+	for i := range nights {
+		switch nights[i].Start {
+		case nightAt:
+			night = &nights[i]
+		case napAt:
+			nap = &nights[i]
+		}
+	}
+	if night == nil || nap == nil {
+		t.Fatalf("nights = %#v, want this run's night and nap", nights)
 	}
 
-	night := nights[0]
-	if night.Date != "2099-09-21" {
-		t.Errorf("date = %q, want the wake-up day 2099-09-21", night.Date)
+	if night.Date != wake {
+		t.Errorf("date = %q, want the wake-up day %s", night.Date, wake)
 	}
-	if night.Start != local("2099-09-20", "22:30").UnixMilli() || night.End != local("2099-09-21", "06:30").UnixMilli() {
+	if night.Start != local(eve, "22:30").UnixMilli() || night.End != local(wake, "06:30").UnixMilli() {
 		t.Errorf("night bounds = %d..%d", night.Start, night.End)
 	}
 	if night.InBedMinutes != 480 {
@@ -644,22 +671,27 @@ func TestIntegrationSleepDailyAcrossMidnightFromTwoSources(t *testing.T) {
 		t.Errorf("sources = %d, want 2", night.Sources)
 	}
 
-	if nap := nights[1]; nap.Date != "2099-09-21" || nap.AsleepMinutes != 60 || nap.Sources != 1 {
-		t.Errorf("nap = %+v", nap)
+	// The nap is a row of its own, on the same date, three hours after
+	// waking rather than part of the night.
+	if nap.Date != wake || nap.AsleepMinutes != 60 || nap.Sources != 1 {
+		t.Errorf("nap = %+v", *nap)
+	}
+	if nap.Start <= night.End {
+		t.Errorf("nap starts at %d, before the night ended at %d", nap.Start, night.End)
 	}
 
 	// The evening the night began is not a wake-up day, so it has no row.
-	before, err := store.SleepDaily(ctx, local("2099-09-20", "00:00"), local("2099-09-21", "00:00"))
+	before, err := store.SleepDaily(ctx, local(eve, "00:00"), local(wake, "00:00"))
 	if err != nil {
 		t.Fatalf("SleepDaily (previous day): %v", err)
 	}
 	for _, candidate := range before {
-		if candidate.Date == "2099-09-20" && candidate.AsleepMinutes > 0 {
+		if candidate.Start == local(eve, "22:30").UnixMilli() {
 			t.Errorf("the night was also reported on the day it started: %+v", candidate)
 		}
 	}
 
-	if _, err := store.SleepDaily(ctx, local("2098-01-01", "00:00"), local("2099-09-22", "00:00")); err == nil {
+	if _, err := store.SleepDaily(ctx, fixtureDay(2090, loc, suffix).AddDate(-2, 0, 0), local(after, "00:00")); err == nil {
 		t.Error("a range over 366 days was accepted")
 	} else {
 		wantRequestError(t, err, "at most 366 days")
@@ -683,7 +715,7 @@ func TestIntegrationSamplesQuantityAndCategory(t *testing.T) {
 	sourceID, dropSource := insertSource(t, ctx, admin, fmt.Sprintf("CodexSampleSource%d", suffix))
 	defer dropSource()
 
-	start := time.Date(2099, 8, 1, 10, 0, 0, 0, time.UTC)
+	start := fixtureDay(2080, time.UTC, suffix).Add(10 * time.Hour)
 	var quantityUUIDs []string
 	for i := 0; i < 3; i++ {
 		uuid := fixtureUUID("dddddddd", suffix, i)
@@ -815,7 +847,7 @@ func TestIntegrationWorkoutSeriesFiltersAndDownsamples(t *testing.T) {
 	defer dropPower()
 
 	workoutUUID := fixtureUUID("abababab", suffix, 1)
-	start := time.Date(2099, 8, 2, 9, 0, 0, 0, time.UTC)
+	start := fixtureDay(2075, time.UTC, suffix).Add(9 * time.Hour)
 	end := start.Add(30 * time.Minute)
 	defer func() {
 		bg := context.Background()
@@ -916,10 +948,14 @@ func TestIntegrationStateOfMind(t *testing.T) {
 		t.Fatalf("losAngelesLocation: %v", err)
 	}
 	suffix := time.Now().UTC().UnixNano()
-	// 23:30 local on the 3rd is already the 4th in UTC: the row must be
-	// dated by the server's zone, not by UTC.
-	late := time.Date(2099, 10, 3, 23, 30, 0, 0, loc)
-	morning := time.Date(2099, 10, 3, 8, 0, 0, 0, loc)
+	dayStart := fixtureDay(2085, loc, suffix)
+	day := dayStart.Format("2006-01-02")
+	at := func(hour, minute int) time.Time {
+		return time.Date(dayStart.Year(), dayStart.Month(), dayStart.Day(), hour, minute, 0, 0, loc)
+	}
+	// 23:30 local is already the next day in UTC: the row must be dated by
+	// the server's zone, not by UTC.
+	morning, late := at(8, 0), at(23, 30)
 
 	first := fixtureUUID("fafafafa", suffix, 1)
 	second := fixtureUUID("fafafafa", suffix, 2)
@@ -935,19 +971,27 @@ func TestIntegrationStateOfMind(t *testing.T) {
 		t.Fatalf("insert state_of_mind: %v", err)
 	}
 
-	dayStart := time.Date(2099, 10, 3, 0, 0, 0, 0, loc)
-	entries, err := store.StateOfMind(ctx, dayStart, dayStart.Add(24*time.Hour))
+	entries, err := store.StateOfMind(ctx, dayStart, dayStart.AddDate(0, 0, 1))
 	if err != nil {
 		t.Fatalf("StateOfMind: %v", err)
 	}
-	if len(entries) != 2 {
-		t.Fatalf("entries = %#v, want both", entries)
+	firstAt, secondAt := -1, -1
+	for i, entry := range entries {
+		switch entry.UUID {
+		case first:
+			firstAt = i
+		case second:
+			secondAt = i
+		}
 	}
-	if entries[0].UUID != first || entries[1].UUID != second {
-		t.Errorf("order = %s, %s, want oldest first", entries[0].UUID, entries[1].UUID)
+	if firstAt < 0 || secondAt < 0 {
+		t.Fatalf("entries = %#v, want both of this run's rows", entries)
 	}
-	e := entries[0]
-	if e.Date != "2099-10-03" || e.Timestamp != morning.UnixMilli() || e.Kind != "momentaryEmotion" {
+	if firstAt > secondAt {
+		t.Errorf("the 23:30 entry came before the 08:00 one; rows must be oldest first")
+	}
+	e := entries[firstAt]
+	if e.Date != day || e.Timestamp != morning.UnixMilli() || e.Kind != "momentaryEmotion" {
 		t.Errorf("entry = %+v", e)
 	}
 	if e.Valence == nil || *e.Valence != 0.5 || e.ValenceClassification == nil || *e.ValenceClassification != "slightlyPleasant" {
@@ -956,16 +1000,17 @@ func TestIntegrationStateOfMind(t *testing.T) {
 	if strings.Join(e.Labels, ",") != "calm,grateful" || strings.Join(e.Associations, ",") != "family" {
 		t.Errorf("labels/associations = %v / %v", e.Labels, e.Associations)
 	}
-	// The late entry stays on its local day even though it is the 4th in UTC.
-	if entries[1].Date != "2099-10-03" {
-		t.Errorf("late entry date = %q, want the local day 2099-10-03", entries[1].Date)
+	// The late entry stays on its local day even though it is the next day
+	// in UTC.
+	if entries[secondAt].Date != day {
+		t.Errorf("late entry date = %q, want the local day %s", entries[secondAt].Date, day)
 	}
 	// NULL arrays come back empty, never nil, so JSON renders [].
-	if entries[1].Labels == nil || len(entries[1].Labels) != 0 {
-		t.Errorf("labels = %#v, want an empty slice", entries[1].Labels)
+	if entries[secondAt].Labels == nil || len(entries[secondAt].Labels) != 0 {
+		t.Errorf("labels = %#v, want an empty slice", entries[secondAt].Labels)
 	}
 
-	if _, err := store.StateOfMind(ctx, time.Date(2098, 1, 1, 0, 0, 0, 0, loc), dayStart); err == nil {
+	if _, err := store.StateOfMind(ctx, dayStart.AddDate(-2, 0, 0), dayStart); err == nil {
 		t.Error("a range over 366 days was accepted")
 	} else {
 		wantRequestError(t, err, "at most 366 days")
