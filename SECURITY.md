@@ -57,7 +57,7 @@ Everything in this repository is in scope, in particular:
 - **iOS app and `PulsHealthSync`**: handling of the server URL and bearer
   token, health data written outside the app container, data sent anywhere
   other than the configured server.
-- **Compose stack and schema** (`server/docker-compose.yml`, `server/db/init`):
+- **Compose stack and schema** (`server/docker-compose.yml`, `server/db/migrations`):
   defaults that expose a service or credential more widely than documented.
 - **Web viewer** (`web/`): only as deployed the documented way — bound to
   loopback or a private interface. See the note below.

@@ -85,7 +85,7 @@ func run(logger *slog.Logger) error {
 		return errors.New("PULS_USER_ID must be a UUID")
 	}
 	// The calendar zone for the daily endpoints. Same value the database's
-	// puls.time_zone setting holds (db/init/013_time_zone.sh), so the API's
+	// puls.time_zone setting holds (db/migrations/013_time_zone.sh), so the API's
 	// day ranges and metric_daily's day column agree. Fail fast on a typo
 	// rather than serve misaligned days.
 	loc, err := loadTimeZone(os.Getenv("PULS_TIME_ZONE"))

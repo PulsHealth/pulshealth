@@ -1,9 +1,8 @@
 -- PulsHealth series tables: workout routes, heartbeat series, ECG,
 -- state of mind, medication dose events.
 --
--- Idempotent (IF NOT EXISTS everywhere) so it can be applied to a live
--- database whose volume predates this file; /docker-entrypoint-initdb.d
--- only runs on first startup.
+-- Idempotent (IF NOT EXISTS everywhere): it predates the migrate service and
+-- was applied by hand to live databases whose volume predated the file.
 
 -- GPS points from HKWorkoutRoute, keyed by owning workout. Hypertable.
 CREATE TABLE IF NOT EXISTS workout_route_points (

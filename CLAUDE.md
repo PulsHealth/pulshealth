@@ -37,7 +37,7 @@ cd ../api && go vet ./... && go test ./...
 cd ../mcp && go vet ./... && go test ./...   # MCP server; tests run against an httptest fake of the product API
 
 # Server integration tests (gated on DATABASE_URL; schema must be applied)
-cd server && docker compose up -d db
+cd server && docker compose up -d migrate      # db + schema, nothing else
 DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" \
   go test -run Integration ./ingest/...
 # To run them as the scoped `ingest` role, point DATABASE_URL at it and set
@@ -54,7 +54,7 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   confirms the upload (`HealthSyncEngine` → `recordUploadedBatch`). Persisting earlier
   loses data on crash. Re-sending the same page is safe: every insert is
   `ON CONFLICT DO NOTHING` on sample UUID, so the pipeline is idempotent end-to-end.
-- **Every row belongs to a user.** A `users` table (`db/init/000_users.sql`,
+- **Every row belongs to a user.** A `users` table (`db/migrations/000_users.sql`,
   seeded with the default user) is referenced by a `user_id` foreign key on every
   data table. The client sends its user in the **`X-User-ID` HTTP header** (a
   UUID, from `SyncConfiguration.userID`, set by `HTTPSyncTransport`), *not* in the
@@ -77,7 +77,7 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
 - **Wire format changes touch both sides.** `Models/SyncModels.swift` (incl.
   `AggregateSampleRow`) + `Serialization/NDJSONEncoder.swift` on the client must
   stay in lockstep with `server/ingest/parse.go` + `store.go` and the schema in
-  `server/db/init/`. Update the fixtures in `parse_test.go` and the curl example
+  `server/db/migrations/`. Update the fixtures in `parse_test.go` and the curl example
   in `server/README.md` too. **The protocol documents change in the same PR:**
   `docs/protocol/README.md` (the Puls Sync Protocol spec), the JSON Schemas in
   `docs/protocol/schema/`, and the fixture corpus in `docs/protocol/fixtures/`
@@ -128,7 +128,7 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   a plain `date`), or a day splits across two rows. The server's own day
   boundary — for `metric_daily` and every daily view or query bucketed
   server-side — is `PULS_TIME_ZONE` (stored on the database by
-  `db/init/013_time_zone.sh`, exposed as `puls_time_zone()`, default UTC) and
+  `db/migrations/013_time_zone.sh`, exposed as `puls_time_zone()`, default UTC) and
   must match the phone's zone, or server-computed days disagree with these rows.
 - **A locked device means HealthKit is unreadable.** Every query fails with
   `errorDatabaseInaccessible`, and iOS runs `BGProcessingTask` when the device
@@ -150,10 +150,23 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   pipelines overlap query and upload better. Keep
   `HealthSyncEngine.pack`'s no-split property intact —
   `MergedSyncPackingTests` guards it.
-- **Schema runs on first startup only.** `db/init/*.sql` applies only to an empty
-  volume. There is no migration framework: new DDL goes in a new idempotent
-  (`IF NOT EXISTS`) file in `db/init/`, and is applied to live databases manually
-  via `docker compose exec db psql -U postgres -d postgres -f …`.
+- **The schema is applied by the `migrate` service, never by hand.**
+  `server/db/migrate.sh` — a one-shot Compose service on the db image that
+  runs before every app service on each `docker compose up -d` — applies
+  `db/migrations/` in lexical order and records each file in
+  `schema_migrations` with its checksum. New DDL is a new `NNN_name.sql`;
+  an applied file is immutable (a changed checksum or a missing recorded
+  file aborts the run, and the app services do not start). Exceptions are
+  declared on a file's first line: `-- puls:rerun` (re-applied whenever it
+  changes — `009_metric_daily.sql`, `010_category_labels.sql`, both
+  `CREATE OR REPLACE`/upsert by design) and `-- puls:no-transaction`
+  (applied statement by statement — `008_quantity_rollups.sql`, because
+  `refresh_continuous_aggregate` cannot run in a transaction block). `*.sh`
+  files (`013_time_zone.sh`, `099_read_roles.sh`) run on every invocation
+  from `.env` values. A database that predates the service (schema present,
+  no `schema_migrations`) is never guessed at: the run refuses until
+  `docker compose run --rm migrate baseline` records the files. See
+  `server/README.md`, "Schema migrations".
 - **Actors.** `HealthSyncEngine`, `SyncStateStore`, and `SyncEventLog` are actors
   under Swift 6 strict concurrency (`BackgroundSyncScheduler` is a `Sendable` final
   class). Views call them via `@MainActor` `AppModel`.
@@ -242,19 +255,23 @@ outside this repository — nothing here assumes a particular machine.
 - CI is `.github/workflows/ci.yml` (Go vet/tests, lint, shellcheck and
   `scripts/check-public-tree.sh`) plus `ios-ci.yml` for the Swift side. There
   is no deploy workflow in this repo.
-- `db/init/` changes do not apply to existing volumes (see the invariant
-  above). Until a migration framework lands (`docs/open-source-plan.md`,
-  SRV-3), apply new DDL to a live database by hand via
-  `docker compose exec db psql -U postgres -d postgres -f …` and treat it as
-  one-way: `099_read_roles.sh` (roles/passwords) and `013_time_zone.sh`
-  (`PULS_TIME_ZONE`) are re-runnable by design; the rest is `IF NOT EXISTS`.
+- Schema changes ride the `migrate` service (see the invariant above):
+  `docker compose up -d` applies pending files before the app services
+  start, and a database created before the service existed needs a one-time
+  `docker compose run --rm migrate baseline`. `099_read_roles.sh`
+  (roles/passwords) and `013_time_zone.sh` (`PULS_TIME_ZONE`) re-run on
+  every start, so rotating a database password or changing the zone is
+  "edit `.env`, `docker compose up -d`". Still treat DDL on a live database
+  as one-way: there is no backup service.
 - The reference stack has no backup service yet (SRV-9 in the plan). The
   Postgres volume is the only copy of the data — a disk failure, a bad
   migration or a dropped volume loses everything.
-- The ingest container connects as the `postgres` superuser by default; once
-  `INGEST_DB_USER=ingest`/`INGEST_DB_PASSWORD` are in `.env` and
-  `099_read_roles.sh` has been re-run with `INGEST_DB_PASSWORD`, it connects as
-  the scoped DML-only `ingest` role.
+- The ingest container connects as the scoped DML-only `ingest` role:
+  `INGEST_DB_USER` defaults to `ingest`, `INGEST_DB_PASSWORD` is required,
+  and `099_read_roles.sh` keeps the role's password equal to it on every
+  start. It never holds the superuser password; `INGEST_DB_USER=postgres`
+  with the superuser password in `INGEST_DB_PASSWORD` is the documented,
+  discouraged way back.
 - The product API host mapping stays on `127.0.0.1`; the `web` viewer has no
   authentication, so it binds to `WEB_BIND_ADDR` (default `127.0.0.1`) and
   belongs behind a private network or an authenticating proxy. `web` connects

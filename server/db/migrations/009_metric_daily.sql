@@ -1,3 +1,4 @@
+-- puls:rerun
 -- Unified daily "best guess of truth" per metric, per user (a VIEW, not a table:
 -- always live, no backfill/refresh, no extra storage).
 --
@@ -23,12 +24,11 @@
 -- computed in the phone's local calendar, and the Grafana dashboards read the
 -- same function so every daily view agrees.
 --
--- Idempotent (CREATE OR REPLACE). Apply to a live DB:
---   docker compose exec db psql -U postgres -d postgres -f \
---     /docker-entrypoint-initdb.d/009_metric_daily.sql
---   # and, once per zone change (applies to new connections; re-run to change):
---   docker compose exec db psql -U postgres -d postgres \
---     -c "ALTER DATABASE postgres SET puls.time_zone = 'America/Los_Angeles'"
+-- Idempotent (CREATE OR REPLACE) and marked `puls:rerun` on its first line:
+-- the migrate service re-applies it whenever this file changes, so edit the
+-- view definition here in place instead of adding a new numbered file. To
+-- change the zone, set PULS_TIME_ZONE in .env and run the migrate service
+-- again (013_time_zone.sh stores it; applies to new connections).
 
 -- Include the not-yet-materialized portion of the current hour in reads from
 -- quantity_rollups. Without real-time aggregation, metric_daily can lag until
@@ -39,7 +39,7 @@ ALTER MATERIALIZED VIEW quantity_rollups SET (timescaledb.materialized_only = fa
 -- puls.time_zone database setting (ALTER DATABASE … SET, written by
 -- 013_time_zone.sh from PULS_TIME_ZONE); falls back to UTC when unset or
 -- empty. STABLE, not IMMUTABLE: the setting can change between sessions.
--- Defined here rather than in a later file because init files run in name
+-- Defined here rather than in a later file because migrations run in name
 -- order and a view binds the functions it calls when it is created, so the
 -- function has to exist before CREATE VIEW metric_daily below.
 CREATE OR REPLACE FUNCTION puls_time_zone() RETURNS text
@@ -119,7 +119,8 @@ JOIN sample_types t ON t.type_id = COALESCE(a.type_id, r.type_id);
 -- an exact, non-default ACL), so re-running 008 then 009 on a live database
 -- silently broke /v1/metrics/daily with permission-denied until 099 was re-run
 -- by hand. Re-grant here so the documented "safe to re-run" sequence is.
--- Guarded: on first startup the roles do not exist yet (099 creates them).
+-- Guarded: on a fresh database the roles do not exist yet (099 creates them,
+-- and it runs after this file on every migrate run).
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'api_reader') THEN

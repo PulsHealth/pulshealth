@@ -1,5 +1,5 @@
--- PulsHealth schema. Applied automatically by the timescaledb-ha image's
--- /docker-entrypoint-initdb.d on first startup (empty data volume only).
+-- PulsHealth base schema. Applied once by the `migrate` service (db/migrate.sh)
+-- and recorded in schema_migrations; later changes go in new numbered files.
 
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 

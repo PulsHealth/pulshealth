@@ -107,7 +107,7 @@ function warnOnce(key: string, ...args: unknown[]): void {
 }
 
 // The database's own calendar zone. `puls_time_zone()` returns the server
-// stack's PULS_TIME_ZONE (stored on the database by db/init/013_time_zone.sh;
+// stack's PULS_TIME_ZONE (stored on the database by db/migrations/013_time_zone.sh;
 // UTC when unset). metric_daily buckets its days in that zone, so its rows are
 // only honest for this viewer when it equals the viewer's PULS_TIME_ZONE.
 // Resolved lazily and cached at module scope. A failed lookup (database

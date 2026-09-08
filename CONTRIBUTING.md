@@ -114,7 +114,7 @@ npm run dev                     # demo data when DATABASE_URL is unset
 
 ```bash
 docker compose -f server/docker-compose.yml config --quiet   # with the .env secrets exported
-shellcheck server/db/init/*.sh scripts/*.sh
+shellcheck server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh
 ```
 
 ## Rules that keep the pieces in step
@@ -135,7 +135,7 @@ in the same pull request:
 - client: `PulsHealthSync/Sources/PulsHealthSync/Models/SyncModels.swift` and
   `Serialization/NDJSONEncoder.swift`;
 - server: `server/ingest/parse.go` and `server/ingest/store.go`;
-- schema: a new idempotent file under `server/db/init/`;
+- schema: a new `NNN_name.sql` under `server/db/migrations/`;
 - tests: the fixtures in `server/ingest/parse_test.go`;
 - docs: the wire-format description and curl example in `server/README.md`.
 
@@ -145,10 +145,15 @@ place, so nothing is lost, but syncing stalls until the server is updated.
 Until the protocol is versioned (see the plan), keep changes additive and
 keep the server tolerant of old clients.
 
-**Schema changes are new files, and they are applied by hand.** `db/init/`
-runs only against an empty volume. New DDL goes in a new `IF NOT EXISTS` file
-and is applied to existing databases manually; say so in `server/README.md`
-when a change must land before the ingest build that depends on it.
+**Schema changes are new files; applied files are immutable.** The Compose
+`migrate` service applies `server/db/migrations/` in order on every
+`docker compose up -d` and records each file in `schema_migrations` with its
+checksum, so new DDL goes in a new `NNN_name.sql` — never into a file that has
+already been applied (the migrator refuses a changed checksum). Only files that
+are `CREATE OR REPLACE` by design carry a first line of `-- puls:rerun` and are
+re-applied when they change. Say so in `server/README.md` when a change must
+land before the ingest build that depends on it (see "Schema migrations"
+there).
 
 ## Before you open a pull request
 
