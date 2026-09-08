@@ -32,6 +32,18 @@ type SampleFilters struct {
 	Offset int
 }
 
+// SampleMeta is the sample_types row behind a raw-sample query: the numeric
+// type id the sample tables key on, plus the kind and canonical unit the
+// answer reports. Resolving it is a separate step so a caller that streams
+// (GET /v1/export) learns about a bad identifier before it has written a
+// single byte of the response.
+type SampleMeta struct {
+	Type   string
+	TypeID int16
+	Kind   string
+	Unit   *string
+}
+
 // Sample is one raw HealthKit sample. Value is the numeric value in the
 // type's canonical unit for a quantity type and the integer enum value for a
 // category type, where Label (from category_labels) names it.
@@ -53,31 +65,43 @@ type SamplesPage struct {
 	NextOffset int      `json:"nextOffset"`
 }
 
-// Samples returns one page of a type's raw samples ordered by start time.
-// An identifier the database has never seen, or one that is not a quantity
-// or category type, is a request error.
-func (st *Store) Samples(ctx context.Context, f SampleFilters) (*SamplesPage, error) {
-	var (
-		typeID int16
-		kind   *string
-		unit   *string
-	)
+// SampleType resolves a HealthKit identifier to the sample_types row the
+// raw-sample queries need. An identifier the database has never seen, or one
+// that is not a quantity or category type, is a request error — the caller's
+// fault, answered with a 400 rather than logged as a 500.
+func (st *Store) SampleType(ctx context.Context, identifier string) (SampleMeta, error) {
+	meta := SampleMeta{Type: identifier}
+	var kind *string
 	err := st.pool.QueryRow(ctx, `
-		SELECT type_id, kind, unit FROM sample_types WHERE identifier = $1`, f.Type).
-		Scan(&typeID, &kind, &unit)
+		SELECT type_id, kind, unit FROM sample_types WHERE identifier = $1`, identifier).
+		Scan(&meta.TypeID, &kind, &meta.Unit)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, badRequestf("unknown type %q: it has never been synced (see /v1/catalog/types)", f.Type)
+		return SampleMeta{}, badRequestf("unknown type %q: it has never been synced (see /v1/catalog/types)", identifier)
 	}
 	if err != nil {
-		return nil, err
+		return SampleMeta{}, err
 	}
 	if kind == nil {
-		return nil, badRequestf("type %q has no kind recorded; only quantity and category types have samples", f.Type)
+		return SampleMeta{}, badRequestf("type %q has no kind recorded; only quantity and category types have samples", identifier)
 	}
+	if *kind != "quantity" && *kind != "category" {
+		return SampleMeta{}, badRequestf("type %q is a %s type; only quantity and category samples are served here (workouts have /v1/workouts)", identifier, *kind)
+	}
+	meta.Kind = *kind
+	return meta, nil
+}
 
-	page := &SamplesPage{Type: f.Type, Kind: *kind, Unit: unit, Samples: make([]Sample, 0)}
-	var rows pgx.Rows
-	switch *kind {
+// StreamSamples calls fn once per raw sample of meta's type inside
+// [f.Start, f.End), ordered by start time, never holding more than one row —
+// the export streams hundreds of thousands of them. A Limit of zero or less
+// means every matching row; Samples passes the endpoint's page size. fn's
+// error stops the scan and comes back unchanged.
+func (st *Store) StreamSamples(ctx context.Context, meta SampleMeta, f SampleFilters, fn func(Sample) error) error {
+	var (
+		rows pgx.Rows
+		err  error
+	)
+	switch meta.Kind {
 	case "quantity":
 		rows, err = st.pool.Query(ctx, `
 			SELECT q.uuid::text, q.start_ts, q.end_ts, q.value::float8, s.name
@@ -89,7 +113,7 @@ func (st *Store) Samples(ctx context.Context, f SampleFilters) (*SamplesPage, er
 			  AND q.start_ts < $4
 			ORDER BY q.start_ts, q.uuid
 			LIMIT $5 OFFSET $6`,
-			st.userID, typeID, f.Start, f.End, f.Limit, f.Offset)
+			st.userID, meta.TypeID, f.Start, f.End, nullableLimit(f.Limit), f.Offset)
 	case "category":
 		// Category values are only meaningful with their type; the label
 		// join is keyed on the identifier so the same integer decodes
@@ -105,12 +129,12 @@ func (st *Store) Samples(ctx context.Context, f SampleFilters) (*SamplesPage, er
 			  AND c.start_ts < $4
 			ORDER BY c.start_ts, c.uuid
 			LIMIT $5 OFFSET $6`,
-			st.userID, typeID, f.Start, f.End, f.Limit, f.Offset, f.Type)
+			st.userID, meta.TypeID, f.Start, f.End, nullableLimit(f.Limit), f.Offset, meta.Type)
 	default:
-		return nil, badRequestf("type %q is a %s type; only quantity and category samples are served here (workouts have /v1/workouts)", f.Type, *kind)
+		return badRequestf("type %q is a %s type; only quantity and category samples are served here (workouts have /v1/workouts)", meta.Type, meta.Kind)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
@@ -120,17 +144,34 @@ func (st *Store) Samples(ctx context.Context, f SampleFilters) (*SamplesPage, er
 			start, end time.Time
 		)
 		dest := []any{&s.UUID, &start, &end, &s.Value, &s.Source}
-		if *kind == "category" {
+		if meta.Kind == "category" {
 			dest = append(dest, &s.Label)
 		}
 		if err := rows.Scan(dest...); err != nil {
-			return nil, err
+			return err
 		}
 		s.Start = start.UTC().UnixMilli()
 		s.End = end.UTC().UnixMilli()
-		page.Samples = append(page.Samples, s)
+		if err := fn(s); err != nil {
+			return err
+		}
 	}
-	if err := rows.Err(); err != nil {
+	return rows.Err()
+}
+
+// Samples collects one page of StreamSamples into the endpoint's envelope.
+// An identifier the database has never seen, or one that is not a quantity
+// or category type, is a request error.
+func (st *Store) Samples(ctx context.Context, f SampleFilters) (*SamplesPage, error) {
+	meta, err := st.SampleType(ctx, f.Type)
+	if err != nil {
+		return nil, err
+	}
+	page := &SamplesPage{Type: meta.Type, Kind: meta.Kind, Unit: meta.Unit, Samples: make([]Sample, 0)}
+	if err := st.StreamSamples(ctx, meta, f, func(s Sample) error {
+		page.Samples = append(page.Samples, s)
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 	page.NextOffset = f.Offset + len(page.Samples)

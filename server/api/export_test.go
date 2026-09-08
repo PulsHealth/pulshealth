@@ -1,0 +1,430 @@
+package main
+
+import (
+	"context"
+	"encoding/csv"
+	"encoding/json"
+	"errors"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+)
+
+// exportServer is a Server over store, with a token the helpers below send.
+func exportServer(t *testing.T, store apiStore) *Server {
+	t.Helper()
+	return &Server{
+		store: store,
+		token: "secret",
+		log:   slog.New(slog.NewTextHandler(testWriter{t}, nil)),
+	}
+}
+
+// getExport runs one GET /v1/export?query through the router.
+func getExport(t *testing.T, srv *Server, query string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, "/v1/export?"+query, nil)
+	req.Header.Set("Authorization", "Bearer secret")
+	rec := httptest.NewRecorder()
+	srv.routes().ServeHTTP(rec, req)
+	return rec
+}
+
+// The fixture range: one day of 2026, in epoch milliseconds.
+const (
+	exportStartMS = 1767225600000
+	exportEndMS   = 1767312000000
+	exportRange   = "start=1767225600000&end=1767312000000"
+)
+
+func TestExportCSVWritesAHeaderRowAndOneRowPerDay(t *testing.T) {
+	t.Parallel()
+
+	unit := "count"
+	srv := exportServer(t, &fakeStore{
+		daily: []DailyMetric{{
+			Identifier: "HKQuantityTypeIdentifierStepCount",
+			Unit:       &unit,
+			Days: []DailyPoint{
+				{Date: "2026-01-01", Value: ptrFloat64(8123.5)},
+				{Date: "2026-01-02", Value: nil},
+			},
+		}},
+	})
+
+	rec := getExport(t, srv, "format=csv&dataset=daily_metrics&types=HKQuantityTypeIdentifierStepCount&"+exportRange)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Type"); got != "text/csv; charset=utf-8" {
+		t.Errorf("Content-Type = %q", got)
+	}
+	want := `attachment; filename="puls-daily_metrics-1767225600000-1767312000000.csv"`
+	if got := rec.Header().Get("Content-Disposition"); got != want {
+		t.Errorf("Content-Disposition = %q, want %q", got, want)
+	}
+
+	records, err := csv.NewReader(strings.NewReader(rec.Body.String())).ReadAll()
+	if err != nil {
+		t.Fatalf("the body is not CSV: %v", err)
+	}
+	if len(records) != 3 {
+		t.Fatalf("records = %#v, want a header and two rows", records)
+	}
+	header := strings.Join(records[0], ",")
+	if header != "identifier,unit,date,value" {
+		t.Errorf("header = %q", header)
+	}
+	if row := strings.Join(records[1], ","); row != "HKQuantityTypeIdentifierStepCount,count,2026-01-01,8123.5" {
+		t.Errorf("first row = %q", row)
+	}
+	// A null value is an empty cell, not the string "null" or a zero.
+	if row := strings.Join(records[2], ","); row != "HKQuantityTypeIdentifierStepCount,count,2026-01-02," {
+		t.Errorf("second row = %q", row)
+	}
+}
+
+func TestExportJSONLKeysAreTheCSVColumns(t *testing.T) {
+	t.Parallel()
+
+	unit := "count/min"
+	srv := exportServer(t, &fakeStore{
+		samples: &SamplesPage{
+			Type: "HKQuantityTypeIdentifierHeartRate",
+			Kind: "quantity",
+			Unit: &unit,
+			Samples: []Sample{
+				{UUID: "11111111-1111-4111-8111-111111111111", Start: exportStartMS, End: exportStartMS, Value: ptrFloat64(61), Source: ptrString("Watch")},
+				{UUID: "22222222-2222-4222-8222-222222222222", Start: exportStartMS + 1000, End: exportStartMS + 1000, Value: nil, Source: nil},
+			},
+		},
+	})
+
+	query := "dataset=samples&type=HKQuantityTypeIdentifierHeartRate&" + exportRange
+	jsonl := getExport(t, srv, "format=jsonl&"+query)
+	if jsonl.Code != http.StatusOK {
+		t.Fatalf("status = %d, body %s", jsonl.Code, jsonl.Body.String())
+	}
+	if got := jsonl.Header().Get("Content-Type"); got != "application/x-ndjson" {
+		t.Errorf("Content-Type = %q", got)
+	}
+	if !strings.HasSuffix(jsonl.Header().Get("Content-Disposition"), `.jsonl"`) {
+		t.Errorf("Content-Disposition = %q", jsonl.Header().Get("Content-Disposition"))
+	}
+
+	lines := strings.Split(strings.TrimSuffix(jsonl.Body.String(), "\n"), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("lines = %#v, want one object per sample and no header line", lines)
+	}
+	var first map[string]any
+	if err := json.Unmarshal([]byte(lines[0]), &first); err != nil {
+		t.Fatalf("line 1 is not JSON: %v", err)
+	}
+	if first["type"] != "HKQuantityTypeIdentifierHeartRate" || first["unit"] != "count/min" || first["value"] != 61.0 {
+		t.Errorf("line 1 = %v", first)
+	}
+	if first["source"] != "Watch" {
+		t.Errorf("source = %v", first["source"])
+	}
+	var second map[string]any
+	if err := json.Unmarshal([]byte(lines[1]), &second); err != nil {
+		t.Fatalf("line 2 is not JSON: %v", err)
+	}
+	// A null stays null rather than disappearing, so every line has the
+	// same keys.
+	if value, ok := second["value"]; !ok || value != nil {
+		t.Errorf("line 2 value = %v (present %v), want an explicit null", value, ok)
+	}
+
+	// The two formats describe the same rows: the CSV header row is exactly
+	// the JSONL object's keys, in order.
+	csvRec := getExport(t, srv, "format=csv&"+query)
+	records, err := csv.NewReader(strings.NewReader(csvRec.Body.String())).ReadAll()
+	if err != nil {
+		t.Fatalf("the CSV body is not CSV: %v", err)
+	}
+	keys := jsonKeysInOrder(t, lines[0])
+	if strings.Join(records[0], ",") != strings.Join(keys, ",") {
+		t.Errorf("CSV header %q and JSONL keys %q disagree", records[0], keys)
+	}
+}
+
+// jsonKeysInOrder reads the keys of a JSON object in the order they appear.
+func jsonKeysInOrder(t *testing.T, line string) []string {
+	t.Helper()
+	decoder := json.NewDecoder(strings.NewReader(line))
+	if _, err := decoder.Token(); err != nil { // the opening brace
+		t.Fatalf("decode %q: %v", line, err)
+	}
+	var keys []string
+	for decoder.More() {
+		key, err := decoder.Token()
+		if err != nil {
+			t.Fatalf("decode %q: %v", line, err)
+		}
+		keys = append(keys, key.(string))
+		var value any
+		if err := decoder.Decode(&value); err != nil {
+			t.Fatalf("decode %q: %v", line, err)
+		}
+	}
+	return keys
+}
+
+func TestExportFlattensNestedFieldsAndJoinsLists(t *testing.T) {
+	t.Parallel()
+
+	srv := exportServer(t, &fakeStore{
+		nights: []SleepNight{{
+			Date: "2026-01-02", Start: exportStartMS, End: exportEndMS,
+			InBedMinutes: 480, AsleepMinutes: 430,
+			Stages:  SleepStages{Core: 220, Deep: 60, REM: 100, Unspecified: 50, Awake: 20},
+			Sources: 2,
+		}},
+		moods: []StateOfMindEntry{{
+			UUID: "33333333-3333-4333-8333-333333333333", Date: "2026-01-01", Timestamp: exportStartMS,
+			Kind: "momentaryEmotion", Valence: ptrFloat64(0.25), ValenceClassification: ptrString("slightlyPleasant"),
+			Labels: []string{"calm", "content"}, Associations: []string{"family"},
+		}},
+	})
+
+	sleep := getExport(t, srv, "format=csv&dataset=sleep&"+exportRange)
+	records, err := csv.NewReader(strings.NewReader(sleep.Body.String())).ReadAll()
+	if err != nil {
+		t.Fatalf("sleep body is not CSV: %v", err)
+	}
+	if len(records) != 2 {
+		t.Fatalf("sleep records = %#v", records)
+	}
+	if got := strings.Join(records[0], ","); !strings.Contains(got, "stages.core,stages.deep,stages.rem,stages.unspecified,stages.awake") {
+		t.Errorf("sleep header = %q, want the stage minutes flattened by path", got)
+	}
+	if got := strings.Join(records[1], ","); got != "2026-01-02,1767225600000,1767312000000,480,430,220,60,100,50,20,2" {
+		t.Errorf("sleep row = %q", got)
+	}
+
+	// A list is comma-joined inside its (quoted) CSV cell, and stays a JSON
+	// array in JSONL.
+	moodCSV := getExport(t, srv, "format=csv&dataset=state_of_mind&"+exportRange)
+	if !strings.Contains(moodCSV.Body.String(), `"calm,content"`) {
+		t.Errorf("state of mind CSV = %q, want the labels joined in one quoted cell", moodCSV.Body.String())
+	}
+	moodJSONL := getExport(t, srv, "format=jsonl&dataset=state_of_mind&"+exportRange)
+	var entry map[string]any
+	if err := json.Unmarshal([]byte(strings.TrimSpace(moodJSONL.Body.String())), &entry); err != nil {
+		t.Fatalf("state of mind JSONL: %v", err)
+	}
+	labels, ok := entry["labels"].([]any)
+	if !ok || len(labels) != 2 || labels[0] != "calm" {
+		t.Errorf("labels = %v, want a JSON array", entry["labels"])
+	}
+}
+
+func TestExportWorkoutsStreamsTheWholeRangeUnpaged(t *testing.T) {
+	t.Parallel()
+
+	store := &fakeStore{workouts: []WorkoutSummary{{
+		UUID: "44444444-4444-4444-8444-444444444444", ActivityType: "HKWorkoutActivityTypeRunning",
+		Start: exportStartMS, End: exportEndMS, DurationS: ptrFloat64(3600), DistanceM: ptrFloat64(10000),
+		EnergyKcal: ptrFloat64(620), HasRoute: true,
+		AvailableMetrics: []string{"HKQuantityTypeIdentifierHeartRate", "HKQuantityTypeIdentifierRunningPower"},
+	}}}
+	srv := exportServer(t, store)
+
+	rec := getExport(t, srv, "format=csv&dataset=workouts&activityType=HKWorkoutActivityTypeRunning&"+exportRange)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+	}
+	// The export asks for the whole range: no page size, and both bounds
+	// pushed into the filter.
+	if store.lastWorkouts.Limit != 0 || store.lastWorkouts.Offset != 0 {
+		t.Errorf("filters = %+v, want no paging", store.lastWorkouts)
+	}
+	if store.lastWorkouts.Start == nil || store.lastWorkouts.Start.UnixMilli() != exportStartMS {
+		t.Errorf("start = %v", store.lastWorkouts.Start)
+	}
+	if store.lastWorkouts.ActivityType != "HKWorkoutActivityTypeRunning" {
+		t.Errorf("activityType = %q", store.lastWorkouts.ActivityType)
+	}
+	if !strings.Contains(rec.Body.String(), `"HKQuantityTypeIdentifierHeartRate,HKQuantityTypeIdentifierRunningPower"`) {
+		t.Errorf("body = %q, want availableMetrics joined in one cell", rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), ",true,") {
+		t.Errorf("body = %q, want hasRoute as a boolean", rec.Body.String())
+	}
+}
+
+func TestExportRejectsBadRequests(t *testing.T) {
+	t.Parallel()
+
+	srv := exportServer(t, &fakeStore{})
+	cases := []struct {
+		name  string
+		query string
+		want  string
+	}{
+		{"no format", "dataset=sleep&" + exportRange, "missing format"},
+		{"unknown format", "format=parquet&dataset=sleep&" + exportRange, "invalid format"},
+		{"no dataset", "format=csv&" + exportRange, "missing dataset"},
+		{"unknown dataset", "format=csv&dataset=heartbeats&" + exportRange, "invalid dataset"},
+		{"no range", "format=csv&dataset=sleep", "missing start"},
+		{"backwards range", "format=csv&dataset=sleep&start=2&end=1", "end must be after start"},
+		{"daily metrics without types", "format=csv&dataset=daily_metrics&" + exportRange, "missing types"},
+		{"samples without a type", "format=csv&dataset=samples&" + exportRange, "missing type"},
+		{
+			"samples over 31 days",
+			"format=csv&dataset=samples&type=HKQuantityTypeIdentifierHeartRate&start=0&end=" +
+				msString(32*24*time.Hour),
+			"31 days",
+		},
+		{"sleep over 366 days", "format=csv&dataset=sleep&start=0&end=" + msString(367*24*time.Hour), "366 days"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			rec := getExport(t, srv, tc.query)
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+			}
+			var body map[string]string
+			if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+				t.Fatalf("body is not the usual error JSON: %v", err)
+			}
+			if !strings.Contains(body["error"], tc.want) {
+				t.Errorf("error = %q, want it to mention %q", body["error"], tc.want)
+			}
+		})
+	}
+}
+
+// msString renders a duration as the epoch-millisecond bound a range
+// parameter takes.
+func msString(d time.Duration) string {
+	return strconv.FormatInt(d.Milliseconds(), 10)
+}
+
+// A bad type is the store's 400, and it must arrive before the download
+// starts: the response has to be a JSON error, not a CSV file with a header
+// row and nothing under it.
+func TestExportUnknownSampleTypeIsA400BeforeAnyRows(t *testing.T) {
+	t.Parallel()
+
+	srv := exportServer(t, &fakeStore{sampleTypeErr: badRequestf("unknown type %q: it has never been synced", "HKNope")})
+	rec := getExport(t, srv, "format=csv&dataset=samples&type=HKNope&"+exportRange)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Type"); got != "application/json" {
+		t.Errorf("Content-Type = %q, want the error JSON", got)
+	}
+	if strings.Contains(rec.Body.String(), "uuid,start") {
+		t.Errorf("body = %q, want no CSV header", rec.Body.String())
+	}
+}
+
+func TestExportStoreFailureBeforeTheStreamIsA500(t *testing.T) {
+	t.Parallel()
+
+	srv := exportServer(t, &fakeStore{err: errors.New("boom")})
+	rec := getExport(t, srv, "format=csv&dataset=sleep&"+exportRange)
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestExportRequiresTheToken(t *testing.T) {
+	t.Parallel()
+
+	srv := exportServer(t, &fakeStore{})
+	req := httptest.NewRequest(http.MethodGet, "/v1/export?format=csv&dataset=sleep&"+exportRange, nil)
+	rec := httptest.NewRecorder()
+	srv.routes().ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", rec.Code)
+	}
+}
+
+// The response is chunked and the rows leave the server before the scan has
+// finished — that is the whole point of the endpoint — and a failure once
+// the body is on the wire aborts the transfer rather than closing a short
+// file cleanly.
+func TestExportStreamsChunkedAndAbortsOnAMidStreamFailure(t *testing.T) {
+	t.Parallel()
+
+	// A store whose scan emits one row, blocks until the test has read it,
+	// then fails.
+	released := make(chan struct{})
+	failing := &streamingStore{
+		fakeStore: fakeStore{},
+		workoutRows: func(fn func(WorkoutSummary) error) error {
+			if err := fn(WorkoutSummary{
+				UUID: "55555555-5555-4555-8555-555555555555", ActivityType: "HKWorkoutActivityTypeWalking",
+				Start: exportStartMS, End: exportEndMS, AvailableMetrics: []string{},
+			}); err != nil {
+				return err
+			}
+			<-released
+			return errors.New("the database went away")
+		},
+	}
+	srv := exportServer(t, failing)
+	server := httptest.NewServer(srv.routes())
+	defer server.Close()
+
+	req, err := http.NewRequest(http.MethodGet, server.URL+"/v1/export?format=csv&dataset=workouts&"+exportRange, nil)
+	if err != nil {
+		t.Fatalf("NewRequest: %v", err)
+	}
+	req.Header.Set("Authorization", "Bearer secret")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("Do: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.ContentLength != -1 {
+		t.Errorf("ContentLength = %d, want -1: an export must not be buffered to a known length", resp.ContentLength)
+	}
+	if len(resp.TransferEncoding) == 0 || resp.TransferEncoding[0] != "chunked" {
+		t.Errorf("TransferEncoding = %v, want chunked", resp.TransferEncoding)
+	}
+
+	// The header row and the first data row are readable while the handler
+	// is still inside the scan.
+	reader := csv.NewReader(resp.Body)
+	header, err := reader.Read()
+	if err != nil {
+		t.Fatalf("reading the header row: %v", err)
+	}
+	if header[0] != "uuid" {
+		t.Errorf("header = %v", header)
+	}
+	row, err := reader.Read()
+	if err != nil {
+		t.Fatalf("reading the first row while the scan is still running: %v", err)
+	}
+	if row[0] != "55555555-5555-4555-8555-555555555555" {
+		t.Errorf("row = %v", row)
+	}
+
+	close(released)
+	if _, err := io.ReadAll(resp.Body); err == nil {
+		t.Error("the rest of the body read cleanly; a mid-stream failure must break the transfer")
+	}
+}
+
+// streamingStore is a fakeStore whose workout scan is a function, so a test
+// can make it block or fail part-way through.
+type streamingStore struct {
+	fakeStore
+	workoutRows func(fn func(WorkoutSummary) error) error
+}
+
+func (s *streamingStore) StreamWorkouts(_ context.Context, _ WorkoutFilters, fn func(WorkoutSummary) error) error {
+	return s.workoutRows(fn)
+}

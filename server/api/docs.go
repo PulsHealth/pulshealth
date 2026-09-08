@@ -1,6 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+	"strconv"
+	"strings"
+)
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -23,7 +27,73 @@ func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/openapi+json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(productAPIOpenAPIJSON))
+	_, _ = w.Write([]byte(openAPIDocument(requestOrigin(r))))
+}
+
+// openAPIOriginPlaceholder is the servers[0].url the stored document
+// carries; every request fills it in with the base URL that request
+// arrived on. Importers that build a client from the document — ChatGPT
+// Actions above all — refuse a document whose servers entry is not a real
+// URL, and a deployment cannot know its own public name.
+const openAPIOriginPlaceholder = `"{{origin}}"`
+
+// openAPIDocument is the served OpenAPI document for a deployment reachable
+// at origin.
+func openAPIDocument(origin string) string {
+	return strings.Replace(productAPIOpenAPIJSON, openAPIOriginPlaceholder, strconv.Quote(origin), 1)
+}
+
+// requestOrigin reconstructs the base URL this request reached the API on,
+// honouring the headers a TLS-terminating proxy sets (Tailscale Serve,
+// Caddy, nginx), so the document a client downloads names the host that
+// client used rather than the loopback address the service binds to. A host
+// that is not a plausible authority — the header is attacker-controlled —
+// falls back to "/", the relative server URL every OpenAPI 3.1 tool accepts.
+func requestOrigin(r *http.Request) string {
+	host := r.Host
+	if forwarded := firstForwardedValue(r.Header.Get("X-Forwarded-Host")); forwarded != "" {
+		host = forwarded
+	}
+	if !isHostAuthority(host) {
+		return "/"
+	}
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	switch firstForwardedValue(r.Header.Get("X-Forwarded-Proto")) {
+	case "https":
+		scheme = "https"
+	case "http":
+		scheme = "http"
+	}
+	return scheme + "://" + host
+}
+
+// firstForwardedValue takes the first entry of a comma-separated
+// X-Forwarded-* header, which is the one the client actually asked for.
+func firstForwardedValue(header string) string {
+	first, _, _ := strings.Cut(header, ",")
+	return strings.TrimSpace(first)
+}
+
+// isHostAuthority accepts the characters a host[:port] authority may hold —
+// letters, digits, dot, hyphen, colon, and the brackets of an IPv6 literal —
+// and nothing else, so no header can inject into the document.
+func isHostAuthority(host string) bool {
+	if host == "" || len(host) > 255 {
+		return false
+	}
+	for i := 0; i < len(host); i++ {
+		c := host[i]
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+		case c == '.' || c == '-' || c == ':' || c == '[' || c == ']':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 const productAPIDocsHTML = `<!doctype html>
@@ -82,6 +152,7 @@ const productAPIDocsHTML = `<!doctype html>
       <tr><td><code>GET</code></td><td><code>/v1/sleep/daily</code></td><td><code>start=ms&amp;end=ms</code></td><td>One row per night, attributed to the wake-up day, with stage minutes.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/samples</code></td><td><code>type</code>, <code>start=ms&amp;end=ms</code>, <code>limit?</code>, <code>offset?</code></td><td>Raw samples of one quantity or category type.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/state-of-mind</code></td><td><code>start=ms&amp;end=ms</code></td><td>State of Mind entries: valence, labels, associations.</td></tr>
+      <tr><td><code>GET</code></td><td><code>/v1/export</code></td><td><code>format</code>, <code>dataset</code>, <code>start=ms&amp;end=ms</code>, plus that dataset's filters</td><td>A whole range as a streamed CSV or JSONL download.</td></tr>
     </tbody>
   </table>
 
@@ -91,6 +162,12 @@ const productAPIDocsHTML = `<!doctype html>
 
   <h2>Raw samples</h2>
   <p><code>/v1/samples</code> serves individual HealthKit records for exactly one type, ordered by start time, at most 31 days per request (<code>limit</code> defaults to 1000, caps at 5000; page with <code>nextOffset</code>). Unlike <code>/v1/metrics/daily</code> these are <strong>not</strong> deduplicated: if an iPhone and an Apple Watch both recorded the same minutes, both rows come back. A quantity sample carries <code>value</code> in the page's canonical <code>unit</code>; a category sample carries the integer <code>value</code> and its HealthKit <code>label</code>.</p>
+
+  <h2>Export</h2>
+  <p><code>/v1/export</code> returns a whole range as a file rather than a JSON document, for a spreadsheet, a notebook, or a chat attachment. Both parameters are required: <code>format</code> is <code>csv</code> or <code>jsonl</code>, <code>dataset</code> is one of <code>daily_metrics</code>, <code>samples</code>, <code>workouts</code>, <code>sleep</code>, <code>activity</code>, <code>state_of_mind</code>. <code>start</code> and <code>end</code> are required for every dataset; <code>daily_metrics</code> also takes <code>types</code>, <code>samples</code> takes <code>type</code>, and <code>workouts</code> takes an optional <code>activityType</code>.</p>
+  <pre><code>curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
+  "$PULS_API_BASE_URL/v1/export?format=csv&amp;dataset=sleep&amp;start=1735689600000&amp;end=1738368000000"</code></pre>
+  <p>The response is streamed (<code>Transfer-Encoding: chunked</code>) and arrives as an attachment called <code>puls-&lt;dataset&gt;-&lt;start&gt;-&lt;end&gt;.&lt;csv|jsonl&gt;</code>. CSV opens with a header row; JSONL writes one JSON object per line whose keys are exactly those column names. Field names are the JSON endpoints' names; where an endpoint nests, the export flattens — a metric's days become one row each carrying <code>identifier</code> and <code>unit</code>, a night's stage minutes become <code>stages.core</code>, <code>stages.deep</code> and so on, and a list (a workout's <code>availableMetrics</code>, an entry's <code>labels</code>) is comma-joined inside its CSV cell and stays an array in JSONL. Ranges are capped as on the endpoint the data comes from: 31 days for <code>samples</code>, 366 for the rest. <code>workouts</code> returns the whole range, newest first; <code>limit</code> and <code>offset</code> do not apply to an export. A failure after the first rows are on the wire aborts the connection, so a truncated file is always a visibly failed download rather than a short one.</p>
 
   <h2>Conventions</h2>
   <p>All timestamps are epoch milliseconds (0 to 253402300799999; anything else is a <code>400</code>). Workout ranges are <code>[start, end)</code> on the workout start time. The daily endpoints (<code>/v1/metrics/daily</code>, <code>/v1/activity/summary</code>) return every local calendar day — in the server's configured zone, <code>PULS_TIME_ZONE</code> — that overlaps <code>[start, end)</code>, so a range that touches one minute of a day returns that whole day. <code>/v1/sleep/daily</code> and <code>/v1/state-of-mind</code> use those same local days and reject ranges over 366 days. Empty result sets return empty arrays.</p>
@@ -106,6 +183,7 @@ const productAPIOpenAPIJSON = `{
     "version": "1.0.0",
     "description": "Read-only API for downstream products that use PulsHealth data."
   },
+  "servers": [{ "url": "{{origin}}", "description": "This PulsHealth deployment (the base URL this document was fetched from)." }],
   "security": [{ "bearerAuth": [] }],
   "components": {
     "securitySchemes": {
@@ -306,6 +384,7 @@ const productAPIOpenAPIJSON = `{
   "paths": {
     "/": {
       "get": {
+        "operationId": "getIndex",
         "security": [],
         "summary": "API index",
         "responses": { "200": { "description": "API index" } }
@@ -313,6 +392,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/docs": {
       "get": {
+        "operationId": "getDocs",
         "security": [],
         "summary": "Human-readable API docs",
         "responses": { "200": { "description": "HTML documentation" } }
@@ -320,6 +400,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/openapi.json": {
       "get": {
+        "operationId": "getOpenAPI",
         "security": [],
         "summary": "OpenAPI schema",
         "responses": { "200": { "description": "OpenAPI document" } }
@@ -327,6 +408,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/healthz": {
       "get": {
+        "operationId": "getHealth",
         "security": [],
         "summary": "Health check",
         "responses": { "200": { "description": "Healthy" }, "503": { "description": "Database unavailable" } }
@@ -334,18 +416,21 @@ const productAPIOpenAPIJSON = `{
     },
     "/v1/profile": {
       "get": {
+        "operationId": "getProfile",
         "summary": "Default user profile",
         "responses": { "200": { "description": "Profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } }, "401": { "description": "Unauthorized" }, "404": { "description": "Profile not found" } }
       }
     },
     "/v1/catalog/types": {
       "get": {
+        "operationId": "listCatalogTypes",
         "summary": "Available data types",
         "responses": { "200": { "description": "Catalog", "content": { "application/json": { "schema": { "type": "object", "properties": { "types": { "type": "array", "items": { "$ref": "#/components/schemas/CatalogType" } } } } } } } }
       }
     },
     "/v1/metrics/latest": {
       "get": {
+        "operationId": "getLatestMetrics",
         "summary": "Latest quantity metrics",
         "parameters": [{ "name": "types", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers." }],
         "responses": { "200": { "description": "Latest metrics", "content": { "application/json": { "schema": { "type": "object", "properties": { "metrics": { "type": "array", "items": { "$ref": "#/components/schemas/LatestMetric" } } } } } } } }
@@ -353,6 +438,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/v1/metrics/daily": {
       "get": {
+        "operationId": "getDailyMetrics",
         "summary": "Daily metric series",
         "parameters": [
           { "name": "types", "in": "query", "required": true, "schema": { "type": "string" } },
@@ -364,6 +450,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/v1/activity/summary": {
       "get": {
+        "operationId": "getActivitySummary",
         "summary": "Activity ring summaries",
         "parameters": [
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
@@ -374,6 +461,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/v1/workouts": {
       "get": {
+        "operationId": "listWorkouts",
         "summary": "Workout summaries",
         "parameters": [
           { "name": "start", "in": "query", "required": false, "schema": { "type": "integer", "format": "int64" } },
@@ -387,6 +475,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/v1/workouts/{uuid}": {
       "get": {
+        "operationId": "getWorkout",
         "summary": "Workout detail",
         "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
         "responses": { "200": { "description": "Workout detail", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutDetail" } } } }, "400": { "description": "Invalid UUID" }, "404": { "description": "Workout not found" } }
@@ -394,6 +483,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/v1/workouts/{uuid}/series": {
       "get": {
+        "operationId": "getWorkoutSeries",
         "summary": "Intra-workout streams",
         "description": "Per-second curves recorded during the workout, each downsampled to at most maxPoints points by bucket-averaging while keeping the first and last point.",
         "parameters": [
@@ -406,6 +496,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/v1/sleep/daily": {
       "get": {
+        "operationId": "getSleepNights",
         "summary": "Sleep nights",
         "description": "One row per sleep session, attributed to the local calendar day it ended on. Sessions are split on gaps over three hours, and every local day overlapping [start, end) is covered.",
         "parameters": [
@@ -417,6 +508,7 @@ const productAPIOpenAPIJSON = `{
     },
     "/v1/samples": {
       "get": {
+        "operationId": "getSamples",
         "summary": "Raw samples of one type",
         "description": "Individual HealthKit records, ordered by start time, not deduplicated across devices. The range is [start, end) on the sample start time and may not exceed 31 days.",
         "parameters": [
@@ -431,12 +523,40 @@ const productAPIOpenAPIJSON = `{
     },
     "/v1/state-of-mind": {
       "get": {
+        "operationId": "getStateOfMind",
         "summary": "State of Mind entries",
         "parameters": [
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
         ],
         "responses": { "200": { "description": "Entries", "content": { "application/json": { "schema": { "type": "object", "properties": { "entries": { "type": "array", "items": { "$ref": "#/components/schemas/StateOfMindEntry" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" } }
+      }
+    },
+    "/v1/export": {
+      "get": {
+        "operationId": "exportDataset",
+        "summary": "Bulk export one dataset as CSV or JSONL",
+        "description": "Streams a whole range as a file (Transfer-Encoding: chunked, Content-Disposition: attachment) instead of a JSON document. CSV opens the file with a header row; JSONL writes one JSON object per line whose keys are the same column names. Field names match the JSON endpoints; where an endpoint nests (a metric's days, a night's stages) the export flattens, repeating the identifying fields on every row and naming a nested field by its path. Ranges are capped like the endpoint each dataset comes from: 31 days for samples, 366 days for the rest. The workouts dataset returns the whole range, newest first — limit and offset are not used here.",
+        "parameters": [
+          { "name": "format", "in": "query", "required": true, "schema": { "type": "string", "enum": ["csv", "jsonl"] } },
+          { "name": "dataset", "in": "query", "required": true, "schema": { "type": "string", "enum": ["daily_metrics", "samples", "workouts", "sleep", "activity", "state_of_mind"] } },
+          { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
+          { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
+          { "name": "types", "in": "query", "required": false, "schema": { "type": "string" }, "description": "daily_metrics only, and required there: comma-separated HealthKit identifiers." },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string" }, "description": "samples only, and required there: exactly one HealthKit identifier." },
+          { "name": "activityType", "in": "query", "required": false, "schema": { "type": "string" }, "description": "workouts only: keep one activity type." }
+        ],
+        "responses": {
+          "200": {
+            "description": "The dataset, streamed as an attachment named puls-<dataset>-<start>-<end>.<csv|jsonl>",
+            "content": {
+              "text/csv": { "schema": { "type": "string" } },
+              "application/x-ndjson": { "schema": { "type": "string" } }
+            }
+          },
+          "400": { "description": "Missing or invalid format or dataset, a missing dataset parameter, an unknown type, or a range over the dataset's cap" },
+          "401": { "description": "Unauthorized" }
+        }
       }
     }
   }
