@@ -136,7 +136,10 @@ labels(type_identifier, value, enum_name, label, is_deprecated) AS (
         ('HKCategoryTypeIdentifierAppleWalkingSteadinessEvent', 3::smallint, 'HKCategoryValueAppleWalkingSteadinessEventRepeatLow', 'Repeat Low', false),
         ('HKCategoryTypeIdentifierAppleWalkingSteadinessEvent', 4::smallint, 'HKCategoryValueAppleWalkingSteadinessEventRepeatVeryLow', 'Repeat Very Low', false),
 
-        ('HKCategoryTypeIdentifierAudioExposureEvent', 1::smallint, 'HKCategoryValueAudioExposureEventLoudEnvironment', 'Loud Environment', true),
+        -- HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent (iOS 14) kept
+        -- the raw value of the iOS 13 constant it replaced, so this — not the
+        -- newer constant's spelling — is the identifier samples actually carry.
+        ('HKCategoryTypeIdentifierAudioExposureEvent', 1::smallint, 'HKCategoryValueEnvironmentalAudioExposureEventMomentaryLimit', 'Momentary Limit', false),
 
         ('HKCategoryTypeIdentifierCervicalMucusQuality', 1::smallint, 'HKCategoryValueCervicalMucusQualityDry', 'Dry', false),
         ('HKCategoryTypeIdentifierCervicalMucusQuality', 2::smallint, 'HKCategoryValueCervicalMucusQualitySticky', 'Sticky', false),
@@ -152,7 +155,6 @@ labels(type_identifier, value, enum_name, label, is_deprecated) AS (
         ('HKCategoryTypeIdentifierContraceptive', 6::smallint, 'HKCategoryValueContraceptiveOral', 'Oral', false),
         ('HKCategoryTypeIdentifierContraceptive', 7::smallint, 'HKCategoryValueContraceptivePatch', 'Patch', false),
 
-        ('HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent', 1::smallint, 'HKCategoryValueEnvironmentalAudioExposureEventMomentaryLimit', 'Momentary Limit', false),
         ('HKCategoryTypeIdentifierHeadphoneAudioExposureEvent', 1::smallint, 'HKCategoryValueHeadphoneAudioExposureEventSevenDayLimit', 'Seven Day Limit', false),
         ('HKCategoryTypeIdentifierLowCardioFitnessEvent', 1::smallint, 'HKCategoryValueLowCardioFitnessEventLowFitness', 'Low Fitness', false),
 
@@ -183,3 +185,9 @@ ON CONFLICT (type_identifier, value) DO UPDATE
 SET enum_name = EXCLUDED.enum_name,
     label = EXCLUDED.label,
     is_deprecated = EXCLUDED.is_deprecated;
+
+-- Earlier revisions of this seed keyed loud-environment events on the iOS 14
+-- constant's spelling. No sample can carry that string (see above), so the row
+-- was unreachable; drop it wherever a previous run inserted it.
+DELETE FROM category_labels
+WHERE type_identifier = 'HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent';
