@@ -120,8 +120,13 @@ public actor HealthSyncEngine {
 
     // MARK: - Configuration
 
-    public func configure(_ config: SyncConfiguration) async {
-        await store.setConfiguration(config)
+    /// Apply a configuration. Check `serverIdentityChange(applying:)` first: a
+    /// configuration that points at a different server or user should be
+    /// applied only after the user has chosen to start fresh (`resetAll()`
+    /// beforehand) or keep progress, and then with `confirmServerIdentity`
+    /// so the store records the new identity as the one its progress belongs to.
+    public func configure(_ config: SyncConfiguration, confirmServerIdentity: Bool = false) async {
+        await store.setConfiguration(config, confirmServerIdentity: confirmServerIdentity)
         await store.pruneAggregateStates(keeping: Set(config.aggregates.map(\.id)))
         observerCoalesceWindow = max(0, config.observerCoalesceWindow)
         buildTransport(from: config)
@@ -319,6 +324,21 @@ public actor HealthSyncEngine {
         await store.resetAll()
         notifyChanged()
         return true
+    }
+
+    /// Whether applying `config` would point the stored progress at a different
+    /// server or user (see `ServerIdentity`). Non-nil means: ask the user
+    /// before `configure` — start fresh (`resetAll()` then `configure(_:
+    /// confirmServerIdentity: true)`) or keep progress (`configure` with the
+    /// confirmation alone).
+    public func serverIdentityChange(applying config: SyncConfiguration) async -> ServerIdentityChange? {
+        await store.serverIdentityChange(applying: config)
+    }
+
+    /// A mismatch between the persisted configuration and the recorded server
+    /// identity — left behind when a change was applied but never confirmed.
+    public func pendingServerIdentityChange() async -> ServerIdentityChange? {
+        await store.pendingServerIdentityChange()
     }
 
     public func snapshot() async -> [TypeSyncStatus] {
@@ -722,6 +742,8 @@ public actor HealthSyncEngine {
                 hkSamples.compactMap { ($0 as? HKHeartbeatSeriesSample).map { ($0.uuid, $0) } },
                 uniquingKeysWith: { a, _ in a }
             )
+            var unreadable = 0
+            var lastError: Error?
             for i in samples.indices {
                 guard let series = byUUID[samples[i].uuid] else { continue }
                 do {
@@ -733,10 +755,16 @@ public actor HealthSyncEngine {
                     // and re-fail the same page on every wake forever, so the
                     // row goes up with the empty trace the mapper initialised.
                     if SeriesEnricher.isPhaseAbortingError(error) { throw error }
-                    await eventLog.log(
-                        .warn, type: descriptor.identifier,
-                        "Heartbeat series \(samples[i].uuid.uuidString) unreadable: \(error) — uploading without beats")
+                    unreadable += 1
+                    lastError = error
                 }
+            }
+            if unreadable > 0, let lastError {
+                // Counted, not named: the event log is persisted and exported,
+                // and must not carry sample UUIDs.
+                await eventLog.log(
+                    .warn, type: descriptor.identifier,
+                    "\(unreadable) of \(samples.count) heartbeat series unreadable (\(lastError)) — uploading without beats")
             }
             return WorkoutEnrichment()
         case .ecg:
@@ -744,16 +772,22 @@ public actor HealthSyncEngine {
                 hkSamples.compactMap { ($0 as? HKElectrocardiogram).map { ($0.uuid, $0) } },
                 uniquingKeysWith: { a, _ in a }
             )
+            var unreadable = 0
+            var lastError: Error?
             for i in samples.indices {
                 guard let ecg = byUUID[samples[i].uuid] else { continue }
                 do {
                     samples[i].ecg?.voltagesUV = try await enricher.voltagesUV(for: ecg)
                 } catch {
                     if SeriesEnricher.isPhaseAbortingError(error) { throw error }
-                    await eventLog.log(
-                        .warn, type: descriptor.identifier,
-                        "ECG \(samples[i].uuid.uuidString) voltages unreadable: \(error) — uploading without the trace")
+                    unreadable += 1
+                    lastError = error
                 }
+            }
+            if unreadable > 0, let lastError {
+                await eventLog.log(
+                    .warn, type: descriptor.identifier,
+                    "\(unreadable) of \(samples.count) ECG voltage traces unreadable (\(lastError)) — uploading without the trace")
             }
             return WorkoutEnrichment()
         case .workout:

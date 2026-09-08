@@ -168,6 +168,11 @@ public struct WorkoutEnrichmentState: Codable, Sendable, Equatable {
 /// Persists sync configuration and per-type state (anchors, counters) as an
 /// atomically-written JSON file in Application Support. An actor so concurrent
 /// per-type sync tasks can update state safely.
+///
+/// The file is protected until first unlock and excluded from backup
+/// (`ProtectedStateFile`). It never contains the bearer token: the token lives
+/// in the `TokenStore` (the Keychain in production) and is only ever held in
+/// memory on `configuration.authToken`.
 public actor SyncStateStore {
     public private(set) var configuration: SyncConfiguration
     public private(set) var typeStates: [String: TypeSyncState]
@@ -179,10 +184,17 @@ public actor SyncStateStore {
     public private(set) var workoutRoutesState: WorkoutEnrichmentState
     /// Watermark/counters for the late workout-stream enrichment phase.
     public private(set) var workoutStreamsState: WorkoutEnrichmentState
+    /// The server and user every anchor and watermark above was earned
+    /// against. Nil until a server URL has been applied. See `ServerIdentity`.
+    public private(set) var serverIdentity: ServerIdentity?
     /// Stable per-install ID sent with every batch.
     public let deviceID: String
 
     private let fileURL: URL
+    private let tokenStore: TokenStore
+    /// Set when the last hand-off to the token store failed, so the next
+    /// configuration write retries instead of assuming the token is safe.
+    private var tokenStoreDirty = false
     private let logger = Logger(subsystem: PulsLog.subsystem, category: "state")
     private var saveTask: Task<Void, Never>?
 
@@ -194,6 +206,7 @@ public actor SyncStateStore {
         var activitySummaryState: ActivitySummaryState
         var workoutRoutesState: WorkoutEnrichmentState
         var workoutStreamsState: WorkoutEnrichmentState
+        var serverIdentity: ServerIdentity?
 
         init(
             configuration: SyncConfiguration,
@@ -202,7 +215,8 @@ public actor SyncStateStore {
             aggregateStates: [String: AggregateSyncState],
             activitySummaryState: ActivitySummaryState,
             workoutRoutesState: WorkoutEnrichmentState,
-            workoutStreamsState: WorkoutEnrichmentState
+            workoutStreamsState: WorkoutEnrichmentState,
+            serverIdentity: ServerIdentity?
         ) {
             self.configuration = configuration
             self.typeStates = typeStates
@@ -211,6 +225,7 @@ public actor SyncStateStore {
             self.activitySummaryState = activitySummaryState
             self.workoutRoutesState = workoutRoutesState
             self.workoutStreamsState = workoutStreamsState
+            self.serverIdentity = serverIdentity
         }
 
         // The whole file is loaded with `try?` — a synthesized decoder would
@@ -229,15 +244,23 @@ public actor SyncStateStore {
                 WorkoutEnrichmentState.self, forKey: .workoutRoutesState) ?? WorkoutEnrichmentState()
             workoutStreamsState = try c.decodeIfPresent(
                 WorkoutEnrichmentState.self, forKey: .workoutStreamsState) ?? WorkoutEnrichmentState()
+            serverIdentity = try c.decodeIfPresent(ServerIdentity.self, forKey: .serverIdentity)
         }
     }
 
-    public init(directory: URL? = nil) {
+    /// - Parameters:
+    ///   - directory: Where `sync-state.json` lives; Application Support by default.
+    ///   - tokenStore: Where the bearer token lives; the app Keychain by default.
+    ///     Tests and throwaway engines pass an `InMemoryTokenStore`.
+    public init(directory: URL? = nil, tokenStore: TokenStore? = nil) {
         let dir = directory ?? FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("PulsHealthSync", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        ProtectedStateFile.prepareDirectory(dir)
         self.fileURL = dir.appendingPathComponent("sync-state.json")
+        let tokenStore = tokenStore ?? KeychainTokenStore()
+        self.tokenStore = tokenStore
+        let logger = Logger(subsystem: PulsLog.subsystem, category: "state")
 
         var loaded: PersistedState?
         if let data = try? Data(contentsOf: fileURL) {
@@ -251,18 +274,54 @@ public actor SyncStateStore {
                 let quarantine = fileURL.appendingPathExtension(
                     "corrupt-\(Int(Date().timeIntervalSince1970))")
                 try? FileManager.default.moveItem(at: fileURL, to: quarantine)
-                Logger(subsystem: PulsLog.subsystem, category: "state").error(
+                ProtectedStateFile.protect(quarantine)
+                logger.error(
                     "Sync state file undecodable (\(error)); moved aside as \(quarantine.lastPathComponent) and starting fresh")
             }
         }
-        if let decoded = loaded {
+        if var decoded = loaded {
+            var rewrite = false
+            if let legacyToken = decoded.configuration.authToken {
+                // One-time migration: builds before the Keychain store kept the
+                // token in this file. Move it out and rewrite the file without
+                // it. If the Keychain refuses, the file keeps the token for now
+                // and the migration retries on the next launch — losing the
+                // token would stall every sync until the user re-enters it.
+                do {
+                    try tokenStore.setToken(legacyToken)
+                    rewrite = true
+                    logger.notice("Moved the bearer token out of sync-state.json into the token store")
+                } catch {
+                    tokenStoreDirty = true
+                    logger.error("Token store rejected the legacy token; leaving it in the state file for now: \(error)")
+                }
+            } else {
+                do {
+                    decoded.configuration.authToken = try tokenStore.token()
+                } catch {
+                    logger.error("Could not read the bearer token from the token store: \(error)")
+                }
+            }
+            if decoded.serverIdentity == nil,
+               let adopted = ServerIdentity(configuration: decoded.configuration) {
+                // A state file from before identities were recorded: whatever
+                // progress it holds was earned against the server it names.
+                decoded.serverIdentity = adopted
+                rewrite = true
+            }
             self.configuration = decoded.configuration
             self.typeStates = decoded.typeStates
             self.aggregateStates = decoded.aggregateStates
             self.activitySummaryState = decoded.activitySummaryState
             self.workoutRoutesState = decoded.workoutRoutesState
             self.workoutStreamsState = decoded.workoutStreamsState
+            self.serverIdentity = decoded.serverIdentity
             self.deviceID = decoded.deviceID
+            if rewrite {
+                // Can't call the isolated persistNow() from the nonisolated
+                // init; the shared writer strips the token the same way.
+                Self.writeSnapshot(decoded, to: fileURL, logger: logger)
+            }
         } else {
             self.configuration = SyncConfiguration()
             self.typeStates = [:]
@@ -270,7 +329,12 @@ public actor SyncStateStore {
             self.activitySummaryState = ActivitySummaryState()
             self.workoutRoutesState = WorkoutEnrichmentState()
             self.workoutStreamsState = WorkoutEnrichmentState()
+            self.serverIdentity = nil
             self.deviceID = UUID().uuidString
+            // A fresh file, but the Keychain may still hold a token from a
+            // previous install of the same bundle — reuse it, exactly as the
+            // old file-based token would have survived a state reset.
+            self.configuration.authToken = (try? tokenStore.token()) ?? nil
         }
     }
 
@@ -286,9 +350,77 @@ public actor SyncStateStore {
 
     // MARK: - Writes
 
-    public func setConfiguration(_ config: SyncConfiguration) {
+    /// Replace the configuration. The token goes to the token store; the file
+    /// gets everything else.
+    ///
+    /// The server identity is recorded from `config` unless applying it would
+    /// abandon progress earned against a different server or user
+    /// (`serverIdentityChange(applying:)` non-nil) and the caller has not
+    /// passed `confirmServerIdentity` — the app asks the user first (start
+    /// fresh, or keep progress) and confirms afterwards. Until then the stored
+    /// identity stays put, so a launch after an interrupted change still sees
+    /// the mismatch and can ask again.
+    public func setConfiguration(_ config: SyncConfiguration, confirmServerIdentity: Bool = false) {
+        let change = serverIdentityChange(applying: config)
+        if config.authToken != configuration.authToken || tokenStoreDirty {
+            storeToken(config.authToken)
+        }
         configuration = config
+        if change == nil || confirmServerIdentity, let applied = ServerIdentity(configuration: config) {
+            serverIdentity = applied
+        }
         persist()
+    }
+
+    private func storeToken(_ token: String?) {
+        do {
+            try tokenStore.setToken(token)
+            tokenStoreDirty = false
+        } catch {
+            tokenStoreDirty = true
+            logger.error("Could not write the bearer token to the token store: \(error)")
+        }
+    }
+
+    // MARK: - Server identity
+
+    /// Pure comparison behind `serverIdentityChange(applying:)`: true when both
+    /// identities are present and differ. Nothing stored, or a configuration
+    /// without a server URL, is never a change.
+    public nonisolated static func serverIdentityChanged(
+        stored: ServerIdentity?, applied: ServerIdentity?
+    ) -> Bool {
+        guard let stored, let applied else { return false }
+        return stored != applied
+    }
+
+    /// True when any anchor or watermark has been earned — i.e. there is
+    /// progress a server change could strand.
+    public var hasSyncProgress: Bool {
+        typeStates.values.contains { $0.anchorData != nil || $0.totalSamplesExported > 0 }
+            || aggregateStates.values.contains { $0.computedThrough != nil }
+            || activitySummaryState.computedThrough != nil
+            || workoutRoutesState.computedThrough != nil
+            || workoutStreamsState.computedThrough != nil
+    }
+
+    /// The change applying `config` would make to the recorded server identity,
+    /// or nil when it is the same server and user, no identity is recorded yet,
+    /// or there is no progress to strand. A non-nil result means the caller
+    /// should ask before `setConfiguration(_:confirmServerIdentity:)`.
+    public func serverIdentityChange(applying config: SyncConfiguration) -> ServerIdentityChange? {
+        guard let stored = serverIdentity,
+              let applied = ServerIdentity(configuration: config),
+              Self.serverIdentityChanged(stored: stored, applied: applied),
+              hasSyncProgress else { return nil }
+        return ServerIdentityChange(from: stored, to: applied)
+    }
+
+    /// The mismatch, if any, between the recorded identity and the persisted
+    /// configuration itself — the state a launch finds after a change was
+    /// applied but never confirmed.
+    public func pendingServerIdentityChange() -> ServerIdentityChange? {
+        serverIdentityChange(applying: configuration)
     }
 
     public func update(_ identifier: String, _ mutate: @Sendable (inout TypeSyncState) -> Void) {
@@ -328,9 +460,19 @@ public actor SyncStateStore {
         }
     }
 
+    /// `lastError` text: scrubbed of the bearer token, URL queries and control
+    /// characters and capped, because it is written to disk and exported with
+    /// diagnostics (a server error body can be a whole HTML page).
+    private func errorText(_ error: Error) -> String {
+        ErrorScrubber.describe(
+            error, limit: ErrorScrubber.persistedLimit,
+            secrets: [configuration.authToken].compactMap { $0 })
+    }
+
     public func recordError(identifier: String, error: Error) {
+        let text = errorText(error)
         update(identifier) { s in
-            s.lastError = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+            s.lastError = text
             s.lastErrorAt = Date()
         }
     }
@@ -402,8 +544,9 @@ public actor SyncStateStore {
     }
 
     public func recordAggregateError(configID: UUID, error: Error) {
+        let text = errorText(error)
         updateAggregate(configID) { s in
-            s.lastError = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+            s.lastError = text
             s.lastErrorAt = Date()
         }
     }
@@ -478,8 +621,9 @@ public actor SyncStateStore {
     }
 
     public func recordActivitySummaryError(error: Error) {
+        let text = errorText(error)
         updateActivitySummary { s in
-            s.lastError = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+            s.lastError = text
             s.lastErrorAt = Date()
         }
     }
@@ -558,8 +702,9 @@ public actor SyncStateStore {
     }
 
     public func recordWorkoutEnrichmentError(_ kind: WorkoutEnrichmentKind, error: Error) {
+        let text = errorText(error)
         updateWorkoutEnrichment(kind) { s in
-            s.lastError = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+            s.lastError = text
             s.lastErrorAt = Date()
         }
     }
@@ -649,11 +794,23 @@ public actor SyncStateStore {
         let snapshot = PersistedState(
             configuration: configuration, typeStates: typeStates, deviceID: deviceID,
             aggregateStates: aggregateStates, activitySummaryState: activitySummaryState,
-            workoutRoutesState: workoutRoutesState, workoutStreamsState: workoutStreamsState
+            workoutRoutesState: workoutRoutesState, workoutStreamsState: workoutStreamsState,
+            serverIdentity: serverIdentity
         )
+        Self.writeSnapshot(snapshot, to: fileURL, logger: logger)
+    }
+
+    /// The one path to disk. The token is stripped here (belt and braces —
+    /// `SyncConfiguration` refuses to encode it anyway) and the file is written
+    /// atomically with protection and backup exclusion.
+    private nonisolated static func writeSnapshot(
+        _ snapshot: PersistedState, to url: URL, logger: Logger
+    ) {
+        var snapshot = snapshot
+        snapshot.configuration.authToken = nil
         do {
             let data = try JSONEncoder.puls.encode(snapshot)
-            try data.write(to: fileURL, options: .atomic)
+            try ProtectedStateFile.write(data, to: url)
         } catch {
             logger.error("Failed to persist sync state: \(error)")
         }

@@ -49,6 +49,13 @@ final class AppModel {
     /// Cleared when a later request actually determines them.
     var authorizationHint: String?
     var lastErrorMessage: String?
+    /// A Save & Apply that would point the sync at a different server or user
+    /// ID. Held here — nothing applied yet — until the user chooses between
+    /// starting fresh and keeping progress (`confirmServerChange`); RootView
+    /// presents the prompt wherever the apply came from.
+    private(set) var pendingServerChange: ServerIdentityChange?
+    /// Whether the deferred apply asked to backfill newly enabled types.
+    @ObservationIgnored private var pendingServerChangeWantsNewTypeSync = false
 
     /// Types a permission request failed to determine this session. Re-requesting
     /// them just makes the sheet flash and auto-dismiss, so the proactive tab-exit
@@ -93,6 +100,12 @@ final class AppModel {
         // exactly the state the observer and BG schedule should run in.
         if !config.observedTypeIdentifiers.isEmpty, !needsAuthorization {
             markAuthorizationRequested()
+        }
+        // A server/user change that was applied but never confirmed (the app
+        // died between the two) leaves the stored progress pointing at the
+        // wrong server. Ask again rather than quietly syncing on.
+        if let change = await engine.pendingServerIdentityChange() {
+            pendingServerChange = change
         }
 
         // Observe engine changes -> refresh dashboard.
@@ -263,9 +276,19 @@ final class AppModel {
         UserDefaults.standard.set(true, forKey: "authorizationRequested")
     }
 
-    func applyConfiguration(syncNewTypes: Bool = false) async {
+    /// Push the draft to the engine. Returns false when nothing was applied
+    /// because the draft points at a different server or user ID than the
+    /// stored sync progress belongs to: the prompt is raised instead, and the
+    /// apply resumes from `confirmServerChange` with the user's choice.
+    @discardableResult
+    func applyConfiguration(syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false) async -> Bool {
+        if !serverChangeConfirmed, let change = await engine.serverIdentityChange(applying: config) {
+            pendingServerChange = change
+            pendingServerChangeWantsNewTypeSync = syncNewTypes
+            return false
+        }
         await resetReidentifiedAggregates()
-        await engine.configure(config)
+        await engine.configure(config, confirmServerIdentity: serverChangeConfirmed)
         appliedConfig = config
         // User identity is independent of workout availability. Send it as its
         // own tiny batch so Save & Apply updates the server immediately even when
@@ -283,7 +306,7 @@ final class AppModel {
         await engine.startObserving()
         await refresh()
 
-        guard syncNewTypes, configured, config.authToken != nil, !isSyncingAll else { return }
+        guard syncNewTypes, configured, config.authToken != nil, !isSyncingAll else { return true }
         // Types enabled but never synced (no anchor) start backfilling right
         // away so they appear live on the dashboard instead of "not synced".
         let newTypes = statuses
@@ -301,7 +324,7 @@ final class AppModel {
         let activitySummaryState = await engine.store.activitySummaryState
         let newRings = config.enabledTypes.contains(HealthTypeCatalog.activitySummaryIdentifier)
             && activitySummaryState.computedThrough == nil
-        guard !newTypes.isEmpty || !newAggregates.isEmpty || newRings else { return }
+        guard !newTypes.isEmpty || !newAggregates.isEmpty || newRings else { return true }
 
         // This is usually the largest data movement of an install, so it runs
         // inside a wake like every other entry point (X-Wake-ID on its batches,
@@ -331,6 +354,53 @@ final class AppModel {
             }
             await engine.finishWake(wake)
         }
+        return true
+    }
+
+    // MARK: - Server / user change
+
+    /// Resolve a deferred apply. "Start fresh" runs the existing full reset —
+    /// every anchor and watermark — so the new server receives all history
+    /// from the start date; "keep progress" leaves them, so only data newer
+    /// than the old high-water mark reaches it. Either way the identity is
+    /// recorded only now, with the choice, never before it.
+    ///
+    /// Synchronous on purpose: the alert button's action and the dismissal of
+    /// its `isPresented` binding land in the same turn, so the choice is
+    /// captured here, before any await, and the work continues in a task.
+    func confirmServerChange(startFresh: Bool) {
+        guard let change = pendingServerChange else { return }
+        pendingServerChange = nil
+        let wantsNewTypeSync = pendingServerChangeWantsNewTypeSync
+        pendingServerChangeWantsNewTypeSync = false
+        Task {
+            await resolveServerChange(change, startFresh: startFresh, wantsNewTypeSync: wantsNewTypeSync)
+        }
+    }
+
+    private func resolveServerChange(
+        _ change: ServerIdentityChange, startFresh: Bool, wantsNewTypeSync: Bool
+    ) async {
+        if startFresh {
+            guard await engine.resetAll() else {
+                lastErrorMessage = "A sync is in progress. Wait for it to finish, then save again."
+                return
+            }
+            await engine.eventLog.log(
+                .warn, "Sync target changed (\(change.summary)) — all anchors and watermarks reset; re-syncing history")
+        } else {
+            await engine.eventLog.log(
+                .warn, "Sync target changed (\(change.summary)) — progress kept; only new data will reach it")
+        }
+        await applyConfiguration(
+            syncNewTypes: startFresh || wantsNewTypeSync, serverChangeConfirmed: true)
+    }
+
+    /// Dismiss the prompt without applying. The draft keeps what was typed so
+    /// the user can adjust it; nothing has reached the engine.
+    func cancelServerChange() {
+        pendingServerChange = nil
+        pendingServerChangeWantsNewTypeSync = false
     }
 
     // MARK: - Staged Data Types changes
@@ -372,6 +442,14 @@ final class AppModel {
     /// backfilling newly enabled types/aggregates. Mirrors Settings' Save & Apply.
     func applyChanges() async {
         await applyConfiguration(syncNewTypes: true)
+    }
+
+    /// Validates a user ID edit: a UUID in any case or nil. Normalized to
+    /// lowercase to match `PulsDefaultUser.id`; the server treats the ID
+    /// case-insensitively but the stored identity compares lowercased.
+    nonisolated static func normalizedUserID(_ text: String) -> String? {
+        UUID(uuidString: text.trimmingCharacters(in: .whitespacesAndNewlines))
+            .map { $0.uuidString.lowercased() }
     }
 
     /// Before applying, reset the watermark of any aggregate whose server

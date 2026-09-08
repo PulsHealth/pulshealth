@@ -13,7 +13,7 @@ public struct UploadResult: Sendable {
     }
 }
 
-public enum TransportError: Error, LocalizedError {
+public enum TransportError: Error, LocalizedError, CustomStringConvertible {
     case notConfigured
     case serverError(status: Int, body: String)
     case network(Error)
@@ -22,19 +22,28 @@ public enum TransportError: Error, LocalizedError {
     /// `serverError` so the UI can name the cause instead of showing a raw 400.
     case unsupportedProtocol(supportedVersions: [Int])
 
+    /// The response body is kept only in scrubbed, capped form: it is shown
+    /// on screen, but it is also what ends up in `lastError` and the event log,
+    /// and a server (or a proxy in front of it) may echo headers or return a
+    /// whole HTML page.
     public var errorDescription: String? {
         switch self {
         case .notConfigured:
             return "Server URL or auth token not configured"
         case .serverError(let status, let body):
-            return "Server returned \(status): \(body.prefix(200))"
+            return "Server returned \(status): \(ErrorScrubber.scrub(body, limit: ErrorScrubber.displayLimit))"
         case .network(let error):
-            return "Network error: \(error.localizedDescription)"
+            return "Network error: \(ErrorScrubber.scrub(error.localizedDescription, limit: ErrorScrubber.displayLimit))"
         case .unsupportedProtocol(let versions):
+            // Built from integers only — nothing here needs scrubbing.
             let list = versions.isEmpty ? "none" : versions.map(String.init).joined(separator: ", ")
             return "This server does not support this app version (server protocol \(list), app protocol \(PulsProtocol.version))"
         }
     }
+
+    /// `"\(error)"` on an enum would otherwise dump the associated values —
+    /// the entire raw response body — into whichever log interpolated it.
+    public var description: String { errorDescription ?? "Transport error" }
 
     /// Server 4xx errors won't succeed on retry; everything else might.
     var isRetryable: Bool {

@@ -45,7 +45,7 @@ public actor SyncEventLog {
         let dir = directory ?? FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("PulsHealthSync", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        ProtectedStateFile.prepareDirectory(dir)
         self.fileURL = dir.appendingPathComponent("event-log.json")
         if let data = try? Data(contentsOf: fileURL),
            let decoded = try? JSONDecoder.puls.decode([SyncEvent].self, from: data) {
@@ -53,7 +53,12 @@ public actor SyncEventLog {
         }
     }
 
+    /// Record an event. The message is scrubbed first (`ErrorScrubber`): this
+    /// buffer is persisted and exported through the diagnostics share sheet,
+    /// so a bearer token, a URL query or a raw server error page must not
+    /// survive in it even when an interpolated error carried one.
     public func log(_ level: SyncEvent.Level, type: String? = nil, _ message: String) {
+        let message = ErrorScrubber.scrub(message, limit: ErrorScrubber.eventLimit)
         let event = SyncEvent(level: level, type: type, message: message)
         events.append(event)
         if events.count > Self.capacity {
@@ -107,7 +112,7 @@ public actor SyncEventLog {
             try? await Task.sleep(for: .seconds(1))
             saveTask = nil
             if let data = try? JSONEncoder.puls.encode(events) {
-                try? data.write(to: fileURL, options: .atomic)
+                try? ProtectedStateFile.write(data, to: fileURL)
             }
         }
     }

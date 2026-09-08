@@ -162,7 +162,7 @@ public actor WakeLog {
         let dir = directory ?? FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("PulsHealthSync", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        ProtectedStateFile.prepareDirectory(dir)
         self.fileURL = dir.appendingPathComponent("wake-log.json")
         if let data = try? Data(contentsOf: fileURL),
            let decoded = try? JSONDecoder.puls.decode([WakeRecord].self, from: data) {
@@ -178,7 +178,7 @@ public actor WakeLog {
             // Can't call the isolated persistNow() from the nonisolated init;
             // write inline (same atomic encode).
             if changed, let data = try? JSONEncoder.puls.encode(records) {
-                try? data.write(to: fileURL, options: .atomic)
+                try? ProtectedStateFile.write(data, to: fileURL)
             }
         }
     }
@@ -285,7 +285,7 @@ public actor WakeLog {
 
     private func persistNow() {
         if let data = try? JSONEncoder.puls.encode(records) {
-            try? data.write(to: fileURL, options: .atomic)
+            try? ProtectedStateFile.write(data, to: fileURL)
         }
     }
 

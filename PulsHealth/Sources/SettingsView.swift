@@ -191,8 +191,11 @@ struct SettingsView: View {
         .alert("Start initial backfill?", isPresented: $confirmBackfill) {
             Button("Start Backfill") {
                 Task {
-                    await apply()
-                    await model.startBackfill()
+                    // A server/user change defers the apply to the fresh-vs-
+                    // keep prompt; the backfill is then part of "start fresh".
+                    if await apply() {
+                        await model.startBackfill()
+                    }
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -229,13 +232,15 @@ struct SettingsView: View {
         }
     }
 
-    private func apply() async {
+    /// False when the apply was deferred to the server-change prompt.
+    @discardableResult
+    private func apply() async -> Bool {
         // Save & Apply is disabled while the URL is invalid; an empty field
         // clears the server.
         model.config.serverURL = validatedServerURL
         let token = enteredToken
         model.config.authToken = token.isEmpty ? nil : token
-        await model.applyConfiguration()
+        return await model.applyConfiguration()
     }
 
     /// Accepts a pasted `PULS_TOKEN=…` line from the server's `.env` as well as
@@ -289,14 +294,69 @@ private struct ConnectionTestResultRow: View {
     }
 }
 
+/// The fresh-vs-keep prompt raised when Save & Apply (from Settings, the User
+/// page or the Data Types tab) would point the sync at a different server or
+/// user ID than the stored anchors and watermarks were earned against.
+/// Attached at the root so it appears whichever tab the apply came from.
+struct ServerChangePrompt: ViewModifier {
+    @Environment(AppModel.self) private var model
+
+    func body(content: Content) -> some View {
+        content.alert(
+            model.pendingServerChange?.serverChanged == false
+                ? "Sync as a different user?" : "Sync to a different server?",
+            isPresented: Binding(
+                get: { model.pendingServerChange != nil },
+                // An alert only closes through its buttons, and each of them
+                // clears the pending change itself; the binding's own
+                // dismissal must not race ahead and cancel the choice.
+                set: { _ in }
+            )
+        ) {
+            Button("Start Fresh (Recommended)") { model.confirmServerChange(startFresh: true) }
+            Button("Keep Progress") { model.confirmServerChange(startFresh: false) }
+            Button("Cancel", role: .cancel) { model.cancelServerChange() }
+        } message: {
+            Text(Self.message(for: model.pendingServerChange))
+        }
+    }
+
+    static func message(for change: ServerIdentityChange?) -> String {
+        guard let change else { return "" }
+        let what = change.serverChanged && change.userChanged
+            ? "The server and user ID changed"
+            : change.serverChanged ? "The server changed" : "The user ID changed"
+        let target = change.userChanged && !change.serverChanged
+            ? "the server treats a new user ID as a different person, so nothing synced so far counts for it"
+            : "your sync progress belongs to the previous server"
+        return """
+        \(what) (\(change.summary)) — \(target).
+
+        Start fresh re-syncs all history from the start date (recommended). \
+        Keep progress sends only new data from here on, and the new target \
+        never receives anything older.
+        """
+    }
+}
+
+extension View {
+    func serverChangePrompt() -> some View { modifier(ServerChangePrompt()) }
+}
+
 /// Edits the active user's identity (name/email/dob/sex). Every field starts
 /// unset — nothing about the person is assumed — and each may be left that way.
-/// The user_id is stable and shown read-only. Saving pushes the configuration
-/// to the engine so the next batch syncs as this user and updates the server's
-/// `users` row.
+/// The user ID lives under Advanced: it is stable across reinstalls and only
+/// needs changing when several people share one server. Saving pushes the
+/// configuration to the engine so the next batch syncs as this user and
+/// updates the server's `users` row; a changed ID goes through the same
+/// fresh-vs-keep prompt as a server change.
 struct UserView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    @State private var userIDText = ""
+    @State private var userIDLoaded = false
+
+    private var userIDValid: Bool { AppModel.normalizedUserID(userIDText) != nil }
 
     var body: some View {
         @Bindable var model = model
@@ -347,11 +407,28 @@ struct UserView: View {
             }
 
             Section {
-                LabeledContent("User ID", value: model.config.userID)
-                    .textSelection(.enabled)
-                    .font(.footnote)
+                TextField("User ID (UUID)", text: $userIDText)
+                    .font(.footnote.monospaced())
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .onChange(of: userIDText) { _, text in
+                        // Only a valid UUID reaches the draft; an in-progress
+                        // edit leaves the applied ID untouched.
+                        if let normalized = AppModel.normalizedUserID(text) {
+                            model.config.userID = normalized
+                        }
+                    }
+                if !userIDValid {
+                    Text("Not a valid UUID (8-4-4-4-12 hex digits). The previous ID stays in effect until this is fixed.")
+                        .font(.caption).foregroundStyle(.red)
+                }
+                Button("Generate New ID") {
+                    userIDText = UUID().uuidString.lowercased()
+                }
+            } header: {
+                Text("Advanced")
             } footer: {
-                Text("This ID tags every row stored for you on the server and is stable across reinstalls. If several people share one server, each should sync under a distinct ID — editing it here is planned.")
+                Text("Every row stored for you on the server is tagged with this ID, and it survives reinstalls. If several people share one server, each should sync under a distinct ID. Changing it makes the server treat you as a different person, so saving asks whether to re-sync all history under the new ID or keep going with only new data.")
             }
 
             Section {
@@ -359,9 +436,15 @@ struct UserView: View {
                     Task { await model.applyConfiguration() }
                     dismiss()
                 }
+                .disabled(!userIDValid)
             }
         }
         .navigationTitle("User")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            guard !userIDLoaded else { return }
+            userIDLoaded = true
+            userIDText = model.config.userID
+        }
     }
 }

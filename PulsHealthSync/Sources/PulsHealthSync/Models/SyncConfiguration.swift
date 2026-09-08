@@ -28,7 +28,10 @@ public struct SyncConfiguration: Codable, Sendable, Equatable {
     public var startDate: Date
     /// Server batch upload endpoint, e.g. https://host:8080
     public var serverURL: URL?
-    /// Bearer token for the ingest server.
+    /// Bearer token for the ingest server. In-memory only: `encode(to:)` never
+    /// writes it, `SyncStateStore` keeps it in its `TokenStore` (the Keychain)
+    /// and fills it back in on load. The decoder still reads the key so a state
+    /// file from before the Keychain store can be migrated.
     public var authToken: String?
     /// Max types exported concurrently during backfill. HealthKit's store handles
     /// 2-4 concurrent queries well; beyond that, XPC contention erodes throughput.
@@ -161,12 +164,14 @@ public struct SyncConfiguration: Codable, Sendable, Equatable {
     /// cleared field round-trips as cleared rather than silently disappearing.
     /// (State files from the first user-aware schema used synthesized encoding
     /// and therefore omitted nil values; decoding treats an absent key as nil.)
+    ///
+    /// `authToken` is deliberately absent: the token belongs in the Keychain,
+    /// and every encoding of this struct lands on disk.
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(enabledTypes, forKey: .enabledTypes)
         try c.encode(startDate, forKey: .startDate)
         try c.encodeIfPresent(serverURL, forKey: .serverURL)
-        try c.encodeIfPresent(authToken, forKey: .authToken)
         try c.encode(maxConcurrentTypes, forKey: .maxConcurrentTypes)
         try c.encode(batchSize, forKey: .batchSize)
         try c.encode(observerCoalesceWindow, forKey: .observerCoalesceWindow)

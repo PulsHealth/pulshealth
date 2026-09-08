@@ -31,9 +31,21 @@ Sources/PulsHealthSync/
 │   └── Reconciliation.swift         Per-UTC-month UUID XOR digests vs GET /v1/digest;
 │                                    re-uploads missing samples, deletes server orphans.
 ├── Anchors/
-│   └── SyncStateStore.swift         Actor persisting config + per-type state (anchor
-│                                    blob, counters, timestamps, errors) as atomic JSON
-│                                    in Application Support; 250 ms debounced writes.
+│   ├── SyncStateStore.swift         Actor persisting config + per-type state (anchor
+│   │                                blob, counters, timestamps, errors) as atomic JSON
+│   │                                in Application Support; 250 ms debounced writes.
+│   │                                Never writes the bearer token; records the
+│   │                                ServerIdentity its progress belongs to and
+│   │                                reports when a configuration would move it.
+│   ├── TokenStore.swift             TokenStore protocol; KeychainTokenStore (generic
+│   │                                password, AfterFirstUnlockThisDeviceOnly, service
+│   │                                = bundle ID + ".sync-token") and InMemoryTokenStore.
+│   ├── ServerIdentity.swift         Normalized host+port+path+userID the stored anchors
+│   │                                were earned against; ServerIdentityChange drives
+│   │                                the app's start-fresh vs keep-progress prompt.
+│   └── ProtectedStateFile.swift     Atomic writes with completeUntilFirstUserAuthen-
+│                                    tication protection + backup exclusion for every
+│                                    state file (sync-state, event-log, wake-log).
 ├── Transport/
 │   ├── PulsProtocol.swift           Protocol version (`PulsProtocol.version`, the
 │   │                                X-Puls-Protocol header, clientVersion) and
@@ -42,7 +54,8 @@ Sources/PulsHealthSync/
 │   │                                POST /v1/batches, bearer auth, exponential backoff
 │   │                                (4 retries, jittered; 4xx never retried, except 429),
 │   │                                probe() (header-only batch), and TransportError
-│   │                                incl. `unsupportedProtocol`.
+│   │                                incl. `unsupportedProtocol`; its text is scrubbed
+│   │                                (ErrorScrubber) before it is shown or logged.
 │   ├── ServerAPIClient.swift        Read side: GET /v1/capabilities, /v1/stats,
 │   │                                /v1/digest, /v1/uuids.
 │   ├── ConnectionTest.swift         ConnectionTester: capabilities → probe fallback,
@@ -75,7 +88,12 @@ Sources/PulsHealthSync/
 │                                    metadata coercion, workout statistics.
 └── Metrics/
     ├── SyncEventLog.swift           Ring buffer (2,000) + persisted file + os.Logger
-    │                                mirror + AsyncStream for live UI.
+    │                                mirror + AsyncStream for live UI. Messages are
+    │                                scrubbed before they are kept; never sample UUIDs.
+    ├── ErrorScrubber.swift          Redacts bearer/basic credentials, URL queries and
+    │                                known secrets, drops control characters, caps
+    │                                length — for lastError, the event log and
+    │                                TransportError descriptions.
     └── WakeLog.swift                Durable per-wake telemetry: WakeTrigger,
                                      WakeContext + WakeScope (@TaskLocal propagated
                                      to nested syncs and the transport), and one
@@ -95,11 +113,45 @@ handler and its work task can't clobber each other's outcome.
 
 Tests (`Tests/PulsHealthSyncTests/`, Swift Testing): catalog integrity (unique
 identifiers, unit parsing), serialization (NDJSON line structure, gzip framing
-+ CRC, metadata round-trip), and the protocol surface (`ProtocolTests.swift`:
-header version fields, request headers, protocol-rejection parsing,
-capabilities decoding, URL validation, and the connection test end to end
-against an in-process `URLProtocol`). HealthKit itself isn't mockable, so engine
-behavior is exercised in the app via the benchmark and diagnostics screens.
++ CRC, metadata round-trip), the state store (token migration and Keychain
+hand-off, server-identity change detection and reset, scrubbed error text), and
+the protocol surface (`ProtocolTests.swift`: header version fields, request
+headers, protocol-rejection parsing, capabilities decoding, URL validation, and
+the connection test end to end against an in-process `URLProtocol`). HealthKit
+itself isn't mockable, so engine behavior is exercised in the app via the
+benchmark and diagnostics screens.
+
+## Secrets and state at rest
+
+The bearer token is the one secret the package holds. It lives in the Keychain
+(`KeychainTokenStore`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` so
+background wakes after a reboot can still build a transport, and never restored
+onto another device) and is held in memory on `SyncConfiguration.authToken`;
+`SyncConfiguration.encode(to:)` refuses to write it and `SyncStateStore` fills it
+back in on load. A state file from a build that kept the token inline is migrated
+on first load: the token moves to the Keychain and the file is rewritten without
+it. Pass an `InMemoryTokenStore` to `SyncStateStore(directory:tokenStore:)` for
+tests and throwaway engines.
+
+`sync-state.json`, `event-log.json`, `wake-log.json` and any quarantined copy are
+written with `FileProtectionType.completeUntilFirstUserAuthentication` and
+excluded from backup (`ProtectedStateFile`): anchors are opaque, device-specific
+`HKQueryAnchor` blobs that mean nothing on another device.
+
+Persisted progress is tied to a `ServerIdentity` (normalized host, port, path and
+user ID). `SyncStateStore.serverIdentityChange(applying:)` is non-nil when a new
+configuration would point that progress at a different server or user while
+there is progress to strand; the app then asks whether to start fresh
+(`resetAll()`, then `configure(_:confirmServerIdentity: true)`) or keep going
+(confirm without the reset). The identity is recorded only with that
+confirmation, so a launch after an interrupted change finds the mismatch again
+(`pendingServerIdentityChange()`).
+
+Error text that is persisted or logged goes through `ErrorScrubber`: bearer and
+basic credentials, URL query strings and the configured token are redacted,
+control characters dropped, and `lastError` is capped at 120 characters. The
+event log never names sample UUIDs. This covers every `TransportError`,
+including a server's rejection body and the `unsupportedProtocol` message.
 
 ## Wire protocol version
 
