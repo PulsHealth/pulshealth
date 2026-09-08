@@ -389,12 +389,13 @@ No. The app requests read access only, and its usage strings say so.
   configure and nowhere else.
 - **One bearer token, today.** The ingest server accepts a single static
   `PULS_TOKEN`; whoever holds it can upload and delete data for any user ID.
-  Per-device tokens bound to a user are planned. The token is currently kept
-  in the app's sync-state file rather than the Keychain; moving it is a
-  pre-1.0 requirement. Guessing it is slow, at least: ingest rate-limits
-  **failed** authentications per client IP (10 per minute, `429` with
-  `Retry-After` after that) and never throttles a request that presents the
-  right token — `server/README.md`, "Rate limiting".
+  Per-device tokens bound to a user are planned. On the phone the token is
+  kept in the Keychain (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, so
+  background wakes can still reach it and a backup cannot carry it to another
+  device), never in the sync-state file. Guessing it is slow, at least: ingest
+  rate-limits **failed** authentications per client IP (10 per minute, `429`
+  with `Retry-After` after that) and never throttles a request that presents
+  the right token — `server/README.md`, "Rate limiting".
 - **Put the ingest endpoint behind TLS.** Every service binds to loopback by
   default; expose only the ingest port, and only through a TLS-terminating
   proxy or a VPN. The one exception is `scripts/bootstrap.sh --lan`
@@ -487,6 +488,10 @@ reduce memory and re-upload cost after failures.
   what to run before a pull request. Issue templates cover bugs, feature
   requests, and questions from people implementing their own receiver.
 - [`SECURITY.md`](SECURITY.md) — private vulnerability reporting and scope.
+- [`docs/privacy-policy.md`](docs/privacy-policy.md) — what the app reads,
+  where it sends it (only your server), and what stays on the phone.
+  [`docs/appstore/`](docs/appstore/README.md) holds the App Store listing copy,
+  review notes, and the recipe for the throwaway review backend.
 - [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — Contributor Covenant.
 - [`LICENSE`](LICENSE) — Apache License 2.0, for everything in this
   repository. [`NOTICE`](NOTICE) carries the attribution.

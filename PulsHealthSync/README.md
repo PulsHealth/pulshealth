@@ -64,6 +64,9 @@ Sources/PulsHealthSync/
 │   │                                protocol, unreachable, server error).
 │   ├── ServerURLValidation.swift    URL rules mirroring ATS: https anywhere, http only
 │   │                                for local-network hosts.
+│   ├── PairingPayload.swift         Parses the puls://pair?url=&token=&user= QR payload
+│   │                                bootstrap.sh prints; re-validates the URL with
+│   │                                ServerURLValidation and the user as a UUID.
 │   └── DiagnosticTransports.swift   DryRunTransport (benchmark, discards output) and
 │                                    InstrumentedTransport (per-batch timing capture).
 ├── Models/
@@ -191,6 +194,14 @@ produced a batch.
   reported as a rejected token, a network failure as unreachable with the
   cause (TLS, DNS, timeout, refused, ATS), anything else as a server error.
   Nothing about the test is persisted.
+- **Pairing codes.** `PairingPayload.parse` reads the
+  `puls://pair?url=&token=&user=` string encoded in the QR code
+  `scripts/bootstrap.sh` prints. A scanned code is untrusted input: the URL is
+  re-validated with `ServerURLValidation` (so a code carrying plain `http://`
+  to a non-local host is refused, not silently saved), the user must be a UUID,
+  unknown query items are ignored, and anything that is not a `puls://pair` URL
+  is rejected as "not a pairing code". `apply(to:)` writes only the server URL,
+  token and user ID into a `SyncConfiguration` draft.
 
 ## How a sync runs
 

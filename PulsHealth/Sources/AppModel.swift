@@ -49,6 +49,15 @@ final class AppModel {
     /// Cleared when a later request actually determines them.
     var authorizationHint: String?
     var lastErrorMessage: String?
+    /// True while the first-run flow covers the app (`OnboardingView`). Set
+    /// synchronously in `init` so a fresh launch never flashes an unconfigured
+    /// dashboard, then corrected in `startBody` once the persisted
+    /// configuration has actually been read.
+    var showsOnboarding = false
+    /// Whether the flow is a replay on an install that already finished it
+    /// (Settings → Diagnostics). Only a replay gets a Close button — a genuine
+    /// first run walks forward through the steps instead.
+    private(set) var onboardingIsRerun = false
     /// A Save & Apply that would point the sync at a different server or user
     /// ID. Held here — nothing applied yet — until the user chooses between
     /// starting fresh and keeping progress (`confirmServerChange`); RootView
@@ -69,6 +78,14 @@ final class AppModel {
         let engine = HealthSyncEngine()
         self.engine = engine
         self.scheduler = BackgroundSyncScheduler(engine: engine)
+        // Reading the persisted configuration is async, and the window is built
+        // before it lands. Decide from the two durable flags alone so a first
+        // launch opens straight into onboarding: `authorizationRequested` marks
+        // any install that has been through Apply, including one that predates
+        // this flow. `startBody` re-checks against the loaded configuration.
+        let defaults = UserDefaults.standard
+        showsOnboarding = !defaults.bool(forKey: Self.onboardingCompletedKey)
+            && !defaults.bool(forKey: "authorizationRequested")
     }
 
     // MARK: - Lifecycle
@@ -106,6 +123,18 @@ final class AppModel {
         // wrong server. Ask again rather than quietly syncing on.
         if let change = await engine.pendingServerIdentityChange() {
             pendingServerChange = change
+        }
+        // Correct `init`'s guess now the stored configuration is known: an
+        // install that already has a server or types (an upgrade from before
+        // this flow existed, or one whose Apply predates the durable flag) is
+        // configured and must never be sent through first-run onboarding.
+        if showsOnboarding {
+            if config.serverURL != nil || !config.observedTypeIdentifiers.isEmpty
+                || authorizationRequested {
+                completeOnboarding()
+            } else {
+                preselectCommonTypesIfUnset()
+            }
         }
 
         // Observe engine changes -> refresh dashboard.
@@ -184,6 +213,55 @@ final class AppModel {
         f.dateFormat = "yyyyMMdd-HHmmss"
         return f
     }()
+
+    // MARK: - First run
+
+    private static let onboardingCompletedKey = "onboardingCompleted"
+
+    /// Marks the first run done and leaves the flow. Durable, so the flow is
+    /// shown exactly once per install; Settings → Diagnostics can replay it.
+    func completeOnboarding() {
+        UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
+        showsOnboarding = false
+        onboardingIsRerun = false
+    }
+
+    /// The flow's last step: push everything it assembled (server, user, types)
+    /// to the engine, which requests Health access for the selection and starts
+    /// backfilling the newly enabled types — the same path Save & Apply takes.
+    /// The first-run flag is written first so a failure here cannot trap the
+    /// user in the flow.
+    func finishOnboarding() async {
+        UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
+        await applyConfiguration(syncNewTypes: true)
+        showsOnboarding = false
+        onboardingIsRerun = false
+    }
+
+    /// Settings → Diagnostics: replay the flow on a configured install. Nothing
+    /// is reset — the existing selection and server stay in the draft.
+    func restartOnboarding() {
+        onboardingIsRerun = true
+        preselectCommonTypesIfUnset()
+        showsOnboarding = true
+    }
+
+    /// Seeds the draft with the Common preset so the flow's Health-access step
+    /// has a sensible set to ask for and its type step opens on a real
+    /// selection. Only ever fills an empty draft: a replay must not overwrite
+    /// what the user already chose.
+    private func preselectCommonTypesIfUnset() {
+        guard config.enabledTypes.isEmpty, config.aggregates.isEmpty else { return }
+        config.enabledTypes = TypePresets.common
+    }
+
+    /// Requests Health access for the current draft without applying anything
+    /// else — the flow's dedicated permission step, run before the server and
+    /// type selection reach the engine. Types added after this step are
+    /// requested by `applyConfiguration` on the final step.
+    func requestOnboardingHealthAccess() async {
+        await requestAccessForEnabledTypesIfNeeded()
+    }
 
     // MARK: - Actions
 

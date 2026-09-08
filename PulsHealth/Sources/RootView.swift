@@ -4,8 +4,10 @@ import PulsHealthSync
 struct RootView: View {
     private enum Tab: Hashable { case dashboard, dataTypes, log, settings }
     @State private var selection: Tab = .dashboard
+    @Environment(AppModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
         TabView(selection: $selection) {
             NavigationStack { DashboardView() }
                 .tabItem { Label("Dashboard", systemImage: "waveform.path.ecg") }
@@ -24,6 +26,13 @@ struct RootView: View {
         // Save & Apply on Settings, the User page, or the Data Types bar can
         // all raise the server/user-change prompt; show it above every tab.
         .serverChangePrompt()
+        // First run only: a fresh install lands here with no server and no
+        // types, so the tabs have nothing to show and nothing to say about
+        // where to start. `showsOnboarding` is false for every configured
+        // install (see AppModel).
+        .fullScreenCover(isPresented: $model.showsOnboarding) {
+            OnboardingView().environment(model)
+        }
     }
 }
 
