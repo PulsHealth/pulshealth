@@ -973,7 +973,7 @@ volume:
 - Every count identical either side of the wipe: `quantity_samples` 5,
   `aggregate_samples` 1, `activity_summaries` 1, `deleted_samples` 1,
   `users` 1, `batches` 2, `sources` 2, `sample_types` 2, `category_labels`
-  257, `schema_migrations` 13 — and the values themselves, down to the
+  256, `schema_migrations` 13 — and the values themselves, down to the
   profile's name, email and date of birth.
 - The three hypertables (`quantity_samples`, `workout_route_points`,
   `workout_series_points`), the `quantity_rollups` continuous aggregate and
@@ -990,10 +990,10 @@ volume:
   `"duplicates":2`, `GET /v1/profile` served the restored identity, and the
   viewer rendered the restored data behind its Basic-auth prompt.
 
-A second pass restored the same dump from a **host path** with `--no-start`,
-after adding a row that the dump did not contain: the row was gone afterwards
-and the app services stayed down until `docker compose up -d` — i.e. the
-restore really replaces the database rather than merging into it.
+A second pass restored a dump from a **host path** with `--no-start`, after
+inserting a `users` row that the dump did not contain: the row was gone
+afterwards and the app services stayed down until `docker compose up -d` —
+i.e. the restore replaces the database rather than merging into it.
 
 Also confirmed, because they are the parts you only find out about later:
 pruning deletes dumps older than `PULS_BACKUP_KEEP_DAYS` but **keeps the
