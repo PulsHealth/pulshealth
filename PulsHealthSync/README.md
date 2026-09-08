@@ -78,9 +78,11 @@ Sources/PulsHealthSync/
 │   │                                detail structs), SyncDeletion, RoutePayload,
 │   │                                AggregateSampleRow, ActivitySummaryRow, SyncBatch,
 │   │                                SyncReason.
-│   └── HealthTypeCatalog.swift      Registry of ~80 HealthKit types (79 on iOS 26;
-│                                    fewer on older iOS): display name, kind, canonical
-│                                    unit, group, est. samples/day (for ETA).
+│   └── HealthTypeCatalog.swift      Registry of 80 HealthKit types: display name, kind,
+│                                    canonical unit, group, est. samples/day (for ETA),
+│                                    minimum iOS. `definitions` is the full list on any
+│                                    runtime; `all` is what this OS exposes. The source
+│                                    of docs/protocol/catalog.json (see catalog.md there).
 ├── Serialization/
 │   ├── NDJSONEncoder.swift          Batch → gzip NDJSON (hand-framed gzip over
 │   │                                Compression's raw DEFLATE + CRC32).
@@ -112,7 +114,10 @@ device↔server join key. `finish` is idempotent so a background task's expirati
 handler and its work task can't clobber each other's outcome.
 
 Tests (`Tests/PulsHealthSyncTests/`, Swift Testing): catalog integrity (unique
-identifiers, unit parsing), serialization (NDJSON line structure, gzip framing
+identifiers, unit parsing, declarative OS gates) and the published vocabulary
+(`CatalogVocabularyTests` renders `docs/protocol/catalog.json` from the catalog
+and compares it byte for byte; with `TEST_RUNNER_PULS_WRITE_CATALOG=1` on the
+xcodebuild command it rewrites the file), serialization (NDJSON line structure, gzip framing
 + CRC, metadata round-trip), the state store (token migration and Keychain
 hand-off, server-identity change detection and reset, scrubbed error text), and
 the protocol surface (`ProtocolTests.swift`: header version fields, request

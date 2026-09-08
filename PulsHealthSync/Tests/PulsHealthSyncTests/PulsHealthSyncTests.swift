@@ -9,6 +9,59 @@ import Testing
     @Test func identifiersAreUnique() {
         let ids = HealthTypeCatalog.all.map(\.identifier)
         #expect(Set(ids).count == ids.count)
+        let defined = HealthTypeCatalog.definitions.map(\.identifier)
+        #expect(Set(defined).count == defined.count)
+    }
+
+    /// `all` is exactly the definitions the running OS reaches — declarative
+    /// `minimumIOS` gates, not `#available`, so the published vocabulary can
+    /// list every definition.
+    @Test func availableTypesAreTheDefinitionsThisOSReaches() {
+        let expected = HealthTypeCatalog.definitions.filter { descriptor in
+            descriptor.minimumIOS <= HealthTypeDescriptor.IOSVersion(
+                ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
+                ProcessInfo.processInfo.operatingSystemVersion.minorVersion)
+        }
+        #expect(HealthTypeCatalog.all == expected)
+        #expect(HealthTypeCatalog.all.count + HealthTypeCatalog.definitions.filter {
+            !$0.isAvailableOnThisOS
+        }.count == HealthTypeCatalog.definitions.count)
+        for descriptor in HealthTypeCatalog.definitions where !descriptor.isAvailableOnThisOS {
+            #expect(HealthTypeCatalog.descriptor(for: descriptor.identifier) == nil)
+            #expect(descriptor.sampleType == nil)
+        }
+        #expect(HealthTypeCatalog.definitions.filter { $0.minimumIOS < .baseline }.isEmpty)
+        if #available(iOS 26.0, *) {
+            #expect(HealthTypeCatalog.all.count == HealthTypeCatalog.definitions.count)
+        }
+    }
+
+    /// Gated quantity/category entries spell their identifiers as strings (the
+    /// SDK constants are `@available`-restricted); pin them to the constants
+    /// where the SDK has them. The special kinds' identifiers are wire-format
+    /// contracts (the server hardcodes them) rather than SDK values — State of
+    /// Mind's object type, for one, reports `HKDataTypeStateOfMind` at runtime.
+    @Test func gatedIdentifiersMatchTheSDK() {
+        if #available(iOS 18.0, *) {
+            #expect(HKCategoryTypeIdentifier.sleepApneaEvent.rawValue
+                == HealthTypeCatalog.sleepApneaEventIdentifier)
+        }
+        for descriptor in HealthTypeCatalog.definitions where descriptor.minimumIOS > .baseline {
+            #expect(
+                [HealthTypeCatalog.sleepApneaEventIdentifier, HealthTypeCatalog.stateOfMindIdentifier,
+                 HealthTypeCatalog.medicationDoseIdentifier].contains(descriptor.identifier),
+                "\(descriptor.identifier) is gated above iOS \(HealthTypeDescriptor.IOSVersion.baseline); pin it here")
+        }
+    }
+
+    @Test func groupKeysAreStableAndUnique() {
+        let keys = HealthTypeDescriptor.Group.allCases.map(\.key)
+        #expect(Set(keys).count == keys.count)
+        for group in HealthTypeDescriptor.Group.allCases {
+            #expect(group.key == group.key.lowercased())
+            let lettersOnly = group.key.allSatisfy { $0.isLetter }
+            #expect(lettersOnly, "\(group.key) is not a plain word")
+        }
     }
 
     @Test func everyTypeResolvesToASampleType() {
