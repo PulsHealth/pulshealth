@@ -38,6 +38,10 @@ manual on the data model and its traps, and two ready-made prompts
 **Not yet:** GPS routes, medication doses, ECGs and heartbeat series. They
 are in the database; no tool serves them.
 
+For a whole range as a *file* rather than an answer in a chat — a spreadsheet,
+a notebook, something to attach — use `GET /v1/export` or the `puls-export`
+CLI instead of a tool call: [`export.md`](export.md).
+
 ## Two ways to connect
 
 1. **Local binary (stdio).** The assistant launches `pulshealth-mcp` on
@@ -188,6 +192,83 @@ curl -s -X POST https://<machine>.<tailnet>.ts.net:8445/mcp \
 
 A `401` means the token; a `503` from `/healthz` means the product API (or
 its database) is down.
+
+## ChatGPT: the product API as a custom GPT Action
+
+ChatGPT does not speak to the MCP server with a pasted bearer token. What it
+does take is an **Action**: an OpenAPI document plus a credential, from which
+it calls the HTTP API itself. The product API already publishes one, so no
+extra component is needed — but read the caveats first, because the shape of
+the feature is different from everything above.
+
+**OpenAI's servers, not your browser, fetch the document and call the
+endpoints.** A tailnet-only URL (`https://<machine>.<tailnet>.ts.net:8444`),
+a loopback address or an SSH tunnel **will not work**: import fails, and even
+if it did not, every call would. The API has to be reachable from the public
+internet for as long as the Action is in use.
+
+### 1. Publish the API on a public HTTPS URL
+
+Any TLS-terminating tunnel or proxy does: `tailscale funnel --bg --https=443
+http://localhost:8081`, a Cloudflare Tunnel, or a reverse proxy on a VPS.
+Treat this as a temporary window — see the caveats.
+
+```bash
+curl -s https://health.example.net/healthz                     # {"ok":true,"db":true}
+curl -s https://health.example.net/openapi.json | python3 -m json.tool >/dev/null && echo "schema ok"
+```
+
+The document fills its `servers[0].url` in from the request it arrived on
+(honouring `X-Forwarded-Host` / `X-Forwarded-Proto`), so **fetch it through
+the public URL** — a copy pulled from `127.0.0.1` names the loopback address
+and the Action will call the wrong host.
+
+### 2. Import it
+
+In ChatGPT: **Create a GPT → Configure → Create new action → Import from
+URL**, and give it `https://health.example.net/openapi.json`. (Pasting the
+JSON works too.) Every endpoint arrives with an `operationId` the model calls
+by name — `getDailyMetrics`, `getSleepNights`, `listWorkouts`,
+`exportDataset` and so on.
+
+### 3. Configure the token
+
+**Authentication → API Key → Auth Type: Bearer**, and paste the value of
+`PULS_API_TOKEN` from `server/.env`. That single token is the whole trust
+boundary; `/`, `/docs`, `/openapi.json` and `/healthz` stay open, everything
+under `/v1/` needs it.
+
+Publishing a GPT (even "anyone with the link") requires a privacy policy URL.
+
+### 4. Check it
+
+Ask *"what health data do you have about me, and how current is it?"* — that
+is one `listCatalogTypes` call and it also tells the model today's date.
+Approve the first call when ChatGPT asks.
+
+### Caveats
+
+- **Keep the GPT private.** The API key is stored with the Action, so anyone
+  who can use the GPT can read your health data — including your name, email
+  and date of birth from `/v1/profile`. Do not share or publish it.
+- **Rotate the token afterwards.** It has been handed to a third party and
+  travelled over a public endpoint. When you are done: generate a new one
+  (`openssl rand -hex 32`), set `PULS_API_TOKEN` in `server/.env`,
+  `docker compose up -d api mcp`, and update your other clients. Take the
+  public endpoint down at the same time (`tailscale funnel --https=443 off`).
+- **A public endpoint is a public endpoint.** There is no rate limiting and no
+  IP allowlist in front of the API; the token is all that stands between the
+  internet and the data. Keep the window short.
+- **Actions time out (tens of seconds) and truncate large answers.** Ask for
+  narrow ranges. `exportDataset` streams a CSV or JSONL *file*, which is
+  exactly the wrong shape for a chat turn — use the JSON endpoints for
+  questions and the `puls-export` CLI for files ([`export.md`](export.md)).
+- **Dates are epoch milliseconds** and the API does not report its zone, so
+  tell the GPT which zone the server runs in (`PULS_TIME_ZONE`) in its
+  instructions, or it will guess.
+- The MCP server remains the better route wherever the client supports it:
+  it speaks calendar days, keeps the model honest about units and
+  double counting, and never needs a public endpoint.
 
 ## Try these
 
