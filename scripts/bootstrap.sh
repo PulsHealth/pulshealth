@@ -530,5 +530,5 @@ wait_for_ingest "$(probe_base "$(env_get INGEST_BIND_ADDR)")" "$(env_get PULS_TO
 print_pairing
 print_services
 note "Later: \`make pairing\` re-prints this block; \`make logs\`, \`make ps\`, \`make down\`; server/README.md has the rest."
-note "Backups are opt-in and off: \`make backup\` takes one now, \`docker compose --profile backup up -d\` runs them"
+note "Backups are opt-in and off: \`make backup\` takes one now, \`docker compose --profile backup up -d backup\` runs"
 note "on a schedule (server/README.md, \"Backup & restore\"). Nothing else copies your data anywhere."

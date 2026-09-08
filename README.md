@@ -32,9 +32,9 @@ it is where the sync protocol is written.
 >   `scripts/bootstrap.sh --build` (then `make dev-up`).
 > - **Backups are opt-in and off by default.** The stack ships a `backup`
 >   service, but it only runs when you enable its profile
->   (`docker compose --profile backup up -d`, or `make backup` for one dump).
->   Until then your Postgres volume is the only copy of your data. Nothing
->   verifies a backup except the restore drill in `server/README.md`.
+>   (`docker compose --profile backup up -d backup`, or `make backup` for one
+>   dump). Until then your Postgres volume is the only copy of your data.
+>   Nothing verifies a backup except the restore drill in `server/README.md`.
 >
 > Decisions, requirements, and phases are in
 > [`docs/open-source-plan.md`](docs/open-source-plan.md).

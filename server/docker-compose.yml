@@ -250,7 +250,7 @@ services:
     # `docker compose up -d` does not start it and the stack is unchanged for
     # anyone who does not ask:
     #
-    #   docker compose --profile backup up -d      # scheduled dumps
+    #   docker compose --profile backup up -d backup   # scheduled dumps
     #   docker compose run --rm backup once        # one dump now (`make backup`)
     #   docker compose run --rm backup list        # what is in the store
     #

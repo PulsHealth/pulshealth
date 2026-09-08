@@ -290,8 +290,8 @@ outside this repository — nothing here assumes a particular machine.
 - **Backups are opt-in and off by default.** `server/backup/backup.sh` runs as
   the `backup` Compose service behind the `backup` **profile**, so a plain
   `docker compose up -d` does not start it and the stack is unchanged for
-  anyone who does not ask for it: `docker compose --profile backup up -d` for
-  a schedule, `make backup` for one dump now, `make restore FILE=…`
+  anyone who does not ask for it: `docker compose --profile backup up -d backup`
+  for a schedule, `make backup` for one dump now, `make restore FILE=…`
   (`server/backup/restore.sh`) to put one back. Until it is turned on the
   Postgres volume is the only copy of the data. Dumps default to the `backups`
   Docker volume — same disk as the database, so `PULS_BACKUP_DIR` pointing
