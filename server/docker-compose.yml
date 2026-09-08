@@ -12,12 +12,19 @@ x-app-logging: &app-logging
     max-size: "50m"
     max-file: "5"
 
+# The PostgreSQL + TimescaleDB image, pinned to an exact tag and shared by the
+# db and migrate services so the two can never drift apart. The floating
+# `pg17` tag moves TimescaleDB minor versions underneath running installs
+# (its internal catalog changed between 2.27 and 2.29), so bumping this is a
+# deliberate step — see server/README.md, "Upgrading the database image".
+x-db-image: &db-image timescale/timescaledb-ha:pg17.11-ts2.29.2
+
 services:
   db:
     # Plain PostgreSQL + TimescaleDB. The schema is NOT applied here: the
     # image's own initdb hooks only run on an empty volume, so the `migrate`
     # service below owns the schema and runs on every start instead.
-    image: timescale/timescaledb-ha:pg17
+    image: *db-image
     restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
@@ -40,11 +47,11 @@ services:
     # and time-zone scripts, then exits. The app services start only after it
     # exits 0 (service_completed_successfully), so a failed migration stops
     # the stack loudly instead of running new code against an old schema.
-    # Same image as db (psql + bash, nothing to build). By hand:
+    # Same pinned image as db (psql + bash, nothing to build). By hand:
     #   docker compose run --rm migrate            # apply pending migrations
     #   docker compose run --rm migrate baseline   # adopt a pre-existing database
     # See server/README.md, "Schema migrations".
-    image: timescale/timescaledb-ha:pg17
+    image: *db-image
     restart: "no"
     logging: *app-logging
     entrypoint: ["bash", "/puls/migrate.sh"]

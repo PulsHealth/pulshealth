@@ -12,6 +12,12 @@ from nbclient import NotebookClient
 ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = ROOT / "notebooks" / "healthkit_database_exploration.ipynb"
 DB_PASSWORD = "puls_notebook_test"
+# The exact PostgreSQL + TimescaleDB image the compose stack pins (x-db-image in
+# server/docker-compose.yml), so the throwaway database matches a real install.
+DB_IMAGE = re.search(
+    r"timescale/timescaledb-ha:[\w.\-]+",
+    (ROOT / "server" / "docker-compose.yml").read_text(),
+).group(0)
 
 
 def run(cmd, *, env=None, check=True):
@@ -139,7 +145,7 @@ def test_healthkit_notebook_executes_against_seeded_database(tmp_path):
                 f"POSTGRES_PASSWORD={DB_PASSWORD}",
                 "-p",
                 "127.0.0.1::5432",
-                "timescale/timescaledb-ha:pg17",
+                DB_IMAGE,
             ]
         )
         container_id = container.stdout.strip()

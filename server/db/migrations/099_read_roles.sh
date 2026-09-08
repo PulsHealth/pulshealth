@@ -190,29 +190,60 @@ BEGIN
       ('public', 'metric_daily', 'SELECT', false),
       ('public', 'workout_route_points', 'SELECT', false),
       ('public', 'workout_series_points', 'SELECT', false)
-    ), allowed_ht AS (
-      SELECT id, compressed_hypertable_id
-      FROM _timescaledb_catalog.hypertable
-      WHERE schema_name = 'public'
-        AND table_name IN (
-          'quantity_samples', 'workout_route_points', 'workout_series_points'
-        )
-    ), allowed_ht_ids(id) AS (
-      SELECT id FROM allowed_ht
-      UNION
-      SELECT compressed_hypertable_id FROM allowed_ht
-      WHERE compressed_hypertable_id IS NOT NULL
+    ), allowed_hypertables(hypertable_schema, hypertable_name) AS (VALUES
+      ('public', 'quantity_samples'),
+      ('public', 'workout_route_points'),
+      ('public', 'workout_series_points')
+    ),
+    -- TimescaleDB copies a hypertable's ACL onto the relations that store
+    -- it, so api_reader must hold exactly SELECT on each of them and on
+    -- nothing else in _timescaledb_internal. They are named through public,
+    -- version-stable catalogs only — _timescaledb_catalog's layout changed
+    -- between 2.27 and 2.29 and broke the previous version of this check.
+    -- Two kinds of relation:
+    --   1. chunks, listed by timescaledb_information.chunks;
+    --   2. columnstore storage: the table holding a chunk's compressed rows
+    --      (2.29: <chunk>_compressed; up to 2.28: compress_hyper_N_M_chunk
+    --      under a _compressed_hypertable_N parent — an upgraded database
+    --      keeps the old-style chunks, with their grants, next to new-style
+    --      ones). No public view names these, so they are recognised by a
+    --      structure that has been stable since compression shipped: a
+    --      table in _timescaledb_internal carrying TimescaleDB's _ts_meta_*
+    --      bookkeeping columns whose remaining columns are exactly the
+    --      column set of one allowed hypertable. (A future hypertable with
+    --      an identical column set that api_reader may not read would make
+    --      this check fail loudly rather than pass silently.)
+    allowed_chunks(nspname, relname) AS (
+      SELECT ch.chunk_schema::text, ch.chunk_name::text
+      FROM timescaledb_information.chunks ch
+      JOIN allowed_hypertables ah
+        ON ah.hypertable_schema = ch.hypertable_schema::text
+       AND ah.hypertable_name = ch.hypertable_name::text
+    ), allowed_column_sets(cols) AS (
+      SELECT array_agg(a.attname::text ORDER BY a.attname)
+      FROM allowed_hypertables ah
+      JOIN pg_class h
+        ON h.oid = format('%I.%I', ah.hypertable_schema, ah.hypertable_name)::regclass
+      JOIN pg_attribute a
+        ON a.attrelid = h.oid AND a.attnum > 0 AND NOT a.attisdropped
+      GROUP BY h.oid
+    ), allowed_columnstore(nspname, relname) AS (
+      SELECT n.nspname::text, c.relname::text
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = '_timescaledb_internal'
+        AND c.relkind = 'r'
+        AND EXISTS (SELECT 1 FROM pg_attribute a
+                    WHERE a.attrelid = c.oid AND a.attname = '_ts_meta_count')
+        AND (SELECT array_agg(a.attname::text ORDER BY a.attname)
+             FROM pg_attribute a
+             WHERE a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+               AND a.attname NOT LIKE '\_ts\_meta\_%')
+            IN (SELECT cols FROM allowed_column_sets)
     ), managed_relations(nspname, relname, privilege_type, is_grantable) AS (
-      SELECT h.schema_name::text, h.table_name::text, 'SELECT', false
-      FROM _timescaledb_catalog.hypertable h
-      WHERE h.id IN (
-        SELECT compressed_hypertable_id FROM allowed_ht
-        WHERE compressed_hypertable_id IS NOT NULL
-      )
+      SELECT nspname, relname, 'SELECT', false FROM allowed_chunks
       UNION
-      SELECT c.schema_name::text, c.table_name::text, 'SELECT', false
-      FROM _timescaledb_catalog.chunk c
-      WHERE c.hypertable_id IN (SELECT id FROM allowed_ht_ids)
+      SELECT nspname, relname, 'SELECT', false FROM allowed_columnstore
     ), expected AS (
       SELECT * FROM expected_public
       UNION
@@ -223,6 +254,19 @@ BEGIN
       JOIN pg_namespace n ON n.oid = c.relnamespace
       CROSS JOIN LATERAL aclexplode(c.relacl) acl
       WHERE acl.grantee = api_oid
+        -- Up to TimescaleDB 2.28 a compressed hypertable also had a
+        -- column-less parent table (_compressed_hypertable_N) that the grant
+        -- hook copied the ACL to. It stores nothing (each compressed chunk
+        -- carries its own columns), nothing public ties it to its
+        -- hypertable, and the 2.29 extension update drops it — so
+        -- non-grantable SELECT on such a table is tolerated, not required.
+        AND NOT (n.nspname = '_timescaledb_internal'
+                 AND c.relkind = 'r'
+                 AND acl.privilege_type = 'SELECT'
+                 AND NOT acl.is_grantable
+                 AND NOT EXISTS (SELECT 1 FROM pg_attribute a
+                                 WHERE a.attrelid = c.oid AND a.attnum > 0
+                                   AND NOT a.attisdropped))
     )
     (SELECT * FROM expected EXCEPT SELECT * FROM actual)
     UNION ALL
@@ -482,13 +526,45 @@ BEGIN
           OR (n.nspname = '_timescaledb_internal'
              AND acl.privilege_type IN ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
              AND (
-               EXISTS (SELECT 1 FROM _timescaledb_catalog.chunk ch
-                       WHERE ch.schema_name = n.nspname AND ch.table_name = c.relname)
-               OR EXISTS (SELECT 1 FROM _timescaledb_catalog.hypertable h
-                          WHERE h.schema_name = n.nspname AND h.table_name = c.relname)
-               OR EXISTS (SELECT 1 FROM _timescaledb_catalog.continuous_agg ca
-                          WHERE (ca.partial_view_schema = n.nspname AND ca.partial_view_name = c.relname)
-                             OR (ca.direct_view_schema = n.nspname AND ca.direct_view_name = c.relname))
+               -- a chunk of a hypertable or of a continuous aggregate
+               EXISTS (SELECT 1 FROM timescaledb_information.chunks ch
+                       WHERE ch.chunk_schema = n.nspname AND ch.chunk_name = c.relname)
+               -- a continuous aggregate's materialization hypertable
+               OR EXISTS (SELECT 1 FROM timescaledb_information.continuous_aggregates ca
+                          WHERE ca.materialization_hypertable_schema = n.nspname
+                            AND ca.materialization_hypertable_name = c.relname)
+               -- columnstore storage of any hypertable, old or new layout
+               -- (recognised as in the api_reader check above)
+               OR (c.relkind = 'r'
+                   AND EXISTS (SELECT 1 FROM pg_attribute a
+                               WHERE a.attrelid = c.oid AND a.attname = '_ts_meta_count'))
+               -- TimescaleDB <= 2.28's column-less compressed-hypertable
+               -- parent (see the api_reader check above)
+               OR (c.relkind = 'r'
+                   AND NOT EXISTS (SELECT 1 FROM pg_attribute a
+                                   WHERE a.attrelid = c.oid AND a.attnum > 0
+                                     AND NOT a.attisdropped))
+               -- a continuous aggregate's partial/direct helper view: a view
+               -- here that reads nothing but user hypertables or
+               -- materialization hypertables. TimescaleDB's own stats views
+               -- in this schema read _timescaledb_catalog and stay excluded.
+               OR (c.relkind = 'v'
+                   AND EXISTS (SELECT 1 FROM pg_rewrite rw WHERE rw.ev_class = c.oid)
+                   AND NOT EXISTS (
+                     SELECT 1
+                     FROM pg_rewrite rw
+                     JOIN pg_depend d
+                       ON d.classid = 'pg_rewrite'::regclass AND d.objid = rw.oid
+                      AND d.refclassid = 'pg_class'::regclass AND d.refobjid <> c.oid
+                     JOIN pg_class rc ON rc.oid = d.refobjid
+                     JOIN pg_namespace rn ON rn.oid = rc.relnamespace
+                     WHERE rw.ev_class = c.oid
+                       AND NOT EXISTS (SELECT 1 FROM timescaledb_information.hypertables h
+                                       WHERE h.hypertable_schema = rn.nspname
+                                         AND h.hypertable_name = rc.relname)
+                       AND NOT EXISTS (SELECT 1 FROM timescaledb_information.continuous_aggregates ca
+                                       WHERE ca.materialization_hypertable_schema = rn.nspname
+                                         AND ca.materialization_hypertable_name = rc.relname)))
              ))
         )
       )

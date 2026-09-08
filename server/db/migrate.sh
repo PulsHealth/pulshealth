@@ -179,6 +179,22 @@ done
 
 wait_for_db
 
+# The timescaledb-ha image ships every versioned timescaledb-*.so back to
+# 2.17 and does not run ALTER EXTENSION on an existing volume, so a database
+# created under an older image keeps working on its old extension version
+# after the image is bumped — silently. Say so; upgrading the extension is a
+# deliberate operator step (server/README.md, "Upgrading the database image").
+ext_versions="$(sql <<'EOSQL'
+SELECT installed_version || ' ' || default_version
+FROM pg_available_extensions WHERE name = 'timescaledb' AND installed_version <> default_version;
+EOSQL
+)"
+if [[ -n $ext_versions ]]; then
+  log "NOTE: timescaledb extension is ${ext_versions% *} on $target but this image ships ${ext_versions#* };" \
+      "run 'docker compose exec db psql -X -U postgres -d postgres -c \"ALTER EXTENSION timescaledb UPDATE\"'" \
+      "when no app service is connected (see server/README.md, \"Upgrading the database image\")."
+fi
+
 have_table="$(relation_exists public.schema_migrations)"
 have_users="$(relation_exists public.users)"
 tracked=f

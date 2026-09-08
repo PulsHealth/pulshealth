@@ -6,8 +6,8 @@ migrator via Docker Compose:
 
 | Service | Image | Port | Purpose |
 |---|---|---|---|
-| `db` | `timescale/timescaledb-ha:pg17` | 127.0.0.1:5432 | PostgreSQL 17 + TimescaleDB |
-| `migrate` | `timescale/timescaledb-ha:pg17` (one-shot) | — | Applies `db/migrations/` before the app services start, on every `docker compose up -d` (see "Schema migrations") |
+| `db` | `timescale/timescaledb-ha:pg17.11-ts2.29.2` (pinned — see "Upgrading the database image") | 127.0.0.1:5432 | PostgreSQL 17 + TimescaleDB |
+| `migrate` | same pinned image as `db` (one-shot) | — | Applies `db/migrations/` before the app services start, on every `docker compose up -d` (see "Schema migrations") |
 | `ingest` | built from `ingest/` (Go, distroless) | 127.0.0.1:8080 | HTTP ingest API — expose it through a TLS-terminating proxy of your choice (Tailscale Serve/Funnel is one option; see "Exposing the server"); connects as the scoped DML-only `ingest` role (see "The scoped `ingest` role") |
 | `api` | built from `api/` (Go, distroless) | 127.0.0.1:8081 | Product read API for downstream apps |
 | `grafana` | `grafana/grafana:13.0.2` (pinned — 13.x provisioning is version-sensitive) | 127.0.0.1:3000 | Dashboards (reach them through the same kind of TLS proxy, e.g. Tailscale Serve on `:8443`) |
@@ -114,9 +114,9 @@ irrecoverably**.
 
 ### Schema migrations
 
-`db/migrate.sh`, run by the `migrate` Compose service (the same
-`timescale/timescaledb-ha:pg17` image as `db`, so `psql` and `bash` are there
-and nothing is built), applies the files in `db/migrations/` in lexical
+`db/migrate.sh`, run by the `migrate` Compose service (the same pinned
+`timescale/timescaledb-ha` image as `db`, so `psql` and `bash` are there and
+nothing is built), applies the files in `db/migrations/` in lexical
 order and records each one in a `schema_migrations` table (`filename`,
 `applied_at`, `checksum`). It runs on every `docker compose up -d` and by
 hand with `docker compose run --rm migrate`. It logs one line per file —
@@ -177,8 +177,48 @@ docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
 ```
 
 The first `docker compose up -d` after this change also recreates the `db`
-container (its definition lost the init-script mount and the role
-passwords); the data volume is untouched.
+container (its definition lost the init-script mount and the role passwords,
+and its image is now pinned rather than the floating `pg17` tag); the data
+volume is untouched, but a database created from the older floating tag now
+runs under a newer TimescaleDB binary — read "Upgrading the database image"
+below before or right after adopting it.
+
+### Upgrading the database image
+
+`docker-compose.yml` pins PostgreSQL + TimescaleDB to one exact tag
+(`x-db-image`, shared by `db` and `migrate` so they cannot drift; currently
+`timescale/timescaledb-ha:pg17.11-ts2.29.2`). The floating `pg17` tag moves
+TimescaleDB minor versions underneath running installs — 2.27 → 2.29 changed
+its internal catalog and broke the role script until it was rewritten
+against the public `timescaledb_information` views — so bumping the tag is a
+deliberate step. What was verified for this pin, on a volume created by the
+2.27.1 image with compressed chunks, a continuous aggregate and the three
+roles:
+
+- **The image does not upgrade the extension by itself.** It ships every
+  versioned `timescaledb-*.so` back to 2.17 and its only initdb hook is a
+  `CREATE EXTENSION` that runs on a brand-new volume, so the old database
+  starts under the new image and keeps working on its old extension
+  (`extversion` stays `2.27.1`, queries and `migrate` run). `migrate` prints
+  a NOTE whenever the installed extension differs from the one the image
+  ships.
+- **Upgrade the extension yourself, deliberately** — in a fresh session
+  (`psql -X`, first statement) with no app service connected, after a
+  `pg_dump`; extension updates are one-way:
+
+  ```bash
+  docker compose stop ingest api web grafana
+  docker compose exec db psql -X -U postgres -d postgres -c "ALTER EXTENSION timescaledb UPDATE"
+  docker compose up -d
+  ```
+
+  Verified 2.27.1 → 2.29.2: the update drops the old `_compressed_hypertable_N`
+  parents, keeps the existing compressed chunks (and their grants) under
+  their old `compress_hyper_N_M_chunk` names next to new `<chunk>_compressed`
+  ones, and `migrate` — `099_read_roles.sh` included — runs clean before and
+  after it.
+- Bump the tag in `docker-compose.yml` only: CI's `db-migrate` job and
+  `tests/test_healthkit_notebook.py` read the image from there.
 
 ### The scoped `ingest` role
 

@@ -128,9 +128,14 @@ jobs:
 
       - name: Start a throwaway TimescaleDB
         run: |
+          # The exact image the compose stack pins (x-db-image), so this job
+          # tests the TimescaleDB a self-hoster actually gets.
+          DB_IMAGE=$(grep -oE -m1 'timescale/timescaledb-ha:[A-Za-z0-9._-]+' server/docker-compose.yml)
+          echo "DB_IMAGE=$DB_IMAGE" >> "$GITHUB_ENV"
+          echo "using $DB_IMAGE"
           docker network create puls-ci
           docker run -d --name puls-ci-db --network puls-ci \
-            -e POSTGRES_PASSWORD=ci-secret timescale/timescaledb-ha:pg17
+            -e POSTGRES_PASSWORD=ci-secret "$DB_IMAGE"
           for _ in $(seq 1 60); do
             if docker exec puls-ci-db pg_isready -h 127.0.0.1 -U postgres -d postgres >/dev/null 2>&1; then
               exit 0
@@ -152,7 +157,7 @@ jobs:
               -e PGHOST=puls-ci-db -e PGPASSWORD=ci-secret -e MIGRATIONS_DIR=/puls/migrations \
               -e GRAFANA_DB_PASSWORD=ci-grafana -e API_DB_PASSWORD=ci-api \
               -e INGEST_DB_PASSWORD=ci-ingest -e PULS_TIME_ZONE=Europe/Berlin \
-              --entrypoint bash timescale/timescaledb-ha:pg17 /puls/migrate.sh "$@"
+              --entrypoint bash "$DB_IMAGE" /puls/migrate.sh "$@"
           }
           sql() {
             docker exec puls-ci-db psql -U postgres -d postgres -tA -v ON_ERROR_STOP=1 -c "$1"
