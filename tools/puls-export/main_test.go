@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -143,13 +144,20 @@ func TestRunWritesToStdoutWithoutAnOutputFile(t *testing.T) {
 func TestRunCopiesTheBodyBeforeTheResponseEnds(t *testing.T) {
 	t.Parallel()
 
-	firstChunkOut := make(chan struct{})
+	var (
+		firstChunkOut = make(chan struct{})
+		timedOut      atomic.Bool
+	)
 	api := newExportRecorder(t, http.StatusOK, "date,moveKcal\n2026-01-01,410\n")
 	written := &signalWriter{seen: firstChunkOut}
 	api.afterFirstChunk = func() {
 		select {
 		case <-firstChunkOut:
 		case <-time.After(10 * time.Second):
+			// The client never passed the first chunk on while the response
+			// was still open. Recorded rather than failed here, because this
+			// runs on the server's goroutine.
+			timedOut.Store(true)
 		}
 	}
 
@@ -159,6 +167,10 @@ func TestRunCopiesTheBodyBeforeTheResponseEnds(t *testing.T) {
 	}
 	if err := download(context.Background(), http.DefaultClient, opts, written); err != nil {
 		t.Fatalf("download: %v", err)
+	}
+	if timedOut.Load() {
+		t.Fatal("the first chunk never reached the destination while the response was open: " +
+			"the body was buffered instead of streamed")
 	}
 	if !strings.HasPrefix(written.String(), "date,moveKcal\n") {
 		t.Errorf("output = %q", written.String())
@@ -321,6 +333,32 @@ func TestRunReadsTheEnvironment(t *testing.T) {
 	want := time.Date(2026, 1, 1, 0, 0, 0, 0, berlin).UnixMilli()
 	if got := api.query.Get("start"); got != strconv.FormatInt(want, 10) {
 		t.Errorf("start = %q, want %d (midnight in Europe/Berlin)", got, want)
+	}
+}
+
+// An unknown flag is a command-line mistake like any other (exit 2), and the
+// flag package has already written the complaint and the usage block, so main
+// must not print it a second time.
+func TestRunUnknownFlagIsAUsageErrorReportedOnce(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+	err := run(context.Background(), []string{"--nonsense"}, &stdout, &stderr, noEnv)
+	if err == nil {
+		t.Fatal("run returned nil for an unknown flag")
+	}
+	if !errors.Is(err, errUsage) {
+		t.Errorf("err = %v, want a usage error (exit 2)", err)
+	}
+	if err.Error() != "" {
+		t.Errorf("err message = %q, want empty so main does not reprint what flag already wrote", err.Error())
+	}
+	if got := stderr.String(); !strings.Contains(got, "flag provided but not defined: -nonsense") ||
+		!strings.Contains(got, "usage: puls-export") {
+		t.Errorf("stderr = %q, want the flag package's complaint and the usage block", got)
+	}
+	if n := strings.Count(stderr.String(), "not defined"); n != 1 {
+		t.Errorf("the complaint appears %d times, want 1", n)
 	}
 }
 

@@ -31,6 +31,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode/utf8"
 	// Embed the IANA zone database so --time-zone resolves on a machine
 	// without /usr/share/zoneinfo.
 	_ "time/tzdata"
@@ -56,7 +57,11 @@ func main() {
 	case errors.Is(err, flag.ErrHelp):
 		os.Exit(0)
 	case errors.Is(err, errUsage):
-		fmt.Fprintln(os.Stderr, "puls-export:", err)
+		// An empty message means the flag package has already written the
+		// complaint and the usage block; saying it again helps nobody.
+		if msg := err.Error(); msg != "" {
+			fmt.Fprintln(os.Stderr, "puls-export:", msg)
+		}
 		os.Exit(2)
 	default:
 		fmt.Fprintln(os.Stderr, "puls-export:", err)
@@ -69,6 +74,10 @@ func main() {
 // unwraps to it so errors.Is recognises the class while the user still reads
 // only the specific complaint.
 var errUsage = errors.New("bad usage")
+
+// errFlagReported is the usage error for a mistake the flag package has
+// already reported in full.
+var errFlagReported = &usageError{}
 
 type usageError struct{ msg string }
 
@@ -130,7 +139,13 @@ Examples:
 		showVersion  = fs.Bool("version", false, "print the version and exit")
 	)
 	if err := fs.Parse(args); err != nil {
-		return err // flag.ErrHelp, or the flag package already explained it
+		if errors.Is(err, flag.ErrHelp) {
+			return err // -h: the usage block is already on stderr, exit 0
+		}
+		// The flag package has printed the complaint and the whole usage
+		// block. Classify it so the exit status is 2 like every other
+		// command-line mistake, without printing the message a second time.
+		return errFlagReported
 	}
 	if *showVersion {
 		fmt.Fprintln(stdout, version())
@@ -209,8 +224,9 @@ func download(ctx context.Context, client *http.Client, opts options, stdout io.
 		if err != nil {
 			return err
 		}
-		// The safety net for an early return; the close that matters is the
-		// explicit one below, and this second one is a no-op after it.
+		// The safety net for an early return. After the explicit close below
+		// it returns os.ErrClosed, which is discarded — closing a closed
+		// *os.File cannot touch a recycled descriptor.
 		defer f.Close()
 		file, out = f, f
 	}
@@ -267,8 +283,14 @@ func apiError(resp *http.Response) error {
 	if json.Unmarshal(body, &payload) == nil && payload.Error != "" {
 		message = payload.Error
 	}
+	// Truncate on a rune boundary; cutting mid-rune would put a replacement
+	// character in the middle of the server's own message.
 	if len(message) > 500 {
-		message = message[:500] + "…"
+		cut := 500
+		for cut > 0 && !utf8.RuneStart(message[cut]) {
+			cut--
+		}
+		message = message[:cut] + "…"
 	}
 	err := fmt.Errorf("the product API answered %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	if message != "" {
