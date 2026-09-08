@@ -96,10 +96,13 @@ land, in the same pull request, in **all** of:
    `server/README.md`.
 
 A catalog change additionally regenerates `docs/protocol/catalog.json` and
-`web/lib/catalog.generated.ts`. **Deploy the server first**: an old server
-rejects batches carrying new line types with a `400`, which stalls syncing
-until it is updated (nothing is lost — the client does not retry a `4xx` and
-its anchors stay put).
+`web/lib/catalog.generated.ts`. The header's `schemaVersion` (and
+`X-Puls-Protocol`) is bumped **only** for a change a v1 receiver written from
+the spec would reject — new sample kinds and new line types; new optional
+fields, new type identifiers and new read endpoints are additive and keep the
+number. **Deploy the server first**: an old server rejects batches carrying
+new line types with a `400`, which stalls syncing until it is updated (nothing
+is lost — the client does not retry a `4xx` and its anchors stay put).
 
 ## Running the tests
 
