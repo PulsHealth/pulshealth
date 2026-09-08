@@ -37,10 +37,26 @@ const (
 	// query still shows progress, large enough that a million-row export is
 	// not a million syscalls.
 	exportFlushRows = 256
-	// The range caps, matching the endpoints the datasets come from: raw
-	// samples stay at 31 days because a busy type runs to hundreds of
-	// thousands of rows a month, everything else at 366.
+	// The range cap for every dataset but samples, which keeps the 31 days
+	// GET /v1/samples enforces (a busy type runs to hundreds of thousands of
+	// rows a month). 366 is what /v1/sleep/daily and /v1/state-of-mind
+	// already apply; for daily metrics, activity rings and workouts it is
+	// deliberately *stricter* than the JSON endpoints, which have no cap at
+	// all — a page is bounded by its page size, a file only by its range.
+	//
+	// This measures the instant span. The day-grained stores additionally
+	// reject a range touching more than 366 local calendar days, so a span
+	// that squeaks under here can still be a 400 from the store — before any
+	// bytes either way, with its own message.
 	maxExportRange = 366 * 24 * time.Hour
+	// How many exports may be in flight at once. samples and workouts hold a
+	// pooled database connection for as long as the client takes to read the
+	// file — minutes on a slow link — and the pool is small (pgxpool defaults
+	// to max(4, NumCPU)), so without a bound a few stalled downloads starve
+	// every other endpoint. Over the bound is an immediate 503 with
+	// Retry-After, never a queue: waiting would hold the very connection the
+	// limit exists to protect.
+	maxConcurrentExports = 2
 )
 
 // exportDatasets names every value of the dataset parameter, in the order
@@ -73,6 +89,20 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		s.writeStoreError(w, err, "export")
 		return
 	}
+
+	// The slot is taken here — after everything that can 400, before the
+	// first byte — and held to the last one. A rejected request must not
+	// consume one, or a burst of malformed requests would 503 the real ones;
+	// what the limit protects is the connection a download holds while the
+	// client reads, and only a request that gets this far ever holds one.
+	if !s.acquireExport() {
+		w.Header().Set("Retry-After", "60")
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": fmt.Sprintf("at most %d exports may run at once; retry shortly", maxConcurrentExports),
+		})
+		return
+	}
+	defer s.releaseExport()
 
 	w.Header().Set("Content-Type", format.contentType)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q",
@@ -112,8 +142,11 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		if r.Context().Err() != nil {
 			// The client hung up part-way through — a Ctrl-C on a long
 			// download, which is a normal thing to do. There is nobody left
-			// to signal, and nothing here went wrong.
-			s.log.Info("export abandoned by the client", "dataset", dataset.Name, "rows", rows)
+			// to signal, and nothing here went wrong. err is logged anyway:
+			// a genuine store failure can race a disconnect, and this is the
+			// only place it would ever be seen.
+			s.log.Info("export abandoned by the client",
+				"dataset", dataset.Name, "rows", rows, "err", err.Error())
 			return
 		}
 		// The 200 and some rows are already on the wire, so the only honest
@@ -121,10 +154,31 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		// than close the chunked body cleanly on a short file. net/http
 		// recognises ErrAbortHandler, drops the connection without a stack
 		// trace, and the client's read fails.
+		//
+		// A test that drives this handler through httptest.NewRecorder() with
+		// a store that fails *after* the first row will see that panic
+		// escape, because there is no net/http in the way to recover it. Use
+		// httptest.NewServer for a mid-stream failure, as
+		// TestExportStreamsChunkedAndAbortsOnAMidStreamFailure does.
 		s.log.Error("export failed mid-stream", "dataset", dataset.Name, "rows", rows, "err", err.Error())
 		panic(http.ErrAbortHandler)
 	}
 }
+
+// acquireExport takes one of the maxConcurrentExports slots, or reports that
+// they are all busy. The channel is created on first use so a Server built as
+// a struct literal — which every test does — needs no constructor.
+func (s *Server) acquireExport() bool {
+	s.exportOnce.Do(func() { s.exportSlots = make(chan struct{}, maxConcurrentExports) })
+	select {
+	case s.exportSlots <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *Server) releaseExport() { <-s.exportSlots }
 
 // flush empties the encoder's buffer into the ResponseWriter and pushes the
 // chunk to the client. A ResponseWriter that cannot flush (a test recorder,
@@ -195,13 +249,13 @@ func (s *Server) exportDailyMetrics(r *http.Request) (*exportDataset, error) {
 }
 
 func (s *Server) exportSamples(r *http.Request) (*exportDataset, error) {
-	filters, err := sampleFiltersFromRequest(r)
+	// Only the type and the range: limit and offset are the JSON endpoint's
+	// paging and mean nothing to an export, so they are neither read nor
+	// validated here — a zero Limit is "the whole range" downstream.
+	filters, err := sampleTypeAndRange(r)
 	if err != nil {
 		return nil, asBadRequest(err)
 	}
-	// The export streams the whole range; limit and offset are the JSON
-	// endpoint's paging and mean nothing here.
-	filters.Limit, filters.Offset = 0, 0
 	// Resolve the type before the response starts, so an identifier the
 	// database has never seen is a 400 and not a one-line file.
 	meta, err := s.store.SampleType(r.Context(), filters.Type)
@@ -428,16 +482,23 @@ type exportEncoder interface {
 // csvEncoder writes the column names as the header row and then one record
 // per row.
 type csvEncoder struct {
-	w     *csv.Writer
-	cells []string
+	w       *csv.Writer
+	columns int
+	cells   []string
 }
 
 func (e *csvEncoder) Begin(columns []string) error {
+	e.columns = len(columns)
 	e.cells = make([]string, 0, len(columns))
 	return e.w.Write(columns)
 }
 
 func (e *csvEncoder) Row(values []any) error {
+	// The same check jsonlEncoder makes: a dataset whose values drifted from
+	// its Columns must fail, not ship a ragged file that reads as CSV.
+	if len(values) != e.columns {
+		return fmt.Errorf("export row has %d values for %d columns", len(values), e.columns)
+	}
 	e.cells = e.cells[:0]
 	for _, value := range values {
 		e.cells = append(e.cells, csvCell(value))

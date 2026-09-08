@@ -84,16 +84,21 @@ func isHostAuthority(host string) bool {
 	if host == "" || len(host) > 255 {
 		return false
 	}
+	alphanumeric := false
 	for i := 0; i < len(host); i++ {
 		c := host[i]
 		switch {
 		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+			alphanumeric = true
 		case c == '.' || c == '-' || c == ':' || c == '[' || c == ']':
 		default:
 			return false
 		}
 	}
-	return true
+	// Punctuation alone ("::::", "-") passes the character test but is not a
+	// host; an importer would reject the resulting URL with a far more
+	// confusing message than the relative "/" fallback gives.
+	return alphanumeric
 }
 
 const productAPIDocsHTML = `<!doctype html>
@@ -167,7 +172,7 @@ const productAPIDocsHTML = `<!doctype html>
   <p><code>/v1/export</code> returns a whole range as a file rather than a JSON document, for a spreadsheet, a notebook, or a chat attachment. Both parameters are required: <code>format</code> is <code>csv</code> or <code>jsonl</code>, <code>dataset</code> is one of <code>daily_metrics</code>, <code>samples</code>, <code>workouts</code>, <code>sleep</code>, <code>activity</code>, <code>state_of_mind</code>. <code>start</code> and <code>end</code> are required for every dataset; <code>daily_metrics</code> also takes <code>types</code>, <code>samples</code> takes <code>type</code>, and <code>workouts</code> takes an optional <code>activityType</code>.</p>
   <pre><code>curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
   "$PULS_API_BASE_URL/v1/export?format=csv&amp;dataset=sleep&amp;start=1735689600000&amp;end=1738368000000"</code></pre>
-  <p>The response is streamed (<code>Transfer-Encoding: chunked</code>) and arrives as an attachment called <code>puls-&lt;dataset&gt;-&lt;start&gt;-&lt;end&gt;.&lt;csv|jsonl&gt;</code>. CSV opens with a header row; JSONL writes one JSON object per line whose keys are exactly those column names. Field names are the JSON endpoints' names; where an endpoint nests, the export flattens — a metric's days become one row each carrying <code>identifier</code> and <code>unit</code>, a night's stage minutes become <code>stages.core</code>, <code>stages.deep</code> and so on, and a list (a workout's <code>availableMetrics</code>, an entry's <code>labels</code>) is comma-joined inside its CSV cell and stays an array in JSONL. Ranges are capped as on the endpoint the data comes from: 31 days for <code>samples</code>, 366 for the rest. <code>workouts</code> returns the whole range, newest first; <code>limit</code> and <code>offset</code> do not apply to an export. A failure after the first rows are on the wire aborts the connection, so a truncated file is always a visibly failed download rather than a short one.</p>
+  <p>The response is streamed (<code>Transfer-Encoding: chunked</code>) and arrives as an attachment called <code>puls-&lt;dataset&gt;-&lt;start&gt;-&lt;end&gt;.&lt;csv|jsonl&gt;</code>. CSV opens with a header row; JSONL writes one JSON object per line whose keys are exactly those column names. Field names are the JSON endpoints' names; where an endpoint nests, the export flattens — a metric's days become one row each carrying <code>identifier</code> and <code>unit</code>, a night's stage minutes become <code>stages.core</code>, <code>stages.deep</code> and so on, and a list (a workout's <code>availableMetrics</code>, an entry's <code>labels</code>) is comma-joined inside its CSV cell and stays an array in JSONL. Ranges are capped at 31 days for <code>samples</code>, as on <code>/v1/samples</code>, and 366 days for every other dataset — the cap <code>/v1/sleep/daily</code> and <code>/v1/state-of-mind</code> already apply, and deliberately stricter than <code>/v1/metrics/daily</code>, <code>/v1/activity/summary</code> and <code>/v1/workouts</code>, which are bounded by a page size instead. <code>workouts</code> returns the whole range, newest first; <code>limit</code> and <code>offset</code> do not apply to an export. At most two exports run at once — each holds a database connection for the length of the download — and a third gets a <code>503</code> with <code>Retry-After</code>. A failure after the first rows are on the wire aborts the connection, so a truncated file is always a visibly failed download rather than a short one.</p>
 
   <h2>Conventions</h2>
   <p>All timestamps are epoch milliseconds (0 to 253402300799999; anything else is a <code>400</code>). Workout ranges are <code>[start, end)</code> on the workout start time. The daily endpoints (<code>/v1/metrics/daily</code>, <code>/v1/activity/summary</code>) return every local calendar day — in the server's configured zone, <code>PULS_TIME_ZONE</code> — that overlaps <code>[start, end)</code>, so a range that touches one minute of a day returns that whole day. <code>/v1/sleep/daily</code> and <code>/v1/state-of-mind</code> use those same local days and reject ranges over 366 days. Empty result sets return empty arrays.</p>
@@ -536,7 +541,7 @@ const productAPIOpenAPIJSON = `{
       "get": {
         "operationId": "exportDataset",
         "summary": "Bulk export one dataset as CSV or JSONL",
-        "description": "Streams a whole range as a file (Transfer-Encoding: chunked, Content-Disposition: attachment) instead of a JSON document. CSV opens the file with a header row; JSONL writes one JSON object per line whose keys are the same column names. Field names match the JSON endpoints; where an endpoint nests (a metric's days, a night's stages) the export flattens, repeating the identifying fields on every row and naming a nested field by its path. Ranges are capped like the endpoint each dataset comes from: 31 days for samples, 366 days for the rest. The workouts dataset returns the whole range, newest first — limit and offset are not used here.",
+        "description": "Streams a whole range as a file (Transfer-Encoding: chunked, Content-Disposition: attachment) instead of a JSON document. CSV opens the file with a header row; JSONL writes one JSON object per line whose keys are the same column names. Field names match the JSON endpoints; where an endpoint nests (a metric's days, a night's stages) the export flattens, repeating the identifying fields on every row and naming a nested field by its path. Ranges are capped at 31 days for samples (as /v1/samples is) and 366 days for every other dataset — the same cap /v1/sleep/daily and /v1/state-of-mind apply, and deliberately stricter than /v1/metrics/daily, /v1/activity/summary and /v1/workouts, which are bounded by a page size rather than by their range. The workouts dataset returns the whole range, newest first; limit and offset are not used here. At most 2 exports run at once, because each holds a database connection for the length of the download; over that is a 503 with Retry-After.",
         "parameters": [
           { "name": "format", "in": "query", "required": true, "schema": { "type": "string", "enum": ["csv", "jsonl"] } },
           { "name": "dataset", "in": "query", "required": true, "schema": { "type": "string", "enum": ["daily_metrics", "samples", "workouts", "sleep", "activity", "state_of_mind"] } },
@@ -555,7 +560,8 @@ const productAPIOpenAPIJSON = `{
             }
           },
           "400": { "description": "Missing or invalid format or dataset, a missing dataset parameter, an unknown type, or a range over the dataset's cap" },
-          "401": { "description": "Unauthorized" }
+          "401": { "description": "Unauthorized" },
+          "503": { "description": "Too many exports already in progress; retry after the Retry-After interval" }
         }
       }
     }

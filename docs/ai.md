@@ -244,8 +244,11 @@ share the GPT with anyone else. Don't — see the caveats.
 ### 4. Check it
 
 Ask *"what health data do you have about me, and how current is it?"* — that
-is one `listCatalogTypes` call and it also tells the model today's date.
-Approve the first call when ChatGPT asks.
+is one `listCatalogTypes` call, which lists every type with the row count and
+the timestamps of its oldest and newest record. Approve the first call when
+ChatGPT asks. (Unlike the MCP tool of the same shape, the raw endpoint does
+*not* report the server's current date: `latest` is the newest **data**, so an
+assistant that reads it as "today" is wrong by however far sync has lagged.)
 
 ### Caveats
 

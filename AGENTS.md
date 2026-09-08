@@ -128,14 +128,14 @@ one up with `cd server && docker compose up -d migrate` (that applies the
 schema and starts nothing else), then, with `server/.env` sourced:
 
 ```bash
+export DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres"
+
 # ingest
-cd server/ingest && DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" \
-  go test -run Integration -count=1 ./...
+(cd server/ingest && go test -run Integration -count=1 ./...)
 
 # product API — the fixture-writing ones also need this flag, and write
 # through ADMIN_DATABASE_URL (which defaults to DATABASE_URL)
-cd server/api && DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" \
-  PULS_API_WRITE_INTEGRATION_TESTS=1 go test -run Integration -count=1 ./...
+(cd server/api && PULS_API_WRITE_INTEGRATION_TESTS=1 go test -run Integration -count=1 ./...)
 ```
 
 **Protocol corpus** — every fixture must validate, and the reference receiver

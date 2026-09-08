@@ -63,6 +63,11 @@ type Server struct {
 	catalogMu      sync.Mutex
 	catalogTypes   []CatalogType
 	catalogExpires time.Time
+
+	// The bounded set of /v1/export slots (see maxConcurrentExports), made on
+	// first use so a Server built as a struct literal still has one.
+	exportOnce  sync.Once
+	exportSlots chan struct{}
 }
 
 func main() {
@@ -597,9 +602,11 @@ func workoutFiltersFromRequest(r *http.Request) (WorkoutFilters, error) {
 	return filters, nil
 }
 
-// sampleFiltersFromRequest reads GET /v1/samples: exactly one type, a
-// required [start, end) range of at most maxSampleRange, and paging.
-func sampleFiltersFromRequest(r *http.Request) (SampleFilters, error) {
+// sampleTypeAndRange reads what GET /v1/samples and the samples export have
+// in common: exactly one type, and a required [start, end) range of at most
+// maxSampleRange. Limit and Offset are left zero, which the store reads as
+// "every matching row".
+func sampleTypeAndRange(r *http.Request) (SampleFilters, error) {
 	var f SampleFilters
 	q := r.URL.Query()
 
@@ -617,11 +624,21 @@ func sampleFiltersFromRequest(r *http.Request) (SampleFilters, error) {
 	if end.Sub(start) > maxSampleRange {
 		return f, fmt.Errorf("range must not exceed %d days", int(maxSampleRange.Hours()/24))
 	}
+	f.Start, f.End = start, end
+	return f, nil
+}
+
+// sampleFiltersFromRequest reads GET /v1/samples: sampleTypeAndRange plus the
+// endpoint's paging.
+func sampleFiltersFromRequest(r *http.Request) (SampleFilters, error) {
+	f, err := sampleTypeAndRange(r)
+	if err != nil {
+		return f, err
+	}
 	limit, offset, err := parseLimitOffsetBounds(r, defaultSampleLimit, maxSampleLimit)
 	if err != nil {
 		return f, err
 	}
-	f.Start, f.End = start, end
 	f.Limit, f.Offset = limit, offset
 	return f, nil
 }
