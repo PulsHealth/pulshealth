@@ -424,9 +424,11 @@ final class RequestRecorder: @unchecked Sendable {
             recorder.append(recorded)
             return recorded.request.url?.path == "/v1/capabilities" ? .http(404, Data()) : .http(503, Data())
         }
-        let start = ContinuousClock.now
         #expect(await tester.run() == .serverError(status: 503))
-        #expect(ContinuousClock.now - start < .seconds(1))
+        // Two requests — the capabilities probe and one upload attempt — is the
+        // whole claim: a retry would show up here as a third. Wall-clock timing
+        // used to stand in for that and failed on a loaded CI machine, which
+        // says nothing about whether the code retried.
         #expect(recorder.all.count == 2)
     }
 }
