@@ -13,6 +13,56 @@ public struct HealthTypeDescriptor: Identifiable, Sendable, Hashable {
         case vitals = "Vitals"
         case workouts = "Workouts"
         case other = "Other"
+
+        /// Stable machine key (`activity`, `heart`, …): the value published in
+        /// `docs/protocol/catalog.json` and used by the web viewer. The raw
+        /// value is the display label.
+        public var key: String {
+            switch self {
+            case .activity: "activity"
+            case .heart: "heart"
+            case .body: "body"
+            case .respiratory: "respiratory"
+            case .sleep: "sleep"
+            case .nutrition: "nutrition"
+            case .vitals: "vitals"
+            case .workouts: "workouts"
+            case .other: "other"
+            }
+        }
+    }
+
+    /// An iOS release, compared numerically. Catalog entries carry the first
+    /// release PulsHealth exports them on as data rather than as `#available`
+    /// checks, so the published vocabulary (`docs/protocol/catalog.json`) can
+    /// list every type with its `minimumIOS` no matter which runtime renders it.
+    public struct IOSVersion: Sendable, Hashable, Comparable, CustomStringConvertible {
+        public let major: Int
+        public let minor: Int
+
+        public init(_ major: Int, _ minor: Int = 0) {
+            self.major = major
+            self.minor = minor
+        }
+
+        /// The package's deployment target. Every type older than this is
+        /// published with it: PulsHealth cannot run on anything earlier, so a
+        /// finer answer would not change what a receiver can expect.
+        public static let baseline = IOSVersion(17)
+
+        /// `"18.0"` — the form used on the wire and in the docs.
+        public var description: String { "\(major).\(minor)" }
+
+        public static func < (lhs: IOSVersion, rhs: IOSVersion) -> Bool {
+            (lhs.major, lhs.minor) < (rhs.major, rhs.minor)
+        }
+
+        /// True when the running OS is at least this release — the runtime
+        /// equivalent of `#available(iOS major.minor, *)`.
+        public var isAvailableOnThisOS: Bool {
+            ProcessInfo.processInfo.isOperatingSystemAtLeast(
+                OperatingSystemVersion(majorVersion: major, minorVersion: minor, patchVersion: 0))
+        }
     }
 
     public var id: String { identifier }
@@ -25,8 +75,19 @@ public struct HealthTypeDescriptor: Identifiable, Sendable, Hashable {
     public let group: Group
     /// Rough expected sample density, used for backfill ETA estimates (samples per active day).
     public let estimatedSamplesPerDay: Int
+    /// The first iOS release PulsHealth exports this type on: `IOSVersion.baseline`
+    /// (17.0) for anything older, otherwise the release that introduced the
+    /// HealthKit type. `HealthTypeCatalog.all` omits entries above the running OS.
+    public let minimumIOS: IOSVersion
+
+    /// True when the running OS exposes this type.
+    public var isAvailableOnThisOS: Bool { minimumIOS.isAvailableOnThisOS }
 
     var sampleType: HKSampleType? {
+        // A definition above the running OS has no resolvable HealthKit type;
+        // constructing one would trap. `all` never contains such an entry, but
+        // the guard keeps `definitions` safe to walk too.
+        guard isAvailableOnThisOS else { return nil }
         switch kind {
         case .quantity: return HKQuantityType(HKQuantityTypeIdentifier(rawValue: identifier))
         case .category: return HKCategoryType(HKCategoryTypeIdentifier(rawValue: identifier))
@@ -56,6 +117,13 @@ public struct HealthTypeDescriptor: Identifiable, Sendable, Hashable {
 }
 
 /// Registry of every type PulsHealthSync knows how to export.
+///
+/// `definitions` is the complete vocabulary on every iOS the package supports;
+/// `all` (and `quantityTypes`/`categoryTypes`/`specialTypes`) is the subset
+/// the running OS exposes, which is what the app offers and syncs. The
+/// published vocabulary, `docs/protocol/catalog.json`, is rendered from
+/// `definitions` by `CatalogVocabularyTests` in the package tests, which also
+/// fail whenever the committed file and this catalog disagree.
 public enum HealthTypeCatalog {
     /// Special identifier used for workouts (HKWorkoutType has no string identifier).
     public static let workoutIdentifier = "HKWorkoutTypeIdentifier"
@@ -70,17 +138,32 @@ public enum HealthTypeCatalog {
     public static let electrocardiogramIdentifier = "HKDataTypeIdentifierElectrocardiogram"
     public static let stateOfMindIdentifier = "HKDataTypeIdentifierStateOfMind"
     public static let medicationDoseIdentifier = "HKMedicationDoseEventTypeIdentifierMedicationDoseEvent"
+    /// iOS 18 category type, spelled out because `HKCategoryTypeIdentifier.sleepApneaEvent`
+    /// is `@available(iOS 18, *)` and `definitions` must build on every runtime.
+    /// `CatalogTests.gatedIdentifiersMatchTheSDK` pins it to the SDK constant.
+    public static let sleepApneaEventIdentifier = "HKCategoryTypeIdentifierSleepApneaEvent"
 
-    public static let all: [HealthTypeDescriptor] = quantityTypes + categoryTypes + specialTypes + [
-        HealthTypeDescriptor(
-            identifier: workoutIdentifier, displayName: "Workouts", kind: .workout,
-            unitString: nil, group: .workouts, estimatedSamplesPerDay: 2
-        ),
-        HealthTypeDescriptor(
-            identifier: activitySummaryIdentifier, displayName: "Activity Rings",
-            kind: .activitySummary, unitString: nil, group: .activity, estimatedSamplesPerDay: 1
-        ),
-    ]
+    /// Every type the catalog defines, on every iOS PulsHealth supports, in
+    /// declaration order. Never depends on the running OS: this is the
+    /// published vocabulary.
+    public static let definitions: [HealthTypeDescriptor] =
+        quantityDefinitions + categoryDefinitions + specialDefinitions + [
+            HealthTypeDescriptor(
+                identifier: workoutIdentifier, displayName: "Workouts", kind: .workout,
+                unitString: nil, group: .workouts, estimatedSamplesPerDay: 2,
+                minimumIOS: .baseline
+            ),
+            HealthTypeDescriptor(
+                identifier: activitySummaryIdentifier, displayName: "Activity Rings",
+                kind: .activitySummary, unitString: nil, group: .activity, estimatedSamplesPerDay: 1,
+                minimumIOS: .baseline
+            ),
+        ]
+
+    /// The definitions the running OS exposes — what the app offers and syncs.
+    /// An entry whose `minimumIOS` is above the running OS is absent, exactly
+    /// as it was when the gates were `#available` checks.
+    public static let all: [HealthTypeDescriptor] = definitions.filter(\.isAvailableOnThisOS)
 
     /// True for the daily activity-summary (rings) type, which is exported via
     /// `HKActivitySummaryQuery` rather than the anchored/observer sample path.
@@ -88,34 +171,36 @@ public enum HealthTypeCatalog {
         identifier == activitySummaryIdentifier
     }
 
-    /// Series + non-quantity special types; OS-gated entries only appear where the
-    /// runtime can actually resolve their `HKSampleType`.
-    public static let specialTypes: [HealthTypeDescriptor] = {
-        var out: [HealthTypeDescriptor] = [
-            HealthTypeDescriptor(
-                identifier: heartbeatSeriesIdentifier, displayName: "Heartbeat Series (beat-to-beat)",
-                kind: .heartbeatSeries, unitString: nil, group: .heart, estimatedSamplesPerDay: 6
-            ),
-            HealthTypeDescriptor(
-                identifier: electrocardiogramIdentifier, displayName: "ECG",
-                kind: .ecg, unitString: nil, group: .heart, estimatedSamplesPerDay: 1
-            ),
-        ]
-        if #available(iOS 18.0, *) {
-            out.append(HealthTypeDescriptor(
-                identifier: stateOfMindIdentifier, displayName: "State of Mind",
-                kind: .stateOfMind, unitString: nil, group: .other, estimatedSamplesPerDay: 2
-            ))
-        }
-        if #available(iOS 26.0, *) {
-            out.append(HealthTypeDescriptor(
-                identifier: medicationDoseIdentifier, displayName: "Medication Doses",
-                kind: .medicationDose, unitString: nil, group: .other, estimatedSamplesPerDay: 3
-            ))
-        }
-        return out
-    }()
+    /// Series + non-quantity special types the running OS exposes.
+    public static let specialTypes: [HealthTypeDescriptor] =
+        specialDefinitions.filter(\.isAvailableOnThisOS)
 
+    /// Series + non-quantity special types, OS-gated entries included.
+    public static let specialDefinitions: [HealthTypeDescriptor] = [
+        HealthTypeDescriptor(
+            identifier: heartbeatSeriesIdentifier, displayName: "Heartbeat Series (beat-to-beat)",
+            kind: .heartbeatSeries, unitString: nil, group: .heart, estimatedSamplesPerDay: 6,
+            minimumIOS: .baseline
+        ),
+        HealthTypeDescriptor(
+            identifier: electrocardiogramIdentifier, displayName: "ECG",
+            kind: .ecg, unitString: nil, group: .heart, estimatedSamplesPerDay: 1,
+            minimumIOS: .baseline
+        ),
+        HealthTypeDescriptor(
+            identifier: stateOfMindIdentifier, displayName: "State of Mind",
+            kind: .stateOfMind, unitString: nil, group: .other, estimatedSamplesPerDay: 2,
+            minimumIOS: HealthTypeDescriptor.IOSVersion(18)
+        ),
+        HealthTypeDescriptor(
+            identifier: medicationDoseIdentifier, displayName: "Medication Doses",
+            kind: .medicationDose, unitString: nil, group: .other, estimatedSamplesPerDay: 3,
+            minimumIOS: HealthTypeDescriptor.IOSVersion(26)
+        ),
+    ]
+
+    /// The descriptor for an identifier the running OS exposes; nil for
+    /// unknown identifiers and for definitions above the running OS.
     public static func descriptor(for identifier: String) -> HealthTypeDescriptor? {
         byIdentifier[identifier]
     }
@@ -167,11 +252,20 @@ public enum HealthTypeCatalog {
     ) -> HealthTypeDescriptor {
         HealthTypeDescriptor(
             identifier: id.rawValue, displayName: name, kind: .quantity,
-            unitString: unit, group: group, estimatedSamplesPerDay: perDay
+            unitString: unit, group: group, estimatedSamplesPerDay: perDay,
+            minimumIOS: .baseline
         )
     }
 
-    public static let quantityTypes: [HealthTypeDescriptor] = [
+    /// Quantity types the running OS exposes (today: every definition — none
+    /// is gated above the deployment target).
+    public static let quantityTypes: [HealthTypeDescriptor] =
+        quantityDefinitions.filter(\.isAvailableOnThisOS)
+
+    /// Quantity types, OS-gated entries included. A gated entry here must use
+    /// a raw identifier string (the SDK constant is unavailable to older
+    /// compilers' availability checking) and carry its `minimumIOS`.
+    public static let quantityDefinitions: [HealthTypeDescriptor] = [
         // Activity
         q(.stepCount, "Steps", "count", .activity, perDay: 250),
         q(.distanceWalkingRunning, "Walking + Running Distance", "m", .activity, perDay: 250),
@@ -258,13 +352,27 @@ public enum HealthTypeCatalog {
         _ id: HKCategoryTypeIdentifier, _ name: String,
         _ group: HealthTypeDescriptor.Group, perDay: Int
     ) -> HealthTypeDescriptor {
+        c(id.rawValue, name, group, perDay: perDay, minimumIOS: .baseline)
+    }
+
+    private static func c(
+        _ identifier: String, _ name: String,
+        _ group: HealthTypeDescriptor.Group, perDay: Int,
+        minimumIOS: HealthTypeDescriptor.IOSVersion
+    ) -> HealthTypeDescriptor {
         HealthTypeDescriptor(
-            identifier: id.rawValue, displayName: name, kind: .category,
-            unitString: nil, group: group, estimatedSamplesPerDay: perDay
+            identifier: identifier, displayName: name, kind: .category,
+            unitString: nil, group: group, estimatedSamplesPerDay: perDay,
+            minimumIOS: minimumIOS
         )
     }
 
-    public static let categoryTypes: [HealthTypeDescriptor] = [
+    /// Category types the running OS exposes.
+    public static let categoryTypes: [HealthTypeDescriptor] =
+        categoryDefinitions.filter(\.isAvailableOnThisOS)
+
+    /// Category types, OS-gated entries included.
+    public static let categoryDefinitions: [HealthTypeDescriptor] = [
         c(.sleepAnalysis, "Sleep Stages", .sleep, perDay: 40),
         c(.appleStandHour, "Stand Hours", .activity, perDay: 16),
         c(.mindfulSession, "Mindful Minutes", .other, perDay: 2),
@@ -276,12 +384,7 @@ public enum HealthTypeCatalog {
         c(.toothbrushingEvent, "Toothbrushing Events", .other, perDay: 2),
         c(.environmentalAudioExposureEvent, "Loud Environment Events", .other, perDay: 1),
         c(.headphoneAudioExposureEvent, "Loud Headphone Events", .other, perDay: 1),
-    ] + ios18CategoryTypes
-
-    private static let ios18CategoryTypes: [HealthTypeDescriptor] = {
-        guard #available(iOS 18.0, *) else { return [] }
-        return [
-            c(.sleepApneaEvent, "Sleep Apnea Events", .sleep, perDay: 1),
-        ]
-    }()
+        c(sleepApneaEventIdentifier, "Sleep Apnea Events", .sleep, perDay: 1,
+          minimumIOS: HealthTypeDescriptor.IOSVersion(18)),
+    ]
 }
