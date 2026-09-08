@@ -257,9 +257,10 @@ Approve the first call when ChatGPT asks.
   (`openssl rand -hex 32`), set `PULS_API_TOKEN` in `server/.env`,
   `docker compose up -d api mcp`, and update your other clients. Take the
   public endpoint down at the same time (`tailscale funnel --https=443 off`).
-- **A public endpoint is a public endpoint.** There is no rate limiting and no
-  IP allowlist in front of the API; the token is all that stands between the
-  internet and the data. Keep the window short.
+- **A public endpoint is a public endpoint.** The product API has no rate
+  limiting of its own (ingest's is a different service on a different port)
+  and no IP allowlist; the token is all that stands between the internet and
+  the data. Keep the window short.
 - **Actions time out (tens of seconds) and truncate large answers.** Ask for
   narrow ranges. `exportDataset` streams a CSV or JSONL *file*, which is
   exactly the wrong shape for a chat turn — use the JSON endpoints for
