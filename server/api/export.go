@@ -109,6 +109,13 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		err = flush(encoder, control)
 	}
 	if err != nil {
+		if r.Context().Err() != nil {
+			// The client hung up part-way through — a Ctrl-C on a long
+			// download, which is a normal thing to do. There is nobody left
+			// to signal, and nothing here went wrong.
+			s.log.Info("export abandoned by the client", "dataset", dataset.Name, "rows", rows)
+			return
+		}
 		// The 200 and some rows are already on the wire, so the only honest
 		// signal left is an incomplete transfer: abort the response rather
 		// than close the chunked body cleanly on a short file. net/http

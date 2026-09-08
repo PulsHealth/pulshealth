@@ -435,6 +435,41 @@ func TestExportStreamsChunkedAndAbortsOnAMidStreamFailure(t *testing.T) {
 	}
 }
 
+// A client that hangs up mid-download — a Ctrl-C on a long export — is
+// normal, not a failure: the handler returns quietly instead of aborting the
+// response and logging an error nobody caused.
+func TestExportClientDisconnectIsNotAFailure(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	srv := exportServer(t, &streamingStore{
+		workoutRows: func(fn func(WorkoutSummary) error) error {
+			if err := fn(exportTestWorkout(0)); err != nil {
+				return err
+			}
+			cancel()
+			return ctx.Err()
+		},
+	})
+
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet,
+		"/v1/export?format=csv&dataset=workouts&"+exportRange, nil)
+	req.Header.Set("Authorization", "Bearer secret")
+	rec := httptest.NewRecorder()
+	// A panic(http.ErrAbortHandler) here would fail the test: nothing between
+	// this call and net/http would recover it.
+	srv.routes().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	// What was already flushed stands; the buffered tail is dropped, because
+	// there is nobody to send it to.
+	if !strings.HasPrefix(rec.Body.String(), "uuid,activityType,") {
+		t.Errorf("body = %q, want the header row that was already on the wire", rec.Body.String())
+	}
+}
+
 // exportTestWorkout is the n-th row of the streaming fixture, with a uuid
 // that names its position.
 func exportTestWorkout(n int) WorkoutSummary {
