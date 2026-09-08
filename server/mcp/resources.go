@@ -73,9 +73,10 @@ Do it in this order, and skip a step if list_available_types shows there is no d
 2. Call get_activity_rings for the range.
 3. Call get_daily_metrics for the range with whichever of these exist: HKQuantityTypeIdentifierStepCount, HKQuantityTypeIdentifierActiveEnergyBurned, HKQuantityTypeIdentifierAppleExerciseTime, HKQuantityTypeIdentifierRestingHeartRate, HKQuantityTypeIdentifierHeartRateVariabilitySDNN, HKQuantityTypeIdentifierBodyMass.
 4. Call list_workouts for the range.
-5. Optionally call get_daily_metrics once more for the seven days before the range, so trends have a baseline.
+5. Call get_sleep for the range if HKCategoryTypeIdentifierSleepAnalysis has data. Each row is one night, dated by the day of waking, in minutes; ignore short daytime naps for the headline figure.
+6. Optionally call get_daily_metrics once more for the seven days before the range, so trends have a baseline.
 
-Then write a short summary: how many days closed each ring, the average daily steps with the best and worst day, workouts (count, total time, total distance, the longest one), resting heart rate and HRV compared with the previous week if you fetched it, and weight if present. Name the days that have no data rather than treating them as zero, and quote units. Keep it under 250 words.`
+Then write a short summary: how many days closed each ring, the average daily steps with the best and worst day, workouts (count, total time, total distance, the longest one), average time asleep in hours with the best and worst night and the usual deep/REM share, resting heart rate and HRV compared with the previous week if you fetched it, and weight if present. Name the days that have no data rather than treating them as zero, and quote units. Keep it under 250 words.`
 
 const compareWorkoutsPrompt = `Compare my %s workouts in %s with those in %s (calendar months in the server's time zone; today is %s).
 

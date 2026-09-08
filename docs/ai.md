@@ -20,19 +20,23 @@ page is the client-side setup; the server's own README is
 | Activity rings and goals per day | `get_activity_rings` |
 | Workouts, filtered by date and activity | `list_workouts` |
 | One workout's heart rate / power / pace statistics, laps, pauses | `get_workout` |
+| The second-by-second curves inside one workout | `get_workout_series` |
+| Sleep by night: time asleep, time in bed, stages | `get_sleep` |
+| The individual records of one type, raw | `get_samples` |
+| Logged moods and emotions | `get_state_of_mind` |
 
 Daily values are the deduplicated ones (no iPhone + Watch double counting),
 every value carries its unit, and dates are calendar days in your
-`PULS_TIME_ZONE`. The assistant can also read `pulshealth://guide`, a short
+`PULS_TIME_ZONE`. Sleep follows Apple Health: a night is dated by the day you
+wake up, and where several devices recorded the same night nothing is summed
+across them. `get_samples` is the one tool that returns undeduplicated
+records — that is what makes it useful for looking at particular readings and
+useless for totals. The assistant can also read `pulshealth://guide`, a short
 manual on the data model and its traps, and two ready-made prompts
 (`weekly_summary`, `compare_workouts`).
 
-**Not yet:** sleep. Sleep stages are category samples, which the product API
-does not serve yet (planned as SRV-13 in
-[`docs/open-source-plan.md`](open-source-plan.md), together with a bounded
-raw-sample window, per-workout streams and State of Mind). Ask "how did I
-sleep last week?" today and the assistant should say so and offer what is
-recorded during sleep — resting heart rate, HRV, wrist temperature.
+**Not yet:** GPS routes, medication doses, ECGs and heartbeat series. They
+are in the database; no tool serves them.
 
 ## Two ways to connect
 
@@ -190,9 +194,15 @@ its database) is down.
 - **"What data do you have about me, and how current is it?"** — one
   `list_available_types` call; a good first question, it also tells the
   assistant today's date.
-- **"How did I sleep last week?"** — not available yet; the assistant
-  should say so (see above) and offer resting heart rate, HRV and wrist
-  temperature for the same nights instead.
+- **"How did I sleep last week?"** — one `get_sleep` call for the seven
+  days; each row is a night, dated by the morning you woke up, with time
+  asleep, time in bed and the core / deep / REM split in minutes. The
+  `weekly_summary` prompt now folds this in too.
+- **"When exactly did my heart rate spike during yesterday's meeting?"** —
+  `get_samples` with `HKQuantityTypeIdentifierHeartRate` for that day; the
+  individual readings, not a daily average.
+- **"Show me how my heart rate moved through Saturday's run."** —
+  `list_workouts` for the day, then `get_workout_series` with the uuid.
 - **"Compare my runs this month to last month."** — two `list_workouts`
   calls with `activity_type: running`, then totals, averages and pace;
   `get_workout` on a few for heart rate. The `compare_workouts` prompt does
