@@ -6,9 +6,8 @@
 -- local date directly sidesteps timezone drift that would split a day in two.
 -- Plain table: at most ~366 rows/year.
 --
--- Idempotent (IF NOT EXISTS everywhere) so it can be applied to a live database
--- whose volume predates this file; /docker-entrypoint-initdb.d only runs on
--- first startup.
+-- Idempotent (IF NOT EXISTS everywhere): it predates the migrate service and
+-- was applied by hand to live databases whose volume predated the file.
 
 CREATE TABLE IF NOT EXISTS activity_summaries (
     date               date        NOT NULL,

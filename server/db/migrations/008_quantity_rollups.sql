@@ -1,3 +1,4 @@
+-- puls:no-transaction
 -- Rename + regroup the server-side hourly rollup of quantity_samples.
 --
 -- Old: quantity_hourly, grouped by (type_id, bucket) only. That both leaked
@@ -15,14 +16,14 @@
 -- such as sum_value. Safe to re-run, but it rebuilds quantity_rollups even on
 -- fresh volumes where 001 already created it.
 --
--- /docker-entrypoint-initdb.d only runs on first startup. Apply to a live DB:
---   docker compose exec db psql -U postgres -d postgres -f \
---     /docker-entrypoint-initdb.d/008_quantity_rollups.sql
--- If metric_daily exists, the DROP ... CASCADE below removes it; apply
--- 009_metric_daily.sql after this file (it re-grants the read roles the
--- cascade discards).
+-- If metric_daily exists, the DROP ... CASCADE below removes it; the migrate
+-- service applies 009_metric_daily.sql right after this file (it re-grants
+-- the read roles the cascade discards).
 -- The recreated view starts empty (WITH NO DATA); the refresh below fills it
 -- immediately rather than waiting up to 30 min for the policy's first run.
+-- refresh_continuous_aggregate cannot run inside a transaction block, hence
+-- the puls:no-transaction marker on the first line: migrate.sh applies this
+-- file statement by statement instead of under --single-transaction.
 
 DROP MATERIALIZED VIEW IF EXISTS quantity_hourly CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS quantity_rollups CASCADE;

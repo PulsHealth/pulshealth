@@ -4,22 +4,19 @@
 #
 #   grafana     read-only; Grafana datasource + web viewer   GRAFANA_DB_PASSWORD (required)
 #   api_reader  read-only; product API, exact SELECT set     API_DB_PASSWORD     (required)
-#   ingest      DML-only writer for the ingest server        INGEST_DB_PASSWORD  (optional)
+#   ingest      DML-only writer for the ingest server        INGEST_DB_PASSWORD  (see below)
 #
-# INGEST_DB_PASSWORD is optional on purpose so an unchanged .env keeps
-# working: the Compose `db` service carries only the two required passwords,
-# so on first startup this script runs from /docker-entrypoint-initdb.d
-# without INGEST_DB_PASSWORD, skips the ingest role, and the ingest service
-# keeps its Compose default of connecting as the superuser. Opt in on a
-# running database by re-running the script with the variable set (it is safe
-# to rerun: it creates missing roles, rotates passwords and re-applies the
-# exact grants):
+# The migrate service (db/migrate.sh) runs this script on every invocation,
+# i.e. on every `docker compose up -d`, with all three passwords from .env —
+# Compose requires INGEST_DB_PASSWORD, and the ingest service connects as the
+# `ingest` role by default. It is safe to rerun: it creates missing roles,
+# rotates passwords to the current .env values and re-applies the exact
+# grants, so rotating a database password is "edit .env, docker compose up -d".
 #
-#   docker compose exec -T -e GRAFANA_DB_PASSWORD=... -e API_DB_PASSWORD=... \
-#     -e INGEST_DB_PASSWORD=... db bash /docker-entrypoint-initdb.d/099_read_roles.sh
-#
-# then set INGEST_DB_USER=ingest / INGEST_DB_PASSWORD in .env and recreate the
-# ingest service (see server/README.md).
+# INGEST_DB_PASSWORD is only optional when the script is run by hand outside
+# Compose: unset, it skips the ingest role and says so. Connection comes from
+# PGHOST/PGPORT/PGPASSWORD in the environment (set by migrate.sh);
+# POSTGRES_USER / POSTGRES_DB default to postgres/postgres.
 set -euo pipefail
 
 : "${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD must be set}"
@@ -29,7 +26,7 @@ INGEST_DB_PASSWORD="${INGEST_DB_PASSWORD:-}"
 POSTGRES_USER="${POSTGRES_USER:-postgres}"
 POSTGRES_DB="${POSTGRES_DB:-postgres}"
 
-psql -v ON_ERROR_STOP=1 \
+psql -q -v ON_ERROR_STOP=1 \
      -v grafana_password="${GRAFANA_DB_PASSWORD}" \
      -v api_password="${API_DB_PASSWORD}" \
      --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
@@ -295,13 +292,13 @@ EOSQL
 # ingest: the scoped writer the ingest server connects as once opted in.
 # ---------------------------------------------------------------------------
 if [[ -z "$INGEST_DB_PASSWORD" ]]; then
-  echo "099_read_roles: INGEST_DB_PASSWORD is not set; skipping the ingest role" \
-       "(the ingest service keeps connecting as ${POSTGRES_USER})." \
-       "Re-run this script with -e INGEST_DB_PASSWORD=... to opt in."
+  echo "099_read_roles: INGEST_DB_PASSWORD is not set; skipping the ingest role." \
+       "The Compose stack always sets it (the ingest service connects as ingest);" \
+       "re-run with INGEST_DB_PASSWORD exported to create or rotate the role."
   exit 0
 fi
 
-psql -v ON_ERROR_STOP=1 \
+psql -q -v ON_ERROR_STOP=1 \
      -v ingest_password="${INGEST_DB_PASSWORD}" \
      --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
 BEGIN;
@@ -366,7 +363,7 @@ ALTER ROLE ingest RESET ALL;
 ALTER ROLE ingest IN DATABASE :"DBNAME" RESET ALL;
 
 -- Exactly the DML surface of server/ingest/store.go: row reads and writes on
--- the tables in public, including the ones future init files add. No CREATE
+-- the tables in public, including the ones future migrations add. No CREATE
 -- on the schema and no TRUNCATE/REFERENCES/TRIGGER, so an ingest bug or a
 -- leaked token cannot alter the schema, drop data wholesale, change roles, or
 -- reach superuser-only paths such as COPY TO PROGRAM.
@@ -385,7 +382,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ingest;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO ingest;
 
 -- InsertBatch opens every transaction with this SET LOCAL. Prove the role may
--- set it now, at opt-in, instead of finding out as 500s on the first batch if
+-- set it now, on every migrate run, instead of finding out as 500s on the first batch if
 -- a TimescaleDB upgrade ever turns the GUC superuser-only.
 SET ROLE ingest;
 SET LOCAL timescaledb.max_tuples_decompressed_per_dml_transaction = 0;
@@ -466,7 +463,7 @@ BEGIN
   -- the grant hook derived from one (chunks, compressed/materialized
   -- hypertables, continuous-aggregate helper views); or USAGE/SELECT on a
   -- sequence in public. Anything else (TRUNCATE, REFERENCES, TRIGGER,
-  -- MAINTAIN, WITH GRANT OPTION, other schemas) fails the opt-in.
+  -- MAINTAIN, WITH GRANT OPTION, other schemas) fails the run.
   IF EXISTS (
     SELECT 1
     FROM pg_class c
@@ -500,7 +497,7 @@ BEGIN
   END IF;
 
   -- Coverage: every table, view and sequence in public carries the full set,
-  -- so a new init file's table is writable the moment it is created.
+  -- so a new migration's table is writable the moment it is created.
   IF EXISTS (
     SELECT 1
     FROM pg_class c

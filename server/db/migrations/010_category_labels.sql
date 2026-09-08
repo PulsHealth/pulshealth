@@ -1,7 +1,12 @@
+-- puls:rerun
 -- Human-readable labels for HKCategorySample.value.
 -- Seeded from the iPhoneOS 26.5 HealthKit headers:
 -- HKTypeIdentifiers.h maps category identifiers to value enums, and
 -- HKCategoryValues.h defines the enum values.
+--
+-- Marked puls:rerun: the seed is refreshed in place after SDK updates and the
+-- INSERT below is an upsert, so the migrate service re-applies this file
+-- whenever it changes instead of requiring a new numbered copy of the seed.
 
 CREATE TABLE IF NOT EXISTS category_labels (
     type_identifier text     NOT NULL,

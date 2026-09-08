@@ -14,20 +14,15 @@ x-app-logging: &app-logging
 
 services:
   db:
+    # Plain PostgreSQL + TimescaleDB. The schema is NOT applied here: the
+    # image's own initdb hooks only run on an empty volume, so the `migrate`
+    # service below owns the schema and runs on every start instead.
     image: timescale/timescaledb-ha:pg17
     restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
-      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?set in .env}
-      API_DB_PASSWORD: ${API_DB_PASSWORD:?set in .env}
-      # Calendar zone for every daily view (metric_daily, Grafana daily
-      # panels, the api's local-day ranges). Must match the phone's zone; set
-      # it in .env BEFORE first start — db/init/013_time_zone.sh stores it on
-      # the database (ALTER DATABASE … SET; re-run to change it later).
-      PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
     volumes:
       - db_data:/home/postgres/pgdata/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro
     ports:
       # Localhost only — never exposed beyond the host.
       - "127.0.0.1:5432:5432"
@@ -38,6 +33,46 @@ services:
       retries: 12
       start_period: 30s
 
+  migrate:
+    # One-shot schema migrator, run before every app service on each
+    # `docker compose up -d`: applies pending files from db/migrations/ in
+    # order, records them in schema_migrations, re-runs the env-driven role
+    # and time-zone scripts, then exits. The app services start only after it
+    # exits 0 (service_completed_successfully), so a failed migration stops
+    # the stack loudly instead of running new code against an old schema.
+    # Same image as db (psql + bash, nothing to build). By hand:
+    #   docker compose run --rm migrate            # apply pending migrations
+    #   docker compose run --rm migrate baseline   # adopt a pre-existing database
+    # See server/README.md, "Schema migrations".
+    image: timescale/timescaledb-ha:pg17
+    restart: "no"
+    logging: *app-logging
+    entrypoint: ["bash", "/puls/migrate.sh"]
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      MIGRATIONS_DIR: /puls/migrations
+      # Read by 099_read_roles.sh on every run: creates the grafana,
+      # api_reader and ingest roles and rotates their passwords to these.
+      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?set in .env}
+      API_DB_PASSWORD: ${API_DB_PASSWORD:?set in .env}
+      INGEST_DB_PASSWORD: ${INGEST_DB_PASSWORD:?set in .env}
+      # Calendar zone for every daily view (metric_daily, Grafana daily
+      # panels, the api's local-day ranges). Must match the phone's zone.
+      # 013_time_zone.sh validates it and stores it on the database
+      # (ALTER DATABASE … SET) on every run, so changing it later is: edit
+      # .env, `docker compose up -d`.
+      PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
+    volumes:
+      - ./db/migrate.sh:/puls/migrate.sh:ro
+      - ./db/migrations:/puls/migrations:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
   ingest:
     build:
       context: ./ingest
@@ -46,11 +81,12 @@ services:
     restart: unless-stopped
     logging: *app-logging
     environment:
-      # Defaults to the superuser so an unchanged .env keeps working. Once the
-      # scoped `ingest` role exists (db/init/099_read_roles.sh re-run with
-      # INGEST_DB_PASSWORD), set INGEST_DB_USER=ingest and INGEST_DB_PASSWORD
-      # in .env and `docker compose up -d ingest` — see server/README.md.
-      DATABASE_URL: postgres://${INGEST_DB_USER:-postgres}:${INGEST_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/postgres?sslmode=disable
+      # Connects as the scoped DML-only `ingest` role (created and kept
+      # current by 099_read_roles.sh from INGEST_DB_PASSWORD) — the only
+      # internet-facing service never holds the superuser password. To run
+      # as the superuser instead, set INGEST_DB_USER=postgres and
+      # INGEST_DB_PASSWORD to the same value as POSTGRES_PASSWORD in .env.
+      DATABASE_URL: postgres://${INGEST_DB_USER:-ingest}:${INGEST_DB_PASSWORD:?set in .env}@db:5432/postgres?sslmode=disable
       PULS_TOKEN: ${PULS_TOKEN:?set in .env}
       LISTEN_ADDR: ":8080"
     ports:
@@ -61,6 +97,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   api:
     build:
@@ -86,6 +124,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   web:
     # Next.js health viewer. Reads Postgres directly over the internal
@@ -110,6 +150,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   grafana:
     # Pinned: a :latest pull to Grafana 13 silently broke datasource
@@ -149,6 +191,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   db_data:

@@ -2,11 +2,9 @@
 -- statistics (min/avg/max/sum), workout events (laps/segments/pauses),
 -- multi-sport sub-activities, and the user profile (DOB/sex) for HR zones.
 --
--- Idempotent (IF NOT EXISTS / ADD COLUMN IF NOT EXISTS) so it can be applied to
--- a live database whose volume predates this file; /docker-entrypoint-initdb.d
--- only runs on first startup. Apply to a running DB with:
---   docker compose exec db psql -U postgres -d postgres -f \
---     /docker-entrypoint-initdb.d/006_workout_enhanced.sql
+-- Idempotent (IF NOT EXISTS / ADD COLUMN IF NOT EXISTS): it predates the
+-- migrate service and was applied by hand to live databases whose volume
+-- predated the file.
 
 -- Intra-workout time series: heart rate, power, cadence, speed, etc. — one row
 -- per datum, keyed by owning workout + quantity type. Hypertable so old chunks

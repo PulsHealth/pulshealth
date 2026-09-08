@@ -13,14 +13,19 @@
 # The value is validated against pg_timezone_names (exact, case-sensitive, so
 # the same string also satisfies Go's time.LoadLocation in the api service)
 # and written with ALTER DATABASE … SET, which applies to connections opened
-# after it runs (the app services connect later, so a fresh install picks it
-# up immediately). Changing the zone on a live database is the same command,
-# re-run — either re-run this script with the new value or:
+# after it runs. The migrate service (db/migrate.sh) runs this script on every
+# invocation, before the app services start, so a fresh install picks the zone
+# up immediately and changing it later is: edit PULS_TIME_ZONE in .env, then
+# `docker compose up -d` (migrate re-runs this; the app containers are
+# recreated because their environment changed). Without Compose the same
+# effect is:
 #
 #   docker compose exec db psql -U postgres -d postgres \
 #     -c "ALTER DATABASE postgres SET puls.time_zone = 'Europe/Berlin'"
 #
 # then restart the app containers (or wait for their pools to reconnect).
+# Connection comes from PGHOST/PGPORT/PGPASSWORD in the environment (set by
+# migrate.sh); POSTGRES_USER / POSTGRES_DB default to postgres/postgres.
 set -euo pipefail
 
 PULS_TIME_ZONE="${PULS_TIME_ZONE:-UTC}"
@@ -38,7 +43,7 @@ if [[ "$known" != "1" ]]; then
   exit 1
 fi
 
-psql -v ON_ERROR_STOP=1 -v tz="${PULS_TIME_ZONE}" \
+psql -q -v ON_ERROR_STOP=1 -v tz="${PULS_TIME_ZONE}" \
      --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
 ALTER DATABASE :"DBNAME" SET puls.time_zone = :'tz';
 EOSQL
