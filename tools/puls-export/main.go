@@ -200,21 +200,29 @@ func download(ctx context.Context, client *http.Client, opts options, stdout io.
 		return apiError(resp)
 	}
 
-	out := stdout
+	var (
+		out  = stdout
+		file *os.File
+	)
 	if opts.output != "" && opts.output != "-" {
-		file, err := os.Create(opts.output)
+		f, err := os.Create(opts.output)
 		if err != nil {
 			return err
 		}
-		defer file.Close()
-		out = file
+		// The safety net for an early return; the close that matters is the
+		// explicit one below, and this second one is a no-op after it.
+		defer f.Close()
+		file, out = f, f
 	}
 	// io.Copy streams: the export is never held in memory, however long it is.
 	if _, err := io.Copy(out, resp.Body); err != nil {
 		return fmt.Errorf("the download stopped early — the file is incomplete: %w", err)
 	}
-	if closer, ok := out.(*os.File); ok {
-		return closer.Close()
+	if file != nil {
+		// Only the file this call opened is closed — never the caller's
+		// stdout — and its error is reported: a last block that failed to
+		// reach the disk would otherwise be a silently short export.
+		return file.Close()
 	}
 	return nil
 }

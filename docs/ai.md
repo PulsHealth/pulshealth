@@ -238,7 +238,8 @@ by name — `getDailyMetrics`, `getSleepNights`, `listWorkouts`,
 boundary; `/`, `/docs`, `/openapi.json` and `/healthz` stay open, everything
 under `/v1/` needs it.
 
-Publishing a GPT (even "anyone with the link") requires a privacy policy URL.
+ChatGPT asks for a privacy policy URL for the Action before it will let you
+share the GPT with anyone else. Don't — see the caveats.
 
 ### 4. Check it
 
