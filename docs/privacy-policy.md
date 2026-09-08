@@ -124,8 +124,10 @@ provider's responsibility are yours:
 - **The bearer token.** It is a single shared secret. Anyone who has it can
   upload and delete data on your server. Rotate it if it leaks.
 - **Data at rest, backups, and deletion.** Your database holds identifiable
-  health data. Encryption at rest, backups (the project ships none), retention,
-  and honouring your own deletion requests are yours to arrange.
+  health data. Encryption at rest, retention, and honouring your own deletion
+  requests are yours to arrange. The project ships a backup service, but it is
+  opt-in and off until you turn it on — until then the Postgres volume is the
+  only copy.
 - **Anyone else you let use your server.** If you host other people's data, you
   are the data controller for it, and any obligations that come with that are
   yours.
