@@ -1,12 +1,14 @@
 # PulsHealth Server
 
 Self-hosted ingestion stack for Apple HealthKit data exported by the
-PulsHealth iOS app. Four app containers plus PostgreSQL via Docker Compose:
+PulsHealth iOS app. Four app containers plus PostgreSQL and a one-shot schema
+migrator via Docker Compose:
 
 | Service | Image | Port | Purpose |
 |---|---|---|---|
-| `db` | `timescale/timescaledb-ha:pg17` | 127.0.0.1:5432 | PostgreSQL 17 + TimescaleDB |
-| `ingest` | built from `ingest/` (Go, distroless) | 127.0.0.1:8080 | HTTP ingest API — expose it through a TLS-terminating proxy of your choice (Tailscale Serve/Funnel is one option; see "Exposing the server"); connects as `postgres` by default, or as the scoped DML-only `ingest` role once opted in (see below) |
+| `db` | `timescale/timescaledb-ha:pg17.11-ts2.29.2` (pinned — see "Upgrading the database image") | 127.0.0.1:5432 | PostgreSQL 17 + TimescaleDB |
+| `migrate` | same pinned image as `db` (one-shot) | — | Applies `db/migrations/` before the app services start, on every `docker compose up -d` (see "Schema migrations") |
+| `ingest` | built from `ingest/` (Go, distroless) | 127.0.0.1:8080 | HTTP ingest API — expose it through a TLS-terminating proxy of your choice (Tailscale Serve/Funnel is one option; see "Exposing the server"); connects as the scoped DML-only `ingest` role (see "The scoped `ingest` role") |
 | `api` | built from `api/` (Go, distroless) | 127.0.0.1:8081 | Product read API for downstream apps |
 | `grafana` | `grafana/grafana:13.0.2` (pinned — 13.x provisioning is version-sensitive) | 127.0.0.1:3000 | Dashboards (reach them through the same kind of TLS proxy, e.g. Tailscale Serve on `:8443`) |
 | `web` | built from `../web/` (Next.js standalone) | `${WEB_BIND_ADDR:-127.0.0.1}:3001` | Web health viewer — reads the DB directly as the read-only `grafana` role |
@@ -20,7 +22,8 @@ server/
 ├── .env.example          # copy to .env, fill in secrets
 ├── api/                  # Go product read API + Dockerfile
 ├── ingest/               # Go ingest server + Dockerfile
-├── db/init/              # schema, applied on first startup
+├── db/migrate.sh         # schema migrator, run by the `migrate` service
+├── db/migrations/        # numbered schema files it applies, in order
 ├── grafana/              # provisioned datasource + dashboard
 ```
 
@@ -31,14 +34,19 @@ cd server
 cp .env.example .env
 # Generate secrets (run once per variable):
 openssl rand -hex 32
-# Edit .env: POSTGRES_PASSWORD, PULS_TOKEN, PULS_API_TOKEN,
-# GRAFANA_PASSWORD, GRAFANA_DB_PASSWORD, API_DB_PASSWORD — and PULS_TIME_ZONE,
-# which must be right BEFORE the first start (see "Configuration" below).
+# Edit .env: POSTGRES_PASSWORD, PULS_TOKEN, PULS_API_TOKEN, GRAFANA_PASSWORD,
+# GRAFANA_DB_PASSWORD, API_DB_PASSWORD, INGEST_DB_PASSWORD — and PULS_TIME_ZONE
+# (see "Configuration" below).
 
-docker compose up -d --build
+docker compose up -d --build         # db → migrate (schema) → ingest, api, web, grafana
+docker compose logs migrate          # one line per schema file: applied / skipped / rerun
 curl -s localhost:8080/healthz       # → {"db":true,"ok":true}
 curl -s localhost:8081/healthz       # → {"db":true,"ok":true}
 ```
+
+That is the whole install: the `migrate` service creates the schema on an
+empty volume, records what it applied, and every app service waits for it
+to finish. The same command upgrades a running install later.
 
 ### Configuration
 
@@ -50,33 +58,27 @@ comments). Beyond the passwords and tokens, two settings deserve attention:
   calendar: the `metric_daily` view, Grafana's daily panels, the product API's
   local-day ranges, and the web viewer. It has to match the phone because the
   daily aggregates HealthKit computes on-device are already in the phone's
-  local calendar — a mismatch splits days between two rows. **Set it before
-  the first start:** `db/init/013_time_zone.sh` validates it against
-  `pg_timezone_names` (init fails loudly on an unknown name) and stores it on
-  the database with `ALTER DATABASE … SET puls.time_zone`, which the
-  `puls_time_zone()` SQL function reads. Compose hands the same value to the
-  `api` and `web` containers (the API refuses to start on an invalid name).
-  Nothing in `db/init/` re-runs on an existing volume, so to change the zone
-  later store the new value by hand, then recreate the app containers so their
-  pools reconnect:
+  local calendar — a mismatch splits days between two rows. The `migrate`
+  service stores it on the database on every start:
+  `db/migrations/013_time_zone.sh` validates it against `pg_timezone_names`
+  (the stack refuses to start on an unknown name) and writes it with
+  `ALTER DATABASE … SET puls.time_zone`, which the `puls_time_zone()` SQL
+  function reads. Compose hands the same value to the `api` and `web`
+  containers (the API refuses to start on an invalid name). To change the
+  zone later:
 
   ```bash
-  # 1. set the new PULS_TIME_ZONE in .env (so a future re-init agrees), then
-  #    validate + store it on the running database (same script init ran):
-  docker compose exec -T -e PULS_TIME_ZONE=Europe/Berlin \
-    db bash /docker-entrypoint-initdb.d/013_time_zone.sh
-  #    (equivalent, without validation:
-  #     docker compose exec db psql -U postgres -d postgres \
-  #       -c "ALTER DATABASE postgres SET puls.time_zone = 'Europe/Berlin'")
-  # 2. pick it up — Compose recreates db/api/web because their environment
-  #    changed; the data volume is untouched:
+  # 1. set the new PULS_TIME_ZONE in .env
+  # 2. migrate re-stores it, and Compose recreates api/web because their
+  #    environment changed; the data volume is untouched:
   docker compose up -d
   docker compose exec db psql -U postgres -d postgres -tAc "SELECT puls_time_zone()"
   ```
 
-  The setting applies to new connections only. Stored rows are never
-  rewritten; the daily views simply re-bucket on read, and Grafana's hidden
-  `tz` variable re-queries it on dashboard load.
+  The setting applies to new connections only (ingest and Grafana pick it up
+  as their pools reconnect; `docker compose restart ingest grafana` forces
+  it). Stored rows are never rewritten; the daily views simply re-bucket on
+  read, and Grafana's hidden `tz` variable re-queries it on dashboard load.
 - **`GRAFANA_ALERT_EMAIL`** — the recipient of every Grafana alert
   (`grafana/provisioning/alerting/contact-points.yml` templates it). Compose
   defaults it to `alerts@example.com` so the contact point always has an
@@ -94,120 +96,161 @@ repo. To upgrade a running install, pull the new revision and rebuild:
 ```bash
 git pull
 cd server && docker compose up -d --build
+docker compose logs migrate                      # what the schema step did
 curl -s localhost:8080/healthz && curl -s localhost:8081/healthz
 ```
 
-The schema in `db/init/` is applied automatically **only on first startup**
-(empty `db_data` volume); on an existing volume nothing in `db/init/` runs
-again, so schema changes must be applied by hand (next section). A migration
-framework that applies numbered SQL at startup is planned — see
-[`docs/open-source-plan.md`](../docs/open-source-plan.md). Until it lands,
-**take a `pg_dump` before any schema change**: the stack ships no backup
-service (see "Backup & restore"), so the live volume is the only copy.
-Re-applying the schema from scratch means dropping the volume
+`docker compose up -d` always runs the `migrate` service before it
+(re)starts `ingest`, `api`, `web` and `grafana`, so a revision that adds a
+schema file applies it before the code that depends on it comes up. If a
+migration fails, the app services are not started and `docker compose up`
+reports `dependency failed to start`; the containers from the previous
+revision are left running as they were. Fix the cause and `docker compose
+up -d` again. **Take a `pg_dump` before upgrading**: the stack ships no
+backup service (see "Backup & restore"), so the live volume is the only
+copy. Re-applying the schema from scratch means dropping the volume
 (`docker compose down -v && docker compose up -d`), which **destroys all data
 irrecoverably**.
 
-### Schema changes on a live database
+### Schema migrations
 
-There is no replayable migration framework yet. Write new DDL as an idempotent
-(`CREATE TABLE IF NOT EXISTS …`) file in `db/init/` — see `002_series_tables.sql`
-for the pattern — so fresh installs pick it up automatically, then apply it to a
-running database by hand. `db/init/` is bind-mounted read-only into the `db`
-container at `/docker-entrypoint-initdb.d`, so the file is already there:
+`db/migrate.sh`, run by the `migrate` Compose service (the same pinned
+`timescale/timescaledb-ha` image as `db`, so `psql` and `bash` are there and
+nothing is built), applies the files in `db/migrations/` in lexical
+order and records each one in a `schema_migrations` table (`filename`,
+`applied_at`, `checksum`). It runs on every `docker compose up -d` and by
+hand with `docker compose run --rm migrate`. It logs one line per file —
+`applied`, `skipped`, `rerun` or `ran` — and a summary line.
+
+| File | Behaviour |
+|---|---|
+| `NNN_name.sql` | One-shot. Applied once, inside a single transaction together with its `schema_migrations` row (`psql --single-transaction`, `ON_ERROR_STOP`), so a failed file leaves nothing behind and is retried on the next run. Applied files are immutable: the migrator refuses to continue when a recorded file's checksum no longer matches (edit a new file, never an applied one) or when a recorded file is missing (never rename or delete one). |
+| `-- puls:rerun` on the first line | Re-runnable: applied whenever its checksum differs from the recorded one, and the record is updated. For files that are `CREATE OR REPLACE` or upserts by design — `009_metric_daily.sql` (the view and `puls_time_zone()`) and `010_category_labels.sql` (the label seed, refreshed after SDK updates). Edit those in place. |
+| `-- puls:no-transaction` on the first line | Applied statement by statement instead of under one transaction, for a file with a statement that cannot run in a transaction block (`008_quantity_rollups.sql`: `refresh_continuous_aggregate`). Such a file must be idempotent, since a mid-file failure is retried from the top. |
+| `NNN_name.sh` | Run on every invocation, never recorded: `013_time_zone.sh` (stores `PULS_TIME_ZONE`) and `099_read_roles.sh` (creates the `grafana`, `api_reader` and `ingest` roles and rotates their passwords to the `.env` values, so rotating a database password is "edit `.env`, `docker compose up -d`"). They read `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` and `PULS_TIME_ZONE`, which Compose passes to the service. |
+
+**Adding a migration.** Create the next `NNN_name.sql` (three digits, an
+underscore, a name), write plain DDL/DML — no `BEGIN`/`COMMIT`, the migrator
+wraps it; `IF NOT EXISTS` is still welcome — and `docker compose up -d`.
+Fresh installs and existing installs take the same path. Tables created this
+way are readable by `grafana` and writable by `ingest` at once through the
+default privileges `099_read_roles.sh` sets; `api_reader` has an exact grant
+list, so extend that script (and its assertion) when the product API needs a
+new table. Never edit a file that has been applied anywhere — put the change
+in a new file. Ordering between schema and code is automatic: `migrate`
+applies every pending file before `ingest` starts, which is why files such
+as `003_aggregates.sql`, `005_activity_summaries.sql`,
+`006_workout_enhanced.sql`, `007_wake_telemetry.sql` and
+`011_temporal_contexts.sql` — all referenced unconditionally by
+`InsertBatch` — are in place before the build that writes them comes up.
+
+**Existing databases (created before the migrate service): baseline once.**
+A database that has the schema but no `schema_migrations` table makes the
+migrator stop with exit 1 rather than guess which files it contains, so
+`docker compose up -d` will not start the app services until you tell it.
+If every file in `db/migrations/` has already been applied to it — true for
+any database created by the old first-start init and kept current by hand —
+record that:
 
 ```bash
-docker compose exec -T db pg_dump -U postgres -Fc postgres > before-00N.dump   # first
-docker compose exec db psql -U postgres -d postgres \
-  -f /docker-entrypoint-initdb.d/00N_new_tables.sql
+git pull
+# add INGEST_DB_PASSWORD=<openssl rand -hex 32> to .env (see "The scoped ingest role")
+cd server
+docker compose run --rm migrate baseline
+docker compose up -d --build
 ```
 
-Nothing ever replays the whole bootstrap set against a populated volume, and
-the role script (`099_read_roles.sh`) is only re-run deliberately (below).
-
-#### Add the product API role to an existing database
-
-Add `PULS_API_TOKEN` and `API_DB_PASSWORD` to `.env` first. Fresh installs
-pick up `api_reader` from `db/init/099_read_roles.sh`, but existing populated
-`db_data` volumes do not rerun `db/init`, so the role must be applied manually.
-The script is safe to rerun: it creates missing roles, rotates passwords, and
-re-applies the exact product API grants.
+`baseline` records every `*.sql` file as applied, with its checksum,
+**without running any of them**, runs the `*.sh` files (so the `ingest` role
+exists before ingest starts), and prints what it recorded. Re-runnable files
+are recorded without a checksum, so the `docker compose up -d` that follows
+applies `009_metric_daily.sql` and `010_category_labels.sql` once. Both are
+`CREATE OR REPLACE`/upsert, so that is safe whatever state their objects were
+in — a database created before `puls_time_zone()` existed gets the current
+`metric_daily` this way with no manual step; if you prefer, apply such a file
+by hand before or after the baseline instead. If a one-shot file has *not*
+been applied to your database, apply it by hand first, then baseline:
 
 ```bash
-source .env
-
-docker compose exec -T \
-  -e GRAFANA_DB_PASSWORD="$GRAFANA_DB_PASSWORD" \
-  -e API_DB_PASSWORD="$API_DB_PASSWORD" \
-  db bash /docker-entrypoint-initdb.d/099_read_roles.sh
+docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+  < db/migrations/NNN_name.sql
 ```
 
-#### Run ingest as the scoped `ingest` role (opt-in)
+The first `docker compose up -d` after this change also recreates the `db`
+container (its definition lost the init-script mount and the role passwords,
+and its image is now pinned rather than the floating `pg17` tag); the data
+volume is untouched, but a database created from the older floating tag now
+runs under a newer TimescaleDB binary — read "Upgrading the database image"
+below before or right after adopting it.
 
-Ingest is the only internet-facing service, yet Compose defaults its
-`DATABASE_URL` to the `postgres` superuser. The same `099_read_roles.sh` can
-create a scoped `ingest` role holding exactly what `ingest/store.go` needs:
-`CONNECT`, `USAGE` on `public`, `SELECT/INSERT/UPDATE/DELETE` on every table
-and view in `public`, `USAGE/SELECT` on its sequences, and default privileges
-so tables and sequences added by future init files are covered too. It has no
-`CREATE` on the schema, no `TRUNCATE`, and none of `SUPERUSER`, `CREATEROLE`,
+### Upgrading the database image
+
+`docker-compose.yml` pins PostgreSQL + TimescaleDB to one exact tag
+(`x-db-image`, shared by `db` and `migrate` so they cannot drift; currently
+`timescale/timescaledb-ha:pg17.11-ts2.29.2`). The floating `pg17` tag moves
+TimescaleDB minor versions underneath running installs — 2.27 → 2.29 changed
+its internal catalog and broke the role script until it was rewritten
+against the public `timescaledb_information` views — so bumping the tag is a
+deliberate step. What was verified for this pin, on a volume created by the
+2.27.1 image with compressed chunks, a continuous aggregate and the three
+roles:
+
+- **The image does not upgrade the extension by itself.** It ships every
+  versioned `timescaledb-*.so` back to 2.17 and its only initdb hook is a
+  `CREATE EXTENSION` that runs on a brand-new volume, so the old database
+  starts under the new image and keeps working on its old extension
+  (`extversion` stays `2.27.1`, queries and `migrate` run). `migrate` prints
+  a NOTE whenever the installed extension differs from the one the image
+  ships.
+- **Upgrade the extension yourself, deliberately** — in a fresh session
+  (`psql -X`, first statement) with no app service connected, after a
+  `pg_dump`; extension updates are one-way:
+
+  ```bash
+  docker compose stop ingest api web grafana
+  docker compose exec db psql -X -U postgres -d postgres -c "ALTER EXTENSION timescaledb UPDATE"
+  docker compose up -d
+  ```
+
+  Verified 2.27.1 → 2.29.2: the update drops the old `_compressed_hypertable_N`
+  parents, keeps the existing compressed chunks (and their grants) under
+  their old `compress_hyper_N_M_chunk` names next to new `<chunk>_compressed`
+  ones, and `migrate` — `099_read_roles.sh` included — runs clean before and
+  after it.
+- Bump the tag in `docker-compose.yml` only: CI's `db-migrate` job and
+  `tests/test_healthkit_notebook.py` read the image from there.
+
+### The scoped `ingest` role
+
+Ingest is the only internet-facing service, so it does not hold the
+superuser password: Compose connects it as the `ingest` role
+(`INGEST_DB_USER` defaults to `ingest`; `INGEST_DB_PASSWORD` is required),
+which `099_read_roles.sh` creates on every migrate run holding exactly what
+`ingest/store.go` needs: `CONNECT`, `USAGE` on `public`,
+`SELECT/INSERT/UPDATE/DELETE` on every table and view in `public`,
+`USAGE/SELECT` on its sequences, and default privileges so tables and
+sequences added by future migrations are covered too. It has no `CREATE` on
+the schema, no `TRUNCATE`, and none of `SUPERUSER`, `CREATEROLE`,
 `CREATEDB`, `REPLICATION` or `BYPASSRLS`, so an ingest bug or a leaked
-`PULS_TOKEN` cannot drop tables, alter roles, or `COPY TO PROGRAM`. TimescaleDB
-propagates the grants to hypertable chunks (existing ones on grant, new ones
-as they are created), and the `SET LOCAL
+`PULS_TOKEN` cannot drop tables, alter roles, or `COPY TO PROGRAM`.
+TimescaleDB propagates the grants to hypertable chunks (existing ones on
+grant, new ones as they are created), and the `SET LOCAL
 timescaledb.max_tuples_decompressed_per_dml_transaction` that `InsertBatch`
 issues is a user-settable GUC; the script proves both, plus the exact role
 attributes and ACL set, before it commits.
 
-The role is opt-in so an unchanged `.env` keeps working: the `db` service's
-environment carries only the two required passwords, so on a fresh volume the
-script runs without `INGEST_DB_PASSWORD`, logs that it skipped the ingest
-role, and ingest keeps connecting as `postgres`. To opt in on a running
-database:
+To run ingest as the superuser instead (not recommended), set
+`INGEST_DB_USER=postgres` and `INGEST_DB_PASSWORD` to the same value as
+`POSTGRES_PASSWORD` in `.env`, then `docker compose up -d ingest`. Either
+way, verify who is connected:
 
 ```bash
-# 1. add to .env:  INGEST_DB_USER=ingest  and  INGEST_DB_PASSWORD=$(openssl rand -hex 32)
-set -a; source .env; set +a
-
-# 2. create (or rotate) the role and apply its exact grants — safe to rerun
-docker compose exec -T \
-  -e GRAFANA_DB_PASSWORD="$GRAFANA_DB_PASSWORD" \
-  -e API_DB_PASSWORD="$API_DB_PASSWORD" \
-  -e INGEST_DB_PASSWORD="$INGEST_DB_PASSWORD" \
-  db bash /docker-entrypoint-initdb.d/099_read_roles.sh
-
-# 3. recreate only ingest with the new DATABASE_URL, then verify
-docker compose up -d ingest
+docker compose exec db psql -U postgres -d postgres -tAc \
+  "SELECT DISTINCT usename FROM pg_stat_activity WHERE client_addr IS NOT NULL"
+# → api_reader, grafana, ingest
 curl -fsS http://127.0.0.1:8080/healthz
 curl -fsS -H "Authorization: Bearer $PULS_TOKEN" http://127.0.0.1:8080/v1/stats
 ```
-
-Roll back by removing `INGEST_DB_USER`/`INGEST_DB_PASSWORD` from `.env` and
-running `docker compose up -d ingest` again; the role can stay. These three
-steps are the complete procedure — other docs that mention opting in point
-back to this section.
-
-Live databases whose volume predates `003_aggregates.sql` (aggregate
-series/bucket tables + `batches.aggregate_count`) need it applied this way
-**before** deploying an ingest build that accepts aggregate lines — the
-ingest transaction references the new tables and column unconditionally. The
-same applies to `005_activity_summaries.sql` (the `activity_summaries` table +
-`batches.activity_summary_count`): apply it before deploying an ingest build
-that accepts activity-summary lines.
-
-Likewise `006_workout_enhanced.sql` (the `workout_series_points` hypertable and
-`workouts.stats_detail/events/activities` columns) must be applied **before**
-deploying an ingest build that accepts workout-series lines, since `InsertBatch`
-references those tables unconditionally.
-
-`007_wake_telemetry.sql` adds wake-correlation/timing columns to `batches`
-(`wake_id`, `trigger`, `parse_ms`, `insert_ms`). `InsertBatch` writes them
-unconditionally, so apply it **before** deploying the ingest build that sets them.
-
-`011_temporal_contexts.sql` adds the `temporal_contexts` lookup table and nullable
-temporal-context ID columns used to reconstruct source local wall time.
-`InsertBatch` writes those columns whenever new clients send temporal context,
-so apply it **before** deploying an ingest build that stores local-time context.
 
 `010_category_labels.sql` adds the `category_labels` lookup table for joining
 raw `category_samples.value` integers to their HealthKit meanings:
@@ -225,13 +268,11 @@ The ground truth for this seed data is the HealthKit SDK bundled with Xcode:
 `HKTypeIdentifiers.h` maps each `HKCategoryTypeIdentifier*` to its category
 value enum, and `HKCategoryValues.h` defines the integer values and enum names.
 Refresh `010_category_labels.sql` after major Xcode/iOS SDK updates, or when
-adding support for newly exposed HealthKit category types. Apply it to a live DB
-the same way as other idempotent schema files, then verify the expected seed
-shape:
+adding support for newly exposed HealthKit category types. It carries the
+`-- puls:rerun` marker and its insert is an upsert, so after editing it
+`docker compose up -d` re-applies it; then verify the expected seed shape:
 
 ```bash
-docker compose exec db psql -U postgres -d postgres \
-  -f /docker-entrypoint-initdb.d/010_category_labels.sql
 docker compose exec db psql -U postgres -d postgres -tA \
   -c "SELECT count(*), count(DISTINCT type_identifier) FROM category_labels;"
 # iPhoneOS 26.5 SDK seed: 257|70
@@ -241,7 +282,7 @@ docker compose exec db psql -U postgres -d postgres -tA \
 and the profile line's user upsert reference) and seeds the default user. It runs
 first on a fresh volume; there is no in-place migration for the `user_id`
 columns, so adding users to a database with existing data means a full reset —
-drop the volume, let `db/init` re-run, and resync from the app.
+drop the volume, let `migrate` rebuild the schema, and resync from the app.
 
 ### The token
 
@@ -566,14 +607,8 @@ WHERE gap IS NOT NULL GROUP BY thr ORDER BY thr;
 
 The sequence rule needs `SELECT` on the sequences — without it
 `pg_sequences.last_value` reads NULL for the `grafana` role and the rule
-evaluates to 0 forever. `099_read_roles.sh` grants it; on a database created
-before that change, apply it by hand:
-
-```bash
-docker compose exec -T db psql -U postgres -d postgres \
-  -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO grafana;" \
-  -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON SEQUENCES TO grafana;"
-```
+evaluates to 0 forever. `099_read_roles.sh` grants it on every
+`docker compose up -d`.
 
 **Email delivery needs one manual step.** Rules always evaluate and always
 turn the UI red, but `GF_SMTP_ENABLED` defaults to `false` so a deploy can
@@ -609,12 +644,14 @@ If you add backups, note that TimescaleDB restores require
 ```bash
 cd ingest
 go vet ./... && go test ./...                  # unit tests, no DB needed
-# Integration test against the compose database:
-docker compose up -d db
-DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" go test -run Integration ./...
-# ...or as the scoped ingest role (after opting in, see above); the superuser
-# URL is still needed for the tests' DDL and compress_chunk setup steps:
+# Integration tests against the compose database (db + schema, nothing else):
+docker compose up -d migrate
+set -a; source ../.env; set +a
+# As the scoped ingest role — what the stack connects as; the superuser URL is
+# still needed for the tests' DDL and compress_chunk setup steps:
 DATABASE_URL="postgres://ingest:$INGEST_DB_PASSWORD@localhost:5432/postgres" \
 ADMIN_DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" \
   go test -run Integration ./...
+# ...or everything as the superuser:
+DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" go test -run Integration ./...
 ```

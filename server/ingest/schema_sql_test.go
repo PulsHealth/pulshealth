@@ -8,8 +8,8 @@ import (
 
 func TestQuantityRollupsExposeSumValue(t *testing.T) {
 	for _, path := range []string{
-		"../db/init/001_schema.sql",
-		"../db/init/008_quantity_rollups.sql",
+		"../db/migrations/001_schema.sql",
+		"../db/migrations/008_quantity_rollups.sql",
 	} {
 		sql := readSQL(t, path)
 		if !strings.Contains(sql, "sum(value)  AS sum_value") {
@@ -19,7 +19,7 @@ func TestQuantityRollupsExposeSumValue(t *testing.T) {
 }
 
 func TestMetricDailyUsesOnlyCanonicalDailyAggregates(t *testing.T) {
-	sql := readSQL(t, "../db/init/009_metric_daily.sql")
+	sql := readSQL(t, "../db/migrations/009_metric_daily.sql")
 	for _, want := range []string{
 		"s.interval_value = 1",
 		"s.interval_unit = 'day'",
@@ -37,7 +37,7 @@ func TestMetricDailyUsesOnlyCanonicalDailyAggregates(t *testing.T) {
 }
 
 func TestMetricDailyEnablesCurrentRollupData(t *testing.T) {
-	sql := readSQL(t, "../db/init/009_metric_daily.sql")
+	sql := readSQL(t, "../db/migrations/009_metric_daily.sql")
 	if !strings.Contains(sql,
 		"ALTER MATERIALIZED VIEW quantity_rollups SET (timescaledb.materialized_only = false)") {
 		t.Fatal("metric_daily migration does not enable real-time quantity_rollups")
@@ -45,7 +45,7 @@ func TestMetricDailyEnablesCurrentRollupData(t *testing.T) {
 }
 
 func TestMetricDailyFallbackSemanticsAreExplicit(t *testing.T) {
-	sql := readSQL(t, "../db/init/009_metric_daily.sql")
+	sql := readSQL(t, "../db/migrations/009_metric_daily.sql")
 	if !strings.Contains(sql, "sum(r.sum_value)") {
 		t.Fatalf("metric_daily does not use quantity_rollups.sum_value for cumulative fallback")
 	}
@@ -64,7 +64,7 @@ func TestMetricDailyFallbackSemanticsAreExplicit(t *testing.T) {
 }
 
 func TestTemporalContextsSchemaAddsActivitySummaryContext(t *testing.T) {
-	sql := readSQL(t, "../db/init/011_temporal_contexts.sql")
+	sql := readSQL(t, "../db/migrations/011_temporal_contexts.sql")
 	for _, want := range []string{
 		"CREATE TABLE IF NOT EXISTS temporal_contexts",
 		"utc_offset_seconds  integer NOT NULL",
@@ -78,7 +78,7 @@ func TestTemporalContextsSchemaAddsActivitySummaryContext(t *testing.T) {
 }
 
 func TestProductAPIReadRoleIncludesAggregateCatalogTables(t *testing.T) {
-	script := readSQL(t, "../db/init/099_read_roles.sh")
+	script := readSQL(t, "../db/migrations/099_read_roles.sh")
 	for _, table := range []string{"aggregate_series", "aggregate_samples"} {
 		if !strings.Contains(script, table) {
 			t.Fatalf("product API read-role script missing %s", table)

@@ -12,6 +12,12 @@ from nbclient import NotebookClient
 ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK = ROOT / "notebooks" / "healthkit_database_exploration.ipynb"
 DB_PASSWORD = "puls_notebook_test"
+# The exact PostgreSQL + TimescaleDB image the compose stack pins (x-db-image in
+# server/docker-compose.yml), so the throwaway database matches a real install.
+DB_IMAGE = re.search(
+    r"timescale/timescaledb-ha:[\w.\-]+",
+    (ROOT / "server" / "docker-compose.yml").read_text(),
+).group(0)
 
 
 def run(cmd, *, env=None, check=True):
@@ -36,29 +42,25 @@ def wait_for_postgres(database_url):
     raise AssertionError("temporary Postgres did not become ready")
 
 
-def apply_schema(database_url):
-    run(
-        [
-            "psql",
-            database_url,
-            "-v",
-            "ON_ERROR_STOP=1",
-            "-c",
-            """
-            DO $$
-            BEGIN
-              IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grafana') THEN
-                CREATE ROLE grafana LOGIN PASSWORD 'puls_notebook_test';
-              END IF;
-            END
-            $$;
-            GRANT CONNECT ON DATABASE postgres TO grafana;
-            GRANT USAGE ON SCHEMA public TO grafana;
-            """,
-        ]
-    )
-    for sql_path in sorted((ROOT / "server" / "db" / "init").glob("*.sql")):
-        run(["psql", database_url, "-v", "ON_ERROR_STOP=1", "-f", str(sql_path)])
+def apply_schema(port):
+    # The same path a fresh `docker compose up -d` takes: server/db/migrate.sh
+    # applies every file in server/db/migrations/ in order (recording them in
+    # schema_migrations) and runs the role and time-zone scripts, here against
+    # the throwaway container over TCP with the superuser password.
+    env = {
+        **os.environ,
+        "PGHOST": "127.0.0.1",
+        "PGPORT": port,
+        "PGPASSWORD": DB_PASSWORD,
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_DB": "postgres",
+        "MIGRATIONS_DIR": str(ROOT / "server" / "db" / "migrations"),
+        "GRAFANA_DB_PASSWORD": DB_PASSWORD,
+        "API_DB_PASSWORD": DB_PASSWORD,
+        "INGEST_DB_PASSWORD": DB_PASSWORD,
+        "PULS_TIME_ZONE": "UTC",
+    }
+    run(["bash", str(ROOT / "server" / "db" / "migrate.sh")], env=env)
 
 
 def seed_healthkit_rows(database_url):
@@ -143,7 +145,7 @@ def test_healthkit_notebook_executes_against_seeded_database(tmp_path):
                 f"POSTGRES_PASSWORD={DB_PASSWORD}",
                 "-p",
                 "127.0.0.1::5432",
-                "timescale/timescaledb-ha:pg17",
+                DB_IMAGE,
             ]
         )
         container_id = container.stdout.strip()
@@ -154,7 +156,7 @@ def test_healthkit_notebook_executes_against_seeded_database(tmp_path):
         database_url = f"postgresql://postgres:{DB_PASSWORD}@127.0.0.1:{port}/postgres"
 
         wait_for_postgres(database_url)
-        apply_schema(database_url)
+        apply_schema(port)
         seed_healthkit_rows(database_url)
         env_path.write_text(
             "\n".join(

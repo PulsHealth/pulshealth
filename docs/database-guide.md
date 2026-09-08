@@ -747,8 +747,11 @@ Local disposable database:
 ```bash
 cd server
 cp .env.example .env
-docker compose up -d db
+docker compose up -d migrate      # db + schema, nothing else
 ```
 
-Fresh installs apply `server/db/init/*.sql` only on an empty database volume.
-Existing live databases require manual schema application.
+The `migrate` Compose service applies `server/db/migrations/` on every
+`docker compose up -d` and records what it applied in `schema_migrations`: a
+fresh volume gets the whole set, and a database created before the service
+existed needs a one-time `docker compose run --rm migrate baseline`. See
+`server/README.md`, "Schema migrations".

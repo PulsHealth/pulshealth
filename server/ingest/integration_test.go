@@ -19,7 +19,7 @@ import (
 
 // adminPool connects as a role that owns the schema, for the few setup steps
 // the scoped `ingest` role is deliberately not allowed to perform: applying
-// db/init DDL and compress_chunk (TimescaleDB requires the hypertable owner).
+// db/migrations DDL and compress_chunk (TimescaleDB requires the hypertable owner).
 // ADMIN_DATABASE_URL falls back to DATABASE_URL, so running the whole suite as
 // the superuser keeps working unchanged; to exercise the production role, set
 // DATABASE_URL to the ingest credentials and ADMIN_DATABASE_URL to postgres.
@@ -39,7 +39,8 @@ func adminPool(t *testing.T, ctx context.Context) *pgxpool.Pool {
 
 // TestIntegration_IngestRoundTrip exercises the full store path against a
 // real database. It is skipped unless DATABASE_URL is set and expects the
-// schema from server/db/init to be applied, e.g.:
+// schema from server/db/migrations to be applied (the compose `migrate` service
+// does that on `docker compose up -d`), e.g.:
 //
 //	docker compose up -d db
 //	DATABASE_URL=postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres go test ./...
@@ -169,7 +170,7 @@ func TestIntegration_CategoryLabelsJoin(t *testing.T) {
 	}
 	defer pool.Close()
 
-	ddl, err := os.ReadFile("../db/init/010_category_labels.sql")
+	ddl, err := os.ReadFile("../db/migrations/010_category_labels.sql")
 	if err != nil {
 		t.Fatalf("read category labels schema: %v", err)
 	}
@@ -457,7 +458,7 @@ func TestIntegration_SeriesKindsAndRoutes(t *testing.T) {
 // a real database: recomputed buckets overwrite previous values (including an
 // explicit null), and the natural series key is shared across devices.
 // Gated on DATABASE_URL like TestIntegration_IngestRoundTrip. The schema in
-// db/init is applied only on first startup, so this test applies the
+// db/migrations may not have reached a shared DB yet, so this test applies the
 // idempotent 003_aggregates.sql itself in case the volume predates it.
 func TestIntegration_AggregateUpsert(t *testing.T) {
 	url := os.Getenv("DATABASE_URL")
@@ -475,7 +476,7 @@ func TestIntegration_AggregateUpsert(t *testing.T) {
 	defer pool.Close()
 	store := NewStore(pool)
 
-	ddl, err := os.ReadFile("../db/init/003_aggregates.sql")
+	ddl, err := os.ReadFile("../db/migrations/003_aggregates.sql")
 	if err != nil {
 		t.Fatalf("read 003_aggregates.sql: %v", err)
 	}

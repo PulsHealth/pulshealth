@@ -8,9 +8,8 @@
 -- foreground | manual). parse_ms/insert_ms are server-measured timings, persisted
 -- here so they survive container restarts (they were previously log-only).
 --
--- Idempotent (IF NOT EXISTS) so it can be applied to a live database:
---   docker compose exec db psql -U postgres -d postgres -f \
---     /docker-entrypoint-initdb.d/007_wake_telemetry.sql
+-- Idempotent (IF NOT EXISTS): it predates the migrate service and was applied
+-- by hand to live databases whose volume predated the file.
 
 ALTER TABLE batches ADD COLUMN IF NOT EXISTS wake_id   uuid;
 ALTER TABLE batches ADD COLUMN IF NOT EXISTS trigger   text;

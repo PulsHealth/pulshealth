@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// defaultUserID is the seeded default user (see db/init/000_users.sql). Batches
+// defaultUserID is the seeded default user (see db/migrations/000_users.sql). Batches
 // that arrive without an X-User-ID header are attributed to it, and it is the
 // column DEFAULT on every data table.
 const defaultUserID = "5ea4d000-0000-4000-8000-000000000001"
