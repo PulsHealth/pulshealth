@@ -20,10 +20,55 @@ type fakeStore struct {
 	activity []ActivityDay
 	workouts []WorkoutSummary
 	workout  *WorkoutDetail
+	nights   []SleepNight
+	samples  *SamplesPage
+	series   *WorkoutSeriesResponse
+	moods    []StateOfMindEntry
 	calls    struct {
 		catalog int
 	}
+	// The arguments of the most recent samples / series call, so handler
+	// tests can assert on what the parsers produced.
+	lastSamples SampleFilters
+	lastSeries  struct {
+		uuid      string
+		types     []string
+		maxPoints int
+	}
 	err error
+}
+
+func (f *fakeStore) SleepDaily(context.Context, time.Time, time.Time) ([]SleepNight, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.nights, nil
+}
+
+func (f *fakeStore) Samples(_ context.Context, filters SampleFilters) (*SamplesPage, error) {
+	f.lastSamples = filters
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.samples == nil {
+		return &SamplesPage{Type: filters.Type, Kind: "quantity", Samples: []Sample{}, NextOffset: filters.Offset}, nil
+	}
+	return f.samples, nil
+}
+
+func (f *fakeStore) WorkoutSeries(_ context.Context, uuid string, types []string, maxPoints int) (*WorkoutSeriesResponse, error) {
+	f.lastSeries.uuid, f.lastSeries.types, f.lastSeries.maxPoints = uuid, types, maxPoints
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.series, nil
+}
+
+func (f *fakeStore) StateOfMind(context.Context, time.Time, time.Time) ([]StateOfMindEntry, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.moods, nil
 }
 
 func (f *fakeStore) Ping(context.Context) error { return f.err }
@@ -196,13 +241,267 @@ func TestOpenAPIWithoutAuthAdvertisesProductPaths(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode body: %v", err)
 	}
-	for _, path := range []string{"/v1/profile", "/v1/catalog/types", "/v1/metrics/latest", "/v1/metrics/daily", "/v1/activity/summary", "/v1/workouts", "/v1/workouts/{uuid}"} {
+	for _, path := range []string{
+		"/v1/profile", "/v1/catalog/types", "/v1/metrics/latest", "/v1/metrics/daily", "/v1/activity/summary",
+		"/v1/workouts", "/v1/workouts/{uuid}", "/v1/workouts/{uuid}/series", "/v1/sleep/daily", "/v1/samples", "/v1/state-of-mind",
+	} {
 		if _, ok := body.Paths[path]; !ok {
 			t.Fatalf("openapi paths missing %s", path)
 		}
 	}
-	if _, ok := body.Components.Schemas["WorkoutDetail"]; !ok {
-		t.Fatal("openapi schemas missing WorkoutDetail")
+	for _, schema := range []string{"WorkoutDetail", "SleepNight", "SamplesPage", "WorkoutSeriesResponse", "StateOfMindEntry"} {
+		if _, ok := body.Components.Schemas[schema]; !ok {
+			t.Fatalf("openapi schemas missing %s", schema)
+		}
+	}
+
+	// The HTML reference lists the same endpoints.
+	docs := serveAuthorized(t, srv, http.MethodGet, "/docs", nil)
+	for _, path := range []string{"/v1/sleep/daily", "/v1/samples", "/v1/workouts/{uuid}/series", "/v1/state-of-mind"} {
+		if !strings.Contains(docs.Body.String(), path) {
+			t.Errorf("docs page does not mention %s", path)
+		}
+	}
+}
+
+func TestSleepDailyReturnsNightsWhenAuthorized(t *testing.T) {
+	t.Parallel()
+
+	srv := testServer(t, &fakeStore{nights: []SleepNight{{
+		Date: "2026-09-21", Start: 1789968600000, End: 1789997400000,
+		InBedMinutes: 480, AsleepMinutes: 460,
+		Stages:  SleepStages{Core: 340, Deep: 60, REM: 60, Awake: 10},
+		Sources: 2,
+	}}})
+
+	rec := serveAuthorized(t, srv, http.MethodGet, "/v1/sleep/daily?start=1789930800000&end=1790017200000", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	var body struct {
+		Nights []map[string]any `json:"nights"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	if len(body.Nights) != 1 || body.Nights[0]["date"] != "2026-09-21" || body.Nights[0]["asleepMinutes"] != 460.0 {
+		t.Fatalf("nights = %#v", body.Nights)
+	}
+	stages, ok := body.Nights[0]["stages"].(map[string]any)
+	if !ok || stages["core"] != 340.0 || stages["unspecified"] != 0.0 {
+		t.Fatalf("stages = %#v (every stage key must be present, zero included)", body.Nights[0]["stages"])
+	}
+
+	empty := serveAuthorized(t, testServer(t, &fakeStore{nights: []SleepNight{}}), http.MethodGet, "/v1/sleep/daily?start=1789930800000&end=1790017200000", nil)
+	assertJSONKeyIsArray(t, empty.Body.Bytes(), "nights")
+
+	bad := serveAuthorized(t, testServer(t, &fakeStore{}), http.MethodGet, "/v1/sleep/daily?start=1790017200000&end=1789930800000", nil)
+	if bad.Code != http.StatusBadRequest {
+		t.Fatalf("reversed range status = %d, want 400", bad.Code)
+	}
+	assertJSONError(t, bad.Body.Bytes(), "end must be after start")
+}
+
+func TestStoreRequestErrorsBecome400(t *testing.T) {
+	t.Parallel()
+
+	srv := testServer(t, &fakeStore{err: badRequestf("range covers 400 days; at most 366 days per request")})
+	for _, target := range []string{
+		"/v1/sleep/daily?start=1751328000000&end=1751414400000",
+		"/v1/state-of-mind?start=1751328000000&end=1751414400000",
+		"/v1/samples?type=HKQuantityTypeIdentifierHeartRate&start=1751328000000&end=1751414400000",
+	} {
+		rec := serveAuthorized(t, srv, http.MethodGet, target, nil)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: status = %d, want 400", target, rec.Code)
+		}
+		assertJSONError(t, rec.Body.Bytes(), "range covers 400 days; at most 366 days per request")
+	}
+
+	// Any other store error stays a generic 500.
+	broken := testServer(t, &fakeStore{err: errors.New("connection reset")})
+	rec := serveAuthorized(t, broken, http.MethodGet, "/v1/sleep/daily?start=1751328000000&end=1751414400000", nil)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500", rec.Code)
+	}
+	assertJSONError(t, rec.Body.Bytes(), "sleep failed")
+}
+
+func TestSamplesHandlerParsesFiltersAndReturnsPage(t *testing.T) {
+	t.Parallel()
+
+	store := &fakeStore{samples: &SamplesPage{
+		Type: "HKCategoryTypeIdentifierSleepAnalysis", Kind: "category",
+		Samples: []Sample{{
+			UUID: "11111111-1111-4111-8111-111111111111", Start: 1751562000000, End: 1751565600000,
+			Value: ptrFloat64(3), Label: ptrString("Asleep Core"), Source: ptrString("Apple Watch"),
+		}},
+		NextOffset: 11,
+	}}
+	srv := testServer(t, store)
+
+	rec := serveAuthorized(t, srv, http.MethodGet, "/v1/samples?type=HKCategoryTypeIdentifierSleepAnalysis&start=1751328000000&end=1751414400000&limit=9999&offset=10", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d: %s", rec.Code, http.StatusOK, rec.Body.String())
+	}
+	if store.lastSamples.Type != "HKCategoryTypeIdentifierSleepAnalysis" || store.lastSamples.Limit != maxSampleLimit || store.lastSamples.Offset != 10 {
+		t.Errorf("filters = %+v (limit should clamp to %d)", store.lastSamples, maxSampleLimit)
+	}
+	if store.lastSamples.Start.UnixMilli() != 1751328000000 || store.lastSamples.End.UnixMilli() != 1751414400000 {
+		t.Errorf("range = %s .. %s", store.lastSamples.Start, store.lastSamples.End)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	samples := body["samples"].([]any)
+	if body["kind"] != "category" || body["nextOffset"] != 11.0 || len(samples) != 1 {
+		t.Fatalf("body = %#v", body)
+	}
+	first := samples[0].(map[string]any)
+	if first["label"] != "Asleep Core" || first["value"] != 3.0 || first["source"] != "Apple Watch" {
+		t.Errorf("sample = %#v", first)
+	}
+
+	// Defaults, and a quantity page has no label keys.
+	quantity := &fakeStore{samples: &SamplesPage{Type: "HKQuantityTypeIdentifierHeartRate", Kind: "quantity", Unit: ptrString("count/min"),
+		Samples: []Sample{{UUID: "11111111-1111-4111-8111-111111111111", Value: ptrFloat64(68)}}}}
+	rec = serveAuthorized(t, testServer(t, quantity), http.MethodGet, "/v1/samples?type=HKQuantityTypeIdentifierHeartRate&start=1751328000000&end=1751414400000", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	if quantity.lastSamples.Limit != defaultSampleLimit || quantity.lastSamples.Offset != 0 {
+		t.Errorf("defaults = %+v", quantity.lastSamples)
+	}
+	if strings.Contains(rec.Body.String(), `"label"`) {
+		t.Errorf("quantity sample carries a label key: %s", rec.Body.String())
+	}
+}
+
+func TestSamplesHandlerRejectsBadRequests(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		query   string
+		wantErr string
+	}{
+		{name: "missing type", query: "start=1751328000000&end=1751414400000", wantErr: "missing type"},
+		{name: "several types", query: "type=a,b&start=1751328000000&end=1751414400000", wantErr: "type must name exactly one HealthKit identifier"},
+		{name: "missing range", query: "type=HKQuantityTypeIdentifierHeartRate", wantErr: "missing start"},
+		{name: "over 31 days", query: "type=HKQuantityTypeIdentifierHeartRate&start=1751328000000&end=1754006400001", wantErr: "range must not exceed 31 days"},
+		{name: "bad limit", query: "type=HKQuantityTypeIdentifierHeartRate&start=1751328000000&end=1751414400000&limit=0", wantErr: "limit must be at least 1"},
+		{name: "bad offset", query: "type=HKQuantityTypeIdentifierHeartRate&start=1751328000000&end=1751414400000&offset=-1", wantErr: "offset must be at least 0"},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			rec := serveAuthorized(t, testServer(t, &fakeStore{}), http.MethodGet, "/v1/samples?"+tc.query, nil)
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want 400", rec.Code)
+			}
+			assertJSONError(t, rec.Body.Bytes(), tc.wantErr)
+		})
+	}
+	// Exactly 31 days is fine.
+	rec := serveAuthorized(t, testServer(t, &fakeStore{}), http.MethodGet, "/v1/samples?type=HKQuantityTypeIdentifierHeartRate&start=1751328000000&end=1754006400000", nil)
+	if rec.Code != http.StatusOK {
+		t.Errorf("31-day range status = %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestWorkoutSeriesHandler(t *testing.T) {
+	t.Parallel()
+
+	const uuid = "11111111-1111-4111-8111-111111111111"
+	store := &fakeStore{series: &WorkoutSeriesResponse{
+		UUID: uuid, Start: 1751562000000, End: 1751565600000, MaxPoints: 3,
+		Series: []WorkoutSeries{{
+			Type: "HKQuantityTypeIdentifierHeartRate", Unit: ptrString("count/min"), TotalPoints: 900,
+			Points: []SeriesPoint{{T: 1751562000000, V: 98}, {T: 1751563800000, V: 151.5}, {T: 1751565600000, V: 120}},
+		}},
+	}}
+	srv := testServer(t, store)
+
+	rec := serveAuthorized(t, srv, http.MethodGet, "/v1/workouts/"+uuid+"/series?types=HKQuantityTypeIdentifierHeartRate,HKQuantityTypeIdentifierRunningPower&maxPoints=3", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d: %s", rec.Code, rec.Body.String())
+	}
+	if store.lastSeries.uuid != uuid || store.lastSeries.maxPoints != 3 || len(store.lastSeries.types) != 2 {
+		t.Errorf("store call = %+v", store.lastSeries)
+	}
+	if !strings.Contains(rec.Body.String(), `"points":[[1751562000000,98],[1751563800000,151.5],[1751565600000,120]]`) {
+		t.Errorf("points are not [t, value] pairs: %s", rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"totalPoints":900`) {
+		t.Errorf("totalPoints missing: %s", rec.Body.String())
+	}
+
+	// Defaults and clamping.
+	if _, _, err := workoutSeriesRequest(httptest.NewRequest(http.MethodGet, "/", nil)); err != nil {
+		t.Fatal(err)
+	}
+	rec = serveAuthorized(t, srv, http.MethodGet, "/v1/workouts/"+uuid+"/series", nil)
+	if rec.Code != http.StatusOK || store.lastSeries.maxPoints != defaultSeriesPoints || store.lastSeries.types != nil {
+		t.Errorf("defaults: status %d, call %+v", rec.Code, store.lastSeries)
+	}
+	rec = serveAuthorized(t, srv, http.MethodGet, "/v1/workouts/"+uuid+"/series?maxPoints=999999", nil)
+	if rec.Code != http.StatusOK || store.lastSeries.maxPoints != maxSeriesPoints {
+		t.Errorf("clamp: status %d, maxPoints %d", rec.Code, store.lastSeries.maxPoints)
+	}
+
+	for query, wantErr := range map[string]string{
+		"maxPoints=0":   "maxPoints must be at least 1",
+		"maxPoints=abc": "invalid maxPoints: must be an integer",
+		"types=a,":      "types must not contain empty values",
+	} {
+		rec = serveAuthorized(t, srv, http.MethodGet, "/v1/workouts/"+uuid+"/series?"+query, nil)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: status = %d, want 400", query, rec.Code)
+		}
+		assertJSONError(t, rec.Body.Bytes(), wantErr)
+	}
+
+	rec = serveAuthorized(t, srv, http.MethodGet, "/v1/workouts/not-a-uuid/series", nil)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("bad uuid status = %d", rec.Code)
+	}
+	rec = serveAuthorized(t, testServer(t, &fakeStore{}), http.MethodGet, "/v1/workouts/"+uuid+"/series", nil)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("unknown workout status = %d, want 404", rec.Code)
+	}
+	assertJSONError(t, rec.Body.Bytes(), "workout not found")
+}
+
+func TestStateOfMindHandler(t *testing.T) {
+	t.Parallel()
+
+	srv := testServer(t, &fakeStore{moods: []StateOfMindEntry{{
+		UUID: "11111111-1111-4111-8111-111111111111", Date: "2026-09-06", Timestamp: 1788987600000,
+		Kind: "momentaryEmotion", Valence: ptrFloat64(0.5), ValenceClassification: ptrString("pleasant"),
+		Labels: []string{"calm"}, Associations: []string{"family"},
+	}}})
+	rec := serveAuthorized(t, srv, http.MethodGet, "/v1/state-of-mind?start=1751328000000&end=1751414400000", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	var body struct {
+		Entries []StateOfMindEntry `json:"entries"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Entries) != 1 || body.Entries[0].Kind != "momentaryEmotion" || body.Entries[0].Labels[0] != "calm" {
+		t.Errorf("entries = %+v", body.Entries)
+	}
+
+	empty := serveAuthorized(t, testServer(t, &fakeStore{moods: []StateOfMindEntry{}}), http.MethodGet, "/v1/state-of-mind?start=1751328000000&end=1751414400000", nil)
+	assertJSONKeyIsArray(t, empty.Body.Bytes(), "entries")
+
+	bad := serveAuthorized(t, srv, http.MethodGet, "/v1/state-of-mind?start=nope&end=1751414400000", nil)
+	if bad.Code != http.StatusBadRequest {
+		t.Errorf("status = %d", bad.Code)
 	}
 }
 

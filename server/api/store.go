@@ -522,25 +522,57 @@ func scanWorkoutSummaryRow(
 	return nil
 }
 
+// requestError is a store failure the request caused — an identifier the
+// database has never seen, a range over a cap — and is answered with 400
+// rather than logged as a 500.
+type requestError struct{ msg string }
+
+func (e *requestError) Error() string { return e.msg }
+
+func badRequestf(format string, args ...any) error {
+	return &requestError{msg: fmt.Sprintf(format, args...)}
+}
+
 // localDayRange returns the inclusive first and exclusive last calendar day
 // (YYYY-MM-DD, in loc) touched by the instant range [start, end).
 func localDayRange(start, end time.Time, loc *time.Location) (string, string, error) {
+	first, afterLast, err := localDayBounds(start, end, loc)
+	if err != nil {
+		return "", "", err
+	}
+	return first.Format("2006-01-02"), afterLast.Format("2006-01-02"), nil
+}
+
+// localDayBounds returns the instants of local midnight (in loc) that begin
+// the first calendar day touched by [start, end) and the day after the last
+// one — the same days localDayRange names, as timestamps a query can
+// compare against.
+func localDayBounds(start, end time.Time, loc *time.Location) (time.Time, time.Time, error) {
 	if !end.After(start) {
-		return "", "", fmt.Errorf("end must be after start")
+		return time.Time{}, time.Time{}, fmt.Errorf("end must be after start")
 	}
 	if loc == nil {
 		loc = time.UTC
 	}
 
 	startLocal := start.In(loc)
+	first := time.Date(startLocal.Year(), startLocal.Month(), startLocal.Day(), 0, 0, 0, 0, loc)
 	lastTouchedLocal := end.Add(-time.Nanosecond).In(loc)
-	exclusiveEndLocal := time.Date(
+	afterLast := time.Date(
 		lastTouchedLocal.Year(),
 		lastTouchedLocal.Month(),
 		lastTouchedLocal.Day(),
 		0, 0, 0, 0,
 		loc,
 	).AddDate(0, 0, 1)
+	return first, afterLast, nil
+}
 
-	return startLocal.Format("2006-01-02"), exclusiveEndLocal.Format("2006-01-02"), nil
+// calendarDays counts the calendar days from the local midnight first up to
+// but excluding the local midnight afterLast. The arithmetic runs on the
+// dates in UTC so a DST change inside the span cannot skew it.
+func calendarDays(first, afterLast time.Time) int {
+	f := time.Date(first.Year(), first.Month(), first.Day(), 0, 0, 0, 0, time.UTC)
+	a := time.Date(afterLast.Year(), afterLast.Month(), afterLast.Day(), 0, 0, 0, 0, time.UTC)
+	return int(a.Sub(f).Hours() / 24)
 }

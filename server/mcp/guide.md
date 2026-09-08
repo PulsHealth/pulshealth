@@ -29,6 +29,10 @@ through a read-only API. Nothing here can change any data.
 | `get_activity_rings(start_date, end_date)` | Apple Watch Move / Exercise / Stand values and goals per day. |
 | `list_workouts(start_date?, end_date?, activity_type?, limit?, offset?)` | Workout summaries, newest first. |
 | `get_workout(uuid)` | One workout's per-type statistics, events and multi-sport parts. |
+| `get_workout_series(uuid, types?, max_points?)` | The second-by-second streams inside one workout (heart rate, power, speed, ...). |
+| `get_sleep(start_date, end_date)` | One row per night: time asleep, time in bed, the stage breakdown, how many devices recorded it. |
+| `get_samples(type, start_date, end_date, limit?, offset?)` | The individual records of one type — raw, undeduplicated. Up to 31 days per call. |
+| `get_state_of_mind(start_date, end_date)` | Logged moods and emotions: valence, labels, associations. |
 
 Every tool returns one compact JSON object. Errors come back as tool errors
 with the reason (a date in the wrong format, an unknown workout, the product
@@ -55,8 +59,13 @@ four decimals.
   Exercise in minutes, Stand in hours, each with a goal). They are what the
   person sees in the Fitness app; do not reconstruct them from samples.
 - **Workouts** have a summary (activity, start, end, duration, distance,
-  energy) and a detail (per-type min/avg/max/sum statistics, events such as
-  pauses and laps, and sub-activities for multi-sport sessions).
+  energy), a detail (per-type min/avg/max/sum statistics, events such as
+  pauses and laps, and sub-activities for multi-sport sessions) and the
+  streams behind those statistics (`get_workout_series`).
+- **Sleep** is stored as one raw sample per stage, but `get_sleep` returns it
+  the way a person thinks about it: one row per night. See below.
+- **State of Mind** entries are typed in by hand in the Health or Mindfulness
+  app. They are sparse and self-reported; most days have none.
 
 ## Units
 
@@ -107,8 +116,35 @@ An iPhone and an Apple Watch both record steps, distance and energy for the
 same minutes. Adding raw samples across both devices roughly doubles daily
 step counts — the most common way to misread this data. The daily tools
 avoid it: HealthKit's own daily aggregate already merges the devices, and the
-server's fallback takes a single source per day. Trust `get_daily_metrics`
-and `get_activity_rings`; never total raw readings yourself.
+server's fallback takes a single source per day. `get_sleep` applies the same
+idea per night. Trust `get_daily_metrics`, `get_activity_rings` and
+`get_sleep`; never total raw readings yourself.
+
+`get_samples` is the deliberate exception: it hands back the individual
+records exactly as synced, **not** deduplicated, because that is the point of
+asking for them. Use it to look at particular readings — every blood-pressure
+entry, when the heart rate spiked, each logged symptom — never to compute a
+total or an average.
+
+## Sleep
+
+`get_sleep` returns one row per sleep session. Two rules shape it:
+
+- **A night belongs to the day you wake up.** Apple Health does this too, so
+  a night from 22:40 on the 20th to 06:30 on the 21st is dated the 21st. "How
+  did I sleep last night?" on the 21st means the row dated the 21st.
+- **A gap of more than three hours starts a new session**, so a daytime nap is
+  its own row on the same date. Check `start` and `end` before calling a row
+  "last night".
+
+Durations are minutes: `asleep_min` (core + deep + REM + unspecified),
+`in_bed_min`, and a `stages` breakdown. `awake_min` is time awake during the
+night and is *not* part of `asleep_min`; `unspecified_min` is sleep recorded
+without stage detail, typical of an iPhone or a third-party app. `sources`
+counts the devices that recorded the night — when several did, nothing is
+summed across them: `in_bed_min` is the largest single source's total, and
+`asleep_min` with its stages come together from the source that recorded the
+most sleep.
 
 ## The time-zone rule
 
@@ -121,14 +157,10 @@ in the configured zone.
 
 ## What is not available yet
 
-- **Sleep.** Sleep stages are category samples, which the product API does
-  not serve yet. Say so plainly; offer what does exist — resting heart rate,
-  HRV and wrist temperature are recorded during sleep, and
-  `list_available_types` shows whether `HKCategoryTypeIdentifierSleepAnalysis`
-  has data at all. (Planned as SRV-13 in the project's roadmap.)
-- Raw sample windows, per-second workout streams and GPS routes, State of
-  Mind, medication doses, ECGs. `get_workout` gives per-workout statistics
-  but not the curves.
+- GPS routes, medication doses, ECGs and heartbeat series. The database
+  holds them; no tool serves them.
+- Any kind of writing: this server is read-only, so it cannot log, correct or
+  delete a single record.
 
 ## Recipes: question → tool
 
@@ -143,7 +175,11 @@ in the configured zone.
 | "Compare my runs this month to last month" | `list_workouts(activity_type="running")` twice (one range per month); totals, averages, pace; `get_workout` on a few for heart rate. |
 | "What was my longest ride?" | `list_workouts(activity_type="cycling", limit=200)`, page with `offset` if `next_offset` appears; pick the max `distance_m`. |
 | "How hard was Tuesday's workout?" | `list_workouts` for that day, then `get_workout(uuid)`; report heart-rate avg/max, energy, duration. |
-| "How did I sleep last week?" | Not available yet — see above; offer resting HR / HRV instead. |
+| "How did my heart rate move during that run?" | `get_workout_series(uuid, types=[HKQuantityTypeIdentifierHeartRate])`; describe the shape, not every point. |
+| "How did I sleep last week?" | `get_sleep(start_date, end_date)`; average `asleep_min` (report in hours), name the best and worst night, mention the stage mix and any night with no data. |
+| "Did I sleep better on the nights I ran?" | `get_sleep` for the range and `list_workouts` for the same range; line the workout days up with the *following* night's row (a night is dated by its wake-up day). |
+| "When exactly did my heart rate spike yesterday?" | `get_samples(type=HKQuantityTypeIdentifierHeartRate, start_date, end_date)`; read the individual samples, never total them. |
+| "How have I been feeling lately?" | `get_state_of_mind(start_date, end_date)`; report the entries and their labels plainly, and say most days have none if so. |
 | "How old am I?" / "Who is this data for?" | `get_profile`. |
 
 When a range is longer than 366 days, split it into several calls. When the

@@ -19,7 +19,11 @@ var wantTools = []string{
 	"get_daily_metrics",
 	"get_latest_metrics",
 	"get_profile",
+	"get_samples",
+	"get_sleep",
+	"get_state_of_mind",
 	"get_workout",
+	"get_workout_series",
 	"list_available_types",
 	"list_workouts",
 }

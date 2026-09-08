@@ -188,6 +188,59 @@ func fixtureWorkoutDetail() WorkoutDetail {
 	}
 }
 
+// A night from 22:40 on the 20th to 06:30 on the 21st, Berlin time, that a
+// Watch and a phone both recorded.
+var fixtureSleep = map[string]any{"nights": []SleepNight{{
+	Date:          "2026-09-21",
+	Start:         time.Date(2026, 9, 20, 20, 30, 0, 0, time.UTC).UnixMilli(), // 22:30 CEST
+	End:           time.Date(2026, 9, 21, 4, 30, 0, 0, time.UTC).UnixMilli(),  // 06:30 CEST
+	InBedMinutes:  480,
+	AsleepMinutes: 460.000001,
+	Stages:        SleepStages{Core: 340, Deep: 60, REM: 60, Awake: 10},
+	Sources:       2,
+}}}
+
+var fixtureSamples = SamplesPage{
+	Type: "HKCategoryTypeIdentifierSleepAnalysis", Kind: "category",
+	Samples: []Sample{{
+		UUID:   "11111111-1111-4111-8111-111111111111",
+		Start:  time.Date(2026, 9, 20, 20, 40, 0, 0, time.UTC).UnixMilli(),
+		End:    time.Date(2026, 9, 20, 23, 0, 0, 0, time.UTC).UnixMilli(),
+		Value:  ptr(3.0),
+		Label:  ptr("Asleep Core"),
+		Source: ptr("Apple Watch"),
+	}},
+	NextOffset: 1,
+}
+
+// A heart-rate stream of four points, one per minute from the workout start.
+func fixtureSeries() WorkoutSeriesResponse {
+	start := fixtureWorkoutSummary.Start
+	return WorkoutSeriesResponse{
+		UUID: workoutUUID, Start: start, End: fixtureWorkoutSummary.End, MaxPoints: 500,
+		Series: []WorkoutSeries{{
+			Type: "HKQuantityTypeIdentifierHeartRate", Unit: ptr("count/min"), TotalPoints: 2700,
+			Points: []SeriesPoint{
+				{T: start, V: 98},
+				{T: start + 60_000, V: 120.500001},
+				{T: start + 120_000, V: 151},
+				{T: start + 180_000, V: 143},
+			},
+		}},
+	}
+}
+
+var fixtureStateOfMind = map[string]any{"entries": []StateOfMindEntry{{
+	UUID:                  "22222222-2222-4222-8222-222222222222",
+	Date:                  "2026-09-06",
+	Timestamp:             time.Date(2026, 9, 6, 17, 0, 0, 0, time.UTC).UnixMilli(),
+	Kind:                  "momentaryEmotion",
+	Valence:               ptr(0.500001),
+	ValenceClassification: ptr("slightlyPleasant"),
+	Labels:                []string{"calm", "grateful"},
+	Associations:          []string{"family"},
+}}}
+
 func TestNewAPIClient_ValidatesURL(t *testing.T) {
 	for _, bad := range []string{"", "localhost:8081", "ftp://host", "http://", "not a url"} {
 		if _, err := NewAPIClient(bad, "t", nil); err == nil {

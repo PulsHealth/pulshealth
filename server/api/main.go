@@ -43,6 +43,10 @@ type apiStore interface {
 	ActivitySummary(context.Context, time.Time, time.Time) ([]ActivityDay, error)
 	Workouts(context.Context, WorkoutFilters) ([]WorkoutSummary, error)
 	Workout(context.Context, string) (*WorkoutDetail, error)
+	SleepDaily(context.Context, time.Time, time.Time) ([]SleepNight, error)
+	Samples(context.Context, SampleFilters) (*SamplesPage, error)
+	WorkoutSeries(context.Context, string, []string, int) (*WorkoutSeriesResponse, error)
+	StateOfMind(context.Context, time.Time, time.Time) ([]StateOfMindEntry, error)
 }
 
 type Server struct {
@@ -187,6 +191,10 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("GET /v1/activity/summary", s.auth(s.handleActivitySummary))
 	mux.HandleFunc("GET /v1/workouts", s.auth(s.handleWorkouts))
 	mux.HandleFunc("GET /v1/workouts/{uuid}", s.auth(s.handleWorkout))
+	mux.HandleFunc("GET /v1/workouts/{uuid}/series", s.auth(s.handleWorkoutSeries))
+	mux.HandleFunc("GET /v1/sleep/daily", s.auth(s.handleSleepDaily))
+	mux.HandleFunc("GET /v1/samples", s.auth(s.handleSamples))
+	mux.HandleFunc("GET /v1/state-of-mind", s.auth(s.handleStateOfMind))
 	return mux
 }
 
@@ -326,6 +334,85 @@ func (s *Server) handleWorkout(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, workout)
 }
 
+func (s *Server) handleSleepDaily(w http.ResponseWriter, r *http.Request) {
+	start, end, err := parseRange(r)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	nights, err := s.store.SleepDaily(r.Context(), start, end)
+	if err != nil {
+		s.writeStoreError(w, err, "sleep")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string][]SleepNight{"nights": nights})
+}
+
+func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
+	filters, err := sampleFiltersFromRequest(r)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	page, err := s.store.Samples(r.Context(), filters)
+	if err != nil {
+		s.writeStoreError(w, err, "samples")
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
+func (s *Server) handleWorkoutSeries(w http.ResponseWriter, r *http.Request) {
+	uuid := r.PathValue("uuid")
+	if !isUUID(uuid) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid workout uuid"})
+		return
+	}
+	types, maxPoints, err := workoutSeriesRequest(r)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	series, err := s.store.WorkoutSeries(r.Context(), uuid, types, maxPoints)
+	if err != nil {
+		s.log.Error("workout series query failed", "uuid", uuid, "err", err.Error())
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "workout series failed"})
+		return
+	}
+	if series == nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "workout not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, series)
+}
+
+func (s *Server) handleStateOfMind(w http.ResponseWriter, r *http.Request) {
+	start, end, err := parseRange(r)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	entries, err := s.store.StateOfMind(r.Context(), start, end)
+	if err != nil {
+		s.writeStoreError(w, err, "state of mind")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string][]StateOfMindEntry{"entries": entries})
+}
+
+// writeStoreError answers a failed store call: a requestError is the
+// caller's fault and comes back as a 400 with its message; anything else is
+// logged and answered with a generic 500.
+func (s *Server) writeStoreError(w http.ResponseWriter, err error, what string) {
+	var reqErr *requestError
+	if errors.As(err, &reqErr) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": reqErr.Error()})
+		return
+	}
+	s.log.Error(what+" query failed", "err", err.Error())
+	writeJSON(w, http.StatusInternalServerError, map[string]string{"error": what + " failed"})
+}
+
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -399,8 +486,14 @@ func optionalMSParam(raw, name string) (*time.Time, error) {
 }
 
 func parseLimitOffset(r *http.Request) (limit, offset int, err error) {
+	return parseLimitOffsetBounds(r, defaultLimit, maxLimit)
+}
+
+// parseLimitOffsetBounds reads limit (default def, clamped to max) and
+// offset (default 0) from the query.
+func parseLimitOffsetBounds(r *http.Request, def, max int) (limit, offset int, err error) {
 	q := r.URL.Query()
-	limit = defaultLimit
+	limit = def
 	offset = 0
 
 	if raw := q.Get("limit"); raw != "" {
@@ -412,8 +505,8 @@ func parseLimitOffset(r *http.Request) (limit, offset int, err error) {
 	if limit < 1 {
 		return 0, 0, errors.New("limit must be at least 1")
 	}
-	if limit > maxLimit {
-		limit = maxLimit
+	if limit > max {
+		limit = max
 	}
 
 	if raw := q.Get("offset"); raw != "" {
@@ -467,6 +560,63 @@ func workoutFiltersFromRequest(r *http.Request) (WorkoutFilters, error) {
 	filters.Limit = limit
 	filters.Offset = offset
 	return filters, nil
+}
+
+// sampleFiltersFromRequest reads GET /v1/samples: exactly one type, a
+// required [start, end) range of at most maxSampleRange, and paging.
+func sampleFiltersFromRequest(r *http.Request) (SampleFilters, error) {
+	var f SampleFilters
+	q := r.URL.Query()
+
+	f.Type = strings.TrimSpace(q.Get("type"))
+	if f.Type == "" {
+		return f, errors.New("missing type")
+	}
+	if strings.Contains(f.Type, ",") {
+		return f, errors.New("type must name exactly one HealthKit identifier")
+	}
+	start, end, err := parseRange(r)
+	if err != nil {
+		return f, err
+	}
+	if end.Sub(start) > maxSampleRange {
+		return f, fmt.Errorf("range must not exceed %d days", int(maxSampleRange.Hours()/24))
+	}
+	limit, offset, err := parseLimitOffsetBounds(r, defaultSampleLimit, maxSampleLimit)
+	if err != nil {
+		return f, err
+	}
+	f.Start, f.End = start, end
+	f.Limit, f.Offset = limit, offset
+	return f, nil
+}
+
+// workoutSeriesRequest reads GET /v1/workouts/{uuid}/series: an optional
+// comma-separated types filter and maxPoints (default defaultSeriesPoints,
+// clamped to maxSeriesPoints).
+func workoutSeriesRequest(r *http.Request) ([]string, int, error) {
+	var types []string
+	if strings.TrimSpace(r.URL.Query().Get("types")) != "" {
+		var err error
+		if types, err = parseTypesParam(r); err != nil {
+			return nil, 0, err
+		}
+	}
+	maxPoints := defaultSeriesPoints
+	if raw := r.URL.Query().Get("maxPoints"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil {
+			return nil, 0, errors.New("invalid maxPoints: must be an integer")
+		}
+		if n < 1 {
+			return nil, 0, errors.New("maxPoints must be at least 1")
+		}
+		maxPoints = n
+	}
+	if maxPoints > maxSeriesPoints {
+		maxPoints = maxSeriesPoints
+	}
+	return types, maxPoints, nil
 }
 
 func isHexN(s string, n int) bool {
