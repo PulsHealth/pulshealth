@@ -40,6 +40,14 @@ jobs:
             (
               cd "$module"
               go mod verify
+              # gofmt has no check mode: it lists what it would change, so a
+              # non-empty listing is the failure.
+              unformatted=$(gofmt -l .)
+              if [ -n "$unformatted" ]; then
+                echo "not gofmt-clean in $module:" >&2
+                echo "$unformatted" >&2
+                exit 1
+              fi
               go vet ./...
               go test -race -count=1 ./...
             )

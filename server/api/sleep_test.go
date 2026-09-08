@@ -44,7 +44,7 @@ func TestSleepStageFromEnumCoversTheSeededLabels(t *testing.T) {
 		"HKCategoryValueSleepAnalysisAsleepDeep":        sleepStageDeep,
 		"HKCategoryValueSleepAnalysisAsleepREM":         sleepStageREM,
 		"HKCategoryValueSleepAnalysisSomethingNew":      sleepStageUnknown,
-		"":                                              sleepStageUnknown,
+		"": sleepStageUnknown,
 	}
 	for name, stage := range want {
 		if got := sleepStageFromEnum(name); got != stage {
