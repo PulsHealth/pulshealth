@@ -1,7 +1,8 @@
 # CLAUDE.md — agent guide for Puls
 
 Personal HealthKit → self-hosted Postgres sync. Four components, each with its own README
-(architecture, wire format, performance numbers live there — read them before deep work):
+(architecture, wire format, performance numbers live there — read them before deep work),
+plus a standalone CLI:
 
 | Path | What | Docs |
 |---|---|---|

@@ -29,6 +29,7 @@ here, so anyone can write their own receiver. Apache-2.0. Pre-release.
 | `server/api/` | Go product API: read-only JSON + `/v1/export`, OpenAPI at `/openapi.json`, HTML at `/docs` | `server/README.md` |
 | `server/mcp/` | Go MCP server, read-only, over the product API only | `server/mcp/README.md`, `docs/ai.md` |
 | `server/db/` | `migrate.sh` and the numbered migrations it applies | `server/README.md` |
+| `server/backup/` | The opt-in `backup` Compose profile: scheduled `pg_dump`s and the restore drill | `server/README.md` |
 | `web/` | Next.js viewer, reads Postgres directly | `web/README.md` |
 | `docs/protocol/` | The Puls Sync Protocol v1 spec, JSON Schemas, fixtures | `docs/protocol/README.md` |
 | `tools/protocol-check/` | Validates a batch against the schemas | — |
@@ -164,9 +165,13 @@ cd PulsHealth && xcodegen && xcodebuild test -scheme PulsHealth \
 ```bash
 docker compose -f server/docker-compose.yml config --quiet
 docker compose -f server/docker-compose.yml -f server/compose.build.yml config --quiet
-shellcheck server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh
+docker compose -f server/docker-compose.yml --profile backup config --quiet
+shellcheck server/db/migrate.sh server/db/migrations/*.sh server/backup/*.sh scripts/*.sh
 scripts/check-public-tree.sh
 ```
+
+The `docker compose config` calls need the `${VAR:?}` secrets to be set;
+CI passes `validation-only` placeholders and starts nothing.
 
 `scripts/check-public-tree.sh` fails if a tracked file carries owner-specific
 or private-infrastructure content (a tailnet hostname, a personal mailbox, a
