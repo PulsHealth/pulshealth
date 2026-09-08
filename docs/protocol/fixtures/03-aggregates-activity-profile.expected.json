@@ -1,0 +1,14 @@
+{
+  "scenario": "Aggregate buckets, daily activity summaries, and a profile snapshot",
+  "notes": "Two aggregate buckets (one with a value and temporal contexts, one explicit-null 'empty bucket'), two activity summaries (one with localDate and temporal context, one legacy-style with only the epoch-ms date and null rings), and a profile line that clears name and email while setting date of birth and sex. Aggregates and summaries are upserts; a replay overwrites the same rows.",
+  "status": 200,
+  "response": {
+    "accepted": 0,
+    "deleted": 0,
+    "duplicates": 0,
+    "routePoints": 0,
+    "seriesPoints": 0,
+    "aggregateSamples": 2,
+    "activitySummaries": 2
+  }
+}
