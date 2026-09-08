@@ -73,7 +73,10 @@ jobs:
           PULS_MCP_TOKEN: validation-only
           DEPLOY_COMMIT: ${{ github.sha }}
         run: |
+          # Both ways the stack is run: pulling the published images, and the
+          # developer overlay that builds them from the checkout.
           docker compose -f server/docker-compose.yml config --quiet
+          docker compose -f server/docker-compose.yml -f server/compose.build.yml config --quiet
           for script in server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh; do
             bash -n "$script"
           done
@@ -83,6 +86,45 @@ jobs:
             sudo apt-get install -y shellcheck
           fi
           shellcheck server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh
+
+  # The four app images build for linux/amd64 (no push) so a broken
+  # Dockerfile fails a pull request instead of the next release. Same
+  # contexts and build args as .github/workflows/release.yml and
+  # server/compose.build.yml — keep the three in step.
+  images:
+    name: Build ${{ matrix.image }} image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ingest
+            context: server/ingest
+          - image: api
+            context: server/api
+          - image: mcp
+            context: server/mcp
+          - image: web
+            context: web
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Build ${{ matrix.image }} (linux/amd64, not pushed)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64
+          push: false
+          build-args: |
+            BUILD_COMMIT=${{ github.sha }}
+          tags: pulshealth-${{ matrix.image }}:ci
+          cache-from: type=gha,scope=${{ matrix.image }}-linux-amd64
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-linux-amd64
 
   # The protocol corpus: every fixture in docs/protocol/fixtures must validate
   # against the JSON Schemas in docs/protocol/schema, and the Python reference

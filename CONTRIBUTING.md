@@ -113,9 +113,19 @@ npm run dev                     # demo data when DATABASE_URL is unset
 ### Compose and shell
 
 ```bash
-docker compose -f server/docker-compose.yml config --quiet   # with the .env secrets exported
+# Both variants, with the .env secrets exported: pulling the published
+# images, and the developer overlay that builds them from the checkout.
+docker compose -f server/docker-compose.yml config --quiet
+docker compose -f server/docker-compose.yml -f server/compose.build.yml config --quiet
 shellcheck server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh
+make dev-up                     # run the whole stack from this checkout
 ```
+
+CI also builds the four app images for `linux/amd64` on every pull request
+(`images` job), so a Dockerfile change is checked before it is merged.
+`.github/workflows/release.yml` publishes them to `ghcr.io/pulshealth` on
+`v*` tags and on manual runs; the image matrix there, the `images` job in
+`ci.yml` and `server/compose.build.yml` must agree on contexts and build args.
 
 ## Rules that keep the pieces in step
 
