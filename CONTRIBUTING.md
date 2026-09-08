@@ -106,6 +106,7 @@ about.
 ```bash
 cd web
 npm ci
+npm run check:catalog           # lib/catalog.generated.ts matches docs/protocol/catalog.json
 npm run lint && npm run typecheck && npm test && npm run build
 npm run dev                     # demo data when DATABASE_URL is unset
 ```
@@ -137,7 +138,10 @@ in the same pull request:
 - server: `server/ingest/parse.go` and `server/ingest/store.go`;
 - schema: a new `NNN_name.sql` under `server/db/migrations/`;
 - tests: the fixtures in `server/ingest/parse_test.go`;
-- docs: the wire-format description and curl example in `server/README.md`.
+- docs: the wire-format description and curl example in `server/README.md`;
+- for a catalog change (a new type, a changed unit): the rendered vocabulary
+  `docs/protocol/catalog.json` and `web/lib/catalog.generated.ts`, both
+  regenerated rather than edited (`docs/protocol/catalog.md`).
 
 The server deploys first. An old server rejects batches carrying new line
 types with a 400; the client never retries 4xx and leaves its anchors in
