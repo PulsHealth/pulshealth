@@ -36,11 +36,23 @@ curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
 `limit` and `offset` do not apply: an export is bounded by its range, not by a
 page size, and `workouts` returns the whole range rather than one page.
 
-**Range caps** match the endpoint each dataset comes from: **31 days** for
-`samples` (a busy type runs to hundreds of thousands of rows a month),
-**366 days** for everything else. Over the cap is a `400` naming the limit,
-the same shape the JSON endpoints use:
-`{"error": "range must not exceed 31 days"}`.
+**Range caps.** `samples` keeps the **31 days** `/v1/samples` enforces — a
+busy type runs to hundreds of thousands of rows a month. Every other dataset
+is capped at **366 days**: the same cap `/v1/sleep/daily` and
+`/v1/state-of-mind` already apply, and deliberately *stricter* than
+`/v1/metrics/daily`, `/v1/activity/summary` and `/v1/workouts`, which have no
+range cap because a page is bounded by its page size. A file is bounded only
+by its range, so it needs one. Over the cap is a `400` naming the limit, in
+the shape the JSON endpoints use:
+`{"error": "range must not exceed 31 days"}`. The cap above measures the
+instant span; the day-grained datasets additionally reject a range that
+touches more than 366 local calendar days, with their own message. Either way
+it is a clean `400` before a single byte of the file.
+
+**At most two exports run at once.** Each holds a database connection for the
+length of the download, and the pool is small, so a third request is refused
+immediately with a `503` and a `Retry-After` header rather than queued behind
+them — waiting would tie up the connection the limit exists to protect.
 
 ## Datasets and their columns
 
@@ -72,11 +84,19 @@ for days, canonical units — with two format-specific conventions:
 an iPhone and an Apple Watch recorded the same minutes, both rows are there.
 Use `daily_metrics` for totals.
 
+One thing to know before double-clicking a CSV: cells are written verbatim, so
+a value that begins with `=`, `+`, `-` or `@` is a formula to a spreadsheet.
+Every column here is a number, a date, a UUID or a HealthKit identifier except
+`source`, which is the display name of whatever app wrote the sample. Import
+the file as text — or use JSONL — if you do not trust every app that has ever
+written to your Health store.
+
 ## How it streams
 
 The response carries no `Content-Length`, so it is framed
 `Transfer-Encoding: chunked` and the file starts arriving before the query has
-finished. The header row is pushed on its own and rows follow in flush
+finished. The first push happens before any row is read — it carries the CSV
+header row, or for JSONL just the response head — and rows follow in flush
 windows. Nothing is buffered to the length of the export, on either side:
 `puls-export` copies the body straight through to the file.
 
@@ -95,8 +115,9 @@ The response is an attachment named
 
 ```bash
 go install github.com/PulsHealth/pulshealth/tools/puls-export@latest
-# or, from a checkout
-go build -o puls-export ./tools/puls-export
+# or, from a checkout — it is its own Go module, so build it from its own
+# directory; there is no module at the repository root
+cd tools/puls-export && go build -o puls-export .
 ```
 
 It is a thin client: it builds the query, sends the bearer token, and copies
@@ -114,6 +135,7 @@ with the endpoint.
 | `--types`, `--type`, `--activity-type` | — | the per-dataset filters above |
 | `--time-zone` | `$PULS_TIME_ZONE`, else UTC | the zone a `YYYY-MM-DD` bound is read in |
 | `-o` | standard output | write to this file |
+| `--version` | | print the version and exit |
 
 `--start 2026-01-01 --end 2026-02-01` is the whole of January. Exit status is
 `0` on success, `2` for a mistake in the command line, `1` for a failed

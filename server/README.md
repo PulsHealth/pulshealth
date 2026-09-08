@@ -673,9 +673,14 @@ recorded. `/v1/state-of-mind` returns logged State of Mind entries, at most
 `Content-Disposition: attachment` — instead of a JSON document, for a
 spreadsheet or a notebook. `dataset` is one of `daily_metrics`, `samples`,
 `workouts`, `sleep`, `activity`, `state_of_mind`, each taking the same filters
-as the endpoint it comes from and capped the same way (31 days for `samples`,
-366 for the rest). The rows go out as they are read, so the response is
-chunked and nothing is buffered to the size of the export. `tools/puls-export`
+as the endpoint it comes from. Ranges are capped at 31 days for `samples`, as
+on `/v1/samples`, and 366 days for the rest — the cap `/v1/sleep/daily` and
+`/v1/state-of-mind` already apply, and deliberately stricter than
+`/v1/metrics/daily`, `/v1/activity/summary` and `/v1/workouts`, which are
+bounded by a page size instead. The rows go out as they are read, so the
+response is chunked and nothing is buffered to the size of the export; because
+each download holds a database connection for its whole length, at most two
+run at once and a third gets a `503` with `Retry-After`. `tools/puls-export`
 is a small CLI for it. Columns, formats and the failure modes are in
 [`docs/export.md`](../docs/export.md).
 
