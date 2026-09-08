@@ -160,13 +160,18 @@ jobs:
           # expect <summary substring> [migrate args...]: run migrate, print its
           # last summary line, fail unless the output carries the substring.
           expect() {
-            local want=$1 out; shift
-            out=$(migrate "$@" 2>&1)
+            local want=$1 out status=0; shift
+            out=$(migrate "$@" 2>&1) || status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "migrate exited with status $status:"; echo "$out"; exit 1
+            fi
             grep '^migrate: ' <<<"$out" | tail -n 1
             grep -qF -- "$want" <<<"$out" || { echo "expected: $want"; echo "$out"; exit 1; }
           }
-          sqls=$(ls server/db/migrations/*.sql | wc -l | tr -d ' ')
-          shs=$(ls server/db/migrations/*.sh | wc -l | tr -d ' ')
+          sql_files=(server/db/migrations/*.sql)
+          sh_files=(server/db/migrations/*.sh)
+          sqls=${#sql_files[@]}
+          shs=${#sh_files[@]}
           reruns=$( (grep -lx -- '-- puls:rerun' server/db/migrations/*.sql || true) | wc -l | tr -d ' ')
 
           echo "::group::fresh database: every file applied"
