@@ -10,6 +10,7 @@ any language; the reference receiver is the Go ingest server in
 |---|---|
 | This specification | `docs/protocol/README.md` |
 | JSON Schema (draft 2020-12) for the header and every line type | [`schema/`](schema/) |
+| Type vocabulary: every syncable type with its identifier, kind, canonical unit, aggregation style and minimum iOS, rendered from the Swift catalog | [`catalog.json`](catalog.json), explained in [`catalog.md`](catalog.md) |
 | Fixture corpus: known-good batches with the counts a reference server returns | [`fixtures/`](fixtures/) |
 | Checker: validates any batch against the schemas and the framing rules | [`tools/protocol-check/`](../../tools/protocol-check/) |
 | Reference receiver (Python, SQLite, standard library) plus a smoke test that runs the corpus against any receiver URL | [`examples/receivers/python-sqlite/`](../../examples/receivers/python-sqlite/) |
@@ -419,12 +420,19 @@ receiver needs for heart-rate zones.
 ## 5. Type vocabulary and canonical units
 
 Every quantity type has exactly one unit on the wire, converted on the phone.
-The table is `HealthTypeCatalog.quantityTypes` in
+The machine-readable vocabulary is [`catalog.json`](catalog.json) — one entry
+per syncable type with its identifier, kind, canonical unit, HealthKit
+aggregation style, the aggregate functions it allows and the first iOS release
+that carries it; [`catalog.md`](catalog.md) documents the fields. It is
+rendered from `HealthTypeCatalog` in
 [`HealthTypeCatalog.swift`](../../PulsHealthSync/Sources/PulsHealthSync/Models/HealthTypeCatalog.swift),
-which is the source of truth; unit strings are HealthKit `HKUnit` strings.
-Two are easy to misread: `%` is HealthKit's percent unit, whose scalar is a
-**fraction** (blood oxygen 0.97, not 97), and `count/min` is beats or breaths
-per minute. `s` appears only on `duration` aggregates.
+the authoritative definition, and a package test fails whenever the two
+disagree, so read the JSON rather than the Swift when you need the list.
+Unit strings are HealthKit `HKUnit` strings. Two are easy to misread: `%` is
+HealthKit's percent unit, whose scalar is a **fraction** (blood oxygen 0.97,
+not 97), and `count/min` is beats or breaths per minute. `s` appears only on
+`duration` aggregates. The table below is a reading aid grouped by unit;
+`catalog.json` is the copy to trust.
 
 | Type identifier (`HKQuantityTypeIdentifier…`) | Unit |
 |---|---|
@@ -452,9 +460,13 @@ per minute. `s` appears only on `duration` aggregates.
 Category types (`HKCategoryTypeIdentifier…`: `SleepAnalysis`,
 `AppleStandHour`, `MindfulSession`, `HighHeartRateEvent`, `LowHeartRateEvent`,
 `IrregularHeartRhythmEvent`, `LowCardioFitnessEvent`, `HandwashingEvent`,
-`ToothbrushingEvent`, `EnvironmentalAudioExposureEvent`,
-`HeadphoneAudioExposureEvent`, and `SleepApneaEvent` on iOS 18) have no unit;
-their `category` integer is HealthKit's per-type enumeration. Workouts,
+`ToothbrushingEvent`, `AudioExposureEvent`, `HeadphoneAudioExposureEvent`, and
+`SleepApneaEvent` on iOS 18) have no unit; their `category` integer is
+HealthKit's per-type enumeration. `AudioExposureEvent` is loud-environment
+events: HealthKit renamed the *constant* to
+`HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent` in iOS 14 but kept
+the original string, so that is the identifier on the wire — one reason to
+read [`catalog.json`](catalog.json) rather than an Apple header. Workouts,
 heartbeat series, ECGs, State of Mind and medication doses have no unit
 either; their detail objects state units per field.
 

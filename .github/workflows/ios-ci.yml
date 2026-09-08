@@ -6,11 +6,14 @@ on:
     paths:
       - "PulsHealth/**"
       - "PulsHealthSync/**"
+      # The package tests compare this file byte for byte with the catalog.
+      - "docs/protocol/catalog.json"
       - ".github/workflows/ios-ci.yml"
   pull_request:
     paths:
       - "PulsHealth/**"
       - "PulsHealthSync/**"
+      - "docs/protocol/catalog.json"
       - ".github/workflows/ios-ci.yml"
 
 permissions:
