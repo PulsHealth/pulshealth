@@ -34,7 +34,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for module in server/ingest server/api server/mcp; do
+          # tools/puls-export is the CLI for the product API's /v1/export; it
+          # has no dependencies, so it carries no go.sum to cache above.
+          for module in server/ingest server/api server/mcp tools/puls-export; do
             (
               cd "$module"
               go mod verify
