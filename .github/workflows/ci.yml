@@ -68,10 +68,11 @@ jobs:
           GRAFANA_PASSWORD: validation-only
           GRAFANA_DB_PASSWORD: validation-only
           API_DB_PASSWORD: validation-only
+          INGEST_DB_PASSWORD: validation-only
           DEPLOY_COMMIT: ${{ github.sha }}
         run: |
           docker compose -f server/docker-compose.yml config --quiet
-          for script in server/db/init/*.sh scripts/*.sh; do
+          for script in server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh; do
             bash -n "$script"
           done
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
@@ -79,7 +80,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y shellcheck
           fi
-          shellcheck server/db/init/*.sh scripts/*.sh
+          shellcheck server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh
 
   # The protocol corpus: every fixture in docs/protocol/fixtures must validate
   # against the JSON Schemas in docs/protocol/schema, and the Python reference
@@ -109,6 +110,98 @@ jobs:
 
       - name: Smoke-test the Python reference receiver with the corpus
         run: python3 examples/receivers/python-sqlite/smoke_test.py
+
+  # The schema path a self-hoster takes, end to end: server/db/migrate.sh
+  # against a throwaway TimescaleDB — fresh (every file applied), again (every
+  # file skipped), then the pre-migrate-database case with schema_migrations
+  # dropped: the run must refuse, `baseline` must record every file, the next
+  # run applies only the re-runnable files and the one after that is a no-op;
+  # an edited applied file is refused. migrate.sh runs inside the same image
+  # the compose `migrate` service uses, so nothing depends on the runner's psql.
+  db-migrate:
+    name: Schema migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Start a throwaway TimescaleDB
+        run: |
+          docker network create puls-ci
+          docker run -d --name puls-ci-db --network puls-ci \
+            -e POSTGRES_PASSWORD=ci-secret timescale/timescaledb-ha:pg17
+          for _ in $(seq 1 60); do
+            if docker exec puls-ci-db pg_isready -h 127.0.0.1 -U postgres -d postgres >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "database did not become ready" >&2
+          docker logs puls-ci-db
+          exit 1
+
+      - name: Run the migration scenario
+        shell: bash
+        run: |
+          set -euo pipefail
+          migrate() {
+            docker run --rm --network puls-ci \
+              -v "$PWD/server/db/migrate.sh:/puls/migrate.sh:ro" \
+              -v "${MIGRATIONS_SRC:-$PWD/server/db/migrations}:/puls/migrations:ro" \
+              -e PGHOST=puls-ci-db -e PGPASSWORD=ci-secret -e MIGRATIONS_DIR=/puls/migrations \
+              -e GRAFANA_DB_PASSWORD=ci-grafana -e API_DB_PASSWORD=ci-api \
+              -e INGEST_DB_PASSWORD=ci-ingest -e PULS_TIME_ZONE=Europe/Berlin \
+              --entrypoint bash timescale/timescaledb-ha:pg17 /puls/migrate.sh "$@"
+          }
+          sql() {
+            docker exec puls-ci-db psql -U postgres -d postgres -tA -v ON_ERROR_STOP=1 -c "$1"
+          }
+          # expect <summary substring> [migrate args...]: run migrate, print its
+          # last summary line, fail unless the output carries the substring.
+          expect() {
+            local want=$1 out; shift
+            out=$(migrate "$@" 2>&1)
+            grep '^migrate: ' <<<"$out" | tail -n 1
+            grep -qF -- "$want" <<<"$out" || { echo "expected: $want"; echo "$out"; exit 1; }
+          }
+          sqls=$(ls server/db/migrations/*.sql | wc -l | tr -d ' ')
+          shs=$(ls server/db/migrations/*.sh | wc -l | tr -d ' ')
+          reruns=$( (grep -lx -- '-- puls:rerun' server/db/migrations/*.sql || true) | wc -l | tr -d ' ')
+
+          echo "::group::fresh database: every file applied"
+          expect "$sqls applied, 0 rerun, 0 skipped, $shs script(s) ran"
+          echo "::endgroup::"
+          echo "::group::second run: every file skipped"
+          expect "0 applied, 0 rerun, $sqls skipped, $shs script(s) ran"
+          echo "::endgroup::"
+          echo "::group::a database from before the migrate service: refused until baselined"
+          sql "DROP TABLE schema_migrations"
+          if migrate; then echo "migrate must refuse a database without schema_migrations"; exit 1; fi
+          expect "baseline complete: $sqls file(s) recorded" baseline
+          test "$(sql 'SELECT count(*) FROM schema_migrations')" -eq "$sqls"
+          echo "::endgroup::"
+          echo "::group::after baseline: only the re-runnable files are applied, then nothing"
+          expect "0 applied, $reruns rerun, $((sqls - reruns)) skipped, $shs script(s) ran"
+          expect "0 applied, 0 rerun, $sqls skipped, $shs script(s) ran"
+          echo "::endgroup::"
+          echo "::group::an edited applied file is refused"
+          cp -R server/db/migrations /tmp/edited
+          echo "-- edited" >> /tmp/edited/001_schema.sql
+          if MIGRATIONS_SRC=/tmp/edited migrate; then echo "an edited applied file must be refused"; exit 1; fi
+          echo "::endgroup::"
+          echo "::group::schema assertions"
+          test "$(sql 'SELECT puls_time_zone()')" = "Europe/Berlin"
+          sql 'SELECT count(*) FROM metric_daily'
+          test "$(sql 'SELECT count(*) FROM category_labels')" -gt 0
+          test "$(sql "SELECT string_agg(rolname, ',' ORDER BY rolname) FROM pg_roles WHERE rolname IN ('grafana','api_reader','ingest')")" = "api_reader,grafana,ingest"
+          echo "::endgroup::"
+
+      - name: Remove the throwaway database
+        if: always()
+        run: |
+          docker rm -f puls-ci-db >/dev/null 2>&1 || true
+          docker network rm puls-ci >/dev/null 2>&1 || true
 
   # Upstream advisories are reported here, visibly red, but this job is meant
   # to stay OUT of any required-status-check list: a new advisory in a
