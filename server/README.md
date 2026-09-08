@@ -104,9 +104,16 @@ comments). Beyond the passwords and tokens, two settings deserve attention:
   defaults it to `alerts@example.com` so the contact point always has an
   address; set it to your own. Mail only leaves once SMTP is configured — see
   "Alerting".
-- `WEB_BIND_ADDR` — the web viewer is unauthenticated and defaults to
-  loopback. To reach it from other machines bind it to a private interface
-  (a VPN/tailnet address), never `0.0.0.0`.
+- `WEB_AUTH_PASSWORD` — the web viewer's login. Set it and every page asks
+  for it over HTTP Basic (any username; `/api/healthz` stays open so health
+  checks keep working); empty, the viewer has no login at all and says so in
+  `docker compose logs web`. `scripts/bootstrap.sh` generates one on a fresh
+  install and prints it with the pairing block. See `web/README.md`,
+  "Access control".
+- `WEB_BIND_ADDR` — where the viewer's port is published; defaults to
+  loopback. Basic auth is a password prompt, not TLS, so this still matters:
+  to reach the viewer from other machines bind it to a private interface (a
+  VPN/tailnet address), never `0.0.0.0`.
 - `INGEST_BIND_ADDR` — where ingest's port 8080 is published; defaults to
   loopback, which is right whenever a TLS proxy sits in front of it.
   `0.0.0.0` — what `scripts/bootstrap.sh --lan` writes — publishes it on

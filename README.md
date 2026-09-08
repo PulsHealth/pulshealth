@@ -397,9 +397,13 @@ No. The app requests read access only, and its usage strings say so.
   serves.** Its Compose service binds to loopback like the API; publish it
   only over HTTPS, and keep the client config files that hold the token out
   of version control. `docs/ai.md` has the details.
-- **The web viewer is unauthenticated.** It is a read-only page over your
-  health database with no login. Its bind address is the access control:
-  keep `WEB_BIND_ADDR` on loopback or a private network, never `0.0.0.0`.
+- **The web viewer's login is optional.** Set `WEB_AUTH_PASSWORD` and every
+  page asks for it over HTTP Basic (any username; `/api/healthz` stays open
+  for health checks); `scripts/bootstrap.sh` generates one on a fresh install
+  and prints it. Leave it empty and the viewer is a read-only page over your
+  health database with no login at all. Either way the bind address still
+  matters — Basic auth sends the password on every request — so keep
+  `WEB_BIND_ADDR` on loopback or a private network, never `0.0.0.0`.
 - **The database holds identifiable data** (name, email, date of birth, sex
   next to the samples). Ingest connects as the scoped DML-only `ingest`
   role, never as the superuser (`server/README.md`, "The scoped `ingest`

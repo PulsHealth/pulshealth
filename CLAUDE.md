@@ -303,9 +303,24 @@ outside this repository — nothing here assumes a particular machine.
   directly, which works because the app's ATS exception permits plain HTTP
   to local-network hosts (`ServerURLValidation.isLocalNetworkHost`). Keep
   the two rules in step, and keep the loopback default.
-- The product API host mapping stays on `127.0.0.1`; the `web` viewer has no
-  authentication, so it binds to `WEB_BIND_ADDR` (default `127.0.0.1`) and
-  belongs behind a private network or an authenticating proxy. `web` connects
-  to Postgres over the internal docker network as the read-only `grafana` role
-  (`DATABASE_URL` built from `GRAFANA_DB_PASSWORD` in `.env`), so it never
-  needs the SSH-tunnel/`DATABASE_URL` dance used for local `npm run dev`.
+- The product API host mapping stays on `127.0.0.1`. The `web` viewer's login
+  is **optional and off unless `WEB_AUTH_PASSWORD` is set** (`web/proxy.ts`,
+  Next 16's middleware convention, over the pure helpers in `web/lib/auth.ts`;
+  HTTP Basic, any username, `/api/healthz` exempt so health checks work,
+  constant-time compare, nothing about an attempt logged). `scripts/bootstrap.sh`
+  generates one on a fresh `.env` and prints it; an `.env` written before the
+  key existed keeps the old open behaviour, and the container's startup log
+  says which mode it is in. It is a password prompt, not TLS, so `web` still
+  binds to `WEB_BIND_ADDR` (default `127.0.0.1`) and belongs behind a private
+  network or an HTTPS proxy. `web` connects to Postgres over the internal
+  docker network as the read-only `grafana` role (`DATABASE_URL` built from
+  `GRAFANA_DB_PASSWORD` in `.env`), so it never needs the
+  SSH-tunnel/`DATABASE_URL` dance used for local `npm run dev`.
+- **Ingest throttles failed authentications, never successful ones**
+  (`server/ingest/ratelimit.go`): a per-client-IP token bucket, 10 failures
+  with a 10/minute refill, `429` + `Retry-After` once empty — and the refusal
+  happens *before* the token comparison, or the limit would only change the
+  status code an attacker sees rather than their guessing rate. A backfill is
+  thousands of authenticated requests, so successes must never draw from the
+  bucket. The client is the TCP peer address unless `TRUST_PROXY_HEADERS=true`
+  declares a proxy that owns `X-Forwarded-For`.

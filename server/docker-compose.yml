@@ -186,10 +186,17 @@ services:
       DATABASE_URL: postgres://grafana:${GRAFANA_DB_PASSWORD}@db:5432/postgres?sslmode=disable
       PULS_USER_ID: ${PULS_USER_ID:-5ea4d000-0000-4000-8000-000000000001}
       PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
+      # Set it and every page asks for this password over HTTP Basic (any
+      # username; /api/healthz stays open for health checks). Left empty the
+      # viewer has no login at all, exactly as before, and says so in its
+      # startup log. scripts/bootstrap.sh generates one on a fresh install
+      # and prints it. See web/README.md, "Access control".
+      WEB_AUTH_PASSWORD: ${WEB_AUTH_PASSWORD:-}
     ports:
-      # 3000 is Grafana. Default to loopback; to reach the (unauthenticated)
-      # viewer from other machines set WEB_BIND_ADDR to a private interface,
-      # e.g. the host's Tailscale IPv4, rather than 0.0.0.0.
+      # 3000 is Grafana. Default to loopback; to reach the viewer from other
+      # machines set WEB_BIND_ADDR to a private interface, e.g. the host's
+      # Tailscale IPv4, rather than 0.0.0.0 — WEB_AUTH_PASSWORD is a password
+      # prompt, not TLS, so the bind address still matters.
       - "${WEB_BIND_ADDR:-127.0.0.1}:3001:3000"
     depends_on:
       db:
