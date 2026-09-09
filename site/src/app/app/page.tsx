@@ -3,12 +3,13 @@ import { Activity, ArrowRight, BarChart3, Bot, Database, Dumbbell, Ear, FileJson
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AppStoreBadge } from "@/components/app-store-badge";
 
 const GITHUB = "https://github.com/PulsHealth/pulshealth";
 
 export const metadata = {
   title: "PulsHealth for iOS - Apple Health, Synced to Your Own Server",
-  description: "An open-source iOS app that reads Apple Health read-only and streams every sample to a backend you run yourself. Full historical backfill, then continuous near-real-time sync. Apache-2.0, built from source.",
+  description: "A free, open-source iOS app that reads Apple Health read-only and streams every sample to a backend you run yourself. Full historical backfill, then continuous near-real-time sync. On the App Store, Apache-2.0.",
   alternates: {
     canonical: '/app/',
   },
@@ -87,7 +88,7 @@ export default function AppPage() {
       <section className="w-full bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-zinc-900 pt-20 pb-32 border-b">
         <div className="container mx-auto max-w-7xl px-4 flex flex-col items-center text-center space-y-8">
           <Badge variant="outline" className="px-4 py-1 text-sm rounded-full border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-            Pre-release &middot; Build from source
+            Free on the App Store &middot; Open source
           </Badge>
 
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 max-w-3xl">
@@ -101,8 +102,9 @@ export default function AppPage() {
             There is no PulsHealth account and no PulsHealth cloud.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
+          <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+            <AppStoreBadge />
+            <Button asChild size="lg" variant="outline">
               <a href={GITHUB} target="_blank" rel="noopener noreferrer">
                 <Github className="mr-2 h-4 w-4" />
                 Get the Source
@@ -129,10 +131,10 @@ export default function AppPage() {
           <CardContent>
             <ul className="space-y-4 text-muted-foreground">
               <li>
-                <strong className="text-foreground">It is not on the App Store yet.</strong> You
-                build it yourself with Xcode 26 and XcodeGen. Running it on a real iPhone needs a
-                paid Apple Developer team, because the HealthKit background-delivery entitlement
-                requires one.
+                <strong className="text-foreground">It is on the App Store.</strong> Free, for
+                iPhone. You can also build it yourself with Xcode 26 and XcodeGen — but running
+                your own build on a real iPhone needs a paid Apple Developer team, because the
+                HealthKit background-delivery entitlement requires one.
               </li>
               <li>
                 <strong className="text-foreground">You need a server first.</strong> The app has

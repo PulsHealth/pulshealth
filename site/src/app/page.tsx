@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Bot, Database, FileCode2, Github, Lock, Server, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AppStoreBadge } from "@/components/app-store-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedWord } from "@/components/animated-word";
 
@@ -78,7 +79,8 @@ export default function HomePage() {
             hosted by us, because there is nothing to host.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+            <AppStoreBadge />
             <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
               <a href={GITHUB} target="_blank" rel="noopener noreferrer">
                 <Github className="mr-2 h-4 w-4" />
@@ -94,8 +96,8 @@ export default function HomePage() {
           </div>
 
           <p className="text-sm text-muted-foreground max-w-xl">
-            Pre-release: the app is not on the App Store yet, so you build it from source
-            with Xcode. Running it needs a server of your own.
+            The app is free on the App Store — or build it from source with Xcode.
+            Either way it needs a server of your own to sync to.
           </p>
         </div>
       </section>
