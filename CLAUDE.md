@@ -1,8 +1,8 @@
 # CLAUDE.md — agent guide for Puls
 
-Personal HealthKit → self-hosted Postgres sync. Four components, each with its own README
+Personal HealthKit → self-hosted Postgres sync. Five components, each with its own README
 (architecture, wire format, performance numbers live there — read them before deep work),
-plus a standalone CLI and the public website:
+plus two standalone CLIs and the public website:
 
 | Path | What | Docs |
 |---|---|---|
@@ -10,7 +10,9 @@ plus a standalone CLI and the public website:
 | `PulsHealth/` | SwiftUI app wrapping the library (dashboard, type picker, settings, log, benchmark) | `PulsHealth/README.md` |
 | `server/` | Docker Compose: Go ingest/product APIs + PostgreSQL 17/TimescaleDB + Grafana | `server/README.md` |
 | `server/mcp/` | Go MCP server (stdio + streamable HTTP) giving AI assistants read-only tools over the product API; talks only to the API, never Postgres | `server/mcp/README.md`, `docs/ai.md` |
+| `web/` | Next.js self-hosted viewer, published as the fourth GHCR image. Reads Postgres directly as the read-only `grafana` role; optional HTTP Basic auth. **Not** `site/`, which is the public marketing site | `web/README.md` |
 | `tools/puls-export/` | Standalone Go module: CLI for the product API's `GET /v1/export` (streamed CSV/JSONL). Its own `go.mod`, stdlib only | `docs/export.md` |
+| `tools/protocol-check/` | Standalone Go module: validates the `docs/protocol/fixtures/` corpus against the JSON Schemas. Own `go.mod`, own CI job | `docs/protocol/README.md` |
 | `site/` | Next.js static export behind **pulshealth.com** (marketing pages, blog, knowledge-base viewer). Built with bun. **Not** `web/`, which is the self-hosted viewer | `site/README.md` |
 | `knowledge-base/`, `blog/` | The site's content: 177 YAML HealthKit type files (clinical prose, ranges, sources) and the MDX posts + images | `knowledge-base/README.md`, `blog/BLOG_SYSTEM.md` |
 
@@ -26,8 +28,9 @@ restating them — keep it that way.
 # Library tests (Swift Testing; serialization + catalog suites)
 cd PulsHealthSync && xcodebuild test -scheme PulsHealthSync \
   -destination 'platform=iOS Simulator,name=iPhone 17'
-# After editing HealthTypeCatalog: rewrite the published vocabulary, then the
-# web core (docs/protocol/catalog.md). The comparison test fails until you do.
+# After editing HealthTypeCatalog: rewrite the published vocabulary
+# (docs/protocol/catalog.json), then the web overlay's generated core
+# (web/lib/catalog.generated.ts). The comparison test fails until you do.
 cd PulsHealthSync && TEST_RUNNER_PULS_WRITE_CATALOG=1 xcodebuild test \
   -scheme PulsHealthSync -destination 'platform=iOS Simulator,name=iPhone 17' \
   -only-testing:PulsHealthSyncTests/CatalogVocabularyTests
@@ -55,7 +58,7 @@ cd PulsHealth && xcodebuild test -scheme PulsHealth \
 scripts/bootstrap.sh --build                   # first run, from source
 make dev-up                                    # thereafter (compose.build.yml)
 
-# Marketing site (bun, not npm). Exports 197 static pages to site/out —
+# Marketing site (bun, not npm). Exports 190 static pages to site/out —
 # 177 of them from knowledge-base/. `make site-dev|site-build|site-lint` and
 # `scripts/deploy-site.sh` (S3 + CloudFront) wrap this from the repo root.
 cd site && bun install && bun run lint && bun run build
@@ -66,10 +69,21 @@ cd ../api && go vet ./... && go test ./...
 cd ../mcp && go vet ./... && go test ./...   # MCP server; tests run against an httptest fake of the product API
 cd ../../tools/puls-export && go vet ./... && go test ./...   # export CLI (own module, no deps)
 
-# Server integration tests (gated on DATABASE_URL; schema must be applied)
+# Protocol corpus against the JSON Schemas, then the same corpus posted at the
+# Python reference receiver. Both from the repository root:
+cd tools/protocol-check && go test ./... && go run . ../../docs/protocol/fixtures/*.ndjson
+python3 examples/receivers/python-sqlite/smoke_test.py
+
+# Self-hosted viewer (npm, not bun — the mirror image of site/), from the root
+cd web && npm ci && npm run check:catalog && npm run lint && \
+  npm run typecheck && npm test && npm run build
+
+# Server integration tests (gated on DATABASE_URL; schema must be applied).
+# There is no module at server/ — ingest, api and mcp are each their own
+# module, so run these from the module directory, not from server/.
 cd server && docker compose up -d migrate      # db + schema, nothing else
-DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" \
-  go test -run Integration ./ingest/...
+cd ingest && DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" \
+  go test -run Integration ./...
 # To run them as the scoped `ingest` role, point DATABASE_URL at it and set
 # ADMIN_DATABASE_URL to the postgres URL (DDL + compress_chunk setup steps).
 ```

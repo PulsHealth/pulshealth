@@ -472,7 +472,7 @@ cd ../mcp      && go vet ./... && go test ./...
 # Web viewer
 cd web && npm ci && npm run lint && npm run typecheck && npm test && npm run build
 
-# Marketing site (bun; exports 197 static pages to site/out, 177 of them from
+# Marketing site (bun; exports 190 static pages to site/out, 177 of them from
 # knowledge-base/, which it reads as a repository-root sibling)
 cd site && bun install && bun run lint && bun run build
 

@@ -158,7 +158,7 @@ cd web && npm ci && npm run check:catalog && npm run lint && \
   npm run typecheck && npm test && npm run build
 ```
 
-**Marketing site** (bun, not npm — it exports 197 static pages, 177 of them
+**Marketing site** (bun, not npm — it exports 190 static pages, 177 of them
 rendered from `knowledge-base/`, and the CI job asserts those counts, so a
 content directory that goes missing fails the build rather than silently
 shrinking it):

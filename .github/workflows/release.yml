@@ -90,9 +90,20 @@ jobs:
           echo "is_release=$is_release" >> "$GITHUB_OUTPUT"
           echo "publishing version $version (release: $is_release)"
 
+  # ci.yml does not trigger on tags, so before this job existed a `git push
+  # --tags` published four images — and moved `latest`, which every unpinned
+  # self-hoster runs — without a single test having run against that commit.
+  # Calling the workflow (rather than trusting a check-suite lookup) also means
+  # the tagged tree itself is tested, not whatever main happened to be.
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
   build:
     name: Build ${{ matrix.image }} (${{ matrix.platform }})
-    needs: version
+    needs: [version, ci]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     strategy:
@@ -178,6 +189,17 @@ jobs:
     needs: [version, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+      # Provenance is attested here rather than in `build`, where buildkit's
+      # own `provenance:` would add attestation manifests to the per-platform
+      # digests the merge step globs — which is why that stays false. Attesting
+      # the finished manifest list instead gives a consumer one thing to check:
+      #   gh attestation verify oci://ghcr.io/pulshealth/<image>:<tag> \
+      #     --repo PulsHealth/pulshealth
+      attestations: write
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -227,7 +249,24 @@ jobs:
           docker buildx imagetools create $tags $digests
 
       - name: Inspect the result
+        id: inspect
         env:
           IMAGE: ${{ env.IMAGE_NAMESPACE }}/${{ matrix.image }}
           VERSION: ${{ needs.version.outputs.version }}
-        run: docker buildx imagetools inspect "$IMAGE:$VERSION"
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
+          digest=$(docker buildx imagetools inspect "$IMAGE:$VERSION" \
+            --format '{{json .Manifest.Digest}}' | tr -d '"')
+          case $digest in
+            sha256:*) ;;
+            *) echo "could not read the manifest-list digest: '$digest'" >&2; exit 1 ;;
+          esac
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE_NAMESPACE }}/${{ matrix.image }}
+          subject-digest: ${{ steps.inspect.outputs.digest }}
+          push-to-registry: true

@@ -15,7 +15,7 @@ relative path, so the three must stay where they are:
 
 Moving `site/` (or either sibling) breaks both without a build error — the
 loaders log "dir not found" and simply emit fewer pages. The page count is
-the tell: a full build exports **197** static pages, 177 of them under
+the tell: a full build exports **190** static pages, 177 of them under
 `knowledge-base/types/`.
 
 ## Develop
@@ -29,8 +29,8 @@ bun run dev        # localhost:3000
 ## Build and lint
 
 ```bash
-bun run build      # static export to site/out/ (197 pages)
-bun run lint       # ESLint (3 known warnings, no errors)
+bun run build      # static export to site/out/ (190 pages)
+bun run lint       # ESLint (2 known warnings, no errors)
 ```
 
 `make site-dev`, `make site-build` and `make site-lint` from the repository
