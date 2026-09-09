@@ -2,7 +2,7 @@
 
 Personal HealthKit → self-hosted Postgres sync. Four components, each with its own README
 (architecture, wire format, performance numbers live there — read them before deep work),
-plus a standalone CLI:
+plus a standalone CLI and the public website:
 
 | Path | What | Docs |
 |---|---|---|
@@ -11,6 +11,8 @@ plus a standalone CLI:
 | `server/` | Docker Compose: Go ingest/product APIs + PostgreSQL 17/TimescaleDB + Grafana | `server/README.md` |
 | `server/mcp/` | Go MCP server (stdio + streamable HTTP) giving AI assistants read-only tools over the product API; talks only to the API, never Postgres | `server/mcp/README.md`, `docs/ai.md` |
 | `tools/puls-export/` | Standalone Go module: CLI for the product API's `GET /v1/export` (streamed CSV/JSONL). Its own `go.mod`, stdlib only | `docs/export.md` |
+| `site/` | Next.js static export behind **pulshealth.com** (marketing pages, blog, knowledge-base viewer). Built with bun. **Not** `web/`, which is the self-hosted viewer | `site/README.md` |
+| `knowledge-base/`, `blog/` | The site's content: 177 YAML HealthKit type files (clinical prose, ranges, sources) and the MDX posts + images | `knowledge-base/README.md`, `blog/BLOG_SYSTEM.md` |
 
 [`AGENTS.md`](AGENTS.md) is the short, tool-agnostic version of this file for
 an automated contributor (components, where the authoritative facts live, the
@@ -52,6 +54,11 @@ cd PulsHealth && xcodebuild test -scheme PulsHealth \
 # the code in the checkout, add the build overlay:
 scripts/bootstrap.sh --build                   # first run, from source
 make dev-up                                    # thereafter (compose.build.yml)
+
+# Marketing site (bun, not npm). Exports 197 static pages to site/out —
+# 177 of them from knowledge-base/. `make site-dev|site-build|site-lint` and
+# `scripts/deploy-site.sh` (S3 + CloudFront) wrap this from the repo root.
+cd site && bun install && bun run lint && bun run build
 
 # Server unit tests (no DB needed)
 cd server/ingest && go vet ./... && go test ./...
@@ -221,6 +228,16 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   than a copy, so it can push detail screens the footer knows nothing about —
   that is why the `NavigationStack` carries `.id(step)`; removing it leaves a
   pushed category sitting on top of the next step.
+- **`site/`, `knowledge-base/` and `blog/` are siblings at the repository root.**
+  The site reads its content by relative path —
+  `path.join(process.cwd(), "..", "knowledge-base")` in `site/src/lib/api.ts`,
+  `../blog/articles` in `site/src/lib/blog.ts`, and `cp -r ../blog/images/.` in
+  `site/package.json`'s `copy-blog-images`. Move or rename any of the three and
+  the loaders log "dir not found", return nothing, and the build **still
+  succeeds** — it just exports far fewer pages. The count is the only alarm, so
+  the `site` CI job asserts it (177 type pages, one per tracked YAML file, and
+  one page per `blog/articles/*.mdx`). Keep that check honest rather than
+  loosening it.
 - **The published privacy claims are load-bearing.**
   `docs/privacy-policy.md` and `docs/appstore/` state as fact that the app has
   zero third-party dependencies, sends data only to the configured server,

@@ -47,6 +47,8 @@ it is where the sync protocol is written.
 | **`PulsHealthSync`** | [`PulsHealthSync/`](PulsHealthSync/README.md) | Swift package (iOS 17+, Swift 6 strict concurrency, zero dependencies): anchored-query sync engine, on-device aggregates, activity rings, background scheduling, HTTP transport, NDJSON encoding. Embeddable in other apps. |
 | **Reference server** | [`server/`](server/README.md) | Docker Compose stack: TimescaleDB, Go ingest API, Go product API (OpenAPI 3.1), Grafana with provisioned dashboards and alert rules. |
 | **Web viewer** | [`web/`](web/README.md) | Next.js viewer (activity rings, trends, workouts, catalog) reading Postgres directly. |
+| **Marketing site** | [`site/`](site/README.md) | Next.js static export behind pulshealth.com: product pages, blog, and the knowledge-base viewer. Distinct from `web/`. |
+| **Knowledge base** | [`knowledge-base/`](knowledge-base/README.md) | 177 YAML files describing every HealthKit type — what it measures, how it is interpreted, typical and notable ranges, sources. Read by `site/` at build time; useful on its own. |
 | **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
 | **MCP server** | [`server/mcp/`](server/mcp/README.md) | Read-only MCP server over the product API for Claude Desktop, Claude Code, Cursor and remote connectors: daily metrics, rings, workouts, latest readings, with an embedded guide for the model. Setup in [`docs/ai.md`](docs/ai.md). |
 
@@ -458,8 +460,12 @@ cd server/ingest && go vet ./... && go test ./...
 cd ../api      && go vet ./... && go test ./...
 cd ../mcp      && go vet ./... && go test ./...
 
-# Web
+# Web viewer
 cd web && npm ci && npm run lint && npm run typecheck && npm test && npm run build
+
+# Marketing site (bun; exports 197 static pages to site/out, 177 of them from
+# knowledge-base/, which it reads as a repository-root sibling)
+cd site && bun install && bun run lint && bun run build
 
 # The whole stack from this checkout (server/compose.build.yml overlay)
 make dev-up
