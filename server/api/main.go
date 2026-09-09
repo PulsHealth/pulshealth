@@ -25,9 +25,13 @@ import (
 const (
 	defaultUserID   = "5ea4d000-0000-4000-8000-000000000001"
 	shutdownTimeout = 15 * time.Second
-	defaultLimit    = 50
-	maxLimit        = 200
-	catalogTTL      = 5 * time.Minute
+	// Ceiling on a single handler's database work. Generous enough for the
+	// widest legitimate query, short enough that a stuck one returns its
+	// pool connection. /v1/export is exempt (see routes).
+	handlerTimeout = 30 * time.Second
+	defaultLimit   = 50
+	maxLimit       = 200
+	catalogTTL     = 5 * time.Minute
 	// Accepted range for epoch-millisecond query parameters: 1970-01-01 to
 	// 9999-12-31T23:59:59.999Z, the widest span the `date` casts can carry.
 	minEpochMS int64 = 0
@@ -59,6 +63,20 @@ type Server struct {
 	store apiStore
 	token string
 	log   *slog.Logger
+
+	// Whether X-Forwarded-* may be believed: for the rate-limit key, and for
+	// the host the OpenAPI document advertises. Off unless a proxy that
+	// overwrites those headers is the only thing that can reach this port.
+	trustProxyHeaders bool
+
+	// Per-client-IP auth-failure buckets, made on first use so a Server built
+	// as a struct literal (every test) still has one.
+	limiterOnce sync.Once
+	failures    *failureLimiter
+
+	// Last known database status for the unauthenticated /healthz, so its
+	// request rate cannot drive pool acquisitions (see health.go).
+	health healthCache
 
 	catalogMu      sync.Mutex
 	catalogTypes   []CatalogType
@@ -121,7 +139,22 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
-	srv := &Server{store: NewStore(pool, userID, loc), token: token, log: logger}
+	// Same switch, same default (off), same meaning as ingest's: only a proxy
+	// that overwrites X-Forwarded-* may be believed. It decides both the
+	// rate-limit key and the host the OpenAPI document advertises.
+	trustProxyHeaders := os.Getenv("TRUST_PROXY_HEADERS") == "true"
+
+	srv := &Server{
+		store:             NewStore(pool, userID, loc),
+		token:             token,
+		log:               logger,
+		trustProxyHeaders: trustProxyHeaders,
+	}
+	logger.Info("starting",
+		"addr", addr,
+		"time_zone", loc.String(),
+		"trust_proxy_headers", trustProxyHeaders,
+	)
 	httpSrv := &http.Server{
 		Addr:              addr,
 		Handler:           srv.routes(),
@@ -226,10 +259,26 @@ func (s *Server) apiRoutes() []route {
 	}
 }
 
+// limiter returns the auth-failure limiter, creating it on first use.
+func (s *Server) limiter() *failureLimiter {
+	s.limiterOnce.Do(func() {
+		if s.failures == nil {
+			s.failures = newFailureLimiter()
+		}
+	})
+	return s.failures
+}
+
 func (s *Server) routes() http.Handler {
 	mux := http.NewServeMux()
 	for _, rt := range s.apiRoutes() {
 		handler := rt.handler
+		// The export streams for as long as the download takes; every other
+		// handler is bounded so one slow query cannot hold a pool connection
+		// open indefinitely.
+		if rt.path != "/v1/export" {
+			handler = withTimeout(handlerTimeout, handler)
+		}
 		if rt.auth {
 			handler = s.auth(handler)
 		}
@@ -241,8 +290,26 @@ func (s *Server) routes() http.Handler {
 func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
+
+		// Refusal happens BEFORE the token comparison, exactly as it does in
+		// ingest: charging a failure but still answering 401 would let an
+		// attacker keep guessing at full speed and read the status code.
+		ip := clientIP(r, s.trustProxyHeaders)
+		if ok, wait := s.limiter().allow(ip, time.Now()); !ok {
+			w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())))
+			s.log.Warn("auth throttled", "ip", ip, "path", r.URL.Path, "retry_after_s", int(wait.Seconds()))
+			writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many failed authentications"})
+			return
+		}
+
 		got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if !ok || subtle.ConstantTimeCompare([]byte(got), []byte(s.token)) != 1 {
+			// A successful request never costs a token: a client polling this
+			// API legitimately must never be throttled.
+			s.limiter().recordFailure(ip, time.Now())
+			// Logged so a token brute-force leaves a trace. The token itself is
+			// never logged, present or absent.
+			s.log.Warn("auth failed", "ip", ip, "path", r.URL.Path, "had_bearer", ok)
 			w.Header().Set("WWW-Authenticate", "Bearer")
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
@@ -251,10 +318,24 @@ func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// withTimeout bounds a handler's database work. Without it a slow query holds
+// a pooled connection until the client goes away, and the pool defaults to
+// max(4, NumCPU) — so a handful of them starve every other endpoint.
+//
+// /v1/export is deliberately exempt: it streams for as long as the download
+// takes, and is bounded instead by its own concurrency slots and range cap.
+func withTimeout(d time.Duration, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), d)
+		defer cancel()
+		next(w, r.WithContext(ctx))
+	}
+}
+
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
-	defer cancel()
-	if err := s.store.Ping(ctx); err != nil {
+	// Cached: this endpoint is unauthenticated, so request rate must not drive
+	// pool acquisitions. See health.go.
+	if !s.health.status(r.Context(), s.store, time.Now()) {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"ok": false, "db": false})
 		return
 	}

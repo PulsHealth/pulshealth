@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -40,6 +41,9 @@ type fakeStore struct {
 	// Fails only SampleType, so an export test can make the type lookup a
 	// 400 without failing every other call.
 	sampleTypeErr error
+	// Counts database liveness probes, so a test can assert /healthz does not
+	// make one per request (see health.go).
+	pings atomic.Int64
 }
 
 func (f *fakeStore) SleepDaily(context.Context, time.Time, time.Time) ([]SleepNight, error) {
@@ -118,7 +122,10 @@ func (f *fakeStore) StateOfMind(context.Context, time.Time, time.Time) ([]StateO
 	return f.moods, nil
 }
 
-func (f *fakeStore) Ping(context.Context) error { return f.err }
+func (f *fakeStore) Ping(context.Context) error {
+	f.pings.Add(1)
+	return f.err
+}
 
 func (f *fakeStore) Profile(context.Context) (*Profile, error) {
 	if f.err != nil {

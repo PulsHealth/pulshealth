@@ -21,7 +21,7 @@ PULS_TOKEN="$(openssl rand -hex 32)" python3 receiver.py
 |---|---|---|
 | `PULS_TOKEN` | (required) | The bearer token the app must send. |
 | `PULS_DB` | `puls.sqlite` | SQLite file; created with its schema on first start. |
-| `PULS_BIND` | `0.0.0.0` | Listen address. Use `127.0.0.1` when you only test locally. |
+| `PULS_BIND` | `127.0.0.1` | Listen address. Loopback by default, like the reference stack's `INGEST_BIND_ADDR`. Set `0.0.0.0` deliberately to accept a phone on your LAN — there is no TLS here and no throttling of failed authentications. |
 | `PULS_PORT` | `8080` | Listen port. |
 
 Check it is up:

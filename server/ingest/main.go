@@ -200,6 +200,10 @@ type Server struct {
 	// Whether X-Forwarded-For may be believed when identifying a client;
 	// false unless TRUST_PROXY_HEADERS says a proxy owns that header.
 	trustProxyHeaders bool
+
+	// Last known database status for the unauthenticated /healthz, so its
+	// request rate cannot drive pool acquisitions (see health.go).
+	health healthCache
 }
 
 func newServer(store ingester, token string, trustProxyHeaders bool, log *slog.Logger) *Server {
@@ -739,9 +743,9 @@ func (s *Server) handleCapabilities(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
-	defer cancel()
-	if err := s.store.Ping(ctx); err != nil {
+	// Cached: this endpoint is unauthenticated, so request rate must not drive
+	// pool acquisitions. See health.go.
+	if !s.health.status(r.Context(), s.store, time.Now()) {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"ok": false, "db": false})
 		return
 	}

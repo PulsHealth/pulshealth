@@ -27,7 +27,7 @@ func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/openapi+json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(openAPIDocument(requestOrigin(r))))
+	_, _ = w.Write([]byte(openAPIDocument(requestOrigin(r, s.trustProxyHeaders))))
 }
 
 // openAPIOriginPlaceholder is the servers[0].url the stored document
@@ -47,25 +47,35 @@ func openAPIDocument(origin string) string {
 // honouring the headers a TLS-terminating proxy sets (Tailscale Serve,
 // Caddy, nginx), so the document a client downloads names the host that
 // client used rather than the loopback address the service binds to. A host
-// that is not a plausible authority — the header is attacker-controlled —
-// falls back to "/", the relative server URL every OpenAPI 3.1 tool accepts.
-func requestOrigin(r *http.Request) string {
+// that is not a plausible authority falls back to "/", the relative server
+// URL every OpenAPI 3.1 tool accepts.
+//
+// X-Forwarded-* is believed only when trustProxy says a proxy owns it — the
+// same TRUST_PROXY_HEADERS switch, and the same default of off, that ingest
+// applies to the rate-limit key. /openapi.json is unauthenticated, so without
+// the gate any caller could choose the host the document advertises; and
+// docs/ai.md tells people to fetch that document over a public URL and hand it
+// to ChatGPT together with PULS_API_TOKEN, which makes a document naming the
+// wrong host a way to deliver a credential somewhere it should not go.
+func requestOrigin(r *http.Request, trustProxy bool) string {
 	host := r.Host
-	if forwarded := firstForwardedValue(r.Header.Get("X-Forwarded-Host")); forwarded != "" {
-		host = forwarded
-	}
-	if !isHostAuthority(host) {
-		return "/"
-	}
 	scheme := "http"
 	if r.TLS != nil {
 		scheme = "https"
 	}
-	switch firstForwardedValue(r.Header.Get("X-Forwarded-Proto")) {
-	case "https":
-		scheme = "https"
-	case "http":
-		scheme = "http"
+	if trustProxy {
+		if forwarded := firstForwardedValue(r.Header.Get("X-Forwarded-Host")); forwarded != "" {
+			host = forwarded
+		}
+		switch firstForwardedValue(r.Header.Get("X-Forwarded-Proto")) {
+		case "https":
+			scheme = "https"
+		case "http":
+			scheme = "http"
+		}
+	}
+	if !isHostAuthority(host) {
+		return "/"
 	}
 	return scheme + "://" + host
 }

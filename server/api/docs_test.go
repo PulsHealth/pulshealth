@@ -241,37 +241,59 @@ func TestDocsPageListsEveryRoute(t *testing.T) {
 func TestOpenAPIServerURLFollowsTheRequest(t *testing.T) {
 	t.Parallel()
 
-	srv := testServer(t, &fakeStore{})
-
 	cases := []struct {
-		name    string
-		host    string
-		headers map[string]string
-		want    string
+		name       string
+		host       string
+		headers    map[string]string
+		trustProxy bool
+		want       string
 	}{
-		{"plain host", "puls.example.com", nil, "http://puls.example.com"},
+		{"plain host", "puls.example.com", nil, false, "http://puls.example.com"},
 		{
-			"behind a TLS proxy",
+			"behind a trusted TLS proxy",
 			"127.0.0.1:8081",
 			map[string]string{"X-Forwarded-Host": "puls.example.com", "X-Forwarded-Proto": "https"},
+			true,
 			"https://puls.example.com",
 		},
 		{
-			"a proxy chain names the client's host first",
+			"a trusted proxy chain names the client's host first",
 			"127.0.0.1:8081",
 			map[string]string{"X-Forwarded-Host": "puls.example.com, inner", "X-Forwarded-Proto": "https, http"},
+			true,
 			"https://puls.example.com",
 		},
 		{
 			"a host that is not an authority falls back to the relative server",
 			"127.0.0.1:8081",
 			map[string]string{"X-Forwarded-Host": `evil", "x": "`},
+			true,
 			"/",
+		},
+		// /openapi.json is unauthenticated, so without TRUST_PROXY_HEADERS any
+		// caller could choose the host the document advertises — and docs/ai.md
+		// tells people to hand that document to ChatGPT alongside the API
+		// token. Untrusted, the header is ignored entirely.
+		{
+			"an untrusted X-Forwarded-Host is ignored",
+			"127.0.0.1:8081",
+			map[string]string{"X-Forwarded-Host": "attacker.example.com", "X-Forwarded-Proto": "https"},
+			false,
+			"http://127.0.0.1:8081",
+		},
+		{
+			"an untrusted proxy cannot upgrade the scheme either",
+			"puls.example.com",
+			map[string]string{"X-Forwarded-Proto": "https"},
+			false,
+			"http://puls.example.com",
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			srv := testServer(t, &fakeStore{})
+			srv.trustProxyHeaders = tc.trustProxy
 			req := httptest.NewRequest(http.MethodGet, "/openapi.json", nil)
 			req.Host = tc.host
 			for name, value := range tc.headers {
@@ -291,6 +313,7 @@ func TestOpenAPIServerURLFollowsTheRequest(t *testing.T) {
 	}
 
 	// The placeholder never reaches a client.
+	srv := testServer(t, &fakeStore{})
 	req := httptest.NewRequest(http.MethodGet, "/openapi.json", nil)
 	rec := httptest.NewRecorder()
 	srv.routes().ServeHTTP(rec, req)

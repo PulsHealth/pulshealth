@@ -253,11 +253,25 @@ type APIClient struct {
 
 // NewAPIClient validates baseURL (an absolute http(s) URL, any trailing slash
 // dropped) and returns a client. A nil hc gets a client with a timeout.
+//
+// Any userinfo in the URL is discarded rather than carried. This server hands
+// its errors to a language model and its startup line to a log, and both used
+// to render the base URL verbatim — so a PULS_API_URL of the form
+// http://alice:sup3rsecret@host:8081 printed the password to both. Credentials
+// belong in PULS_API_TOKEN; a URL that carries them loses them here.
 func NewAPIClient(baseURL, token string, hc *http.Client) (*APIClient, error) {
-	u, err := url.Parse(strings.TrimSpace(baseURL))
+	trimmed := strings.TrimSpace(baseURL)
+	u, err := url.Parse(trimmed)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		return nil, fmt.Errorf("PULS_API_URL %q must be an absolute http(s) URL such as http://127.0.0.1:8081", baseURL)
+		// Redacted() on the parse failure path too: an unparseable URL can
+		// still contain a password, and this message reaches the operator.
+		shown := trimmed
+		if u != nil {
+			shown = u.Redacted()
+		}
+		return nil, fmt.Errorf("PULS_API_URL %q must be an absolute http(s) URL such as http://127.0.0.1:8081", shown)
 	}
+	u.User = nil
 	u.Path = strings.TrimRight(u.Path, "/")
 	u.RawPath = ""
 	u.RawQuery = ""
@@ -268,8 +282,10 @@ func NewAPIClient(baseURL, token string, hc *http.Client) (*APIClient, error) {
 	return &APIClient{base: u, token: token, http: hc}, nil
 }
 
-// BaseURL is the normalised product API base.
-func (c *APIClient) BaseURL() string { return c.base.String() }
+// BaseURL is the normalised product API base. It carries no credentials —
+// NewAPIClient drops them — and Redacted() is belt and braces for a client
+// built by some other path.
+func (c *APIClient) BaseURL() string { return c.base.Redacted() }
 
 func (c *APIClient) get(ctx context.Context, path string, query url.Values, out any) error {
 	u := *c.base
@@ -284,7 +300,8 @@ func (c *APIClient) get(ctx context.Context, path string, query url.Values, out 
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("product API unreachable at %s: %w", c.base, err)
+		// c.BaseURL(), not c.base: this string is handed to the model.
+		return fmt.Errorf("product API unreachable at %s: %w", c.BaseURL(), err)
 	}
 	defer resp.Body.Close()
 
