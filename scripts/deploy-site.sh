@@ -100,7 +100,11 @@ if [ "$dry_run" -eq 1 ]; then
 fi
 
 echo "deploy-site: syncing to s3://$s3_bucket"
-aws s3 sync "$out_dir/" "s3://$s3_bucket" --delete "${dry_run_flag[@]}"
+# bash 3.2 (macOS) treats "${arr[@]}" on an EMPTY array as an unbound
+# variable under set -u, so a real deploy died here while --dry-run,
+# which fills the array, passed. The ${arr[@]+...} guard expands to
+# nothing when the array is empty instead of erroring.
+aws s3 sync "$out_dir/" "s3://$s3_bucket" --delete ${dry_run_flag[@]+"${dry_run_flag[@]}"}
 
 if [ "$dry_run" -eq 1 ] || [ "$invalidate" -eq 0 ]; then
   echo "deploy-site: skipping the CloudFront invalidation"
