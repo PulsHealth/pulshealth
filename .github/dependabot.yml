@@ -1,0 +1,95 @@
+# Dependabot keeps the five ecosystems moving. The `advisories` CI job reports
+# what is vulnerable; nothing here raised a fix, so reports accumulated instead
+# of being acted on — js-yaml sat on a HIGH advisory as a direct production
+# dependency of site/, and tools/protocol-check drifted 25 minor versions
+# behind the server modules on golang.org/x/text.
+#
+# Updates are grouped per ecosystem so a solo maintainer reviews a handful of
+# PRs a week rather than one per package. Security updates are deliberately
+# left ungrouped by GitHub and arrive on their own.
+version: 2
+
+updates:
+  # Go: five independent modules, no go.work.
+  - package-ecosystem: gomod
+    directories:
+      - /server/ingest
+      - /server/api
+      - /server/mcp
+      - /tools/puls-export
+      - /tools/protocol-check
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      go-dependencies:
+        patterns: ["*"]
+    commit-message:
+      prefix: "deps"
+
+  # The self-hosted viewer.
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      web-dependencies:
+        patterns: ["*"]
+        # Next and React move together; keep them out of the bulk group so a
+        # framework bump is reviewed on its own against the viewer's tests.
+        exclude-patterns: ["next", "react", "react-dom", "eslint-config-next"]
+      web-framework:
+        patterns: ["next", "react", "react-dom", "eslint-config-next"]
+    commit-message:
+      prefix: "deps"
+
+  # The marketing site. bun.lock, not package-lock.json.
+  - package-ecosystem: bun
+    directory: /site
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      site-dependencies:
+        patterns: ["*"]
+        exclude-patterns: ["next", "react", "react-dom", "eslint-config-next"]
+      site-framework:
+        patterns: ["next", "react", "react-dom", "eslint-config-next"]
+    commit-message:
+      prefix: "deps"
+
+  # Workflow actions are SHA-pinned, so nothing else can bump them.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"
+
+  # Base images. These are tag-pinned rather than digest-pinned, so two builds
+  # of one commit can differ; Dependabot is what makes digest pinning
+  # maintainable if that change is made later.
+  - package-ecosystem: docker
+    directories:
+      - /server/ingest
+      - /server/api
+      - /server/mcp
+      - /web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 4
+    groups:
+      base-images:
+        patterns: ["*"]
+    commit-message:
+      prefix: "deps"

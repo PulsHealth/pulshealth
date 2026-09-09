@@ -88,15 +88,19 @@ cd server/ingest && go vet ./... && go test ./...
 cd ../api      && go vet ./... && go test ./...
 ```
 
-Integration tests are gated on `DATABASE_URL` and need the schema applied,
-which the Compose database does on first start:
+Integration tests are gated on `DATABASE_URL` and need the schema applied.
+The database image's own initdb hooks only run on an empty volume, so the
+schema is owned by the `migrate` service — start that, not `db`. And there is
+no module at `server/`: `ingest`, `api` and `mcp` are each their own Go
+module, so run the tests from the module directory.
 
 ```bash
 cd server
 cp .env.example .env            # fill in the secrets, see server/README.md
-docker compose up -d db
+docker compose up -d migrate    # db + schema, nothing else
+cd ingest
 DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" \
-  go test -run Integration ./ingest/...
+  go test -run Integration ./...
 ```
 
 The product API's fixture-writing integration tests additionally require
@@ -117,7 +121,7 @@ npm run dev                     # demo data when DATABASE_URL is unset
 
 Built with **bun**, not npm, and distinct from `web/`. It reads
 `knowledge-base/` and `blog/` as repository-root siblings by relative path, so
-a full export is 197 static pages — 177 of them knowledge-base types. CI
+a full export is 190 static pages — 177 of them knowledge-base types. CI
 asserts that source count and built count match, because a moved content
 directory makes the build emit fewer pages instead of failing.
 
