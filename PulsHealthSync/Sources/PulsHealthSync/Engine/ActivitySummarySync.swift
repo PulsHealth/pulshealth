@@ -13,7 +13,10 @@ import HealthKit
 // repairs older edits. There is no observer/background-delivery for activity
 // summaries, so they refresh on foreground/periodic/scheduled syncs plus an
 // opportunistic hourly refresh at the tail of observer wakes
-// (`refreshActivitySummaryIfStale`).
+// (`refreshActivitySummaryIfStale`). They are the *first* phase of
+// `syncAllEnabled`: one row per local day is seconds of work and the first
+// thing a dashboard can show, so a long first backfill no longer runs to
+// completion before any ring data exists.
 
 extension HealthSyncEngine {
     /// Export activity summaries. Overlap-guarded like `sync(type:)`.

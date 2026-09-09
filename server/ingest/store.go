@@ -680,6 +680,13 @@ type typeInfo struct {
 // HKQuantityTypeIdentifierAppleExerciseTime as "s" and every consumer of
 // sample_types.unit (route metrics, the product API catalog, Grafana)
 // mislabelled the type from then on.
+//
+// That is not a rare ordering any more. The client covers a recent aggregate
+// window before its raw sweep (`syncRecentAggregates`), so on a first backfill
+// the first line this server sees for a type with an aggregate configured is
+// normally an aggregate line. This precedence rule and the canonical-unit
+// UPDATE in ensureTypes are what keep that from mislabelling every such type —
+// neither is redundant.
 func batchTypeInfos(b *Batch) map[string]typeInfo {
 	infos := map[string]typeInfo{}
 	for i := range b.Samples {
@@ -764,7 +771,10 @@ func ensureTypes(ctx context.Context, tx pgx.Tx, b *Batch) (map[string]int16, er
 	// The anti-join above never touches an existing row, so a unit registered
 	// wrongly (or a canonical unit that later changed in the client catalog)
 	// stayed wrong forever. Let canonical units win: correct rows whose stored
-	// unit differs from what a sample/series line says. Only rows that
+	// unit differs from what a sample/series line says. This is the repair for
+	// the aggregate-registers-the-type-first ordering described on
+	// batchTypeInfos, which a first backfill now hits by design — do not drop
+	// it as a no-op. Only rows that
 	// actually differ are written (or locked), and an UPDATE burns no identity
 	// values, so on the steady-state path this is a no-op.
 	var fixIdents, fixUnits []string

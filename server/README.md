@@ -623,6 +623,16 @@ per-type row counts and time bounds. It includes aggregate-only types;
 sum. Timestamps are epoch milliseconds, time ranges use `[start, end)`, and
 valid queries with no matching rows return empty arrays rather than errors.
 
+**Daily metrics need an aggregate, not just raw rows.** `metric_daily` — and
+so `/v1/metrics/daily`, Grafana's daily panels and the web viewer's daily
+charts — derives a type's cumulative/discrete semantics from `aggregate_series`
+(`db/migrations/009_metric_daily.sql`), a table only an aggregate line writes.
+A type with millions of raw samples and no aggregate configured has latest
+readings and intraday values but no daily row. This is why the phone uploads a
+bounded recent window of aggregates *before* its raw sweep on a first
+backfill (`syncRecentAggregates`): without it a fresh install shows nothing
+daily until the whole history has landed.
+
 The service publishes its own discovery surface:
 
 - `GET /` — JSON index with docs and OpenAPI links.

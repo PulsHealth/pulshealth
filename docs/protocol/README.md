@@ -327,9 +327,10 @@ GPS fixes for one workout. `workoutUUID` (required) names the workout sample;
 Optional fields are absent or null when Core Location reported them invalid.
 A route longer than 4,000 points is split across several lines, and the
 lines of one workout MAY arrive in different batches (the app back-fills
-workouts in phases: summaries first, routes and series last). The app sends
-the workout sample before its route lines today, but a receiver SHOULD NOT
-depend on the workout row existing when its points arrive.
+workouts in phases: the workout summary in the raw phase, routes and series
+in the last two phases — see §8.2). The app sends the workout sample before
+its route lines today, but a receiver SHOULD NOT depend on the workout row
+existing when its points arrive.
 
 ### 4.4 Series
 
@@ -431,8 +432,11 @@ disagree, so read the JSON rather than the Swift when you need the list.
 Unit strings are HealthKit `HKUnit` strings. Two are easy to misread: `%` is
 HealthKit's percent unit, whose scalar is a **fraction** (blood oxygen 0.97,
 not 97), and `count/min` is beats or breaths per minute. `s` appears only on
-`duration` aggregates. The table below is a reading aid grouped by unit;
-`catalog.json` is the copy to trust.
+`duration` aggregates — and since a type's first line may be an aggregate
+(§8.2), `s` can be the first unit a receiver ever sees for a type whose
+canonical unit is `min`. Take the canonical unit from this table, not from
+whichever line arrived first. The table below is a reading aid grouped by
+unit; `catalog.json` is the copy to trust.
 
 | Type identifier (`HKQuantityTypeIdentifier…`) | Unit |
 |---|---|
@@ -630,6 +634,23 @@ behave this way and a receiver MAY depend on it.
   8 concurrent connections to one host. Receivers MUST cope with concurrent
   batches from one device and with the same type arriving out of
   chronological order across batches.
+- A full run goes in phases, cheapest-useful first: activity summaries, then a
+  bounded recent window of aggregates, then the raw samples, then the full
+  aggregate pass, then workout routes, then workout series. Within the raw
+  phase the heaviest type starts first and the rest run cheapest-first. None
+  of this is part of the wire contract — it is described so receiver authors
+  know what arrival order to expect — but the two consequences below are
+  normative.
+- **A type's first line MAY be an aggregate or activity-summary line rather
+  than a sample line.** Aggregate-only types (aggregates enabled for a type
+  whose raw samples are not) have always been able to do this; since the
+  recent-aggregate phase it is the ordinary case on a first backfill for every
+  type that has an aggregate configured. A receiver MUST therefore be able to
+  register a type from an aggregate line, and MUST NOT assume the canonical
+  unit from §5 has been established by an earlier sample line — a `duration`
+  aggregate carries `s` whatever the type's own unit is, so a receiver that
+  records the unit of whichever line arrives first MUST correct it when a
+  sample line later supplies the canonical one.
 - Workouts back-fill in phases: workout samples first, then route and series
   lines in later batches, chunked by point count. Route and series lines for
   a workout can therefore arrive minutes after the workout, and a receiver

@@ -205,14 +205,16 @@ produced a batch.
 
 ## How a sync runs
 
-1. `HealthSyncEngine.syncAll` fans out over enabled types with a `TaskGroup`
-   (default 4 concurrent — HealthKit query throughput degrades beyond that), in
+1. `HealthSyncEngine.syncTypes(_:reason:)` fans out over enabled types with a
+   `TaskGroup` (default 4 concurrent — HealthKit query throughput degrades
+   beyond that). Its **non-incremental** branch orders the sweep by
    `HealthTypeCatalog.backfillOrder`: heaviest type first, then cheapest-first.
    Summed over the catalog heart rate alone is a little over half of
    `estimatedSamplesPerDay`, so ascending order would leave it to start last and
    then run by itself, and descending would park all four slots on heavy types
    and land nothing visible early. One slot on the pole from t=0 plus three
    retiring the tail is both the shorter sweep and the more useful one.
+   Incremental runs take the merged path below and are not reordered.
 2. Per type: `HKAnchoredObjectQuery` pages from the stored anchor (nil anchor +
    start-date predicate = backfill), 1,000 samples/page.
 3. `SampleMapper` converts to DTOs; `SeriesEnricher` fills in series payloads;
