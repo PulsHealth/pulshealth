@@ -205,6 +205,33 @@ public enum HealthTypeCatalog {
         byIdentifier[identifier]
     }
 
+    /// Execution order for a backfill sweep over `identifiers`.
+    ///
+    /// A backfill is one long pole plus a long tail: summed over the catalog,
+    /// heart rate alone is a little over half of `estimatedSamplesPerDay`, and
+    /// most types are in the single digits per day. Neither naive sort handles
+    /// that. Ascending leaves the pole to start last and then run by itself
+    /// after everything else has drained, which stretches the whole sweep;
+    /// descending parks every concurrent slot on a heavy type and lands nothing
+    /// visible for the first stretch.
+    ///
+    /// So the single most expensive type goes first — it is the critical path
+    /// and wants a slot from t=0 — and the rest follow cheapest-first, so the
+    /// remaining slots retire the once-a-day types in the opening minutes
+    /// instead of at whatever point the alphabet happened to put them. Ties and
+    /// identifiers with no descriptor on this OS fall back to identifier order,
+    /// so the sweep stays deterministic.
+    public static func backfillOrder(_ identifiers: [String]) -> [String] {
+        func cost(_ identifier: String) -> Int {
+            descriptor(for: identifier)?.estimatedSamplesPerDay ?? 0
+        }
+        let ascending = identifiers.sorted {
+            cost($0) == cost($1) ? $0 < $1 : cost($0) < cost($1)
+        }
+        guard let heaviest = ascending.last else { return ascending }
+        return [heaviest] + ascending.dropLast()
+    }
+
     /// Sample types that are safe to pass to HealthKit's normal bulk read APIs.
     /// Per-object-only Health Records types, such as medication dose events, must
     /// use `requestPerObjectReadAuthorization` instead.

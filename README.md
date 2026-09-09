@@ -214,6 +214,14 @@ is a small CLI for it: [`docs/export.md`](docs/export.md).
   pages. Fully resumable at page granularity; interrupt it freely. Workouts
   are backfilled in phases (summaries first, GPS routes and intra-workout
   series last) so one large workout cannot stall the rest.
+- **Backfill order is chosen, not alphabetical.** Activity rings go first —
+  one row per day, seconds of work, and the first thing a dashboard can show.
+  Then the raw sweep, which starts the single heaviest type (heart rate, over
+  half of all samples for a Watch wearer) immediately so the long pole holds a
+  slot from the start, and runs everything else cheapest-first so the tail of
+  once-a-day types lands in the opening minutes. Aggregates and workout
+  enrichment follow. Batches therefore arrive out of chronological order — the
+  [protocol](docs/protocol/README.md) requires receivers to cope with that.
 - **Incremental sync** merges one page per changed type into shared uploads,
   never splitting a page across batches, so anchor-after-ack still holds
   when many types change at once.
