@@ -1,0 +1,182 @@
+identifier: "HKCategoryTypeIdentifierLowHeartRateEvent"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Activity and Heart"
+human_readable_name: "Low Heart Rate Event"
+short_description: "Records events when heart rate falls below a user-configured threshold while the user has been inactive."
+icon: "heart.fill"
+color: "#FF2D55"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notApplicable"
+    description: "The only value for low heart rate events. The presence of a sample indicates the threshold was breached. The actual heart rate value is stored in associated metadata."
+ios_introduced:
+  version: "12.2"
+  year: 2019
+watchos_introduced:
+  version: "5.2"
+  year: 2019
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "Apple Watch"
+    capability: "Exclusive source - continuously monitors heart rate and detects when rate falls below threshold during inactive periods"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  Low Heart Rate Event records instances when the user's heart rate falls below a configurable threshold (40-50 BPM, default 40 BPM) while appearing inactive for at least 10 minutes. This complements the High Heart Rate Event feature as part of Apple Watch's comprehensive heart health monitoring.
+
+  Low heart rate (bradycardia) at rest can be completely normal in well-conditioned athletes or may indicate cardiac conduction disorders, medication effects, or other clinical conditions requiring attention. Context is essential for interpretation.
+
+  ## How It's Detected/Measured
+  **Detection Algorithm:**
+  1. Apple Watch continuously monitors heart rate via photoplethysmography (PPG)
+  2. Accelerometer confirms user has been inactive for approximately 10+ minutes
+  3. If heart rate drops below threshold during sedentary period, an event is recorded
+  4. User receives a notification about the low rate
+  5. Multiple readings confirm sustained bradycardia vs. transient measurement
+
+  **Threshold Configuration:**
+  - Users can set threshold between 40-50 BPM in the Watch app
+  - Default threshold: 40 BPM
+  - Available thresholds: 40, 45, 50 BPM
+  - Feature can be disabled if not desired
+
+  **What's Recorded:**
+  - Timestamp when threshold breach was detected
+  - Duration of low heart rate period
+  - Associated heart rate samples from the event
+  - Device information
+
+  ## Health Significance
+  **Normal Bradycardia:**
+  Athletes and highly fit individuals commonly have resting heart rates of 40-60 BPM or even lower due to:
+  - Increased cardiac stroke volume (more blood pumped per beat)
+  - Enhanced vagal tone from aerobic conditioning
+  - More efficient cardiovascular system
+
+  **Pathological Bradycardia Causes:**
+
+  *Cardiac Conduction Disorders:*
+  - Sick sinus syndrome (sinus node dysfunction)
+  - Atrioventricular (AV) block (first, second, or third degree)
+  - Bundle branch blocks
+  - Post-cardiac surgery or ablation
+
+  *Medication-Induced:*
+  - Beta-blockers (metoprolol, atenolol, carvedilol)
+  - Calcium channel blockers (diltiazem, verapamil)
+  - Digoxin
+  - Antiarrhythmic drugs (amiodarone, sotalol)
+  - Clonidine
+  - Opioids
+
+  *Metabolic/Systemic:*
+  - Hypothyroidism
+  - Hypothermia
+  - Severe electrolyte imbalances (hyperkalemia)
+  - Increased intracranial pressure (Cushing reflex)
+  - Obstructive sleep apnea (during apneic episodes)
+
+  *Other:*
+  - Vasovagal response
+  - Carotid sinus hypersensitivity
+  - Advanced age (natural conduction system degeneration)
+
+  **Clinical Significance:**
+  - Asymptomatic bradycardia in healthy individuals often requires no treatment
+  - Symptomatic bradycardia (dizziness, fatigue, syncope) may require pacemaker evaluation
+  - New-onset bradycardia warrants investigation of underlying cause
+
+  ## Clinical Interpretation Guidelines
+  **For Health Consultants:**
+
+  1. **Assess Fitness Level First:**
+     - Endurance athletes (runners, cyclists, swimmers) commonly have rates 35-50 BPM
+     - Highly trained athletes may see rates as low as 28-35 BPM
+     - If client is athletic and asymptomatic, low rates are likely physiologic
+
+  2. **Review Medication List:**
+     - Beta-blockers are the most common cause of non-physiologic bradycardia
+     - Check for recent medication changes or additions
+     - Drug interactions can potentiate bradycardic effects
+
+  3. **Symptom Correlation:**
+     - Asymptomatic bradycardia: Usually benign, monitor
+     - Symptomatic (dizziness, fatigue, near-syncope, syncope): Requires medical evaluation
+     - Symptoms during events vs. at other times
+
+  4. **Event Patterns:**
+     - Nocturnal events common and often normal (vagal tone increases during sleep)
+     - Daytime events during wakefulness more significant
+     - Frequency and trend over time
+
+  5. **Threshold Selection:**
+     - Athletes: May want to set at 40 BPM to avoid frequent benign alerts
+     - Non-athletes on rate-control medications: 45-50 BPM may be appropriate
+     - History of syncope or falls: Consider lower threshold for sensitivity
+
+  6. **Correlated Data:**
+     - Check if events occur during sleep (normal) vs. wakefulness (more concerning)
+     - Review for high heart rate events as well (tachy-brady syndrome)
+     - HRV patterns around events
+     - ECG recordings if available from same time period
+
+  7. **Red Flags Requiring Immediate Medical Evaluation:**
+     - Syncope or near-syncope episodes
+     - Heart rate below 40 in non-athlete without rate-slowing medications
+     - New bradycardia with chest pain or shortness of breath
+     - Combination with irregular rhythm events (suggests sick sinus syndrome)
+     - Progressive lowering of heart rate over time
+
+  ## Caveats & Limitations
+  - **Athletic Context Essential:** Low heart rate in athletes is usually a sign of fitness, not pathology
+  - **PPG Limitations:** Motion, poor fit, or skin pigmentation can affect measurement accuracy
+  - **Nocturnal Normality:** Rates in the 40s during sleep are common and usually benign
+  - **Not Diagnostic:** Events prompt evaluation but don't diagnose conduction disorders
+  - **Medication Confounding:** Many cardiac medications intentionally lower heart rate
+  - **Limited Threshold Range:** 40 BPM minimum threshold may miss significant bradycardia in athletes who normally run lower
+  - **Episodic Events:** Brief pauses or intermittent blocks may be missed if not sustained
+  - **Rhythm Undetermined:** PPG cannot distinguish sinus bradycardia from junctional rhythm or heart block
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateEventThreshold"
+    description: "The BPM threshold that was configured when the event was detected (40-50 BPM)"
+  - key: "HKMetadataKeyAverageHeartRate"
+    description: "The average heart rate measured during the low heart rate event period"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Individual heart rate samples provide context around low heart rate events"
+  - identifier: "HKCategoryTypeIdentifierHighHeartRateEvent"
+    relationship: "Combined high and low events suggest tachy-brady syndrome or arrhythmia"
+  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
+    relationship: "Irregular rhythm with bradycardia may indicate sick sinus syndrome or AFib with slow ventricular response"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Chronic low resting heart rate trend provides context for event interpretation"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "High VO2max supports athletic bradycardia interpretation"
+  - identifier: "HKElectrocardiogramType"
+    relationship: "ECG can identify conduction disorders (heart block, sinus pause) when low heart rate events occur"
+references:
+  - title: "HKCategoryTypeIdentifierLowHeartRateEvent - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierlowheartratevent"
+    type: "official"
+  - title: "Monitor your heart rate on Apple Watch - Apple Support"
+    url: "https://support.apple.com/en-us/108794"
+    type: "official"
+  - title: "Bradycardia: Evaluation and Management - American Family Physician"
+    url: "https://www.aafp.org/pubs/afp/issues/2021/0901/bradycardia.html"
+    type: "medical"
+  - title: "Athlete's Heart: Bradycardia in Highly Trained Athletes"
+    url: "https://pubmed.ncbi.nlm.nih.gov/30392564/"
+    type: "research"
+last_updated: "2026-01-27"

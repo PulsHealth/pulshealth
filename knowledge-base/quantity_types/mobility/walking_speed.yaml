@@ -1,0 +1,131 @@
+identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Mobility"
+human_readable_name: "Walking Speed"
+short_description: "Average speed during walking, a key indicator of functional mobility and overall health status."
+icon: "figure.walk"
+color: "#FF9500"
+default_unit: "m/s"
+supported_units:
+  - "m/s"
+  - "km/hr"
+  - "mi/hr"
+unit_description: "Meters per second (m/s) is the standard unit for gait velocity in clinical settings."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 0.5
+  max: 1.8
+  unit: "m/s"
+  notes: "Healthy adults typically walk 1.2-1.4 m/s; values below 0.8 m/s are clinically significant."
+clinical_ranges:
+  - population: "Adults 20-40"
+    normal: "1.3-1.5 m/s"
+    concerning: "<1.0 m/s"
+  - population: "Adults 40-60"
+    normal: "1.2-1.4 m/s"
+    concerning: "<0.9 m/s"
+  - population: "Adults 60-70"
+    normal: "1.1-1.3 m/s"
+    concerning: "<0.8 m/s"
+  - population: "Adults 70-80"
+    normal: "1.0-1.2 m/s"
+    concerning: "<0.7 m/s"
+  - population: "Adults 80+"
+    normal: "0.8-1.1 m/s"
+    concerning: "<0.6 m/s"
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone"
+    capability: "Motion sensors during walking bouts"
+  - name: "Apple Watch"
+    capability: "Continuous gait analysis during daily activities"
+primary_source: "Apple Watch or iPhone motion sensors"
+description: |
+  ## Overview
+  Walking speed, also known as gait velocity, is the distance covered per unit time during ambulation. It is widely recognized as a vital sign of functional status and has been termed the "sixth vital sign" in geriatric medicine due to its strong association with morbidity, mortality, and quality of life.
+
+  ## How It's Measured
+  Apple devices use built-in accelerometers and gyroscopes to analyze gait patterns during natural walking. The iPhone requires the device to be carried on the body (typically in a pocket), while Apple Watch provides more consistent measurements from the wrist. Measurements are taken during walking bouts of sufficient duration and steady-state locomotion to ensure accuracy.
+
+  ## Health Significance
+  Walking speed is one of the most robust predictors of health outcomes in older adults:
+  - **Mortality prediction**: Speeds below 0.8 m/s are associated with significantly increased mortality risk
+  - **Functional independence**: Minimum of 1.0 m/s needed for safe community ambulation (crossing streets)
+  - **Hospitalization risk**: Slower walking speeds predict increased hospital admissions
+  - **Cognitive decline**: Gait velocity decline often precedes or accompanies cognitive impairment
+  - **Frailty indicator**: One of the five Fried frailty criteria
+
+  ## Clinical Interpretation Guidelines
+  - **>1.0 m/s**: Generally indicates good functional status and life expectancy
+  - **0.8-1.0 m/s**: Warrants attention; may indicate early functional decline
+  - **0.6-0.8 m/s**: Moderate impairment; increased fall and mortality risk
+  - **<0.6 m/s**: Severe impairment; high risk for adverse outcomes
+
+  The "1.0 m/s threshold" is particularly important as it represents the minimum speed needed to safely cross a street at a standard crosswalk timing.
+
+  ## Age-Adjusted Norms
+  Walking speed naturally declines with age at approximately 1-2% per year after age 60. When interpreting values:
+  - Compare to age-matched norms rather than absolute thresholds
+  - Track longitudinal changes; decline >0.1 m/s per year is concerning
+  - Consider baseline function and recent changes in context
+
+  ## Caveats & Limitations
+  - Measurements require consistent device placement and sufficient walking duration
+  - Environmental factors (terrain, footwear, weather) affect measurements
+  - Acute illness, pain, or medication effects can temporarily reduce speed
+  - Self-selected walking speed differs from maximum walking speed
+  - Device algorithms may not account for assistive device use
+
+  ## Additional Notes
+  Walking speed is particularly valuable for:
+  - **Geriatric assessment**: Screening for frailty and functional decline
+  - **Post-surgical recovery**: Tracking rehabilitation progress after joint replacement or cardiac surgery
+  - **Neurological monitoring**: Assessing Parkinson's disease progression, stroke recovery
+  - **Chronic disease management**: COPD, heart failure, and diabetes impact gait velocity
+
+  Consider combining with other mobility metrics (step length, asymmetry) for comprehensive gait assessment.
+metadata_keys:
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Indicates which side of the body the device was placed during measurement"
+  - key: "HKMetadataKeySessionEstimate"
+    description: "Indicates if the value represents an estimate from a workout session"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
+    relationship: "Complementary gait parameter; speed = step length x cadence"
+  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
+    relationship: "Asymmetry can affect and explain speed variations"
+  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
+    relationship: "Increased double support often correlates with decreased speed"
+  - identifier: "HKQuantityTypeIdentifierAppleWalkingSteadiness"
+    relationship: "Both metrics assess fall risk and mobility status"
+  - identifier: "HKQuantityTypeIdentifierSixMinuteWalkTestDistance"
+    relationship: "Formal functional capacity test related to habitual walking speed"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierWalkingSpeed"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierwalkingspeed"
+    type: "official"
+  - title: "Gait Speed as the Sixth Vital Sign - Journal of the American Geriatrics Society"
+    url: "https://agsjournals.onlinelibrary.wiley.com/doi/10.1111/j.1532-5415.2010.03036.x"
+    type: "research"
+  - title: "Gait Speed and Survival in Older Adults - JAMA"
+    url: "https://jamanetwork.com/journals/jama/fullarticle/644554"
+    type: "research"
+  - title: "Fried Frailty Criteria - Journal of Gerontology"
+    url: "https://academic.oup.com/biomedgerontology/article/56/3/M146/545770"
+    type: "medical"
+last_updated: "2026-01-27"

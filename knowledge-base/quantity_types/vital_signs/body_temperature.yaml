@@ -1,0 +1,329 @@
+# ============================================
+# HEALTHKIT DATA TYPE: BODY TEMPERATURE
+# ============================================
+# Clinical reference for health consultants and clinicians
+# Last updated: 2026-01-27
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierBodyTemperature"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Body Temperature"
+short_description: "A measurement of the body's internal temperature, a fundamental vital sign indicating metabolic and immune system status."
+
+# --- APPLE HEALTH UI ---
+icon: "thermometer"
+color: "#FF3B30"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "degC"
+supported_units:
+  - "degC"
+  - "degF"
+  - "K"
+unit_description: "Temperature is typically recorded in degrees Celsius (degC) or degrees Fahrenheit (degF). HealthKit also supports Kelvin (K) for scientific applications."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 35.5
+  max: 37.5
+  unit: "degC"
+  notes: "Normal oral temperature range for healthy adults. Values vary by measurement site and individual baseline."
+
+clinical_ranges:
+  - population: "Adults (oral)"
+    normal: "36.1-37.2 degC (97.0-99.0 degF)"
+    low: "<35.0 degC (95.0 degF) - hypothermia"
+    high: ">38.0 degC (100.4 degF) - fever"
+  - population: "Adults (rectal)"
+    normal: "36.6-37.8 degC (97.9-100.0 degF)"
+    low: "<35.5 degC (95.9 degF)"
+    high: ">38.5 degC (101.3 degF)"
+  - population: "Adults (axillary)"
+    normal: "35.5-37.0 degC (95.9-98.6 degF)"
+    low: "<35.0 degC (95.0 degF)"
+    high: ">37.5 degC (99.5 degF)"
+  - population: "Adults (tympanic)"
+    normal: "35.4-37.8 degC (95.7-100.0 degF)"
+    low: "<35.0 degC (95.0 degF)"
+    high: ">38.0 degC (100.4 degF)"
+  - population: "Children (1-3 years, oral)"
+    normal: "35.5-37.5 degC (95.9-99.5 degF)"
+    low: "<36.1 degC (97.0 degF)"
+    high: ">38.0 degC (100.4 degF)"
+  - population: "Infants (rectal)"
+    normal: "36.6-38.0 degC (97.9-100.4 degF)"
+    low: "<36.1 degC (97.0 degF) - requires medical attention"
+    high: ">38.0 degC (100.4 degF)"
+  - population: "Elderly adults"
+    normal: "35.8-36.9 degC (96.4-98.4 degF)"
+    low: "<35.5 degC (95.9 degF)"
+    high: ">37.5 degC (99.5 degF) - may indicate fever in this population"
+    notes: "Elderly individuals typically have lower baseline temperatures and may not mount typical febrile responses to infection"
+
+# --- CATEGORY VALUES ---
+category_values: null
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "8.0"
+  year: 2014
+  notes: "Available since initial HealthKit release"
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+  notes: "Apple Watch does not directly measure body temperature; values typically come from connected thermometers or manual entry"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Smart Thermometers"
+    capability: "Direct temperature measurement via oral, axillary, tympanic, or temporal artery sensors"
+    examples:
+      - "Withings Thermo"
+      - "Kinsa Smart Thermometer"
+      - "iHealth Smart Thermometer"
+  - name: "Manual Entry"
+    capability: "Users can manually log temperature readings from any thermometer via the Health app"
+  - name: "Third-party Apps"
+    capability: "Health and medical apps can write temperature data to HealthKit"
+    examples:
+      - "Period tracking apps"
+      - "Medical symptom trackers"
+primary_source: "Smart Thermometers"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Body temperature is a fundamental vital sign that reflects the body's thermoregulatory
+  function and metabolic state. The hypothalamus maintains core body temperature within
+  a narrow range through complex feedback mechanisms involving heat production (metabolism,
+  shivering) and heat dissipation (sweating, vasodilation).
+
+  While the historical "normal" of 37.0 degC (98.6 degF) comes from 19th-century studies,
+  modern research suggests average body temperature has declined slightly, with contemporary
+  healthy adults averaging 36.4-36.6 degC (97.5-97.9 degF). Individual baseline temperatures
+  vary, making trend analysis more valuable than single measurements.
+
+  ## How It's Measured
+  Body temperature can be measured at several anatomical sites, each with different
+  characteristics:
+
+  **Oral (Sublingual)**
+  - Most common method for adults and older children
+  - Thermometer placed under the tongue in the posterior sublingual pocket
+  - Accuracy affected by recent food/drink, mouth breathing, and ambient temperature
+  - Takes 3-5 minutes for glass thermometers; 10-60 seconds for digital
+
+  **Rectal**
+  - Considered the gold standard for core temperature measurement
+  - Typically reads 0.3-0.6 degC (0.5-1.0 degF) higher than oral
+  - Preferred for infants and young children
+  - Slightly lags behind rapid temperature changes
+
+  **Axillary (Armpit)**
+  - Least invasive but also least accurate
+  - Reads approximately 0.3-0.6 degC (0.5-1.0 degF) lower than oral
+  - Requires prolonged measurement time (5-10 minutes)
+  - Useful for screening but not definitive fever assessment
+
+  **Tympanic (Ear)**
+  - Measures infrared radiation from the tympanic membrane
+  - Quick and convenient but technique-dependent
+  - Accuracy affected by cerumen (earwax), ear infections, and probe positioning
+  - Not recommended for infants under 6 months
+
+  **Temporal Artery (Forehead)**
+  - Non-invasive infrared measurement across the forehead
+  - Convenient for screening but variable accuracy
+  - Reads approximately 0.3-0.6 degC (0.5-1.0 degF) lower than oral
+
+  **Important Note:** Temperatures from different measurement sites should NOT be directly
+  compared. Clinicians should establish which site was used and interpret accordingly.
+
+  ## Health Significance
+  Body temperature provides critical information about:
+
+  - **Infection**: Fever is a cardinal sign of infectious disease, representing the body's
+    immune response to pathogens
+  - **Inflammatory conditions**: Autoimmune diseases and inflammatory disorders can cause
+    persistent low-grade fever
+  - **Metabolic disorders**: Thyroid dysfunction affects thermoregulation
+  - **Environmental exposure**: Hypothermia from cold exposure; hyperthermia from heat stroke
+  - **Medication effects**: Certain drugs can cause fever (drug fever) or hypothermia
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  - Normal body temperature exhibits circadian variation of 0.25-0.5 degC (0.5-1.0 degF)
+  - Lowest point (nadir): approximately 04:00
+  - Highest point (peak): approximately 18:00
+  - Women's temperatures fluctuate with menstrual cycle (see Basal Body Temperature)
+  - Physical activity, ambient temperature, and recent food/drink affect readings
+
+  ### Elevated Values May Indicate
+  - **Infectious diseases**: Bacterial, viral, parasitic, or fungal infections
+  - **Inflammatory conditions**: Rheumatoid arthritis, inflammatory bowel disease, lupus
+  - **Malignancy**: Certain cancers, especially lymphomas and leukemias
+  - **Drug fever**: Reaction to medications (antibiotics, anticonvulsants, etc.)
+  - **Hyperthyroidism**: Increased metabolic rate
+  - **Heat stroke**: Environmental hyperthermia (medical emergency)
+  - **Post-surgical fever**: Normal inflammatory response in first 48 hours
+
+  **Fever Classifications:**
+  - Low-grade fever: 37.5-38.0 degC (99.5-100.4 degF)
+  - Moderate fever: 38.1-39.0 degC (100.6-102.2 degF)
+  - High fever: 39.1-41.0 degC (102.4-105.8 degF)
+  - Hyperpyrexia: >41.1 degC (106.0 degF) - medical emergency
+
+  ### Low Values May Indicate
+  - **Hypothermia**: Core temperature <35.0 degC (95.0 degF)
+  - **Severe infection/sepsis**: Paradoxically, severe infections can cause hypothermia
+  - **Hypothyroidism**: Decreased metabolic rate
+  - **Adrenal insufficiency**: Impaired stress response
+  - **Hypoglycemia**: Low blood sugar
+  - **Drug/alcohol intoxication**: Impaired thermoregulation
+  - **Malnutrition**: Decreased metabolic activity
+  - **Elderly patients**: Age-related decline in thermoregulatory capacity
+
+  **Hypothermia Classifications:**
+  - Mild: 32-35 degC (89.6-95.0 degF) - shivering, confusion
+  - Moderate: 28-32 degC (82.4-89.6 degF) - shivering stops, severe confusion
+  - Severe: <28 degC (82.4 degF) - loss of consciousness, cardiac arrhythmias
+
+  ### Red Flags for Consultation
+  - Temperature >40.0 degC (104.0 degF) in adults
+  - Temperature >38.0 degC (100.4 degF) in infants under 3 months
+  - Temperature <35.0 degC (95.0 degF) - hypothermia
+  - Fever persisting >3 days without clear cause
+  - Fever with altered mental status or severe headache
+  - Fever in immunocompromised patients (oncology, HIV, transplant recipients)
+  - Fever with petechial rash (possible meningococcemia)
+  - Fever with rigors (shaking chills) suggesting bacteremia
+  - Fever with hypotension (possible sepsis)
+  - Post-operative fever after 48 hours (possible surgical site infection)
+
+  ## Caveats & Limitations
+
+  **Measurement Considerations:**
+  - Site-specific normal ranges must be applied
+  - Consumer thermometers may have accuracy of +/- 0.1-0.3 degC
+  - Technique significantly affects accuracy, especially for tympanic measurements
+  - Recent hot/cold food or drink affects oral readings for 15-30 minutes
+  - Environmental temperature affects peripheral measurement sites
+
+  **Clinical Limitations:**
+  - Single temperature reading less informative than trends
+  - Absence of fever does not rule out infection, especially in elderly or immunocompromised
+  - Fever vs. hyperthermia distinction critical: antipyretics ineffective for hyperthermia
+  - NSAIDs and acetaminophen can mask fever
+  - Elderly patients may not mount typical febrile response
+
+  **HealthKit-Specific Notes:**
+  - Data may come from various device types with different accuracy
+  - Measurement site metadata should be recorded but may not always be present
+  - Manual entries may have transcription errors
+  - Time of measurement important for circadian context
+
+  ## Additional Notes
+
+  **Fever vs. Hyperthermia - Critical Distinction:**
+  Fever is a regulated rise in the hypothalamic set-point due to pyrogens (infection,
+  inflammation). Hyperthermia is an uncontrolled rise due to heat exposure or impaired
+  heat dissipation. This distinction is critical because:
+  - Fever responds to antipyretics (NSAIDs, acetaminophen)
+  - Hyperthermia requires active cooling and does NOT respond to antipyretics
+  - Hyperthermia (heat stroke) is immediately life-threatening
+
+  **Age-Related Considerations:**
+  - Neonates and infants: Immature thermoregulation; fever may be absent even with severe
+    infection; hypothermia more common
+  - Elderly: Baseline temperatures are lower; may not develop fever with infection;
+    altered mental status may be the only sign of infection
+
+  **Consumer Wearables and Temperature:**
+  Apple Watch Series 8 and later measure wrist temperature during sleep, but this is
+  recorded as a separate data type (appleSleepingWristTemperature) and represents
+  relative changes from baseline rather than absolute body temperature. Wrist temperature
+  is NOT directly comparable to traditional body temperature measurements.
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyBodyTemperatureSensorLocation"
+    description: "Indicates where on the body the temperature was measured"
+    values:
+      - "HKBodyTemperatureSensorLocationOther (0)"
+      - "HKBodyTemperatureSensorLocationArmpit (1)"
+      - "HKBodyTemperatureSensorLocationBody (2)"
+      - "HKBodyTemperatureSensorLocationEar (3)"
+      - "HKBodyTemperatureSensorLocationFinger (4)"
+      - "HKBodyTemperatureSensorLocationGastroIntestinal (5)"
+      - "HKBodyTemperatureSensorLocationMouth (6)"
+      - "HKBodyTemperatureSensorLocationRectum (7)"
+      - "HKBodyTemperatureSensorLocationToe (8)"
+      - "HKBodyTemperatureSensorLocationEarDrum (9)"
+      - "HKBodyTemperatureSensorLocationTemporalArtery (10)"
+      - "HKBodyTemperatureSensorLocationForehead (11)"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
+    relationship: "Related measurement - BBT is temperature at complete rest, used for fertility tracking"
+  - identifier: "HKQuantityTypeIdentifierAppleSleepingWristTemperature"
+    relationship: "Related measurement - Wrist temperature during sleep measured by Apple Watch"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Often elevated with fever; useful for assessing infection severity"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Often elevated with fever; useful for infection assessment"
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "Important to monitor with respiratory infections causing fever"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - bodyTemperature"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/1615490-bodytemperature"
+    type: "official"
+  - title: "Temperature - Clinical Methods - NCBI Bookshelf"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK331/"
+    type: "medical"
+  - title: "Normal Body Temperature: A Systematic Review - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6456186/"
+    type: "research"
+  - title: "Body temperature norms - MedlinePlus"
+    url: "https://medlineplus.gov/ency/article/001982.htm"
+    type: "medical"
+  - title: "Fever - Physiology - NCBI Bookshelf"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK562334/"
+    type: "medical"
+  - title: "Hypothermia - NCBI Bookshelf"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK545239/"
+    type: "medical"
+  - title: "Cleveland Clinic - Normal Body Temperature"
+    url: "https://health.clevelandclinic.org/body-temperature-what-is-and-isnt-normal"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 8.0 introduction confirmed via Apple documentation and Microsoft Xamarin documentation
+  - Clinical ranges derived from NCBI Bookshelf, MedlinePlus, and Cleveland Clinic
+  - Measurement site differences documented in clinical literature with typical offsets
+  - Modern research suggests average body temperature has declined from historical 98.6 degF
+  - Elderly temperature considerations from geriatric medicine literature
+  - Fever vs hyperthermia distinction critical for clinical practice

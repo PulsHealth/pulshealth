@@ -1,0 +1,131 @@
+identifier: "HKCategoryTypeIdentifierCoughing"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Coughing"
+short_description: "Tracks coughing episodes and their severity."
+icon: "lungs.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Coughing is a protective reflex that clears the airways of irritants, secretions, and foreign particles. This HealthKit category type allows users to track coughing episodes and their severity, providing valuable data for monitoring respiratory illness progression, identifying triggers, and assessing treatment effectiveness.
+
+  ## Health Significance
+  Cough is classified by duration:
+  - **Acute cough**: Less than 3 weeks (usually infectious)
+  - **Subacute cough**: 3-8 weeks (often post-infectious)
+  - **Chronic cough**: Greater than 8 weeks (requires investigation)
+
+  Common causes of acute cough:
+  - Upper respiratory tract infections (common cold)
+  - Influenza and COVID-19
+  - Acute bronchitis
+  - Pneumonia
+  - Pertussis (whooping cough)
+
+  Common causes of chronic cough:
+  - Postnasal drip / Upper airway cough syndrome
+  - Asthma and cough-variant asthma
+  - Gastroesophageal reflux disease (GERD)
+  - ACE inhibitor-induced cough
+  - Chronic bronchitis / COPD
+  - Bronchiectasis
+
+  Concerning causes:
+  - Lung cancer
+  - Tuberculosis
+  - Interstitial lung disease
+  - Heart failure
+
+  ## When to Seek Medical Attention
+  Users should seek medical evaluation when cough:
+  - Persists for more than 3 weeks
+  - Produces blood or bloody mucus (hemoptysis)
+  - Is accompanied by unexplained weight loss
+  - Is associated with fever lasting more than a week
+  - Causes shortness of breath or wheezing
+  - Disrupts sleep significantly
+  - Is accompanied by chest pain
+  - Occurs with night sweats
+  - Is progressively worsening
+  - Occurs in smokers or former smokers
+  - Is associated with voice changes
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Illness progression and resolution
+  - Nocturnal patterns (GERD, asthma, postnasal drip)
+  - Seasonal patterns (allergies, asthma)
+  - Environmental triggers (occupational, pollution)
+  - Response to treatment (bronchodilators, acid suppression)
+  - Post-infectious cough duration
+  - Correlation with medication changes (ACE inhibitors)
+
+  ## Caveats & Limitations
+  - Does not capture cough characteristics (dry vs. productive)
+  - Sputum color and quantity not recorded
+  - Frequency of coughing episodes not quantified
+  - Cannot differentiate between cough triggers
+  - Associated symptoms (wheezing, dyspnea) not captured
+  - Time of day patterns require careful logging
+  - Does not replace pulmonary function testing
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
+    relationship: "Respiratory conditions often cause both cough and dyspnea"
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Fever with cough suggests infection"
+  - identifier: "HKCategoryTypeIdentifierChills"
+    relationship: "Chills with cough indicate infectious etiology"
+  - identifier: "HKCategoryTypeIdentifierSoreThroat"
+    relationship: "Upper respiratory infections cause both symptoms"
+  - identifier: "HKCategoryTypeIdentifierRunnyNose"
+    relationship: "Postnasal drip is a common cause of chronic cough"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierCoughing"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiercoughing"
+    type: "official"
+  - title: "Cough - American College of Chest Physicians"
+    url: "https://www.chestnet.org/topic-collections/cough"
+    type: "medical"
+  - title: "Chronic Cough - Mayo Clinic"
+    url: "https://www.mayoclinic.org/diseases-conditions/chronic-cough/symptoms-causes/syc-20351575"
+    type: "medical"
+last_updated: "2026-01-27"

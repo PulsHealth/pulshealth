@@ -1,0 +1,139 @@
+identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Mobility"
+human_readable_name: "Walking Asymmetry Percentage"
+short_description: "Percentage difference in step time between left and right legs during walking."
+icon: "figure.walk"
+color: "#FF9500"
+default_unit: "%"
+supported_units:
+  - "%"
+unit_description: "Percentage representing the degree of asymmetry between left and right leg gait patterns."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 0
+  max: 25
+  unit: "%"
+  notes: "Healthy adults typically show <10% asymmetry; values >15% warrant clinical evaluation."
+clinical_ranges:
+  - population: "Healthy Adults"
+    normal: "<10%"
+    concerning: ">15%"
+  - population: "Adults 65+"
+    normal: "<12%"
+    concerning: ">18%"
+  - population: "Post-surgical (hip/knee)"
+    normal: "<20% (early recovery)"
+    concerning: ">25% after 3 months"
+  - population: "Neurological conditions"
+    normal: "Variable by condition"
+    concerning: "Progressive increase from baseline"
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone"
+    capability: "Motion sensors detect left-right gait differences"
+  - name: "Apple Watch"
+    capability: "Continuous bilateral gait analysis during daily activities"
+primary_source: "Apple Watch or iPhone motion sensors"
+description: |
+  ## Overview
+  Walking asymmetry percentage quantifies the difference in gait characteristics between the left and right sides during ambulation. It measures the percentage difference in the time each foot spends on the ground during walking. This metric serves as an objective indicator of limping, compensatory gait patterns, and unilateral musculoskeletal or neurological impairments.
+
+  ## How It's Measured
+  Apple devices analyze motion sensor data to detect the timing characteristics of each step, comparing left and right leg parameters including:
+  - Step time (duration from heel strike to toe-off)
+  - Swing phase duration
+  - Ground contact time
+
+  The asymmetry is calculated as the percentage difference between the two sides, with 0% indicating perfect symmetry. A positive value indicates which side has the longer step time, though HealthKit reports the absolute magnitude.
+
+  ## Health Significance
+  Gait asymmetry is clinically significant because:
+  - **Injury detection**: Often the first objective sign of lower extremity injury
+  - **Pain monitoring**: Asymmetry increases with pain, even before conscious awareness
+  - **Neurological assessment**: Stroke, Parkinson's, and MS cause characteristic asymmetries
+  - **Prosthetic/orthotic evaluation**: Objective measure of device fit and function
+  - **Fall risk**: Asymmetric gait increases stumbling and fall risk
+
+  ## Clinical Interpretation Guidelines
+  - **<5%**: Excellent symmetry; normal for healthy adults
+  - **5-10%**: Mild asymmetry; may be normal variant or subclinical issue
+  - **10-15%**: Moderate asymmetry; warrants investigation
+  - **15-25%**: Significant asymmetry; likely symptomatic, requires evaluation
+  - **>25%**: Severe asymmetry; significant gait impairment present
+
+  Key clinical considerations:
+  - **New onset asymmetry**: May indicate acute injury, joint flare, or neurological event
+  - **Progressive increase**: Suggests worsening condition requiring intervention
+  - **Post-treatment decrease**: Objective evidence of therapeutic response
+  - **Persistent asymmetry**: May indicate chronic condition or structural abnormality
+
+  ## Age-Adjusted Norms
+  Gait symmetry is relatively preserved with normal aging compared to other gait parameters:
+  - Ages 20-60: <8% is typical
+  - Ages 60-80: <12% is acceptable
+  - Ages 80+: <15% is acceptable
+
+  Significant asymmetry at any age warrants evaluation, as it more likely reflects pathology than normal aging.
+
+  ## Caveats & Limitations
+  - Device placement affects measurement accuracy (phone in pocket, watch on wrist)
+  - Footwear differences between feet can cause apparent asymmetry
+  - Carrying items (bags, children) on one side affects gait
+  - Environmental factors (uneven ground, slopes) influence measurements
+  - Does not specify which leg has the abnormality (need clinical correlation)
+  - May not detect subtle asymmetries that are clinically apparent
+  - Compensatory patterns may mask true asymmetry
+
+  ## Additional Notes
+  Walking asymmetry is particularly valuable for:
+  - **Orthopedic rehabilitation**: Tracking recovery after hip/knee replacement, ACL repair
+  - **Sports medicine**: Detecting overuse injuries before symptomatic
+  - **Neurological monitoring**: Stroke recovery, Parkinson's medication timing
+  - **Chronic pain management**: Objective documentation of functional impact
+  - **Workers' compensation**: Objective functional assessment
+
+  Consider the clinical context when interpreting:
+  - Historical leg length discrepancy may cause stable, asymptomatic asymmetry
+  - Recent changes from baseline are more significant than absolute values
+  - Combine with walking speed and double support for comprehensive assessment
+metadata_keys:
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Indicates which side of the body the device was placed during measurement"
+  - key: "HKMetadataKeySessionEstimate"
+    description: "Indicates if the value represents an estimate from a workout session"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Asymmetry often causes compensatory speed reduction"
+  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
+    relationship: "Asymmetry may increase double support on affected side"
+  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
+    relationship: "Asymmetric step lengths contribute to overall asymmetry"
+  - identifier: "HKQuantityTypeIdentifierAppleWalkingSteadiness"
+    relationship: "Asymmetry is a factor in overall steadiness assessment"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierwalkingasymmetrypercentage"
+    type: "official"
+  - title: "Gait Asymmetry in Clinical Practice - Journal of NeuroEngineering and Rehabilitation"
+    url: "https://jneuroengrehab.biomedcentral.com/"
+    type: "research"
+  - title: "Asymmetric Gait and Fall Risk - Physical Therapy Journal"
+    url: "https://academic.oup.com/ptj"
+    type: "medical"
+last_updated: "2026-01-27"

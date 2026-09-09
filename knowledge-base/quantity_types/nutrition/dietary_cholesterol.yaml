@@ -1,0 +1,146 @@
+identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Cholesterol"
+short_description: "Cholesterol intake from animal-based foods"
+icon: "drop.fill"
+color: "#FF9500"
+default_unit: "mg"
+supported_units:
+  - "mg"
+  - "g"
+unit_description: "Milligrams (mg) of dietary cholesterol. Cholesterol is a sterol found exclusively in animal products and is also synthesized endogenously by the liver."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 0
+  max: 600
+  unit: "mg"
+  notes: "Vegans consume 0mg; average American intake is 250-350mg/day. Single egg yolk contains ~186mg."
+clinical_ranges:
+  - population: "Adults (current Dietary Guidelines)"
+    rda: "No specific limit; eat as little as possible while consuming healthy eating pattern"
+  - population: "Adults (AHA/ACC recommendation)"
+    rda: "Limit dietary cholesterol for those with elevated LDL or CVD risk"
+  - population: "Historical Recommendation (pre-2015)"
+    rda: "<300mg/day general population"
+  - population: "Hyper-Responders"
+    rda: "Individual response varies; some are highly sensitive to dietary cholesterol"
+  - population: "Diabetes"
+    rda: "Limit dietary cholesterol; increased CVD risk in this population"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Cholesterol tracking from food database entries"
+    examples:
+      - "MyFitnessPal"
+      - "Cronometer"
+      - "LoseIt"
+      - "Yazio"
+  - name: "Heart health apps"
+    capability: "Cholesterol intake tracking with cardiovascular context"
+    examples:
+      - "Fooducate"
+      - "Heart Habit"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Cholesterol represents intake of cholesterol from animal-based foods including eggs, shellfish, meat, poultry, and dairy. Cholesterol is a waxy substance essential for cell membranes, hormone synthesis, and vitamin D production. The body produces 800-1000mg cholesterol daily (endogenous synthesis), and dietary intake (exogenous) affects blood cholesterol levels in a variable, individual-dependent manner.
+
+  The FDA Daily Value for cholesterol is 300mg based on a 2,000 calorie diet. This was retained in the 2020 update for labeling purposes, though the 2015-2020 Dietary Guidelines removed the specific 300mg limit, instead recommending to consume as little dietary cholesterol as possible within a healthy eating pattern. This shift reflects evidence that dietary cholesterol has a smaller effect on blood cholesterol than previously believed for most individuals.
+
+  ## Health Significance
+  Understanding dietary cholesterol's role:
+  - **Blood Cholesterol Relationship**: Dietary cholesterol has modest effect on blood cholesterol; saturated fat has larger impact
+  - **Individual Variation**: Hyper-responders (15-25% of population) show significant LDL increase with dietary cholesterol
+  - **Cardiovascular Disease**: Direct relationship between dietary cholesterol and CVD risk is debated
+  - **Homeostatic Regulation**: Liver adjusts endogenous production based on dietary intake (in most individuals)
+  - **Egg Controversy**: Research has shifted; moderate egg consumption not associated with CVD in healthy individuals
+  - **Food Matrix Effects**: Cholesterol in whole foods (eggs) may differ from isolated cholesterol
+
+  ## Clinical Interpretation Guidelines
+  When assessing dietary cholesterol:
+  1. **Context Matters**: Cholesterol intake less important than overall dietary pattern
+  2. **Consider Saturated Fat**: Foods high in cholesterol (fatty meats) often high in saturated fat
+  3. **Identify Hyper-Responders**: Check LDL response with cholesterol intake changes
+  4. **Assess Egg Consumption**: Common high-cholesterol food; 1 egg/day generally acceptable for healthy adults
+  5. **Review Baseline CVD Risk**: Higher-risk individuals may benefit from stricter limitation
+  6. **Evaluate Total Diet Quality**: Plant-based patterns naturally low in cholesterol
+  7. **Monitor Lipid Panel**: Correlate dietary changes with LDL-C, especially in diabetes
+
+  ## Deficiency Symptoms
+  Cholesterol deficiency from diet does not occur:
+  - Body synthesizes sufficient cholesterol regardless of dietary intake
+  - No dietary cholesterol requirement exists
+  - Rare genetic disorders (Smith-Lemli-Opitz syndrome) impair cholesterol synthesis; dietary cholesterol may help
+  - Extremely low-fat diets may impair absorption of fat-soluble vitamins but not cause cholesterol deficiency
+
+  ## Excess/Toxicity
+  High dietary cholesterol concerns (primarily in susceptible individuals):
+  - **Elevated LDL Cholesterol**: In hyper-responders, significant LDL increase possible
+  - **Cardiovascular Risk**: Debated; older evidence stronger than recent research
+  - **Atherosclerosis**: Oxidized cholesterol may contribute to plaque formation
+  - **Gallstones**: High cholesterol intake may increase cholesterol gallstone risk
+  - **No Acute Toxicity**: Unlike some nutrients, no acute adverse effects from high single-meal intake
+
+  ## Special Populations
+  - **Familial Hypercholesterolemia**: Dietary cholesterol limitation recommended despite mixed evidence
+  - **Diabetes**: ADA recommends limiting dietary cholesterol due to increased CVD risk
+  - **Prior Cardiovascular Events**: Conservative approach with dietary cholesterol prudent
+  - **APOE4 Carriers**: May be more sensitive to dietary cholesterol's effect on LDL
+  - **Hyper-Responders**: Identified by LDL increase with egg/cholesterol consumption; limit intake
+  - **Hypo-Responders**: Majority of population; dietary cholesterol has minimal effect
+  - **Vegetarians/Vegans**: Naturally consume zero (vegan) or minimal (vegetarian) dietary cholesterol
+  - **Athletes**: Cholesterol needs for hormone synthesis met by endogenous production
+
+  ## Caveats & Limitations
+  - **Evolving Science**: Recommendations have changed significantly; 2015 removal of 300mg limit controversial
+  - **Individual Variation**: Difficult to predict who will be cholesterol hyper-responder
+  - **Confounding Factors**: High cholesterol foods often high in saturated fat (separating effects difficult)
+  - **Egg Research Funding**: Industry funding of egg studies creates potential bias concerns
+  - **Food Matrix Complexity**: Cholesterol in eggs with choline and protein differs from isolated cholesterol
+  - **Database Accuracy**: Cholesterol content varies by animal diet, cut of meat, preparation
+  - **Absorption Variability**: Only ~50% of dietary cholesterol absorbed; varies by individual
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the cholesterol source (e.g., 'egg', 'shrimp', 'liver')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
+    relationship: "Often co-occur in animal foods; both affect lipid profiles"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "High-cholesterol foods typically contain fat"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Cholesterol itself provides no calories"
+  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
+    relationship: "Animal protein sources contain cholesterol"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryCholesterol"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarycholesterol"
+    type: "official"
+  - title: "Dietary Cholesterol and Cardiovascular Risk: AHA Science Advisory"
+    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000743"
+    type: "medical"
+  - title: "Dietary Guidelines for Americans 2020-2025: Cholesterol"
+    url: "https://www.dietaryguidelines.gov/"
+    type: "official"
+  - title: "Dietary Cholesterol and the Lack of Evidence in Cardiovascular Disease - Nutrients"
+    url: "https://www.mdpi.com/2072-6643/10/6/780"
+    type: "research"
+last_updated: "2026-01-27"

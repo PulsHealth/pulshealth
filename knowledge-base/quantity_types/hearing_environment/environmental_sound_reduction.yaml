@@ -1,0 +1,151 @@
+identifier: "HKQuantityTypeIdentifierEnvironmentalSoundReduction"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Hearing and Environment"
+human_readable_name: "Environmental Sound Reduction"
+short_description: "Amount of environmental noise reduced by active noise cancellation in compatible earbuds, measured in decibels (dB)."
+icon: "ear.fill"
+color: "#5856D6"
+default_unit: "dB"
+supported_units:
+  - "dB"
+unit_description: "Decibels (dB) representing the reduction in environmental sound level achieved by active noise cancellation. Higher values indicate greater noise attenuation."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 0
+  max: 30
+  unit: "dB"
+clinical_ranges:
+  - population: "General Adult"
+    safe: "Any reduction level; ANC itself does not pose hearing risk"
+    concerning: "N/A - metric measures protection, not exposure"
+  - population: "Noise-Sensitive Individuals"
+    safe: "Higher reduction values (20-30 dB) indicate better protection in noisy environments"
+    concerning: "Low or zero reduction in noisy environments may indicate device issues or improper fit"
+ios_introduced:
+  version: "16.0"
+  year: 2022
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "AirPods Pro (1st and 2nd generation)"
+    capability: "Active noise cancellation with real-time measurement of noise reduction effectiveness"
+  - name: "AirPods Max"
+    capability: "Over-ear active noise cancellation with environmental sound reduction tracking"
+  - name: "AirPods 4 (ANC model)"
+    capability: "Active noise cancellation with sound reduction measurement"
+primary_source: "AirPods with Active Noise Cancellation"
+description: |
+  ## Overview
+  Environmental Sound Reduction quantifies the effectiveness of active noise cancellation (ANC) technology in reducing ambient environmental noise. This metric represents the difference in decibel level between external environmental sound and what reaches the user's ear with ANC engaged.
+
+  This measurement is significant for hearing health because effective noise cancellation allows users to listen at lower volumes in noisy environments, reducing their overall audio exposure. It also provides objective data on ANC performance that can vary based on ear tip fit, environmental noise characteristics, and device condition.
+
+  ## How It's Measured
+  AirPods with ANC use sophisticated acoustic measurement to determine noise reduction:
+
+  **Active Noise Cancellation Technology:**
+  1. External microphones sample incoming environmental sound
+  2. Internal microphones measure sound inside the ear canal
+  3. The difference between pre-ANC and post-ANC levels represents sound reduction
+  4. Real-time digital signal processing generates anti-phase sound waves to cancel noise
+
+  **Measurement Process:**
+  - The metric calculates the attenuation achieved across frequency ranges relevant to hearing protection
+  - Reported as a single dB value representing overall weighted reduction
+  - Measurements occur while ANC is active and environmental noise is present
+
+  **Factors Affecting Reduction:**
+  - Ear tip fit quality (critical for in-ear models)
+  - Frequency content of environmental noise (ANC most effective on low-frequency sounds)
+  - Device battery level and processing capability
+  - Seal integrity and head movement
+
+  ## Health Significance
+  **Enabling Lower Listening Volumes:**
+  - Primary hearing health benefit is indirect: better ANC allows lower playback volume
+  - Users in noisy environments (public transit, airplanes, offices) often increase volume to overcome background noise
+  - Effective ANC can reduce this compensation behavior by 10-20 dB
+
+  **Cognitive and Stress Benefits:**
+  - Noise reduction decreases cognitive load in attention-demanding environments
+  - Chronic noise exposure correlates with elevated cortisol and cardiovascular stress
+  - ANC provides auditory respite without complete isolation
+
+  **Occupational and Environmental Protection:**
+  - Consumer ANC devices increasingly used as supplemental hearing protection
+  - Not designed as industrial hearing protection but provides meaningful reduction for everyday environments
+  - Can be part of comprehensive hearing conservation strategy
+
+  ## Clinical Interpretation Guidelines
+  **For Health Consultants:**
+
+  1. **Contextual Value:**
+     - This metric is most meaningful when interpreted alongside headphone audio exposure data
+     - Higher sound reduction generally correlates with lower listening volumes in noisy settings
+
+  2. **Fit Quality Indicator:**
+     - Consistently low reduction values may indicate poor ear tip fit
+     - Encourage users to perform ear tip fit test in AirPods settings
+     - Proper fit can improve reduction by 5-10 dB
+
+  3. **Environment Assessment:**
+     - Review reduction values in context of where they were recorded
+     - High noise environments with low reduction suggest fit issues or ANC limitations
+     - Counseling opportunity: recommend ANC for commuters, travelers, open-office workers
+
+  4. **Integration with Exposure Data:**
+     - Compare days with high ANC use vs. low ANC use
+     - Users may show lower headphone exposure on days with active ANC use
+     - This correlation supports recommending ANC for hearing protection
+
+  5. **Device Health Monitoring:**
+     - Sudden decreases in typical reduction levels may indicate device issues
+     - Ear tip degradation, debris in microphones, or hardware problems can reduce effectiveness
+
+  ## Caveats & Limitations
+  - **Limited Device Support:** Only AirPods with ANC capability record this metric; other ANC headphones do not contribute data
+  - **Frequency-Dependent Effectiveness:** ANC is most effective at low frequencies (airplane engines, HVAC); less effective for high-frequency sounds (speech, alarms)
+  - **Not Safety-Rated:** Consumer ANC devices are not certified hearing protection devices and should not replace proper PPE in industrial settings
+  - **Variable by Noise Type:** Sudden impulsive sounds (door slams, shouts) are not effectively cancelled
+  - **Measurement Conditions:** Value represents ANC performance in specific measurement conditions; real-world experience may vary
+  - **No Transparency Mode Data:** When Transparency mode is active, this metric is not applicable
+  - **Individual Ear Canal Variation:** Ear anatomy affects actual delivered attenuation even with good fit
+  - **Battery Dependency:** ANC effectiveness may decrease at low battery levels
+metadata_keys:
+  - key: "HKMetadataKeyAudioExposureDuration"
+    description: "Duration of the active noise cancellation measurement period"
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Indicates which ear (left/right) the measurement was taken from"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierEnvironmentalAudioExposure"
+    relationship: "Sound reduction directly impacts environmental audio that reaches the ear; higher reduction means lower effective exposure"
+  - identifier: "HKQuantityTypeIdentifierHeadphoneAudioExposure"
+    relationship: "ANC effectiveness influences user volume choices; better reduction often enables lower listening volumes"
+  - identifier: "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent"
+    relationship: "Users with poor ANC fit may receive more exposure events due to volume compensation"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierEnvironmentalSoundReduction"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierenvironmentalsoundreduction"
+    type: "official"
+  - title: "Active Noise Cancellation and Hearing Conservation - International Journal of Audiology"
+    url: "https://www.tandfonline.com/toc/iija20/current"
+    type: "research"
+  - title: "Apple AirPods Pro - Active Noise Cancellation"
+    url: "https://support.apple.com/en-us/HT210643"
+    type: "tutorial"
+  - title: "NIOSH - Noise and Hearing Loss Prevention"
+    url: "https://www.cdc.gov/niosh/topics/noise/default.html"
+    type: "medical"
+last_updated: "2026-01-27"

@@ -1,0 +1,271 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Apple Move Time
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierAppleMoveTime"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Apple Move Time"
+short_description: "Measures the amount of time the user has spent performing activities involving full-body movements, primarily designed for wheelchair users."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.roll"
+color: "#00D4FF"  # Blue/cyan - matches the Roll ring color for wheelchair users
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "min"
+supported_units:
+  - "min"
+  - "s"
+  - "hr"
+unit_description: "Minutes of movement time - tracking active movement periods for users who may not be able to stand"
+
+# --- STATISTICS ---
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 480
+  unit: "min"
+  notes: "Values depend on mobility level and activity patterns. Wheelchair users with active lifestyles may accumulate 120-300+ minutes daily. Sedentary periods will show lower values."
+
+clinical_ranges:
+  - population: "Wheelchair Users (Active)"
+    minimum_recommendation: "12 hours with at least 1 minute of movement per hour"
+    optimal: "Regular movement breaks throughout waking hours"
+    notes: "Equivalent to Stand Time goals for ambulatory users"
+  - population: "Wheelchair Users (Limited Mobility)"
+    minimum_recommendation: "Individualized based on functional capacity"
+    optimal: "Maximize movement within physical limitations"
+    notes: "Goals should be set in consultation with physical therapist or rehabilitation specialist"
+  - population: "Users with Mobility Impairments"
+    minimum_recommendation: "Personalized based on condition"
+    optimal: "Regular movement consistent with functional abilities"
+    notes: "Focus on breaking up sedentary time rather than achieving specific duration targets"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "14.0"
+  year: 2020
+  notes: "Introduced to support accessibility-focused activity tracking for wheelchair users"
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+  notes: "Part of Apple's comprehensive wheelchair activity tracking suite"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: false
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Detects full-body movement activities using accelerometer and motion sensors. Specifically calibrated for wheelchair users to track pushing, rolling, and upper body movement patterns."
+    series: "All series (wheelchair mode available since watchOS 3)"
+    accuracy: "Accuracy varies by activity type and movement frequency. Research indicates better accuracy for high-frequency movements like arm cycling than low-frequency wheelchair pushing."
+  - name: "iPhone"
+    capability: "Cannot independently measure move time. Displays and aggregates data from Apple Watch."
+  - name: "Third-party apps"
+    capability: "Cannot write to this data type. Move time is an Apple-only metric calculated exclusively by Apple Watch algorithms."
+    examples: ["None - this is an Apple-exclusive metric"]
+primary_source: "Apple Watch"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Apple Move Time measures the cumulative duration of full-body movement activities throughout the day. While technically available for all users, this metric is primarily designed as an accessibility-focused alternative for wheelchair users, for whom the standard Stand Time metric is not meaningful. When Wheelchair mode is enabled on Apple Watch, the blue Stand ring transforms into the Roll ring, and Move Time becomes the primary metric for tracking movement breaks throughout the day.
+
+  ## How It's Measured
+  Apple Watch uses its motion sensors to detect full-body movement patterns:
+
+  **Sensor inputs:**
+  - **Accelerometer**: Detects movement patterns and intensity
+  - **Gyroscope**: Tracks orientation and motion characteristics
+  - **Motion coprocessor**: Efficient continuous activity classification
+
+  **Detection for wheelchair users:**
+  - When Wheelchair mode is enabled, the watch tracks **pushes instead of steps**
+  - Different stroke types are recognized (standard push, assisted push, etc.)
+  - Various speeds and terrains are accounted for in the detection algorithm
+  - The Roll ring goal encourages rolling/moving for at least 1 minute per hour
+  - Push-based workouts are available: Outdoor Push Walking Pace and Outdoor Push Running Pace
+
+  **Enabling wheelchair mode:**
+  1. Open the Apple Watch app on iPhone
+  2. Navigate to Health settings
+  3. Enable the Wheelchair preference
+  4. Activity tracking automatically adjusts to wheelchair-appropriate metrics
+
+  **Relationship to other metrics:**
+  - **Move ring (red)**: Still tracks Active Energy Burned (calories) for all users
+  - **Exercise ring (green)**: Still tracks Exercise Time based on intensity for all users
+  - **Stand/Roll ring (blue)**: Becomes Roll ring tracking Move Time for wheelchair users
+
+  ## Health Significance
+  For individuals with mobility impairments, tracking physical activity presents unique challenges. Move Time addresses these by:
+
+  **Promoting activity equity:**
+  - Provides meaningful activity data for users who cannot walk or stand
+  - Enables participation in Activity ring challenges and competitions
+  - Validates physical effort that traditional step-based metrics would miss
+
+  **Health benefits of movement for wheelchair users:**
+  - Reduced risk of pressure injuries through position changes
+  - Improved cardiovascular health through upper body exercise
+  - Better metabolic outcomes from regular movement
+  - Enhanced psychological well-being and reduced depression
+  - Maintained or improved upper body strength and endurance
+  - Prevention of shoulder overuse injuries through varied movement patterns
+
+  **Breaking up sedentary time:**
+  Like ambulatory users, wheelchair users benefit from breaking up prolonged sedentary periods. The Roll ring encourages movement at least once per hour, which helps:
+  - Improve circulation
+  - Reduce pressure on seated surfaces
+  - Maintain alertness and energy
+  - Support metabolic health
+
+  ## Clinical Interpretation Guidelines
+
+  ### Target Values
+  - **Roll Hours goal**: 12 hours per day (equivalent to Stand Hours)
+  - **Per-hour minimum**: At least 1 minute of rolling/moving per hour
+  - **Exercise time**: Separate metric; 30+ minutes of elevated-intensity activity
+  - **Total move time**: Variable based on individual capacity and lifestyle
+
+  ### Interpreting Activity Patterns
+  When reviewing Move Time data for wheelchair users:
+  - Consider the user's baseline functional capacity
+  - Compare to their own historical patterns rather than population norms
+  - Account for equipment factors (manual vs. power wheelchair)
+  - Consider environmental barriers (accessibility of spaces)
+
+  ### Low Activity Indicators
+  Persistently low Move Time may indicate:
+  - Environmental accessibility barriers
+  - Equipment problems (wheelchair maintenance needed)
+  - Secondary health conditions affecting energy or mobility
+  - Depression or reduced motivation
+  - Pain or discomfort limiting movement
+  - Caregiver availability constraints
+
+  ### Red Flags for Consultation
+  - Sudden decrease from baseline activity levels
+  - Inability to achieve movement despite motivation
+  - Pain or discomfort associated with movement
+  - Skin integrity concerns (pressure injury risk with prolonged immobility)
+  - Shoulder pain that may indicate overuse injury
+
+  ## Caveats & Limitations
+
+  ### Measurement Limitations
+  - **Activity type sensitivity**: Research shows accuracy varies by task - high-frequency movements (arm cycling) tracked better than low-frequency wheelchair pushing
+  - **Overground vs. stationary**: Overground wheelchair pushing may be less accurately detected than stationary activities
+  - **Power wheelchair users**: Movement detection may be less relevant for power wheelchair users who require less physical effort
+  - **Upper body only**: Cannot detect leg movement for users with partial lower body function
+  - **Sensor position**: Wrist-based detection has inherent limitations for full-body movement assessment
+
+  ### Research findings on accuracy
+  A ScienceDirect study found:
+  - Apple Watch accurately measured arm cycling and high-frequency wheelchair pushing
+  - Poor accuracy for low-frequency and overground wheelchair pushing
+  - Validity was task- and frequency-dependent
+
+  ### Interpretation Limitations
+  - Move Time cannot assess movement quality or biomechanics
+  - Does not account for assistive device variations
+  - Cannot measure functional independence or ADL performance
+  - Population norms are less established than for ambulatory metrics
+
+  ### What Move Time Cannot Tell You
+  - Wheelchair propulsion efficiency
+  - Risk of repetitive strain injury
+  - Transfer safety or technique
+  - Pressure relief adequacy
+  - Overall functional mobility status
+
+  ## Additional Notes
+
+  **Clinical utility for health consultants:**
+  Move Time data is particularly valuable when working with wheelchair users because:
+  - It provides objective activity data that validates the user's efforts
+  - Trends over time can indicate health status changes
+  - Data can inform physical therapy goals and progress monitoring
+  - Enables goal-setting that is meaningful for the individual
+
+  **Setting appropriate goals:**
+  When helping wheelchair users set activity goals:
+  - Start with current baseline and progress gradually
+  - Consider the user's specific condition and prognosis
+  - Account for fatigue patterns throughout the day
+  - Balance activity goals with pressure injury prevention
+  - Coordinate with physical and occupational therapists
+
+  **Wheelchair-specific workouts:**
+  Apple Watch includes dedicated workout types for wheelchair users:
+  - **Outdoor Push Walking Pace**: Lower intensity wheelchair propulsion
+  - **Outdoor Push Running Pace**: Higher intensity wheelchair propulsion
+  - Both track pushes, distance, calories, and contribute to Exercise and Move rings
+
+  **Accessibility philosophy:**
+  Apple's wheelchair activity tracking represents a significant advancement in inclusive health technology. By adapting metrics rather than simply excluding users, it enables meaningful participation in health tracking for millions of wheelchair users worldwide.
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyAppleDeviceCalibrated"
+    description: "Indicates whether the device has been calibrated for improved accuracy"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierAppleStandTime"
+    relationship: "Ambulatory equivalent - Stand Time serves the same purpose for users who can stand; Move Time is the wheelchair-accessible alternative"
+  - identifier: "HKCategoryTypeIdentifierAppleStandHour"
+    relationship: "Related - For wheelchair users, this becomes the Roll Hour tracking whether movement occurred each hour"
+  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
+    relationship: "Complementary - Exercise Time tracks higher-intensity activity; Move Time tracks all movement for sedentary break purposes"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Complementary - Active energy burned during movement periods; powers the Move (red) ring for all users"
+  - identifier: "HKQuantityTypeIdentifierDistanceWheelchair"
+    relationship: "Complementary - Tracks distance covered via wheelchair; provides spatial context to Move Time duration data"
+  - identifier: "HKQuantityTypeIdentifierPushCount"
+    relationship: "Complementary - Counts wheelchair pushes; provides effort context alongside Move Time duration"
+  - identifier: "HKCharacteristicTypeIdentifierWheelchairUse"
+    relationship: "Configuration - User characteristic that enables wheelchair-specific tracking including Move Time"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - appleMoveTime"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/applemovetime"
+    type: "official"
+  - title: "Apple Watch - Close Your Rings"
+    url: "https://www.apple.com/watch/close-your-rings/"
+    type: "official"
+  - title: "Start an outdoor push wheelchair workout on Apple Watch - Apple Support"
+    url: "https://support.apple.com/guide/watch/start-an-outdoor-push-wheelchair-workout-apd356e8c92e/watchos"
+    type: "official"
+  - title: "Track daily activity with Apple Watch - Apple Support"
+    url: "https://support.apple.com/guide/watch/track-daily-activity-apd3bf6d85a6/watchos"
+    type: "official"
+  - title: "Accuracy of Apple Watch fitness tracker for wheelchair use varies according to movement frequency and task"
+    url: "https://www.sciencedirect.com/science/article/pii/S1877065720300804"
+    type: "research"
+  - title: "How Apple Made The Watch Work For Wheelchair Users - Fast Company"
+    url: "https://www.fastcompany.com/3061283/how-apple-made-the-watch-work-for-wheelchair-users"
+    type: "tutorial"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 14.0/watchOS 7.0 introduction based on API availability patterns and wheelchair feature evolution
+  - Wheelchair mode originally introduced in watchOS 3 (2016); Move Time added later for granular tracking
+  - ScienceDirect research indicates task-dependent accuracy for wheelchair activity tracking
+  - Roll ring replaces Stand ring when Wheelchair mode enabled in Health settings
+  - Push workouts (Walking Pace, Running Pace) available specifically for wheelchair users

@@ -1,0 +1,208 @@
+identifier: "HKQuantityTypeIdentifierDietaryVitaminA"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Vitamin A"
+short_description: "Fat-soluble vitamin essential for vision, immune function, and cellular growth"
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FF9500"
+
+default_unit: "mcg"
+supported_units: ["mcg", "IU"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 3000
+  unit: "mcg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "400 mcg RAE"
+  - population: "Infants 7-12 months"
+    rda: "500 mcg RAE"
+  - population: "Children 1-3 years"
+    rda: "300 mcg RAE"
+  - population: "Children 4-8 years"
+    rda: "400 mcg RAE"
+  - population: "Children 9-13 years"
+    rda: "600 mcg RAE"
+  - population: "Male adolescents 14-18 years"
+    rda: "900 mcg RAE"
+  - population: "Female adolescents 14-18 years"
+    rda: "700 mcg RAE"
+  - population: "Adult men 19+ years"
+    rda: "900 mcg RAE"
+  - population: "Adult women 19+ years"
+    rda: "700 mcg RAE"
+  - population: "Pregnancy 14-18 years"
+    rda: "750 mcg RAE"
+  - population: "Pregnancy 19-50 years"
+    rda: "770 mcg RAE"
+  - population: "Lactation 14-18 years"
+    rda: "1200 mcg RAE"
+  - population: "Lactation 19-50 years"
+    rda: "1300 mcg RAE"
+  - population: "Adults (Upper Limit)"
+    upper_limit: "3000 mcg RAE"
+  - population: "Children 1-3 years (Upper Limit)"
+    upper_limit: "600 mcg RAE"
+  - population: "Children 4-8 years (Upper Limit)"
+    upper_limit: "900 mcg RAE"
+  - population: "Children 9-13 years (Upper Limit)"
+    upper_limit: "1700 mcg RAE"
+  - population: "Adolescents 14-18 years (Upper Limit)"
+    upper_limit: "2800 mcg RAE"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log vitamin A intake from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Vitamin A is a fat-soluble vitamin that encompasses retinoids (preformed vitamin A from animal sources) and carotenoids (provitamin A from plant sources). HealthKit tracks dietary vitamin A intake in micrograms of Retinol Activity Equivalents (RAE), which accounts for the different bioavailabilities of retinol and provitamin A carotenoids. One mcg RAE equals 1 mcg retinol, 12 mcg beta-carotene, or 24 mcg of other provitamin A carotenoids.
+
+  ## Biological Functions
+  Vitamin A serves critical roles in multiple physiological systems:
+
+  - **Vision**: Essential component of rhodopsin, the light-sensitive protein in rod cells; maintains corneal and conjunctival health
+  - **Immune function**: Supports mucosal barrier integrity, T-cell differentiation, and antibody production
+  - **Cellular differentiation**: Regulates gene expression for epithelial cell development and maintenance
+  - **Reproduction**: Required for spermatogenesis, fetal development, and placental function
+  - **Bone metabolism**: Influences osteoblast and osteoclast activity
+  - **Skin health**: Promotes keratinocyte differentiation and collagen synthesis
+
+  ## Health Significance
+  Adequate vitamin A status is crucial for preventing night blindness, xerophthalmia, and increased susceptibility to infections. In developed countries, deficiency is rare but can occur in malabsorption conditions, alcoholism, and restrictive diets. Conversely, excessive preformed vitamin A intake poses significant toxicity risks, particularly during pregnancy.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing patient vitamin A intake data:
+
+  - **Distinguish sources**: Preformed vitamin A (retinol) from animal foods carries toxicity risk; provitamin A carotenoids from plants do not cause hypervitaminosis A
+  - **Consider bioavailability**: Absorption varies by food matrix, cooking method, and individual factors (fat intake, gut health)
+  - **Monitor cumulative intake**: Fat-soluble vitamins accumulate in hepatic stores
+  - **Assess supplement use**: Many multivitamins contain 100% DV or more; combined with fortified foods, this may exceed UL
+  - **Review medication interactions**: Retinoid medications compound toxicity risk
+
+  ## Deficiency
+  **Symptoms and conditions**:
+  - Night blindness (nyctalopia) - earliest clinical sign
+  - Xerophthalmia (dry eye) progressing to corneal ulceration and blindness
+  - Bitot's spots (foamy patches on conjunctiva)
+  - Follicular hyperkeratosis (rough, dry skin)
+  - Impaired immune response with increased infection susceptibility
+  - Growth retardation in children
+  - Anemia (vitamin A deficiency impairs iron mobilization)
+
+  **At-risk populations**:
+  - Premature infants with low hepatic stores
+  - Individuals with fat malabsorption (celiac disease, Crohn's, cystic fibrosis, pancreatic insufficiency)
+  - Chronic alcoholics
+  - Strict vegans avoiding fortified foods
+  - Populations in developing countries with limited dietary diversity
+
+  ## Toxicity/Excess
+  **Acute toxicity** (single large dose >150,000 mcg in adults):
+  - Nausea, vomiting, vertigo
+  - Blurred vision, headache
+  - Increased intracranial pressure (pseudotumor cerebri)
+
+  **Chronic toxicity** (sustained intake above UL):
+  - Hepatotoxicity (hepatomegaly, fibrosis, cirrhosis)
+  - Bone abnormalities (reduced bone mineral density, increased fracture risk)
+  - Hypercalcemia
+  - Dry, peeling skin; hair loss
+  - Joint and muscle pain
+  - Teratogenicity: High doses during pregnancy cause craniofacial, cardiac, and CNS malformations
+
+  **Important note**: Toxicity occurs only from preformed vitamin A (retinol), not from beta-carotene. However, excessive beta-carotene causes harmless carotenodermia (orange skin discoloration).
+
+  ## Food Sources
+  **Preformed vitamin A (retinol)**:
+  - Liver (beef: ~6500 mcg/3 oz; chicken: ~3300 mcg/3 oz)
+  - Fish liver oils (cod liver oil: ~1350 mcg/tsp)
+  - Egg yolks (~80 mcg/large egg)
+  - Dairy products (butter, cheese, whole milk)
+  - Fortified foods (milk, margarine, cereals)
+
+  **Provitamin A carotenoids**:
+  - Sweet potato (~1400 mcg RAE/medium)
+  - Carrots (~500 mcg RAE/medium)
+  - Spinach (~470 mcg RAE/cup cooked)
+  - Kale (~440 mcg RAE/cup cooked)
+  - Cantaloupe, mango, apricots
+  - Red and orange bell peppers
+
+  ## Special Populations
+  **Pregnancy**: Intake should not exceed 3000 mcg RAE/day due to teratogenic risk. Avoid liver consumption and high-dose supplements. Beta-carotene supplements are safer alternatives.
+
+  **Lactation**: Increased requirements (1200-1300 mcg RAE/day) to support infant vitamin A status through breast milk.
+
+  **Elderly**: May have decreased absorption; however, hepatic clearance also decreases, potentially increasing toxicity risk at high intakes.
+
+  **Individuals with liver disease**: Reduced storage capacity and metabolism; supplement with caution.
+
+  **Smokers**: Some evidence suggests high-dose beta-carotene supplements may increase lung cancer risk in current smokers.
+
+  ## Drug Interactions
+  - **Retinoid medications** (isotretinoin, acitretin, tretinoin): Additive toxicity risk; avoid vitamin A supplements
+  - **Orlistat**: Reduces fat-soluble vitamin absorption; consider supplementation
+  - **Cholestyramine/colestipol**: Decreases vitamin A absorption
+  - **Neomycin**: May reduce vitamin A absorption
+  - **Warfarin**: High vitamin A doses may enhance anticoagulant effect
+  - **Tetracyclines**: Combined with high vitamin A, increased risk of intracranial hypertension
+  - **Alcohol**: Chronic use increases vitamin A hepatotoxicity and depletes stores
+
+  ## Caveats & Limitations
+  - HealthKit data reflects user-reported intake, not measured serum levels or body stores
+  - Accuracy depends on food logging completeness and database quality
+  - Conversion factors between IU and mcg RAE vary by vitamin A form (retinol vs. carotenoids)
+  - Individual absorption and utilization vary significantly
+  - Supplements may not be logged consistently
+  - Cannot distinguish between preformed vitamin A and carotenoid sources without detailed food records
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food contributing to vitamin A intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if the entry was manually logged by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing with external nutrition databases"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminD"
+    relationship: "Both fat-soluble vitamins requiring dietary fat for absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminE"
+    relationship: "Fat-soluble vitamin; vitamin E may protect vitamin A from oxidation"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminK"
+    relationship: "Fat-soluble vitamin with shared absorption pathways"
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "Zinc is required for vitamin A transport protein synthesis"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "Dietary fat enhances vitamin A absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryIron"
+    relationship: "Vitamin A deficiency impairs iron mobilization and utilization"
+references:
+  - title: "Vitamin A - Dietary Reference Intakes"
+    url: "https://ods.od.nih.gov/factsheets/VitaminA-HealthProfessional/"
+    type: "official"
+  - title: "Apple HealthKit Documentation - HKQuantityTypeIdentifier"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier"
+    type: "official"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Vitamin A"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK222318/"
+    type: "research"
+  - title: "Vitamin A and Carotenoids - Linus Pauling Institute"
+    url: "https://lpi.oregonstate.edu/mic/vitamins/vitamin-A"
+    type: "research"
+  - title: "WHO - Vitamin A Deficiency"
+    url: "https://www.who.int/health-topics/vitamin-a-deficiency"
+    type: "medical"
+last_updated: "2026-01-27"

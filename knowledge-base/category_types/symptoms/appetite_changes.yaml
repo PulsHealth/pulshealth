@@ -1,0 +1,120 @@
+identifier: "HKCategoryTypeIdentifierAppetiteChanges"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Appetite Changes"
+short_description: "Tracks changes in appetite including increased or decreased hunger."
+icon: "fork.knife"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No appetite changes experienced"
+  - value: 1
+    name: "decreased"
+    description: "Appetite decreased from normal"
+  - value: 2
+    name: "noChange"
+    description: "Appetite unchanged"
+  - value: 3
+    name: "increased"
+    description: "Appetite increased from normal"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Appetite changes refer to noticeable increases or decreases in hunger and desire to eat compared to an individual's baseline. This HealthKit category type allows users to log appetite fluctuations, providing valuable data for identifying patterns related to medications, mental health conditions, hormonal changes, or underlying medical conditions.
+
+  ## Health Significance
+  Appetite is regulated by complex interactions between hormones, neurotransmitters, and psychological factors. Changes in appetite can be early indicators of various medical and psychiatric conditions. Tracking these changes provides clinicians with objective data to assess disease progression, medication effects, and treatment response.
+
+  Common conditions associated with decreased appetite:
+  - Depression and anxiety disorders
+  - Infections and acute illness
+  - Cancer and chemotherapy
+  - Chronic diseases (heart failure, COPD, kidney disease)
+  - Medication side effects
+  - Grief and emotional distress
+  - Gastrointestinal disorders
+
+  Common conditions associated with increased appetite:
+  - Hyperthyroidism
+  - Diabetes mellitus
+  - Pregnancy
+  - Premenstrual syndrome
+  - Medication effects (corticosteroids, certain antidepressants)
+  - Recovery from illness
+  - Binge eating disorder
+  - Stress eating patterns
+
+  ## When to Seek Medical Attention
+  Users should consult a healthcare provider when:
+  - Appetite changes persist for more than 2 weeks
+  - Unintentional weight loss exceeds 5% of body weight in 6-12 months
+  - Loss of appetite is accompanied by fatigue, fever, or pain
+  - Increased appetite is accompanied by weight loss (suggesting hyperthyroidism or diabetes)
+  - Appetite changes are associated with mood disturbances
+  - Changes significantly affect quality of life or nutritional status
+  - New medications coincide with appetite changes
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Medication-related appetite changes (onset correlating with new prescriptions)
+  - Menstrual cycle patterns
+  - Depressive episode markers
+  - Seasonal affective patterns
+  - Stress-related eating behaviors
+  - Treatment response in eating disorders
+
+  ## Caveats & Limitations
+  - Baseline appetite varies significantly between individuals
+  - Does not quantify food intake or caloric consumption
+  - Subjective assessment may be influenced by eating disorder cognitions
+  - Cannot differentiate between hunger and cravings
+  - Does not capture specific food preferences or aversions
+  - Limited context without associated mood or symptom data
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierNausea"
+    relationship: "Nausea often causes decreased appetite"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Fatigue and appetite changes often co-occur in systemic illness"
+  - identifier: "HKCategoryTypeIdentifierMoodChanges"
+    relationship: "Depression and anxiety commonly affect appetite"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Sustained appetite changes may result in weight changes"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Appetite changes affect caloric intake"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierAppetiteChanges"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierappetitechanges"
+    type: "official"
+  - title: "Unintentional Weight Loss - AAFP"
+    url: "https://www.aafp.org/pubs/afp/issues/2014/0501/p718.html"
+    type: "medical"
+  - title: "Appetite Regulation - Physiology"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK278931/"
+    type: "research"
+last_updated: "2026-01-27"

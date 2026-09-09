@@ -1,0 +1,95 @@
+identifier: "HKCategoryTypeIdentifierIntermenstrualBleeding"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Intermenstrual Bleeding"
+short_description: "Records spotting or bleeding that occurs between menstrual periods."
+icon: "drop.fill"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "notApplicable"
+    description: "The only value for this category type, indicating that intermenstrual bleeding occurred on this day."
+ios_introduced:
+  version: "9.0"
+  year: 2015
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Manual logging through Health app or Cycle Tracking app"
+  - name: "Apple Watch"
+    capability: "Manual logging through Cycle Tracking app"
+  - name: "Third-party apps"
+    capability: "Period tracking apps can record spotting events"
+primary_source: "User-reported"
+description: |
+  ## Overview
+  Intermenstrual bleeding, commonly called spotting, refers to any vaginal bleeding that occurs outside the expected menstrual period. This data type captures occurrences of bleeding between periods, which is distinct from menstrual flow tracking. Each logged entry indicates a day when spotting was observed, helping users and clinicians identify patterns of breakthrough bleeding over time.
+
+  ## Health Significance
+  While occasional spotting can be normal, persistent or recurrent intermenstrual bleeding may indicate underlying conditions requiring medical evaluation. Common causes include:
+  - **Hormonal fluctuations**: Ovulation spotting, hormonal contraceptive adjustment, perimenopause
+  - **Structural abnormalities**: Uterine fibroids, polyps, cervical ectropion
+  - **Infections**: Cervicitis, sexually transmitted infections, pelvic inflammatory disease
+  - **Pregnancy-related**: Implantation bleeding, ectopic pregnancy, miscarriage
+  - **Malignancy**: Cervical or endometrial cancer (particularly concerning in postmenopausal women)
+
+  Tracking intermenstrual bleeding provides objective data for clinical consultations and helps differentiate between benign and concerning bleeding patterns.
+
+  ## Clinical Interpretation Guidelines
+  When evaluating intermenstrual bleeding data:
+  - **Frequency**: Occasional mid-cycle spotting (around ovulation) may be physiological; persistent spotting warrants investigation
+  - **Timing in cycle**: Ovulation spotting typically occurs 10-16 days before the next period; post-coital bleeding suggests cervical pathology
+  - **Duration**: Brief spotting (1-2 days) differs clinically from prolonged intermenstrual bleeding
+  - **Associated factors**: Correlate with contraceptive use, recent IUD insertion, or medication changes
+  - **Age considerations**: New-onset intermenstrual bleeding in women over 45 requires endometrial evaluation; postmenopausal bleeding always requires investigation
+  - **Pattern recognition**: Regular mid-cycle spotting may indicate ovulation; irregular, unpredictable spotting is more concerning
+
+  ## Caveats & Limitations
+  - Binary data type (occurred/did not occur) without quantification of bleeding amount
+  - Cannot distinguish between vaginal, cervical, and uterine bleeding sources
+  - User may confuse light menstrual flow with spotting, especially with irregular cycles
+  - Hormonal contraceptives commonly cause breakthrough bleeding, particularly in first 3 months
+  - Does not capture color or consistency of bleeding, which can be clinically relevant
+  - Post-coital bleeding should be specifically flagged but is not differentiated in this type
+metadata_keys:
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Menstrual flow tracks expected period bleeding; intermenstrual bleeding captures bleeding outside this window"
+  - identifier: "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding"
+    relationship: "System notification triggered when intermenstrual bleeding occurs frequently over multiple cycles"
+  - identifier: "HKCategoryTypeIdentifierSexualActivity"
+    relationship: "Can help identify post-coital bleeding patterns when correlated"
+  - identifier: "HKCategoryTypeIdentifierContraceptive"
+    relationship: "Hormonal contraceptives commonly cause breakthrough bleeding"
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "Ovulation timing can help determine if spotting is ovulation-related"
+references:
+  - title: "HKCategoryTypeIdentifierIntermenstrualBleeding - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierintermenstrualbleeding"
+    type: "official"
+  - title: "Abnormal Uterine Bleeding - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/abnormal-uterine-bleeding"
+    type: "medical"
+  - title: "Intermenstrual and Postcoital Bleeding - AAFP"
+    url: "https://www.aafp.org/pubs/afp/issues/2019/0401/p435.html"
+    type: "medical"
+last_updated: "2026-01-27"

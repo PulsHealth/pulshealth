@@ -1,0 +1,259 @@
+identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Vitamin C"
+short_description: "Water-soluble antioxidant essential for collagen synthesis, immune function, and iron absorption"
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FF9500"
+
+default_unit: "mg"
+supported_units: ["mg", "g"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 2000
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "40 mg (AI)"
+  - population: "Infants 7-12 months"
+    rda: "50 mg (AI)"
+  - population: "Children 1-3 years"
+    rda: "15 mg"
+  - population: "Children 4-8 years"
+    rda: "25 mg"
+  - population: "Children 9-13 years"
+    rda: "45 mg"
+  - population: "Male adolescents 14-18 years"
+    rda: "75 mg"
+  - population: "Female adolescents 14-18 years"
+    rda: "65 mg"
+  - population: "Adult men 19+ years"
+    rda: "90 mg"
+  - population: "Adult women 19+ years"
+    rda: "75 mg"
+  - population: "Pregnancy 14-18 years"
+    rda: "80 mg"
+  - population: "Pregnancy 19-50 years"
+    rda: "85 mg"
+  - population: "Lactation 14-18 years"
+    rda: "115 mg"
+  - population: "Lactation 19-50 years"
+    rda: "120 mg"
+  - population: "Smokers (add to base RDA)"
+    rda: "+35 mg above non-smoker requirements"
+  - population: "Adults (Upper Limit)"
+    upper_limit: "2000 mg"
+  - population: "Children 1-3 years (Upper Limit)"
+    upper_limit: "400 mg"
+  - population: "Children 4-8 years (Upper Limit)"
+    upper_limit: "650 mg"
+  - population: "Children 9-13 years (Upper Limit)"
+    upper_limit: "1200 mg"
+  - population: "Adolescents 14-18 years (Upper Limit)"
+    upper_limit: "1800 mg"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log vitamin C intake from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Vitamin C (ascorbic acid) is a water-soluble vitamin that humans cannot synthesize due to a mutation in the L-gulonolactone oxidase gene. It functions as a potent antioxidant and essential cofactor for numerous enzymatic reactions. Unlike fat-soluble vitamins, vitamin C is not stored in significant amounts, making regular dietary intake necessary. HealthKit tracks dietary vitamin C intake in milligrams.
+
+  ## Biological Functions
+  Vitamin C serves critical roles as an antioxidant and enzyme cofactor:
+
+  - **Collagen synthesis**: Essential cofactor for prolyl and lysyl hydroxylases, enzymes required for collagen cross-linking. Affects skin, blood vessels, bones, cartilage, and wound healing.
+  - **Antioxidant defense**: Scavenges reactive oxygen species; regenerates oxidized vitamin E; protects LDL from oxidation
+  - **Iron absorption**: Reduces ferric iron (Fe3+) to ferrous iron (Fe2+) in the gut, dramatically enhancing non-heme iron absorption
+  - **Carnitine biosynthesis**: Cofactor for enzymes producing carnitine, essential for fatty acid transport into mitochondria
+  - **Neurotransmitter synthesis**: Cofactor for dopamine beta-hydroxylase (converts dopamine to norepinephrine)
+  - **Immune function**: Supports epithelial barrier function, enhances phagocyte function, supports lymphocyte proliferation
+  - **Gene expression**: Influences epigenetic regulation through effects on DNA and histone demethylases
+
+  ## Health Significance
+  Adequate vitamin C prevents scurvy and supports immune function, wound healing, and cardiovascular health. While frank deficiency is rare in developed countries, suboptimal intake is common and associated with increased oxidative stress and impaired immune function. Evidence for high-dose vitamin C in disease prevention and treatment remains mixed.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing patient vitamin C intake data:
+
+  - **Consider smoking status**: Smokers have increased oxidative stress and require 35 mg/day more than non-smokers
+  - **Evaluate dietary diversity**: Vitamin C is concentrated in fruits and vegetables; limited intake suggests deficiency risk
+  - **Assess absorption factors**: Large single doses are absorbed less efficiently than divided doses
+  - **Review supplement use**: Distinguish therapeutic doses from excessive supplementation
+  - **Consider drug interactions**: Several medications affect vitamin C status
+  - **Correlate with clinical presentation**: Symptoms of deficiency (fatigue, poor wound healing) may appear before frank scurvy
+
+  ## Deficiency
+  **Scurvy** (severe deficiency - intake <10 mg/day for weeks):
+  - Fatigue, malaise, weakness
+  - Gingival swelling, bleeding gums, tooth loss
+  - Petechiae, ecchymoses, poor wound healing
+  - Perifollicular hemorrhages (pathognomonic)
+  - Corkscrew hairs
+  - Hemarthrosis, joint pain
+  - Anemia (due to bleeding and impaired iron absorption)
+  - Cardiac complications in severe cases
+
+  **Marginal deficiency** (suboptimal status):
+  - Fatigue, irritability
+  - Impaired wound healing
+  - Increased susceptibility to infections
+  - Dry, rough skin
+  - Easy bruising
+  - Joint and muscle aches
+
+  **At-risk populations**:
+  - Smokers and passive smoke exposure
+  - Individuals with limited dietary variety (especially low fruit/vegetable intake)
+  - Patients with malabsorption conditions (Crohn's, celiac disease)
+  - End-stage renal disease patients (especially those on dialysis)
+  - Individuals with alcohol use disorder
+  - Elderly with poor nutrition
+  - Patients with cancer undergoing treatment
+
+  ## Toxicity/Excess
+  Vitamin C has relatively low toxicity due to decreased absorption and increased excretion at high doses.
+
+  **Gastrointestinal effects** (most common at >1000 mg/day):
+  - Diarrhea, nausea, abdominal cramps
+  - Typically dose-dependent and resolve with dose reduction
+
+  **Kidney stones**:
+  - High vitamin C intake increases urinary oxalate excretion
+  - May increase risk of calcium oxalate kidney stones in susceptible individuals
+  - Patients with history of oxalate stones should avoid high doses (>1000 mg/day)
+
+  **Iron overload concerns**:
+  - Enhanced iron absorption could be problematic in hemochromatosis
+  - Patients with iron overload conditions should monitor intake
+
+  **Other potential concerns**:
+  - May interfere with certain laboratory tests (glucose, occult blood)
+  - High-dose IV vitamin C (not relevant to dietary intake) has specific considerations
+  - Rebound scurvy theoretically possible after abrupt cessation of very high doses (rarely documented)
+
+  **Clinical note**: The UL of 2000 mg/day is based primarily on osmotic diarrhea. Many individuals tolerate higher doses, but there is no established benefit.
+
+  ## Food Sources
+  **Excellent sources** (>50 mg per serving):
+  - Red bell pepper (1/2 cup raw: ~95 mg)
+  - Orange juice (3/4 cup: ~93 mg)
+  - Orange (1 medium: ~70 mg)
+  - Grapefruit juice (3/4 cup: ~70 mg)
+  - Kiwifruit (1 medium: ~64 mg)
+  - Green bell pepper (1/2 cup raw: ~60 mg)
+  - Broccoli (1/2 cup cooked: ~51 mg)
+  - Strawberries (1/2 cup: ~49 mg)
+  - Brussels sprouts (1/2 cup cooked: ~48 mg)
+
+  **Good sources** (25-50 mg per serving):
+  - Grapefruit (1/2 medium: ~39 mg)
+  - Tomato juice (3/4 cup: ~33 mg)
+  - Cantaloupe (1/2 cup: ~29 mg)
+  - Cabbage (1/2 cup cooked: ~28 mg)
+  - Cauliflower (1/2 cup raw: ~26 mg)
+  - Potato (1 medium baked: ~17 mg)
+  - Tomato (1 medium raw: ~17 mg)
+
+  **Bioavailability and stability**:
+  - Vitamin C is heat-sensitive; cooking reduces content by 25-50%
+  - Absorption is 70-90% at moderate intakes, decreasing to <50% at doses >1000 mg
+  - Divided doses throughout the day are better absorbed than single large doses
+  - Storage and processing reduce vitamin C content
+
+  ## Special Populations
+  **Smokers**: Require an additional 35 mg/day (125 mg for men, 110 mg for women) due to increased oxidative stress and metabolic turnover. Passive smoke exposure also increases requirements.
+
+  **Pregnancy**: Modest increase in requirements (80-85 mg/day). Adequate vitamin C supports fetal development and may reduce preeclampsia risk. Very high doses are not recommended.
+
+  **Lactation**: Requirements increase to 115-120 mg/day to maintain milk vitamin C levels.
+
+  **Elderly**: At higher risk for inadequate intake due to dietary limitations. May benefit from supplementation if dietary intake is low.
+
+  **Surgical patients**: Increased requirements for wound healing. Some surgeons recommend supplementation perioperatively.
+
+  **Athletes**: High-intensity exercise increases oxidative stress, potentially increasing vitamin C needs. However, evidence for performance benefits of supplementation is mixed.
+
+  **Patients with hemochromatosis**: Should be cautious with high doses due to enhanced iron absorption.
+
+  ## Drug Interactions
+  **Vitamin C may increase absorption/effects of**:
+  - **Iron supplements**: Significantly enhances non-heme iron absorption; take together if iron supplementation is needed, separately if iron overload is a concern
+  - **Aluminum-containing antacids**: May increase aluminum absorption (clinical significance uncertain)
+
+  **Vitamin C may decrease effects of**:
+  - **Warfarin**: High doses (>1000 mg) may reduce anticoagulant effect; monitor INR
+  - **Indinavir and other protease inhibitors**: High doses may reduce drug levels
+
+  **Drugs that may reduce vitamin C status**:
+  - **Aspirin**: Chronic high-dose use may increase vitamin C excretion
+  - **Oral contraceptives**: May lower plasma vitamin C levels
+  - **Corticosteroids**: Chronic use may reduce vitamin C status
+  - **NSAIDs**: May reduce tissue vitamin C levels
+  - **Chemotherapy agents**: Increase oxidative stress and vitamin C depletion
+
+  **Laboratory test interactions**:
+  - May cause false-negative results for fecal occult blood tests
+  - May interfere with glucose monitoring in some systems
+  - Very high doses may affect urinalysis results
+
+  ## Caveats & Limitations
+  - HealthKit data reflects user-reported intake, not plasma or tissue vitamin C levels
+  - Accuracy depends on food logging completeness and database quality
+  - Vitamin C content in foods varies significantly with freshness, storage, and preparation
+  - Absorption efficiency decreases with larger doses
+  - Individual requirements vary based on smoking status, stress, and health conditions
+  - Supplements may be logged inconsistently
+  - Cannot distinguish between ascorbic acid and other forms (e.g., mineral ascorbates, ester-C)
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food contributing to vitamin C intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if the entry was manually logged by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing with external nutrition databases"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryIron"
+    relationship: "Vitamin C dramatically enhances non-heme iron absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminE"
+    relationship: "Vitamin C regenerates oxidized vitamin E, supporting antioxidant network"
+  - identifier: "HKQuantityTypeIdentifierDietaryFolate"
+    relationship: "Both nutrients are abundant in fruits and vegetables; vitamin C protects folate from oxidation"
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "Both support immune function; often co-supplemented for cold prevention"
+  - identifier: "HKQuantityTypeIdentifierDietaryCollagen"
+    relationship: "Vitamin C is essential for collagen synthesis"
+references:
+  - title: "Vitamin C - Dietary Reference Intakes"
+    url: "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/"
+    type: "official"
+  - title: "Apple HealthKit Documentation - HKQuantityTypeIdentifier"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier"
+    type: "official"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Vitamin C"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK225480/"
+    type: "research"
+  - title: "Vitamin C - Linus Pauling Institute"
+    url: "https://lpi.oregonstate.edu/mic/vitamins/vitamin-C"
+    type: "research"
+  - title: "Vitamin C and Immune Function"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5707683/"
+    type: "research"
+  - title: "Scurvy: A Disease Almost Forgotten"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6566697/"
+    type: "medical"
+last_updated: "2026-01-27"

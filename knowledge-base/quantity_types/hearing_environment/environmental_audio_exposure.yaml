@@ -1,0 +1,138 @@
+identifier: "HKQuantityTypeIdentifierEnvironmentalAudioExposure"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Hearing and Environment"
+human_readable_name: "Environmental Audio Exposure"
+short_description: "Ambient sound level exposure measured in A-weighted decibels (dB(A)), indicating potential hearing damage risk from environmental noise."
+icon: "ear.fill"
+color: "#5856D6"
+default_unit: "dB(A)"
+supported_units:
+  - "dB(A)"
+  - "dBASPL"
+unit_description: "A-weighted decibels (dB(A)) apply frequency weighting that approximates human hearing sensitivity, giving more weight to frequencies where the ear is most sensitive (1-6 kHz) and less weight to very low and very high frequencies."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 30
+  max: 110
+  unit: "dB(A)"
+clinical_ranges:
+  - population: "General Adult"
+    safe: "Below 70 dB(A) for prolonged exposure"
+    concerning: "Above 85 dB(A) for extended periods; immediate concern above 100 dB(A)"
+  - population: "Occupational (NIOSH Guidelines)"
+    safe: "85 dB(A) for up to 8 hours with hearing protection"
+    concerning: "For every 3 dB increase, safe exposure time halves (88 dB = 4 hours, 91 dB = 2 hours)"
+  - population: "WHO Recommendations"
+    safe: "Below 70 dB(A) average over 24 hours; below 85 dB(A) for leisure activities"
+    concerning: "Cumulative weekly exposure exceeding 80 dB(A) averaged over 40 hours"
+ios_introduced:
+  version: "13.0"
+  year: 2019
+watchos_introduced:
+  version: "6.0"
+  year: 2019
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch Series 4 and later"
+    capability: "Continuous ambient sound level monitoring via built-in microphone with on-device processing"
+  - name: "Apple Watch SE"
+    capability: "Environmental sound level measurement"
+  - name: "Apple Watch Ultra"
+    capability: "Enhanced environmental audio monitoring"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  Environmental Audio Exposure measures the ambient sound levels in a user's surroundings throughout the day. This metric is critical for assessing cumulative noise exposure that can lead to noise-induced hearing loss (NIHL), one of the most common preventable causes of hearing impairment worldwide.
+
+  The measurement uses A-weighted decibels (dB(A)), which filter sound frequencies to match human hearing sensitivity. This weighting is the standard for occupational and environmental noise assessment, making HealthKit data directly comparable to regulatory guidelines.
+
+  ## How It's Measured
+  Apple Watch performs environmental sound level measurements using its built-in microphone. The device:
+
+  1. Samples ambient audio periodically throughout the day (approximately every few minutes when worn)
+  2. Processes audio entirely on-device to protect privacy - no audio recordings are stored or transmitted
+  3. Calculates the equivalent continuous sound level (Leq) over the sampling period
+  4. Applies A-weighting to produce dB(A) values
+
+  The Apple Watch Noise app provides real-time monitoring and can alert users when sound levels exceed configurable thresholds (default 90 dB). Measurements are only taken when the watch is worn and unlocked.
+
+  ## Health Significance
+  **Noise-Induced Hearing Loss (NIHL):**
+  - NIHL is cumulative and irreversible, caused by damage to cochlear hair cells
+  - The WHO estimates 1.1 billion young people are at risk of hearing loss from unsafe listening practices
+  - Occupational noise exposure affects approximately 22 million U.S. workers annually
+
+  **Dose-Response Relationship:**
+  - Sound intensity follows a logarithmic scale - every 3 dB increase doubles sound energy
+  - At 85 dB(A), safe exposure is limited to 8 hours per day (NIOSH standard)
+  - At 100 dB(A), damage can occur in as little as 15 minutes
+  - At 110 dB(A), exposure limit drops to approximately 2 minutes
+
+  **Beyond Hearing:**
+  - Chronic noise exposure correlates with cardiovascular stress, elevated blood pressure, and sleep disturbances
+  - Environmental noise is linked to cognitive impairment in children and increased stress hormone levels
+
+  ## Clinical Interpretation Guidelines
+  **For Health Consultants:**
+
+  1. **Review Weekly Averages:** Single high readings are less concerning than sustained elevated exposure. Focus on patterns across days and weeks.
+
+  2. **Context Matters:** Occupational exposure (construction, manufacturing, music venues) requires different counseling than leisure exposure.
+
+  3. **Cumulative Dose:** Calculate approximate weekly noise dose. WHO recommends limiting cumulative exposure to 80 dB(A) averaged over 40 hours.
+
+  4. **Risk Stratification:**
+     - Low Risk: Average environmental exposure below 70 dB(A)
+     - Moderate Risk: Regular exposure between 70-85 dB(A); counsel on hearing protection
+     - High Risk: Frequent exposure above 85 dB(A); recommend audiological evaluation
+
+  5. **Intervention Triggers:**
+     - Sustained averages above 80 dB(A) warrant hearing protection discussion
+     - Frequent alerts (above 90 dB) suggest environmental modifications or hearing conservation program
+
+  ## Caveats & Limitations
+  - **Sampling Frequency:** Measurements are periodic, not continuous, so brief loud exposures between samples may be missed
+  - **Watch Wearing Patterns:** Data gaps occur when the watch is not worn or is locked
+  - **Microphone Position:** Wrist-level measurements may differ from ear-level exposure, particularly for directional sound sources
+  - **Indoor/Outdoor Differences:** Environmental acoustics affect measurements; indoor reverberant spaces may read differently than outdoor environments
+  - **No Frequency Detail:** dB(A) is a single-number metric that doesn't capture specific harmful frequencies
+  - **Calibration Variability:** Individual device microphone variations may affect absolute accuracy, though relative trends remain valid
+  - **Context Blindness:** The metric cannot distinguish between harmful industrial noise and acceptable ambient sound at the same level
+metadata_keys:
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Indicates which wrist the Apple Watch was worn on during measurement"
+  - key: "HKMetadataKeyAudioExposureLevel"
+    description: "The measured sound pressure level in dB(A)"
+  - key: "HKMetadataKeyAudioExposureDuration"
+    description: "Duration of the exposure measurement period"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeadphoneAudioExposure"
+    relationship: "Complementary metric measuring audio exposure specifically from headphones/earbuds; combined with environmental exposure provides total daily noise dose"
+  - identifier: "HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent"
+    relationship: "Category type that records discrete events when environmental audio exceeds notification threshold"
+  - identifier: "HKCategoryTypeIdentifierAudioExposureEvent"
+    relationship: "Deprecated predecessor category type for audio exposure events"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierEnvironmentalAudioExposure"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierenvironmentalaudioexposure"
+    type: "official"
+  - title: "WHO - Make Listening Safe"
+    url: "https://www.who.int/activities/making-listening-safe"
+    type: "medical"
+  - title: "NIOSH Criteria for a Recommended Standard: Occupational Noise Exposure"
+    url: "https://www.cdc.gov/niosh/docs/98-126/"
+    type: "research"
+  - title: "Apple Support - Noise App and Hearing Health"
+    url: "https://support.apple.com/en-us/HT209593"
+    type: "tutorial"
+last_updated: "2026-01-27"

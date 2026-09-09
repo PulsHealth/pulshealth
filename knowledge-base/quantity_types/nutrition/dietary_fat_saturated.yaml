@@ -1,0 +1,155 @@
+identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Saturated Fat"
+short_description: "Saturated fatty acid intake from animal and tropical plant sources"
+icon: "drop.fill"
+color: "#FF3B30"
+default_unit: "g"
+supported_units:
+  - "g"
+  - "mg"
+  - "oz"
+unit_description: "Grams (g) of saturated fatty acids. Saturated fats have no double bonds in their carbon chain and are typically solid at room temperature."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 5
+  max: 60
+  unit: "g"
+  notes: "Average American intake is 11-12% of calories (~25-30g). Recommendations target <10% of calories (<22g on 2000 kcal)."
+clinical_ranges:
+  - population: "Adults (Dietary Guidelines)"
+    rda: "<10% of total calories (<22g on 2000 kcal diet)"
+  - population: "Cardiovascular Disease Risk"
+    rda: "<7% of total calories (AHA recommendation)"
+  - population: "Elevated LDL Cholesterol"
+    rda: "<7% of calories; emphasize replacement with unsaturated fats"
+  - population: "Diabetes"
+    rda: "<10% of calories; focus on fat quality"
+  - population: "Ketogenic Diet"
+    rda: "Varies; often 30-50g despite high total fat"
+  - population: "Children (2-18 years)"
+    rda: "<10% of calories"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Saturated fat tracking as component of total fat"
+    examples:
+      - "MyFitnessPal"
+      - "Cronometer"
+      - "LoseIt"
+      - "Yazio"
+  - name: "Heart health focused apps"
+    capability: "Saturated fat tracking with cardiovascular risk context"
+    examples:
+      - "Fooducate"
+      - "Heart Habit"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Saturated Fat represents intake of fatty acids without double bonds in their carbon chain. Primary sources include animal products (meat, dairy, eggs) and tropical oils (coconut, palm). Saturated fat has been a focus of cardiovascular disease prevention guidelines for decades due to its LDL cholesterol-raising effect, though recent research has added nuance regarding saturated fat source and replacement nutrient.
+
+  The FDA Daily Value for saturated fat is 20g based on a 2,000 calorie diet (updated 2020). This represents less than 10% of total calories and is a limit rather than a target. The Dietary Guidelines recommend consuming as little saturated fat as possible within a healthy eating pattern.
+
+  ## Health Significance
+  Saturated fat intake impacts:
+  - **LDL Cholesterol**: Most potent dietary factor raising LDL; ~2 mg/dL increase per 1% energy from saturated fat
+  - **Cardiovascular Disease**: Replacement with unsaturated fats reduces CVD events
+  - **Inflammation**: Some saturated fatty acids (palmitic acid) promote inflammation
+  - **Insulin Sensitivity**: High saturated fat intake associated with insulin resistance
+  - **Cell Membrane Composition**: Affects membrane fluidity and cell function
+  - **Hepatic Fat**: May contribute to hepatic lipid accumulation
+  - **HDL Cholesterol**: Saturated fat also raises HDL, complicating risk interpretation
+
+  ## Clinical Interpretation Guidelines
+  When assessing saturated fat intake:
+  1. **Calculate Percentage of Calories**: g saturated fat x 9 / total calories x 100
+  2. **Compare to Guidelines**: Target <10% general population; <7% for CVD risk
+  3. **Identify Primary Sources**: Dairy, red meat, processed meat, baked goods, fried foods
+  4. **Assess Replacement Foods**: What would replace saturated fat - unsaturated fat or refined carbs?
+  5. **Review Lipid Panel**: Correlate saturated fat intake with LDL-C and triglycerides
+  6. **Consider Saturated Fat Subtypes**: Stearic acid (chocolate) is relatively neutral vs. lauric/myristic/palmitic
+  7. **Evaluate Total Dietary Pattern**: Mediterranean diet with moderate saturated fat may be acceptable
+
+  ## Deficiency Symptoms
+  Saturated fat is not essential; no deficiency syndrome exists:
+  - Body can synthesize saturated fatty acids from carbohydrates and other fats
+  - No recommended minimum intake
+  - Very low saturated fat intake (with adequate total fat) has no adverse effects
+  - Concerns about extremely low fat diets relate to total fat, not saturated specifically
+
+  ## Excess/Toxicity
+  High saturated fat intake is associated with:
+  - **Elevated LDL Cholesterol**: Primary mechanism of cardiovascular harm
+  - **Cardiovascular Disease**: Increased risk of coronary heart disease and stroke
+  - **Insulin Resistance**: Impairs insulin signaling in muscle and adipose tissue
+  - **Inflammation**: Activates inflammatory pathways via TLR4
+  - **Endothelial Dysfunction**: Impairs blood vessel function
+  - **Hepatic Steatosis**: Contributes to fatty liver development
+  - **Cognitive Decline**: Some evidence linking high saturated fat to dementia risk
+  - **Gut Microbiome Disruption**: Alters microbiome composition unfavorably
+
+  ## Special Populations
+  - **Familial Hypercholesterolemia**: Strict saturated fat limitation essential; <7% or lower
+  - **Prior Cardiovascular Events**: Very low saturated fat (<5-6% calories) recommended
+  - **Elevated Lp(a)**: Saturated fat reduction may not address Lp(a); individualized approach
+  - **Diabetes**: Replacing saturated with unsaturated fat improves insulin sensitivity
+  - **Ketogenic Diet**: Despite high total fat, quality matters; emphasize mono/polyunsaturated sources
+  - **Lean Mass Hyper-Responders**: Rare phenotype with LDL elevation on low-carb; monitoring essential
+  - **APOE4 Carriers**: May be more sensitive to saturated fat's LDL-raising effect
+  - **Elderly**: Balance CV risk reduction with adequate calorie/nutrient intake
+
+  ## Caveats & Limitations
+  - **Source Matters**: Saturated fat from dairy may differ from processed meat (food matrix effects)
+  - **Replacement Nutrient Critical**: Replacing with unsaturated fat beneficial; with refined carbs neutral/harmful
+  - **Individual Variation**: LDL response to saturated fat varies (hyper-responders vs. hypo-responders)
+  - **Subtype Differences**: Not all saturated fatty acids are equivalent metabolically
+  - **Recent Controversy**: Some meta-analyses questioned saturated fat-CVD link; scientific consensus still supports limitation
+  - **Observational Limitations**: Diet studies confounded by overall dietary patterns
+  - **Food Matrix**: Cheese may have different effects than butter despite similar saturated fat content
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the saturated fat source (e.g., 'butter', 'beef', 'coconut oil')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "Saturated fat is a component of total fat"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated"
+    relationship: "Monounsaturated fat can replace saturated fat for CV benefit"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
+    relationship: "Polyunsaturated fat can replace saturated fat for CV benefit"
+  - identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
+    relationship: "Often co-occur in animal foods; both affect lipid profiles"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Saturated fat contributes to total caloric intake at 9 kcal/g"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFatSaturated"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfatsaturated"
+    type: "official"
+  - title: "Dietary Fats and Cardiovascular Disease: AHA Presidential Advisory 2017"
+    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000510"
+    type: "medical"
+  - title: "Saturated Fatty Acids and Cardiovascular Disease: JACC State-of-the-Art Review"
+    url: "https://www.jacc.org/doi/10.1016/j.jacc.2020.05.077"
+    type: "research"
+  - title: "Dietary Guidelines for Americans 2020-2025: Saturated Fat"
+    url: "https://www.dietaryguidelines.gov/"
+    type: "official"
+last_updated: "2026-01-27"

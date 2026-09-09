@@ -1,0 +1,120 @@
+identifier: "HKCategoryTypeIdentifierLactation"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Lactation"
+short_description: "Tracks breastfeeding and pumping sessions for postpartum mothers."
+icon: "figure.and.child.holdinghands"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "notApplicable"
+    description: "Lactation event occurred. This is the only category value; additional details like duration or breast side may be stored in metadata or sample duration."
+ios_introduced:
+  version: "14.3"
+  year: 2020
+watchos_introduced:
+  version: "7.2"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Manual logging through Health app or breastfeeding tracking apps"
+  - name: "Apple Watch"
+    capability: "Manual logging through Cycle Tracking app"
+  - name: "Smart breast pumps"
+    capability: "Connected breast pumps like Willow or Elvie can automatically log pumping sessions"
+  - name: "Third-party apps"
+    capability: "Breastfeeding and baby care apps with lactation tracking features"
+primary_source: "User-reported or Connected Device"
+description: |
+  ## Overview
+  Lactation tracking records breastfeeding and breast pumping sessions for postpartum mothers. Each logged event captures the occurrence and duration of feeding or pumping, helping mothers monitor feeding patterns and milk production. This data is valuable for establishing feeding routines, ensuring adequate infant nutrition, and tracking the breastfeeding journey over time.
+
+  The sample duration indicates the length of the feeding or pumping session. Some apps and devices provide additional details such as breast side (left/right), milk volume pumped, or feeding type (direct nursing vs. pumping), though these details may be stored in app-specific metadata or separate data types.
+
+  ## Health Significance
+  Lactation tracking serves multiple health purposes for both mother and infant:
+  - **Infant nutrition monitoring**: Tracking feeding frequency and duration helps ensure adequate infant nutrition, especially in the early weeks
+  - **Milk supply management**: Frequent nursing/pumping maintains prolactin levels and supports milk production
+  - **Feeding pattern establishment**: Identifying patterns helps establish predictable feeding routines
+  - **Return of fertility awareness**: Lactational amenorrhea method (LAM) effectiveness depends on exclusive breastfeeding patterns
+  - **Weaning transition**: Gradual reduction in feeding frequency supports comfortable weaning
+  - **Mastitis prevention**: Regular nursing/pumping helps prevent engorgement and blocked ducts
+  - **Postpartum mental health**: Breastfeeding challenges can impact maternal wellbeing; tracking documents the experience
+
+  ## Clinical Interpretation Guidelines
+  When reviewing lactation data in clinical context:
+  - **Newborn feeding frequency**:
+    - Healthy newborns typically nurse 8-12 times per 24 hours in first weeks
+    - Feeding intervals should not exceed 4 hours initially
+    - Very frequent feeding (every hour) may indicate ineffective milk transfer or low supply
+  - **Session duration considerations**:
+    - Typical nursing sessions last 10-20 minutes per breast
+    - Very short (< 5 min) or very long (> 45 min) sessions may warrant evaluation
+    - Duration alone does not indicate milk volume consumed
+  - **Supply assessment**:
+    - Pumping output provides measurable supply data (though pumping is not equivalent to nursing)
+    - Regular pumping sessions maintain supply when direct nursing is not possible
+  - **Lactational amenorrhea method (LAM)**:
+    - Effective contraception requires: exclusive/nearly exclusive breastfeeding, amenorrhea, and infant < 6 months
+    - Tracked feeding patterns help assess LAM criteria
+  - **Weaning patterns**:
+    - Gradual reduction (dropping one session every few days) minimizes engorgement and hormonal shifts
+    - Abrupt cessation increases mastitis risk and hormonal fluctuation symptoms
+  - **Warning signs to assess**:
+    - Sudden decrease in feeding frequency without intentional weaning
+    - Painful feeding sessions suggesting infection or latch issues
+    - Infant weight concerns despite frequent tracked feedings
+
+  ## Caveats & Limitations
+  - Does not capture milk volume transferred during nursing (only pumping can be measured)
+  - Session duration does not correlate directly with milk consumption
+  - Does not distinguish between direct breastfeeding and pumping unless metadata specifies
+  - Breast side tracking may not be captured in standard category value
+  - Does not assess latch quality or feeding effectiveness
+  - Supplemental feeding with formula or expressed milk is not tracked in this type
+  - Exclusive breastfeeding status for LAM assessment requires considering all infant feeding sources
+  - Smart pump data may not sync in real-time, creating logging delays
+  - Manual logging may be inconsistent during demanding newborn period
+metadata_keys:
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierPregnancy"
+    relationship: "Lactation typically follows pregnancy and childbirth"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Exclusive breastfeeding may delay return of menstruation (lactational amenorrhea)"
+  - identifier: "HKCategoryTypeIdentifierContraceptive"
+    relationship: "Lactational amenorrhea provides natural contraception under specific conditions"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Nighttime feeding sessions correlate with maternal sleep patterns"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Breastfeeding demands can contribute to postpartum fatigue"
+references:
+  - title: "HKCategoryTypeIdentifierLactation - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierlactation"
+    type: "official"
+  - title: "Breastfeeding and Lactation - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/breastfeeding-your-baby"
+    type: "medical"
+  - title: "Breastfeeding Guidelines - AAP"
+    url: "https://publications.aap.org/pediatrics/article/150/1/e2022057988/188347/Breastfeeding-and-the-Use-of-Human-Milk"
+    type: "medical"
+  - title: "Lactational Amenorrhea Method - WHO"
+    url: "https://www.who.int/teams/sexual-and-reproductive-health-and-research/key-areas-of-work/contraception/lam"
+    type: "medical"
+last_updated: "2026-01-27"

@@ -1,0 +1,257 @@
+identifier: "HKQuantityTypeIdentifierPeripheralPerfusionIndex"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Peripheral Perfusion Index"
+short_description: "A measure of peripheral blood flow derived from pulse oximetry, representing the ratio of pulsatile to non-pulsatile blood components."
+icon: "waveform.path"
+color: "#5856D6"
+default_unit: "%"
+supported_units:
+  - "%"
+unit_description: "Expressed as a percentage representing the ratio of pulsatile (arterial) signal to non-pulsatile (static tissue) signal."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteMin"
+  - "discreteMax"
+  - "discreteAverage"
+  - "mostRecent"
+typical_range:
+  min: 0.02
+  max: 20
+  unit: "%"
+  notes: "Normal range typically 0.5-2.0% in healthy adults at rest. Values vary significantly based on measurement site, temperature, and physiological state."
+clinical_ranges:
+  - population: "Adults"
+    very_low: "<0.2% (significantly reduced perfusion)"
+    low: "0.2-0.5% (reduced perfusion)"
+    normal: "0.5-2.0%"
+    high: "2.0-20.0% (strong perfusion)"
+  - population: "Neonates"
+    abnormal_threshold: "<1.24% (foot measurement)"
+    notes: "PI <1.24% in neonates is a predictor of illness severity in NICU settings"
+  - population: "Critical Care"
+    poor_prognosis: "<0.3-0.6%"
+    notes: "Low PI in ICU patients correlates with poor outcomes and may indicate need for hemodynamic intervention"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Pulse Oximeters with PI capability"
+    capability: "Masimo, Nonin, and other advanced pulse oximeters can measure and transmit PI"
+  - name: "Medical-grade Monitoring Systems"
+    capability: "Hospital bedside monitors with SpO2 sensors often include PI"
+  - name: "Consumer Pulse Oximeters"
+    capability: "Some consumer devices (e.g., Nonin 3230, QardioSpO2) measure and export PI to HealthKit"
+primary_source: "Pulse Oximeters"
+description: |
+  ## Overview
+
+  Peripheral Perfusion Index (PI) is a numerical value derived from the photoplethysmographic (PPG) signal in pulse oximetry. It represents the ratio of the pulsatile blood flow (AC component, reflecting arterial blood) to the non-pulsatile or static blood flow (DC component, reflecting venous blood, bone, tissue, and skin pigment).
+
+  **Formula:** PI = (AC / DC) × 100%
+
+  PI is an indirect, noninvasive indicator of peripheral perfusion status. Unlike SpO2, which indicates oxygen saturation, PI reflects the strength of the pulsatile signal and thus provides information about local blood flow and vascular tone at the measurement site.
+
+  PI is increasingly recognized as a valuable clinical tool because it:
+  - Provides real-time, continuous perfusion assessment
+  - Requires no additional equipment beyond standard pulse oximetry
+  - Offers objective data for subjective clinical assessments
+  - Can serve as an early warning indicator before other vital signs change
+
+  ## How It's Measured
+
+  **Photoplethysmography (PPG) Principle:**
+  A pulse oximeter emits light (typically red and infrared) through tissue and measures light absorption. The absorbed light varies with each heartbeat as arterial blood volume changes.
+
+  **Signal Components:**
+  - **AC Component:** The pulsatile portion of the signal that changes with each heartbeat, representing arterial blood volume changes
+  - **DC Component:** The baseline, non-pulsatile portion representing static tissue absorption (venous blood, bone, muscle, skin)
+
+  **Calculation:**
+  The device calculates PI as the ratio of AC amplitude to DC amplitude, expressed as a percentage. Higher PI indicates stronger pulsatile flow relative to static tissue.
+
+  **Measurement Sites:**
+  - Fingertip (most common for spot checks)
+  - Toe (useful in critical care, pediatrics)
+  - Earlobe
+  - Forehead (reflectance sensors)
+
+  **Factors Affecting Measurement:**
+  - Peripheral vasoconstriction/vasodilation
+  - Ambient temperature
+  - Patient positioning
+  - Motion artifacts
+  - Probe placement and fit
+  - Nail polish or artificial nails
+  - Skin pigmentation (affects DC component)
+
+  ## Health Significance
+
+  PI serves as an indicator of peripheral tissue perfusion and can reflect:
+
+  **Cardiovascular Status:**
+  - Cardiac output and stroke volume
+  - Peripheral vascular resistance
+  - Volume status and fluid responsiveness
+
+  **Autonomic Function:**
+  - Sympathetic tone (vasoconstriction lowers PI)
+  - Response to stress, pain, or anxiety
+
+  **Clinical Applications:**
+
+  1. **Anesthesia Monitoring:**
+     - Onset of anesthesia causes vasodilation, increasing PI
+     - A spike in PI can indicate successful epidural or regional anesthesia
+     - Helps assess adequacy of anesthetic block
+
+  2. **Critical Care:**
+     - Low PI correlates with poor tissue perfusion
+     - Can guide fluid resuscitation and vasopressor therapy
+     - Predictor of adverse outcomes in ICU patients
+
+  3. **Neonatal Care:**
+     - PI <1.24% on foot predicts illness severity
+     - Used in screening for critical congenital heart disease
+     - Helps assess response to treatment in NICU
+
+  4. **Pain Assessment:**
+     - Acute pain causes vasoconstriction, decreasing PI
+     - Useful for objective pain assessment in non-communicative patients
+
+  5. **Pulse Oximeter Signal Quality:**
+     - Higher PI indicates more reliable SpO2 readings
+     - PI <0.3% suggests SpO2 values may be unreliable
+
+  ## Clinical Interpretation Guidelines
+
+  ### General PI Ranges
+
+  | PI Value | Interpretation | Clinical Significance |
+  |----------|----------------|----------------------|
+  | **<0.2%** | Very low | Severe vasoconstriction, poor perfusion, shock states; SpO2 readings likely unreliable |
+  | **0.2-0.5%** | Low | Reduced perfusion; may indicate cold environment, peripheral vascular disease, early shock |
+  | **0.5-2.0%** | Normal | Adequate peripheral perfusion in most healthy adults |
+  | **2.0-5.0%** | Elevated | Good perfusion; may indicate vasodilation, warm environment, post-exercise |
+  | **>5.0%** | High | Strong arterial pulsation; vasodilated state, post-anesthesia, hyperdynamic circulation |
+
+  ### Trend Interpretation
+
+  - **Rising PI:** Vasodilation occurring (warming, anesthesia onset, improved perfusion)
+  - **Falling PI:** Vasoconstriction (cooling, hypovolemia, pain, stress, deterioration)
+  - **Stable PI:** Consistent hemodynamic state
+
+  ### Context-Specific Interpretation
+
+  **In Critical Care:**
+  - PI <0.6% associated with poor outcomes
+  - Low PI despite adequate blood pressure may indicate microcirculatory dysfunction
+  - Trend more important than absolute value
+
+  **In Anesthesia:**
+  - Expect PI increase with successful regional block
+  - Absence of PI increase may indicate failed block
+
+  **In Neonates:**
+  - Pre-ductal/post-ductal PI differences may indicate ductal-dependent cardiac lesion
+  - PI <1.24% on foot warrants further evaluation
+
+  ### Red Flags for Consultation
+
+  - **Persistently very low PI (<0.3%):** In any clinical setting, indicates severely compromised perfusion
+  - **Falling PI with normal blood pressure:** May indicate early compensated shock
+  - **Discordance between PI and clinical assessment:** Warrants investigation
+  - **Asymmetric PI:** Different values between limbs may indicate vascular pathology
+
+  ## Caveats & Limitations
+
+  ### Technical Limitations
+
+  - **No Standardized Normal Range:** Values vary significantly between devices, manufacturers, and measurement sites
+  - **Device-Specific:** Different algorithms and calibrations mean PI values are not directly comparable across devices
+  - **Site Dependent:** Fingertip PI differs from toe or earlobe PI
+  - **Motion Sensitive:** Movement significantly affects accuracy
+  - **Temperature Dependent:** Cold extremities lower PI independent of central perfusion
+
+  ### Clinical Limitations
+
+  - **Not Direct Perfusion Measurement:** PI is a surrogate marker, not direct tissue perfusion assessment
+  - **Affected by Multiple Factors:** Cannot distinguish between causes of low PI (cold vs. shock vs. PAD)
+  - **Limited Validation:** Clinical thresholds are not as well-established as for other vital signs
+  - **Population Variability:** Baseline PI varies considerably between individuals
+
+  ### When PI May Be Misleading
+
+  - Cold extremities (environmental, not pathological)
+  - Nail polish or artificial nails
+  - Peripheral vascular disease (chronically low PI)
+  - Raynaud's phenomenon
+  - Position-dependent changes
+  - Recent smoking or caffeine (vasoconstriction)
+
+  ## Additional Notes
+
+  **Signal Quality Indicator:**
+  Perhaps the most universally applicable use of PI is as a signal quality indicator. When PI is very low (<0.3-0.4%), SpO2 readings should be interpreted with caution as they may be inaccurate due to weak signal.
+
+  **Research Applications:**
+  PI is being studied as:
+  - Predictor of successful spinal anesthesia
+  - Marker of fluid responsiveness
+  - Screening tool for peripheral arterial disease
+  - Indicator of autonomic dysfunction in diabetes
+
+  **Consumer Health Context:**
+  For consumer pulse oximeters that report PI to HealthKit:
+  - Helps users understand measurement reliability
+  - Very low PI readings suggest poor sensor placement or cold fingers
+  - May prompt users to warm hands and remeasure
+  - Not typically actionable for general wellness users without clinical context
+
+  **Emerging Integration:**
+  Some wearable devices are beginning to incorporate PI or similar perfusion metrics. As these expand, PI may become more relevant in consumer health monitoring, though interpretation guidelines for this context are still developing.
+
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateSensorLocation"
+    description: "Location of the sensor used for measurement (finger, toe, earlobe)"
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Which side of the body the device was placed on (left or right)"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "co-measured"
+    description: "SpO2 is measured simultaneously with PI using the same pulse oximetry technology"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "co-measured"
+    description: "Heart rate is derived from the same PPG waveform used to calculate PI"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "cardiovascular_context"
+    description: "Blood pressure and PI together provide more complete hemodynamic picture"
+  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
+    relationship: "affecting_factor"
+    description: "Temperature significantly affects peripheral perfusion and PI values"
+references:
+  - title: "peripheralPerfusionIndex - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/1615442-peripheralperfusionindex"
+    type: "official"
+  - title: "Peripheral Perfusion Index of Pulse Oximetry in Adult Patients: A Narrative Review"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11389527/"
+    type: "research"
+  - title: "Use of Peripheral Perfusion Index Derived from Pulse Oximetry as Noninvasive Indicator of Perfusion"
+    url: "https://pubmed.ncbi.nlm.nih.gov/12072670/"
+    type: "research"
+  - title: "Clinical Applications of Perfusion Index - Masimo White Paper"
+    url: "https://www.masimo.co.uk/siteassets/uk/documents/pdf/clinical-evidence/whitepapers/lab3410f_whitepapers_perfusion_index.pdf"
+    type: "medical"
+  - title: "Understanding Perfusion Index in Pulse Oximeter"
+    url: "https://www.bplmedicaltechnologies.com/blog/understanding-perfusion-index-in-pulse-oximeter-26434/"
+    type: "tutorial"
+last_updated: "2026-01-27"

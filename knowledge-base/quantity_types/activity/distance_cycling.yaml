@@ -1,0 +1,287 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Distance Cycling
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierDistanceCycling"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Cycling Distance"
+short_description: "Measures the distance the user has moved by cycling."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.outdoor.cycle"
+color: "#30D158"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "m"
+supported_units:
+  - "m"
+  - "km"
+  - "mi"
+  - "ft"
+  - "yd"
+unit_description: "Length units measuring cumulative distance traveled by bicycle. Default is meters; users typically view in kilometers or miles based on locale."
+
+# --- STATISTICS ---
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 300000
+  unit: "m"
+  notes: "Daily values vary widely from 0 for non-cyclists to 50+ km for commuters and recreational riders. Competitive cyclists may log 100-200+ km in training rides. Century rides (160 km/100 mi) represent common endurance goals."
+
+clinical_ranges:
+  - population: "Recreational Cyclists"
+    low_activity: "<25 km/week"
+    moderate_activity: "25-75 km/week"
+    active: "75-150 km/week"
+    highly_active: ">150 km/week"
+  - population: "Bike Commuters"
+    short_commute: "<5 km one-way"
+    moderate_commute: "5-15 km one-way"
+    long_commute: ">15 km one-way"
+  - population: "Competitive Cyclists (weekly)"
+    amateur: "150-300 km/week"
+    competitive: "300-500 km/week"
+    elite: "500-1000+ km/week"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "8.0"
+  year: 2014
+  notes: "Available since initial HealthKit release"
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+  notes: "Apple Watch provides GPS-enhanced cycling distance tracking"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "GPS-based distance tracking during cycling workouts. Apple Watch detects cycling activity and uses GPS for accurate distance measurement. Indoor cycling requires integration with connected equipment or manual entry."
+    series: "All series (GPS on Series 2+)"
+    accuracy: "Outdoor GPS tracking typically within 1-3% of actual distance."
+  - name: "iPhone"
+    capability: "GPS-based distance tracking when phone is mounted on bike or carried. Many cycling apps use iPhone GPS for ride tracking."
+    accuracy: "GPS accuracy similar to Apple Watch when signal is good."
+  - name: "Cycling computers"
+    capability: "Dedicated cycling GPS units often provide the most accurate and feature-rich cycling data, exportable to HealthKit via companion apps."
+    examples: ["Garmin Edge", "Wahoo ELEMNT", "Hammerhead Karoo"]
+  - name: "Indoor trainers"
+    capability: "Smart trainers can transmit distance based on wheel speed or virtual power/speed calculations."
+    examples: ["Wahoo KICKR", "Tacx Neo", "Peloton Bike"]
+  - name: "Cycling apps"
+    capability: "Third-party cycling apps with GPS tracking provide detailed ride data including distance."
+    examples: ["Strava", "Komoot", "Ride with GPS", "Cyclemeter"]
+primary_source: "GPS-enabled device (Apple Watch, iPhone, or cycling computer)"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Cycling Distance measures the cumulative distance traveled by bicycle during cycling activities. Unlike walking/running distance, cycling distance is almost exclusively tracked via GPS or smart trainer data rather than motion sensors alone. Cycling is among the most efficient and sustainable means of transportation and is specifically recommended by the WHO as an accessible form of physical activity.
+
+  ## How It's Measured
+  Cycling distance measurement on Apple devices and third-party equipment:
+
+  **GPS-Based Measurement:**
+  - Primary method for outdoor cycling
+  - GPS receiver samples position at regular intervals (typically every second)
+  - Distance calculated by summing great-circle distances between consecutive points
+  - Apple Watch Series 2+ has built-in GPS; earlier models require iPhone
+  - Accuracy typically 1-3% of actual distance in good GPS conditions
+
+  **Speed Sensor-Based Measurement:**
+  - Uses wheel rotation count multiplied by wheel circumference
+  - Requires accurate wheel circumference setting
+  - Unaffected by GPS signal quality
+  - Common on dedicated cycling computers
+  - Accuracy depends on correct setup (tire size, pressure)
+
+  **Smart Trainer Measurement:**
+  - Indoor trainers calculate distance from wheel speed or virtual speed
+  - Some trainers simulate gradient resistance and calculate equivalent distance
+  - Virtual cycling platforms (Zwift, TrainerRoad) provide distance data
+  - May or may not correlate to outdoor equivalent distance
+
+  **Power-Based Estimation:**
+  - Advanced cycling computers can estimate speed from power output
+  - Accounts for rider weight, aerodynamics, and gradient
+  - Useful when GPS is unavailable
+
+  **Data Recording:**
+  - Cycling distance recorded as cumulative samples during ride
+  - Workout sessions provide second-by-second distance data
+  - Background cycling detection on Apple Watch can track cycling without explicit workout start
+
+  ## Health Significance
+  Cycling provides substantial cardiovascular and metabolic health benefits while being low-impact on joints:
+
+  **WHO Recommendations:**
+  - Cycling for 20 minutes most days reduces total mortality risk by at least 10%
+  - Walking for 30 minutes or cycling for 20 minutes meets daily activity thresholds
+  - Cycling integrates exercise into daily routines through active transportation
+  - WHO promotes cycling as simple, cost-effective way of being active
+
+  **Cardiovascular Benefits:**
+  - Regular cycling associated with 46% lower risk of cardiovascular disease
+  - Improves cardiorespiratory fitness with lower joint stress than running
+  - Effective for maintaining activity in older adults or those with joint issues
+
+  **Metabolic Benefits:**
+  - Cycling burns approximately 400-600 calories per hour (moderate intensity)
+  - Regular cycling improves insulin sensitivity
+  - Associated with lower risk of type 2 diabetes
+
+  **Practical Benefits:**
+  - Allows covering greater distances than walking in same time
+  - Sustainable transportation option with health co-benefits
+  - Lower perceived exertion than running at similar caloric expenditure
+
+  ## Clinical Interpretation Guidelines
+
+  ### Activity Level Assessment
+  Weekly cycling distance provides insight into activity levels for cyclists:
+  - **<25 km/week:** Occasional recreational cycling
+  - **25-75 km/week:** Regular recreational cycling, meeting health guidelines
+  - **75-150 km/week:** Active cycling lifestyle
+  - **>150 km/week:** Serious recreational or competitive cyclist
+
+  ### Training Load Considerations
+  For regular cyclists, distance trends indicate training adaptation:
+  - **Consistency:** Regular riding more beneficial than sporadic long rides
+  - **Progressive overload:** Gradual distance increases improve fitness
+  - **Recovery:** Rest days important for adaptation
+  - **10% rule:** Increase weekly distance by no more than 10% to reduce overuse injury risk
+
+  ### Commuter Cycling
+  For bike commuters, distance helps quantify daily activity:
+  - Round-trip commute of 10 km provides significant daily exercise
+  - Regular cycling commutes can replace structured workouts
+  - Weather and seasonal patterns affect cycling commute consistency
+
+  ### Clinical Considerations
+  - Cycling is excellent for patients with joint issues (low impact)
+  - Suitable for rehabilitation after lower-extremity injuries
+  - Good option for patients who find walking difficult
+  - May be limited by balance issues or cognitive impairment
+
+  ### Red Flags
+  - Sudden inability to complete typical cycling distances
+  - Significant chest pain, shortness of breath, or dizziness during cycling
+  - Joint or muscle pain that worsens with cycling
+  - Large unexplained drops in typical cycling distance
+
+  ## Caveats & Limitations
+
+  ### Measurement Limitations
+  - **GPS accuracy:** Tunnels, dense urban areas, and tree cover reduce accuracy
+  - **Indoor cycling:** Distance may not reflect outdoor equivalent effort
+  - **E-bike tracking:** Electric assist affects relationship between distance and exercise
+  - **Stationary bikes:** Many stationary bikes do not report to HealthKit without third-party apps
+
+  ### Interpretation Limitations
+  - **Effort not captured:** Wind, gradient, and surface affect effort for same distance
+  - **Intensity varies:** Casual cruising vs. intense interval training may cover same distance
+  - **E-bike consideration:** Pedal-assist bikes cover more distance with less effort
+  - **Group riding:** Drafting in groups reduces effort for same distance
+
+  ### What Cycling Distance Cannot Tell You
+  - Elevation gain/loss (critical for cycling effort)
+  - Average or maximum speed
+  - Power output
+  - Cadence
+  - Heart rate zones during activity
+  - Caloric expenditure (requires power or heart rate data)
+
+  ## Additional Notes
+
+  **For Health Consultants:**
+  When reviewing cycling distance data:
+  1. Consider in conjunction with elevation data if available
+  2. Distinguish between commute and recreational cycling
+  3. Note e-bike vs. traditional bike usage
+  4. Compare with other activity types (walking/running)
+  5. Assess seasonal patterns (many cyclists ride less in winter)
+
+  **Cycling vs. Walking Equivalence:**
+  - General rule: 3 km cycling approximately equals 1 km running in terms of time/effort
+  - However, caloric equivalence varies significantly by intensity
+  - Distance alone does not indicate exercise equivalence
+
+  **Integration with Workouts:**
+  Cycling workouts provide richer data including:
+  - Route/map data
+  - Speed statistics
+  - Elevation profile (on supported devices)
+  - Heart rate correlation
+  - Power data (with compatible sensors)
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier for the sample from the originating source"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+  - key: "HKMetadataKeyIndoorWorkout"
+    description: "Boolean indicating whether the distance was recorded during an indoor cycling workout"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
+    relationship: "Related - Alternative distance metric for ambulatory activity"
+  - identifier: "HKQuantityTypeIdentifierCyclingSpeed"
+    relationship: "Derived from - Speed calculated from distance over time"
+  - identifier: "HKQuantityTypeIdentifierCyclingPower"
+    relationship: "Complementary - Power provides effort context for distance covered"
+  - identifier: "HKQuantityTypeIdentifierCyclingCadence"
+    relationship: "Complementary - Cadence indicates pedaling efficiency"
+  - identifier: "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower"
+    relationship: "Complementary - FTP provides context for cycling performance"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Related - Cycling distance contributes to energy expenditure"
+  - identifier: "HKWorkoutTypeCycling"
+    relationship: "Contains - Cycling workouts include distance as a key metric"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - distanceCycling"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/distancecycling"
+    type: "official"
+  - title: "WHO: Promoting Walking, Cycling and Other Forms of Active Mobility"
+    url: "https://www.who.int/health-topics/physical-activity/promoting-walking-and-cycling"
+    type: "medical"
+  - title: "WHO: 100 Reasons to Cycle and Walk More"
+    url: "https://www.who.int/docs/librariesprovider2/default-document-library/who---100-reasons-to-cycle-and-walk-more.pdf"
+    type: "medical"
+  - title: "WHO Guidelines on Physical Activity and Sedentary Behaviour"
+    url: "https://www.who.int/publications/i/item/9789240015128"
+    type: "medical"
+  - title: "CDC Physical Activity Guidelines for Americans"
+    url: "https://www.cdc.gov/physical-activity-basics/guidelines/adults.html"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 8.0 introduction confirmed via Apple Developer Documentation
+  - Default unit is meters per HealthKit documentation
+  - WHO specifically promotes cycling as accessible physical activity
+  - 20 minutes cycling = 10% mortality risk reduction per WHO
+  - Training volume guidelines from cycling coaching literature
+  - GPS accuracy estimates based on Apple technical documentation

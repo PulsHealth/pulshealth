@@ -1,0 +1,177 @@
+identifier: "HKQuantityTypeIdentifierSixMinuteWalkTestDistance"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Mobility"
+human_readable_name: "Six-Minute Walk Test Distance"
+short_description: "Total distance walked during a standardized six-minute walk test, a validated measure of functional capacity."
+icon: "figure.walk"
+color: "#5856D6"
+default_unit: "m"
+supported_units:
+  - "m"
+  - "km"
+  - "ft"
+  - "mi"
+unit_description: "Meters (m) representing the total distance covered during the six-minute test period."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 200
+  max: 700
+  unit: "m"
+  notes: "Healthy adults typically achieve 400-700 m; cardiac/pulmonary patients often 200-400 m."
+clinical_ranges:
+  - population: "Healthy Adults 20-40"
+    normal: "550-700 m"
+    concerning: "<500 m"
+  - population: "Healthy Adults 40-60"
+    normal: "500-650 m"
+    concerning: "<450 m"
+  - population: "Healthy Adults 60-70"
+    normal: "450-600 m"
+    concerning: "<400 m"
+  - population: "Healthy Adults 70-80"
+    normal: "400-550 m"
+    concerning: "<350 m"
+  - population: "Heart Failure (NYHA II-III)"
+    normal: "300-450 m"
+    concerning: "<300 m"
+  - population: "COPD (GOLD II-III)"
+    normal: "300-400 m"
+    concerning: "<250 m"
+  - population: "Post-cardiac surgery"
+    normal: "Variable by time post-op"
+    concerning: "<200 m or no improvement"
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Automated six-minute walk test with guided workout"
+  - name: "iPhone"
+    capability: "Can record manually entered test results"
+primary_source: "Apple Watch guided workout or clinical testing"
+description: |
+  ## Overview
+  The Six-Minute Walk Test (6MWT) is a validated, submaximal exercise test that measures the distance an individual can walk on a flat, hard surface in six minutes. It is one of the most widely used functional capacity assessments in cardiology, pulmonology, and rehabilitation medicine. The test reflects the integrated response of all physiological systems involved in exercise, including cardiopulmonary, musculoskeletal, and neurological systems.
+
+  ## How It's Measured
+  The traditional clinical 6MWT follows American Thoracic Society (ATS) guidelines:
+  - Performed on a 30-meter hallway
+  - Patient walks at their own pace, resting as needed
+  - Standardized encouragement given at each minute
+  - Total distance recorded at six minutes
+
+  Apple Watch provides an automated version:
+  - Guided workout with timer and distance tracking
+  - GPS and accelerometer-based distance calculation
+  - Can be performed outdoors on flat terrain
+  - Results comparable to clinical testing in validation studies
+
+  ## Health Significance
+  The 6MWT distance is a powerful predictor of outcomes:
+  - **Mortality**: Strong predictor in heart failure, COPD, pulmonary hypertension
+  - **Hospitalization**: Lower distances predict increased hospitalization rates
+  - **Surgical risk**: Used in pre-operative assessment for major surgery
+  - **Disease progression**: Tracks functional decline in chronic conditions
+  - **Treatment response**: Measures effectiveness of interventions
+
+  Clinically important thresholds:
+  - **<300 m**: Associated with significantly increased mortality in heart failure
+  - **<350 m**: High risk for post-operative complications
+  - **Improvement >30 m**: Considered clinically meaningful change
+
+  ## Clinical Interpretation Guidelines
+  Absolute thresholds by condition:
+  - **Heart Failure**: <300 m indicates poor prognosis; NYHA class correlates with distance
+  - **COPD**: <350 m indicates severe functional limitation; correlates with BODE index
+  - **Pulmonary Arterial Hypertension**: Used to assess WHO functional class
+  - **Post-transplant**: Predicts outcomes after lung or heart transplantation
+
+  Reference equations account for age, sex, height, and weight:
+  - Males: Distance = 1140 - (5.61 x BMI) - (6.94 x age) + height adjustment
+  - Females: Distance = 1017 - (6.24 x BMI) - (5.83 x age) + height adjustment
+  - Results often reported as percent predicted
+
+  Minimal Clinically Important Difference (MCID):
+  - Heart failure: 30-45 m
+  - COPD: 25-35 m
+  - Pulmonary hypertension: 33-42 m
+
+  ## Age-Adjusted Norms
+  Healthy adult reference values decline with age:
+  - Ages 20-29: Males 640-700 m, Females 590-660 m
+  - Ages 30-39: Males 610-680 m, Females 570-640 m
+  - Ages 40-49: Males 580-660 m, Females 540-620 m
+  - Ages 50-59: Males 540-620 m, Females 500-580 m
+  - Ages 60-69: Males 490-580 m, Females 460-540 m
+  - Ages 70-79: Males 430-530 m, Females 400-490 m
+  - Ages 80+: Males 350-460 m, Females 340-430 m
+
+  ## Caveats & Limitations
+  - Consumer device tests may not follow ATS standardization exactly
+  - Course layout (outdoor vs. hallway, turns) affects results
+  - Weather conditions impact outdoor testing
+  - Motivation and encouragement significantly affect performance
+  - Learning effect: first test often lower than subsequent tests
+  - Cannot distinguish cardiopulmonary from musculoskeletal limitations
+  - Supplemental oxygen use must be consistent across tests
+  - Medications (bronchodilators, cardiac drugs) affect results
+
+  ## Additional Notes
+  The 6MWT is valuable for:
+  - **Pre-operative assessment**: Risk stratification for cardiac, thoracic, abdominal surgery
+  - **Cardiac rehabilitation**: Tracking recovery and exercise tolerance
+  - **Pulmonary rehabilitation**: Documenting improvement in COPD, pulmonary fibrosis
+  - **Heart failure management**: Guiding therapy intensity and prognosis discussions
+  - **Disability assessment**: Objective functional capacity documentation
+
+  Apple Watch implementation notes:
+  - Encourage consistent testing conditions (same time of day, similar weather)
+  - Flat terrain essential; avoid hills
+  - Results may run 5-10% higher than indoor hallway tests
+  - Serial testing most valuable for tracking individual change over time
+  - Consider heart rate and symptoms during test for comprehensive assessment
+metadata_keys:
+  - key: "HKMetadataKeyWeatherCondition"
+    description: "Weather conditions during outdoor test that may affect performance"
+  - key: "HKMetadataKeyWeatherTemperature"
+    description: "Ambient temperature during the test"
+  - key: "HKMetadataKeyHeartRateRecoveryOneMinute"
+    description: "Heart rate recovery at one minute post-test if available"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Average walking speed during 6MWT reflects habitual gait velocity"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "6MWT distance correlates with maximal oxygen consumption"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Heart rate response during 6MWT provides additional clinical data"
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "Oxygen desaturation during 6MWT indicates cardiopulmonary limitation"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Respiratory rate during exertion reflects cardiopulmonary function"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierSixMinuteWalkTestDistance"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifiersixminutewalktestdistance"
+    type: "official"
+  - title: "ATS Statement: Guidelines for the Six-Minute Walk Test"
+    url: "https://www.atsjournals.org/doi/full/10.1164/ajrccm.166.1.at1102"
+    type: "medical"
+  - title: "Six-Minute Walk Test in Heart Failure - Circulation"
+    url: "https://www.ahajournals.org/journal/circ"
+    type: "research"
+  - title: "Reference Equations for Six-Minute Walk Distance"
+    url: "https://erj.ersjournals.com/"
+    type: "research"
+last_updated: "2026-01-27"

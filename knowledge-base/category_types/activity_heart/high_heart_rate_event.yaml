@@ -1,0 +1,171 @@
+identifier: "HKCategoryTypeIdentifierHighHeartRateEvent"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Activity and Heart"
+human_readable_name: "High Heart Rate Event"
+short_description: "Records events when heart rate exceeds a user-configured threshold while the user appears inactive."
+icon: "heart.fill"
+color: "#FF2D55"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notApplicable"
+    description: "The only value for high heart rate events. The presence of a sample indicates the threshold was exceeded while inactive. The actual heart rate value is stored in associated metadata."
+ios_introduced:
+  version: "12.2"
+  year: 2019
+watchos_introduced:
+  version: "5.2"
+  year: 2019
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "Apple Watch"
+    capability: "Exclusive source - monitors heart rate continuously and detects threshold breaches during inactive periods"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  High Heart Rate Event records instances when the user's heart rate exceeds a configurable threshold (100-150 BPM, default 120 BPM) while they appear to be inactive for at least 10 minutes. This feature is part of Apple Watch's heart health monitoring suite introduced with watchOS 5.
+
+  The key clinical insight is that this captures elevated heart rate at rest - tachycardia without obvious physical explanation. During exercise or physical activity, elevated heart rates are expected and don't trigger alerts. These events only fire when motion sensors indicate the user has been sedentary.
+
+  ## How It's Detected/Measured
+  **Detection Algorithm:**
+  1. Apple Watch continuously monitors heart rate using photoplethysmography (PPG)
+  2. Accelerometer confirms user has been inactive for approximately 10+ minutes
+  3. If heart rate exceeds threshold during this sedentary period, an event is recorded
+  4. User receives a notification alerting them to the elevated rate
+  5. Additional readings are taken to confirm the elevation isn't transient
+
+  **Threshold Configuration:**
+  - Users can set threshold between 100-150 BPM in the Watch app
+  - Default threshold: 120 BPM
+  - Available thresholds: 100, 110, 120, 130, 140, 150 BPM
+  - Feature can be disabled entirely if desired
+
+  **What's Recorded:**
+  - Timestamp of event
+  - Duration of elevated heart rate period
+  - Associated heart rate samples captured during event
+  - Device and software version information
+
+  ## Health Significance
+  Resting tachycardia (elevated heart rate while at rest) can indicate various clinical conditions requiring attention:
+
+  **Cardiovascular Causes:**
+  - Atrial fibrillation or other arrhythmias
+  - Supraventricular tachycardia (SVT)
+  - Heart failure (compensatory tachycardia)
+  - Hypertension
+  - Anemia (heart compensates for reduced oxygen carrying capacity)
+
+  **Non-Cardiovascular Causes:**
+  - Anxiety or panic attacks
+  - Hyperthyroidism
+  - Dehydration
+  - Fever or infection
+  - Caffeine or stimulant use
+  - Medication side effects (decongestants, albuterol, some antidepressants)
+  - Pain
+  - Hypoglycemia
+
+  **Lifestyle Factors:**
+  - Poor physical fitness (deconditioned state)
+  - Sleep deprivation
+  - Alcohol withdrawal
+  - Nicotine use
+
+  **Clinical Significance:**
+  - Persistent resting tachycardia >100 BPM associated with increased cardiovascular mortality
+  - Elevated resting heart rate is an independent risk factor for all-cause mortality
+  - May be early indicator of developing cardiac conditions
+
+  ## Clinical Interpretation Guidelines
+  **For Health Consultants:**
+
+  1. **Assess Event Frequency:**
+     - Occasional isolated events (1-2/month): May be situational (stress, caffeine, illness)
+     - Frequent events (weekly+): Warrants clinical evaluation
+     - Daily events: Urgent need for medical assessment
+
+  2. **Review Context:**
+     - Time of day (nocturnal events more concerning)
+     - Associated symptoms reported by user
+     - Recent illness, stress, or lifestyle changes
+     - Correlation with caffeine, alcohol, or medication timing
+
+  3. **Threshold Appropriateness:**
+     - Default 120 BPM is reasonable for most adults
+     - Consider lower threshold (100-110) for those with cardiovascular concerns
+     - May raise threshold for individuals with known benign tachycardia
+
+  4. **Correlated Data:**
+     - Review associated heart rate samples for pattern (gradual rise vs. sudden spike)
+     - Check for irregular rhythm notifications around same time
+     - Examine HRV trends - low HRV may indicate autonomic dysfunction
+     - Review sleep data - poor sleep often correlates with elevated daytime heart rate
+
+  5. **Red Flags Requiring Immediate Referral:**
+     - Symptoms during events (chest pain, shortness of breath, dizziness, fainting)
+     - Heart rates significantly above threshold (e.g., >150 BPM at rest)
+     - Events occurring during sleep
+     - New-onset frequent events in previously healthy individual
+     - Combination with low heart rate events (suggests arrhythmia)
+
+  6. **Actionable Recommendations:**
+     - Encourage medical evaluation for persistent events
+     - Suggest limiting caffeine and alcohol
+     - Stress management and sleep hygiene
+     - Ensure adequate hydration
+     - Review medications with healthcare provider
+
+  ## Caveats & Limitations
+  - **Activity Detection Imperfect:** Some light activities may not register as "active," potentially triggering false events
+  - **PPG Limitations:** Motion artifact, poor wrist fit, or tattoos can affect heart rate accuracy
+  - **Not Diagnostic:** Events suggest further evaluation, not a diagnosis
+  - **Threshold Selection:** No clinical guidelines exist for optimal threshold; 120 BPM is arbitrary
+  - **Context Missing:** System cannot capture emotional state, recent caffeine intake, or other contextual factors
+  - **Single Lead Equivalent:** PPG cannot characterize arrhythmia type the way ECG can
+  - **Episodic Arrhythmias:** Brief paroxysmal events may be missed if they don't align with monitoring windows
+  - **User Burden:** Frequent notifications may cause anxiety or lead to feature disablement
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateEventThreshold"
+    description: "The BPM threshold that was configured when the event was detected (100-150 BPM)"
+  - key: "HKMetadataKeyAverageHeartRate"
+    description: "The average heart rate measured during the high heart rate event period"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Individual heart rate samples provide detailed data around high heart rate events"
+  - identifier: "HKCategoryTypeIdentifierLowHeartRateEvent"
+    relationship: "Combined high and low events may indicate arrhythmia with both fast and slow phases"
+  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
+    relationship: "Irregular rhythm events may co-occur with high heart rate, suggesting AFib with rapid ventricular response"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "Low HRV often accompanies chronically elevated heart rate and indicates autonomic dysfunction"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Elevated resting heart rate trend may predict increased high heart rate events"
+  - identifier: "HKElectrocardiogramType"
+    relationship: "ECG can characterize arrhythmia type when high heart rate events occur"
+references:
+  - title: "HKCategoryTypeIdentifierHighHeartRateEvent - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierhighheartratevent"
+    type: "official"
+  - title: "Monitor your heart rate on Apple Watch - Apple Support"
+    url: "https://support.apple.com/en-us/108794"
+    type: "official"
+  - title: "Resting Heart Rate and Cardiovascular Disease - Journal of the American College of Cardiology"
+    url: "https://pubmed.ncbi.nlm.nih.gov/27231927/"
+    type: "research"
+  - title: "Sinus Tachycardia: Evaluation and Management - American Family Physician"
+    url: "https://www.aafp.org/pubs/afp/issues/2023/0300/sinus-tachycardia.html"
+    type: "medical"
+last_updated: "2026-01-27"

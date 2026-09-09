@@ -1,0 +1,123 @@
+identifier: "HKCategoryTypeIdentifierHeartburn"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Heartburn"
+short_description: "Tracks episodes of heartburn or acid reflux symptoms"
+icon: "flame.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No heartburn symptoms experienced"
+  - value: 1
+    name: "present"
+    description: "Mild heartburn - slight burning sensation, easily tolerable"
+  - value: 2
+    name: "moderate"
+    description: "Moderate heartburn - noticeable discomfort affecting activities"
+  - value: 3
+    name: "severe"
+    description: "Severe heartburn - intense burning, significant distress"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Heartburn (pyrosis) is a burning sensation in the chest caused by stomach acid
+  refluxing into the esophagus. This data type enables users to track frequency,
+  severity, and patterns of heartburn episodes for personal monitoring and
+  clinical consultation.
+
+  ## Health Significance
+  - **Gastroesophageal Reflux Disease (GERD)**: Frequent heartburn (2+ times/week)
+    may indicate GERD requiring medical evaluation
+  - **Esophageal Health**: Chronic acid exposure can lead to esophagitis,
+    Barrett's esophagus, or strictures
+  - **Medication Monitoring**: Useful for tracking response to antacids, H2
+    blockers, or proton pump inhibitors
+  - **Lifestyle Factors**: Helps identify dietary triggers, meal timing issues,
+    or positional factors
+
+  ## When to Seek Medical Attention
+  - Heartburn occurring more than twice weekly for several weeks
+  - Symptoms not relieved by over-the-counter medications
+  - Difficulty swallowing or pain when swallowing
+  - Unexplained weight loss with heartburn
+  - Vomiting blood or having black, tarry stools
+  - Chest pain with exertion (may indicate cardiac origin)
+  - New heartburn symptoms after age 50
+
+  ## CRITICAL: Cardiac vs. GI Differentiation
+  Heartburn can mimic cardiac symptoms. Red flags for cardiac origin include:
+  - Pain radiating to arm, jaw, or back
+  - Associated shortness of breath or sweating
+  - Pain with exertion rather than meals
+  - History of cardiac risk factors
+  When in doubt, cardiac causes should be ruled out first.
+
+  ## Pattern Recognition
+  Tracking heartburn episodes can reveal:
+  - Food and beverage triggers (spicy, fatty, acidic, caffeine, alcohol)
+  - Relationship to meal size and timing
+  - Positional triggers (lying down, bending over)
+  - Medication effectiveness and timing
+  - Stress-related patterns
+  - Nocturnal symptom patterns
+
+  ## Caveats & Limitations
+  - Subjective severity assessment varies between individuals
+  - Cannot distinguish heartburn from other chest discomfort causes
+  - Does not capture regurgitation or other GERD symptoms separately
+  - Relies on user's ability to differentiate from cardiac symptoms
+  - No direct integration with pH monitoring or endoscopy data
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierNausea"
+    relationship: "Often co-occurs; both GI symptoms that may share triggers"
+  - identifier: "HKCategoryTypeIdentifierVomiting"
+    relationship: "May occur with severe reflux episodes"
+  - identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
+    relationship: "Critical differential; cardiac vs GI origin"
+  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+    relationship: "May co-occur in GI disturbances"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Helpful for differentiating cardiac from GI symptoms"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierHeartburn"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierheartburn"
+    type: "official"
+  - title: "GERD Clinical Guidelines - American College of Gastroenterology"
+    url: "https://gi.org/guidelines/"
+    type: "medical"
+  - title: "Heartburn vs Heart Attack - American Heart Association"
+    url: "https://www.heart.org/en/health-topics/heart-attack/warning-signs-of-a-heart-attack"
+    type: "medical"
+last_updated: "2026-01-27"

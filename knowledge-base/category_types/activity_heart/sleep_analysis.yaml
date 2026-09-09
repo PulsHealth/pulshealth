@@ -1,0 +1,158 @@
+identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Activity and Heart"
+human_readable_name: "Sleep Analysis"
+short_description: "Records sleep stages and time spent in bed, including detailed sleep architecture data."
+icon: "bed.double.fill"
+color: "#5856D6"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "inBed"
+    description: "User is in bed but sleep state is undetermined. Represents the total time from getting into bed to getting out, regardless of actual sleep."
+  - value: 1
+    name: "asleepUnspecified"
+    description: "User is asleep but the specific sleep stage cannot be determined. Used when device lacks sleep staging capability or data is insufficient for classification."
+  - value: 2
+    name: "awake"
+    description: "User is awake during a sleep session. Captures periods of wakefulness after initially falling asleep (WASO - Wake After Sleep Onset)."
+  - value: 3
+    name: "asleepCore"
+    description: "User is in core (light) sleep, also known as N1 and N2 NREM sleep stages. Characterized by reduced muscle activity, slower eye movements, and sleep spindles."
+  - value: 4
+    name: "asleepDeep"
+    description: "User is in deep sleep (N3 NREM/slow-wave sleep). Most restorative stage characterized by delta brain waves, growth hormone release, and physical recovery."
+  - value: 5
+    name: "asleepREM"
+    description: "User is in REM (Rapid Eye Movement) sleep. Associated with vivid dreaming, memory consolidation, emotional processing, and temporary muscle paralysis."
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Native sleep tracking with motion and heart rate analysis for sleep staging (Series 4+)"
+  - name: "iPhone"
+    capability: "Basic in-bed detection via Bedtime/Sleep Focus features using accelerometer"
+  - name: "Third-party sleep trackers"
+    capability: "Oura Ring, Whoop, Fitbit, and other devices can write sleep data via HealthKit API"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  Sleep Analysis is HealthKit's comprehensive sleep tracking data type that captures both time in bed and detailed sleep stage architecture. The data model evolved significantly in iOS 16 (2022) to include granular sleep stages (Core, Deep, REM) alongside the original in-bed and asleep categories.
+
+  Each sleep sample is stored as a time interval with start and end times, allowing for reconstruction of complete sleep sessions. Multiple samples can overlap (e.g., an inBed sample containing several sleep stage samples), enabling both simple duration queries and complex sleep architecture analysis.
+
+  ## How It's Detected/Measured
+  **Apple Watch Detection Method:**
+  - Wrist motion analysis via accelerometer to detect movement patterns consistent with sleep
+  - Heart rate variability (HRV) patterns that correlate with sleep stages
+  - Respiratory rate estimation for additional sleep quality signals
+  - Machine learning models trained on polysomnography-validated data
+
+  **Sleep Stage Classification (Apple Watch Series 4+):**
+  - Core Sleep: Detected via characteristic sleep spindle-associated HRV patterns and minimal movement
+  - Deep Sleep: Identified by lowest heart rate, highest HRV, and near-complete motion absence
+  - REM Sleep: Characterized by irregular heart rate patterns and occasional small movements
+  - Awake: Brief increases in heart rate and movement within a sleep session
+
+  **Third-Party Devices:**
+  Detection methods vary significantly by manufacturer. Most consumer devices use accelerometry and heart rate, while research-grade devices may include EEG or SpO2.
+
+  ## Health Significance
+  Sleep architecture provides critical insights into overall health status:
+
+  **Deep Sleep (N3):**
+  - Essential for physical recovery, immune function, and growth hormone secretion
+  - Adults typically need 1-2 hours per night; declines naturally with age
+  - Reduced deep sleep correlates with metabolic dysfunction, cognitive decline, and weakened immunity
+
+  **REM Sleep:**
+  - Critical for emotional regulation, memory consolidation, and learning
+  - Adults typically need 1.5-2.5 hours per night
+  - Suppressed by alcohol, cannabis, and many medications (SSRIs, benzodiazepines)
+  - Chronic REM deprivation linked to mood disorders and cognitive impairment
+
+  **Sleep Efficiency:**
+  - Calculated as (Total Sleep Time / Time in Bed) x 100
+  - Normal: >85%; Poor: <80%
+  - Low efficiency suggests insomnia, sleep disorders, or environmental disruption
+
+  **Total Sleep Time:**
+  - Adults: 7-9 hours recommended (National Sleep Foundation)
+  - Chronic short sleep (<6 hours) increases cardiovascular disease risk, obesity, and all-cause mortality
+
+  ## Clinical Interpretation Guidelines
+  **For Health Consultants:**
+
+  1. **Assess Sleep Duration Trends:** Look for patterns of insufficient sleep (<7 hours consistently) which warrant lifestyle intervention discussion.
+
+  2. **Evaluate Sleep Architecture:**
+     - Deep sleep <1 hour/night may indicate recovery issues, overtraining in athletes, or aging-related changes
+     - REM <1 hour/night may suggest medication effects, alcohol use, or sleep disorder
+     - Excessive awake time (>30 minutes WASO) suggests sleep maintenance insomnia
+
+  3. **Consider Source Device:** Apple Watch sleep staging has been validated against polysomnography with moderate-to-good agreement for sleep/wake detection, though stage classification accuracy varies.
+
+  4. **Week-over-Week Patterns:** Single nights are less meaningful than 7-14 day trends. Look for:
+     - Social jet lag (weekend/weekday timing differences >2 hours)
+     - Progressive sleep debt accumulation
+     - Correlation between poor sleep and symptom reports
+
+  5. **Red Flags Requiring Medical Referral:**
+     - Severe sleep efficiency <70% despite adequate time in bed
+     - Complete absence of deep or REM sleep over multiple nights
+     - Reports of unrefreshing sleep despite adequate duration
+
+  ## Caveats & Limitations
+  - **Not Diagnostic:** Consumer sleep staging is not equivalent to clinical polysomnography (PSG) and should not be used to diagnose sleep disorders
+  - **Accuracy Variability:** Sleep stage classification accuracy varies by device, individual physiology, and sleep position
+  - **Movement Dependency:** Accelerometer-based detection may misclassify quiet wakefulness as sleep
+  - **Apple Watch Charging:** Watch must be charged at some point, potentially missing sleep data if not worn
+  - **Algorithm Updates:** Apple's sleep algorithms are updated periodically, which may affect longitudinal comparisons
+  - **No Respiratory Events:** HealthKit sleep data does not capture apnea/hypopnea events; cannot screen for sleep apnea
+  - **Multiple Source Conflicts:** When multiple devices record sleep, HealthKit's source prioritization may create confusing overlapping records
+metadata_keys:
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where sleep was recorded, important for travelers and circadian rhythm analysis"
+  - key: "HKMetadataKeySleepSchedule"
+    description: "Indicates if the sleep session was part of a scheduled sleep period set in the Health app"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "HRV during sleep provides additional recovery and autonomic health insights"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Respiratory rate during sleep can indicate sleep quality and potential respiratory issues"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Resting heart rate often measured during sleep; lower values generally indicate better fitness"
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "SpO2 during sleep can help identify potential sleep-disordered breathing"
+  - identifier: "HKCategoryTypeIdentifierAppleStandHour"
+    relationship: "Daytime activity patterns influence sleep quality and circadian rhythm"
+references:
+  - title: "HKCategoryValueSleepAnalysis - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis"
+    type: "official"
+  - title: "Sleep and HealthKit - WWDC 2020"
+    url: "https://developer.apple.com/videos/play/wwdc2020/10184/"
+    type: "official"
+  - title: "Consumer Sleep Tracking Devices: A Review of Validation Studies"
+    url: "https://pubmed.ncbi.nlm.nih.gov/29235907/"
+    type: "research"
+  - title: "National Sleep Foundation Sleep Duration Recommendations"
+    url: "https://www.sleepfoundation.org/how-sleep-works/how-much-sleep-do-we-really-need"
+    type: "medical"
+last_updated: "2026-01-27"

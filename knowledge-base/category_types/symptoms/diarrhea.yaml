@@ -1,0 +1,129 @@
+identifier: "HKCategoryTypeIdentifierDiarrhea"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Diarrhea"
+short_description: "Tracks episodes of diarrhea and loose stools."
+icon: "circle.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Diarrhea is defined as loose, watery stools occurring three or more times per day. This HealthKit category type enables users to track diarrhea episodes and their severity, providing important data for identifying triggers, monitoring hydration status, and guiding clinical evaluation.
+
+  ## Health Significance
+  Diarrhea is classified by duration:
+  - **Acute diarrhea**: Less than 14 days (usually infectious or dietary)
+  - **Persistent diarrhea**: 14-30 days
+  - **Chronic diarrhea**: Greater than 30 days (requires investigation)
+
+  Common causes of acute diarrhea:
+  - Viral gastroenteritis (norovirus, rotavirus)
+  - Bacterial infections (Salmonella, E. coli, Campylobacter)
+  - Food poisoning
+  - Medication side effects (antibiotics, metformin)
+  - Dietary indiscretion
+
+  Common causes of chronic diarrhea:
+  - Irritable bowel syndrome (IBS-D)
+  - Inflammatory bowel disease (Crohn's, ulcerative colitis)
+  - Celiac disease
+  - Lactose intolerance
+  - Small intestinal bacterial overgrowth (SIBO)
+  - Microscopic colitis
+  - Bile acid malabsorption
+  - Chronic pancreatitis
+
+  ## When to Seek Medical Attention
+  Users should seek immediate medical care when diarrhea:
+  - Is accompanied by signs of severe dehydration (extreme thirst, minimal urination, dizziness)
+  - Contains blood or appears black/tarry
+  - Is accompanied by fever above 102F (39C)
+  - Causes severe abdominal pain
+  - Persists for more than 2 days in adults (or 24 hours in children)
+  - Occurs after recent antibiotic use (concern for C. difficile)
+  - Develops during or after international travel
+
+  Seek routine evaluation when:
+  - Diarrhea is chronic (lasting more than 4 weeks)
+  - Associated with unexplained weight loss
+  - Alternates with constipation
+  - Disrupts work or daily activities frequently
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Food-related triggers (lactose, gluten, FODMAPs)
+  - Medication-associated diarrhea
+  - Travel-related episodes
+  - Stress and anxiety correlations
+  - Menstrual cycle patterns
+  - Post-infectious IBS development
+  - Treatment response (dietary changes, medications)
+
+  ## Caveats & Limitations
+  - Frequency of bowel movements not captured numerically
+  - Stool consistency (Bristol Scale) not recorded
+  - Volume of output not assessed (important for dehydration risk)
+  - Cannot differentiate between secretory, osmotic, or inflammatory causes
+  - Blood or mucus presence not captured
+  - Specific food triggers require additional logging
+  - Hydration status not monitored
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+    relationship: "Cramps commonly accompany diarrheal episodes"
+  - identifier: "HKCategoryTypeIdentifierNausea"
+    relationship: "Nausea and diarrhea often co-occur in gastroenteritis"
+  - identifier: "HKCategoryTypeIdentifierVomiting"
+    relationship: "Vomiting with diarrhea suggests infectious gastroenteritis"
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Fever with diarrhea indicates infectious etiology"
+  - identifier: "HKCategoryTypeIdentifierConstipation"
+    relationship: "Alternating diarrhea and constipation suggests IBS"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierDiarrhea"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierdiarrhea"
+    type: "official"
+  - title: "Diarrhea - NIDDK"
+    url: "https://www.niddk.nih.gov/health-information/digestive-diseases/diarrhea"
+    type: "medical"
+  - title: "Chronic Diarrhea - ACG Clinical Guidelines"
+    url: "https://gi.org/topics/diarrhea-acute-and-chronic/"
+    type: "medical"
+last_updated: "2026-01-27"

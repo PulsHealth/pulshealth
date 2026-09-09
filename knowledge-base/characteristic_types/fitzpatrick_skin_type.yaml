@@ -1,0 +1,154 @@
+identifier: "HKCharacteristicTypeIdentifierFitzpatrickSkinType"
+source: "HealthKit"
+type: "HKCharacteristicType"
+category: "Characteristics"
+human_readable_name: "Fitzpatrick Skin Type"
+short_description: "The user's skin phototype classification used for UV exposure recommendations and skin health guidance."
+icon: "sun.max.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: "Enumerated value representing Fitzpatrick skin phototype scale (I-VI)"
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notSet"
+    description: "The user has not specified their skin type"
+  - value: 1
+    name: "I"
+    description: "Very fair skin, always burns, never tans. Light eyes, blond or red hair. High sensitivity to UV."
+  - value: 2
+    name: "II"
+    description: "Fair skin, usually burns, tans minimally. Light eyes, blond or light brown hair. High sensitivity to UV."
+  - value: 3
+    name: "III"
+    description: "Medium skin, sometimes mild burn, tans uniformly. Any eye or hair color. Moderate sensitivity to UV."
+  - value: 4
+    name: "IV"
+    description: "Olive skin, rarely burns, tans easily. Dark eyes, dark hair. Low sensitivity to UV."
+  - value: 5
+    name: "V"
+    description: "Brown skin, very rarely burns, tans very easily. Dark eyes, dark hair. Very low sensitivity to UV."
+  - value: 6
+    name: "VI"
+    description: "Dark brown to black skin, never burns, deeply pigmented. Dark eyes, dark hair. Least sensitivity to UV."
+ios_introduced:
+  version: "9.0"
+  year: 2015
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "User manually sets value in Health app profile (Settings > Health > Health Details)"
+  - name: "iPad"
+    capability: "User manually sets value in Health app profile"
+primary_source: "User Input"
+description: |
+  ## Overview
+
+  HKCharacteristicTypeIdentifierFitzpatrickSkinType stores the user's skin phototype based on the
+  Fitzpatrick scale, a classification system developed by dermatologist Thomas Fitzpatrick in 1975.
+  The scale categorizes skin into six types based on melanin content and response to ultraviolet (UV)
+  light exposure. This read-only characteristic is used primarily for personalized UV exposure
+  recommendations and sun safety guidance.
+
+  ## Health Significance
+
+  Skin type has important implications for health recommendations and risk assessment:
+
+  - **UV exposure tolerance**: Skin type determines how quickly skin burns and safe sun exposure
+    duration. Type I skin may burn in 10 minutes; Type VI rarely burns even with extended exposure.
+
+  - **Skin cancer risk**: Lighter skin types (I-II) have significantly higher risk of melanoma, basal
+    cell carcinoma, and squamous cell carcinoma. However, all skin types can develop skin cancer.
+
+  - **Vitamin D synthesis**: Darker skin types require more UV exposure to produce equivalent vitamin D.
+    Type VI skin may need 3-6 times more exposure than Type I for the same vitamin D production.
+
+  - **Photoaging**: UV damage causes premature aging (wrinkles, spots). Lighter skin types show
+    photoaging effects more quickly and severely.
+
+  - **Dermatological treatments**: Laser treatments, chemical peels, and phototherapy protocols are
+    adjusted based on skin type to minimize adverse effects (hyperpigmentation, scarring).
+
+  - **Cosmetic recommendations**: Sunscreen SPF recommendations and reapplication frequency vary by
+    skin type
+
+  ## Clinical Interpretation
+
+  When using Fitzpatrick skin type data, clinicians should consider:
+
+  - **UV exposure guidance**: Provide personalized safe sun exposure times:
+    - Types I-II: SPF 30+ always, limit midday exposure, seek shade
+    - Types III-IV: SPF 15-30, moderate protection needed
+    - Types V-VI: Still need sun protection despite lower burn risk
+
+  - **Skin cancer screening**: All skin types need regular skin checks, but emphasize frequency and
+    thoroughness for Types I-III. Remind darker-skinned patients that while less common, skin cancer
+    in Types V-VI often presents later and with worse outcomes.
+
+  - **Vitamin D considerations**: Patients with darker skin types, especially in northern latitudes,
+    may benefit from vitamin D supplementation given reduced synthesis efficiency.
+
+  - **Treatment planning**: When referring for dermatological procedures, note skin type as it
+    affects treatment protocols and risk of post-inflammatory hyperpigmentation.
+
+  - **Outdoor activity counseling**: Athletes, outdoor workers, and those in high-UV environments
+    need skin type-specific guidance
+
+  ## Caveats & Limitations
+
+  - **Self-classification variability**: Users may not accurately assess their skin type. The
+    classification requires understanding burn/tan response, which some users may not have observed.
+
+  - **Simplification of skin diversity**: The 6-type scale is a simplification. Individuals may fall
+    between categories or have mixed characteristics.
+
+  - **Not equivalent to ethnicity**: While skin type correlates with ancestry, it's specifically about
+    UV response. People of any ethnicity can have various skin types.
+
+  - **Read-only access**: Apps cannot set or modify this value - only the user can change it through
+    Health app settings.
+
+  - **Body site variation**: Skin type may vary across body sites (face vs. unexposed areas). The
+    Fitzpatrick classification typically refers to unexposed skin.
+
+  - **Dynamic factors not captured**: Current tan level, medication photosensitivity, and skin
+    conditions affecting UV response are not represented.
+
+  - **Potential for sensitivity**: Asking users about skin color/type can feel uncomfortable. Apple
+    frames this as "sun sensitivity" rather than explicitly about race or color.
+
+  - **Limited clinical validation in HealthKit context**: While Fitzpatrick scale is clinically
+    validated, its application via consumer apps for UV recommendations has limited research support.
+metadata_keys: []
+related_types:
+  - identifier: "HKQuantityTypeIdentifierUVExposure"
+    relationship: "uv_protection_calculation"
+  - identifier: "HKCharacteristicTypeIdentifierBiologicalSex"
+    relationship: "demographic_characteristic"
+  - identifier: "HKCharacteristicTypeIdentifierDateOfBirth"
+    relationship: "demographic_characteristic"
+references:
+  - title: "Apple Developer Documentation - HKCharacteristicTypeIdentifierFitzpatrickSkinType"
+    url: "https://developer.apple.com/documentation/healthkit/hkcharacteristictypeidentifierfitzpatrickskintype"
+    type: "official"
+  - title: "Apple Developer Documentation - HKFitzpatrickSkinType"
+    url: "https://developer.apple.com/documentation/healthkit/hkfitzpatrickskintype"
+    type: "official"
+  - title: "Fitzpatrick TB. The Validity and Practicality of Sun-Reactive Skin Types I Through VI"
+    url: "https://jamanetwork.com/journals/jamadermatology/article-abstract/549509"
+    type: "research"
+  - title: "Skin Cancer Foundation - Fitzpatrick Skin Type"
+    url: "https://www.skincancer.org/risk-factors/fitzpatrick-skin-type/"
+    type: "medical"
+last_updated: "2026-01-27"

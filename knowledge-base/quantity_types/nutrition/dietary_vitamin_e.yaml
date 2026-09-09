@@ -1,0 +1,243 @@
+identifier: "HKQuantityTypeIdentifierDietaryVitaminE"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Vitamin E"
+short_description: "Fat-soluble antioxidant protecting cell membranes from oxidative damage"
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#34C759"
+
+default_unit: "mg"
+supported_units: ["mg", "IU"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 1000
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "4 mg (AI)"
+  - population: "Infants 7-12 months"
+    rda: "5 mg (AI)"
+  - population: "Children 1-3 years"
+    rda: "6 mg"
+  - population: "Children 4-8 years"
+    rda: "7 mg"
+  - population: "Children 9-13 years"
+    rda: "11 mg"
+  - population: "Adolescents and adults 14+ years"
+    rda: "15 mg"
+  - population: "Pregnancy (all ages)"
+    rda: "15 mg"
+  - population: "Lactation (all ages)"
+    rda: "19 mg"
+  - population: "Children 1-3 years (Upper Limit)"
+    upper_limit: "200 mg"
+  - population: "Children 4-8 years (Upper Limit)"
+    upper_limit: "300 mg"
+  - population: "Children 9-13 years (Upper Limit)"
+    upper_limit: "600 mg"
+  - population: "Adolescents 14-18 years (Upper Limit)"
+    upper_limit: "800 mg"
+  - population: "Adults 19+ years (Upper Limit)"
+    upper_limit: "1000 mg"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log vitamin E intake from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Vitamin E is a group of eight fat-soluble compounds: four tocopherols (alpha, beta, gamma, delta) and four tocotrienols (alpha, beta, gamma, delta). Alpha-tocopherol is the only form that meets human requirements and is the focus of dietary recommendations. Vitamin E functions primarily as a chain-breaking antioxidant in cell membranes. HealthKit tracks dietary vitamin E intake in milligrams of alpha-tocopherol equivalents.
+
+  ## Biological Functions
+  Vitamin E serves as the body's primary lipid-soluble antioxidant:
+
+  - **Antioxidant protection**: Scavenges peroxyl radicals, protecting polyunsaturated fatty acids (PUFAs) in cell membranes and lipoproteins from lipid peroxidation
+  - **Cell membrane integrity**: Maintains structural integrity of all cell membranes, including red blood cells
+  - **Immune function**: Supports T-cell function and immune response, particularly important in elderly
+  - **Gene expression**: Modulates expression of genes involved in cell proliferation and inflammation
+  - **Platelet aggregation**: Inhibits platelet aggregation; affects blood clotting
+  - **Cell signaling**: Influences protein kinase C activity and other signaling pathways
+  - **Neurological function**: Protects neural tissue from oxidative damage
+  - **Antioxidant network**: Works synergistically with vitamin C, which regenerates oxidized vitamin E
+
+  ## Health Significance
+  While clinical vitamin E deficiency is rare in healthy individuals, the vitamin plays important roles in protecting against oxidative damage. Deficiency results in serious neurological dysfunction. High-dose supplementation trials for chronic disease prevention have yielded mixed results, and some studies suggest potential harm from very high doses.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing patient vitamin E intake data:
+
+  - **Assess PUFA intake**: Higher PUFA consumption increases vitamin E requirements
+  - **Consider dietary fat adequacy**: Vitamin E requires fat for absorption
+  - **Note supplement forms**: Natural (d-alpha-tocopherol) has higher bioactivity than synthetic (dl-alpha-tocopherol)
+  - **Evaluate total intake**: Distinguish food sources from supplements
+  - **Review anticoagulant use**: Vitamin E at high doses has anticoagulant effects
+  - **Consider malabsorption conditions**: Fat malabsorption significantly impacts vitamin E status
+  - **Monitor high-dose supplementation**: Potential concerns with doses >400 IU/day
+
+  ## Deficiency
+  **Clinical deficiency is rare** and typically occurs only with:
+  - Genetic abnormalities (ataxia with vitamin E deficiency - AVED; abetalipoproteinemia)
+  - Severe fat malabsorption (cystic fibrosis, cholestatic liver disease, short bowel syndrome)
+  - Prolonged severe malnutrition
+  - Premature infants (low vitamin E stores)
+
+  **Symptoms and conditions**:
+  - **Spinocerebellar ataxia**: Progressive loss of coordination, unsteady gait
+  - **Peripheral neuropathy**: Sensory symptoms in extremities
+  - **Muscle weakness**: Proximal myopathy
+  - **Retinopathy**: Visual disturbances (pigmented retinopathy)
+  - **Impaired immune response**: Increased infection susceptibility
+  - **Hemolytic anemia**: Red blood cell fragility (especially in premature infants)
+  - **Cognitive decline**: In prolonged severe deficiency
+
+  **At-risk populations**:
+  - Premature and very low birth weight infants
+  - Patients with cystic fibrosis
+  - Cholestatic liver disease patients
+  - Crohn's disease and other malabsorption conditions
+  - Post-bariatric surgery patients
+  - Patients with abetalipoproteinemia or AVED
+  - Those on very low-fat diets
+
+  ## Toxicity/Excess
+  Vitamin E from food is not known to cause toxicity. Concerns arise with high-dose supplementation.
+
+  **Potential adverse effects of high-dose supplements**:
+  - **Increased bleeding risk**: Vitamin E inhibits platelet aggregation and may interfere with vitamin K-dependent clotting factors
+    - Particularly concerning with anticoagulant therapy
+    - May increase risk of hemorrhagic stroke
+  - **Possible increased mortality**: Some meta-analyses suggest doses >400 IU/day may be associated with slightly increased all-cause mortality (controversial and debated)
+  - **Prostate cancer concerns**: SELECT trial found increased prostate cancer risk with 400 IU/day vitamin E supplementation in healthy men
+  - **Gastrointestinal symptoms**: Nausea, diarrhea, cramping at very high doses
+  - **Fatigue and weakness**: Reported at very high intakes
+
+  **Clinical note**: The UL of 1000 mg (1500 IU natural or 1100 IU synthetic) is based on hemorrhagic risk. However, many practitioners recommend caution above 400 IU/day based on meta-analysis findings.
+
+  **Important distinction**:
+  - 1 mg alpha-tocopherol = 1.49 IU natural vitamin E (d-alpha-tocopherol)
+  - 1 mg alpha-tocopherol = 2.22 IU synthetic vitamin E (dl-alpha-tocopherol)
+
+  ## Food Sources
+  **Excellent sources** (>2 mg per serving):
+  - Wheat germ oil (1 tbsp: ~20 mg)
+  - Sunflower seeds (1 oz: ~7.4 mg)
+  - Almonds (1 oz: ~7.3 mg)
+  - Sunflower oil (1 tbsp: ~5.6 mg)
+  - Safflower oil (1 tbsp: ~4.6 mg)
+  - Hazelnuts (1 oz: ~4.3 mg)
+  - Peanuts, peanut butter (1 oz or 2 tbsp: ~2-3 mg)
+
+  **Good sources** (1-2 mg per serving):
+  - Spinach (1/2 cup cooked: ~1.9 mg)
+  - Broccoli (1/2 cup cooked: ~1.2 mg)
+  - Kiwifruit (1 medium: ~1.1 mg)
+  - Mango (1/2 cup: ~0.9 mg)
+  - Tomato (1 medium: ~0.7 mg)
+  - Avocado (1/2 avocado: ~2.1 mg)
+
+  **Other sources**:
+  - Vegetable oils (corn, soybean, olive)
+  - Fortified cereals (varies widely)
+  - Egg yolks (modest amounts)
+
+  **Bioavailability considerations**:
+  - Requires dietary fat for absorption (consume with fat-containing foods)
+  - Food processing and storage can reduce vitamin E content
+  - Natural form (d-alpha-tocopherol) has higher bioavailability than synthetic (dl-alpha-tocopherol)
+  - Gamma-tocopherol (common in US diet from soybean/corn oil) does not contribute to vitamin E requirements
+
+  ## Special Populations
+  **Pregnancy**: RDA remains at 15 mg. Adequate vitamin E supports fetal development and protects against oxidative stress. Very high doses are not recommended.
+
+  **Lactation**: Requirements increase to 19 mg/day to maintain breast milk vitamin E content and support infant needs.
+
+  **Premature infants**: At high risk of deficiency due to poor placental transfer and low body stores. Supplementation often required; dosing is specialized.
+
+  **Elderly**: May have lower vitamin E status due to decreased dietary intake. Some evidence suggests adequate vitamin E supports immune function and cognitive health in aging, but high-dose supplementation trials have not shown consistent benefits.
+
+  **Athletes**: Intense exercise increases oxidative stress. While athletes may have increased vitamin E utilization, supplementation studies have not consistently shown performance benefits.
+
+  **Patients with cystic fibrosis**: Require pancreatic enzymes with meals and often need fat-soluble vitamin supplementation, including vitamin E (often TPGS - water-soluble form).
+
+  **Patients on anticoagulants**: Should avoid high-dose vitamin E supplementation (>400 IU) without medical supervision due to increased bleeding risk.
+
+  ## Drug Interactions
+  **Vitamin E may enhance effects of**:
+  - **Anticoagulants/antiplatelet agents** (warfarin, heparin, aspirin, clopidogrel): Increased bleeding risk; monitor INR with warfarin
+  - **NSAIDs**: Potential additive antiplatelet effects
+
+  **Drugs that may reduce vitamin E absorption**:
+  - **Orlistat**: Reduces fat absorption, decreasing vitamin E uptake
+  - **Cholestyramine and colestipol**: Bile acid sequestrants reduce fat-soluble vitamin absorption
+  - **Mineral oil**: Dissolves vitamin E, reducing absorption
+
+  **Other interactions**:
+  - **Statins and niacin**: Vitamin E may reduce HDL-cholesterol raising effects of this combination (clinical significance debated)
+  - **Cyclosporine**: Vitamin E may increase cyclosporine absorption
+  - **Chemotherapy agents**: Antioxidant effects may theoretically interfere; advise patients to consult oncologist
+
+  **Clinical notes**:
+  - Discontinue high-dose vitamin E supplementation 2-4 weeks before elective surgery
+  - Patients on warfarin taking vitamin E should have INR monitored more frequently
+
+  ## Caveats & Limitations
+  - HealthKit data reflects user-reported intake, not serum alpha-tocopherol levels
+  - Most food databases report only alpha-tocopherol; gamma-tocopherol (prevalent in US diet) is often not captured
+  - Supplement forms vary in bioactivity (natural vs. synthetic)
+  - Individual requirements depend on PUFA intake and oxidative stress
+  - Accuracy depends on logging completeness and database quality
+  - Cannot distinguish natural from synthetic forms in supplements
+  - High-dose supplementation has not been shown to prevent chronic diseases and may pose risks
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food contributing to vitamin E intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if the entry was manually logged by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing with external nutrition databases"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
+    relationship: "Vitamin C regenerates oxidized vitamin E, supporting antioxidant defense network"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminA"
+    relationship: "Fat-soluble vitamin; vitamin E may protect vitamin A from oxidation"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminK"
+    relationship: "Fat-soluble vitamin; high-dose vitamin E may interfere with vitamin K function"
+  - identifier: "HKQuantityTypeIdentifierDietarySelenium"
+    relationship: "Selenium in glutathione peroxidase works synergistically with vitamin E in antioxidant defense"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
+    relationship: "Higher PUFA intake increases vitamin E requirements for membrane protection"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "Dietary fat required for vitamin E absorption"
+references:
+  - title: "Vitamin E - Dietary Reference Intakes"
+    url: "https://ods.od.nih.gov/factsheets/VitaminE-HealthProfessional/"
+    type: "official"
+  - title: "Apple HealthKit Documentation - HKQuantityTypeIdentifier"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier"
+    type: "official"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Vitamin E"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK225483/"
+    type: "research"
+  - title: "Vitamin E - Linus Pauling Institute"
+    url: "https://lpi.oregonstate.edu/mic/vitamins/vitamin-E"
+    type: "research"
+  - title: "Vitamin E and the Risk of Prostate Cancer - SELECT Trial"
+    url: "https://jamanetwork.com/journals/jama/fullarticle/1104493"
+    type: "research"
+  - title: "Meta-analysis of Vitamin E Supplementation and Mortality"
+    url: "https://www.acpjournals.org/doi/10.7326/0003-4819-142-1-200501040-00110"
+    type: "research"
+last_updated: "2026-01-27"

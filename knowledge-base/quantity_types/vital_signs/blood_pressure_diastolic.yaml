@@ -1,0 +1,185 @@
+identifier: "HKQuantityTypeIdentifierBloodPressureDiastolic"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Blood Pressure (Diastolic)"
+short_description: "The minimum arterial pressure between heartbeats when the heart relaxes, representing the lower number in a blood pressure reading."
+icon: "heart.fill"
+color: "#FF3B30"
+default_unit: "mmHg"
+supported_units:
+  - "mmHg"
+  - "kPa"
+unit_description: "Millimeters of mercury (mmHg) is the standard unit for blood pressure measurement worldwide."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteMin"
+  - "discreteMax"
+  - "discreteAverage"
+  - "mostRecent"
+typical_range:
+  min: 60
+  max: 120
+  unit: "mmHg"
+  notes: "Normal diastolic pressure ranges from 60-80 mmHg. Values above 120 mmHg indicate hypertensive crisis."
+clinical_ranges:
+  - population: "Adults (18+ years)"
+    normal: "<80 mmHg"
+    elevated: "<80 mmHg (elevated category is systolic-only)"
+    high_stage_1: "80-89 mmHg"
+    high_stage_2: ">=90 mmHg"
+    crisis: ">120 mmHg"
+  - population: "Older Adults (65+ years)"
+    normal: "60-80 mmHg"
+    notes: "Very low diastolic pressure (<60 mmHg) in elderly may impair coronary perfusion; avoid aggressive lowering."
+  - population: "Pediatric"
+    notes: "Normal ranges vary significantly by age, height percentile, and sex. Refer to pediatric-specific tables."
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Blood Pressure Cuffs"
+    capability: "Primary measurement device; oscillometric or auscultatory methods"
+  - name: "Smart Blood Pressure Monitors"
+    capability: "Withings, Omron, QardioArm - Bluetooth-connected automatic cuffs"
+  - name: "Manual Entry"
+    capability: "Users can log readings from clinical visits or non-connected devices"
+primary_source: "Blood Pressure Monitors (Cuff-based)"
+description: |
+  ## Overview
+
+  Diastolic blood pressure (DBP) represents the minimum pressure exerted against arterial walls during ventricular relaxation (diastole), when the heart is filling with blood between beats. It is the second or "bottom" number in a standard blood pressure reading (e.g., 120/**80** mmHg). This measurement reflects peripheral vascular resistance and the elasticity of arterial walls.
+
+  Diastolic pressure is particularly important because it determines the pressure gradient driving coronary blood flow. The coronary arteries primarily fill during diastole, so adequate diastolic pressure is essential for heart muscle perfusion.
+
+  In HealthKit, diastolic blood pressure is stored as part of a correlation sample (HKCorrelationTypeIdentifierBloodPressure) that combines both systolic and diastolic readings into a single blood pressure measurement.
+
+  ## How It's Measured
+
+  **Oscillometric Method (most consumer devices):** An inflatable cuff wrapped around the upper arm detects pressure oscillations during cuff deflation. The diastolic value is determined algorithmically from the pattern of oscillations.
+
+  **Auscultatory Method (clinical gold standard):** Using a stethoscope over the brachial artery, the diastolic pressure is identified when Korotkoff sounds disappear (Phase V) or become muffled (Phase IV).
+
+  **Measurement Best Practices:**
+  - Rest for 5 minutes before measurement
+  - Sit with back supported, feet flat on floor
+  - Position arm at heart level
+  - Use appropriately sized cuff
+  - Avoid caffeine, exercise, and smoking 30 minutes prior
+  - Take 2-3 readings 1-2 minutes apart; average the results
+
+  ## Health Significance
+
+  While systolic pressure has received more attention in recent guidelines, diastolic pressure remains clinically important:
+
+  **In Younger Adults (<50 years):** Elevated diastolic pressure is often the first sign of developing hypertension and carries significant cardiovascular risk.
+
+  **Coronary Perfusion:** The heart receives blood flow primarily during diastole. Low diastolic pressure (<60 mmHg) may impair coronary artery perfusion, particularly in patients with coronary artery disease.
+
+  **J-Curve Phenomenon:** Some studies suggest a J-shaped relationship between diastolic pressure and cardiovascular events, where both very high and very low values may be harmful, especially in older adults and those with existing heart disease.
+
+  **Pulse Pressure:** The difference between systolic and diastolic pressure (pulse pressure) is itself a cardiovascular risk marker. Wide pulse pressure (>60 mmHg) indicates arterial stiffness.
+
+  ## Clinical Interpretation Guidelines
+
+  ### Blood Pressure Categories (AHA/ACC 2017 Guidelines, reaffirmed 2025)
+
+  | Category | Systolic (mmHg) | | Diastolic (mmHg) |
+  |----------|-----------------|---|------------------|
+  | **Normal** | <120 | and | <80 |
+  | **Elevated** | 120-129 | and | <80 |
+  | **Stage 1 Hypertension** | 130-139 | or | 80-89 |
+  | **Stage 2 Hypertension** | >=140 | or | >=90 |
+  | **Hypertensive Crisis** | >180 | and/or | >120 |
+
+  Note: Elevated blood pressure category is defined by systolic only; diastolic remains <80 mmHg.
+
+  ### Elevated Values May Indicate
+  - Essential (primary) hypertension (common in younger adults)
+  - Secondary hypertension causes
+  - Increased peripheral vascular resistance
+  - Medication effects (NSAIDs, decongestants, stimulants)
+  - Acute stress or pain
+  - Sleep apnea
+
+  ### Low Values May Indicate
+  - Normal variant in healthy, fit individuals
+  - Medication effects (excessive antihypertensive therapy)
+  - Dehydration or blood loss
+  - Severe infection or sepsis
+  - Cardiac tamponade or heart failure
+  - Aortic regurgitation (characteristically low diastolic)
+  - Advanced age with arterial stiffening (isolated systolic hypertension)
+
+  ### Clinical Considerations for Low Diastolic Pressure
+  - **DBP <60 mmHg:** May indicate inadequate coronary perfusion pressure, especially concerning in patients with known coronary artery disease
+  - **Wide pulse pressure (>60 mmHg):** Suggests arterial stiffness; common in elderly
+  - **Treatment targets:** Current guidelines caution against lowering diastolic below 60-65 mmHg, particularly in older adults
+
+  ### Red Flags for Immediate Consultation
+  - **Hypertensive Crisis:** DBP >120 mmHg, especially with symptoms
+  - **Very Low DBP:** <50 mmHg with symptoms of poor perfusion
+  - **New aortic regurgitation murmur:** Very low diastolic with wide pulse pressure
+  - **Signs of end-organ damage:** Chest pain, neurological changes, acute kidney injury
+
+  ## Caveats & Limitations
+
+  - **Age-Related Changes:** Diastolic pressure typically rises until age 50-60, then may decline as arteries stiffen, leading to isolated systolic hypertension
+  - **Measurement Challenges:** Diastolic is generally harder to measure accurately than systolic; oscillometric devices may be less precise
+  - **Arrhythmias:** Irregular heart rhythms make diastolic measurement particularly unreliable
+  - **Exercise Effect:** Post-exercise, systolic rises but diastolic typically falls; wait at least 30 minutes after exercise
+  - **White Coat Effect:** Affects both systolic and diastolic, though typically more pronounced for systolic
+  - **Device Algorithms:** Different manufacturers use different algorithms to determine diastolic from oscillometric signals
+
+  ## Additional Notes
+
+  **Pulse Pressure Calculation:** Pulse pressure = Systolic - Diastolic. Normal is 30-50 mmHg. Values >60 mmHg suggest arterial stiffness; values <25 mmHg may indicate low cardiac output.
+
+  **Mean Arterial Pressure (MAP):** MAP = DBP + 1/3(SBP - DBP). This represents average pressure throughout the cardiac cycle and is important for organ perfusion assessment.
+
+  **Correlation Requirement:** In HealthKit, blood pressure readings must be stored as HKCorrelation objects containing both systolic and diastolic samples together.
+
+  **Treatment Implications:** When treating hypertension, clinicians must balance the benefits of lowering systolic pressure against the risks of excessive diastolic lowering, particularly in older adults with coronary artery disease.
+
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateSensorLocation"
+    description: "Location of the sensor used for measurement"
+  - key: "HKMetadataKeyBodyPosition"
+    description: "Body position during measurement (sitting, lying down, standing)"
+  - key: "HKMetadataKeyBloodPressureMeasurementContext"
+    description: "Context of measurement such as at rest, during exercise, or post-exercise"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "paired"
+    description: "Systolic pressure is always recorded alongside diastolic as part of a blood pressure reading"
+  - identifier: "HKCorrelationTypeIdentifierBloodPressure"
+    relationship: "parent_correlation"
+    description: "The correlation type that combines systolic and diastolic into a single reading"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "related_vital"
+    description: "Heart rate is often measured simultaneously with blood pressure"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "fitness_indicator"
+    description: "Cardiovascular fitness level affects blood pressure response"
+references:
+  - title: "HKQuantityTypeIdentifierBloodPressureDiastolic - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierbloodpressurediastolic"
+    type: "official"
+  - title: "2025 AHA/ACC Guideline for High Blood Pressure in Adults"
+    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001356"
+    type: "medical"
+  - title: "Blood Pressure Chart: What Your Reading Means - Mayo Clinic"
+    url: "https://www.mayoclinic.org/diseases-conditions/high-blood-pressure/in-depth/blood-pressure/art-20050982"
+    type: "medical"
+  - title: "Isolated Systolic Hypertension - Mayo Clinic"
+    url: "https://www.mayoclinic.org/diseases-conditions/high-blood-pressure/expert-answers/hypertension/faq-20058527"
+    type: "medical"
+last_updated: "2026-01-27"

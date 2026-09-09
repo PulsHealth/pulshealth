@@ -1,0 +1,159 @@
+# ============================================
+# HEALTHKIT DATA TYPE KNOWLEDGE BASE TEMPLATE
+# ============================================
+# This file serves as a reference for the YAML schema.
+# Copy this template when creating new data type entries.
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierExample"  # Full HK identifier string
+source: "HealthKit"  # Data source platform: HealthKit | GoogleHealth | Garmin | etc.
+type: "HKQuantityType"  # HKQuantityType | HKCategoryType | HKCorrelationType | HKCharacteristicType
+category: "Category Name"  # Grouping category from healthkit_data_types.md
+human_readable_name: "Example Metric"
+short_description: "Brief one-sentence description of what this metric measures."
+
+# --- APPLE HEALTH UI ---
+icon: "heart.fill"  # SF Symbol name used in Apple Health (or description if unknown)
+color: "#FF2D55"  # Hex color used in Apple Health app (or null if unknown)
+
+# --- UNITS & MEASUREMENT (for HKQuantityType) ---
+default_unit: "count/min"  # Primary unit in HealthKit
+supported_units:  # All units HealthKit accepts for this type
+  - "count/min"
+  - "count/s"
+unit_description: "Human-readable explanation of the unit"
+
+# --- STATISTICS (for HKQuantityType) ---
+aggregation_type: "discrete"  # discrete | cumulative
+# discrete: values represent instantaneous measurements (use avg/min/max)
+# cumulative: values accumulate over time (use sum)
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 100
+  unit: "count/min"
+  notes: "Additional context about the range"
+clinical_ranges:
+  - population: "Adults"
+    normal: "60-100"
+    low: "<60"
+    high: ">100"
+  - population: "Children"
+    normal: "70-120"
+
+# --- CATEGORY VALUES (for HKCategoryType only) ---
+category_values: null  # Set to null for HKQuantityType
+# For HKCategoryType, list all enum values:
+# category_values:
+#   - value: 0
+#     name: "enumName"
+#     description: "What this value means"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "8.0"
+  year: 2014
+  notes: "Available since initial HealthKit release"
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+  notes: null
+deprecated: false
+deprecated_in: null  # e.g., "iOS 15.0" if deprecated
+
+# --- PERMISSIONS & ACCESS ---
+writable: true  # Can third-party apps write this data type?
+requires_authorization: true  # Always true for HealthKit
+sensitive_data: false  # true for reproductive health, mental health, etc.
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Description of how the device measures this"
+    series: "All series"  # or specific series like "Series 4+"
+  - name: "iPhone"
+    capability: "How iPhone can capture this data"
+  - name: "Third-party devices"
+    capability: "External device capabilities"
+    examples: ["Device1", "Device2"]
+primary_source: "Apple Watch"  # Most common/reliable source
+
+# --- DETAILED DESCRIPTION (Markdown) ---
+# This is the main documentation field. Include:
+# - Overview of what the metric measures
+# - How it's measured (sensors, algorithms)
+# - Health significance and what it indicates
+# - Clinical interpretation guidelines
+# - Population-specific considerations
+# - Limitations and accuracy notes
+# - Historical context (when introduced, how it evolved)
+# - Red flags that warrant clinical attention
+description: |
+  ## Overview
+  Brief explanation of what this metric measures and why it matters.
+
+  ## How It's Measured
+  Technical details about measurement methodology, sensors used,
+  and any algorithms involved.
+
+  ## Health Significance
+  What this metric indicates about health status. Connection to
+  clinical outcomes and health conditions.
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  What constitutes normal for different populations.
+
+  ### Elevated Values May Indicate
+  - Condition 1
+  - Condition 2
+
+  ### Low Values May Indicate
+  - Condition 1
+  - Condition 2
+
+  ### Red Flags for Consultation
+  - When to recommend seeing a healthcare provider
+
+  ## Caveats & Limitations
+  - Accuracy considerations
+  - Factors that affect readings
+  - What this metric cannot tell you
+
+  ## Additional Notes
+  Any other relevant information for health consultants.
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyExample"
+    description: "What this metadata provides"
+    values:
+      - "value1 (0)"
+      - "value2 (1)"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierRelated"
+    relationship: "How this type relates (e.g., 'Derived from', 'Component of')"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/..."
+    type: "official"
+  - title: "Medical Reference"
+    url: "https://..."
+    type: "medical"  # official | medical | research | tutorial
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  Internal notes about sources used, verification status, etc.
+  Not displayed to end users.

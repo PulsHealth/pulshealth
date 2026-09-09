@@ -1,0 +1,248 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Step Count
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierStepCount"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Step Count"
+short_description: "Measures the number of steps the user has taken."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.walk"
+color: "#FF9500"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "count"
+supported_units:
+  - "count"
+unit_description: "Dimensionless count of individual steps detected by motion sensors"
+
+# --- STATISTICS ---
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 50000
+  unit: "count"
+  notes: "Daily values typically range from 2,000-15,000 steps for most adults. Values above 25,000 are uncommon but possible for ultramarathon athletes or occupations requiring extensive walking."
+
+clinical_ranges:
+  - population: "Adults"
+    sedentary: "<5,000 steps/day"
+    low_active: "5,000-7,499 steps/day"
+    somewhat_active: "7,500-9,999 steps/day"
+    active: "10,000-12,499 steps/day"
+    highly_active: ">12,500 steps/day"
+  - population: "Older Adults (65+)"
+    sedentary: "<3,000 steps/day"
+    low_active: "3,000-5,999 steps/day"
+    active: "6,000-8,000 steps/day"
+    highly_active: ">8,000 steps/day"
+  - population: "Children and Adolescents"
+    sedentary: "<6,000 steps/day"
+    active: "10,000-14,000 steps/day"
+    highly_active: ">14,000 steps/day"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "8.0"
+  year: 2014
+  notes: "Available since initial HealthKit release"
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+  notes: "Apple Watch provides continuous step tracking with improved accuracy"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Continuous step counting using accelerometer and gyroscope sensors with motion coprocessor. Provides highest accuracy with wrist-based detection algorithms optimized for natural arm swing during walking and running."
+    series: "All series"
+    accuracy: "Typically within 2-5% of actual steps during normal walking."
+  - name: "iPhone"
+    capability: "Step counting via built-in accelerometer and M-series motion coprocessor. Tracks steps when phone is carried in pocket, bag, or hand. Functions as primary source when Apple Watch is not available."
+    accuracy: "Accuracy varies based on phone placement; best when in pocket."
+  - name: "Third-party wearables"
+    capability: "Various fitness trackers and smartwatches can write step data to HealthKit."
+    examples: ["Fitbit", "Garmin", "Oura Ring", "Whoop", "Samsung Galaxy Watch"]
+  - name: "Third-party apps"
+    capability: "Pedometer apps using iPhone sensors can contribute step data."
+    examples: ["Pedometer++", "Pacer", "StepsApp"]
+primary_source: "Apple Watch"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Step count measures the cumulative number of steps a user takes over a given time period. It is one of the most widely tracked health metrics globally, serving as a simple proxy for overall physical activity level. The metric gained mainstream popularity with consumer fitness trackers and has become a cornerstone of activity monitoring in digital health.
+
+  ## How It's Measured
+  Step detection on Apple devices uses a combination of hardware sensors and machine learning algorithms:
+
+  **Apple Watch:**
+  - Accelerometer detects characteristic acceleration patterns of walking
+  - Gyroscope provides orientation data to distinguish steps from other movements
+  - Motion coprocessor processes sensor data continuously with low power consumption
+  - Machine learning algorithms filter out false positives (driving, gesturing)
+  - Arm swing patterns help improve accuracy during walking and running
+
+  **iPhone:**
+  - Built-in accelerometer in M-series motion coprocessor
+  - Continuous background processing without significant battery drain
+  - Step detection even when phone is in pocket, purse, or armband
+  - Algorithms calibrated for various carrying positions
+
+  **Data Recording:**
+  - Steps are recorded as cumulative samples over time intervals
+  - Multiple sources (Watch + iPhone) are intelligently deduplicated
+  - HealthKit automatically prioritizes the most accurate source when overlap occurs
+
+  ## Health Significance
+  Step count serves as an accessible measure of physical activity with well-documented health associations:
+
+  **Mortality Risk Reduction:**
+  A 2025 meta-analysis published in The Lancet Public Health analyzing 57 studies found that 7,000 steps per day was associated with:
+  - 47% lower risk of all-cause mortality (compared to 2,000 steps/day)
+  - 25% lower risk of cardiovascular disease incidence
+  - 47% lower risk of cardiovascular disease mortality
+  - 37% lower risk of cancer mortality
+  - 14% lower risk of type 2 diabetes
+  - 38% lower risk of dementia
+
+  **The 10,000 Steps Myth:**
+  The popular 10,000 steps per day goal originated from a 1965 Japanese marketing campaign for a pedometer called "Manpo-kei" (10,000 steps meter), not from scientific research. The device was marketed ahead of the 1964 Tokyo Olympics during increased focus on fitness. While 10,000 steps remains a viable target for active individuals, research shows significant health benefits at lower thresholds.
+
+  **Age-Related Differences:**
+  - Adults under 60: Maximum mortality benefit observed at 8,000-10,000 steps/day
+  - Adults 60 and older: Benefits plateau at approximately 6,000-8,000 steps/day
+  - Additional steps beyond these thresholds provide diminishing but not negative returns
+
+  ## Clinical Interpretation Guidelines
+
+  ### Activity Level Classification (Tudor-Locke Scale)
+  - **Sedentary:** <5,000 steps/day - Associated with increased health risks
+  - **Low Active:** 5,000-7,499 steps/day - Below recommended activity levels
+  - **Somewhat Active:** 7,500-9,999 steps/day - Meets minimum health thresholds
+  - **Active:** 10,000-12,499 steps/day - Associated with optimal health outcomes
+  - **Highly Active:** >12,500 steps/day - Above average activity levels
+
+  ### Health Outcome Associations
+  - **Cardiovascular Health:** Each additional 1,000 steps/day associated with lower cardiovascular risk up to approximately 8,000-10,000 steps
+  - **Metabolic Health:** Regular step accumulation improves insulin sensitivity and glucose regulation
+  - **Mental Health:** Walking activity associated with reduced depression symptoms; 7,000 steps/day linked to 22% lower risk of depressive symptoms
+  - **Cognitive Function:** Higher step counts associated with 38% lower dementia risk
+  - **Fall Prevention:** Regular walking improves balance and reduces fall risk by approximately 28%
+
+  ### Red Flags and Considerations
+  - Sudden significant decreases in daily step count may indicate illness, injury, or depression
+  - Very low activity (<3,000 steps/day) in previously active individuals warrants clinical attention
+  - Pain during walking that limits step count should be evaluated
+  - Inconsistent patterns (high variability day-to-day) may indicate health instability
+
+  ## Caveats & Limitations
+
+  ### Measurement Limitations
+  - **Undercounting scenarios:** Pushing shopping carts, baby strollers, or walkers may reduce step detection due to dampened arm swing
+  - **Overcounting scenarios:** Vigorous hand gestures while seated may register false steps
+  - **Activity type:** Steps do not capture non-ambulatory activities (swimming, cycling, rowing)
+  - **Intensity blindness:** Step count does not distinguish between casual strolling and brisk walking
+
+  ### Interpretation Limitations
+  - **Not a complete activity measure:** Does not account for resistance training, flexibility work, or non-step cardio
+  - **Individual variation:** Optimal step count varies by age, baseline fitness, and health conditions
+  - **Context matters:** 5,000 intentional walking steps may have different health implications than 5,000 incidental steps
+  - **Terrain and conditions:** Hilly terrain or challenging surfaces provide more exercise per step but may reduce step count
+
+  ### What Step Count Cannot Tell You
+  - Caloric expenditure (requires step length, weight, and pace data)
+  - Exercise intensity
+  - Cardiovascular fitness level
+  - Muscle strength or flexibility
+  - Balance or coordination quality
+
+  ## Additional Notes
+
+  **Clinical Recommendations:**
+  For sedentary patients, a realistic initial goal is to increase daily steps by 1,000-2,000 above baseline. The CDC and WHO focus on minutes of moderate-to-vigorous activity (150 minutes/week) rather than step targets, as step intensity matters for cardiovascular benefits.
+
+  **Weekend Warrior Benefit:**
+  Research shows that achieving 8,000+ steps on just 1-2 days per week still provides substantial mortality risk reduction, suggesting that concentrated activity patterns can be beneficial for those unable to exercise daily.
+
+  **For Health Consultants:**
+  When reviewing step data:
+  1. Examine weekly averages rather than individual days
+  2. Look for trends over 4+ weeks
+  3. Consider patient's age, mobility status, and health goals
+  4. Frame recommendations around achievable incremental increases
+  5. Emphasize that any increase from sedentary baseline provides health benefits
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier for the sample from the originating source, useful for deduplication"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
+    relationship: "Complementary - Distance provides context for step count by indicating ground covered"
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Complementary - Walking speed indicates intensity of steps"
+  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
+    relationship: "Complementary - Step length used to calculate distance from step count"
+  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
+    relationship: "Complementary - Indicates gait quality during stepping"
+  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
+    relationship: "Complementary - Gait stability metric during stepping"
+  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
+    relationship: "Related - Exercise minutes often accumulated through step-based activity"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Related - Steps contribute to active calorie burn"
+  - identifier: "HKQuantityTypeIdentifierFlightsClimbed"
+    relationship: "Complementary - Vertical movement tracked alongside horizontal steps"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - stepCount"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/stepcount"
+    type: "official"
+  - title: "Daily steps and health outcomes in adults: a systematic review and dose-response meta-analysis - The Lancet Public Health (2025)"
+    url: "https://www.thelancet.com/journals/lanpub/article/PIIS2468-2667(25)00164-1/fulltext"
+    type: "research"
+  - title: "Daily steps and all-cause mortality: a meta-analysis of 15 international cohorts"
+    url: "https://www.thelancet.com/journals/lanpub/article/PIIS2468-2667(21)00302-9/fulltext"
+    type: "research"
+  - title: "Steps per Day and All-Cause Mortality in Middle-aged Adults - JAMA Network Open"
+    url: "https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2783711"
+    type: "research"
+  - title: "CDC Physical Activity Guidelines for Americans"
+    url: "https://www.cdc.gov/physical-activity-basics/guidelines/adults.html"
+    type: "medical"
+  - title: "WHO Guidelines on Physical Activity and Sedentary Behaviour"
+    url: "https://www.who.int/publications/i/item/9789240015128"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 8.0 introduction confirmed via Apple Developer Documentation
+  - 10,000 steps origin: 1965 Yamasa Clock "Manpo-kei" marketing campaign (News Medical, Harvard Health)
+  - 7,000-8,000 steps research: 2025 Lancet meta-analysis of 57 studies, 2022 meta-analysis of 15 cohorts
+  - Clinical activity classifications based on Tudor-Locke step-defined sedentary lifestyle index
+  - CDC and WHO guidelines focus on minutes of activity rather than step counts

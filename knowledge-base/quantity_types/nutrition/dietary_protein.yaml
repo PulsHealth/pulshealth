@@ -1,0 +1,160 @@
+identifier: "HKQuantityTypeIdentifierDietaryProtein"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Protein"
+short_description: "Total protein intake from food and supplements"
+icon: "fork.knife"
+color: "#FF2D55"
+default_unit: "g"
+supported_units:
+  - "g"
+  - "mg"
+  - "oz"
+unit_description: "Grams (g) of protein. Protein provides 4 kcal/g of metabolizable energy and contains essential amino acids required for tissue synthesis."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 40
+  max: 250
+  unit: "g"
+  notes: "Varies significantly by body weight, activity level, and health goals. Athletes and those in caloric deficit may consume 2-3g/kg body weight."
+clinical_ranges:
+  - population: "Adults (general)"
+    rda: "0.8 g/kg body weight/day (46g women, 56g men)"
+  - population: "Older Adults (65+)"
+    rda: "1.0-1.2 g/kg body weight/day"
+  - population: "Athletes (endurance)"
+    rda: "1.2-1.4 g/kg body weight/day"
+  - population: "Athletes (strength/power)"
+    rda: "1.6-2.2 g/kg body weight/day"
+  - population: "Weight Loss (caloric deficit)"
+    rda: "1.2-1.6 g/kg body weight/day to preserve lean mass"
+  - population: "Pregnancy"
+    rda: "+25g/day above baseline (71g total)"
+  - population: "Chronic Kidney Disease (non-dialysis)"
+    rda: "0.6-0.8 g/kg body weight/day"
+  - population: "Hemodialysis"
+    rda: "1.0-1.2 g/kg body weight/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Protein tracking from food database entries, barcode scanning, recipe analysis"
+    examples:
+      - "MyFitnessPal"
+      - "Cronometer"
+      - "MacroFactor"
+      - "Carbon Diet Coach"
+  - name: "Meal delivery services"
+    capability: "Automatic logging of delivered meals with precise macros"
+    examples:
+      - "Factor"
+      - "Trifecta"
+      - "Territory Foods"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Protein represents the total intake of protein from all food sources and supplements. Protein is composed of amino acids, nine of which are essential and must be obtained from diet. Beyond its caloric contribution (4 kcal/g), protein serves critical structural, enzymatic, hormonal, and immunological functions that make it arguably the most important macronutrient for health optimization.
+
+  The FDA Daily Value for protein is 50g based on a 2,000 calorie diet (updated 2020). This serves as a reference for nutrition labeling but individual needs vary considerably based on body weight, activity level, and health status.
+
+  ## Health Significance
+  Adequate protein intake supports:
+  - **Muscle Protein Synthesis**: Essential for maintaining and building lean body mass
+  - **Satiety**: Highest satiety index of all macronutrients; supports weight management
+  - **Thermic Effect**: 20-30% of protein calories used in digestion vs. 5-10% for carbs, 0-3% for fat
+  - **Bone Health**: Adequate protein (especially with calcium) supports bone mineral density
+  - **Immune Function**: Antibodies and immune cells require amino acids for synthesis
+  - **Wound Healing**: Critical for tissue repair; needs increase post-surgery or injury
+  - **Sarcopenia Prevention**: Higher intakes help preserve muscle mass with aging
+
+  ## Clinical Interpretation Guidelines
+  When assessing protein intake data:
+  1. **Calculate Relative Intake**: Express as g/kg body weight for meaningful comparison to recommendations
+  2. **Assess Distribution**: Protein timing matters; 25-40g per meal optimizes muscle protein synthesis
+  3. **Evaluate Quality**: Complete proteins (animal sources, soy) vs. incomplete (most plant sources)
+  4. **Consider Leucine Content**: 2.5-3g leucine per meal triggers maximal protein synthesis
+  5. **Review in Context**: Higher needs during caloric deficit, illness, recovery, or intense training
+  6. **Check Kidney Function**: Screen for CKD before recommending high protein intakes
+
+  ## Deficiency Symptoms
+  Protein deficiency (rare in developed countries) manifests as:
+  - Muscle wasting and weakness (sarcopenia)
+  - Edema (particularly peripheral and ascites due to low albumin)
+  - Hair loss and brittle, ridged nails
+  - Skin lesions and poor wound healing
+  - Increased infection susceptibility
+  - Fatigue and weakness
+  - Growth retardation in children
+  - Kwashiorkor (severe deficiency with adequate calories) or Marasmus (deficiency with caloric deficit)
+
+  ## Excess/Toxicity
+  High protein intake concerns:
+  - **Kidney Function**: May accelerate decline in pre-existing CKD; no evidence of harm in healthy kidneys
+  - **Bone Health**: Outdated concern; adequate protein supports bone health when calcium is sufficient
+  - **Dehydration Risk**: Increased urea production requires adequate hydration
+  - **Gout**: High purine proteins (organ meats, certain seafood) may trigger flares in susceptible individuals
+  - **Cardiovascular**: Source matters; processed red meat associated with increased CV risk vs. fish/poultry
+  - **Cancer**: High processed meat intake associated with colorectal cancer risk
+  - **Displacement**: Very high protein may displace other important nutrients (fiber, micronutrients)
+
+  ## Special Populations
+  - **Athletes**: Protein timing around training; 0.25-0.4g/kg per meal; distribute across 4-5 meals
+  - **Elderly**: Higher per-meal protein (30-40g) needed to overcome anabolic resistance; leucine-rich sources preferred
+  - **Diabetes**: Protein has minimal impact on blood glucose; may help with satiety and weight management
+  - **Vegetarians/Vegans**: Combine complementary proteins; may need 10-20% higher intake due to lower digestibility
+  - **Pregnancy**: Increased needs for fetal development; high-quality complete proteins emphasized
+  - **Eating Disorders**: Balance protein adequacy with avoiding dietary restriction triggers
+  - **Post-Bariatric Surgery**: Protein prioritized at meals; typically 60-80g/day minimum with supplements
+
+  ## Caveats & Limitations
+  - **Logging Accuracy**: Portion estimation affects protein tracking; meat portions commonly underestimated
+  - **Complete vs. Incomplete**: Total grams don't reflect amino acid profile or quality
+  - **Cooking Methods**: Some protein denaturation with cooking doesn't affect nutritional value
+  - **Bioavailability**: PDCAAS/DIAAS scores vary; egg (1.0) vs. wheat (0.42)
+  - **Individual Variation**: Genetics, gut microbiome, and training status affect protein needs
+  - **Supplement Accuracy**: Protein powder labels may overstate content; third-party testing recommended
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the food source (e.g., 'chicken breast', 'whey protein', 'tofu')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Protein contributes to total caloric intake at 4 kcal/g"
+  - identifier: "HKQuantityTypeIdentifierLeanBodyMass"
+    relationship: "Adequate protein supports maintenance of lean body mass"
+  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
+    relationship: "Co-macronutrient; protein intake affects carbohydrate allocation in diet"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "Co-macronutrient; protein sources often contain fat"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Protein intake relative to body weight determines adequacy"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryProtein"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryprotein"
+    type: "official"
+  - title: "Dietary Reference Intakes for Protein - National Academies"
+    url: "https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids"
+    type: "research"
+  - title: "International Society of Sports Nutrition Position Stand: Protein and Exercise"
+    url: "https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8"
+    type: "medical"
+  - title: "Protein Requirements and Recommendations for Older People"
+    url: "https://pubmed.ncbi.nlm.nih.gov/25926511/"
+    type: "research"
+last_updated: "2026-01-27"

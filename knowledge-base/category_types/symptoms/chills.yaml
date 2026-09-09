@@ -1,0 +1,122 @@
+identifier: "HKCategoryTypeIdentifierChills"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Chills"
+short_description: "Tracks episodes of chills and shivering."
+icon: "thermometer.snowflake"
+color: "#5AC8FA"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Chills are episodes of shivering and feeling cold, often accompanied by goosebumps (piloerection). They occur when muscles rapidly contract and relax to generate heat, typically in response to infection, cold exposure, or other physiological triggers. This HealthKit category type allows users to log chills episodes, providing valuable data for tracking illness onset and progression.
+
+  ## Health Significance
+  Chills most commonly indicate the body's response to infection as the hypothalamus raises the body's temperature setpoint. They can be an early warning sign of developing illness and help clinicians track disease progression and treatment response.
+
+  Common causes include:
+  - Bacterial infections (UTI, pneumonia, sepsis)
+  - Viral infections (influenza, COVID-19, common cold)
+  - Malaria and other parasitic infections
+  - Inflammatory conditions
+  - Medication reactions
+  - Blood transfusion reactions
+  - Anesthesia recovery
+  - Hypoglycemia
+  - Hyperthyroidism
+  - Anxiety and panic attacks
+
+  Rigors (severe chills with violent shaking) are particularly significant and often indicate:
+  - Bacteremia or sepsis
+  - Pyelonephritis
+  - Pneumonia
+  - Malaria
+  - Abscess formation
+
+  ## When to Seek Medical Attention
+  Users should seek medical evaluation when chills:
+  - Are accompanied by high fever (>101.3F/38.5C)
+  - Are severe (rigors with uncontrollable shaking)
+  - Occur after recent surgery or invasive procedure
+  - Are accompanied by confusion or altered mental status
+  - Occur with shortness of breath or chest pain
+  - Follow travel to malaria-endemic areas
+  - Are accompanied by rash or skin changes
+  - Persist or recur without clear cause
+  - Occur in immunocompromised individuals
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Illness onset and progression
+  - Cyclic patterns (suggesting malaria in endemic areas)
+  - Correlation with fever episodes
+  - Treatment response to antibiotics or antivirals
+  - Post-procedure infection development
+  - Medication-related reactions
+
+  ## Caveats & Limitations
+  - Does not measure body temperature objectively
+  - Cannot differentiate between infection and other causes
+  - Severity assessment is subjective
+  - Cold exposure-related chills may be logged alongside pathological chills
+  - Does not capture associated symptoms comprehensively
+  - Limited value without concurrent temperature measurements
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Chills typically precede or accompany fever"
+  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
+    relationship: "Objective temperature measurement complements chills tracking"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Fatigue commonly accompanies infectious illness with chills"
+  - identifier: "HKCategoryTypeIdentifierGeneralizedBodyAche"
+    relationship: "Body aches often occur with infection-related chills"
+  - identifier: "HKCategoryTypeIdentifierCoughing"
+    relationship: "Respiratory infections cause both chills and coughing"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierChills"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierchills"
+    type: "official"
+  - title: "Fever and Chills - MedlinePlus"
+    url: "https://medlineplus.gov/ency/article/003091.htm"
+    type: "medical"
+  - title: "Sepsis Recognition - CDC"
+    url: "https://www.cdc.gov/sepsis/what-is-sepsis.html"
+    type: "medical"
+last_updated: "2026-01-27"

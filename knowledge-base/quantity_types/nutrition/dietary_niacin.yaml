@@ -1,0 +1,206 @@
+identifier: "HKQuantityTypeIdentifierDietaryNiacin"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Niacin (Vitamin B3)"
+short_description: "Records dietary intake of niacin (vitamin B3), essential for energy metabolism, DNA repair, and cellular signaling."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FFCC00"
+
+default_unit: "mg"
+supported_units: ["mg", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 5.0
+  max: 40.0
+  unit: "mg"
+clinical_ranges:
+  - population: "Adult men (19+ years)"
+    rda: "16 mg NE/day"
+  - population: "Adult women (19+ years)"
+    rda: "14 mg NE/day"
+  - population: "Pregnancy"
+    rda: "18 mg NE/day"
+  - population: "Lactation"
+    rda: "17 mg NE/day"
+  - population: "Infants (0-6 months)"
+    ai: "2 mg NE/day"
+  - population: "Infants (7-12 months)"
+    ai: "4 mg NE/day"
+  - population: "Children (1-3 years)"
+    rda: "6 mg NE/day"
+  - population: "Children (4-8 years)"
+    rda: "8 mg NE/day"
+  - population: "Children (9-13 years)"
+    rda: "12 mg NE/day"
+  - population: "Adolescent males (14-18 years)"
+    rda: "16 mg NE/day"
+  - population: "Adolescent females (14-18 years)"
+    rda: "14 mg NE/day"
+  - population: "Upper Limit (Adults)"
+    ul: "35 mg/day (supplemental nicotinic acid)"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Manual logging and barcode scanning of food items with niacin content"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+  - name: "Nutrition coaching platforms"
+    capability: "Meal planning with micronutrient tracking"
+    examples: ["Noom", "PlateJoy"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Niacin (vitamin B3) encompasses two primary forms: nicotinic acid and nicotinamide (niacinamide).
+  Both forms serve as precursors to the essential coenzymes nicotinamide adenine dinucleotide
+  (NAD) and its phosphorylated form (NADP). These coenzymes participate in over 400 enzymatic
+  reactions, making niacin one of the most functionally diverse B-vitamins. Niacin can also be
+  synthesized endogenously from the amino acid tryptophan (60 mg tryptophan yields approximately
+  1 mg niacin), hence dietary requirements are expressed as niacin equivalents (NE).
+
+  ## Biological Functions
+  - **NAD/NADP coenzyme synthesis**: Critical for cellular redox reactions
+  - **Energy metabolism**: Central role in glycolysis, citric acid cycle, and oxidative phosphorylation
+  - **DNA repair**: NAD is a substrate for poly(ADP-ribose) polymerases (PARPs)
+  - **Cellular signaling**: NAD is a substrate for sirtuins, regulating metabolism and aging
+  - **Gene expression**: NAD-dependent deacetylases affect chromatin structure
+  - **Lipid metabolism**: High-dose nicotinic acid affects lipoprotein metabolism
+  - **Calcium signaling**: NAADP, derived from NAD, regulates calcium release
+  - **Cell death pathways**: NAD levels influence apoptosis and necrosis
+
+  ## Health Significance
+  Niacin has a unique place in clinical medicine due to its pharmacologic effects at high doses.
+  Nicotinic acid (but not nicotinamide) at doses of 1-3 grams daily has historically been used
+  to modify lipid profiles, raising HDL and lowering triglycerides and LDL. However, recent
+  clinical trials have questioned the cardiovascular benefit of niacin therapy. At nutritional
+  doses, adequate niacin intake supports fundamental cellular processes including energy
+  production and DNA maintenance.
+
+  ## Clinical Interpretation Guidelines
+  - **Niacin equivalents**: 1 mg NE = 1 mg niacin OR 60 mg tryptophan
+  - **Daily monitoring**: Compare cumulative intake against RDA in NE
+  - **Trend analysis**: Assess 7-30 day averages for consistent adequacy
+  - **Protein intake consideration**: High-protein diets provide tryptophan for endogenous synthesis
+  - **Laboratory markers**: Urinary N-methylnicotinamide and 2-pyridone; ratio <1 suggests deficiency
+  - **Distinguish forms**: Nicotinic acid and nicotinamide have different clinical profiles
+
+  ## Deficiency
+  **Pellagra** - The classic niacin deficiency syndrome, characterized by the "4 Ds":
+
+  - **Dermatitis**: Bilateral, symmetrical photosensitive rash (Casal's necklace on neck;
+    glove and stocking distribution on extremities); progresses from erythema to
+    hyperpigmentation with scaling
+  - **Diarrhea**: Inflammation of the entire GI tract causing glossitis, stomatitis,
+    and secretory diarrhea
+  - **Dementia**: Neuropsychiatric symptoms including depression, anxiety, irritability,
+    poor concentration, progressing to memory loss, confusion, and psychosis
+  - **Death**: Untreated pellagra is fatal
+
+  **At-risk populations**:
+  - Populations dependent on corn/maize (niacin in corn is bound and unavailable without alkali treatment)
+  - Chronic alcoholics
+  - Carcinoid syndrome (tryptophan diverted to serotonin synthesis)
+  - Hartnup disease (impaired tryptophan absorption)
+  - Isoniazid therapy without B6 supplementation
+
+  ## Toxicity/Excess
+  **Nicotinic acid (pharmacologic doses)**:
+  - **Flushing**: Most common adverse effect; prostaglandin-mediated vasodilation causing
+    warmth, redness, and itching (can be mitigated by aspirin, extended-release formulations)
+  - **Hepatotoxicity**: Dose-dependent; more common with sustained-release preparations
+  - **Glucose intolerance**: May worsen glycemic control in diabetics
+  - **Hyperuricemia**: Can precipitate gout
+  - **GI disturbances**: Nausea, vomiting, diarrhea
+  - **Macular edema**: Rare but reported with high doses
+
+  **Nicotinamide**: Generally better tolerated; flushing does not occur; hepatotoxicity
+  possible at very high doses (>3 g/day)
+
+  UL: 35 mg/day for supplemental nicotinic acid (based on flushing); does not apply to
+  food sources or nicotinamide at typical doses.
+
+  ## Food Sources
+  - **Excellent sources (>5 mg/serving)**: Chicken breast, turkey, tuna, salmon, beef,
+    fortified cereals, peanuts
+  - **Good sources (2-5 mg/serving)**: Pork, mushrooms, green peas, enriched bread and
+    pasta, sunflower seeds
+  - **Moderate sources (<2 mg/serving)**: Potatoes, corn (if nixtamalized), legumes,
+    dairy products
+
+  Note: Niacin in mature cereal grains (corn, wheat, sorghum) is largely bound as niacytin
+  and has low bioavailability unless treated with alkali (nixtamalization).
+
+  ## Special Populations
+  - **Chronic alcohol users**: Impaired absorption and increased requirements; high pellagra risk
+  - **Carcinoid syndrome patients**: Tryptophan shunted to serotonin; require niacin supplementation
+  - **Hartnup disease**: Genetic disorder impairing tryptophan absorption; requires supplementation
+  - **Patients on isoniazid**: INH interferes with niacin metabolism; often given with B6
+  - **Corn-dependent populations**: Risk of deficiency without proper processing
+  - **Diabetics**: High-dose nicotinic acid may worsen glucose control
+  - **Patients with liver disease**: Avoid high-dose niacin; hepatotoxicity risk
+  - **Patients on statins**: Combination therapy requires monitoring for myopathy
+  - **Gout patients**: High-dose niacin can increase uric acid levels
+
+  ## Drug Interactions
+  - **Statins (HMG-CoA reductase inhibitors)**: Combined high-dose niacin increases myopathy risk
+  - **Isoniazid (INH)**: Depletes niacin by interfering with tryptophan-niacin pathway
+  - **Anticonvulsants (phenytoin, carbamazepine)**: May increase niacin requirements
+  - **5-Fluorouracil**: May reduce niacin synthesis
+  - **Mercaptopurine/Azathioprine**: May interact with niacin metabolism
+  - **Alcohol**: Impairs niacin absorption and increases requirements
+  - **Aspirin**: Can reduce flushing from nicotinic acid
+  - **Antihypertensives**: High-dose niacin may potentiate hypotensive effects
+  - **Anticoagulants**: Possible enhancement of anticoagulant effect
+  - **Diabetes medications**: May require adjustment due to niacin's effects on glucose
+
+  ## Caveats & Limitations
+  - **Niacin equivalents**: HealthKit may not account for tryptophan contribution to niacin status
+  - **Form not distinguished**: Nicotinic acid vs. nicotinamide not typically differentiated
+  - **Self-reported intake**: Accuracy depends on user diligence and food database quality
+  - **Bioavailability**: Varies significantly by food source (bound vs. free niacin)
+  - **No direct measurement**: Data reflects intake estimates, not tissue NAD status
+  - **Pharmacologic vs. nutritional**: High-dose niacin therapy is distinct from nutritional adequacy
+  - **Supplementation tracking**: May not capture all sources or distinguish supplement forms
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "The type of food or meal providing the niacin intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used to sync data across multiple devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External unique identifier from the source app"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryThiamin"
+    relationship: "Related B-vitamin; thiamin is required for niacin synthesis from tryptophan"
+  - identifier: "HKQuantityTypeIdentifierDietaryRiboflavin"
+    relationship: "Related B-vitamin; riboflavin is required for niacin synthesis from tryptophan"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminB6"
+    relationship: "B6 is required for the tryptophan-niacin conversion pathway"
+  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
+    relationship: "Protein provides tryptophan for endogenous niacin synthesis"
+  - identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
+    relationship: "High-dose niacin affects cholesterol and lipid metabolism"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryNiacin"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryniacin"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Niacin Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Niacin-HealthProfessional/"
+    type: "medical"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Thiamin, Riboflavin, Niacin, Vitamin B6, Folate, Vitamin B12, Pantothenic Acid, Biotin, and Choline"
+    url: "https://nap.nationalacademies.org/catalog/6015/dietary-reference-intakes-for-thiamin-riboflavin-niacin-vitamin-b6-folate-vitamin-b12-pantothenic-acid-biotin-and-choline"
+    type: "research"
+  - title: "Pellagra - StatPearls NCBI Bookshelf"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK557587/"
+    type: "medical"
+last_updated: "2026-01-27"

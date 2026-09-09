@@ -1,0 +1,222 @@
+identifier: "HKQuantityTypeIdentifierDietaryChloride"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Chloride"
+short_description: "Chloride intake from food and supplements, essential for fluid balance, gastric acid production, and nerve transmission."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#5AC8FA"
+
+default_unit: "mg"
+supported_units: ["mg", "g", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 5000
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "180 mg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "570 mg/day (AI)"
+  - population: "Children 1-3 years"
+    rda: "1500 mg/day (AI)"
+  - population: "Children 4-8 years"
+    rda: "1900 mg/day (AI)"
+  - population: "Children 9-13 years"
+    rda: "2300 mg/day (AI)"
+  - population: "Adolescents 14-18 years"
+    rda: "2300 mg/day (AI)"
+  - population: "Adults 19-50 years"
+    rda: "2300 mg/day (AI)"
+  - population: "Adults 51-70 years"
+    rda: "2000 mg/day (AI)"
+  - population: "Adults 71+ years"
+    rda: "1800 mg/day (AI)"
+  - population: "Pregnant women"
+    rda: "2300 mg/day (AI)"
+  - population: "Lactating women"
+    rda: "2300 mg/day (AI)"
+  - population: "Adults"
+    upper_limit: "3600 mg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary chloride from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track chloride intake for fluid and electrolyte management"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Chloride is the major extracellular anion, comprising approximately 70% of the body's total negative ion content. Most dietary chloride is consumed as sodium chloride (table salt), making chloride intake closely linked to sodium intake. Chloride is essential for maintaining fluid balance, producing gastric acid, and supporting nerve impulse transmission. Because chloride and sodium are consumed together, dietary chloride deficiency is rare, and chloride status generally parallels sodium status.
+
+  ## Biological Functions
+  - **Fluid and electrolyte balance**: Primary extracellular anion; maintains osmotic pressure with sodium
+  - **Gastric acid production**: Chloride is the anion in hydrochloric acid (HCl) secreted by parietal cells
+  - **Acid-base balance**: Involved in chloride shift (exchange with bicarbonate) in red blood cells
+  - **Nerve impulse transmission**: Chloride channels regulate neuronal excitability
+  - **Immune function**: Chloride is used by neutrophils to produce hypochlorous acid (bleach) for pathogen killing
+  - **Muscle function**: Chloride channels important for skeletal muscle membrane stability
+  - **Intestinal absorption**: Chloride transport coupled with sodium absorption in gut
+
+  ## Health Significance
+  Chloride intake is clinically linked with sodium intake and blood pressure. The DASH diet and other low-sodium dietary patterns reduce both sodium and chloride. While chloride itself may have independent effects on blood pressure (some research suggests chloride contributes to hypertension beyond sodium alone), most clinical guidance focuses on sodium reduction, which inherently reduces chloride. Chloride depletion (hypochloremia) is clinically significant primarily in conditions causing GI losses or diuretic use.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing chloride intake data:
+  - **Correlate with sodium intake**: Since most dietary chloride comes from salt, chloride and sodium intakes are closely related
+  - **Consider blood pressure context**: High chloride intake (from salt) contributes to hypertension
+  - **Assess for vomiting or NG suction**: GI losses cause hypochloremic metabolic alkalosis
+  - **Review diuretic use**: Loop diuretics cause significant chloride losses
+  - **Note that isolated chloride tracking is uncommon**: Sodium is typically the focus of dietary interventions
+  - **Recognize chloride-specific conditions**: Cystic fibrosis affects chloride channels; congenital chloride diarrhea causes chloride wasting
+
+  ## Deficiency
+  **Hypochloremia causes**:
+  - GI losses: Vomiting, nasogastric suction, diarrhea (chloride-losing)
+  - Diuretic use (especially loop diuretics)
+  - Excessive sweating without replacement
+  - Syndrome of inappropriate ADH (dilutional)
+  - Cystic fibrosis (elevated sweat chloride, but can develop hypochloremia with losses)
+  - Congenital chloride diarrhea (rare genetic disorder)
+  - Chronic respiratory acidosis with compensation
+  - Bartter syndrome
+
+  **Symptoms of hypochloremia**:
+  - Usually accompanied by hyponatremia and/or metabolic alkalosis
+  - Muscle weakness, cramping
+  - Fatigue, lethargy
+  - Confusion
+  - Respiratory depression (metabolic alkalosis compensation)
+  - Cardiac arrhythmias (in severe cases)
+
+  **Hypochloremic metabolic alkalosis**:
+  - Classic presentation with vomiting or NG suction
+  - Loss of HCl depletes chloride and hydrogen ions
+  - Volume contraction triggers aldosterone, maintaining alkalosis
+  - Requires chloride replacement (usually as NaCl or KCl) for correction
+
+  ## Toxicity/Excess
+  **Hyperchloremia**:
+  - Usually accompanied by hypernatremia or normal anion gap metabolic acidosis
+  - Causes: Dehydration, excessive saline administration, renal tubular acidosis, diarrhea
+
+  **High chloride intake concerns** (as sodium chloride):
+  - Hypertension
+  - Cardiovascular disease
+  - Stroke
+  - Fluid retention
+  - Potentially direct effects on vasculature and kidney
+
+  **Research on chloride specifically**:
+  - Some studies suggest chloride may have blood pressure effects independent of sodium
+  - Non-chloride sodium salts (like sodium bicarbonate) may have different BP effects
+  - Clinical guidance still focuses primarily on total sodium/salt intake
+
+  **Upper limit**: 3600 mg/day based on the UL for sodium (2300 mg/day) and the equimolar ratio in NaCl.
+
+  ## Food Sources
+  **Primary source**:
+  - Table salt (sodium chloride): 60% chloride by weight
+  - 1 teaspoon salt = ~3400 mg chloride
+
+  **Foods high in chloride** (from added salt):
+  - Processed foods: Canned soups, frozen meals, snacks
+  - Cured meats: Bacon, ham, deli meats
+  - Cheese
+  - Bread and baked goods
+  - Condiments: Soy sauce, salad dressings
+  - Fast food
+
+  **Natural chloride sources** (lower amounts):
+  - Seaweed: Naturally high in chloride
+  - Celery
+  - Tomatoes
+  - Olives
+  - Rye
+
+  **Other dietary sources**:
+  - Potassium chloride (salt substitutes)
+  - Chlorinated drinking water (minimal contribution)
+
+  ## Absorption Factors
+  **Very high bioavailability**: Nearly 100% of dietary chloride is absorbed.
+
+  **Absorption characteristics**:
+  - Absorbed throughout the GI tract
+  - Passive and active transport mechanisms
+  - Coupled with sodium absorption in many cases
+
+  **No significant enhancers or inhibitors**: Chloride absorption is not significantly affected by other dietary factors.
+
+  **Balance regulation**: Maintained primarily through renal excretion. Kidneys can efficiently conserve chloride when intake is low or excrete excess when intake is high.
+
+  ## Special Populations
+  - **Hypertensive patients**: Should reduce sodium chloride (salt) intake; chloride reduction follows sodium reduction
+  - **Heart failure patients**: Fluid and sodium/chloride restriction often necessary
+  - **Cystic fibrosis patients**: Have abnormal chloride channels; elevated sweat chloride is diagnostic; may need salt supplementation in hot weather
+  - **Patients with vomiting/NG suction**: At risk for hypochloremic metabolic alkalosis; require chloride replacement
+  - **Diuretic users**: Loop diuretics cause significant chloride wasting; may need monitoring
+  - **Athletes/heavy sweating**: Lose chloride in sweat; sports drinks contain chloride
+  - **Chronic kidney disease**: May have impaired chloride excretion; intake may need modification
+  - **Congenital chloride diarrhea**: Rare genetic disorder requiring careful chloride management
+
+  ## Drug Interactions
+  - **Loop diuretics (furosemide, bumetanide)**: Significantly increase chloride excretion; can cause hypochloremia
+  - **Thiazide diuretics**: Also increase chloride excretion
+  - **Carbonic anhydrase inhibitors (acetazolamide)**: Affect acid-base balance and indirectly chloride
+  - **NSAIDs**: Affect renal sodium and chloride handling
+  - **Lithium**: Sodium/chloride depletion can increase lithium levels and toxicity risk
+  - **Corticosteroids**: Can affect fluid and electrolyte balance
+
+  ## Caveats & Limitations
+  - HealthKit captures chloride intake, but it's almost always from sodium chloride (salt)
+  - Most nutrition tracking focuses on sodium rather than chloride separately
+  - Food databases may not have accurate chloride data; often estimated from sodium
+  - Salt substitutes (KCl) provide chloride without sodium but may not be logged correctly
+  - Serum chloride is routinely measured and reflects fluid/acid-base status
+  - Spot urine chloride can help diagnose the cause of metabolic alkalosis
+  - Sweat chloride test is diagnostic for cystic fibrosis
+  - Chloride intake recommendations are closely tied to sodium recommendations
+  - Independent effects of chloride (vs. sodium) on health outcomes are difficult to study because they're almost always consumed together
+  - Processing and cooking methods affect salt content but chloride tracking doesn't capture this variability well
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing chloride"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietarySodium"
+    relationship: "Sodium and chloride consumed together as salt; intakes closely correlated"
+  - identifier: "HKQuantityTypeIdentifierDietaryPotassium"
+    relationship: "Potassium chloride is a salt substitute; potassium-chloride-sodium interactions affect blood pressure"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "High sodium chloride intake contributes to hypertension"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureDiastolic"
+    relationship: "Salt reduction lowers blood pressure"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryChloride"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarychloride"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Chloride Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Chloride-Consumer/"
+    type: "medical"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Chloride"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK545442/"
+    type: "research"
+  - title: "American Heart Association - Sodium and Salt"
+    url: "https://www.heart.org/en/healthy-living/healthy-eating/eat-smart/sodium"
+    type: "medical"
+last_updated: "2026-01-27"

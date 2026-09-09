@@ -1,0 +1,121 @@
+identifier: "HKCategoryTypeIdentifierIrregularMenstrualCycles"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Irregular Menstrual Cycles"
+short_description: "System-generated notification indicating significant variability in menstrual cycle length from month to month."
+icon: "calendar"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "notApplicable"
+    description: "Irregular menstrual cycles have been detected. This is a system notification indicating significant cycle-to-cycle length variability in the user's logged period data."
+ios_introduced:
+  version: "16.0"
+  year: 2022
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Automatic detection through Cycle Tracking analysis when sufficient period data is logged"
+  - name: "Apple Watch"
+    capability: "Supports cycle tracking data collection for deviation detection"
+primary_source: "System-generated"
+description: |
+  ## Overview
+  Irregular Menstrual Cycles is a system-generated notification that alerts users when their tracked menstrual cycles show significant variability in length from one cycle to the next. Unlike infrequent cycles (consistently long cycles), irregular cycles refer to unpredictable variation - for example, alternating between 25-day and 40-day cycles or highly variable cycle lengths over several months.
+
+  The Cycle Tracking feature analyzes multiple months of logged period data to assess cycle regularity. When cycle-to-cycle variation exceeds typical physiological ranges (generally > 7-9 days variation between cycles), this notification is generated to encourage discussion with a healthcare provider.
+
+  ## Health Significance
+  Irregular menstrual cycles can indicate various reproductive and systemic health conditions:
+  - **Polycystic ovary syndrome (PCOS)**: Hormonal imbalance causes unpredictable ovulation and cycle timing
+  - **Thyroid disorders**: Both hypo- and hyperthyroidism disrupt menstrual regularity
+  - **Perimenopause**: Natural transition period characterized by increasing cycle variability
+  - **Hormonal fluctuations**: Stress, travel, illness, or weight changes can temporarily affect regularity
+  - **Uterine abnormalities**: Fibroids or polyps may cause unpredictable bleeding patterns
+  - **Ovulatory dysfunction**: Irregular ovulation leads to variable cycle lengths
+  - **Hyperprolactinemia**: Elevated prolactin causes erratic menstrual patterns
+  - **Primary ovarian insufficiency**: Declining ovarian function creates irregularity
+
+  Cycle regularity is considered a vital sign of reproductive health; persistent irregularity warrants clinical evaluation.
+
+  ## Clinical Interpretation Guidelines
+  When evaluating irregular cycle notifications:
+  - **Normal variability**: Up to 7-9 days variation between cycles can be normal; greater variability is clinically significant
+  - **Pattern assessment questions**:
+    - Are cycles consistently unpredictable, or was there a recent change in pattern?
+    - Is there a stress, lifestyle, or medication change correlating with irregularity onset?
+    - Are there associated symptoms (weight changes, hirsutism, acne, hot flashes)?
+  - **Differentiating from infrequent cycles**:
+    - Irregular = variable (e.g., 22, 35, 28, 45 days)
+    - Infrequent = consistently long (e.g., 42, 45, 40, 48 days)
+    - Both patterns may coexist
+  - **Clinical evaluation approach**:
+    - Detailed menstrual history and symptom review
+    - Consider age-related factors (adolescence, perimenopause)
+    - Hormonal assessment: FSH, LH, estradiol, TSH, prolactin, androgens
+    - Pelvic imaging if structural pathology suspected
+    - Review contraceptive history and recent changes
+  - **Lifestyle factors**: Assess stress, exercise patterns, sleep, and nutrition
+  - **Red flags requiring urgent evaluation**:
+    - Associated heavy bleeding or anemia symptoms
+    - Pelvic pain
+    - Signs of hyperandrogenism (PCOS)
+    - Symptoms suggestive of thyroid dysfunction
+
+  ## Caveats & Limitations
+  - Read-only system notification; users cannot manually create or modify this sample
+  - Requires consistent period logging over multiple months for pattern recognition
+  - Algorithm thresholds and methodology are not publicly specified
+  - Some natural cycle variability is physiological; notification indicates above-normal variation
+  - Adolescents (first 2-3 years after menarche) naturally have irregular cycles
+  - Perimenopausal women expect increasing irregularity
+  - Recent hormonal contraceptive initiation or discontinuation causes temporary irregularity
+  - Postpartum cycles may be irregular while hormones normalize
+  - Does not identify underlying cause; clinical workup required
+  - Incomplete or inconsistent logging may affect algorithm accuracy
+  - Stress, travel, and illness can cause transient irregularity without pathology
+metadata_keys:
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Source data analyzed to detect cycle irregularity patterns"
+  - identifier: "HKCategoryTypeIdentifierInfrequentMenstrualCycles"
+    relationship: "Related deviation detection for cycles occurring less frequently than normal"
+  - identifier: "HKCategoryTypeIdentifierProlongedMenstrualPeriods"
+    relationship: "Related deviation detection for extended bleeding duration"
+  - identifier: "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding"
+    relationship: "Related deviation detection for bleeding between periods"
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "Ovulation tracking can help identify ovulatory vs anovulatory irregular cycles"
+references:
+  - title: "HKCategoryTypeIdentifierIrregularMenstrualCycles - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierirregularmenstrualcycles"
+    type: "official"
+  - title: "Cycle Tracking Deviation Notifications - Apple"
+    url: "https://support.apple.com/en-us/HT212899"
+    type: "official"
+  - title: "Menstrual Cycle as a Vital Sign - ACOG"
+    url: "https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2015/01/menstruation-in-girls-and-adolescents-using-the-menstrual-cycle-as-a-vital-sign"
+    type: "medical"
+  - title: "Abnormal Uterine Bleeding - FIGO Classification"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3232027/"
+    type: "research"
+last_updated: "2026-01-27"

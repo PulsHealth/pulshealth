@@ -1,0 +1,117 @@
+identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Ovulation Test Result"
+short_description: "Records results from ovulation predictor kit (OPK) tests that detect the LH surge preceding ovulation."
+icon: "testtube.2"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "negative"
+    description: "Test line is lighter than control line, indicating LH levels have not yet surged. Ovulation is not imminent."
+  - value: 2
+    name: "luteinizingHormoneSurge"
+    description: "Test line is equal to or darker than control line, indicating the LH surge has been detected. Ovulation typically occurs within 24-36 hours."
+  - value: 3
+    name: "indeterminate"
+    description: "Test result is unclear or invalid, possibly due to testing error, diluted urine, or faulty test strip."
+  - value: 4
+    name: "estrogenSurge"
+    description: "For advanced digital OPKs that detect estrogen rise before LH surge, indicating high fertility is approaching but peak has not yet been reached."
+ios_introduced:
+  version: "9.0"
+  year: 2015
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Manual logging of OPK results through Health app or fertility apps"
+  - name: "Apple Watch"
+    capability: "Manual logging through Cycle Tracking app"
+  - name: "Connected fertility devices"
+    capability: "Smart OPK readers like Mira or Inito can automatically log results"
+  - name: "Third-party apps"
+    capability: "Fertility apps that track ovulation test results"
+primary_source: "User-reported or Connected Device"
+description: |
+  ## Overview
+  Ovulation predictor kits (OPKs) detect the surge in luteinizing hormone (LH) that occurs 24-36 hours before ovulation. This LH surge triggers the release of a mature egg from the ovary. By testing daily during the expected fertile window, users can identify their most fertile days for conception or predict ovulation timing for natural family planning.
+
+  Standard OPKs provide a positive/negative result based on LH detection. Advanced digital tests may also detect rising estrogen levels, which precede the LH surge by 1-2 days, providing an earlier fertility indicator. Quantitative OPK readers can measure exact hormone levels, offering more precise tracking.
+
+  ## Health Significance
+  Ovulation test results provide objective confirmation of hormonal function and cycle timing:
+  - **Fertility optimization**: Identifies the 24-48 hour window of peak fertility for couples trying to conceive
+  - **Ovulation confirmation**: Regular positive LH tests suggest consistent ovulation is occurring
+  - **Cycle timing**: Helps establish pattern of ovulation timing within each cycle
+  - **Anovulation detection**: Persistently negative tests throughout a cycle may indicate anovulation
+  - **PCOS indicator**: Women with PCOS may have elevated baseline LH, causing false positives or prolonged positive readings
+  - **Luteal phase assessment**: Days from LH surge to next period indicates luteal phase length
+
+  ## Clinical Interpretation Guidelines
+  When reviewing ovulation test data:
+  - **Testing timing**: Tests should be performed in afternoon or evening (not first morning urine) for most accurate LH detection
+  - **Surge duration**: LH surge typically lasts 12-24 hours; testing once daily may occasionally miss the surge
+  - **Ovulation timing**: Ovulation occurs approximately 24-36 hours after LH surge detection; the day of positive test and following day are most fertile
+  - **Pattern analysis**:
+    - Consistent positive results around cycle day 12-16 suggest normal ovulatory cycles
+    - Very early or late surges may indicate hormonal imbalances
+    - Multiple surges per cycle can indicate PCOS or peri-ovulatory LH fluctuations
+  - **Negative results throughout cycle**: Consider anovulatory cycle, testing at wrong time, or testing window too narrow
+  - **Indeterminate results**: Often caused by testing too early/late in day, diluted urine, or expired tests
+  - **Estrogen surge results**: Indicates fertility is rising; expect LH surge within 1-2 days
+
+  ## Caveats & Limitations
+  - Does not confirm ovulation occurred, only that LH surge was detected
+  - Some women have short LH surges that may be missed with once-daily testing
+  - Elevated baseline LH in PCOS can cause false positives or difficulty interpreting results
+  - Certain medications (fertility drugs, HCG injections) can affect results
+  - Recently discontinued hormonal contraceptives may cause irregular patterns
+  - Testing technique and hydration levels affect result accuracy
+  - Standard OPKs provide qualitative (yes/no) results; subtle variations in LH levels are not captured
+  - Does not indicate egg quality or whether ovulation will result in successful fertilization
+  - Perimenopause may cause erratic LH patterns
+metadata_keys:
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
+    relationship: "Cervical mucus observations complement OPK testing for fertility awareness"
+  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
+    relationship: "Temperature rise confirms ovulation occurred after positive OPK; used together for comprehensive tracking"
+  - identifier: "HKCategoryTypeIdentifierProgesteroneTestResult"
+    relationship: "Progesterone testing confirms ovulation occurred; should follow positive OPK by 5-7 days"
+  - identifier: "HKCategoryTypeIdentifierSexualActivity"
+    relationship: "Timing intercourse with positive OPK maximizes conception probability"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Cycle tracking provides context for expected ovulation timing"
+references:
+  - title: "HKCategoryTypeIdentifierOvulationTestResult - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierovulationtestresult"
+    type: "official"
+  - title: "Ovulation Predictor Kits - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/evaluating-infertility"
+    type: "medical"
+  - title: "Timing of Intercourse in Relation to Ovulation - NEJM"
+    url: "https://www.nejm.org/doi/full/10.1056/NEJM199512073332301"
+    type: "research"
+  - title: "Urinary LH Detection for Ovulation Prediction - Human Reproduction"
+    url: "https://academic.oup.com/humrep/article/30/7/1699/619257"
+    type: "research"
+last_updated: "2026-01-27"

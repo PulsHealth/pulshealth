@@ -1,0 +1,155 @@
+identifier: "HKQuantityTypeIdentifierUVExposure"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Lab and Test Results"
+human_readable_name: "UV Exposure"
+short_description: "Ultraviolet radiation exposure measurement for skin cancer risk assessment and vitamin D synthesis tracking"
+icon: "sun.max.fill"
+color: "#FF9500"
+default_unit: "count"
+supported_units:
+  - "count"
+unit_description: "Count represents UV exposure index units or cumulative exposure counts from sensor devices"
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+typical_range:
+  min: 0
+  max: 11
+  unit: "count"
+  notes: "UV Index scale: 0-2 Low, 3-5 Moderate, 6-7 High, 8-10 Very High, 11+ Extreme"
+clinical_ranges:
+  - population: "Safe Exposure (Fair Skin)"
+    normal: "UV Index 0-2: Low risk, minimal protection needed"
+  - population: "Moderate Risk"
+    normal: "UV Index 3-5: Protection recommended, limit midday exposure"
+  - population: "High Risk"
+    normal: "UV Index 6-7: Protection essential, reduce sun exposure 10am-4pm"
+  - population: "Very High/Extreme Risk"
+    normal: "UV Index 8+: Avoid sun exposure during peak hours, full protection required"
+ios_introduced:
+  version: "9.0"
+  year: 2015
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Wearable UV Sensors"
+    capability: "Personal UV exposure monitoring throughout the day"
+    examples:
+      - "La Roche-Posay My Skin Track UV"
+      - "L'Oreal UV Sense"
+      - "Shade UV Sensor"
+  - name: "Smartwatch UV Sensors"
+    capability: "Integrated UV index measurement"
+    examples:
+      - "Garmin Instinct Solar"
+      - "Casio G-Shock with UV sensor"
+  - name: "Environmental UV Monitors"
+    capability: "Location-based UV index reporting"
+    examples:
+      - "Weather apps with UV data"
+      - "EPA SunWise UV Index"
+primary_source: "Wearable UV sensors and environmental data"
+description: |
+  ## Overview
+  UV Exposure tracks ultraviolet radiation exposure from sunlight or artificial sources. This metric is essential for skin cancer prevention, vitamin D synthesis optimization, and managing photosensitive conditions. UV radiation exposure is the primary environmental risk factor for skin cancer, making accurate tracking valuable for dermatological health.
+
+  ## How It's Measured
+  UV exposure is captured through multiple methods:
+  - **Wearable UV sensors**: Small photosensitive devices worn on skin or clothing
+    - Measure actual UV radiation reaching the body
+    - Account for clothing, shade, and personal exposure patterns
+  - **Environmental UV Index**: Location-based measurements from meteorological services
+    - Global standardized scale (0-11+) developed by WHO
+    - Does not account for individual behavior or clothing
+  - **Cumulative dosimeters**: Track total UV dose over time
+    - Some devices calculate Minimal Erythemal Dose (MED) equivalents
+    - Can estimate time to sunburn based on skin type
+
+  ## Health Significance
+  UV exposure data informs multiple health considerations:
+  - **Skin cancer prevention**: Primary modifiable risk factor for melanoma and non-melanoma skin cancers
+  - **Photoaging assessment**: UV exposure accelerates skin aging
+  - **Vitamin D synthesis**: UVB exposure necessary for endogenous vitamin D production
+  - **Photosensitivity management**: Essential for patients on photosensitizing medications
+  - **Lupus and autoimmune conditions**: UV exposure can trigger flares
+  - **Post-procedure care**: Important after skin procedures or treatments
+
+  ## Clinical Interpretation Guidelines
+  When using UV exposure data for patient counseling:
+  1. **Skin type consideration** (Fitzpatrick scale):
+     - Type I-II (fair skin): Burns easily, high risk, aggressive protection needed
+     - Type III-IV (medium skin): Moderate risk, standard protection
+     - Type V-VI (dark skin): Lower burn risk but still need protection; skin cancer detected later stage
+  2. **UV Index action levels**:
+     - 0-2: Low risk, enjoy outdoor activities
+     - 3-5: Moderate, seek shade during midday, use SPF 30+
+     - 6-7: High, reduce exposure 10am-4pm, SPF 30+, protective clothing
+     - 8-10: Very high, minimize outdoor exposure during peak hours
+     - 11+: Extreme, avoid outdoor exposure during peak hours
+  3. **Cumulative exposure assessment**:
+     - Lifetime UV exposure correlates with skin cancer risk
+     - Blistering sunburns, especially in youth, particularly significant
+     - Occupational and recreational patterns matter
+  4. **Vitamin D balance**:
+     - Brief unprotected exposure (10-15 minutes) several times weekly typically sufficient
+     - Depends on latitude, season, skin type, and body area exposed
+     - Supplementation often preferable to UV exposure for vitamin D
+  5. **Medication interactions**:
+     - Photosensitizing drugs increase burn risk: tetracyclines, NSAIDs, thiazides, fluoroquinolones
+     - Patients on these medications need stricter UV protection
+  6. **High-risk patients requiring enhanced protection**:
+     - Personal or family history of skin cancer
+     - Multiple dysplastic nevi
+     - Immunosuppressed patients
+     - Xeroderma pigmentosum and other photosensitivity disorders
+
+  ## Caveats & Limitations
+  - **Sensor placement matters**: UV exposure varies significantly by body location
+  - **Environmental vs. personal exposure**: UV Index doesn't reflect individual behavior
+  - **Reflection and indirect exposure**: Water, snow, sand amplify UV; shade is not complete protection
+  - **UVA vs. UVB**: Most sensors measure combined UV; different wavelengths have different effects
+  - **Indoor UV sources**: Tanning beds, certain lights not always captured
+  - **Window glass**: Blocks UVB but not all UVA
+  - **Cloud cover misconception**: UV can penetrate clouds; cloudy days still require protection
+  - **Altitude effects**: UV increases approximately 10% per 1000m elevation
+
+  ## Additional Notes
+  For clinical practice, UV exposure data is most valuable when combined with patient education about sun protection behaviors. Wearable UV sensors can increase awareness and behavior modification, particularly for patients who underestimate their exposure. Consider that some UV exposure is beneficial for vitamin D synthesis and circadian rhythm regulation, requiring a balanced approach rather than complete avoidance. For high-risk patients, recommend annual full-body skin examinations alongside UV exposure monitoring.
+metadata_keys:
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the UV sensor device"
+  - key: "HKMetadataKeyUVIndexClassification"
+    description: "Categorical classification of UV exposure level (Low, Moderate, High, Very High, Extreme)"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier for syncing data across devices"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierTimeInDaylight"
+    relationship: "Daylight exposure provides context for UV exposure and circadian health"
+  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
+    relationship: "Outdoor exercise correlates with UV exposure; helps identify exposure patterns"
+  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
+    relationship: "Outdoor activity metrics help contextualize UV exposure data"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierUVExposure"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifieruvexposure"
+    type: "official"
+  - title: "WHO - INTERSUN Programme: UV Index"
+    url: "https://www.who.int/news-room/questions-and-answers/item/radiation-the-ultraviolet-(uv)-index"
+    type: "medical"
+  - title: "American Academy of Dermatology - Sun Protection"
+    url: "https://www.aad.org/public/everyday-care/sun-protection"
+    type: "medical"
+  - title: "Skin Cancer Foundation - UV Radiation and Skin Cancer"
+    url: "https://www.skincancer.org/risk-factors/uv-radiation/"
+    type: "medical"
+  - title: "Wearable UV Sensors: A Systematic Review"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8156775/"
+    type: "research"
+last_updated: "2026-01-27"

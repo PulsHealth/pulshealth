@@ -1,0 +1,287 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Swimming Stroke Count
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierSwimmingStrokeCount"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Swimming Stroke Count"
+short_description: "Measures the number of strokes performed while swimming."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.pool.swim"
+color: "#5AC8FA"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "count"
+supported_units:
+  - "count"
+unit_description: "Discrete count of swimming strokes detected during swimming activity. Each stroke cycle (one arm pull for freestyle/backstroke, one full pull for breaststroke/butterfly) counts as one stroke."
+
+# --- STATISTICS ---
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 5000
+  unit: "count"
+  notes: "Single workout values depend heavily on distance and stroke efficiency. A typical 1500m workout might involve 900-1500 strokes depending on swimmer skill level. Competitive swimmers are more efficient (fewer strokes per lap) than recreational swimmers."
+
+clinical_ranges:
+  - population: "Strokes per 25m Lap (Freestyle)"
+    beginner: "25-40 strokes"
+    intermediate: "18-25 strokes"
+    advanced: "12-18 strokes"
+    elite: "10-14 strokes"
+  - population: "SWOLF Score Ranges (25m pool)"
+    beginner: ">60"
+    intermediate: "45-60"
+    advanced: "35-45"
+    elite: "<35"
+  - population: "Strokes per 25m by Stroke Type"
+    freestyle: "12-25 strokes"
+    backstroke: "14-28 strokes"
+    breaststroke: "8-16 strokes"
+    butterfly: "8-14 strokes"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "10.0"
+  year: 2016
+  notes: "Introduced alongside swimming distance with Apple Watch Series 2 swim tracking"
+watchos_introduced:
+  version: "3.0"
+  year: 2016
+  notes: "Automatic stroke detection using accelerometer pattern recognition during swim workouts"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Automatic stroke counting using accelerometer-based motion detection. Identifies stroke type (freestyle, backstroke, breaststroke, butterfly) and counts individual stroke cycles."
+    series: "Series 2 and later"
+    accuracy: "Generally accurate for standard competitive strokes. Mixed strokes, drills, or unconventional technique may affect accuracy."
+    examples: ["Apple Watch Series 2", "Apple Watch SE", "Apple Watch Ultra"]
+  - name: "Swim-capable fitness trackers"
+    capability: "Dedicated swim trackers with accelerometer-based stroke counting. Many provide SWOLF calculations."
+    examples: ["Garmin Swim 2", "FORM Smart Swim Goggles", "Polar Vantage"]
+  - name: "Swimming apps"
+    capability: "Third-party apps may provide stroke count data from connected devices or manual entry."
+    examples: ["MySwimPro", "Swim.com", "SwimIO"]
+primary_source: "Apple Watch (Series 2 or later) with Pool Swim or Open Water Swim workout"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Swimming Stroke Count tracks the number of arm strokes performed during swimming. This metric is fundamental to swimming efficiency analysis and, when combined with lap time, produces the SWOLF score—a key indicator of swimming efficiency analogous to golf scoring (lower is better). Apple Watch detects not only the count but also the stroke type, enabling stroke-specific efficiency tracking.
+
+  For health consultants working with swimmers, stroke count provides insight into technique, fatigue patterns, and training adaptation that distance alone cannot reveal. A swimmer improving technique will often show decreasing stroke counts while maintaining or improving speed.
+
+  ## How It's Measured
+  Apple Watch uses sophisticated accelerometer pattern recognition to count strokes:
+
+  **Stroke Detection Mechanism:**
+  - Accelerometer samples wrist motion at high frequency during swim workouts
+  - Machine learning algorithm identifies characteristic motion patterns for each stroke type
+  - Each complete stroke cycle (arm entry to arm entry for freestyle/backstroke) registers as one count
+  - For breaststroke and butterfly, each simultaneous arm pull counts as one stroke
+
+  **Stroke Type Recognition:**
+  Apple Watch identifies four competitive stroke types:
+  - **Freestyle (Front Crawl):** Alternating arm rotation with continuous flutter kick
+  - **Backstroke:** Alternating arm rotation while supine
+  - **Breaststroke:** Simultaneous arm pull with frog kick
+  - **Butterfly:** Simultaneous arm recovery with dolphin kick
+
+  **Per-Lap Recording:**
+  - Stroke count recorded per lap when pool length is set
+  - Enables lap-by-lap efficiency comparison
+  - Identifies fatigue patterns (increasing strokes as workout progresses)
+  - Mixed stroke laps labeled when stroke type changes mid-lap
+
+  **SWOLF Calculation:**
+  SWOLF (swim golf) = stroke count + time in seconds for a given distance
+  - Example: 20 strokes + 35 seconds = 55 SWOLF for one length
+  - Lower SWOLF indicates better efficiency
+  - Useful for tracking technique improvement over time
+  - Named after golf scoring where lower is better
+
+  ## Health Significance
+  While stroke count itself is not a direct health metric, it provides valuable insight into swimming efficiency and training status:
+
+  **Technique Development:**
+  - Decreasing stroke count at constant speed indicates improved technique
+  - Coaches use stroke count to evaluate catch effectiveness and stroke length
+  - Efficiency improvements reduce energy cost for given distance
+
+  **Fatigue Monitoring:**
+  - Stroke count typically increases as swimmer fatigues
+  - "Stroke count creep" during a set indicates declining efficiency
+  - Useful for pacing strategy and recognizing overtraining
+
+  **Training Adaptation:**
+  - Long-term stroke count trends reveal technique improvement
+  - Comparing SWOLF across sessions shows efficiency gains
+  - Helps quantify benefits of technique-focused training
+
+  **Injury Prevention Context:**
+  - High stroke counts may indicate inefficient technique with excess shoulder stress
+  - Stroke type data helps identify stroke-specific overuse patterns
+  - Monitoring stroke count per distance helps optimize training load
+
+  ## Clinical Interpretation Guidelines
+
+  ### Efficiency Assessment
+  Stroke count per lap provides technique insights:
+
+  **Freestyle Stroke Count per 25m:**
+  - **>30 strokes:** Likely technique issues; high energy cost
+  - **25-30 strokes:** Beginner/intermediate recreational swimmer
+  - **18-25 strokes:** Solid recreational or masters swimmer
+  - **14-18 strokes:** Competitive swimmer
+  - **<14 strokes:** Elite-level technique
+
+  ### SWOLF Interpretation
+  SWOLF scores for 25m freestyle:
+  - **>65:** Beginner; significant technique improvement potential
+  - **55-65:** Intermediate recreational swimmer
+  - **45-55:** Good recreational or masters swimmer
+  - **35-45:** Competitive swimmer
+  - **<35:** Elite level efficiency
+
+  ### Trend Analysis
+  For regular swimmers, monitor:
+  - **Session-to-session SWOLF:** Should remain stable or improve
+  - **Within-workout progression:** Increasing stroke count indicates fatigue
+  - **Seasonal trends:** Expect improvements with consistent training
+  - **Post-technique work:** Stroke count may temporarily increase during change
+
+  ### Stroke Type Distribution
+  Review stroke variety for balanced training:
+  - Heavy freestyle reliance may contribute to shoulder imbalance
+  - Backstroke provides counter-movement for shoulder health
+  - Breaststroke and butterfly require specific flexibility
+
+  ### Clinical Considerations
+  - High stroke counts with shoulder pain: possible technique-related stress
+  - Sudden inability to maintain previous stroke counts: potential injury or illness
+  - Stroke type changes to avoid pain: compensation pattern worth investigating
+
+  ## Caveats & Limitations
+
+  ### Measurement Limitations
+  - **Drill work:** Catch-up drills, single-arm drills may not count accurately
+  - **Kickboard sets:** No arm strokes to count during kick sets
+  - **Pull buoy:** May slightly affect stroke detection
+  - **Non-standard strokes:** Sidestroke, elementary backstroke poorly detected
+  - **Very slow swimming:** Gentle recreational swimming may undercount
+
+  ### Interpretation Limitations
+  - **Speed not captured:** Same stroke count at different speeds means different efficiency
+  - **Individual variation:** Body size, arm length affect baseline stroke count
+  - **Pool length impact:** SWOLF scores not comparable across different pool lengths
+  - **Stroke type differences:** Each stroke has different typical counts; compare like to like
+
+  ### What Stroke Count Cannot Tell You
+  - Distance per stroke (need distance data)
+  - Stroke rate (strokes per minute)
+  - Catch and pull quality
+  - Kick contribution to propulsion
+  - Body position and streamlining
+  - Breathing pattern effectiveness
+
+  ## Additional Notes
+
+  **For Health Consultants:**
+  When reviewing swimming stroke count data:
+  1. Always consider in conjunction with distance and time (SWOLF)
+  2. Compare same stroke types and same pool lengths
+  3. Look for within-workout fatigue patterns
+  4. Note stroke type variety for shoulder health assessment
+  5. Consider baseline differences due to swimmer height/arm length
+
+  **SWOLF as Primary Efficiency Metric:**
+  SWOLF is widely used in swim coaching:
+  - Combines speed and efficiency in single number
+  - Enables workout-to-workout comparison
+  - Goal: maintain low SWOLF even when fatigued
+  - Different pool lengths require separate SWOLF tracking
+
+  **Stroke Count by Stroke Type:**
+  Different strokes have different typical counts per 25m:
+  - Freestyle: Most common, fastest stroke for most swimmers
+  - Backstroke: Slightly higher count than freestyle typical
+  - Breaststroke: Lowest stroke count, longest glide phase
+  - Butterfly: Similar to breaststroke but more demanding
+
+  **Integration with Swim Workouts:**
+  Detailed workout data includes:
+  - Per-lap stroke count
+  - Per-lap stroke type
+  - Per-lap SWOLF
+  - Rest intervals
+  - Stroke count trends across sets
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeySwimmingStrokeStyle"
+    description: "The stroke type detected for this sample: freestyle (0), backstroke (1), breaststroke (2), butterfly (3), or mixed (4)."
+  - key: "HKMetadataKeySwimmingLocationType"
+    description: "Indicates whether the swim was in a pool (1) or open water (2)."
+  - key: "HKMetadataKeyLapLength"
+    description: "The pool length in meters, needed for accurate stroke-per-lap calculations."
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier for the sample from the originating source."
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices."
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution."
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDistanceSwimming"
+    relationship: "Complementary - Distance combined with stroke count provides efficiency metrics (SWOLF)"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Related - Stroke efficiency affects energy expenditure for given distance"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Complementary - Heart rate provides intensity context; efficient strokes require less cardiac output"
+  - identifier: "HKWorkoutTypeSwimming"
+    relationship: "Contains - Swimming workouts include stroke count as detailed metric"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - swimmingStrokeCount"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/swimmingstrokecount"
+    type: "official"
+  - title: "Apple Support - Swim tracking with Apple Watch"
+    url: "https://support.apple.com/en-us/HT205014"
+    type: "official"
+  - title: "USA Swimming - Stroke Technique Resources"
+    url: "https://www.usaswimming.org/coaches/coaching-resources"
+    type: "research"
+  - title: "Masters Swimming - SWOLF Explained"
+    url: "https://www.usms.org/fitness-and-training/articles-and-videos/articles/what-is-swolf"
+    type: "tutorial"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - SWOLF = Strokes + Seconds per length (like golf, lower is better)
+  - Four stroke types detected: freestyle, backstroke, breaststroke, butterfly
+  - Elite freestyle swimmers: 10-14 strokes per 25m
+  - Recreational swimmers: 25-40 strokes per 25m
+  - Stroke count increases with fatigue (useful training metric)
+  - Arm length/height significantly affects baseline stroke count
+  - Compare only same stroke types and pool lengths for valid analysis

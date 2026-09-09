@@ -1,0 +1,156 @@
+identifier: "HKQuantityTypeIdentifierInsulinDelivery"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Lab and Test Results"
+human_readable_name: "Insulin Delivery"
+short_description: "Amount of insulin delivered for diabetes management, tracking basal and bolus doses in international units"
+icon: "syringe.fill"
+color: "#FF9500"
+default_unit: "IU"
+supported_units:
+  - "IU"
+unit_description: "International Units (IU) standardize insulin potency measurement across different formulations"
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+typical_range:
+  min: 0
+  max: 100
+  unit: "IU"
+  notes: "Total daily dose varies widely; typically 0.5-1.0 IU/kg body weight for Type 1 diabetes"
+clinical_ranges:
+  - population: "Type 1 Diabetes Adults"
+    normal: "Total daily dose: 0.4-1.0 IU/kg; approximately 40-60 units/day average"
+  - population: "Type 2 Diabetes - Insulin Requiring"
+    normal: "Highly variable; may exceed 1-2 IU/kg in insulin-resistant patients"
+  - population: "Basal Insulin (Type 1)"
+    normal: "Approximately 40-50% of total daily dose"
+  - population: "Bolus Insulin (Type 1)"
+    normal: "Approximately 50-60% of total daily dose, divided among meals"
+ios_introduced:
+  version: "11.0"
+  year: 2017
+watchos_introduced:
+  version: "4.0"
+  year: 2017
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "Insulin Pumps"
+    capability: "Continuous subcutaneous insulin infusion with precise basal and bolus delivery"
+    examples:
+      - "Medtronic MiniMed 780G"
+      - "Tandem t:slim X2"
+      - "Omnipod 5"
+      - "Insulet Omnipod"
+  - name: "Smart Insulin Pens"
+    capability: "Connected pens that track injection doses and timing"
+    examples:
+      - "Novo Nordisk NovoPen 6"
+      - "Companion InPen"
+      - "Eli Lilly Tempo Smart Button"
+  - name: "Automated Insulin Delivery Systems"
+    capability: "Closed-loop systems that automatically adjust insulin based on CGM readings"
+    examples:
+      - "Medtronic 780G with Guardian 4"
+      - "Tandem Control-IQ"
+      - "Beta Bionics iLet"
+primary_source: "Insulin pumps and smart insulin pens"
+description: |
+  ## Overview
+  Insulin Delivery tracks the amount of insulin administered for diabetes management. This metric captures both basal (background) insulin that maintains glucose control between meals and bolus (mealtime) insulin that covers carbohydrate intake and corrects high blood glucose levels. Accurate insulin delivery data is fundamental to diabetes self-management and clinical decision-making.
+
+  ## How It's Measured
+  Insulin delivery is tracked through connected diabetes devices:
+  - **Insulin pumps**: Automatically log all programmed and delivered insulin with timestamps
+  - **Smart insulin pens**: Record dose amounts, timing, and pen temperature
+  - **Manual logging**: Patient-entered data for traditional pen or syringe injections
+  - Data includes:
+    - Dose amount in international units (IU)
+    - Delivery type (basal vs. bolus)
+    - Timestamp of delivery
+    - For pumps: programmed vs. actually delivered amounts
+    - Extended/square wave bolus information
+
+  ## Health Significance
+  Insulin delivery data serves multiple critical purposes in diabetes care:
+  - **Dose optimization**: Enables fine-tuning of insulin regimens based on patterns
+  - **Hypoglycemia investigation**: Correlates low glucose events with preceding insulin doses
+  - **Adherence assessment**: Identifies missed doses or inconsistent timing
+  - **Total daily dose trends**: Tracks changes in insulin requirements over time
+  - **Basal-bolus balance**: Ensures appropriate distribution for glycemic control
+  - **Time-in-range improvement**: Data-driven adjustments to increase optimal glucose time
+
+  ## Clinical Interpretation Guidelines
+  When reviewing insulin delivery data for clinical decisions:
+  1. **Total Daily Dose (TDD) analysis**:
+     - Calculate average TDD over 7-14 days for stable assessment
+     - Significant changes in TDD may indicate illness, activity changes, or insulin resistance shifts
+     - TDD >1.5 IU/kg suggests significant insulin resistance
+  2. **Basal-bolus ratio**:
+     - Typical ratio: 40-50% basal, 50-60% bolus
+     - High basal percentage may indicate insufficient bolus dosing or carb counting errors
+     - High bolus percentage may suggest inadequate basal rates
+  3. **Bolus timing assessment**:
+     - Pre-meal timing (15-20 minutes before) optimal for most rapid-acting insulins
+     - Delayed bolusing contributes to postprandial hyperglycemia
+  4. **Correction dose patterns**:
+     - Frequent correction boluses suggest basal or carb ratio inadequacy
+     - Time of day patterns reveal specific adjustment opportunities
+  5. **Pump-specific metrics**:
+     - Suspend time: Excessive suspension indicates overcorrection risk
+     - Temporary basal use: Patterns around exercise or illness
+     - Auto-mode percentage: Indicator of system compatibility
+  6. **Smart pen insights**:
+     - Missed dose patterns: Identify problematic times or days
+     - Dose consistency: Variations may indicate carb counting issues
+
+  ## Caveats & Limitations
+  - **Programmed vs. delivered**: Pump malfunctions may create discrepancies
+  - **Injection site issues**: Lipohypertrophy affects absorption, not captured in data
+  - **Insulin type matters**: Onset and duration vary by formulation
+  - **Missing data**: Injections with non-connected devices not automatically captured
+  - **Does not equal absorption**: Delivery confirmed does not guarantee proper absorption
+  - **Context required**: Data meaningless without corresponding glucose and carb information
+  - **Device-specific limitations**: Not all pumps/pens integrate with HealthKit
+  - **Temperature sensitivity**: Insulin degradation not reflected in delivery data
+
+  ## Additional Notes
+  For comprehensive diabetes management, insulin delivery data should be reviewed alongside continuous glucose monitoring (CGM) data, carbohydrate intake, and physical activity. The most valuable insights come from overlaying insulin doses with glucose response curves to identify timing and dosing opportunities. Automated insulin delivery (AID) systems provide the most complete picture, as they capture micro-adjustments that manual regimens cannot. When counseling patients, focus on patterns over individual doses and celebrate improvements in time-in-range rather than scrutinizing specific values.
+metadata_keys:
+  - key: "HKInsulinDeliveryReasonBasal"
+    description: "Indicates the insulin was delivered as basal (background) insulin"
+  - key: "HKInsulinDeliveryReasonBolus"
+    description: "Indicates the insulin was delivered as bolus (mealtime or correction) insulin"
+  - key: "HKMetadataKeyInsulinDeliveryReason"
+    description: "Specifies whether delivery was basal or bolus"
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the insulin pump or smart pen device"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier for syncing data across devices and platforms"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
+    relationship: "Blood glucose values are the primary outcome measure for insulin dosing decisions"
+  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
+    relationship: "Carbohydrate intake directly informs bolus insulin calculations"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Physical activity affects insulin sensitivity and dose requirements"
+  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
+    relationship: "Illness-related temperature elevation increases insulin requirements"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierInsulinDelivery"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierinsulindelivery"
+    type: "official"
+  - title: "ADA Standards of Care in Diabetes 2024"
+    url: "https://diabetesjournals.org/care/issue/47/Supplement_1"
+    type: "medical"
+  - title: "Consensus Recommendations for Use of AGP in Clinical Practice"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7196880/"
+    type: "medical"
+  - title: "Connected Insulin Pen Devices and Data Integration"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8189489/"
+    type: "research"
+last_updated: "2026-01-27"

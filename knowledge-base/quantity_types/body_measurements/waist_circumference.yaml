@@ -1,0 +1,351 @@
+# ============================================
+# HEALTHKIT DATA TYPE: WAIST CIRCUMFERENCE
+# ============================================
+# Clinical reference for health consultants and clinicians
+# Last updated: 2026-01-27
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierWaistCircumference"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Body Measurements"
+human_readable_name: "Waist Circumference"
+short_description: "A measurement of the circumference of the waist at the level of the umbilicus or narrowest point, a key indicator of central adiposity and cardiometabolic risk."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.arms.open"
+color: "#FF9500"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "cm"
+supported_units:
+  - "cm"
+  - "m"
+  - "in"
+  - "ft"
+unit_description: "Waist circumference is typically recorded in centimeters (cm) or inches (in). HealthKit accepts any length unit and converts between them automatically."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 40
+  max: 180
+  unit: "cm"
+  notes: "Range encompasses children through adults with severe obesity. Healthy adult range typically 60-100 cm."
+
+clinical_ranges:
+  - population: "Adult males - Low cardiometabolic risk"
+    normal: "<94 cm (<37 in)"
+    notes: "IDF/European criteria; ATP III uses <102 cm (<40 in)"
+  - population: "Adult males - Increased risk"
+    normal: "94-102 cm (37-40 in)"
+    high: ">102 cm (>40 in) - substantially increased risk"
+    notes: "ATP III threshold for metabolic syndrome component"
+  - population: "Adult females - Low cardiometabolic risk"
+    normal: "<80 cm (<31.5 in)"
+    notes: "IDF/European criteria; ATP III uses <88 cm (<35 in)"
+  - population: "Adult females - Increased risk"
+    normal: "80-88 cm (31.5-35 in)"
+    high: ">88 cm (>35 in) - substantially increased risk"
+    notes: "ATP III threshold for metabolic syndrome component"
+  - population: "Asian males"
+    normal: "<90 cm (<35.4 in)"
+    high: ">90 cm - increased risk"
+    notes: "IDF Asian-specific threshold; lower cutoff due to higher metabolic risk at lower waist circumference"
+  - population: "Asian females"
+    normal: "<80 cm (<31.5 in)"
+    high: ">80 cm - increased risk"
+    notes: "IDF Asian-specific threshold"
+  - population: "Japanese males"
+    normal: "<85 cm (<33.5 in)"
+    high: ">85 cm - metabolic syndrome criterion"
+    notes: "Japan-specific criterion; lower than other populations"
+  - population: "Japanese females"
+    normal: "<90 cm (<35.4 in)"
+    high: ">90 cm - metabolic syndrome criterion"
+    notes: "Japan-specific criterion; uniquely higher for women than men"
+
+# --- CATEGORY VALUES ---
+category_values: null
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "11.0"
+  year: 2017
+  notes: "Added in iOS 11 to support body composition and cardiometabolic risk assessment"
+watchos_introduced:
+  version: "4.0"
+  year: 2017
+  notes: "Synced from iPhone; Apple Watch does not measure waist circumference directly"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Manual Entry"
+    capability: "Users measure with a flexible tape measure and enter values in the Health app or third-party apps"
+  - name: "Smart Tape Measures"
+    capability: "Bluetooth-connected tape measures that automatically log measurements"
+    examples:
+      - "RENPHO Smart Tape Measure"
+      - "Bagel Smart Tape Measure"
+  - name: "Body Composition Scales"
+    capability: "Some advanced scales estimate waist circumference from bioelectrical impedance patterns"
+    examples:
+      - "Withings Body Scan"
+  - name: "Third-party Apps"
+    capability: "Fitness and health tracking apps can write waist circumference data to HealthKit"
+    examples:
+      - "MyFitnessPal"
+      - "Lose It!"
+      - "Noom"
+primary_source: "Manual Entry"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Waist circumference (WC) is a simple anthropometric measurement that serves as a surrogate
+  marker for intra-abdominal (visceral) fat accumulation. Unlike subcutaneous fat, visceral
+  fat is metabolically active and strongly associated with:
+
+  - Insulin resistance and type 2 diabetes
+  - Dyslipidemia (elevated triglycerides, low HDL cholesterol)
+  - Hypertension
+  - Cardiovascular disease
+  - Non-alcoholic fatty liver disease (NAFLD)
+  - Certain cancers (colorectal, breast, endometrial)
+
+  Waist circumference is a core component of metabolic syndrome diagnostic criteria and
+  provides prognostic information independent of body mass index (BMI). In clinical practice,
+  WC often better predicts cardiometabolic risk than BMI alone, particularly for individuals
+  with "normal" BMI but excess central adiposity ("metabolically obese normal weight" or
+  "TOFI" - thin outside, fat inside).
+
+  ## How It's Measured
+  **Standardized Clinical Measurement Protocol:**
+
+  1. Subject stands with feet together, arms at sides, relaxed
+  2. Measurement taken at end of normal expiration (not holding breath)
+  3. Tape positioned horizontally, snug but not compressing skin
+  4. Reading taken to nearest 0.1 cm or 0.5 inch
+
+  **Anatomical Landmarks (varies by protocol):**
+
+  - **WHO Protocol:** Midpoint between lowest palpable rib and top of iliac crest
+  - **NIH/NHLBI Protocol:** Superior border of iliac crest (used in ATP III)
+  - **Common Practice:** At the level of the umbilicus (belly button)
+  - **Narrowest Point:** Natural waist (smallest circumference between ribs and hips)
+
+  **Important Considerations:**
+  - Measurement should be taken on bare skin or over light clothing
+  - Tape must be parallel to the floor
+  - Subject should not hold their breath or "suck in" their stomach
+  - Multiple measurements (2-3) should be averaged
+  - Different protocols yield slightly different values; consistency is key
+
+  **Consumer Self-Measurement:**
+  Most waist circumference data in HealthKit comes from self-measurement, which is subject
+  to technique variability. Instructing patients on proper technique improves reliability.
+
+  ## Health Significance
+
+  ### Metabolic Syndrome Criteria
+  Waist circumference is a mandatory or key component of metabolic syndrome definitions:
+
+  **IDF Definition (2005) - Central obesity REQUIRED:**
+  - Europid males: >= 94 cm (37 in)
+  - Europid females: >= 80 cm (31.5 in)
+  - South Asian/Chinese/Japanese males: >= 90 cm (35.4 in)*
+  - South Asian/Chinese females: >= 80 cm (31.5 in)
+  *Japanese male criterion is 85 cm per Japanese guidelines
+
+  Plus any two of: elevated triglycerides, reduced HDL, elevated blood pressure,
+  elevated fasting glucose.
+
+  **ATP III/AHA/NHLBI Definition:**
+  - Males: >= 102 cm (40 in)
+  - Females: >= 88 cm (35 in)
+
+  Three of five criteria required (WC, TG, HDL, BP, glucose).
+
+  **WHO Definition:**
+  - Males: Waist-to-hip ratio >0.90
+  - Females: Waist-to-hip ratio >0.85
+  - Or BMI >= 30 kg/m2
+
+  ### Cardiometabolic Risk Stratification
+
+  The relationship between waist circumference and metabolic risk varies by ethnicity:
+
+  - **South Asians and East Asians:** Develop metabolic complications at lower WC
+  - **African descent:** May have lower visceral fat at given WC
+  - **European descent:** Standard cutoffs most applicable
+
+  ### Waist-to-Height Ratio (WHtR)
+  An alternative metric that may better predict cardiometabolic risk across populations:
+  - WHtR >= 0.5 indicates increased risk regardless of sex or ethnicity
+  - Simple message: "Keep your waist to less than half your height"
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  Optimal waist circumference varies by sex, ethnicity, and age:
+
+  **General Guidance:**
+  - Lower is generally better for metabolic health
+  - Trends over time more informative than single measurements
+  - Consider in conjunction with other metabolic parameters
+
+  ### Elevated Values May Indicate
+  - **Visceral adiposity:** Central fat accumulation independent of BMI
+  - **Metabolic syndrome:** Core diagnostic criterion
+  - **Insulin resistance:** Strong correlation with HOMA-IR
+  - **Increased cardiovascular risk:** Independent predictor of CV events
+  - **NAFLD risk:** Visceral fat strongly associated with hepatic steatosis
+  - **Type 2 diabetes risk:** Strong predictor of incident diabetes
+  - **Sleep apnea risk:** Central obesity is a major risk factor
+  - **Certain cancers:** Colorectal, breast (postmenopausal), endometrial
+
+  ### Changes Over Time
+  - **Increasing WC:** May signal lifestyle changes, medication effects (e.g., steroids,
+    some antipsychotics), hormonal changes, or declining metabolic health
+  - **Decreasing WC:** Often reflects successful lifestyle intervention; associated
+    with metabolic improvement even without significant weight change
+  - **WC reduction of 4 cm:** Associated with clinically meaningful improvements in
+    metabolic parameters
+
+  ### Red Flags for Consultation
+  - WC exceeding population-specific thresholds (see clinical_ranges above)
+  - Rapid increase in WC (>5 cm over months)
+  - WC increase accompanied by other metabolic syndrome features
+  - WC >= 88/102 cm with known cardiovascular disease or diabetes
+  - Discordance between BMI category and WC (normal BMI, elevated WC)
+  - WC elevation in patients on medications known to cause central adiposity
+
+  ## Caveats & Limitations
+
+  **Measurement Considerations:**
+  - Technique variability: Different protocols yield different values
+  - Self-measurement: Often inaccurate; overestimation or underestimation common
+  - Time of day: May vary slightly due to meals and fluid intake
+  - Clothing: Should be measured on bare skin or minimal clothing
+  - Posture: Standing vs. supine positions yield different values
+  - Respiratory phase: End-expiration standardizes measurement
+
+  **Clinical Limitations:**
+  - Does not distinguish between visceral and subcutaneous abdominal fat
+  - Single measurement less reliable than serial tracking
+  - Cutoffs derived from specific populations may not apply universally
+  - Not validated for children; percentile charts exist but less widely used
+  - Pregnancy invalidates standard interpretation
+  - Abdominal surgery, hernias, or organomegaly affect measurement
+
+  **Population-Specific Considerations:**
+  - Ethnic-specific cutoffs important for accurate risk assessment
+  - Age-related changes in fat distribution may affect interpretation
+  - Very muscular individuals may have higher WC without metabolic risk
+  - Elderly may have muscle loss but preserved or increased visceral fat
+
+  **HealthKit-Specific Notes:**
+  - Most data is manually entered with potential technique inconsistencies
+  - No automatic measurement from Apple devices
+  - Historical data may not indicate measurement protocol used
+  - Consider standardizing measurement instructions for tracked patients
+
+  ## Additional Notes
+
+  **Clinical Utility Compared to BMI:**
+  Waist circumference provides complementary and sometimes superior information to BMI:
+
+  - BMI cannot distinguish between fat mass and lean mass
+  - BMI misses "metabolically obese normal weight" individuals
+  - WC better correlates with visceral fat mass
+  - WC better predicts cardiovascular events in some studies
+  - Combined use of BMI and WC improves risk stratification
+
+  **Lifestyle Intervention Target:**
+  Waist circumference can serve as a motivational metric for patients:
+  - More responsive to exercise (especially aerobic) than BMI
+  - Reductions possible even without significant scale weight changes
+  - Visible and tangible feedback for patients
+  - 5-10% reduction in WC associated with metabolic improvements
+
+  **Pharmacotherapy Considerations:**
+  Monitor WC in patients on medications associated with weight gain:
+  - Atypical antipsychotics (olanzapine, clozapine)
+  - Corticosteroids
+  - Some antidepressants (mirtazapine, TCAs)
+  - Insulin and sulfonylureas
+  - Some anticonvulsants
+
+  **Children and Adolescents:**
+  - Age and sex-specific percentile charts available (less standardized than adult cutoffs)
+  - WC >= 90th percentile for age/sex indicates elevated risk
+  - Tracking trends more important than absolute values
+  - Consider WC as part of comprehensive pediatric obesity evaluation
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user (true) or automatically recorded by a device (false)"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeight"
+    relationship: "Used together to calculate waist-to-height ratio (WHtR)"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Complementary measure; WC provides information beyond BMI"
+  - identifier: "HKQuantityTypeIdentifierBodyMassIndex"
+    relationship: "WC and BMI together improve cardiometabolic risk stratification"
+  - identifier: "HKQuantityTypeIdentifierBodyFatPercentage"
+    relationship: "Both reflect adiposity; WC specifically indicates central fat distribution"
+  - identifier: "HKQuantityTypeIdentifierLeanBodyMass"
+    relationship: "Lean mass affects interpretation of waist circumference"
+  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
+    relationship: "Elevated WC is a risk factor for glucose dysregulation"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "Both are components of metabolic syndrome"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureDiastolic"
+    relationship: "Both are components of metabolic syndrome"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - waistCircumference"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/waistcircumference"
+    type: "official"
+  - title: "Harmonizing the Metabolic Syndrome - Circulation (AHA)"
+    url: "https://www.ahajournals.org/doi/10.1161/circulationaha.109.192644"
+    type: "research"
+  - title: "Metabolic Syndrome: Definitions and Controversies - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3115896/"
+    type: "research"
+  - title: "IDF Metabolic Syndrome Definition"
+    url: "https://reference.medscape.com/calculator/120/metabolic-syndrome-idf"
+    type: "medical"
+  - title: "Waist Circumference and Cardiometabolic Risk - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC2858833/"
+    type: "research"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 11.0/watchOS 4.0 introduction based on HealthKit documentation timeline
+  - Discrete aggregation type - supports discreteAverage, discreteMin, discreteMax, mostRecent
+  - Length unit dimension (centimeters, inches primarily used)
+  - Metabolic syndrome thresholds from IDF 2005 and ATP III/AHA/NHLBI 2009 harmonized criteria
+  - Ethnic-specific cutoffs from IDF consensus and regional studies (Asian, Japanese populations)
+  - WHO vs ATP III measurement protocols documented; note differences in landmarks
+  - Waist-to-height ratio (>0.5) emerging as population-agnostic risk indicator

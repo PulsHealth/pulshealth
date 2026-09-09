@@ -1,0 +1,209 @@
+identifier: "HKQuantityTypeIdentifierBodyMass"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Body Measurements"
+human_readable_name: "Body Mass (Weight)"
+short_description: "The user's total body weight, typically measured using a scale."
+icon: "scalemass"
+color: "#34C759"
+default_unit: "kg"
+supported_units:
+  - "kg"
+  - "lb"
+  - "oz"
+  - "st"
+  - "g"
+unit_description: "Body mass can be expressed in kilograms (kg), pounds (lb), ounces (oz), stones (st), or grams (g). HealthKit stores mass values and converts between units as needed."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+  - "separateBySource"
+typical_range:
+  min: 20
+  max: 300
+  unit: "kg"
+  notes: "Adult range typically 40-150 kg; extreme values outside 20-300 kg should be validated for data entry errors."
+clinical_ranges:
+  - population: "Adult Men"
+    normal: "Varies by height; healthy BMI (18.5-24.9) corresponds to different weights"
+    example_5ft10: "58.5-77.1 kg (129-170 lb) for 177.8 cm (5'10\")"
+    notes: "Healthy weight ranges depend on height, frame size, and body composition"
+  - population: "Adult Women"
+    normal: "Varies by height; healthy BMI (18.5-24.9) corresponds to different weights"
+    example_5ft5: "50.3-67.6 kg (111-149 lb) for 165.1 cm (5'5\")"
+    notes: "Healthy weight ranges depend on height, frame size, and body composition"
+  - population: "Elderly Adults (65+)"
+    notes: "Slightly higher weight (BMI 23-30) may be protective; unintentional weight loss is concerning"
+  - population: "Athletes"
+    notes: "May weigh more than average due to increased muscle mass; body composition more relevant than weight alone"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Smart Scales"
+    capability: "Automatic weight measurement with wireless sync to HealthKit"
+    examples: ["Withings Body+", "Withings Body Cardio", "Eufy Smart Scale", "Garmin Index S2", "Fitbit Aria Air"]
+  - name: "Bluetooth Scales"
+    capability: "Weight measurement with Bluetooth connectivity to companion apps"
+    examples: ["Renpho Smart Scale", "Etekcity Scale", "INEVIFIT Smart Scale", "Wyze Scale"]
+  - name: "Traditional Scales with Manual Entry"
+    capability: "Manual weight recording through Health app or third-party apps"
+    examples: ["Any bathroom scale", "Medical office scales"]
+  - name: "Wearable Devices"
+    capability: "Store and sync weight data entered through companion apps"
+    examples: ["Apple Watch (via Health app)", "Fitbit devices", "Garmin watches"]
+  - name: "Clinical Devices"
+    capability: "Medical-grade weight measurement"
+    examples: ["seca medical scales", "Health o meter professional scales", "Detecto scales"]
+primary_source: "Primarily measured by bathroom scales (smart or manual), with data synced or entered into HealthKit through companion apps or the Apple Health app directly."
+description: |
+  ## Overview
+  Body mass, commonly referred to as weight, is one of the most fundamental and frequently tracked health metrics. It represents the total mass of the body, including bone, muscle, fat, water, and organs. While weight alone provides limited insight into health status, tracking weight trends over time is valuable for weight management, identifying health changes, and monitoring treatment responses.
+
+  ## How It's Measured
+  Body mass is typically measured using scales:
+
+  **Consumer Scales:**
+  - Digital bathroom scales (±0.1-0.2 kg accuracy)
+  - Smart scales with WiFi/Bluetooth connectivity for automatic HealthKit sync
+  - Mechanical/analog scales (less precise, ±0.5 kg)
+
+  **Clinical Settings:**
+  - Calibrated medical scales (±0.05 kg accuracy)
+  - Bed scales for immobile patients
+  - Chair scales for patients who cannot stand
+
+  **Best Practices for Accurate Measurement:**
+  - Weigh at the same time daily (morning, after voiding, before eating)
+  - Wear consistent clothing (or none)
+  - Use the same scale consistently
+  - Place scale on hard, flat surface
+  - Stand still and centered on the scale
+
+  ## Health Significance
+  Body mass serves as a foundational metric for:
+  - Calculating BMI and assessing weight status
+  - Monitoring weight management progress
+  - Detecting fluid retention (heart failure, kidney disease)
+  - Identifying unintentional weight loss (cancer, malabsorption, depression)
+  - Adjusting medication dosages (many drugs are weight-based)
+  - Tracking pregnancy progression
+  - Assessing nutritional status
+  - Monitoring eating disorder recovery
+  - Athletic performance optimization
+
+  ## Clinical Interpretation Guidelines
+
+  ### Healthy Weight Assessment
+  Weight should be interpreted in context with height (via BMI), body composition, and individual factors:
+
+  | Height | Healthy Weight Range (BMI 18.5-24.9) |
+  |--------|--------------------------------------|
+  | 152 cm (5'0") | 43-57 kg (95-125 lb) |
+  | 163 cm (5'4") | 50-66 kg (110-145 lb) |
+  | 173 cm (5'8") | 57-76 kg (125-168 lb) |
+  | 183 cm (6'0") | 64-86 kg (141-189 lb) |
+  | 193 cm (6'4") | 71-96 kg (157-212 lb) |
+
+  ### Weight Changes May Indicate
+
+  **Unintentional Weight Gain:**
+  - Fluid retention (edema from heart, liver, or kidney conditions)
+  - Hypothyroidism
+  - Medication side effects (steroids, antipsychotics, some antidepressants)
+  - Cushing's syndrome
+  - Lifestyle changes (decreased activity, increased caloric intake)
+  - Smoking cessation
+
+  **Unintentional Weight Loss:**
+  - Malignancy (cancer cachexia)
+  - Hyperthyroidism
+  - Diabetes (especially uncontrolled type 1)
+  - Malabsorption syndromes (celiac disease, Crohn's disease)
+  - Chronic infections (TB, HIV)
+  - Depression or anxiety
+  - Eating disorders
+  - Dementia (forgetting to eat)
+  - Medication side effects
+
+  ### Red Flags for Consultation
+  - Unintentional weight loss >5% in 6-12 months - warrants medical evaluation
+  - Rapid weight gain >2 kg in 1-2 days - possible fluid retention, assess cardiac/renal function
+  - Weight fluctuations >2-3 kg day-to-day - likely hydration changes, not true mass changes
+  - Significant divergence from historical weight patterns without explanation
+  - Weight loss combined with other symptoms (fatigue, night sweats, changes in appetite)
+  - Pediatric weight falling off growth curve percentiles
+
+  ## Caveats & Limitations
+  - **Daily fluctuations are normal**: Weight can vary 1-2 kg (2-4 lb) daily due to hydration, food intake, and bowel contents
+  - **Does not reflect body composition**: Two people at the same weight can have vastly different amounts of muscle versus fat
+  - **Timing matters**: Morning weights (fasted, after voiding) are most consistent and reliable for tracking
+  - **Scale variability**: Different scales may give different readings; use the same scale for trend tracking
+  - **Clothing and time of day**: Inconsistent measurement conditions reduce data reliability
+  - **Water retention**: Menstrual cycle, sodium intake, and medications can cause temporary weight changes
+  - **Post-exercise weight**: Can be lower due to sweat loss; not representative of true body mass
+  - **Muscle vs. fat changes**: Beginning an exercise program may show weight stability or gain despite fat loss
+
+  ## Additional Notes
+  - Weekly averages are more meaningful than daily weights for tracking true mass changes
+  - A pound of true body mass change requires approximately a 3,500 calorie deficit or surplus over time
+  - Weight-focused metrics should be complemented with body composition data when available
+  - For clinical weight management, consider using trend analysis rather than single data points
+  - HealthKit's discrete aggregation allows for meaningful average, min, and max calculations over time periods
+  - Some smart scales identify individual users and can track multiple household members separately
+  - Weight data synced from multiple devices may create duplicate entries; HealthKit typically handles deduplication
+  - Consider cultural and individual preferences for weight units (kg vs. lb) when configuring devices and apps
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the weight was manually entered by the user or automatically recorded by a connected scale."
+  - key: "HKMetadataKeyDeviceSerialNumber"
+    description: "Serial number of the scale that recorded the weight measurement."
+  - key: "HKMetadataKeyExternalUUID"
+    description: "A unique identifier from an external data source that originally recorded this measurement."
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing this sample across devices and platforms."
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for tracking updates to synced samples."
+  - key: "HKMetadataKeyTimeZone"
+    description: "The time zone in which the measurement was recorded, useful for travelers."
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBodyMassIndex"
+    relationship: "BMI is calculated from body mass and height."
+  - identifier: "HKQuantityTypeIdentifierHeight"
+    relationship: "Height is needed alongside body mass to calculate BMI and assess healthy weight ranges."
+  - identifier: "HKQuantityTypeIdentifierBodyFatPercentage"
+    relationship: "Body fat percentage indicates how much of body mass is adipose tissue."
+  - identifier: "HKQuantityTypeIdentifierLeanBodyMass"
+    relationship: "Lean body mass is the non-fat component of total body mass."
+  - identifier: "HKQuantityTypeIdentifierBasalEnergyBurned"
+    relationship: "Basal metabolic rate is influenced by body mass; higher mass generally means higher BMR."
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Caloric expenditure during activity is partly determined by body mass."
+references:
+  - title: "HKQuantityTypeIdentifierBodyMass - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierbodymass"
+    type: "official"
+  - title: "HealthKit Units and Quantities - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/units-and-quantities"
+    type: "official"
+  - title: "Assessing Your Weight - CDC"
+    url: "https://www.cdc.gov/healthyweight/assessing/index.html"
+    type: "medical"
+  - title: "Unexplained Weight Loss - Mayo Clinic"
+    url: "https://www.mayoclinic.org/symptoms/unexplained-weight-loss/basics/definition/sym-20050700"
+    type: "medical"
+  - title: "Physiology, Body Mass Index - StatPearls NCBI"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK535456/"
+    type: "research"
+last_updated: "2026-01-27"

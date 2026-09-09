@@ -1,0 +1,140 @@
+identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Chest Tightness or Pain"
+short_description: "Tracks episodes of chest tightness, pressure, or pain."
+icon: "heart.fill"
+color: "#FF3B30"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Chest tightness or pain encompasses a range of sensations including pressure, squeezing, aching, burning, or sharp pain in the chest area. This HealthKit category type allows users to log these episodes, providing critical data for identifying patterns and potential cardiac, pulmonary, or musculoskeletal conditions. Given the potential seriousness of chest symptoms, this data type carries significant clinical importance.
+
+  ## Health Significance
+  Chest pain is one of the most common reasons for emergency department visits and can indicate life-threatening conditions. However, it can also arise from benign causes. Tracking patterns helps clinicians differentiate between cardiac and non-cardiac etiologies.
+
+  Cardiac causes (require urgent evaluation):
+  - Acute coronary syndrome (heart attack, unstable angina)
+  - Stable angina pectoris
+  - Pericarditis
+  - Myocarditis
+  - Aortic dissection
+  - Arrhythmias
+
+  Pulmonary causes:
+  - Pulmonary embolism
+  - Pneumonia
+  - Pleuritis
+  - Pneumothorax
+  - Asthma
+
+  Gastrointestinal causes:
+  - Gastroesophageal reflux disease (GERD)
+  - Esophageal spasm
+  - Peptic ulcer disease
+
+  Musculoskeletal causes:
+  - Costochondritis
+  - Muscle strain
+  - Rib fractures
+
+  Other causes:
+  - Anxiety and panic attacks
+  - Herpes zoster (shingles)
+
+  ## When to Seek Medical Attention
+  EMERGENCY: Call emergency services (911) immediately if chest pain:
+  - Is severe, crushing, or pressure-like
+  - Radiates to arm, jaw, neck, or back
+  - Is accompanied by shortness of breath
+  - Occurs with sweating, nausea, or lightheadedness
+  - Is accompanied by irregular heartbeat or palpitations
+  - Occurs during exertion
+  - Lasts more than a few minutes
+
+  Seek prompt medical evaluation when:
+  - Pain is new or different from previous episodes
+  - Episodes are increasing in frequency or severity
+  - Pain occurs at rest
+  - There are cardiac risk factors (diabetes, hypertension, smoking, family history)
+  - Pain is associated with fever or cough
+  - Symptoms are recurrent without clear diagnosis
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Exertional patterns (angina typically occurs with activity)
+  - Postprandial patterns (suggesting GERD)
+  - Anxiety-related episodes (panic attacks)
+  - Position-dependent pain (musculoskeletal or pericarditis)
+  - Response to nitroglycerin or antacids
+  - Correlation with respiratory symptoms
+  - Weather or temperature triggers
+
+  ## Caveats & Limitations
+  - This is NOT a substitute for emergency evaluation of acute chest pain
+  - Location, radiation, and quality of pain are not captured
+  - Cannot differentiate between cardiac and non-cardiac causes
+  - Associated symptoms (sweating, nausea, dyspnea) not recorded
+  - May delay care if users rely on logging instead of seeking evaluation
+  - Severity assessment is subjective
+  - Does not capture duration of episodes
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
+    relationship: "Dyspnea often accompanies cardiac and pulmonary chest pain"
+  - identifier: "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat"
+    relationship: "Palpitations may occur with cardiac-related chest symptoms"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Heart rate changes may accompany chest symptoms"
+  - identifier: "HKCategoryTypeIdentifierDizziness"
+    relationship: "Dizziness with chest pain suggests cardiac etiology"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Fatigue may accompany cardiac conditions causing chest pain"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierChestTightnessOrPain"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierchesttightnesssorpain"
+    type: "official"
+  - title: "Chest Pain - American Heart Association"
+    url: "https://www.heart.org/en/health-topics/heart-attack/warning-signs-of-a-heart-attack"
+    type: "medical"
+  - title: "Evaluation of Chest Pain - AAFP"
+    url: "https://www.aafp.org/pubs/afp/issues/2017/1001/p430.html"
+    type: "medical"
+last_updated: "2026-01-27"

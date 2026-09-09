@@ -1,0 +1,181 @@
+identifier: "HKQuantityTypeIdentifierBodyMassIndex"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Body Measurements"
+human_readable_name: "Body Mass Index"
+short_description: "A calculated ratio of weight to height used to classify weight status and assess health risks."
+icon: "figure.stand"
+color: "#5856D6"
+default_unit: "count"
+supported_units:
+  - "count"
+  - "kg/m^2"
+unit_description: "BMI is expressed as a dimensionless ratio (kg/m^2), stored in HealthKit as a count value representing the numeric BMI value."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+  - "separateBySource"
+typical_range:
+  min: 10
+  max: 60
+  unit: "kg/m^2"
+  notes: "Extreme values outside 10-60 are physiologically implausible for adults; typical adult range is 15-40."
+clinical_ranges:
+  - population: "Adults (WHO Classification)"
+    normal: "18.5-24.9 kg/m^2"
+    low: "<18.5 kg/m^2 (Underweight)"
+    high: ">=25.0 kg/m^2 (Overweight/Obese)"
+  - population: "Adults - Detailed Categories"
+    underweight_severe: "<16.0 kg/m^2 (Severe thinness)"
+    underweight_moderate: "16.0-16.9 kg/m^2 (Moderate thinness)"
+    underweight_mild: "17.0-18.4 kg/m^2 (Mild thinness)"
+    normal: "18.5-24.9 kg/m^2"
+    overweight: "25.0-29.9 kg/m^2"
+    obese_class_1: "30.0-34.9 kg/m^2"
+    obese_class_2: "35.0-39.9 kg/m^2"
+    obese_class_3: ">=40.0 kg/m^2 (Severe obesity)"
+  - population: "Asian Adults (Modified WHO)"
+    normal: "18.5-22.9 kg/m^2"
+    overweight: "23.0-24.9 kg/m^2"
+    obese_class_1: "25.0-29.9 kg/m^2"
+    obese_class_2: ">=30.0 kg/m^2"
+    notes: "Lower thresholds due to higher metabolic risk at lower BMI in Asian populations"
+  - population: "Elderly Adults (65+)"
+    normal: "23.0-29.9 kg/m^2"
+    notes: "Higher BMI may be protective in elderly; low BMI (<23.0) associated with increased mortality"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Smart Scales"
+    capability: "Auto-calculate BMI from weight and stored height"
+    examples: ["Withings Body+", "Eufy Smart Scale", "Garmin Index S2", "Renpho Smart Scale"]
+  - name: "Fitness Apps"
+    capability: "Calculate from user-entered weight and height"
+    examples: ["Apple Health", "MyFitnessPal", "Lose It!", "Noom"]
+  - name: "Clinical Devices"
+    capability: "Professional-grade body composition analysis"
+    examples: ["InBody", "Tanita", "seca medical scales"]
+primary_source: "Calculated from body mass and height measurements, either automatically by connected devices or manually entered by users."
+description: |
+  ## Overview
+  Body Mass Index (BMI) is a simple, widely-used screening metric calculated by dividing body weight in kilograms by height in meters squared (kg/m^2). While not a direct measure of body fat, BMI provides a standardized classification system for identifying weight categories that may correlate with health risks.
+
+  ## How It's Measured
+  BMI is calculated using the formula: BMI = weight (kg) / height (m)^2. In HealthKit, BMI values can be:
+  - Automatically calculated by smart scales that know the user's height
+  - Computed by health apps from stored weight and height data
+  - Manually entered by users or healthcare providers
+
+  The calculation requires accurate height measurement; outdated height values can significantly skew results.
+
+  ## Health Significance
+  BMI serves as a population-level screening tool for weight-related health risks. Research consistently shows associations between elevated BMI and increased risk of:
+  - Type 2 diabetes mellitus
+  - Cardiovascular disease (hypertension, coronary artery disease, stroke)
+  - Metabolic syndrome
+  - Certain cancers (colon, breast, kidney)
+  - Sleep apnea and respiratory conditions
+  - Osteoarthritis
+  - Non-alcoholic fatty liver disease (NAFLD)
+
+  Conversely, very low BMI is associated with malnutrition, osteoporosis, anemia, and immune dysfunction.
+
+  ## Clinical Interpretation Guidelines
+
+  ### WHO BMI Classification (Adults)
+  | Category | BMI Range |
+  |----------|-----------|
+  | Underweight | <18.5 |
+  | Normal weight | 18.5-24.9 |
+  | Overweight | 25.0-29.9 |
+  | Obese Class I | 30.0-34.9 |
+  | Obese Class II | 35.0-39.9 |
+  | Obese Class III | >=40.0 |
+
+  ### Elevated BMI May Indicate
+  - Excess adipose tissue accumulation
+  - Increased cardiometabolic risk
+  - Need for lifestyle intervention or medical evaluation
+  - Potential sleep-disordered breathing
+  - Higher surgical and anesthetic risk
+
+  ### Low BMI May Indicate
+  - Malnutrition or inadequate caloric intake
+  - Eating disorders (anorexia nervosa, bulimia)
+  - Chronic illness or malabsorption
+  - Hyperthyroidism
+  - Cancer or cachexia
+  - Sarcopenia (in elderly)
+
+  ### Red Flags for Consultation
+  - BMI <16.0 (severe underweight) - urgent nutritional assessment needed
+  - BMI >=40.0 (severe obesity) - bariatric medicine referral warranted
+  - Rapid BMI changes (>2 kg/m^2 in 3 months) without intentional intervention
+  - BMI discordant with clinical appearance (muscular individuals with elevated BMI)
+  - Pediatric BMI crossing percentile lines significantly
+
+  ## Caveats & Limitations
+  - **Does not measure body composition**: BMI cannot distinguish between muscle mass, bone density, and fat mass. Athletes and muscular individuals often have elevated BMI despite low body fat.
+  - **Does not indicate fat distribution**: Central/visceral adiposity carries greater health risk than peripheral fat, but BMI does not capture this distinction. Waist circumference is a better predictor of cardiometabolic risk.
+  - **Population-specific limitations**: Standard cut-offs were derived primarily from Caucasian populations. Asian and South Asian populations demonstrate elevated health risks at lower BMI thresholds.
+  - **Age considerations**: In elderly populations (65+), slightly higher BMI (25-30) may be protective, while low BMI is associated with increased mortality.
+  - **Not appropriate for certain populations**: Children, pregnant women, and elite athletes require different assessment tools.
+  - **High specificity, low sensitivity**: BMI reliably identifies obese individuals but frequently misses those with normal weight obesity (excess fat with normal BMI).
+
+  ## Additional Notes
+  - BMI should be used as one component of a comprehensive health assessment, not as a standalone diagnostic criterion.
+  - Consider using alongside waist circumference, body fat percentage, and clinical evaluation.
+  - The Edmonton Obesity Staging System provides a more nuanced assessment of obesity-related health impact.
+  - For clinical decision-making, trends over time are often more valuable than single measurements.
+  - HealthKit stores BMI as a discrete quantity type, appropriate for point-in-time measurements that should be averaged rather than summed.
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the BMI value was manually entered by the user (true) or automatically recorded by a device (false)."
+  - key: "HKMetadataKeyExternalUUID"
+    description: "A unique identifier from an external data source that originally recorded this measurement."
+  - key: "HKMetadataKeyDeviceSerialNumber"
+    description: "Serial number of the smart scale or device that calculated the BMI value."
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing this sample across devices and platforms."
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for tracking updates to synced samples."
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "BMI is calculated from body mass (weight) divided by height squared."
+  - identifier: "HKQuantityTypeIdentifierHeight"
+    relationship: "Height is required for BMI calculation; outdated height values cause inaccurate BMI."
+  - identifier: "HKQuantityTypeIdentifierBodyFatPercentage"
+    relationship: "Body fat percentage provides direct adiposity measurement that BMI approximates."
+  - identifier: "HKQuantityTypeIdentifierLeanBodyMass"
+    relationship: "Lean body mass helps explain BMI elevations in muscular individuals."
+  - identifier: "HKQuantityTypeIdentifierWaistCircumference"
+    relationship: "Waist circumference combined with BMI improves cardiometabolic risk prediction."
+references:
+  - title: "HKQuantityTypeIdentifierBodyMassIndex - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierbodymassindex"
+    type: "official"
+  - title: "Body mass index - BMI - WHO"
+    url: "https://www.who.int/europe/news-room/fact-sheets/item/body-mass-index---bmi"
+    type: "medical"
+  - title: "Adult BMI Categories - CDC"
+    url: "https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html"
+    type: "medical"
+  - title: "Physiology, Body Mass Index - StatPearls NCBI"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK535456/"
+    type: "research"
+  - title: "Body Mass Index: Obesity, BMI, and Health - A Critical Review"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC4890841/"
+    type: "research"
+last_updated: "2026-01-27"

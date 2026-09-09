@@ -1,0 +1,124 @@
+identifier: "HKCategoryTypeIdentifierPregnancyTestResult"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Pregnancy Test Result"
+short_description: "Records results from home pregnancy tests that detect human chorionic gonadotropin (hCG)."
+icon: "testtube.2"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "negative"
+    description: "Pregnancy test did not detect hCG above threshold level, indicating pregnancy is unlikely. However, testing too early may produce false negatives."
+  - value: 2
+    name: "positive"
+    description: "Pregnancy test detected hCG, indicating pregnancy. Confirmation with healthcare provider is recommended."
+  - value: 3
+    name: "indeterminate"
+    description: "Test result is unclear, possibly due to faint line, testing error, or early pregnancy with borderline hCG levels."
+ios_introduced:
+  version: "15.0"
+  year: 2021
+watchos_introduced:
+  version: "8.0"
+  year: 2021
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Manual logging through Health app or Cycle Tracking app"
+  - name: "Apple Watch"
+    capability: "Manual logging through Cycle Tracking app"
+  - name: "Connected pregnancy tests"
+    capability: "Smart pregnancy tests like Clearblue Connected can sync results"
+  - name: "Third-party apps"
+    capability: "Fertility and pregnancy tracking apps"
+primary_source: "User-reported or Connected Device"
+description: |
+  ## Overview
+  Pregnancy test tracking records results from home urine pregnancy tests, which detect human chorionic gonadotropin (hCG) produced after embryo implantation. hCG levels typically become detectable 10-14 days after conception, around the time of expected menstruation. Recording test results over time can document the testing journey for users trying to conceive or those monitoring for unexpected pregnancy.
+
+  Home pregnancy tests vary in sensitivity, with some detecting hCG at levels as low as 10 mIU/mL (early detection tests) while standard tests detect at 25 mIU/mL or higher. False negatives can occur when testing too early; false positives are rare but may indicate chemical pregnancy, ectopic pregnancy, or certain medical conditions.
+
+  ## Health Significance
+  Pregnancy test results are clinically significant for multiple reasons:
+  - **Pregnancy confirmation**: Positive result initiates prenatal care planning and early pregnancy considerations
+  - **Conception timing**: For those actively trying to conceive, tracking test results documents the fertility journey
+  - **Pregnancy loss monitoring**: Serial testing may detect chemical pregnancies (very early pregnancy loss)
+  - **Ectopic pregnancy awareness**: Positive test with pain or unusual bleeding requires immediate evaluation
+  - **Medication safety**: Early pregnancy detection is critical for avoiding teratogenic medications
+  - **Lifestyle modifications**: Positive result prompts alcohol cessation, prenatal vitamin initiation, and dietary changes
+
+  ## Clinical Interpretation Guidelines
+  When reviewing pregnancy test data:
+  - **Testing timing considerations**:
+    - Most accurate results occur on or after the first day of missed period
+    - Testing too early (before implantation) will produce false negatives
+    - First morning urine typically has highest hCG concentration
+  - **Positive result interpretation**:
+    - Any positive result warrants healthcare provider follow-up
+    - Faint positive lines typically indicate early pregnancy with lower hCG levels
+    - Line darkness is not a reliable indicator of pregnancy viability
+    - Quantitative serum hCG testing provides more precise information
+  - **Negative result interpretation**:
+    - True negative if tested after expected period with consistently negative results
+    - Consider repeat testing in 2-3 days if period remains absent
+    - Persistent negative tests with missed periods warrant medical evaluation
+  - **Indeterminate results**:
+    - Often indicates very early pregnancy or evaporation line
+    - Repeat testing in 48-72 hours as hCG doubles approximately every 48 hours in early pregnancy
+  - **Serial testing patterns**:
+    - Multiple positive tests followed by negative may indicate chemical pregnancy
+    - Decreasing line intensity over time may indicate pregnancy loss
+
+  ## Caveats & Limitations
+  - Does not capture quantitative hCG levels; clinical confirmation requires blood testing
+  - Test sensitivity varies by brand; results are not directly comparable across products
+  - Testing too early produces unreliable results regardless of actual pregnancy status
+  - Does not indicate pregnancy location (intrauterine vs. ectopic)
+  - Does not indicate pregnancy viability or development
+  - Evaporation lines can be mistaken for faint positives, especially if read after recommended time window
+  - Certain medications (hCG injections for fertility) can cause false positives
+  - Rarely, certain tumors or medical conditions can produce hCG leading to false positives
+  - User interpretation of faint lines may differ from actual result
+  - Chemical pregnancies (positive test followed by early loss) are common and may be captured
+metadata_keys:
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Missed period often prompts pregnancy testing"
+  - identifier: "HKCategoryTypeIdentifierPregnancy"
+    relationship: "Positive pregnancy test may lead to logging pregnancy state"
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "Ovulation tracking preceding pregnancy test provides conception timing context"
+  - identifier: "HKCategoryTypeIdentifierSexualActivity"
+    relationship: "Sexual activity timing relative to ovulation provides conception probability context"
+  - identifier: "HKCategoryTypeIdentifierProgesteroneTestResult"
+    relationship: "Progesterone levels support pregnancy maintenance after positive test"
+references:
+  - title: "HKCategoryTypeIdentifierPregnancyTestResult - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierpregnancytestresult"
+    type: "official"
+  - title: "Home Pregnancy Tests - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/pregnancy-tests"
+    type: "medical"
+  - title: "Early Pregnancy Loss - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/early-pregnancy-loss"
+    type: "medical"
+  - title: "hCG Levels in Early Pregnancy - Human Reproduction"
+    url: "https://academic.oup.com/humrep/article/23/2/271/2914064"
+    type: "research"
+last_updated: "2026-01-27"

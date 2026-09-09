@@ -1,0 +1,162 @@
+identifier: "HKQuantityTypeIdentifierDietaryFiber"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Fiber"
+short_description: "Total fiber intake from plant-based foods and supplements"
+icon: "leaf.fill"
+color: "#34C759"
+default_unit: "g"
+supported_units:
+  - "g"
+  - "mg"
+  - "oz"
+unit_description: "Grams (g) of dietary fiber. Fiber is a non-digestible carbohydrate that provides 0-2 kcal/g depending on fermentability and type."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 5
+  max: 50
+  unit: "g"
+  notes: "Most Americans consume only 10-15g/day, well below recommendations. High-fiber diets may exceed 40g/day."
+clinical_ranges:
+  - population: "Adult Women (19-50)"
+    rda: "25g/day"
+  - population: "Adult Women (51+)"
+    rda: "21g/day"
+  - population: "Adult Men (19-50)"
+    rda: "38g/day"
+  - population: "Adult Men (51+)"
+    rda: "30g/day"
+  - population: "Children (1-3 years)"
+    rda: "19g/day"
+  - population: "Children (4-8 years)"
+    rda: "25g/day"
+  - population: "Pregnancy"
+    rda: "28g/day"
+  - population: "General Guideline"
+    rda: "14g per 1000 kcal consumed"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Fiber tracking with soluble/insoluble breakdown in comprehensive apps"
+    examples:
+      - "Cronometer"
+      - "MyFitnessPal"
+      - "Lose It"
+      - "Yazio"
+  - name: "Gut health apps"
+    capability: "Fiber tracking with microbiome considerations"
+    examples:
+      - "ZOE"
+      - "Viome"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Fiber represents the total intake of non-digestible carbohydrates from plant-based foods. Fiber includes soluble fiber (dissolves in water, forms gel, fermented by gut bacteria) and insoluble fiber (does not dissolve, adds bulk to stool). Despite being non-digestible by human enzymes, fiber profoundly impacts metabolic health, gut function, and disease risk.
+
+  The FDA Daily Value for dietary fiber is 28g based on a 2,000 calorie diet (updated 2020). This aligns with the recommendation of 14g per 1,000 calories consumed. Most Americans fall significantly short, consuming only 10-15g daily.
+
+  ## Health Significance
+  Adequate fiber intake provides:
+  - **Gut Health**: Feeds beneficial gut bacteria (prebiotic effect); produces short-chain fatty acids (SCFAs)
+  - **Glycemic Control**: Slows carbohydrate absorption; reduces postprandial glucose spikes
+  - **Cardiovascular Health**: Lowers LDL cholesterol (soluble fiber); reduces CV mortality risk
+  - **Weight Management**: Increases satiety; displaces calorie-dense foods
+  - **Bowel Regularity**: Prevents constipation; maintains healthy stool bulk and transit time
+  - **Cancer Prevention**: Associated with reduced colorectal cancer risk
+  - **Blood Pressure**: High-fiber diets associated with lower blood pressure
+  - **Inflammation**: SCFAs from fiber fermentation have anti-inflammatory effects
+
+  ## Clinical Interpretation Guidelines
+  When assessing fiber intake:
+  1. **Compare to Recommendations**: Most individuals fall significantly short; even 50% of goal is beneficial
+  2. **Assess Fiber Sources**: Whole foods (vegetables, fruits, legumes, whole grains) vs. supplements
+  3. **Consider Soluble vs. Insoluble**: Soluble for cholesterol/glucose; insoluble for bowel regularity
+  4. **Evaluate Fluid Intake**: Adequate hydration essential for fiber to function properly
+  5. **Review Rate of Increase**: Rapid fiber increases cause GI distress; increase by 5g/week
+  6. **Check for Contraindications**: Some GI conditions require fiber modification
+  7. **Correlate with GI Symptoms**: Bloating may indicate too-rapid increase or FODMAP sensitivity
+
+  ## Deficiency Symptoms
+  Low fiber intake is associated with:
+  - Constipation and irregular bowel movements
+  - Increased hemorrhoid and diverticular disease risk
+  - Elevated LDL cholesterol
+  - Greater postprandial glucose variability
+  - Increased hunger and reduced satiety
+  - Gut microbiome dysbiosis
+  - Higher colorectal cancer risk over time
+  - Increased cardiovascular disease risk
+
+  ## Excess/Toxicity
+  Very high fiber intake may cause:
+  - **GI Distress**: Bloating, gas, cramping, especially with rapid increases
+  - **Mineral Binding**: Phytates in high-fiber foods can reduce mineral absorption (iron, zinc, calcium)
+  - **Bowel Obstruction**: Rare; risk with inadequate fluid or GI anatomical abnormalities
+  - **Medication Interference**: May affect absorption of some medications
+  - **Caloric Displacement**: In undernourished individuals, high fiber may reduce energy intake
+  - **FODMAP Overload**: Fermentable fibers may worsen IBS symptoms in sensitive individuals
+
+  ## Special Populations
+  - **IBS**: Low-FODMAP diet temporarily restricts certain fermentable fibers; gradually reintroduce
+  - **IBD (Crohn's, UC)**: During flares, low-residue diet may be needed; adequate fiber in remission
+  - **Diverticulitis**: High fiber recommended for prevention; low fiber during acute episodes
+  - **Diabetes**: Soluble fiber particularly beneficial for glycemic control; psyllium, beta-glucan studied
+  - **Cardiovascular Disease**: 5-10g/day soluble fiber can reduce LDL by 5-10%
+  - **Weight Loss**: High-fiber foods increase satiety; associated with greater weight loss success
+  - **Elderly**: Often reduced intake due to dental issues, appetite; important for bowel regularity
+  - **Post-Bariatric Surgery**: Gradual fiber introduction; focus on soluble fiber initially
+
+  ## Caveats & Limitations
+  - **Database Variability**: Fiber content varies by database and analytical method used
+  - **Soluble/Insoluble Distinction**: Not all tracking apps differentiate; total fiber reported
+  - **Functional vs. Intact Fiber**: Added fibers (inulin, chicory root) may not have same benefits as intact food fiber
+  - **Individual Tolerance**: Gut microbiome composition affects fiber tolerance and fermentation
+  - **Processing Effects**: Food processing can alter fiber content and characteristics
+  - **Net Carb Calculations**: Fiber subtraction from total carbs assumes complete non-absorption, which varies
+  - **Supplement Quality**: Fiber supplements vary in efficacy; whole food sources generally preferred
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the fiber source (e.g., 'oatmeal', 'beans', 'psyllium')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
+    relationship: "Fiber is a subcategory of total carbohydrates"
+  - identifier: "HKQuantityTypeIdentifierDietarySugar"
+    relationship: "Both are carbohydrate subcategories; fiber often displaces sugar in diet"
+  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
+    relationship: "Fiber slows glucose absorption and reduces postprandial spikes"
+  - identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
+    relationship: "Soluble fiber reduces dietary cholesterol absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Fiber contributes minimal calories (0-2 kcal/g)"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFiber"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfiber"
+    type: "official"
+  - title: "Dietary Reference Intakes for Fiber - National Academies"
+    url: "https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids"
+    type: "research"
+  - title: "Health Benefits of Dietary Fiber - Nutrition Reviews"
+    url: "https://academic.oup.com/nutritionreviews/article/67/4/188/1901012"
+    type: "research"
+  - title: "Fiber and Prebiotics: Mechanisms and Health Benefits - Nutrients"
+    url: "https://www.mdpi.com/2072-6643/5/4/1417"
+    type: "research"
+last_updated: "2026-01-27"

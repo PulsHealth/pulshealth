@@ -1,0 +1,264 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Heart Rate
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierHeartRate"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Heart Rate"
+short_description: "Measures the number of times the heart beats per minute."
+
+# --- APPLE HEALTH UI ---
+icon: "heart.fill"
+color: "#FF2D55"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "count/min"
+supported_units:
+  - "count/min"
+  - "count/s"
+unit_description: "Beats per minute (BPM) - the standard clinical unit for heart rate measurement"
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "separateBySource"
+  - "mostRecent"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 30
+  max: 220
+  unit: "count/min"
+  notes: "Range encompasses bradycardia through maximum exercise heart rates. Values outside this range are physiologically rare but possible."
+
+clinical_ranges:
+  - population: "Adults (resting)"
+    normal: "60-100 bpm"
+    low: "<60 bpm (bradycardia)"
+    high: ">100 bpm (tachycardia)"
+  - population: "Well-trained athletes (resting)"
+    normal: "40-60 bpm"
+    low: "<40 bpm"
+    high: ">60 bpm at rest may indicate deconditioning"
+  - population: "Children 6-15 years (resting)"
+    normal: "70-100 bpm"
+    low: "<70 bpm"
+    high: ">100 bpm"
+  - population: "Infants (resting)"
+    normal: "100-160 bpm"
+    low: "<100 bpm"
+    high: ">160 bpm"
+  - population: "Adults during moderate exercise"
+    normal: "50-70% of max HR (approx 100-140 bpm for age 40)"
+  - population: "Adults during vigorous exercise"
+    normal: "70-85% of max HR"
+    high: ">85% max HR sustained may indicate overexertion"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "8.0"
+  year: 2014
+  notes: "Available since initial HealthKit release"
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+  notes: "Apple Watch has been primary heart rate data source since watchOS 2.0"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Continuous optical heart rate monitoring using green LED photoplethysmography (PPG). Measures heart rate during activity and at regular intervals throughout the day."
+    series: "All series"
+    accuracy: "Within 5 bpm for 98% of resting measurements (Apple internal study). Accuracy varies with activity level and movement."
+  - name: "iPhone"
+    capability: "Cannot directly measure heart rate. Acts as data aggregator from connected devices."
+  - name: "Bluetooth chest straps"
+    capability: "ECG-based measurement, generally more accurate during high-intensity exercise than optical sensors."
+    examples: ["Polar H10", "Garmin HRM-Pro", "Wahoo TICKR"]
+  - name: "Third-party wearables"
+    capability: "Various optical and ECG-based monitors can write heart rate data to HealthKit."
+    examples: ["Fitbit", "Garmin", "Whoop", "Oura Ring"]
+primary_source: "Apple Watch"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Heart rate measures the number of times the heart contracts (beats) per minute. It is one of the most fundamental vital signs and provides immediate insight into cardiovascular function, fitness level, and overall physiological state. Heart rate data from consumer wearables represents the most frequently collected health metric worldwide.
+
+  ## How It's Measured
+  Apple Watch uses photoplethysmography (PPG) technology with green LED lights and light-sensitive photodiodes. The sensor detects blood volume changes in the wrist's microvasculature:
+
+  - **Green LEDs** flash hundreds of times per second
+  - Blood absorbs green light; more blood = more absorption
+  - The varying light absorption pattern corresponds to heartbeats
+  - Algorithms filter motion artifacts and calculate beat-to-beat intervals
+
+  **Measurement contexts on Apple Watch:**
+  - Background readings every ~5-10 minutes when sedentary
+  - Continuous monitoring during workouts (every few seconds)
+  - On-demand readings when viewing the Heart Rate app
+
+  **Accuracy considerations:**
+  - Resting: 98% within 5 bpm, 99.7% within 10 bpm
+  - During exercise: 87-96% within 5 bpm depending on activity type
+  - Motion artifact significantly impacts accuracy during vigorous arm movement
+
+  ## Health Significance
+  Heart rate serves as a window into autonomic nervous system function and cardiovascular health:
+
+  - **Resting heart rate trends** correlate with cardiovascular fitness and mortality risk
+  - **Heart rate response to exercise** indicates cardiorespiratory fitness
+  - **Acute elevations** may signal stress, illness, dehydration, or cardiac events
+  - **Chronic elevations** associated with increased cardiovascular disease risk
+
+  Research shows that resting heart rate is an independent predictor of all-cause mortality, with each 10 bpm increase associated with a 10-20% higher mortality risk in epidemiological studies.
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  - **Adults at rest:** 60-100 bpm (AHA/Mayo Clinic standard)
+  - **Athletes:** 40-60 bpm is common and healthy
+  - **During sleep:** Heart rate naturally decreases 10-20% below daytime resting rate
+  - **Maximum heart rate estimate:** 220 minus age (individual variation of +/- 12 bpm)
+
+  ### Elevated Values (Tachycardia >100 bpm at rest) May Indicate
+  - Fever or infection
+  - Dehydration
+  - Anxiety or panic
+  - Stimulant use (caffeine, medications, illicit drugs)
+  - Anemia
+  - Hyperthyroidism
+  - Heart failure compensation
+  - Arrhythmias (atrial fibrillation, SVT, VT)
+  - Pain
+  - Blood loss
+  - Pulmonary embolism
+
+  ### Low Values (Bradycardia <60 bpm) May Indicate
+  - High cardiovascular fitness (benign in athletes)
+  - Beta-blocker or calcium channel blocker use
+  - Hypothyroidism
+  - Sleep (normal)
+  - Sick sinus syndrome
+  - Heart block
+  - Hypothermia
+  - Increased intracranial pressure
+
+  ### Red Flags for Immediate Consultation
+  - Resting heart rate persistently >100 bpm with symptoms (palpitations, chest pain, shortness of breath)
+  - Heart rate <40 bpm with dizziness, fainting, or fatigue
+  - Sudden unexplained changes of >20 bpm from baseline
+  - Heart rate not recovering after exercise cessation
+  - Irregular rhythm detection combined with high/low heart rate
+  - Heart rate >200 bpm during exercise (especially if approaching or exceeding calculated max)
+  - New-onset tachycardia at rest without clear explanation
+
+  ## Caveats & Limitations
+
+  ### Measurement Limitations
+  - **Motion artifact:** Accuracy drops significantly during activities with arm movement
+  - **Tattoos:** Dark tattoos may interfere with optical sensor readings
+  - **Cold extremities:** Vasoconstriction reduces signal quality
+  - **Loose watch fit:** Poor skin contact degrades accuracy
+  - **Arrhythmias:** PPG sensors may miscount during irregular rhythms
+
+  ### Interpretation Limitations
+  - Single readings are less meaningful than trends over time
+  - Context matters: heart rate varies dramatically with activity, posture, temperature, and emotional state
+  - Consumer devices cannot diagnose arrhythmias (though Apple Watch can detect irregular rhythm patterns)
+  - Heart rate alone cannot differentiate between cardiac and non-cardiac causes of abnormal values
+
+  ### What Heart Rate Cannot Tell You
+  - Blood pressure
+  - Cardiac output or stroke volume
+  - Presence or absence of structural heart disease
+  - Specific arrhythmia diagnosis
+  - Adequacy of tissue perfusion
+
+  ## Additional Notes
+
+  **Metadata context:** Heart rate samples may include HKMetadataKeyHeartRateMotionContext to indicate whether the reading was taken during sedentary, active, or workout states. This context is crucial for proper interpretation.
+
+  **Related notifications:** Apple Watch can generate high heart rate (>120 bpm threshold configurable), low heart rate (<40 bpm threshold configurable), and irregular rhythm notifications, which create corresponding HKCategoryType samples.
+
+  **For health consultants:** When reviewing heart rate data, always consider:
+  1. Time of day and activity context
+  2. Recent caffeine, alcohol, or medication use
+  3. Sleep quality and stress levels
+  4. Hydration status
+  5. Illness or infection
+  6. Trends over weeks/months rather than individual readings
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateMotionContext"
+    description: "Indicates the user's activity state when the heart rate sample was recorded"
+    values:
+      - "notSet (0) - Context not available"
+      - "sedentary (1) - User was stationary"
+      - "active (2) - User was in motion but not in a workout"
+  - key: "HKMetadataKeyHeartRateSensorLocation"
+    description: "Indicates where on the body the heart rate sensor was placed"
+    values:
+      - "chest (1)"
+      - "wrist (2)"
+      - "finger (3)"
+      - "hand (4)"
+      - "earLobe (5)"
+      - "foot (6)"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Derived from - Apple calculates resting HR from heart rate samples taken during periods of inactivity"
+  - identifier: "HKQuantityTypeIdentifierWalkingHeartRateAverage"
+    relationship: "Derived from - Calculated from heart rate samples taken during walking"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "Complementary - HRV is calculated from beat-to-beat interval data"
+  - identifier: "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute"
+    relationship: "Derived from - Calculated from HR at peak exercise vs. 1 minute post-exercise"
+  - identifier: "HKCategoryTypeIdentifierHighHeartRateEvent"
+    relationship: "Triggered by - Generated when heart rate exceeds user-defined threshold while inactive"
+  - identifier: "HKCategoryTypeIdentifierLowHeartRateEvent"
+    relationship: "Triggered by - Generated when heart rate drops below user-defined threshold"
+  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
+    relationship: "Complementary - Detected from analysis of heart rate rhythm patterns"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - heartRate"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/heartrate"
+    type: "official"
+  - title: "Heart rate: What's normal? - Mayo Clinic"
+    url: "https://www.mayoclinic.org/healthy-lifestyle/fitness/expert-answers/heart-rate/faq-20057979"
+    type: "medical"
+  - title: "All About Heart Rate - American Heart Association"
+    url: "https://www.heart.org/en/health-topics/high-blood-pressure/the-facts-about-high-blood-pressure/all-about-heart-rate-pulse"
+    type: "medical"
+  - title: "Target Heart Rates Chart - American Heart Association"
+    url: "https://www.heart.org/en/healthy-living/fitness/fitness-basics/target-heart-rates"
+    type: "medical"
+  - title: "Validity and Reliability of the Apple Watch for Measuring Heart Rate During Exercise"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6226089/"
+    type: "research"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 8.0 introduction confirmed via Apple Developer Documentation
+  - Clinical ranges sourced from Mayo Clinic and AHA guidelines
+  - Apple Watch accuracy data from Apple internal study (November 2024) and PMC research articles
+  - Metadata keys confirmed via HealthKit framework headers and developer documentation

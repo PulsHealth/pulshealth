@@ -1,0 +1,148 @@
+identifier: "HKQuantityTypeIdentifierInhalerUsage"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Lab and Test Results"
+human_readable_name: "Inhaler Usage"
+short_description: "Count of inhaler actuations for asthma and COPD management tracking"
+icon: "lungs.fill"
+color: "#5AC8FA"
+default_unit: "count"
+supported_units:
+  - "count"
+unit_description: "Count represents the number of inhaler actuations (puffs) delivered"
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+typical_range:
+  min: 0
+  max: 12
+  unit: "count"
+  notes: "Per day; rescue inhaler use >2 times/week (excluding pre-exercise use) suggests suboptimal asthma control"
+clinical_ranges:
+  - population: "Well-Controlled Asthma"
+    normal: "Rescue inhaler: 0-2 uses per week, maintenance inhaler: as prescribed (typically 1-2 times daily)"
+  - population: "Partially Controlled Asthma"
+    normal: "Rescue inhaler: 3-4 uses per week"
+  - population: "Uncontrolled Asthma"
+    normal: "Rescue inhaler: daily use or >2 canisters per year"
+  - population: "COPD Maintenance"
+    normal: "1-4 puffs of maintenance inhaler per day as prescribed"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Smart Inhalers"
+    capability: "Automatic tracking of inhaler actuations with timestamp and optional technique feedback"
+    examples:
+      - "Propeller Health Sensor"
+      - "Adherium Hailie"
+      - "Teva Digihaler"
+  - name: "Connected Inhaler Add-ons"
+    capability: "Clip-on sensors that attach to existing inhalers"
+    examples:
+      - "FindAir ONE"
+      - "Cohero Health HeroTracker"
+  - name: "Integrated Smart Inhalers"
+    capability: "Built-in sensors with technique assessment"
+    examples:
+      - "Teva ProAir Digihaler"
+      - "Teva AirDuo Digihaler"
+      - "Teva ArmonAir Digihaler"
+primary_source: "Smart inhaler devices and connected sensors"
+description: |
+  ## Overview
+  Inhaler Usage tracks the number of actuations (puffs) from inhalers used in asthma and COPD management. This data enables objective assessment of medication adherence, rescue medication reliance, and overall respiratory disease control. The metric distinguishes between maintenance therapy compliance and breakthrough symptom management.
+
+  ## How It's Measured
+  Inhaler usage is captured through various smart device technologies:
+  - **Sensor-equipped inhalers**: Built-in electronics detect canister actuation
+  - **Add-on sensors**: Attachable devices that clip onto standard inhalers
+  - **Manual logging**: Patient self-reported entries in health apps
+  - Data captured includes timestamp, number of actuations, and sometimes GPS location
+  - Advanced devices may assess inhalation technique (flow rate, duration, synchronization)
+  - Data syncs to smartphone apps and integrates with HealthKit
+
+  ## Health Significance
+  Inhaler usage data provides critical insights for respiratory disease management:
+  - **Asthma control assessment**: Rescue inhaler frequency indicates symptom burden
+  - **Adherence monitoring**: Maintenance inhaler use patterns reveal medication compliance
+  - **Exacerbation prediction**: Increasing rescue use may predict impending exacerbations
+  - **Treatment optimization**: Identifies need for step-up therapy or medication changes
+  - **Trigger identification**: Location and time patterns may reveal environmental triggers
+  - **Cost management**: Over-reliance on rescue inhalers indicates suboptimal control
+
+  ## Clinical Interpretation Guidelines
+  When reviewing inhaler usage data for clinical decisions:
+  1. **Distinguish inhaler types**:
+     - Rescue/reliever (SABA): Beta-agonists like albuterol for acute symptoms
+     - Controller/maintenance: ICS, LABA, or combination products for prevention
+     - Monitor both patterns separately for complete picture
+  2. **Asthma control indicators** (per GINA guidelines):
+     - Well-controlled: Rescue use ≤2 times/week
+     - Not well-controlled: Rescue use >2 times/week
+     - Very poorly controlled: Rescue use daily or multiple times daily
+  3. **Adherence assessment**:
+     - Maintenance inhaler: <80% of prescribed doses suggests poor adherence
+     - Look for patterns: weekend drops, evening doses missed, vacation gaps
+  4. **Red flags requiring intervention**:
+     - Rescue inhaler use >2 canisters per year
+     - Increasing frequency trend over weeks
+     - Nighttime rescue use (indicates nocturnal symptoms)
+  5. **COPD considerations**:
+     - Increased reliever use may indicate exacerbation onset
+     - Triple therapy adherence critical for severe COPD
+
+  ## Caveats & Limitations
+  - **Does not confirm drug delivery**: Actuation recorded even if technique is poor
+  - **Inhaler type ambiguity**: HealthKit may not distinguish between different inhalers
+  - **Manual entry reliability**: Self-reported data subject to recall bias
+  - **Device compatibility**: Not all inhalers have smart sensor options
+  - **Battery and connectivity issues**: May cause gaps in automated tracking
+  - **Over-reliance on counting**: Does not capture inhaler technique quality
+  - **Priming doses**: Device may count priming actuations as therapeutic uses
+  - **Shared inhalers**: Data may not reflect single-patient use
+
+  ## Additional Notes
+  Inhaler usage data is most valuable when combined with symptom diaries, peak flow measurements, and spirometry results. For clinical consultations, review usage trends over weeks to months rather than individual days. Smart inhaler programs have demonstrated improved adherence and reduced exacerbations when combined with patient education and feedback. Consider integrating inhaler data with environmental monitoring (pollen counts, air quality) to identify trigger patterns.
+metadata_keys:
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the smart inhaler or sensor device"
+  - key: "HKMetadataKeyInhalerType"
+    description: "Type of inhaler: rescue/reliever vs. maintenance/controller"
+  - key: "HKMetadataKeyMedicationName"
+    description: "Name of the medication in the inhaler"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier for syncing data across devices"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
+    relationship: "FEV1 provides objective measure of airflow; contextualizes inhaler usage patterns"
+  - identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
+    relationship: "PEFR tracking complements inhaler data for comprehensive asthma monitoring"
+  - identifier: "HKQuantityTypeIdentifierForcedVitalCapacity"
+    relationship: "FVC helps assess overall lung function in context of inhaler requirements"
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "SpO2 may drop during episodes requiring rescue inhaler use"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Elevated respiratory rate may accompany need for rescue inhaler"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierInhalerUsage"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierinhalerusage"
+    type: "official"
+  - title: "GINA 2023 - Global Strategy for Asthma Management and Prevention"
+    url: "https://ginasthma.org/gina-reports/"
+    type: "medical"
+  - title: "Digital Health Technologies in Asthma Management"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7463268/"
+    type: "research"
+  - title: "Smart Inhaler Technology Review"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6702421/"
+    type: "research"
+last_updated: "2026-01-27"

@@ -1,0 +1,291 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Physical Effort
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierPhysicalEffort"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Physical Effort"
+short_description: "Measures the perceived intensity of physical activity on a standardized effort scale."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.run"
+color: "#FF9500"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "kcal/(kg*hr)"
+supported_units:
+  - "kcal/(kg*hr)"
+unit_description: "Physical effort is measured in kilocalories per kilogram of body weight per hour, representing the metabolic rate during activity. This unit aligns with MET (Metabolic Equivalent of Task) concepts, where 1 MET equals approximately 1 kcal/kg/hr at rest."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 1
+  max: 20
+  unit: "kcal/(kg*hr)"
+  notes: "Values roughly correspond to MET values. Resting is ~1.0, walking ~3-4, running ~8-12, and maximum effort activities can reach 15-20 for elite athletes."
+
+clinical_ranges:
+  - population: "General Activity Intensity"
+    sedentary: "1.0-1.5 (sitting, resting)"
+    light: "1.5-3.0 (standing, light housework)"
+    moderate: "3.0-6.0 (brisk walking, casual cycling)"
+    vigorous: "6.0-9.0 (jogging, swimming)"
+    high_intensity: ">9.0 (running, intense sports)"
+  - population: "Workout Intensity Zones"
+    recovery: "1.0-3.0"
+    aerobic: "3.0-6.0"
+    tempo: "6.0-8.0"
+    threshold: "8.0-10.0"
+    anaerobic: ">10.0"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "17.0"
+  year: 2023
+  notes: "Introduced in iOS 17 as part of enhanced workout and activity tracking capabilities"
+watchos_introduced:
+  version: "10.0"
+  year: 2023
+  notes: "watchOS 10 introduced Physical Effort as a new way to understand workout intensity beyond heart rate alone"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Calculates physical effort using a combination of motion sensors, heart rate, and machine learning algorithms to estimate metabolic intensity during activities and workouts."
+    series: "Series 4 and later (watchOS 10+)"
+    examples: ["Apple Watch Series 9", "Apple Watch Ultra 2"]
+  - name: "iPhone"
+    capability: "Can contribute to physical effort estimation when used for workout tracking, though Apple Watch provides more comprehensive data."
+    examples: ["iPhone 15 series", "iPhone 14 series"]
+  - name: "Third-party fitness apps"
+    capability: "Apps that calculate effort or intensity metrics may write physical effort data to HealthKit."
+    examples: ["Workout apps with RPE tracking", "Training platforms"]
+primary_source: "Apple Watch with watchOS 10+"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Physical Effort is a metric introduced in iOS 17 and watchOS 10 that quantifies the intensity of physical activity. Unlike simple heart rate-based intensity measures, Physical Effort uses Apple's machine learning algorithms to estimate metabolic demand by combining multiple data sources including motion, heart rate, and contextual information.
+
+  The metric provides a more comprehensive view of exercise intensity that accounts for the type of activity being performed, making it valuable for comparing effort across different workout types. A strength training session and a run might produce similar Physical Effort values if the metabolic demand is comparable, even though heart rate responses may differ significantly.
+
+  ## How It's Measured
+
+  **Multi-Sensor Fusion:**
+  Physical Effort calculation integrates multiple data streams:
+
+  - **Heart Rate:** Elevated heart rate indicates increased metabolic demand
+  - **Motion Data:** Accelerometer and gyroscope detect movement intensity and patterns
+  - **Activity Classification:** Machine learning identifies activity type (walking, running, strength training, etc.)
+  - **User Profile:** Age, weight, height, and fitness level inform personalized calculations
+
+  **MET-Based Framework:**
+  The unit (kcal/kg/hr) aligns with Metabolic Equivalent of Task (MET) concepts:
+  - 1 MET = metabolic rate at rest (~1 kcal/kg/hr)
+  - Walking = ~3-4 METs
+  - Running = ~8-12 METs
+  - High-intensity exercise = 10-15+ METs
+
+  **Algorithm Approach:**
+  Apple's approach differs from simple heart rate zone calculations:
+  - Accounts for activity-specific heart rate responses
+  - Adjusts for individual fitness level (trained athletes have different HR responses)
+  - Considers motion intensity even when heart rate data is limited
+  - Uses machine learning trained on diverse activity patterns
+
+  **Real-Time and Post-Workout:**
+  - During workouts, effort displayed in real-time on Apple Watch
+  - Post-workout summary includes average and peak effort
+  - Historical effort data accessible in Apple Health
+
+  ## Health Significance
+
+  Physical Effort provides clinically relevant intensity information:
+
+  **Exercise Prescription Alignment:**
+  - Effort values roughly correspond to established MET categories
+  - Helps assess whether activity meets moderate (3-6 METs) or vigorous (>6 METs) thresholds
+  - Supports evaluation of compliance with physical activity guidelines
+
+  **Cross-Activity Comparison:**
+  - Allows meaningful comparison of intensity across different activity types
+  - Strength training, cycling, swimming, and running can be compared on same scale
+  - Helps identify preferred activities that achieve target intensities
+
+  **Personalized Intensity Tracking:**
+  - Individual fitness level influences perceived effort
+  - Same external workload produces different effort values based on conditioning
+  - Trends over time may reflect fitness improvements
+
+  **Training Load Management:**
+  - High effort values indicate demanding sessions
+  - Tracking cumulative effort helps manage training load
+  - Balance between high and low effort sessions supports recovery
+
+  ## Clinical Interpretation Guidelines
+
+  ### Understanding Effort Values
+
+  **Activity Intensity Classification:**
+  - **1.0-1.5:** Sedentary activities (sitting, lying down)
+  - **1.5-3.0:** Light intensity (standing, slow walking, light housework)
+  - **3.0-6.0:** Moderate intensity (brisk walking, casual cycling, recreational swimming)
+  - **6.0-9.0:** Vigorous intensity (jogging, aerobics, competitive sports)
+  - **>9.0:** High/maximal intensity (running, HIIT, competitive athletics)
+
+  **Meeting Physical Activity Guidelines:**
+  WHO and AHA recommend:
+  - 150-300 minutes of moderate-intensity (3-6 effort) activity weekly, OR
+  - 75-150 minutes of vigorous-intensity (>6 effort) activity weekly
+  - Physical Effort can help assess whether these thresholds are being met
+
+  **Individual Variation:**
+  - Same effort value represents similar relative intensity across individuals
+  - Deconditioned individuals may reach high effort values at lower absolute workloads
+  - Well-trained athletes require higher absolute workloads for same effort values
+
+  ### Clinical Applications
+
+  **Exercise Prescription:**
+  - Prescribe target effort ranges for workout intensity
+  - "Moderate intensity" translates to approximately 3-6 effort units
+  - Clearer than heart rate zones for patients on beta-blockers or with chronotropic incompetence
+
+  **Cardiac Rehabilitation:**
+  - Monitor exercise intensity during rehabilitation programs
+  - Ensure patients stay within prescribed effort limits
+  - Track progression as conditioning improves
+
+  **Weight Management:**
+  - Higher effort activities contribute more to energy expenditure
+  - Effort provides context beyond duration for activity assessment
+  - Help patients identify sustainable moderate-intensity activities
+
+  **Athletic Training:**
+  - Track training intensity distribution (polarized, pyramidal, threshold)
+  - Ensure adequate recovery between high-effort sessions
+  - Monitor for overtraining (sustained high effort with declining performance)
+
+  ### Red Flags
+  - Very high effort (>12) during what should be moderate activity
+  - Significant increase in effort for same workload (possible illness, overtraining, or deconditioning)
+  - Inability to achieve target effort values despite increased workload
+  - Sustained high effort with symptoms (chest pain, severe dyspnea)
+
+  ## Caveats & Limitations
+
+  ### Measurement Considerations
+  - **Algorithm opacity:** Apple's exact calculation method is not publicly disclosed
+  - **Device dependency:** Requires Apple Watch with watchOS 10+ for full functionality
+  - **Activity type effects:** Accuracy may vary by activity type; optimized for common activities
+  - **Heart rate dependency:** Activities where heart rate is unreliable (cold water swimming) may be less accurate
+
+  ### Interpretation Challenges
+  - **Not direct MET measurement:** Values correlate with but are not identical to laboratory-measured METs
+  - **Individual calibration:** Algorithm may not perfectly calibrate to every individual
+  - **External factors:** Illness, medications, stress, and sleep affect effort responses
+  - **Learning curve:** Understanding effort values requires familiarization
+
+  ### What Physical Effort Cannot Tell You
+  - Actual energy expenditure (use Active Energy for calories)
+  - Specific muscle groups being worked
+  - Exercise technique or form
+  - Training effectiveness or adaptation
+  - Precise alignment with clinical exercise testing results
+
+  ## Additional Notes
+
+  **Comparison to RPE:**
+  Physical Effort differs from subjective Rating of Perceived Exertion (RPE):
+  - RPE is self-reported (1-10 or 6-20 scale)
+  - Physical Effort is objectively measured from sensors
+  - Both have value; RPE captures subjective experience
+  - Physical Effort provides consistent, comparable data
+
+  **Integration with Workout App:**
+  In watchOS 10+:
+  - Effort displayed during workouts
+  - Post-workout summary shows effort distribution
+  - Workout history includes effort data
+  - Effort zones may guide real-time pacing
+
+  **For Health Consultants:**
+  1. Use Physical Effort as an intensity metric that transcends activity type
+  2. Values roughly correspond to MET levels for clinical interpretation
+  3. Helpful for patients where heart rate is unreliable (beta-blockers, pacemakers)
+  4. Track trends over time to assess conditioning changes
+  5. Prescribe target effort ranges rather than absolute workloads
+  6. Combine with duration to assess total activity volume
+  7. Recognize this is a newer metric; clinical validation research is ongoing
+  8. Consider alongside traditional metrics (heart rate, RPE) for comprehensive assessment
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the sample was entered manually by the user rather than automatically recorded"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier for the sample from the originating source"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where the measurement was recorded"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Complementary - Active energy represents total calories while effort represents intensity"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Input factor - Heart rate is one input to effort calculation"
+  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
+    relationship: "Complementary - Exercise time captures duration; effort captures intensity"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Related - VO2max represents capacity; effort represents current demand relative to capacity"
+  - identifier: "HKWorkoutType"
+    relationship: "Contains - Workouts include physical effort samples throughout the session"
+  - identifier: "HKQuantityTypeIdentifierRunningPower"
+    relationship: "Complementary - Running power provides mechanical work measure; effort provides metabolic demand"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - physicalEffort"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/physicaleffort"
+    type: "official"
+  - title: "Apple - watchOS 10 Features"
+    url: "https://www.apple.com/watchos/watchos-10/"
+    type: "official"
+  - title: "ACSM Guidelines for Exercise Testing and Prescription"
+    url: "https://www.acsm.org/education-resources/books/guidelines-exercise-testing-prescription"
+    type: "medical"
+  - title: "Metabolic Equivalent: A User Guide - BJSM"
+    url: "https://bjsm.bmj.com/content/45/4/292"
+    type: "research"
+  - title: "WHO Guidelines on Physical Activity and Sedentary Behaviour"
+    url: "https://www.who.int/publications/i/item/9789240015128"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 17.0/watchOS 10.0 introduction confirmed via Apple Developer Documentation
+  - Physical Effort introduced at WWDC 2023
+  - Unit (kcal/kg/hr) aligns with MET concepts but is Apple's proprietary calculation
+  - Uses machine learning combining motion, heart rate, and activity context
+  - Designed to provide consistent intensity comparison across activity types
+  - Limited independent validation research available given recent introduction
+  - Complements rather than replaces traditional intensity metrics (HR zones, RPE)

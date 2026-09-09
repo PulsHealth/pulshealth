@@ -1,0 +1,194 @@
+identifier: "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Activity and Heart"
+human_readable_name: "Headphone Audio Exposure Event"
+short_description: "Records events when headphone audio levels exceed safe listening thresholds, risking hearing damage."
+icon: "headphones"
+color: "#5856D6"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 3
+    name: "sevenDayLimit"
+    description: "Headphone audio exposure over the past 7 days has exceeded the WHO-recommended safe limit of 80 decibels averaged over 40 hours per week."
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone"
+    capability: "Monitors audio output to connected headphones and calculates exposure levels"
+  - name: "Apple Watch"
+    capability: "Monitors audio from connected headphones during standalone playback"
+  - name: "AirPods"
+    capability: "Reports playback levels to iPhone/Watch for exposure calculation"
+  - name: "Beats Headphones"
+    capability: "Compatible Beats devices report audio levels for exposure tracking"
+primary_source: "iPhone"
+description: |
+  ## Overview
+  Headphone Audio Exposure Event records notifications when cumulative weekly headphone listening exceeds safe thresholds based on WHO recommendations. Unlike environmental Audio Exposure Events which track ambient noise, this specifically monitors audio delivered through headphones and earbuds.
+
+  The system calculates a rolling 7-day exposure based on listening volume and duration, comparing it against established safe listening limits. This enables users to understand their cumulative risk rather than just instantaneous loud sounds.
+
+  ## How It's Detected/Measured
+  **Audio Level Calculation:**
+  - iPhone/Apple Watch tracks audio output level to headphones
+  - Levels measured in decibels relative to full scale (dBFS), converted to estimated ear-level dBA
+  - Accounts for headphone type when known (in-ear vs. over-ear affects ear-level sound)
+
+  **WHO Safe Listening Equivalency:**
+  The 7-day limit is based on WHO's weekly exposure budget:
+  - Reference level: 80 dBA for 40 hours/week
+  - Exposure doubles for every 3 dB increase:
+    - 80 dBA: 40 hours/week
+    - 83 dBA: 20 hours/week
+    - 86 dBA: 10 hours/week
+    - 89 dBA: 5 hours/week
+    - 92 dBA: 2.5 hours/week
+
+  **Exposure Notification Threshold:**
+  - Default: 80 dBA for 40 hours/week equivalent (100% of safe limit)
+  - Configurable from 75-100 dBA in Settings
+  - Option to reduce loud audio automatically when threshold exceeded
+
+  **Rolling Calculation:**
+  - System maintains 7-day rolling exposure history
+  - Accounts for both volume and duration
+  - Resets naturally as old exposure ages out of 7-day window
+
+  **Supported Devices:**
+  - AirPods (all models)
+  - AirPods Pro and AirPods Max
+  - Beats headphones with H1 or W1 chip
+  - Third-party Bluetooth headphones (less accurate level estimation)
+  - Wired headphones via Lightning or 3.5mm (requires measurement calibration)
+
+  **Headphone Accommodations:**
+  - Users can customize audio based on audiogram
+  - Accommodate headphones feature adjusts for hearing loss
+
+  ## Health Significance
+  **Personal Audio Device Risk:**
+  Personal listening devices present a significant and growing hearing health risk:
+  - WHO estimates 1.1 billion young people at risk of hearing loss from unsafe listening practices
+  - Personal audio devices are used for longer durations than typical environmental noise exposure
+  - In-ear devices deliver sound directly to the ear canal, requiring less power to reach hazardous levels
+
+  **Cumulative Nature of Damage:**
+  Unlike sudden noise trauma, most headphone-related hearing loss is gradual:
+  - Hair cell damage accumulates over months and years
+  - Early damage may not be noticeable on standard audiograms
+  - "Hidden hearing loss" (synaptopathy) can occur before measurable threshold shift
+  - By the time hearing loss is noticeable, significant damage has occurred
+
+  **High-Risk Behaviors:**
+  - Increasing volume to overcome background noise (e.g., on airplanes, public transit)
+  - Extended listening sessions (binge-watching, gaming, work calls)
+  - Preference for in-ear earbuds that seal ear canal
+  - Using audio to sleep (overnight exposure)
+
+  **Protective Factors:**
+  - Active noise cancellation (ANC) reduces need to increase volume
+  - Over-ear headphones may provide some passive isolation
+  - Regular breaks during extended listening
+  - Moderate volume with longer duration vs. loud volume for shorter time
+
+  ## Clinical Interpretation Guidelines
+  **For Health Consultants:**
+
+  1. **Assess Listening Patterns:**
+     - Total daily/weekly listening hours
+     - Typical volume levels (if Health app data available)
+     - Types of content (music, podcasts, calls, gaming)
+     - Environments where listening occurs
+
+  2. **Event Frequency:**
+     - Single event: May reflect unusual week (travel, special project)
+     - Recurring events: Habitual overexposure pattern
+     - Weekly events: Consistent high-risk behavior
+
+  3. **Review Weekly Exposure Data:**
+     - Health app shows rolling 7-day exposure as percentage of safe limit
+     - Identify which days contributed most
+     - Note correlation with activities or environments
+
+  4. **Behavior Modification Recommendations:**
+     - 60/60 rule: No more than 60% volume for 60 minutes, then break
+     - Use noise-canceling headphones to avoid volume escalation
+     - Enable "Reduce Loud Sounds" feature to cap volume
+     - Consider over-ear instead of in-ear for passive isolation
+     - Schedule listening breaks, especially during long sessions
+
+  5. **Technology Recommendations:**
+     - Enable automatic headphone audio reduction
+     - Use "Headphone Notifications" in Settings
+     - Review weekly summaries in Health app
+     - AirPods Pro/Max with ANC for noisy environments
+
+  6. **High-Risk Populations:**
+     - Teens and young adults (heavy personal audio use)
+     - Remote workers (all-day video calls)
+     - Commuters (competing with transit noise)
+     - Musicians and audio professionals
+     - Gamers (extended sessions with gaming headsets)
+
+  7. **Hearing Assessment:**
+     - Recommend baseline audiogram for frequent alert recipients
+     - Consider extended high-frequency audiometry (above 8 kHz)
+     - Tinnitus evaluation if ringing reported
+     - Annual monitoring for high-exposure individuals
+
+  ## Caveats & Limitations
+  - **Device-Dependent Accuracy:** Level estimation varies by headphone type and may be less accurate for third-party devices
+  - **No Ear-Level Measurement:** Actual sound at eardrum depends on headphone fit, ear anatomy, and other factors
+  - **Compliance Unknown:** Feature tracks audio output, not whether user actually has headphones on ears
+  - **Third-Party Headphones:** Many Bluetooth headphones don't report accurate level data
+  - **Speaker Spillover:** If audio plays through speakers instead of headphones, may be incorrectly attributed
+  - **Frequency Content:** Measures overall level, not potentially more damaging high-frequency content
+  - **Individual Susceptibility:** Safe limits are population-based; individual susceptibility varies
+  - **Concurrent Environmental Noise:** Doesn't account for additive effect of headphone + environmental exposure
+  - **Hearing Damage Already Present:** Doesn't adjust recommendations for pre-existing hearing loss
+metadata_keys:
+  - key: "HKMetadataKeyAudioExposureLevel"
+    description: "The average audio level in dBA that contributed to the threshold breach"
+  - key: "HKMetadataKeyAudioExposureDuration"
+    description: "The total duration of headphone listening in the 7-day period"
+  - key: "HKMetadataKeyHeadphoneAudioDataSource"
+    description: "Identifier for the headphone model or source device"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeadphoneAudioExposure"
+    relationship: "Continuous headphone audio level measurements that feed into the weekly exposure calculation"
+  - identifier: "HKCategoryTypeIdentifierAudioExposureEvent"
+    relationship: "Complementary tracking for environmental/ambient noise vs headphone audio"
+  - identifier: "HKQuantityTypeIdentifierEnvironmentalAudioExposure"
+    relationship: "Environmental sound levels that may combine with headphone exposure for total noise burden"
+  - identifier: "HKAudiogramType"
+    relationship: "Audiogram results can contextualize exposure recommendations for those with existing hearing loss"
+references:
+  - title: "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierheadphoneaudioexposureevent"
+    type: "official"
+  - title: "Use headphone audio level features on iPhone - Apple Support"
+    url: "https://support.apple.com/en-us/108783"
+    type: "official"
+  - title: "WHO Global Standard for Safe Listening Venues and Events"
+    url: "https://www.who.int/publications/i/item/9789240015593"
+    type: "medical"
+  - title: "Unsafe Listening Practices: A Growing Concern for Hearing Health"
+    url: "https://pubmed.ncbi.nlm.nih.gov/36399093/"
+    type: "research"
+last_updated: "2026-01-27"

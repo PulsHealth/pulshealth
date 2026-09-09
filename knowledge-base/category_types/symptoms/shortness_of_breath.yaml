@@ -1,0 +1,177 @@
+identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Shortness of Breath"
+short_description: "Tracks episodes of dyspnea or breathing difficulty"
+icon: "lungs.fill"
+color: "#5AC8FA"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No shortness of breath experienced"
+  - value: 1
+    name: "present"
+    description: "Mild shortness of breath - slight awareness, able to complete activities"
+  - value: 2
+    name: "moderate"
+    description: "Moderate shortness of breath - noticeable difficulty, limits some activities"
+  - value: 3
+    name: "severe"
+    description: "Severe shortness of breath - significant distress, markedly limits activities"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Shortness of breath (dyspnea) is the subjective sensation of breathing
+  discomfort or air hunger. It is a critical symptom that can indicate
+  conditions ranging from anxiety to life-threatening cardiac or pulmonary
+  emergencies. This data type enables tracking for pattern identification
+  and clinical correlation.
+
+  ## Health Significance
+  - **Cardiac Function**: Key symptom of heart failure, coronary artery disease,
+    and arrhythmias
+  - **Pulmonary Health**: Indicator of asthma, COPD, pulmonary embolism,
+    pneumonia, and other lung conditions
+  - **Exercise Capacity**: Tracks functional status and disease progression
+  - **Treatment Monitoring**: Essential for evaluating response to cardiac or
+    pulmonary medications
+  - **Early Warning**: New or worsening dyspnea often precedes clinical
+    deterioration
+
+  ## CRITICAL: Red Flags Requiring Immediate Evaluation
+
+  **Call 911 immediately if shortness of breath occurs with:**
+  - Chest pain or pressure
+  - Sudden onset at rest
+  - Altered consciousness or confusion
+  - Bluish discoloration of lips or fingers (cyanosis)
+  - Inability to speak in full sentences
+  - Severe wheezing or stridor
+  - Coughing up blood
+  - Recent surgery, travel, or immobilization (PE risk)
+  - Swelling in legs with new dyspnea (possible PE or heart failure)
+  - High fever with breathing difficulty
+
+  ## Clinical Context
+  **Cardiac Causes:**
+  - Heart failure (acute or chronic)
+  - Coronary artery disease / angina
+  - Arrhythmias
+  - Valvular heart disease
+  - Cardiomyopathy
+  - Pericardial effusion
+
+  **Pulmonary Causes:**
+  - Asthma
+  - COPD/emphysema
+  - Pneumonia
+  - Pulmonary embolism
+  - Pulmonary fibrosis
+  - Pleural effusion
+  - Pneumothorax
+
+  **Other Causes:**
+  - Anemia
+  - Anxiety/panic attacks
+  - Deconditioning/obesity
+  - Neuromuscular disorders
+  - Thyroid disorders
+
+  ## When to Seek Medical Attention
+  **Urgent Evaluation (same day):**
+  - New shortness of breath without obvious cause
+  - Worsening of chronic dyspnea
+  - Dyspnea at rest
+  - Dyspnea limiting usual activities
+  - Associated leg swelling or weight gain
+  - Orthopnea (difficulty breathing lying flat)
+  - Paroxysmal nocturnal dyspnea (waking up short of breath)
+
+  ## Pattern Recognition
+  Tracking shortness of breath can reveal:
+  - Exertional vs. rest dyspnea patterns
+  - Progressive worsening over time (concerning)
+  - Triggers (exertion, allergens, cold air, emotions)
+  - Time of day patterns (morning = asthma, night = heart failure)
+  - Positional component (orthopnea, platypnea)
+  - Response to rescue inhalers or other treatments
+  - Correlation with oxygen saturation readings
+  - Relationship to palpitations or chest pain
+
+  ## Functional Classification Correlation
+  Severity often aligns with NYHA heart failure classification:
+  - Class I: No limitation during ordinary activity
+  - Class II: Slight limitation; comfortable at rest
+  - Class III: Marked limitation; comfortable only at rest
+  - Class IV: Unable to carry out any activity without discomfort
+
+  ## Caveats & Limitations
+  - Subjective perception varies significantly between individuals
+  - Cannot differentiate between cardiac and pulmonary causes
+  - Does not capture oxygen saturation data
+  - Anxiety-related dyspnea may be indistinguishable
+  - Does not record breathing rate or pattern
+  - Activity context during symptom not captured
+  - Requires correlation with objective testing (spirometry, imaging, ECG)
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat"
+    relationship: "Co-occurring cardiac symptoms"
+  - identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
+    relationship: "Critical co-symptom for cardiac evaluation"
+  - identifier: "HKCategoryTypeIdentifierWheezing"
+    relationship: "Suggests airway component"
+  - identifier: "HKCategoryTypeIdentifierCoughing"
+    relationship: "Often co-occurs in pulmonary conditions"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Common in heart failure and pulmonary disease"
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "Objective oxygenation data"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Objective respiratory rate data"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Cardiopulmonary fitness indicator"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierShortnessOfBreath"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiershortnessofbreath"
+    type: "official"
+  - title: "Dyspnea Evaluation - American Thoracic Society"
+    url: "https://www.thoracic.org/patients/patient-resources/"
+    type: "medical"
+  - title: "Heart Failure Symptoms - American Heart Association"
+    url: "https://www.heart.org/en/health-topics/heart-failure/warning-signs-of-heart-failure"
+    type: "medical"
+  - title: "Pulmonary Embolism Signs - CDC"
+    url: "https://www.cdc.gov/blood-clots/signs-symptoms/index.html"
+    type: "medical"
+last_updated: "2026-01-27"

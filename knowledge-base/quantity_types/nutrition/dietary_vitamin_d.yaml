@@ -1,0 +1,230 @@
+identifier: "HKQuantityTypeIdentifierDietaryVitaminD"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Vitamin D"
+short_description: "Fat-soluble vitamin essential for calcium absorption, bone health, immune function, and cellular regulation"
+
+# --- APPLE HEALTH UI ---
+icon: "sun.max.fill"
+color: "#FFCC00"
+
+default_unit: "mcg"
+supported_units: ["mcg", "IU"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 100
+  unit: "mcg"
+clinical_ranges:
+  - population: "Infants 0-12 months"
+    rda: "10 mcg (400 IU) AI"
+  - population: "Children 1-18 years"
+    rda: "15 mcg (600 IU)"
+  - population: "Adults 19-70 years"
+    rda: "15 mcg (600 IU)"
+  - population: "Adults 71+ years"
+    rda: "20 mcg (800 IU)"
+  - population: "Pregnancy (all ages)"
+    rda: "15 mcg (600 IU)"
+  - population: "Lactation (all ages)"
+    rda: "15 mcg (600 IU)"
+  - population: "Infants 0-6 months (Upper Limit)"
+    upper_limit: "25 mcg (1000 IU)"
+  - population: "Infants 6-12 months (Upper Limit)"
+    upper_limit: "38 mcg (1500 IU)"
+  - population: "Children 1-3 years (Upper Limit)"
+    upper_limit: "63 mcg (2500 IU)"
+  - population: "Children 4-8 years (Upper Limit)"
+    upper_limit: "75 mcg (3000 IU)"
+  - population: "Ages 9+ years (Upper Limit)"
+    upper_limit: "100 mcg (4000 IU)"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log vitamin D intake from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Vitamin D is a fat-soluble secosteroid that functions as a prohormone. The two main dietary forms are vitamin D2 (ergocalciferol, from plant sources) and D3 (cholecalciferol, from animal sources and UV-B exposed skin). Both forms are converted in the liver to 25-hydroxyvitamin D [25(OH)D], the main circulating form used to assess status, and then in the kidneys to the active hormone 1,25-dihydroxyvitamin D [1,25(OH)2D]. HealthKit tracks dietary vitamin D intake in micrograms, where 1 mcg = 40 IU.
+
+  ## Biological Functions
+  Vitamin D exerts effects through nuclear vitamin D receptors (VDRs) present in most tissues:
+
+  - **Calcium and phosphorus homeostasis**: Increases intestinal calcium and phosphorus absorption; promotes renal calcium reabsorption; mobilizes calcium from bone when needed
+  - **Bone health**: Essential for bone mineralization; prevents rickets in children and osteomalacia in adults
+  - **Immune modulation**: Influences both innate and adaptive immunity; stimulates antimicrobial peptide production; modulates inflammatory responses
+  - **Cell differentiation**: Regulates cell growth, differentiation, and apoptosis in many tissue types
+  - **Muscle function**: VDRs in skeletal muscle affect strength and function
+  - **Cardiovascular function**: Receptors in cardiac tissue; influences blood pressure regulation
+  - **Neuromuscular function**: Supports balance and reduces fall risk in elderly
+  - **Gene expression**: VDRs regulate hundreds of genes across multiple systems
+
+  ## Health Significance
+  Vitamin D insufficiency and deficiency are pandemic, affecting an estimated 1 billion people worldwide. Beyond bone health, low vitamin D status is associated with increased risk of numerous conditions including autoimmune diseases, cardiovascular disease, certain cancers, and infections. However, causality and benefits of supplementation beyond bone health remain areas of active research.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing patient vitamin D intake data:
+
+  - **Dietary intake is typically insufficient**: Most people cannot meet vitamin D needs through diet alone without fortified foods or supplements
+  - **Consider sun exposure**: Cutaneous synthesis can be the primary source, but varies greatly by latitude, season, skin pigmentation, sunscreen use, and time outdoors
+  - **Serum testing is essential**: Dietary intake alone cannot determine vitamin D status; 25(OH)D levels are necessary
+  - **D3 vs D2**: Some evidence suggests D3 is more effective at raising 25(OH)D levels than D2
+  - **Evaluate total intake**: Combine food, supplements, and estimate sun exposure contribution
+  - **Consider individual factors**: Obesity, malabsorption, and certain medications affect vitamin D metabolism
+
+  ## Deficiency
+  **Serum 25(OH)D classifications** (widely used, though some debate exists):
+  - Deficient: <12 ng/mL (<30 nmol/L) - increased risk of bone disease
+  - Insufficient: 12-20 ng/mL (30-50 nmol/L) - suboptimal for bone and overall health
+  - Sufficient: 20-50 ng/mL (50-125 nmol/L) - adequate for most people
+  - High: >50 ng/mL (>125 nmol/L) - potential adverse effects
+
+  **Clinical manifestations of deficiency**:
+  - **Rickets** (children): Impaired bone mineralization causing skeletal deformities, growth retardation, muscle weakness
+  - **Osteomalacia** (adults): Bone pain, proximal muscle weakness, increased fracture risk, waddling gait
+  - **Secondary hyperparathyroidism**: Elevated PTH attempting to maintain calcium levels
+  - **Increased fall risk** (elderly): Due to muscle weakness and impaired neuromuscular function
+  - **Fatigue and generalized weakness**
+
+  **At-risk populations**:
+  - Elderly (reduced skin synthesis capacity and often limited sun exposure)
+  - People with dark skin (melanin reduces UV-B absorption)
+  - Those living at high latitudes (limited UV-B exposure, especially in winter)
+  - Individuals with limited sun exposure (homebound, institutionalized, fully covered clothing)
+  - Obese individuals (vitamin D sequestered in adipose tissue)
+  - Malabsorption conditions (celiac, Crohn's, gastric bypass, pancreatic insufficiency)
+  - Exclusively breastfed infants (breast milk is low in vitamin D)
+  - Vegans (limited dietary sources)
+
+  ## Toxicity/Excess
+  Vitamin D toxicity is rare but serious, typically occurring only with excessive supplementation.
+
+  **Hypervitaminosis D** (usually serum 25(OH)D >150 ng/mL):
+  - **Hypercalcemia**: Primary toxicity mechanism
+    - Symptoms: Nausea, vomiting, weakness, frequent urination, kidney problems
+    - Severe: Confusion, heart rhythm abnormalities, kidney stones, kidney failure
+  - **Soft tissue calcification**: Calcium deposits in kidneys, blood vessels, heart, lungs
+  - **Bone loss**: Paradoxically, very high levels may increase bone resorption
+
+  **Causes**:
+  - Excessive supplementation (typically >10,000 IU/day for extended periods)
+  - NOT from sun exposure (photodegradation limits cutaneous production)
+  - NOT from food (insufficient vitamin D content to cause toxicity)
+  - Industrial accidents with vitamin D-containing products
+
+  **Clinical note**: The UL of 4000 IU (100 mcg) is conservative. Many individuals take higher doses without adverse effects, but routine monitoring of serum 25(OH)D is advisable at higher intakes.
+
+  ## Food Sources
+  **Natural sources** (relatively few foods contain significant vitamin D):
+  - Fatty fish: Salmon (3 oz: ~14-18 mcg), mackerel, sardines, trout
+  - Fish liver oils: Cod liver oil (1 tbsp: ~34 mcg)
+  - Egg yolks (~1 mcg per yolk; varies with hen's diet)
+  - Beef liver (~1 mcg/3 oz)
+  - Cheese (small amounts)
+  - Mushrooms exposed to UV light (D2; content varies widely)
+
+  **Fortified foods** (primary dietary source for most people):
+  - Milk (typically ~3 mcg/cup in US)
+  - Orange juice (fortified: ~2.5 mcg/cup)
+  - Cereals (varies: ~1-2.5 mcg/serving)
+  - Plant-based milk alternatives (when fortified: ~2.5 mcg/cup)
+  - Margarine (varies by product)
+  - Infant formula (required to contain vitamin D)
+
+  **Bioavailability considerations**:
+  - Fat-soluble; absorption enhanced by dietary fat
+  - D3 may be more effective than D2 at raising serum levels
+  - Absorption decreases with age and GI conditions
+
+  ## Special Populations
+  **Infants**: American Academy of Pediatrics recommends 400 IU (10 mcg)/day starting at birth for breastfed and partially breastfed infants. Formula-fed infants receiving <1 L formula/day also need supplementation.
+
+  **Pregnancy**: Adequate vitamin D is crucial for fetal bone development. Deficiency associated with increased preeclampsia, gestational diabetes, and preterm birth risk. Many experts recommend 1000-2000 IU/day during pregnancy, particularly for women at risk of deficiency.
+
+  **Lactation**: Breast milk vitamin D content depends on maternal status. Standard supplementation (400-600 IU) does not significantly increase breast milk vitamin D. Some recommend high-dose maternal supplementation (4000-6400 IU/day) as alternative to infant supplementation.
+
+  **Elderly (71+ years)**: RDA increases to 800 IU (20 mcg) due to decreased skin synthesis, reduced kidney conversion to active form, and increased fall/fracture risk. Many geriatric societies recommend 800-2000 IU/day.
+
+  **Obese individuals**: May require 2-3 times more vitamin D to achieve adequate serum levels due to sequestration in adipose tissue.
+
+  **Post-bariatric surgery**: Fat malabsorption significantly impairs vitamin D absorption. Require higher doses and regular monitoring.
+
+  **Dark-skinned individuals**: May require 3-5 times more sun exposure to produce equivalent vitamin D compared to light-skinned individuals.
+
+  ## Drug Interactions
+  **Drugs that decrease vitamin D levels/effects**:
+  - **Anticonvulsants** (phenytoin, phenobarbital, carbamazepine): Increase vitamin D catabolism via CYP450 induction
+  - **Glucocorticoids**: Impair calcium absorption and may affect vitamin D metabolism
+  - **Rifampin**: Increases vitamin D catabolism
+  - **Cholestyramine**: Reduces fat-soluble vitamin absorption
+  - **Orlistat**: Decreases fat absorption, reducing vitamin D uptake
+  - **Antifungal agents** (ketoconazole): May impair vitamin D metabolism
+
+  **Drugs whose effects may be altered by vitamin D**:
+  - **Thiazide diuretics**: Combined with vitamin D may cause hypercalcemia
+  - **Digoxin**: Hypercalcemia from vitamin D toxicity increases digoxin toxicity risk
+  - **Calcium channel blockers**: Vitamin D-induced hypercalcemia may reduce efficacy
+
+  **Important clinical notes**:
+  - Patients on anticonvulsants often require vitamin D supplementation
+  - Monitor calcium levels when using thiazides with vitamin D supplements
+
+  ## Caveats & Limitations
+  - HealthKit data reflects dietary intake only, not cutaneous synthesis or total vitamin D status
+  - Serum 25(OH)D measurement is essential for assessing true vitamin D status
+  - Sun exposure contribution varies enormously and cannot be captured by dietary tracking
+  - Food databases may not distinguish D2 from D3
+  - Fortification levels vary by country and product
+  - Individual response to supplementation varies significantly
+  - Optimal serum levels remain debated (some advocate for higher targets than official recommendations)
+  - Cannot determine if intake is sufficient without serum testing
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food contributing to vitamin D intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if the entry was manually logged by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing with external nutrition databases"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
+    relationship: "Vitamin D essential for calcium absorption; both critical for bone health"
+  - identifier: "HKQuantityTypeIdentifierDietaryPhosphorus"
+    relationship: "Vitamin D regulates phosphorus absorption; both needed for bone mineralization"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminK"
+    relationship: "Both fat-soluble vitamins important for bone health; vitamin K directs calcium to bone"
+  - identifier: "HKQuantityTypeIdentifierDietaryMagnesium"
+    relationship: "Magnesium required for vitamin D metabolism and activation"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminA"
+    relationship: "Fat-soluble vitamin; very high vitamin A may antagonize vitamin D actions"
+  - identifier: "HKQuantityTypeIdentifierUVExposure"
+    relationship: "UV exposure enables cutaneous vitamin D synthesis, major source for most people"
+references:
+  - title: "Vitamin D - Dietary Reference Intakes"
+    url: "https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/"
+    type: "official"
+  - title: "Apple HealthKit Documentation - HKQuantityTypeIdentifier"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier"
+    type: "official"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Vitamin D and Calcium"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK56070/"
+    type: "research"
+  - title: "Vitamin D - Linus Pauling Institute"
+    url: "https://lpi.oregonstate.edu/mic/vitamins/vitamin-D"
+    type: "research"
+  - title: "Endocrine Society Clinical Practice Guideline on Vitamin D"
+    url: "https://academic.oup.com/jcem/article/96/7/1911/2833671"
+    type: "medical"
+  - title: "Vitamin D Deficiency - NEJM Review"
+    url: "https://www.nejm.org/doi/full/10.1056/NEJMra070553"
+    type: "medical"
+last_updated: "2026-01-27"

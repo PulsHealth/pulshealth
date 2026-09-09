@@ -1,0 +1,218 @@
+identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Respiratory Rate"
+short_description: "The number of breaths taken per minute, typically measured during sleep."
+icon: "lungs.fill"
+color: "#5AC8FA"
+default_unit: "count/min"
+supported_units:
+  - "count/min"
+  - "breaths/min"
+unit_description: "Breaths per minute (count/min) - the number of complete respiratory cycles in one minute."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 12
+  max: 20
+  unit: "breaths/min"
+  notes: "Range for healthy adults at rest. Values may vary during sleep, exercise, or illness."
+clinical_ranges:
+  - population: "Adults (at rest)"
+    normal: "12-20 breaths/min"
+    low: "<12 breaths/min (bradypnea)"
+    high: ">20 breaths/min (tachypnea)"
+  - population: "Adults (during sleep)"
+    normal: "12-16 breaths/min"
+    low: "<10 breaths/min"
+    high: ">20 breaths/min"
+  - population: "Infants (0-1 year)"
+    normal: "30-60 breaths/min"
+    low: "<30 breaths/min"
+    high: ">60 breaths/min"
+  - population: "Children (1-5 years)"
+    normal: "20-30 breaths/min"
+    low: "<20 breaths/min"
+    high: ">30 breaths/min"
+  - population: "Children (6-12 years)"
+    normal: "18-26 breaths/min"
+    low: "<18 breaths/min"
+    high: ">26 breaths/min"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+  notes: "Automatic sleep respiratory rate tracking was introduced in watchOS 8 (2021)."
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch Series 3+"
+    capability: "Automatic measurement during sleep with Sleep Focus enabled"
+  - name: "Third-party respiratory monitors"
+    capability: "Manual or automatic data entry"
+  - name: "Medical-grade spirometers"
+    capability: "Professional respiratory assessment"
+  - name: "Manual entry"
+    capability: "User can manually log respiratory rate"
+primary_source: "Apple Watch (during sleep tracking)"
+description: |
+  ## Overview
+
+  Respiratory rate measures the number of breaths a person takes per minute and is one of the four
+  primary vital signs (along with heart rate, blood pressure, and body temperature). This metric
+  provides valuable insight into respiratory health, cardiovascular function, and overall
+  physiological state. In HealthKit, respiratory rate data is commonly collected automatically
+  by Apple Watch during sleep when Sleep Focus mode is enabled.
+
+  ## How It's Measured
+
+  ### Apple Watch Measurement Method
+  Apple Watch uses its built-in accelerometer to detect subtle chest and wrist movements
+  associated with breathing during sleep. The algorithm analyzes motion patterns in 30-second
+  intervals to estimate breathing rate. This method requires:
+
+  - Sleep Focus mode to be enabled
+  - The watch to be worn during sleep
+  - Sufficient sleep duration for accurate averaging
+
+  The accelerometer-based approach does not directly measure airflow but infers respiratory
+  rate from the rhythmic body movements that accompany breathing.
+
+  ### Clinical Measurement Methods
+  - **Manual counting**: Observing chest rise/fall for 60 seconds
+  - **Capnography**: Measuring exhaled CO2 (gold standard)
+  - **Impedance pneumography**: Detecting thoracic impedance changes
+  - **Respiratory inductance plethysmography**: Using chest/abdomen bands
+
+  ## Health Significance
+
+  Respiratory rate is a sensitive indicator of physiological stress and can change before other
+  vital signs in response to illness or deterioration. It reflects the body's demand for oxygen
+  and need to expel carbon dioxide, making it valuable for:
+
+  - Early detection of respiratory infections
+  - Monitoring sleep quality and disorders
+  - Assessing cardiovascular fitness
+  - Identifying metabolic disturbances
+  - Tracking recovery from illness
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  - **Adults at rest**: 12-20 breaths/min (some sources cite 12-18)
+  - **During sleep**: Typically 12-16 breaths/min, lower than awake values
+  - **During exercise**: Can increase to 40-60 breaths/min depending on intensity
+
+  ### Elevated Values (Tachypnea) May Indicate
+  - **Respiratory conditions**: Pneumonia, asthma, COPD exacerbation, pulmonary embolism
+  - **Cardiac conditions**: Heart failure, cardiac tamponade
+  - **Metabolic causes**: Diabetic ketoacidosis, metabolic acidosis, fever
+  - **Psychological**: Anxiety, panic attacks
+  - **Other**: Pain, anemia, hyperthyroidism, sepsis
+
+  ### Low Values (Bradypnea) May Indicate
+  - **Central nervous system**: Head injury, stroke, increased intracranial pressure
+  - **Medication effects**: Opioid use, sedative overdose, anesthesia
+  - **Metabolic**: Hypothyroidism, metabolic alkalosis
+  - **Other**: Hypothermia, severe fatigue
+
+  ### Red Flags for Consultation
+  - Respiratory rate consistently >25 breaths/min at rest
+  - Respiratory rate <10 breaths/min
+  - Sudden significant change from baseline (increase >5 breaths/min)
+  - Accompanied by shortness of breath, chest pain, or cyanosis
+  - Irregular breathing patterns (Cheyne-Stokes, Kussmaul, apneustic)
+  - Associated with confusion or altered mental status
+
+  ## Caveats & Limitations
+
+  ### Apple Watch Limitations
+  - **Sleep-only measurement**: Standard respiratory rate is only captured during sleep
+  - **Motion artifacts**: Excessive movement can interfere with accuracy
+  - **Position dependence**: May be affected by sleep position
+  - **Age restriction**: Not available for users under 13 years old
+  - **Requires Sleep Focus**: Must have Sleep mode enabled for automatic tracking
+  - **Averaging effect**: Reports average over sleep period, may miss transient abnormalities
+
+  ### General Limitations
+  - Normal ranges vary by age, fitness level, and individual baseline
+  - Single readings are less meaningful than trends over time
+  - Consumer devices are not validated for clinical diagnosis
+  - Does not capture respiratory depth, pattern, or effort
+  - Cannot detect partial airway obstruction or gas exchange problems
+
+  ### Important Distinctions
+  - **Respiratory rate vs. breathing disturbances**: Apple Watch also tracks "breathing
+    disturbances" which measures interruptions to normal breathing patterns (related to
+    sleep apnea screening), distinct from respiratory rate
+  - **Resting vs. active**: HealthKit respiratory rate typically reflects resting/sleep values
+
+  ## Additional Notes
+
+  ### Trends and Patterns
+  Clinicians should look for:
+  - Gradual increases that may indicate developing illness
+  - Night-to-night variability (high variability may suggest sleep disorders)
+  - Correlation with other metrics (heart rate, HRV, sleep stages)
+
+  ### Integration with Other Data
+  Respiratory rate is most meaningful when interpreted alongside:
+  - Heart rate and heart rate variability
+  - Blood oxygen saturation (SpO2)
+  - Sleep stage data
+  - Activity and exercise data
+
+  ### Population Considerations
+  - Athletes may have lower resting respiratory rates (10-12 breaths/min)
+  - Elderly patients may have slightly higher baseline rates
+  - Pregnant women typically have elevated respiratory rates
+  - Children and infants have significantly higher normal ranges
+
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateSensorLocation"
+    description: "Location of the sensor used for measurement"
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the device that recorded the measurement"
+  - key: "HKMetadataKeyDeviceManufacturerName"
+    description: "Manufacturer of the device used for measurement"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "Complementary respiratory metric"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Often correlates with respiratory changes"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "Both reflect autonomic nervous system state"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Respiratory rate measured during sleep"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Respiratory efficiency indicator"
+references:
+  - title: "HKQuantityTypeIdentifierRespiratoryRate - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierrespiratoryrate"
+    type: "official"
+  - title: "Physiology, Respiratory Rate - StatPearls (NCBI)"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK537306/"
+    type: "medical"
+  - title: "Abnormal Respirations - StatPearls (NCBI)"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK470309/"
+    type: "medical"
+  - title: "Vital Signs - Johns Hopkins Medicine"
+    url: "https://www.hopkinsmedicine.org/health/conditions-and-diseases/vital-signs-body-temperature-pulse-rate-respiration-rate-blood-pressure"
+    type: "medical"
+  - title: "Understanding Vital Signs: Respiratory Rate - American Lung Association"
+    url: "https://www.lung.org/blog/respiratory-rate-vital-signs"
+    type: "medical"
+  - title: "Estimating Sleep Stages from Apple Watch"
+    url: "https://www.apple.com/health/pdf/Estimating_Sleep_Stages_from_Apple_Watch_Oct_2025.pdf"
+    type: "official"
+last_updated: "2026-01-27"

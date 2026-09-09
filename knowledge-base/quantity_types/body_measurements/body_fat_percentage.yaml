@@ -1,0 +1,220 @@
+identifier: "HKQuantityTypeIdentifierBodyFatPercentage"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Body Measurements"
+human_readable_name: "Body Fat Percentage"
+short_description: "The proportion of total body mass composed of adipose tissue, expressed as a percentage."
+icon: "percent"
+color: "#FF9500"
+default_unit: "%"
+supported_units:
+  - "%"
+  - "percent"
+unit_description: "Body fat percentage is expressed as a decimal value representing the fraction of body mass that is fat (e.g., 0.25 = 25%)."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+  - "separateBySource"
+typical_range:
+  min: 3
+  max: 60
+  unit: "%"
+  notes: "Essential fat minimum is approximately 3% for men and 10-12% for women; values above 50% indicate severe obesity."
+clinical_ranges:
+  - population: "Adult Men (20-39 years)"
+    essential: "2-5%"
+    athletes: "6-13%"
+    fitness: "14-17%"
+    acceptable: "18-24%"
+    obese: ">25%"
+  - population: "Adult Men (40-59 years)"
+    essential: "2-5%"
+    athletes: "6-13%"
+    fitness: "14-17%"
+    acceptable: "18-24%"
+    obese: ">25%"
+    notes: "Acceptable range shifts slightly higher with age; 11-21% considered normal by some standards"
+  - population: "Adult Men (60-79 years)"
+    low: "<13%"
+    normal: "13-24%"
+    high: ">25%"
+    notes: "Higher body fat may be acceptable/protective in elderly; focus on preserving lean mass"
+  - population: "Adult Women (20-39 years)"
+    essential: "10-13%"
+    athletes: "14-20%"
+    fitness: "21-24%"
+    acceptable: "25-31%"
+    obese: ">32%"
+  - population: "Adult Women (40-59 years)"
+    essential: "10-13%"
+    athletes: "14-20%"
+    fitness: "21-24%"
+    acceptable: "25-34%"
+    obese: ">35%"
+    notes: "Acceptable range increases slightly; 24-34% considered normal by some standards"
+  - population: "Adult Women (60-79 years)"
+    low: "<24%"
+    normal: "25-36%"
+    high: ">36%"
+    notes: "Age-related increases in body fat are normal; very low levels may indicate health issues"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Bioelectrical Impedance Scales"
+    capability: "Estimate body fat using electrical impedance through body tissues"
+    examples: ["Withings Body+", "Eufy Smart Scale P2 Pro", "Garmin Index S2", "Renpho Smart Scale"]
+  - name: "Handheld BIA Analyzers"
+    capability: "Upper body impedance measurement for body composition"
+    examples: ["Omron Body Composition Monitor", "Tanita BC-554"]
+  - name: "Professional Body Composition Analyzers"
+    capability: "Segmental multi-frequency bioelectrical impedance analysis"
+    examples: ["InBody 570", "InBody 770", "Tanita MC-780MA", "seca mBCA"]
+  - name: "Research/Clinical Methods"
+    capability: "Gold-standard body composition measurement"
+    examples: ["DEXA scan", "Bod Pod (air displacement)", "Hydrostatic weighing"]
+primary_source: "Typically measured by smart scales using bioelectrical impedance analysis (BIA), or by clinical methods such as DEXA, hydrostatic weighing, or air displacement plethysmography."
+description: |
+  ## Overview
+  Body fat percentage represents the proportion of total body mass composed of adipose (fat) tissue. Unlike BMI, which is a simple height-to-weight ratio, body fat percentage provides a direct measure of adiposity and better reflects actual body composition. This metric is essential for distinguishing between individuals who have similar weights but vastly different amounts of muscle versus fat.
+
+  ## How It's Measured
+  Body fat percentage can be measured through several methods with varying accuracy:
+
+  **Consumer Methods (BIA - Bioelectrical Impedance Analysis):**
+  - Smart scales and handheld devices send a small electrical current through the body
+  - Fat tissue conducts electricity differently than lean tissue
+  - Algorithms estimate body fat based on impedance measurements
+  - Accuracy: ±3-5% compared to gold standard methods
+  - Hydration status, recent exercise, and meal timing significantly affect readings
+
+  **Clinical/Research Methods:**
+  - **DEXA (Dual-Energy X-ray Absorptiometry)**: Gold standard for body composition; accuracy ±1-2%
+  - **Hydrostatic Weighing**: Underwater weighing based on density differences
+  - **Air Displacement Plethysmography (Bod Pod)**: Uses air displacement to measure body volume
+  - **MRI/CT Scans**: Most accurate but expensive and impractical for routine use
+
+  ## Health Significance
+  Body fat percentage is a more accurate predictor of health outcomes than BMI alone. Excessive body fat is associated with:
+  - Insulin resistance and type 2 diabetes
+  - Cardiovascular disease and hypertension
+  - Metabolic syndrome
+  - Chronic inflammation
+  - Hormonal imbalances
+  - Sleep apnea
+  - Certain cancers (breast, colon, endometrial)
+  - Joint problems and mobility limitations
+
+  Insufficient body fat can lead to:
+  - Hormonal dysfunction (amenorrhea in women, low testosterone in men)
+  - Compromised immune function
+  - Poor thermoregulation
+  - Nutrient deficiencies
+  - Bone loss
+  - Fertility problems
+
+  ## Clinical Interpretation Guidelines
+
+  ### Body Fat Classification Chart
+
+  | Category | Men | Women |
+  |----------|-----|-------|
+  | Essential Fat | 2-5% | 10-13% |
+  | Athletes | 6-13% | 14-20% |
+  | Fitness | 14-17% | 21-24% |
+  | Acceptable | 18-24% | 25-31% |
+  | Obese | >25% | >32% |
+
+  ### Elevated Body Fat May Indicate
+  - Caloric surplus over time
+  - Sedentary lifestyle
+  - Hormonal imbalances (hypothyroidism, Cushing's syndrome, PCOS)
+  - Medication side effects (steroids, some antidepressants)
+  - Sleep deprivation or poor sleep quality
+  - Chronic stress (elevated cortisol)
+  - Metabolic adaptation from repeated dieting
+
+  ### Low Body Fat May Indicate
+  - Overtraining or excessive exercise
+  - Eating disorders (anorexia nervosa, orthorexia)
+  - Malabsorption syndromes
+  - Chronic illness or cachexia
+  - Hyperthyroidism
+  - Relative Energy Deficiency in Sport (RED-S)
+
+  ### Red Flags for Consultation
+  - Men below 5% or women below 12% body fat - risk of hormonal disruption
+  - Women with body fat <17% experiencing amenorrhea - evaluate for hypothalamic amenorrhea
+  - Rapid changes (>2% in 4 weeks) without intentional intervention
+  - Body fat >35% in men or >40% in women - high cardiometabolic risk
+  - Athletes with declining performance and low body fat - screen for RED-S
+  - Discrepancy between visual appearance and measured body fat percentage
+
+  ## Caveats & Limitations
+  - **Measurement variability**: Consumer BIA devices can vary 3-8% from true values and fluctuate day-to-day based on hydration, meals, and exercise
+  - **Hydration dependence**: BIA significantly underestimates fat in dehydrated states and overestimates when over-hydrated
+  - **Time-of-day effects**: Measure at consistent times (morning, fasted) for comparable readings
+  - **Device-to-device variation**: Different scales may give different absolute values; track trends on the same device
+  - **Population-specific algorithms**: Most BIA algorithms were developed on younger, Caucasian populations and may be less accurate for other demographics
+  - **Does not indicate fat distribution**: Visceral fat (around organs) is more metabolically harmful than subcutaneous fat, but standard BIA cannot differentiate
+  - **Athletic populations**: Standard BIA algorithms may underestimate fat in athletes with high muscle mass
+  - **Elderly populations**: Age-related changes in hydration and tissue conductivity affect accuracy
+
+  ## Additional Notes
+  - For health risk assessment, combining body fat percentage with waist circumference provides better insight than either alone
+  - Essential fat is the minimum fat required for basic physiological functions; dropping below essential fat levels is dangerous
+  - Women require higher essential fat than men due to reproductive and hormonal functions
+  - Professional athletes may temporarily drop to very low body fat for competition, but this is not sustainable or healthy long-term
+  - Body fat percentage naturally increases with age as muscle mass declines (sarcopenia)
+  - Focus on trends over time rather than single measurements; weekly or monthly tracking is more meaningful than daily
+  - The same body fat percentage can look different on individuals of different heights and builds
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the value was manually entered by the user or automatically recorded by a measurement device."
+  - key: "HKMetadataKeyDeviceSerialNumber"
+    description: "Serial number of the scale or body composition analyzer that recorded the measurement."
+  - key: "HKMetadataKeyExternalUUID"
+    description: "A unique identifier from an external data source that originally recorded this measurement."
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing this sample across devices and platforms."
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for tracking updates to synced samples."
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Total body weight, of which body fat percentage represents the adipose tissue portion."
+  - identifier: "HKQuantityTypeIdentifierLeanBodyMass"
+    relationship: "Lean body mass is the complement of body fat (total mass minus fat mass)."
+  - identifier: "HKQuantityTypeIdentifierBodyMassIndex"
+    relationship: "BMI is a simpler metric; body fat percentage provides more accurate adiposity assessment."
+  - identifier: "HKQuantityTypeIdentifierWaistCircumference"
+    relationship: "Waist circumference indicates visceral fat distribution; complements body fat percentage."
+  - identifier: "HKQuantityTypeIdentifierBasalEnergyBurned"
+    relationship: "Basal metabolic rate is influenced by body composition; higher lean mass increases BMR."
+references:
+  - title: "HKQuantityTypeIdentifierBodyFatPercentage - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierbodyfatpercentage"
+    type: "official"
+  - title: "Body Fat Percentage Chart: Healthy Ranges by Age and Gender"
+    url: "https://www.healthline.com/health/exercise-fitness/ideal-body-fat-percentage"
+    type: "medical"
+  - title: "Healthy percentage body fat ranges: an approach for developing guidelines based on body mass index"
+    url: "https://pubmed.ncbi.nlm.nih.gov/10966886/"
+    type: "research"
+  - title: "Body composition data for individuals 8 years of age and older - CDC NCHS"
+    url: "https://www.cdc.gov/nchs/data/series/sr_11/sr11_250.pdf"
+    type: "research"
+  - title: "Normal ranges of body weight and body fat - Human Kinetics"
+    url: "https://us.humankinetics.com/blogs/excerpt/normal-ranges-of-body-weight-and-body-fat"
+    type: "medical"
+last_updated: "2026-01-27"

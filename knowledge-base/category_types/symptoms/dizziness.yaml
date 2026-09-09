@@ -1,0 +1,140 @@
+identifier: "HKCategoryTypeIdentifierDizziness"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Dizziness"
+short_description: "Tracks episodes of dizziness, lightheadedness, or vertigo."
+icon: "tornado"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Dizziness is a broad term encompassing several distinct sensations: lightheadedness (feeling faint), vertigo (spinning sensation), disequilibrium (unsteadiness), and presyncope (feeling about to pass out). This HealthKit category type allows users to track dizziness episodes, providing important data for identifying patterns and underlying causes.
+
+  ## Health Significance
+  Dizziness is one of the most common complaints in medical practice, affecting approximately 15-20% of adults annually. Proper characterization is essential for diagnosis, as different types of dizziness have different causes and treatments.
+
+  Types and common causes:
+
+  **Vertigo (spinning sensation):**
+  - Benign paroxysmal positional vertigo (BPPV)
+  - Meniere's disease
+  - Vestibular neuritis/labyrinthitis
+  - Vestibular migraine
+  - Acoustic neuroma
+
+  **Lightheadedness/Presyncope:**
+  - Orthostatic hypotension
+  - Dehydration
+  - Hypoglycemia
+  - Cardiac arrhythmias
+  - Vasovagal syncope
+  - Medication side effects
+  - Anemia
+
+  **Disequilibrium:**
+  - Peripheral neuropathy
+  - Cerebellar dysfunction
+  - Parkinson's disease
+  - Vision problems
+
+  **Psychogenic dizziness:**
+  - Anxiety and panic disorder
+  - Persistent postural-perceptual dizziness (PPPD)
+
+  ## When to Seek Medical Attention
+  Seek emergency care when dizziness:
+  - Is accompanied by sudden severe headache
+  - Occurs with slurred speech or facial drooping (stroke symptoms)
+  - Is associated with chest pain or palpitations
+  - Results in loss of consciousness
+  - Is accompanied by weakness or numbness
+  - Follows head trauma
+  - Is accompanied by high fever and stiff neck
+
+  Seek routine evaluation when:
+  - Episodes are recurrent or persistent
+  - Dizziness affects daily activities or driving
+  - Associated with hearing loss or tinnitus
+  - Occurs with position changes consistently
+  - Is accompanied by nausea and vomiting
+  - Started after beginning new medication
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Position-triggered episodes (BPPV)
+  - Correlation with standing (orthostatic hypotension)
+  - Migraine associations
+  - Medication timing effects
+  - Hydration status correlations
+  - Stress and anxiety triggers
+  - Menstrual cycle patterns
+  - Blood sugar correlations
+
+  ## Caveats & Limitations
+  - Does not differentiate between types of dizziness (vertigo vs. lightheadedness)
+  - Duration of episodes not captured
+  - Triggering factors not recorded systematically
+  - Associated symptoms (nausea, hearing changes) not linked
+  - Cannot assess fall risk
+  - Position at onset not recorded
+  - Subjective severity varies significantly between individuals
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierNausea"
+    relationship: "Nausea commonly accompanies vestibular dizziness"
+  - identifier: "HKCategoryTypeIdentifierHeadache"
+    relationship: "Vestibular migraine causes both dizziness and headache"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "Blood pressure changes can cause orthostatic dizziness"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Cardiac arrhythmias can cause dizziness"
+  - identifier: "HKCategoryTypeIdentifierFainting"
+    relationship: "Presyncope may progress to fainting"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierDizziness"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierdizziness"
+    type: "official"
+  - title: "Dizziness - Mayo Clinic"
+    url: "https://www.mayoclinic.org/diseases-conditions/dizziness/symptoms-causes/syc-20371787"
+    type: "medical"
+  - title: "Approach to the Patient with Dizziness - AAFP"
+    url: "https://www.aafp.org/pubs/afp/issues/2017/0201/p154.html"
+    type: "medical"
+last_updated: "2026-01-27"

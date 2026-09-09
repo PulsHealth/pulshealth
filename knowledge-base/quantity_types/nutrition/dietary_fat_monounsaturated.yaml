@@ -1,0 +1,142 @@
+identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Monounsaturated Fat"
+short_description: "Monounsaturated fatty acid intake, primarily from olive oil, nuts, and avocados"
+icon: "drop.fill"
+color: "#34C759"
+default_unit: "g"
+supported_units:
+  - "g"
+  - "mg"
+  - "oz"
+unit_description: "Grams (g) of monounsaturated fatty acids (MUFA). MUFAs have one double bond in their carbon chain and are typically liquid at room temperature."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 10
+  max: 80
+  unit: "g"
+  notes: "Mediterranean diet provides 15-20% of calories from MUFA. Average American intake is ~11-12% of calories."
+clinical_ranges:
+  - population: "Adults (general)"
+    rda: "No specific RDA; part of total fat AMDR (20-35% of calories)"
+  - population: "Mediterranean Diet Pattern"
+    rda: "15-20% of total calories from MUFA"
+  - population: "Cardiovascular Disease Prevention"
+    rda: "Replace saturated fat with MUFA for LDL reduction"
+  - population: "Diabetes/Metabolic Syndrome"
+    rda: "Emphasize MUFA over saturated fat for insulin sensitivity"
+  - population: "Elevated LDL Cholesterol"
+    rda: "Substitute for saturated fat sources"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "MUFA tracking as component of detailed fat breakdown"
+    examples:
+      - "Cronometer"
+      - "MyFitnessPal"
+      - "MacroFactor"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Monounsaturated Fat (MUFA) represents intake of fatty acids with a single double bond in their carbon chain. The predominant dietary MUFA is oleic acid (18:1), abundant in olive oil, avocados, nuts (almonds, pecans, macadamia), and some animal fats. MUFAs are a cornerstone of the Mediterranean diet and are associated with cardiovascular benefit, particularly when replacing saturated fat.
+
+  There is no established FDA Daily Value for monounsaturated fat specifically. Nutrition labels are not required to list MUFA content, though some products voluntarily include it. The focus for labeling and guidelines is on limiting saturated fat and trans fat rather than targeting specific MUFA intake levels.
+
+  ## Health Significance
+  Monounsaturated fat intake supports:
+  - **Cardiovascular Health**: Replaces saturated fat to lower LDL without reducing HDL
+  - **Insulin Sensitivity**: High-MUFA diets improve glycemic control in type 2 diabetes
+  - **Inflammation Reduction**: Oleic acid has anti-inflammatory properties
+  - **Endothelial Function**: Extra virgin olive oil improves blood vessel function
+  - **Blood Pressure**: Part of DASH and Mediterranean patterns that lower BP
+  - **Body Composition**: May promote favorable fat distribution vs. saturated fat
+  - **Cognitive Health**: Mediterranean diet (high MUFA) associated with reduced dementia risk
+  - **Antioxidant Vehicle**: Olive oil contains polyphenols with additional benefits
+
+  ## Clinical Interpretation Guidelines
+  When assessing MUFA intake:
+  1. **Evaluate Source Quality**: Extra virgin olive oil provides polyphenols; refined oils do not
+  2. **Compare to Saturated Fat**: Ratio of MUFA:SFA is more informative than absolute MUFA
+  3. **Assess as Part of Pattern**: MUFA intake meaningful in context of overall diet quality
+  4. **Check Total Fat Balance**: MUFA + PUFA should exceed saturated fat intake
+  5. **Review Food Sources**: Nuts and avocados provide fiber/nutrients vs. pure oils
+  6. **Consider Mediterranean Adherence**: MUFA is one component of beneficial dietary pattern
+  7. **Correlate with Lipid Panel**: High MUFA diets may improve HDL:LDL ratio
+
+  ## Deficiency Symptoms
+  MUFA is not an essential nutrient; no deficiency syndrome exists:
+  - Body can synthesize monounsaturated fatty acids (via stearoyl-CoA desaturase)
+  - No recommended minimum intake established
+  - Low MUFA intake is suboptimal but not deficiency
+  - Health effects relate to what MUFA replaces in the diet
+
+  ## Excess/Toxicity
+  High MUFA intake has minimal adverse effects:
+  - **Caloric Excess**: As with all fats, overconsumption leads to caloric surplus
+  - **GI Distress**: Very high olive oil intake may cause mild GI upset in some
+  - **Weight Gain**: If total calories exceed expenditure, regardless of fat type
+  - **No Established Upper Limit**: Studies with up to 25% of calories from MUFA show no harm
+  - **Processing Concerns**: Some MUFA oils (high-oleic sunflower) are highly processed
+
+  ## Special Populations
+  - **Cardiovascular Disease**: Extra virgin olive oil (EVOO) specifically studied; 4+ tbsp/day in PREDIMED
+  - **Type 2 Diabetes**: High-MUFA diets may improve HbA1c and reduce medication needs
+  - **Metabolic Syndrome**: Mediterranean pattern with high MUFA improves all syndrome components
+  - **NAFLD**: MUFA-rich diet may reduce hepatic fat content
+  - **Elevated Triglycerides**: Replacing carbohydrates with MUFA lowers triglycerides
+  - **Elderly**: Cognitive benefits of Mediterranean diet include MUFA component
+  - **Athletes**: Adequate fat including MUFA supports hormone production; not performance-limiting
+
+  ## Caveats & Limitations
+  - **Source Matters**: EVOO differs from refined olive oil or high-oleic vegetable oils
+  - **Polyphenols Confounding**: Olive oil benefits may be partly from polyphenols, not just MUFA
+  - **Food Matrix Effects**: Nuts provide fiber, minerals, phytosterols beyond MUFA
+  - **Database Limitations**: MUFA content varies by olive variety, ripeness, processing
+  - **Cooking Stability**: MUFA more stable than PUFA for cooking but less than saturated fat
+  - **Mediterranean Diet Complexity**: MUFA is one component; isolating its effect is difficult
+  - **Industry Influence**: Olive oil industry funding of some research creates potential bias
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the MUFA source (e.g., 'olive oil', 'almonds', 'avocado')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "MUFA is a component of total fat"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
+    relationship: "MUFA should preferentially replace saturated fat for cardiovascular benefit"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
+    relationship: "Both are unsaturated fats; MUFA more oxidatively stable"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "MUFA contributes to total caloric intake at 9 kcal/g"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFatMonounsaturated"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfatmonounsaturated"
+    type: "official"
+  - title: "PREDIMED Trial: Primary Prevention of Cardiovascular Disease with a Mediterranean Diet"
+    url: "https://www.nejm.org/doi/full/10.1056/NEJMoa1800389"
+    type: "research"
+  - title: "Monounsaturated Fatty Acids and Risk of Cardiovascular Disease: Circulation"
+    url: "https://www.ahajournals.org/doi/10.1161/CIRCULATIONAHA.114.010867"
+    type: "research"
+  - title: "Olive Oil and Health: Summary of the II International Conference"
+    url: "https://pubmed.ncbi.nlm.nih.gov/20442390/"
+    type: "research"
+last_updated: "2026-01-27"

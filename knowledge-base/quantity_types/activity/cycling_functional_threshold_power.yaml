@@ -1,0 +1,354 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Cycling Functional Threshold Power
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Cycling Functional Threshold Power"
+short_description: "Represents the maximum power a cyclist can sustain for approximately one hour."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.outdoor.cycle"
+color: "#30D158"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "W"
+supported_units:
+  - "W"
+unit_description: "Watts (W) - the sustained power output representing the boundary between steady-state aerobic exercise and exercise requiring progressive anaerobic contribution."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 100
+  max: 500
+  unit: "W"
+  notes: "FTP varies dramatically by fitness, training, and body size. Untrained individuals may have FTP of 100-150W. Recreational cyclists typically 150-250W. Well-trained amateurs 250-350W. Elite professionals can exceed 400-450W. Female values typically 10-15% lower at same training level."
+
+clinical_ranges:
+  - population: "Untrained/Sedentary"
+    ftp_range: "100-150 W"
+    ftp_per_kg: "1.5-2.0 W/kg"
+  - population: "Recreational Cyclist"
+    ftp_range: "150-220 W"
+    ftp_per_kg: "2.0-2.8 W/kg"
+  - population: "Regular Cyclist"
+    ftp_range: "200-280 W"
+    ftp_per_kg: "2.8-3.5 W/kg"
+  - population: "Well-Trained Amateur"
+    ftp_range: "260-350 W"
+    ftp_per_kg: "3.5-4.5 W/kg"
+  - population: "Elite Amateur"
+    ftp_range: "320-400 W"
+    ftp_per_kg: "4.5-5.5 W/kg"
+  - population: "Professional (Male)"
+    ftp_range: "380-480+ W"
+    ftp_per_kg: "5.5-6.8+ W/kg"
+  - population: "Professional (Female)"
+    ftp_range: "280-380+ W"
+    ftp_per_kg: "4.8-5.8+ W/kg"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "17.0"
+  year: 2023
+  notes: "Added as part of enhanced cycling metrics in iOS 17; Apple Watch can estimate FTP"
+watchos_introduced:
+  version: "10.0"
+  year: 2023
+  notes: "Apple Watch Series 8+ and Ultra can estimate FTP from outdoor cycling workouts"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Estimates FTP from outdoor cycling workouts using power estimation, heart rate data, and ride characteristics. Requires sufficient ride data for estimation. Updates automatically when new estimates are available."
+    examples: ["Apple Watch Series 8", "Apple Watch Series 9", "Apple Watch Ultra", "Apple Watch Ultra 2"]
+  - name: "Power Meters"
+    capability: "Enable accurate FTP testing through structured tests (20-minute test, ramp test, or full hour of power). Gold standard for FTP determination."
+    examples: ["Garmin Rally", "Favero Assioma", "Stages", "Quarq DZero"]
+  - name: "Smart Trainers"
+    capability: "Enable controlled FTP testing through structured test protocols. ERG mode maintains target power for accurate testing."
+    examples: ["Wahoo KICKR", "Tacx Neo", "Elite Direto", "Saris H3"]
+  - name: "Training Apps"
+    capability: "Provide FTP test protocols and can write FTP values to HealthKit. Often include analysis tools for FTP estimation from ride data."
+    examples: ["TrainerRoad", "Zwift", "Sufferfest", "Xert"]
+primary_source: "Power meter or smart trainer via structured FTP test"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Functional Threshold Power (FTP) represents the highest average power output a cyclist can sustain for approximately one hour. It serves as the cornerstone of power-based training, defining the boundary between sustainable aerobic exercise and efforts requiring significant anaerobic contribution. FTP is arguably the most important single metric for assessing and tracking cycling fitness.
+
+  FTP enables precise training zone prescription, performance tracking over time, and objective comparison of cycling fitness. When expressed relative to body weight (W/kg), it provides a standardized fitness benchmark that accounts for individual body composition.
+
+  ## How It's Measured
+
+  ### Formal FTP Testing Protocols
+
+  **20-Minute Test (Most Common):**
+  - Warm up thoroughly (15-20 minutes including efforts)
+  - Ride as hard as sustainable for exactly 20 minutes
+  - FTP = 20-minute average power × 0.95 (5% reduction)
+  - Rationale: 20 minutes more practical than full hour; 95% factor approximates 1-hour power
+
+  **Ramp Test:**
+  - Start at low power (~100W), increase by set amount (typically 20W) every minute
+  - Continue until failure (cannot maintain target power)
+  - FTP estimated from peak power achieved
+  - Advantages: Less psychological burden, shorter test duration
+
+  **8-Minute Test Protocol:**
+  - Two 8-minute maximal efforts with recovery between
+  - FTP = average of efforts × 0.90
+  - Useful when time-constrained
+
+  **Full Hour Test (Gold Standard):**
+  - Ride maximally sustainable effort for one hour
+  - Average power = FTP directly
+  - Rarely performed due to difficulty and time
+
+  ### Apple Watch FTP Estimation
+  Apple Watch (Series 8+, Ultra) estimates FTP through:
+
+  **Data Collection:**
+  - Records outdoor cycling workouts with power estimation
+  - Monitors heart rate throughout rides
+  - Analyzes sustained efforts and their characteristics
+
+  **Estimation Algorithm:**
+  - Uses machine learning to identify threshold-relevant efforts
+  - Correlates estimated power with heart rate data
+  - Builds FTP estimate over multiple rides
+  - Updates automatically when better estimates available
+
+  **Requirements:**
+  - Multiple outdoor cycling workouts
+  - Sufficient intensity efforts (hard riding, not just easy spins)
+  - Consistent heart rate data
+  - User metrics (age, weight, height) properly set
+
+  **Limitations:**
+  - Less accurate than dedicated power meter testing
+  - Cannot perform traditional FTP test protocols
+  - Estimation may take several weeks of riding to develop
+  - Results should be validated against formal testing when possible
+
+  ### Training Platform Estimation
+  Many cycling apps estimate FTP from ride data:
+  - **Zwift:** Estimates from race and hard workout data
+  - **TrainerRoad:** Adaptive training adjusts FTP based on workout performance
+  - **Xert:** Continuous FTP estimation from every ride
+
+  ## Health Significance
+
+  ### Cardiovascular Fitness Benchmark
+  FTP closely correlates with physiological markers:
+
+  **Relationship to VO2max:**
+  - FTP typically occurs at 72-77% of VO2max power
+  - Higher FTP generally indicates higher VO2max
+  - More practical to measure than laboratory VO2max testing
+
+  **Lactate Threshold Correlation:**
+  - FTP approximates the lactate threshold (onset of blood lactate accumulation)
+  - At FTP, lactate production roughly equals clearance
+  - Above FTP, lactate accumulates progressively
+
+  ### Training Load Quantification
+  FTP enables precise training prescription:
+
+  **Training Stress Score (TSS):**
+  - Normalizes workout stress relative to FTP
+  - TSS = (Duration × IF² × 100) / 3600
+  - IF (Intensity Factor) = Normalized Power / FTP
+  - Enables comparison across different workout types
+
+  **Power-to-Weight Ratio:**
+  - FTP/kg is the key performance metric for climbing and overall cycling fitness
+  - Allows meaningful comparison between cyclists of different sizes
+  - Primary determinant of climbing speed
+
+  ### Fitness Progression Tracking
+  FTP changes indicate fitness adaptation:
+  - Improvement: FTP increasing over training blocks (typically 2-5% per month when training effectively)
+  - Plateau: FTP stable despite training (may need training adjustment)
+  - Decline: FTP decreasing (detraining, overtraining, or illness)
+
+  ## Clinical Interpretation Guidelines
+
+  ### FTP/Weight Classification
+
+  The most meaningful way to assess cycling fitness:
+
+  | Category | Men (W/kg) | Women (W/kg) | Description |
+  |----------|------------|--------------|-------------|
+  | Untrained | <2.0 | <1.7 | No regular cycling |
+  | Recreational | 2.0-2.5 | 1.7-2.2 | Casual cycling |
+  | Club Cyclist | 2.5-3.5 | 2.2-3.0 | Regular training |
+  | Serious Amateur | 3.5-4.2 | 3.0-3.6 | Structured training |
+  | Very Strong | 4.2-5.0 | 3.6-4.3 | Competitive racing |
+  | Elite | 5.0-5.8 | 4.3-5.0 | Regional/national level |
+  | World Class | >5.8 | >5.0 | Professional level |
+
+  ### Interpreting FTP Changes
+
+  **Positive Adaptation:**
+  - 5-10% FTP increase over 8-12 weeks of structured training is excellent
+  - Beginners may see larger initial gains (10-20%)
+  - Smaller gains (2-5%) expected in already-trained cyclists
+
+  **Concerning Patterns:**
+  - FTP decline despite training: May indicate overtraining, illness, or inadequate recovery
+  - Inability to complete FTP test: Could signal fatigue, illness, or psychological factors
+  - FTP much higher than expected for training volume: Verify testing protocol accuracy
+
+  ### Clinical Applications
+
+  **Cardiac Rehabilitation:**
+  - FTP provides objective exercise prescription baseline
+  - Training zones based on FTP ensure appropriate intensity
+  - Progress tracked through FTP improvement
+
+  **Weight Management:**
+  - FTP enables accurate caloric expenditure calculation
+  - Higher FTP allows greater energy expenditure per hour
+  - Track fitness alongside weight changes
+
+  **General Fitness Assessment:**
+  - FTP/kg provides standardized fitness benchmark
+  - More objective than subjective fitness ratings
+  - Motivational tool for fitness improvement
+
+  ### Red Flags
+  - Significant unexplained FTP decline (>10% without detraining)
+  - Inability to achieve previous FTP despite adequate recovery
+  - Symptoms (chest pain, excessive dyspnea, dizziness) during FTP testing
+  - Heart rate response mismatched with power (very high or very low HR at threshold)
+
+  ## Caveats & Limitations
+
+  ### Testing Protocol Considerations
+  - **Protocol variability:** Different tests may yield different FTP values
+  - **Pacing challenges:** Poor pacing (starting too hard or too easy) affects results
+  - **Fatigue state:** FTP tests require fresh state for accurate results
+  - **Environmental factors:** Heat, altitude affect FTP performance
+
+  ### Apple Watch Estimation Limitations
+  - Estimates may vary ±10-15% from actual tested FTP
+  - Requires multiple rides to develop estimate
+  - Cannot perform controlled FTP test
+  - Best used for trend tracking rather than absolute values
+
+  ### Interpretation Limitations
+  - FTP is a single point; full power profile provides more insight
+  - Doesn't capture short-duration power (sprinting ability)
+  - Doesn't account for efficiency differences
+  - FTP can vary day-to-day (±5% normal variation)
+
+  ### What FTP Cannot Tell You
+  - Sprint power or neuromuscular capacity
+  - Endurance beyond one hour (durability)
+  - Pedaling efficiency or technique
+  - Climbing ability (need weight for W/kg)
+  - Time trial performance (aerodynamics matter)
+
+  ## Additional Notes
+
+  **For Health Consultants:**
+  1. FTP/kg is the most meaningful cycling fitness metric—always calculate it
+  2. Validate Apple Watch FTP estimates with formal testing when possible
+  3. Use FTP trends over months, not single values, for fitness assessment
+  4. FTP testing requires motivation and appropriate fatigue state
+  5. Consider client's training history when interpreting FTP values
+  6. FTP-based training zones provide precise exercise prescription
+  7. Track FTP alongside body weight for complete picture
+
+  **Training Zones Based on FTP:**
+  | Zone | Name | % of FTP | Purpose |
+  |------|------|----------|---------|
+  | 1 | Active Recovery | <55% | Recovery rides |
+  | 2 | Endurance | 55-75% | Base building, fat oxidation |
+  | 3 | Tempo | 76-90% | Aerobic development |
+  | 4 | Threshold | 91-105% | FTP improvement |
+  | 5 | VO2max | 106-120% | Maximal aerobic capacity |
+  | 6 | Anaerobic | 121-150% | Short, high-intensity |
+  | 7 | Neuromuscular | >150% | Sprint development |
+
+  **FTP Testing Recommendations:**
+  - Test every 6-8 weeks during structured training
+  - Ensure 2-3 days rest before testing
+  - Standardize test conditions (same time of day, nutrition, equipment)
+  - Use same protocol each time for comparison
+  - Consider ramp test for less experienced cyclists
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the FTP value was manually entered by the user versus automatically estimated"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+  - key: "HKMetadataKeyQuantityClampedToLowerBound"
+    description: "Indicates if the value was clamped to a minimum threshold"
+  - key: "HKMetadataKeyQuantityClampedToUpperBound"
+    description: "Indicates if the value was clamped to a maximum threshold"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierCyclingPower"
+    relationship: "Foundation - FTP is derived from sustained cycling power output"
+  - identifier: "HKQuantityTypeIdentifierCyclingCadence"
+    relationship: "Complementary - Cadence during FTP efforts indicates pedaling efficiency"
+  - identifier: "HKQuantityTypeIdentifierCyclingSpeed"
+    relationship: "Related - FTP influences sustainable cycling speed on flat terrain"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Complementary - Heart rate at FTP helps define training zones"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Related - FTP correlates with VO2max; both indicate aerobic fitness"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Derived from - FTP enables accurate energy expenditure calculation"
+  - identifier: "HKWorkoutTypeCycling"
+    relationship: "Contains - FTP tests recorded as cycling workouts"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - cyclingFunctionalThresholdPower"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/cyclingfunctionalthresholdpower"
+    type: "official"
+  - title: "Apple Watch cycling metrics and power estimation"
+    url: "https://support.apple.com/guide/watch/cycling-apd6a8cd52d7/watchos"
+    type: "official"
+  - title: "Training and Racing with a Power Meter - Coggan & Allen"
+    url: "https://www.trainingpeaks.com/learn/articles/power-training-levels/"
+    type: "research"
+  - title: "Power Profiling and FTP Classification - TrainingPeaks"
+    url: "https://www.trainingpeaks.com/learn/articles/power-profiling/"
+    type: "tutorial"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 17.0/watchOS 10.0 introduction based on Apple Developer Documentation
+  - FTP concept and testing protocols from Dr. Andrew Coggan's research
+  - Power-to-weight classifications from Coggan/Allen power profiling research
+  - Training zone model widely adopted in cycling (Coggan zones)
+  - Apple Watch FTP estimation added in watchOS 10
+  - Lactate threshold and FTP correlation from exercise physiology literature
+  - TSS and IF formulas from TrainingPeaks methodology

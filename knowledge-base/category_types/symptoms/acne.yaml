@@ -1,0 +1,108 @@
+identifier: "HKCategoryTypeIdentifierAcne"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Acne"
+short_description: "Tracks acne breakouts and their severity."
+icon: "face.smiling"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Acne is a common skin condition involving inflammation of hair follicles and sebaceous glands, resulting in pimples, blackheads, whiteheads, and sometimes deeper cysts or nodules. This HealthKit category type enables users to log acne breakouts and their severity, helping identify triggers and treatment effectiveness over time.
+
+  ## Health Significance
+  While often considered a cosmetic concern, acne can significantly impact quality of life and may indicate underlying hormonal or systemic conditions. Tracking acne patterns provides valuable clinical insights for dermatological care and hormonal assessment.
+
+  Common associated conditions include:
+  - Hormonal fluctuations (menstrual cycle, puberty, menopause)
+  - Polycystic ovary syndrome (PCOS)
+  - Cushing's syndrome
+  - Medication side effects (corticosteroids, lithium, androgens)
+  - Dietary sensitivities (high-glycemic foods, dairy)
+  - Stress-related exacerbations
+  - Contact or cosmetic reactions
+
+  ## When to Seek Medical Attention
+  Users should consult a healthcare provider when acne:
+  - Is severe, widespread, or cystic
+  - Leaves scarring
+  - Does not respond to over-the-counter treatments after 2-3 months
+  - Appears suddenly in adulthood with other symptoms (hirsutism, irregular periods)
+  - Is associated with signs of systemic illness
+  - Causes significant psychological distress
+  - Occurs with rapid weight changes or menstrual irregularities
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Menstrual cycle correlations (hormonal acne typically worsens premenstrually)
+  - Dietary triggers
+  - Stress-related flares
+  - Treatment response over time
+  - Seasonal variations
+  - Medication-induced changes
+
+  ## Caveats & Limitations
+  - Severity assessment is subjective and may vary between users
+  - Does not capture acne type (comedonal, inflammatory, cystic)
+  - Location of breakouts is not recorded
+  - Cannot assess scarring risk
+  - Limited value without photographic documentation
+  - Self-reported data may not align with clinical grading scales
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Hormonal acne often correlates with menstrual cycle phase"
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "Hormonal changes during ovulation may affect acne"
+  - identifier: "HKCategoryTypeIdentifierMoodChanges"
+    relationship: "Stress and mood can influence acne severity"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Poor sleep quality may exacerbate acne"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierAcne"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifieracne"
+    type: "official"
+  - title: "Acne - American Academy of Dermatology"
+    url: "https://www.aad.org/public/diseases/acne"
+    type: "medical"
+  - title: "Acne Vulgaris - JAMA Patient Page"
+    url: "https://jamanetwork.com/journals/jama/fullarticle/2767070"
+    type: "medical"
+last_updated: "2026-01-27"

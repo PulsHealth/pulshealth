@@ -1,0 +1,310 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Distance Wheelchair
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierDistanceWheelchair"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Wheelchair Distance"
+short_description: "Measures the distance the user has moved using a wheelchair."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.roll"
+color: "#FF9500"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "m"
+supported_units:
+  - "m"
+  - "km"
+  - "mi"
+  - "ft"
+  - "yd"
+unit_description: "Length units measuring cumulative distance traveled by wheelchair. Default is meters; users typically view in kilometers or miles based on locale."
+
+# --- STATISTICS ---
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 30000
+  unit: "m"
+  notes: "Daily values vary widely based on mobility level, activity type, and environment accessibility. Active wheelchair users may travel 2-10 km daily. Wheelchair athletes in training may exceed 20 km."
+
+clinical_ranges:
+  - population: "Adult Wheelchair Users"
+    sedentary: "<1 km/day"
+    low_active: "1-2 km/day"
+    somewhat_active: "2-4 km/day"
+    active: "4-8 km/day"
+    highly_active: ">8 km/day"
+  - population: "Wheelchair Athletes (weekly)"
+    recreational: "20-50 km/week"
+    competitive: "50-100 km/week"
+    elite: ">100 km/week"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "10.0"
+  year: 2016
+  notes: "Introduced alongside wheelchair-specific fitness tracking features"
+watchos_introduced:
+  version: "3.0"
+  year: 2016
+  notes: "watchOS 3.0 introduced comprehensive wheelchair activity tracking including distance, pushes, and wheelchair-specific workouts"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "When wheelchair mode is enabled, Apple Watch uses specialized algorithms to track wheelchair propulsion and estimate distance traveled. GPS provides accurate outdoor distance tracking. The accelerometer and gyroscope detect push patterns to estimate distance when GPS is unavailable."
+    series: "All series (wheelchair mode available since watchOS 3.0)"
+    accuracy: "GPS-based outdoor tracking typically within 1-3% of actual distance. Push-based estimation varies by surface and wheelchair type."
+  - name: "iPhone"
+    capability: "Can track wheelchair distance when combined with GPS during outdoor activity. Primary role is data aggregation from Apple Watch."
+  - name: "Third-party apps"
+    capability: "Specialized wheelchair fitness apps can write distance data to HealthKit."
+    examples: ["WheelMate", "Wheel-E"]
+  - name: "Smart wheelchairs"
+    capability: "Advanced wheelchairs with sensors can track distance and export to health apps."
+primary_source: "Apple Watch with Wheelchair mode enabled"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Wheelchair Distance measures the cumulative distance traveled by users who primarily use manual wheelchairs for mobility. Apple introduced wheelchair-specific fitness tracking in iOS 10 and watchOS 3 (2016), recognizing that standard step-based activity tracking does not serve wheelchair users. This metric enables wheelchair users to track their physical activity with the same detail available to ambulatory users.
+
+  ## How It's Measured
+  Distance measurement for wheelchair users involves specialized algorithms:
+
+  **GPS-Based Measurement:**
+  - Used during outdoor activity and wheelchair workouts
+  - Provides most accurate distance measurement
+  - Apple Watch Series 2+ has built-in GPS
+  - Samples position at regular intervals and calculates path distance
+  - Accuracy typically within 1-3% of actual distance outdoors
+
+  **Push-Based Estimation:**
+  - When GPS is unavailable (indoors), distance estimated from push count
+  - Accelerometer and gyroscope detect characteristic push patterns
+  - Algorithms calibrated for wheelchair propulsion dynamics
+  - Distance = pushes x estimated distance per push
+  - Calibration improves with GPS-tracked outdoor activity
+
+  **Wheelchair Mode Configuration:**
+  - Users enable wheelchair mode in Apple Watch Health settings
+  - When enabled, pushes replace steps throughout the system
+  - Roll goal replaces Stand goal in Activity rings
+  - Workout app shows wheelchair-specific workout types
+
+  **Data Recording:**
+  - Distance recorded as cumulative samples during activity
+  - Wheelchair workouts provide higher-resolution data
+  - Background tracking continues throughout the day
+
+  ## Health Significance
+  Physical activity is critically important for wheelchair users, who face unique health challenges:
+
+  **Physical Activity Guidelines:**
+  The CDC recommends wheelchair users get:
+  - At least 150 minutes per week of moderate-intensity aerobic activity (such as wheeling oneself)
+  - Or 75 minutes per week of vigorous-intensity activity (such as wheelchair basketball)
+  - Plus muscle-strengthening activities 2+ days per week
+
+  The WHO has released global public health guidelines on physical activity specifically for people living with disability, recognizing wheelchairs as a valid form of active mobility.
+
+  **Health Benefits for Wheelchair Users:**
+  - Cardiovascular health improvement
+  - Upper body strength and endurance
+  - Improved mental health and reduced depression
+  - Better balance and transfer ability
+  - Increased self-efficacy and independence
+  - Reduced secondary health complications
+
+  **Unique Health Considerations:**
+  Wheelchair users face elevated risks for:
+  - Cardiovascular disease (due to often lower activity levels)
+  - Pressure injuries
+  - Upper extremity overuse injuries
+  - Depression and social isolation
+  - Obesity and metabolic disorders
+
+  Regular wheelchair propulsion distance helps address cardiovascular and metabolic risks while requiring attention to upper extremity strain.
+
+  ## Clinical Interpretation Guidelines
+
+  ### Activity Level Assessment
+  Daily wheelchair distance indicates activity level:
+  - **<1 km/day:** Minimal mobility, may indicate barriers or health issues
+  - **1-2 km/day:** Basic daily mobility
+  - **2-4 km/day:** Moderate activity level
+  - **4-8 km/day:** Active lifestyle, meeting health guidelines
+  - **>8 km/day:** Highly active, athletic level
+
+  ### Contextual Factors Affecting Distance
+  Unlike ambulatory distance, wheelchair distance is heavily influenced by:
+  - **Environmental accessibility:** Curb cuts, ramps, paved surfaces
+  - **Indoor vs. outdoor:** Indoor distances typically shorter
+  - **Wheelchair type:** Manual vs. power-assist affects user effort
+  - **Living situation:** Institutional settings may limit distance
+  - **Weather:** Outdoor wheeling affected by precipitation and temperature
+
+  ### Clinical Considerations for Health Consultants
+
+  **Unique Assessment Needs:**
+  - Distance goals should be individualized based on injury level, upper body function, and baseline fitness
+  - Compare distance to individual's baseline, not population norms
+  - Consider both distance and push count (distance per push indicates efficiency)
+  - Account for environmental barriers that may limit activity
+
+  **Upper Extremity Health:**
+  - High push volumes associated with shoulder and wrist overuse injuries
+  - Balance activity goals with injury prevention
+  - Power-assist wheelchairs may allow greater distance with reduced strain
+  - Monitor for pain or dysfunction in shoulders, elbows, wrists
+
+  **Secondary Condition Prevention:**
+  - Regular wheeling helps prevent pressure injuries (weight shifts, improved circulation)
+  - Cardiovascular activity critical given elevated CVD risk in wheelchair users
+  - Mental health benefits of mobility and community access
+
+  ### Red Flags
+  - Significant unexplained decrease in daily distance
+  - Inability to cover previously manageable distances
+  - Upper extremity pain limiting wheeling
+  - Avoidance of outdoor wheeling (may indicate accessibility barriers or depression)
+
+  ## Caveats & Limitations
+
+  ### Measurement Limitations
+  - **GPS accuracy indoors:** Accelerometer-based estimation less accurate than GPS
+  - **Wheelchair variability:** Different wheelchair types and user propulsion styles affect calibration
+  - **Power-assist and power wheelchairs:** Distance tracking primarily designed for manual wheelchair propulsion
+  - **Surface effects:** Carpet, grass, and uneven surfaces affect push efficiency and distance accuracy
+
+  ### Accessibility and Tracking Barriers
+  - **Environmental barriers:** Inaccessible environments limit activity regardless of user motivation
+  - **Device access:** Not all wheelchair users have Apple Watch
+  - **Setup complexity:** Wheelchair mode must be manually enabled
+  - **Feature awareness:** Many wheelchair users unaware of specialized tracking features
+
+  ### Interpretation Limitations
+  - **Effort not captured:** Terrain (slopes, surfaces) dramatically affects effort for same distance
+  - **Not intensity-specific:** Leisurely wheeling vs. vigorous propulsion may cover same distance
+  - **Assistance not tracked:** Pushed by caregiver vs. self-propelled indistinguishable
+
+  ### What Wheelchair Distance Cannot Tell You
+  - Upper extremity strain or injury risk
+  - Quality of wheeling technique
+  - Environmental barriers encountered
+  - Power chair usage vs. manual propulsion
+  - Caloric expenditure (requires heart rate or power data)
+
+  ## Additional Notes
+
+  **Accessibility Considerations for Health Consultants:**
+  When working with wheelchair users:
+  1. Recognize that low distance may reflect environmental barriers, not lack of motivation
+  2. Assess accessibility of home, work, and community environments
+  3. Consider referral to physical therapy for wheeling efficiency assessment
+  4. Discuss power-assist options if upper extremity strain is a concern
+  5. Connect patients with adaptive sports and recreation programs
+
+  **Activity Goals:**
+  The NIH Pathways to Prevention workshop on Physical Activity for Wheelchair Users highlights:
+  - Need for individualized activity recommendations
+  - Importance of both aerobic and strength activities
+  - Value of social and recreational activity
+  - Gaps in research on optimal activity types and doses
+
+  **Community and Social Benefits:**
+  Wheelchair distance tracking supports:
+  - Participation in community life
+  - Independence and self-efficacy
+  - Motivation through quantified progress
+  - Connection with wheelchair sports community
+
+  **For Health Consultants:**
+  When reviewing wheelchair distance data:
+  1. Consider individual's injury/disability level and functional capacity
+  2. Assess environmental accessibility barriers
+  3. Balance activity goals with overuse injury prevention
+  4. Celebrate incremental improvements
+  5. Connect with adaptive sports and recreation resources
+  6. Consider mental health impacts of mobility and activity levels
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier for the sample from the originating source"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+  - key: "HKMetadataKeyIndoorWorkout"
+    description: "Boolean indicating whether the distance was recorded during an indoor workout"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierPushCount"
+    relationship: "Complementary - Push count provides context for wheelchair distance (efficiency = distance/pushes)"
+  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
+    relationship: "Alternative - Distance metric for ambulatory users"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Related - Wheelchair propulsion contributes to active calorie burn"
+  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
+    relationship: "Related - Wheelchair activity contributes to exercise minutes"
+  - identifier: "HKWorkoutTypeWheelchairWalkPace"
+    relationship: "Contains - Walking-pace wheelchair workouts include distance"
+  - identifier: "HKWorkoutTypeWheelchairRunPace"
+    relationship: "Contains - Running-pace wheelchair workouts include distance"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - distanceWheelchair"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/distancewheelchair"
+    type: "official"
+  - title: "Apple Support - Start an outdoor push wheelchair workout"
+    url: "https://support.apple.com/guide/watch/start-an-outdoor-push-wheelchair-workout-apd356e8c92e/watchos"
+    type: "official"
+  - title: "Apple Support - Use Accessibility features on Apple Watch"
+    url: "https://support.apple.com/en-us/102253"
+    type: "official"
+  - title: "CDC - Increasing Physical Activity among Adults with Disabilities"
+    url: "https://www.cdc.gov/disability-and-health/conditions/physical-activity.html"
+    type: "medical"
+  - title: "CDC - Physical Activity for People with Disability"
+    url: "https://www.cdc.gov/disability-and-health/articles-documents/physical-activity-for-people-with-disability.html"
+    type: "medical"
+  - title: "NIH Pathways to Prevention - Physical Activity for Wheelchair Users"
+    url: "https://prevention.nih.gov/research-priorities/research-needs-and-gaps/pathways-prevention/can-physical-activity-improve-health-wheelchair-users"
+    type: "research"
+  - title: "Physical Activity and the Health of Wheelchair Users - AAFP"
+    url: "https://www.aafp.org/pubs/afp/issues/2022/0500/p534.html"
+    type: "medical"
+  - title: "WHO Guidelines on Physical Activity for People Living with Disability"
+    url: "https://journals.humankinetics.com/view/journals/jpah/18/1/article-p86.xml"
+    type: "research"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 10.0/watchOS 3.0 introduction confirmed via Apple Support documentation
+  - Wheelchair mode features announced at WWDC 2016
+  - CDC guidelines: 150 min/week moderate activity for wheelchair users
+  - WHO released first global guidelines for people with disabilities in 2020
+  - NIH Pathways to Prevention workshop highlighted research gaps in wheelchair activity
+  - Accessibility barriers significantly impact achievable activity levels
+  - Power-assist wheelchairs create measurement complexity

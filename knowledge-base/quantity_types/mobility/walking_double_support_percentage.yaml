@@ -1,0 +1,138 @@
+identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Mobility"
+human_readable_name: "Walking Double Support Percentage"
+short_description: "Percentage of the gait cycle when both feet are simultaneously in contact with the ground."
+icon: "figure.walk"
+color: "#FF9500"
+default_unit: "%"
+supported_units:
+  - "%"
+unit_description: "Percentage of the total gait cycle duration spent in double support phase."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 15
+  max: 45
+  unit: "%"
+  notes: "Healthy adults typically show 20-30% double support; values above 35% may indicate balance concerns."
+clinical_ranges:
+  - population: "Adults 20-40"
+    normal: "18-25%"
+    concerning: ">30%"
+  - population: "Adults 40-60"
+    normal: "20-28%"
+    concerning: ">32%"
+  - population: "Adults 60-70"
+    normal: "22-30%"
+    concerning: ">35%"
+  - population: "Adults 70-80"
+    normal: "25-33%"
+    concerning: ">38%"
+  - population: "Adults 80+"
+    normal: "28-38%"
+    concerning: ">42%"
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone"
+    capability: "Motion sensors analyze gait phases during walking"
+  - name: "Apple Watch"
+    capability: "Continuous gait cycle analysis during daily activities"
+primary_source: "Apple Watch or iPhone motion sensors"
+description: |
+  ## Overview
+  Walking double support percentage measures the proportion of the gait cycle when both feet are in contact with the ground simultaneously. This metric is a fundamental gait parameter that reflects balance, stability, and confidence during walking. Higher double support time indicates a more cautious, stability-seeking gait pattern.
+
+  ## How It's Measured
+  During normal walking, the gait cycle alternates between single support (one foot on ground) and double support (both feet on ground) phases. Apple devices analyze accelerometer and gyroscope data to identify these phase transitions and calculate the percentage of time spent in double support. Measurements are collected during natural walking bouts throughout the day.
+
+  ## Health Significance
+  Double support percentage is a sensitive indicator of:
+  - **Balance confidence**: Individuals with balance concerns instinctively increase double support time
+  - **Fall risk**: Elevated double support correlates with increased fall risk
+  - **Neurological function**: Parkinson's disease, stroke, and other conditions affect this parameter
+  - **Pain avoidance**: Joint pain often leads to prolonged double support
+  - **Vestibular function**: Inner ear disorders affect balance and gait timing
+
+  ## Clinical Interpretation Guidelines
+  - **<25%**: Generally indicates confident, efficient gait pattern
+  - **25-32%**: Normal range for older adults; monitor for changes
+  - **32-40%**: Elevated; suggests balance concerns or functional limitation
+  - **>40%**: Significantly elevated; high fall risk, requires assessment
+
+  Changes from individual baseline are often more meaningful than absolute values. A sudden increase may indicate:
+  - New onset of dizziness or vertigo
+  - Acute illness affecting balance
+  - Pain limiting mobility
+  - Medication side effects
+  - Fear of falling after a near-miss or fall event
+
+  ## Age-Adjusted Norms
+  Double support percentage naturally increases with age as part of the normal adaptation to changing balance systems:
+  - Ages 20-40: ~20-25%
+  - Ages 40-60: ~22-28%
+  - Ages 60-80: ~25-35%
+  - Ages 80+: ~28-40%
+
+  The age-related increase reflects:
+  - Declining vestibular function
+  - Reduced proprioception
+  - Decreased muscle strength
+  - Lower confidence in balance
+
+  ## Caveats & Limitations
+  - Walking speed affects double support; slower speeds naturally have higher percentages
+  - Footwear type influences gait patterns and measurements
+  - Uneven terrain may appropriately increase double support
+  - Acute fatigue or distraction can temporarily affect values
+  - Carrying loads (bags, children) alters normal gait patterns
+  - Bilateral measurements may not capture unilateral problems
+
+  ## Additional Notes
+  This metric is particularly valuable for:
+  - **Post-fall assessment**: Monitoring recovery of gait confidence
+  - **Parkinson's disease**: Tracking progression and medication effects
+  - **Vestibular rehabilitation**: Assessing treatment response
+  - **Hip/knee replacement recovery**: Documenting return to normal gait
+  - **Diabetic neuropathy**: Monitoring peripheral nerve function impact on gait
+
+  Consider evaluating alongside walking asymmetry and walking speed for comprehensive gait analysis. An isolated increase in double support with preserved speed may indicate early balance concerns before overt problems develop.
+metadata_keys:
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Indicates which side of the body the device was placed during measurement"
+  - key: "HKMetadataKeySessionEstimate"
+    description: "Indicates if the value represents an estimate from a workout session"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Slower walking speed typically correlates with higher double support"
+  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
+    relationship: "Both metrics reflect gait stability and balance"
+  - identifier: "HKQuantityTypeIdentifierAppleWalkingSteadiness"
+    relationship: "Double support contributes to overall steadiness assessment"
+  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
+    relationship: "Shorter steps often accompany increased double support"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierwalkingdoublesupportpercentage"
+    type: "official"
+  - title: "Gait Parameters and Fall Risk in Older Adults - Gait & Posture Journal"
+    url: "https://www.sciencedirect.com/journal/gait-and-posture"
+    type: "research"
+  - title: "Double Support Time as a Fall Risk Indicator - Archives of Physical Medicine"
+    url: "https://www.archives-pmr.org/"
+    type: "medical"
+last_updated: "2026-01-27"

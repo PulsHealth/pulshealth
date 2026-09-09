@@ -1,0 +1,167 @@
+identifier: "HKQuantityTypeIdentifierStairDescentSpeed"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Mobility"
+human_readable_name: "Stair Descent Speed"
+short_description: "Speed of descending stairs, measuring vertical velocity during stair descent."
+icon: "figure.stairs"
+color: "#30D158"
+default_unit: "m/s"
+supported_units:
+  - "m/s"
+  - "ft/s"
+unit_description: "Meters per second (m/s) representing vertical velocity while descending stairs."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 0.3
+  max: 1.0
+  unit: "m/s"
+  notes: "Healthy adults typically achieve 0.5-0.8 m/s; descent is usually faster than ascent in healthy individuals."
+clinical_ranges:
+  - population: "Adults 20-40"
+    normal: "0.6-0.9 m/s"
+    concerning: "<0.5 m/s"
+  - population: "Adults 40-60"
+    normal: "0.5-0.8 m/s"
+    concerning: "<0.45 m/s"
+  - population: "Adults 60-70"
+    normal: "0.45-0.7 m/s"
+    concerning: "<0.4 m/s"
+  - population: "Adults 70-80"
+    normal: "0.35-0.6 m/s"
+    concerning: "<0.3 m/s"
+  - population: "Adults 80+"
+    normal: "0.25-0.5 m/s"
+    concerning: "<0.2 m/s"
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone"
+    capability: "Barometric altimeter and motion sensors detect stair descent"
+  - name: "Apple Watch"
+    capability: "Continuous stair descent analysis with altitude tracking"
+primary_source: "Apple Watch or iPhone barometric and motion sensors"
+description: |
+  ## Overview
+  Stair descent speed measures the vertical velocity during stair descent, expressed as meters of elevation lost per second. While often overlooked compared to stair climbing, stair descent is biomechanically distinct and clinically important. Descending stairs requires eccentric muscle control, balance, and confidence - making it a sensitive indicator of fall risk and lower extremity function.
+
+  ## How It's Measured
+  Apple devices use the same sensor combination as stair ascent:
+  - **Barometric altimeter**: Detects negative elevation changes to identify descent
+  - **Accelerometer**: Analyzes movement patterns to confirm stair descent (vs. elevator)
+  - **Gyroscope**: Helps distinguish controlled descent from other downward movements
+
+  The metric calculates vertical velocity by dividing elevation lost by time spent descending. Measurements are collected automatically during daily activities.
+
+  ## Health Significance
+  Stair descent is particularly important because:
+  - **Fall risk**: More falls occur descending stairs than ascending
+  - **Eccentric strength**: Requires quadriceps to control knee flexion against gravity
+  - **Visual dependence**: Requires looking down, affecting balance
+  - **Fear factor**: Many individuals are more fearful of descent than ascent
+  - **Knee loading**: Higher joint forces during descent stress arthritic joints
+
+  Clinical significance:
+  - Descent speed often declines before ascent speed in early functional decline
+  - Strong predictor of fear of falling
+  - Sensitive to knee osteoarthritis and anterior knee pain
+  - Important for community mobility (public stairs, transit access)
+
+  ## Clinical Interpretation Guidelines
+  - **>0.6 m/s**: Confident, functional descent; minimal limitation
+  - **0.5-0.6 m/s**: Adequate function; may slow with fatigue
+  - **0.4-0.5 m/s**: Moderate limitation; likely uses handrail
+  - **0.3-0.4 m/s**: Significant limitation; requires handrail, may use step-to pattern
+  - **<0.3 m/s**: Severe limitation; high fall risk, may need assistance
+
+  Descent-to-ascent ratio:
+  - **Normal**: Descent faster than ascent (ratio ~1.1-1.3)
+  - **Joint pain pattern**: Descent slower than ascent (ratio <1.0)
+  - **Cardiopulmonary pattern**: Ascent slower, descent relatively preserved (ratio >1.3)
+
+  Specific conditions affecting descent:
+  - **Knee osteoarthritis**: Marked descent limitation due to eccentric loading
+  - **Patellofemoral pain**: Stairs descent particularly symptomatic
+  - **Post-ACL reconstruction**: Descent confidence often lags behind ascent
+  - **Vestibular disorders**: Descent requires more visual-vestibular integration
+  - **Peripheral neuropathy**: Sensory loss makes descent hazardous
+
+  ## Age-Adjusted Norms
+  Stair descent speed decreases with age, but the decline pattern differs from ascent:
+  - Descent requires more balance and motor control
+  - Fear of falling increasingly affects descent with age
+  - Eccentric strength preserved better than concentric, but still declines
+
+  Expected ranges by age:
+  - Ages 30-40: 0.60-0.85 m/s
+  - Ages 40-50: 0.55-0.75 m/s
+  - Ages 50-60: 0.50-0.70 m/s
+  - Ages 60-70: 0.45-0.60 m/s
+  - Ages 70-80: 0.35-0.50 m/s
+  - Ages 80+: 0.25-0.40 m/s
+
+  ## Caveats & Limitations
+  - Stair geometry significantly affects descent speed (steeper stairs require more control)
+  - Lighting conditions important for visual guidance during descent
+  - Handrail availability and use affects measurements
+  - Carrying items affects descent more than ascent (balance challenge)
+  - Fear and confidence strongly influence speed independent of physical capacity
+  - Device may not distinguish cautious controlled descent from impaired descent
+  - Visual impairment affects descent disproportionately
+
+  ## Additional Notes
+  Stair descent speed is particularly valuable for:
+  - **Fall risk assessment**: One of the most sensitive mobility measures for fall prediction
+  - **Knee osteoarthritis**: Tracking disease impact and treatment response
+  - **Post-knee replacement**: Descent recovery often lags behind ascent
+  - **Vestibular rehabilitation**: Monitoring progress with visual-vestibular integration
+  - **ACL rehabilitation**: Return-to-activity criteria
+
+  Key clinical insight: If a patient reports difficulty with stairs, always clarify whether the problem is primarily with ascent, descent, or both. Isolated descent difficulty suggests:
+  - Knee joint pathology (especially patellofemoral)
+  - Balance/vestibular concerns
+  - Fear of falling
+  - Visual impairment
+
+  Consider both ascent and descent speeds together for comprehensive stair mobility assessment.
+metadata_keys:
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Indicates which side of the body the device was placed during measurement"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierStairAscentSpeed"
+    relationship: "Complementary measure; ascent/descent ratio provides clinical insight"
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Level walking speed provides baseline mobility comparison"
+  - identifier: "HKQuantityTypeIdentifierFlightsClimbed"
+    relationship: "Volume of stair activity; descent speed indicates control quality"
+  - identifier: "HKQuantityTypeIdentifierAppleWalkingSteadiness"
+    relationship: "Both metrics assess fall risk; descent particularly relevant"
+  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
+    relationship: "Balance confidence affects both measures"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierStairDescentSpeed"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierstairdescentspeed"
+    type: "official"
+  - title: "Stair Descent and Fall Risk in Older Adults"
+    url: "https://academic.oup.com/ageing"
+    type: "research"
+  - title: "Biomechanics of Stair Descent - Journal of Biomechanics"
+    url: "https://www.sciencedirect.com/journal/journal-of-biomechanics"
+    type: "research"
+  - title: "Eccentric Strength and Functional Mobility"
+    url: "https://www.jospt.org/"
+    type: "medical"
+last_updated: "2026-01-27"

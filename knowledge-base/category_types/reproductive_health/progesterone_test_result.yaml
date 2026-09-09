@@ -1,0 +1,118 @@
+identifier: "HKCategoryTypeIdentifierProgesteroneTestResult"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Progesterone Test Result"
+short_description: "Records results from progesterone tests used to confirm ovulation and assess luteal phase function."
+icon: "testtube.2"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "negative"
+    description: "Low progesterone levels detected, indicating ovulation has not occurred or the luteal phase is inadequate."
+  - value: 2
+    name: "positive"
+    description: "Elevated progesterone levels detected, confirming ovulation has occurred and the corpus luteum is producing progesterone."
+  - value: 3
+    name: "indeterminate"
+    description: "Test result is unclear or progesterone levels are borderline, making interpretation uncertain."
+ios_introduced:
+  version: "15.0"
+  year: 2021
+watchos_introduced:
+  version: "8.0"
+  year: 2021
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Manual logging through Health app or fertility tracking apps"
+  - name: "Apple Watch"
+    capability: "Manual logging through Cycle Tracking app"
+  - name: "Connected testing devices"
+    capability: "Home hormone testing devices like Mira or Proov can sync progesterone results"
+  - name: "Third-party apps"
+    capability: "Fertility apps that track hormone test results"
+primary_source: "User-reported or Connected Device"
+description: |
+  ## Overview
+  Progesterone testing confirms that ovulation has occurred by detecting the hormone produced by the corpus luteum after egg release. Unlike ovulation predictor kits (OPKs) that predict upcoming ovulation via LH surge, progesterone tests provide retrospective confirmation that ovulation happened. This is valuable for fertility awareness, as a positive LH surge does not guarantee subsequent ovulation.
+
+  Testing is typically performed 7 days after expected ovulation (approximately day 21 of a 28-day cycle, or 7 days post-LH surge). At-home progesterone tests using urine (detecting PdG, a progesterone metabolite) have become available, though serum blood tests remain the clinical standard for quantitative assessment.
+
+  ## Health Significance
+  Progesterone testing provides critical reproductive health information:
+  - **Ovulation confirmation**: Definitively confirms an egg was released, not just that LH surge occurred
+  - **Luteal phase assessment**: Adequate progesterone is essential for embryo implantation and early pregnancy maintenance
+  - **Luteal phase deficiency (LPD)**: Low mid-luteal progesterone may indicate inadequate corpus luteum function affecting fertility
+  - **Fertility treatment monitoring**: Used to confirm ovulation induction success and assess need for progesterone supplementation
+  - **Anovulation diagnosis**: Consistently low progesterone indicates chronic anovulation requiring evaluation
+  - **Pregnancy support**: Adequate progesterone levels are necessary to maintain early pregnancy
+
+  ## Clinical Interpretation Guidelines
+  When reviewing progesterone test data:
+  - **Testing timing**: Optimal testing occurs 7 days post-ovulation (or 7 days after positive OPK)
+    - Testing too early or late may show falsely low levels
+    - For irregular cycles, testing relative to ovulation signs is more reliable than cycle day
+  - **Serum progesterone reference values**:
+    - Pre-ovulation: < 1 ng/mL
+    - Post-ovulation (mid-luteal): > 3 ng/mL confirms ovulation; > 10 ng/mL indicates robust luteal function
+    - Pregnancy: Levels continue rising; > 10-20 ng/mL supports early pregnancy
+  - **At-home urine test interpretation**:
+    - Detects PdG (pregnanediol glucuronide), progesterone metabolite
+    - Positive result indicates ovulation occurred; multiple days of positive results suggest adequate luteal function
+  - **Clinical patterns to note**:
+    - Positive OPK followed by negative progesterone: LUF syndrome (luteinized unruptured follicle) or anovulation despite LH surge
+    - Consistently low mid-luteal progesterone: Possible luteal phase deficiency
+    - Positive progesterone with short luteal phase (< 10 days): May benefit from progesterone supplementation
+  - **Fertility treatment context**: Progesterone supplementation after IUI or IVF is common; testing during supplementation reflects exogenous sources
+
+  ## Caveats & Limitations
+  - At-home tests provide qualitative (positive/negative) results; quantitative levels require blood testing
+  - Progesterone levels fluctuate throughout the day (pulsatile secretion); single measurements may not reflect overall function
+  - Timing relative to ovulation is critical; incorrect timing leads to misinterpretation
+  - Does not measure absolute progesterone level; borderline cases require serum testing
+  - Normal progesterone does not guarantee pregnancy success; other factors affect implantation
+  - Exogenous progesterone supplementation will cause positive results regardless of ovulation
+  - Urine PdG testing is an indirect measure; not directly equivalent to serum progesterone
+  - Single positive result is less informative than multiple days of testing showing sustained levels
+metadata_keys:
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "OPK predicts ovulation; progesterone test confirms it occurred afterwards"
+  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
+    relationship: "Temperature rise after ovulation correlates with progesterone production"
+  - identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
+    relationship: "Post-ovulatory mucus changes correlate with progesterone elevation"
+  - identifier: "HKCategoryTypeIdentifierPregnancyTestResult"
+    relationship: "Adequate progesterone supports implantation and early pregnancy maintenance"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Progesterone withdrawal triggers menstruation; testing helps assess luteal phase length"
+references:
+  - title: "HKCategoryTypeIdentifierProgesteroneTestResult - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierprogesterontestresult"
+    type: "official"
+  - title: "Evaluation of the Luteal Phase - Fertility and Sterility"
+    url: "https://www.fertstert.org/article/S0015-0282(19)32382-4/fulltext"
+    type: "research"
+  - title: "Luteal Phase Deficiency - ASRM"
+    url: "https://www.asrm.org/topics/topics-index/luteal-phase-deficiency/"
+    type: "medical"
+  - title: "Progesterone and Pregnancy - ACOG"
+    url: "https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2017/11/the-use-of-progesterone-after-assisted-reproductive-technology"
+    type: "medical"
+last_updated: "2026-01-27"

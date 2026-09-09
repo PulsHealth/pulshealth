@@ -1,0 +1,147 @@
+identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Lab and Test Results"
+human_readable_name: "Forced Expiratory Volume (FEV1)"
+short_description: "Volume of air forcefully exhaled in the first second of spirometry, a key indicator of obstructive lung disease"
+icon: "lungs.fill"
+color: "#5AC8FA"
+default_unit: "L"
+supported_units:
+  - "L"
+  - "mL"
+  - "fl_oz_us"
+unit_description: "Liters (L) or milliliters (mL) represent the volume of air expelled from the lungs during forced exhalation"
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 1.0
+  max: 6.0
+  unit: "L"
+  notes: "Highly dependent on age, sex, height, and ethnicity; interpret using percent predicted values"
+clinical_ranges:
+  - population: "Healthy Adult Males"
+    normal: "3.0-5.5 L absolute; >80% predicted considered normal"
+  - population: "Healthy Adult Females"
+    normal: "2.0-4.0 L absolute; >80% predicted considered normal"
+  - population: "Mild Obstruction"
+    normal: "60-79% predicted"
+  - population: "Moderate Obstruction"
+    normal: "40-59% predicted"
+  - population: "Severe Obstruction"
+    normal: "<40% predicted"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Personal Spirometers"
+    capability: "Home spirometry measurement for FEV1 tracking"
+    examples:
+      - "Nuvoair Air Next"
+      - "MIR Smart One"
+      - "Propeller Health Sensor"
+  - name: "Clinical Spirometers"
+    capability: "High-precision pulmonary function testing"
+    examples:
+      - "Vitalograph"
+      - "CareFusion MasterScreen"
+      - "NDD EasyOne"
+  - name: "Connected Inhalers"
+    capability: "Some devices include spirometry capabilities"
+    examples:
+      - "Adherium Smartinhaler"
+      - "Propeller Health"
+primary_source: "Spirometry devices"
+description: |
+  ## Overview
+  Forced Expiratory Volume in 1 second (FEV1) is the volume of air that can be forcefully exhaled in the first second after taking a maximal deep breath. It is the most important single measure of airflow limitation and is essential for diagnosing and monitoring obstructive lung diseases such as asthma and COPD.
+
+  ## How It's Measured
+  FEV1 is measured through spirometry, a standardized pulmonary function test:
+  - Patient takes a maximal inspiration to total lung capacity
+  - Performs a forced, rapid, complete exhalation into a spirometer
+  - The device measures volume over time, capturing the first-second volume
+  - At least three acceptable maneuvers are required; best value is recorded
+  - Results are compared to predicted values based on age, sex, height, and ethnicity
+  - Bronchodilator testing may be performed to assess reversibility
+
+  ## Health Significance
+  FEV1 serves multiple critical clinical purposes:
+  - **COPD diagnosis and staging**: GOLD criteria use FEV1 for severity classification
+  - **Asthma assessment**: Monitors disease control and guides treatment decisions
+  - **Surgical risk assessment**: Low FEV1 indicates increased perioperative pulmonary risk
+  - **Disability evaluation**: Used in occupational and insurance assessments
+  - **Treatment response**: Tracks effectiveness of bronchodilators and anti-inflammatory therapies
+  - **Prognosis**: Lower FEV1 associated with increased mortality in respiratory diseases
+
+  ## Clinical Interpretation Guidelines
+  When interpreting FEV1 for clinical decisions:
+  1. **Use percent predicted**: Absolute values must be converted to percent of predicted based on reference equations (GLI-2012 recommended)
+  2. **FEV1/FVC ratio**: Essential for distinguishing obstructive from restrictive patterns
+     - <0.70 indicates obstruction (with clinical correlation)
+     - Lower limit of normal (LLN) preferred over fixed ratio in younger and older adults
+  3. **Bronchodilator response**: >12% and >200 mL improvement suggests reversibility
+  4. **Trend analysis**: A decline >40 mL/year exceeds normal aging decline
+  5. **GOLD staging for COPD**:
+     - GOLD 1 (Mild): FEV1 ≥80% predicted
+     - GOLD 2 (Moderate): 50% ≤ FEV1 < 80% predicted
+     - GOLD 3 (Severe): 30% ≤ FEV1 < 50% predicted
+     - GOLD 4 (Very Severe): FEV1 < 30% predicted
+  6. **Asthma control**: Normal FEV1 between exacerbations suggests good control
+
+  ## Caveats & Limitations
+  - **Effort-dependent**: Poor technique yields unreliable results; coaching is essential
+  - **Reference equation selection**: Different equations yield different percent predicted values
+  - **Age and height accuracy**: Errors in demographic data affect predicted values
+  - **Home spirometry variability**: Consumer devices may be less accurate than clinical spirometers
+  - **Acute conditions**: Respiratory infections temporarily affect readings
+  - **Circadian variation**: FEV1 varies throughout the day; standardize timing
+  - **Bronchodilator timing**: Document time since last bronchodilator use
+  - **Not diagnostic alone**: Clinical correlation required for diagnosis
+
+  ## Additional Notes
+  Home spirometry is increasingly used for remote monitoring of patients with chronic respiratory conditions. When reviewing patient-generated FEV1 data, establish a personal best baseline and monitor for significant declines (>15-20%) that may indicate exacerbation or disease progression. Integration with inhaler usage data and symptom tracking provides comprehensive respiratory disease management.
+metadata_keys:
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the spirometry device used for measurement"
+  - key: "HKMetadataKeyWasTakenInLab"
+    description: "Indicates if measurement was performed in a clinical laboratory setting"
+  - key: "HKMetadataKeyReferenceRangeLowerLimit"
+    description: "Lower limit of normal range for the measurement"
+  - key: "HKMetadataKeyReferenceRangeUpperLimit"
+    description: "Upper limit of normal range for the measurement"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierForcedVitalCapacity"
+    relationship: "FVC is measured simultaneously; FEV1/FVC ratio is essential for diagnosis"
+  - identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
+    relationship: "PEFR provides complementary airflow assessment; more accessible for daily monitoring"
+  - identifier: "HKQuantityTypeIdentifierInhalerUsage"
+    relationship: "Inhaler frequency contextualizes FEV1 values and treatment burden"
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "Oxygen saturation may decline with severe FEV1 reduction"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierForcedExpiratoryVolume1"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierforcedexpiratoryvolume1"
+    type: "official"
+  - title: "GOLD 2023 Report - Global Strategy for COPD"
+    url: "https://goldcopd.org/2023-gold-report/"
+    type: "medical"
+  - title: "ATS/ERS Standardization of Spirometry"
+    url: "https://www.thoracic.org/statements/resources/pft/spirometry.pdf"
+    type: "medical"
+  - title: "Global Lung Function Initiative (GLI) Reference Equations"
+    url: "https://www.ers-education.org/guidelines/global-lung-function-initiative/"
+    type: "research"
+last_updated: "2026-01-27"

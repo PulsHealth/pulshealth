@@ -1,0 +1,164 @@
+identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Fat (Total)"
+short_description: "Total fat intake from all dietary sources"
+icon: "drop.fill"
+color: "#FFCC00"
+default_unit: "g"
+supported_units:
+  - "g"
+  - "mg"
+  - "oz"
+unit_description: "Grams (g) of total fat. Fat provides 9 kcal/g, more than double the energy density of protein or carbohydrates."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 30
+  max: 200
+  unit: "g"
+  notes: "On a 2000 kcal diet, 44-78g represents 20-35% of calories. Ketogenic diets may reach 150-200g/day."
+clinical_ranges:
+  - population: "Adults (AMDR)"
+    rda: "20-35% of total calories (44-78g on 2000 kcal diet)"
+  - population: "Children (1-3 years)"
+    rda: "30-40% of calories"
+  - population: "Children (4-18 years)"
+    rda: "25-35% of calories"
+  - population: "Low-Fat Diet"
+    rda: "20-25% of calories"
+  - population: "Mediterranean Diet"
+    rda: "35-40% of calories (emphasis on unsaturated fats)"
+  - population: "Ketogenic Diet"
+    rda: "70-80% of calories (150-175g on 2000 kcal)"
+  - population: "Cardiovascular Disease Prevention"
+    rda: "Replace saturated with unsaturated; total fat less important"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Fat tracking with breakdown by type in comprehensive apps"
+    examples:
+      - "MyFitnessPal"
+      - "Cronometer"
+      - "MacroFactor"
+      - "Carb Manager"
+  - name: "Keto-focused apps"
+    capability: "Detailed fat tracking with emphasis on fat subtypes"
+    examples:
+      - "Carb Manager"
+      - "KetoDiet"
+      - "Senza"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Fat (Total) represents the combined intake of all fat types: saturated, monounsaturated, polyunsaturated, and trans fats. Fat is essential for hormone production, cell membrane integrity, absorption of fat-soluble vitamins (A, D, E, K), and provides concentrated energy. Modern understanding emphasizes fat quality over quantity, shifting focus from total fat reduction to optimizing fat subtypes.
+
+  The FDA Daily Value for total fat is 78g based on a 2,000 calorie diet (updated 2020). This represents 35% of calories, at the upper end of the Acceptable Macronutrient Distribution Range (AMDR). The emphasis has shifted from limiting total fat to focusing on the type of fat consumed.
+
+  ## Health Significance
+  Dietary fat impacts:
+  - **Energy Provision**: Most calorie-dense macronutrient at 9 kcal/g; efficient energy storage
+  - **Hormone Production**: Cholesterol (from fat metabolism) is precursor to steroid hormones
+  - **Cell Structure**: Phospholipids form cell membranes; fatty acid composition affects membrane fluidity
+  - **Vitamin Absorption**: Fat-soluble vitamins require dietary fat for absorption
+  - **Satiety**: Fat slows gastric emptying; contributes to meal satisfaction
+  - **Brain Health**: Brain is ~60% fat; essential fatty acids critical for cognitive function
+  - **Inflammation**: Different fat types have pro- or anti-inflammatory effects
+  - **Cardiovascular Health**: Fat type significantly affects lipid profiles and CV risk
+
+  ## Clinical Interpretation Guidelines
+  When assessing total fat intake:
+  1. **Calculate Percentage of Calories**: g fat x 9 / total calories x 100; compare to 20-35% range
+  2. **Assess Fat Subtypes**: Total fat without subtype breakdown provides incomplete picture
+  3. **Evaluate Fat Sources**: Whole food fats (nuts, avocado, fish) vs. processed (fried foods, baked goods)
+  4. **Check Essential Fatty Acid Adequacy**: Omega-3 and omega-6 intake often imbalanced
+  5. **Consider Dietary Pattern**: Mediterranean high-fat differs from Western high-fat
+  6. **Review Lipid Panels**: Correlate fat intake patterns with lipid profiles
+  7. **Assess Absorption Issues**: Fat malabsorption conditions require modified fat intake
+
+  ## Deficiency Symptoms
+  Fat deficiency (rare except in malabsorption or extreme restriction) causes:
+  - Dry, scaly skin and dermatitis
+  - Hair loss
+  - Poor wound healing
+  - Fat-soluble vitamin deficiencies (A, D, E, K)
+  - Hormonal disruption (low testosterone, amenorrhea)
+  - Depression and cognitive impairment
+  - Essential fatty acid deficiency symptoms
+  - Growth retardation in children
+  - Night blindness (vitamin A deficiency)
+
+  ## Excess/Toxicity
+  High total fat intake concerns:
+  - **Caloric Excess**: Energy-dense; easy to overconsume calories
+  - **Weight Gain**: If caloric surplus results from high fat intake
+  - **GI Distress**: High fat meals cause nausea, bloating in some individuals
+  - **Gallbladder Issues**: High fat can trigger gallbladder attacks in susceptible individuals
+  - **Steatorrhea**: In malabsorption conditions, excess dietary fat worsens symptoms
+  - **Cardiovascular Risk**: Depends heavily on fat type; saturated and trans fats most concerning
+  - **Pancreatitis**: High fat contraindicated; exacerbates inflammation
+
+  ## Special Populations
+  - **Cardiovascular Disease**: Emphasize unsaturated fats; Mediterranean pattern beneficial
+  - **Diabetes**: Fat quality affects insulin sensitivity; moderate fat intake often appropriate
+  - **Ketogenic Therapy**: 70-90% fat for epilepsy management; medical supervision required
+  - **Athletes**: Fat provides endurance fuel; 20-35% calories typically adequate
+  - **Gallbladder Disease**: Low-fat diet post-cholecystectomy; gradual increase over time
+  - **Pancreatic Insufficiency**: Enzyme replacement with fat intake; may require MCT oil
+  - **Malabsorption (Crohn's, Celiac)**: May need fat restriction or MCT supplementation
+  - **Cystic Fibrosis**: High fat, high calorie diet with enzyme replacement
+  - **NAFLD**: Moderate fat; emphasize unsaturated over saturated
+
+  ## Caveats & Limitations
+  - **Total Fat Limitations**: Without subtype data, clinical utility is reduced
+  - **Quality vs. Quantity**: Modern evidence prioritizes fat type over total amount
+  - **Hidden Fats**: Processed foods contain fats not easily tracked
+  - **Cooking Method Effects**: Frying adds fat not accounted for in raw food databases
+  - **Trans Fat Underreporting**: Partially hydrogenated oils being phased out but still present
+  - **Individual Response**: Lipid response to dietary fat varies significantly by genetics (APOE status)
+  - **Database Accuracy**: Fat content varies by animal diet, processing, preparation
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the fat source (e.g., 'olive oil', 'butter', 'avocado')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
+    relationship: "Saturated fat is a component of total fat"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated"
+    relationship: "Monounsaturated fat is a component of total fat"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
+    relationship: "Polyunsaturated fat is a component of total fat"
+  - identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
+    relationship: "Dietary cholesterol often accompanies saturated fat in animal foods"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Fat contributes to total caloric intake at 9 kcal/g"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFatTotal"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfattotal"
+    type: "official"
+  - title: "Dietary Reference Intakes for Fat - National Academies"
+    url: "https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids"
+    type: "research"
+  - title: "Dietary Fats and Cardiovascular Disease: AHA Presidential Advisory"
+    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000510"
+    type: "medical"
+  - title: "Dietary Guidelines for Americans 2020-2025: Fats"
+    url: "https://www.dietaryguidelines.gov/"
+    type: "official"
+last_updated: "2026-01-27"

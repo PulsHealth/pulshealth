@@ -1,0 +1,174 @@
+identifier: "HKCategoryTypeIdentifierSkippedHeartbeat"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Skipped Heartbeat"
+short_description: "Tracks episodes of perceived missed or extra heartbeats"
+icon: "heart.fill"
+color: "#FF2D55"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No skipped or extra heartbeats noticed"
+  - value: 1
+    name: "present"
+    description: "Mild - occasional isolated skipped beats"
+  - value: 2
+    name: "moderate"
+    description: "Moderate - multiple skipped beats, somewhat bothersome"
+  - value: 3
+    name: "severe"
+    description: "Severe - frequent skipped beats, distressing or associated with other symptoms"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Skipped heartbeats (ectopic beats) are the sensation that the heart has
+  "missed a beat" or produced an extra beat. This is typically caused by
+  premature atrial contractions (PACs) or premature ventricular contractions
+  (PVCs), which are usually benign but can occasionally indicate underlying
+  cardiac conditions. This data type enables symptom tracking for clinical
+  correlation.
+
+  ## Health Significance
+  - **Ectopy Awareness**: Most commonly represents benign PACs or PVCs
+  - **Arrhythmia Detection**: May indicate need for rhythm monitoring
+  - **Trigger Identification**: Helps identify caffeine, stress, or other
+    precipitants
+  - **Treatment Monitoring**: Track response to lifestyle changes or medications
+  - **Anxiety Association**: Awareness of ectopy can increase anxiety, creating
+    feedback loop
+
+  ## CRITICAL: Red Flags Requiring Evaluation
+
+  **Seek Immediate Care if Skipped Beats Occur With:**
+  - Chest pain or pressure
+  - Shortness of breath
+  - Lightheadedness or near-fainting
+  - Loss of consciousness
+  - Prolonged episodes (multiple consecutive skipped beats)
+
+  **High-Risk Features Requiring Evaluation:**
+  - New onset in someone with known heart disease
+  - Family history of sudden cardiac death
+  - Skipped beats during exercise
+  - Increasing frequency over time
+  - Associated with sustained rapid heartbeat
+  - Occurring with exertion rather than at rest
+
+  ## Clinical Context
+  **Common Benign Causes:**
+  - Caffeine
+  - Alcohol
+  - Stress and anxiety
+  - Lack of sleep
+  - Dehydration
+  - Electrolyte imbalances
+  - Hormonal changes
+
+  **Cardiac Causes Requiring Evaluation:**
+  - Frequent PVCs (>10,000/day may affect heart function)
+  - Underlying cardiomyopathy
+  - Coronary artery disease
+  - Electrolyte abnormalities (low potassium, magnesium)
+  - Structural heart disease
+
+  **Medical Conditions:**
+  - Hyperthyroidism
+  - Anemia
+  - Fever
+  - Medication effects
+
+  ## When to Seek Medical Attention
+  - New or increasing frequency of skipped beats
+  - Skipped beats with any red flag symptoms
+  - Skipped beats affecting quality of life
+  - Episodes lasting more than a few seconds
+  - Skipped beats only during exercise
+  - Known heart disease with new symptom
+  - Accompanied by rapid heart rate episodes
+
+  ## Pattern Recognition
+  Tracking skipped beats can reveal:
+  - Trigger identification (caffeine, alcohol, stress)
+  - Time of day patterns
+  - Relationship to meals or digestion
+  - Sleep quality correlation
+  - Positional triggers
+  - Frequency trends over time
+  - Response to lifestyle modifications
+  - Correlation with Apple Watch rhythm data
+
+  ## Integration with Objective Data
+  Combine symptom logging with:
+  - Apple Watch irregular rhythm notifications
+  - ECG recordings during symptoms
+  - Heart rate variability data
+  - Resting heart rate trends
+
+  ## Caveats & Limitations
+  - Subjective sensation may not reflect actual ectopy
+  - Cannot differentiate PACs from PVCs
+  - Does not capture "burden" (percentage of beats that are ectopic)
+  - Anxiety can heighten awareness without increasing ectopy
+  - Brief episodes difficult to capture on monitoring
+  - Retrospective logging may be inaccurate
+  - Requires ECG correlation for definitive diagnosis
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat"
+    relationship: "Related cardiac symptom; may co-occur"
+  - identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
+    relationship: "Red flag when combined with skipped beats"
+  - identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
+    relationship: "Concerning co-symptom requiring evaluation"
+  - identifier: "HKCategoryTypeIdentifierDizziness"
+    relationship: "May indicate hemodynamic significance"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Objective heart rate data during episodes"
+  - identifier: "HKElectrocardiogramType"
+    relationship: "ECG for detecting ectopic beats"
+  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
+    relationship: "Apple Watch detected irregularity"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierSkippedHeartbeat"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierskippedheartbeat"
+    type: "official"
+  - title: "Premature Ventricular Contractions - ACC"
+    url: "https://www.acc.org/latest-in-cardiology"
+    type: "medical"
+  - title: "When to Worry About Skipped Beats - Cleveland Clinic"
+    url: "https://my.clevelandclinic.org/health/symptoms/22108-heart-palpitations"
+    type: "medical"
+  - title: "PVC Management Guidelines - Heart Rhythm Society"
+    url: "https://www.hrsonline.org/guidance"
+    type: "medical"
+last_updated: "2026-01-27"

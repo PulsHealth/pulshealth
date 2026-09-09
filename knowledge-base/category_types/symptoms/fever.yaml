@@ -1,0 +1,133 @@
+identifier: "HKCategoryTypeIdentifierFever"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Fever"
+short_description: "Tracks episodes of fever or elevated body temperature."
+icon: "thermometer.high"
+color: "#FF3B30"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Fever is defined as an elevation of body temperature above the normal range (typically >100.4F/38C). This HealthKit category type allows users to log perceived fever episodes, providing valuable data for tracking illness onset, progression, and resolution. Note that this is distinct from the quantitative body temperature measurement.
+
+  ## Health Significance
+  Fever is a fundamental physiological response to infection and inflammation. It represents the body's immune system activating to fight pathogens. Tracking fever patterns helps clinicians assess illness severity and treatment response.
+
+  Fever is classified by temperature:
+  - **Low-grade fever**: 100.4-102.2F (38-39C)
+  - **Moderate fever**: 102.2-104F (39-40C)
+  - **High fever**: 104-106F (40-41C)
+  - **Hyperpyrexia**: >106F (>41C) - medical emergency
+
+  Common causes include:
+  - Viral infections (influenza, COVID-19, common cold)
+  - Bacterial infections (UTI, pneumonia, strep throat)
+  - Inflammatory conditions (autoimmune diseases)
+  - Medication reactions (drug fever)
+  - Post-vaccination response
+  - Heat stroke
+  - Malignancy (lymphoma, leukemia)
+  - Deep vein thrombosis
+
+  Fever of unknown origin (FUO) categories:
+  - Classic FUO (>3 weeks, undiagnosed after evaluation)
+  - Nosocomial FUO (hospital-acquired)
+  - Neutropenic FUO (in immunocompromised patients)
+  - HIV-associated FUO
+
+  ## When to Seek Medical Attention
+  Seek immediate medical care when fever:
+  - Exceeds 104F (40C) in adults
+  - Is accompanied by severe headache, stiff neck, confusion (meningitis signs)
+  - Is associated with difficulty breathing
+  - Occurs with rash, especially if rapidly spreading
+  - Is accompanied by severe abdominal pain
+  - Occurs in infants under 3 months (any fever)
+  - Is present in immunocompromised individuals
+  - Is accompanied by decreased urination or signs of dehydration
+
+  Seek routine evaluation when:
+  - Fever persists more than 3 days
+  - Temperature repeatedly exceeds 103F (39.4C)
+  - Fever returns after resolving
+  - Associated with localized symptoms (urinary, respiratory)
+  - No clear source is identified
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Illness onset and duration
+  - Response to antipyretic medications
+  - Fever patterns (continuous, remittent, intermittent)
+  - Post-vaccination reactions
+  - Recurring fevers suggesting chronic conditions
+  - Treatment response to antibiotics
+  - Cyclic patterns (malaria, cyclic neutropenia)
+
+  ## Caveats & Limitations
+  - Subjective perception of fever may not correlate with measured temperature
+  - Does not replace objective temperature measurement
+  - Temperature value not captured (use HKQuantityTypeIdentifierBodyTemperature)
+  - Time of fever spike not precisely recorded
+  - Associated symptoms not linked directly
+  - Antipyretic use may mask fever patterns
+  - Elderly and immunocompromised may not mount typical fever response
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
+    relationship: "Objective temperature measurement complements fever tracking"
+  - identifier: "HKCategoryTypeIdentifierChills"
+    relationship: "Chills typically accompany rising fever"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Fatigue commonly accompanies febrile illness"
+  - identifier: "HKCategoryTypeIdentifierGeneralizedBodyAche"
+    relationship: "Body aches often occur with fever"
+  - identifier: "HKCategoryTypeIdentifierHeadache"
+    relationship: "Headache frequently accompanies fever"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierFever"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierfever"
+    type: "official"
+  - title: "Fever - Mayo Clinic"
+    url: "https://www.mayoclinic.org/diseases-conditions/fever/symptoms-causes/syc-20352759"
+    type: "medical"
+  - title: "Fever of Unknown Origin - AAFP"
+    url: "https://www.aafp.org/pubs/afp/issues/2014/1001/p465.html"
+    type: "medical"
+last_updated: "2026-01-27"

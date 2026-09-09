@@ -1,0 +1,208 @@
+identifier: "HKCorrelationTypeIdentifierBloodPressure"
+source: "HealthKit"
+type: "HKCorrelationType"
+category: "Correlations"
+human_readable_name: "Blood Pressure"
+short_description: "A correlation grouping systolic and diastolic blood pressure readings taken at the same time."
+icon: "heart.fill"
+color: "#FF3B30"
+default_unit: "mmHg"
+supported_units:
+  - "mmHg"
+unit_description: "Millimeters of mercury (mmHg) - standard unit for blood pressure measurement"
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteMin"
+  - "discreteMax"
+  - "discreteAverage"
+  - "mostRecent"
+typical_range:
+  systolic: "90-120 mmHg"
+  diastolic: "60-80 mmHg"
+  notes: "Normal blood pressure is typically below 120/80 mmHg"
+clinical_ranges:
+  - name: "Normal"
+    systolic_range: "<120"
+    diastolic_range: "<80"
+    description: "Optimal blood pressure level"
+  - name: "Elevated"
+    systolic_range: "120-129"
+    diastolic_range: "<80"
+    description: "Risk for developing hypertension"
+  - name: "Hypertension Stage 1"
+    systolic_range: "130-139"
+    diastolic_range: "80-89"
+    description: "Lifestyle changes recommended; medication may be considered"
+  - name: "Hypertension Stage 2"
+    systolic_range: ">=140"
+    diastolic_range: ">=90"
+    description: "Medication typically recommended along with lifestyle changes"
+  - name: "Hypertensive Crisis"
+    systolic_range: ">180"
+    diastolic_range: ">120"
+    description: "Requires immediate medical attention"
+  - name: "Hypotension"
+    systolic_range: "<90"
+    diastolic_range: "<60"
+    description: "May indicate underlying issues; evaluate symptoms"
+category_values: null
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "Bluetooth Blood Pressure Monitor"
+    capability: "Automatic measurement and wireless data transmission (Omron, Withings, iHealth, QardioArm)"
+  - name: "iPhone"
+    capability: "Manual entry via Health app or third-party apps"
+  - name: "Apple Watch"
+    capability: "Manual entry; Apple Watch Series 9+ may support future BP estimation features"
+  - name: "Smart Scales"
+    capability: "Some smart scales include BP measurement (Withings Body Cardio)"
+primary_source: "Bluetooth Blood Pressure Monitor"
+description: |
+  ## Overview
+
+  HKCorrelationTypeIdentifierBloodPressure is a correlation type that groups together systolic and
+  diastolic blood pressure measurements taken at the same moment. Unlike simple quantity types, a
+  correlation contains multiple related samples that should be interpreted together. Each blood
+  pressure correlation contains exactly two quantity samples:
+
+  1. **HKQuantityTypeIdentifierBloodPressureSystolic** - The higher number, measured when the heart
+     contracts
+  2. **HKQuantityTypeIdentifierBloodPressureDiastolic** - The lower number, measured when the heart
+     relaxes between beats
+
+  The correlation ensures these paired values share the same timestamp and metadata, maintaining the
+  clinical integrity of the measurement.
+
+  ## Health Significance
+
+  Blood pressure is one of the most important vital signs and a primary indicator of cardiovascular
+  health:
+
+  - **Cardiovascular risk**: Hypertension is a leading risk factor for heart attack, stroke, heart
+    failure, kidney disease, and vascular dementia
+
+  - **Silent condition**: High blood pressure typically has no symptoms until serious damage occurs,
+    making regular monitoring essential
+
+  - **Modifiable risk factor**: Unlike age or genetics, blood pressure can be improved through
+    lifestyle changes and medication
+
+  - **Treatment monitoring**: Patients on antihypertensive medications need regular BP tracking to
+    assess treatment effectiveness
+
+  - **White coat effect**: Home blood pressure monitoring captures readings in a relaxed environment,
+    often revealing different patterns than clinical measurements
+
+  - **Masked hypertension**: Some patients have normal office readings but elevated home readings,
+    which home monitoring can detect
+
+  ## Clinical Interpretation
+
+  When reviewing blood pressure correlation data, clinicians should consider:
+
+  - **Both values matter**: While systolic pressure often receives more attention (especially in older
+    adults), diastolic pressure is also clinically significant, particularly in younger patients.
+
+  - **Measurement conditions**: Valid readings require:
+    - 5 minutes of rest before measurement
+    - Seated with back supported, feet flat on floor
+    - Arm at heart level
+    - Empty bladder
+    - No caffeine, exercise, or smoking for 30 minutes prior
+
+  - **Pattern recognition**: Look for:
+    - Sustained elevation (vs. occasional spikes)
+    - Morning hypertension (cardiovascular risk marker)
+    - Nocturnal patterns (if available from 24-hour monitoring)
+    - Response to medications
+
+  - **Pulse pressure**: The difference between systolic and diastolic (e.g., 120-80 = 40 mmHg). Wide
+    pulse pressure (>60) may indicate arterial stiffness; narrow pulse pressure may indicate low
+    cardiac output.
+
+  - **Variability**: Significant variation between readings may itself be a cardiovascular risk factor
+
+  - **Context from metadata**: Check device source, body position, and any user notes
+
+  ## Caveats & Limitations
+
+  - **Measurement quality varies**: Consumer devices vary in accuracy. FDA-cleared monitors validated
+    against reference standards are preferred. Wrist monitors are generally less accurate than upper
+    arm cuffs.
+
+  - **User technique**: Even good devices produce inaccurate readings with improper cuff size, arm
+    position, or insufficient rest period
+
+  - **Single readings insufficient**: Clinical decisions should be based on multiple readings over
+    time, not individual measurements
+
+  - **Incomplete context**: HealthKit captures the numbers but not always the measurement conditions.
+    Metadata may or may not include body position, arm used, or cuff size.
+
+  - **No continuous monitoring**: Unlike heart rate, blood pressure requires active measurement.
+    Patterns between measurements are not captured.
+
+  - **Arrhythmia interference**: Atrial fibrillation and other arrhythmias can cause inaccurate
+    oscillometric BP readings
+
+  - **Correlation structure**: Apps must properly handle the correlation type - reading the component
+    samples rather than treating it as a simple value. Some apps may not correctly display or export
+    correlated data.
+
+  - **No Apple Watch native measurement**: As of 2025, Apple Watch cannot measure blood pressure
+    directly. Any BP data from Apple Watch is manually entered.
+metadata_keys:
+  - key: "HKMetadataKeyBloodPressureClassification"
+    description: "Classification of the reading according to clinical guidelines (deprecated in favor of app-side classification)"
+  - key: "HKMetadataKeyBodyPosition"
+    description: "Body position during measurement (sitting, lying down, standing)"
+  - key: "HKMetadataKeyCuffType"
+    description: "Type of blood pressure cuff used (upper arm, wrist)"
+  - key: "HKMetadataKeyMeasurementSite"
+    description: "Which arm was used for measurement (left, right)"
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name/model of the blood pressure monitor"
+  - key: "HKMetadataKeyDeviceManufacturerName"
+    description: "Manufacturer of the blood pressure monitor"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Whether the reading was manually entered by the user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from the source device"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "component_sample"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureDiastolic"
+    relationship: "component_sample"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "often_measured_together"
+  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
+    relationship: "may_affect_accuracy"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "cardiovascular_health_indicator"
+references:
+  - title: "Apple Developer Documentation - HKCorrelationTypeIdentifierBloodPressure"
+    url: "https://developer.apple.com/documentation/healthkit/hkcorrelationtypeidentifierbloodpressure"
+    type: "official"
+  - title: "Apple Developer Documentation - HKCorrelation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcorrelation"
+    type: "official"
+  - title: "American Heart Association - Understanding Blood Pressure Readings"
+    url: "https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings"
+    type: "medical"
+  - title: "ACC/AHA Guideline for Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults"
+    url: "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065"
+    type: "research"
+  - title: "FDA - Blood Pressure Monitoring Devices"
+    url: "https://www.fda.gov/medical-devices/consumer-products/blood-pressure-monitoring-devices"
+    type: "medical"
+last_updated: "2026-01-27"

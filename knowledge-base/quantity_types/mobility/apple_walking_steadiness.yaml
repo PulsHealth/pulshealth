@@ -1,0 +1,189 @@
+identifier: "HKQuantityTypeIdentifierAppleWalkingSteadiness"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Mobility"
+human_readable_name: "Apple Walking Steadiness"
+short_description: "Composite measure of walking stability and balance, used to estimate fall risk."
+icon: "figure.walk"
+color: "#FF9500"
+default_unit: "%"
+supported_units:
+  - "%"
+unit_description: "Percentage score representing overall walking steadiness, with higher values indicating better stability."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 0
+  max: 100
+  unit: "%"
+  notes: "Scores are classified as OK (high steadiness), Low, or Very Low (highest fall risk)."
+clinical_ranges:
+  - population: "All Adults"
+    normal: "OK classification (typically >60%)"
+    concerning: "Low (<60%) or Very Low (<40%)"
+  - population: "Adults 65+"
+    normal: "OK classification"
+    concerning: "Any Low or Very Low reading warrants fall risk assessment"
+  - population: "Post-fall patients"
+    normal: "Return to OK classification"
+    concerning: "Persistent Low/Very Low readings"
+ios_introduced:
+  version: "15.0"
+  year: 2021
+watchos_introduced:
+  version: "8.0"
+  year: 2021
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone"
+    capability: "Motion sensors analyze gait stability during daily walking"
+  - name: "Apple Watch"
+    capability: "Continuous gait stability monitoring during daily activities"
+primary_source: "iPhone motion sensors (phone must be carried during walking)"
+description: |
+  ## Overview
+  Apple Walking Steadiness is a composite metric that analyzes multiple aspects of gait to estimate fall risk. It combines measurements of balance, stability, and coordination during everyday walking to produce a single score indicating overall walking steadiness. This metric is classified by Apple into three categories: OK, Low, and Very Low, with the latter two indicating increased fall risk.
+
+  Apple Walking Steadiness received FDA clearance as a medical device feature in 2021, making it one of the first consumer-grade fall risk assessment tools with regulatory validation.
+
+  ## How It's Measured
+  Walking Steadiness is calculated from iPhone motion sensor data collected during daily walking. The algorithm analyzes:
+  - **Gait variability**: Step-to-step consistency in timing and length
+  - **Walking asymmetry**: Left-right differences in gait pattern
+  - **Double support time**: Proportion of gait cycle with both feet on ground
+  - **Walking speed**: Overall pace and speed consistency
+  - **Step regularity**: Rhythmicity and smoothness of gait
+
+  Requirements for measurement:
+  - iPhone must be carried on body (pocket recommended)
+  - Sufficient walking duration (typically accumulates over days)
+  - iOS 15 or later
+  - User height entered in Health app for calibration
+
+  ## Health Significance
+  Falls are a leading cause of injury and death in older adults:
+  - 1 in 4 Americans over 65 falls each year
+  - Falls cause 95% of hip fractures
+  - Fear of falling leads to activity restriction and further decline
+  - Fall-related medical costs exceed $50 billion annually in the US
+
+  Walking Steadiness addresses this by:
+  - Providing objective, continuous fall risk monitoring
+  - Detecting decline before a fall occurs
+  - Enabling early intervention with exercise and environmental modifications
+  - Tracking response to fall prevention programs
+
+  ## Clinical Interpretation Guidelines
+  Apple classifies Walking Steadiness into three categories:
+
+  **OK (Green)**
+  - Walking steadiness is within normal range
+  - Continue current activity levels
+  - No specific intervention needed
+  - Routine fall risk counseling appropriate
+
+  **Low (Yellow)**
+  - Increased risk of falling
+  - User receives notification on device
+  - Clinical evaluation recommended
+  - Consider:
+    - Fall risk factor assessment
+    - Medication review (sedatives, antihypertensives)
+    - Vision and hearing evaluation
+    - Home safety assessment
+    - Balance and strength exercise program
+
+  **Very Low (Red)**
+  - Significantly increased fall risk
+  - User receives urgent notification
+  - Prompt clinical evaluation strongly recommended
+  - Consider:
+    - Comprehensive geriatric assessment
+    - Physical therapy evaluation
+    - Assistive device assessment
+    - Home modifications
+    - Supervised exercise program
+    - Potential underlying medical causes (neurological, cardiac, vestibular)
+
+  ## Age-Adjusted Norms
+  While Apple does not publish specific numeric thresholds, the algorithm accounts for age-related changes in gait:
+  - Normal aging causes gradual gait changes
+  - Algorithm calibrated to detect abnormal decline beyond expected aging
+  - Classifications reflect deviation from age-matched norms
+  - Serial measurements detect individual decline over time
+
+  Key consideration: A "Low" reading in a 45-year-old may indicate different pathology than in an 85-year-old, even though both warrant attention.
+
+  ## Caveats & Limitations
+  - **iPhone placement**: Must be carried consistently; different placements affect accuracy
+  - **Measurement conditions**: Only captures walking on relatively flat surfaces
+  - **Environmental factors**: Uneven terrain, poor footwear appropriately affect readings
+  - **Acute vs. chronic**: Cannot distinguish temporary (illness, medication) from chronic causes
+  - **Not diagnostic**: Identifies risk but not specific cause
+  - **Validation population**: May have different performance in populations not well-represented in studies
+  - **Requires consistent use**: Sparse data reduces reliability
+  - **Not a replacement**: Should complement, not replace, clinical fall risk assessment
+
+  ## Additional Notes
+  Walking Steadiness is particularly valuable for:
+  - **Geriatric screening**: Population-level fall risk identification
+  - **Post-fall monitoring**: Tracking recovery and intervention effectiveness
+  - **Medication management**: Detecting gait effects of new medications
+  - **Chronic disease monitoring**: Parkinson's, MS, diabetes, heart failure
+  - **Rehabilitation tracking**: Objective progress measurement
+
+  Integration with clinical care:
+  - Can be shared with healthcare providers via Health app
+  - Supports longitudinal tracking between visits
+  - Complements but does not replace clinical assessments (Timed Up and Go, Berg Balance Scale)
+  - Useful for remote patient monitoring programs
+
+  Patient engagement:
+  - Notifications encourage proactive fall prevention
+  - Visible metric motivates exercise adherence
+  - Enables informed discussions with healthcare providers
+  - Empowers patients in their own fall prevention
+
+  The combination of FDA clearance, continuous monitoring, and user-facing notifications makes Walking Steadiness a unique tool for fall prevention at the population level.
+metadata_keys:
+  - key: "HKMetadataKeyAppleWalkingSteadinessClassification"
+    description: "Classification of the walking steadiness value (OK, Low, or Very Low)"
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Indicates which side of the body the device was placed during measurement"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Component metric contributing to steadiness calculation"
+  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
+    relationship: "Component metric; elevated double support reduces steadiness score"
+  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
+    relationship: "Component metric; asymmetry reduces steadiness score"
+  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
+    relationship: "Component metric contributing to steadiness calculation"
+  - identifier: "HKQuantityTypeIdentifierStairDescentSpeed"
+    relationship: "Related fall risk indicator; descent particularly relevant"
+  - identifier: "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent"
+    relationship: "Records when significant changes in steadiness classification occur"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierAppleWalkingSteadiness"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierapplewalkingsteadiness"
+    type: "official"
+  - title: "Apple Walking Steadiness FDA Clearance Information"
+    url: "https://www.apple.com/healthcare/health-records/"
+    type: "official"
+  - title: "Validation of iPhone-based Walking Steadiness - npj Digital Medicine"
+    url: "https://www.nature.com/npjdigitalmed/"
+    type: "research"
+  - title: "CDC STEADI Fall Prevention Initiative"
+    url: "https://www.cdc.gov/steadi/"
+    type: "medical"
+  - title: "Falls Prevention in Older Adults - American Geriatrics Society"
+    url: "https://geriatricscareonline.org/"
+    type: "medical"
+last_updated: "2026-01-27"

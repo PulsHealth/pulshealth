@@ -1,0 +1,302 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Underwater Depth
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierUnderwaterDepth"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Underwater Depth"
+short_description: "Measures the user's depth underwater during diving activities."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.pool.swim"
+color: "#007AFF"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "m"
+supported_units:
+  - "m"
+  - "ft"
+unit_description: "Depth below water surface measured in meters (default) or feet. Measured as distance from surface (0) increasing with depth."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 40
+  unit: "m"
+  notes: "Apple Watch Ultra rated for recreational diving to 40m (130 ft). Most recreational dives occur between 10-30m. Surface is 0m. Values above 40m exceed device rating and most recreational diving certification limits."
+
+clinical_ranges:
+  - population: "Recreational Diving Depth Limits"
+    open_water_certified: "0-18 m (0-60 ft)"
+    advanced_open_water: "0-30 m (0-100 ft)"
+    deep_diver_specialty: "0-40 m (0-130 ft)"
+  - population: "Apple Watch Ultra Specifications"
+    rated_depth: "40 m (130 ft)"
+    certification: "EN13319 compliant depth gauge"
+    temperature_range: "0°C to 40°C water temperature"
+  - population: "Freediving Depths (for reference)"
+    beginner: "5-15 m"
+    intermediate: "15-30 m"
+    advanced: "30-50+ m"
+    note: "Apple Watch Ultra not designed for freediving"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "16.0"
+  year: 2022
+  notes: "Introduced with Apple Watch Ultra featuring built-in depth gauge"
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+  notes: "Apple Watch Ultra includes depth gauge (pressure sensor) and water temperature sensor. Oceanic+ app provides full dive computer functionality."
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch Ultra"
+    capability: "Built-in depth gauge using pressure sensor, certified to EN13319 standard for dive gauges. Automatically activates Depth app when submerged. Maximum rated depth 40m (130 ft)."
+    accuracy: "Certified to EN13319 diving instrument standard. Pressure-based measurement provides high accuracy."
+    examples: ["Apple Watch Ultra", "Apple Watch Ultra 2"]
+  - name: "Dive computers"
+    capability: "Dedicated dive computers that sync to HealthKit via companion apps may write depth data."
+    examples: ["Garmin Descent", "Suunto D5", "Shearwater Peregrine"]
+primary_source: "Apple Watch Ultra with Depth app or Oceanic+ dive computer app"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Underwater Depth measures the user's depth below the water surface during diving activities. This metric was introduced with Apple Watch Ultra in 2022, which includes a purpose-built depth gauge (pressure sensor) certified to the EN13319 standard for diving instruments. The watch is water-resistant and rated for recreational diving to 40 meters (130 feet).
+
+  This is the first Apple Watch designed for scuba diving and freediving activities, featuring automatic depth tracking and optional integration with the Oceanic+ app for full dive computer functionality including no-decompression limits, ascent rate monitoring, and dive logging.
+
+  ## How It's Measured
+  Apple Watch Ultra measures depth using a dedicated pressure sensor:
+
+  **Pressure-Based Depth Measurement:**
+  - Depth gauge uses water pressure to calculate depth
+  - Water pressure increases approximately 1 atmosphere per 10 meters
+  - Sensor measures absolute pressure and subtracts surface atmospheric pressure
+  - Provides accurate depth reading independent of water type (fresh/salt)
+
+  **Automatic Activation:**
+  - Depth app automatically launches when watch submerges
+  - Begins recording depth data immediately upon immersion
+  - No user action required to start tracking
+  - Watch face displays current depth in real-time
+
+  **EN13319 Certification:**
+  - European standard for diving accessories including depth gauges
+  - Certifies accuracy, reliability, and safety features
+  - Requires specific accuracy tolerances (±0.1m at recreational depths)
+  - Mandates proper display legibility and function verification
+
+  **Data Recording:**
+  - Depth samples recorded at high frequency during dive
+  - Maximum depth per dive tracked
+  - Dive duration recorded
+  - Water temperature captured simultaneously
+
+  **Oceanic+ Integration:**
+  For full dive computer functionality:
+  - No-decompression limit (NDL) calculations
+  - Ascent rate monitoring with alerts
+  - Safety stop countdown
+  - Dive log with profile graphs
+  - GPS surface position marking
+
+  ## Health Significance
+  Underwater depth has important safety and health implications for divers:
+
+  **Decompression Sickness Prevention:**
+  - Depth and time underwater determine nitrogen absorption
+  - Deeper dives and longer bottom times increase decompression risk
+  - Accurate depth tracking essential for dive planning and safety
+  - Exceeding no-decompression limits requires staged ascent stops
+
+  **Pressure-Related Injuries:**
+  - Barotrauma risk increases with depth (ears, sinuses, lungs)
+  - Rapid ascent can cause arterial gas embolism
+  - Depth data helps verify safe ascent rates
+  - Medical evaluation needed after rapid ascents or DCS symptoms
+
+  **Nitrogen Narcosis:**
+  - Begins affecting most divers around 30m depth
+  - Impairs judgment and reaction time
+  - Depth tracking helps divers stay within personal limits
+  - Returns to normal upon ascending
+
+  **Oxygen Toxicity (Technical Diving):**
+  - At depth, elevated partial pressure of oxygen becomes toxic
+  - Air diving: significant concern below 56m (beyond recreational limits)
+  - Enriched air (Nitrox) diving: shallower depth limits apply
+  - Accurate depth data critical for technical divers
+
+  ## Clinical Interpretation Guidelines
+
+  ### Dive Profile Assessment
+  Review dive depth data for safety compliance:
+
+  **Maximum Depth Evaluation:**
+  - Compare max depth to diver's certification level
+  - Open Water: 18m max recommended
+  - Advanced Open Water: 30m max recommended
+  - Deep Specialty: 40m max (recreational limit)
+
+  **Depth Pattern Analysis:**
+  - Multi-level dive profiles reduce decompression stress
+  - "Yo-yo" profiles (repeated descents) increase DCS risk
+  - Ideal profiles: deepest point first, gradual ascent
+  - Safety stops at 5m for 3+ minutes recommended
+
+  **Repetitive Dive Considerations:**
+  - Residual nitrogen affects subsequent dives
+  - Surface intervals between dives should be tracked
+  - Shallower limits apply to repetitive dives
+  - Multi-day diving requires conservative planning
+
+  ### Post-Dive Medical Considerations
+  Depth data relevant when evaluating:
+  - Decompression sickness symptoms (joint pain, neurological signs)
+  - Barotrauma symptoms (ear pain, dizziness, lung issues)
+  - Flying after diving (recommended 12-24 hour surface interval)
+  - Altitude exposure after diving (similar considerations)
+
+  ### Clinical Red Flags for Divers
+  - Maximum depth exceeding certification level
+  - Rapid ascent rates (>9m/min)
+  - Omitted safety stops
+  - Multiple deep dives in single day
+  - Diving with contraindicated medical conditions
+
+  ## Caveats & Limitations
+
+  ### Device Limitations
+  - **Maximum rated depth:** 40m - do not exceed
+  - **Not for technical diving:** Not rated for decompression diving, mixed gas, or rebreathers
+  - **Not for high-velocity water:** Do not use for water skiing, diving from heights
+  - **Temperature range:** Designed for 0°C to 40°C water
+  - **Single device:** Should not replace dedicated dive computer for serious diving
+
+  ### Measurement Considerations
+  - **Altitude diving:** Requires dive computer algorithms; basic depth gauge insufficient
+  - **Fresh vs. salt water:** Minor density difference (2.5%) may affect calculations
+  - **Sensor limitations:** Very rapid depth changes may not capture all peaks/valleys
+
+  ### Interpretation Limitations
+  - **Depth alone insufficient:** Time at depth critical for decompression calculations
+  - **No-deco limits:** Require full dive computer functionality (Oceanic+ app)
+  - **Individual variation:** Decompression susceptibility varies by person
+  - **Medical fitness:** Depth data does not assess diver's fitness to dive
+
+  ### Safety Warnings
+  - Apple Watch Ultra is a recreational dive gauge, not a primary dive computer
+  - Serious divers should use dedicated dive computer equipment
+  - Always follow dive computer recommendations over depth gauge alone
+  - Seek medical attention for any decompression symptoms regardless of dive profile
+
+  ## Additional Notes
+
+  **For Health Consultants:**
+  When reviewing underwater depth data:
+  1. Verify depth limits appropriate to diver certification
+  2. Look for safe dive profiles (deepest first, gradual ascent)
+  3. Check for safety stops at 5m on dives >10m
+  4. Consider surface intervals between repetitive dives
+  5. Note any symptoms following dives that exceeded limits
+
+  **Diving Fitness Considerations:**
+  Medical conditions affecting diving fitness:
+  - Respiratory conditions (asthma, COPD)
+  - Cardiac conditions (including PFO)
+  - Seizure disorders
+  - Diabetes (requires evaluation)
+  - Ear/sinus conditions
+  - Pregnancy (contraindicated)
+  - Recent surgery or injury
+  - Refer to DAN (Divers Alert Network) guidelines
+
+  **Depth and Certification Correlation:**
+  Diving certification levels and typical depth limits:
+  - Discover Scuba (introductory): 12m max, instructor supervision
+  - Open Water Diver: 18m max, buddy diving
+  - Advanced Open Water: 30m max
+  - Deep Diver Specialty: 40m max (recreational limit)
+  - Technical diving: Beyond 40m, requires specialized training
+
+  **Integration with Dive Logs:**
+  Full dive data includes:
+  - Depth profile over time
+  - Maximum depth achieved
+  - Dive duration
+  - Water temperature
+  - Surface GPS position
+  - No-deco time remaining (with Oceanic+)
+  - Ascent rate warnings
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyUnderwaterDepthAlgorithmVersion"
+    description: "Version of the algorithm used to calculate depth from pressure sensor data."
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier for the sample from the originating source."
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices."
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution."
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierWaterTemperature"
+    relationship: "Complementary - Water temperature typically recorded alongside depth during dives"
+  - identifier: "HKQuantityTypeIdentifierDistanceSwimming"
+    relationship: "Related - Swimming distance may be recorded during snorkeling or surface intervals"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Complementary - Heart rate during diving provides physiological stress data"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Complementary - Breathing rate affects air consumption during diving"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - underwaterDepth"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/underwaterdepth"
+    type: "official"
+  - title: "Apple Watch Ultra Technical Specifications"
+    url: "https://www.apple.com/apple-watch-ultra/specs/"
+    type: "official"
+  - title: "EN13319 Diving Accessories Standard"
+    url: "https://www.en-standard.eu/bs-en-13319-diving-accessories-depth-gauges-and-combined-depth-and-time-measuring-devices-functional-and-safety-requirements-test-methods/"
+    type: "research"
+  - title: "Divers Alert Network - Medical FAQs"
+    url: "https://dan.org/health-medicine/health-resources/diseases-conditions/"
+    type: "medical"
+  - title: "PADI Depth Limits and Certification Levels"
+    url: "https://www.padi.com/courses"
+    type: "tutorial"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - Apple Watch Ultra introduced 2022 with EN13319 certified depth gauge
+  - Maximum rated depth: 40m (130 ft) for recreational diving
+  - Depth measured via pressure sensor (1 atm per ~10m water depth)
+  - Oceanic+ app provides full dive computer functionality
+  - Recreational diving depth limits: 18m (OW), 30m (AOW), 40m (Deep)
+  - Not designed for technical diving, freediving, or high-velocity water activities
+  - Decompression sickness risk depends on depth AND time, not depth alone

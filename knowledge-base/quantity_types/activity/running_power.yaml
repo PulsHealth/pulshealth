@@ -1,0 +1,171 @@
+identifier: "HKQuantityTypeIdentifierRunningPower"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Running Power"
+short_description: "The rate of mechanical work performed during running, measured in watts."
+icon: "figure.run"
+color: "#30D158"
+default_unit: "W"
+supported_units:
+  - "W"
+  - "kW"
+unit_description: "Watts (W) measure the rate of energy expenditure or mechanical work. Unlike cycling power which is directly measured at the pedals, running power is estimated from motion sensors and represents the total mechanical power output during running."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 150
+  max: 450
+  unit: "W"
+  notes: "Highly dependent on body weight, running speed, and terrain. Recreational runners typically see 200-300W at easy pace; elite runners may sustain 350-450W during races."
+clinical_ranges:
+  - population: "Recreational runners (easy pace)"
+    values: "150-250 W typical; ~3-4 W/kg body weight"
+  - population: "Recreational runners (tempo pace)"
+    values: "250-350 W typical; ~4-5 W/kg body weight"
+  - population: "Competitive runners (race pace)"
+    values: "300-400 W typical; ~5-6 W/kg body weight"
+  - population: "Elite runners (race pace)"
+    values: "350-500+ W typical; ~6-7+ W/kg body weight"
+  - population: "General guideline"
+    values: "Power-to-weight ratio (W/kg) is more useful for comparison than absolute watts"
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Calculates running power using motion sensors and algorithms during outdoor and treadmill runs"
+    examples:
+      - "Apple Watch Series 6"
+      - "Apple Watch Series 7"
+      - "Apple Watch Series 8"
+      - "Apple Watch Series 9"
+      - "Apple Watch SE (2nd gen)"
+      - "Apple Watch Ultra"
+      - "Apple Watch Ultra 2"
+  - name: "Third-party running power meters"
+    capability: "Dedicated devices or pods that estimate running power"
+    examples:
+      - "Stryd"
+      - "Garmin Running Dynamics Pod"
+      - "COROS POD 2"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  Running power represents the rate of mechanical work performed during running, expressed in watts. Unlike heart rate, which responds slowly to changes in effort and is affected by many external factors, power provides an instantaneous measure of actual physical output. This makes it valuable for pacing, training load monitoring, and performance analysis.
+
+  Running power differs fundamentally from cycling power:
+  - **Cycling power** is directly measured via strain gauges at the pedals/crank
+  - **Running power** is estimated from accelerometer and motion data using biomechanical models
+
+  Despite being an estimate, running power has proven useful for training guidance and performance tracking.
+
+  ## How It's Measured
+  Apple Watch estimates running power using its built-in motion sensors (accelerometers and gyroscopes) combined with algorithms that model running biomechanics:
+
+  1. **Accelerometer data**: Measures the magnitude and direction of forces during each stride
+  2. **Gyroscope data**: Captures rotational movements and body orientation
+  3. **Barometric altimeter**: Detects elevation changes to account for uphill/downhill running
+  4. **GPS (outdoor)**: Provides speed data to refine estimates
+  5. **Biomechanical model**: Estimates the mechanical work required to move the body at the measured speed and acceleration
+
+  The algorithm accounts for:
+  - Horizontal propulsion (moving forward)
+  - Vertical oscillation (bouncing with each stride)
+  - Braking forces on landing
+  - Elevation changes
+
+  Power values update in near real-time, making them useful for immediate pacing feedback.
+
+  ## Health Significance
+  Running power provides several advantages for training and health monitoring:
+
+  - **Objective intensity measure**: Unlike heart rate, power is not affected by caffeine, stress, sleep quality, or cardiovascular drift
+  - **Instant feedback**: Responds immediately to changes in effort, unlike heart rate which lags by 30-60 seconds
+  - **Terrain-independent**: Automatically accounts for hills, wind, and surface conditions
+  - **Training load quantification**: Power x time = work (kilojoules), enabling precise training load tracking
+  - **Running economy indicator**: Power at a given pace reflects efficiency; lower power for the same speed indicates better economy
+  - **Fatigue detection**: Rising power at constant pace or falling pace at constant power indicates fatigue
+
+  ## Clinical Interpretation Guidelines
+  When reviewing running power data with patients/clients:
+
+  1. **Use power-to-weight ratio**: Express as W/kg for meaningful comparisons between individuals
+  2. **Establish individual baselines**: What matters most is how an individual's power changes over time at given intensities
+  3. **Compare to pace**: The relationship between power and pace reveals running economy
+  4. **Monitor power zones**: Like heart rate zones, power zones can guide training intensity:
+     - Zone 1 (Recovery): <65% of threshold power
+     - Zone 2 (Endurance): 65-80% of threshold power
+     - Zone 3 (Tempo): 80-90% of threshold power
+     - Zone 4 (Threshold): 90-100% of threshold power
+     - Zone 5 (VO2max): 100-115% of threshold power
+  5. **Track running efficiency**: Power/pace ratio improvements indicate better running economy
+
+  Threshold power (the power sustainable for approximately 1 hour) can be estimated from field tests or race performances.
+
+  ## Caveats & Limitations
+  - **Estimation, not measurement**: Unlike cycling power meters, running power is calculated from motion data, not directly measured. Different devices/algorithms may give different values.
+  - **No standardization**: There is no industry standard for running power calculation, so values from Apple Watch, Stryd, Garmin, etc. may not be directly comparable.
+  - **Biomechanical assumptions**: Algorithms assume typical running biomechanics; unusual gait patterns may affect accuracy.
+  - **Does not measure all work**: Some metabolic work (stabilization, arm swing, breathing) is not fully captured.
+  - **Treadmill limitations**: Without GPS, treadmill power estimates rely more heavily on motion sensors and may be less accurate.
+  - **Newer metric**: Less validated than heart rate for health outcomes; clinical significance is primarily in training optimization rather than health risk assessment.
+  - **Environmental factors**: Extreme temperatures, altitude, and surfaces may affect the relationship between power and physiological strain.
+
+  ## Additional Notes
+  - Running power is particularly useful for hilly terrain where pace alone is misleading
+  - Elite coaches increasingly use power for training prescription and race pacing
+  - The "cost of running" can be quantified as W/kg/(m/s) to assess economy
+  - Power data pairs well with heart rate data: power shows external load while heart rate shows internal response
+  - Consistent power output often results in faster finish times than consistent pace on varied terrain
+  - For injured runners returning to training, power can help limit stress independent of pace
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateSensorLocation"
+    description: "Location of heart rate sensor if heart rate was recorded alongside power."
+  - key: "HKMetadataKeyIndoorWorkout"
+    description: "Boolean indicating if the workout was performed indoors (treadmill), which affects power calculation methodology."
+  - key: "HKMetadataKeyElevationAscended"
+    description: "Total elevation gained during the run, relevant as uphill running requires more power."
+  - key: "HKMetadataKeyElevationDescended"
+    description: "Total elevation lost during the run."
+  - key: "HKMetadataKeyAverageSpeed"
+    description: "Average speed during the sample period, useful for calculating running economy."
+related_types:
+  - identifier: "HKQuantityTypeIdentifierRunningSpeed"
+    relationship: "Speed and power together reveal running economy; same power at higher speed indicates better efficiency"
+  - identifier: "HKQuantityTypeIdentifierRunningStrideLength"
+    relationship: "Stride length affects power production; optimal stride length minimizes power at a given speed"
+  - identifier: "HKQuantityTypeIdentifierRunningVerticalOscillation"
+    relationship: "Excessive vertical oscillation wastes power; lower oscillation generally means more efficient running"
+  - identifier: "HKQuantityTypeIdentifierRunningGroundContactTime"
+    relationship: "Ground contact time affects power transfer efficiency during each stride"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Comparing heart rate to power reveals aerobic efficiency and cardiovascular drift"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Power over time equals mechanical work; metabolic energy burned is related but includes efficiency losses"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Higher VO2 max generally enables sustaining higher power outputs"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierRunningPower"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierrunningpower"
+    type: "official"
+  - title: "Apple Support - Running metrics on Apple Watch"
+    url: "https://support.apple.com/en-us/HT212958"
+    type: "official"
+  - title: "Running Power: Science and Application"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6572024/"
+    type: "research"
+  - title: "Validity and Reliability of Running Power Measurement"
+    url: "https://www.frontiersin.org/articles/10.3389/fphys.2019.00594/full"
+    type: "research"
+last_updated: "2026-01-27"

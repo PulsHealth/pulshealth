@@ -1,0 +1,225 @@
+identifier: "HKQuantityTypeIdentifierDietaryManganese"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Manganese"
+short_description: "Manganese intake from food and supplements, essential for bone formation, metabolism, and antioxidant defense."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#8E8E93"
+
+default_unit: "mg"
+supported_units: ["mg", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 11
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "0.003 mg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "0.6 mg/day (AI)"
+  - population: "Children 1-3 years"
+    rda: "1.2 mg/day (AI)"
+  - population: "Children 4-8 years"
+    rda: "1.5 mg/day (AI)"
+  - population: "Boys 9-13 years"
+    rda: "1.9 mg/day (AI)"
+  - population: "Girls 9-13 years"
+    rda: "1.6 mg/day (AI)"
+  - population: "Boys 14-18 years"
+    rda: "2.2 mg/day (AI)"
+  - population: "Girls 14-18 years"
+    rda: "1.6 mg/day (AI)"
+  - population: "Adult men 19+ years"
+    rda: "2.3 mg/day (AI)"
+  - population: "Adult women 19+ years"
+    rda: "1.8 mg/day (AI)"
+  - population: "Pregnant women"
+    rda: "2.0 mg/day (AI)"
+  - population: "Lactating women"
+    rda: "2.6 mg/day (AI)"
+  - population: "Adults"
+    upper_limit: "11 mg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary manganese from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track manganese intake against personalized targets"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Manganese is an essential trace mineral that serves as a cofactor for numerous enzymes involved in metabolism, bone development, and antioxidant defense. The body contains approximately 10-20 mg of manganese, primarily in bone, liver, kidney, and pancreas. Dietary manganese deficiency is extremely rare due to its wide availability in foods, but toxicity (primarily from occupational or environmental exposure) is a significant concern causing neurological damage similar to Parkinson's disease.
+
+  ## Biological Functions
+  - **Bone formation**: Component of enzymes involved in bone matrix synthesis and cartilage formation
+  - **Antioxidant defense**: Manganese superoxide dismutase (MnSOD) in mitochondria neutralizes superoxide radicals
+  - **Carbohydrate metabolism**: Activates pyruvate carboxylase and phosphoenolpyruvate carboxykinase in gluconeogenesis
+  - **Amino acid metabolism**: Required for arginase (urea cycle)
+  - **Cholesterol synthesis**: Activates mevalonate kinase
+  - **Wound healing**: Required for proper collagen formation via prolidase
+  - **Neurotransmitter synthesis**: Involved in production of neurotransmitters
+  - **Reproductive function**: Required for normal reproductive physiology
+
+  ## Health Significance
+  Despite its essential nature, dietary manganese deficiency has never been conclusively documented in humans eating natural diets. Research interest focuses primarily on two areas: (1) potential protective effects against oxidative stress through MnSOD, and (2) neurotoxicity from excess exposure. Manganese toxicity (manganism) causes a parkinsonian syndrome, making exposure limits critical in occupational settings. The mineral also plays roles in bone health, though clinical significance is less established than for calcium or vitamin D.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing manganese intake data:
+  - **Recognize deficiency is essentially unknown**: From food sources, deficiency doesn't occur
+  - **Focus on excess risk**: Most clinical relevance is avoiding toxicity, not preventing deficiency
+  - **Consider occupational exposure**: Welders, miners, battery manufacturers at risk
+  - **Assess liver function**: Impaired biliary excretion increases toxicity risk
+  - **Review TPN formulation**: Patients on long-term TPN require careful manganese dosing
+  - **Note tea consumption**: Tea is very high in manganese; heavy tea drinkers may have elevated intake
+
+  ## Deficiency
+  **True manganese deficiency in humans is extremely rare** - documented only in experimental settings:
+  - Research subjects on manganese-depleted diets developed:
+    - Dermatitis, skin rash
+    - Altered cholesterol and lipid metabolism
+    - Impaired glucose tolerance
+    - Altered bone/cartilage metabolism
+    - Possibly impaired growth (in children)
+
+  **Conditions that might increase deficiency risk** (theoretical):
+  - Severe malabsorption
+  - Long-term TPN without manganese
+  - Very high calcium, iron, or phosphorus intake (competitive inhibition)
+
+  **Clinical pearl**: If manganese deficiency is suspected, look for other nutrient deficiencies first, as isolated manganese deficiency is extraordinarily rare.
+
+  ## Toxicity/Excess
+  **Manganism** (chronic manganese toxicity):
+  - **Early symptoms**: Psychiatric manifestations - compulsive behavior, emotional lability, hallucinations ("manganese madness")
+  - **Progressive neurological syndrome**: Resembles Parkinson's disease
+    - Bradykinesia, rigidity
+    - Dystonia
+    - Gait disturbance (characteristic "cock walk")
+    - Tremor (different from PD - less responsive to levodopa)
+    - Masked facies
+
+  **Routes of toxic exposure**:
+  - Occupational inhalation (primary concern): Welding, mining, battery manufacturing
+  - Contaminated drinking water
+  - TPN with excessive manganese (especially in liver disease)
+  - High intake combined with impaired biliary excretion
+
+  **Risk factors for toxicity**:
+  - Liver disease (impaired biliary excretion is primary elimination route)
+  - Chronic liver failure/cirrhosis
+  - Iron deficiency (increases manganese absorption)
+  - Neonates (immature excretory mechanisms)
+  - TPN-dependent patients
+
+  **Diagnosis**: Brain MRI shows T1 hyperintensity in basal ganglia (manganese is paramagnetic).
+
+  ## Food Sources
+  **Very high manganese** (>1 mg per serving):
+  - Mussels: 5.8 mg per 3 oz
+  - Hazelnuts: 1.6 mg per oz
+  - Pecans: 1.3 mg per oz
+  - Brown rice: 1.8 mg per cup cooked
+  - Oatmeal: 1.4 mg per cup
+  - Pineapple: 1.5 mg per cup
+
+  **High manganese** (0.5-1 mg per serving):
+  - Whole wheat bread: 0.7 mg per slice
+  - Sweet potato: 0.5 mg per medium
+  - Spinach: 0.8 mg per cup cooked
+  - Tea: 0.5-1.6 mg per cup (varies widely)
+  - Legumes: chickpeas, lentils
+  - Tofu: 0.7 mg per 1/2 cup
+
+  **Moderate sources** (0.2-0.5 mg per serving):
+  - Most fruits and vegetables
+  - Nuts and seeds
+  - Whole grains
+
+  **Note**: Tea can be very high in manganese; heavy tea drinkers may obtain substantial manganese from this source.
+
+  ## Absorption Factors
+  **Low bioavailability**: Only 1-5% of dietary manganese is absorbed; tightly regulated.
+
+  **Enhancers**:
+  - Low manganese status (body upregulates absorption when needed)
+  - Iron deficiency (shared transporters mean more manganese absorbed when iron-depleted)
+
+  **Inhibitors**:
+  - Iron: High iron intake reduces manganese absorption (competitive)
+  - Calcium: May reduce manganese absorption
+  - Phosphorus: Reduces absorption (forms insoluble complexes)
+  - Phytates: Reduce bioavailability
+  - Oxalates: May reduce absorption
+  - Fiber: High fiber intake associated with reduced absorption
+
+  **Homeostatic regulation**: Unlike most minerals, manganese homeostasis is primarily maintained through biliary excretion rather than absorption regulation. This makes liver function critical for manganese balance.
+
+  ## Special Populations
+  - **Liver disease patients**: Cannot excrete manganese normally; at high risk for toxicity; TPN manganese must be reduced or eliminated
+  - **Neonates**: Immature biliary excretion; higher absorption in gut; TPN-associated toxicity documented
+  - **TPN-dependent patients**: Manganese accumulation common; current recommendations suggest reducing or eliminating manganese from TPN
+  - **Iron-deficient individuals**: Increased manganese absorption; may accumulate more manganese
+  - **Welders and miners**: Occupational exposure risk; respiratory protection important
+  - **Heavy tea drinkers**: May have elevated intake, though clinical significance unclear in healthy individuals
+  - **Vegetarians**: May have higher intake from plant foods but not clinically concerning
+
+  ## Drug Interactions
+  - **Iron supplements**: High-dose iron reduces manganese absorption; conversely, iron deficiency increases manganese absorption and potential toxicity
+  - **Antacids**: May affect manganese absorption
+  - **Levodopa**: Manganese toxicity can mimic Parkinson's but responds poorly to levodopa
+  - **Quinolone antibiotics**: Manganese may reduce absorption; separate by 2 hours
+  - **Tetracyclines**: May form complexes with manganese
+  - **Magnesium supplements**: May compete for absorption
+
+  ## Caveats & Limitations
+  - HealthKit captures dietary intake, but toxicity primarily occurs from inhalation exposure (not tracked)
+  - Dietary deficiency is essentially non-existent; tracking mainly relevant for completeness or research
+  - Blood manganese levels poorly correlate with body burden
+  - Whole blood manganese may reflect recent exposure but not tissue accumulation
+  - Brain MRI (T1 hyperintensity in basal ganglia) is best indicator of excess accumulation
+  - Tea manganese content varies widely and may not be accurately captured in databases
+  - Recommendations are Adequate Intake (AI) rather than RDA due to insufficient data for RDA determination
+  - The very low absorption rate (1-5%) means intake values don't directly predict body manganese status
+  - Liver function is the primary determinant of manganese toxicity risk, not dietary intake alone
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing manganese"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryIron"
+    relationship: "Iron and manganese share transporters; iron status affects manganese absorption and potential toxicity"
+  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
+    relationship: "High calcium intake may reduce manganese absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryMagnesium"
+    relationship: "Both minerals involved in bone health and may compete for absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "Trace minerals involved in antioxidant enzyme systems"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryManganese"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarymanganese"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Manganese Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Manganese-HealthProfessional/"
+    type: "medical"
+  - title: "Neurotoxicology - Manganese Neurotoxicity"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2844943/"
+    type: "research"
+  - title: "ASPEN - Manganese in Parenteral Nutrition"
+    url: "https://aspenjournals.onlinelibrary.wiley.com/journal/19412444"
+    type: "medical"
+last_updated: "2026-01-27"

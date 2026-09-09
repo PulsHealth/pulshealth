@@ -1,0 +1,214 @@
+identifier: "HKQuantityTypeIdentifierDietaryPhosphorus"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Phosphorus"
+short_description: "Phosphorus intake from food and supplements, essential for bone structure, energy metabolism, and cellular function."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FF9500"
+
+default_unit: "mg"
+supported_units: ["mg", "g", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 4000
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "100 mg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "275 mg/day (AI)"
+  - population: "Children 1-3 years"
+    rda: "460 mg/day"
+  - population: "Children 4-8 years"
+    rda: "500 mg/day"
+  - population: "Children 9-18 years"
+    rda: "1250 mg/day"
+  - population: "Adults 19+ years"
+    rda: "700 mg/day"
+  - population: "Pregnant/lactating women"
+    rda: "700 mg/day (1250 mg if <18 years)"
+  - population: "Adults 19-70 years"
+    upper_limit: "4000 mg/day"
+  - population: "Adults >70 years"
+    upper_limit: "3000 mg/day"
+  - population: "Pregnant women 14-50 years"
+    upper_limit: "3500 mg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary phosphorus from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track phosphorus intake for renal or bone health management"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Phosphorus is the second most abundant mineral in the human body (after calcium), comprising about 1% of body weight. Approximately 85% is stored in bones and teeth as hydroxyapatite, with the remaining 15% distributed throughout soft tissues and extracellular fluid. Unlike many minerals, phosphorus deficiency is rare in developed countries; the clinical concern is typically excess intake, particularly in patients with chronic kidney disease.
+
+  ## Biological Functions
+  - **Bone structure**: Combined with calcium forms hydroxyapatite, the mineral component of bone and teeth
+  - **Energy metabolism**: Component of ATP, ADP, and AMP; essential for all cellular energy transactions
+  - **Nucleic acids**: Structural component of DNA and RNA backbones
+  - **Cell membranes**: Phospholipids are the primary structural component of all biological membranes
+  - **Cell signaling**: Phosphorylation/dephosphorylation regulates enzyme activity and signal transduction
+  - **Acid-base balance**: Phosphate buffer system helps maintain blood pH
+  - **Oxygen delivery**: Component of 2,3-DPG which regulates hemoglobin oxygen affinity
+
+  ## Health Significance
+  While essential for health, the Western diet typically provides excess phosphorus from food additives and processed foods. High phosphorus intake, especially when calcium intake is low, may impair bone health by increasing PTH secretion. In chronic kidney disease, hyperphosphatemia is a major concern linked to cardiovascular calcification and mortality. The calcium-to-phosphorus ratio in the diet may be more important than absolute phosphorus intake for bone health.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing phosphorus intake data:
+  - **Recognize that deficiency is rare**: Most Western diets exceed the RDA
+  - **Assess calcium-to-phosphorus ratio**: Optimal ratio is approximately 1:1 to 2:1 (Ca:P)
+  - **Identify hidden sources**: Phosphorus additives in processed foods can double estimated intake
+  - **Consider bioavailability**: Additive phosphorus (inorganic) is ~100% absorbed vs. 40-60% for natural food sources
+  - **Review kidney function**: CKD patients require phosphorus restriction (typically 800-1000 mg/day)
+  - **Evaluate for bone health context**: High phosphorus with low calcium may negatively affect bone
+
+  ## Deficiency
+  **Hypophosphatemia causes** (rare without underlying condition):
+  - Refeeding syndrome in malnourished patients
+  - Chronic alcoholism
+  - Diabetic ketoacidosis (during treatment)
+  - Hyperparathyroidism
+  - Vitamin D deficiency (severe)
+  - Phosphate-binding antacid abuse
+  - Hereditary hypophosphatemia
+
+  **Symptoms of severe deficiency**:
+  - Muscle weakness and rhabdomyolysis
+  - Respiratory failure (diaphragm weakness)
+  - Cardiac dysfunction
+  - Hemolysis (RBC fragility from ATP depletion)
+  - Neurological: Confusion, seizures, coma
+  - Bone pain and rickets/osteomalacia
+  - Impaired immune function
+
+  ## Toxicity/Excess
+  **Hyperphosphatemia** (primarily in renal impairment):
+  - Acute: Usually asymptomatic initially; can cause hypocalcemia symptoms
+  - Chronic: Vascular and soft tissue calcification, cardiovascular disease
+
+  **Risks of high intake in general population**:
+  - Secondary hyperparathyroidism (especially with low calcium intake)
+  - Potential bone loss if calcium-phosphorus ratio imbalanced
+  - Cardiovascular concerns: Emerging evidence links high serum phosphorus (even within normal range) to cardiovascular risk
+
+  **Food additive phosphorus concerns**:
+  - Nearly 100% bioavailable (vs. 40-60% for natural sources)
+  - Can add 500-1000 mg/day to diet
+  - Often not fully captured in nutrition databases
+  - Found in processed meats, soft drinks, fast food, frozen foods
+
+  ## Food Sources
+  **High phosphorus foods** (>200 mg per serving):
+  - Dairy: Milk, cheese, yogurt
+  - Meat, poultry, fish (all protein-rich foods)
+  - Eggs
+  - Nuts and seeds
+  - Legumes: Beans, lentils
+  - Whole grains
+
+  **Processed foods with phosphorus additives**:
+  - Soft drinks (phosphoric acid)
+  - Processed meats and cheeses
+  - Frozen meals
+  - Fast food
+  - Baked goods
+  - Enhanced meats (phosphate solutions for moisture retention)
+
+  **Phosphorus additives to identify on labels**:
+  - Phosphoric acid
+  - Sodium phosphate
+  - Potassium phosphate
+  - Calcium phosphate
+  - Disodium phosphate
+  - Pyrophosphate
+
+  ## Absorption Factors
+  **Bioavailability varies by source**:
+  - Inorganic phosphorus (additives): ~90-100% absorbed
+  - Animal protein sources: ~50-70% absorbed
+  - Plant sources (phytate-bound): ~40-50% absorbed
+  - Phytate phosphorus: Lower bioavailability; released by phytase (lacking in humans but present in yeast/fermentation)
+
+  **Enhancers**:
+  - Vitamin D: Increases intestinal phosphorus absorption
+  - Low phosphorus status: Body upregulates absorption when depleted
+
+  **Inhibitors**:
+  - Aluminum-containing antacids: Bind phosphorus in gut
+  - Calcium supplements: High doses can reduce phosphorus absorption
+  - Sevelamer and other phosphate binders (used in CKD)
+
+  ## Special Populations
+  - **Chronic kidney disease**: Cannot excrete excess phosphorus; strict dietary restriction essential; often need phosphate binders
+  - **Dialysis patients**: Phosphorus removal inadequate; diet restriction critical; target 800-1000 mg/day
+  - **Hyperparathyroidism**: May have abnormal phosphorus handling
+  - **Vitamin D deficiency/insufficiency**: Impaired calcium and phosphorus regulation
+  - **Growing children/adolescents**: Higher requirements (1250 mg/day) for bone development
+  - **Premature infants**: May need supplementation; immature kidneys affect phosphorus handling
+  - **Tumor lysis syndrome**: Massive phosphorus release from cell death; medical emergency
+  - **Those with high processed food intake**: May significantly exceed RDA without awareness
+
+  ## Drug Interactions
+  - **Phosphate binders** (sevelamer, lanthanum, calcium acetate): Used therapeutically to reduce absorption in CKD
+  - **Aluminum-containing antacids**: Long-term use can cause phosphorus depletion and bone disease
+  - **Calcium supplements**: May reduce phosphorus absorption; timing separation may help
+  - **Sucralfate**: Contains aluminum; can bind phosphorus
+  - **Vitamin D and analogs**: Increase intestinal absorption of both calcium and phosphorus
+  - **Bisphosphonates**: These drugs contain phosphorus-like structures but don't significantly contribute to phosphorus intake
+  - **Corticosteroids**: Can affect phosphorus metabolism
+  - **Insulin**: Drives phosphorus into cells; relevant in refeeding syndrome and DKA treatment
+
+  ## Caveats & Limitations
+  - HealthKit data may significantly underestimate phosphorus intake due to food additive phosphorus
+  - Nutrition databases often don't include phosphorus from additives accurately
+  - "Enhanced" meats may contain 2-3x the phosphorus of unprocessed equivalents
+  - Brand-specific additive content varies and may not be captured in generic food entries
+  - Serum phosphorus is regulated and doesn't directly reflect dietary intake
+  - For CKD patients, careful professional management is required; self-tracking may be insufficient
+  - Calcium-phosphorus ratio is clinically relevant but requires both minerals to be tracked accurately
+  - Organic vs. inorganic source distinction affects bioavailability but isn't captured in logging
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing phosphorus"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
+    relationship: "Calcium and phosphorus work together in bone; dietary ratio affects bone health"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminD"
+    relationship: "Vitamin D regulates both calcium and phosphorus absorption and homeostasis"
+  - identifier: "HKQuantityTypeIdentifierDietaryMagnesium"
+    relationship: "All three minerals contribute to bone structure and are often considered together"
+  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
+    relationship: "Protein-rich foods are typically high in phosphorus"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryPhosphorus"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryphosphorus"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Phosphorus Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Phosphorus-HealthProfessional/"
+    type: "medical"
+  - title: "KDIGO Guidelines - Chronic Kidney Disease-Mineral and Bone Disorder"
+    url: "https://kdigo.org/guidelines/ckd-mbd/"
+    type: "medical"
+  - title: "Advances in Nutrition - Phosphorus Intake and Cardiovascular Health"
+    url: "https://academic.oup.com/advances/article/12/2/362/5906538"
+    type: "research"
+last_updated: "2026-01-27"

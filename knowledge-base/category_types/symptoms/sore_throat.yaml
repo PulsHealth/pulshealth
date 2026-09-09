@@ -1,0 +1,151 @@
+identifier: "HKCategoryTypeIdentifierSoreThroat"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Sore Throat"
+short_description: "Tracks episodes and severity of throat pain or irritation"
+icon: "mouth.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No sore throat or throat discomfort"
+  - value: 1
+    name: "present"
+    description: "Mild sore throat - slight scratchiness or irritation"
+  - value: 2
+    name: "moderate"
+    description: "Moderate sore throat - noticeable pain, uncomfortable swallowing"
+  - value: 3
+    name: "severe"
+    description: "Severe sore throat - significant pain, difficulty swallowing"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Sore throat (pharyngitis) is pain, scratchiness, or irritation of the throat
+  that often worsens when swallowing. It is one of the most common symptoms
+  prompting medical visits. This data type enables tracking of throat symptoms
+  for illness monitoring and clinical correlation.
+
+  ## Health Significance
+  - **Infection Indicator**: Common symptom of viral and bacterial upper
+    respiratory infections
+  - **Strep Detection**: Pattern and severity help distinguish strep throat
+    from viral causes
+  - **Illness Duration**: Tracking helps monitor recovery timeline
+  - **Environmental Factors**: May indicate allergies, dry air, or irritant
+    exposure
+  - **Voice Health**: Important for those whose work depends on voice
+
+  ## Clinical Context
+  **Common Causes:**
+  - Viral infections (common cold, flu, mononucleosis, COVID-19)
+  - Bacterial infections (strep throat - Group A Streptococcus)
+  - Post-nasal drip
+  - Allergies
+  - Dry air
+  - Mouth breathing during sleep
+  - GERD (acid reflux)
+  - Voice strain
+
+  **Strep Throat Indicators (Centor Criteria):**
+  - Fever
+  - Tonsillar exudates (white patches)
+  - Swollen/tender anterior cervical lymph nodes
+  - Absence of cough
+
+  ## When to Seek Medical Attention
+  **Urgent Evaluation:**
+  - Difficulty breathing or swallowing
+  - Inability to swallow saliva (drooling)
+  - Severe throat swelling
+  - Muffled or "hot potato" voice
+  - High fever (>101.5°F/38.6°C)
+  - Neck stiffness or swelling
+  - Symptoms of dehydration
+
+  **Schedule Appointment For:**
+  - Sore throat lasting more than a week
+  - Sore throat with fever but no cold symptoms (possible strep)
+  - Recurrent sore throats
+  - Ear pain accompanying sore throat
+  - Joint pain with sore throat
+  - Rash with sore throat
+  - Blood in saliva or phlegm
+  - Lump in neck
+
+  ## Pattern Recognition
+  Tracking sore throat can reveal:
+  - Illness duration and recovery trajectory
+  - Seasonal patterns (viral season peaks)
+  - Environmental triggers (allergies, dry air)
+  - Recurrent infections pattern
+  - Relationship to snoring or mouth breathing
+  - GERD-related patterns (morning symptoms)
+  - Voice strain patterns
+  - Response to treatments
+
+  ## Caveats & Limitations
+  - Cannot distinguish viral from bacterial cause
+  - Subjective severity varies between individuals
+  - Does not capture throat appearance (redness, exudates)
+  - Cannot assess for strep without clinical evaluation
+  - Does not record associated symptoms in same entry
+  - Brief episodes may not be logged
+  - Cannot differentiate pharyngitis from laryngitis
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Common co-symptom in infections"
+  - identifier: "HKCategoryTypeIdentifierCoughing"
+    relationship: "Often co-occurs in upper respiratory infections"
+  - identifier: "HKCategoryTypeIdentifierRunnyNose"
+    relationship: "Post-nasal drip can cause sore throat"
+  - identifier: "HKCategoryTypeIdentifierSinusCongestion"
+    relationship: "URI symptoms often cluster together"
+  - identifier: "HKCategoryTypeIdentifierHeadache"
+    relationship: "Common with infections causing sore throat"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Systemic symptom of infection"
+  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
+    relationship: "Objective fever data for correlation"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierSoreThroat"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiersorethroat"
+    type: "official"
+  - title: "Sore Throat Guidelines - IDSA"
+    url: "https://www.idsociety.org/practice-guideline/sore-throat/"
+    type: "medical"
+  - title: "Strep Throat Information - CDC"
+    url: "https://www.cdc.gov/group-a-strep/"
+    type: "medical"
+last_updated: "2026-01-27"

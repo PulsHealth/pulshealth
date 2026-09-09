@@ -1,0 +1,219 @@
+identifier: "HKQuantityTypeIdentifierDietaryBiotin"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Biotin (Vitamin B7)"
+short_description: "Records dietary intake of biotin (vitamin B7), essential for carboxylase enzymes in fatty acid, amino acid, and glucose metabolism."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FFCC00"
+
+default_unit: "mcg"
+supported_units: ["mcg", "mg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 10
+  max: 100
+  unit: "mcg"
+clinical_ranges:
+  - population: "Adult men (19+ years)"
+    ai: "30 mcg/day"
+  - population: "Adult women (19+ years)"
+    ai: "30 mcg/day"
+  - population: "Pregnancy"
+    ai: "30 mcg/day"
+  - population: "Lactation"
+    ai: "35 mcg/day"
+  - population: "Infants (0-6 months)"
+    ai: "5 mcg/day"
+  - population: "Infants (7-12 months)"
+    ai: "6 mcg/day"
+  - population: "Children (1-3 years)"
+    ai: "8 mcg/day"
+  - population: "Children (4-8 years)"
+    ai: "12 mcg/day"
+  - population: "Children (9-13 years)"
+    ai: "20 mcg/day"
+  - population: "Adolescents (14-18 years)"
+    ai: "25 mcg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Manual logging and barcode scanning of food items with biotin content"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+  - name: "Nutrition coaching platforms"
+    capability: "Meal planning with micronutrient tracking"
+    examples: ["Noom", "PlateJoy"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Biotin (vitamin B7, formerly vitamin H) is a water-soluble vitamin that serves as a covalently
+  bound prosthetic group for five carboxylase enzymes in humans. These biotin-dependent
+  carboxylases are essential for fatty acid synthesis, amino acid catabolism, and gluconeogenesis.
+  Biotin is widely available in foods and is also synthesized by intestinal bacteria, making
+  frank deficiency rare in healthy individuals. However, certain genetic conditions, medications,
+  and dietary factors can precipitate deficiency.
+
+  ## Biological Functions
+  - **Acetyl-CoA carboxylase (ACC)**: Rate-limiting step in fatty acid synthesis; converts
+    acetyl-CoA to malonyl-CoA
+  - **Pyruvate carboxylase (PC)**: Key enzyme in gluconeogenesis; converts pyruvate to
+    oxaloacetate
+  - **Propionyl-CoA carboxylase (PCC)**: Catabolism of odd-chain fatty acids and certain
+    amino acids (isoleucine, valine, methionine, threonine)
+  - **3-Methylcrotonyl-CoA carboxylase (MCC)**: Leucine catabolism
+  - **Gene expression**: Histones can be biotinylated, potentially affecting gene regulation
+  - **Cell signaling**: Emerging evidence for non-carboxylase functions
+
+  ## Health Significance
+  Biotin has gained significant consumer attention for its purported benefits for hair, skin,
+  and nail health. While biotin deficiency clearly causes hair loss and dermatitis, evidence
+  that supplementation improves these conditions in biotin-replete individuals is limited.
+  Clinically, biotin is most relevant in the context of inherited metabolic disorders affecting
+  carboxylase function, certain medications, and a critical laboratory interference issue
+  where high-dose biotin supplementation can cause erroneous results in immunoassays.
+
+  ## Clinical Interpretation Guidelines
+  - **Adequate Intake (AI)**: Only AI values exist (no RDA) due to insufficient data
+  - **Daily monitoring**: Compare cumulative intake against AI values
+  - **Trend analysis**: Assess 7-14 day averages
+  - **Supplement awareness**: High-dose biotin supplements (common for hair/nail claims)
+    rarely captured in food logs
+  - **Laboratory interference**: CRITICAL - biotin can interfere with immunoassays
+    (troponin, thyroid tests, hormone panels)
+  - **Urinary 3-hydroxyisovaleric acid**: Elevated levels suggest marginal biotin deficiency
+
+  ## Deficiency
+  **Primary deficiency** is rare but recognized causes include:
+
+  **Genetic disorders**:
+  - Biotinidase deficiency: Inability to recycle biotin from biocytin; screened at birth
+  - Holocarboxylase synthetase deficiency: Impaired attachment of biotin to carboxylases
+
+  **Acquired deficiency** symptoms:
+  - **Dermatologic**: Periorificial (around eyes, nose, mouth) scaly, erythematous dermatitis;
+    seborrheic-like rash
+  - **Hair**: Alopecia (hair loss), loss of hair color
+  - **Neurological**: Lethargy, hypotonia, developmental delay (infants); depression,
+    paresthesias, hallucinations (adults)
+  - **Metabolic**: Lactic acidosis, organic aciduria
+  - **Immune**: Increased susceptibility to infections (Candida)
+
+  **At-risk populations**:
+  - Raw egg white consumption (avidin binds biotin and prevents absorption)
+  - Parenteral nutrition without biotin supplementation
+  - Chronic anticonvulsant therapy (especially valproic acid, carbamazepine, phenytoin)
+  - Chronic alcohol use
+  - Pregnancy (marginal biotin deficiency is common)
+  - Inflammatory bowel disease
+  - Biotinidase deficiency carriers (heterozygotes may have reduced activity)
+
+  ## Toxicity/Excess
+  No Tolerable Upper Intake Level (UL) has been established for biotin. Even at very high
+  supplemental doses (up to 200 mg/day in some studies), no adverse effects have been
+  consistently reported.
+
+  **CRITICAL LABORATORY INTERFERENCE**:
+  High-dose biotin supplementation (commonly 5,000-10,000 mcg/day for hair/nails) can cause
+  significant interference with immunoassays that use biotin-streptavidin technology:
+
+  - **Troponin**: False decreases can mask myocardial infarction
+  - **Thyroid function tests (TSH, T4, T3)**: Results may appear hyperthyroid (low TSH,
+    elevated T3/T4) or hypothyroid depending on assay design
+  - **Parathyroid hormone**: Falsely elevated or decreased
+  - **Reproductive hormones (FSH, LH, estradiol, testosterone)**: Variable interference
+  - **Tumor markers (PSA, CA-125)**: False results possible
+  - **BNP/NT-proBNP**: May affect heart failure assessment
+
+  FDA has issued warnings. Patients should be advised to discontinue biotin supplements
+  2-7 days before laboratory testing depending on dose.
+
+  ## Food Sources
+  - **Excellent sources (>10 mcg/serving)**: Beef liver, egg yolk (cooked), salmon, pork
+  - **Good sources (5-10 mcg/serving)**: Sunflower seeds, sweet potato, almonds, spinach,
+    broccoli
+  - **Moderate sources (<5 mcg/serving)**: Cheese, milk, whole wheat bread, banana,
+    mushrooms, cauliflower
+
+  Note: Egg whites contain avidin, which tightly binds biotin and prevents absorption.
+  Cooking denatures avidin and eliminates this effect. Chronic consumption of raw egg whites
+  can cause deficiency.
+
+  ## Special Populations
+  - **Pregnancy**: Marginal biotin deficiency is common (up to 50% of pregnant women);
+    may affect fetal development; teratogenic in animal studies at deficient states
+  - **Infants on formula**: Ensure formula contains adequate biotin
+  - **Biotinidase deficiency patients**: Require lifelong biotin supplementation (5-20 mg/day)
+  - **Patients on anticonvulsants**: Valproic acid, carbamazepine, phenytoin, and
+    phenobarbital may deplete biotin; monitor and consider supplementation
+  - **Long-term parenteral nutrition**: Requires biotin in TPN formulation
+  - **Chronic alcohol users**: May have impaired biotin status
+  - **Smokers**: Some evidence of lower biotin status
+  - **Patients taking high-dose biotin supplements**: Counsel regarding laboratory interference
+
+  ## Drug Interactions
+  - **Anticonvulsants (valproic acid, carbamazepine, phenytoin, phenobarbital, primidone)**:
+    Accelerate biotin catabolism and may cause deficiency with long-term use
+  - **Antibiotics (long-term)**: May reduce intestinal bacterial biotin synthesis
+  - **Isotretinoin**: May affect biotin metabolism
+  - **Alpha-lipoic acid**: Competes for cellular uptake via same transporter
+  - **Pantothenic acid (high doses)**: May compete for intestinal absorption
+  - **Raw egg whites**: Avidin protein binds biotin irreversibly
+
+  **Note on laboratory tests**: While not a drug interaction per se, biotin supplementation
+  interferes with streptavidin-biotin immunoassays, affecting numerous clinical tests.
+
+  ## Caveats & Limitations
+  - **Adequate Intake only**: No RDA established; AI based on limited data
+  - **Self-reported intake**: Accuracy depends on user diligence and food database quality
+  - **Supplement use underreported**: High-dose biotin supplements common but often not logged
+  - **Bacterial contribution**: Intestinal synthesis not reflected in dietary intake data
+  - **Bioavailability**: Varies by food source; protein-bound biotin requires biotinidase
+  - **No direct measurement**: HealthKit data reflects intake estimates, not serum levels
+  - **Laboratory interference critical**: Healthcare providers must ask about biotin supplements
+  - **Limited evidence for cosmetic benefits**: Hair/skin/nail claims largely unsubstantiated
+    in biotin-replete individuals
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "The type of food or meal providing the biotin intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used to sync data across multiple devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External unique identifier from the source app"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryPantothenicAcid"
+    relationship: "Related B-vitamin that may compete for absorption at high doses"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminB12"
+    relationship: "B-vitamin involved in related metabolic pathways"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "Biotin-dependent acetyl-CoA carboxylase is essential for fatty acid synthesis"
+  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
+    relationship: "Biotin-dependent pyruvate carboxylase is key enzyme in gluconeogenesis"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryBiotin"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarybiotin"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Biotin Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Biotin-HealthProfessional/"
+    type: "medical"
+  - title: "FDA Safety Communication - Biotin Interference with Lab Tests"
+    url: "https://www.fda.gov/medical-devices/safety-communications/update-fda-warns-biotin-may-interfere-lab-tests-fda-safety-communication"
+    type: "official"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Thiamin, Riboflavin, Niacin, Vitamin B6, Folate, Vitamin B12, Pantothenic Acid, Biotin, and Choline"
+    url: "https://nap.nationalacademies.org/catalog/6015/dietary-reference-intakes-for-thiamin-riboflavin-niacin-vitamin-b6-folate-vitamin-b12-pantothenic-acid-biotin-and-choline"
+    type: "research"
+  - title: "Biotinidase Deficiency - GeneReviews NCBI Bookshelf"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK1322/"
+    type: "medical"
+last_updated: "2026-01-27"

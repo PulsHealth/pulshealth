@@ -1,0 +1,288 @@
+# ============================================
+# HEALTHKIT DATA TYPE: HEIGHT
+# ============================================
+# Clinical reference for health consultants and clinicians
+# Last updated: 2026-01-27
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierHeight"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Body Measurements"
+human_readable_name: "Height"
+short_description: "A measurement of the user's standing height, a fundamental anthropometric parameter used for health assessment, growth monitoring, and clinical calculations."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.stand"
+color: "#5856D6"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "m"
+supported_units:
+  - "m"
+  - "cm"
+  - "in"
+  - "ft"
+unit_description: "Height is typically recorded in meters (m) or centimeters (cm) in metric systems, or inches (in) and feet (ft) in imperial systems. HealthKit automatically converts between compatible length units."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0.5
+  max: 2.5
+  unit: "m"
+  notes: "Range encompasses newborns through exceptionally tall adults. Adult heights typically fall between 1.50-2.00 m (4'11\" - 6'7\")."
+
+clinical_ranges:
+  - population: "Adult males (USA)"
+    normal: "1.63-1.88 m (5'4\" - 6'2\")"
+    notes: "5th to 95th percentile range; mean approximately 1.76 m (5'9\")"
+  - population: "Adult females (USA)"
+    normal: "1.51-1.73 m (4'11\" - 5'8\")"
+    notes: "5th to 95th percentile range; mean approximately 1.62 m (5'4\")"
+  - population: "Children (0-2 years)"
+    normal: "Use WHO length-for-age growth charts"
+    notes: "Measured as recumbent length until age 2"
+  - population: "Children (2-20 years)"
+    normal: "Use CDC height-for-age growth charts"
+    notes: "Standing height measured; percentiles track growth trajectory"
+  - population: "Elderly adults"
+    normal: "May be 2.5-7.5 cm shorter than peak adult height"
+    notes: "Height loss of 1-3 cm per decade after age 40 is typical; accelerated loss may indicate osteoporosis"
+
+# --- CATEGORY VALUES ---
+category_values: null
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "8.0"
+  year: 2014
+  notes: "Available since initial HealthKit release"
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+  notes: "Primarily synced from iPhone; Apple Watch does not directly measure height"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Manual Entry"
+    capability: "Users can manually log height readings in the Health app or through third-party apps"
+  - name: "Smart Scales"
+    capability: "Some smart scales include height measurement or allow manual height input for BMI calculations"
+    examples:
+      - "Withings Body+"
+      - "Eufy Smart Scale"
+  - name: "Clinical Measurements"
+    capability: "Healthcare provider measurements can be entered manually or imported via health record integration"
+  - name: "Third-party Apps"
+    capability: "Fitness, nutrition, and health apps can write height data to HealthKit"
+    examples:
+      - "MyFitnessPal"
+      - "Lose It!"
+      - "Noom"
+primary_source: "Manual Entry"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Height (stature) is a fundamental anthropometric measurement representing the vertical distance
+  from the base of the feet to the top of the head. It is one of the most commonly used body
+  measurements in clinical practice, serving as an essential parameter for:
+
+  - Calculating Body Mass Index (BMI) and assessing weight status
+  - Monitoring growth and development in children and adolescents
+  - Determining appropriate medication dosages in certain contexts
+  - Assessing nutritional status and identifying malnutrition
+  - Detecting height loss as an indicator of osteoporosis
+  - Establishing reference ranges for organ function (e.g., lung capacity)
+
+  In adults, height is typically stable after skeletal maturity (around age 18-25) but gradually
+  decreases with aging due to vertebral compression and intervertebral disc degeneration.
+
+  ## How It's Measured
+  **Standard Clinical Measurement (Stadiometer):**
+  - Subject stands barefoot on a flat surface with heels together
+  - Back, buttocks, and heels touching the vertical measurement surface
+  - Head positioned in the Frankfurt horizontal plane (lower eye orbit aligned with ear canal)
+  - Subject takes a deep breath and stands as tall as possible
+  - Horizontal headpiece lowered to the highest point of the head
+  - Measurement recorded to the nearest 0.1 cm or 1/8 inch
+
+  **Recumbent Length (Infants 0-2 years):**
+  - Measured lying down on a measuring board with fixed headboard
+  - Two examiners recommended: one holds head, one extends legs
+  - Recumbent length is typically 0.7-1.0 cm greater than standing height
+
+  **Consumer Methods:**
+  - Wall-mounted measuring tapes or marks
+  - Self-reported (often overestimated by 1-2 cm)
+  - Smart scale companion apps (user-entered)
+
+  **HealthKit Data Entry:**
+  Most height data in HealthKit comes from manual entry or is synced from third-party apps
+  rather than direct device measurement. Apple Watch and iPhone do not have sensors capable
+  of measuring height directly.
+
+  ## Health Significance
+  Height serves multiple clinical purposes across different life stages:
+
+  **Pediatric Applications:**
+  - Growth monitoring: Serial height measurements plotted on standardized growth charts
+    identify growth disorders, nutritional deficiencies, or endocrine abnormalities
+  - Short stature evaluation: Heights below the 3rd percentile or crossing percentiles
+    downward warrant investigation for growth hormone deficiency, hypothyroidism,
+    celiac disease, or genetic conditions
+  - Tall stature evaluation: Heights above the 97th percentile may indicate conditions
+    like Marfan syndrome, Klinefelter syndrome, or growth hormone-secreting tumors
+
+  **Adult Applications:**
+  - BMI calculation: Height is essential for calculating BMI (weight in kg / height in m^2)
+  - Height loss monitoring: Loss >4 cm from peak adult height suggests vertebral fractures
+    and warrants bone density assessment
+  - Drug dosing: Certain medications (chemotherapy, antibiotics) use body surface area
+    calculations that incorporate height
+  - Pulmonary function: Predicted values for spirometry are height-dependent
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  Adult height is determined by genetic factors (~80%) and environmental factors (~20%)
+  including nutrition, disease, and socioeconomic conditions during growth years.
+
+  **Reference Populations:**
+  - WHO growth standards: Based on optimally fed, healthy children worldwide
+  - CDC growth charts: Based on U.S. population data
+  - Population-specific charts may be more appropriate for certain ethnic groups
+
+  ### Short Stature May Indicate
+  - **Constitutional short stature**: Familial pattern, normal growth velocity
+  - **Constitutional growth delay**: "Late bloomers" with delayed bone age
+  - **Growth hormone deficiency**: Low GH or IGF-1 levels
+  - **Hypothyroidism**: Slowed growth with other systemic symptoms
+  - **Chronic diseases**: Celiac disease, inflammatory bowel disease, chronic kidney disease
+  - **Genetic syndromes**: Turner syndrome, Down syndrome, Noonan syndrome
+  - **Skeletal dysplasias**: Achondroplasia, hypochondroplasia
+  - **Malnutrition**: Insufficient caloric or protein intake
+
+  ### Tall Stature May Indicate
+  - **Constitutional tall stature**: Familial pattern
+  - **Marfan syndrome**: Tall, thin habitus with cardiac and ocular abnormalities
+  - **Klinefelter syndrome**: XXY chromosomal pattern in males
+  - **Growth hormone excess**: Gigantism (before growth plate closure) or acromegaly
+  - **Precocious puberty**: Early growth spurt followed by premature fusion
+
+  ### Height Loss in Adults May Indicate
+  - **Osteoporosis with vertebral compression fractures**: Most common cause
+  - **Degenerative disc disease**: Intervertebral disc height loss
+  - **Postural changes**: Kyphosis, scoliosis progression
+  - **Sarcopenia**: Muscle loss affecting posture
+
+  ### Red Flags for Consultation
+  - Height <3rd percentile or >97th percentile on growth charts
+  - Crossing two or more percentile lines on growth chart
+  - Growth velocity <4 cm/year in children (outside normal range for age)
+  - Height loss >2 cm in adults over 1-3 years
+  - Height loss >4 cm from recalled peak adult height
+  - Disproportionate short stature (limbs vs trunk)
+  - Height discordant with parental heights (more than 2 SDs from mid-parental height)
+
+  ## Caveats & Limitations
+
+  **Measurement Considerations:**
+  - Diurnal variation: Height is 1-2 cm greater in the morning than evening due to
+    spinal disc compression throughout the day
+  - Self-reported height: Typically overestimated by 1-2 cm (more in elderly)
+  - Measurement technique: Inconsistent positioning affects accuracy
+  - Recumbent vs standing: Different values; must compare like with like
+
+  **Clinical Limitations:**
+  - Single measurements less informative than serial tracking
+  - Adult height alone provides limited diagnostic information
+  - BMI using height has limitations for muscular individuals or those with edema
+  - Arm span may better reflect "genetic height" in those with skeletal deformities
+
+  **HealthKit-Specific Notes:**
+  - Most data is manually entered with potential for entry errors
+  - No automatic measurement from Apple devices
+  - Historical data may not indicate measurement method or conditions
+  - Consider requesting measurement source when interpreting data
+
+  ## Additional Notes
+
+  **Growth Chart Interpretation for Clinicians:**
+  - Use WHO growth standards for children 0-2 years
+  - Use CDC growth charts for children 2-20 years (in the United States)
+  - Plot serial measurements to assess trajectory, not just single points
+  - Calculate mid-parental height: [(father's height + mother's height) / 2] +/- 6.5 cm
+  - Growth velocity (cm/year) often more informative than absolute height
+
+  **Height in Electronic Health Records:**
+  HealthKit can import height data from clinical records via Apple Health Records.
+  These measurements are typically more reliable than self-reported values and
+  should be flagged as clinically measured when available.
+
+  **Special Populations:**
+  - Wheelchair users: May report standing height if known, or use arm span
+  - Spinal deformities: Arm span may better estimate genetic potential
+  - Pregnancy: Height measurement is standard at first prenatal visit
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user (true) or automatically recorded by a device (false)"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Used together to calculate BMI"
+  - identifier: "HKQuantityTypeIdentifierBodyMassIndex"
+    relationship: "Derived from height and body mass"
+  - identifier: "HKQuantityTypeIdentifierLeanBodyMass"
+    relationship: "Body composition metric that complements height for physique assessment"
+  - identifier: "HKQuantityTypeIdentifierWaistCircumference"
+    relationship: "Used together for waist-to-height ratio, a predictor of cardiometabolic risk"
+  - identifier: "HKQuantityTypeIdentifierBodyFatPercentage"
+    relationship: "Body composition metric; reference ranges may vary by height"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - height"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/height"
+    type: "official"
+  - title: "Height Assessment - StatPearls - NCBI Bookshelf"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK551524/"
+    type: "medical"
+  - title: "CDC Growth Charts"
+    url: "https://www.cdc.gov/growthcharts/cdc-charts.htm"
+    type: "medical"
+  - title: "WHO Child Growth Standards"
+    url: "https://www.who.int/tools/child-growth-standards/standards"
+    type: "medical"
+  - title: "Height loss predicts mortality - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC2917587/"
+    type: "research"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 8.0/watchOS 2.0 introduction confirmed via Apple documentation (HK_AVAILABLE_IOS_WATCHOS(8_0, 2_0))
+  - Discrete aggregation type confirmed - supports discreteAverage, discreteMin, discreteMax, mostRecent
+  - Length unit dimension confirmed (meters, centimeters, feet, inches)
+  - Clinical ranges derived from CDC growth chart data and NCBI clinical resources
+  - Height loss thresholds for osteoporosis screening from clinical guidelines
+  - Diurnal variation documented in anthropometry literature

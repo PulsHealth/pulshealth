@@ -1,0 +1,179 @@
+identifier: "HKQuantityTypeIdentifierDietaryThiamin"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Thiamin (Vitamin B1)"
+short_description: "Records dietary intake of thiamin (vitamin B1), essential for carbohydrate metabolism and neurological function."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FFCC00"
+
+default_unit: "mg"
+supported_units: ["mg", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0.5
+  max: 3.0
+  unit: "mg"
+clinical_ranges:
+  - population: "Adult men (19+ years)"
+    rda: "1.2 mg/day"
+  - population: "Adult women (19+ years)"
+    rda: "1.1 mg/day"
+  - population: "Pregnancy"
+    rda: "1.4 mg/day"
+  - population: "Lactation"
+    rda: "1.4 mg/day"
+  - population: "Infants (0-6 months)"
+    ai: "0.2 mg/day"
+  - population: "Infants (7-12 months)"
+    ai: "0.3 mg/day"
+  - population: "Children (1-3 years)"
+    rda: "0.5 mg/day"
+  - population: "Children (4-8 years)"
+    rda: "0.6 mg/day"
+  - population: "Children (9-13 years)"
+    rda: "0.9 mg/day"
+  - population: "Adolescent males (14-18 years)"
+    rda: "1.2 mg/day"
+  - population: "Adolescent females (14-18 years)"
+    rda: "1.0 mg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Manual logging and barcode scanning of food items with thiamin content"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+  - name: "Nutrition coaching platforms"
+    capability: "Meal planning with micronutrient tracking"
+    examples: ["Noom", "PlateJoy"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Thiamin (vitamin B1) is a water-soluble vitamin that plays a critical role in energy metabolism,
+  particularly in the conversion of carbohydrates to ATP. It is the coenzyme form, thiamin
+  pyrophosphate (TPP), that serves as a cofactor for several key enzymes in carbohydrate and
+  branched-chain amino acid metabolism. The body has limited storage capacity for thiamin
+  (approximately 25-30 mg total body stores), making regular dietary intake essential.
+
+  ## Biological Functions
+  - **Pyruvate dehydrogenase complex**: Converts pyruvate to acetyl-CoA for the citric acid cycle
+  - **Alpha-ketoglutarate dehydrogenase**: Key enzyme in the citric acid cycle
+  - **Transketolase**: Essential for the pentose phosphate pathway and nucleotide synthesis
+  - **Branched-chain alpha-keto acid dehydrogenase**: Catabolism of branched-chain amino acids
+  - **Neurological function**: Critical for nerve impulse transmission and acetylcholine synthesis
+  - **Cardiac function**: Supports normal heart muscle contractility
+
+  ## Health Significance
+  Thiamin status is particularly important for individuals with high carbohydrate intake, as
+  thiamin requirements increase proportionally with carbohydrate consumption. Athletes, those
+  on high-calorie diets, and individuals recovering from illness may have elevated requirements.
+  Chronic alcohol consumption significantly impairs thiamin absorption and utilization, making
+  monitoring essential in this population.
+
+  ## Clinical Interpretation Guidelines
+  - **Daily intake tracking**: Compare cumulative daily intake against RDA values
+  - **Trend analysis**: Monitor 7-30 day averages to assess habitual intake patterns
+  - **Context consideration**: Account for alcohol use, malabsorption conditions, and medication use
+  - **Carbohydrate ratio**: Higher carbohydrate diets may require proportionally higher thiamin
+  - **Laboratory correlation**: Erythrocyte transketolase activity coefficient (ETKAC) >1.25 suggests deficiency
+
+  ## Deficiency
+  **Beriberi** - The classic thiamin deficiency syndrome manifests in several forms:
+
+  - **Dry beriberi**: Peripheral neuropathy with symmetric motor and sensory deficits,
+    paresthesias, muscle weakness, and foot/wrist drop
+  - **Wet beriberi**: Cardiovascular involvement with high-output heart failure, peripheral
+    edema, and cardiomegaly
+  - **Cerebral beriberi (Wernicke-Korsakoff syndrome)**:
+    - Wernicke encephalopathy: Acute confusion, ataxia, ophthalmoplegia (classic triad)
+    - Korsakoff psychosis: Chronic anterograde and retrograde amnesia, confabulation
+  - **Infantile beriberi**: Seen in breastfed infants of thiamin-deficient mothers; presents
+    with cardiac failure, aphonia, and neurological symptoms
+
+  Early deficiency signs include fatigue, irritability, poor concentration, and anorexia.
+
+  ## Toxicity/Excess
+  No Tolerable Upper Intake Level (UL) has been established for thiamin due to lack of adverse
+  effects from high oral doses. Excess thiamin is rapidly excreted in urine. Rare reports of
+  adverse reactions (anaphylaxis) exist only with parenteral administration at very high doses.
+
+  ## Food Sources
+  - **Excellent sources (>0.3 mg/serving)**: Pork, fortified cereals, enriched grains
+  - **Good sources (0.1-0.3 mg/serving)**: Legumes (black beans, lentils), nuts (macadamia,
+    pistachios), seeds (sunflower), whole grains, nutritional yeast
+  - **Moderate sources (<0.1 mg/serving)**: Fish (trout, tuna), eggs, dairy products
+
+  Note: Thiamin is heat-sensitive and water-soluble; significant losses occur during cooking.
+
+  ## Special Populations
+  - **Chronic alcohol users**: Impaired absorption, decreased hepatic storage, and increased
+    urinary excretion; prophylactic supplementation often indicated
+  - **Bariatric surgery patients**: Malabsorption risk; require ongoing monitoring and
+    supplementation
+  - **Elderly**: May have reduced absorption and increased requirements
+  - **Diabetes patients**: Some evidence of increased urinary thiamin losses
+  - **Renal dialysis patients**: Losses during dialysis require supplementation
+  - **Individuals with high carbohydrate intake**: Increased thiamin demand
+  - **Hyperemesis gravidarum**: Severe vomiting increases deficiency risk in pregnancy
+  - **Critically ill patients**: Often require higher doses; refeeding syndrome risk
+
+  ## Drug Interactions
+  - **Loop diuretics (furosemide)**: Increase urinary thiamin excretion; monitor long-term users
+  - **Digoxin**: Severe thiamin deficiency may affect digoxin efficacy in heart failure
+  - **5-Fluorouracil**: May inhibit thiamin phosphorylation; monitor oncology patients
+  - **Phenytoin**: May reduce thiamin absorption
+  - **Alcohol**: Impairs absorption and increases excretion
+  - **Antacids/PPIs**: Long-term use may theoretically affect absorption (limited evidence)
+  - **Metformin**: Some evidence suggests may reduce thiamin levels; clinical significance unclear
+
+  ## Caveats & Limitations
+  - **Self-reported intake**: Food logging accuracy depends on user diligence and database quality
+  - **Bioavailability variation**: Actual absorption varies based on food matrix and preparation
+  - **Thiaminases**: Raw fish and shellfish contain enzymes that destroy thiamin
+  - **Anti-thiamin factors**: Tea, coffee, betel nuts, and certain plants contain antagonists
+  - **Storage limitations**: Body stores deplete within 2-3 weeks of inadequate intake
+  - **No direct measurement**: HealthKit data reflects intake estimates, not blood levels
+  - **Supplementation tracking**: May not capture all supplement sources accurately
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "The type of food or meal providing the thiamin intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used to sync data across multiple devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External unique identifier from the source app"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryRiboflavin"
+    relationship: "Related B-vitamin that works synergistically in energy metabolism"
+  - identifier: "HKQuantityTypeIdentifierDietaryNiacin"
+    relationship: "Related B-vitamin; thiamin is required for niacin synthesis from tryptophan"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Higher caloric intake increases thiamin requirements"
+  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
+    relationship: "Thiamin requirements increase with carbohydrate consumption"
+  - identifier: "HKQuantityTypeIdentifierDietaryPantothenicAcid"
+    relationship: "B-vitamin involved in related metabolic pathways"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryThiamin"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarythiamin"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Thiamin Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Thiamin-HealthProfessional/"
+    type: "medical"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Thiamin, Riboflavin, Niacin, Vitamin B6, Folate, Vitamin B12, Pantothenic Acid, Biotin, and Choline"
+    url: "https://nap.nationalacademies.org/catalog/6015/dietary-reference-intakes-for-thiamin-riboflavin-niacin-vitamin-b6-folate-vitamin-b12-pantothenic-acid-biotin-and-choline"
+    type: "research"
+  - title: "Wernicke Encephalopathy - StatPearls NCBI Bookshelf"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK470344/"
+    type: "medical"
+last_updated: "2026-01-27"

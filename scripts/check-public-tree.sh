@@ -43,6 +43,7 @@ host_word_files='\.(md|yml|yaml|sh|go|sql)$'
 allow=(
   '/home/postgres/pgdata' # PGDATA inside the timescaledb-ha image
   'you@gmail.com'         # placeholder next to the Gmail SMTP example in .env.example
+  'sagepub.com/home/'     # a journal's own URL, cited by a knowledge-base entry
 )
 
 # NUL-separated list of every tracked file except this script.

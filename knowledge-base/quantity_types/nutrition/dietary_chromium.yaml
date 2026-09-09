@@ -1,0 +1,231 @@
+identifier: "HKQuantityTypeIdentifierDietaryChromium"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Chromium"
+short_description: "Chromium intake from food and supplements, involved in insulin signaling and macronutrient metabolism."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#C0C0C0"
+
+default_unit: "mcg"
+supported_units: ["mcg", "mg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 200
+  unit: "mcg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "0.2 mcg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "5.5 mcg/day (AI)"
+  - population: "Children 1-3 years"
+    rda: "11 mcg/day (AI)"
+  - population: "Children 4-8 years"
+    rda: "15 mcg/day (AI)"
+  - population: "Boys 9-13 years"
+    rda: "25 mcg/day (AI)"
+  - population: "Girls 9-13 years"
+    rda: "21 mcg/day (AI)"
+  - population: "Boys 14-18 years"
+    rda: "35 mcg/day (AI)"
+  - population: "Girls 14-18 years"
+    rda: "24 mcg/day (AI)"
+  - population: "Adult men 19-50 years"
+    rda: "35 mcg/day (AI)"
+  - population: "Adult men 51+ years"
+    rda: "30 mcg/day (AI)"
+  - population: "Adult women 19-50 years"
+    rda: "25 mcg/day (AI)"
+  - population: "Adult women 51+ years"
+    rda: "20 mcg/day (AI)"
+  - population: "Pregnant women"
+    rda: "30 mcg/day (AI)"
+  - population: "Lactating women"
+    rda: "45 mcg/day (AI)"
+  - population: "Adults"
+    upper_limit: "Not established (no adverse effects from food/supplements documented)"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary chromium from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track chromium intake against personalized targets"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Chromium is a trace mineral that has been proposed to enhance insulin action and glucose metabolism. The body contains approximately 4-6 mg of chromium, with the highest concentrations in liver, spleen, soft tissue, and bone. While chromium has been marketed extensively for diabetes management and weight loss, scientific evidence for benefits in chromium-replete individuals is limited and controversial. The mechanism by which chromium affects insulin action remains incompletely understood.
+
+  ## Biological Functions
+  - **Insulin signaling enhancement**: Proposed to potentiate insulin action at the cellular level
+  - **Chromodulin**: An oligopeptide that binds chromium and may amplify insulin receptor kinase activity
+  - **Glucose metabolism**: May improve glucose uptake in insulin-sensitive tissues
+  - **Lipid metabolism**: Some studies suggest effects on cholesterol and triglycerides
+  - **Protein metabolism**: Limited evidence for effects on lean body mass
+
+  **Note**: The essentiality of chromium for humans has been questioned. Some researchers argue that evidence is insufficient to classify chromium as essential, and the European Food Safety Authority has not established dietary reference values.
+
+  ## Health Significance
+  Chromium has been intensively studied for potential benefits in type 2 diabetes, metabolic syndrome, and weight management. Early case reports of chromium deficiency in TPN patients suggested a role in glucose metabolism. However, subsequent research has produced inconsistent results. Current evidence suggests that chromium supplementation may have modest benefits in individuals with documented chromium deficiency or diabetes, but benefits in healthy, chromium-replete individuals are not established.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing chromium intake data:
+  - **Recognize limited evidence base**: Benefits of supplementation in replete individuals are unproven
+  - **Assess diabetes context**: May have modest glucose-lowering effects in some diabetic patients
+  - **Consider placebo effects**: Many reported benefits may be non-specific
+  - **Evaluate supplement marketing claims critically**: Many claims lack robust evidence
+  - **Note occupational exposure risk**: Hexavalent chromium (industrial) is carcinogenic; different from dietary trivalent chromium
+  - **Review TPN patients**: Deficiency documented in long-term TPN without chromium
+
+  ## Deficiency
+  **True chromium deficiency** documented only in specific contexts:
+  - Long-term TPN without chromium supplementation
+  - Severe malnutrition
+
+  **Reported deficiency symptoms** (from TPN case reports):
+  - Impaired glucose tolerance
+  - Elevated blood glucose
+  - Peripheral neuropathy
+  - Weight loss
+  - Confusion
+  - Elevated lipids
+
+  **Clinical uncertainty**: Some researchers question whether these cases truly represent chromium deficiency or other confounding factors. The 2014 IOM review could not confirm that chromium is essential.
+
+  **No clear deficiency syndrome** has been established in individuals consuming normal diets.
+
+  ## Toxicity/Excess
+  **Dietary chromium (trivalent, Cr3+)**:
+  - No adverse effects documented from food or supplements
+  - No UL established due to lack of adverse effect data
+  - Very low absorption limits potential for toxicity
+
+  **Industrial chromium (hexavalent, Cr6+)**:
+  - Highly toxic and carcinogenic
+  - Causes lung cancer (inhalation)
+  - Skin ulceration
+  - Nasal septum perforation
+  - Kidney damage
+  - This is NOT the form in food or supplements
+
+  **High-dose supplement concerns** (theoretical):
+  - Case reports of kidney damage with very high doses
+  - DNA damage reported in some cell studies
+  - Interaction with medications possible
+
+  **Form distinction is critical**: Trivalent chromium (dietary/supplement) vs. hexavalent chromium (industrial) have completely different safety profiles.
+
+  ## Food Sources
+  **Higher chromium foods** (variable content):
+  - Broccoli: 11 mcg per 1/2 cup
+  - Grape juice: 8 mcg per cup
+  - Whole wheat bread: 2 mcg per slice
+  - Potatoes: 3 mcg per cup
+  - Garlic: 3 mcg per teaspoon
+  - Basil: 2 mcg per tablespoon
+
+  **Moderate sources**:
+  - Beef: 2 mcg per 3 oz
+  - Orange juice: 2 mcg per cup
+  - Turkey breast: 2 mcg per 3 oz
+  - Red wine: 1-13 mcg per 5 oz (varies widely)
+  - Apple: 1 mcg per medium
+
+  **Challenges with food chromium data**:
+  - Chromium content in foods is often poorly characterized
+  - Contamination during food processing can add chromium
+  - Stainless steel cookware can leach chromium (especially with acidic foods)
+  - Analytical methods for chromium are difficult; older data may be unreliable
+
+  ## Absorption Factors
+  **Very low bioavailability**: Only 0.4-2.5% of dietary chromium is absorbed.
+
+  **Enhancers**:
+  - Vitamin C: May enhance chromium absorption
+  - Niacin: Some evidence for improved absorption
+  - Amino acids: Certain amino acids may improve absorption
+  - Oxalate: Paradoxically may enhance chromium absorption
+
+  **Inhibitors**:
+  - Phytates: May reduce absorption
+  - Zinc: High-dose zinc may compete
+  - Iron: May compete for absorption
+  - Antacids: Reduce absorption by altering pH
+
+  **Supplement forms**:
+  - Chromium picolinate: Most studied; better absorbed than other forms
+  - Chromium nicotinate: Good bioavailability
+  - Chromium chloride: Lower bioavailability
+  - High-chromium yeast: Variable chromium content
+
+  ## Special Populations
+  - **Type 2 diabetes**: Some meta-analyses show modest glucose reduction with supplementation; individual response varies; not a substitute for standard therapy
+  - **Gestational diabetes**: Limited evidence; some studies show benefit
+  - **Metabolic syndrome**: Mixed results; may improve some parameters
+  - **Polycystic ovary syndrome (PCOS)**: Some studies suggest benefit for insulin resistance
+  - **TPN patients**: Require chromium supplementation to prevent deficiency
+  - **Athletes**: Popular supplement for body composition; evidence weak
+  - **Elderly**: May have lower chromium status; clinical significance uncertain
+  - **Occupational exposure**: Industrial workers with hexavalent chromium exposure need monitoring
+
+  ## Drug Interactions
+  - **Insulin and oral hypoglycemics**: Chromium may enhance glucose-lowering effects; monitor for hypoglycemia
+  - **Metformin**: Potential additive effect on glucose; monitor
+  - **Corticosteroids**: Increase urinary chromium excretion
+  - **Beta-blockers**: May affect chromium metabolism
+  - **NSAIDs**: May affect chromium absorption
+  - **Antacids/H2 blockers/PPIs**: May reduce chromium absorption
+  - **Levothyroxine**: Take separately; chromium may affect absorption
+  - **Ascorbic acid (vitamin C)**: May enhance chromium absorption
+
+  ## Caveats & Limitations
+  - HealthKit captures estimated intake, but chromium status has no reliable biomarker
+  - Blood/urine chromium levels don't reliably reflect body stores or nutritional status
+  - Food composition data for chromium is of poor quality; databases may be unreliable
+  - The essentiality of chromium for humans remains scientifically debated
+  - Most supplementation studies show modest or null effects
+  - AI values are based on estimated average intakes, not requirement data
+  - No UL established, but this reflects lack of data, not proven safety at all doses
+  - Supplement industry marketing often exceeds evidence
+  - Form of supplement (picolinate vs. chloride) affects bioavailability but usually not logged
+  - Hexavalent chromium (industrial carcinogen) is distinct from dietary trivalent chromium
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing chromium"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
+    relationship: "Chromium proposed to enhance insulin action and glucose metabolism"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
+    relationship: "Vitamin C may enhance chromium absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "High-dose zinc may compete with chromium absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryIron"
+    relationship: "Iron and chromium may compete for absorption"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryChromium"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarychromium"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Chromium Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Chromium-HealthProfessional/"
+    type: "medical"
+  - title: "Diabetes Care - Chromium Supplementation in Diabetes"
+    url: "https://care.diabetesjournals.org/content/27/11/2741"
+    type: "research"
+  - title: "EFSA Scientific Opinion on Chromium"
+    url: "https://www.efsa.europa.eu/en/efsajournal/pub/3845"
+    type: "research"
+last_updated: "2026-01-27"

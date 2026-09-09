@@ -1,0 +1,175 @@
+identifier: "HKCategoryTypeIdentifierMindfulSession"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Activity and Heart"
+human_readable_name: "Mindful Session"
+short_description: "Records mindfulness or meditation sessions, tracking time spent in intentional mental health practice."
+icon: "brain.head.profile"
+color: "#5AC8FA"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notApplicable"
+    description: "The only value for mindful sessions. The presence of a sample indicates a mindfulness session occurred; duration is captured via start and end timestamps."
+ios_introduced:
+  version: "10.0"
+  year: 2016
+watchos_introduced:
+  version: "3.0"
+  year: 2016
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Native Mindfulness app (formerly Breathe) creates sessions automatically"
+  - name: "iPhone"
+    capability: "Third-party meditation apps (Headspace, Calm, Insight Timer, etc.) can write sessions"
+  - name: "iPad"
+    capability: "Third-party meditation apps can write sessions via HealthKit"
+primary_source: "Apple Watch Mindfulness App"
+description: |
+  ## Overview
+  Mindful Session records periods of intentional mindfulness practice, including meditation, breathing exercises, and other contemplative activities. Unlike most category types that have multiple enum values, Mindful Session uses only a single value - the clinical meaning is derived from the session's start time, end time, and associated metadata.
+
+  The Apple Watch Mindfulness app (renamed from "Breathe" in watchOS 8) creates sessions automatically when users complete guided breathing exercises. Third-party apps like Headspace, Calm, Ten Percent Happier, and Insight Timer can also write mindfulness data to HealthKit.
+
+  ## How It's Detected/Measured
+  **Apple Watch Mindfulness App:**
+  - Sessions are initiated manually or via scheduled reminders
+  - Breathe sessions guide users through deep breathing with haptic feedback
+  - Reflect sessions (watchOS 8+) provide prompts for contemplative thought
+  - Duration is user-selected (1-5 minutes default, customizable)
+  - Heart rate is measured before and after session
+
+  **Third-Party Apps:**
+  - Session timing is controlled by the app's meditation/exercise
+  - Apps may include guided audio, visual aids, or silent timers
+  - Duration varies from 1 minute to multiple hours
+  - Many apps track meditation streaks and session types
+
+  **Data Recorded:**
+  - Start timestamp
+  - End timestamp (duration = end - start)
+  - Source app identifier
+  - Optional metadata (session type, program name, etc.)
+
+  ## Health Significance
+  Mindfulness meditation has been extensively studied and shows benefits across multiple health domains:
+
+  **Mental Health:**
+  - Reduces symptoms of anxiety and depression (effect sizes comparable to antidepressants in some studies)
+  - Decreases stress and cortisol levels
+  - Improves emotional regulation
+  - Reduces rumination and negative thought patterns
+  - Supports treatment of PTSD and trauma
+
+  **Cognitive Function:**
+  - Improves attention and concentration
+  - Enhances working memory
+  - Increases cognitive flexibility
+  - May slow age-related cognitive decline
+
+  **Physical Health:**
+  - Reduces blood pressure (3-5 mmHg in hypertensive patients)
+  - Improves HRV, indicating better autonomic balance
+  - Decreases inflammatory markers (IL-6, CRP)
+  - May improve immune function
+  - Reduces chronic pain perception and improves pain coping
+
+  **Sleep:**
+  - Improves sleep quality and reduces insomnia symptoms
+  - Decreases sleep onset latency
+  - Mindfulness-Based Therapy for Insomnia (MBTI) is an evidence-based treatment
+
+  ## Clinical Interpretation Guidelines
+  **For Health Consultants:**
+
+  1. **Assess Practice Consistency:**
+     - Regular practice matters more than session length
+     - Look for patterns: daily vs. sporadic practice
+     - 10-20 minutes daily shows benefits in most research
+     - Even 5-minute "micro-meditations" have value
+
+  2. **Duration Considerations:**
+     - Beginners: 5-10 minutes is appropriate starting point
+     - Experienced practitioners: 20-45 minutes common
+     - Longer isn't always better; consistency trumps duration
+     - Watch for avoidance patterns (starting then stopping)
+
+  3. **Timing Patterns:**
+     - Morning sessions may improve focus throughout day
+     - Evening sessions can improve sleep
+     - Post-stressor sessions provide acute relief
+     - Identify what timing works for the individual
+
+  4. **Integration with Other Metrics:**
+     - Compare HRV before/after mindfulness sessions
+     - Correlate with sleep quality trends
+     - Note relationship to stress events and symptom reports
+     - Track alongside mood logging if available
+
+  5. **Goal Setting:**
+     - Start with achievable targets (e.g., 3x/week for 5 minutes)
+     - Gradually increase frequency before duration
+     - Celebrate streaks while normalizing breaks
+     - Recommend app-based guidance for beginners
+
+  6. **Clinical Applications:**
+     - Chronic pain management
+     - Anxiety and panic disorder
+     - Depression (especially Mindfulness-Based Cognitive Therapy)
+     - Substance use recovery support
+     - Cardiovascular disease risk reduction
+     - Sleep disorders
+
+  ## Caveats & Limitations
+  - **Self-Reported Nature:** Session occurrence doesn't guarantee quality mindfulness practice
+  - **No Quality Metrics:** Cannot assess depth of practice or mental state achieved
+  - **App Variability:** Different apps may define "mindfulness" differently
+  - **Passive Tracking Impossible:** Unlike steps or heart rate, mindfulness cannot be automatically detected
+  - **Session Type Unknown:** HealthKit doesn't distinguish meditation types (focused attention, open monitoring, loving-kindness, etc.)
+  - **Engagement Uncertain:** Starting a session doesn't mean completing it or engaging meaningfully
+  - **Cultural Context:** Mindfulness research is largely Western; practices may have different meanings cross-culturally
+  - **Not a Treatment Substitute:** While evidence-based, app-based mindfulness shouldn't replace clinical mental health care when indicated
+metadata_keys:
+  - key: "HKMetadataKeyMindfulnessSessionType"
+    description: "Custom metadata some apps use to specify the type of mindfulness practice (e.g., breathing, meditation, body scan)"
+  - key: "HKMetadataKeySessionGuidanceLevel"
+    description: "Indicates whether the session was guided, semi-guided, or unguided"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "HRV often improves during and after mindfulness practice, serving as an objective marker of relaxation response"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Heart rate typically decreases during mindfulness sessions due to parasympathetic activation"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Breathing exercises directly target respiratory rate, often slowing from 12-20 to 4-8 breaths per minute"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Regular mindfulness practice correlates with improved sleep quality and duration"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Chronic mindfulness practice may lower resting heart rate over time"
+references:
+  - title: "HKCategoryTypeIdentifierMindfulSession - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiermindfulsession"
+    type: "official"
+  - title: "Mindfulness app on Apple Watch - Apple Support"
+    url: "https://support.apple.com/guide/watch/use-the-mindfulness-app-apd371dfe3d7/watchos"
+    type: "official"
+  - title: "Mindfulness-Based Interventions: An Overall Review - Annual Review of Psychology"
+    url: "https://pubmed.ncbi.nlm.nih.gov/35363567/"
+    type: "research"
+  - title: "Effect of Mindfulness Meditation on Blood Pressure: A Meta-Analysis"
+    url: "https://pubmed.ncbi.nlm.nih.gov/28384004/"
+    type: "research"
+  - title: "American Psychological Association - Mindfulness meditation: A research-proven way to reduce stress"
+    url: "https://www.apa.org/topics/mindfulness/meditation"
+    type: "medical"
+last_updated: "2026-01-27"

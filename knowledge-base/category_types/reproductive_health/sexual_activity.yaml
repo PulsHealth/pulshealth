@@ -1,0 +1,103 @@
+identifier: "HKCategoryTypeIdentifierSexualActivity"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Sexual Activity"
+short_description: "Logs sexual activity events with optional indication of protection use for fertility and reproductive health tracking."
+icon: "heart.fill"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "notApplicable"
+    description: "Sexual activity occurred. This is the only category value; additional context about protection use is stored in metadata."
+ios_introduced:
+  version: "9.0"
+  year: 2015
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Manual logging through Health app or Cycle Tracking app"
+  - name: "Apple Watch"
+    capability: "Manual logging through Cycle Tracking app"
+  - name: "Third-party apps"
+    capability: "Fertility and period tracking apps that include sexual activity logging"
+primary_source: "User-reported"
+description: |
+  ## Overview
+  Sexual activity tracking records instances of sexual intercourse, enabling correlation with menstrual cycle data for fertility awareness. This data type supports users who are trying to conceive by identifying intercourse timing relative to ovulation, as well as those using fertility awareness-based methods (FABMs) for contraception. The sample includes metadata to indicate whether protection (barrier methods) was used.
+
+  Each logged entry represents a sexual activity event with an associated timestamp, allowing users to track frequency and timing patterns over their menstrual cycles. When combined with ovulation indicators (cervical mucus, OPK results, basal temperature), this data helps optimize conception timing or evaluate FABM adherence.
+
+  ## Health Significance
+  Sexual activity data serves multiple clinical and personal purposes:
+  - **Conception optimization**: Timing intercourse during the fertile window (particularly the day before and day of ovulation) maximizes pregnancy chances
+  - **Fertility evaluation**: Couples undergoing fertility assessment benefit from documented intercourse timing relative to confirmed ovulation
+  - **FABM compliance**: For users avoiding pregnancy, tracking confirms adherence to abstinence during fertile windows
+  - **Pattern recognition**: Frequency and timing patterns may be relevant to relationship counseling or sexual health discussions
+  - **Post-coital bleeding identification**: Correlating with intermenstrual bleeding can identify post-coital bleeding patterns
+  - **STI risk assessment**: When protection status is tracked, may inform sexual health counseling
+
+  ## Clinical Interpretation Guidelines
+  When reviewing sexual activity data in clinical context:
+  - **Conception counseling**: For couples trying to conceive, verify intercourse is occurring during the fertile window (5 days before ovulation through ovulation day)
+  - **Optimal timing**: The highest conception rates occur with intercourse 1-2 days before ovulation; daily or every-other-day intercourse during the fertile window is recommended
+  - **Sperm considerations**: Sperm survive up to 5 days in fertile cervical mucus; intercourse before ovulation is more likely to result in conception than intercourse after
+  - **Frequency assessment**: For fertility purposes, intercourse every 1-2 days during the fertile window is optimal; more frequent intercourse does not significantly improve conception rates
+  - **Protection metadata**: When evaluating for pregnancy risk or FABM compliance, note whether protection was indicated
+  - **Privacy considerations**: This is highly sensitive data; ensure appropriate confidentiality and discuss only when clinically relevant
+
+  ## Caveats & Limitations
+  - Highly sensitive personal information requiring strict privacy protections
+  - Self-reported data may be incomplete due to privacy concerns or forgetfulness
+  - Protection metadata is optional; absence does not confirm unprotected intercourse
+  - Does not distinguish between types of sexual activity (only penetrative vaginal intercourse is relevant to fertility)
+  - Does not capture ejaculation occurrence, which is relevant for conception
+  - Couples may not consistently log every occurrence
+  - Time of day is captured but not duration or other details
+  - Shared devices may discourage logging due to privacy concerns
+  - Does not replace clinical fertility counseling or detailed sexual history
+metadata_keys:
+  - key: "HKMetadataKeySexualActivityProtectionUsed"
+    description: "Boolean indicating whether barrier protection was used during the sexual activity"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "Positive OPK indicates optimal timing for intercourse for conception"
+  - identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
+    relationship: "Egg-white mucus indicates peak fertility timing for intercourse"
+  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
+    relationship: "Temperature tracking confirms ovulation; intercourse should occur before temperature rise for conception"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Cycle tracking provides context for fertile window identification"
+  - identifier: "HKCategoryTypeIdentifierContraceptive"
+    relationship: "Contraceptive use provides additional context for pregnancy risk assessment"
+  - identifier: "HKCategoryTypeIdentifierIntermenstrualBleeding"
+    relationship: "Correlation can identify post-coital bleeding patterns"
+references:
+  - title: "HKCategoryTypeIdentifierSexualActivity - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiersexualactivity"
+    type: "official"
+  - title: "Optimizing Natural Fertility - ASRM"
+    url: "https://www.asrm.org/topics/topics-index/optimizing-natural-fertility/"
+    type: "medical"
+  - title: "Timing of Sexual Intercourse and Fertility - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/evaluating-infertility"
+    type: "medical"
+last_updated: "2026-01-27"

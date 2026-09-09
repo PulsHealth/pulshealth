@@ -1,0 +1,227 @@
+identifier: "HKQuantityTypeIdentifierDietaryIron"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Iron"
+short_description: "Iron intake from food and supplements, essential for oxygen transport and energy metabolism."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#8B4513"
+
+default_unit: "mg"
+supported_units: ["mg", "mcg", "g"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 45
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 7-12 months"
+    rda: "11 mg/day"
+  - population: "Children 1-3 years"
+    rda: "7 mg/day"
+  - population: "Children 4-8 years"
+    rda: "10 mg/day"
+  - population: "Children 9-13 years"
+    rda: "8 mg/day"
+  - population: "Teen boys 14-18 years"
+    rda: "11 mg/day"
+  - population: "Teen girls 14-18 years"
+    rda: "15 mg/day"
+  - population: "Adult men 19+ years"
+    rda: "8 mg/day"
+  - population: "Adult women 19-50 years"
+    rda: "18 mg/day"
+  - population: "Adult women 51+ years"
+    rda: "8 mg/day"
+  - population: "Pregnant women"
+    rda: "27 mg/day"
+  - population: "Lactating women 14-18 years"
+    rda: "10 mg/day"
+  - population: "Lactating women 19+ years"
+    rda: "9 mg/day"
+  - population: "Vegetarians"
+    rda: "1.8x standard RDA (due to lower bioavailability)"
+  - population: "All adults"
+    upper_limit: "45 mg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary iron from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track iron intake with absorption context"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Iron is an essential trace mineral required for oxygen transport, electron transfer, and numerous enzymatic reactions. The body contains 3-5 grams of iron, with approximately 65% in hemoglobin, 10% in myoglobin, and the remainder in storage (ferritin) and transport (transferrin) forms. Iron deficiency is the most common nutritional deficiency worldwide, while iron overload causes significant organ damage.
+
+  ## Biological Functions
+  - **Oxygen transport**: Central component of hemoglobin (carries O2 from lungs to tissues) and myoglobin (oxygen storage in muscle)
+  - **Electron transport**: Essential component of cytochromes in mitochondrial ATP production
+  - **DNA synthesis**: Required for ribonucleotide reductase activity
+  - **Enzymatic cofactor**: Necessary for catalase, peroxidases, and cytochrome P450 enzymes
+  - **Immune function**: Required for lymphocyte proliferation and antimicrobial activity
+  - **Neurotransmitter synthesis**: Cofactor for tyrosine hydroxylase (dopamine synthesis) and tryptophan hydroxylase (serotonin)
+
+  ## Health Significance
+  Iron balance is tightly regulated because humans lack an active excretion mechanism. Absorption is adjusted based on body stores and erythropoietic demand. Iron deficiency progresses through stages: depleted stores, iron-deficient erythropoiesis, and finally iron deficiency anemia. Conversely, iron overload (hereditary hemochromatosis or transfusion-related) causes oxidative damage to liver, heart, and endocrine organs.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing iron intake data:
+  - **Distinguish iron forms**: Heme iron (animal sources) has 15-35% absorption; non-heme iron (plants, supplements) has 2-20% absorption
+  - **Assess menstrual status**: Premenopausal women lose significant iron monthly; requirements nearly double
+  - **Review dietary patterns**: Vegetarians/vegans need 1.8x RDA due to exclusive non-heme intake
+  - **Consider meal composition**: Vitamin C dramatically enhances non-heme iron absorption
+  - **Evaluate timing**: Iron supplements are best absorbed on empty stomach but cause more GI side effects
+  - **Check for chronic blood loss**: GI bleeding, heavy menses, frequent blood donation increase needs
+
+  ## Deficiency
+  **Iron deficiency stages**:
+  1. Depleted stores: Low ferritin, normal hemoglobin
+  2. Iron-deficient erythropoiesis: Low transferrin saturation, rising TIBC
+  3. Iron deficiency anemia: Low hemoglobin, microcytic hypochromic RBCs
+
+  **Symptoms**:
+  - Fatigue and weakness (reduced oxygen delivery)
+  - Pallor (decreased hemoglobin)
+  - Dyspnea on exertion
+  - Cognitive impairment and poor concentration
+  - Pica (craving non-food items like ice, dirt)
+  - Restless legs syndrome
+  - Brittle nails (koilonychia/spoon nails in severe cases)
+  - Glossitis and angular cheilitis
+  - Impaired thermoregulation
+  - Reduced immune function
+
+  **High-risk groups**:
+  - Menstruating women (especially heavy flow)
+  - Pregnant women
+  - Infants and young children
+  - Adolescents during growth spurts
+  - Vegetarians/vegans
+  - Frequent blood donors
+  - Chronic disease (CKD, heart failure, IBD)
+
+  ## Toxicity/Excess
+  **Acute iron poisoning** (typically accidental pediatric ingestion):
+  - GI hemorrhage, vomiting, diarrhea
+  - Metabolic acidosis
+  - Liver failure
+  - Cardiovascular collapse
+
+  **Chronic iron overload**:
+  - Liver: Cirrhosis, hepatocellular carcinoma
+  - Heart: Cardiomyopathy, arrhythmias, heart failure
+  - Endocrine: Diabetes (pancreatic damage), hypogonadism, hypothyroidism
+  - Joints: Arthropathy
+  - Skin: Bronze discoloration
+
+  **Populations at risk for overload**:
+  - Hereditary hemochromatosis (HFE mutations)
+  - Thalassemia and sickle cell disease (transfusion-dependent)
+  - Chronic liver disease
+  - Those taking unnecessary supplements
+
+  ## Food Sources
+  **Heme iron sources** (animal-derived, 15-35% absorbed):
+  - Organ meats: Liver, kidney (highest concentration)
+  - Red meat: Beef, lamb
+  - Poultry: Dark meat chicken, turkey
+  - Seafood: Oysters, clams, mussels, sardines
+
+  **Non-heme iron sources** (plant-derived, 2-20% absorbed):
+  - Legumes: Lentils, chickpeas, kidney beans, soybeans
+  - Fortified cereals and bread
+  - Dark leafy greens: Spinach, Swiss chard
+  - Tofu and tempeh
+  - Pumpkin seeds, quinoa
+  - Dried fruits: Raisins, apricots
+
+  ## Absorption Factors
+  **Enhancers of non-heme iron absorption**:
+  - Vitamin C (ascorbic acid): Most potent enhancer; 75 mg can triple absorption
+  - MFP factor: Meat, fish, poultry enhance absorption of co-consumed non-heme iron
+  - Organic acids: Citric acid, lactic acid (fermented foods)
+  - Low iron stores: Body upregulates absorption when depleted
+
+  **Inhibitors**:
+  - Phytates: Whole grains, legumes, nuts (soaking/sprouting reduces)
+  - Polyphenols: Tea, coffee, wine, chocolate (tannins bind iron)
+  - Calcium: Inhibits both heme and non-heme absorption; separate by 2 hours
+  - Oxalates: Spinach, rhubarb
+  - Soy protein: Contains phytate and specific inhibitory factors
+  - Antacids and PPIs: Reduced stomach acid impairs iron solubility
+  - Excess zinc or copper: Compete for absorption
+
+  ## Special Populations
+  - **Pregnant women**: Plasma volume expansion and fetal demands require 27 mg/day; routine supplementation often recommended
+  - **Menstruating women**: Average monthly loss of 30-40 mg iron; heavy flow increases substantially
+  - **Vegetarians/vegans**: Should aim for 1.8x RDA; focus on vitamin C pairing and avoiding absorption inhibitors at iron-rich meals
+  - **Endurance athletes**: "Sports anemia" may reflect plasma expansion; true deficiency from foot-strike hemolysis, GI bleeding, sweat losses
+  - **Infants**: Iron stores from birth deplete by 4-6 months; fortified formula or iron supplementation needed
+  - **Chronic kidney disease**: Functional iron deficiency common despite adequate stores; IV iron often required
+  - **Inflammatory conditions**: Hepcidin elevation blocks iron absorption and release; may need IV iron
+  - **Bariatric surgery patients**: Bypass of duodenum (primary absorption site) necessitates supplementation
+
+  ## Drug Interactions
+  - **Thyroid hormones (levothyroxine)**: Iron reduces absorption; separate by 4 hours
+  - **Bisphosphonates**: Iron impairs absorption; separate by 2 hours
+  - **Tetracyclines/fluoroquinolones**: Form non-absorbable complexes; separate by 2-4 hours
+  - **Levodopa/carbidopa**: Iron may reduce absorption
+  - **ACE inhibitors**: May increase risk of iron-related adverse effects
+  - **Proton pump inhibitors/H2 blockers**: Reduce iron absorption (need gastric acid)
+  - **Calcium supplements**: Inhibit iron absorption; take at different meals
+  - **Cholestyramine**: May bind iron in gut
+
+  ## Caveats & Limitations
+  - HealthKit data represents intake, not absorption or iron status
+  - Heme vs. non-heme distinction not captured, though absorption differs 5-10x
+  - Meal composition affecting absorption not tracked
+  - Food database accuracy varies; fortification levels differ by brand/region
+  - Supplement iron forms (ferrous sulfate, gluconate, citrate) have different bioavailability
+  - Serum ferritin is the best single marker of iron stores; intake data alone is insufficient for status assessment
+  - Ferritin is an acute phase reactant; inflammation falsely elevates levels
+  - Cooking in cast iron cookware can increase food iron content (not captured)
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing iron"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
+    relationship: "Vitamin C dramatically enhances non-heme iron absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
+    relationship: "Calcium inhibits iron absorption; timing separation recommended"
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "High-dose zinc supplements can interfere with copper and indirectly iron metabolism"
+  - identifier: "HKQuantityTypeIdentifierDietaryCopper"
+    relationship: "Copper is essential for iron mobilization via ceruloplasmin"
+  - identifier: "HKQuantityTypeIdentifierDietaryFolate"
+    relationship: "Both iron and folate deficiency cause anemia; often co-occur"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminB12"
+    relationship: "B12 deficiency also causes anemia; differential diagnosis important"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryIron"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryiron"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Iron Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/"
+    type: "medical"
+  - title: "WHO - Iron Deficiency Anaemia Assessment, Prevention and Control"
+    url: "https://www.who.int/publications/m/item/iron-deficiency-anaemia-assessment-prevention-and-control"
+    type: "research"
+  - title: "American Society of Hematology - Iron Deficiency Anemia"
+    url: "https://www.hematology.org/education/patients/anemia/iron-deficiency"
+    type: "medical"
+last_updated: "2026-01-27"

@@ -1,0 +1,138 @@
+identifier: "HKCategoryTypeIdentifierRunnyNose"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Runny Nose"
+short_description: "Tracks episodes and severity of nasal discharge"
+icon: "drop.fill"
+color: "#5AC8FA"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No runny nose or nasal discharge"
+  - value: 1
+    name: "present"
+    description: "Mild runny nose - occasional drip, minimal tissue use"
+  - value: 2
+    name: "moderate"
+    description: "Moderate runny nose - frequent discharge, regular tissue use"
+  - value: 3
+    name: "severe"
+    description: "Severe runny nose - constant dripping, significantly bothersome"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Runny nose (rhinorrhea) is the discharge of fluid from the nasal passages.
+  It can be watery, thick, clear, colored, or bloody depending on the underlying
+  cause. This data type enables tracking of nasal symptoms for pattern
+  identification and illness monitoring.
+
+  ## Health Significance
+  - **Infection Monitoring**: Common symptom of viral upper respiratory infections
+  - **Allergy Tracking**: Key symptom of allergic rhinitis; tracking reveals
+    seasonal or trigger patterns
+  - **Cold/Flu Differentiation**: Pattern helps distinguish viral illnesses
+  - **Treatment Response**: Monitor effectiveness of antihistamines,
+    decongestants, or nasal steroids
+  - **Environmental Health**: May indicate air quality or irritant exposure issues
+
+  ## Clinical Context
+  **Common Causes:**
+  - Viral upper respiratory infection (common cold)
+  - Allergic rhinitis (hay fever)
+  - Non-allergic rhinitis (vasomotor rhinitis)
+  - Sinusitis
+  - Cold air or irritant exposure
+  - Spicy foods (gustatory rhinitis)
+  - Medication side effects
+
+  **Less Common Causes:**
+  - CSF leak (clear, watery discharge, especially after trauma)
+  - Foreign body (especially in children; often unilateral)
+  - Nasal polyps
+  - Deviated septum
+
+  ## When to Seek Medical Attention
+  - Clear, watery discharge after head injury (possible CSF leak)
+  - Unilateral discharge, especially if foul-smelling
+  - Persistent symptoms more than 10 days
+  - High fever with nasal symptoms
+  - Blood-tinged discharge without obvious cause
+  - Symptoms not responding to OTC treatments
+  - Chronic rhinitis affecting quality of life
+  - Symptoms suggesting bacterial sinusitis (facial pain, tooth pain,
+    purulent discharge, fever)
+
+  ## Pattern Recognition
+  Tracking runny nose can reveal:
+  - Seasonal patterns (allergic rhinitis)
+  - Correlation with specific environments (dust, pets, mold)
+  - Duration of illness episodes
+  - Response to antihistamines or other treatments
+  - Relationship to weather changes
+  - Morning vs. evening patterns
+  - Association with other symptoms (sneezing, congestion)
+  - Recurrent patterns suggesting chronic rhinitis
+
+  ## Caveats & Limitations
+  - Does not capture discharge characteristics (color, consistency)
+  - Subjective severity varies between individuals
+  - Cannot distinguish between causes (infectious vs. allergic)
+  - Does not capture associated symptoms in same entry
+  - Brief symptom episodes may not be logged
+  - Environmental context not captured
+  - Cannot differentiate anterior vs. posterior drainage
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierSinusCongestion"
+    relationship: "Often co-occur; nasal congestion and discharge together"
+  - identifier: "HKCategoryTypeIdentifierSoreThroat"
+    relationship: "Post-nasal drip can cause sore throat"
+  - identifier: "HKCategoryTypeIdentifierCoughing"
+    relationship: "Post-nasal drip triggers cough"
+  - identifier: "HKCategoryTypeIdentifierHeadache"
+    relationship: "May indicate sinus involvement"
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Suggests infectious cause"
+  - identifier: "HKCategoryTypeIdentifierSneezing"
+    relationship: "Common co-occurring symptom, especially in allergies"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierRunnyNose"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierrunnynose"
+    type: "official"
+  - title: "Allergic Rhinitis - ACAAI"
+    url: "https://acaai.org/allergies/allergic-conditions/allergic-rhinitis/"
+    type: "medical"
+  - title: "Common Cold - CDC"
+    url: "https://www.cdc.gov/common-cold/"
+    type: "medical"
+last_updated: "2026-01-27"

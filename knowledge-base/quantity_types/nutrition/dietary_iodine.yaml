@@ -1,0 +1,220 @@
+identifier: "HKQuantityTypeIdentifierDietaryIodine"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Iodine"
+short_description: "Iodine intake from food and supplements, essential for thyroid hormone synthesis and metabolic regulation."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#5856D6"
+
+default_unit: "mcg"
+supported_units: ["mcg", "mg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 1100
+  unit: "mcg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "110 mcg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "130 mcg/day (AI)"
+  - population: "Children 1-8 years"
+    rda: "90 mcg/day"
+  - population: "Children 9-13 years"
+    rda: "120 mcg/day"
+  - population: "Adolescents 14-18 years"
+    rda: "150 mcg/day"
+  - population: "Adults 19+ years"
+    rda: "150 mcg/day"
+  - population: "Pregnant women"
+    rda: "220 mcg/day"
+  - population: "Lactating women"
+    rda: "290 mcg/day"
+  - population: "Children 1-3 years"
+    upper_limit: "200 mcg/day"
+  - population: "Children 4-8 years"
+    upper_limit: "300 mcg/day"
+  - population: "Children 9-13 years"
+    upper_limit: "600 mcg/day"
+  - population: "Adolescents 14-18 years"
+    upper_limit: "900 mcg/day"
+  - population: "Adults 19+ years"
+    upper_limit: "1100 mcg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary iodine from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track iodine intake for thyroid health management"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Iodine is an essential trace element required exclusively for thyroid hormone synthesis. The thyroid gland concentrates iodine at 20-50 times plasma levels, using it to produce thyroxine (T4) and triiodothyronine (T3). These hormones regulate metabolic rate, growth, development, and protein synthesis in virtually every tissue. Iodine deficiency remains the leading preventable cause of intellectual disability worldwide, though salt iodization programs have dramatically reduced deficiency in many countries.
+
+  ## Biological Functions
+  - **Thyroid hormone synthesis**: Sole biological role; iodine is incorporated into T4 (4 iodine atoms) and T3 (3 iodine atoms)
+  - **Metabolic regulation**: Thyroid hormones regulate basal metabolic rate in all tissues
+  - **Growth and development**: Critical for normal fetal brain development and childhood growth
+  - **Thermogenesis**: Thyroid hormones regulate heat production
+  - **Cardiovascular function**: T3 affects heart rate, contractility, and vascular resistance
+  - **Protein metabolism**: Thyroid hormones regulate protein synthesis throughout body
+
+  ## Health Significance
+  Iodine status directly determines thyroid function. Deficiency causes goiter (thyroid enlargement), hypothyroidism, and in severe cases during pregnancy, irreversible neurological damage in offspring (cretinism). Excess iodine can paradoxically cause both hypothyroidism (Wolff-Chaikoff effect) and hyperthyroidism (Jod-Basedow phenomenon), particularly in those with underlying thyroid disease. Salt iodization remains the primary public health intervention for ensuring adequate population intake.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing iodine intake data:
+  - **Recognize variable food content**: Iodine content varies widely based on soil, water, and animal feed iodization
+  - **Identify primary sources**: Iodized salt, dairy, seafood, and eggs are main contributors
+  - **Assess salt use**: Those avoiding salt (hypertension management) or using non-iodized salt may be deficient
+  - **Consider special diets**: Vegan, no-dairy, low-salt diets often inadequate without supplementation
+  - **Review thyroid status**: Patients with thyroid disease may need to modify iodine intake
+  - **Evaluate pregnancy/lactation**: Requirements significantly increase; supplementation often recommended
+
+  ## Deficiency
+  **Iodine deficiency spectrum**:
+  - Goiter: Thyroid enlargement (earliest visible sign)
+  - Hypothyroidism: Fatigue, weight gain, cold intolerance, dry skin, constipation, depression
+  - Cretinism (severe maternal deficiency): Irreversible intellectual disability, deaf-mutism, motor defects
+  - Pregnancy complications: Miscarriage, stillbirth, congenital abnormalities
+  - Growth retardation in children
+  - Impaired cognitive function (even mild deficiency)
+
+  **At-risk populations**:
+  - Pregnant and lactating women (highest requirements)
+  - People in iodine-deficient geographic regions
+  - Those who don't use iodized salt
+  - Vegans (no dairy, seafood, or eggs)
+  - People consuming goitrogens without adequate iodine
+
+  **Diagnosis**:
+  - Population level: Median urinary iodine concentration (UIC)
+  - Individual: Serum thyroglobulin, thyroid function tests (TSH, T4)
+
+  ## Toxicity/Excess
+  **Acute iodine excess**:
+  - Metallic taste, burning mouth
+  - GI upset, diarrhea
+  - Hypersalivation
+
+  **Chronic excessive intake** (>1100 mcg/day in adults):
+  - Hypothyroidism (Wolff-Chaikoff effect): Especially in those with underlying Hashimoto's thyroiditis
+  - Hyperthyroidism (Jod-Basedow phenomenon): In those with autonomous thyroid nodules or latent Graves' disease
+  - Thyroiditis
+  - Thyroid papillary cancer (controversial; some studies suggest association)
+
+  **High-risk sources of excess**:
+  - Kelp/seaweed supplements (can contain >1000 mcg per serving)
+  - Amiodarone (contains 75 mg iodine per 200 mg tablet)
+  - Iodinated contrast media
+  - Topical iodine antiseptics (absorbed through skin/mucosa)
+  - Some "thyroid support" supplements
+
+  ## Food Sources
+  **High iodine foods** (variable content):
+  - Seaweed: Kelp (very high, 1000+ mcg per serving), nori (moderate)
+  - Cod: 100-140 mcg per 3 oz
+  - Dairy: Milk (56 mcg/cup), yogurt, cheese (from iodine-containing sanitizers and animal feed)
+  - Iodized salt: 45 mcg per 1/4 teaspoon
+  - Shrimp: 35 mcg per 3 oz
+  - Eggs: 24 mcg per large egg
+
+  **Moderate sources**:
+  - Tuna
+  - Enriched bread (some contain iodine from dough conditioners)
+  - Prunes
+  - Lima beans
+
+  **Important notes**:
+  - Sea salt, kosher salt, Himalayan salt are NOT iodized
+  - Iodine content in foods varies by region, season, and processing
+  - Dairy iodine comes from iodine-containing sanitizers and supplemented cattle feed
+
+  ## Absorption Factors
+  **High bioavailability**:
+  - Iodine is nearly completely absorbed (>90%) from the GI tract
+  - Absorbed primarily as iodide (I-)
+
+  **Goitrogens** (substances that interfere with thyroid function, not absorption):
+  - Cruciferous vegetables (broccoli, cabbage, kale, Brussels sprouts): Contain thiocyanates
+  - Soy: Isoflavones may inhibit thyroid peroxidase
+  - Cassava: Contains cyanogenic glucosides
+  - Millet: Contains flavonoids affecting iodine utilization
+
+  **Note**: Goitrogens are primarily a concern when iodine intake is marginal; adequate iodine intake overcomes goitrogen effects. Cooking reduces goitrogen content.
+
+  **Thyroid iodine uptake influenced by**:
+  - TSH levels (stimulates uptake)
+  - Iodine status (deficiency increases efficiency)
+  - Perchlorate, thiocyanate, nitrate (competitively inhibit iodide transport)
+
+  ## Special Populations
+  - **Pregnant women**: Requirements increase 50%; deficiency causes irreversible fetal neurological damage; WHO recommends supplementation in deficient areas
+  - **Lactating women**: Iodine concentrated in breast milk; requirements highest of any life stage (290 mcg/day)
+  - **Vegans**: No dairy, seafood, or eggs; must rely on iodized salt or supplements
+  - **Those avoiding salt**: Hypertension management often reduces iodized salt use; alternative sources needed
+  - **Hashimoto's thyroiditis**: Excess iodine may exacerbate; moderate intake recommended
+  - **Graves' disease**: May need iodine restriction depending on treatment phase
+  - **Thyroid nodules**: Iodine excess can trigger hyperthyroidism in autonomous nodules
+  - **Patients undergoing radioactive iodine treatment**: Require low-iodine diet pre-procedure
+  - **Geographic risk**: Mountainous regions, areas far from sea with non-iodized salt at risk
+
+  ## Drug Interactions
+  - **Amiodarone**: Contains high iodine; can cause hypo- or hyperthyroidism
+  - **Lithium**: Inhibits thyroid hormone release; iodine excess may compound hypothyroid effect
+  - **Anti-thyroid drugs** (methimazole, propylthiouracil): Inhibit iodine organification; used to treat hyperthyroidism
+  - **Levothyroxine**: Patients may not need as much iodine if replacing thyroid hormone
+  - **Potassium iodide**: Used therapeutically for thyroid protection, expectorant
+  - **ACE inhibitors**: Some contain iodine-based preservatives
+  - **Iodinated contrast media**: Massive iodine load; can affect thyroid function
+  - **Perchlorate-containing drugs**: Block iodide uptake
+
+  ## Caveats & Limitations
+  - HealthKit captures estimated intake, not thyroid iodine status
+  - Food iodine content highly variable and poorly captured in databases
+  - Iodized salt use is the main determinant but frequency of use is imprecise
+  - Seaweed consumption can cause wide variations in intake
+  - Urinary iodine concentration reflects recent intake but requires 24-hour collection for accuracy
+  - Thyroid function tests (TSH, T4) are better indicators of iodine status than intake data
+  - Restaurant and processed food salt is typically not iodized
+  - Regional soil iodine content affects food composition but isn't captured
+  - Supplement iodine sources vary (potassium iodide, kelp); kelp amounts are inconsistent
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing iodine"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietarySelenium"
+    relationship: "Selenium is required for thyroid hormone conversion (T4 to T3); both affect thyroid function"
+  - identifier: "HKQuantityTypeIdentifierDietaryIron"
+    relationship: "Iron deficiency impairs thyroid hormone synthesis"
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "Zinc is required for thyroid hormone receptor function"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryIodine"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryiodine"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Iodine Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Iodine-HealthProfessional/"
+    type: "medical"
+  - title: "WHO - Assessment of Iodine Deficiency Disorders"
+    url: "https://www.who.int/publications/i/item/9789241595827"
+    type: "research"
+  - title: "American Thyroid Association - Iodine Deficiency"
+    url: "https://www.thyroid.org/iodine-deficiency/"
+    type: "medical"
+last_updated: "2026-01-27"

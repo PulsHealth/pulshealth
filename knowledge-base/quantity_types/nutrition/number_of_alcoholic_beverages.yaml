@@ -1,0 +1,285 @@
+identifier: "HKQuantityTypeIdentifierNumberOfAlcoholicBeverages"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Alcoholic Beverages"
+short_description: "Count of standard alcoholic drinks consumed, used to track alcohol intake for health monitoring."
+
+# --- APPLE HEALTH UI ---
+icon: "wineglass.fill"
+color: "#AF52DE"
+
+default_unit: "count"
+supported_units:
+  - "count"
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 0
+  max: 10
+  unit: "count"
+clinical_ranges:
+  - population: "Women"
+    recommended: "Up to 1 drink per day"
+    upper_limit: "1 drink/day; 7 drinks/week (USDA/HHS moderate drinking guideline)"
+  - population: "Men"
+    recommended: "Up to 2 drinks per day"
+    upper_limit: "2 drinks/day; 14 drinks/week (USDA/HHS moderate drinking guideline)"
+  - population: "Adults 65+"
+    recommended: "No more than 1 drink per day"
+    upper_limit: "1 drink/day due to altered metabolism and medication interactions"
+  - population: "Pregnant Women"
+    recommended: "Complete abstinence"
+    upper_limit: "No safe amount established; avoid entirely"
+  - population: "Breastfeeding Women"
+    recommended: "Abstinence preferred; if consuming, limit to occasional single drink"
+    upper_limit: "Wait 2+ hours per drink before breastfeeding"
+  - population: "Adolescents (<21 years)"
+    recommended: "Complete abstinence"
+    upper_limit: "Illegal and developmentally harmful"
+  - population: "Recovering from Alcohol Use Disorder"
+    recommended: "Complete abstinence"
+    upper_limit: "No alcohol consumption recommended"
+  - population: "Certain Medical Conditions"
+    recommended: "Complete abstinence or as directed by physician"
+    upper_limit: "Varies by condition (liver disease, pancreatitis, certain cancers)"
+ios_introduced:
+  version: "15.0"
+  year: 2021
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "Nutrition and Wellness Apps"
+    capability: "Manual drink logging with tracking and insights"
+    examples:
+      - "Apple Health"
+      - "MyFitnessPal"
+      - "Lose It!"
+      - "Cronometer"
+  - name: "Alcohol-Specific Tracking Apps"
+    capability: "Specialized alcohol monitoring with BAC estimates and habit tracking"
+    examples:
+      - "Sunnyside"
+      - "Reframe"
+      - "Less (Drink Less)"
+      - "DrinkControl"
+  - name: "Sobriety Apps"
+    capability: "Track alcohol-free days and support recovery"
+    examples:
+      - "I Am Sober"
+      - "Nomo"
+      - "EasyQuit Drinking"
+primary_source: "Manual logging by user"
+description: |
+  ## Overview
+  This data type tracks the number of standard alcoholic beverages consumed. A standard drink in the United States contains approximately 14 grams (0.6 ounces) of pure alcohol, which is found in:
+  - 12 oz of regular beer (~5% alcohol)
+  - 5 oz of wine (~12% alcohol)
+  - 1.5 oz of distilled spirits (~40% alcohol/80 proof)
+
+  Accurate tracking of alcohol consumption is clinically valuable for assessing cardiovascular risk, liver health, medication safety, mental health, and overall wellness.
+
+  ## Standard Drink Equivalents
+  Understanding standard drink sizes is essential for accurate tracking:
+
+  **Beer:**
+  - Regular beer (5% ABV): 12 oz = 1 standard drink
+  - Light beer (4.2% ABV): 12 oz = ~0.8 standard drinks
+  - Craft/IPA (7% ABV): 12 oz = ~1.4 standard drinks
+  - Malt liquor (7% ABV): 12 oz = ~1.4 standard drinks
+
+  **Wine:**
+  - Table wine (12% ABV): 5 oz = 1 standard drink
+  - Fortified wine (17% ABV): 3.5 oz = 1 standard drink
+  - Wine cooler (5% ABV): 12 oz = 1 standard drink
+
+  **Spirits:**
+  - 80 proof (40% ABV): 1.5 oz = 1 standard drink
+  - 100 proof (50% ABV): 1.2 oz = 1 standard drink
+  - Mixed drinks: Typically 1-3 standard drinks depending on recipe
+
+  **Common Underestimation Errors:**
+  - Restaurant wine pours often 6-9 oz (1.2-1.8 standard drinks)
+  - Craft cocktails may contain 2-3 oz spirits (1.3-2 standard drinks)
+  - Large wine glasses encourage overpour
+  - High-ABV craft beers significantly exceed standard drink equivalent
+
+  ## Health Significance
+  Alcohol affects virtually every organ system:
+
+  **Cardiovascular:**
+  - Light-moderate consumption: Some studies suggest modest cardioprotective effects (controversial)
+  - Heavy consumption: Increased risk of hypertension, cardiomyopathy, arrhythmias, stroke
+  - Binge drinking: Acute cardiovascular stress, "holiday heart syndrome"
+
+  **Hepatic:**
+  - Fatty liver: Can develop with regular moderate-heavy use
+  - Alcoholic hepatitis: Inflammation from chronic heavy use
+  - Cirrhosis: End-stage liver disease from prolonged heavy drinking
+  - Liver cancer: Significantly increased risk with chronic use
+
+  **Oncologic:**
+  - Increased risk of cancers: mouth, throat, esophagus, liver, breast, colon
+  - Risk increases with amount consumed; no safe threshold for cancer risk
+  - Synergistic risk with tobacco use
+
+  **Neurological:**
+  - Acute: Impaired judgment, coordination, memory
+  - Chronic: Cognitive decline, Wernicke-Korsakoff syndrome
+  - Mental health: Depression, anxiety (can worsen or trigger)
+
+  **Metabolic:**
+  - Empty calories contributing to weight gain
+  - Hypoglycemia risk, especially in diabetics
+  - Disrupted sleep architecture despite sedative effect
+
+  ## Clinical Interpretation Guidelines
+  When reviewing alcohol intake data:
+
+  **Risk Categories:**
+  - **Low risk**: Within moderate drinking guidelines; no concerning patterns
+  - **Moderate risk**: Occasionally exceeds guidelines; binge episodes
+  - **High risk**: Regularly exceeds guidelines; signs of dependence
+  - **Severe**: Alcohol use disorder criteria met
+
+  **AUDIT-C Screening Correlation:**
+  Use tracked data to inform AUDIT-C scores:
+  1. How often do you have a drink containing alcohol? (frequency)
+  2. How many drinks on a typical drinking day? (quantity)
+  3. How often 6+ drinks on one occasion? (binge pattern)
+
+  **Binge Drinking Definition:**
+  - Women: 4+ drinks in ~2 hours
+  - Men: 5+ drinks in ~2 hours
+  - Reaches BAC ~0.08 g/dL
+
+  **Heavy Drinking Definition:**
+  - Women: >3 drinks/day or >7 drinks/week
+  - Men: >4 drinks/day or >14 drinks/week
+
+  **Pattern Analysis:**
+  - Weekend clustering vs. daily consumption
+  - Escalating quantities over time
+  - Drinking in response to stress/emotions
+  - Solitary vs. social drinking
+  - Time of day patterns
+
+  ## Drug Interactions
+  Alcohol interacts with numerous medications; critical counseling area:
+
+  **Dangerous Combinations:**
+  - **Opioids**: Profound respiratory depression; potentially fatal
+  - **Benzodiazepines**: Enhanced CNS depression; overdose risk
+  - **Sleep medications (Z-drugs)**: Increased sedation, memory impairment
+  - **Muscle relaxants**: Enhanced CNS depression
+
+  **Significant Interactions:**
+  - **Acetaminophen**: Increased hepatotoxicity risk (even at therapeutic doses with heavy drinking)
+  - **NSAIDs**: Increased GI bleeding risk
+  - **Warfarin**: Unpredictable anticoagulant effect; INR fluctuations
+  - **Metformin**: Lactic acidosis risk with heavy consumption
+  - **Methotrexate**: Increased hepatotoxicity
+  - **Metronidazole**: Disulfiram-like reaction (nausea, vomiting, flushing)
+  - **Antidepressants**: Variable effects; may worsen depression
+  - **Antihypertensives**: Enhanced hypotensive effect
+
+  **Diabetes Medications:**
+  - Insulin and sulfonylureas: Hypoglycemia risk (alcohol inhibits gluconeogenesis)
+  - Metformin: Lactic acidosis with heavy drinking
+  - Timing matters: Risk highest when drinking without food
+
+  ## Special Populations
+
+  **Pregnancy:**
+  - No known safe amount of alcohol during pregnancy
+  - Fetal Alcohol Spectrum Disorders (FASD) risk
+  - Counsel complete abstinence throughout pregnancy
+  - Partner with OB/GYN for patients struggling with cessation
+
+  **Older Adults (65+):**
+  - Reduced hepatic metabolism and increased sensitivity
+  - Higher fall risk with any consumption
+  - Increased medication interaction potential
+  - Cognitive effects more pronounced
+  - NIAAA recommends no more than 1 drink/day
+
+  **Mental Health:**
+  - Alcohol worsens depression and anxiety long-term
+  - High comorbidity with substance use disorders
+  - May interfere with psychiatric medications
+  - Screen for self-medication patterns
+
+  **Liver Disease:**
+  - Complete abstinence required for alcoholic liver disease
+  - May need abstinence for other liver conditions
+  - Critical for transplant evaluation
+
+  **Cancer Survivors:**
+  - Particularly important to limit for breast cancer survivors
+  - Consider abstinence for head/neck, liver, esophageal cancers
+
+  ## Caveats & Limitations
+  - **Self-reported data**: Subject to underreporting due to social desirability bias
+  - **Standard drink confusion**: Users may not understand standard drink equivalents
+  - **Pour size variability**: Home pours and bar servings vary significantly
+  - **Recall bias**: Often logged retrospectively with inaccurate quantities
+  - **No BAC correlation**: Count doesn't account for timing, body weight, or food intake
+  - **Missing context**: Doesn't capture drinking circumstances or motivations
+  - **Incomplete capture**: May not include all drinking occasions
+  - **Sensitive data flag**: Requires extra privacy consideration in clinical settings
+  - **Social/legal implications**: Data could have non-medical consequences if disclosed
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of alcoholic beverage (e.g., 'Beer', 'Wine', 'Spirits', 'Cocktail')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating if the value was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Alcohol disrupts sleep architecture; correlate intake with sleep quality data"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Alcohol acutely increases heart rate; chronic heavy use associated with arrhythmias"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariability"
+    relationship: "Alcohol reduces HRV; useful marker for physiological stress from drinking"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "Chronic heavy drinking associated with hypertension"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureDiastolic"
+    relationship: "Chronic heavy drinking associated with hypertension"
+  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
+    relationship: "Alcohol can cause hypoglycemia; important correlation for diabetics"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Alcohol provides empty calories; may contribute to weight changes"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Alcohol contributes significant calories (7 kcal/gram)"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Chronic alcohol use may elevate resting heart rate"
+  - identifier: "HKCategoryTypeIdentifierMindfulSession"
+    relationship: "Mindfulness practice may support alcohol reduction goals"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierNumberOfAlcoholicBeverages"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifiernumberofalcoholicbeverages"
+    type: "official"
+  - title: "USDA Dietary Guidelines for Americans 2020-2025 - Alcoholic Beverages"
+    url: "https://www.dietaryguidelines.gov/resources/2020-2025-dietary-guidelines-online-materials"
+    type: "official"
+  - title: "NIAAA - Rethinking Drinking"
+    url: "https://www.rethinkingdrinking.niaaa.nih.gov/"
+    type: "official"
+  - title: "CDC - Dietary Guidelines for Alcohol"
+    url: "https://www.cdc.gov/alcohol/fact-sheets/moderate-drinking.htm"
+    type: "official"
+  - title: "WHO - Global Status Report on Alcohol and Health"
+    url: "https://www.who.int/publications/i/item/9789241565639"
+    type: "research"
+  - title: "AAFP - Alcohol Use Disorder: Diagnosis and Management"
+    url: "https://www.aafp.org/pubs/afp/issues/2021/0715/p161.html"
+    type: "medical"
+  - title: "ACOG Committee Opinion - Alcohol Abuse and Other Substance Use Disorders"
+    url: "https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2015/07/at-risk-drinking-and-alcohol-dependence-obstetric-and-gynecologic-implications"
+    type: "medical"
+  - title: "SAMHSA - National Helpline for Substance Abuse"
+    url: "https://www.samhsa.gov/find-help/national-helpline"
+    type: "official"
+last_updated: "2026-01-27"

@@ -1,0 +1,180 @@
+identifier: "HKQuantityTypeIdentifierTimeInDaylight"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Hearing and Environment"
+human_readable_name: "Time in Daylight"
+short_description: "Duration of exposure to outdoor daylight conditions, measured in minutes, relevant for circadian rhythm regulation, mental health, and eye health."
+icon: "sun.max.fill"
+color: "#FFCC00"
+default_unit: "min"
+supported_units:
+  - "min"
+  - "hr"
+  - "s"
+unit_description: "Time measured in minutes representing cumulative daily exposure to natural outdoor daylight, detected via ambient light sensor when illumination exceeds indoor lighting thresholds (typically >1000 lux)."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "mostRecent"
+typical_range:
+  min: 0
+  max: 480
+  unit: "min"
+clinical_ranges:
+  - population: "General Adult"
+    safe: "30-120 minutes daily; more beneficial for mental health and circadian regulation"
+    concerning: "Consistently below 20 minutes daily may indicate insufficient light exposure"
+  - population: "Children and Adolescents"
+    safe: "40-120 minutes or more daily; critical for myopia prevention"
+    concerning: "Below 40 minutes daily associated with increased myopia risk"
+  - population: "Seasonal Affective Disorder Risk"
+    safe: "60+ minutes daily, especially morning light exposure"
+    concerning: "Minimal daylight exposure during winter months; <30 minutes consistently"
+  - population: "Shift Workers"
+    safe: "Strategic light exposure aligned with work schedule"
+    concerning: "Daylight exposure timing misaligned with desired sleep schedule"
+ios_introduced:
+  version: "17.0"
+  year: 2023
+watchos_introduced:
+  version: "10.0"
+  year: 2023
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch Series 6 and later"
+    capability: "Ambient light sensor measures light intensity to detect outdoor daylight conditions"
+  - name: "Apple Watch SE (2nd generation)"
+    capability: "Daylight detection via ambient light sensor"
+  - name: "Apple Watch Ultra (all models)"
+    capability: "Enhanced ambient light sensing for daylight measurement"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  Time in Daylight measures the cumulative duration a user spends in natural outdoor light conditions each day. This metric captures exposure to daylight-level illumination (typically >1000 lux), which has profound effects on circadian rhythm regulation, mental health, and ocular development in children.
+
+  Natural daylight is fundamentally different from artificial indoor lighting in both intensity (outdoor light: 10,000-100,000 lux vs. typical indoor: 100-500 lux) and spectral composition. The Apple Watch ambient light sensor distinguishes these conditions to provide actionable data on a crucial but often overlooked health behavior.
+
+  ## How It's Measured
+  Apple Watch uses its ambient light sensor to detect daylight conditions:
+
+  **Detection Methodology:**
+  1. Ambient light sensor continuously monitors illumination levels when worn
+  2. Algorithm distinguishes outdoor daylight (high lux, broad spectrum) from indoor lighting
+  3. Time is accumulated when conditions meet daylight threshold criteria
+  4. Daily totals are aggregated and stored in HealthKit
+
+  **Threshold Considerations:**
+  - Outdoor shade: ~10,000 lux (detected as daylight)
+  - Direct sunlight: 50,000-100,000+ lux (detected as daylight)
+  - Bright indoor lighting: 300-500 lux (typically not counted)
+  - Window/natural light indoors: Variable; may or may not be counted depending on intensity
+
+  **Measurement Conditions:**
+  - Watch must be worn with face exposed to ambient light
+  - Long sleeves covering the watch face may reduce detection accuracy
+  - Measurements are not dependent on UV exposure or direct sun visibility
+
+  ## Health Significance
+  **Circadian Rhythm Regulation:**
+  - Morning daylight exposure is the primary zeitgeber (time-giver) for human circadian rhythm
+  - Light exposure suppresses melatonin and advances the circadian phase
+  - Proper circadian alignment improves sleep quality, mood, metabolism, and cognitive function
+  - Insufficient daylight is linked to delayed sleep phase syndrome and circadian disruption
+
+  **Mental Health and Seasonal Affective Disorder:**
+  - Seasonal Affective Disorder (SAD) affects 1-10% of adults, depending on latitude
+  - Daylight exposure is the first-line treatment and prevention for SAD
+  - Even subsyndromal winter depression responds to increased light exposure
+  - Regular daylight correlates with reduced depression and anxiety symptoms year-round
+
+  **Myopia Prevention in Children:**
+  - Outdoor time is protective against myopia development, independent of physical activity
+  - Studies show 40+ minutes daily reduces myopia onset risk by up to 50%
+  - The protective effect is attributed to high-intensity light's impact on retinal dopamine
+  - Myopia prevalence has reached epidemic levels (>90% in some East Asian urban youth)
+
+  **Other Health Benefits:**
+  - Vitamin D synthesis (requires UV-B, which correlates with daylight)
+  - Enhanced alertness and cognitive performance
+  - Blood pressure regulation through nitric oxide pathways
+  - Improved sleep efficiency
+
+  ## Clinical Interpretation Guidelines
+  **For Health Consultants:**
+
+  1. **Establish Baseline Patterns:**
+     - Review weekly trends rather than individual days
+     - Note seasonal variations (winter vs. summer)
+     - Identify workday vs. weekend differences
+
+  2. **Population-Specific Targets:**
+     - Adults with mood concerns: Aim for 60+ minutes, emphasizing morning exposure
+     - Children/adolescents: Target 40-120 minutes for myopia prevention
+     - Shift workers: Time daylight exposure strategically relative to work schedule
+     - Elderly/institutionalized: Any increase from baseline is beneficial
+
+  3. **Timing Matters:**
+     - Morning light (within 2 hours of waking) is most effective for circadian entrainment
+     - Evening light can delay sleep timing (problematic for some, helpful for night owls)
+     - Midday light still provides mental health and general benefits
+
+  4. **Intervention Strategies:**
+     - Morning walks or outdoor breakfast/coffee
+     - Walking meetings or outdoor lunch breaks
+     - Position workspace near windows (though this doesn't count toward outdoor time)
+     - Light therapy boxes (10,000 lux) for those unable to get outdoor exposure
+
+  5. **Seasonal Considerations:**
+     - Winter months at higher latitudes make adequate daylight challenging
+     - May need to supplement with light therapy devices
+     - Track year-over-year patterns to anticipate seasonal depression risk
+
+  6. **Red Flags:**
+     - Consistently <20 minutes daily suggests lifestyle intervention opportunity
+     - Severe insomnia combined with low daylight warrants circadian assessment
+     - Children with minimal outdoor time should be counseled on myopia risk
+
+  ## Caveats & Limitations
+  - **Sensor Position:** Watch worn under long sleeves may not accurately detect ambient light
+  - **Indoor Bright Light:** Very bright indoor spaces (atriums, greenhouses) might occasionally register as daylight
+  - **Cloudy Days:** Overcast outdoor conditions still typically exceed threshold and are counted
+  - **No UV Measurement:** This metric does not measure UV exposure; daylight time doesn't directly indicate vitamin D synthesis
+  - **No Timing Data in Aggregate:** Daily total doesn't specify morning vs. evening distribution
+  - **Watch Wearing Compliance:** Time without the watch is not captured
+  - **Geographic/Seasonal Context:** Same duration has different health implications at different latitudes and seasons
+  - **Quality vs. Quantity:** Cannot distinguish direct sunlight from shaded outdoor light
+metadata_keys:
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone of the measurement, relevant for understanding daylight availability"
+  - key: "HKMetadataKeyWeatherCondition"
+    description: "Weather conditions during measurement if available"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Daylight exposure, especially morning light, directly influences sleep timing and quality"
+  - identifier: "HKQuantityTypeIdentifierUVExposure"
+    relationship: "UV exposure often correlates with daylight time; both relate to outdoor activity"
+  - identifier: "HKQuantityTypeIdentifierStepCount"
+    relationship: "Outdoor walking is a common source of daylight exposure; metrics often correlate"
+  - identifier: "HKCategoryTypeIdentifierMindfulSession"
+    relationship: "Outdoor mindfulness practices combine daylight exposure with stress reduction benefits"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierTimeInDaylight"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifiertimeindaylight"
+    type: "official"
+  - title: "Outdoor Activity and Myopia Progression - Ophthalmology Journal"
+    url: "https://www.aaojournal.org/article/S0161-6420(18)30102-X/fulltext"
+    type: "research"
+  - title: "Light Therapy for Seasonal Affective Disorder - American Journal of Psychiatry"
+    url: "https://ajp.psychiatryonline.org/doi/10.1176/appi.ajp.2005.05010066"
+    type: "research"
+  - title: "Apple Watch Health Features - Time in Daylight"
+    url: "https://support.apple.com/guide/watch/health-features-apde0218de59/watchos"
+    type: "tutorial"
+  - title: "Circadian Rhythms and Mental Health - Nature Reviews Neuroscience"
+    url: "https://www.nature.com/articles/s41583-020-0305-7"
+    type: "medical"
+last_updated: "2026-01-27"

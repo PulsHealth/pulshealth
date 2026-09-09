@@ -1,0 +1,170 @@
+identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Energy Consumed"
+short_description: "Total caloric energy intake from food and beverages"
+icon: "flame.fill"
+color: "#FF9500"
+default_unit: "kcal"
+supported_units:
+  - "kcal"
+  - "kJ"
+  - "Cal"
+unit_description: "Kilocalories (kcal) represent metabolizable energy from food. 1 kcal = 4.184 kJ. 'Calories' on food labels are actually kilocalories."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 1200
+  max: 4000
+  unit: "kcal"
+  notes: "Highly variable based on age, sex, body size, activity level, and metabolic health. Athletes may exceed 5000 kcal/day."
+clinical_ranges:
+  - population: "Adult Women (sedentary)"
+    rda: "1600-2000 kcal/day"
+    upper_limit: "Individualized based on weight goals"
+  - population: "Adult Women (active)"
+    rda: "2000-2400 kcal/day"
+    upper_limit: "Individualized based on weight goals"
+  - population: "Adult Men (sedentary)"
+    rda: "2000-2400 kcal/day"
+    upper_limit: "Individualized based on weight goals"
+  - population: "Adult Men (active)"
+    rda: "2400-3200 kcal/day"
+    upper_limit: "Individualized based on weight goals"
+  - population: "Children (4-8 years)"
+    rda: "1200-1800 kcal/day"
+    upper_limit: "Based on growth charts and activity"
+  - population: "Adolescents (14-18 years)"
+    rda: "1800-3200 kcal/day"
+    upper_limit: "Based on growth and activity"
+  - population: "Pregnancy"
+    rda: "+340 kcal/day (2nd trimester), +450 kcal/day (3rd trimester)"
+    upper_limit: "Individualized"
+  - population: "Lactation"
+    rda: "+330-400 kcal/day"
+    upper_limit: "Individualized"
+  - population: "Endurance Athletes"
+    rda: "3000-6000+ kcal/day"
+    upper_limit: "Based on training load and body composition goals"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Manual food logging, barcode scanning, meal photography with AI recognition"
+    examples:
+      - "MyFitnessPal"
+      - "Cronometer"
+      - "LoseIt"
+      - "Noom"
+      - "MacroFactor"
+  - name: "Smart scales with companion apps"
+    capability: "Weight tracking integrated with calorie recommendations"
+    examples:
+      - "Withings Body+"
+      - "Renpho Smart Scale"
+  - name: "CGM systems"
+    capability: "Some CGM apps allow meal logging alongside glucose data"
+    examples:
+      - "Levels"
+      - "Signos"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Energy Consumed represents the total caloric intake from all food and beverages logged by the user. This is the foundational metric for nutritional assessment and weight management. Energy balance (calories in vs. calories out) remains the primary determinant of body weight changes, though the quality of calories significantly impacts metabolic health, satiety, and body composition.
+
+  ## Health Significance
+  Accurate calorie tracking enables:
+  - **Weight Management**: Creating appropriate caloric deficits (typically 500-750 kcal/day for 1-1.5 lb/week loss) or surpluses for weight goals
+  - **Metabolic Health Assessment**: Identifying potential metabolic adaptation in weight loss plateaus
+  - **Athletic Performance**: Ensuring adequate fueling for training and competition
+  - **Clinical Nutrition**: Monitoring intake in eating disorders, failure to thrive, or post-surgical nutrition
+
+  ## Clinical Interpretation Guidelines
+  When reviewing dietary energy data:
+  1. **Assess Logging Consistency**: Sporadic logging limits data utility. Look for patterns across days with complete logging.
+  2. **Compare to Estimated Needs**: Use validated equations (Mifflin-St Jeor, Harris-Benedict) adjusted for activity level.
+  3. **Evaluate Macronutrient Distribution**: Total calories without macro context provides incomplete picture.
+  4. **Consider Underreporting**: Research consistently shows 20-50% underreporting of caloric intake, even with tracking apps.
+  5. **Weekend vs. Weekday Patterns**: Many individuals consume 200-500+ additional calories on weekends.
+
+  ## Deficiency Symptoms
+  Chronic energy deficit may manifest as:
+  - Fatigue, weakness, and decreased physical performance
+  - Hair loss, brittle nails, dry skin
+  - Amenorrhea or irregular menstruation in women
+  - Decreased libido and hormonal disruption
+  - Impaired immune function
+  - Muscle wasting and decreased bone density
+  - Relative Energy Deficiency in Sport (RED-S) in athletes
+  - Cognitive impairment and mood disturbances
+
+  ## Excess/Toxicity
+  Chronic caloric surplus leads to:
+  - Weight gain and obesity
+  - Increased visceral adiposity
+  - Insulin resistance and metabolic syndrome
+  - Elevated cardiovascular disease risk
+  - Non-alcoholic fatty liver disease (NAFLD)
+  - Increased cancer risk (obesity-related cancers)
+  - Sleep apnea and joint stress
+
+  ## Special Populations
+  - **Athletes**: Periodized nutrition with higher intakes during training blocks; may need 40-70 kcal/kg body weight
+  - **Diabetes**: Caloric control essential for glycemic management; low-calorie diets may achieve remission in Type 2
+  - **Eating Disorders**: Calorie tracking may be contraindicated; can reinforce obsessive behaviors
+  - **Elderly**: Often require lower calories but higher protein density; malnutrition risk increases
+  - **Post-Bariatric Surgery**: Severely restricted intake (800-1200 kcal) with emphasis on protein first
+  - **Pregnancy/Lactation**: Modest increases needed; quality of calories critical for fetal development
+
+  ## Caveats & Limitations
+  - **Self-Reported Data**: All food logging is subject to user error, portion estimation inaccuracies, and intentional/unintentional omissions
+  - **Database Accuracy**: Food databases contain errors; restaurant/homemade foods are estimates
+  - **Individual Variation**: Metabolizable energy varies by gut microbiome, food preparation, and individual digestion
+  - **Thermic Effect**: Not all calories are equal metabolically; protein has higher thermic effect than carbs or fat
+  - **Absorption Variability**: Fiber, food processing, and cooking methods affect actual calorie absorption
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the type of food or meal logged (e.g., 'breakfast', 'lunch', 'dinner', 'snack')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating whether the data was manually entered by the user versus automatically captured"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from the source app's database for data synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
+    relationship: "Protein contributes 4 kcal/g to total energy intake"
+  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
+    relationship: "Carbohydrates contribute 4 kcal/g to total energy intake"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "Fat contributes 9 kcal/g to total energy intake"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Active calories burned; used to calculate energy balance"
+  - identifier: "HKQuantityTypeIdentifierBasalEnergyBurned"
+    relationship: "Resting metabolic rate; combined with active energy for total expenditure"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Body weight changes reflect long-term energy balance"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryenergyconsumed"
+    type: "official"
+  - title: "Dietary Reference Intakes for Energy - National Academies"
+    url: "https://www.nationalacademies.org/our-work/dietary-reference-intakes-for-energy"
+    type: "research"
+  - title: "Dietary Guidelines for Americans 2020-2025"
+    url: "https://www.dietaryguidelines.gov/"
+    type: "official"
+  - title: "Position of the Academy of Nutrition and Dietetics: Interventions for the Treatment of Overweight and Obesity in Adults"
+    url: "https://jandonline.org/article/S2212-2672(16)00295-8/fulltext"
+    type: "medical"
+last_updated: "2026-01-27"

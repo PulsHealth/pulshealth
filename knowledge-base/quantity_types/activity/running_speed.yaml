@@ -1,0 +1,190 @@
+identifier: "HKQuantityTypeIdentifierRunningSpeed"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Running Speed"
+short_description: "The rate of travel during running activities, typically measured in meters per second or minutes per mile/kilometer."
+icon: "figure.run"
+color: "#30D158"
+default_unit: "m/s"
+supported_units:
+  - "m/s"
+  - "km/hr"
+  - "mi/hr"
+unit_description: "Default unit is meters per second (m/s). Runners commonly use pace (min/mile or min/km) which is the inverse of speed. HealthKit stores speed; apps typically convert to pace for display. 1 m/s = 3.6 km/hr = 2.237 mi/hr."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 2.0
+  max: 6.5
+  unit: "m/s"
+  notes: "2.0 m/s = 13:24 min/mile (slow jog); 4.0 m/s = 6:42 min/mile (moderate run); 6.5 m/s = 4:07 min/mile (elite pace). Walking is typically 1.0-1.8 m/s."
+clinical_ranges:
+  - population: "Beginning runners"
+    values: "2.0-2.8 m/s (9:30-13:30 min/mile pace)"
+  - population: "Recreational runners"
+    values: "2.8-3.5 m/s (7:35-9:30 min/mile pace)"
+  - population: "Competitive amateur runners"
+    values: "3.5-4.5 m/s (5:55-7:35 min/mile pace)"
+  - population: "Highly trained runners"
+    values: "4.5-5.5 m/s (4:50-5:55 min/mile pace)"
+  - population: "Elite runners"
+    values: "5.5-6.5+ m/s (sub-4:50 min/mile pace)"
+  - population: "World record marathon pace"
+    values: "~5.9 m/s (4:33 min/mile)"
+ios_introduced:
+  version: "16.0"
+  year: 2022
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+deprecated: false
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Measures running speed using GPS for outdoor runs and motion sensors for treadmill runs"
+    examples:
+      - "Apple Watch Series 6"
+      - "Apple Watch Series 7"
+      - "Apple Watch Series 8"
+      - "Apple Watch Series 9"
+      - "Apple Watch SE (2nd gen)"
+      - "Apple Watch Ultra"
+      - "Apple Watch Ultra 2"
+  - name: "iPhone"
+    capability: "Can track running speed via GPS during outdoor runs when carried"
+    examples:
+      - "iPhone 8 and later"
+  - name: "Third-party GPS devices"
+    capability: "Various running watches and foot pods can write running speed to HealthKit"
+    examples:
+      - "Garmin running watches"
+      - "Polar running watches"
+      - "COROS watches"
+      - "Stryd foot pod"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  Running speed measures how fast a person is moving during a run, expressed as distance covered per unit time. While HealthKit stores speed in m/s, runners typically think in terms of pace (time per distance unit), which is the inverse. Running speed is a fundamental metric for training, racing, and assessing fitness progress.
+
+  Speed serves multiple purposes:
+  - **Performance metric**: Faster sustainable speeds indicate improved fitness
+  - **Training zone guidance**: Different speeds target different physiological adaptations
+  - **Race pacing**: Maintaining appropriate speed is crucial for optimal race performance
+  - **Progress tracking**: Speed improvements at given effort levels show training effectiveness
+
+  ## How It's Measured
+  Apple Watch measures running speed using multiple data sources:
+
+  **Outdoor Running:**
+  - **GPS**: Primary method for outdoor runs; calculates speed from position changes over time
+  - **Motion sensors**: Accelerometers provide instant speed estimates between GPS fixes and during GPS signal loss
+  - **Sensor fusion**: Algorithms combine GPS and accelerometer data for smoother, more accurate speed readings
+
+  **Treadmill Running:**
+  - **Accelerometer-based**: Uses arm swing cadence and stride characteristics to estimate speed
+  - **Calibration**: Accuracy improves with outdoor runs that help calibrate the motion-to-speed relationship
+  - **Manual input**: Users can manually enter treadmill speed for better accuracy
+
+  Speed data is recorded throughout a workout, allowing analysis of:
+  - Instantaneous speed at any point
+  - Average speed over intervals or the entire workout
+  - Speed variability and consistency
+  - Split times per mile/kilometer
+
+  ## Health Significance
+  Running speed has several clinical and health applications:
+
+  - **Fitness indicator**: Faster speeds at submaximal effort indicate better aerobic fitness
+  - **Functional capacity**: Running speed (and the related walking speed) predicts functional independence
+  - **Training prescription**: Speed-based workouts target specific physiological systems
+  - **Rehabilitation progress**: Tracking speed during return-to-run protocols monitors recovery
+  - **Cardiovascular health**: The ability to sustain running reflects cardiovascular function
+  - **Aging marker**: Speed decline with age is modifiable through training
+
+  Note that speed alone doesn't indicate effort level - the same speed may represent easy running for one person and maximal effort for another.
+
+  ## Clinical Interpretation Guidelines
+  When interpreting running speed data:
+
+  1. **Context matters**: Always consider speed alongside heart rate, power, and perceived exertion
+  2. **Individual baselines**: Compare to the person's own history, not population averages
+  3. **Training zones by speed**:
+     - Recovery: 60-70% of threshold pace
+     - Easy/Aerobic: 70-80% of threshold pace
+     - Tempo: 85-90% of threshold pace
+     - Threshold: ~1 hour race pace
+     - Interval: 95-105% of threshold pace
+     - Repetition: Faster than threshold pace with full recovery
+  4. **Speed-heart rate relationship**: Cardiac drift (rising HR at constant speed) indicates fatigue, dehydration, or heat stress
+  5. **Speed variability**: Consistent pacing generally indicates better fitness and running economy
+  6. **Terrain adjustment**: Expect slower speeds uphill and faster speeds downhill; grade-adjusted pace (GAP) normalizes this
+
+  Threshold pace (sustainable for ~1 hour) is a key reference point and can be estimated from recent race times or field tests.
+
+  ## Caveats & Limitations
+  - **GPS accuracy**: Speed measurements can be affected by GPS signal quality (urban canyons, tree cover, weather)
+  - **Treadmill estimates**: Without GPS, treadmill speed is estimated and may differ from actual belt speed
+  - **Instantaneous vs. average**: Instantaneous speed can be noisy; average speed over intervals is more reliable
+  - **Terrain effects**: Speed comparisons are only meaningful on similar terrain; a 6:30 pace uphill is not equivalent to 6:30 on flat ground
+  - **Environmental factors**: Wind, temperature, altitude, and surface all affect achievable speed independent of fitness
+  - **Not effort-adjusted**: Two runners at the same speed may be at very different effort levels
+  - **Technical limitations**: GPS can show artificially high/low speeds during tight turns, tunnels, or when signal is acquired
+  - **Indoor accuracy**: Treadmill speed estimates typically have larger errors than outdoor GPS measurements
+
+  ## Additional Notes
+  - Speed and pace are inversely related: Speed = Distance / Time; Pace = Time / Distance
+  - Common pace conversions: 10 min/mile = 2.68 m/s; 8 min/mile = 3.35 m/s; 6 min/mile = 4.47 m/s
+  - Grade-adjusted pace (GAP) is useful for comparing effort on hilly courses to flat running
+  - Speed variability during a workout can indicate pacing strategy, fatigue patterns, or terrain changes
+  - For clinical gait analysis, walking speed is often measured; running speed extends this to higher functional capacity assessment
+  - Elite marathon runners sustain speeds above 5.5 m/s (sub-3:00 pace per km) for over 2 hours
+metadata_keys:
+  - key: "HKMetadataKeyIndoorWorkout"
+    description: "Boolean indicating if the run was performed indoors (treadmill), which affects speed measurement methodology."
+  - key: "HKMetadataKeyAverageSpeed"
+    description: "Average speed calculated over a workout segment or entire workout."
+  - key: "HKMetadataKeyElevationAscended"
+    description: "Total elevation gain, which contextualizes speed (uphill running is naturally slower)."
+  - key: "HKMetadataKeyElevationDescended"
+    description: "Total elevation loss during the run."
+  - key: "HKMetadataKeyWeatherTemperature"
+    description: "Ambient temperature, which affects sustainable running speed."
+  - key: "HKMetadataKeyWeatherHumidity"
+    description: "Ambient humidity, which affects sustainable running speed."
+related_types:
+  - identifier: "HKQuantityTypeIdentifierRunningPower"
+    relationship: "Power at a given speed indicates running economy; lower power for same speed means better efficiency"
+  - identifier: "HKQuantityTypeIdentifierRunningStrideLength"
+    relationship: "Speed equals stride length times cadence; changes in speed result from changes in one or both"
+  - identifier: "HKQuantityTypeIdentifierRunningGroundContactTime"
+    relationship: "Faster speeds typically correlate with shorter ground contact times"
+  - identifier: "HKQuantityTypeIdentifierRunningVerticalOscillation"
+    relationship: "Vertical oscillation relative to speed indicates running efficiency"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Heart rate at given speeds indicates aerobic fitness; same speed at lower HR shows improvement"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Higher VO2 max enables sustaining faster speeds; speed during fitness tests estimates VO2 max"
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Related metric for lower-intensity locomotion; the boundary between walking and running speed"
+  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
+    relationship: "Distance covered is the integral of speed over time"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierRunningSpeed"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierrunningspeed"
+    type: "official"
+  - title: "Apple Support - Running metrics on Apple Watch"
+    url: "https://support.apple.com/en-us/HT212958"
+    type: "official"
+  - title: "Determinants of Running Performance"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4470530/"
+    type: "research"
+  - title: "GPS Accuracy in Consumer Wearables"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6540897/"
+    type: "research"
+last_updated: "2026-01-27"

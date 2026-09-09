@@ -1,0 +1,125 @@
+identifier: "HKCategoryTypeIdentifierDrySkin"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Dry Skin"
+short_description: "Tracks episodes of dry, rough, or flaky skin."
+icon: "hand.raised.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Dry skin (xerosis) is characterized by rough, scaly, flaky, or cracked skin that may feel tight or itchy. This HealthKit category type enables users to track dry skin episodes, helping identify triggers, seasonal patterns, and underlying conditions that may require treatment.
+
+  ## Health Significance
+  While often a benign cosmetic concern, dry skin can indicate underlying medical conditions, nutritional deficiencies, or environmental factors requiring attention. Chronic dry skin can lead to complications like eczematous dermatitis or skin infections.
+
+  Common causes include:
+  - Environmental factors (low humidity, cold weather, indoor heating)
+  - Frequent bathing or use of harsh soaps
+  - Aging (sebaceous gland activity decreases)
+  - Dehydration
+  - Atopic dermatitis (eczema)
+  - Psoriasis
+  - Contact dermatitis
+
+  Medical conditions associated with dry skin:
+  - Hypothyroidism
+  - Diabetes mellitus
+  - Chronic kidney disease
+  - Malnutrition (essential fatty acid deficiency, zinc deficiency)
+  - Sjögren's syndrome
+  - Ichthyosis (genetic conditions)
+
+  Medication-related causes:
+  - Diuretics
+  - Retinoids
+  - Statins
+  - Chemotherapy agents
+
+  ## When to Seek Medical Attention
+  Users should consult a healthcare provider when dry skin:
+  - Does not improve with regular moisturizing
+  - Is accompanied by intense itching disrupting sleep
+  - Becomes cracked, bleeding, or shows signs of infection
+  - Is widespread and persistent
+  - Is associated with other symptoms (fatigue, cold intolerance, weight changes)
+  - Appears suddenly without clear cause
+  - Is accompanied by hair loss or nail changes
+  - Significantly affects quality of life
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Seasonal patterns (winter exacerbations)
+  - Correlation with environmental humidity levels
+  - Response to moisturizing interventions
+  - Medication-related onset
+  - Association with systemic symptoms (suggesting thyroid or metabolic causes)
+  - Stress-related flares
+  - Diet and hydration correlations
+
+  ## Caveats & Limitations
+  - Location of dry skin not captured
+  - Cannot differentiate between dry skin types (xerosis vs. eczema vs. psoriasis)
+  - Does not record associated symptoms (itching, cracking, bleeding)
+  - Severity is subjective
+  - Environmental context not captured
+  - Cannot assess for underlying systemic conditions
+  - Limited value without laboratory correlation when systemic cause suspected
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierHairLoss"
+    relationship: "Hair loss and dry skin may indicate thyroid dysfunction"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Fatigue with dry skin suggests systemic conditions like hypothyroidism"
+  - identifier: "HKCategoryTypeIdentifierBrittleNails"
+    relationship: "Nail changes often accompany systemic causes of dry skin"
+  - identifier: "HKQuantityTypeIdentifierDietaryWater"
+    relationship: "Hydration status affects skin moisture"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierDrySkin"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierdryskin"
+    type: "official"
+  - title: "Dry Skin - Mayo Clinic"
+    url: "https://www.mayoclinic.org/diseases-conditions/dry-skin/symptoms-causes/syc-20353885"
+    type: "medical"
+  - title: "Xerosis - American Academy of Dermatology"
+    url: "https://www.aad.org/public/everyday-care/skin-care-basics/dry/dermatologists-tips-relieve-dry-skin"
+    type: "medical"
+last_updated: "2026-01-27"

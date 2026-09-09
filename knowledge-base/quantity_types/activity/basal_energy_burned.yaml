@@ -1,0 +1,245 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Basal Energy Burned
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierBasalEnergyBurned"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Basal Energy Burned"
+short_description: "Measures the resting energy expenditure (calories burned at rest) to maintain basic physiological functions."
+
+# --- APPLE HEALTH UI ---
+icon: "flame.fill"
+color: "#FF9500"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "kcal"
+supported_units:
+  - "kcal"
+  - "kJ"
+  - "Cal"
+unit_description: "Kilocalories (kcal) or kilojoules (kJ) - measures energy expenditure at complete rest over a time period"
+
+# --- STATISTICS ---
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 1000
+  max: 2500
+  unit: "kcal/day"
+  notes: "Daily basal energy expenditure varies based on age, sex, height, weight, and body composition. Range represents typical adult values."
+
+clinical_ranges:
+  - population: "Adult women"
+    low: "<1200 kcal/day"
+    average: "1400-1800 kcal/day"
+    high: ">2000 kcal/day"
+  - population: "Adult men"
+    low: "<1400 kcal/day"
+    average: "1600-2200 kcal/day"
+    high: ">2400 kcal/day"
+  - population: "Older adults (65+)"
+    low: "<1100 kcal/day"
+    average: "1200-1600 kcal/day"
+    high: ">1800 kcal/day"
+  - population: "Athletes/highly active individuals"
+    low: "N/A"
+    average: "1800-2400 kcal/day"
+    high: ">2600 kcal/day (high lean mass)"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "8.0"
+  year: 2014
+  notes: "Available since initial HealthKit release"
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+  notes: "Apple Watch calculates and contributes basal energy estimates throughout the day"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Continuously estimates basal energy burned throughout the day using user profile data (age, sex, height, weight) and potentially sensor inputs for refinement."
+    series: "All series"
+  - name: "iPhone"
+    capability: "Calculates basal energy estimates using Health profile data. Acts as data aggregator from connected devices and apps."
+  - name: "Third-party fitness apps"
+    capability: "Apps can calculate and write basal energy estimates using various BMR equations and user data."
+    examples: ["MyFitnessPal", "Lose It!", "Cronometer", "Fitbit"]
+primary_source: "Apple Watch"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Basal Energy Burned represents the energy expended by the body at complete rest to maintain essential physiological functions such as breathing, circulation, cellular repair, brain activity, and maintaining body temperature. This is clinically referred to as Basal Metabolic Rate (BMR) or Resting Energy Expenditure (REE). In HealthKit, this value accumulates throughout the day, representing the cumulative resting calories burned.
+
+  Basal energy typically accounts for 60-75% of Total Daily Energy Expenditure (TDEE), making it the largest component of daily calorie burn. Understanding a client's basal energy is fundamental to nutrition planning, weight management, and metabolic health assessment.
+
+  ## How It's Measured
+
+  ### Apple's Estimation Method
+  Apple does not publicly disclose its exact BMR calculation algorithm, but evidence suggests it uses a variation of established prediction equations incorporating:
+  - **Age** (metabolic rate declines ~2% per decade after age 20)
+  - **Biological sex** (males typically have 5-10% higher BMR due to greater lean mass)
+  - **Height** (taller individuals have more metabolically active tissue)
+  - **Weight** (primary determinant of energy expenditure)
+
+  Apple Watch may also incorporate sensor data (heart rate at rest, activity patterns) to refine estimates beyond simple equations, which explains day-to-day variations in reported basal energy.
+
+  ### Standard BMR Prediction Equations
+
+  **Harris-Benedict Equation (1919, revised 1984):**
+  - Men: BMR = 88.362 + (13.397 × weight kg) + (4.799 × height cm) - (5.677 × age years)
+  - Women: BMR = 447.593 + (9.247 × weight kg) + (3.098 × height cm) - (4.330 × age years)
+
+  **Mifflin-St Jeor Equation (1990) - Recommended by American Dietetic Association:**
+  - Men: BMR = (10 × weight kg) + (6.25 × height cm) - (5 × age years) + 5
+  - Women: BMR = (10 × weight kg) + (6.25 × height cm) - (5 × age years) - 161
+
+  The Mifflin-St Jeor equation is considered more accurate for modern populations, predicting REE within 10% of measured values in approximately 70% of obese individuals and 82% of non-obese individuals.
+
+  ### Gold Standard Measurement
+  Clinical measurement uses indirect calorimetry, which measures oxygen consumption (VO2) and carbon dioxide production (VCO2) to calculate actual metabolic rate. This is far more accurate than prediction equations but requires specialized equipment.
+
+  ## Health Significance
+
+  Basal energy expenditure provides critical insight into metabolic health:
+
+  - **Weight Management Foundation:** BMR determines the minimum calories needed daily. Creating appropriate caloric deficits or surpluses requires accurate BMR knowledge.
+
+  - **Metabolic Health Indicator:** Abnormally low BMR relative to body size may indicate metabolic adaptation (from chronic dieting), thyroid dysfunction, or hormonal imbalances.
+
+  - **Nutritional Planning:** Ensures clients receive adequate energy for basic function, preventing the negative health consequences of excessive caloric restriction.
+
+  - **Body Composition Proxy:** Higher BMR relative to body weight often indicates greater lean body mass, as muscle tissue is more metabolically active than fat tissue.
+
+  ## Clinical Interpretation Guidelines
+
+  ### Factors That Increase Basal Energy
+  - Greater lean body mass/muscle mass
+  - Larger body size (height and weight)
+  - Male biological sex
+  - Younger age
+  - Hyperthyroidism
+  - Fever/infection (7% increase per 1°F above normal)
+  - Certain medications (stimulants, thyroid hormones)
+  - Pregnancy (especially 2nd and 3rd trimesters)
+  - Recovery from injury or surgery
+  - High ambient temperature stress
+
+  ### Factors That Decrease Basal Energy
+  - Loss of lean body mass
+  - Smaller body size
+  - Female biological sex
+  - Older age
+  - Hypothyroidism
+  - Prolonged caloric restriction (adaptive thermogenesis)
+  - Hormonal changes (menopause, low testosterone)
+  - Sedentary lifestyle leading to muscle loss
+  - Certain medications (beta-blockers)
+  - Malnutrition
+
+  ### Clinical Red Flags
+  - **Measured BMR significantly lower than predicted (ratio <0.90):** May indicate chronic energy deficiency, particularly relevant in athletes (Relative Energy Deficiency in Sport - RED-S)
+  - **Unexplained changes in BMR:** Warrant investigation for thyroid dysfunction, hormonal imbalances, or chronic illness
+  - **BMR discrepancy after weight loss:** Post-weight loss BMR reduction beyond what body composition change predicts may indicate metabolic adaptation requiring careful nutritional management
+
+  ## Caveats & Limitations
+
+  ### Estimation Accuracy
+  - All prediction equations have significant individual error margins (typically ±10-15%)
+  - No prediction equation performs well across all populations; accuracy varies by BMI, age, and ethnicity
+  - Equations were developed primarily on Caucasian populations and may be less accurate for other ethnic groups
+  - Severely obese individuals (BMI >40) show higher prediction errors
+  - Apple's proprietary algorithm has shown average calorie estimation errors of approximately 28% in research studies
+
+  ### What Basal Energy Cannot Tell You
+  - Actual body composition (fat vs. muscle)
+  - Thyroid function status
+  - Presence of metabolic disorders
+  - Nutritional adequacy
+  - Individual metabolic efficiency
+
+  ### Interpretation Considerations
+  - Day-to-day variation in Apple's estimates may reflect algorithm adjustments rather than true metabolic changes
+  - Accurate user profile data (especially weight) is essential for meaningful estimates
+  - Should be considered alongside active energy for total energy expenditure assessment
+
+  ## Additional Notes
+
+  **TDEE Calculation Context:**
+  Total Daily Energy Expenditure = Basal Energy + Active Energy + Thermic Effect of Food (TEF)
+  - Basal Energy: 60-75% of TDEE
+  - Active Energy: 15-30% of TDEE (highly variable)
+  - TEF: ~10% of TDEE
+
+  **For Health Consultants:**
+  1. Always verify client's Health profile data (weight, height, age) is current for accurate estimates
+  2. Use basal + active energy totals to understand overall energy expenditure patterns
+  3. Consider recommending indirect calorimetry for clients with unexplained weight management difficulties
+  4. Be cautious of very low calorie recommendations; ensure they exceed estimated BMR to preserve metabolic health
+  5. Track trends over weeks/months rather than daily fluctuations
+  6. Recognize that Apple's estimates are useful for relative tracking but may not match clinical measurements
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the sample was entered manually by the user rather than automatically recorded"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Complementary - Together with basal energy, represents total energy expenditure excluding thermic effect of food"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Complementary - Comparing dietary intake to basal+active energy determines energy balance"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Input factor - Body weight is a primary determinant of BMR calculations"
+  - identifier: "HKQuantityTypeIdentifierLeanBodyMass"
+    relationship: "Input factor - Lean mass is more metabolically active than fat mass; influences actual BMR"
+  - identifier: "HKQuantityTypeIdentifierHeight"
+    relationship: "Input factor - Height is used in BMR prediction equations"
+  - identifier: "HKCharacteristicTypeIdentifierBiologicalSex"
+    relationship: "Input factor - Sex-specific coefficients used in BMR equations"
+  - identifier: "HKCharacteristicTypeIdentifierDateOfBirth"
+    relationship: "Input factor - Age is used in BMR prediction equations"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - basalEnergyBurned"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/basalenergyburned"
+    type: "official"
+  - title: "Mifflin-St Jeor Equation - Medscape Calculator"
+    url: "https://reference.medscape.com/calculator/846/mifflin-st-jeor-equation"
+    type: "medical"
+  - title: "Comparison of predictive equations for resting metabolic rate - Journal of the American Dietetic Association"
+    url: "https://pubmed.ncbi.nlm.nih.gov/15883556/"
+    type: "research"
+  - title: "Comparison of Harris Benedict and Mifflin-ST Jeor equations with indirect calorimetry"
+    url: "https://pubmed.ncbi.nlm.nih.gov/18688113/"
+    type: "research"
+  - title: "Energy Expenditure - Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Energy_expenditure"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 8.0 introduction confirmed via Apple Developer Documentation
+  - Mifflin-St Jeor accuracy data from Journal of the American Dietetic Association systematic review (2005)
+  - Apple BMR calculation method inferred from Apple Community discussions and fitness tracking analysis
+  - Clinical REE assessment guidance from nutrition and obesity research literature
+  - TDEE components breakdown from standard exercise physiology references

@@ -1,0 +1,309 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Distance Downhill Snow Sports
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierDistanceDownhillSnowSports"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Downhill Snow Sports Distance"
+short_description: "Measures the distance traveled while skiing or snowboarding downhill."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.skiing.downhill"
+color: "#5AC8FA"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "m"
+supported_units:
+  - "m"
+  - "km"
+  - "mi"
+  - "ft"
+  - "yd"
+unit_description: "Length units measuring cumulative distance traveled during downhill skiing and snowboarding. Typically displayed in kilometers or miles based on user locale."
+
+# --- STATISTICS ---
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 100000
+  unit: "m"
+  notes: "Single-day values vary enormously based on terrain, conditions, and skier/snowboarder ability. Recreational skiers might cover 15-30 km per day; avid skiers can exceed 50 km on a full day."
+
+clinical_ranges:
+  - population: "Recreational Skiers/Snowboarders"
+    half_day: "5-15 km"
+    full_day: "15-30 km"
+    intensive_day: "30-50 km"
+  - population: "Advanced/Expert Skiers"
+    half_day: "10-25 km"
+    full_day: "25-50 km"
+    intensive_day: "50-80 km"
+  - population: "Professional/Competitive"
+    training_day: "30-60 km"
+    competition_day: "Varies by event"
+    peak_day: "80+ km"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "11.0"
+  year: 2017
+  notes: "Introduced to support ski and snowboard workout tracking"
+watchos_introduced:
+  version: "4.0"
+  year: 2017
+  notes: "watchOS 4.0 added dedicated skiing and snowboarding workout types with altitude and distance tracking"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Tracks downhill snow sports distance using GPS for horizontal distance and barometric altimeter for elevation changes. Ski and snowboard workout modes optimize tracking for characteristic movement patterns."
+    series: "Series 3 and later (GPS models)"
+    examples: ["Apple Watch Series 3", "Apple Watch Ultra"]
+  - name: "iPhone"
+    capability: "Can track snow sports distance when carried in pocket or arm band. GPS and barometric altimeter provide distance and elevation data."
+    examples: ["iPhone 6s and later"]
+  - name: "Third-party ski tracking apps"
+    capability: "Specialized ski and snowboard tracking apps often provide enhanced features like run counting, lift detection, and resort integration."
+    examples: ["Slopes", "Ski Tracks", "Snoww"]
+  - name: "Dedicated ski trackers"
+    capability: "Some ski-specific devices can export data to HealthKit through companion apps."
+    examples: ["Garmin MARQ Adventurer", "Suunto watches"]
+primary_source: "Apple Watch or iPhone during Skiing/Snowboarding workout"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Distance Downhill Snow Sports tracks the cumulative distance traveled while skiing or snowboarding. Apple introduced this dedicated metric in 2017, recognizing that snow sports have unique tracking requirements compared to other activities. The metric captures distance traveled during active descents, providing skiers and snowboarders with meaningful data about their on-mountain activity.
+
+  This metric is particularly valuable for winter sports enthusiasts who want to quantify their skiing or snowboarding volume, track seasonal progress, and understand their activity levels during ski trips.
+
+  ## How It's Measured
+
+  **GPS-Based Distance:**
+  Primary distance calculation uses GPS:
+  - Satellite positioning tracks horizontal movement across terrain
+  - Sampling rate increases during active descents for accuracy
+  - Modern Apple Watch (Ultra series) provides enhanced GPS accuracy
+  - Works best with clear sky view; tree cover and terrain can affect accuracy
+
+  **Barometric Altimeter:**
+  Apple Watch and iPhone include barometric altimeters that:
+  - Measure atmospheric pressure changes indicating elevation change
+  - Distinguish uphill (lift rides) from downhill (skiing/snowboarding)
+  - Provide vertical descent data that complements horizontal distance
+  - Help identify run starts and ends
+
+  **Workout Mode Optimization:**
+  When users start a Skiing or Snowboarding workout:
+  - Algorithms optimize for snow sports movement patterns
+  - Automatic run detection identifies descents vs. lift rides
+  - Enhanced GPS sampling during active skiing/snowboarding
+  - Battery optimization during inactive periods (lift rides, breaks)
+
+  **Third-Party App Enhancements:**
+  Dedicated ski tracking apps often provide:
+  - Automatic lift detection using altitude and motion data
+  - Individual run distance and statistics
+  - Resort-specific trail mapping
+  - More granular data than Apple's native workout tracking
+
+  ## Health Significance
+
+  Snow sports provide significant physical activity benefits:
+
+  **Cardiovascular Exercise:**
+  - Downhill skiing and snowboarding are moderate to vigorous aerobic activities
+  - Distance covered correlates with overall activity volume
+  - Heart rate elevated during descents, recovering during lift rides
+
+  **Musculoskeletal Benefits:**
+  - Lower body strengthening: quadriceps, hamstrings, glutes
+  - Core stability demands throughout skiing/snowboarding
+  - Balance and proprioception training
+
+  **Caloric Expenditure:**
+  - Skiing burns approximately 300-600 calories per hour depending on intensity
+  - Distance provides context for energy expenditure during ski days
+  - Full day of skiing can burn 2,000-4,000 calories
+
+  **Mental Health:**
+  - Outdoor winter activity associated with mood benefits
+  - Social aspects of skiing contribute to wellbeing
+  - Quantified achievement can enhance motivation and enjoyment
+
+  ## Clinical Interpretation Guidelines
+
+  ### Assessing Snow Sports Activity
+
+  **Daily Volume Assessment:**
+  - **5-15 km:** Half day or leisurely skiing; appropriate for beginners or reconditioning
+  - **15-30 km:** Typical full day for recreational skiers
+  - **30-50 km:** Intensive skiing day; significant physical demand
+  - **50+ km:** Very high volume; typically advanced skiers on favorable terrain
+
+  **Context Factors:**
+  Distance alone doesn't capture full picture; consider:
+  - Terrain difficulty: Steep expert runs vs. groomed cruisers
+  - Snow conditions: Powder, ice, crud affect effort significantly
+  - Altitude: High altitude increases physiological demands
+  - Temperature: Cold weather increases metabolic demands
+
+  **Seasonal Tracking:**
+  - Total season distance provides activity volume measure
+  - Week-over-week comparison shows conditioning progression
+  - Year-over-year comparison indicates long-term engagement
+
+  ### Clinical Considerations
+
+  **Injury Risk Assessment:**
+  Snow sports carry inherent injury risks:
+  - ACL injuries common in skiing (more in women)
+  - Wrist fractures common in snowboarding
+  - Fatigue increases injury risk; high daily distances may indicate overexertion
+  - Last run of day often when injuries occur
+
+  **Altitude Considerations:**
+  - Many ski resorts at 2,000-4,000m elevation
+  - Acute mountain sickness possible above 2,500m
+  - Reduced oxygen availability affects performance and recovery
+  - Altitude acclimatization takes several days
+
+  **Age and Fitness Considerations:**
+  - Snow sports require baseline fitness for safety
+  - Eccentric loading demands good quadriceps strength
+  - Balance and reaction time important for injury prevention
+  - Pre-season conditioning highly recommended
+
+  **Temperature and Dehydration:**
+  - Cold dry mountain air increases respiratory water loss
+  - Physical exertion combined with altitude increases dehydration risk
+  - Distance tracking should prompt attention to hydration
+
+  ### Red Flags
+  - Very high daily distances without adequate conditioning
+  - Significant decline in distance tolerance mid-day or mid-trip
+  - Continued skiing despite fatigue (injury risk)
+  - Post-skiing symptoms suggesting altitude illness
+
+  ## Caveats & Limitations
+
+  ### Measurement Accuracy
+  - **GPS signal quality:** Mountain terrain, tree cover, and weather affect GPS accuracy
+  - **Lift ride inclusion:** Some tracking may inadvertently include lift distance
+  - **Indoor training:** Cannot track indoor ski simulators or ski ergometers
+  - **Cross-country skiing:** This metric is for downhill only; cross-country uses different tracking
+
+  ### Activity Capture Limitations
+  - **Intensity not captured:** Same distance can represent very different effort levels
+  - **Terrain not reflected:** 10 km on bunny slopes vs. expert terrain are very different
+  - **Conditions invisible:** Ice, powder, and crud affect effort dramatically
+  - **Technique not assessed:** Poor technique means more effort for same distance
+
+  ### What Distance Cannot Tell You
+  - Skiing or snowboarding technique quality
+  - Terrain difficulty encountered
+  - Number of runs completed
+  - Vertical feet descended (related but separate metric)
+  - Risk exposure or safety margin
+  - Fatigue level or injury risk
+
+  ## Additional Notes
+
+  **Vertical Descent Context:**
+  While this metric tracks horizontal distance, vertical feet/meters descended is also valuable:
+  - Many skiers track "vertical feet" as key metric
+  - Some apps provide both horizontal distance and vertical descent
+  - Vertical descent available through elevation data in workouts
+
+  **Seasonal Activity Metric:**
+  For health consultants working with ski enthusiasts:
+  - Snow sports are seasonal; expect winter activity spikes
+  - Encourage year-round conditioning to prepare for ski season
+  - Track trends across seasons for engagement patterns
+  - Consider off-season activities that complement skiing
+
+  **For Health Consultants:**
+  1. Use distance as one indicator of snow sports activity volume
+  2. Consider altitude and environmental factors in assessment
+  3. Watch for signs of overexertion (declining tolerance, fatigue)
+  4. Encourage pre-season conditioning for injury prevention
+  5. Recognize that distance underrepresents intensity on challenging terrain
+  6. Consider complementary metrics: heart rate, calories, elevation change
+  7. Discuss hydration and altitude awareness with regular skiers
+  8. Monitor for post-trip recovery, especially after intensive ski vacations
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the sample was entered manually by the user rather than automatically recorded"
+  - key: "HKMetadataKeyWeatherTemperature"
+    description: "Ambient temperature during the activity, important for understanding conditions"
+  - key: "HKMetadataKeyWeatherHumidity"
+    description: "Relative humidity during the activity"
+  - key: "HKMetadataKeyElevationAscended"
+    description: "Total elevation gain during the workout (typically lift rides)"
+  - key: "HKMetadataKeyElevationDescended"
+    description: "Total elevation loss during the workout (skiing/snowboarding runs)"
+  - key: "HKMetadataKeyIndoorWorkout"
+    description: "Boolean indicating indoor workout (false for actual snow sports)"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
+    relationship: "Alternative - General distance metric for non-snow-sports activities"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Complementary - Caloric expenditure during snow sports"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Complementary - Heart rate data provides intensity context for distance"
+  - identifier: "HKWorkoutActivityTypeDownhillSkiing"
+    relationship: "Contains - Skiing workouts include distance data"
+  - identifier: "HKWorkoutActivityTypeSnowboarding"
+    relationship: "Contains - Snowboarding workouts include distance data"
+  - identifier: "HKQuantityTypeIdentifierFlightsClimbed"
+    relationship: "Related - Elevation data complements distance for understanding terrain"
+  - identifier: "HKQuantityTypeIdentifierDistanceCrossCountrySkiing"
+    relationship: "Alternative - Separate metric for cross-country skiing distance"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - distanceDownhillSnowSports"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/distancedownhillsnowsports"
+    type: "official"
+  - title: "Apple Support - Track skiing and snowboarding with Apple Watch"
+    url: "https://support.apple.com/en-us/HT207934"
+    type: "official"
+  - title: "Skiing and Snowboarding Injury Prevention - AAOS"
+    url: "https://orthoinfo.aaos.org/en/staying-healthy/skiing-and-snowboarding-injury-prevention/"
+    type: "medical"
+  - title: "Altitude Illness - CDC Yellow Book"
+    url: "https://wwwnc.cdc.gov/travel/yellowbook/2024/environmental-hazards-risks/altitude-illness"
+    type: "medical"
+  - title: "Physical Demands of Recreational Skiing"
+    url: "https://bjsm.bmj.com/content/40/5/434"
+    type: "research"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 11.0/watchOS 4.0 introduction confirmed via Apple Developer Documentation
+  - Apple Watch gained skiing and snowboarding workout types in fall 2017
+  - Skiing burns approximately 300-600 kcal/hour depending on intensity
+  - ACL injury risk higher in female skiers; pre-season training reduces risk
+  - High altitude (>2500m) affects performance and may cause altitude illness
+  - Third-party apps like Slopes provide enhanced tracking features
+  - Distance correlates with but does not fully capture skiing effort

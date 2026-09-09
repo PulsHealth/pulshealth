@@ -1,0 +1,155 @@
+identifier: "HKCategoryTypeIdentifierVomiting"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Vomiting"
+short_description: "Tracks episodes and severity of vomiting"
+icon: "circle.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No vomiting episodes"
+  - value: 1
+    name: "present"
+    description: "Mild - isolated episode(s), tolerable"
+  - value: 2
+    name: "moderate"
+    description: "Moderate - multiple episodes, limited oral intake"
+  - value: 3
+    name: "severe"
+    description: "Severe - frequent episodes, unable to keep fluids down"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Vomiting (emesis) is the forceful expulsion of stomach contents through the
+  mouth. It is a reflex action that can result from numerous causes ranging
+  from benign to serious. This data type enables tracking of vomiting episodes
+  for pattern identification, dehydration risk assessment, and clinical
+  consultation.
+
+  ## Health Significance
+  - **Dehydration Risk**: Repeated vomiting can lead to significant fluid and
+    electrolyte losses
+  - **Medication Monitoring**: Common side effect of many drugs, especially
+    chemotherapy
+  - **Infection Tracking**: Key symptom of gastroenteritis and food poisoning
+  - **Pregnancy Monitoring**: Morning sickness and hyperemesis gravidarum
+    assessment
+  - **Chronic Conditions**: May indicate gastroparesis, cyclic vomiting
+    syndrome, or other conditions
+
+  ## Clinical Context
+  **Common Causes:**
+  - Gastroenteritis (viral or bacterial)
+  - Food poisoning
+  - Medications (chemotherapy, opioids, antibiotics)
+  - Motion sickness
+  - Pregnancy
+  - Migraine
+  - Alcohol intoxication
+
+  **Serious Causes Requiring Evaluation:**
+  - Bowel obstruction
+  - Appendicitis
+  - Pancreatitis
+  - Head injury/increased intracranial pressure
+  - Diabetic ketoacidosis
+  - Cyclic vomiting syndrome
+  - Eating disorders
+
+  ## When to Seek Medical Attention
+  **Emergency Symptoms:**
+  - Vomiting blood or coffee-ground material
+  - Severe abdominal pain
+  - Signs of dehydration (dark urine, dizziness, confusion)
+  - Vomiting after head injury
+  - Projectile vomiting
+  - Vomiting with high fever and stiff neck
+  - Unable to keep any fluids down for 24 hours
+  - Vomiting with severe headache
+  - Vomiting with chest pain
+
+  **Schedule Evaluation For:**
+  - Vomiting lasting more than 48 hours
+  - Unexplained weight loss with vomiting
+  - Recurrent vomiting episodes without clear cause
+  - Vomiting with new medication
+  - Persistent vomiting in pregnancy affecting weight
+
+  ## Pattern Recognition
+  Tracking vomiting can reveal:
+  - Frequency and episode clustering
+  - Relationship to meals (timing, food triggers)
+  - Medication timing correlations
+  - Morning patterns (pregnancy, increased ICP)
+  - Migraine associations
+  - Response to antiemetics
+  - Recovery trajectory in acute illness
+  - Cyclic patterns (cyclic vomiting syndrome)
+
+  ## Caveats & Limitations
+  - Does not capture volume or character of emesis
+  - Cannot record emesis content (food, bile, blood)
+  - Subjective severity assessment
+  - Cannot distinguish vomiting from regurgitation
+  - Does not track fluid intake or hydration status
+  - Cannot capture interval between episodes
+  - Does not differentiate causes
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierNausea"
+    relationship: "Typically precedes vomiting; track together"
+  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+    relationship: "Often co-occurs in GI conditions"
+  - identifier: "HKCategoryTypeIdentifierDiarrhea"
+    relationship: "Common in gastroenteritis"
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Suggests infectious cause"
+  - identifier: "HKCategoryTypeIdentifierHeadache"
+    relationship: "Migraine association; or concerning neurological sign"
+  - identifier: "HKCategoryTypeIdentifierAppetiteChanges"
+    relationship: "Vomiting affects eating patterns"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierVomiting"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiervomiting"
+    type: "official"
+  - title: "Nausea and Vomiting in Adults - American Family Physician"
+    url: "https://www.aafp.org/pubs/afp.html"
+    type: "medical"
+  - title: "Antiemetic Guidelines - ASCO"
+    url: "https://www.asco.org/practice-policy/guidelines"
+    type: "medical"
+  - title: "Cyclic Vomiting Syndrome - NORD"
+    url: "https://rarediseases.org/rare-diseases/cyclic-vomiting-syndrome/"
+    type: "medical"
+last_updated: "2026-01-27"

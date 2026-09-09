@@ -1,0 +1,158 @@
+identifier: "HKCategoryTypeIdentifierSleepChanges"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Sleep Changes"
+short_description: "Tracks changes in sleep patterns or quality"
+icon: "moon.fill"
+color: "#5856D6"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No notable changes in sleep patterns"
+  - value: 1
+    name: "present"
+    description: "Mild sleep changes - slight variation from normal"
+  - value: 2
+    name: "moderate"
+    description: "Moderate sleep changes - noticeable impact on rest quality"
+  - value: 3
+    name: "severe"
+    description: "Severe sleep changes - significant disruption to sleep patterns"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Sleep changes encompass alterations in sleep duration, quality, timing, or
+  architecture. This includes difficulty falling asleep, staying asleep,
+  waking too early, sleeping too much, or non-restorative sleep. This data
+  type enables tracking subjective sleep quality changes as a symptom for
+  clinical correlation.
+
+  ## Health Significance
+  - **Mental Health Indicator**: Sleep changes are a core symptom of depression,
+    anxiety, and bipolar disorder
+  - **Hormonal Correlation**: Common during menstrual cycles, perimenopause,
+    menopause, and pregnancy
+  - **Medical Conditions**: Many conditions affect sleep quality
+  - **Medication Effects**: Numerous medications impact sleep
+  - **Quality of Life**: Sleep disruption affects daytime function, mood,
+    and cognitive performance
+  - **Circadian Health**: Tracks alignment with natural sleep-wake cycles
+
+  ## Clinical Context
+  **Sleep Changes May Indicate:**
+  - Depression (insomnia or hypersomnia)
+  - Anxiety disorders
+  - Bipolar disorder (decreased need for sleep in mania)
+  - Chronic pain conditions
+  - Menopausal transition
+  - Sleep disorders (apnea, restless legs, narcolepsy)
+  - Substance use or withdrawal
+  - Medication effects
+
+  **Types of Sleep Changes:**
+  - Initial insomnia (difficulty falling asleep)
+  - Middle insomnia (frequent awakenings)
+  - Terminal insomnia (early morning awakening)
+  - Hypersomnia (excessive sleep)
+  - Non-restorative sleep (unrefreshing despite adequate duration)
+  - Circadian disruption (shifted timing)
+
+  ## When to Seek Medical Attention
+  - Sleep changes lasting more than 2 weeks
+  - Significant daytime impairment from poor sleep
+  - Sleep changes with mood symptoms (depression, anxiety)
+  - Chronic insomnia affecting work or relationships
+  - Excessive sleepiness causing safety concerns (driving)
+  - Snoring with witnessed breathing pauses (sleep apnea)
+  - Sleep changes with unexplained weight change
+  - New medication with sleep disruption
+  - Sleep changes affecting ability to function
+
+  ## Pattern Recognition
+  Tracking sleep changes can reveal:
+  - Menstrual cycle correlations
+  - Perimenopause patterns
+  - Medication timing relationships
+  - Stress and lifestyle trigger identification
+  - Seasonal patterns (SAD)
+  - Correlation with other symptoms (pain, hot flashes)
+  - Weekday vs. weekend patterns
+  - Travel and jet lag recovery
+  - Response to sleep interventions
+
+  ## Integration with Objective Data
+  Combine with:
+  - Apple Watch sleep tracking for objective duration
+  - Sleep stage analysis (if available)
+  - Heart rate during sleep
+  - Respiratory rate during sleep
+  - Movement/restlessness data
+
+  ## Caveats & Limitations
+  - Does not specify type of sleep change (insomnia vs. hypersomnia)
+  - Subjective assessment may not match objective metrics
+  - Cannot capture sleep architecture changes
+  - Does not distinguish primary from secondary insomnia
+  - Single severity score cannot capture complex patterns
+  - Relies on self-perception of sleep quality
+  - Day-to-day variation normal; patterns more meaningful
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Objective sleep data for correlation"
+  - identifier: "HKCategoryTypeIdentifierMoodChanges"
+    relationship: "Sleep and mood bidirectionally influence each other"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Common consequence of poor sleep"
+  - identifier: "HKCategoryTypeIdentifierNightSweats"
+    relationship: "Can cause sleep disruption"
+  - identifier: "HKCategoryTypeIdentifierHotFlashes"
+    relationship: "Menopause symptoms affecting sleep"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "Indicator of sleep quality and autonomic function"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Sleep-disordered breathing indicator"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierSleepChanges"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiersleepchanges"
+    type: "official"
+  - title: "Insomnia Clinical Guidelines - AASM"
+    url: "https://aasm.org/clinical-resources/practice-standards/"
+    type: "medical"
+  - title: "Sleep and Mental Health - NIMH"
+    url: "https://www.nimh.nih.gov/health/publications"
+    type: "medical"
+  - title: "Sleep Disorders - Sleep Foundation"
+    url: "https://www.sleepfoundation.org/sleep-disorders"
+    type: "medical"
+last_updated: "2026-01-27"

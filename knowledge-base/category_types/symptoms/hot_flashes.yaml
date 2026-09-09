@@ -1,0 +1,133 @@
+identifier: "HKCategoryTypeIdentifierHotFlashes"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Hot Flashes"
+short_description: "Tracks episodes of sudden warmth and flushing, commonly associated with menopause"
+icon: "thermometer.sun.fill"
+color: "#FF3B30"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No hot flash episodes experienced"
+  - value: 1
+    name: "present"
+    description: "Mild hot flash - brief warmth, minimal disruption"
+  - value: 2
+    name: "moderate"
+    description: "Moderate hot flash - noticeable flushing and sweating"
+  - value: 3
+    name: "severe"
+    description: "Severe hot flash - intense heat, profuse sweating, significant distress"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Hot flashes (vasomotor symptoms) are sudden feelings of warmth, typically most
+  intense over the face, neck, and chest, often accompanied by flushing and
+  sweating. They are the hallmark symptom of menopause but can occur in other
+  clinical contexts. This data type enables tracking of frequency, severity,
+  and patterns for symptom management.
+
+  ## Health Significance
+  - **Menopause Transition**: Primary indicator of perimenopause and menopause;
+    affects 75-80% of menopausal individuals
+  - **Hormone Therapy Monitoring**: Essential for evaluating effectiveness of
+    HRT or other treatments
+  - **Quality of Life**: Hot flashes significantly impact sleep, work, and
+    daily activities
+  - **Duration Tracking**: Average duration is 7 years, but can persist 10+ years
+  - **Cardiovascular Risk**: Frequency/severity may correlate with cardiovascular
+    risk markers
+
+  ## Clinical Context: Beyond Menopause
+  Hot flashes can also occur in:
+  - **Cancer Treatment**: Common side effect of anti-estrogen therapies
+    (tamoxifen, aromatase inhibitors)
+  - **Surgical/Medical Menopause**: Oophorectomy, chemotherapy, radiation
+  - **Androgen Deprivation**: Men receiving prostate cancer treatment
+  - **Thyroid Disorders**: Hyperthyroidism can cause similar symptoms
+  - **Carcinoid Syndrome**: Rare but important differential
+  - **Medications**: Certain antidepressants, opioids during withdrawal
+
+  ## When to Seek Medical Attention
+  - Hot flashes severely impacting quality of life or sleep
+  - New onset hot flashes without clear hormonal explanation
+  - Associated symptoms (weight loss, palpitations, diarrhea) suggesting
+    other conditions
+  - Hot flashes in men not on hormone therapy
+  - Symptoms not responding to lifestyle modifications
+  - Desire to discuss hormone therapy options
+
+  ## Pattern Recognition
+  Tracking hot flash episodes can reveal:
+  - Circadian patterns (many experience more at night)
+  - Triggers (alcohol, spicy foods, caffeine, stress, warm environments)
+  - Relationship to menstrual cycle during perimenopause
+  - Treatment effectiveness over time
+  - Correlation with sleep quality
+  - Seasonal variations
+
+  ## Caveats & Limitations
+  - Subjective severity assessment varies considerably between individuals
+  - Brief episodes may be missed or not logged
+  - Cannot differentiate from fever, anxiety-related warmth, or other causes
+  - Does not capture duration of individual episodes
+  - Night sweats tracked separately (though often related)
+  - No objective temperature measurement integration
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierNightSweats"
+    relationship: "Nocturnal equivalent; often co-occurs in menopause"
+  - identifier: "HKCategoryTypeIdentifierMoodChanges"
+    relationship: "Common co-occurring menopause symptom"
+  - identifier: "HKCategoryTypeIdentifierSleepChanges"
+    relationship: "Hot flashes frequently disrupt sleep quality"
+  - identifier: "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat"
+    relationship: "May co-occur during hot flash episodes"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Context for perimenopause tracking"
+  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
+    relationship: "Objective temperature data for correlation"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierHotFlashes"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierhotflashes"
+    type: "official"
+  - title: "Management of Menopausal Symptoms - ACOG"
+    url: "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2014/01/management-of-menopausal-symptoms"
+    type: "medical"
+  - title: "The Menopause Society Clinical Guidelines"
+    url: "https://www.menopause.org/for-professionals"
+    type: "medical"
+  - title: "Vasomotor Symptoms and Cardiovascular Risk - Menopause Journal"
+    url: "https://journals.lww.com/menopausejournal/"
+    type: "research"
+last_updated: "2026-01-27"

@@ -1,0 +1,310 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Cycling Speed
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierCyclingSpeed"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Cycling Speed"
+short_description: "Measures the instantaneous speed during cycling activities."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.outdoor.cycle"
+color: "#30D158"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "m/s"
+supported_units:
+  - "m/s"
+  - "km/h"
+  - "mi/h"
+unit_description: "Speed units measuring rate of travel. Default is meters per second (m/s); users typically view in kilometers per hour (km/h) or miles per hour (mph) based on locale."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 25
+  unit: "m/s"
+  notes: "Equivalent to 0-90 km/h (0-56 mph). Recreational cyclists typically average 15-25 km/h (4-7 m/s). Trained cyclists average 25-35 km/h (7-10 m/s). Professional sprints can exceed 70 km/h (19 m/s). Descents may reach 80-100+ km/h."
+
+clinical_ranges:
+  - population: "Recreational/Beginner"
+    average_speed: "15-20 km/h (4.2-5.6 m/s)"
+    typical_context: "Casual rides, bike paths, errands"
+  - population: "Regular Cyclist"
+    average_speed: "20-28 km/h (5.6-7.8 m/s)"
+    typical_context: "Fitness rides, commuting"
+  - population: "Well-Trained Amateur"
+    average_speed: "28-35 km/h (7.8-9.7 m/s)"
+    typical_context: "Group rides, training, racing"
+  - population: "Elite/Professional"
+    average_speed: "35-45+ km/h (9.7-12.5+ m/s)"
+    typical_context: "Time trials, races (flat terrain)"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "17.0"
+  year: 2023
+  notes: "Added as part of enhanced cycling metrics in iOS 17"
+watchos_introduced:
+  version: "10.0"
+  year: 2023
+  notes: "Apple Watch provides GPS-based cycling speed measurement"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "GPS-based speed measurement during outdoor cycling. Calculates instantaneous and average speed from position changes. Indoor cycling requires speed sensor or smart trainer."
+    examples: ["Apple Watch Series 3+", "Apple Watch Ultra"]
+  - name: "iPhone"
+    capability: "GPS-based speed tracking when mounted on bike or carried. Many cycling apps use iPhone for ride tracking including speed data."
+    examples: ["iPhone with GPS"]
+  - name: "Cycling Computers"
+    capability: "GPS and/or speed sensor-based measurement. Dedicated cycling computers often provide more accurate and reliable speed data than wrist-worn devices."
+    examples: ["Garmin Edge", "Wahoo ELEMNT", "Hammerhead Karoo"]
+  - name: "Speed Sensors"
+    capability: "Wheel-based sensors measure actual wheel rotation, providing accurate speed regardless of GPS signal. Essential for indoor cycling."
+    examples: ["Garmin Speed Sensor", "Wahoo RPM Speed", "Magene S3+"]
+  - name: "Smart Trainers"
+    capability: "Calculate speed from wheel rotation or virtual speed based on power and simulated conditions. Indoor-specific measurement."
+    examples: ["Wahoo KICKR", "Tacx Neo", "Elite Direto"]
+primary_source: "GPS-enabled device (Apple Watch, iPhone, or cycling computer)"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Cycling Speed measures how fast a cyclist is traveling, typically expressed in kilometers per hour (km/h) or miles per hour (mph). Unlike power output, speed is highly influenced by environmental factors including wind, gradient, road surface, and aerodynamics. While speed is an intuitive metric for cyclists, it provides limited insight into actual effort or fitness when used in isolation.
+
+  Speed data is valuable for pacing, navigation, and tracking ride progress, but should be interpreted alongside power and heart rate data for meaningful performance analysis.
+
+  ## How It's Measured
+
+  ### GPS-Based Measurement
+  The primary method for outdoor cycling speed measurement:
+
+  **How GPS Speed Works:**
+  - GPS receiver calculates position at regular intervals (typically 1 Hz)
+  - Speed derived from position change over time
+  - Modern devices use multi-constellation GNSS (GPS, GLONASS, Galileo)
+  - Accuracy typically ±0.1-0.5 km/h in good conditions
+
+  **GPS Limitations:**
+  - Signal degradation in tunnels, urban canyons, dense tree cover
+  - Position errors amplified in speed calculation
+  - Lag in rapid speed changes (acceleration/deceleration)
+  - Altitude (vertical speed) less accurate than horizontal
+
+  ### Wheel Speed Sensor Measurement
+  Direct measurement via wheel rotation:
+
+  **How Wheel Sensors Work:**
+  - Magnet on wheel spoke triggers sensor with each rotation
+  - Sensor counts rotations and calculates speed from wheel circumference
+  - Speed = Wheel Circumference × Rotations per Second
+
+  **Advantages:**
+  - Unaffected by GPS signal quality
+  - Works indoors and outdoors
+  - Instantaneous response to speed changes
+  - More accurate in variable GPS conditions
+
+  **Setup Requirements:**
+  - Accurate wheel circumference measurement
+  - Proper sensor positioning
+  - Circumference changes with tire pressure and wear
+
+  ### Smart Trainer Speed
+  Indoor trainers calculate speed through:
+  - Wheel-on trainers: Direct wheel speed measurement
+  - Direct drive trainers: Virtual speed from power/resistance
+  - Virtual platforms (Zwift): Simulated speed based on power and virtual terrain
+
+  **Indoor vs. Outdoor Speed:**
+  - Indoor speed may not correlate to outdoor performance
+  - Virtual speeds can differ significantly from real-world equivalents
+  - Controlled environment eliminates wind and terrain variables
+
+  ## Health Significance
+
+  ### Activity Intensity Indicator (Limited)
+  Speed provides a rough indication of exercise intensity, but with significant caveats:
+  - Higher speed generally indicates higher effort (on flat ground, no wind)
+  - Speed alone cannot determine training zone or physiological stress
+  - Two cyclists at same speed may have vastly different power outputs
+
+  ### Functional Mobility Assessment
+  For non-competitive cyclists, speed trends may indicate:
+  - Fitness improvement (faster average speed over same route)
+  - Mobility limitations (declining speed over time)
+  - Equipment issues (sudden speed decreases)
+
+  ### Transportation Efficiency
+  For commuter cyclists:
+  - Average commute speed affects journey time planning
+  - Speed data helps optimize routes
+  - Consistent speed suggests sustainable effort level
+
+  ## Clinical Interpretation Guidelines
+
+  ### Contextualizing Speed Data
+
+  Speed must always be interpreted with context:
+
+  **Terrain Factors:**
+  - Flat roads: Most comparable conditions
+  - Hills: Climbing 10-15 km/h typical; descending 50-80+ km/h possible
+  - Technical terrain: Speed limited by handling, not fitness
+
+  **Environmental Factors:**
+  - Headwind: Can reduce speed 10-30% at same effort
+  - Tailwind: Can increase speed 10-30% at same effort
+  - Road surface: Gravel, wet roads, poor surfaces slow cyclists
+
+  **Equipment Factors:**
+  - Bike type: Road bikes faster than mountain or city bikes
+  - Tires: Rolling resistance varies significantly
+  - Aerodynamics: Position and equipment affect speed
+
+  ### Average Speed Benchmarks
+  For flat terrain with minimal wind:
+
+  | Cyclist Type | Average Speed | Context |
+  |--------------|---------------|---------|
+  | Beginner | 15-18 km/h | Casual riding, upright position |
+  | Recreational | 18-24 km/h | Regular riding, some fitness |
+  | Fitness Cyclist | 24-30 km/h | Training, road bike |
+  | Club Racer | 30-36 km/h | Group rides, racing |
+  | Elite Amateur | 36-42 km/h | Competitive racing |
+  | Professional | 40-50+ km/h | Time trials, races |
+
+  ### Clinical Considerations
+  - Speed trends over same route more meaningful than absolute values
+  - Declining speed at same heart rate may indicate fitness loss
+  - Increasing speed at same heart rate suggests fitness improvement
+  - Consider recommending power meters for accurate performance tracking
+
+  ### Red Flags
+  - Significant unexplained decline in typical speeds
+  - Inability to maintain previously comfortable speeds
+  - Dizziness or symptoms at moderate speeds
+  - Speed data inconsistent with effort level (may indicate equipment issues)
+
+  ## Caveats & Limitations
+
+  ### Why Speed Is a Poor Training Metric
+
+  **Environmental Variability:**
+  - 5 mph headwind can require 30%+ more power for same speed
+  - 5% gradient can halve speed at same power
+  - Temperature affects air density and rolling resistance
+
+  **Comparison Problems:**
+  - Same speed means different things for different riders
+  - Route-to-route comparisons rarely meaningful
+  - Day-to-day variations often due to conditions, not fitness
+
+  **Indoor/Outdoor Disconnect:**
+  - Indoor trainer speeds not comparable to outdoor
+  - Virtual platforms use different speed calculations
+  - Power is the only consistent metric across environments
+
+  ### Measurement Limitations
+  - GPS accuracy degrades in covered areas
+  - Wheel sensor accuracy depends on calibration
+  - Instantaneous speed more variable than average
+  - Moving vs. total average can differ significantly
+
+  ### What Speed Cannot Tell You
+  - Actual physiological effort
+  - Training zone or intensity
+  - Fitness changes (without controlling for conditions)
+  - Caloric expenditure
+  - Whether the pace is sustainable
+
+  ## Additional Notes
+
+  **For Health Consultants:**
+  1. Speed data is most useful for transportation and navigation, not training prescription
+  2. Compare speeds only on identical routes in similar conditions
+  3. Use speed in conjunction with heart rate for basic intensity assessment
+  4. Recommend power meters for clients serious about cycling performance
+  5. Average moving speed is more meaningful than overall average (includes stops)
+  6. Indoor speed data should not be compared to outdoor riding
+  7. Speed goals are less useful than power or heart rate goals for training
+
+  **Speed Conversions:**
+  - 1 m/s = 3.6 km/h = 2.237 mph
+  - 10 km/h = 2.78 m/s = 6.21 mph
+  - 20 mph = 32.2 km/h = 8.94 m/s
+
+  **Maximum Speed vs. Average Speed:**
+  - Maximum speed typically occurs on descents
+  - Max speed less meaningful for fitness assessment
+  - Average speed more relevant for overall performance
+  - Moving average excludes stopped time
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the sample was manually entered by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+  - key: "HKMetadataKeyIndoorWorkout"
+    description: "Boolean indicating whether the speed was recorded during an indoor cycling workout"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDistanceCycling"
+    relationship: "Derived from - Distance accumulated over time determines average speed"
+  - identifier: "HKQuantityTypeIdentifierCyclingPower"
+    relationship: "Complementary - Power is the effort required to achieve speed; provides context"
+  - identifier: "HKQuantityTypeIdentifierCyclingCadence"
+    relationship: "Related - Cadence and gearing determine wheel speed"
+  - identifier: "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower"
+    relationship: "Related - FTP determines sustainable power and thus sustainable speed"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Complementary - Heart rate provides effort context for speed data"
+  - identifier: "HKWorkoutTypeCycling"
+    relationship: "Contains - Cycling workouts include speed statistics"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - cyclingSpeed"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/cyclingspeed"
+    type: "official"
+  - title: "Apple Watch cycling features"
+    url: "https://support.apple.com/guide/watch/cycling-apd6a8cd52d7/watchos"
+    type: "official"
+  - title: "GPS Speed Accuracy Analysis"
+    url: "https://www.gps.gov/systems/gps/performance/accuracy/"
+    type: "research"
+  - title: "Factors Affecting Cycling Speed - Cycling Science"
+    url: "https://www.cyclinganalytics.com/blog/2018/06/how-does-wind-affect-cycling-speed"
+    type: "tutorial"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 17.0/watchOS 10.0 introduction based on Apple Developer Documentation
+  - Average speed benchmarks compiled from cycling training literature
+  - GPS accuracy specifications from GPS.gov technical documentation
+  - Wind resistance effects on cycling speed from cycling physics research
+  - Speed vs. power relationship well-established in cycling science

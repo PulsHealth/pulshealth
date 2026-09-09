@@ -1,0 +1,158 @@
+identifier: "HKQuantityTypeIdentifierDietarySugar"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Sugar"
+short_description: "Total sugar intake including natural and added sugars"
+icon: "cube.fill"
+color: "#FF2D55"
+default_unit: "g"
+supported_units:
+  - "g"
+  - "mg"
+  - "oz"
+unit_description: "Grams (g) of total sugars. Includes monosaccharides (glucose, fructose, galactose) and disaccharides (sucrose, lactose, maltose). Provides 4 kcal/g."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 10
+  max: 150
+  unit: "g"
+  notes: "Average American consumes 60-80g/day of added sugars alone. WHO recommends limiting added sugars to <25g/day."
+clinical_ranges:
+  - population: "Adults (WHO recommendation - added sugars)"
+    rda: "<25g/day (6 teaspoons) strongly recommended"
+  - population: "Adults (AHA recommendation - added sugars)"
+    rda: "Women: <25g/day; Men: <36g/day"
+  - population: "Children (2-18 years, AHA)"
+    rda: "<25g/day added sugars"
+  - population: "Diabetes"
+    rda: "Minimize added sugars; total carbs more important than sugar specifically"
+  - population: "Cardiovascular Disease Risk"
+    rda: "<5% of calories from added sugars optimal"
+  - population: "NAFLD/Metabolic Syndrome"
+    rda: "Minimize fructose and added sugars"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Sugar tracking with some apps differentiating added vs. natural sugars"
+    examples:
+      - "MyFitnessPal"
+      - "Cronometer"
+      - "LoseIt"
+      - "Yazio"
+  - name: "CGM companion apps"
+    capability: "Correlate sugar intake with glucose response"
+    examples:
+      - "Levels"
+      - "Signos"
+      - "Nutrisense"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Sugar represents total sugar intake from all sources, including both naturally occurring sugars (in fruits, vegetables, dairy) and added sugars (sweeteners added during processing or preparation). While HealthKit tracks total sugars, clinically the distinction between natural and added sugars is critical, as added sugar intake is strongly associated with metabolic disease risk.
+
+  The FDA Daily Value for total sugars is 50g based on a 2,000 calorie diet (updated 2020). However, this represents a limit rather than a target, and for added sugars specifically, the FDA Daily Value is also 50g (10% of calories), which aligns with the upper limit of most health organization recommendations. Lower intakes of added sugars are consistently associated with better health outcomes.
+
+  ## Health Significance
+  Sugar intake impacts:
+  - **Glycemic Control**: Direct, rapid effect on blood glucose levels
+  - **Metabolic Health**: Excess added sugar linked to insulin resistance, metabolic syndrome
+  - **Cardiovascular Disease**: High sugar intake increases CVD risk independent of weight
+  - **Hepatic Health**: Fructose (half of sucrose) metabolized primarily in liver; excess linked to NAFLD
+  - **Dental Health**: Primary dietary cause of dental caries
+  - **Weight Management**: Liquid sugars particularly problematic; low satiety, high palatability
+  - **Inflammation**: High sugar intake associated with elevated inflammatory markers
+  - **Mood and Energy**: Blood sugar swings affect energy levels and mood stability
+
+  ## Clinical Interpretation Guidelines
+  When assessing sugar intake:
+  1. **Differentiate Sugar Sources**: Fruit sugar with fiber differs from added sugars in soft drinks
+  2. **Calculate Added Sugar**: If total sugar tracked, estimate added sugars (often 60-70% of total in Western diets)
+  3. **Compare to Guidelines**: WHO <25g added sugars; AHA <25g women, <36g men
+  4. **Identify Hidden Sugars**: Review sources for hidden added sugars (sauces, condiments, "healthy" foods)
+  5. **Assess Sugar-Sweetened Beverage Intake**: Single largest source of added sugars; liquid calories not compensated
+  6. **Correlate with CGM Data**: If available, review glucose responses to high-sugar meals
+  7. **Consider Timing**: Post-exercise sugar is metabolically different from sedentary sugar consumption
+
+  ## Deficiency Symptoms
+  There is no sugar deficiency as sugar is not an essential nutrient:
+  - Body can produce glucose from other carbohydrates, protein, and fat
+  - No recommended minimum intake for added sugars
+  - Natural sugars from whole foods provide other nutrients; zero added sugar is optimal
+  - Very low total carbohydrate intake may cause ketosis but not sugar "deficiency"
+
+  ## Excess/Toxicity
+  High sugar intake is associated with:
+  - **Obesity**: High palatability and low satiety promote overconsumption
+  - **Type 2 Diabetes**: Chronic high sugar intake impairs insulin sensitivity
+  - **Cardiovascular Disease**: Increased CVD mortality with >10% calories from added sugar
+  - **Non-Alcoholic Fatty Liver Disease**: Fructose particularly hepatotoxic in excess
+  - **Dental Caries**: Fermented by oral bacteria producing enamel-eroding acids
+  - **Dyslipidemia**: Elevated triglycerides, reduced HDL cholesterol
+  - **Hyperuricemia/Gout**: Fructose increases uric acid production
+  - **Cognitive Decline**: Emerging evidence linking high sugar to dementia risk
+  - **Cancer**: Obesity-mediated cancer risk; some direct associations studied
+
+  ## Special Populations
+  - **Diabetes**: Carbohydrate counting more important than sugar avoidance per se; glycemic index matters
+  - **Gestational Diabetes**: Strict sugar limitation; avoid sugar-sweetened beverages completely
+  - **NAFLD**: Eliminate fructose-containing added sugars; limit fruit juice
+  - **Athletes**: Strategic sugar use peri-workout acceptable; rapid glucose availability benefits performance
+  - **Children**: Developing taste preferences; early sugar restriction may prevent lifelong overconsumption
+  - **Eating Disorders**: Complete sugar restriction may trigger binge behaviors; moderation approach often preferred
+  - **Reactive Hypoglycemia**: Avoid high-sugar foods that cause glucose spikes followed by crashes
+  - **PCOS**: Sugar reduction improves insulin sensitivity and hormonal profiles
+
+  ## Caveats & Limitations
+  - **Total vs. Added Sugars**: Most food databases and HealthKit track total sugars; added sugar often estimated
+  - **Natural Sugar Context**: 20g sugar from an apple (with fiber, nutrients) differs from 20g in soda
+  - **Sugar Alcohols**: Not included in sugar totals but may affect glucose (varies by type)
+  - **Database Inconsistencies**: Sugar content for same foods varies across databases
+  - **Hidden Sugars**: Many names for added sugars (56+ identified) complicate identification
+  - **Glycemic Response Variation**: Individual glucose responses to same sugar load vary significantly
+  - **Fructose vs. Glucose**: Metabolized differently; fructose uniquely processed by liver
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the sugar source (e.g., 'candy', 'fruit', 'soft drink')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
+    relationship: "Sugar is a subcategory of total carbohydrates"
+  - identifier: "HKQuantityTypeIdentifierDietaryFiber"
+    relationship: "Fiber slows sugar absorption; presence differentiates whole foods from refined"
+  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
+    relationship: "Sugar intake directly and rapidly affects blood glucose levels"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Sugar contributes to total caloric intake at 4 kcal/g"
+  - identifier: "HKQuantityTypeIdentifierInsulinDelivery"
+    relationship: "Sugar intake affects insulin requirements in diabetes management"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietarySugar"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarysugar"
+    type: "official"
+  - title: "WHO Guideline: Sugars Intake for Adults and Children"
+    url: "https://www.who.int/publications/i/item/9789241549028"
+    type: "official"
+  - title: "AHA Scientific Statement: Added Sugars and Cardiovascular Disease Risk in Children"
+    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000439"
+    type: "medical"
+  - title: "Dietary Sugars and Health: Umbrella Review of Meta-Analyses"
+    url: "https://www.bmj.com/content/381/bmj-2022-071609"
+    type: "research"
+last_updated: "2026-01-27"

@@ -1,0 +1,190 @@
+identifier: "HKQuantityTypeIdentifierRunningStrideLength"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Running Stride Length"
+short_description: "The distance covered in a single running stride, measured from one foot contact to the next contact of the same foot."
+icon: "figure.run"
+color: "#30D158"
+default_unit: "m"
+supported_units:
+  - "m"
+  - "cm"
+  - "ft"
+  - "in"
+unit_description: "Default unit is meters (m). Stride length represents a full gait cycle - from when one foot contacts the ground to when the same foot contacts the ground again. This is double the step length (left foot to right foot)."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 1.2
+  max: 2.8
+  unit: "m"
+  notes: "Stride length varies significantly with running speed, height, and running form. Jogging typically produces 1.2-1.6m strides; moderate running 1.6-2.0m; fast running 2.0-2.8m. Elite sprinters can exceed 3m."
+clinical_ranges:
+  - population: "Slow jogging (10-11 min/mile)"
+    values: "1.2-1.6 m typical; highly variable with height"
+  - population: "Easy running (8-9 min/mile)"
+    values: "1.5-1.9 m typical"
+  - population: "Moderate running (7-8 min/mile)"
+    values: "1.7-2.1 m typical"
+  - population: "Fast running (6-7 min/mile)"
+    values: "1.9-2.3 m typical"
+  - population: "Competitive racing (5-6 min/mile)"
+    values: "2.1-2.5 m typical"
+  - population: "Elite distance running"
+    values: "2.3-2.8 m typical"
+  - population: "Height-normalized guideline"
+    values: "Stride length typically ranges from 0.8x to 1.3x height, increasing with speed"
+ios_introduced:
+  version: "16.0"
+  year: 2022
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+deprecated: false
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Estimates stride length using motion sensors and GPS data during outdoor runs"
+    examples:
+      - "Apple Watch Series 6"
+      - "Apple Watch Series 7"
+      - "Apple Watch Series 8"
+      - "Apple Watch Series 9"
+      - "Apple Watch SE (2nd gen)"
+      - "Apple Watch Ultra"
+      - "Apple Watch Ultra 2"
+  - name: "Third-party running pods and watches"
+    capability: "Various devices can measure stride length using accelerometers and/or GPS"
+    examples:
+      - "Garmin Running Dynamics Pod"
+      - "Stryd"
+      - "COROS POD 2"
+      - "Garmin running watches with wrist-based dynamics"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  Running stride length is the distance traveled during one complete gait cycle - from when one foot contacts the ground until the same foot contacts the ground again. It is a fundamental biomechanical parameter that, combined with cadence (stride rate), determines running speed:
+
+  **Speed = Stride Length x Cadence**
+
+  Stride length reflects the interaction of:
+  - Lower limb length and body proportions
+  - Running speed and effort level
+  - Neuromuscular coordination and flexibility
+  - Running economy and form
+  - Fatigue state
+  - Terrain and surface conditions
+
+  Understanding stride length helps runners and clinicians assess form, identify inefficiencies, and monitor for injury risk factors.
+
+  ## How It's Measured
+  Apple Watch estimates stride length through a combination of methods:
+
+  1. **Derived calculation**: Speed (from GPS) divided by cadence (from accelerometer) yields stride length
+     - Stride Length = Speed / (Cadence / 2)
+     - Note: Cadence is steps per minute; divided by 2 gives strides per minute
+
+  2. **Motion sensor analysis**: Accelerometer patterns during each stride provide additional estimates
+     - Peak accelerations correlate with stride characteristics
+     - Vertical displacement during flight phase relates to stride length
+
+  3. **Sensor fusion**: Multiple data sources are combined for improved accuracy
+
+  The measurement captures average stride length over sample periods, smoothing out stride-to-stride variability. Real-time display shows recent averages rather than each individual stride.
+
+  ## Health Significance
+  Stride length has several clinical and performance implications:
+
+  - **Running economy**: An optimal stride length exists for each individual; overstriding or understriding wastes energy
+  - **Injury risk**: Overstriding (landing with foot far ahead of center of mass) increases impact forces and is associated with certain injuries
+  - **Fatigue marker**: Stride length typically decreases with fatigue as neuromuscular function declines
+  - **Form assessment**: Abnormal stride length may indicate flexibility limitations, strength deficits, or compensatory patterns
+  - **Speed development**: Improving stride length (while maintaining cadence) increases speed
+  - **Rehabilitation monitoring**: Tracking stride length symmetry and normalization during return-to-run protocols
+  - **Age-related changes**: Stride length tends to decrease with age; maintaining it indicates preserved function
+
+  ## Clinical Interpretation Guidelines
+  When analyzing stride length data:
+
+  1. **Consider height**: Taller individuals naturally have longer strides; normalize to height (stride length / height ratio) for comparisons
+  2. **Speed context is essential**: Always interpret stride length relative to speed - stride length increases naturally as pace increases
+  3. **Cadence relationship**:
+     - Speed increases can come from longer strides, faster cadence, or both
+     - Research suggests higher cadence (shorter strides at same speed) may reduce injury risk
+     - Common guidance: 170-180+ steps/min (85-90+ strides/min) for most running speeds
+  4. **Watch for overstriding indicators**:
+     - Stride length increasing while speed stays constant
+     - Foot landing well ahead of center of mass
+     - High braking forces (visible in ground contact time patterns)
+  5. **Fatigue patterns**:
+     - Decreasing stride length at constant speed suggests fatigue
+     - Maintaining stride length late in workouts indicates good endurance
+  6. **Left-right symmetry**: Asymmetric stride length may indicate injury or compensation
+
+  Optimal stride length is individual - what matters is finding the natural, efficient length for each person at each speed, not matching a population target.
+
+  ## Caveats & Limitations
+  - **Derived measurement**: Stride length is calculated from speed and cadence, so errors in either affect accuracy
+  - **Treadmill challenges**: Without GPS, stride length estimation relies more heavily on motion sensors and may be less accurate
+  - **Terrain effects**: Uphill running naturally shortens stride; downhill lengthens it - this is normal adaptation, not a problem
+  - **Surface variability**: Trail running on uneven surfaces causes natural stride length variation
+  - **Individual variability**: "Optimal" stride length varies significantly between individuals; population norms are guidelines only
+  - **Speed dependency**: Stride length comparisons only make sense at similar speeds
+  - **Doesn't capture asymmetry**: Standard measurements report average stride length, not left vs. right differences
+  - **Form oversimplification**: Stride length alone doesn't fully describe running form quality
+
+  ## Additional Notes
+  - Step length (single step) is half of stride length; some devices report step length instead
+  - Elite runners at marathon pace typically show stride lengths of 1.5-1.8m at high cadences (190-200 steps/min)
+  - Sprinters rely more on stride length for speed; distance runners often optimize cadence
+  - Cadence training (running to a metronome) is a common intervention to reduce overstriding
+  - Research suggests 5-10% increases in cadence can reduce impact forces without significantly affecting performance
+  - During rehabilitation, stride length is often restricted initially and gradually returned to normal
+  - Cross-country or trail running typically shows shorter, more variable stride lengths than road running
+metadata_keys:
+  - key: "HKMetadataKeyIndoorWorkout"
+    description: "Boolean indicating if the run was indoors (treadmill); affects stride length estimation methodology."
+  - key: "HKMetadataKeyAverageSpeed"
+    description: "Average running speed during the sample; essential context for interpreting stride length."
+  - key: "HKMetadataKeyElevationAscended"
+    description: "Total elevation gain; uphill sections naturally shorten stride length."
+  - key: "HKMetadataKeyElevationDescended"
+    description: "Total elevation loss; downhill sections naturally lengthen stride length."
+related_types:
+  - identifier: "HKQuantityTypeIdentifierRunningSpeed"
+    relationship: "Speed equals stride length times cadence; these metrics are mathematically linked"
+  - identifier: "HKQuantityTypeIdentifierStepCount"
+    relationship: "Step count over distance allows stride length calculation; cadence is steps per time unit"
+  - identifier: "HKQuantityTypeIdentifierRunningGroundContactTime"
+    relationship: "Longer strides often correlate with longer ground contact time due to increased braking forces"
+  - identifier: "HKQuantityTypeIdentifierRunningVerticalOscillation"
+    relationship: "Vertical oscillation and stride length together describe the running trajectory"
+  - identifier: "HKQuantityTypeIdentifierRunningPower"
+    relationship: "Stride length affects power production; overstriding increases braking power costs"
+  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
+    relationship: "Walking step length is the lower-intensity analog; running stride length is typically longer"
+  - identifier: "HKQuantityTypeIdentifierHeight"
+    relationship: "Height is used to normalize stride length for individual comparisons (stride length / height)"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierRunningStrideLength"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierrunningstridlength"
+    type: "official"
+  - title: "Apple Support - Running metrics on Apple Watch"
+    url: "https://support.apple.com/en-us/HT212958"
+    type: "official"
+  - title: "Effects of Step Rate Manipulation on Running Mechanics"
+    url: "https://pubmed.ncbi.nlm.nih.gov/21311356/"
+    type: "research"
+  - title: "Biomechanics of Running Gait"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5765988/"
+    type: "research"
+  - title: "Reducing Running Injuries via Gait Retraining"
+    url: "https://bjsm.bmj.com/content/49/21/1382"
+    type: "medical"
+last_updated: "2026-01-27"

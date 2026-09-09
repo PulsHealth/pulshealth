@@ -1,0 +1,238 @@
+identifier: "HKQuantityTypeIdentifierDietaryCopper"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Copper"
+short_description: "Copper intake from food and supplements, essential for iron metabolism, connective tissue, and nervous system function."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#B87333"
+
+default_unit: "mcg"
+supported_units: ["mcg", "mg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 10000
+  unit: "mcg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "200 mcg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "220 mcg/day (AI)"
+  - population: "Children 1-3 years"
+    rda: "340 mcg/day"
+  - population: "Children 4-8 years"
+    rda: "440 mcg/day"
+  - population: "Children 9-13 years"
+    rda: "700 mcg/day"
+  - population: "Adolescents 14-18 years"
+    rda: "890 mcg/day"
+  - population: "Adults 19+ years"
+    rda: "900 mcg/day"
+  - population: "Pregnant women"
+    rda: "1000 mcg/day"
+  - population: "Lactating women"
+    rda: "1300 mcg/day"
+  - population: "Adults"
+    upper_limit: "10000 mcg/day (10 mg)"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary copper from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track copper intake against personalized targets"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Copper is an essential trace mineral that serves as a cofactor for numerous enzymes involved in energy production, iron metabolism, neurotransmitter synthesis, and connective tissue formation. The body contains approximately 75-150 mg of copper, primarily in liver, brain, heart, and kidneys. Copper deficiency is relatively rare but can occur with excessive zinc supplementation, malabsorption, or prolonged enteral/parenteral nutrition without adequate copper. Copper toxicity is primarily a concern in Wilson's disease.
+
+  ## Biological Functions
+  - **Iron metabolism**: Ceruloplasmin (copper-containing) oxidizes Fe2+ to Fe3+ for transferrin binding; essential for iron transport
+  - **Energy production**: Cytochrome c oxidase (copper enzyme) is the terminal electron acceptor in mitochondrial respiratory chain
+  - **Connective tissue**: Lysyl oxidase (copper enzyme) cross-links collagen and elastin
+  - **Antioxidant defense**: Cu/Zn superoxide dismutase (SOD1) neutralizes superoxide radicals
+  - **Neurotransmitter synthesis**: Dopamine beta-hydroxylase converts dopamine to norepinephrine
+  - **Melanin synthesis**: Tyrosinase requires copper for melanin production
+  - **Neuropeptide processing**: Peptidylglycine alpha-amidating monooxygenase requires copper
+  - **Immune function**: Required for neutrophil function and various immune processes
+
+  ## Health Significance
+  Copper's role in iron metabolism means that copper deficiency can cause anemia that doesn't respond to iron supplementation. Its role in connective tissue affects bone health, vascular integrity, and wound healing. Neurological symptoms from copper deficiency can mimic B12 deficiency (subacute combined degeneration). The copper-zinc balance is clinically important, as excessive zinc intake is the most common cause of acquired copper deficiency.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing copper intake data:
+  - **Recognize that deficiency is rare from diet alone**: Usually secondary to malabsorption or zinc excess
+  - **Assess zinc intake simultaneously**: High zinc (>50 mg/day from supplements) can cause copper deficiency
+  - **Consider high-risk patients**: Bariatric surgery, prolonged TPN, premature infants
+  - **Evaluate unexplained anemia**: Copper deficiency causes anemia unresponsive to iron
+  - **Review neurological symptoms**: Myelopathy similar to B12 deficiency can occur
+  - **Note vegetarian advantage**: Plant foods are generally good copper sources
+
+  ## Deficiency
+  **Causes of copper deficiency**:
+  - Excessive zinc supplementation (most common acquired cause)
+  - Bariatric surgery (especially gastric bypass)
+  - Malabsorption syndromes (celiac, IBD, short bowel)
+  - Long-term TPN without copper
+  - Premature infants (low stores, rapid growth)
+  - Menkes disease (genetic copper transport disorder)
+  - High-dose antacid use
+
+  **Manifestations**:
+  - **Hematologic**:
+    - Anemia (microcytic or normocytic, iron-refractory)
+    - Neutropenia (most sensitive indicator)
+    - Bone marrow changes mimicking myelodysplasia
+  - **Neurologic** (copper myelopathy):
+    - Sensory ataxia
+    - Spastic gait
+    - Peripheral neuropathy
+    - Resembles subacute combined degeneration of B12 deficiency
+  - **Skeletal**:
+    - Osteoporosis
+    - Fractures
+    - Bone abnormalities in children
+  - **Other**:
+    - Impaired wound healing
+    - Hypopigmentation (gray hair, pale skin)
+    - Increased infections
+
+  **Menkes disease** (X-linked genetic):
+  - Severe copper deficiency from birth
+  - Kinky/sparse hair, seizures, developmental delay
+  - Fatal without early treatment
+
+  ## Toxicity/Excess
+  **Acute copper toxicity** (rare, usually from contaminated water/beverages):
+  - Nausea, vomiting, abdominal pain
+  - Diarrhea (often green-colored)
+  - Metallic taste
+  - Hepatotoxicity
+  - Hemolysis
+
+  **Chronic copper excess**:
+  - Hepatic damage (cirrhosis)
+  - Neurologic: Kayser-Fleischer rings, neuropsychiatric symptoms (Wilson's disease)
+  - Hemolytic anemia
+
+  **Wilson's disease** (genetic copper overload):
+  - Impaired biliary copper excretion
+  - Hepatic, neurologic, and psychiatric manifestations
+  - Kayser-Fleischer corneal rings (pathognomonic)
+  - Requires lifelong copper restriction and chelation therapy
+
+  **Upper limit**: 10 mg/day based on liver damage as critical endpoint
+
+  ## Food Sources
+  **Very high copper** (>0.5 mg per serving):
+  - Beef liver: 4 mg per oz (highest food source)
+  - Oysters: 5.7 mg per 3 oz
+  - Lobster, crab: 1-2 mg per 3 oz
+  - Dark chocolate: 0.5 mg per oz
+
+  **High copper** (0.2-0.5 mg per serving):
+  - Cashews: 0.6 mg per oz
+  - Sunflower seeds: 0.5 mg per oz
+  - Shiitake mushrooms: 0.65 mg per 1/2 cup
+  - Chickpeas: 0.3 mg per 1/2 cup
+  - Tofu: 0.4 mg per 1/2 cup
+
+  **Moderate sources** (0.1-0.2 mg per serving):
+  - Potatoes
+  - Whole grains
+  - Most nuts
+  - Avocado
+  - Dried fruits
+
+  **Copper in water**: Can be significant source if plumbing contains copper pipes, especially with acidic water.
+
+  ## Absorption Factors
+  **Absorption efficiency**: 30-40% of dietary copper is absorbed; inversely related to intake.
+
+  **Enhancers**:
+  - Adequate protein intake (amino acids aid absorption)
+  - Acidic environment (improite dissolution)
+  - Histidine, methionine (form absorbable complexes)
+
+  **Inhibitors**:
+  - **Zinc**: Most significant inhibitor; induces metallothionein which binds copper in enterocytes and prevents absorption. This is the mechanism of zinc-induced copper deficiency.
+  - Phytates: Bind copper, reducing absorption
+  - Fiber: High fiber diets may reduce absorption
+  - Iron: High-dose iron supplements may compete
+  - Vitamin C: Very high doses may reduce copper absorption
+  - Molybdenum: Forms complexes with copper (thiomolybdates)
+  - Cadmium: Competes for absorption
+
+  **Homeostatic regulation**: Absorption increases with deficiency; biliary excretion is primary elimination route.
+
+  ## Special Populations
+  - **Bariatric surgery patients**: High risk; especially gastric bypass which bypasses duodenum (primary absorption site)
+  - **Premature infants**: Low copper stores; need supplementation
+  - **TPN patients**: Must include copper in formulation; deficiency develops within weeks
+  - **Wilson's disease patients**: Require copper restriction and chelation; avoid copper-rich foods
+  - **High-zinc supplement users**: Risk of copper deficiency; monitor if taking >50 mg zinc daily
+  - **Vegetarians/vegans**: Generally adequate intake; plant foods are good sources
+  - **Celiac disease/IBD**: Malabsorption risk
+  - **Those with unexplained anemia**: Consider copper deficiency, especially if neutropenic
+  - **Patients with myelopathy**: Include copper status in workup
+
+  ## Drug Interactions
+  - **Zinc supplements**: High-dose zinc induces copper deficiency; used therapeutically in Wilson's disease
+  - **Penicillamine**: Copper chelator; used in Wilson's disease; can cause copper deficiency
+  - **Trientine**: Another copper chelator for Wilson's disease
+  - **Antacids and H2 blockers**: May reduce copper absorption
+  - **Proton pump inhibitors**: Long-term use may affect copper status
+  - **Oral contraceptives**: May increase serum copper levels
+  - **NSAIDs**: May alter copper distribution
+  - **Allopurinol**: May affect copper metabolism
+
+  ## Caveats & Limitations
+  - HealthKit data represents intake, not copper status
+  - Serum copper and ceruloplasmin are standard markers but can be affected by inflammation, pregnancy, and estrogen
+  - 24-hour urine copper used in Wilson's disease diagnosis
+  - Hepatic copper content (biopsy) is gold standard but invasive
+  - Food copper content varies with soil and water supply
+  - Copper from plumbing (first-draw water) not captured in food logging
+  - Wilson's disease patients must strictly limit copper; food tracking critical but databases may be imprecise
+  - Zinc-copper balance more important than absolute copper intake for some patients
+  - Mild deficiency symptoms are nonspecific; often overlooked until hematologic or neurologic signs develop
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing copper"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "High zinc intake causes copper deficiency; balance is clinically critical"
+  - identifier: "HKQuantityTypeIdentifierDietaryIron"
+    relationship: "Copper required for iron metabolism (ceruloplasmin); copper deficiency causes iron-refractory anemia"
+  - identifier: "HKQuantityTypeIdentifierDietaryMolybdenum"
+    relationship: "Molybdenum can form complexes with copper affecting absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
+    relationship: "High-dose vitamin C may affect copper absorption and status"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryCopper"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarycopper"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Copper Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Copper-HealthProfessional/"
+    type: "medical"
+  - title: "American Journal of Clinical Nutrition - Copper Deficiency"
+    url: "https://academic.oup.com/ajcn/article/88/3/855S/4649177"
+    type: "research"
+  - title: "AASLD Practice Guidelines - Wilson Disease"
+    url: "https://www.aasld.org/practice-guidelines/wilson-disease"
+    type: "medical"
+last_updated: "2026-01-27"

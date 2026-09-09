@@ -1,0 +1,141 @@
+identifier: "HKCategoryTypeIdentifierHeadache"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Headache"
+short_description: "Tracks headache episodes and their severity."
+icon: "brain.head.profile"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Headache is one of the most common pain conditions, characterized by pain in any region of the head. This HealthKit category type allows users to track headache episodes and their severity, providing valuable data for identifying patterns, triggers, and treatment effectiveness. For migraine sufferers and those with chronic headaches, longitudinal tracking is particularly valuable.
+
+  ## Health Significance
+  Headaches are classified as primary (the headache itself is the condition) or secondary (headache is a symptom of another condition). Understanding headache patterns is crucial for accurate diagnosis and effective treatment.
+
+  Primary headache disorders:
+  - **Tension-type headache**: Most common; bilateral, pressing quality
+  - **Migraine**: Often unilateral, pulsating; with or without aura
+  - **Cluster headache**: Severe, unilateral; with autonomic symptoms
+  - **Other primary headaches**: Exercise-related, cough headache, etc.
+
+  Secondary headaches (caused by underlying conditions):
+  - Medication overuse headache (rebound)
+  - Sinus headache (rhinosinusitis)
+  - Hypertensive headache
+  - Post-traumatic headache
+  - Infection (meningitis, encephalitis)
+  - Intracranial pathology (tumor, hemorrhage)
+  - Temporal arteritis
+  - Cervicogenic headache
+
+  Common triggers:
+  - Stress and anxiety
+  - Sleep disturbances (too much or too little)
+  - Hormonal changes (menstrual cycle)
+  - Dietary factors (alcohol, caffeine, MSG, nitrates)
+  - Environmental factors (weather, bright lights, loud sounds)
+  - Dehydration
+  - Medication effects
+
+  ## When to Seek Medical Attention
+  EMERGENCY (seek immediate care):
+  - Sudden, severe "thunderclap" headache
+  - Headache with fever, stiff neck, confusion (meningitis signs)
+  - Headache with vision loss or neurological symptoms
+  - Headache following head trauma
+  - Worst headache of life
+  - Headache with weakness, numbness, or speech changes
+
+  Seek prompt evaluation when:
+  - New headache pattern after age 50
+  - Headaches progressively worsen over weeks
+  - Headaches wake you from sleep
+  - Personality or mental status changes accompany headache
+  - Headaches significantly impact quality of life
+  - Current treatments are ineffective
+  - Headaches increase in frequency (>15 days/month)
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Menstrual migraine patterns
+  - Medication overuse (increasing frequency with analgesic use)
+  - Weather and environmental triggers
+  - Sleep-headache correlations
+  - Dietary triggers
+  - Treatment effectiveness over time
+  - Progression to chronic daily headache
+  - Aura patterns preceding migraine
+
+  ## Caveats & Limitations
+  - Headache type (tension vs. migraine) not differentiated
+  - Location and quality of pain not captured
+  - Duration of headaches not recorded
+  - Associated symptoms (nausea, photophobia) not linked
+  - Aura symptoms not tracked
+  - Medication use timing not correlated
+  - Cannot capture triggers without additional logging
+  - Does not replace formal headache diary
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierNausea"
+    relationship: "Nausea commonly accompanies migraine headaches"
+  - identifier: "HKCategoryTypeIdentifierDizziness"
+    relationship: "Vestibular migraine causes both headache and dizziness"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Fatigue may precede or follow headache episodes"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Sleep patterns significantly affect headache frequency"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Menstrual migraines correlate with menstrual cycle"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierHeadache"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierheadache"
+    type: "official"
+  - title: "Headache - American Migraine Foundation"
+    url: "https://americanmigrainefoundation.org/"
+    type: "medical"
+  - title: "Headache Classification - International Headache Society"
+    url: "https://ichd-3.org/"
+    type: "medical"
+  - title: "Migraine - Mayo Clinic"
+    url: "https://www.mayoclinic.org/diseases-conditions/migraine-headache/symptoms-causes/syc-20360201"
+    type: "medical"
+last_updated: "2026-01-27"

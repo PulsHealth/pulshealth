@@ -1,0 +1,243 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Resting Heart Rate
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Resting Heart Rate"
+short_description: "Measures the heart rate while the user is at rest and relaxed, typically the lowest heart rate during waking hours."
+
+# --- APPLE HEALTH UI ---
+icon: "heart.fill"
+color: "#FF2D55"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "count/min"
+supported_units:
+  - "count/min"
+  - "count/s"
+unit_description: "Beats per minute (BPM) measured during periods of physical and mental rest"
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "separateBySource"
+  - "mostRecent"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 35
+  max: 110
+  unit: "count/min"
+  notes: "Encompasses athletic bradycardia through elevated resting rates seen in deconditioned or unwell individuals"
+
+clinical_ranges:
+  - population: "Adults (general)"
+    normal: "60-100 bpm"
+    low: "<60 bpm (may be normal in fit individuals)"
+    high: ">100 bpm (tachycardia at rest)"
+  - population: "Well-trained endurance athletes"
+    normal: "40-60 bpm"
+    low: "<40 bpm (may warrant evaluation even in athletes)"
+    high: ">60 bpm may indicate overtraining or deconditioning"
+  - population: "Elite athletes"
+    normal: "35-50 bpm"
+    low: "<35 bpm (rare, requires evaluation)"
+    high: ">50 bpm"
+  - population: "Older adults (65+)"
+    normal: "60-80 bpm"
+    low: "<60 bpm (increased concern for sick sinus syndrome)"
+    high: ">80 bpm associated with higher mortality risk"
+  - population: "Optimal cardiovascular health"
+    normal: "50-70 bpm"
+    high: "Resting HR >80 bpm associated with increased CV risk"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "11.0"
+  year: 2017
+  notes: "Introduced alongside expanded heart health features with Apple Watch Series 3"
+watchos_introduced:
+  version: "4.0"
+  year: 2017
+  notes: "Requires Apple Watch for automatic calculation; computed from background heart rate measurements"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Automatically calculated daily from heart rate samples taken during periods of inactivity. Requires wearing the watch consistently throughout the day for accurate determination."
+    series: "Series 1 and later"
+    accuracy: "Dependent on consistent wear and adequate background readings during sedentary periods"
+  - name: "iPhone"
+    capability: "Displays and stores resting heart rate data but cannot measure directly. Requires connected Apple Watch or third-party device."
+  - name: "Third-party fitness trackers"
+    capability: "Many fitness trackers calculate and can write resting heart rate to HealthKit"
+    examples: ["Fitbit", "Garmin", "Whoop", "Oura Ring"]
+primary_source: "Apple Watch"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Resting heart rate (RHR) represents the number of heartbeats per minute while the body is at complete rest. Unlike instantaneous heart rate readings, RHR is a calculated value derived from heart rate samples taken during periods of physical inactivity and mental calm. It serves as one of the most clinically meaningful heart rate metrics, correlating strongly with cardiovascular fitness, autonomic function, and long-term health outcomes.
+
+  ## How It's Measured
+  Apple Watch calculates resting heart rate through an algorithmic analysis of background heart rate measurements:
+
+  - **Data collection:** Heart rate is sampled approximately every 5-10 minutes during the day
+  - **Activity filtering:** Samples taken during movement, exercise, or elevated activity are excluded
+  - **Time window:** Typically uses data from periods of sustained inactivity (sitting, lying down)
+  - **Daily calculation:** A single RHR value is generated for each day, usually reflecting the lowest heart rate during waking sedentary periods
+
+  **Note:** RHR differs from sleeping heart rate, which may be even lower. Apple Health reports RHR as a separate metric from sleep-related heart rate data.
+
+  **Timing:** RHR values typically appear in HealthKit by late morning or early afternoon once sufficient sedentary data has been collected.
+
+  ## Health Significance
+  Resting heart rate is one of the most powerful predictors of cardiovascular health and all-cause mortality:
+
+  **Cardiovascular fitness indicator:**
+  - Lower RHR generally indicates better cardiovascular conditioning
+  - Endurance training can reduce RHR by 10-20 bpm over months
+  - The heart becomes more efficient, pumping more blood per beat (increased stroke volume)
+
+  **Mortality predictor:**
+  - Large epidemiological studies show RHR is independently associated with mortality
+  - Each 10 bpm increase in RHR is associated with 10-20% higher mortality risk
+  - This association holds even after adjusting for fitness level and other risk factors
+
+  **Autonomic nervous system marker:**
+  - RHR reflects the balance between sympathetic and parasympathetic tone
+  - Chronic stress, poor sleep, and illness elevate RHR through sympathetic activation
+  - Improved fitness enhances parasympathetic (vagal) tone, lowering RHR
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  - **General population:** 60-100 bpm (AHA standard)
+  - **Optimal range:** 50-70 bpm (associated with best health outcomes)
+  - **Athletes:** 40-60 bpm is normal and reflects training adaptation
+  - **Elite endurance athletes:** 35-50 bpm, some documented cases in the 30s
+
+  ### Elevated Resting Heart Rate May Indicate
+  - **Deconditioning:** Lack of regular cardiovascular exercise
+  - **Overtraining syndrome:** Paradoxical RHR increase in overtrained athletes
+  - **Chronic stress:** Sustained sympathetic nervous system activation
+  - **Poor sleep quality:** Sleep deprivation elevates RHR
+  - **Dehydration:** Reduced blood volume requires faster heart rate
+  - **Illness/infection:** Even before symptoms appear, RHR often rises
+  - **Fever:** Heart rate increases ~10 bpm per degree Celsius
+  - **Hyperthyroidism:** Elevated metabolic rate increases RHR
+  - **Anemia:** Compensatory tachycardia due to reduced oxygen-carrying capacity
+  - **Heart failure:** Compensatory elevation to maintain cardiac output
+  - **Medication effects:** Stimulants, decongestants, bronchodilators
+  - **Caffeine/alcohol:** Both can elevate RHR, especially with chronic heavy use
+
+  ### Low Resting Heart Rate May Indicate
+  - **Excellent cardiovascular fitness:** Most common cause in healthy individuals
+  - **Beta-blocker use:** Medications that slow heart rate
+  - **Calcium channel blocker use:** Certain types (non-dihydropyridine)
+  - **Hypothyroidism:** Reduced metabolic rate lowers RHR
+  - **Sick sinus syndrome:** Pathological bradycardia, especially in elderly
+  - **Heart block:** Conduction system disease
+  - **Electrolyte abnormalities:** Particularly hyperkalemia
+
+  ### Red Flags for Consultation
+  - **Sudden RHR increase >15-20 bpm from baseline** without clear cause (may indicate illness, overtraining, or cardiac issue)
+  - **Resting HR persistently >100 bpm** in adults
+  - **RHR <40 bpm with symptoms** (dizziness, fatigue, fainting)
+  - **Progressive RHR trend upward over weeks/months** without lifestyle explanation
+  - **RHR elevation that doesn't normalize** after rest, recovery from illness, or reduced stress
+  - **RHR >80 bpm in individuals with known cardiovascular disease** (may indicate inadequate rate control or disease progression)
+
+  ## Caveats & Limitations
+
+  ### Measurement Considerations
+  - **Requires consistent wear:** Sporadic Apple Watch use produces unreliable RHR data
+  - **Timing matters:** RHR measured after caffeine, stress, or activity will be elevated
+  - **Day-to-day variation:** Normal variation of 3-5 bpm is expected
+  - **Posture affects readings:** Standing RHR is typically 10-15 bpm higher than supine
+
+  ### Interpretation Caveats
+  - **Context is crucial:** A "high" RHR in one person may be normal for another
+  - **Trends over time** are more meaningful than single values
+  - **Athletic bradycardia** (RHR <60) should not be treated unless symptomatic
+  - **Age adjustment:** RHR tends to increase slightly with age in sedentary individuals
+
+  ### Limitations
+  - Cannot detect arrhythmias or structural heart disease
+  - Does not measure blood pressure or cardiac output
+  - Single daily value may miss significant intraday variations
+  - Algorithm may not perfectly distinguish rest from sedentary states in all users
+
+  ## Additional Notes
+
+  **Tracking recommendations for health consultants:**
+  - Look at 7-day or 30-day moving averages rather than daily values
+  - Note seasonal patterns (RHR may increase in summer heat)
+  - Correlate RHR changes with sleep, stress, illness, and training load
+  - Consider morning RHR as the most standardized measurement point
+
+  **Red flag patterns to watch for:**
+  - Sustained elevation during recovery weeks (overtraining)
+  - RHR rise preceding symptom onset by 1-2 days (early illness indicator)
+  - Gradual upward drift over months (may indicate declining fitness or emerging health issue)
+
+  **For athletes:** RHR is a valuable recovery and readiness marker. Many coaches use morning RHR to adjust training intensity. An elevated RHR (>5 bpm above baseline) may suggest incomplete recovery and warrant reduced training load.
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateMotionContext"
+    description: "Typically set to sedentary (1) for resting heart rate samples"
+    values:
+      - "sedentary (1) - User was stationary"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Source data - RHR is derived from background heart rate samples"
+  - identifier: "HKQuantityTypeIdentifierWalkingHeartRateAverage"
+    relationship: "Complementary - Both provide context for cardiac function; walking HR minus RHR indicates chronotropic competence"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "Complementary - Both reflect autonomic nervous system function; often correlated (higher HRV = lower RHR)"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Correlated - Lower RHR generally associated with higher VO2max and better cardiorespiratory fitness"
+  - identifier: "HKCategoryTypeIdentifierLowHeartRateEvent"
+    relationship: "Related alert - May be triggered if RHR drops below user-defined threshold"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Context - Sleep quality affects RHR; poor sleep often elevates next-day RHR"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - restingHeartRate"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/restingheartrate"
+    type: "official"
+  - title: "Heart rate: What's normal? - Mayo Clinic"
+    url: "https://www.mayoclinic.org/healthy-lifestyle/fitness/expert-answers/heart-rate/faq-20057979"
+    type: "medical"
+  - title: "All About Heart Rate - American Heart Association"
+    url: "https://www.heart.org/en/health-topics/high-blood-pressure/the-facts-about-high-blood-pressure/all-about-heart-rate-pulse"
+    type: "medical"
+  - title: "Need for a Revision of the Normal Limits of Resting Heart Rate - AHA Journals"
+    url: "https://www.ahajournals.org/doi/10.1161/01.HYP.33.2.622"
+    type: "research"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 11.0/watchOS 4.0 introduction based on Apple feature announcements (2017)
+  - Clinical ranges from Mayo Clinic, AHA guidelines, and cardiovascular epidemiology literature
+  - Mortality association data from multiple large cohort studies (Copenhagen Heart Study, NHANES, etc.)
+  - Overtraining and recovery applications well-documented in sports medicine literature

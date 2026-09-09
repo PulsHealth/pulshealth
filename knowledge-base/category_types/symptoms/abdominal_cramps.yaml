@@ -1,0 +1,109 @@
+identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Abdominal Cramps"
+short_description: "Tracks episodes of cramping pain in the abdominal region."
+icon: "bolt.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Abdominal cramps are involuntary muscle contractions in the abdominal region that cause sharp, intermittent pain. This HealthKit category type allows users to log the presence and severity of abdominal cramping episodes, providing valuable data for identifying patterns related to diet, menstrual cycles, stress, or underlying gastrointestinal conditions.
+
+  ## Health Significance
+  Abdominal cramps can indicate a wide range of conditions from benign causes like menstrual cramps or dietary indiscretion to more serious conditions requiring medical attention. For clinicians, tracking frequency and severity patterns helps differentiate between functional disorders (like IBS) and organic pathology. The data can reveal correlations with food intake, menstrual cycles, medication use, or stress levels.
+
+  Common associated conditions include:
+  - Irritable bowel syndrome (IBS)
+  - Menstrual dysmenorrhea
+  - Inflammatory bowel disease (IBD)
+  - Food intolerances or allergies
+  - Gastroenteritis
+  - Constipation
+  - Stress-related functional disorders
+
+  ## When to Seek Medical Attention
+  Users should seek medical evaluation when abdominal cramps:
+  - Are severe and sudden in onset
+  - Persist for more than 24-48 hours
+  - Are accompanied by fever, vomiting blood, or bloody stools
+  - Occur with inability to pass gas or stool
+  - Are associated with unexplained weight loss
+  - Significantly interfere with daily activities
+  - Follow abdominal trauma
+  - Occur during pregnancy
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Cyclic patterns suggesting menstrual-related cramping
+  - Post-meal patterns indicating food sensitivities
+  - Stress-correlated episodes
+  - Medication-related side effects
+  - Progressive worsening suggesting disease progression
+
+  ## Caveats & Limitations
+  - Subjective severity ratings may vary between users
+  - Location of cramps within the abdomen is not captured
+  - Does not distinguish between different types of pain (cramping vs. sharp vs. dull)
+  - Relies on user compliance for accurate tracking
+  - Cannot differentiate between causes without additional context
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierBloating"
+    relationship: "Often co-occurs with abdominal cramps in GI disorders"
+  - identifier: "HKCategoryTypeIdentifierConstipation"
+    relationship: "Constipation frequently causes abdominal cramping"
+  - identifier: "HKCategoryTypeIdentifierDiarrhea"
+    relationship: "Cramps often accompany diarrheal episodes"
+  - identifier: "HKCategoryTypeIdentifierNausea"
+    relationship: "Nausea frequently co-occurs with abdominal pain"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Menstrual cramps correlate with menstrual flow"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierAbdominalCramps"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierabdominalcramps"
+    type: "official"
+  - title: "Irritable Bowel Syndrome - NIDDK"
+    url: "https://www.niddk.nih.gov/health-information/digestive-diseases/irritable-bowel-syndrome"
+    type: "medical"
+  - title: "Abdominal Pain - Mayo Clinic"
+    url: "https://www.mayoclinic.org/symptoms/abdominal-pain/basics/definition/sym-20050728"
+    type: "medical"
+last_updated: "2026-01-27"

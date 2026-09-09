@@ -1,0 +1,137 @@
+identifier: "HKCharacteristicTypeIdentifierBiologicalSex"
+source: "HealthKit"
+type: "HKCharacteristicType"
+category: "Characteristics"
+human_readable_name: "Biological Sex"
+short_description: "The user's biological sex as set in their Health profile, used for health calculations and reference ranges."
+icon: "person.fill"
+color: "#007AFF"
+default_unit: null
+supported_units: null
+unit_description: "Enumerated value representing biological sex"
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notSet"
+    description: "The user has not specified their biological sex in Health settings"
+  - value: 1
+    name: "female"
+    description: "Female biological sex"
+  - value: 2
+    name: "male"
+    description: "Male biological sex"
+  - value: 3
+    name: "other"
+    description: "Other or not exclusively male or female"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "User manually sets value in Health app profile (Settings > Health > Health Details)"
+  - name: "iPad"
+    capability: "User manually sets value in Health app profile"
+primary_source: "User Input"
+description: |
+  ## Overview
+
+  HKCharacteristicTypeIdentifierBiologicalSex stores the user's biological sex as configured in their
+  Health app profile. This is a read-only characteristic that can only be modified by the user through
+  the Health app settings - apps cannot write to this value. The characteristic is used throughout
+  HealthKit for sex-specific calculations, reference ranges, and health recommendations.
+
+  ## Health Significance
+
+  Biological sex is fundamental to many aspects of health assessment and medical care:
+
+  - **Metabolic calculations**: Basal metabolic rate (BMR), total daily energy expenditure (TDEE), and
+    caloric needs calculations differ by sex
+
+  - **Cardiovascular risk**: Heart rate zones, blood pressure norms, and cardiovascular risk assessments
+    use sex-specific reference ranges
+
+  - **Body composition**: Body fat percentage interpretations, healthy weight ranges, and fitness
+    assessments vary by biological sex
+
+  - **Medication dosing**: Many pharmaceuticals have sex-specific dosing guidelines or
+    pharmacokinetic differences
+
+  - **Laboratory reference ranges**: Normal values for many blood tests (hemoglobin, creatinine,
+    hormone levels) differ by sex
+
+  - **Disease risk assessment**: Prevalence and presentation of many conditions vary by biological sex
+
+  - **Reproductive health**: Enables appropriate tracking features (menstrual cycle tracking for females)
+
+  ## Clinical Interpretation
+
+  When accessing biological sex data, clinicians should consider:
+
+  - **Self-reported nature**: This value is set by the user and may not reflect chromosomal sex,
+    hormonal status, or medical history
+
+  - **Transgender and intersex individuals**: Users may select "Other" or may choose based on current
+    hormone status rather than sex assigned at birth. Clinical decisions may require more detailed
+    discussion with the patient.
+
+  - **Reference range application**: When applying sex-specific reference ranges, consider whether the
+    patient's current hormonal milieu aligns with their selected biological sex
+
+  - **"Not Set" handling**: If the value is notSet, apps should either prompt for this information or
+    use sex-neutral calculations where possible
+
+  - **Privacy sensitivity**: This is considered sensitive health information. Apps must have explicit
+    authorization to read this characteristic.
+
+  ## Caveats & Limitations
+
+  - **Read-only access**: Apps cannot set or modify this value - only the user can change it in Health
+    settings. This prevents apps from incorrectly assuming or overwriting the user's data.
+
+  - **Binary plus "Other"**: The three-option model (female/male/other) may not fully capture the
+    complexity of biological sex variations (intersex conditions, hormone therapy effects, etc.)
+
+  - **Not gender identity**: This field represents biological sex, not gender identity. Users may have
+    different preferences for how they identify versus what is medically relevant.
+
+  - **Static value**: Unlike other health data, this doesn't change over time (no historical samples).
+    For individuals undergoing gender-affirming care, the current value may not reflect their entire
+    health history.
+
+  - **Impacts derived calculations**: Many HealthKit calculations depend on this value. If notSet or
+    incorrectly set, derived metrics like energy expenditure may be inaccurate.
+
+  - **Cannot be deleted**: Once set, users can only change the value, not remove it entirely (though
+    they could set it back to a neutral state in some implementations).
+metadata_keys: []
+related_types:
+  - identifier: "HKCharacteristicTypeIdentifierDateOfBirth"
+    relationship: "demographic_characteristic"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "sex_specific_tracking"
+  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
+    relationship: "sex_specific_tracking"
+  - identifier: "HKQuantityTypeIdentifierBodyFatPercentage"
+    relationship: "sex_specific_reference_ranges"
+references:
+  - title: "Apple Developer Documentation - HKCharacteristicTypeIdentifierBiologicalSex"
+    url: "https://developer.apple.com/documentation/healthkit/hkcharacteristictypeidentifierbiologicalsex"
+    type: "official"
+  - title: "Apple Developer Documentation - HKBiologicalSex"
+    url: "https://developer.apple.com/documentation/healthkit/hkbiologicalsex"
+    type: "official"
+  - title: "HealthKit Framework Reference"
+    url: "https://developer.apple.com/documentation/healthkit"
+    type: "official"
+last_updated: "2026-01-27"

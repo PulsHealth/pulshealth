@@ -1,0 +1,210 @@
+identifier: "HKQuantityTypeIdentifierDietaryMolybdenum"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Molybdenum"
+short_description: "Molybdenum intake from food and supplements, essential as a cofactor for enzymes involved in sulfur metabolism."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#8E8E93"
+
+default_unit: "mcg"
+supported_units: ["mcg", "mg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 2000
+  unit: "mcg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "2 mcg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "3 mcg/day (AI)"
+  - population: "Children 1-3 years"
+    rda: "17 mcg/day"
+  - population: "Children 4-8 years"
+    rda: "22 mcg/day"
+  - population: "Children 9-13 years"
+    rda: "34 mcg/day"
+  - population: "Adolescents 14-18 years"
+    rda: "43 mcg/day"
+  - population: "Adults 19+ years"
+    rda: "45 mcg/day"
+  - population: "Pregnant women"
+    rda: "50 mcg/day"
+  - population: "Lactating women"
+    rda: "50 mcg/day"
+  - population: "Children 1-3 years"
+    upper_limit: "300 mcg/day"
+  - population: "Children 4-8 years"
+    upper_limit: "600 mcg/day"
+  - population: "Children 9-13 years"
+    upper_limit: "1100 mcg/day"
+  - population: "Adolescents 14-18 years"
+    upper_limit: "1700 mcg/day"
+  - population: "Adults 19+ years"
+    upper_limit: "2000 mcg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary molybdenum from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track molybdenum intake against personalized targets"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Molybdenum is an essential trace mineral that functions as a cofactor for a small number of critical enzymes involved in the metabolism of sulfur-containing amino acids, purines, and aldehydes. The body contains approximately 9 mg of molybdenum, primarily in liver, kidney, adrenal glands, and bone. Dietary deficiency is extraordinarily rare because molybdenum requirements are low and it's widely distributed in foods. The primary clinical relevance is molybdenum cofactor deficiency, a rare genetic disorder.
+
+  ## Biological Functions
+  - **Sulfite oxidase**: Converts sulfite to sulfate; essential for sulfur amino acid metabolism; deficiency causes severe neurological damage
+  - **Xanthine oxidase/dehydrogenase**: Converts hypoxanthine to xanthine and xanthine to uric acid; purine catabolism
+  - **Aldehyde oxidase**: Metabolizes drugs and toxins; contributes to drug metabolism
+  - **Mitochondrial amidoxime reducing component (mARC)**: Detoxification functions
+
+  All molybdenum-dependent enzymes require the molybdenum cofactor (Moco), a complex organic molecule synthesized from molybdenum.
+
+  ## Health Significance
+  For nutritional purposes, molybdenum deficiency is essentially non-existent in humans consuming food. The clinical significance lies primarily in two areas: (1) the rare genetic disorder of molybdenum cofactor deficiency, which causes severe neurological disease in infancy, and (2) understanding interactions with copper metabolism. Some geographic areas with very high molybdenum in soil/water have reported effects on copper status. The low requirement and widespread availability in foods makes dietary molybdenum a minor clinical concern.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing molybdenum intake data:
+  - **Recognize deficiency is essentially impossible from diet**: Not a clinical concern for food-based diets
+  - **Note genetic disorders**: Molybdenum cofactor deficiency is a severe genetic disease unrelated to diet
+  - **Consider copper interactions**: Very high molybdenum can induce copper deficiency (relevant for animals, less so humans)
+  - **Assess TPN adequacy**: Only setting where dietary deficiency has been reported
+  - **Understand limited relevance**: Tracking molybdenum is rarely clinically indicated outside research settings
+
+  ## Deficiency
+  **Dietary molybdenum deficiency** - documented only once:
+  - A single case report in a TPN patient after prolonged feeding without molybdenum
+  - Symptoms: Tachycardia, tachypnea, mental status changes, visual disturbances, coma
+  - Resolved with molybdenum supplementation
+
+  **Molybdenum cofactor deficiency** (genetic disorder, not dietary):
+  - Rare autosomal recessive disorder
+  - Mutations in MOCS1, MOCS2, or GPHN genes
+  - Presents in neonatal period with:
+    - Intractable seizures
+    - Severe developmental delay
+    - Lens dislocation
+    - Facial dysmorphism
+  - Elevated urine sulfite, S-sulfocysteine; low uric acid
+  - Usually fatal in infancy/early childhood
+  - Not treatable with dietary molybdenum (cofactor synthesis is defective)
+
+  **Isolated sulfite oxidase deficiency**: Similar presentation to Moco deficiency; equally severe.
+
+  ## Toxicity/Excess
+  **Acute toxicity** (rare):
+  - Very high doses (>10-15 mg/day) in occupational settings or supplements
+  - Gout-like symptoms (elevated uric acid from xanthine oxidase activity)
+  - Joint pain
+
+  **Chronic excess**:
+  - Secondary copper deficiency (molybdenum forms thiomolybdates with sulfur that bind copper)
+  - Reproductive effects in animals at very high doses
+  - Gout-like syndrome with joint pain
+
+  **Geographic/environmental exposure**:
+  - "Teart" pastures in parts of UK have high soil molybdenum
+  - Animals grazing on these pastures develop copper deficiency
+  - Human effects less documented but theoretically possible in extreme cases
+
+  **Upper limit basis**: 2000 mcg/day for adults based on reproductive and developmental effects in animals.
+
+  ## Food Sources
+  **High molybdenum foods** (>50 mcg per serving):
+  - Legumes: Black beans (130 mcg/cup), lentils (148 mcg/cup), lima beans, split peas
+  - Nuts: Almonds, peanuts, cashews
+
+  **Moderate sources** (20-50 mcg per serving):
+  - Whole grains: Oats, wheat
+  - Dairy: Milk, yogurt, cheese
+  - Eggs
+  - Beef liver
+
+  **Lower sources** (5-20 mcg per serving):
+  - Most vegetables
+  - Fruits
+  - Meat, poultry, fish
+
+  **Note**: Soil molybdenum content affects plant food levels; geographic variation exists.
+
+  ## Absorption Factors
+  **High bioavailability**: 40-90% of dietary molybdenum is absorbed.
+
+  **Absorption characteristics**:
+  - Rapidly absorbed in stomach and small intestine
+  - Absorption inversely related to intake (homeostatic regulation)
+  - Molybdate (MoO4^2-) is the primary form absorbed
+
+  **Enhancers**:
+  - Low molybdenum status increases absorption efficiency
+
+  **Inhibitors**:
+  - Copper: High copper intake may reduce molybdenum absorption
+  - Sulfate: Competes for transport
+  - Tungsten: Competes for incorporation into molybdoenzymes
+
+  **Homeostatic regulation**: Unlike many trace minerals, molybdenum balance is primarily maintained through renal excretion rather than absorption regulation. The kidneys efficiently adjust molybdenum excretion based on intake.
+
+  ## Special Populations
+  - **TPN patients**: Require molybdenum in formulation; only population at realistic deficiency risk
+  - **Patients with molybdenum cofactor deficiency**: Genetic disorder; dietary molybdenum is irrelevant (cannot synthesize cofactor)
+  - **Individuals with sulfite sensitivity**: May have reduced sulfite oxidase activity; dietary molybdenum won't help if genetic
+  - **Those in high-molybdenum geographic areas**: May have elevated intake; theoretical copper interaction concern
+  - **Gout patients**: Molybdenum-dependent xanthine oxidase produces uric acid; very high molybdenum might theoretically worsen gout
+
+  ## Drug Interactions
+  - **Copper supplements**: Molybdenum and copper have antagonistic interactions; excessive molybdenum may impair copper status
+  - **Tungsten compounds**: Compete with molybdenum for enzyme incorporation
+  - **Sulfite-containing medications**: Sulfite oxidase metabolizes sulfites; theoretical interaction
+  - **Xanthine oxidase inhibitors (allopurinol, febuxostat)**: Act on molybdenum-containing enzyme; no direct dietary interaction
+
+  ## Caveats & Limitations
+  - HealthKit captures dietary intake, but molybdenum status assessment is rarely indicated clinically
+  - No reliable biomarker for molybdenum status; serum/urine levels reflect recent intake
+  - Food composition databases have limited molybdenum data; values may be estimated
+  - Soil and water molybdenum content varies geographically; local food sources affected
+  - Deficiency from diet is essentially impossible in anyone eating food
+  - Genetic molybdenum cofactor deficiency is unrelated to dietary intake
+  - Clinical relevance of tracking molybdenum intake is minimal for most individuals
+  - RDA values are based on balance studies with considerable uncertainty
+  - The interaction with copper is more relevant for animal nutrition than typical human diets
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing molybdenum"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryCopper"
+    relationship: "Molybdenum and copper have antagonistic interactions; high molybdenum can impair copper status"
+  - identifier: "HKQuantityTypeIdentifierDietaryIron"
+    relationship: "Both trace minerals involved in various metabolic processes"
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "Trace mineral involved in enzyme function"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryMolybdenum"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarymolybdenum"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Molybdenum Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Molybdenum-HealthProfessional/"
+    type: "medical"
+  - title: "Journal of Inherited Metabolic Disease - Molybdenum Cofactor Deficiency"
+    url: "https://onlinelibrary.wiley.com/journal/15732665"
+    type: "research"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Molybdenum"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK222301/"
+    type: "research"
+last_updated: "2026-01-27"

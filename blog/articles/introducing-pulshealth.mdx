@@ -1,0 +1,84 @@
+---
+title: "Introducing PulsHealth"
+date: "2026-02-03"
+tags: []
+excerpt: "Consumer health data is hard —- siloed between many devices, inconsistent metrics/algorithms, and complex to interpret. PulsHealth handles it."
+---
+
+*Everything AI needs to collect and understand wearable health data*
+
+## The Opportunity
+
+Consumer wearables like the Apple Watch now generate thousands of health data points daily — heart rate, sleep stages, blood oxygen, activity metrics, and more. Yet this data remains siloed in device ecosystems, difficult to interpret without clinical context, and largely underutilized. The amount of these devices and metrics will only become more important in the future. AI agents have the potential to unlock actionable insights from this data, but they face significant challenges around privacy, accuracy, and interoperability across device/platforms. What's missing is the infrastructure layer that makes wearable health data reliable, normalized, and privacy-safe for AI consumption. PulsHealth fills that gap.
+
+## Introducing PulsHealth
+
+Wearable health data is fragmented across devices, sampling rates, units, and formats. An Apple Watch measures heart rate differently than a Fitbit, step counts vary by sensor placement, and VO2 Max estimates have device-specific confidence intervals. AI agents need a reliable data layer that handles normalization, clinical context, privacy controls, and real-time sync — building this from scratch is a massive undertaking that distracts from the actual AI product. PulsHealth provides this foundation so developers can focus on what they do best. Some possible examples include:
+
+<Grid cols={2}>
+<FeatureCard title="Health Coaching" description="Agents that understand training readiness from multi-source wearable data" />
+<FeatureCard title="Telehealth" description="Platforms enriched with continuous patient metrics between visits" />
+<FeatureCard title="Research" description="Studies powered by live participant data with built-in consent management" />
+<FeatureCard title="Fitness" description="AI-driven recommendations grounded in clinical accuracy" />
+</Grid>
+
+## Solutions
+
+### Wearable Knowledge Base
+
+Consumer health data is complex. There are many different algorithms and techniques to measure the same thing. How do you handle data from multiple devices? Different rates of sampling? How accurate is this VO2 Max estimate and when can I trust it from the Apple Watch?
+
+PulsHealth has an extensive knowledge that AI and humans can leverage. Every health metric has detailed technical and clinical summaries. This includes things like sampling rate, typical ranges, volume of data collected, compaction policies,  how they relate to types measured on different devices (step count from the Apple Watch, Fitbit, vs iPhone), etc.
+
+<Callout type="tip" icon={false}>Distill years of expertise and experience from our team of clinicians and ex Apple Health Team and Google research scientists into your AI agent.</Callout>
+
+[Learn more about the Knowledge Base →](/knowledge-base)
+
+### AI Health Agent
+
+LLMs allowed us to ask questions and understand our health. Agents allow us to act on it by continually monitoring, being a fitness coach, or many other possibilities. Health data introduces new challenges with privacy concerns and health-related topics that are critical to get right.
+
+PulsHealth has its own Health Agent you can build from that addresses both these concerns:
+
+#### PrivacyProtect Layer
+
+An on-device LLM identifies the minimum necessary clinical data and queries only that. This filtered data can then be passed to more capable cloud-based LLMs. There is a conversation between them to solve your goals while protecting your on-device health data. You are in control the whole time — you can also just use the on-device model, and only when absolutely necessary will it suggest sending data off-device.
+
+When data does need to reach cloud-based LLMs like Gemini or ChatGPT, it goes through a privacy-preserving query layer that aggregates, filters, fuzzes dates, and injects noise to help anonymize. PulsHealth maintains awareness of what health data has been sent to what source.
+
+#### Grounding and Fact Checking
+
+Health is a domain where accuracy is non-negotiable. PulsHealth grounds its AI Health Agent in clinical truth through multiple layers:
+
+<Accordion>
+<AccordionItem title="Knowledge Base Grounding">The agent has access to PulsHealth's extensive Wearable Knowledge Base, giving it detailed technical and clinical context for every metric it reasons about — typical ranges, device-specific accuracy, sampling characteristics, and clinical significance. This prevents the common failure mode of LLMs hallucinating health information.</AccordionItem>
+<AccordionItem title="Tool-Based Fact Checking">The agent is equipped with tools to verify its own claims against the knowledge base before responding. Rather than relying on parametric knowledge alone, it actively retrieves and cross-references authoritative metric data during reasoning.</AccordionItem>
+<AccordionItem title="LLM-as-a-Judge Testing Harness">We run a continuous evaluation pipeline where LLM judges score agent responses against clinician-validated ground truth. This harness tests across a battery of clinical scenarios — edge cases, multi-metric reasoning, device-specific nuances — and catches regressions before they reach users.</AccordionItem>
+<AccordionItem title="Clinical Input">Our testing corpus is built and reviewed with input from clinicians and health data scientists. The ground truth the agent is tested against comes from real clinical expertise, not just LLM-generated benchmarks.</AccordionItem>
+</Accordion>
+
+You can use our AI agent out of the box or integrate with your existing system. We offer MCP, agent-to-agent communication, or using the PrivacyProtect query layer directly with your own agent.
+
+[Learn more about the AI Health Agent →](/ai)
+
+### PulsHealthSync
+
+Health data lives on the device. For most applications — research studies tracking participants, clinicians monitoring patients between visits, fitness platforms aggregating across wearables — the data needs to be somewhere accessible, kept current, and structured for querying. Building a reliable sync pipeline that handles encryption, consent, and the quirks of each wearable platform is a significant engineering effort that has nothing to do with the actual product you're trying to build.
+
+PulsHealthSync is a package that manages the real-time collection and sync of wearable health data. It handles keeping multiple data sources up to date, encrypting data in transit and at rest, and giving users full control over what is collected and shared — permissions they can change at any time.
+
+You can use PulsHealthSync in two ways. For a fully managed experience, PulsHealth provides an end-to-end solution with a hosted database that makes it easy to query health events as they happen — the most recent workout, an ECG, sleep stages. For teams that want complete control, the package works with your own infrastructure: point it at your endpoint and the data flows to your storage, your way.
+
+<Callout type="info">PulsHealthSync also pairs naturally with the AI Health Agent. For on-device use cases, the agent can read directly from the local health store without exporting or managing data externally — no sync required. When your application needs to incorporate multiple wearable data sources or make health data available to cloud-based systems, PulsHealthSync keeps everything current and the agent can read from the synced data instead. The right approach depends on the use case, and both work out of the box.</Callout>
+
+[Learn more about PulsHealthSync →](/sync)
+
+## Get Started
+
+PulsHealth is built for developers and teams who want to ship health AI products without rebuilding the data layer from scratch. Whether you're integrating wearable data into an existing agent, launching a new health platform, or running a clinical study — we'd love to help you get there.
+
+- [Explore the Knowledge Base](/knowledge-base) to see how we structure 150+ health metrics for AI
+- [Try the AI Health Agent](/ai) with built-in privacy and clinical grounding
+- [Set up PulsHealthSync](/sync) to start collecting wearable data in minutes
+
+Reach out at [hello@pulshealth.com](mailto:hello@pulshealth.com) — we'd love to hear what you're building.

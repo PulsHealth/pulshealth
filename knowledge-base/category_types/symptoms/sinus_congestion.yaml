@@ -1,0 +1,146 @@
+identifier: "HKCategoryTypeIdentifierSinusCongestion"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Sinus Congestion"
+short_description: "Tracks episodes and severity of nasal and sinus congestion"
+icon: "nose.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No sinus congestion; normal nasal breathing"
+  - value: 1
+    name: "present"
+    description: "Mild congestion - slight stuffiness, can breathe through nose"
+  - value: 2
+    name: "moderate"
+    description: "Moderate congestion - noticeable obstruction, partial mouth breathing"
+  - value: 3
+    name: "severe"
+    description: "Severe congestion - near-complete obstruction, mouth breathing required"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Sinus congestion is the sensation of nasal stuffiness or blockage caused by
+  swollen nasal tissues and blood vessels, often accompanied by mucus
+  accumulation. This data type enables tracking of congestion episodes for
+  pattern identification and treatment monitoring.
+
+  ## Health Significance
+  - **Infection Tracking**: Common symptom of viral URI, sinusitis, and
+    respiratory infections
+  - **Allergy Monitoring**: Key symptom of allergic rhinitis; reveals
+    environmental triggers
+  - **Sleep Quality**: Congestion significantly impacts sleep and can
+    worsen sleep apnea
+  - **Chronic Conditions**: Persistent congestion may indicate chronic
+    sinusitis or structural issues
+  - **Treatment Response**: Monitor effectiveness of decongestants, nasal
+    steroids, or antihistamines
+
+  ## Clinical Context
+  **Common Causes:**
+  - Viral upper respiratory infection (common cold)
+  - Acute or chronic sinusitis
+  - Allergic rhinitis
+  - Non-allergic rhinitis
+  - Nasal polyps
+  - Deviated septum
+  - Environmental irritants
+
+  **Contributing Factors:**
+  - Dry air
+  - Weather changes
+  - Hormonal changes (pregnancy rhinitis)
+  - Medications (rhinitis medicamentosa from overuse of nasal decongestants)
+  - Smoking or secondhand smoke exposure
+
+  ## When to Seek Medical Attention
+  - Congestion lasting more than 10 days
+  - Severe facial pain or pressure
+  - High fever with sinus symptoms
+  - Symptoms worsening after initial improvement
+  - Recurrent episodes of sinusitis
+  - Congestion not responding to OTC treatments
+  - Unilateral congestion (could indicate structural problem)
+  - Congestion affecting sleep quality significantly
+  - Vision changes or severe headache with congestion
+  - Symptoms suggesting bacterial sinusitis
+
+  ## Pattern Recognition
+  Tracking sinus congestion can reveal:
+  - Seasonal patterns (allergic rhinitis)
+  - Environmental triggers (dust, mold, pet dander)
+  - Duration of illness episodes
+  - Nighttime vs. daytime patterns
+  - Response to different treatments
+  - Correlation with weather or air quality
+  - Relationship to sleep quality
+  - Recurrent infection patterns
+
+  ## Caveats & Limitations
+  - Subjective severity assessment
+  - Cannot distinguish between nasal and sinus involvement
+  - Does not capture cause (infectious vs. allergic)
+  - Cannot differentiate unilateral vs. bilateral
+  - Does not record mucus characteristics
+  - Brief episodes may not be logged
+  - Environmental context not captured
+  - May not distinguish from other nasal symptoms
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierRunnyNose"
+    relationship: "Often co-occur; congestion may precede or follow rhinorrhea"
+  - identifier: "HKCategoryTypeIdentifierHeadache"
+    relationship: "Sinus headache common with congestion"
+  - identifier: "HKCategoryTypeIdentifierSoreThroat"
+    relationship: "Post-nasal drip can cause throat irritation"
+  - identifier: "HKCategoryTypeIdentifierCoughing"
+    relationship: "Post-nasal drip triggers cough"
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Suggests infectious cause"
+  - identifier: "HKCategoryTypeIdentifierSleepChanges"
+    relationship: "Congestion often disrupts sleep"
+  - identifier: "HKCategoryTypeIdentifierSnoring"
+    relationship: "Congestion commonly causes or worsens snoring"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierSinusCongestion"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiersinuscongestion"
+    type: "official"
+  - title: "Sinusitis Guidelines - AAO-HNS"
+    url: "https://www.entnet.org/quality-practice/quality-products/clinical-practice-guidelines/"
+    type: "medical"
+  - title: "Allergic Rhinitis - American Academy of Allergy"
+    url: "https://www.aaaai.org/conditions-treatments/allergies/rhinitis"
+    type: "medical"
+last_updated: "2026-01-27"

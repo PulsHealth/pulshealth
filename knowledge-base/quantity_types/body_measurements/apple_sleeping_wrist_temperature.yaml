@@ -1,0 +1,341 @@
+# ============================================
+# HEALTHKIT DATA TYPE: APPLE SLEEPING WRIST TEMPERATURE
+# ============================================
+# Clinical reference for health consultants and clinicians
+# Last updated: 2026-01-27
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierAppleSleepingWristTemperature"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Body Measurements"
+human_readable_name: "Sleeping Wrist Temperature"
+short_description: "A relative measurement of wrist skin temperature deviation from a personal baseline, recorded during sleep by Apple Watch, used for menstrual cycle tracking and detecting physiological changes."
+
+# --- APPLE HEALTH UI ---
+icon: "thermometer.variable.and.figure"
+color: "#FF9F0A"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "degC"
+supported_units:
+  - "degC"
+  - "degF"
+unit_description: "Values are recorded as deviations from baseline in degrees Celsius (degC) or Fahrenheit (degF). Positive values indicate temperature above baseline; negative values indicate below baseline. This is NOT an absolute body temperature measurement."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: -1.0
+  max: 1.0
+  unit: "degC"
+  notes: "Typical nightly variation from personal baseline. Values represent deviation, not absolute temperature. Larger deviations may indicate illness or hormonal changes."
+
+clinical_ranges:
+  - population: "Adults - Normal variation"
+    normal: "-0.2 to +0.3 degC from baseline"
+    notes: "Day-to-day variation in healthy individuals without significant physiological changes"
+  - population: "Women - Luteal phase (post-ovulation)"
+    normal: "+0.2 to +0.5 degC above follicular baseline"
+    notes: "Progesterone-mediated temperature elevation; typically rises 24-48 hours after ovulation"
+  - population: "Women - Follicular phase (pre-ovulation)"
+    normal: "At or below baseline"
+    notes: "Represents the lower temperature phase before the biphasic shift"
+  - population: "Illness/Fever"
+    normal: "+0.5 to +1.5 degC or more above baseline"
+    notes: "Elevated wrist temperature during sleep may indicate immune response; not a substitute for clinical fever assessment"
+
+# --- CATEGORY VALUES ---
+category_values: null
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "16.0"
+  year: 2022
+  notes: "Introduced with iPhone 14 and iOS 16; requires paired Apple Watch with temperature sensors"
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+  notes: "Requires Apple Watch Series 8, Apple Watch Ultra, or later models with dual temperature sensors"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: false
+requires_authorization: true
+sensitive_data: true
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch Series 8"
+    capability: "Dual temperature sensors (back crystal and under display) sample wrist temperature every 5 seconds during sleep"
+  - name: "Apple Watch Series 9"
+    capability: "Dual temperature sensors with same measurement methodology as Series 8"
+  - name: "Apple Watch Series 10"
+    capability: "Dual temperature sensors; enhanced sleep tracking integration"
+  - name: "Apple Watch Ultra"
+    capability: "Dual temperature sensors; same measurement capability as Series 8"
+  - name: "Apple Watch Ultra 2"
+    capability: "Dual temperature sensors with same measurement methodology"
+primary_source: "Apple Watch Series 8 or later"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Apple Sleeping Wrist Temperature is a specialized measurement introduced with Apple Watch
+  Series 8 that captures changes in wrist skin temperature during sleep relative to a personal
+  baseline. Unlike traditional body temperature measurements, this metric:
+
+  - Records **relative deviations** from an established baseline, NOT absolute temperature
+  - Is measured **passively during sleep** rather than as point-in-time readings
+  - Reflects **skin/peripheral temperature** rather than core body temperature
+  - Requires approximately **5 nights** to establish a personal baseline
+  - Is designed for **trend analysis** rather than clinical fever assessment
+
+  The primary use cases Apple has designed this feature for include:
+  1. **Menstrual cycle tracking:** Detecting the biphasic temperature shift associated with ovulation
+  2. **Retrospective ovulation estimation:** Improving period predictions in Cycle Tracking
+  3. **General wellness trends:** Observing patterns that may correlate with illness, exercise recovery, travel, or lifestyle changes
+
+  **Critical Understanding:** This data type represents wrist skin temperature deviation from
+  baseline measured during sleep. It is NOT equivalent to and should NOT be directly compared
+  with traditional body temperature measurements (oral, rectal, tympanic, etc.).
+
+  ## How It's Measured
+  **Hardware:**
+  Apple Watch Series 8 and later models contain two temperature sensors:
+  - **Back crystal sensor:** Located on the case back, in contact with the wrist
+  - **Under-display sensor:** Located beneath the screen, measuring ambient temperature
+
+  The dual-sensor design allows the watch to compensate for environmental factors and
+  improve accuracy by comparing skin-side and ambient measurements.
+
+  **Measurement Process:**
+  1. User wears Apple Watch to sleep with Sleep Focus enabled
+  2. During sleep, the watch samples wrist temperature every 5 seconds
+  3. Advanced algorithms aggregate thousands of samples into a single nightly value
+  4. For the first ~5 nights, the system establishes a personal baseline
+  5. Subsequent readings are displayed as deviations from this baseline
+  6. Data syncs to iPhone Health app where it can be viewed and used for cycle tracking
+
+  **Requirements for Data Collection:**
+  - Sleep Focus must be enabled with a sleep schedule configured
+  - Watch must be worn during sleep
+  - At least 4 hours of sleep detected
+  - Watch must be worn for at least 5 nights to establish baseline
+  - Feature must be enabled in Watch settings
+
+  **Baseline Establishment:**
+  The baseline is not a fixed value but a rolling average that adapts over time. This means:
+  - The system continuously refines its understanding of "normal" for the user
+  - Major physiological changes may trigger baseline recalibration
+  - The displayed deviation is always relative to recent baseline, not an absolute reference
+
+  ## Health Significance
+
+  ### Menstrual Cycle Tracking and Ovulation Detection
+  The primary clinical application of sleeping wrist temperature is supporting fertility
+  awareness methods (FAM) and menstrual cycle tracking:
+
+  **Physiological Basis:**
+  - Progesterone, released after ovulation, acts on the hypothalamus to elevate the
+    thermoregulatory set-point
+  - This causes a characteristic biphasic temperature pattern: lower temperatures in the
+    follicular phase (pre-ovulation) and higher temperatures in the luteal phase (post-ovulation)
+  - The temperature shift typically occurs 24-48 hours after the LH surge and ovulation
+  - Luteal phase temperatures are typically 0.2-0.5 degC higher than follicular phase
+
+  **Research on Wrist Skin Temperature:**
+  Studies comparing wrist skin temperature to basal body temperature (BBT) for ovulation detection:
+  - Wrist temperature shows 86.2% probability of correctly indicating ovulation when a shift is detected
+  - More sensitive than BBT (62% vs 23%) for detecting ovulation
+  - Greater range of temperature change (0.50 degC vs 0.20 degC between phases)
+  - Less affected by lifestyle factors that disrupt BBT (alcohol, eating before bed, disrupted sleep)
+  - Higher false-positive rate than BBT, so should be combined with other fertility indicators
+
+  **Apple's Implementation:**
+  - Cycle Tracking app uses wrist temperature data to provide retrospective ovulation estimates
+  - Can improve period predictions by identifying luteal phase length
+  - Should be used in conjunction with other fertility awareness indicators for family planning
+  - NOT approved as a standalone contraceptive method
+
+  ### Illness and Immune Response Detection
+  While Apple explicitly states the feature is not designed to detect fever or diagnose illness,
+  users and researchers have observed:
+
+  - Elevated sleeping wrist temperature may precede symptomatic illness by 1-2 days
+  - Temperature elevations of +0.5 degC to +1.5 degC or more may correlate with immune activation
+  - Some users have detected COVID-19 infections through temperature trend changes
+  - Patterns may be visible before subjective symptoms are noticed
+
+  **Important Caveats:**
+  - NOT validated or approved for fever detection or medical diagnosis
+  - Wrist skin temperature does not directly correlate with core body temperature
+  - A clinical thermometer should always be used to confirm suspected fever
+  - Apple Watch cannot and should not replace clinical assessment
+
+  ### Other Potential Applications
+  - **Exercise recovery:** Temperature patterns may reflect recovery status
+  - **Jetlag and travel:** Circadian disruption may manifest in temperature patterns
+  - **Alcohol consumption:** May affect nightly temperature readings
+  - **Environmental factors:** Sleep environment temperature affects readings
+  - **Menopausal transition:** Hot flashes and temperature dysregulation may be observable
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  - Day-to-day variation of +/- 0.2 degC is typical
+  - Consistent patterns emerge over 2-4 weeks of tracking
+  - Menstruating individuals will see cyclical patterns aligned with their cycle
+
+  ### Elevated Values May Indicate
+  - **Luteal phase (post-ovulation):** Normal biphasic shift; sustained elevation until menses
+  - **Early pregnancy:** Sustained elevated temperatures beyond expected menstruation
+  - **Immune response:** Possible early indicator of illness (not diagnostic)
+  - **Warm sleep environment:** External factor affecting readings
+  - **Alcohol consumption:** May elevate overnight temperature
+  - **Intense exercise:** May affect recovery-night temperatures
+
+  ### Low Values May Indicate
+  - **Follicular phase (pre-ovulation):** Normal lower temperatures before ovulation
+  - **Anovulatory cycle:** Absence of biphasic pattern (no clear temperature rise)
+  - **Cool sleep environment:** External factor
+  - **Consistent low values:** May indicate baseline recalibration or individual variation
+
+  ### Red Flags for Consultation
+  - **Absence of biphasic pattern** in women trying to conceive (may indicate anovulation)
+  - **Persistent elevation** beyond expected menstruation (possible pregnancy or illness)
+  - **Dramatic or sustained deviations** without clear explanation
+  - **Pattern changes** that concern the patient warrant discussion
+  - **Reliance on this data for contraception** should be discouraged without comprehensive FAM education
+
+  ## Caveats & Limitations
+
+  **Measurement Considerations:**
+  - **Not absolute temperature:** Cannot determine if user has a fever of 38 degC
+  - **Baseline-dependent:** New users need 5+ nights to establish baseline
+  - **Sleep quality affects data:** Poor sleep or insufficient wear time may result in missing data
+  - **Environmental factors:** Very hot or cold bedrooms affect readings
+  - **Wrist position:** Must maintain skin contact; loose band may cause errors
+
+  **Clinical Limitations:**
+  - **Not FDA-cleared** for medical diagnosis or fertility/contraception
+  - **Not a thermometer replacement:** Clinical fever assessment requires traditional methods
+  - **Retrospective ovulation only:** Does not predict ovulation in advance
+  - **Individual variation:** Baseline differences mean absolute comparisons between individuals are invalid
+  - **Anovulatory cycles:** May not be detected if temperature variation is subtle
+
+  **Data Interpretation Challenges:**
+  - **Relative values only:** Clinicians cannot map directly to clinical temperature standards
+  - **Algorithm opacity:** Baseline calculation and deviation algorithms are proprietary
+  - **Missing data:** Nights without sufficient sleep or watch wear produce no data
+  - **Confounders:** Illness, alcohol, environment, medications can all affect readings
+
+  **HealthKit-Specific Notes:**
+  - Read-only: Third-party apps cannot write to this data type
+  - Sensitive data classification: Requires specific authorization
+  - Only available from Apple Watch Series 8 or later
+  - Data is per-night aggregate, not continuous readings
+
+  ## Additional Notes
+
+  **Comparison with Traditional Basal Body Temperature (BBT):**
+
+  | Aspect | BBT | Apple Sleeping Wrist Temperature |
+  |--------|-----|----------------------------------|
+  | Measurement | Oral, vaginal, or rectal | Wrist skin |
+  | Timing | Immediately upon waking | Throughout sleep (passive) |
+  | Type | Absolute temperature | Relative deviation |
+  | Convenience | Requires active measurement | Automatic |
+  | Sensitivity for ovulation | ~23% | ~62% |
+  | Affected by lifestyle | Yes (sleep, alcohol) | Less affected |
+  | Medical validation | Decades of research | Limited (newer technology) |
+
+  **Relationship to Core Body Temperature:**
+  Wrist skin temperature is a peripheral measurement that does not directly reflect core
+  body temperature. The relationship is complex:
+  - Skin temperature is typically lower than core temperature
+  - Peripheral temperature varies more with environmental conditions
+  - The deviation-from-baseline approach partially mitigates this limitation
+  - Direct comparison with oral/rectal temperatures is not valid
+
+  **For Health Consultants:**
+  When reviewing this data with clients:
+  1. Explain that values are deviations, not absolute temperatures
+  2. Look for patterns over weeks/months rather than individual nights
+  3. Use for trend analysis and cycle awareness, not medical diagnosis
+  4. Encourage clinical thermometer use if fever is suspected
+  5. Consider lifestyle factors that may affect readings
+  6. Educate on limitations of retrospective ovulation detection for family planning
+
+  **Privacy Considerations:**
+  This data type is classified as sensitive in HealthKit because it may reveal:
+  - Menstrual cycle information
+  - Potential pregnancy status
+  - Illness patterns
+  - Sleep behavior
+
+  Health consultants should be aware of the privacy implications when accessing or
+  discussing this data with clients.
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyAppleDeviceCalibrated"
+    description: "Indicates whether the device has been calibrated for temperature measurement (baseline established after ~5 nights)"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
+    relationship: "Related but different - Body Temperature is absolute; Sleeping Wrist Temperature is relative deviation"
+  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
+    relationship: "Conceptually similar purpose (cycle tracking) but different measurement approach and data type"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Sleep data is required for wrist temperature collection; tracks when temperature was measured"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Used together for comprehensive menstrual cycle tracking in Apple Health"
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "Complementary data for fertility tracking; LH test results combined with temperature patterns"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Sleep heart rate may provide complementary physiological insights"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Sleep respiratory rate complements temperature for overnight health monitoring"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - appleSleepingWristTemperature"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/applesleepingwristtemperature"
+    type: "official"
+  - title: "Track your nightly wrist temperature changes with Apple Watch - Apple Support"
+    url: "https://support.apple.com/en-us/102674"
+    type: "official"
+  - title: "The Accuracy of Wrist Skin Temperature in Detecting Ovulation - JMIR"
+    url: "https://www.jmir.org/2021/6/e20710"
+    type: "research"
+  - title: "Modern fertility awareness methods: wrist wearables capture menstrual cycle changes - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6265623/"
+    type: "research"
+  - title: "Physiology, Ovulation and Basal Body Temperature - NCBI Bookshelf"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK546686/"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 16.0/watchOS 9.0 introduction confirmed via Apple documentation and support articles
+  - Requires Apple Watch Series 8, Ultra, or later - dual temperature sensors required
+  - Data represents deviation from baseline, NOT absolute temperature - critical for interpretation
+  - 5-night baseline establishment period documented in Apple support materials
+  - Wrist skin temperature research (JMIR 2021) shows 86.2% ovulation detection accuracy
+  - Comparison with BBT: more sensitive but higher false-positive rate
+  - Apple explicitly disclaims fever detection and medical diagnosis use
+  - Sensitive data classification in HealthKit due to reproductive health implications
+  - Write access restricted to Apple only (writable: false)
+  - Biphasic temperature pattern: follicular phase lower, luteal phase +0.2-0.5 degC higher

@@ -1,0 +1,171 @@
+identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Carbohydrates"
+short_description: "Total carbohydrate intake including sugars, starches, and fiber"
+icon: "leaf.fill"
+color: "#FFCC00"
+default_unit: "g"
+supported_units:
+  - "g"
+  - "mg"
+  - "oz"
+unit_description: "Grams (g) of total carbohydrates. Carbohydrates provide 4 kcal/g of metabolizable energy (fiber provides 0-2 kcal/g depending on type)."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 20
+  max: 500
+  unit: "g"
+  notes: "Highly variable based on dietary approach. Ketogenic diets may target <50g; endurance athletes may exceed 500g on heavy training days."
+clinical_ranges:
+  - population: "Adults (general, AMDR)"
+    rda: "45-65% of total calories (225-325g on 2000 kcal diet)"
+  - population: "Adequate Intake (minimum)"
+    rda: "130g/day based on brain glucose requirements"
+  - population: "Low-Carbohydrate Diet"
+    rda: "50-150g/day"
+  - population: "Ketogenic Diet"
+    rda: "20-50g/day"
+  - population: "Type 1 Diabetes"
+    rda: "Individualized with carb counting for insulin dosing"
+  - population: "Type 2 Diabetes"
+    rda: "Often 45-60g per meal; individualized"
+  - population: "Endurance Athletes"
+    rda: "5-12 g/kg body weight depending on training load"
+  - population: "Pregnancy"
+    rda: "175g/day minimum"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Carbohydrate tracking with glycemic index/load data in some apps"
+    examples:
+      - "MyFitnessPal"
+      - "Cronometer"
+      - "Carb Manager"
+      - "Glucose Buddy"
+  - name: "CGM companion apps"
+    capability: "Meal logging with glucose response correlation"
+    examples:
+      - "Levels"
+      - "Signos"
+      - "Nutrisense"
+      - "Dexcom Clarity"
+  - name: "Diabetes management apps"
+    capability: "Carb counting for insulin dosing calculations"
+    examples:
+      - "mySugr"
+      - "Sugarmate"
+      - "Diabits"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Carbohydrates represents total carbohydrate intake including simple sugars (mono- and disaccharides), complex carbohydrates (starches), and fiber. Carbohydrates are the body's preferred and most efficient fuel source, particularly for the brain and high-intensity exercise. This metric is foundational for diabetes management, athletic performance, and various therapeutic dietary approaches.
+
+  The FDA Daily Value for total carbohydrates is 275g based on a 2,000 calorie diet (updated 2020). This represents approximately 55% of calories from carbohydrates, aligning with the Acceptable Macronutrient Distribution Range (AMDR).
+
+  ## Health Significance
+  Carbohydrate intake impacts:
+  - **Blood Glucose Regulation**: Direct effect on postprandial glucose; critical for diabetes management
+  - **Energy Metabolism**: Primary fuel for brain (requires ~120g glucose/day) and anaerobic exercise
+  - **Athletic Performance**: Glycogen stores limit high-intensity exercise capacity
+  - **Insulin Sensitivity**: Carbohydrate quality and quantity affect metabolic health
+  - **Gut Health**: Fiber (a carbohydrate) feeds beneficial gut bacteria
+  - **Thyroid Function**: Very low carb intake may reduce T3 conversion
+  - **Mood and Cognition**: Carbohydrates influence serotonin production
+
+  ## Clinical Interpretation Guidelines
+  When evaluating carbohydrate data:
+  1. **Assess Quality Over Quantity**: Whole grains, fruits, vegetables vs. refined/added sugars
+  2. **Calculate Relative Intake**: g/kg body weight for athletes; percentage of calories for general population
+  3. **Review Fiber Separately**: Target 14g fiber per 1000 kcal; fiber improves carbohydrate quality
+  4. **Consider Glycemic Impact**: High glycemic foods cause rapid glucose spikes
+  5. **Correlate with CGM Data**: If available, review glucose responses to carbohydrate meals
+  6. **Evaluate Timing**: Carbohydrate periodization around exercise for athletes
+  7. **Check Net Carbs**: Total carbs minus fiber for ketogenic diet adherence
+
+  ## Deficiency Symptoms
+  While no true carbohydrate deficiency exists (body can produce glucose via gluconeogenesis), very low intake may cause:
+  - Fatigue and weakness, especially during exercise
+  - Brain fog and difficulty concentrating
+  - Hypoglycemia symptoms in susceptible individuals
+  - Ketosis (may be therapeutic or problematic depending on context)
+  - Constipation if fiber is also restricted
+  - Muscle cramps and electrolyte imbalances
+  - Irritability and mood changes
+  - Decreased athletic performance, especially high-intensity
+
+  ## Excess/Toxicity
+  High carbohydrate intake concerns:
+  - **Hyperglycemia**: Acute high blood sugar, particularly problematic in diabetes
+  - **Insulin Resistance**: Chronic high-glycemic intake may impair insulin sensitivity
+  - **Weight Gain**: Excess carbohydrates stored as glycogen then fat
+  - **Dyslipidemia**: High refined carb intake raises triglycerides, lowers HDL
+  - **Dental Caries**: Fermentable carbohydrates promote tooth decay
+  - **NAFLD**: High fructose and refined carb intake linked to fatty liver
+  - **Inflammation**: High glycemic diets associated with inflammatory markers
+
+  ## Special Populations
+  - **Type 1 Diabetes**: Precise carb counting essential for insulin dosing; 1 unit insulin per 10-15g carbs typical starting ratio
+  - **Type 2 Diabetes**: Carbohydrate restriction often improves glycemic control; Mediterranean or low-carb approaches beneficial
+  - **Gestational Diabetes**: Carb distribution across meals; avoid large carb loads; complex carbs preferred
+  - **Athletes**: Periodized carbohydrate intake; high during heavy training/competition; lower during recovery/off-season
+  - **Ketogenic Therapy**: Epilepsy, some metabolic disorders; requires strict carb limitation (<20-50g)
+  - **PCOS**: Lower glycemic load may improve insulin sensitivity and hormonal profiles
+  - **Elderly**: Adequate carbs prevent muscle protein from being used for energy
+
+  ## Caveats & Limitations
+  - **Total vs. Net Carbs**: Fiber subtraction varies by country/label standards
+  - **Glycemic Index Variability**: Individual glucose responses vary significantly for same foods
+  - **Food Combinations**: Fat and protein slow carbohydrate absorption; GI tables don't account for mixed meals
+  - **Processing Effects**: Cooking, ripeness, and processing alter glycemic impact
+  - **Database Inconsistencies**: Carbohydrate values for same foods vary across databases
+  - **Fiber Classification**: Soluble vs. insoluble fiber have different metabolic effects
+  - **Individual Variation**: Gut microbiome, genetics, and metabolic health affect carb tolerance
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the carbohydrate source (e.g., 'rice', 'bread', 'fruit')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "Carbohydrates contribute to total caloric intake at 4 kcal/g"
+  - identifier: "HKQuantityTypeIdentifierDietaryFiber"
+    relationship: "Fiber is a subcategory of total carbohydrates"
+  - identifier: "HKQuantityTypeIdentifierDietarySugar"
+    relationship: "Sugars are a subcategory of total carbohydrates"
+  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
+    relationship: "Carbohydrate intake directly affects blood glucose levels"
+  - identifier: "HKQuantityTypeIdentifierInsulinDelivery"
+    relationship: "Carbohydrate intake determines insulin dosing in diabetes"
+  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
+    relationship: "Co-macronutrient; affects carbohydrate allocation in diet"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryCarbohydrates"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarycarbohydrates"
+    type: "official"
+  - title: "Dietary Reference Intakes for Carbohydrates - National Academies"
+    url: "https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids"
+    type: "research"
+  - title: "American Diabetes Association - Nutrition Therapy Recommendations"
+    url: "https://diabetesjournals.org/care/article/42/5/731/40480/Nutrition-Therapy-for-Adults-With-Diabetes-or"
+    type: "medical"
+  - title: "International Society of Sports Nutrition Position Stand: Nutrient Timing"
+    url: "https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0189-4"
+    type: "medical"
+last_updated: "2026-01-27"

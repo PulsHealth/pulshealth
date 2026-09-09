@@ -1,0 +1,321 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Cycling Cadence
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierCyclingCadence"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Cycling Cadence"
+short_description: "Measures pedal revolutions per minute (RPM) during cycling."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.outdoor.cycle"
+color: "#30D158"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "count/min"
+supported_units:
+  - "count/min"
+  - "rpm"
+unit_description: "Revolutions per minute (RPM) - counts the number of complete pedal rotations per minute. One revolution equals one full 360-degree rotation of the crank arm."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 40
+  max: 130
+  unit: "count/min"
+  notes: "Most cyclists naturally pedal between 60-100 RPM. Trained cyclists typically maintain 85-100 RPM. Professional cyclists may sustain 100-110 RPM. Sprints can briefly exceed 120-150 RPM. Low cadence (<60) common during climbing or heavy resistance."
+
+clinical_ranges:
+  - population: "Recreational Cyclists"
+    typical_cadence: "60-80 RPM"
+    context: "Casual riding, often lower cadence with higher gear"
+  - population: "Regular Cyclists"
+    typical_cadence: "75-90 RPM"
+    context: "Fitness riding, developing efficiency"
+  - population: "Trained Cyclists"
+    typical_cadence: "85-100 RPM"
+    context: "Endurance rides, optimal efficiency"
+  - population: "Professional Cyclists"
+    typical_cadence: "90-110 RPM"
+    context: "Racing, high-efficiency pedaling"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "17.0"
+  year: 2023
+  notes: "Added as part of enhanced cycling metrics in iOS 17"
+watchos_introduced:
+  version: "10.0"
+  year: 2023
+  notes: "Apple Watch can estimate cadence from motion sensors; dedicated cadence sensors provide more accurate data"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Cadence Sensors"
+    capability: "Direct measurement of crank or pedal rotation using accelerometer or magnet-based detection. Most accurate cadence measurement method."
+    examples: ["Garmin Cadence Sensor", "Wahoo RPM Cadence", "Magene S3+"]
+  - name: "Power Meters"
+    capability: "Most power meters include cadence measurement as cadence is required for power calculation (power = torque × angular velocity)."
+    examples: ["Garmin Rally", "Favero Assioma", "Stages", "Quarq"]
+  - name: "Apple Watch"
+    capability: "Estimates cadence from accelerometer data detecting the rhythmic motion of the wrist during pedaling. Less accurate than dedicated sensors."
+    examples: ["Apple Watch Series 8+", "Apple Watch Ultra"]
+  - name: "Smart Trainers"
+    capability: "Measure cadence directly from drivetrain rotation or estimate from power pedaling dynamics."
+    examples: ["Wahoo KICKR", "Tacx Neo", "Elite Direto"]
+  - name: "Cycling Computers"
+    capability: "Receive and display cadence data from paired cadence sensors or power meters."
+    examples: ["Garmin Edge", "Wahoo ELEMNT", "Hammerhead Karoo"]
+primary_source: "Cadence sensor or power meter"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Cycling Cadence measures the rate at which a cyclist turns the pedals, expressed in revolutions per minute (RPM). Cadence is a fundamental cycling metric that, combined with gear selection, determines wheel speed and power output. While there is debate about "optimal" cadence, understanding and controlling cadence is essential for efficient cycling, injury prevention, and performance optimization.
+
+  Cadence affects muscle recruitment patterns, cardiovascular load, and energy system utilization. Higher cadences tend to favor the cardiovascular system, while lower cadences place more stress on muscular strength. Individual optimal cadence varies based on fitness, muscle fiber composition, and cycling discipline.
+
+  ## How It's Measured
+
+  ### Dedicated Cadence Sensors
+  Purpose-built sensors mounted on the crank arm or chainstay:
+
+  **Accelerometer-Based Sensors:**
+  - Detect the rotational motion of the crank arm
+  - Self-contained unit attaches to crank
+  - No magnets required
+  - Modern standard for cadence measurement
+
+  **Magnet-Based Sensors:**
+  - Magnet on crank arm passes sensor on frame
+  - One pulse per revolution
+  - Older technology but still reliable
+  - Requires precise alignment
+
+  ### Power Meter Cadence
+  Power meters inherently measure cadence:
+  - Required for power calculation (Power = Torque × Angular Velocity)
+  - Angular velocity is directly related to cadence
+  - Highly accurate as it's fundamental to power measurement
+  - No additional sensor needed
+
+  ### Apple Watch Estimation
+  Apple Watch estimates cadence through motion analysis:
+  - Accelerometer detects rhythmic wrist movement
+  - Machine learning identifies pedaling pattern
+  - Estimates cadence from motion frequency
+
+  **Limitations:**
+  - Less accurate than dedicated sensors
+  - Can be confused by non-pedaling arm movements
+  - May not detect cadence during standing climbs
+  - Accuracy varies with riding style and watch position
+
+  ### Smart Trainer Cadence
+  Indoor trainers measure or estimate cadence:
+  - Direct measurement from drivetrain
+  - Required for accurate power calculation
+  - Some estimate from pedaling dynamics
+
+  ## Health Significance
+
+  ### Musculoskeletal Load Distribution
+  Cadence significantly affects how stress is distributed:
+
+  **Low Cadence (60-75 RPM):**
+  - Higher force per pedal stroke
+  - Greater muscular load
+  - Increased joint stress (knees, hips)
+  - More reliance on glycolytic energy systems
+  - Higher risk of overuse injury with sustained use
+
+  **High Cadence (90-110 RPM):**
+  - Lower force per pedal stroke
+  - Greater cardiovascular demand
+  - Reduced joint stress
+  - More reliance on aerobic systems
+  - Lower injury risk but higher metabolic cost
+
+  ### Knee Health Implications
+  Cadence directly affects knee joint loading:
+  - Higher forces at low cadence increase patellofemoral stress
+  - Cyclists with knee issues often benefit from higher cadence
+  - Rehabilitation protocols typically recommend 80-90+ RPM
+  - Sudden cadence changes can provoke symptoms
+
+  ### Cardiovascular vs. Muscular Stress
+  The cadence/power trade-off:
+  - Same power output achievable at different cadences
+  - Lower cadence: More muscular fatigue, less cardiovascular strain
+  - Higher cadence: More cardiovascular work, less muscular fatigue
+  - Individual optimum depends on fitness profile
+
+  ### Neuromuscular Efficiency
+  Cadence affects pedaling efficiency:
+  - Very low cadence (<60) and very high cadence (>110) less efficient
+  - Optimal efficiency typically 80-100 RPM for most cyclists
+  - Trained cyclists develop efficiency at higher cadences
+  - Cadence training can improve neuromuscular coordination
+
+  ## Clinical Interpretation Guidelines
+
+  ### Optimal Cadence Recommendations
+
+  **General Guidance:**
+  | Situation | Recommended Cadence | Rationale |
+  |-----------|---------------------|-----------|
+  | Endurance riding | 85-95 RPM | Sustainable, joint-friendly |
+  | Climbing | 70-85 RPM | Balance power and efficiency |
+  | Time trialing | 90-100 RPM | Minimize muscular fatigue |
+  | Sprinting | 100-120+ RPM | Maximize power output |
+  | Recovery rides | 85-95 RPM | Low force, maintain movement |
+
+  **For Patients with Joint Issues:**
+  - Recommend 85-100 RPM to reduce joint loading
+  - Avoid sustained low cadence (<70 RPM)
+  - Ensure appropriate gearing for terrain
+  - Monitor for symptom changes with cadence adjustments
+
+  ### Cadence Patterns to Assess
+
+  **Healthy Patterns:**
+  - Consistent cadence within 10-15 RPM range during steady efforts
+  - Appropriate cadence reduction on climbs
+  - Quick cadence recovery after hard efforts
+
+  **Concerning Patterns:**
+  - Consistently very low cadence (<70 RPM) on flat terrain
+  - Inability to maintain cadence under fatigue
+  - Large cadence variability during steady efforts
+  - Cadence declining significantly late in rides
+
+  ### Self-Selected vs. Optimal Cadence
+  Research findings on cadence optimization:
+  - Untrained cyclists often self-select 60-70 RPM
+  - This is typically lower than metabolically optimal
+  - Training shifts preferred cadence upward
+  - Economically optimal cadence increases with power output
+
+  ### Red Flags
+  - Knee pain associated with specific cadence ranges
+  - Inability to increase cadence when desired
+  - Cadence instability or inability to pedal smoothly
+  - Significant leg speed asymmetry (one leg slower)
+
+  ## Caveats & Limitations
+
+  ### Measurement Considerations
+  - Apple Watch estimation less accurate than dedicated sensors
+  - Standing climbing may not register accurate cadence
+  - Zero cadence (coasting) important to distinguish from missing data
+  - Average cadence can mask variability
+
+  ### Interpretation Limitations
+  - Optimal cadence is highly individual
+  - Cadence alone doesn't indicate effort level
+  - Same cadence at different powers means different muscle demands
+  - Terrain and tactics influence appropriate cadence
+
+  ### Individual Variation
+  Factors affecting optimal cadence:
+  - Muscle fiber type composition (slow vs. fast twitch)
+  - Cardiovascular fitness level
+  - Cycling experience and training history
+  - Bike fit and biomechanics
+  - Event type and duration
+
+  ### What Cadence Cannot Tell You
+  - Power output or intensity
+  - Whether the effort is sustainable
+  - Pedaling technique quality
+  - Left/right leg balance
+  - Force application through pedal stroke
+
+  ## Additional Notes
+
+  **For Health Consultants:**
+  1. Recommend cadence sensors for clients concerned about joint health
+  2. Use cadence as a tool for managing musculoskeletal load
+  3. Higher cadence generally safer for clients with knee issues
+  4. Cadence training (drills) can improve cycling efficiency
+  5. Don't prescribe single "optimal" cadence—individual variation is significant
+  6. Consider cadence in rehabilitation protocols for cyclists
+  7. Monitor cadence trends alongside power and heart rate
+
+  **Cadence Training Concepts:**
+  - **Spin-ups:** Gradually increasing cadence to 120+ RPM (neuromuscular training)
+  - **Single-leg drills:** Pedaling with one leg (efficiency, balance)
+  - **Low cadence force:** 50-60 RPM climbing (muscular strength)
+  - **High cadence intervals:** 100-110 RPM sustained (cardiovascular efficiency)
+
+  **Gearing and Cadence:**
+  - Cadence × Gear Ratio × Wheel Circumference = Speed
+  - Proper gearing allows optimal cadence across terrain
+  - Compact cranksets help maintain cadence on climbs
+  - Wide-range cassettes important for varied terrain
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the sample was manually entered by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierCyclingPower"
+    relationship: "Complementary - Power output at given cadence determines muscular vs. cardiovascular load"
+  - identifier: "HKQuantityTypeIdentifierCyclingSpeed"
+    relationship: "Derived with gearing - Cadence combined with gear ratio determines wheel speed"
+  - identifier: "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower"
+    relationship: "Related - FTP tests often note cadence for reproducibility"
+  - identifier: "HKQuantityTypeIdentifierDistanceCycling"
+    relationship: "Related - Cadence contributes to distance through speed"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Complementary - Heart rate increases at higher cadences for same power"
+  - identifier: "HKWorkoutTypeCycling"
+    relationship: "Contains - Cycling workouts include cadence data when available"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - cyclingCadence"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/cyclingcadence"
+    type: "official"
+  - title: "Apple Watch cycling features"
+    url: "https://support.apple.com/guide/watch/cycling-apd6a8cd52d7/watchos"
+    type: "official"
+  - title: "Optimal Pedaling Cadence - Journal of Applied Physiology"
+    url: "https://journals.physiology.org/doi/full/10.1152/jappl.2000.88.6.2035"
+    type: "research"
+  - title: "Effect of Cadence on Cycling Efficiency and Economy"
+    url: "https://pubmed.ncbi.nlm.nih.gov/15356322/"
+    type: "research"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 17.0/watchOS 10.0 introduction based on Apple Developer Documentation
+  - Optimal cadence research from exercise physiology literature
+  - Knee health and cadence relationship from sports medicine research
+  - Self-selected vs. optimal cadence findings from multiple studies
+  - Cadence training methodology from cycling coaching literature
+  - Joint loading studies support higher cadence for reduced knee stress

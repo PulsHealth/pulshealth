@@ -1,0 +1,326 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Heart Rate Variability SDNN
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Heart Rate Variability (SDNN)"
+short_description: "Measures the standard deviation of normal-to-normal heartbeat intervals, reflecting autonomic nervous system function and overall physiological resilience."
+
+# --- APPLE HEALTH UI ---
+icon: "waveform.path.ecg"
+color: "#FF2D55"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "ms"
+supported_units:
+  - "ms"
+  - "s"
+unit_description: "Milliseconds - represents the standard deviation of the time intervals between consecutive heartbeats (NN intervals)"
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "separateBySource"
+  - "mostRecent"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 10
+  max: 200
+  unit: "ms"
+  notes: "Apple Watch typically reports short-term SDNN measurements (not 24-hour SDNN). Values vary dramatically by age, fitness, and measurement duration. Context is critical for interpretation."
+
+clinical_ranges:
+  - population: "Adults (short-term measurement, ~1-5 minutes)"
+    normal: "20-70 ms"
+    low: "<20 ms (reduced variability, may indicate autonomic dysfunction)"
+    high: ">70 ms (excellent variability, often seen in fit individuals)"
+  - population: "Adults (24-hour Holter SDNN - clinical standard)"
+    normal: "100-180 ms"
+    low: "<70 ms (moderate risk)"
+    high: ">180 ms (generally favorable)"
+  - population: "Post-MI patients (24-hour SDNN - clinical threshold)"
+    normal: ">100 ms"
+    low: "<70 ms (moderate mortality risk); SDNN <50 ms associated with 5-fold increased mortality risk post-MI"
+  - population: "Healthy young adults (overnight)"
+    normal: "100-200 ms"
+    low: "<100 ms"
+    high: ">200 ms (excellent parasympathetic function)"
+  - population: "Older adults (65+)"
+    normal: "50-100 ms"
+    low: "<50 ms"
+    high: ">100 ms"
+  - population: "Athletes"
+    normal: "Often >100 ms even in short recordings"
+    low: "Significant drop from baseline may indicate overtraining"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "11.0"
+  year: 2017
+  notes: "Introduced with expanded heart health metrics"
+watchos_introduced:
+  version: "4.0"
+  year: 2017
+  notes: "Apple Watch calculates HRV from optical heart rate sensor data"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Calculates SDNN from beat-to-beat intervals detected by optical PPG sensor. Typically measures during periods of rest, often overnight or during Breathe/Mindfulness sessions. Measurement duration is usually short-term (1-5 minutes)."
+    series: "Series 1 and later"
+    accuracy: "Optical sensors are less precise than ECG for beat detection, but adequate for population-level HRV assessment"
+  - name: "iPhone"
+    capability: "Displays HRV data but cannot measure directly without external sensor"
+  - name: "Chest strap heart rate monitors"
+    capability: "ECG-based chest straps provide more accurate beat detection for HRV measurement"
+    examples: ["Polar H10", "Garmin HRM-Pro", "Wahoo TICKR X"]
+  - name: "Third-party wearables"
+    capability: "Various devices calculate HRV metrics and can write to HealthKit"
+    examples: ["Oura Ring", "Whoop", "Garmin", "Fitbit"]
+primary_source: "Apple Watch"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Heart Rate Variability (HRV) measures the variation in time intervals between consecutive heartbeats. SDNN (Standard Deviation of Normal-to-Normal intervals) is one of the most widely used HRV metrics, representing the overall variability of heart rhythm. Higher HRV generally indicates better autonomic nervous system function, greater physiological resilience, and improved stress adaptability. Lower HRV is associated with increased cardiovascular risk, chronic disease states, and reduced adaptive capacity.
+
+  ## How It's Measured
+
+  **The NN Interval:**
+  - "NN" stands for Normal-to-Normal intervals
+  - Represents the time between successive normal heartbeats (excluding artifacts and ectopic beats)
+  - Measured in milliseconds
+
+  **SDNN Calculation:**
+  - SDNN = Standard Deviation of all NN intervals in the recording
+  - Higher SDNN = more variation between heartbeats = higher HRV
+  - Lower SDNN = more uniform heartbeat intervals = lower HRV
+
+  **Apple Watch Measurement:**
+  - Uses optical PPG sensor to detect pulse peaks
+  - Calculates inter-beat intervals from pulse waveform
+  - Typically measures during rest periods or dedicated sessions (Breathe app)
+  - Records short-term SDNN (usually 1-5 minutes of data)
+  - Often measured overnight or during periods of detected inactivity
+
+  **Important: Recording Duration Matters**
+  - Clinical 24-hour SDNN values (from Holter monitors) are NOT comparable to short-term measurements
+  - Apple Watch SDNN values are typically 20-60% of what 24-hour SDNN would show
+  - Always compare like to like: short-term to short-term, within-person trends
+
+  ## Health Significance
+  HRV reflects the interplay between sympathetic ("fight or flight") and parasympathetic ("rest and digest") nervous system branches:
+
+  **Autonomic Balance:**
+  - High HRV indicates flexible, responsive autonomic regulation
+  - The heart can quickly adapt to changing demands
+  - Reflects robust parasympathetic (vagal) tone
+
+  **Low HRV indicates:**
+  - Reduced autonomic flexibility
+  - Sympathetic dominance or parasympathetic withdrawal
+  - Reduced adaptive capacity
+  - Increased physiological stress load
+
+  **Clinical significance:**
+  - SDNN is the "gold standard" for medical stratification of cardiac risk (per European Society of Cardiology/North American Society of Pacing and Electrophysiology Task Force, 1996)
+  - Post-MI patients with SDNN <50ms have 5.3x higher mortality than those with SDNN >100ms
+  - Low HRV precedes development of hypertension, diabetes, and cardiovascular disease
+  - HRV declines with age, but rate of decline is modifiable
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  **Critical context:** Values depend heavily on:
+  1. Recording duration (short-term vs. 24-hour)
+  2. Measurement conditions (supine, seated, standing)
+  3. Time of day (higher during sleep)
+  4. Age (decreases with age)
+  5. Fitness level (higher in trained individuals)
+
+  **Short-term SDNN (Apple Watch typical):**
+  - Young healthy adults: 30-80 ms
+  - Middle-aged adults: 20-60 ms
+  - Older adults: 15-50 ms
+
+  **24-hour SDNN (clinical Holter):**
+  - Healthy adults: 141 +/- 39 ms (reference population)
+  - Concerning: <100 ms
+  - High risk: <50 ms
+
+  ### Low HRV (Reduced SDNN) May Indicate
+  **Cardiovascular:**
+  - Coronary artery disease
+  - Heart failure
+  - Post-myocardial infarction
+  - Hypertension
+  - Increased arrhythmia risk
+
+  **Metabolic:**
+  - Diabetes mellitus (especially with autonomic neuropathy)
+  - Metabolic syndrome
+  - Obesity
+
+  **Neurological:**
+  - Diabetic autonomic neuropathy
+  - Parkinson's disease
+  - Multiple system atrophy
+  - Stroke
+
+  **Other conditions:**
+  - Chronic stress/burnout
+  - Depression and anxiety disorders
+  - Post-COVID-19 syndrome
+  - Chronic fatigue syndrome
+  - Sleep apnea
+  - Chronic inflammation
+
+  **Lifestyle factors:**
+  - Sleep deprivation
+  - Overtraining in athletes
+  - Alcohol use
+  - Smoking
+  - Sedentary lifestyle
+  - Poor diet
+
+  ### High HRV (Elevated SDNN) Generally Indicates
+  - Good cardiovascular fitness
+  - Effective stress management
+  - Adequate sleep and recovery
+  - Parasympathetic dominance at rest
+  - Younger biological age
+  - Lower all-cause mortality risk
+
+  ### Red Flags for Consultation
+  - **Persistent SDNN <20 ms** on short-term recordings without clear explanation
+  - **Sudden drop in HRV** (>30-40% from baseline) sustained over days
+  - **Low HRV combined with** resting tachycardia, symptoms of autonomic dysfunction, or new cardiac symptoms
+  - **HRV declining trend** over weeks/months despite healthy lifestyle
+  - **Very low HRV in young individual** (<30 years) without explanation
+  - **Low HRV with irregular rhythm** notifications or palpitations
+
+  ## Caveats & Limitations
+
+  ### Measurement Limitations
+  - **Recording duration:** Short-term and 24-hour SDNN are not comparable
+  - **Optical sensor accuracy:** PPG is less precise than ECG for beat detection
+  - **Motion artifact:** Movement degrades signal quality
+  - **Ectopic beats:** Frequent PVCs/PACs may artificially alter SDNN
+  - **Respiratory influence:** Breathing rate significantly affects short-term HRV
+  - **Measurement conditions:** Posture, time of day, recent food/caffeine all affect values
+
+  ### Interpretation Caveats
+  - **Individual baseline matters:** Compare to person's own trends, not population norms
+  - **Context is critical:** Acute stress, illness, poor sleep all acutely lower HRV
+  - **Not a diagnosis:** Low HRV indicates risk, not specific disease
+  - **Age adjustment needed:** HRV naturally declines ~3-4% per decade
+  - **Fitness effect:** Athletes may have very high HRV; overtraining causes acute drops
+
+  ### What SDNN Cannot Tell You
+  - Specific diagnosis of any disease
+  - Blood pressure or glucose levels
+  - Presence of arrhythmias (beyond irregular rhythm)
+  - Structural heart disease
+  - Whether intervention is needed (clinical judgment required)
+
+  ## Additional Notes
+
+  **For health consultants - practical applications:**
+
+  **Stress and recovery monitoring:**
+  - Track 7-day rolling average rather than daily values
+  - Look for consistent drops during high-stress periods
+  - Monitor recovery: HRV should rebound after removing stressors
+
+  **Fitness and training:**
+  - Morning HRV before rising is most standardized
+  - Acute drop may indicate need for recovery day
+  - Chronic low HRV despite training may indicate overtraining
+  - HRV should trend upward with improved fitness over months
+
+  **Sleep assessment:**
+  - Overnight HRV often highest of the day
+  - Poor sleep quality typically shows in reduced overnight HRV
+  - Alcohol before bed notably suppresses HRV
+
+  **Illness detection:**
+  - HRV often drops 1-2 days before symptom onset
+  - Persistent low HRV after illness may indicate incomplete recovery
+
+  **Coaching conversation points:**
+  - HRV is a stress barometer, not a diagnosis
+  - Trends matter more than single readings
+  - Many factors influence HRV - lifestyle changes can improve it
+  - Very high or very low values warrant medical evaluation
+
+  **Comparing devices:**
+  - Different devices use different algorithms and measurement windows
+  - Only compare values from the same device over time
+  - Apple Watch, Oura, Whoop, and Garmin values are not directly comparable
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateMotionContext"
+    description: "HRV is typically measured during rest; this key should indicate sedentary context"
+    values:
+      - "sedentary (1) - User was stationary during HRV measurement"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Source data - HRV is calculated from beat-to-beat intervals derived from heart rate data"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Correlated - Lower resting HR often correlates with higher HRV (both reflect parasympathetic tone)"
+  - identifier: "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute"
+    relationship: "Complementary - Both assess autonomic function; good HR recovery often correlates with higher HRV"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Correlated - Higher cardiovascular fitness (VO2max) often associated with higher HRV"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Context - Sleep quality significantly affects HRV; poor sleep reduces HRV"
+  - identifier: "HKCategoryTypeIdentifierMindfulSession"
+    relationship: "Measurement context - HRV often measured during Breathe/Mindfulness sessions"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Influence factor - Breathing rate affects short-term HRV measurements"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - heartRateVariabilitySDNN"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/heartratevariabilitysdnn"
+    type: "official"
+  - title: "Heart Rate Variability: Standards of Measurement - Circulation (1996)"
+    url: "https://www.ahajournals.org/doi/10.1161/01.cir.93.5.1043"
+    type: "research"
+  - title: "An Overview of Heart Rate Variability Metrics and Norms - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5624990/"
+    type: "research"
+  - title: "Heart Rate Variability: Measurement and Clinical Utility - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6932537/"
+    type: "research"
+  - title: "Heart rate variability: How it might indicate well-being - Harvard Health"
+    url: "https://www.health.harvard.edu/blog/heart-rate-variability-new-way-track-well-2017112212789"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 11.0/watchOS 4.0 introduction confirmed via Apple documentation timeline
+  - Clinical thresholds from 1996 ESC/NASPE Task Force guidelines and subsequent validation studies
+  - Post-MI risk stratification from Kleiger et al. (1987) landmark study
+  - Short-term vs. 24-hour SDNN differences well-documented in HRV literature
+  - Age-related decline rates from multiple population studies
+  - Important to note: Apple Watch SDNN values are NOT equivalent to 24-hour Holter SDNN

@@ -1,0 +1,283 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Distance Swimming
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierDistanceSwimming"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Swimming Distance"
+short_description: "Measures the distance the user has moved by swimming."
+
+# --- APPLE HEALTH UI ---
+icon: "figure.pool.swim"
+color: "#5AC8FA"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "m"
+supported_units:
+  - "m"
+  - "km"
+  - "mi"
+  - "ft"
+  - "yd"
+unit_description: "Length units measuring cumulative distance traveled while swimming. Default is meters; pool swimming often measured in yards (US) or meters (international). Open water swims typically measured in kilometers or miles."
+
+# --- STATISTICS ---
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 10000
+  unit: "m"
+  notes: "Single session values typically range from 500m for casual swimmers to 4000m+ for competitive training. Open water swims can extend to marathon distances (10km+). Daily totals vary widely based on swim frequency."
+
+clinical_ranges:
+  - population: "Recreational Swimmers"
+    occasional: "<1000 m/week"
+    regular: "1000-3000 m/week"
+    active: "3000-6000 m/week"
+  - population: "Competitive Swimmers (weekly)"
+    age_group: "15,000-30,000 m/week"
+    collegiate: "30,000-50,000 m/week"
+    elite: "50,000-80,000 m/week"
+  - population: "Masters Swimmers"
+    recreational: "3000-8000 m/week"
+    competitive: "8000-20,000 m/week"
+  - population: "Triathletes (swim volume)"
+    sprint_distance: "2000-5000 m/week"
+    olympic_distance: "5000-10,000 m/week"
+    ironman: "8000-15,000 m/week"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "10.0"
+  year: 2016
+  notes: "Introduced with Apple Watch Series 2, the first water-resistant Apple Watch with swim tracking capabilities"
+watchos_introduced:
+  version: "3.0"
+  year: 2016
+  notes: "Apple Watch Series 2 introduced swim-proof design (50m water resistance) and pool/open water swim workout detection"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Automatic swim distance tracking using accelerometer-based stroke counting combined with pool length (pool swim) or GPS (open water). Water Lock mode prevents accidental screen input during swimming."
+    series: "Series 2 and later (water-resistant to 50m)"
+    accuracy: "Pool swimming typically within 2-5% when pool length is correctly set. Open water accuracy depends on GPS signal quality at the surface."
+    examples: ["Apple Watch Series 2", "Apple Watch SE", "Apple Watch Ultra"]
+  - name: "Swim-capable fitness trackers"
+    capability: "Dedicated swim trackers measure distance via stroke counting and programmed pool length. Many sync to HealthKit via companion apps."
+    examples: ["Garmin Swim 2", "FORM Smart Swim Goggles", "Amazfit GTR"]
+  - name: "Swimming apps"
+    capability: "Third-party swimming apps provide detailed swim metrics and can write distance data to HealthKit."
+    examples: ["MySwimPro", "Swim.com", "SwimIO"]
+primary_source: "Apple Watch (Series 2 or later) with Pool Swim or Open Water Swim workout"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Swimming Distance measures the cumulative distance traveled during swimming activities. Apple Watch introduced swim tracking with Series 2, using a fundamentally different approach than land-based activities. Rather than relying on GPS (which does not work underwater), pool swimming distance is calculated by counting laps via accelerometer-detected stroke patterns and multiplying by the user-specified pool length. Open water swimming uses GPS sampling when the watch surfaces during strokes.
+
+  Swimming is recognized by the American Heart Association and WHO as excellent cardiovascular exercise that provides full-body conditioning while being extremely low-impact, making it suitable for individuals with joint issues, injuries, or those seeking cross-training benefits.
+
+  ## How It's Measured
+  Apple Watch employs distinct measurement methods for pool and open water swimming:
+
+  **Pool Swimming Measurement:**
+  - User selects "Pool Swim" workout and specifies pool length (25m, 50m, 25yd, or custom)
+  - Accelerometer detects swimming strokes and arm movement patterns
+  - Algorithm identifies when the user reaches the wall and turns (lap detection)
+  - Total distance = number of completed laps × pool length
+  - Stroke type detected: freestyle, backstroke, breaststroke, butterfly, or mixed
+  - Watch recognizes resting periods when swimmer stops at wall
+
+  **Key Pool Detection Features:**
+  - Turn detection uses characteristic deceleration and rotation patterns
+  - Algorithm distinguishes between flip turns and touch turns
+  - Partial laps (stopping mid-pool) may not be counted accurately
+  - Very short pools (<15m) may have reduced accuracy
+
+  **Open Water Swimming Measurement:**
+  - User selects "Open Water Swim" workout
+  - GPS acquires position when watch surfaces during stroke recovery
+  - Distance calculated by connecting GPS points over time
+  - Accuracy depends on stroke type (strokes with more arm elevation provide better GPS signal)
+  - Cold water, waves, and weather can affect GPS acquisition
+
+  **Technical Considerations:**
+  - Apple Watch locks screen during swimming (Water Lock) to prevent accidental input
+  - Ejecting water via speaker vibration is required after exiting water
+  - Heart rate monitoring works during swimming but with reduced accuracy due to water
+  - Watch continues tracking during flip turns and underwater phases
+
+  ## Health Significance
+  Swimming provides exceptional cardiovascular and musculoskeletal benefits:
+
+  **Cardiovascular Benefits:**
+  - Swimming improves cardiorespiratory fitness comparable to running
+  - Regular swimming associated with lower blood pressure
+  - Excellent for maintaining cardiovascular health during injury rehabilitation
+  - Provides aerobic conditioning with minimal orthopedic stress
+
+  **Musculoskeletal Benefits:**
+  - Near-zero impact on joints due to buoyancy
+  - Develops balanced upper and lower body strength
+  - Improves flexibility and range of motion
+  - Particularly valuable for arthritis patients and post-surgical rehabilitation
+
+  **Clinical Populations:**
+  - Recommended for patients with osteoarthritis (Arthritis Foundation)
+  - Safe for many cardiac rehabilitation programs
+  - Appropriate for prenatal fitness with physician approval
+  - Beneficial for weight management (lower injury risk than weight-bearing exercise)
+
+  **WHO and Guidelines Context:**
+  - Swimming counts toward 150 minutes weekly moderate aerobic activity
+  - Vigorous swimming (interval training, racing) counts double toward guidelines
+  - WHO recognizes swimming as accessible activity for diverse populations
+
+  ## Clinical Interpretation Guidelines
+
+  ### Fitness Assessment by Volume
+  Weekly swimming distance provides insight into conditioning level:
+  - **<2000 m/week:** Casual/occasional swimmer; fitness maintenance
+  - **2000-5000 m/week:** Regular recreational swimmer; solid cardiovascular benefit
+  - **5000-10,000 m/week:** Dedicated fitness swimmer; significant conditioning
+  - **>10,000 m/week:** Competitive or serious masters swimmer
+
+  ### Training Load Monitoring
+  For regular swimmers, distance trends indicate training status:
+  - **Consistency patterns:** Regular moderate volume preferred over sporadic high volume
+  - **Progressive overload:** 5-10% weekly increase is reasonable for building fitness
+  - **Tapering:** Reduced distance before competition is normal and expected
+  - **Recovery weeks:** Periodic reduction in volume supports adaptation
+
+  ### Cross-Training Integration
+  For multisport athletes (especially triathletes):
+  - Swimming provides active recovery from running/cycling impact
+  - Monitor total training load across all activities
+  - Swimming technique improvements often yield better results than volume increases
+
+  ### Clinical Red Flags
+  - Persistent shoulder pain during or after swimming (swimmer's shoulder)
+  - Inability to complete previously achievable distances
+  - Chest pain, excessive shortness of breath, or dizziness during swimming
+  - Ear pain or hearing changes (swimmer's ear considerations)
+
+  ## Caveats & Limitations
+
+  ### Measurement Limitations
+  - **Pool length accuracy:** Incorrect pool length setting directly multiplies error
+  - **Partial laps:** Stopping mid-pool or drills may not register accurately
+  - **Non-standard strokes:** Sidestroke, elementary backstroke may confuse detection
+  - **Kickboard/pull buoy:** Drills without full stroke pattern reduce accuracy
+  - **Open water GPS:** Underwater portions have no GPS; accuracy interpolated
+
+  ### Interpretation Limitations
+  - **Intensity not captured:** Easy swimming vs. sprint sets show same distance
+  - **Rest intervals:** Time spent resting at wall not reflected in distance
+  - **Stroke efficiency:** Two swimmers covering same distance may have vastly different fitness
+  - **Pool vs. open water:** Same distance may represent different effort levels
+
+  ### What Swimming Distance Cannot Tell You
+  - Stroke count or SWOLF efficiency metrics (see SwimmingStrokeCount)
+  - Split times per lap or interval
+  - Heart rate zones during swimming
+  - Stroke type breakdown percentages
+  - Caloric expenditure (varies significantly by stroke, intensity, skill)
+  - Drill work or technique-focused training
+
+  ## Additional Notes
+
+  **For Health Consultants:**
+  When reviewing swimming distance data:
+  1. Verify pool length setting matches actual pool (common error source)
+  2. Distinguish pool vs. open water sessions (different accuracy profiles)
+  3. Consider swim frequency alongside total distance
+  4. Note that competitive swimmers may have seasonal training cycles
+  5. Be aware that swim technique dramatically affects distance-to-fitness relationship
+
+  **Pool Length Standards:**
+  - Short course yards (SCY): 25 yards - common in US pools
+  - Short course meters (SCM): 25 meters - common internationally
+  - Long course meters (LCM): 50 meters - Olympic standard
+  - Verify user has set correct length for their pool
+
+  **Integration with Workouts:**
+  Swimming workouts provide additional metrics:
+  - Lap-by-lap breakdown with times
+  - Stroke type per lap
+  - SWOLF scores for efficiency
+  - Active vs. rest time
+  - Stroke count per lap
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeySwimmingLocationType"
+    description: "Indicates whether the swim was in a pool (1) or open water (2). Critical for understanding measurement method."
+  - key: "HKMetadataKeyLapLength"
+    description: "The length of the pool in meters. Used to calculate total distance from lap count. Only applicable to pool swims."
+  - key: "HKMetadataKeySwimmingStrokeStyle"
+    description: "The predominant stroke style detected during the sample (freestyle, backstroke, breaststroke, butterfly, or mixed)."
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier for the sample from the originating source."
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices."
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution."
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierSwimmingStrokeCount"
+    relationship: "Complementary - Stroke count combined with distance provides SWOLF efficiency metric"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Related - Swimming distance contributes to energy expenditure calculations"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Complementary - Heart rate provides intensity context for swimming distance"
+  - identifier: "HKQuantityTypeIdentifierUnderwaterDepth"
+    relationship: "Related - Available on Apple Watch Ultra for dive activities"
+  - identifier: "HKQuantityTypeIdentifierWaterTemperature"
+    relationship: "Related - Water temperature affects swimming performance and safety"
+  - identifier: "HKWorkoutTypeSwimming"
+    relationship: "Contains - Swimming workouts include distance as primary metric"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - distanceSwimming"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/distanceswimming"
+    type: "official"
+  - title: "Apple Support - Track your workouts with Apple Watch"
+    url: "https://support.apple.com/en-us/HT204523"
+    type: "official"
+  - title: "WHO Guidelines on Physical Activity and Sedentary Behaviour"
+    url: "https://www.who.int/publications/i/item/9789240015128"
+    type: "medical"
+  - title: "Arthritis Foundation - Swimming and Arthritis"
+    url: "https://www.arthritis.org/health-wellness/healthy-living/physical-activity/swimming"
+    type: "medical"
+  - title: "American Heart Association - Swimming for Heart Health"
+    url: "https://www.heart.org/en/healthy-living/fitness/fitness-basics/swimming"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 10.0/watchOS 3.0 introduction aligned with Apple Watch Series 2 swim-proof design
+  - Pool swim uses accelerometer lap counting × pool length; open water uses GPS
+  - 50m water resistance rating standard for Apple Watch Series 2+
+  - SWOLF = strokes + time in seconds per lap (efficiency metric)
+  - Competitive swimmers train 30,000-80,000 m/week depending on level
+  - Pool length setting is critical accuracy factor for pool swimming

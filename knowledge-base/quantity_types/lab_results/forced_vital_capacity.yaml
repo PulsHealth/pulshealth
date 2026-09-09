@@ -1,0 +1,149 @@
+identifier: "HKQuantityTypeIdentifierForcedVitalCapacity"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Lab and Test Results"
+human_readable_name: "Forced Vital Capacity"
+short_description: "Total volume of air forcefully exhaled after maximum inhalation, essential for assessing lung capacity and restrictive diseases"
+icon: "lungs.fill"
+color: "#5AC8FA"
+default_unit: "L"
+supported_units:
+  - "L"
+  - "mL"
+  - "fl_oz_us"
+unit_description: "Liters (L) or milliliters (mL) representing the total volume of air that can be forcefully expelled from the lungs"
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 2.0
+  max: 7.0
+  unit: "L"
+  notes: "Varies significantly with age, sex, height, and ethnicity; interpret using percent predicted values"
+clinical_ranges:
+  - population: "Healthy Adult Males"
+    normal: "4.0-6.0 L absolute; >80% predicted considered normal"
+  - population: "Healthy Adult Females"
+    normal: "3.0-4.5 L absolute; >80% predicted considered normal"
+  - population: "Mild Restriction"
+    normal: "70-79% predicted"
+  - population: "Moderate Restriction"
+    normal: "50-69% predicted"
+  - population: "Severe Restriction"
+    normal: "<50% predicted"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Personal Spirometers"
+    capability: "Home spirometry for FVC measurement and lung function tracking"
+    examples:
+      - "Nuvoair Air Next"
+      - "MIR Smart One"
+      - "Propeller Health Sensor"
+  - name: "Clinical Spirometers"
+    capability: "Comprehensive pulmonary function testing with high accuracy"
+    examples:
+      - "Vitalograph"
+      - "CareFusion MasterScreen"
+      - "NDD EasyOne"
+  - name: "Portable Diagnostic Spirometers"
+    capability: "Office-based spirometry with full diagnostic capability"
+    examples:
+      - "Vyaire Micro Direct"
+      - "MIR Spirobank II"
+primary_source: "Spirometry devices"
+description: |
+  ## Overview
+  Forced Vital Capacity (FVC) represents the total volume of air that can be forcefully exhaled after taking the deepest possible breath. It is a fundamental measurement in pulmonary function testing, essential for evaluating lung capacity and identifying restrictive lung diseases that limit lung expansion.
+
+  ## How It's Measured
+  FVC is measured during spirometry alongside FEV1:
+  - Patient inhales maximally to total lung capacity (TLC)
+  - Performs a forced, complete exhalation until no more air can be expelled
+  - Exhalation should continue for at least 6 seconds (adults) or 3 seconds (children)
+  - The spirometer records the total volume expelled during the maneuver
+  - Multiple attempts required; best result from technically acceptable maneuvers is recorded
+  - Quality criteria include consistent results (within 150 mL between best two attempts)
+
+  ## Health Significance
+  FVC is critical for multiple clinical assessments:
+  - **Restrictive disease diagnosis**: Reduced FVC with normal or elevated FEV1/FVC ratio suggests restriction
+  - **Interstitial lung disease monitoring**: Progressive FVC decline indicates disease worsening
+  - **Neuromuscular disease assessment**: FVC tracks respiratory muscle weakness progression
+  - **Surgical candidacy**: Preoperative pulmonary risk assessment
+  - **Pulmonary fibrosis prognosis**: Rate of FVC decline predicts outcomes
+  - **Obesity hypoventilation**: Assesses impact of body habitus on lung mechanics
+
+  ## Clinical Interpretation Guidelines
+  When interpreting FVC in clinical practice:
+  1. **Percent predicted calculation**: Convert absolute FVC to percent of predicted using validated equations (GLI-2012)
+  2. **FEV1/FVC ratio analysis**:
+     - Normal or high ratio (>0.70) with low FVC suggests restrictive pattern
+     - Low ratio (<0.70 or below LLN) with low FVC suggests mixed pattern
+     - Confirmatory lung volume testing (TLC) needed for definitive restriction diagnosis
+  3. **Pattern recognition**:
+     - Obstructive: FEV1 reduced, FVC relatively preserved, low ratio
+     - Restrictive: Both reduced proportionally, normal or high ratio
+     - Mixed: Elements of both patterns
+  4. **Trend monitoring in disease**:
+     - IPF: >5% annual decline associated with increased mortality
+     - ALS: FVC <50% predicted indicates need for ventilatory support discussion
+  5. **Bronchodilator response**: FVC increase >200 mL suggests air trapping component
+  6. **Effort assessment**: Submaximal effort produces artificially low FVC
+
+  ## Caveats & Limitations
+  - **Effort and technique dependent**: Incomplete exhalation falsely lowers FVC
+  - **Cannot confirm restriction alone**: Requires total lung capacity measurement for definitive diagnosis
+  - **Posture effects**: Supine FVC lower than upright; significant difference suggests diaphragm weakness
+  - **Obesity considerations**: Obesity reduces FVC; may overestimate restrictive disease
+  - **Reference equation variability**: Different equations yield different predicted values
+  - **Home device limitations**: Consumer spirometers may not ensure adequate exhalation time
+  - **Reproducibility challenges**: Requires patient coaching for reliable results
+  - **Air trapping**: In obstructive disease, slow vital capacity may exceed FVC
+
+  ## Additional Notes
+  For patients with chronic respiratory conditions, longitudinal FVC tracking is valuable for assessing disease progression and treatment response. Home spirometry data should be interpreted with awareness of potential technique variations. Significant changes (>10% from baseline) warrant clinical evaluation. In neuromuscular diseases like ALS, supine FVC provides additional information about diaphragm function that upright measurements may miss.
+metadata_keys:
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the spirometry device used for measurement"
+  - key: "HKMetadataKeyWasTakenInLab"
+    description: "Indicates if measurement was performed in a clinical laboratory setting"
+  - key: "HKMetadataKeyReferenceRangeLowerLimit"
+    description: "Lower limit of normal range for the measurement"
+  - key: "HKMetadataKeyReferenceRangeUpperLimit"
+    description: "Upper limit of normal range for the measurement"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
+    relationship: "FEV1 is measured simultaneously; FEV1/FVC ratio distinguishes obstructive from restrictive patterns"
+  - identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
+    relationship: "PEFR assesses airflow; combined with FVC provides comprehensive pulmonary assessment"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Respiratory rate may increase as compensation when FVC is significantly reduced"
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "Severe FVC reduction may result in hypoxemia detectable by pulse oximetry"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierForcedVitalCapacity"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierforcedvitalcapacity"
+    type: "official"
+  - title: "ATS/ERS Standardization of Spirometry"
+    url: "https://www.thoracic.org/statements/resources/pft/spirometry.pdf"
+    type: "medical"
+  - title: "Interpretation of Pulmonary Function Tests - ATS/ERS Task Force"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5548412/"
+    type: "medical"
+  - title: "Global Lung Function Initiative (GLI) Reference Equations"
+    url: "https://www.ers-education.org/guidelines/global-lung-function-initiative/"
+    type: "research"
+last_updated: "2026-01-27"

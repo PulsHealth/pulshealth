@@ -1,0 +1,249 @@
+identifier: "HKQuantityTypeIdentifierDietaryVitaminK"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Vitamin K"
+short_description: "Fat-soluble vitamin essential for blood clotting and bone metabolism"
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#30D158"
+
+default_unit: "mcg"
+supported_units: ["mcg", "mg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 500
+  unit: "mcg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "2.0 mcg (AI)"
+  - population: "Infants 7-12 months"
+    rda: "2.5 mcg (AI)"
+  - population: "Children 1-3 years"
+    rda: "30 mcg (AI)"
+  - population: "Children 4-8 years"
+    rda: "55 mcg (AI)"
+  - population: "Children 9-13 years"
+    rda: "60 mcg (AI)"
+  - population: "Adolescents 14-18 years"
+    rda: "75 mcg (AI)"
+  - population: "Adult men 19+ years"
+    rda: "120 mcg (AI)"
+  - population: "Adult women 19+ years"
+    rda: "90 mcg (AI)"
+  - population: "Pregnancy 14-18 years"
+    rda: "75 mcg (AI)"
+  - population: "Pregnancy 19-50 years"
+    rda: "90 mcg (AI)"
+  - population: "Lactation 14-18 years"
+    rda: "75 mcg (AI)"
+  - population: "Lactation 19-50 years"
+    rda: "90 mcg (AI)"
+  - population: "All ages (Upper Limit)"
+    upper_limit: "Not established (no adverse effects from food or supplements)"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log vitamin K intake from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Vitamin K refers to a group of fat-soluble vitamins with a common 2-methyl-1,4-naphthoquinone structure. The two main dietary forms are vitamin K1 (phylloquinone), found in green leafy vegetables, and vitamin K2 (menaquinones, MK-n), produced by bacteria and found in fermented foods and animal products. Vitamin K serves as an essential cofactor for gamma-carboxylation of specific proteins involved in coagulation and bone metabolism. HealthKit tracks dietary vitamin K intake in micrograms.
+
+  ## Biological Functions
+  Vitamin K is essential for the post-translational modification (gamma-carboxylation) of vitamin K-dependent proteins:
+
+  - **Blood coagulation**: Activates clotting factors II (prothrombin), VII, IX, and X, as well as anticoagulant proteins C, S, and Z
+  - **Bone metabolism**: Activates osteocalcin (bone Gla protein), essential for calcium binding to bone matrix; activates matrix Gla protein (MGP), inhibiting soft tissue calcification
+  - **Vascular health**: Matrix Gla protein prevents arterial calcification
+  - **Cell signaling**: Emerging roles in cell proliferation, apoptosis, and inflammation
+  - **Brain function**: Involved in sphingolipid metabolism; potential neuroprotective effects
+
+  **Vitamin K cycle**:
+  Vitamin K is recycled through the vitamin K epoxide reductase (VKORC1) pathway, allowing small dietary amounts to sustain coagulation function. Warfarin inhibits this cycle.
+
+  ## Health Significance
+  Adequate vitamin K is essential for proper blood clotting and is increasingly recognized for its role in bone and cardiovascular health. Clinical deficiency causing bleeding is rare in adults but is a concern in newborns. The interaction between vitamin K and anticoagulant therapy is critically important in clinical practice.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing patient vitamin K intake data:
+
+  - **Critical for warfarin patients**: Vitamin K intake directly affects INR; consistent daily intake is essential
+  - **Assess dietary sources**: Dark green leafy vegetables are the primary source
+  - **Consider K1 vs K2**: Most food databases report primarily K1; K2 from fermented foods may not be captured
+  - **Evaluate antibiotic use**: Prolonged antibiotics can reduce gut bacterial K2 synthesis
+  - **Note malabsorption conditions**: Fat malabsorption significantly impacts vitamin K status
+  - **Review bleeding symptoms**: Unexplained bruising or bleeding may indicate deficiency
+
+  ## Deficiency
+  **Clinical vitamin K deficiency is rare in adults** due to:
+  - Wide distribution in foods
+  - Gut bacterial synthesis of vitamin K2
+  - Efficient recycling via the vitamin K cycle
+  - Low daily requirements
+
+  **Symptoms and conditions** (when deficiency occurs):
+  - Prolonged prothrombin time (PT) and elevated INR
+  - Easy bruising
+  - Bleeding from mucous membranes, GI tract, or wounds
+  - Hemorrhagic disease of the newborn (VKDB)
+  - Increased risk of osteoporosis and fractures (with chronic low status)
+
+  **Vitamin K Deficiency Bleeding (VKDB) in newborns**:
+  - **Early** (0-24 hours): Rare, associated with maternal medications
+  - **Classical** (1-7 days): Presents as GI, umbilical, or circumcision bleeding
+  - **Late** (2-12 weeks): Often presents as intracranial hemorrhage; associated with exclusive breastfeeding without prophylaxis
+
+  **At-risk populations**:
+  - Newborns (especially exclusively breastfed without prophylaxis)
+  - Patients with fat malabsorption (cystic fibrosis, celiac disease, cholestatic liver disease, short bowel)
+  - Patients on prolonged antibiotic therapy
+  - Those with liver disease (reduced clotting factor synthesis)
+  - Patients receiving total parenteral nutrition without vitamin K
+  - Those taking vitamin K antagonists (warfarin)
+  - Individuals with very restricted diets avoiding green vegetables
+
+  ## Toxicity/Excess
+  No Tolerable Upper Intake Level (UL) has been established for vitamin K due to lack of documented toxicity.
+
+  **Safety profile of K1 and K2**:
+  - No adverse effects reported from high dietary or supplemental intake of K1 or K2
+  - Large doses do not affect coagulation in individuals not on anticoagulants
+  - Does not cause hypercoagulability or increased thrombosis risk in healthy individuals
+
+  **Menadione (synthetic K3) concerns**:
+  - Water-soluble synthetic form not recommended for human use
+  - Can cause hemolytic anemia, hyperbilirubinemia, and liver toxicity
+  - Not present in food or standard supplements
+
+  **Clinical note**: While K1 and K2 are safe, patients on warfarin must avoid sudden large changes in vitamin K intake as this will affect INR stability.
+
+  ## Food Sources
+  **Vitamin K1 (phylloquinone) - excellent sources**:
+  - Kale (1 cup raw: ~472 mcg)
+  - Spinach (1 cup raw: ~145 mcg; cooked: ~888 mcg)
+  - Collard greens (1/2 cup cooked: ~530 mcg)
+  - Swiss chard (1 cup raw: ~299 mcg)
+  - Broccoli (1/2 cup cooked: ~110 mcg)
+  - Brussels sprouts (1/2 cup cooked: ~109 mcg)
+  - Lettuce, green leaf (1 cup: ~46 mcg)
+  - Parsley (1/4 cup: ~246 mcg)
+  - Green peas (1/2 cup: ~21 mcg)
+
+  **Vitamin K1 - other sources**:
+  - Vegetable oils: Soybean oil (1 tbsp: ~25 mcg), canola oil (~16 mcg)
+  - Green beans, asparagus, cabbage
+  - Kiwi, avocado (small amounts)
+
+  **Vitamin K2 (menaquinones)**:
+  - Natto (fermented soybeans): Exceptionally high (~1000 mcg MK-7 per 100g)
+  - Hard and soft cheeses (~50-75 mcg/100g, varies widely)
+  - Egg yolks (~32 mcg/100g)
+  - Chicken, beef liver (modest amounts)
+  - Butter (small amounts)
+  - Fermented vegetables (sauerkraut - varies)
+
+  **Bioavailability considerations**:
+  - K1 absorption is 5-10% from raw vegetables; improves with cooking and dietary fat
+  - K2 (especially longer-chain MK-7) has better absorption and longer half-life than K1
+  - Requires dietary fat for optimal absorption
+  - Gut bacteria produce MK-7 through MK-13, but contribution to human requirements is unclear
+
+  ## Special Populations
+  **Newborns**: AAP and WHO recommend prophylactic vitamin K injection at birth (0.5-1 mg IM) to prevent VKDB. Oral regimens are less effective but used in some countries. Exclusively breastfed infants are at highest risk (breast milk is low in vitamin K).
+
+  **Pregnancy**: AI is 75-90 mcg (same as non-pregnant women of same age). No evidence that pregnancy increases requirements. Some medications crossing the placenta may affect fetal vitamin K status.
+
+  **Lactation**: Breast milk is relatively low in vitamin K regardless of maternal intake. Maternal supplementation modestly increases breast milk content but does not eliminate need for infant prophylaxis.
+
+  **Elderly**: May benefit from adequate vitamin K for bone health. Some research suggests higher vitamin K intake is associated with reduced fracture risk and cardiovascular calcification, though evidence is evolving.
+
+  **Patients on warfarin**: CRITICAL - must maintain consistent vitamin K intake, not eliminate it. Sudden large increases or decreases in vitamin K intake cause INR instability. Education should emphasize consistency rather than avoidance. Typical target: 80-120 mcg/day with minimal variation.
+
+  **Patients with osteoporosis**: Some evidence supports vitamin K2 (especially MK-4 and MK-7) for bone health, but results are mixed. Japan has approved high-dose MK-4 for osteoporosis treatment.
+
+  ## Drug Interactions
+  **Vitamin K antagonists (most critical interaction)**:
+  - **Warfarin** (and other coumarins): Inhibits VKORC1, blocking vitamin K recycling
+    - Dietary vitamin K directly opposes warfarin effect
+    - Sudden increase in vitamin K intake decreases INR (increased clotting)
+    - Sudden decrease in vitamin K intake increases INR (bleeding risk)
+    - Management: Maintain consistent daily intake; avoid dramatic changes
+  - Large doses of vitamin K can reverse warfarin anticoagulation
+
+  **Drugs that decrease vitamin K status**:
+  - **Broad-spectrum antibiotics**: Reduce gut bacterial vitamin K synthesis (especially prolonged use)
+  - **Cholestyramine and colestipol**: Reduce fat-soluble vitamin absorption
+  - **Orlistat**: Decreases fat absorption
+  - **Anticonvulsants**: Some may interfere with vitamin K metabolism
+  - **High-dose vitamin A or E**: May interfere with vitamin K function at very high doses
+
+  **Drugs potentially affected by vitamin K**:
+  - **Aspirin and other antiplatelet agents**: Vitamin K does not directly interact but both affect hemostasis
+  - **Direct oral anticoagulants (DOACs)**: Rivaroxaban, apixaban, edoxaban, dabigatran - do NOT interact with vitamin K (do not inhibit VKORC1)
+
+  **Clinical notes for warfarin management**:
+  - Do not advise patients to avoid green vegetables; advise consistency
+  - If INR is subtherapeutic, assess for recent increase in vitamin K intake
+  - If INR is supratherapeutic, assess for recent decrease in vitamin K intake or antibiotic use
+
+  ## Caveats & Limitations
+  - HealthKit data reflects user-reported intake, not vitamin K status or clotting function
+  - Most food databases emphasize K1; K2 content often incomplete or missing
+  - Gut bacterial synthesis contributes variably to vitamin K status and is not captured
+  - Individual vitamin K needs vary based on genetic polymorphisms (VKORC1, CYP4F2)
+  - Accuracy depends on logging completeness, particularly of green vegetables
+  - Cannot determine if intake is adequate without clinical assessment (PT/INR if concerns)
+  - For warfarin patients, daily consistency matters more than absolute amount
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food contributing to vitamin K intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if the entry was manually logged by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing with external nutrition databases"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
+    relationship: "Vitamin K-dependent proteins direct calcium to bone; both essential for bone health"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminD"
+    relationship: "Vitamin D enhances calcium absorption; vitamin K directs calcium to appropriate tissues"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminA"
+    relationship: "Fat-soluble vitamin; very high vitamin A may interfere with vitamin K function"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminE"
+    relationship: "Fat-soluble vitamin; high-dose vitamin E may interfere with vitamin K-dependent coagulation"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "Dietary fat required for vitamin K absorption"
+references:
+  - title: "Vitamin K - Dietary Reference Intakes"
+    url: "https://ods.od.nih.gov/factsheets/VitaminK-HealthProfessional/"
+    type: "official"
+  - title: "Apple HealthKit Documentation - HKQuantityTypeIdentifier"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier"
+    type: "official"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Vitamin K"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK222299/"
+    type: "research"
+  - title: "Vitamin K - Linus Pauling Institute"
+    url: "https://lpi.oregonstate.edu/mic/vitamins/vitamin-K"
+    type: "research"
+  - title: "American Academy of Pediatrics - Prevention of Vitamin K Deficiency Bleeding"
+    url: "https://publications.aap.org/pediatrics/article/149/3/e2021056036/184785/"
+    type: "medical"
+  - title: "Vitamin K and Bone Health"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5494092/"
+    type: "research"
+  - title: "Warfarin-Vitamin K Interaction"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3969757/"
+    type: "medical"
+last_updated: "2026-01-27"

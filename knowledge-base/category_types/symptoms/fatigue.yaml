@@ -1,0 +1,140 @@
+identifier: "HKCategoryTypeIdentifierFatigue"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Fatigue"
+short_description: "Tracks episodes of fatigue, tiredness, or exhaustion."
+icon: "battery.25"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Fatigue is a subjective feeling of tiredness, exhaustion, or lack of energy that is not relieved by rest. It differs from drowsiness (desire to sleep) and weakness (reduced muscle strength). This HealthKit category type allows users to track fatigue episodes, providing valuable data for identifying patterns and potential underlying conditions.
+
+  ## Health Significance
+  Fatigue is one of the most common complaints in primary care, present in up to 20% of patients. It can be a symptom of numerous physical and psychological conditions, making pattern recognition valuable for diagnosis.
+
+  Common causes include:
+
+  **Lifestyle factors:**
+  - Inadequate sleep or poor sleep quality
+  - Physical overexertion
+  - Sedentary lifestyle
+  - Poor nutrition
+  - Excessive caffeine or alcohol
+  - Stress and burnout
+
+  **Medical conditions:**
+  - Anemia (iron deficiency, B12 deficiency)
+  - Thyroid disorders (hypothyroidism, hyperthyroidism)
+  - Diabetes mellitus
+  - Heart disease and heart failure
+  - Chronic kidney disease
+  - Liver disease
+  - Autoimmune conditions (lupus, rheumatoid arthritis)
+  - Cancer
+  - Chronic infections (hepatitis, HIV)
+  - Sleep apnea
+
+  **Psychiatric conditions:**
+  - Depression
+  - Anxiety disorders
+  - Chronic fatigue syndrome / ME/CFS
+
+  **Medications:**
+  - Antihistamines
+  - Beta-blockers
+  - Antidepressants
+  - Sedatives
+  - Chemotherapy
+
+  ## When to Seek Medical Attention
+  Users should consult a healthcare provider when fatigue:
+  - Persists for more than 2 weeks despite adequate rest
+  - Is severe and interferes with daily activities
+  - Is accompanied by unexplained weight loss
+  - Occurs with fever, night sweats, or lymph node enlargement
+  - Is associated with shortness of breath or chest pain
+  - Is accompanied by depression or suicidal thoughts
+  - Follows a viral illness and persists (post-viral fatigue)
+  - Is accompanied by muscle weakness or pain
+  - Results in inability to work or function normally
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Sleep quality correlations
+  - Post-exertional malaise patterns (ME/CFS)
+  - Menstrual cycle associations
+  - Seasonal affective patterns
+  - Medication timing effects
+  - Stress and workload correlations
+  - Response to interventions (sleep hygiene, exercise, diet)
+  - Progressive worsening suggesting underlying disease
+
+  ## Caveats & Limitations
+  - Highly subjective and variable between individuals
+  - Cannot differentiate between fatigue, sleepiness, and weakness
+  - Does not capture impact on functional status
+  - Cannot assess underlying cause without additional evaluation
+  - Sleep data provides important context but requires separate tracking
+  - Mood and psychological factors heavily influence perception
+  - Does not replace objective measures (lab tests, sleep studies)
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Sleep quality directly affects fatigue levels"
+  - identifier: "HKCategoryTypeIdentifierMoodChanges"
+    relationship: "Depression and anxiety commonly cause fatigue"
+  - identifier: "HKCategoryTypeIdentifierAppetiteChanges"
+    relationship: "Appetite and fatigue changes often co-occur in systemic illness"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Activity levels may correlate with or impact fatigue"
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Infectious illness causes both fever and fatigue"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierFatigue"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierfatigue"
+    type: "official"
+  - title: "Fatigue - Mayo Clinic"
+    url: "https://www.mayoclinic.org/symptoms/fatigue/basics/definition/sym-20050894"
+    type: "medical"
+  - title: "Chronic Fatigue Syndrome - CDC"
+    url: "https://www.cdc.gov/me-cfs/index.html"
+    type: "medical"
+last_updated: "2026-01-27"

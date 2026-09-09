@@ -1,0 +1,179 @@
+identifier: "HKQuantityTypeIdentifierBloodAlcoholContent"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Lab and Test Results"
+human_readable_name: "Blood Alcohol Content"
+short_description: "Concentration of alcohol in blood, indicating intoxication level with legal and health implications"
+icon: "drop.fill"
+color: "#AF52DE"
+default_unit: "%"
+supported_units:
+  - "%"
+  - "g/L"
+  - "mg/dL"
+unit_description: "Percent (%) represents grams of alcohol per 100 milliliters of blood; 0.08% equals 80 mg/dL or 0.8 g/L"
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 0.00
+  max: 0.08
+  unit: "%"
+  notes: "0.08% is the legal driving limit in most US states; impairment begins at lower levels"
+clinical_ranges:
+  - population: "Sober"
+    normal: "0.00%: No alcohol present"
+  - population: "Mild Impairment"
+    normal: "0.01-0.05%: Subtle effects on judgment and coordination"
+  - population: "Legal Limit (US)"
+    normal: "0.08%: Illegal to drive in all US states; significant impairment"
+  - population: "Moderate Intoxication"
+    normal: "0.10-0.15%: Obvious impairment, slurred speech, poor coordination"
+  - population: "Severe Intoxication"
+    normal: "0.15-0.30%: Gross motor impairment, possible blackout"
+  - population: "Life-Threatening"
+    normal: ">0.30%: Risk of coma and death; medical emergency"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "Personal Breathalyzers"
+    capability: "Estimates BAC from breath alcohol concentration"
+    examples:
+      - "BACtrack"
+      - "Alcohoot"
+      - "DrinkMate"
+  - name: "Professional Grade Breathalyzers"
+    capability: "Higher accuracy breath alcohol testing"
+    examples:
+      - "BACtrack S80"
+      - "Dräger Alcotest"
+  - name: "Continuous Alcohol Monitoring"
+    capability: "Transdermal alcohol detection"
+    examples:
+      - "SCRAM CAM"
+      - "Soberlink"
+  - name: "Clinical Laboratory"
+    capability: "Direct blood alcohol measurement via venipuncture"
+    examples:
+      - "Hospital laboratory serum alcohol"
+      - "Forensic blood draw"
+primary_source: "Breathalyzer devices and clinical laboratories"
+description: |
+  ## Overview
+  Blood Alcohol Content (BAC) measures the concentration of ethanol in the bloodstream, expressed as a percentage by weight. BAC provides an objective measure of alcohol intoxication level with direct implications for legal status, safety, and health. While primarily associated with legal and safety contexts, BAC data also informs clinical assessment of alcohol use patterns and acute intoxication management.
+
+  ## How It's Measured
+  BAC can be determined through several methods:
+  - **Breath analysis (breathalyzer)**:
+    - Measures breath alcohol concentration (BrAC)
+    - Converted to BAC using partition ratio (approximately 2100:1)
+    - Consumer devices vary in accuracy; fuel cell sensors more accurate than semiconductor
+  - **Blood testing (definitive)**:
+    - Direct measurement of serum or whole blood alcohol
+    - Gold standard but requires venipuncture
+    - Hospital/laboratory testing for clinical or forensic purposes
+  - **Transdermal monitoring**:
+    - Measures alcohol excreted through skin
+    - Continuous monitoring capability
+    - Primarily used for court-ordered sobriety monitoring
+  - **Urine testing**:
+    - Less accurate than blood; reflects recent but not current impairment
+    - Primarily used for detection rather than quantification
+
+  ## Health Significance
+  BAC data serves multiple purposes in health contexts:
+  - **Acute intoxication assessment**: Guides clinical management decisions
+  - **Alcohol use disorder screening**: Patterns may indicate problematic use
+  - **Safety evaluation**: Identifies impairment affecting driving, work, or activities
+  - **Treatment monitoring**: Objective measure for recovery programs
+  - **Drug interaction risk**: Alcohol affects medication metabolism and effects
+  - **Chronic use patterns**: Tolerance indicated by functioning at high BAC levels
+
+  ## Clinical Interpretation Guidelines
+  When interpreting BAC for clinical purposes:
+  1. **Impairment levels by BAC**:
+     - 0.02-0.03%: Relaxation, mild mood elevation, slight impairment
+     - 0.04-0.06%: Lowered inhibitions, impaired judgment, warmth
+     - 0.07-0.09%: Impaired balance, speech, reaction time
+     - 0.10-0.12%: Significant motor impairment, slurred speech
+     - 0.13-0.15%: Gross motor impairment, blurred vision, possible blackout
+     - 0.16-0.20%: Dysphoria, nausea, disorientation
+     - 0.25-0.30%: Severe impairment, risk of aspiration, unconsciousness
+     - >0.35%: Potential coma and death
+  2. **Tolerance considerations**:
+     - Chronic heavy drinkers may appear less impaired at high BAC
+     - High BAC with minimal signs suggests significant tolerance
+     - Tolerance does not protect against organ damage
+  3. **Metabolism estimation**:
+     - Average elimination rate: 0.015-0.020% per hour
+     - Cannot be accelerated by food, coffee, or water
+     - Factors affecting metabolism: weight, sex, liver function, medications
+  4. **Rising vs. falling BAC**:
+     - Impairment may be greater during rising BAC phase
+     - Time since last drink affects interpretation
+  5. **Special populations**:
+     - Women generally reach higher BAC than men with equivalent alcohol
+     - Elderly more sensitive to alcohol effects
+     - Medication interactions can enhance impairment
+  6. **Legal considerations**:
+     - 0.08%: Legal driving limit in all US states
+     - Lower limits for commercial drivers (0.04%) and underage (<0.02%)
+     - Zero tolerance in some professional contexts
+
+  ## Caveats & Limitations
+  - **Consumer device accuracy**: Personal breathalyzers less accurate than professional or clinical tests
+  - **Timing matters**: Peak BAC occurs 30-90 minutes after last drink
+  - **Individual variation**: Same number of drinks produces different BAC in different people
+  - **Mouth alcohol**: Recent drinking can falsely elevate breath readings
+  - **Not a complete picture**: BAC doesn't capture impairment from other substances
+  - **Tolerance masking**: Experienced drinkers may appear less impaired than naive drinkers at same BAC
+  - **Privacy and sensitivity**: BAC data is highly sensitive; stigma associated with alcohol use
+  - **Breath vs. blood discrepancies**: Breath testing estimates BAC with inherent variability
+
+  ## Additional Notes
+  BAC data in HealthKit is primarily from consumer breathalyzer devices designed for personal awareness rather than legal or clinical purposes. When reviewing patient BAC data, consider it as one indicator within a broader assessment of alcohol use patterns. The presence of tracked BAC data may indicate health-conscious behavior around alcohol consumption, but also consider that high readings warrant clinical conversation about drinking patterns and potential alcohol use disorder screening using validated tools like AUDIT or CAGE. Providers should be aware of the sensitivity of this data and approach discussions non-judgmentally.
+metadata_keys:
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the breathalyzer or testing device"
+  - key: "HKMetadataKeyWasTakenInLab"
+    description: "Indicates if measurement was from clinical laboratory testing"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where measurement was taken, relevant for pattern analysis"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Alcohol acutely increases heart rate; pattern changes may correlate with drinking"
+  - identifier: "HKQuantityTypeIdentifierBloodPressure"
+    relationship: "Alcohol has acute and chronic effects on blood pressure"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Alcohol disrupts sleep architecture despite sedative effects"
+  - identifier: "HKQuantityTypeIdentifierStepCount"
+    relationship: "Reduced activity or irregular patterns may coincide with alcohol consumption"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierBloodAlcoholContent"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierbloodalcoholcontent"
+    type: "official"
+  - title: "NIAAA - Understanding Blood Alcohol Content"
+    url: "https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/understanding-blood-alcohol-content-bac"
+    type: "medical"
+  - title: "CDC - Alcohol and Public Health"
+    url: "https://www.cdc.gov/alcohol/"
+    type: "medical"
+  - title: "AUDIT - Alcohol Use Disorders Identification Test"
+    url: "https://www.who.int/publications/i/item/WHO-MSD-MSB-01.6a"
+    type: "medical"
+  - title: "Accuracy of Consumer Breathalyzer Devices"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3686513/"
+    type: "research"
+last_updated: "2026-01-27"

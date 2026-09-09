@@ -1,0 +1,125 @@
+identifier: "HKCategoryTypeIdentifierHairLoss"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Hair Loss"
+short_description: "Tracks episodes of unusual hair shedding or thinning."
+icon: "person.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Hair loss (alopecia) refers to abnormal shedding or thinning of hair from the scalp or other body areas. Normal hair shedding is 50-100 hairs per day; beyond this may indicate pathological hair loss. This HealthKit category type allows users to track hair loss episodes, helping identify patterns related to hormonal changes, nutritional deficiencies, or underlying conditions.
+
+  ## Health Significance
+  Hair loss can significantly impact quality of life and self-esteem. While often genetic or age-related, it can also signal underlying medical conditions requiring treatment. Tracking onset and progression provides valuable clinical context.
+
+  Types of hair loss:
+  - **Androgenetic alopecia**: Male/female pattern baldness (genetic)
+  - **Telogen effluvium**: Diffuse shedding after stress, illness, or hormonal changes
+  - **Alopecia areata**: Autoimmune patchy hair loss
+  - **Anagen effluvium**: Sudden loss during active growth (chemotherapy)
+  - **Traction alopecia**: From tight hairstyles
+  - **Cicatricial alopecia**: Scarring hair loss
+
+  Common causes include:
+  - Hereditary (androgenetic alopecia)
+  - Hormonal changes (pregnancy, menopause, thyroid disorders)
+  - Nutritional deficiencies (iron, zinc, biotin, protein)
+  - Physical or emotional stress (telogen effluvium)
+  - Autoimmune conditions (alopecia areata, lupus)
+  - Medications (chemotherapy, blood thinners, retinoids, beta-blockers)
+  - Scalp conditions (fungal infections, psoriasis)
+  - Post-COVID-19 hair loss
+  - Rapid weight loss
+
+  ## When to Seek Medical Attention
+  Users should consult a healthcare provider when hair loss:
+  - Is sudden or occurs in clumps
+  - Creates bald patches
+  - Is accompanied by scalp pain, itching, or burning
+  - Occurs with other symptoms (fatigue, weight changes, skin changes)
+  - Follows medication changes
+  - Is accompanied by nail changes
+  - Affects eyebrows, eyelashes, or body hair
+  - Is associated with scarring of the scalp
+  - Causes significant emotional distress
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Temporal relationship to stressors (telogen effluvium typically starts 2-3 months after trigger)
+  - Correlation with menstrual cycle or pregnancy
+  - Seasonal shedding patterns
+  - Medication-related onset
+  - Post-illness hair loss (post-COVID)
+  - Response to nutritional supplementation
+  - Treatment effectiveness tracking
+
+  ## Caveats & Limitations
+  - Pattern of hair loss (diffuse vs. patchy) not captured
+  - Location of hair loss not recorded
+  - Cannot quantify amount of hair shed
+  - Does not capture scalp symptoms (itching, pain)
+  - Subjective perception may not match objective assessment
+  - Hair cycle changes are delayed (effects appear months after cause)
+  - Does not differentiate between hair types (scalp, body)
+  - Cannot assess for scarring
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Fatigue and hair loss may indicate thyroid dysfunction"
+  - identifier: "HKCategoryTypeIdentifierDrySkin"
+    relationship: "Dry skin and hair loss can indicate hypothyroidism"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Hormonal changes affect both menstruation and hair"
+  - identifier: "HKCategoryTypeIdentifierBrittleNails"
+    relationship: "Nail changes often accompany hair loss in nutritional deficiencies"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Rapid weight loss can trigger telogen effluvium"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierHairLoss"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierhairloss"
+    type: "official"
+  - title: "Hair Loss - American Academy of Dermatology"
+    url: "https://www.aad.org/public/diseases/hair-loss"
+    type: "medical"
+  - title: "Telogen Effluvium - DermNet"
+    url: "https://dermnetnz.org/topics/telogen-effluvium"
+    type: "medical"
+last_updated: "2026-01-27"

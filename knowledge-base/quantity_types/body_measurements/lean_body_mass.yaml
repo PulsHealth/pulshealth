@@ -1,0 +1,217 @@
+identifier: "HKQuantityTypeIdentifierLeanBodyMass"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Body Measurements"
+human_readable_name: "Lean Body Mass"
+short_description: "The total body mass minus all fat tissue, including muscle, bone, organs, and water."
+icon: "figure.strengthtraining.traditional"
+color: "#007AFF"
+default_unit: "kg"
+supported_units:
+  - "kg"
+  - "lb"
+  - "oz"
+  - "st"
+  - "g"
+unit_description: "Lean body mass is expressed in mass units, typically kilograms (kg) or pounds (lb), representing the weight of all non-fat body tissues."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+  - "separateBySource"
+typical_range:
+  min: 25
+  max: 120
+  unit: "kg"
+  notes: "Adult lean body mass typically ranges from 35-80 kg depending on sex, height, and muscularity."
+clinical_ranges:
+  - population: "Adult Men"
+    typical_range: "50-70 kg"
+    percentage_of_body_weight: "75-85%"
+    notes: "Athletic men may have lean body mass representing 85-90% of total weight"
+  - population: "Adult Women"
+    typical_range: "35-50 kg"
+    percentage_of_body_weight: "65-75%"
+    notes: "Athletic women may have lean body mass representing 75-85% of total weight"
+  - population: "Elderly Adults (65+)"
+    notes: "Age-related muscle loss (sarcopenia) typically results in 3-8% loss of lean mass per decade after age 30; accelerates after 60"
+  - population: "Athletes"
+    notes: "May have significantly higher lean body mass due to increased skeletal muscle; important for performance and metabolism"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Smart Scales with Body Composition"
+    capability: "Estimate lean body mass using bioelectrical impedance analysis (BIA)"
+    examples: ["Withings Body+", "Withings Body Cardio", "Garmin Index S2", "Eufy Smart Scale P2 Pro", "Renpho Smart Scale"]
+  - name: "Professional Body Composition Analyzers"
+    capability: "Multi-frequency segmental BIA for more accurate lean mass estimation"
+    examples: ["InBody 570", "InBody 770", "Tanita MC-780MA", "seca mBCA 515"]
+  - name: "Clinical Imaging"
+    capability: "Gold-standard lean body mass measurement"
+    examples: ["DEXA scanners", "CT scan body composition analysis", "MRI body composition"]
+  - name: "Research Methods"
+    capability: "Highly accurate body composition assessment"
+    examples: ["Bod Pod (air displacement plethysmography)", "Hydrostatic weighing"]
+primary_source: "Calculated from body composition measurements, typically derived from smart scales using bioelectrical impedance or clinical methods like DEXA scanning. Represents total body mass minus body fat mass."
+description: |
+  ## Overview
+  Lean body mass (LBM) represents the total weight of the body excluding adipose (fat) tissue. It includes skeletal muscle, bone, organs, skin, blood, and body water. LBM is a critical metric for understanding body composition, metabolic health, and physical function. Unlike skeletal muscle mass alone, LBM encompasses all non-fat tissues, making it a comprehensive indicator of the body's metabolically active and structural components.
+
+  ## How It's Measured
+  Lean body mass is typically calculated rather than directly measured:
+
+  **Formula:**
+  Lean Body Mass = Total Body Weight - Fat Mass
+
+  **Consumer Methods (BIA):**
+  - Smart scales estimate body fat percentage, then calculate LBM
+  - Accuracy varies: typically ±3-5% for body fat, affecting LBM calculation
+  - Hydration status significantly impacts BIA accuracy
+  - Best measured in the morning, fasted, with consistent hydration
+
+  **Clinical Methods:**
+  - **DEXA (Dual-Energy X-ray Absorptiometry)**: Gold standard; provides segmental lean mass data
+  - **Hydrostatic Weighing**: Uses water displacement to determine body density
+  - **Air Displacement Plethysmography (Bod Pod)**: Measures body volume for density calculation
+  - **CT/MRI**: Most accurate for muscle mass quantification, used in research
+
+  **Predictive Equations:**
+  Various formulas estimate LBM from anthropometric measurements:
+  - Boer formula
+  - James formula
+  - Hume formula
+  These are less accurate but useful when direct measurement is unavailable.
+
+  ## Health Significance
+  Lean body mass is fundamentally important for:
+
+  **Metabolic Health:**
+  - LBM is the primary determinant of basal metabolic rate (BMR)
+  - Higher LBM = higher caloric expenditure at rest
+  - Muscle tissue is more metabolically active than fat
+  - Maintaining LBM is crucial for long-term weight management
+
+  **Physical Function:**
+  - Muscle strength and functional capacity depend on skeletal muscle mass
+  - LBM correlates with mobility, balance, and independence in elderly
+  - Athletic performance is closely tied to lean mass development
+
+  **Clinical Applications:**
+  - Drug dosing: Many medications (chemotherapy, anesthetics) are dosed by LBM
+  - Nutritional assessment: Low LBM indicates malnutrition or cachexia
+  - Sarcopenia diagnosis: Age-related muscle loss is identified through LBM decline
+  - Critical care outcomes: LBM predicts survival and recovery in ICU patients
+  - Dialysis adequacy: LBM is used to determine dialysis dosing
+
+  ## Clinical Interpretation Guidelines
+
+  ### Lean Body Mass as Percentage of Total Weight
+
+  | Category | Men | Women |
+  |----------|-----|-------|
+  | Athletes | 85-90% | 80-85% |
+  | Fit Adults | 80-85% | 75-80% |
+  | Average Adults | 75-80% | 65-75% |
+  | Overweight | 70-75% | 60-65% |
+  | Obese | <70% | <60% |
+
+  ### Elevated Lean Body Mass May Indicate
+  - Regular resistance/strength training
+  - Adequate protein intake and nutrition
+  - Good metabolic health and insulin sensitivity
+  - Athletic conditioning
+  - Genetic predisposition for muscle development
+  - Anabolic steroid use (in extreme cases)
+
+  ### Low Lean Body Mass May Indicate
+  - Sarcopenia (age-related muscle loss)
+  - Malnutrition or inadequate protein intake
+  - Cachexia (wasting from chronic disease or cancer)
+  - Sedentary lifestyle
+  - Prolonged bed rest or immobilization
+  - Chronic corticosteroid use
+  - Endocrine disorders (hypogonadism, growth hormone deficiency)
+  - Malabsorption syndromes
+
+  ### Red Flags for Consultation
+  - Progressive decline in LBM without intentional weight loss - evaluate for sarcopenia or underlying disease
+  - LBM loss during weight loss program exceeding 25% of total weight lost - adjust nutrition/exercise
+  - Low LBM combined with functional decline (weakness, falls, fatigue) - screen for sarcopenia
+  - LBM significantly below expected for height and sex - nutritional and medical evaluation
+  - Rapid LBM decline in hospitalized patients - early mobilization and nutrition intervention
+  - Athletes with declining LBM and performance - evaluate for overtraining, RED-S, or inadequate recovery
+
+  ## Caveats & Limitations
+  - **Includes more than muscle**: LBM encompasses bone, organs, and water, not just skeletal muscle; changes may reflect hydration shifts
+  - **Hydration effects**: Body water is a major component of LBM; dehydration falsely lowers apparent LBM, while over-hydration inflates it
+  - **Measurement variability**: Consumer BIA devices have significant day-to-day variation; track trends over weeks, not days
+  - **Population-specific accuracy**: BIA algorithms may be calibrated for specific populations; accuracy varies across demographics
+  - **Cannot assess distribution**: Standard LBM measurements don't show where lean mass is located (arms vs. legs vs. trunk)
+  - **Does not equal skeletal muscle mass**: LBM is always higher than skeletal muscle mass due to inclusion of other tissues
+  - **Age-related changes**: Normal aging involves LBM decline; expected trajectories differ from pathological loss
+  - **Confounded by edema**: Fluid retention (heart failure, liver disease) artificially increases apparent LBM
+
+  ## Additional Notes
+  - Preserving LBM during weight loss requires adequate protein intake (1.2-1.6 g/kg/day) and resistance training
+  - The average person loses 3-8% of muscle mass per decade after age 30; this accelerates after 60
+  - Sarcopenia is formally diagnosed using LBM thresholds plus functional assessments (grip strength, gait speed)
+  - For athletic performance, tracking segmental lean mass (arms, legs, trunk) provides more actionable data
+  - LBM-based drug dosing is more accurate than total body weight dosing, especially for obese or elderly patients
+  - The relationship between LBM and mortality is U-shaped; both very low and very high values may indicate health issues
+  - Protein distribution throughout the day (20-40g per meal) optimizes muscle protein synthesis
+  - Resistance training remains the most effective intervention for maintaining and building LBM at any age
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the lean body mass value was manually entered or automatically calculated by a measurement device."
+  - key: "HKMetadataKeyDeviceSerialNumber"
+    description: "Serial number of the body composition analyzer or scale that recorded the measurement."
+  - key: "HKMetadataKeyExternalUUID"
+    description: "A unique identifier from an external data source that originally recorded this measurement."
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing this sample across devices and platforms."
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for tracking updates to synced samples."
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Lean body mass is the non-fat portion of total body mass."
+  - identifier: "HKQuantityTypeIdentifierBodyFatPercentage"
+    relationship: "Body fat percentage determines how total mass is divided between fat and lean mass."
+  - identifier: "HKQuantityTypeIdentifierBodyMassIndex"
+    relationship: "BMI does not distinguish between fat and lean mass; LBM provides additional context for interpreting BMI."
+  - identifier: "HKQuantityTypeIdentifierBasalEnergyBurned"
+    relationship: "Basal metabolic rate is primarily determined by lean body mass; more LBM means higher BMR."
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Exercise energy expenditure is influenced by the amount of metabolically active lean tissue."
+  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
+    relationship: "Regular exercise, especially resistance training, helps maintain and build lean body mass."
+references:
+  - title: "leanBodyMass - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/leanbodymass"
+    type: "official"
+  - title: "HealthKit Framework - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit"
+    type: "official"
+  - title: "Lean body mass: the development and validation of prediction equations in healthy adults"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3833312/"
+    type: "research"
+  - title: "Assessing skeletal muscle mass and lean body mass: agreement among methods"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11366593/"
+    type: "research"
+  - title: "Lean Body Mass and Muscle Mass - What's the Difference?"
+    url: "https://inbodyusa.com/blogs/inbodyblog/lean-body-mass-and-muscle-mass-whats-the-difference/"
+    type: "medical"
+  - title: "Sarcopenia: revised European consensus on definition and diagnosis"
+    url: "https://pubmed.ncbi.nlm.nih.gov/30312372/"
+    type: "research"
+last_updated: "2026-01-27"

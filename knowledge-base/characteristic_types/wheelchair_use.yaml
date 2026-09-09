@@ -1,0 +1,151 @@
+identifier: "HKCharacteristicTypeIdentifierWheelchairUse"
+source: "HealthKit"
+type: "HKCharacteristicType"
+category: "Characteristics"
+human_readable_name: "Wheelchair Use"
+short_description: "Indicates whether the user uses a wheelchair, enabling appropriate activity tracking and metrics."
+icon: "figure.roll"
+color: "#007AFF"
+default_unit: null
+supported_units: null
+unit_description: "Enumerated value representing wheelchair use status"
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notSet"
+    description: "The user has not specified their wheelchair use status"
+  - value: 1
+    name: "no"
+    description: "The user does not use a wheelchair"
+  - value: 2
+    name: "yes"
+    description: "The user uses a wheelchair as their primary means of mobility"
+ios_introduced:
+  version: "10.0"
+  year: 2016
+watchos_introduced:
+  version: "3.0"
+  year: 2016
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "User manually sets value in Health app profile (Settings > Health > Health Details) or Apple Watch app"
+  - name: "Apple Watch"
+    capability: "User sets during initial setup or in Settings; enables wheelchair-specific activity tracking"
+primary_source: "User Input"
+description: |
+  ## Overview
+
+  HKCharacteristicTypeIdentifierWheelchairUse indicates whether the user primarily uses a wheelchair
+  for mobility. When enabled, this characteristic fundamentally changes how Apple Watch tracks and
+  reports activity metrics. Instead of counting steps and standing hours, the watch tracks push count
+  and roll hours, using wheelchair-specific motion algorithms optimized for arm movements and wheel
+  propulsion patterns.
+
+  ## Health Significance
+
+  Accurate activity tracking for wheelchair users has important health implications:
+
+  - **Physical activity measurement**: Wheelchair users expend energy differently than ambulatory
+    individuals. Push-based metrics more accurately reflect actual activity levels and caloric expenditure.
+
+  - **Upper extremity health**: Wheelchair propulsion involves significant upper body work. Tracking
+    pushes helps monitor activity patterns that affect shoulder health, a common concern for manual
+    wheelchair users.
+
+  - **Cardiovascular fitness**: Regular wheeling/pushing maintains cardiovascular health. Activity
+    ring goals motivate consistent daily movement.
+
+  - **Sedentary behavior monitoring**: "Roll hours" replace "Stand hours," encouraging position changes
+    and movement throughout the day to prevent pressure injuries and promote circulation.
+
+  - **Rehabilitation tracking**: For users recovering from injury or adapting to wheelchair use,
+    tracking progress in daily activity provides motivation and objective improvement measures.
+
+  - **Research and population health**: Aggregated (anonymized) data helps researchers understand
+    activity patterns in wheelchair users, an historically under-studied population.
+
+  ## Clinical Interpretation
+
+  When reviewing data from wheelchair users, clinicians should consider:
+
+  - **Metric differences**: Activity data will show pushes instead of steps, roll hours instead of
+    stand hours. These aren't directly comparable to ambulatory metrics but are valid measures of
+    activity for this population.
+
+  - **Calorie calculations**: Energy expenditure algorithms account for wheelchair propulsion
+    biomechanics, but individual variation is significant based on wheelchair type, terrain, and
+    user fitness.
+
+  - **Workout types**: Wheelchair-specific workout types become available (Wheelchair Walk Pace,
+    Wheelchair Run Pace) when this is enabled, providing appropriate intensity tracking.
+
+  - **Upper body strain**: High push counts or sudden increases may indicate overexertion risk.
+    Shoulder injuries are common in long-term manual wheelchair users.
+
+  - **Consistency of use**: Some users may use wheelchairs part-time or have variable mobility. The
+    binary nature of this setting doesn't capture this complexity.
+
+  - **Activity goals**: Default activity goals may need adjustment. Clinicians can help patients set
+    appropriate, motivating targets based on their condition and capabilities.
+
+  ## Caveats & Limitations
+
+  - **Binary classification**: The yes/no option doesn't accommodate part-time wheelchair users or
+    those with variable mobility (e.g., MS patients with fluctuating symptoms).
+
+  - **Manual wheelchair assumption**: Activity tracking algorithms are optimized for manual wheelchair
+    propulsion. Power wheelchair users may not see accurate activity tracking.
+
+  - **Read-only access**: Apps cannot set or modify this value - only the user can change it through
+    device settings.
+
+  - **Device requirement**: Wheelchair-specific tracking requires Apple Watch. iPhone-only users don't
+    get push counting functionality.
+
+  - **Algorithm limitations**: Push detection may be affected by terrain, wheelchair type, pushing
+    style, and assistive device use. Accuracy varies by user.
+
+  - **Not a medical record**: This is user-selected preference, not a clinical diagnosis of mobility
+    impairment. It shouldn't be used to infer disability status or medical conditions.
+
+  - **Switching complexity**: If a user's mobility status changes (temporary injury, recovery),
+    changing this setting affects all activity tracking, and historical comparisons become difficult.
+
+  - **Privacy sensitivity**: Wheelchair use is considered sensitive health information that could
+    indicate disability status.
+metadata_keys: []
+related_types:
+  - identifier: "HKQuantityTypeIdentifierPushCount"
+    relationship: "wheelchair_activity_metric"
+  - identifier: "HKQuantityTypeIdentifierDistanceWheelchair"
+    relationship: "wheelchair_activity_metric"
+  - identifier: "HKCategoryTypeIdentifierAppleStandHour"
+    relationship: "replaced_by_roll_hour"
+  - identifier: "HKQuantityTypeIdentifierStepCount"
+    relationship: "replaced_by_push_count"
+  - identifier: "HKWorkoutActivityTypeWheelchairWalkPace"
+    relationship: "enabled_workout_type"
+  - identifier: "HKWorkoutActivityTypeWheelchairRunPace"
+    relationship: "enabled_workout_type"
+references:
+  - title: "Apple Developer Documentation - HKCharacteristicTypeIdentifierWheelchairUse"
+    url: "https://developer.apple.com/documentation/healthkit/hkcharacteristictypeidentifierwheelchairuse"
+    type: "official"
+  - title: "Apple Developer Documentation - HKWheelchairUse"
+    url: "https://developer.apple.com/documentation/healthkit/hkwheelchairuse"
+    type: "official"
+  - title: "Apple Support - Use Apple Watch as a wheelchair user"
+    url: "https://support.apple.com/guide/watch/wheelchair-users-apd89ca0d2e8/watchos"
+    type: "tutorial"
+  - title: "Apple Accessibility - Mobility Features"
+    url: "https://www.apple.com/accessibility/mobility/"
+    type: "official"
+last_updated: "2026-01-27"

@@ -1,0 +1,108 @@
+identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Menstrual Flow"
+short_description: "Tracks menstrual bleeding intensity during a period, ranging from none to heavy flow."
+icon: "drop.fill"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "unspecified"
+    description: "Menstrual flow occurred but intensity was not specified by the user."
+  - value: 2
+    name: "none"
+    description: "No menstrual flow on this day, typically used to mark the end of a period or spotting-free days during expected menstruation."
+  - value: 3
+    name: "light"
+    description: "Light menstrual flow, typically requiring only panty liners or light absorbency products."
+  - value: 4
+    name: "medium"
+    description: "Moderate menstrual flow, typically requiring regular absorbency tampons or pads changed every 3-4 hours."
+  - value: 5
+    name: "heavy"
+    description: "Heavy menstrual flow, requiring high-absorbency products and frequent changes, potentially every 1-2 hours."
+ios_introduced:
+  version: "9.0"
+  year: 2015
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Manual logging through Health app or Cycle Tracking app"
+  - name: "Apple Watch"
+    capability: "Manual logging through Cycle Tracking app"
+  - name: "Third-party apps"
+    capability: "Period tracking apps like Clue, Flo, or Natural Cycles can write menstrual flow data"
+primary_source: "User-reported"
+description: |
+  ## Overview
+  Menstrual flow tracking records the presence and intensity of menstrual bleeding on each day of a period. This data type is fundamental to cycle tracking, enabling prediction of future periods and identification of patterns over time. Users log flow intensity daily during menstruation, building a historical record that informs cycle predictions and fertility window calculations.
+
+  ## Health Significance
+  Menstrual flow patterns provide critical insights into reproductive health. Changes in flow intensity, duration, or regularity can indicate hormonal imbalances, thyroid dysfunction, polycystic ovary syndrome (PCOS), uterine fibroids, endometriosis, or perimenopause. Heavy menstrual bleeding (menorrhagia) may lead to iron-deficiency anemia and significantly impact quality of life. Tracking flow over multiple cycles establishes baseline patterns, making deviations clinically meaningful.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing menstrual flow data:
+  - **Cycle length**: Normal menstrual cycles range from 21-35 days, with most averaging 28 days
+  - **Bleeding duration**: Typical menstruation lasts 3-7 days; consistently longer periods warrant evaluation
+  - **Flow pattern**: Most women experience heavier flow days 1-2, tapering toward the end
+  - **Heavy bleeding indicators**: Soaking through a pad/tampon hourly for several consecutive hours, passing clots larger than a quarter, or needing to wake at night to change products
+  - **Amenorrhea considerations**: Absence of periods (logged as "none" throughout expected menstruation) requires investigation for pregnancy, hormonal disorders, or primary amenorrhea in adolescents
+
+  Clinicians should correlate flow data with symptoms like pain, fatigue, and mood changes for comprehensive assessment.
+
+  ## Caveats & Limitations
+  - Self-reported data is subjective; perception of "light" vs "heavy" varies between individuals
+  - No standardized quantification (e.g., milliliters of blood loss) is captured
+  - Users may not log every day consistently, creating gaps in data
+  - Hormonal contraceptives significantly alter natural flow patterns
+  - Does not distinguish between menstrual bleeding and other vaginal bleeding causes
+  - Postpartum and perimenopause transitions create expected irregularities that may complicate interpretation
+metadata_keys:
+  - key: "HKMetadataKeyMenstrualCycleStart"
+    description: "Boolean indicating whether this sample marks the start of a new menstrual cycle"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierIntermenstrualBleeding"
+    relationship: "Tracks bleeding between periods, distinct from menstrual flow"
+  - identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
+    relationship: "Cervical mucus patterns complement flow data for fertility awareness"
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "Ovulation detection helps contextualize cycle phases relative to menstruation"
+  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
+    relationship: "Temperature tracking confirms ovulation and cycle phase"
+  - identifier: "HKCategoryTypeIdentifierProlongedMenstrualPeriods"
+    relationship: "System notification triggered when bleeding duration exceeds normal ranges"
+  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+    relationship: "Commonly tracked symptom associated with menstruation"
+references:
+  - title: "HKCategoryTypeIdentifierMenstrualFlow - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiermenstrualflow"
+    type: "official"
+  - title: "Menstrual Cycle - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/your-menstrual-cycle"
+    type: "medical"
+  - title: "Heavy Menstrual Bleeding - CDC"
+    url: "https://www.cdc.gov/ncbddd/blooddisorders/women/menorrhagia.html"
+    type: "medical"
+  - title: "Menstrual Disorders - Mayo Clinic"
+    url: "https://www.mayoclinic.org/symptoms/menstrual-problems/basics/definition/sym-20050759"
+    type: "medical"
+last_updated: "2026-01-27"

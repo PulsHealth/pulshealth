@@ -1,0 +1,118 @@
+identifier: "HKCategoryTypeIdentifierToothbrushing"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Other"
+human_readable_name: "Toothbrushing"
+short_description: "Records toothbrushing events with duration and timing information."
+icon: "mouth.fill"
+color: "#5AC8FA"
+default_unit: null
+supported_units: null
+unit_description: "Category type - uses time interval (start/end) rather than units"
+aggregation_type: null
+statistics_options: null
+typical_range:
+  frequency: "2-3 times daily"
+  duration_seconds: "120-180"
+  notes: "Dental associations recommend brushing for 2 minutes, twice daily"
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notApplicable"
+    description: "The only valid value for toothbrushing events - indicates a brushing session occurred"
+ios_introduced:
+  version: "13.0"
+  year: 2019
+watchos_introduced:
+  version: "6.0"
+  year: 2019
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone"
+    capability: "Manual entry via Health app or third-party apps"
+  - name: "Apple Watch"
+    capability: "Manual entry or automatic detection via motion sensors"
+  - name: "Smart Toothbrush"
+    capability: "Automatic logging via Bluetooth-connected toothbrushes (Oral-B, Philips Sonicare, Colgate)"
+primary_source: "Smart Toothbrush"
+description: |
+  ## Overview
+
+  HKCategoryTypeIdentifierToothbrushing captures discrete toothbrushing events in HealthKit. Each sample
+  represents a single brushing session, recording when the brushing started and ended. The duration is
+  calculated from the sample's start and end dates, providing insight into brushing habits and compliance
+  with dental hygiene recommendations.
+
+  ## Health Significance
+
+  Oral health is increasingly recognized as connected to systemic health. Poor oral hygiene is associated
+  with:
+
+  - **Cardiovascular disease**: Periodontal bacteria may contribute to atherosclerosis
+  - **Diabetes management**: Gum disease can affect blood glucose control
+  - **Respiratory infections**: Oral bacteria can be aspirated into lungs
+  - **Pregnancy outcomes**: Periodontal disease linked to preterm birth
+  - **Cognitive health**: Emerging research links oral health to dementia risk
+
+  Tracking brushing frequency and duration helps establish baseline hygiene habits and identify patients
+  who may benefit from oral health interventions.
+
+  ## Clinical Interpretation
+
+  When reviewing toothbrushing data, clinicians should consider:
+
+  - **Frequency**: The American Dental Association recommends brushing twice daily. Less frequent brushing
+    may indicate poor compliance or need for patient education.
+
+  - **Duration**: Each session should last approximately 2 minutes (120 seconds). Consistently short
+    sessions may result in inadequate plaque removal.
+
+  - **Timing patterns**: Morning and evening brushing (especially before bed) is most effective. Brushing
+    after meals can help but should wait 30 minutes after acidic foods.
+
+  - **Consistency**: Regular daily patterns suggest established habits; sporadic entries may indicate
+    incomplete tracking or inconsistent hygiene practices.
+
+  ## Caveats & Limitations
+
+  - **Data completeness**: Users may not consistently log brushing events, especially if manually entered.
+    Smart toothbrush data is more reliable but requires compatible devices.
+
+  - **Quality not captured**: The data records that brushing occurred but not the technique, coverage, or
+    effectiveness. Proper brushing technique matters as much as duration.
+
+  - **Device accuracy**: Motion-based detection (like Apple Watch) may have false positives or miss
+    events. Smart toothbrush data depends on Bluetooth connectivity.
+
+  - **Single value category**: All samples use value 0 (notApplicable) - the meaningful data is in the
+    timestamp and duration, not the category value itself.
+
+  - **Supplementary hygiene not tracked**: Flossing, mouthwash use, and interdental cleaning are not
+    captured by this type.
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from the source device or app"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierHandwashing"
+    relationship: "related_hygiene_behavior"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "temporal_correlation"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierToothbrushing"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiertoothbrushing"
+    type: "official"
+  - title: "American Dental Association - Brushing Your Teeth"
+    url: "https://www.ada.org/resources/research/science-and-research-institute/oral-health-topics/brushing-your-teeth"
+    type: "medical"
+  - title: "Oral Health and Systemic Disease - Journal of Dental Research"
+    url: "https://journals.sagepub.com/home/jdr"
+    type: "research"
+last_updated: "2026-01-27"

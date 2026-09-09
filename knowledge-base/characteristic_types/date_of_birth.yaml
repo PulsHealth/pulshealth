@@ -1,0 +1,141 @@
+identifier: "HKCharacteristicTypeIdentifierDateOfBirth"
+source: "HealthKit"
+type: "HKCharacteristicType"
+category: "Characteristics"
+human_readable_name: "Date of Birth"
+short_description: "The user's date of birth as set in their Health profile, used for age-based health calculations."
+icon: "calendar"
+color: "#FF3B30"
+default_unit: null
+supported_units: null
+unit_description: "Date value (NSDateComponents) representing birth date"
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values: null
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "User manually sets value in Health app profile (Settings > Health > Health Details)"
+  - name: "iPad"
+    capability: "User manually sets value in Health app profile"
+primary_source: "User Input"
+description: |
+  ## Overview
+
+  HKCharacteristicTypeIdentifierDateOfBirth stores the user's birth date as configured in their Health
+  app profile. Unlike most HealthKit types, this returns date components (year, month, day) rather
+  than a sample with a value. This read-only characteristic is fundamental to age-based health
+  calculations throughout HealthKit and health apps. The user can only modify this value through the
+  Health app settings.
+
+  ## Health Significance
+
+  Age is one of the most important variables in medicine, affecting virtually every aspect of health:
+
+  - **Vital sign interpretation**: Normal ranges for heart rate, blood pressure, and respiratory rate
+    vary significantly by age
+
+  - **Metabolic calculations**: Basal metabolic rate formulas (Harris-Benedict, Mifflin-St Jeor)
+    require age as a primary variable
+
+  - **Fitness metrics**: VO2max estimates, maximum heart rate calculations (220-age), and exercise
+    recommendations are age-dependent
+
+  - **Disease risk assessment**: Age is a major risk factor for cardiovascular disease, cancer,
+    osteoporosis, cognitive decline, and most chronic conditions
+
+  - **Screening recommendations**: Preventive care guidelines (mammograms, colonoscopies, bone density
+    scans) are triggered by age thresholds
+
+  - **Medication considerations**: Dosing, drug metabolism, and contraindications often depend on age
+
+  - **Developmental context**: For pediatric users, age determines growth chart percentiles and
+    developmental milestone expectations
+
+  - **Reproductive health**: Fertility counseling, menopause management, and pregnancy risk assessment
+    require accurate age
+
+  ## Clinical Interpretation
+
+  When using date of birth data, clinicians should consider:
+
+  - **Age calculation**: Calculate current age from the date of birth. Remember to account for whether
+    the birthday has occurred in the current year.
+
+  - **Age-specific reference ranges**: Apply appropriate reference ranges for the patient's age group:
+    - Pediatric (0-17)
+    - Young adult (18-39)
+    - Middle-aged (40-64)
+    - Older adult (65+)
+
+  - **Chronological vs. biological age**: The calendar age may not reflect physiological age. Some
+    health metrics and biomarkers can estimate "biological age."
+
+  - **Life stage considerations**: Consider relevant life stages (puberty, perimenopause, etc.) based
+    on age and biological sex
+
+  - **Screening eligibility**: Use age to determine which preventive screenings are recommended per
+    clinical guidelines (USPSTF, etc.)
+
+  ## Caveats & Limitations
+
+  - **Self-reported accuracy**: Users manually enter their birth date. While typically accurate, it
+    could be entered incorrectly or intentionally falsified.
+
+  - **Read-only access**: Apps cannot set or modify this value. Only the user can update it through
+    Health app settings.
+
+  - **Not validated**: There's no verification against official records. For clinical or legal
+    purposes, verify through proper identification.
+
+  - **Date components format**: The API returns NSDateComponents, not a Date object. Apps must handle
+    the conversion appropriately, considering calendar and timezone implications.
+
+  - **Privacy sensitivity**: Date of birth combined with other information can be used for
+    identification. Apps should have clear justification for accessing this data.
+
+  - **May not be set**: Users may choose not to enter their birth date. Apps should handle missing
+    values and may need to prompt users or use alternative methods.
+
+  - **Time zone considerations**: Birth dates are stored as date components without time zone, which
+    is appropriate for this use case but means exact age in hours/minutes cannot be calculated.
+
+  - **No historical tracking**: Unlike samples, this is a single static value. There's no audit trail
+    if the user changes it.
+metadata_keys: []
+related_types:
+  - identifier: "HKCharacteristicTypeIdentifierBiologicalSex"
+    relationship: "demographic_characteristic"
+  - identifier: "HKCharacteristicTypeIdentifierBloodType"
+    relationship: "demographic_characteristic"
+  - identifier: "HKQuantityTypeIdentifierHeight"
+    relationship: "growth_tracking"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "growth_tracking"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "age_adjusted_calculation"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "age_based_reference_ranges"
+references:
+  - title: "Apple Developer Documentation - HKCharacteristicTypeIdentifierDateOfBirth"
+    url: "https://developer.apple.com/documentation/healthkit/hkcharacteristictypeidentifierdateofbirth"
+    type: "official"
+  - title: "Apple Developer Documentation - dateOfBirthComponents"
+    url: "https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-dateofbirthcomponents"
+    type: "official"
+  - title: "HealthKit Framework Reference"
+    url: "https://developer.apple.com/documentation/healthkit"
+    type: "official"
+last_updated: "2026-01-27"

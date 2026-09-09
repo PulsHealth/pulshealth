@@ -1,0 +1,196 @@
+identifier: "HKQuantityTypeIdentifierDietaryCalcium"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Calcium"
+short_description: "Calcium intake from food and supplements, essential for bone health and muscle function."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#EBEBF0"
+
+default_unit: "mg"
+supported_units: ["mg", "g", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 2500
+  unit: "mg"
+clinical_ranges:
+  - population: "Children 1-3 years"
+    rda: "700 mg/day"
+  - population: "Children 4-8 years"
+    rda: "1000 mg/day"
+  - population: "Children 9-18 years"
+    rda: "1300 mg/day"
+  - population: "Adult men 19-70 years"
+    rda: "1000 mg/day"
+  - population: "Adult men >70 years"
+    rda: "1200 mg/day"
+  - population: "Adult women 19-50 years"
+    rda: "1000 mg/day"
+  - population: "Adult women >50 years"
+    rda: "1200 mg/day"
+  - population: "Pregnant/lactating women 14-18 years"
+    rda: "1300 mg/day"
+  - population: "Pregnant/lactating women 19-50 years"
+    rda: "1000 mg/day"
+  - population: "Adults 19-50 years"
+    upper_limit: "2500 mg/day"
+  - population: "Adults >50 years"
+    upper_limit: "2000 mg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary calcium from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track calcium intake against personalized targets"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Calcium is the most abundant mineral in the human body, with 99% stored in bones and teeth as hydroxyapatite crystite. The remaining 1% circulates in blood and soft tissues, playing critical roles in cellular signaling, muscle contraction, and blood coagulation. HealthKit tracks dietary calcium intake from both food sources and supplements.
+
+  ## Biological Functions
+  - **Structural**: Primary component of bone mineral matrix; provides skeletal rigidity and serves as calcium reservoir
+  - **Neuromuscular**: Essential for muscle contraction (including cardiac muscle) and nerve impulse transmission
+  - **Signaling**: Second messenger in intracellular signaling cascades; regulates hormone secretion
+  - **Coagulation**: Required cofactor for multiple steps in the blood clotting cascade
+  - **Enzymatic**: Activates numerous enzymes including lipases and ATPases
+  - **Membrane function**: Maintains cell membrane stability and permeability
+
+  ## Health Significance
+  Adequate calcium intake is critical for achieving peak bone mass during growth and minimizing bone loss in later life. Chronic inadequate intake contributes to osteoporosis, increasing fracture risk. Population studies link adequate calcium intake to reduced risk of colorectal cancer and improved blood pressure regulation. Calcium homeostasis involves complex interactions between parathyroid hormone (PTH), vitamin D, and calcitonin.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing calcium intake data:
+  - **Assess against life-stage RDA**: Requirements increase during adolescence, pregnancy, and after age 50 in women
+  - **Evaluate distribution**: Calcium absorption is saturable; spreading intake across meals (400-500 mg per dose) optimizes absorption
+  - **Consider supplement timing**: Calcium carbonate requires stomach acid (take with meals); calcium citrate can be taken any time
+  - **Review vitamin D status**: Vitamin D deficiency impairs calcium absorption regardless of intake
+  - **Identify high-risk patients**: Those with lactose intolerance, vegan diets, eating disorders, or malabsorptive conditions
+
+  ## Deficiency
+  **Hypocalcemia symptoms**:
+  - Neuromuscular: Muscle cramps, tetany, paresthesias, Chvostek's and Trousseau's signs
+  - Cardiac: Prolonged QT interval, arrhythmias
+  - Neurological: Seizures, altered mental status
+
+  **Chronic inadequacy consequences**:
+  - Reduced bone mineral density (osteopenia/osteoporosis)
+  - Increased fracture risk
+  - Rickets (children) or osteomalacia (adults) when combined with vitamin D deficiency
+  - Secondary hyperparathyroidism with elevated bone turnover
+
+  ## Toxicity/Excess
+  **Hypercalcemia symptoms** (typically from excessive supplementation, not food):
+  - Gastrointestinal: Constipation, nausea, abdominal pain
+  - Renal: Nephrolithiasis (kidney stones), reduced kidney function
+  - Neurological: Confusion, fatigue, depression
+  - Cardiac: Shortened QT interval, arrhythmias
+
+  **Chronic excess risks**:
+  - Kidney stones (especially with low fluid intake)
+  - Possible increased cardiovascular risk (controversial; some studies suggest high supplement doses may increase MI risk)
+  - Milk-alkite syndrome with very high intake plus alkali
+  - Interference with iron and zinc absorption
+
+  ## Food Sources
+  **High calcium foods** (>200 mg per serving):
+  - Dairy: Milk, yogurt, cheese (particularly hard cheeses)
+  - Fortified foods: Plant milks, orange juice, cereals
+  - Fish with bones: Sardines, canned salmon
+  - Leafy greens: Collard greens, kale, bok choy (note: spinach has high oxalate reducing bioavailability)
+
+  **Moderate sources** (100-200 mg per serving):
+  - Tofu (calcium-set)
+  - Almonds
+  - White beans
+  - Broccoli
+
+  ## Absorption Factors
+  **Enhancers**:
+  - Vitamin D: Critical for intestinal calcium absorption
+  - Lactose: May enhance absorption in some individuals
+  - Protein: Moderate protein intake supports absorption
+  - Acidic environment: Stomach acid aids dissolution of calcium salts
+
+  **Inhibitors**:
+  - Oxalates: Spinach, rhubarb, beet greens bind calcium
+  - Phytates: Whole grains, legumes reduce bioavailability
+  - Excess sodium: High sodium increases urinary calcium excretion
+  - Caffeine: Modest increase in calcium excretion
+  - Fiber: Very high fiber intake may reduce absorption
+
+  **Bioavailability by source**:
+  - Dairy: ~30% absorbed
+  - Fortified foods: ~30% (similar to dairy)
+  - Kale, broccoli: ~50-60% (low oxalate greens)
+  - Spinach: ~5% (high oxalate)
+
+  ## Special Populations
+  - **Postmenopausal women**: Estrogen decline accelerates bone loss; may need 1200 mg/day with vitamin D
+  - **Adolescents**: Critical window for peak bone mass; many fall short of 1300 mg requirement
+  - **Vegans**: Must rely on fortified foods and low-oxalate greens; absorption from plant sources varies
+  - **Lactose intolerant**: Lactose-free dairy, fortified alternatives, or lactase supplements
+  - **Bariatric surgery patients**: Malabsorption common; may need calcium citrate and higher doses
+  - **Chronic kidney disease**: Complex calcium/phosphorus management; follow nephrology guidance
+  - **Corticosteroid users**: Accelerated bone loss; often need supplementation
+  - **Athletes with low energy availability**: Relative Energy Deficiency in Sport (RED-S) impairs bone health
+
+  ## Drug Interactions
+  - **Bisphosphonates**: Separate calcium by 2+ hours; calcium impairs bisphosphonate absorption
+  - **Thyroid hormones (levothyroxine)**: Calcium reduces absorption; separate by 4 hours
+  - **Tetracyclines/fluoroquinolones**: Form insoluble complexes; separate by 2-4 hours
+  - **Thiazide diuretics**: Reduce urinary calcium excretion; may increase hypercalcemia risk
+  - **Loop diuretics**: Increase urinary calcium loss
+  - **Proton pump inhibitors**: Long-term use may reduce calcium absorption (less stomach acid)
+  - **Corticosteroids**: Decrease calcium absorption, increase excretion; increase requirements
+  - **Anticonvulsants**: Some induce vitamin D metabolism, indirectly affecting calcium status
+
+  ## Caveats & Limitations
+  - HealthKit data reflects self-reported intake, not absorption or serum levels
+  - Database inaccuracies in food logging apps may over/underestimate calcium content
+  - Supplement calcium often logged separately from food; ensure both are captured
+  - Calcium from fortified foods varies by brand; users may not select exact product
+  - Serum calcium is tightly regulated and does not reflect dietary adequacy; 24-hour urine calcium or bone density testing provides better status assessment
+  - Food timing relative to supplements affects total absorption but is not captured
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing calcium"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminD"
+    relationship: "Vitamin D is essential for calcium absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryPhosphorus"
+    relationship: "Phosphorus works with calcium in bone mineralization; optimal ratio is important"
+  - identifier: "HKQuantityTypeIdentifierDietaryMagnesium"
+    relationship: "Magnesium is required for PTH secretion and vitamin D activation affecting calcium"
+  - identifier: "HKQuantityTypeIdentifierDietarySodium"
+    relationship: "High sodium intake increases urinary calcium excretion"
+  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
+    relationship: "Protein intake affects calcium balance and bone health"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryCalcium"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarycalcium"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Calcium Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/"
+    type: "medical"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Calcium and Vitamin D"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK56070/"
+    type: "research"
+  - title: "Endocrine Society - Evaluation and Treatment of Hypoparathyroidism"
+    url: "https://academic.oup.com/jcem/article/101/6/2273/2804873"
+    type: "medical"
+last_updated: "2026-01-27"

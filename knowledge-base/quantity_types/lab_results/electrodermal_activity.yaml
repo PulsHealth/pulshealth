@@ -1,0 +1,127 @@
+identifier: "HKQuantityTypeIdentifierElectrodermalActivity"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Lab and Test Results"
+human_readable_name: "Electrodermal Activity"
+short_description: "Skin conductance measurement indicating sympathetic nervous system arousal and stress response"
+icon: "waveform.path"
+color: "#5856D6"
+default_unit: "mcS"
+supported_units:
+  - "mcS"
+  - "S"
+unit_description: "Microsiemens (mcS) measure electrical conductance of the skin, which increases with sweat gland activity"
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 0.1
+  max: 20.0
+  unit: "mcS"
+  notes: "Baseline varies significantly between individuals; relative changes are more clinically meaningful than absolute values"
+clinical_ranges:
+  - population: "General Adults"
+    normal: "1-20 mcS baseline, with stress responses showing 0.1-5 mcS increases above baseline"
+  - population: "Relaxed State"
+    normal: "0.5-5 mcS typically indicates low arousal or relaxation"
+  - population: "High Arousal/Stress"
+    normal: "Rapid increases of 2-10 mcS above baseline indicate sympathetic activation"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Wearable Sensors"
+    capability: "Continuous EDA monitoring via skin contact electrodes"
+    examples:
+      - "Empatica E4"
+      - "Garmin Vivosmart 4"
+      - "Fitbit Sense"
+  - name: "Research Devices"
+    capability: "High-precision galvanic skin response measurement"
+    examples:
+      - "Shimmer GSR+"
+      - "BioPac Systems"
+  - name: "Consumer Wellness Devices"
+    capability: "Stress and relaxation tracking"
+    examples:
+      - "Whoop 4.0"
+      - "Oura Ring Gen 3"
+primary_source: "Wearable biometric sensors"
+description: |
+  ## Overview
+  Electrodermal activity (EDA), also known as galvanic skin response (GSR) or skin conductance, measures the electrical conductivity of the skin. This metric reflects sweat gland activity controlled by the sympathetic nervous system, making it a reliable indicator of physiological arousal, stress, and emotional state.
+
+  ## How It's Measured
+  EDA is measured by passing a small, imperceptible electrical current between two electrodes placed on the skin surface. The conductance between these electrodes changes based on sweat gland activity:
+  - **Tonic level (SCL)**: The baseline skin conductance level that changes slowly over time
+  - **Phasic responses (SCR)**: Rapid, transient increases in conductance in response to specific stimuli
+  - Measurement locations include fingers, palms, and wrists, with palms being most sensitive
+  - Consumer devices typically sample at 1-4 Hz, while research devices may sample at 10-100 Hz
+
+  ## Health Significance
+  EDA provides valuable insights into autonomic nervous system function:
+  - **Stress monitoring**: Elevated or reactive EDA indicates sympathetic nervous system activation
+  - **Anxiety assessment**: Chronic elevated EDA may suggest persistent anxiety states
+  - **Sleep quality**: EDA patterns during sleep correlate with sleep stage transitions
+  - **Emotional regulation**: Blunted EDA responses may indicate emotional dysregulation
+  - **Biofeedback therapy**: Used in stress management and anxiety treatment protocols
+  - **PTSD screening**: Altered EDA patterns observed in trauma-related conditions
+
+  ## Clinical Interpretation Guidelines
+  When interpreting EDA data for clinical purposes:
+  1. **Establish individual baseline**: EDA varies significantly between individuals; track changes from personal baseline
+  2. **Consider context**: Environmental temperature, hydration, and physical activity affect readings
+  3. **Look for patterns**: Chronic elevation vs. acute spikes tell different stories
+  4. **Time correlation**: Correlate EDA changes with reported stressors, activities, or symptoms
+  5. **Recovery metrics**: Time to return to baseline after stress events indicates autonomic resilience
+  6. **Medication effects**: Beta-blockers and anxiolytics can reduce EDA responses
+
+  ## Caveats & Limitations
+  - **High individual variability**: Absolute values differ greatly between people; focus on relative changes
+  - **Environmental sensitivity**: Temperature, humidity, and hydration significantly affect readings
+  - **Motion artifacts**: Physical activity can create false readings on consumer devices
+  - **Electrode placement**: Different body locations yield different absolute values
+  - **Habituation**: Repeated stimuli produce diminishing EDA responses
+  - **Not diagnostic**: EDA alone cannot diagnose conditions; it's a supplementary indicator
+  - **Consumer device accuracy**: Clinical-grade devices are more reliable than consumer wearables
+
+  ## Additional Notes
+  EDA is increasingly used in digital health applications for stress management and mental wellness tracking. When combined with heart rate variability (HRV) and other autonomic markers, it provides a more complete picture of stress and recovery states. For clinical applications, consider that EDA data from consumer wearables may not meet research-grade standards but can still identify meaningful trends over time.
+metadata_keys:
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Indicates which side of the body the sensor was worn on"
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the device that recorded the measurement"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier for syncing data across devices"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "Complementary autonomic nervous system indicator; HRV and EDA together provide comprehensive stress assessment"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Heart rate increases often accompany EDA spikes during stress responses"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Respiratory patterns change with autonomic arousal measured by EDA"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "EDA patterns correlate with sleep stages and sleep quality"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierElectrodermalActivity"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierelectrodermalactivity"
+    type: "official"
+  - title: "Electrodermal Activity in Psychological Research"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5624990/"
+    type: "research"
+  - title: "Guidelines for Electrodermal Measurement"
+    url: "https://www.frontiersin.org/articles/10.3389/fpsyg.2017.00451/full"
+    type: "research"
+last_updated: "2026-01-27"

@@ -1,0 +1,157 @@
+identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Lab and Test Results"
+human_readable_name: "Peak Expiratory Flow Rate"
+short_description: "Maximum speed of exhalation measuring airway patency, essential for asthma self-monitoring and action plan guidance"
+icon: "lungs.fill"
+color: "#5AC8FA"
+default_unit: "L/min"
+supported_units:
+  - "L/min"
+  - "L/s"
+  - "mL/s"
+unit_description: "Liters per minute (L/min) measures the maximum airflow velocity during forced exhalation"
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 200
+  max: 700
+  unit: "L/min"
+  notes: "Highly variable by age, sex, and height; personal best is the key reference value"
+clinical_ranges:
+  - population: "Adult Males"
+    normal: "400-700 L/min; varies significantly with height and age"
+  - population: "Adult Females"
+    normal: "300-500 L/min; varies significantly with height and age"
+  - population: "Green Zone (Asthma Action Plan)"
+    normal: "80-100% of personal best - indicates good control"
+  - population: "Yellow Zone (Asthma Action Plan)"
+    normal: "50-79% of personal best - indicates caution, increase medication"
+  - population: "Red Zone (Asthma Action Plan)"
+    normal: "<50% of personal best - medical emergency, seek immediate care"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Personal Peak Flow Meters"
+    capability: "Simple mechanical measurement of peak expiratory flow"
+    examples:
+      - "Vitalograph asma-1"
+      - "Clement Clarke Mini-Wright"
+      - "Philips Personal Best"
+  - name: "Digital Peak Flow Meters"
+    capability: "Electronic PEF measurement with smartphone connectivity"
+    examples:
+      - "Smart Peak Flow"
+      - "MIR Smart One"
+      - "Nuvoair Air Next"
+  - name: "Combination Spirometry Devices"
+    capability: "Full spirometry including PEF measurement"
+    examples:
+      - "Propeller Health Peak Flow"
+      - "Cohero Health HeroTracker"
+primary_source: "Peak flow meters"
+description: |
+  ## Overview
+  Peak Expiratory Flow Rate (PEFR or PEF) measures the maximum speed at which air can be forcefully exhaled from the lungs. It provides a simple, accessible assessment of large airway patency and is a cornerstone of asthma self-management. Regular PEF monitoring helps patients recognize early signs of airway narrowing before symptoms become severe.
+
+  ## How It's Measured
+  PEFR measurement requires proper technique for reliable results:
+  - Patient stands upright (or sits if unable to stand)
+  - Takes a maximal deep breath to total lung capacity
+  - Places lips tightly around the mouthpiece
+  - Exhales as hard and fast as possible in a short, sharp burst
+  - Records the highest reading from three attempts
+  - Best performed at the same time daily (typically morning before bronchodilator)
+  - Personal best established during a period of good control guides interpretation
+
+  ## Health Significance
+  PEFR monitoring serves multiple clinical purposes:
+  - **Asthma action plan guidance**: Objective trigger for medication adjustments
+  - **Early warning system**: Detects airway narrowing before symptoms appear
+  - **Treatment response assessment**: Monitors effectiveness of medication changes
+  - **Trigger identification**: Correlates environmental exposures with airway changes
+  - **Diurnal variation assessment**: Morning dip >20% suggests poor control
+  - **Exercise-induced bronchoconstriction**: Pre/post exercise measurements diagnostic
+
+  ## Clinical Interpretation Guidelines
+  When using PEFR for clinical management:
+  1. **Establish personal best**:
+     - Measure twice daily for 2-3 weeks when asthma is well-controlled
+     - Personal best is the highest reading achieved during this period
+     - Recalculate personal best after growth (children) or significant treatment changes
+  2. **Asthma Action Plan zones**:
+     - **Green (80-100% personal best)**: Maintain current treatment
+     - **Yellow (50-79% personal best)**: Increase controller medication per plan
+     - **Red (<50% personal best)**: Medical emergency; use rescue medication and seek immediate care
+  3. **Variability assessment**:
+     - Calculate diurnal variability: (Evening PEF - Morning PEF) / Average PEF x 100
+     - >20% variability suggests inadequate asthma control
+     - Day-to-day variability >10% also indicates suboptimal control
+  4. **Response to bronchodilator**:
+     - >15% improvement after beta-agonist suggests reversible airflow obstruction
+     - Document pre- and post-bronchodilator values
+  5. **Trend analysis**:
+     - Gradual decline over days may predict exacerbation 2-3 days in advance
+     - Look for patterns correlating with seasons, activities, or exposures
+  6. **Age-appropriate expectations**:
+     - Children's values increase with growth; update personal best regularly
+     - Elderly patients may have lower absolute values
+
+  ## Caveats & Limitations
+  - **Effort-dependent**: Poor technique yields falsely low values
+  - **Large airway focus**: May be normal despite significant small airway disease
+  - **Not interchangeable with FEV1**: PEFR and FEV1 measure different aspects of lung function
+  - **Device variability**: Different peak flow meters may yield different absolute values
+  - **Learning curve**: Patients need training for consistent technique
+  - **Limited in severe obstruction**: Very low values may be difficult to interpret
+  - **Not useful for all patients**: Some patients poorly perceive airway changes regardless of PEF
+  - **Personal best requirement**: Population-based predictions less useful than individual baseline
+
+  ## Additional Notes
+  PEFR monitoring is most valuable when integrated into a written asthma action plan developed collaboratively with the patient. For digital health applications, trend visualization and automatic zone classification enhance patient engagement. Consider that some modern guidelines emphasize symptom-based management over PEFR monitoring, but PEF remains valuable for poor perceivers, severe asthma, and exercise-induced symptoms. Encourage patients to keep their peak flow meter in a consistent location to promote adherence to monitoring routines.
+metadata_keys:
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the peak flow meter device"
+  - key: "HKMetadataKeyWasTakenInLab"
+    description: "Indicates if measurement was performed in a clinical setting"
+  - key: "HKMetadataKeyPersonalBestPEF"
+    description: "Patient's established personal best PEFR value for comparison"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
+    relationship: "FEV1 provides more comprehensive assessment of airflow limitation than PEFR alone"
+  - identifier: "HKQuantityTypeIdentifierForcedVitalCapacity"
+    relationship: "FVC complements PEFR by measuring total lung capacity available for exhalation"
+  - identifier: "HKQuantityTypeIdentifierInhalerUsage"
+    relationship: "Inhaler use patterns help contextualize PEFR values and treatment burden"
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "Severe PEFR reduction may be accompanied by decreased oxygen saturation"
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Increased respiratory rate may accompany low PEFR values during exacerbations"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierpeakexpiratoryflowrate"
+    type: "official"
+  - title: "GINA 2023 - Global Strategy for Asthma Management"
+    url: "https://ginasthma.org/gina-reports/"
+    type: "medical"
+  - title: "National Asthma Education and Prevention Program Guidelines"
+    url: "https://www.nhlbi.nih.gov/health-topics/asthma-management-guidelines"
+    type: "medical"
+  - title: "Peak Expiratory Flow Monitoring in Asthma Management"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2679800/"
+    type: "research"
+last_updated: "2026-01-27"

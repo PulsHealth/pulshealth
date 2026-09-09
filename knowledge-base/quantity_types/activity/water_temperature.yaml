@@ -1,0 +1,297 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Water Temperature
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierWaterTemperature"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Water Temperature"
+short_description: "Measures the temperature of the water during swimming or diving activities."
+
+# --- APPLE HEALTH UI ---
+icon: "thermometer.variable"
+color: "#5AC8FA"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "degC"
+supported_units:
+  - "degC"
+  - "degF"
+  - "K"
+unit_description: "Temperature of water measured during aquatic activities. Default unit is degrees Celsius. Fahrenheit commonly used in US contexts."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 0
+  max: 40
+  unit: "degC"
+  notes: "Apple Watch Ultra operates in water temperatures from 0°C to 40°C. Typical recreational water temperatures range from 15-30°C. Cold water (<15°C) and very warm water (>35°C) present specific physiological considerations."
+
+clinical_ranges:
+  - population: "Water Temperature Classifications"
+    cold: "<15°C (<59°F)"
+    cool: "15-20°C (59-68°F)"
+    comfortable: "20-28°C (68-82°F)"
+    warm: "28-35°C (82-95°F)"
+    hot: ">35°C (>95°F)"
+  - population: "Competitive Swimming Pool Standards"
+    fina_competition: "25-28°C (77-82°F)"
+    training: "26-28°C (79-82°F)"
+    recreational: "27-29°C (81-84°F)"
+  - population: "Open Water Conditions"
+    hypothermia_risk: "<15°C without wetsuit"
+    cold_water_swimming: "15-20°C"
+    moderate: "20-25°C"
+    tropical: ">25°C"
+  - population: "Diving Considerations"
+    wetsuit_recommended: "<24°C (75°F)"
+    tropical_diving: "26-30°C (79-86°F)"
+    thermocline_indicator: "Rapid temperature drop at depth"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "16.0"
+  year: 2022
+  notes: "Introduced with Apple Watch Ultra featuring built-in water temperature sensor"
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+  notes: "Apple Watch Ultra includes dedicated water temperature sensor for dive and swim logging"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch Ultra"
+    capability: "Built-in water temperature sensor. Measures ambient water temperature during swimming and diving activities. Sensor located on caseback for direct water contact."
+    accuracy: "Temperature sensor provides accurate readings when watch is submerged. Surface contact required for accurate measurement."
+    examples: ["Apple Watch Ultra", "Apple Watch Ultra 2"]
+  - name: "Dive computers"
+    capability: "Most dive computers include water temperature sensors and can export data to HealthKit via companion apps."
+    examples: ["Garmin Descent", "Suunto D5", "Shearwater Peregrine"]
+  - name: "Third-party swim trackers"
+    capability: "Some advanced swim trackers include water temperature sensors."
+    examples: ["Garmin Swim 2"]
+primary_source: "Apple Watch Ultra with water temperature sensor"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Water Temperature measures the temperature of water during aquatic activities such as swimming and diving. This metric was introduced with Apple Watch Ultra in 2022, which features a dedicated water temperature sensor on the caseback. Water temperature is essential for dive logging, wetsuit selection, and understanding environmental conditions that affect both comfort and safety during water activities.
+
+  For health consultants, water temperature data provides context for evaluating cold water exposure risks, thermal stress during exercise, and dive safety planning. It is particularly relevant when assessing hypothermia risk or heat-related concerns in aquatic activities.
+
+  ## How It's Measured
+  Apple Watch Ultra uses a dedicated temperature sensor for water temperature measurement:
+
+  **Sensor Technology:**
+  - Temperature sensor located on caseback of Apple Watch Ultra
+  - Direct contact with water provides accurate ambient water temperature
+  - Sensor activated when watch detects submersion
+  - Measurements recorded throughout aquatic activity
+
+  **Measurement Conditions:**
+  - Requires full submersion for accurate reading
+  - Surface swimming may show fluctuating readings
+  - Diving provides consistent temperature at depth
+  - Thermoclines (temperature layers) visible in dive data
+
+  **Recording Context:**
+  - Temperature logged continuously during swim/dive activities
+  - Depth app displays real-time water temperature
+  - Dive logs include temperature profile by depth
+  - Enables identification of thermoclines during descent
+
+  **Accuracy Considerations:**
+  - Most accurate when watch is fully submerged
+  - Wrist body heat may affect surface readings
+  - Requires stabilization time after entering water
+  - Best readings during active swimming or at depth
+
+  ## Health Significance
+  Water temperature significantly affects physiology and safety during aquatic activities:
+
+  **Cold Water Risks:**
+  Cold water exposure presents several health hazards:
+  - **Cold shock response:** Sudden immersion in cold water (<15°C) triggers gasp reflex, hyperventilation, and cardiac stress
+  - **Hypothermia:** Prolonged cold exposure leads to dangerous core temperature drop
+  - **Swimming failure:** Cold water impairs muscle function, leading to drowning risk
+  - **Afterdrop:** Core temperature continues falling after exiting cold water
+
+  **Cold Water Swimming Guidelines:**
+  - Below 10°C: Extreme risk; requires acclimatization and supervision
+  - 10-15°C: High risk; limit exposure time, experienced swimmers only
+  - 15-20°C: Moderate risk; wetsuit recommended for extended swims
+  - Above 20°C: Lower risk; still monitor for individual tolerance
+
+  **Warm Water Considerations:**
+  - Hot water (>35°C) can cause heat stress during exercise
+  - Warm pools reduce cooling efficiency during intense training
+  - Hyperthermia risk in warm water with vigorous exercise
+  - Therapeutic warm water (32-36°C) used for rehabilitation
+
+  **Diving-Specific Significance:**
+  - Water temperature affects air consumption (cold increases rate)
+  - Thermal protection (wetsuit/drysuit) selection depends on temperature
+  - Thermoclines indicate density layers that affect buoyancy
+  - Cold water diving increases nitrogen absorption risk (debated)
+
+  ## Clinical Interpretation Guidelines
+
+  ### Cold Water Exposure Assessment
+  Evaluate cold water swimming data for safety:
+
+  **Exposure Time by Temperature:**
+  - **<10°C:** Maximum 2-5 minutes without thermal protection for unacclimatized
+  - **10-15°C:** 10-20 minutes maximum for acclimatized swimmers
+  - **15-20°C:** Extended swimming possible with proper preparation
+  - **>20°C:** Standard swimming; monitor for individual variation
+
+  ### Hypothermia Risk Factors
+  Consider patient-specific factors:
+  - Body composition (lower body fat increases risk)
+  - Age (elderly and children more vulnerable)
+  - Fitness level (exhaustion accelerates heat loss)
+  - Alcohol use (vasodilation increases heat loss)
+  - Medical conditions (thyroid, diabetes, cardiovascular)
+
+  ### Post-Exposure Monitoring
+  After cold water exposure:
+  - Watch for afterdrop (delayed core temperature decline)
+  - Rewarming should be gradual (not hot showers immediately)
+  - Monitor for delayed symptoms (confusion, extreme fatigue)
+  - Extended shivering indicates significant cold stress
+
+  ### Diving Context Interpretation
+  For dive logs:
+  - Temperature drop with depth indicates thermocline
+  - Cold dives may require decompression conservatism
+  - Verify appropriate thermal protection was used
+  - Consider temperature when evaluating air consumption
+
+  ## Caveats & Limitations
+
+  ### Measurement Limitations
+  - **Surface accuracy:** Wrist body heat affects readings near surface
+  - **Entry readings:** Temperature needs time to stabilize after submersion
+  - **Single point:** Measures water at watch location only
+  - **Not body temperature:** Does not measure user's core or skin temperature
+
+  ### Device Limitations
+  - **Operating range:** Apple Watch Ultra rated for 0-40°C water
+  - **Extreme temperatures:** May not function properly outside rated range
+  - **Requires submersion:** Not accurate for surface or partial submersion
+
+  ### Interpretation Limitations
+  - **Individual tolerance varies:** Same temperature affects people differently
+  - **Acclimatization matters:** Experienced cold water swimmers tolerate more
+  - **No physiological data:** Temperature alone does not indicate body's response
+  - **Context needed:** Water temperature significance depends on activity duration and intensity
+
+  ### What Water Temperature Cannot Tell You
+  - User's core body temperature
+  - Skin temperature or peripheral circulation
+  - Individual cold tolerance or acclimatization level
+  - Wetsuit effectiveness for the user
+  - Whether the user experienced cold stress symptoms
+
+  ## Additional Notes
+
+  **For Health Consultants:**
+  When reviewing water temperature data:
+  1. Correlate with activity duration for exposure assessment
+  2. Consider depth profile for diving (thermocline identification)
+  3. Factor in thermal protection used (wetsuit, drysuit)
+  4. Note seasonal and geographic patterns in swim/dive locations
+  5. Evaluate in context of patient's cold tolerance and health status
+
+  **Thermal Protection Guidelines:**
+  Wetsuit recommendations by water temperature:
+  - 27°C+: Rashguard or no wetsuit
+  - 24-27°C: 2mm shorty or rashguard
+  - 20-24°C: 3mm full wetsuit
+  - 16-20°C: 5mm full wetsuit
+  - 12-16°C: 7mm wetsuit or drysuit
+  - Below 12°C: Drysuit recommended
+
+  **Cold Water Swimming Considerations:**
+  For patients interested in cold water swimming:
+  - Gradual acclimatization essential (start with short exposures)
+  - Never swim alone in cold water
+  - Know the signs of hypothermia and cold incapacitation
+  - Have warm clothing and warm drink ready post-swim
+  - Medical clearance recommended for cardiac patients
+
+  **Integration with Dive Logs:**
+  Complete dive data includes:
+  - Water temperature profile by depth
+  - Thermocline depth identification
+  - Maximum and average water temperature
+  - Correlation with depth and time data
+  - Environmental context for dive planning
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyWaterTemperatureAlgorithmVersion"
+    description: "Version of the algorithm used to process water temperature sensor data."
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier for the sample from the originating source."
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used for syncing data across devices."
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution."
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierUnderwaterDepth"
+    relationship: "Complementary - Depth and temperature together reveal thermoclines and dive conditions"
+  - identifier: "HKQuantityTypeIdentifierDistanceSwimming"
+    relationship: "Related - Swimming distance in context of water temperature indicates cold exposure"
+  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
+    relationship: "Related - Core body temperature may be affected by water temperature exposure"
+  - identifier: "HKQuantityTypeIdentifierAppleSleepingWristTemperature"
+    relationship: "Different measurement - Wrist temperature during sleep vs. ambient water temperature"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - waterTemperature"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/watertemperature"
+    type: "official"
+  - title: "Apple Watch Ultra Technical Specifications"
+    url: "https://www.apple.com/apple-watch-ultra/specs/"
+    type: "official"
+  - title: "Cold Water Safety - International Life Saving Federation"
+    url: "https://www.ilsf.org/drowning-prevention/cold-water-safety/"
+    type: "medical"
+  - title: "FINA Pool Temperature Standards"
+    url: "https://www.fina.org/swimming/facilities"
+    type: "research"
+  - title: "Divers Alert Network - Thermal Protection"
+    url: "https://dan.org/health-medicine/health-resources/diseases-conditions/"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - Apple Watch Ultra (2022) first Apple device with water temperature sensor
+  - Operating range: 0-40°C water temperature
+  - Temperature sensor on caseback for direct water contact
+  - Cold shock response occurs below ~15°C for unacclimatized individuals
+  - Hypothermia risk increases significantly below 15°C without thermal protection
+  - FINA competition pool standard: 25-28°C
+  - Thermoclines visible in dive data as rapid temperature changes with depth

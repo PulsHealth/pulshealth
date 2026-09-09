@@ -1,0 +1,165 @@
+identifier: "HKQuantityTypeIdentifierNumberOfTimesFallen"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Lab and Test Results"
+human_readable_name: "Number of Times Fallen"
+short_description: "Cumulative count of detected fall events for fall risk assessment and elderly health monitoring"
+icon: "figure.fall"
+color: "#FF3B30"
+default_unit: "count"
+supported_units:
+  - "count"
+unit_description: "Count represents the number of fall events detected or recorded"
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+typical_range:
+  min: 0
+  max: 2
+  unit: "count"
+  notes: "Per year for community-dwelling adults; any fall warrants clinical evaluation in older adults"
+clinical_ranges:
+  - population: "Community-Dwelling Adults 65+"
+    normal: "0 falls per year is the goal; 1 in 4 older adults falls each year in the US"
+  - population: "High Fall Risk Elderly"
+    normal: "Recurrent falls (2+ per year) indicate significantly elevated risk"
+  - population: "Nursing Home Residents"
+    normal: "Average 1.5 falls per bed per year; higher rates require intervention"
+  - population: "Hospitalized Patients"
+    normal: "Target: 0 falls; any fall is a reportable safety event"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "4.0"
+  year: 2017
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Automatic fall detection using accelerometer and gyroscope with emergency SOS"
+    examples:
+      - "Apple Watch Series 4+"
+      - "Apple Watch SE"
+      - "Apple Watch Ultra"
+  - name: "Personal Emergency Response Systems (PERS)"
+    capability: "Fall detection with emergency alert functionality"
+    examples:
+      - "Medical Guardian"
+      - "Life Alert"
+      - "Philips Lifeline"
+  - name: "Research-Grade Wearables"
+    capability: "Validated fall detection algorithms for clinical studies"
+    examples:
+      - "Axivity AX3"
+      - "ActiGraph"
+  - name: "Smart Home Sensors"
+    capability: "Ambient fall detection without wearable requirement"
+    examples:
+      - "Vayyar Care"
+      - "Essence SmartCare"
+primary_source: "Wearable fall detection devices"
+description: |
+  ## Overview
+  Number of Times Fallen tracks detected fall events, providing critical data for fall risk assessment and intervention planning. Falls are a leading cause of injury, disability, and death among older adults, making this metric essential for geriatric care, rehabilitation, and preventive medicine. Both device-detected falls and manually logged events contribute to this health record.
+
+  ## How It's Measured
+  Fall detection utilizes multiple sensing modalities:
+  - **Accelerometer analysis**: Detects sudden changes in velocity consistent with falls
+  - **Gyroscope data**: Captures rotational movement during fall events
+  - **Barometric altimeter**: Identifies rapid altitude changes (e.g., sudden drop to floor level)
+  - **Machine learning algorithms**: Distinguish falls from other activities (sitting down quickly, dropping device)
+  - Apple Watch fall detection:
+    - Activated automatically for users 55+ or manually enabled
+    - Detects hard falls followed by immobility
+    - Prompts user confirmation or auto-calls emergency services after 60 seconds of unresponsiveness
+  - Manual logging available for falls not detected by devices
+
+  ## Health Significance
+  Fall data informs multiple aspects of patient care:
+  - **Fall risk stratification**: History of falls is the strongest predictor of future falls
+  - **Medication review trigger**: Falls may indicate adverse drug effects (sedatives, antihypertensives)
+  - **Mobility assessment need**: Prompts gait, balance, and strength evaluation
+  - **Home safety intervention**: Identifies need for environmental modifications
+  - **Care planning**: Influences decisions about living situation and support needs
+  - **Fracture risk assessment**: Falls combined with osteoporosis indicate high fracture risk
+  - **Neurological evaluation**: Unexplained falls may suggest underlying conditions
+
+  ## Clinical Interpretation Guidelines
+  When using fall data for clinical decision-making:
+  1. **Fall frequency assessment**:
+     - Single fall: Conduct basic fall risk evaluation
+     - Recurrent falls (2+ in 12 months): Requires comprehensive multifactorial assessment
+     - Injurious fall: Warrants immediate evaluation regardless of frequency
+  2. **Circumstances analysis**:
+     - Time of day patterns (nocturnal = possible nocturia, orthostasis)
+     - Location patterns (bathroom = grab bar need; stairs = rail assessment)
+     - Activity at time of fall (positional = orthostatic; turning = vestibular)
+  3. **STEADI framework** (CDC):
+     - Screen: Ask about falls annually
+     - Assess: Review fall history, medications, gait/balance
+     - Intervene: Address modifiable risk factors
+  4. **Medication reconciliation**:
+     - Review fall-risk-increasing drugs (FRIDs): benzodiazepines, opioids, antihypertensives
+     - Consider deprescribing where appropriate
+  5. **Physical assessment priorities**:
+     - Timed Up and Go (TUG) test
+     - 30-Second Chair Stand
+     - 4-Stage Balance Test
+     - Visual acuity and hearing screening
+  6. **Red flags requiring urgent evaluation**:
+     - Fall with head injury
+     - Loss of consciousness
+     - New neurological symptoms
+     - Fall without clear mechanical cause
+
+  ## Caveats & Limitations
+  - **Detection accuracy varies**: Not all falls are detected; not all detections are true falls
+  - **False positives**: High-impact activities may trigger false fall alerts
+  - **Wearable requirement**: Falls occurring without device present are not captured
+  - **Underreporting tendency**: Patients may not log or report falls due to embarrassment or fear
+  - **Severity not captured**: Count does not distinguish minor stumbles from injurious falls
+  - **Device positioning**: Fall detection works best when worn on wrist
+  - **Algorithm limitations**: Slow or cushioned falls may not trigger detection
+  - **Population calibration**: Algorithms optimized for older adults may differ for younger populations
+
+  ## Additional Notes
+  Falls data should be integrated with gait analysis metrics (walking steadiness, step length variability) when available for comprehensive mobility assessment. For clinical consultations, inquire about falls not captured by devices, as many patients do not report falls unless specifically asked. Apple Watch fall detection data can provide objective confirmation of fall events that patients may minimize or forget. Consider recommending proactive fall detection enablement for at-risk patients who may not meet the age threshold for automatic activation.
+metadata_keys:
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the device that detected the fall event"
+  - key: "HKMetadataKeyFallDetectionEventType"
+    description: "Classification of the fall event type if available"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier for syncing data across devices"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Reduced walking speed is associated with increased fall risk"
+  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
+    relationship: "Shortened step length may indicate gait instability and fall risk"
+  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
+    relationship: "Gait asymmetry can predict fall risk and underlying mobility issues"
+  - identifier: "HKQuantityTypeIdentifierWalkingSteadiness"
+    relationship: "Walking steadiness directly measures balance and stability during ambulation"
+  - identifier: "HKQuantityTypeIdentifierStairAscentSpeed"
+    relationship: "Reduced stair navigation ability correlates with fall risk"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierNumberOfTimesFallen"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifiernumberoftimesfallen"
+    type: "official"
+  - title: "Apple Watch Fall Detection"
+    url: "https://support.apple.com/en-us/HT208944"
+    type: "official"
+  - title: "CDC STEADI - Stopping Elderly Accidents, Deaths & Injuries"
+    url: "https://www.cdc.gov/steadi/"
+    type: "medical"
+  - title: "AGS/BGS Clinical Practice Guideline: Prevention of Falls in Older Persons"
+    url: "https://geriatricscareonline.org/ProductAbstract/updated-ags-bgs-clinical-practice-guideline-for-prevention-of-falls-in-older-persons/CL014"
+    type: "medical"
+  - title: "Wearable Sensors for Fall Detection: A Review"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7796433/"
+    type: "research"
+last_updated: "2026-01-27"

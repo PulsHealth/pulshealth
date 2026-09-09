@@ -1,0 +1,153 @@
+identifier: "HKQuantityTypeIdentifierWalkingStepLength"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Mobility"
+human_readable_name: "Walking Step Length"
+short_description: "Average distance covered with each step during walking, a fundamental gait parameter."
+icon: "figure.walk"
+color: "#FF9500"
+default_unit: "m"
+supported_units:
+  - "m"
+  - "cm"
+  - "in"
+  - "ft"
+unit_description: "Meters (m) or centimeters (cm) representing the distance from heel strike of one foot to heel strike of the same foot's next step."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 0.4
+  max: 0.9
+  unit: "m"
+  notes: "Varies significantly with height; typical range is 65-85 cm for average height adults."
+clinical_ranges:
+  - population: "Adults (height-normalized)"
+    normal: "0.40-0.50 x height"
+    concerning: "<0.35 x height"
+  - population: "Adults 20-40"
+    normal: "70-85 cm"
+    concerning: "<60 cm"
+  - population: "Adults 60-70"
+    normal: "60-75 cm"
+    concerning: "<50 cm"
+  - population: "Adults 80+"
+    normal: "50-65 cm"
+    concerning: "<40 cm"
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone"
+    capability: "Motion sensors estimate step length during walking"
+  - name: "Apple Watch"
+    capability: "Continuous step length analysis during daily activities"
+primary_source: "Apple Watch or iPhone motion sensors"
+description: |
+  ## Overview
+  Walking step length is the distance covered from the initial contact of one foot to the initial contact of the same foot on the subsequent step. It represents a stride length divided by two. This fundamental gait parameter, combined with cadence (steps per minute), determines walking speed. Step length reflects lower extremity function, balance confidence, and overall mobility status.
+
+  ## How It's Measured
+  Apple devices use accelerometer and gyroscope data to estimate step length through analysis of:
+  - Vertical displacement patterns during gait
+  - Acceleration profiles during each step
+  - Integration with known user height for calibration
+
+  The measurement represents average step length during walking bouts rather than individual step measurements. Accuracy improves with consistent device placement and adequate walking duration.
+
+  ## Health Significance
+  Step length is clinically relevant because:
+  - **Gait efficiency**: Optimal step length maximizes energy efficiency
+  - **Neurological function**: Reduced step length is early sign of Parkinson's, normal pressure hydrocephalus
+  - **Fall risk**: Short, shuffling steps increase stumbling risk
+  - **Functional capacity**: Relates directly to walking speed and independence
+  - **Pain indicator**: Hip, knee, or back pain typically reduces step length
+
+  ## Clinical Interpretation Guidelines
+  Because step length varies with height, normalized interpretation is essential:
+  - **Normal**: Step length approximately 40-50% of body height
+  - **Mild reduction**: 35-40% of body height
+  - **Moderate reduction**: 30-35% of body height
+  - **Severe reduction**: <30% of body height
+
+  Absolute values (for average height ~170 cm):
+  - **>70 cm**: Normal step length
+  - **60-70 cm**: Mildly reduced; monitor for changes
+  - **50-60 cm**: Moderately reduced; likely functional impact
+  - **<50 cm**: Severely reduced; significant gait impairment
+
+  Characteristic patterns:
+  - **Parkinson's disease**: Progressive step length reduction, shuffling gait
+  - **Normal pressure hydrocephalus**: "Magnetic gait" with very short steps
+  - **Hip osteoarthritis**: Reduced step length on affected side
+  - **Peripheral neuropathy**: Cautious, shortened steps due to sensory loss
+
+  ## Age-Adjusted Norms
+  Step length decreases with age, approximately 1-2% per decade after age 50:
+  - Ages 20-40: 75-85 cm (average height)
+  - Ages 40-60: 70-80 cm
+  - Ages 60-70: 65-75 cm
+  - Ages 70-80: 55-70 cm
+  - Ages 80+: 50-65 cm
+
+  Height-normalized values (step length/height ratio):
+  - Ages 20-60: 0.42-0.48
+  - Ages 60-80: 0.38-0.45
+  - Ages 80+: 0.32-0.40
+
+  ## Caveats & Limitations
+  - Height must be accurately recorded for proper interpretation
+  - Footwear affects step length (heels, restrictive shoes)
+  - Walking surface influences measurements (stairs, slopes, rough terrain)
+  - Carrying loads or pushing carts shortens steps
+  - Fatigue and time of day affect step length
+  - Intentionally walking fast or slow changes step length
+  - Device algorithms may not distinguish true shuffling from measurement noise
+
+  ## Additional Notes
+  Step length is particularly valuable for:
+  - **Parkinson's disease monitoring**: Track disease progression and medication response
+  - **Normal pressure hydrocephalus**: Evaluate for surgical shunt candidacy
+  - **Hip/knee replacement**: Document post-operative recovery
+  - **Peripheral neuropathy**: Monitor diabetic foot complications
+  - **Frailty assessment**: Contributes to overall functional status
+
+  Clinical tip: Walking speed = step length x cadence / 2. If walking speed is reduced, step length helps determine if the limitation is:
+  - Shortened steps (musculoskeletal, neurological)
+  - Reduced cadence (cardiovascular, respiratory)
+  - Both (deconditioning, frailty)
+metadata_keys:
+  - key: "HKMetadataKeyDevicePlacementSide"
+    description: "Indicates which side of the body the device was placed during measurement"
+  - key: "HKMetadataKeySessionEstimate"
+    description: "Indicates if the value represents an estimate from a workout session"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Step length directly determines walking speed (speed = step length x cadence)"
+  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
+    relationship: "Asymmetric step lengths contribute to walking asymmetry"
+  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
+    relationship: "Shorter steps often correlate with increased double support time"
+  - identifier: "HKQuantityTypeIdentifierHeight"
+    relationship: "Height is essential for normalized interpretation of step length"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierWalkingStepLength"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierwalkingsteplength"
+    type: "official"
+  - title: "Normative Step Length Data by Age - Gait & Posture"
+    url: "https://www.sciencedirect.com/journal/gait-and-posture"
+    type: "research"
+  - title: "Gait Analysis in Parkinson's Disease - Movement Disorders Journal"
+    url: "https://movementdisorders.onlinelibrary.wiley.com/"
+    type: "medical"
+last_updated: "2026-01-27"

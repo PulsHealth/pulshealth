@@ -1,0 +1,241 @@
+identifier: "HKQuantityTypeIdentifierDietaryPotassium"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Potassium"
+short_description: "Potassium intake from food and supplements, essential for fluid balance, nerve transmission, and muscle contraction."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FF9500"
+
+default_unit: "mg"
+supported_units: ["mg", "g", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 6000
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "400 mg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "860 mg/day (AI)"
+  - population: "Children 1-3 years"
+    rda: "2000 mg/day (AI)"
+  - population: "Children 4-8 years"
+    rda: "2300 mg/day (AI)"
+  - population: "Boys 9-13 years"
+    rda: "2500 mg/day (AI)"
+  - population: "Girls 9-13 years"
+    rda: "2300 mg/day (AI)"
+  - population: "Boys 14-18 years"
+    rda: "3000 mg/day (AI)"
+  - population: "Girls 14-18 years"
+    rda: "2300 mg/day (AI)"
+  - population: "Adult men 19+ years"
+    rda: "3400 mg/day (AI)"
+  - population: "Adult women 19+ years"
+    rda: "2600 mg/day (AI)"
+  - population: "Pregnant women"
+    rda: "2900 mg/day (AI)"
+  - population: "Lactating women"
+    rda: "2800 mg/day (AI)"
+  - population: "All adults"
+    upper_limit: "Not established (caution with supplements and renal impairment)"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary potassium from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track potassium intake for cardiovascular and renal health management"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Potassium is the primary intracellular cation, with 98% of the body's potassium found inside cells. This distribution creates the electrochemical gradient essential for nerve impulse transmission, muscle contraction, and cellular function. Potassium intake has profound effects on blood pressure, cardiovascular health, and kidney stone risk. Despite its importance, most populations consume far below recommended levels, contributing to hypertension and cardiovascular disease burden.
+
+  ## Biological Functions
+  - **Membrane potential**: Maintains cellular resting membrane potential through Na+/K+ ATPase pump
+  - **Nerve transmission**: Essential for action potential generation and propagation
+  - **Muscle contraction**: Required for both skeletal and cardiac muscle function
+  - **Fluid balance**: Primary determinant of intracellular fluid volume; counteracts sodium
+  - **Blood pressure regulation**: Promotes sodium excretion, vasodilation, and reduces vascular resistance
+  - **Acid-base balance**: Intracellular potassium exchanges with hydrogen ions
+  - **Carbohydrate metabolism**: Required for glycogen synthesis
+  - **Protein synthesis**: Necessary for cellular protein production
+
+  ## Health Significance
+  Higher potassium intake is strongly associated with lower blood pressure and reduced stroke risk. The DASH diet's cardiovascular benefits are partly attributed to its high potassium content. Potassium also reduces kidney stone risk by decreasing urinary calcium excretion. The sodium-to-potassium ratio may be more important for cardiovascular health than either mineral alone, with optimal ratios near 1:1 (most Western diets are 2:1 or higher sodium).
+
+  ## Clinical Interpretation Guidelines
+  When reviewing potassium intake data:
+  - **Recognize widespread inadequacy**: Less than 3% of Americans meet the AI; average intake is ~2500 mg/day
+  - **Assess sodium-to-potassium ratio**: Aim for ratio <1:1; most diets are sodium-heavy
+  - **Evaluate fruit and vegetable intake**: Primary potassium sources; correlates with overall diet quality
+  - **Consider blood pressure context**: Increasing potassium may be particularly beneficial for hypertensive patients
+  - **Review kidney function**: CKD patients may need potassium restriction; normal kidneys efficiently excrete excess
+  - **Check medication list**: Many drugs affect potassium handling
+
+  ## Deficiency
+  **Hypokalemia causes**:
+  - Inadequate intake (rare as sole cause)
+  - GI losses: Vomiting, diarrhea, laxative abuse
+  - Renal losses: Diuretics (loop and thiazide), hyperaldosteronism, hypomagnesemia
+  - Transcellular shifts: Insulin, beta-agonists, alkalosis
+  - Excessive sweating (endurance exercise, heat exposure)
+
+  **Symptoms by severity**:
+  - Mild (3.0-3.5 mEq/L): Often asymptomatic; fatigue, constipation
+  - Moderate (2.5-3.0 mEq/L): Muscle weakness, cramps, myalgia
+  - Severe (<2.5 mEq/L):
+    - Muscular: Severe weakness, paralysis, rhabdomyolysis
+    - Cardiac: Arrhythmias, U waves, flattened T waves, prolonged QT
+    - Metabolic: Impaired insulin secretion
+    - Renal: Nephrogenic diabetes insipidus (polyuria)
+
+  **Clinical pearl**: Hypokalemia with concurrent hypomagnesemia is refractory to potassium replacement until magnesium is corrected.
+
+  ## Toxicity/Excess
+  **Hyperkalemia** (dangerous; primarily from impaired excretion, not dietary intake in healthy individuals):
+  - Mild (5.0-6.0 mEq/L): Usually asymptomatic
+  - Moderate (6.0-7.0 mEq/L): Muscle weakness, paresthesias
+  - Severe (>7.0 mEq/L):
+    - Cardiac: Peaked T waves, widened QRS, sine wave pattern, cardiac arrest
+    - Muscular: Ascending paralysis
+    - This is a medical emergency
+
+  **Causes of hyperkalemia**:
+  - Chronic kidney disease (most common)
+  - Acute kidney injury
+  - Medications: ACE inhibitors, ARBs, potassium-sparing diuretics, NSAIDs
+  - Hypoaldosteronism
+  - Tissue breakdown: Rhabdomyolysis, tumor lysis, burns, hemolysis
+  - Acidosis (shifts potassium out of cells)
+  - Excessive supplementation (rare with food intake alone)
+
+  **Note**: No UL established because healthy kidneys efficiently excrete excess; toxicity concerns arise with renal impairment or rapid IV/supplement administration.
+
+  ## Food Sources
+  **Very high potassium foods** (>500 mg per serving):
+  - Potato (baked with skin): ~925 mg
+  - Sweet potato: ~540 mg
+  - White beans (1 cup): ~1000 mg
+  - Beet greens (1 cup cooked): ~1300 mg
+  - Spinach (1 cup cooked): ~840 mg
+  - Salmon (6 oz): ~900 mg
+  - Avocado (1 whole): ~975 mg
+
+  **High potassium foods** (300-500 mg per serving):
+  - Banana: ~420 mg
+  - Tomato sauce (1/2 cup): ~400 mg
+  - Orange juice (1 cup): ~500 mg
+  - Yogurt (1 cup): ~400-500 mg
+  - Cantaloupe (1 cup): ~430 mg
+  - Lentils (1/2 cup cooked): ~365 mg
+
+  **Moderate sources** (200-300 mg per serving):
+  - Milk (1 cup)
+  - Most fruits and vegetables
+  - Chicken, beef
+  - Nuts
+
+  ## Absorption Factors
+  **High bioavailability**:
+  - Dietary potassium is approximately 85-90% absorbed
+  - Absorption occurs primarily in small intestine via passive diffusion
+  - No major enhancers or inhibitors identified
+
+  **Factors affecting potassium status** (not absorption):
+  - Sodium intake: High sodium increases potassium excretion
+  - Fiber: May modestly affect absorption but minimal clinical significance
+  - Cooking methods: Boiling leaches potassium into water (40-50% loss); steaming, microwaving preserve more
+
+  **Potassium balance considerations**:
+  - Renal excretion is primary regulator; healthy kidneys adjust excretion within hours
+  - Aldosterone increases renal potassium excretion
+  - Insulin shifts potassium into cells
+  - Epinephrine (initially) shifts potassium out of cells
+
+  ## Special Populations
+  - **Hypertensive patients**: Increasing potassium particularly beneficial; 500-1000 mg/day increase can lower systolic BP by 2-4 mmHg
+  - **CKD patients**: May need to restrict to 2000-3000 mg/day or less depending on stage; requires close monitoring
+  - **Dialysis patients**: Typically restrict to 2000 mg/day; potassium accumulates between treatments
+  - **Heart failure patients**: Complex management; may need restriction especially if on certain medications
+  - **Athletes/heavy sweating**: May need increased intake; sweat losses significant during prolonged exercise
+  - **ACE inhibitor/ARB users**: Reduced renal potassium excretion; monitor serum levels
+  - **Diuretic users**: Loop and thiazides increase potassium loss; may need supplementation
+  - **Eating disorder patients**: Risk of severe hypokalemia from purging behaviors
+  - **Elderly**: Often on multiple potassium-affecting medications; require careful monitoring
+
+  ## Drug Interactions
+  **Drugs that increase serum potassium** (hyperkalemia risk):
+  - ACE inhibitors (lisinopril, enalapril)
+  - Angiotensin receptor blockers (losartan, valsartan)
+  - Potassium-sparing diuretics (spironolactone, eplerenone, amiloride, triamterene)
+  - NSAIDs (reduce renal blood flow)
+  - Trimethoprim
+  - Heparin
+  - Cyclosporine, tacrolimus
+  - Beta-blockers (prevent intracellular shift)
+  - Digoxin (toxicity can cause hyperkalemia)
+
+  **Drugs that decrease serum potassium** (hypokalemia risk):
+  - Loop diuretics (furosemide, bumetanide)
+  - Thiazide diuretics (hydrochlorothiazide, chlorthalidone)
+  - Corticosteroids
+  - Beta-agonists (albuterol)
+  - Insulin
+  - Laxatives (chronic abuse)
+  - Amphotericin B
+  - Some antibiotics (aminoglycosides, ampicillin)
+
+  ## Caveats & Limitations
+  - HealthKit data represents intake, not serum levels or total body stores
+  - Serum potassium is tightly regulated (3.5-5.0 mEq/L); dietary intake doesn't directly predict levels
+  - Food databases may underestimate potassium (not required on Nutrition Facts labels until 2020)
+  - Cooking method affects potassium content but isn't captured
+  - Salt substitutes (KCl) may not be logged as "food" but contain significant potassium
+  - Supplement potassium (OTC limited to 99 mg per dose) is separate from food potassium
+  - Renal function is critical for interpreting appropriate intake levels
+  - Acute shifts between intracellular and extracellular compartments can affect serum levels independent of intake
+  - Pseudohyperkalemia (hemolyzed sample, tourniquet) can give false readings
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing potassium"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietarySodium"
+    relationship: "Sodium and potassium have opposing effects on blood pressure; ratio is clinically important"
+  - identifier: "HKQuantityTypeIdentifierDietaryMagnesium"
+    relationship: "Magnesium deficiency causes refractory hypokalemia; must correct magnesium first"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "Potassium intake inversely correlates with blood pressure"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureDiastolic"
+    relationship: "Adequate potassium intake supports healthy blood pressure"
+  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
+    relationship: "Potassium reduces urinary calcium excretion, potentially protecting against kidney stones"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryPotassium"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarypotassium"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Potassium Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Potassium-HealthProfessional/"
+    type: "medical"
+  - title: "American Heart Association - Potassium and Blood Pressure"
+    url: "https://www.heart.org/en/health-topics/high-blood-pressure/changes-you-can-make-to-manage-high-blood-pressure/how-potassium-can-help-control-high-blood-pressure"
+    type: "medical"
+  - title: "KDIGO Guidelines - Potassium Management in CKD"
+    url: "https://kdigo.org/guidelines/"
+    type: "medical"
+last_updated: "2026-01-27"

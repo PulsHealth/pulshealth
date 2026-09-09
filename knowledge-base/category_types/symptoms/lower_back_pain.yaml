@@ -1,0 +1,133 @@
+identifier: "HKCategoryTypeIdentifierLowerBackPain"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Lower Back Pain"
+short_description: "Tracks episodes and severity of lower back pain"
+icon: "figure.stand"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No lower back pain experienced"
+  - value: 1
+    name: "present"
+    description: "Mild pain - noticeable but does not limit activities"
+  - value: 2
+    name: "moderate"
+    description: "Moderate pain - limits some activities, may require medication"
+  - value: 3
+    name: "severe"
+    description: "Severe pain - significantly limits activities, requires intervention"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Lower back pain (lumbago) is one of the most common medical complaints worldwide,
+  affecting up to 80% of adults at some point. This data type allows tracking of
+  pain episodes, severity patterns, and response to treatment, supporting both
+  self-management and clinical consultation.
+
+  ## Health Significance
+  - **Prevalence**: Leading cause of disability worldwide
+  - **Chronicity Risk**: 5-10% of acute episodes become chronic (lasting >3 months)
+  - **Functional Impact**: Affects work capacity, mobility, and quality of life
+  - **Healthcare Utilization**: Tracking can support appropriate care-seeking
+  - **Treatment Response**: Enables monitoring of intervention effectiveness
+
+  ## Clinical Categories
+  Lower back pain is typically classified as:
+  - **Acute**: Less than 6 weeks duration
+  - **Subacute**: 6-12 weeks duration
+  - **Chronic**: Greater than 12 weeks duration
+
+  Most cases (85-90%) are "nonspecific" without identifiable structural cause.
+
+  ## When to Seek Medical Attention
+  **Red Flags Requiring Immediate Evaluation:**
+  - Loss of bladder or bowel control (cauda equina syndrome)
+  - Progressive leg weakness or numbness
+  - Pain after significant trauma
+  - Unexplained weight loss with back pain
+  - Fever with back pain
+  - History of cancer with new back pain
+  - Pain that wakes from sleep consistently
+  - Pain worsening despite rest
+
+  **Other Reasons to Consult:**
+  - Pain lasting more than 6 weeks without improvement
+  - Pain radiating below the knee
+  - Significant functional limitation
+  - Need for work restrictions or disability documentation
+
+  ## Pattern Recognition
+  Tracking lower back pain can reveal:
+  - Relationship to specific activities (lifting, sitting, standing)
+  - Positional patterns (better/worse lying down, walking)
+  - Morning stiffness patterns (inflammatory vs. mechanical)
+  - Correlation with exercise or movement
+  - Response to rest, medication, or other interventions
+  - Cyclical patterns (menstrual, occupational, seasonal)
+  - Progressive vs. episodic nature
+
+  ## Caveats & Limitations
+  - Severity is subjective and varies between individuals
+  - Does not capture pain quality (sharp, dull, burning, aching)
+  - Cannot distinguish between different causes of back pain
+  - Does not record radiation pattern or neurological symptoms
+  - No standardized pain scale integration (e.g., 0-10 numeric)
+  - Cannot track functional disability separately from pain intensity
+  - Does not capture medication usage in same entry
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierPelvicPain"
+    relationship: "Pain regions may overlap; gynecological causes can present as low back pain"
+  - identifier: "HKCategoryTypeIdentifierGeneralizedBodyAche"
+    relationship: "Systemic conditions may present with both"
+  - identifier: "HKQuantityTypeIdentifierStepCount"
+    relationship: "Activity levels may correlate with pain patterns"
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Mobility impairment indicator"
+  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
+    relationship: "Gait changes may indicate pain-related compensation"
+  - identifier: "HKWorkoutType"
+    relationship: "Exercise may trigger, exacerbate, or relieve symptoms"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierLowerBackPain"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierlowerbackpain"
+    type: "official"
+  - title: "Low Back Pain Clinical Guidelines - American College of Physicians"
+    url: "https://www.acponline.org/clinical-information/guidelines"
+    type: "medical"
+  - title: "Low Back Pain Fact Sheet - NINDS"
+    url: "https://www.ninds.nih.gov/health-information/disorders/back-pain"
+    type: "medical"
+last_updated: "2026-01-27"

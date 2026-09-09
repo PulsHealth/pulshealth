@@ -1,0 +1,218 @@
+identifier: "HKQuantityTypeIdentifierDietarySelenium"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Selenium"
+short_description: "Selenium intake from food and supplements, essential for antioxidant defense, thyroid function, and immune health."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FF9500"
+
+default_unit: "mcg"
+supported_units: ["mcg", "mg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 400
+  unit: "mcg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "15 mcg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "20 mcg/day (AI)"
+  - population: "Children 1-3 years"
+    rda: "20 mcg/day"
+  - population: "Children 4-8 years"
+    rda: "30 mcg/day"
+  - population: "Children 9-13 years"
+    rda: "40 mcg/day"
+  - population: "Adolescents 14-18 years"
+    rda: "55 mcg/day"
+  - population: "Adults 19+ years"
+    rda: "55 mcg/day"
+  - population: "Pregnant women"
+    rda: "60 mcg/day"
+  - population: "Lactating women"
+    rda: "70 mcg/day"
+  - population: "Adults"
+    upper_limit: "400 mcg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary selenium from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track selenium intake against personalized targets"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Selenium is an essential trace element incorporated into selenoproteins as the amino acid selenocysteine. Humans have 25 selenoproteins with diverse functions including antioxidant defense, thyroid hormone metabolism, and immune regulation. Selenium status varies dramatically by geographic region due to soil content differences. Both deficiency and excess cause significant health problems, making optimal intake particularly important.
+
+  ## Biological Functions
+  - **Antioxidant defense**: Glutathione peroxidases (GPx) reduce hydrogen peroxide and lipid hydroperoxides
+  - **Thyroid hormone metabolism**: Iodothyronine deiodinases convert T4 to active T3
+  - **Redox regulation**: Thioredoxin reductases maintain cellular redox balance
+  - **Immune function**: Supports both innate and adaptive immunity; selenium deficiency impairs immune responses
+  - **Reproduction**: Required for sperm maturation and function; selenoprotein P concentrated in testes
+  - **Inflammatory regulation**: Modulates prostaglandin and leukotriene synthesis
+  - **DNA synthesis**: Contributes to nucleotide production through ribonucleotide reductase
+
+  ## Health Significance
+  Selenium's antioxidant and immune functions have prompted interest in its role in chronic disease prevention. Observational studies associate adequate selenium status with reduced cancer risk, though supplementation trials have shown mixed results. The SELECT trial found no cancer prevention benefit and possible increased prostate cancer risk with selenium supplements in selenium-replete men. Selenium is critical for optimal thyroid function and may play protective roles in cardiovascular disease and cognitive decline.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing selenium intake data:
+  - **Consider geographic variation**: Soil selenium varies 1000-fold across regions; local food sources reflect this
+  - **Assess thyroid connection**: Selenium is required for T4 to T3 conversion; important in thyroid disease
+  - **Recognize narrow therapeutic window**: Benefits occur in deficiency; excess may be harmful
+  - **Evaluate Brazil nut consumption**: Single Brazil nut contains 70-90 mcg; easy to exceed needs
+  - **Review cancer context**: No supplementation benefit shown in selenium-replete populations
+  - **Consider form**: Selenomethionine (organic) vs. selenite (inorganic) have different metabolism
+
+  ## Deficiency
+  **Causes of selenium deficiency**:
+  - Geographic: Living in selenium-poor soil regions (parts of China, New Zealand, some European areas)
+  - Malabsorption: Crohn's disease, short bowel syndrome, gastric bypass
+  - Long-term TPN without adequate selenium
+  - HIV/AIDS (associated with progression)
+  - Dialysis (selenium lost during treatment)
+  - Severe illness: Critical illness depletes selenium
+
+  **Deficiency manifestations**:
+  - **Keshan disease**: Endemic cardiomyopathy in selenium-deficient regions of China; dilated cardiomyopathy
+  - **Kashin-Beck disease**: Osteoarthropathy affecting cartilage; occurs in selenium-deficient areas
+  - Immune dysfunction: Increased viral virulence, impaired cell-mediated immunity
+  - Thyroid dysfunction: Impaired T4 to T3 conversion; can cause hypothyroid symptoms
+  - Muscle weakness and myopathy
+  - Nail changes (white nail beds)
+  - Hair loss
+
+  **Interaction with viral infections**: Selenium deficiency allows viral mutations to more virulent forms (demonstrated with Coxsackievirus in Keshan disease).
+
+  ## Toxicity/Excess
+  **Acute selenosis** (>900 mcg):
+  - Nausea, vomiting, diarrhea
+  - Garlic breath odor
+  - Metallic taste
+  - Hair loss
+  - Neurological: Irritability, fatigue, peripheral neuropathy
+
+  **Chronic selenosis** (>400 mcg/day long-term):
+  - Hair loss and brittle hair
+  - Nail changes (brittleness, discoloration, loss)
+  - Garlic odor (dimethyl selenide)
+  - GI disturbances
+  - Skin rashes
+  - Nervous system: Peripheral neuropathy, paresthesias
+  - Possible increased diabetes risk (from supplementation trials)
+
+  **Brazil nut warning**: A single Brazil nut contains 70-90 mcg; regular consumption of several nuts daily can cause selenosis.
+
+  ## Food Sources
+  **Very high selenium** (>50 mcg per serving):
+  - Brazil nuts: 68-91 mcg per nut (one of the highest food sources)
+  - Yellowfin tuna: 92 mcg per 3 oz
+  - Halibut: 47 mcg per 3 oz
+  - Sardines: 45 mcg per 3 oz
+
+  **High selenium** (20-50 mcg per serving):
+  - Shrimp, crab: 40 mcg per 3 oz
+  - Pork, beef, chicken: 25-35 mcg per 3 oz
+  - Cottage cheese: 20 mcg per cup
+  - Eggs: 15-20 mcg per large egg
+
+  **Moderate sources** (10-20 mcg per serving):
+  - Brown rice, oatmeal
+  - Lentils, baked beans
+  - Whole wheat bread
+  - Mushrooms
+
+  **Geographic note**: Selenium content in plant foods reflects soil levels; varies significantly by region.
+
+  ## Absorption Factors
+  **High bioavailability**:
+  - Dietary selenium is well absorbed (>80% for organic forms)
+  - Selenomethionine (plant/animal sources): ~90% absorbed; incorporated into body proteins
+  - Selenocysteine (animal sources): Well absorbed
+  - Selenite/selenate (supplements): 50-90% absorbed; metabolized differently
+
+  **Enhancers**:
+  - Vitamins A, C, E: May enhance selenium utilization and selenoprotein function
+  - Protein intake: Adequate protein supports selenium incorporation into selenoproteins
+
+  **Inhibitors**:
+  - Heavy metals (mercury, cadmium, arsenic): Can form complexes reducing bioavailability
+  - High-dose vitamin C (>1g): May reduce selenite to elemental selenium (less bioavailable)
+  - Sulfur compounds: High sulfur intake may reduce selenium absorption
+
+  **Form considerations**:
+  - Selenomethionine: Non-specifically incorporated into body proteins; creates tissue stores
+  - Selenite: Converted to selenocysteine for selenoprotein synthesis; doesn't create methionine pools
+
+  ## Special Populations
+  - **Thyroid disease patients**: Selenium supplementation may benefit autoimmune thyroiditis (Hashimoto's); reduces TPO antibodies in some studies
+  - **HIV/AIDS**: Deficiency associated with disease progression; supplementation may have benefits
+  - **Dialysis patients**: Selenium lost during dialysis; supplementation often needed
+  - **Critically ill patients**: Depleted selenium; may benefit from supplementation in ICU setting
+  - **Pregnant women**: Requirements modestly increase; important for fetal development
+  - **Cancer patients**: No clear benefit from supplementation; may be harmful in some contexts
+  - **Geographic risk populations**: Those in China (Keshan/Kashin-Beck areas), parts of Europe with low soil selenium
+  - **Vegetarians/vegans**: May have lower intake depending on food sources and geographic region
+
+  ## Drug Interactions
+  - **Cisplatin and other chemotherapy**: May affect selenium status; some evidence for protective effects
+  - **Statins**: Selenium may interact with lipid metabolism
+  - **Warfarin**: Possible antiplatelet effects at high doses
+  - **Niacin**: Combined with selenium may improve lipid profiles (HDL)
+  - **Corticosteroids**: May reduce selenium levels
+  - **Clozapine**: Has been associated with selenium deficiency
+  - **Valproic acid**: May reduce selenium status
+
+  ## Caveats & Limitations
+  - HealthKit data represents intake, not selenium status
+  - Food selenium content highly variable based on soil and not reliably captured in databases
+  - Brazil nut content particularly variable (varies by tree, soil, region)
+  - Serum or plasma selenium reflects recent intake; RBC selenium or selenoprotein P better for status
+  - Nail or hair selenium can indicate chronic exposure
+  - Narrow therapeutic range makes precision important
+  - Supplementation trials (SELECT) suggest harm possible in replete populations
+  - Form of supplement (selenomethionine vs. selenite) affects metabolism but usually not captured
+  - Cancer prevention claims not supported by randomized trials in selenium-adequate populations
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing selenium"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryIodine"
+    relationship: "Selenium required for thyroid hormone conversion; both affect thyroid function"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminE"
+    relationship: "Selenium and vitamin E have complementary antioxidant functions"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
+    relationship: "Vitamin C regenerates selenoproteins; but high-dose may reduce selenite absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "Both trace minerals involved in immune function and antioxidant defense"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietarySelenium"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryselenium"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Selenium Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/"
+    type: "medical"
+  - title: "Lancet - Selenium and Health"
+    url: "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(12)60027-2/fulltext"
+    type: "research"
+  - title: "SELECT Trial - Selenium and Vitamin E Cancer Prevention"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3102234/"
+    type: "research"
+last_updated: "2026-01-27"

@@ -1,0 +1,154 @@
+identifier: "HKCategoryTypeIdentifierPelvicPain"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Pelvic Pain"
+short_description: "Tracks episodes and severity of pelvic region pain"
+icon: "bolt.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No pelvic pain experienced"
+  - value: 1
+    name: "present"
+    description: "Mild pelvic pain - slight discomfort, does not limit activities"
+  - value: 2
+    name: "moderate"
+    description: "Moderate pelvic pain - noticeable pain affecting some activities"
+  - value: 3
+    name: "severe"
+    description: "Severe pelvic pain - significant pain limiting daily activities"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Pelvic pain refers to discomfort in the lower abdomen and pelvis, below the
+  umbilicus and between the hips. It can be acute or chronic (lasting >6 months)
+  and may originate from reproductive, urinary, gastrointestinal, or
+  musculoskeletal structures. This data type enables pattern tracking for
+  clinical correlation.
+
+  ## Health Significance
+  - **Reproductive Health**: Common symptom in endometriosis, ovarian cysts,
+    fibroids, and pelvic inflammatory disease
+  - **Menstrual Correlation**: Dysmenorrhea is the most common cause of
+    cyclic pelvic pain
+  - **Chronic Pain Conditions**: Chronic pelvic pain affects 15% of women and
+    is a significant source of disability
+  - **Diagnostic Challenge**: Multiple potential organ systems require
+    systematic evaluation
+  - **Quality of Life**: Chronic pelvic pain significantly impacts daily
+    functioning and mental health
+
+  ## Clinical Context
+  **Gynecological Causes:**
+  - Dysmenorrhea (menstrual cramps)
+  - Endometriosis
+  - Ovarian cysts or torsion
+  - Uterine fibroids
+  - Pelvic inflammatory disease
+  - Ectopic pregnancy
+  - Adenomyosis
+
+  **Non-Gynecological Causes:**
+  - Urinary tract infection
+  - Interstitial cystitis
+  - Irritable bowel syndrome
+  - Inflammatory bowel disease
+  - Musculoskeletal disorders
+  - Pelvic floor dysfunction
+
+  ## When to Seek Medical Attention
+  **Emergency Symptoms:**
+  - Sudden, severe pelvic pain
+  - Pelvic pain with fever and chills
+  - Pain with abnormal vaginal bleeding or discharge
+  - Pain with dizziness or fainting
+  - Pain with positive pregnancy test (possible ectopic)
+  - Pain with inability to urinate or have bowel movement
+
+  **Schedule Evaluation For:**
+  - Chronic pelvic pain lasting more than 6 months
+  - Pain interfering with daily activities or work
+  - Pain requiring regular medication use
+  - Cyclic pain worsening over time
+  - Pain with intercourse (dyspareunia)
+  - Pain with urination or bowel movements
+  - Pain not responding to standard treatments
+
+  ## Pattern Recognition
+  Tracking pelvic pain can reveal:
+  - Menstrual cycle correlation (suggests endometriosis, dysmenorrhea)
+  - Ovulation-related patterns (mittelschmerz)
+  - Relationship to bowel movements or urination
+  - Correlation with intercourse or physical activity
+  - Progressive worsening over cycles
+  - Response to hormonal treatments
+  - Food triggers (if GI-related)
+  - Stress and tension patterns
+
+  ## Caveats & Limitations
+  - Cannot localize to specific organ system
+  - Subjective severity assessment
+  - Does not capture pain character (cramping, sharp, dull)
+  - Multiple overlapping conditions common
+  - Does not track associated symptoms separately
+  - Chronic nature may lead to logging fatigue
+  - Cannot differentiate acute vs. chronic presentations
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Cycle tracking for pattern identification"
+  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+    relationship: "Overlapping pain regions; may co-occur"
+  - identifier: "HKCategoryTypeIdentifierLowerBackPain"
+    relationship: "Often radiates to lower back"
+  - identifier: "HKCategoryTypeIdentifierBloating"
+    relationship: "Common co-occurring symptom in GI/GYN conditions"
+  - identifier: "HKCategoryTypeIdentifierConstipation"
+    relationship: "May contribute to or result from pelvic pain"
+  - identifier: "HKCategoryTypeIdentifierSexualActivity"
+    relationship: "Pain timing relative to activity for dyspareunia tracking"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierPelvicPain"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierpelvicpain"
+    type: "official"
+  - title: "Chronic Pelvic Pain - ACOG"
+    url: "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/03/chronic-pelvic-pain"
+    type: "medical"
+  - title: "Endometriosis Guidelines - ASRM"
+    url: "https://www.asrm.org/practice-guidance/"
+    type: "medical"
+  - title: "Pelvic Pain Evaluation - American Family Physician"
+    url: "https://www.aafp.org/pubs/afp.html"
+    type: "medical"
+last_updated: "2026-01-27"

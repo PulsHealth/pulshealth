@@ -1,0 +1,633 @@
+---
+title: "Blog Style Guide: All Available Components and Formatting"
+date: "2026-01-01"
+tags: ["style-guide", "documentation", "internal"]
+excerpt: "A comprehensive reference of all MDX components, markdown formatting, and styling options available for PulsHealth blog articles."
+---
+
+This article demonstrates every component and formatting option available for writing PulsHealth blog posts.
+
+## Typography
+
+### Headings
+
+Use headings to structure your content hierarchically. Start with H2 for main sections (H1 is reserved for the title).
+
+**Heading hierarchy:**
+- H2 (`##`) - Main sections
+- H3 (`###`) - Subsections
+- H4 (`####`) - Sub-subsections
+- H5 (`#####`) - Minor headings
+- H6 (`######`) - Smallest heading
+
+---
+
+### Text Formatting
+
+Regular paragraph text looks like this. Keep paragraphs focused and concise.
+
+**Bold text** for emphasis on important terms.
+
+*Italic text* for introducing new terms or light emphasis.
+
+***Bold and italic*** for extra emphasis (use sparingly).
+
+~~Strikethrough~~ for corrections or deprecated information.
+
+`Inline code` for technical terms, variable names, or short code snippets.
+
+---
+
+### Links
+
+[Internal link to another page](/blog) - links within the site.
+
+[External link to Apple](https://apple.com) - automatically gets an external icon.
+
+<DataTypeLink identifier="HKQuantityTypeIdentifierHeartRate">
+  Link to Heart Rate in Knowledge Base
+</DataTypeLink>
+
+<DataTypeLink identifier="HKQuantityTypeIdentifierVO2Max" />
+
+---
+
+### Lists
+
+**Unordered list:**
+- First item
+- Second item
+  - Nested item
+  - Another nested item
+- Third item
+
+**Ordered list:**
+1. First step
+2. Second step
+   1. Sub-step A
+   2. Sub-step B
+3. Third step
+
+---
+
+### Blockquotes
+
+> Blockquotes are great for highlighting quotes, important passages, or summarizing key points from external sources.
+>
+> They can span multiple paragraphs.
+
+---
+
+## Code Blocks
+
+Inline code: Use `const healthData = await fetchData()` for small snippets.
+
+### Basic Code Block
+
+```javascript
+// Code block with syntax highlighting
+async function getHeartRate() {
+  const query = new HKSampleQuery({
+    sampleType: HKQuantityType.heartRate,
+    predicate: HKQuery.predicateForSamples(startDate, endDate),
+  });
+
+  return await healthStore.execute(query);
+}
+```
+
+### With Filename Title
+
+```swift title="HealthKitService.swift"
+let heartRateType = HKQuantityType.quantityType(
+    forIdentifier: .heartRate
+)!
+
+let query = HKSampleQuery(
+    sampleType: heartRateType,
+    predicate: nil,
+    limit: HKObjectQueryNoLimit,
+    sortDescriptors: nil
+) { query, samples, error in
+    // Handle results
+}
+```
+
+### More Languages
+
+```typescript title="api/health.ts"
+interface HealthMetric {
+  type: string;
+  value: number;
+  unit: string;
+  timestamp: Date;
+}
+
+export async function fetchMetrics(): Promise<HealthMetric[]> {
+  const response = await fetch('/api/health');
+  return response.json();
+}
+```
+
+```python title="analyze.py"
+import pandas as pd
+
+def calculate_resting_hr(samples: list[dict]) -> float:
+    """Calculate average resting heart rate from samples."""
+    df = pd.DataFrame(samples)
+    resting = df[df['activity_level'] == 'resting']
+    return resting['heart_rate'].mean()
+```
+
+```bash
+# Shell commands
+bun add @pulshealth/sdk
+export HEALTH_API_KEY="your-key"
+```
+
+```json title="config.json"
+{
+  "metrics": ["heartRate", "steps", "sleep"],
+  "syncInterval": 3600,
+  "notifications": true
+}
+```
+
+---
+
+## Tables
+
+### Basic Markdown Table
+
+| Metric | Normal Range | Unit |
+|--------|--------------|------|
+| Heart Rate | 60-100 | bpm |
+| Blood Pressure | 120/80 | mmHg |
+| Respiratory Rate | 12-20 | breaths/min |
+| SpO2 | 95-100 | % |
+
+### Table with More Columns
+
+| Age Group | Poor | Fair | Good | Excellent | Superior |
+|-----------|------|------|------|-----------|----------|
+| 20-29 | Below 38 | 38-41 | 42-45 | 46-52 | Above 52 |
+| 30-39 | Below 35 | 35-38 | 39-42 | 43-48 | Above 48 |
+| 40-49 | Below 32 | 32-35 | 36-40 | 41-46 | Above 46 |
+
+---
+
+## Custom Components
+
+### Callouts
+
+Four callout types for different purposes:
+
+<Callout type="info" title="Information">
+Use info callouts for helpful context, background information, or general notes that enhance understanding.
+</Callout>
+
+<Callout type="tip" title="Pro Tip">
+Use tip callouts for actionable advice, best practices, or recommendations that help users get better results.
+</Callout>
+
+<Callout type="warning" title="Warning">
+Use warning callouts for important caveats, potential issues, or things users should be careful about.
+</Callout>
+
+<Callout type="success" title="Success">
+Use success callouts for positive outcomes, confirmations, or highlighting achievements.
+</Callout>
+
+Callouts without titles:
+
+<Callout type="info">
+A simple info callout without a title, useful for brief notes.
+</Callout>
+
+---
+
+### Stat Highlights
+
+Use StatHighlight for showcasing key numbers:
+
+<Grid cols={3}>
+  <StatHighlight value="72" label="bpm" description="Average resting heart rate" />
+  <StatHighlight value="10,000" label="steps" description="Daily goal" />
+  <StatHighlight value="42" label="mL/kg/min" description="VO2 Max" />
+</Grid>
+
+<Grid cols={4}>
+  <StatHighlight value="98%" label="SpO2" />
+  <StatHighlight value="120/80" label="mmHg" />
+  <StatHighlight value="7.5" label="hours" />
+  <StatHighlight value="85" label="HRV" />
+</Grid>
+
+---
+
+### Feature Cards
+
+Use FeatureCard for highlighting features, tips, or key concepts:
+
+<Grid cols={2}>
+  <FeatureCard
+    title="Track Your Progress"
+    description="Monitor your health metrics over time to identify trends and improvements in your cardiovascular fitness."
+  />
+  <FeatureCard
+    title="Set Realistic Goals"
+    description="Start with achievable targets and gradually increase intensity as your fitness improves."
+  />
+</Grid>
+
+<Grid cols={3}>
+  <FeatureCard
+    title="Morning Routine"
+    description="Check your resting heart rate first thing in the morning for the most accurate baseline."
+  />
+  <FeatureCard
+    title="Stay Hydrated"
+    description="Dehydration can affect heart rate measurements. Drink water before workouts."
+  />
+  <FeatureCard
+    title="Rest Days Matter"
+    description="Recovery is essential. Monitor HRV to know when your body needs rest."
+  />
+</Grid>
+
+---
+
+### Tags / Badges
+
+Inline tags for highlighting categories or labels:
+
+This feature is available on <Tag>Apple Watch</Tag> and <Tag>iPhone</Tag>.
+
+Status indicators: <Tag variant="default">Active</Tag> <Tag variant="secondary">Beta</Tag> <Tag variant="outline">Coming Soon</Tag>
+
+---
+
+### Pro/Con Comparison
+
+<ProConComparison
+  title="Apple Watch Health Tracking"
+  pros={[
+    { text: "Continuous heart rate monitoring throughout the day" },
+    { text: "Automatic workout detection and tracking" },
+    { text: "ECG capability for detecting AFib" },
+    { text: "Seamless integration with iPhone Health app" },
+  ]}
+  cons={[
+    { text: "Battery life requires daily charging" },
+    { text: "Some features require cellular model" },
+    { text: "Advanced metrics need watchOS updates" },
+    { text: "Accuracy varies with skin tone and fit" },
+  ]}
+/>
+
+---
+
+## Images
+
+### Blog Image Component
+
+Use BlogImage for optimized images with captions:
+
+<BlogImage
+  src="/blog/vo2-max-apple-watch-guide/vo2-max-hero.webp"
+  alt="Person checking Apple Watch after workout"
+  caption="The BlogImage component automatically optimizes images and adds nice captions"
+  width={800}
+  height={533}
+/>
+
+With priority loading (for above-the-fold images):
+
+<BlogImage
+  src="/blog/vo2-max-apple-watch-guide/vo2-max-hero.webp"
+  alt="Hero image example"
+  caption="Use priority={true} for the first image on the page"
+  width={800}
+  height={533}
+  priority
+/>
+
+---
+
+## Charts and Data Visualization
+
+### Generic Bar Chart
+
+<GenericChart
+  title="Weekly Step Count"
+  description="Average daily steps by day of week"
+  type="bar"
+  xKey="day"
+  yKey="steps"
+  yLabel="steps"
+  color="#0092FF"
+  data={[
+    { day: "Mon", steps: 8500 },
+    { day: "Tue", steps: 12000 },
+    { day: "Wed", steps: 9800 },
+    { day: "Thu", steps: 11200 },
+    { day: "Fri", steps: 7600 },
+    { day: "Sat", steps: 15000 },
+    { day: "Sun", steps: 6200 },
+  ]}
+/>
+
+### Generic Line Chart
+
+<GenericChart
+  title="Resting Heart Rate Trend"
+  description="30-day rolling average"
+  type="line"
+  xKey="week"
+  yKey="bpm"
+  yLabel="bpm"
+  color="#FF3B30"
+  data={[
+    { week: "Week 1", bpm: 72 },
+    { week: "Week 2", bpm: 70 },
+    { week: "Week 3", bpm: 68 },
+    { week: "Week 4", bpm: 67 },
+    { week: "Week 5", bpm: 65 },
+    { week: "Week 6", bpm: 64 },
+  ]}
+/>
+
+### Generic Area Chart
+
+<GenericChart
+  title="Sleep Duration"
+  description="Hours of sleep per night this week"
+  type="area"
+  xKey="night"
+  yKey="hours"
+  yLabel="hours"
+  color="#5856D6"
+  data={[
+    { night: "Mon", hours: 7.2 },
+    { night: "Tue", hours: 6.8 },
+    { night: "Wed", hours: 7.5 },
+    { night: "Thu", hours: 8.1 },
+    { night: "Fri", hours: 6.2 },
+    { night: "Sat", hours: 8.5 },
+    { night: "Sun", hours: 7.8 },
+  ]}
+/>
+
+---
+
+## Data Tables
+
+### Simple Data Table
+
+<DataTable
+  title="Heart Rate Zones"
+  headers={["Zone", "% of Max HR", "Description"]}
+  rows={[
+    ["Zone 1", "50-60%", "Recovery / Warm-up"],
+    ["Zone 2", "60-70%", "Fat burning / Endurance"],
+    ["Zone 3", "70-80%", "Aerobic / Cardio"],
+    ["Zone 4", "80-90%", "Anaerobic / Performance"],
+    ["Zone 5", "90-100%", "Maximum effort"],
+  ]}
+/>
+
+---
+
+## Layout: Grid System
+
+### 2 Columns
+
+<Grid cols={2}>
+  <StatHighlight value="Left" label="Column" description="First item" />
+  <StatHighlight value="Right" label="Column" description="Second item" />
+</Grid>
+
+### 3 Columns
+
+<Grid cols={3}>
+  <StatHighlight value="1" label="First" />
+  <StatHighlight value="2" label="Second" />
+  <StatHighlight value="3" label="Third" />
+</Grid>
+
+### 4 Columns
+
+<Grid cols={4}>
+  <StatHighlight value="A" label="Col 1" />
+  <StatHighlight value="B" label="Col 2" />
+  <StatHighlight value="C" label="Col 3" />
+  <StatHighlight value="D" label="Col 4" />
+</Grid>
+
+---
+
+## Combining Components
+
+Components can be mixed for rich layouts:
+
+<Callout type="info" title="Understanding Your Data">
+The following metrics are interconnected. Improvements in one often lead to improvements in others.
+</Callout>
+
+<Grid cols={3}>
+  <StatHighlight value="65" label="bpm" description="Resting HR" />
+  <StatHighlight value="45" label="ms" description="HRV (SDNN)" />
+  <StatHighlight value="42" label="mL/kg/min" description="VO2 Max" />
+</Grid>
+
+<GenericChart
+  title="Fitness Progression"
+  description="VO2 Max improvement over 12 weeks of training"
+  type="line"
+  xKey="week"
+  yKey="vo2"
+  yLabel="mL/kg/min"
+  color="#34C759"
+  data={[
+    { week: "W1", vo2: 35 },
+    { week: "W2", vo2: 35.5 },
+    { week: "W3", vo2: 36 },
+    { week: "W4", vo2: 36.8 },
+    { week: "W5", vo2: 37.2 },
+    { week: "W6", vo2: 38 },
+    { week: "W7", vo2: 38.5 },
+    { week: "W8", vo2: 39.2 },
+    { week: "W9", vo2: 40 },
+    { week: "W10", vo2: 40.5 },
+    { week: "W11", vo2: 41.2 },
+    { week: "W12", vo2: 42 },
+  ]}
+/>
+
+<Callout type="success" title="Key Takeaway">
+Consistent training over 12 weeks resulted in a 20% improvement in VO2 Max, demonstrating that cardiorespiratory fitness is highly modifiable.
+</Callout>
+
+---
+
+## Interactive Components
+
+### Accordion / FAQ
+
+Collapsible sections for FAQs or expandable content:
+
+<Accordion>
+  <AccordionItem title="What is VO2 Max?">
+    VO2 max (maximal oxygen uptake) represents the maximum rate at which your body can consume oxygen during intense exercise. It's measured in milliliters of oxygen per kilogram of body weight per minute (mL/kg/min).
+  </AccordionItem>
+  <AccordionItem title="How accurate is Apple Watch?">
+    Apple's validation studies report a correlation of approximately r = 0.89 with laboratory treadmill testing. Independent research has generally confirmed reasonable accuracy, with typical individual error margins of plus or minus 3-5 mL/kg/min.
+  </AccordionItem>
+  <AccordionItem title="Can I improve my VO2 Max?" defaultOpen>
+    Yes! Cardiorespiratory fitness is highly modifiable. With consistent aerobic training, most people can see 10-20% improvement in VO2 max within 3-6 months.
+  </AccordionItem>
+</Accordion>
+
+---
+
+### Tabs
+
+Organize related content into switchable panels:
+
+<Tabs>
+  <Tab label="iPhone">
+    On iPhone, open the **Health app** and navigate to Browse, then Heart, then Cardio Fitness to view your VO2 max history and trends.
+  </Tab>
+  <Tab label="Apple Watch">
+    On your Apple Watch, open the **Heart Rate app** or check your fitness data in the Activity app. VO2 max estimates appear after qualifying outdoor workouts.
+  </Tab>
+  <Tab label="Mac">
+    On Mac, you can view your health data by syncing with iCloud. Open **Health** data exports or use third-party apps that sync with Apple Health.
+  </Tab>
+</Tabs>
+
+---
+
+### Steps
+
+Step-by-step instructions with numbered circles:
+
+<Steps>
+  <Step title="Open the Health app">
+    Launch the Health app on your iPhone. It's the white app with a red heart icon.
+  </Step>
+  <Step title="Navigate to Browse">
+    Tap the **Browse** tab at the bottom of the screen to see all health categories.
+  </Step>
+  <Step title="Select Heart">
+    Find and tap on **Heart** in the categories list to view heart-related metrics.
+  </Step>
+  <Step title="View Cardio Fitness">
+    Scroll down and tap **Cardio Fitness** to see your VO2 max history and trends.
+  </Step>
+</Steps>
+
+---
+
+### Timeline
+
+Show progression or history:
+
+<Timeline>
+  <TimelineItem date="Week 1" title="Baseline Assessment">
+    Record your starting VO2 max and resting heart rate. Begin with 3 moderate cardio sessions per week.
+  </TimelineItem>
+  <TimelineItem date="Week 4" title="First Progress Check">
+    You should start seeing initial improvements. Increase workout duration by 10%.
+  </TimelineItem>
+  <TimelineItem date="Week 8" title="Add Intensity">
+    Introduce one interval training session per week while maintaining base cardio.
+  </TimelineItem>
+  <TimelineItem date="Week 12" title="Final Assessment">
+    Compare your metrics to baseline. Most people see 10-15% improvement by this point.
+  </TimelineItem>
+</Timeline>
+
+---
+
+### Definition (Inline Glossary)
+
+Add inline definitions for technical terms:
+
+Your <Definition term="VO2 max">the maximum rate at which your body can consume oxygen during intense exercise, measured in mL/kg/min</Definition> is one of the best predictors of <Definition term="cardiovascular fitness">the ability of your heart, lungs, and blood vessels to supply oxygen to working muscles during sustained physical activity</Definition>.
+
+---
+
+### Quote
+
+Styled quotes from experts or studies:
+
+<Quote
+  author="Dr. Jane Smith"
+  role="Cardiologist, Mayo Clinic"
+  source="Journal of Cardiology, 2024"
+>
+  Low cardiorespiratory fitness is one of the strongest predictors of mortality, yet it remains underutilized in clinical practice. We should be measuring it as routinely as blood pressure.
+</Quote>
+
+<Quote author="American Heart Association">
+  Cardiorespiratory fitness should be regularly assessed and used in clinical practice as a vital sign.
+</Quote>
+
+---
+
+### Key Takeaways
+
+Summary box for main points (typically at end of articles):
+
+<KeyTakeaways>
+- VO2 max strongly predicts longevity and all-cause mortality
+- Apple Watch estimates are reasonably accurate for trend monitoring
+- Cardiorespiratory fitness is highly modifiable with consistent exercise
+- Moving from low to average fitness provides substantial health benefits
+</KeyTakeaways>
+
+<KeyTakeaways title="Action Items">
+- Check your current VO2 max in the Health app
+- Start with 150 minutes of moderate activity per week
+- Track your progress monthly
+</KeyTakeaways>
+
+---
+
+### Citation
+
+Academic-style inline references with hover details:
+
+Studies show VO2 max is a strong predictor of mortality<Citation
+  id={1}
+  authors="Mandsager K, et al."
+  title="Association of Cardiorespiratory Fitness With Long-term Mortality"
+  journal="JAMA Network Open"
+  year={2018}
+  doi="10.1001/jamanetworkopen.2018.3605"
+/>. The American Heart Association now recommends assessing cardiorespiratory fitness as a clinical vital sign<Citation
+  id={2}
+  authors="Ross R, et al."
+  title="Importance of Assessing Cardiorespiratory Fitness in Clinical Practice"
+  journal="Circulation"
+  year={2016}
+  url="https://www.ahajournals.org/doi/10.1161/CIR.0000000000000461"
+/>.
+
+---
+
+### Video
+
+Embed YouTube or Vimeo videos:
+
+<Video
+  src="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  title="Understanding VO2 Max"
+  caption="A visual explanation of how VO2 max affects your health and fitness"
+/>
+
+---
+
+## Best Practices
+

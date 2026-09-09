@@ -1,0 +1,133 @@
+identifier: "HKCategoryTypeIdentifierNausea"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Nausea"
+short_description: "Tracks episodes and severity of nausea"
+icon: "circle.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No nausea experienced"
+  - value: 1
+    name: "present"
+    description: "Mild nausea - slight queasiness, able to eat and function"
+  - value: 2
+    name: "moderate"
+    description: "Moderate nausea - persistent discomfort, reduced appetite"
+  - value: 3
+    name: "severe"
+    description: "Severe nausea - intense, may lead to vomiting, significantly impacts function"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Nausea is the sensation of unease and discomfort in the stomach with an urge
+  to vomit. It is a common symptom with numerous potential causes ranging from
+  benign to serious. This data type enables tracking of nausea episodes for
+  pattern identification and clinical correlation.
+
+  ## Health Significance
+  - **Symptom Monitoring**: Nausea accompanies many conditions requiring tracking
+  - **Medication Side Effects**: Common adverse effect of many drugs, especially
+    chemotherapy, opioids, and antibiotics
+  - **Pregnancy**: Morning sickness tracking in early pregnancy
+  - **Migraine Association**: Often precedes or accompanies migraines
+  - **Gastrointestinal Health**: Indicator of GI disturbances
+  - **Treatment Response**: Monitors effectiveness of antiemetics
+
+  ## Clinical Context
+  Common causes of nausea include:
+  - **Gastrointestinal**: Gastroenteritis, GERD, gastroparesis, obstruction
+  - **Medications**: Chemotherapy, opioids, NSAIDs, antibiotics, anesthesia
+  - **Neurological**: Migraines, vestibular disorders, increased intracranial pressure
+  - **Pregnancy**: First trimester morning sickness, hyperemesis gravidarum
+  - **Metabolic**: Diabetic ketoacidosis, uremia, liver failure
+  - **Infections**: Viral or bacterial infections, food poisoning
+  - **Psychological**: Anxiety, eating disorders
+
+  ## When to Seek Medical Attention
+  - Nausea persisting more than 48 hours without clear cause
+  - Nausea with severe abdominal pain
+  - Signs of dehydration (dark urine, dizziness, dry mouth)
+  - Nausea following head injury
+  - Blood in vomit or coffee-ground appearance
+  - Nausea with high fever
+  - Nausea with severe headache and stiff neck
+  - Unable to keep down any fluids
+  - Nausea with chest pain or shortness of breath
+  - Pregnancy with severe nausea causing weight loss
+
+  ## Pattern Recognition
+  Tracking nausea can reveal:
+  - Medication timing relationships
+  - Dietary triggers
+  - Migraine prodrome patterns
+  - Morning vs. evening patterns
+  - Menstrual cycle correlations
+  - Motion or positional triggers
+  - Stress-related patterns
+  - Response to antiemetic treatments
+
+  ## Caveats & Limitations
+  - Subjective severity difficult to standardize
+  - Does not capture duration of episodes
+  - Cannot identify underlying cause
+  - No integration with vomiting data in same record
+  - Does not track fluid intake or hydration status
+  - Brief episodes may not be logged
+  - Cannot differentiate nausea types (motion, medication, etc.)
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierVomiting"
+    relationship: "Nausea often precedes vomiting; track together"
+  - identifier: "HKCategoryTypeIdentifierHeartburn"
+    relationship: "May co-occur in GI conditions"
+  - identifier: "HKCategoryTypeIdentifierDizziness"
+    relationship: "Vestibular nausea often accompanied by dizziness"
+  - identifier: "HKCategoryTypeIdentifierHeadache"
+    relationship: "Common migraine association"
+  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+    relationship: "GI symptoms often cluster together"
+  - identifier: "HKCategoryTypeIdentifierAppetiteChanges"
+    relationship: "Nausea typically reduces appetite"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierNausea"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiernausea"
+    type: "official"
+  - title: "Nausea and Vomiting - American Family Physician"
+    url: "https://www.aafp.org/pubs/afp/issues/2007/0701/p76.html"
+    type: "medical"
+  - title: "Antiemetic Guidelines - ASCO"
+    url: "https://www.asco.org/practice-policy/guidelines"
+    type: "medical"
+last_updated: "2026-01-27"

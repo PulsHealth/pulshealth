@@ -1,0 +1,251 @@
+identifier: "HKQuantityTypeIdentifierDietaryCaffeine"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Caffeine"
+short_description: "Total caffeine consumed from beverages, food, and supplements, measured in milligrams."
+
+# --- APPLE HEALTH UI ---
+icon: "cup.and.saucer.fill"
+color: "#8B4513"
+
+default_unit: "mg"
+supported_units:
+  - "mg"
+  - "g"
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 0
+  max: 600
+  unit: "mg"
+clinical_ranges:
+  - population: "Healthy Adults"
+    recommended: "Up to 400 mg/day"
+    upper_limit: "400 mg/day (FDA guideline)"
+  - population: "Pregnant Women"
+    recommended: "Limit to 200 mg/day or less"
+    upper_limit: "200 mg/day (ACOG recommendation)"
+  - population: "Breastfeeding Women"
+    recommended: "Up to 300 mg/day"
+    upper_limit: "300 mg/day; monitor infant for irritability"
+  - population: "Adolescents (12-18 years)"
+    recommended: "Up to 100 mg/day"
+    upper_limit: "100 mg/day; American Academy of Pediatrics discourages routine use"
+  - population: "Children (<12 years)"
+    recommended: "Not recommended"
+    upper_limit: "No safe established limit; avoid routine consumption"
+  - population: "Caffeine-Sensitive Individuals"
+    recommended: "Individualized; may need <100 mg/day"
+    upper_limit: "Based on symptom tolerance"
+  - population: "Anxiety/Panic Disorder"
+    recommended: "Minimize or avoid"
+    upper_limit: "Often <100 mg/day or complete abstinence"
+  - population: "Cardiovascular Disease"
+    recommended: "Moderate consumption generally acceptable"
+    upper_limit: "Individualized based on arrhythmia history"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Nutrition Tracking Apps"
+    capability: "Calculate caffeine from logged foods and beverages"
+    examples:
+      - "MyFitnessPal"
+      - "Cronometer"
+      - "Lose It!"
+      - "Nutritionix Track"
+  - name: "Coffee-Specific Apps"
+    capability: "Specialized caffeine tracking with timing analysis"
+    examples:
+      - "Caffeine Tracker"
+      - "HiCoffee"
+      - "Up Coffee"
+  - name: "Manual Entry"
+    capability: "Direct caffeine amount logging"
+    examples:
+      - "Apple Health"
+primary_source: "Manual logging and nutrition database lookups from food/beverage entries"
+description: |
+  ## Overview
+  Dietary caffeine tracks consumption of the world's most widely used psychoactive substance. Caffeine (1,3,7-trimethylxanthine) is a central nervous system stimulant found in coffee, tea, energy drinks, soft drinks, chocolate, and various supplements and medications. Understanding caffeine intake patterns is clinically relevant for sleep quality, cardiovascular health, anxiety management, and medication interactions.
+
+  ## Caffeine Content Reference
+  Common sources and approximate caffeine content:
+
+  **Coffee:**
+  - Brewed coffee (8 oz): 80-100 mg
+  - Espresso (1 oz shot): 63 mg
+  - Instant coffee (8 oz): 60-80 mg
+  - Decaf coffee (8 oz): 2-15 mg
+  - Cold brew (8 oz): 100-200 mg
+
+  **Tea:**
+  - Black tea (8 oz): 40-70 mg
+  - Green tea (8 oz): 25-45 mg
+  - White tea (8 oz): 15-30 mg
+  - Matcha (1 tsp): 70 mg
+  - Herbal tea: 0 mg (caffeine-free)
+
+  **Energy Drinks:**
+  - Red Bull (8.4 oz): 80 mg
+  - Monster (16 oz): 160 mg
+  - 5-hour Energy (2 oz): 200 mg
+  - Bang Energy (16 oz): 300 mg
+
+  **Soft Drinks:**
+  - Coca-Cola (12 oz): 34 mg
+  - Diet Coke (12 oz): 46 mg
+  - Mountain Dew (12 oz): 54 mg
+  - Pepsi (12 oz): 38 mg
+
+  **Other Sources:**
+  - Dark chocolate (1 oz): 12-25 mg
+  - Milk chocolate (1 oz): 6-10 mg
+  - Pre-workout supplements: 150-400 mg
+  - Caffeine pills: 100-200 mg per tablet
+  - Some headache medications: 65-130 mg per dose
+
+  ## Health Significance
+  Caffeine affects multiple body systems with both benefits and risks:
+
+  **Potential Benefits (at moderate doses):**
+  - Enhanced alertness and cognitive performance
+  - Improved physical performance and endurance
+  - Reduced risk of Parkinson's disease, type 2 diabetes, and certain liver conditions
+  - Mild bronchodilation (historically used in asthma treatment)
+  - Headache relief (component in many analgesics)
+
+  **Potential Risks (especially at high doses or in sensitive individuals):**
+  - Sleep disruption and insomnia
+  - Anxiety, restlessness, and jitteriness
+  - Tachycardia and palpitations
+  - Increased blood pressure (acute, transient)
+  - Gastrointestinal upset
+  - Physical dependence and withdrawal symptoms
+  - Potential pregnancy complications at high intake
+
+  ## Pharmacokinetics
+  Understanding caffeine metabolism is crucial for clinical guidance:
+
+  - **Absorption**: Rapidly absorbed; peak plasma levels in 30-60 minutes
+  - **Half-life**: 3-7 hours in healthy adults (average ~5 hours)
+  - **Metabolism**: Primarily hepatic via CYP1A2 enzyme
+  - **Clearance factors**:
+    - Smoking: Increases clearance (shorter half-life)
+    - Pregnancy: Decreased clearance (half-life 9-11 hours in third trimester)
+    - Oral contraceptives: Decreased clearance
+    - Liver disease: Significantly prolonged half-life
+    - Genetic variations: CYP1A2 polymorphisms affect metabolism speed
+
+  ## Clinical Interpretation Guidelines
+  When reviewing caffeine intake data:
+
+  **Sleep Impact Assessment:**
+  - Caffeine consumed within 6 hours of bedtime can significantly disrupt sleep
+  - Even caffeine 6+ hours before sleep may affect sleep quality in slow metabolizers
+  - Recommend last caffeine intake by early afternoon (before 2 PM) for most patients
+  - Consider complete elimination trial for patients with persistent insomnia
+
+  **Anxiety and Mood:**
+  - Doses >200 mg can trigger anxiety symptoms in susceptible individuals
+  - May worsen panic disorder; often recommend complete elimination
+  - Assess for caffeine-induced anxiety disorder (DSM-5 diagnosis)
+
+  **Cardiovascular Considerations:**
+  - Acute BP increase of 3-15 mmHg possible; tolerance develops
+  - Generally safe for most with hypertension at moderate doses
+  - Caution in patients with arrhythmias, especially uncontrolled
+  - May trigger SVT or atrial fibrillation in susceptible individuals
+
+  **Withdrawal Recognition:**
+  - Onset: 12-24 hours after last caffeine
+  - Peak: 20-51 hours
+  - Duration: 2-9 days
+  - Symptoms: Headache, fatigue, irritability, depressed mood, difficulty concentrating
+
+  ## Special Populations
+
+  **Pregnancy:**
+  - ACOG recommends limiting to <200 mg/day
+  - High intake (>300 mg/day) associated with increased miscarriage risk and low birth weight
+  - Caffeine crosses placenta freely; fetus cannot metabolize efficiently
+  - Complete abstinence may be preferred for high-risk pregnancies
+
+  **Breastfeeding:**
+  - Approximately 1% of maternal dose transfers to breast milk
+  - Peak milk concentration 60-120 minutes after consumption
+  - Newborns metabolize caffeine slowly (half-life up to 97 hours)
+  - Watch for infant irritability, poor sleep, or jitteriness
+
+  **Adolescents:**
+  - American Academy of Pediatrics discourages caffeine use in children
+  - Developing brains may be more susceptible to negative effects
+  - Energy drink consumption is a particular concern
+  - May interfere with sleep critical for development
+
+  **Cardiovascular Disease:**
+  - Moderate consumption (3-4 cups coffee/day) generally safe for most
+  - Recent meta-analyses suggest neutral or protective cardiovascular effects
+  - Individualize for patients with arrhythmias or uncontrolled hypertension
+  - May need to avoid or limit with certain medications
+
+  **Mental Health:**
+  - Anxiety disorders: Often benefit from reduction or elimination
+  - Depression: Moderate intake may have protective effects
+  - Bipolar disorder: May trigger manic episodes; use caution
+  - ADHD: Some patients self-medicate; evaluate stimulant interactions
+
+  ## Caveats & Limitations
+  - **Estimation challenges**: Caffeine content varies significantly by preparation method, serving size, and brand
+  - **Incomplete logging**: Users often forget to log all caffeine sources (chocolate, medications, supplements)
+  - **Timing accuracy**: Entry timestamps may not reflect actual consumption time, limiting sleep impact analysis
+  - **Individual variation**: Genetic differences in CYP1A2 create 40-fold variation in metabolism rates
+  - **Tolerance effects**: Regular users develop tolerance; same dose has different effects than in naive users
+  - **Synergistic effects**: Interactions with other substances (alcohol, medications) not captured
+  - **No biomarker correlation**: Self-reported intake may not reflect actual caffeine levels
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Source of caffeine (e.g., 'Coffee', 'Tea', 'Energy Drink', 'Supplement')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating if the value was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Caffeine intake timing directly affects sleep quality and duration; correlate for sleep hygiene assessment"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Caffeine can acutely increase heart rate; useful for assessing individual sensitivity"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "Caffeine causes transient blood pressure elevation; consider when reviewing BP trends"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureDiastolic"
+    relationship: "Caffeine causes transient blood pressure elevation; consider when reviewing BP trends"
+  - identifier: "HKQuantityTypeIdentifierDietaryWater"
+    relationship: "Caffeine has mild diuretic effect; ensure adequate water intake with high caffeine consumption"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Chronic high caffeine intake may affect baseline heart rate measurements"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariability"
+    relationship: "Caffeine may acutely reduce HRV; consider when interpreting autonomic function data"
+references:
+  - title: "FDA - Spilling the Beans: How Much Caffeine is Too Much?"
+    url: "https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much"
+    type: "official"
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryCaffeine"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarycaffeine"
+    type: "official"
+  - title: "ACOG Committee Opinion: Moderate Caffeine Consumption During Pregnancy"
+    url: "https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2010/08/moderate-caffeine-consumption-during-pregnancy"
+    type: "medical"
+  - title: "Caffeine for the Sustainment of Mental Task Performance - Institute of Medicine"
+    url: "https://nap.nationalacademies.org/catalog/10219/caffeine-for-the-sustainment-of-mental-task-performance-formulations-for"
+    type: "research"
+  - title: "European Food Safety Authority - Scientific Opinion on Caffeine Safety"
+    url: "https://www.efsa.europa.eu/en/efsajournal/pub/4102"
+    type: "research"
+  - title: "American Academy of Pediatrics - Clinical Report on Energy Drinks"
+    url: "https://publications.aap.org/pediatrics/article/127/6/1182/65153/Sports-Drinks-and-Energy-Drinks-for-Children-and"
+    type: "medical"
+last_updated: "2026-01-27"

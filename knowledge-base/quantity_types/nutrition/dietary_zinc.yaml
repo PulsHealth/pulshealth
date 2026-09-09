@@ -1,0 +1,239 @@
+identifier: "HKQuantityTypeIdentifierDietaryZinc"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Zinc"
+short_description: "Zinc intake from food and supplements, essential for immune function, wound healing, and protein synthesis."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#8E8E93"
+
+default_unit: "mg"
+supported_units: ["mg", "mcg", "g"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 50
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "2 mg/day"
+  - population: "Infants 7-12 months"
+    rda: "3 mg/day"
+  - population: "Children 1-3 years"
+    rda: "3 mg/day"
+  - population: "Children 4-8 years"
+    rda: "5 mg/day"
+  - population: "Children 9-13 years"
+    rda: "8 mg/day"
+  - population: "Teen boys 14-18 years"
+    rda: "11 mg/day"
+  - population: "Teen girls 14-18 years"
+    rda: "9 mg/day"
+  - population: "Adult men 19+ years"
+    rda: "11 mg/day"
+  - population: "Adult women 19+ years"
+    rda: "8 mg/day"
+  - population: "Pregnant women 14-18 years"
+    rda: "12 mg/day"
+  - population: "Pregnant women 19+ years"
+    rda: "11 mg/day"
+  - population: "Lactating women 14-18 years"
+    rda: "13 mg/day"
+  - population: "Lactating women 19+ years"
+    rda: "12 mg/day"
+  - population: "Vegetarians"
+    rda: "Up to 50% higher due to lower bioavailability"
+  - population: "Adults"
+    upper_limit: "40 mg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary zinc from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track zinc intake against personalized targets"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Zinc is an essential trace mineral involved in nearly every aspect of cellular metabolism. It serves as a structural component and catalytic cofactor for over 300 enzymes and is crucial for the function of approximately 2000 transcription factors. Unlike iron, the body has no dedicated zinc storage; therefore, regular dietary intake is required. Zinc plays critical roles in immune function, wound healing, DNA synthesis, and sensory perception (taste and smell).
+
+  ## Biological Functions
+  - **Enzymatic cofactor**: Required for 300+ enzymes including alcohol dehydrogenase, carbonic anhydrase, carboxypeptidases
+  - **Gene expression**: Zinc finger proteins regulate transcription of numerous genes
+  - **Immune function**: Essential for lymphocyte development, antibody production, and inflammatory response modulation
+  - **Protein synthesis**: Required for ribosomal function and cell division
+  - **Wound healing**: Critical for collagen synthesis, cell proliferation, and epithelialization
+  - **Sensory function**: Required for proper taste (gustin) and smell perception
+  - **Hormone function**: Required for insulin storage and secretion, thyroid hormone metabolism
+  - **Antioxidant**: Component of superoxide dismutase (Cu/Zn-SOD); protects against oxidative stress
+
+  ## Health Significance
+  Zinc deficiency affects approximately 17% of the global population, with higher rates in developing countries. Even mild deficiency impairs immune function, increasing susceptibility to infections. Adequate zinc status is particularly important during periods of rapid growth (childhood, adolescence, pregnancy). Emerging research suggests zinc may play roles in mental health, with low levels associated with depression.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing zinc intake data:
+  - **Assess bioavailability context**: Phytate-rich diets (vegetarian, high whole grain) reduce zinc absorption significantly
+  - **Apply vegetarian adjustments**: May need 50% higher intake to account for reduced bioavailability
+  - **Evaluate for high-risk patients**: Elderly, alcoholics, GI disease, vegetarians/vegans
+  - **Consider zinc-depleting conditions**: Diabetes, sickle cell disease, chronic diarrhea
+  - **Review supplement timing**: Zinc supplements taken with meals are better tolerated but less well absorbed
+  - **Watch for excessive supplementation**: High-dose zinc (>50 mg/day) can cause copper deficiency
+
+  ## Deficiency
+  **Causes of zinc deficiency**:
+  - Inadequate dietary intake (especially in plant-based diets)
+  - Malabsorption: Celiac disease, IBD, short bowel syndrome
+  - Increased losses: Chronic diarrhea, diabetes, alcoholism, burns
+  - Increased requirements: Pregnancy, lactation, rapid growth
+  - Genetic: Acrodermatitis enteropathica (rare inherited disorder)
+  - Drug-induced: Chelating agents, certain diuretics
+
+  **Symptoms**:
+  - Immune dysfunction: Frequent infections, delayed wound healing
+  - Dermatologic: Skin lesions, hair loss, brittle nails
+  - GI: Diarrhea, loss of appetite
+  - Sensory: Impaired taste (hypogeusia) and smell (hyposmia)
+  - Neurological: Irritability, depression, cognitive impairment
+  - Growth: Stunted growth in children, delayed sexual maturation
+  - Ocular: Night blindness (zinc required for vitamin A metabolism)
+  - Reproductive: Hypogonadism, impaired fertility
+
+  **Acrodermatitis enteropathica** (severe genetic zinc deficiency):
+  - Periorificial and acral dermatitis
+  - Diarrhea
+  - Alopecia
+  - Failure to thrive
+
+  ## Toxicity/Excess
+  **Acute zinc toxicity** (>200 mg single dose):
+  - Nausea, vomiting, epigastric pain
+  - Diarrhea
+  - Headache
+
+  **Chronic excessive intake** (>50 mg/day for weeks):
+  - Copper deficiency (competitive absorption): Anemia, neutropenia, neurological problems
+  - Impaired immune function (paradoxically, high zinc impairs immunity)
+  - Reduced HDL cholesterol
+  - Altered iron status
+
+  **Zinc intranasal products warning**: Intranasal zinc products have caused anosmia (permanent loss of smell); FDA warning issued.
+
+  **Upper limit rationale**: 40 mg/day UL based on copper deficiency risk as most sensitive endpoint.
+
+  ## Food Sources
+  **Very high zinc foods** (>5 mg per serving):
+  - Oysters: 74 mg per 3 oz (highest food source)
+  - Beef: 5-7 mg per 3 oz serving
+  - Crab, lobster: 6-7 mg per 3 oz
+
+  **High zinc foods** (2-5 mg per serving):
+  - Pork, chicken (dark meat)
+  - Fortified breakfast cereals
+  - Pumpkin seeds
+  - Chickpeas, lentils, baked beans
+  - Cashews
+
+  **Moderate sources** (1-2 mg per serving):
+  - Cheese
+  - Yogurt, milk
+  - Oatmeal
+  - Almonds
+  - Tofu
+
+  **Note**: Animal sources (oysters, red meat, poultry) have higher bioavailability than plant sources.
+
+  ## Absorption Factors
+  **Absorption efficiency**: Approximately 20-40% of dietary zinc is absorbed; varies greatly with dietary composition.
+
+  **Enhancers**:
+  - Animal protein: Amino acids (histidine, cysteine) enhance absorption
+  - Lower phytate:zinc ratio
+  - Food processing: Fermenting, sprouting, soaking reduce phytate
+
+  **Inhibitors**:
+  - Phytates: Most significant inhibitor; found in whole grains, legumes, nuts, seeds
+  - Calcium: High calcium intake may reduce zinc absorption (controversial)
+  - Iron supplements: High-dose iron can compete for absorption
+  - Fiber: High fiber may reduce absorption (largely through associated phytate)
+  - Oxalates: Modest inhibitory effect
+  - Polyphenols: Tea, coffee may reduce absorption
+  - Copper: Competes for transporters (relevant at supplemental doses)
+
+  **Phytate:zinc molar ratio impact**:
+  - <5: Good bioavailability
+  - 5-15: Moderate bioavailability
+  - >15: Low bioavailability (common in vegetarian diets)
+
+  ## Special Populations
+  - **Vegetarians/vegans**: Need up to 50% more zinc; should employ phytate-reduction strategies
+  - **Pregnant women**: Requirements increase; deficiency linked to preterm birth, low birth weight
+  - **Breastfed infants >6 months**: Need complementary zinc-rich foods; breast milk zinc declines over time
+  - **Elderly**: Often inadequate intake plus reduced absorption; immune function particularly affected
+  - **Alcoholics**: Increased urinary losses, poor dietary intake, impaired absorption
+  - **Sickle cell disease**: Increased urinary losses; may need supplementation
+  - **GI disorders**: IBD, celiac disease cause malabsorption
+  - **Diabetes**: Increased urinary losses; may contribute to impaired wound healing
+  - **Athletes**: May have increased requirements from sweat losses and increased turnover
+  - **HIV/AIDS**: Zinc deficiency common and may accelerate disease progression
+
+  ## Drug Interactions
+  - **Quinolone antibiotics** (ciprofloxacin, levofloxacin): Zinc reduces absorption; separate by 2 hours
+  - **Tetracycline antibiotics**: Zinc reduces absorption; separate by 2 hours
+  - **Penicillamine**: Zinc reduces absorption of this chelating agent
+  - **Thiazide diuretics**: Increase urinary zinc excretion
+  - **Proton pump inhibitors**: Long-term use may reduce zinc absorption
+  - **Iron supplements**: High-dose iron may reduce zinc absorption
+  - **Calcium supplements**: May reduce zinc absorption at high doses
+  - **Copper supplements**: Compete for absorption
+  - **ACE inhibitors**: May reduce serum zinc levels
+  - **Oral contraceptives**: May lower serum zinc levels
+
+  ## Caveats & Limitations
+  - HealthKit data reflects intake, not zinc status
+  - No reliable biomarker for zinc status; serum zinc has limitations (acute phase reactant, diurnal variation)
+  - Phytate content dramatically affects bioavailability but isn't tracked
+  - Food composition databases may not reflect actual bioavailable zinc
+  - Supplement form affects absorption (zinc citrate, gluconate better than oxide)
+  - Zinc from fortified foods may have different bioavailability than natural sources
+  - Individual absorption efficiency varies considerably (20-40%)
+  - Symptoms of mild zinc deficiency are nonspecific and overlap with other conditions
+  - Therapeutic zinc (for common cold) is distinct from nutritional intake; not well-captured
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing zinc"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryCopper"
+    relationship: "High-dose zinc supplements can cause copper deficiency; balance important"
+  - identifier: "HKQuantityTypeIdentifierDietaryIron"
+    relationship: "Iron and zinc compete for absorption at supplemental doses"
+  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
+    relationship: "High calcium intake may modestly reduce zinc absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
+    relationship: "Protein-rich foods are good zinc sources; amino acids enhance absorption"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryZinc"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryzinc"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Zinc Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Zinc-HealthProfessional/"
+    type: "medical"
+  - title: "American Journal of Clinical Nutrition - Zinc Bioavailability"
+    url: "https://academic.oup.com/ajcn/article/91/5/1478S/4597420"
+    type: "research"
+  - title: "WHO - Zinc Supplementation and Health"
+    url: "https://www.who.int/elena/titles/zinc_supplementation/en/"
+    type: "medical"
+last_updated: "2026-01-27"

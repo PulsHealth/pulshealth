@@ -1,0 +1,186 @@
+identifier: "HKQuantityTypeIdentifierDietaryWater"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Water"
+short_description: "Total water consumed from beverages and food, measured in milliliters or liters."
+
+# --- APPLE HEALTH UI ---
+icon: "drop.fill"
+color: "#5AC8FA"
+
+default_unit: "mL"
+supported_units:
+  - "mL"
+  - "L"
+  - "fl_oz_us"
+  - "cup_us"
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 0
+  max: 5000
+  unit: "mL"
+clinical_ranges:
+  - population: "Adult Women"
+    recommended: "2700 mL/day (total water from all sources)"
+    upper_limit: "Generally no upper limit; kidneys can excrete ~0.8-1.0 L/hour"
+  - population: "Adult Men"
+    recommended: "3700 mL/day (total water from all sources)"
+    upper_limit: "Generally no upper limit; kidneys can excrete ~0.8-1.0 L/hour"
+  - population: "Pregnant Women"
+    recommended: "3000 mL/day"
+    upper_limit: "Monitor for excessive intake"
+  - population: "Lactating Women"
+    recommended: "3800 mL/day"
+    upper_limit: "Monitor for excessive intake"
+  - population: "Children (4-8 years)"
+    recommended: "1700 mL/day"
+    upper_limit: "Age-appropriate limits"
+  - population: "Adolescents (14-18 years)"
+    recommended: "2400-3300 mL/day (girls-boys)"
+    upper_limit: "Age-appropriate limits"
+  - population: "Athletes"
+    recommended: "Individualized based on sweat rate; 400-800 mL/hour during exercise"
+    upper_limit: "Avoid hyponatremia; do not exceed sweat losses"
+  - population: "Elderly (65+)"
+    recommended: "Same as adults; often require prompting due to decreased thirst sensation"
+    upper_limit: "May need restriction in heart failure or kidney disease"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Manual Entry Apps"
+    capability: "User logs water intake manually"
+    examples:
+      - "Apple Health"
+      - "WaterMinder"
+      - "MyFitnessPal"
+      - "Cronometer"
+  - name: "Smart Water Bottles"
+    capability: "Automatic tracking via connected bottles"
+    examples:
+      - "HidrateSpark"
+      - "Thermos Connected Hydration Bottle"
+  - name: "Fitness Apps"
+    capability: "Integrated hydration tracking with activity"
+    examples:
+      - "Fitbit"
+      - "Garmin Connect"
+      - "WHOOP"
+primary_source: "Manual logging by user or smart water bottle sensors"
+description: |
+  ## Overview
+  Dietary water tracks the total volume of water consumed through beverages and water-rich foods. This metric is essential for monitoring hydration status, which affects nearly every physiological system. The Adequate Intake (AI) values established by the National Academies of Sciences, Engineering, and Medicine represent total water from all sources, including approximately 20% from food.
+
+  ## Health Significance
+  Proper hydration is critical for:
+  - **Thermoregulation**: Maintaining core body temperature through sweating
+  - **Cardiovascular function**: Adequate blood volume for circulation
+  - **Renal function**: Kidney filtration and waste elimination
+  - **Cognitive performance**: Even mild dehydration (1-2% body weight loss) impairs attention and memory
+  - **Physical performance**: 2% dehydration can reduce endurance capacity by up to 25%
+  - **Digestion**: Nutrient absorption and bowel regularity
+  - **Joint lubrication**: Synovial fluid production
+
+  Chronic mild dehydration is associated with increased risk of urinary tract infections, kidney stones, constipation, and may contribute to fatigue and headaches.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing water intake data:
+
+  **Signs of Inadequate Hydration:**
+  - Intake consistently below 1500 mL/day in adults
+  - Dark urine color (specific gravity >1.020)
+  - Reported symptoms: headache, fatigue, dizziness, dry mouth
+  - Reduced skin turgor, orthostatic hypotension
+
+  **Assessment Considerations:**
+  - Compare intake to AI recommendations adjusted for activity level and climate
+  - Account for water from food sources (fruits, vegetables, soups)
+  - Consider caffeine and alcohol consumption which have mild diuretic effects
+  - Evaluate in context of sodium intake, medications, and health conditions
+
+  **Hydration Goals:**
+  - Baseline: 30-35 mL per kg body weight
+  - Athletes: Add 400-800 mL per hour of exercise
+  - Hot climates: Increase by 500-1000 mL/day
+  - Fever: Add 100-150 mL per degree Celsius above normal
+
+  ## Special Populations
+
+  **Athletes:**
+  - Pre-exercise: 5-7 mL/kg body weight 4 hours before activity
+  - During exercise: 400-800 mL/hour depending on sweat rate
+  - Post-exercise: 1.25-1.5 L per kg body weight lost
+  - Monitor for exercise-associated hyponatremia in endurance events
+
+  **Elderly:**
+  - Decreased thirst sensation increases dehydration risk
+  - May need scheduled drinking rather than relying on thirst
+  - Comorbidities (diabetes, heart failure) may affect requirements
+  - Medications (diuretics, laxatives) increase fluid needs
+
+  **Kidney Disease:**
+  - CKD stages 1-3: Generally normal hydration encouraged
+  - CKD stages 4-5/ESRD: Often require fluid restriction (1-1.5 L/day)
+  - Dialysis patients: Strict fluid limits between treatments
+  - Kidney stone formers: Target >2.5 L urine output daily
+
+  **Heart Failure:**
+  - May require fluid restriction (1.5-2 L/day)
+  - Daily weight monitoring for fluid balance
+  - Individualized targets based on severity and treatment response
+
+  **Pregnancy/Lactation:**
+  - Increased needs due to expanded blood volume and amniotic fluid
+  - Lactation requires additional ~700 mL/day for milk production
+  - Adequate hydration supports fetal development
+
+  ## Caveats & Limitations
+  - **Self-reported data**: Most water intake is manually logged, subject to estimation errors and inconsistent tracking
+  - **Incomplete capture**: Food-derived water (approximately 20% of intake) rarely captured accurately
+  - **Timing not validated**: Entry timestamps may not reflect actual consumption time
+  - **Individual variation**: Optimal intake varies significantly based on body size, activity, climate, and health status
+  - **No output correlation**: Does not account for losses through sweat, urine, or other routes
+  - **Smart bottle limitations**: Only captures water from that specific container
+  - **Hydration status disconnect**: High intake does not guarantee adequate hydration; absorption and retention vary
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of beverage or food contributing to water intake (e.g., 'Water', 'Coffee', 'Fruit')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating if the value was manually entered by the user"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietarySodium"
+    relationship: "Sodium intake affects fluid balance and hydration needs; high sodium increases water requirements"
+  - identifier: "HKQuantityTypeIdentifierDietaryCaffeine"
+    relationship: "Caffeine has mild diuretic effects; monitor in context of total fluid intake"
+  - identifier: "HKQuantityTypeIdentifierDietaryPotassium"
+    relationship: "Potassium works with sodium to regulate fluid balance"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Body weight affects hydration requirements (30-35 mL/kg recommendation)"
+  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
+    relationship: "Exercise increases fluid requirements through sweat losses"
+  - identifier: "HKQuantityTypeIdentifierEnvironmentalAudioExposure"
+    relationship: "Heat exposure from environmental conditions increases hydration needs"
+references:
+  - title: "Dietary Reference Intakes for Water, Potassium, Sodium, Chloride, and Sulfate"
+    url: "https://nap.nationalacademies.org/catalog/10925/dietary-reference-intakes-for-water-potassium-sodium-chloride-and-sulfate"
+    type: "official"
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryWater"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarywater"
+    type: "official"
+  - title: "ACSM Position Stand: Exercise and Fluid Replacement"
+    url: "https://journals.lww.com/acsm-msse/fulltext/2007/02000/exercise_and_fluid_replacement.22.aspx"
+    type: "medical"
+  - title: "Water, Hydration and Health - Nutrition Reviews"
+    url: "https://academic.oup.com/nutritionreviews/article/68/8/439/1841926"
+    type: "research"
+  - title: "European Hydration Institute - Hydration Guidelines"
+    url: "https://www.europeanhydrationinstitute.org/"
+    type: "medical"
+last_updated: "2026-01-27"

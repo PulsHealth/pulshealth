@@ -1,0 +1,199 @@
+identifier: "HKQuantityTypeIdentifierRunningGroundContactTime"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "Running Ground Contact Time"
+short_description: "The duration each foot spends in contact with the ground during a running stride."
+icon: "figure.run"
+color: "#30D158"
+default_unit: "ms"
+supported_units:
+  - "ms"
+  - "s"
+  - "min"
+unit_description: "Milliseconds (ms) representing the time from initial foot strike to toe-off for each ground contact. This is the stance phase of the gait cycle, during which the runner generates propulsive force."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 160
+  max: 320
+  unit: "ms"
+  notes: "Elite sprinters show 160-180 ms; elite distance runners 180-220 ms; recreational runners 220-280 ms; slower joggers 260-320+ ms. Ground contact time decreases as running speed increases."
+clinical_ranges:
+  - population: "Elite sprinters"
+    values: "160-180 ms typical"
+  - population: "Elite distance runners"
+    values: "180-210 ms typical at race pace"
+  - population: "Trained competitive runners"
+    values: "200-240 ms typical"
+  - population: "Recreational runners (moderate pace)"
+    values: "220-260 ms typical"
+  - population: "Recreational runners (easy pace)"
+    values: "240-280 ms typical"
+  - population: "Novice runners / slow jogging"
+    values: "270-320+ ms common"
+  - population: "Walking comparison"
+    values: ">350 ms (walking has longer ground contact and no flight phase)"
+ios_introduced:
+  version: "16.0"
+  year: 2022
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+deprecated: false
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Estimates ground contact time using accelerometer data during running workouts"
+    examples:
+      - "Apple Watch Series 6"
+      - "Apple Watch Series 7"
+      - "Apple Watch Series 8"
+      - "Apple Watch Series 9"
+      - "Apple Watch SE (2nd gen)"
+      - "Apple Watch Ultra"
+      - "Apple Watch Ultra 2"
+  - name: "Third-party running dynamics devices"
+    capability: "Dedicated pods and sensors that measure ground contact time"
+    examples:
+      - "Garmin Running Dynamics Pod"
+      - "Garmin HRM-Pro"
+      - "COROS POD 2"
+      - "Stryd"
+      - "RunScribe"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  Ground contact time (GCT) measures how long each foot stays on the ground during running - from the instant of initial contact (foot strike) to the moment of toe-off. This stance phase is when runners generate propulsive force and absorb impact. The remaining time in each stride is the flight phase, when both feet are off the ground.
+
+  Ground contact time is influenced by:
+  - Running speed (faster = shorter GCT)
+  - Running form and technique
+  - Lower limb strength and stiffness
+  - Foot strike pattern (forefoot vs. heel)
+  - Fatigue state
+  - Surface characteristics
+  - Footwear properties
+
+  Shorter ground contact time (at equivalent speeds) generally indicates more efficient, powerful running, though individual optimal values vary.
+
+  ## How It's Measured
+  Apple Watch estimates ground contact time using motion sensors:
+
+  1. **Accelerometer analysis**: The watch detects characteristic acceleration patterns during ground contact
+     - Impact spike at foot strike
+     - Loading phase accelerations
+     - Propulsion phase patterns
+     - Toe-off transition
+
+  2. **Signal processing**: Algorithms identify stance phase boundaries within each stride cycle
+
+  3. **Pattern recognition**: Machine learning models trained on labeled running data identify foot contact events
+
+  4. **Averaging**: Values are averaged over sample periods, smoothing stride-to-stride variation
+
+  Measurement considerations:
+  - Wrist-based measurement requires inferring foot events from arm/body motion
+  - Some devices use foot-mounted or torso-mounted sensors for more direct measurement
+  - Algorithms account for arm swing but may have more error than direct foot sensors
+
+  ## Health Significance
+  Ground contact time has implications for performance and injury:
+
+  - **Running economy**: Shorter GCT at given speed correlates with better running economy
+  - **Power generation**: Brief, powerful ground contacts indicate good elastic energy return
+  - **Speed development**: Faster running requires shorter ground contact times
+  - **Injury associations**: Very long GCT may indicate overstriding; very short GCT (for ability level) may suggest insufficient cushioning
+  - **Fatigue detection**: GCT typically increases as runners fatigue
+  - **Form assessment**: GCT is a key indicator of running technique
+  - **Training progress**: Decreasing GCT at same pace suggests neuromuscular adaptation
+
+  The relationship between GCT and injury is nuanced - the goal is an individually optimal GCT, not necessarily the shortest possible.
+
+  ## Clinical Interpretation Guidelines
+  When analyzing ground contact time data:
+
+  1. **Always contextualize with speed**: GCT varies dramatically with pace; only compare values at similar speeds
+  2. **Calculate ground contact time ratio**:
+     - GCT / Total Stride Time gives proportion of time on ground
+     - Lower ratios indicate more time in flight (more powerful running)
+     - Elite runners: ~40-45% on ground; Recreational: ~50-60%
+  3. **Assess symmetry**: Left vs. right GCT differences may indicate asymmetry
+     - >3-5% asymmetry warrants attention
+     - May reveal injury compensation or strength imbalances
+  4. **Track fatigue patterns**: Compare early workout to late workout
+     - Increasing GCT suggests fatigue and form breakdown
+     - Maintaining GCT indicates good endurance
+  5. **Pair with other metrics**:
+     - Long GCT + Low cadence = Likely overstriding
+     - Short GCT + High vertical oscillation = "Bounding" pattern
+     - Optimal is short GCT with low oscillation and appropriate cadence
+  6. **Consider intervention thresholds**:
+     - GCT >280 ms at moderate pace suggests room for improvement
+     - Focus on cadence increase, strength training, and plyometrics
+
+  Note: Some runners naturally have longer or shorter GCT based on body type and running style; efficiency matters more than matching population norms.
+
+  ## Caveats & Limitations
+  - **Speed dependency**: GCT comparisons only make sense at similar speeds - a 300 ms GCT while jogging is normal, not problematic
+  - **Wrist-based estimation**: Apple Watch infers foot contact from wrist motion; may be less accurate than foot-mounted sensors
+  - **Individual variation**: Optimal GCT varies by individual; shorter is not always better for everyone
+  - **Surface effects**: Soft surfaces (grass, trails) may increase GCT; hard surfaces decrease it
+  - **Footwear effects**: Different shoes affect GCT through cushioning and energy return properties
+  - **Not a standalone metric**: Must be interpreted with speed, cadence, oscillation, and other metrics
+  - **Asymmetry detection**: Standard measurements report average GCT; detecting left-right differences requires specific analysis
+  - **Training status**: Well-trained runners have shorter GCT partly due to muscle-tendon adaptations, not just form
+
+  ## Additional Notes
+  - The running gait cycle: Stance (ground contact) + Flight (airborne) = Total stride time
+  - Walking has no true flight phase; ground contact includes a double-support period
+  - Elite sprinters achieve ground contact times under 100 ms at top speed
+  - Plyometric training and strength work typically reduce GCT more effectively than form drills alone
+  - Ground contact time balance (left vs. right) is an emerging metric for injury risk assessment
+  - Some research suggests GCT asymmetry >2-3% may increase injury risk
+  - Recovery runs may show longer GCT, which is appropriate for the lower intensity
+  - Cadence and GCT together determine stride time: Stride Time = 60/Cadence = GCT + Flight Time
+metadata_keys:
+  - key: "HKMetadataKeyIndoorWorkout"
+    description: "Boolean indicating if the run was indoors (treadmill); belt movement may affect GCT patterns."
+  - key: "HKMetadataKeyAverageSpeed"
+    description: "Average running speed; essential context for interpreting GCT values."
+  - key: "HKMetadataKeyElevationAscended"
+    description: "Total elevation gain; uphill running typically increases ground contact time."
+  - key: "HKMetadataKeyElevationDescended"
+    description: "Total elevation loss; downhill running may decrease ground contact time."
+related_types:
+  - identifier: "HKQuantityTypeIdentifierRunningSpeed"
+    relationship: "Faster speeds require shorter ground contact times; always interpret GCT relative to pace"
+  - identifier: "HKQuantityTypeIdentifierRunningStrideLength"
+    relationship: "Overstriding (long strides) often produces longer ground contact times due to increased braking"
+  - identifier: "HKQuantityTypeIdentifierRunningVerticalOscillation"
+    relationship: "These metrics together describe running efficiency; lower values in both generally indicate better form"
+  - identifier: "HKQuantityTypeIdentifierRunningPower"
+    relationship: "Shorter ground contact time with same power output indicates better force application efficiency"
+  - identifier: "HKQuantityTypeIdentifierStepCount"
+    relationship: "Higher cadence (more steps per minute) typically correlates with shorter ground contact time"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Improving GCT efficiency may reduce heart rate at given pace due to better economy"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierRunningGroundContactTime"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierrunninggroundcontacttime"
+    type: "official"
+  - title: "Apple Support - Running metrics on Apple Watch"
+    url: "https://support.apple.com/en-us/HT212958"
+    type: "official"
+  - title: "Ground Contact Time and Running Economy"
+    url: "https://pubmed.ncbi.nlm.nih.gov/29723309/"
+    type: "research"
+  - title: "Ground Contact Time Asymmetry and Injury Risk"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6528179/"
+    type: "research"
+  - title: "Biomechanical Factors in Running Economy"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4555089/"
+    type: "research"
+last_updated: "2026-01-27"

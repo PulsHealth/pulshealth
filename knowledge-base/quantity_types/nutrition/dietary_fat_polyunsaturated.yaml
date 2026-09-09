@@ -1,0 +1,157 @@
+identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Polyunsaturated Fat"
+short_description: "Polyunsaturated fatty acid intake including omega-3 and omega-6 essential fatty acids"
+icon: "drop.fill"
+color: "#5AC8FA"
+default_unit: "g"
+supported_units:
+  - "g"
+  - "mg"
+  - "oz"
+unit_description: "Grams (g) of polyunsaturated fatty acids (PUFA). PUFAs have two or more double bonds and include essential fatty acids that must be obtained from diet."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 5
+  max: 40
+  unit: "g"
+  notes: "Average intake is 5-10% of calories. Western diets are often imbalanced with omega-6:omega-3 ratios of 15-20:1 (optimal: 4:1 or lower)."
+clinical_ranges:
+  - population: "Adults (AMDR)"
+    rda: "5-10% of total calories"
+  - population: "Linoleic Acid (omega-6) AI"
+    rda: "Men: 17g/day; Women: 12g/day"
+  - population: "Alpha-Linolenic Acid (omega-3) AI"
+    rda: "Men: 1.6g/day; Women: 1.1g/day"
+  - population: "EPA + DHA (long-chain omega-3)"
+    rda: "250-500mg/day for general health; up to 1-4g for CV disease"
+  - population: "Cardiovascular Disease"
+    rda: "1g EPA+DHA/day; consider 2-4g for elevated triglycerides"
+  - population: "Pregnancy"
+    rda: "200-300mg DHA/day minimum for fetal brain development"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "PUFA tracking; some apps differentiate omega-3 and omega-6"
+    examples:
+      - "Cronometer"
+      - "MyFitnessPal"
+      - "MacroFactor"
+  - name: "Omega-3 focused apps"
+    capability: "Specific omega-3 tracking with EPA/DHA breakdown"
+    examples:
+      - "Cronometer"
+      - "MyFitnessPal Premium"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Polyunsaturated Fat (PUFA) represents intake of fatty acids with two or more double bonds. This category includes essential fatty acids: linoleic acid (LA, omega-6) and alpha-linolenic acid (ALA, omega-3), which cannot be synthesized by the body. Long-chain omega-3s (EPA and DHA from fatty fish) have particularly strong evidence for cardiovascular and cognitive benefits. The balance between omega-6 and omega-3 intake significantly impacts inflammatory status.
+
+  There is no established FDA Daily Value for total polyunsaturated fat. Nutrition labels are not required to list PUFA content specifically, though some products voluntarily include it. The Adequate Intake (AI) levels are set for specific essential fatty acids: linoleic acid (omega-6) and alpha-linolenic acid (omega-3).
+
+  ## Health Significance
+  Polyunsaturated fat intake impacts:
+  - **Cardiovascular Health**: Omega-3s reduce triglycerides, arrhythmia risk, and sudden cardiac death
+  - **Brain Development**: DHA is critical for fetal and infant brain and retinal development
+  - **Inflammation Regulation**: Omega-3s are anti-inflammatory; excess omega-6 relative to omega-3 may be pro-inflammatory
+  - **Cell Membrane Function**: PUFAs determine membrane fluidity and receptor function
+  - **Lipid Profiles**: Replacing saturated fat with PUFA lowers LDL cholesterol
+  - **Mental Health**: Omega-3s associated with reduced depression and cognitive decline
+  - **Immune Function**: Both omega-3 and omega-6 serve as precursors to immune signaling molecules
+  - **Skin Health**: Essential fatty acids maintain skin barrier function
+
+  ## Clinical Interpretation Guidelines
+  When assessing PUFA intake:
+  1. **Differentiate Omega-3 from Omega-6**: Total PUFA without breakdown has limited clinical utility
+  2. **Assess Omega-3 Adequacy**: Look for fatty fish intake (2+ servings/week) or supplementation
+  3. **Evaluate Omega-6:Omega-3 Ratio**: Aim for <4:1; typical Western diet is 15-20:1
+  4. **Check EPA+DHA Specifically**: ALA conversion to EPA/DHA is inefficient (5-15%)
+  5. **Consider Food Sources**: Fish oil, walnuts, flaxseed vs. soybean/corn oil
+  6. **Review Inflammatory Markers**: High PUFA imbalance may correlate with elevated hs-CRP
+  7. **Assess Oxidative Stability**: PUFAs are susceptible to oxidation; quality of oils matters
+
+  ## Deficiency Symptoms
+  Essential fatty acid deficiency (rare in developed countries) causes:
+  - Dry, scaly skin and dermatitis (omega-6 deficiency)
+  - Poor wound healing
+  - Hair loss
+  - Growth retardation in children
+  - Increased susceptibility to infections
+  - Cognitive impairment and neurological symptoms (omega-3 deficiency)
+  - Visual disturbances (DHA deficiency in infants)
+  - Reproductive issues
+
+  ## Excess/Toxicity
+  High PUFA intake concerns:
+  - **Oxidative Stress**: PUFAs highly susceptible to lipid peroxidation
+  - **Omega-6 Excess**: May promote inflammation if not balanced with omega-3
+  - **Bleeding Risk**: High-dose omega-3 (>3g EPA+DHA) may increase bleeding time
+  - **Fishy Taste/Odor**: High fish oil intake causes fishy burps, body odor
+  - **Mercury/Contaminants**: Large predatory fish carry heavy metals
+  - **Vitamin E Depletion**: High PUFA increases vitamin E requirements
+  - **GI Disturbance**: High fish oil doses cause nausea, diarrhea
+  - **LDL Oxidation**: Oxidized PUFA in LDL may be atherogenic
+
+  ## Special Populations
+  - **Cardiovascular Disease**: 1g/day EPA+DHA; 4g/day Vascepa (icosapent ethyl) for high TG with CVD
+  - **Elevated Triglycerides**: 2-4g/day omega-3 reduces TG 20-50%
+  - **Pregnancy/Lactation**: 200-300mg DHA daily; avoid high-mercury fish
+  - **Depression/Mental Health**: 1-2g EPA+DHA studied; EPA may be more effective than DHA
+  - **Dry Eye Disease**: Omega-3 supplementation may improve symptoms
+  - **Rheumatoid Arthritis**: 3g/day omega-3 may reduce joint inflammation
+  - **ADHD in Children**: Some evidence for omega-3 benefit; not first-line treatment
+  - **Elderly/Cognitive Decline**: Higher omega-3 intake associated with slower cognitive decline
+
+  ## Caveats & Limitations
+  - **Total PUFA Limitation**: Without omega-3/omega-6 breakdown, difficult to assess balance
+  - **ALA vs. EPA/DHA**: Plant omega-3 (ALA) poorly converts to beneficial EPA/DHA
+  - **Supplement Quality**: Fish oil supplements vary in purity, EPA/DHA content, oxidation
+  - **Oxidation Concerns**: Rancid oils may be harmful; storage and freshness matter
+  - **Database Accuracy**: Omega-3 content varies by fish species, wild vs. farmed, season
+  - **Cooking Degradation**: High heat damages PUFAs; not suitable for high-temperature cooking
+  - **Individual Variation**: Genetic variants affect PUFA metabolism (FADS1/FADS2 genes)
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the PUFA source (e.g., 'salmon', 'walnuts', 'flaxseed')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "PUFA is a component of total fat"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
+    relationship: "PUFA should preferentially replace saturated fat for cardiovascular benefit"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated"
+    relationship: "Both are unsaturated fats; PUFA less oxidatively stable than MUFA"
+  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
+    relationship: "PUFA contributes to total caloric intake at 9 kcal/g"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfatpolyunsaturated"
+    type: "official"
+  - title: "Dietary Reference Intakes for Essential Fatty Acids - National Academies"
+    url: "https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids"
+    type: "research"
+  - title: "AHA Science Advisory: Omega-3 Fatty Acids and Cardiovascular Disease"
+    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000482"
+    type: "medical"
+  - title: "Omega-6/Omega-3 Essential Fatty Acid Ratio: The Scientific Evidence"
+    url: "https://pubmed.ncbi.nlm.nih.gov/12442909/"
+    type: "research"
+last_updated: "2026-01-27"

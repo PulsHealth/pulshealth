@@ -1,0 +1,143 @@
+identifier: "HKCategoryTypeIdentifierGeneralizedBodyAche"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Generalized Body Ache"
+short_description: "Tracks episodes of widespread muscle aches and body pain."
+icon: "figure.stand"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Generalized body ache (myalgia) refers to widespread muscle pain affecting multiple body areas, often described as aching, soreness, or stiffness. This HealthKit category type enables users to track episodes of diffuse body pain, helping identify patterns related to illness, overexertion, or chronic conditions.
+
+  ## Health Significance
+  Generalized body aches are a common symptom with diverse causes ranging from benign (post-exercise soreness) to serious (systemic infections or autoimmune conditions). Pattern recognition helps clinicians identify underlying causes and guide appropriate evaluation.
+
+  Common causes include:
+
+  **Infectious causes:**
+  - Viral infections (influenza, COVID-19, common cold)
+  - Bacterial infections
+  - Lyme disease
+  - Mononucleosis
+
+  **Inflammatory and autoimmune conditions:**
+  - Fibromyalgia
+  - Polymyalgia rheumatica
+  - Rheumatoid arthritis
+  - Systemic lupus erythematosus
+  - Dermatomyositis/Polymyositis
+
+  **Metabolic and endocrine causes:**
+  - Hypothyroidism
+  - Vitamin D deficiency
+  - Electrolyte imbalances (hypokalemia, hypocalcemia)
+  - Adrenal insufficiency
+
+  **Medication-related:**
+  - Statin-induced myopathy
+  - ACE inhibitors
+  - Chemotherapy
+  - Withdrawal syndromes
+
+  **Other causes:**
+  - Overexertion and delayed onset muscle soreness (DOMS)
+  - Chronic fatigue syndrome
+  - Stress and tension
+  - Dehydration
+
+  ## When to Seek Medical Attention
+  Users should seek immediate medical care when body aches:
+  - Are accompanied by high fever and neck stiffness
+  - Occur with difficulty breathing
+  - Are associated with severe weakness or inability to move
+  - Follow a tick bite or are accompanied by rash (Lyme disease)
+  - Are accompanied by dark urine (rhabdomyolysis)
+  - Occur with swelling of limbs
+
+  Seek routine evaluation when:
+  - Body aches persist for more than 1-2 weeks
+  - Pain significantly affects daily activities
+  - Aches are accompanied by fatigue and unrefreshing sleep
+  - There is associated weight loss or night sweats
+  - Pain is worsening over time
+  - New medications were recently started (especially statins)
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Post-exercise patterns (DOMS timing)
+  - Illness onset and progression
+  - Medication-related onset
+  - Fibromyalgia flare patterns
+  - Stress and sleep quality correlations
+  - Seasonal patterns
+  - Response to treatment
+
+  ## Caveats & Limitations
+  - Does not specify locations of pain
+  - Cannot differentiate between muscle, joint, and bone pain
+  - Does not capture pain quality (aching, burning, sharp)
+  - Severity is subjective and varies between individuals
+  - Cannot assess for weakness (distinct from pain)
+  - Associated symptoms not directly linked
+  - Does not replace objective examination findings
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Body aches commonly accompany febrile illness"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Fatigue and body aches often co-occur"
+  - identifier: "HKCategoryTypeIdentifierChills"
+    relationship: "Chills with body aches suggest infection"
+  - identifier: "HKCategoryTypeIdentifierHeadache"
+    relationship: "Headache often accompanies generalized body aches in viral illness"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "High activity may precede exercise-related body aches"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierGeneralizedBodyAche"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiergeneralizedbodyache"
+    type: "official"
+  - title: "Muscle Pain - Mayo Clinic"
+    url: "https://www.mayoclinic.org/symptoms/muscle-pain/basics/causes/sym-20050866"
+    type: "medical"
+  - title: "Fibromyalgia - American College of Rheumatology"
+    url: "https://www.rheumatology.org/I-Am-A/Patient-Caregiver/Diseases-Conditions/Fibromyalgia"
+    type: "medical"
+last_updated: "2026-01-27"

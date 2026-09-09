@@ -1,0 +1,147 @@
+identifier: "HKCategoryTypeIdentifierNightSweats"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Night Sweats"
+short_description: "Tracks episodes of excessive sweating during sleep"
+icon: "moon.fill"
+color: "#5856D6"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No night sweats experienced"
+  - value: 1
+    name: "present"
+    description: "Mild night sweats - light sweating, may not require changing clothes"
+  - value: 2
+    name: "moderate"
+    description: "Moderate night sweats - noticeable sweating, may need to change clothes"
+  - value: 3
+    name: "severe"
+    description: "Severe night sweats - drenching sweats requiring bedding/clothing change"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Night sweats (sleep hyperhidrosis) are episodes of excessive sweating during
+  sleep that are unrelated to an overheated sleeping environment. Unlike normal
+  perspiration, true night sweats are severe enough to drench sleepwear and
+  bedding. This data type enables tracking of nocturnal sweating episodes for
+  clinical correlation.
+
+  ## Health Significance
+  - **Menopause Indicator**: Common vasomotor symptom during perimenopause and
+    menopause, affecting up to 75% of individuals
+  - **Infection Screening**: Classic symptom of tuberculosis and certain
+    bacterial infections
+  - **Malignancy Warning**: Part of "B symptoms" in lymphoma (with fever,
+    weight loss)
+  - **Medication Effects**: Side effect of many medications
+  - **Hormone Therapy Monitoring**: Track response to treatment
+
+  ## Clinical Context: Causes of Night Sweats
+  **Common Causes:**
+  - Menopause/perimenopause (most common in women 45-55)
+  - Infections (TB, HIV, endocarditis, osteomyelitis)
+  - Medications (antidepressants, hormone therapies, hypoglycemic agents)
+  - Hypoglycemia (especially in diabetics on insulin)
+  - Anxiety and stress disorders
+
+  **Serious Causes Requiring Evaluation:**
+  - Lymphoma and other malignancies
+  - Tuberculosis
+  - Endocarditis
+  - Pheochromocytoma
+  - Carcinoid syndrome
+  - HIV/AIDS
+
+  ## When to Seek Medical Attention
+  **Red Flags:**
+  - Night sweats with unexplained weight loss
+  - Night sweats with persistent fever
+  - Night sweats with lymph node enlargement
+  - Severe night sweats in men or premenopausal women
+  - Night sweats with persistent cough or hemoptysis
+  - New night sweats with no clear cause
+  - Night sweats significantly disrupting sleep quality
+
+  **Also Consider Evaluation For:**
+  - Night sweats not responding to menopause treatment
+  - Night sweats with new medications
+  - Night sweats with symptoms of infection
+
+  ## Pattern Recognition
+  Tracking night sweats can reveal:
+  - Frequency and severity trends
+  - Correlation with menstrual cycle
+  - Medication timing relationships
+  - Environmental factors (room temperature, bedding)
+  - Relationship to evening activities (exercise, alcohol)
+  - Treatment effectiveness
+  - Correlation with daytime hot flashes
+  - Sleep quality impact
+
+  ## Caveats & Limitations
+  - Subjective severity assessment
+  - May not capture all episodes if user sleeps through them
+  - Cannot distinguish between causes
+  - Environmental factors (hot room) may confound data
+  - Does not capture associated symptoms in same record
+  - No integration with room temperature or humidity data
+  - Recall may be imperfect when logging in morning
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierHotFlashes"
+    relationship: "Daytime equivalent; often co-occur in menopause"
+  - identifier: "HKCategoryTypeIdentifierSleepChanges"
+    relationship: "Night sweats frequently disrupt sleep"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Objective sleep data showing disruption patterns"
+  - identifier: "HKCategoryTypeIdentifierFever"
+    relationship: "Important to differentiate; infection indicator"
+  - identifier: "HKCategoryTypeIdentifierMoodChanges"
+    relationship: "Sleep disruption affects mood"
+  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
+    relationship: "Objective temperature data for correlation"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierNightSweats"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiernightsweats"
+    type: "official"
+  - title: "Night Sweats - Mayo Clinic"
+    url: "https://www.mayoclinic.org/symptoms/night-sweats/basics/causes/sym-20050768"
+    type: "medical"
+  - title: "Vasomotor Symptoms Management - The Menopause Society"
+    url: "https://www.menopause.org/for-professionals"
+    type: "medical"
+  - title: "B Symptoms in Lymphoma - Leukemia & Lymphoma Society"
+    url: "https://www.lls.org/"
+    type: "medical"
+last_updated: "2026-01-27"

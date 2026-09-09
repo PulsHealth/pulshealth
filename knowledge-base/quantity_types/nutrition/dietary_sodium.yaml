@@ -1,0 +1,167 @@
+identifier: "HKQuantityTypeIdentifierDietarySodium"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Sodium"
+short_description: "Sodium intake from food, beverages, and table salt"
+icon: "drop.fill"
+color: "#8E8E93"
+default_unit: "mg"
+supported_units:
+  - "mg"
+  - "g"
+unit_description: "Milligrams (mg) of sodium. Table salt (NaCl) is 40% sodium by weight; 1 teaspoon salt = ~2300mg sodium."
+aggregation_type: "cumulative"
+statistics_options:
+  - "cumulativeSum"
+  - "separateBySource"
+typical_range:
+  min: 500
+  max: 6000
+  unit: "mg"
+  notes: "Average American intake is 3400mg/day, well above the 2300mg guideline. Processed foods contribute 70%+ of intake."
+clinical_ranges:
+  - population: "Adults (Dietary Guidelines)"
+    rda: "<2300mg/day (approximately 1 teaspoon salt)"
+  - population: "Adults (AHA Ideal)"
+    rda: "<1500mg/day for optimal cardiovascular health"
+  - population: "Hypertension"
+    rda: "<1500mg/day recommended for blood pressure control"
+  - population: "Heart Failure"
+    rda: "1500-2000mg/day typically recommended"
+  - population: "Chronic Kidney Disease"
+    rda: "<2000mg/day to reduce fluid retention and hypertension"
+  - population: "African Americans"
+    rda: "<1500mg/day due to higher salt sensitivity"
+  - population: "Adults 51+ years"
+    rda: "<1500mg/day due to increased salt sensitivity with age"
+  - population: "Endurance Athletes"
+    rda: "May need additional sodium during prolonged exercise/heat"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Sodium tracking from food database; restaurant/packaged food data often available"
+    examples:
+      - "MyFitnessPal"
+      - "Cronometer"
+      - "LoseIt"
+      - "Yazio"
+  - name: "Blood pressure management apps"
+    capability: "Sodium tracking integrated with BP monitoring"
+    examples:
+      - "Hello Heart"
+      - "Qardio"
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Dietary Sodium represents total sodium intake from all sources including naturally occurring sodium in foods, salt added during cooking or at the table, and sodium in processed/packaged foods. Sodium is an essential electrolyte required for fluid balance, nerve transmission, and muscle function. However, excess intake is strongly associated with hypertension and cardiovascular disease, making it a critical nutrient to monitor.
+
+  The FDA Daily Value for sodium is 2300mg based on a 2,000 calorie diet (updated 2020). This aligns with the Dietary Guidelines for Americans and represents the Chronic Diseases Risk Reduction (CDRR) intake level. Most Americans consume significantly more than this, averaging 3400mg daily, with over 70% coming from processed and restaurant foods rather than the salt shaker.
+
+  ## Health Significance
+  Sodium intake impacts:
+  - **Blood Pressure**: Primary modifiable dietary factor affecting BP; dose-response relationship
+  - **Cardiovascular Disease**: High sodium intake increases CVD, stroke, and heart failure risk
+  - **Fluid Balance**: Regulates extracellular fluid volume; excess causes fluid retention
+  - **Kidney Function**: High sodium increases kidney workload; accelerates CKD progression
+  - **Bone Health**: High sodium increases urinary calcium excretion
+  - **Stomach Cancer**: High salt intake associated with increased gastric cancer risk
+  - **Left Ventricular Hypertrophy**: Independent of BP, high sodium linked to LVH
+  - **Endothelial Function**: Excess sodium impairs blood vessel function
+
+  ## Clinical Interpretation Guidelines
+  When assessing sodium intake:
+  1. **Compare to Guidelines**: 2300mg ceiling; 1500mg ideal for at-risk populations
+  2. **Identify Primary Sources**: Restaurant food, processed foods, bread, deli meats, cheese
+  3. **Assess Cooking Practices**: Salt added at home often underestimated
+  4. **Consider Hidden Sodium**: Condiments, sauces, seasonings, medications
+  5. **Correlate with Blood Pressure**: Track BP alongside sodium intake for individual response
+  6. **Evaluate Potassium Ratio**: Sodium:potassium ratio may be more important than absolute sodium
+  7. **Review Fluid Status**: Edema, weight fluctuations may indicate sodium excess
+
+  ## Deficiency Symptoms
+  Sodium deficiency (hyponatremia) is rare from dietary causes but can occur:
+  - Muscle cramps and weakness
+  - Nausea and vomiting
+  - Headache
+  - Confusion and altered mental status
+  - Seizures (severe hyponatremia)
+  - Fatigue and lethargy
+  - Usually from excessive water intake, diuretics, or medical conditions rather than low dietary sodium
+  - Athletes in prolonged endurance events at risk (exercise-associated hyponatremia)
+
+  ## Excess/Toxicity
+  High sodium intake is associated with:
+  - **Hypertension**: Most consistent dietary-disease relationship; ~5mmHg BP increase per 1000mg sodium
+  - **Stroke**: Strong association with both hemorrhagic and ischemic stroke
+  - **Heart Failure**: Fluid retention exacerbates symptoms; hospitalization trigger
+  - **Chronic Kidney Disease**: Accelerates progression; increases proteinuria
+  - **Gastric Cancer**: Salt damages gastric mucosa; promotes H. pylori pathogenicity
+  - **Osteoporosis**: Urinary calcium loss increases fracture risk
+  - **Autoimmune Disease**: Emerging evidence linking high salt to Th17 inflammation
+  - **Edema**: Peripheral edema, facial puffiness from fluid retention
+
+  ## Special Populations
+  - **Hypertension**: DASH diet plus sodium reduction; 1500mg target can lower BP 5-10mmHg
+  - **Heart Failure**: 1500-2000mg restriction; critical during decompensation
+  - **Chronic Kidney Disease**: <2000mg to slow progression; adjust with dialysis
+  - **African Americans**: Greater salt sensitivity; lower targets recommended
+  - **Elderly**: Increased salt sensitivity with age; balance with appetite/nutrition
+  - **Endurance Athletes**: May need 500-1000mg/hour during prolonged exercise in heat
+  - **Meniere's Disease**: Low-sodium diet (<1500mg) may reduce vertigo episodes
+  - **Cirrhosis with Ascites**: Very strict restriction (<2000mg) to manage fluid accumulation
+  - **POTS/Dysautonomia**: Often require increased sodium (3000-10000mg) for blood volume
+
+  ## Caveats & Limitations
+  - **Tracking Difficulty**: Restaurant and packaged food sodium often estimated; homemade food unmeasured
+  - **Database Variability**: Sodium content varies by brand, recipe, preparation
+  - **Salt vs. Sodium**: Confusion between salt (NaCl) and sodium amounts (40% of salt)
+  - **Individual Salt Sensitivity**: ~50% of hypertensives and 25% of normotensives are salt-sensitive
+  - **Potassium Context**: High potassium intake can mitigate some sodium effects
+  - **Acute vs. Chronic**: Single high-sodium meals less concerning than chronic high intake
+  - **Measurement Challenges**: 24-hour urine sodium most accurate but impractical for routine monitoring
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "String identifier for the sodium source (e.g., 'soup', 'chips', 'bread')"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating manual entry versus automatic capture"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from source app for synchronization"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBloodPressureSystolic"
+    relationship: "Sodium intake directly affects systolic blood pressure"
+  - identifier: "HKQuantityTypeIdentifierBloodPressureDiastolic"
+    relationship: "Sodium intake directly affects diastolic blood pressure"
+  - identifier: "HKQuantityTypeIdentifierDietaryPotassium"
+    relationship: "Potassium:sodium ratio important for cardiovascular health"
+  - identifier: "HKQuantityTypeIdentifierDietaryWater"
+    relationship: "Sodium affects fluid balance and hydration status"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Sodium-related fluid retention causes weight fluctuations"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietarySodium"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarysodium"
+    type: "official"
+  - title: "Dietary Reference Intakes for Sodium - National Academies 2019"
+    url: "https://nap.nationalacademies.org/catalog/25353/dietary-reference-intakes-for-sodium-and-potassium"
+    type: "research"
+  - title: "AHA Scientific Statement: Sodium and Cardiovascular Disease"
+    url: "https://www.ahajournals.org/doi/10.1161/CIRCULATIONAHA.108.191107"
+    type: "medical"
+  - title: "DASH Eating Plan - NHLBI"
+    url: "https://www.nhlbi.nih.gov/health-topics/dash-eating-plan"
+    type: "official"
+  - title: "Global Sodium Consumption and Death from Cardiovascular Causes - NEJM"
+    url: "https://www.nejm.org/doi/full/10.1056/NEJMoa1304127"
+    type: "research"
+last_updated: "2026-01-27"

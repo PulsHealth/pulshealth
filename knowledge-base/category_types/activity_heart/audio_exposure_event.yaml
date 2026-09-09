@@ -1,0 +1,188 @@
+identifier: "HKCategoryTypeIdentifierAudioExposureEvent"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Activity and Heart"
+human_readable_name: "Audio Exposure Event"
+short_description: "Records events when environmental sound levels reach potentially harmful thresholds for hearing health."
+icon: "ear.fill"
+color: "#5856D6"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "loudEnvironment"
+    description: "Environmental sound level exceeded the WHO-recommended threshold for hearing damage risk. Event indicates sustained exposure to loud ambient noise."
+ios_introduced:
+  version: "13.0"
+  year: 2019
+watchos_introduced:
+  version: "6.0"
+  year: 2019
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Uses built-in microphone to measure ambient sound levels and detect potentially harmful noise exposure"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  Audio Exposure Event records notifications triggered when environmental (ambient) sound levels exceed thresholds that could damage hearing over time. This feature was introduced as part of Apple's hearing health initiative in watchOS 6 and iOS 13.
+
+  The Apple Watch uses its built-in microphone to periodically sample ambient noise levels and calculate sound exposure. When sustained exposure exceeds WHO-recommended safe limits, an event is recorded and the user is notified.
+
+  **Important:** This tracks environmental/ambient noise (concerts, machinery, traffic), NOT headphone audio levels, which are tracked separately by Headphone Audio Exposure Event.
+
+  ## How It's Detected/Measured
+  **Sound Level Measurement:**
+  - Apple Watch microphone samples ambient sound periodically (not continuously, to preserve battery)
+  - Sound pressure level (SPL) is measured in decibels, A-weighted (dBA)
+  - A-weighting adjusts measurement to approximate human hearing sensitivity curve
+
+  **Threshold System:**
+  The feature uses the WHO safe listening guidelines:
+  - 80 dBA: Safe for up to 40 hours/week
+  - 85 dBA: Safe for up to 8 hours/week
+  - 90 dBA: Safe for up to 2.5 hours/week
+  - 95 dBA: Safe for up to 48 minutes/week
+  - 100 dBA: Safe for up to 15 minutes/week
+
+  **Default Notification Threshold:**
+  - Users can configure notifications from 80-100 dBA
+  - Default threshold: 90 dBA
+  - Event recorded when sustained exposure exceeds threshold
+
+  **Noise App (Apple Watch):**
+  - Dedicated app shows real-time decibel readings
+  - Complication available for watch face
+  - Historical data viewable in Health app
+
+  **Sound Level Examples:**
+  - 30 dBA: Quiet library
+  - 60 dBA: Normal conversation
+  - 70 dBA: City traffic
+  - 80 dBA: Alarm clock, busy restaurant
+  - 90 dBA: Lawn mower, motorcycle
+  - 100 dBA: Concert, sporting event
+  - 110 dBA: Power tools, rock concert front row
+  - 120 dBA: Jet engine, threshold of pain
+
+  ## Health Significance
+  **Noise-Induced Hearing Loss (NIHL):**
+  NIHL is the second most common form of sensorineural hearing loss after age-related hearing loss. Unlike age-related loss, NIHL is entirely preventable.
+
+  **Mechanism of Damage:**
+  - Intense sound damages hair cells in the cochlea
+  - Hair cells don't regenerate in humans
+  - Damage is cumulative over lifetime
+  - Both intensity and duration determine risk
+
+  **Population Impact:**
+  - An estimated 12.5% of children and 17% of adults have noise-induced hearing damage
+  - Approximately 22 million U.S. workers are exposed to hazardous noise levels annually
+  - Recreational noise exposure (concerts, sporting events, personal audio) is increasing
+
+  **Early Signs of Damage:**
+  - Tinnitus (ringing in ears) after noise exposure
+  - Temporary threshold shift (muffled hearing after exposure)
+  - Difficulty understanding speech in noisy environments
+  - Need to turn up volume higher than before
+
+  **Long-Term Consequences:**
+  - Permanent hearing loss (typically high-frequency first)
+  - Chronic tinnitus
+  - Increased risk of social isolation and depression
+  - Associated cognitive decline in older adults
+  - Communication difficulties affecting work and relationships
+
+  ## Clinical Interpretation Guidelines
+  **For Health Consultants:**
+
+  1. **Assess Exposure Context:**
+     - Occupational (construction, manufacturing, music industry)
+     - Recreational (concerts, sporting events, motorsports, shooting)
+     - Environmental (urban living, traffic noise)
+     - Identify primary sources of high-decibel exposure
+
+  2. **Frequency Analysis:**
+     - Occasional events (monthly): Likely specific high-noise situations
+     - Weekly events: Suggest regular hazardous exposure pattern
+     - Daily events: Occupational exposure or living environment concern
+
+  3. **Threshold Appropriateness:**
+     - 80 dBA: Conservative, appropriate for those concerned about hearing
+     - 90 dBA: Default, catches most hazardous situations
+     - 100 dBA: Only alerts to very loud environments
+
+  4. **Cumulative Risk Assessment:**
+     - Review weekly/monthly noise exposure summary in Health app
+     - Compare to WHO weekly safe limits
+     - Consider lifetime noise exposure history
+
+  5. **Intervention Recommendations:**
+     - Hearing protection (earplugs, noise-canceling headphones)
+     - Environmental modifications when possible
+     - Distance from noise sources
+     - Duration limits for unavoidable exposure
+     - Recovery time between exposures
+
+  6. **Hearing Assessment Referral:**
+     - Recommend audiological evaluation if:
+       - Frequent noise exposure events
+       - Reports of tinnitus or temporary hearing changes
+       - Difficulty hearing in noisy environments
+       - History of significant noise exposure
+
+  7. **Occupational Considerations:**
+     - Workplace noise may require employer-provided protection
+     - OSHA requires hearing conservation programs above 85 dBA
+     - Annual audiograms required for workers in hearing conservation programs
+
+  ## Caveats & Limitations
+  - **Sampling Not Continuous:** Periodic measurements may miss brief loud exposures
+  - **Watch Position:** Microphone on wrist may not capture ear-level sound accurately
+  - **Environmental Variables:** Wind, watch band movement can affect readings
+  - **Not Dosimeter-Grade:** Consumer device, not calibrated occupational noise dosimeter
+  - **No Frequency Analysis:** Measures overall SPL, not harmful frequency content
+  - **Ambient Only:** Does not capture headphone audio (separate data type)
+  - **User Must Wear Watch:** No monitoring when watch is charging or not worn
+  - **Indoor/Outdoor Differences:** Room acoustics affect measurements differently than outdoor environments
+  - **Notification Fatigue:** Frequent alerts may lead users to disable feature
+metadata_keys:
+  - key: "HKMetadataKeyAudioExposureLevel"
+    description: "The peak sound level in dBA that triggered the event"
+  - key: "HKMetadataKeyAudioExposureDuration"
+    description: "Duration of exposure at the harmful level before notification was triggered"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierEnvironmentalAudioExposure"
+    relationship: "Continuous environmental sound level measurements that underlie these discrete events"
+  - identifier: "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent"
+    relationship: "Complementary tracking for headphone/earbud audio levels vs environmental"
+  - identifier: "HKQuantityTypeIdentifierHeadphoneAudioExposure"
+    relationship: "Continuous headphone audio level measurements"
+  - identifier: "HKQuantityTypeIdentifierEnvironmentalSoundReduction"
+    relationship: "Hearing aid or AirPods Pro sound reduction measurements"
+references:
+  - title: "HKCategoryTypeIdentifierAudioExposureEvent - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifieraudioexposureevent"
+    type: "official"
+  - title: "About the Noise app on Apple Watch - Apple Support"
+    url: "https://support.apple.com/en-us/108779"
+    type: "official"
+  - title: "WHO Make Listening Safe Initiative"
+    url: "https://www.who.int/activities/making-listening-safe"
+    type: "medical"
+  - title: "NIOSH Criteria for a Recommended Standard: Occupational Noise Exposure"
+    url: "https://www.cdc.gov/niosh/docs/98-126/"
+    type: "medical"
+  - title: "Noise-Induced Hearing Loss - Lancet"
+    url: "https://pubmed.ncbi.nlm.nih.gov/25466424/"
+    type: "research"
+last_updated: "2026-01-27"

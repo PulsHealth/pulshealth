@@ -1,0 +1,274 @@
+identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Blood Oxygen Saturation (SpO2)"
+short_description: "The percentage of hemoglobin in the blood that is saturated with oxygen."
+icon: "drop.fill"
+color: "#FF3B30"
+default_unit: "%"
+supported_units:
+  - "%"
+  - "percent"
+unit_description: "Percentage (%) - represents the ratio of oxygenated hemoglobin to total hemoglobin, expressed as 0-100% or 0-1 in HealthKit."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 95
+  max: 100
+  unit: "%"
+  notes: "For healthy individuals at sea level. Values may be lower at high altitude or in certain medical conditions."
+clinical_ranges:
+  - population: "Healthy adults (sea level)"
+    normal: "95-100%"
+    low: "<95% (mild hypoxemia)"
+    critical: "<90% (requires medical attention)"
+  - population: "Patients with COPD or chronic lung disease"
+    normal: "88-92%"
+    target: "88-92% (to avoid hypercapnia risk)"
+    low: "<88%"
+  - population: "High altitude (8,000 ft / 2,400 m)"
+    normal: "90-95%"
+    notes: "Acclimatization improves values over days"
+  - population: "High altitude (12,000 ft / 3,600 m)"
+    normal: "85-90%"
+    notes: "Lower values expected; monitor for altitude sickness"
+  - population: "Infants and children"
+    normal: "95-100%"
+    low: "<94%"
+    critical: "<90%"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+  notes: "Blood Oxygen app and sensor introduced with Apple Watch Series 6"
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch Series 6, 7, 8, 9, 10, 11"
+    capability: "On-demand and background SpO2 measurement via reflectance pulse oximetry"
+  - name: "Apple Watch Ultra, Ultra 2, Ultra 3"
+    capability: "On-demand and background SpO2 measurement"
+  - name: "Fingertip pulse oximeters"
+    capability: "Transmissive pulse oximetry (generally more accurate)"
+  - name: "Medical-grade pulse oximeters"
+    capability: "Clinical-grade SpO2 monitoring"
+  - name: "Third-party wearables (Garmin, Fitbit, etc.)"
+    capability: "Wrist-based SpO2 estimation"
+primary_source: "Apple Watch (Series 6 and later)"
+description: |
+  ## Overview
+
+  Blood oxygen saturation (SpO2) measures the percentage of hemoglobin molecules in arterial
+  blood that are carrying oxygen. This is a critical vital sign that indicates how effectively
+  the respiratory and cardiovascular systems are delivering oxygen to tissues. Normal SpO2
+  at sea level is 95-100%, with values below 90% generally considered clinically significant
+  hypoxemia requiring medical evaluation.
+
+  ## How It's Measured
+
+  ### Pulse Oximetry Principles
+  Pulse oximeters work by shining light through tissue and measuring absorption. Oxygenated
+  hemoglobin (oxyhemoglobin) and deoxygenated hemoglobin (deoxyhemoglobin) absorb red and
+  infrared light differently:
+
+  - **Oxyhemoglobin**: Absorbs more infrared light, allows more red light to pass
+  - **Deoxyhemoglobin**: Absorbs more red light, allows more infrared light to pass
+
+  The device calculates the ratio of absorbed red to infrared light to estimate SpO2.
+
+  ### Apple Watch Measurement
+  Apple Watch uses **reflectance pulse oximetry** with:
+  - Four clusters of green, red, and infrared LEDs
+  - Four photodiodes on the back crystal
+  - 15-second measurement duration for on-demand readings
+  - Background measurements throughout the day (if enabled)
+
+  Unlike fingertip oximeters that use transmissive oximetry (light passes through the finger),
+  the Apple Watch measures light reflected back from blood vessels in the wrist. This is
+  more challenging technically and may be less accurate in some conditions.
+
+  ### Factors Affecting Measurement Accuracy
+  - **Skin perfusion**: Cold extremities reduce blood flow and accuracy
+  - **Skin pigmentation**: Darker skin tones may affect readings
+  - **Tattoos**: Ink can block light from the sensor
+  - **Motion**: Movement during measurement causes artifacts
+  - **Nail polish**: (For fingertip oximeters) Dark colors interfere with readings
+  - **Ambient light**: Bright light can affect wrist-based sensors
+  - **Watch fit**: Too loose or too tight affects readings
+
+  ## Health Significance
+
+  Blood oxygen saturation reflects the efficiency of:
+  - **Pulmonary function**: Gas exchange in the lungs
+  - **Cardiovascular function**: Oxygen delivery to tissues
+  - **Hemoglobin function**: Oxygen-carrying capacity of blood
+
+  SpO2 monitoring is valuable for:
+  - Detecting respiratory decline or hypoxemia
+  - Monitoring chronic lung conditions (COPD, asthma, pulmonary fibrosis)
+  - Assessing response to supplemental oxygen therapy
+  - Sleep apnea screening (nocturnal desaturation patterns)
+  - High-altitude acclimatization monitoring
+  - COVID-19 and respiratory infection monitoring
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values (Sea Level)
+  - **95-100%**: Normal for healthy individuals
+  - **Acceptable minimum**: 94% (some sources cite 95%)
+
+  ### SpO2 Classification
+  | SpO2 Range | Classification | Clinical Action |
+  |------------|----------------|-----------------|
+  | 95-100% | Normal | No action needed |
+  | 91-94% | Mild hypoxemia | Monitor; investigate if persistent |
+  | 86-90% | Moderate hypoxemia | Medical evaluation recommended |
+  | <85% | Severe hypoxemia | Urgent medical attention |
+
+  ### Low SpO2 May Indicate
+  - **Respiratory causes**: Pneumonia, COPD exacerbation, asthma attack, pulmonary embolism,
+    COVID-19, pulmonary fibrosis, pneumothorax
+  - **Cardiac causes**: Heart failure, congenital heart disease, shock
+  - **Other causes**: Anemia (severe), carbon monoxide poisoning, high altitude,
+    sleep apnea, hypoventilation
+
+  ### High SpO2 Considerations
+  - Values of 100% are normal when breathing room air
+  - Supplemental oxygen should be titrated to avoid hyperoxia in certain patients
+  - COPD patients: Target 88-92% to avoid suppressing hypoxic respiratory drive
+
+  ### Red Flags for Immediate Medical Attention
+  - SpO2 <90% at sea level (emergency)
+  - SpO2 <85% at any altitude (emergency)
+  - Sudden drop of >4% from baseline
+  - Low SpO2 with symptoms: shortness of breath, chest pain, confusion, cyanosis
+  - Persistent desaturation during sleep (possible sleep apnea)
+  - SpO2 not improving with supplemental oxygen
+
+  ## Altitude Considerations
+
+  Atmospheric pressure decreases with altitude, reducing the partial pressure of oxygen:
+
+  | Altitude | Expected SpO2 Range | Notes |
+  |----------|---------------------|-------|
+  | Sea level | 95-100% | Normal reference |
+  | 5,000 ft (1,500 m) | 93-98% | Minimal impact |
+  | 8,000 ft (2,400 m) | 90-95% | Common elevation in mountain towns |
+  | 10,000 ft (3,000 m) | 87-93% | High altitude threshold |
+  | 12,000 ft (3,600 m) | 85-90% | Very high altitude |
+  | 14,000 ft (4,300 m) | 80-87% | Extreme altitude |
+
+  ### Altitude Sickness Warning Signs
+  - SpO2 <85% with symptoms (headache, nausea, dizziness)
+  - Rapid onset of low SpO2 on ascent
+  - SpO2 not improving after 24-48 hours of acclimatization
+  - Symptoms of HAPE (High Altitude Pulmonary Edema): severe breathlessness,
+    cough, pink frothy sputum
+
+  ### Acclimatization
+  - SpO2 typically improves over 2-5 days at altitude
+  - Full hematological adaptation: approximately 11.4 days per 1,000 m of altitude
+  - Acclimatized individuals show higher SpO2 than new arrivals at same altitude
+
+  ## Caveats & Limitations
+
+  ### Apple Watch Limitations
+  - **Not medical-grade**: Designed for wellness, not clinical diagnosis
+  - **Reflectance method**: Generally less accurate than fingertip transmissive oximeters
+  - **Accuracy range**: Typically within 1-2% of medical-grade devices, but can vary more
+  - **Low perfusion**: May fail or give inaccurate readings with poor circulation
+  - **Motion sensitivity**: Requires 15 seconds of stillness for on-demand measurements
+  - **Background readings**: May miss brief desaturation events
+  - **Regional availability**: Feature availability varies by country due to regulatory/patent issues
+
+  ### General Pulse Oximetry Limitations
+  - **Accuracy degrades below 80%**: Less reliable in severe hypoxemia
+  - **Lag time**: 30-60 second delay in reflecting acute changes
+  - **Cannot detect hyperoxia**: Cannot distinguish between 100% and higher O2 levels
+  - **Carboxyhemoglobin**: CO poisoning shows falsely normal SpO2
+  - **Methemoglobinemia**: Shows falsely low SpO2 around 85%
+  - **Anemia**: May show normal SpO2 despite inadequate oxygen delivery
+  - **Skin pigmentation**: Studies show reduced accuracy in darker skin tones
+
+  ### What SpO2 Does NOT Measure
+  - Actual oxygen content in blood (requires hemoglobin level)
+  - CO2 levels (ventilation adequacy)
+  - Tissue oxygenation
+  - Cardiac output or oxygen delivery to tissues
+
+  ## Additional Notes
+
+  ### Nocturnal SpO2 Monitoring
+  Patterns during sleep can indicate:
+  - **Obstructive sleep apnea**: Cyclical desaturations (drops followed by recovery)
+  - **Central sleep apnea**: Periodic breathing patterns with desaturation
+  - **Hypoventilation syndromes**: Sustained low SpO2 during sleep
+
+  Apple Watch's breathing disturbances metric complements SpO2 for sleep apnea screening.
+
+  ### Exercise and SpO2
+  - Mild, transient drops during intense exercise are normal
+  - SpO2 should recover quickly at rest
+  - Significant exercise-induced desaturation may indicate pulmonary limitation
+
+  ### Integration with Other Metrics
+  SpO2 is most informative when combined with:
+  - Heart rate (tachycardia may compensate for low SpO2)
+  - Respiratory rate (elevated RR with low SpO2 indicates respiratory distress)
+  - Sleep data (timing of desaturation events)
+  - Activity data (context for readings)
+
+metadata_keys:
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the device that recorded the measurement"
+  - key: "HKMetadataKeyDeviceManufacturerName"
+    description: "Manufacturer of the device used for measurement"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating whether the value was manually entered by the user"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
+    relationship: "Complementary respiratory metric"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Cardiovascular response to oxygenation status"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Context for nocturnal SpO2 readings"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Oxygen utilization capacity"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "Autonomic response to respiratory stress"
+references:
+  - title: "HKQuantityTypeIdentifierOxygenSaturation - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifieroxygensaturation"
+    type: "official"
+  - title: "How to use the Blood Oxygen app on Apple Watch - Apple Support"
+    url: "https://support.apple.com/en-us/120358"
+    type: "official"
+  - title: "Low blood oxygen (hypoxemia) - Mayo Clinic"
+    url: "https://www.mayoclinic.org/symptoms/hypoxemia/basics/definition/sym-20050930"
+    type: "medical"
+  - title: "Oxygen Saturation - StatPearls (NCBI)"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK525974/"
+    type: "medical"
+  - title: "Blood Oxygen Level - Cleveland Clinic"
+    url: "https://my.clevelandclinic.org/health/diagnostics/22447-blood-oxygen-level"
+    type: "medical"
+  - title: "High-Altitude Oxygenation - StatPearls (NCBI)"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK539701/"
+    type: "medical"
+  - title: "Normal Oxygen Saturations at Various Altitudes"
+    url: "https://www.high-altitude-medicine.com/SaO2-table.html"
+    type: "medical"
+  - title: "The Apple Watch spO2 sensor and outliers in healthy users - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10082785/"
+    type: "research"
+last_updated: "2026-01-27"

@@ -1,0 +1,178 @@
+identifier: "HKCategoryTypeIdentifierWheezing"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Wheezing"
+short_description: "Tracks episodes of whistling sounds during breathing"
+icon: "lungs.fill"
+color: "#5AC8FA"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No wheezing; normal breath sounds"
+  - value: 1
+    name: "present"
+    description: "Mild wheezing - audible with effort, minimal distress"
+  - value: 2
+    name: "moderate"
+    description: "Moderate wheezing - easily audible, some breathing difficulty"
+  - value: 3
+    name: "severe"
+    description: "Severe wheezing - loud, significant respiratory distress"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Wheezing is a high-pitched whistling sound made during breathing, typically
+  more prominent during exhalation. It results from narrowed or compressed
+  airways and is a key symptom of asthma, COPD, and other respiratory conditions.
+  This data type enables tracking for disease monitoring and treatment response.
+
+  ## Health Significance
+  - **Asthma Control**: Key symptom for assessing asthma control level
+  - **COPD Monitoring**: Indicates exacerbation or worsening obstruction
+  - **Treatment Response**: Track effectiveness of bronchodilators and
+    controller medications
+  - **Trigger Identification**: Helps identify environmental, allergic, or
+    activity triggers
+  - **Action Plan Adherence**: Informs asthma action plan zone determination
+
+  ## CRITICAL: Red Flags Requiring Immediate Care
+
+  **Call 911 or go to emergency room if wheezing occurs with:**
+  - Severe shortness of breath
+  - Inability to speak in full sentences
+  - Bluish lips or fingernails (cyanosis)
+  - Confusion or altered mental status
+  - Rapid breathing with chest retractions
+  - No improvement with rescue inhaler
+  - Silent chest (no wheezing with severe distress - ominous sign)
+
+  **Severe Asthma Attack Signs:**
+  - Peak flow <50% of personal best
+  - Symptoms not responding to rescue medication
+  - Symptoms worsening rapidly
+  - History of severe attacks or ICU admissions
+
+  ## Clinical Context
+  **Common Causes:**
+  - Asthma
+  - COPD/emphysema
+  - Acute bronchitis
+  - Allergic reactions
+  - Respiratory infections
+  - Exercise-induced bronchoconstriction
+
+  **Less Common Causes:**
+  - Anaphylaxis
+  - Heart failure ("cardiac asthma")
+  - Foreign body aspiration
+  - Vocal cord dysfunction
+  - Tumor/airway obstruction
+  - GERD
+
+  **Wheezing Characteristics:**
+  - Expiratory wheezing: typical of asthma/COPD
+  - Inspiratory wheezing/stridor: suggests upper airway obstruction
+  - Both phases: more severe obstruction
+
+  ## When to Seek Medical Attention
+  **Urgent/Same Day:**
+  - New onset wheezing without clear cause
+  - Wheezing not responding to usual treatment
+  - Increased frequency of wheezing episodes
+  - Wheezing with fever
+  - Wheezing affecting sleep
+  - Wheezing with any red flag symptoms
+
+  **Schedule Evaluation:**
+  - Needing rescue inhaler more than 2x/week
+  - Nighttime symptoms more than 2x/month
+  - Activity limitations due to wheezing
+  - To review and update asthma action plan
+
+  ## Pattern Recognition
+  Tracking wheezing can reveal:
+  - Seasonal patterns (allergies, viral seasons)
+  - Environmental triggers (dust, pets, mold, smoke)
+  - Exercise-induced patterns
+  - Nighttime predominance (suggests poor control)
+  - Medication response and timing
+  - Trend toward worsening control
+  - Correlation with peak flow readings
+  - Cold air or weather trigger patterns
+
+  ## Asthma Control Assessment
+  Well-controlled asthma typically means:
+  - Daytime symptoms ≤2 days/week
+  - No nighttime awakenings
+  - Normal activities
+  - Rescue inhaler use ≤2 days/week
+  - No exacerbations
+
+  ## Caveats & Limitations
+  - Subjective; user may not hear subtle wheezing
+  - Cannot distinguish inspiratory from expiratory
+  - Does not capture peak flow or spirometry data
+  - Cannot differentiate between causes
+  - Severe obstruction may have decreased wheezing ("silent chest")
+  - Does not record response to rescue inhaler
+  - Cannot assess oxygen levels during episodes
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
+    relationship: "Often co-occurs; indicates severity"
+  - identifier: "HKCategoryTypeIdentifierCoughing"
+    relationship: "Common co-symptom in asthma and respiratory conditions"
+  - identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
+    relationship: "Asthma symptom complex"
+  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
+    relationship: "Objective oxygenation during episodes"
+  - identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
+    relationship: "Objective airflow measurement for asthma"
+  - identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
+    relationship: "Spirometry for lung function assessment"
+  - identifier: "HKQuantityTypeIdentifierInhalerUsage"
+    relationship: "Rescue medication use correlation"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierWheezing"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierwheezing"
+    type: "official"
+  - title: "Asthma Guidelines - GINA"
+    url: "https://ginasthma.org/gina-reports/"
+    type: "medical"
+  - title: "Asthma Control and Management - NHLBI"
+    url: "https://www.nhlbi.nih.gov/health-topics/asthma-management-guidelines"
+    type: "medical"
+  - title: "COPD Guidelines - GOLD"
+    url: "https://goldcopd.org/gold-reports/"
+    type: "medical"
+last_updated: "2026-01-27"

@@ -1,0 +1,267 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Walking Heart Rate Average
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierWalkingHeartRateAverage"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Walking Heart Rate Average"
+short_description: "Measures the user's average heart rate while walking, providing insight into cardiovascular fitness during light activity."
+
+# --- APPLE HEALTH UI ---
+icon: "heart.fill"
+color: "#FF2D55"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "count/min"
+supported_units:
+  - "count/min"
+  - "count/s"
+unit_description: "Beats per minute (BPM) averaged during walking activity periods"
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "separateBySource"
+  - "mostRecent"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 70
+  max: 160
+  unit: "count/min"
+  notes: "Range varies significantly based on walking pace, terrain, fitness level, and age. Brisk walking elevates heart rate more than casual walking."
+
+clinical_ranges:
+  - population: "Adults (casual walking pace)"
+    normal: "90-120 bpm"
+    low: "<90 bpm (may indicate high fitness or low walking intensity)"
+    high: ">120 bpm at casual pace may warrant evaluation"
+  - population: "Adults (brisk walking)"
+    normal: "110-140 bpm"
+    high: ">140 bpm during moderate walking may indicate deconditioning or cardiac issue"
+  - population: "Well-conditioned adults"
+    normal: "80-110 bpm"
+  - population: "Older adults (65+)"
+    normal: "100-130 bpm"
+    low: "<100 bpm (good fitness indicator)"
+    high: ">140 bpm may indicate cardiovascular stress"
+  - population: "Target zone (moderate intensity)"
+    normal: "50-70% of maximum heart rate"
+    low: "<50% max HR indicates low intensity"
+    high: ">70% max HR indicates vigorous walking"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "11.0"
+  year: 2017
+  notes: "Introduced as part of expanded heart health metrics"
+watchos_introduced:
+  version: "4.0"
+  year: 2017
+  notes: "Requires Apple Watch with motion sensors to detect walking activity"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Automatically detects walking activity using accelerometer and motion coprocessor, then calculates average heart rate during those periods. Includes both workout-tagged walks and incidental walking throughout the day."
+    series: "Series 1 and later"
+    accuracy: "Depends on accurate walking detection and consistent optical heart rate measurement during movement"
+  - name: "iPhone"
+    capability: "Displays walking heart rate data but cannot measure directly. Relies on paired Apple Watch."
+  - name: "Third-party devices"
+    capability: "Some fitness trackers can calculate and write walking heart rate averages to HealthKit"
+    examples: ["Garmin", "Fitbit", "Polar"]
+primary_source: "Apple Watch"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Walking Heart Rate Average captures the mean heart rate during periods of walking activity. Unlike resting heart rate (measured during inactivity) or peak heart rate (during intense exercise), walking heart rate provides insight into cardiac function during light-to-moderate physical activity that most people perform daily. This metric bridges the gap between rest and exercise, offering valuable information about functional cardiovascular fitness.
+
+  ## How It's Measured
+  Apple Watch uses a combination of sensors to identify walking periods and measure heart rate:
+
+  **Walking Detection:**
+  - Accelerometer detects characteristic walking gait patterns
+  - GPS and motion data help distinguish walking from other activities
+  - Algorithm identifies sustained walking periods (typically >10 minutes for daily walking, or any duration during workout sessions)
+
+  **Heart Rate Measurement:**
+  - Optical PPG sensor continuously monitors heart rate during detected walking
+  - Multiple readings are averaged over the walking period
+  - A daily walking heart rate average is calculated from all walking episodes
+
+  **Calculation timing:**
+  - Values are generated daily when sufficient walking data exists
+  - Requires consistent Apple Watch wear during walking activities
+  - Both intentional walks (workouts) and incidental walking (daily activities) contribute
+
+  ## Health Significance
+  Walking heart rate average provides unique clinical value:
+
+  **Functional fitness assessment:**
+  - Reflects how the cardiovascular system responds to everyday physical demand
+  - More relevant to daily life than laboratory exercise tests
+  - Can track fitness improvements with training programs
+
+  **Chronotropic competence indicator:**
+  - The heart's ability to appropriately increase rate with activity
+  - Walking HR minus Resting HR indicates heart rate reserve utilization
+  - Poor heart rate increase with walking may indicate chronotropic incompetence
+
+  **Early warning system:**
+  - Unexplained increases in walking HR may precede illness
+  - Gradual increases over time may indicate declining fitness or emerging cardiac issues
+  - Failure to achieve adequate HR during walking could signal conduction problems
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  - **Casual walking (2-3 mph):** 90-120 bpm for average adults
+  - **Brisk walking (3-4 mph):** 110-140 bpm for average adults
+  - **Target for moderate exercise:** 50-70% of age-predicted maximum heart rate
+  - **Maximum heart rate estimate:** 220 minus age
+
+  **Example for 50-year-old:**
+  - Estimated max HR: 170 bpm
+  - Moderate intensity walking: 85-119 bpm
+  - This individual's walking HR average of 100-110 bpm is appropriate
+
+  ### Elevated Walking Heart Rate May Indicate
+  - **Deconditioning:** Poor cardiovascular fitness requires higher HR to meet activity demands
+  - **Dehydration:** Reduced blood volume increases compensatory heart rate
+  - **Illness or infection:** Fever and inflammatory response elevate exercise HR
+  - **Anemia:** Reduced oxygen-carrying capacity requires faster circulation
+  - **Hyperthyroidism:** Elevated metabolic rate increases cardiac demand
+  - **Heart failure:** Reduced cardiac efficiency requires higher rate
+  - **Medication effects:** Stimulants, decongestants, caffeine
+  - **Anxiety/stress:** Sympathetic activation raises exercise HR beyond expected
+  - **Hot weather:** Heat stress increases cardiovascular demand
+  - **Altitude:** Hypoxia at elevation increases heart rate during activity
+
+  ### Low Walking Heart Rate May Indicate
+  - **Excellent cardiovascular fitness:** Well-trained heart pumps more blood per beat
+  - **Beta-blocker use:** Medications blunt heart rate response to activity
+  - **Chronotropic incompetence:** Inability to appropriately raise HR (if abnormally low)
+  - **Very low walking intensity:** Slow, flat walking may not significantly elevate HR
+  - **Measurement error:** Incorrect walking detection or inaccurate HR reading
+
+  ### Red Flags for Consultation
+  - **Walking HR >85% of maximum** during casual/moderate walking
+  - **Sudden increase >15-20 bpm** from typical walking HR without explanation
+  - **Walking HR approaching resting HR** (failure to mount appropriate response)
+  - **Symptoms during walking:** Chest pain, severe shortness of breath, dizziness, near-syncope
+  - **Walking HR not decreasing** with improved fitness despite regular exercise program
+  - **Progressive increase** in walking HR over weeks without lifestyle change
+  - **Walking HR combined with irregular rhythm notification** from Apple Watch
+
+  ## Caveats & Limitations
+
+  ### Measurement Considerations
+  - **Intensity matters:** Walking pace significantly affects heart rate; slow strolls vs. brisk walks aren't equivalent
+  - **Terrain effects:** Uphill walking elevates HR more than flat walking
+  - **Temperature:** Hot conditions increase cardiovascular demand
+  - **Arm movement:** Vigorous arm swing can cause motion artifact
+  - **Watch fit:** Loose watch reduces optical sensor accuracy during movement
+
+  ### Interpretation Caveats
+  - **Context is essential:** Always consider walking intensity and conditions
+  - **Individual variation:** What's normal for one person may not be for another
+  - **Medication effects:** Beta-blockers will prevent expected HR increase
+  - **Day-to-day variation:** Normal variation of 5-10 bpm expected
+
+  ### Limitations
+  - Does not measure blood pressure or cardiac output
+  - Cannot detect arrhythmias or ischemia
+  - Walking intensity is estimated, not precisely measured
+  - Does not account for arm-carrying, pushing strollers, or other walking variations
+  - Single daily average may obscure significant variation between walks
+
+  ## Additional Notes
+
+  **Practical applications for health consultants:**
+
+  **Fitness tracking:**
+  - Track walking HR trends as fitness improves (expect gradual decrease)
+  - Compare walking HR to resting HR; larger gap indicates better fitness
+  - Use as motivation tool: "Your walking HR has dropped 8 bpm over 3 months"
+
+  **Health monitoring:**
+  - Sudden walking HR elevation may be early illness indicator
+  - Persistent elevation after recovering from illness may indicate incomplete recovery
+  - Correlation with fatigue symptoms can guide return-to-activity decisions
+
+  **Exercise prescription:**
+  - Walking HR helps determine if current walking program is providing adequate stimulus
+  - If walking HR is <50% max, recommend increasing pace or adding incline
+  - If walking HR is >70% max consistently, may need to reduce intensity or evaluate cardiac status
+
+  **Comparative analysis:**
+  - Walking HR - Resting HR = Heart Rate Reserve (HRR) utilized
+  - Higher HRR utilization during casual walking may indicate poor fitness
+  - Very low HRR utilization may indicate insufficient exercise intensity
+
+  **Limitations to discuss with clients:**
+  - This metric provides population-level insights, not diagnostic conclusions
+  - Any concerning patterns should be evaluated by healthcare provider
+  - Do not use to make medical decisions without professional consultation
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateMotionContext"
+    description: "Typically set to active (2) for walking heart rate samples"
+    values:
+      - "active (2) - User was in motion but not in a formal workout"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Source data - Walking HR is derived from heart rate samples during walking periods"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Complementary - Difference between walking HR and resting HR indicates chronotropic response"
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Context - Walking speed affects walking HR; faster walking = higher HR"
+  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
+    relationship: "Activity data - Walking distance correlates with walking HR collection opportunities"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Fitness indicator - Both metrics reflect cardiorespiratory fitness; lower walking HR often correlates with higher VO2max"
+  - identifier: "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute"
+    relationship: "Complementary - Both assess cardiovascular fitness and autonomic function"
+  - identifier: "HKQuantityTypeIdentifierStepCount"
+    relationship: "Activity context - Step count provides context for walking activity volume"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - walkingHeartRateAverage"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/walkingheartrateaverage"
+    type: "official"
+  - title: "Target Heart Rates Chart - American Heart Association"
+    url: "https://www.heart.org/en/healthy-living/fitness/fitness-basics/target-heart-rates"
+    type: "medical"
+  - title: "Understanding Your Target Heart Rate - Johns Hopkins Medicine"
+    url: "https://www.hopkinsmedicine.org/health/wellness-and-prevention/understanding-your-target-heart-rate"
+    type: "medical"
+  - title: "What Is the Average Walking Heart Rate? - Simple.Life"
+    url: "https://simple.life/blog/average-walking-heart-rate/"
+    type: "medical"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 11.0/watchOS 4.0 introduction based on Apple feature release timeline
+  - Clinical ranges derived from AHA target heart rate guidelines and exercise physiology literature
+  - Chronotropic competence concept from cardiovascular medicine literature
+  - Walking intensity effects well-documented in exercise science research

@@ -1,0 +1,125 @@
+identifier: "HKCategoryTypeIdentifierConstipation"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Constipation"
+short_description: "Tracks episodes of constipation and difficulty passing stool."
+icon: "circle.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Constipation is characterized by infrequent bowel movements (fewer than three per week), difficulty passing stool, hard or lumpy stools, and a sensation of incomplete evacuation. This HealthKit category type allows users to track constipation episodes, providing valuable data for identifying causes and monitoring treatment effectiveness.
+
+  ## Health Significance
+  Constipation is one of the most common gastrointestinal complaints, affecting approximately 16% of adults globally. While usually benign, it can significantly impact quality of life and may indicate underlying conditions requiring treatment.
+
+  Common causes include:
+  - Inadequate fiber intake
+  - Insufficient fluid consumption
+  - Sedentary lifestyle
+  - Ignoring urge to defecate
+  - Medication side effects (opioids, anticholinergics, calcium channel blockers, iron supplements)
+  - Irritable bowel syndrome with constipation (IBS-C)
+  - Hypothyroidism
+  - Diabetes mellitus
+  - Neurological conditions (Parkinson's disease, multiple sclerosis)
+  - Pelvic floor dysfunction
+  - Pregnancy
+
+  Concerning causes requiring investigation:
+  - Colorectal cancer
+  - Bowel obstruction
+  - Strictures
+  - Hirschsprung disease
+
+  ## When to Seek Medical Attention
+  Users should consult a healthcare provider when constipation:
+  - Is new and persistent (lasting more than 3 weeks)
+  - Alternates with diarrhea
+  - Is accompanied by blood in stool or rectal bleeding
+  - Is associated with unexplained weight loss
+  - Is accompanied by severe abdominal pain
+  - Does not respond to dietary changes and over-the-counter treatments
+  - Is associated with fever or vomiting
+  - Includes narrow, ribbon-like stools
+  - Occurs in individuals over 50 without recent colonoscopy
+  - Is accompanied by family history of colorectal cancer
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Correlation with dietary changes or fiber intake
+  - Medication-related constipation
+  - Travel-related patterns
+  - Stress and anxiety associations
+  - Menstrual cycle patterns
+  - Response to treatments (fiber, laxatives, lifestyle changes)
+  - Progressive worsening suggesting organic pathology
+
+  ## Caveats & Limitations
+  - Does not capture bowel movement frequency directly
+  - Stool consistency (Bristol Stool Scale) is not recorded
+  - Straining and incomplete evacuation sensations not differentiated
+  - Cannot assess for fecal impaction or obstruction
+  - Dietary context not captured
+  - Does not record specific symptoms (bloating, abdominal pain) that often co-occur
+  - Subjective severity may not correlate with objective measures
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+    relationship: "Constipation often causes abdominal cramping"
+  - identifier: "HKCategoryTypeIdentifierBloating"
+    relationship: "Bloating commonly accompanies constipation"
+  - identifier: "HKCategoryTypeIdentifierDiarrhea"
+    relationship: "Alternating constipation and diarrhea suggests IBS"
+  - identifier: "HKCategoryTypeIdentifierBladderIncontinence"
+    relationship: "Chronic constipation can contribute to bladder dysfunction"
+  - identifier: "HKQuantityTypeIdentifierDietaryFiber"
+    relationship: "Fiber intake directly affects bowel regularity"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierConstipation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierconstipation"
+    type: "official"
+  - title: "Constipation - NIDDK"
+    url: "https://www.niddk.nih.gov/health-information/digestive-diseases/constipation"
+    type: "medical"
+  - title: "Chronic Constipation - ACG Clinical Guidelines"
+    url: "https://gi.org/topics/constipation-and-defection-problems/"
+    type: "medical"
+last_updated: "2026-01-27"

@@ -1,0 +1,227 @@
+identifier: "HKQuantityTypeIdentifierDietaryVitaminB6"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Vitamin B6"
+short_description: "Water-soluble vitamin essential for amino acid metabolism, neurotransmitter synthesis, and hemoglobin formation"
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FFCC00"
+
+default_unit: "mg"
+supported_units: ["mg", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 100
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "0.1 mg (AI)"
+  - population: "Infants 7-12 months"
+    rda: "0.3 mg (AI)"
+  - population: "Children 1-3 years"
+    rda: "0.5 mg"
+  - population: "Children 4-8 years"
+    rda: "0.6 mg"
+  - population: "Children 9-13 years"
+    rda: "1.0 mg"
+  - population: "Male adolescents 14-18 years"
+    rda: "1.3 mg"
+  - population: "Female adolescents 14-18 years"
+    rda: "1.2 mg"
+  - population: "Adults 19-50 years"
+    rda: "1.3 mg"
+  - population: "Men 51+ years"
+    rda: "1.7 mg"
+  - population: "Women 51+ years"
+    rda: "1.5 mg"
+  - population: "Pregnancy (all ages)"
+    rda: "1.9 mg"
+  - population: "Lactation (all ages)"
+    rda: "2.0 mg"
+  - population: "Adults (Upper Limit)"
+    upper_limit: "100 mg"
+  - population: "Children 1-3 years (Upper Limit)"
+    upper_limit: "30 mg"
+  - population: "Children 4-8 years (Upper Limit)"
+    upper_limit: "40 mg"
+  - population: "Children 9-13 years (Upper Limit)"
+    upper_limit: "60 mg"
+  - population: "Adolescents 14-18 years (Upper Limit)"
+    upper_limit: "80 mg"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log vitamin B6 intake from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Vitamin B6 is a water-soluble vitamin comprising six interconvertible forms: pyridoxine (PN), pyridoxal (PL), pyridoxamine (PM), and their 5'-phosphate derivatives. Pyridoxal 5'-phosphate (PLP) is the active coenzyme form involved in over 100 enzymatic reactions. HealthKit tracks dietary vitamin B6 intake in milligrams, representing total B6 from all dietary sources including supplements.
+
+  ## Biological Functions
+  Vitamin B6 serves as a cofactor for numerous essential metabolic processes:
+
+  - **Amino acid metabolism**: Required for transamination, decarboxylation, and racemization reactions; essential for protein synthesis and breakdown
+  - **Neurotransmitter synthesis**: Cofactor for production of serotonin, dopamine, norepinephrine, GABA, and histamine
+  - **Hemoglobin formation**: Required for delta-aminolevulinic acid synthase, the rate-limiting enzyme in heme biosynthesis
+  - **Homocysteine metabolism**: Cofactor for cystathionine beta-synthase, converting homocysteine to cysteine
+  - **Gluconeogenesis**: Cofactor for glycogen phosphorylase, enabling glucose release from glycogen
+  - **Lipid metabolism**: Involved in sphingolipid synthesis
+  - **Immune function**: Supports lymphocyte proliferation and antibody production
+  - **Gene expression**: Influences steroid hormone receptor activity
+
+  ## Health Significance
+  Adequate vitamin B6 is crucial for neurological function, cardiovascular health, and immune competence. Deficiency can result in neurological symptoms, anemia, and dermatitis. While clinical deficiency is uncommon in developed countries, suboptimal status is prevalent, particularly in the elderly. High-dose supplementation over extended periods can cause sensory neuropathy.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing patient vitamin B6 intake data:
+
+  - **Assess total intake**: Combine food and supplement sources
+  - **Consider protein intake**: High protein diets increase B6 requirements
+  - **Evaluate medication use**: Several medications interfere with B6 metabolism
+  - **Monitor supplement doses**: Distinguish therapeutic doses from excessive supplementation
+  - **Note duration of high intake**: Neuropathy risk increases with prolonged high-dose use
+  - **Consider age**: Requirements increase slightly after age 50
+
+  ## Deficiency
+  **Symptoms and conditions**:
+  - Microcytic hypochromic anemia (similar to iron deficiency anemia)
+  - Peripheral neuropathy (numbness, tingling in extremities)
+  - Seborrheic dermatitis (scaling skin around eyes, nose, mouth)
+  - Glossitis (swollen, sore tongue) and angular cheilitis
+  - Depression, confusion, and cognitive impairment
+  - Weakened immune function
+  - Elevated homocysteine levels (cardiovascular risk factor)
+  - Convulsions in severe deficiency (especially infants)
+
+  **At-risk populations**:
+  - Elderly (decreased absorption and increased requirements)
+  - Individuals with alcohol use disorder
+  - Patients with autoimmune disorders (rheumatoid arthritis, celiac disease, IBD)
+  - Women using oral contraceptives (may reduce plasma PLP levels)
+  - Patients with impaired renal function
+  - Individuals on certain medications (see Drug Interactions)
+  - Those with genetic variants affecting B6 metabolism
+
+  ## Toxicity/Excess
+  Unlike most water-soluble vitamins, vitamin B6 can cause toxicity at high doses.
+
+  **Sensory neuropathy** (primary toxicity concern):
+  - Occurs with chronic intake ≥1000 mg/day, but reported at lower doses (200-500 mg/day) with prolonged use
+  - Symptoms: Numbness, tingling, burning in extremities; ataxia; photosensitivity
+  - Usually reversible upon discontinuation, but may persist
+  - Mechanism: Thought to involve direct neurotoxicity or interference with PLP-dependent enzymes
+
+  **Other reported effects at high doses**:
+  - Gastrointestinal disturbances
+  - Skin photosensitivity
+  - Headaches
+  - Paradoxically, neuropathy symptoms similar to deficiency
+
+  **Clinical note**: The UL of 100 mg/day is based on sensory neuropathy risk. Some practitioners use doses above this therapeutically (e.g., for nausea in pregnancy, PMS), but close monitoring is warranted.
+
+  ## Food Sources
+  **High vitamin B6 foods**:
+  - Chickpeas (1 cup cooked: ~1.1 mg)
+  - Beef liver (3 oz: ~0.9 mg)
+  - Tuna, yellowfin (3 oz: ~0.9 mg)
+  - Salmon (3 oz: ~0.6 mg)
+  - Chicken breast (3 oz: ~0.5 mg)
+  - Potatoes (1 medium with skin: ~0.4 mg)
+  - Turkey (3 oz: ~0.4 mg)
+  - Bananas (1 medium: ~0.4 mg)
+
+  **Good sources**:
+  - Fortified cereals (varies widely)
+  - Ground beef, pork
+  - Avocado
+  - Pistachios, sunflower seeds
+  - Spinach, other leafy greens
+  - Sweet potatoes
+  - Cottage cheese
+
+  **Bioavailability considerations**:
+  - Pyridoxine in plants is less bioavailable than pyridoxal/pyridoxamine in animal foods
+  - Food processing and cooking can reduce B6 content by 10-50%
+  - Pyridoxine glucoside in some plant foods has ~50% bioavailability
+
+  ## Special Populations
+  **Pregnancy**: Requirements increase to 1.9 mg/day. B6 (typically 10-25 mg) is commonly used to treat pregnancy-related nausea/vomiting and is considered safe at these doses. Higher doses should be avoided without medical supervision.
+
+  **Lactation**: Requirements increase to 2.0 mg/day to support infant B6 status through breast milk.
+
+  **Elderly**: Plasma PLP levels tend to decline with age despite adequate intake, possibly due to increased inflammation, altered metabolism, or decreased absorption. Some researchers suggest higher intakes may be beneficial.
+
+  **Athletes**: Intense physical activity may increase B6 requirements due to increased protein and amino acid metabolism.
+
+  **Individuals with kidney disease**: Patients on hemodialysis often have low B6 status and may require supplementation.
+
+  ## Drug Interactions
+  **Drugs that decrease B6 status**:
+  - **Isoniazid** (INH): Forms inactive complex with PLP; B6 supplementation (25-50 mg/day) often prescribed concurrently
+  - **Cycloserine**: Increases urinary B6 excretion; supplementation recommended
+  - **Penicillamine**: Chelates PLP; supplementation often needed
+  - **Hydralazine**: Forms hydrazone with PLP
+  - **Theophylline**: Inhibits pyridoxal kinase
+  - **Oral contraceptives**: May lower plasma PLP (clinical significance debated)
+  - **Anticonvulsants**: Phenytoin, carbamazepine, valproic acid may affect B6 metabolism
+
+  **Drugs affected by B6**:
+  - **Levodopa** (without carbidopa): High-dose B6 can accelerate peripheral decarboxylation, reducing efficacy. Does NOT apply to levodopa/carbidopa combinations.
+  - **Phenobarbital and phenytoin**: High-dose B6 may increase metabolism, potentially reducing drug levels
+
+  ## Caveats & Limitations
+  - HealthKit data reflects user-reported intake, not plasma PLP levels or functional status
+  - Accuracy depends on food logging completeness and database quality
+  - Different B6 forms have varying bioavailability not captured in most food databases
+  - Supplement doses may be logged inconsistently
+  - Individual requirements vary based on protein intake, age, and genetic factors
+  - Cannot assess functional B6 status or tissue stores from intake data alone
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food contributing to vitamin B6 intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if the entry was manually logged by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing with external nutrition databases"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminB12"
+    relationship: "Both B vitamins involved in homocysteine metabolism and neurological function"
+  - identifier: "HKQuantityTypeIdentifierDietaryFolate"
+    relationship: "Works synergistically in one-carbon metabolism and homocysteine reduction"
+  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
+    relationship: "B6 requirements increase with higher protein intake"
+  - identifier: "HKQuantityTypeIdentifierDietaryRiboflavin"
+    relationship: "Riboflavin (B2) is required to convert B6 to its active form PLP"
+  - identifier: "HKQuantityTypeIdentifierDietaryNiacin"
+    relationship: "B6 is required for niacin synthesis from tryptophan"
+  - identifier: "HKQuantityTypeIdentifierDietaryIron"
+    relationship: "B6 deficiency can cause anemia; both nutrients support hemoglobin synthesis"
+references:
+  - title: "Vitamin B6 - Dietary Reference Intakes"
+    url: "https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/"
+    type: "official"
+  - title: "Apple HealthKit Documentation - HKQuantityTypeIdentifier"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier"
+    type: "official"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Thiamin, Riboflavin, Niacin, Vitamin B6, Folate, Vitamin B12, Pantothenic Acid, Biotin, and Choline"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK114310/"
+    type: "research"
+  - title: "Vitamin B6 - Linus Pauling Institute"
+    url: "https://lpi.oregonstate.edu/mic/vitamins/vitamin-B6"
+    type: "research"
+  - title: "Vitamin B6 and Its Role in Cell Metabolism and Physiology"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6071262/"
+    type: "research"
+last_updated: "2026-01-27"

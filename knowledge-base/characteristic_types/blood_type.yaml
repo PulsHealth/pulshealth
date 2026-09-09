@@ -1,0 +1,154 @@
+identifier: "HKCharacteristicTypeIdentifierBloodType"
+source: "HealthKit"
+type: "HKCharacteristicType"
+category: "Characteristics"
+human_readable_name: "Blood Type"
+short_description: "The user's ABO blood type and Rh factor as set in their Health profile."
+icon: "drop.fill"
+color: "#FF3B30"
+default_unit: null
+supported_units: null
+unit_description: "Enumerated value representing ABO blood type with Rh factor"
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notSet"
+    description: "The user has not specified their blood type"
+  - value: 1
+    name: "aPositive"
+    description: "Blood type A positive (A+)"
+  - value: 2
+    name: "aNegative"
+    description: "Blood type A negative (A-)"
+  - value: 3
+    name: "bPositive"
+    description: "Blood type B positive (B+)"
+  - value: 4
+    name: "bNegative"
+    description: "Blood type B negative (B-)"
+  - value: 5
+    name: "abPositive"
+    description: "Blood type AB positive (AB+)"
+  - value: 6
+    name: "abNegative"
+    description: "Blood type AB negative (AB-)"
+  - value: 7
+    name: "oPositive"
+    description: "Blood type O positive (O+)"
+  - value: 8
+    name: "oNegative"
+    description: "Blood type O negative (O-)"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "User manually sets value in Health app profile (Settings > Health > Health Details)"
+  - name: "iPad"
+    capability: "User manually sets value in Health app profile"
+primary_source: "User Input"
+description: |
+  ## Overview
+
+  HKCharacteristicTypeIdentifierBloodType stores the user's ABO blood type and Rh factor as configured
+  in their Health app profile. This read-only characteristic includes all eight common blood types
+  (A+, A-, B+, B-, AB+, AB-, O+, O-) plus a "not set" state. The value can only be modified by the
+  user through the Health app settings.
+
+  ## Health Significance
+
+  Blood type is a critical piece of medical information with several important applications:
+
+  - **Emergency transfusion**: In emergencies, knowing blood type can expedite safe transfusion
+    decisions. Universal donor (O-) blood is used when type is unknown, but matched blood is preferred.
+
+  - **Surgical preparation**: Pre-operative blood typing ensures compatible blood products are available
+
+  - **Pregnancy management**: Rh-negative mothers carrying Rh-positive fetuses require RhoGAM to
+    prevent hemolytic disease of the newborn
+
+  - **Organ transplantation**: ABO compatibility is a primary factor in organ matching
+
+  - **Disease associations**: Research has identified associations between blood type and risk for
+    certain conditions:
+    - Type O: Lower risk of heart disease, higher risk of bleeding disorders
+    - Type A: Higher risk of certain cancers, COVID-19 severity
+    - Type AB: Higher risk of cognitive impairment
+    - Rh-negative: Potential pregnancy complications
+
+  ## Clinical Interpretation
+
+  When reviewing blood type data, clinicians should consider:
+
+  - **Verification required**: Self-reported blood type should always be verified through laboratory
+    testing before transfusion or other critical medical decisions. This data is informational only.
+
+  - **Population distribution**: Blood type frequencies vary by ethnicity:
+    - O+: ~37% (most common worldwide)
+    - A+: ~36%
+    - B+: ~8%
+    - O-: ~7%
+    - A-: ~6%
+    - AB+: ~3%
+    - B-: ~2%
+    - AB-: ~1% (rarest)
+
+  - **Emergency medical ID**: Having blood type readily accessible on a phone can be useful in
+    emergencies, though medical teams will still verify before transfusion
+
+  - **Pregnancy counseling**: Rh-negative women should be identified early in pregnancy for appropriate
+    RhoGAM prophylaxis
+
+  ## Caveats & Limitations
+
+  - **Self-reported data**: Users enter their blood type manually based on their understanding or
+    memory. This may be incorrect, outdated, or confused with a family member's type.
+
+  - **Not clinically verified**: HealthKit does not validate blood type entries against laboratory
+    results. Never use this data for transfusion decisions without proper testing.
+
+  - **Read-only**: Apps cannot set or modify blood type - this is a user-controlled health detail.
+    Even clinical apps must rely on the user to update this information.
+
+  - **Static characteristic**: Blood type doesn't change over a lifetime (with rare exceptions like
+    bone marrow transplant), so there's no historical tracking.
+
+  - **Subtype limitations**: The ABO/Rh system is simplified. Clinically important subtypes (weak D,
+    Bombay phenotype) and other blood group systems (Kell, Duffy, etc.) are not represented.
+
+  - **May not be set**: Many users don't know their blood type and leave this field empty. Apps
+    should handle the notSet case gracefully.
+
+  - **Privacy implications**: Blood type is considered sensitive health information and could
+    theoretically be used for identification purposes.
+metadata_keys: []
+related_types:
+  - identifier: "HKCharacteristicTypeIdentifierBiologicalSex"
+    relationship: "demographic_characteristic"
+  - identifier: "HKCharacteristicTypeIdentifierDateOfBirth"
+    relationship: "demographic_characteristic"
+references:
+  - title: "Apple Developer Documentation - HKCharacteristicTypeIdentifierBloodType"
+    url: "https://developer.apple.com/documentation/healthkit/hkcharacteristictypeidentifierbloodtype"
+    type: "official"
+  - title: "Apple Developer Documentation - HKBloodType"
+    url: "https://developer.apple.com/documentation/healthkit/hkbloodtype"
+    type: "official"
+  - title: "American Red Cross - Blood Types"
+    url: "https://www.redcrossblood.org/donate-blood/blood-types.html"
+    type: "medical"
+  - title: "AABB - Blood FAQ"
+    url: "https://www.aabb.org/for-donors-patients/blood-faq"
+    type: "medical"
+last_updated: "2026-01-27"

@@ -1,0 +1,171 @@
+identifier: "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Rapid, Pounding, or Fluttering Heartbeat"
+short_description: "Tracks episodes of palpitations or awareness of heartbeat"
+icon: "heart.fill"
+color: "#FF2D55"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No palpitations or abnormal heartbeat awareness"
+  - value: 1
+    name: "present"
+    description: "Mild palpitations - brief awareness, not distressing"
+  - value: 2
+    name: "moderate"
+    description: "Moderate palpitations - persistent awareness, somewhat distressing"
+  - value: 3
+    name: "severe"
+    description: "Severe palpitations - intense, frightening, or with other symptoms"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Palpitations are the subjective awareness of one's heartbeat, often described
+  as rapid, pounding, fluttering, or irregular. While usually benign, they can
+  indicate underlying arrhythmias or other cardiac conditions. This data type
+  enables tracking of palpitation episodes for correlation with objective
+  heart rhythm data.
+
+  ## Health Significance
+  - **Arrhythmia Detection**: May indicate atrial fibrillation, SVT, PVCs, or
+    other rhythm disturbances
+  - **Symptom-Rhythm Correlation**: Critical for diagnosis when symptoms are
+    intermittent
+  - **Treatment Monitoring**: Track response to antiarrhythmic medications or
+    ablation procedures
+  - **Trigger Identification**: Identify caffeine, alcohol, stress, or other
+    precipitants
+  - **Quality of Life**: Palpitations can cause significant anxiety and
+    healthcare utilization
+
+  ## CRITICAL: Red Flags Requiring Immediate Evaluation
+
+  **Call 911 or go to emergency room if palpitations occur with:**
+  - Chest pain or pressure
+  - Shortness of breath
+  - Lightheadedness or fainting
+  - Loss of consciousness
+  - Severe weakness
+  - Confusion
+  - Palpitations lasting more than a few minutes without resolution
+
+  **High-Risk Features:**
+  - Palpitations during exertion
+  - Family history of sudden cardiac death
+  - Known structural heart disease
+  - Very rapid rate (>150 bpm)
+  - Associated syncope or near-syncope
+
+  ## Clinical Context
+  **Common Benign Causes:**
+  - Anxiety and panic attacks
+  - Caffeine or stimulant intake
+  - Dehydration
+  - Exercise
+  - Premature atrial or ventricular contractions (PACs/PVCs)
+  - Fever or illness
+
+  **Cardiac Causes Requiring Evaluation:**
+  - Atrial fibrillation or flutter
+  - Supraventricular tachycardia (SVT)
+  - Ventricular tachycardia
+  - Wolff-Parkinson-White syndrome
+  - Valvular heart disease
+
+  **Other Medical Causes:**
+  - Hyperthyroidism
+  - Anemia
+  - Hypoglycemia
+  - Electrolyte abnormalities
+  - Medication effects
+
+  ## Pattern Recognition
+  Tracking palpitations can reveal:
+  - Frequency and duration trends
+  - Time of day patterns
+  - Triggers (caffeine, alcohol, exercise, stress, sleep deprivation)
+  - Correlation with Apple Watch heart rate or irregular rhythm notifications
+  - Relationship to meals (postprandial)
+  - Positional triggers
+  - Response to treatment interventions
+
+  ## Integration with Objective Data
+  Combine symptom logging with:
+  - Apple Watch heart rate recordings during episodes
+  - Irregular rhythm notifications
+  - ECG recordings (Apple Watch Series 4+)
+  - Heart rate variability data
+
+  ## Caveats & Limitations
+  - Subjective perception varies widely
+  - Anxiety can cause palpitation awareness without arrhythmia
+  - Does not capture heart rate or rhythm during episode
+  - Episodes may be too brief to log or capture on ECG
+  - Cannot differentiate between arrhythmia types
+  - Retrospective logging may be inaccurate
+  - Requires correlation with objective monitoring for diagnosis
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierSkippedHeartbeat"
+    relationship: "Related symptom; may co-occur or be confused"
+  - identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
+    relationship: "Critical co-symptom suggesting cardiac significance"
+  - identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
+    relationship: "Red flag symptom when combined with palpitations"
+  - identifier: "HKCategoryTypeIdentifierDizziness"
+    relationship: "Suggests hemodynamic significance"
+  - identifier: "HKCategoryTypeIdentifierFainting"
+    relationship: "Serious symptom requiring urgent evaluation"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Objective rate data during symptom episodes"
+  - identifier: "HKElectrocardiogramType"
+    relationship: "ECG recording for arrhythmia detection"
+  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
+    relationship: "Apple Watch detected irregular rhythm events"
+  - identifier: "HKCategoryTypeIdentifierHighHeartRateEvent"
+    relationship: "Apple Watch high heart rate notifications"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierrapidpoundingorflutteringheartbeat"
+    type: "official"
+  - title: "Palpitations Evaluation - ACC/AHA Guidelines"
+    url: "https://www.acc.org/guidelines"
+    type: "medical"
+  - title: "Atrial Fibrillation Information - American Heart Association"
+    url: "https://www.heart.org/en/health-topics/atrial-fibrillation"
+    type: "medical"
+  - title: "When to Worry About Heart Palpitations - Harvard Health"
+    url: "https://www.health.harvard.edu/heart-health/when-to-worry-about-heart-palpitations"
+    type: "medical"
+last_updated: "2026-01-27"

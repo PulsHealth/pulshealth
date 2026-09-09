@@ -1,0 +1,219 @@
+identifier: "HKQuantityTypeIdentifierDietaryPantothenicAcid"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Pantothenic Acid (Vitamin B5)"
+short_description: "Records dietary intake of pantothenic acid (vitamin B5), essential for coenzyme A synthesis and acyl carrier protein function."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#FFCC00"
+
+default_unit: "mg"
+supported_units: ["mg", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 2.0
+  max: 15.0
+  unit: "mg"
+clinical_ranges:
+  - population: "Adult men (19+ years)"
+    ai: "5 mg/day"
+  - population: "Adult women (19+ years)"
+    ai: "5 mg/day"
+  - population: "Pregnancy"
+    ai: "6 mg/day"
+  - population: "Lactation"
+    ai: "7 mg/day"
+  - population: "Infants (0-6 months)"
+    ai: "1.7 mg/day"
+  - population: "Infants (7-12 months)"
+    ai: "1.8 mg/day"
+  - population: "Children (1-3 years)"
+    ai: "2 mg/day"
+  - population: "Children (4-8 years)"
+    ai: "3 mg/day"
+  - population: "Children (9-13 years)"
+    ai: "4 mg/day"
+  - population: "Adolescents (14-18 years)"
+    ai: "5 mg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Manual logging and barcode scanning of food items with pantothenic acid content"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
+  - name: "Nutrition coaching platforms"
+    capability: "Meal planning with micronutrient tracking"
+    examples: ["Noom", "PlateJoy"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Pantothenic acid (vitamin B5) derives its name from the Greek word "pantos" meaning
+  "everywhere," reflecting its ubiquitous presence in foods. This water-soluble vitamin is
+  an essential precursor for the synthesis of coenzyme A (CoA), one of the most important
+  cofactors in metabolism. CoA participates in over 100 different metabolic reactions,
+  including energy production from macronutrients, fatty acid synthesis and oxidation,
+  cholesterol synthesis, and the synthesis of steroid hormones, neurotransmitters, and heme.
+  Pantothenic acid is also a component of acyl carrier protein (ACP), essential for fatty
+  acid synthesis.
+
+  ## Biological Functions
+  - **Coenzyme A synthesis**: Pantothenic acid is converted to CoA through a five-step pathway
+  - **Acetyl-CoA formation**: Central metabolite in the citric acid cycle; substrate for
+    fatty acid and cholesterol synthesis
+  - **Fatty acid metabolism**: CoA required for both beta-oxidation and fatty acid synthesis
+  - **Citric acid cycle**: Multiple CoA-dependent reactions (citrate synthase,
+    alpha-ketoglutarate dehydrogenase, succinyl-CoA synthetase)
+  - **Acyl carrier protein (ACP)**: 4'-phosphopantetheine (from pantothenic acid) is the
+    prosthetic group of ACP in fatty acid synthase
+  - **Steroid hormone synthesis**: CoA required for cholesterol-derived hormone production
+  - **Neurotransmitter synthesis**: Acetyl-CoA is precursor for acetylcholine
+  - **Protein acetylation**: Acetyl-CoA donates acetyl groups for histone and protein modification
+
+  ## Health Significance
+  Due to its widespread availability in foods, pantothenic acid deficiency is extremely rare
+  in humans consuming a varied diet. The vitamin's role in CoA synthesis makes it theoretically
+  important for numerous metabolic processes, but clinical conditions specifically attributed
+  to deficiency are uncommon. Pantothenic acid derivatives (pantothenol, pantethine) have been
+  investigated for wound healing and lipid-lowering effects, respectively, though evidence
+  remains limited.
+
+  ## Clinical Interpretation Guidelines
+  - **Adequate Intake (AI)**: Only AI values exist (no RDA) due to limited data
+  - **Daily monitoring**: Compare cumulative intake against AI values
+  - **Trend analysis**: Assess 7-14 day averages for consistent adequacy
+  - **Dietary assessment**: Low pantothenic acid often indicates overall poor diet quality
+  - **Laboratory markers**: Whole blood or erythrocyte pantothenic acid can be measured but
+    rarely needed clinically
+  - **Urinary excretion**: Reflects recent intake; <1 mg/day suggests deficiency
+
+  ## Deficiency
+  **Natural deficiency is exceptionally rare** due to the vitamin's widespread distribution
+  in foods. Most knowledge comes from experimental deficiency studies using pantothenic acid
+  antagonists (omega-methylpantothenic acid) or highly restricted diets.
+
+  **Experimentally-induced deficiency symptoms**:
+  - **Neurological**: Numbness and burning sensation in feet ("burning feet syndrome"),
+    paresthesias, impaired coordination
+  - **Gastrointestinal**: Nausea, vomiting, abdominal cramps
+  - **General**: Fatigue, malaise, headache, sleep disturbances, irritability
+  - **Metabolic**: Impaired glucose tolerance, increased insulin sensitivity
+  - **Immune**: Impaired antibody production
+
+  **Historical context**: "Burning feet syndrome" was observed in malnourished prisoners of
+  war in World War II and responded to pantothenic acid supplementation, though it may have
+  been part of broader malnutrition.
+
+  **At-risk populations**:
+  - Severe malnutrition (rare in developed countries)
+  - Chronic alcoholism (often combined with other B-vitamin deficiencies)
+  - Pantothenate kinase-associated neurodegeneration (PKAN) - rare genetic disorder
+
+  ## Toxicity/Excess
+  No Tolerable Upper Intake Level (UL) has been established for pantothenic acid. The vitamin
+  is considered to have low toxicity, with no consistent adverse effects reported even at
+  high supplemental doses.
+
+  **High-dose observations** (typically 10-20 g/day):
+  - Diarrhea and gastrointestinal disturbances are the most commonly reported effects
+  - Nausea at very high doses
+  - No serious toxicity documented
+
+  **Pantethine** (dimeric form of pantetheine, a CoA precursor):
+  - Used at doses of 900-1200 mg/day for lipid modification
+  - Generally well-tolerated
+  - GI side effects possible
+
+  ## Food Sources
+  - **Excellent sources (>2 mg/serving)**: Beef liver, chicken liver, sunflower seeds,
+    shiitake mushrooms, fortified cereals
+  - **Good sources (1-2 mg/serving)**: Avocado, chicken breast, beef, salmon, lobster,
+    egg yolk, sweet potato
+  - **Moderate sources (<1 mg/serving)**: Milk, yogurt, broccoli, potatoes, whole grains,
+    legumes, tomatoes, strawberries
+
+  Note: The name "pantothenic" reflects its presence in virtually all foods. Processing,
+  canning, and refining can reduce content by 20-80%. Whole, unprocessed foods are the
+  best sources.
+
+  ## Special Populations
+  - **Pregnancy and lactation**: Modestly increased requirements (6-7 mg/day AI)
+  - **Chronic alcohol users**: Often have multiple B-vitamin deficiencies including
+    potentially pantothenic acid
+  - **Highly processed diet consumers**: May have lower intake due to processing losses
+  - **Athletes**: Theoretical increased requirements with high energy expenditure, though
+    not well-established
+  - **Diabetics**: Some research on pantothenic acid derivatives for wound healing
+  - **Patients with pantothenate kinase-associated neurodegeneration (PKAN)**: Rare genetic
+    disorder; high-dose pantothenic acid not effective; other treatments used
+  - **Patients taking lipid-lowering supplements**: Pantethine has modest lipid effects
+
+  ## Drug Interactions
+  Pantothenic acid has remarkably few documented drug interactions, likely due to its
+  wide availability and established safety.
+
+  - **Cholinesterase inhibitors (donepezil, rivastigmine)**: Theoretical interaction as
+    pantothenic acid is required for acetyl-CoA (acetylcholine precursor); clinical
+    significance unknown
+  - **Biotin (high doses)**: May compete for intestinal absorption
+  - **Dapsone**: May have some interaction with pantothenic acid metabolism
+  - **Oral contraceptives**: May slightly affect pantothenic acid status (limited data)
+
+  **Note**: Unlike many other nutrients, pantothenic acid is not known to have significant
+  interactions with common medications.
+
+  ## Caveats & Limitations
+  - **Adequate Intake only**: No RDA established; AI based on estimated intake data
+  - **Self-reported intake**: Accuracy depends on user diligence and food database quality
+  - **Processing losses**: Food database values may not reflect actual content after cooking
+  - **Bioavailability**: Generally high (40-60%) but varies by food source
+  - **No direct measurement**: HealthKit data reflects intake estimates, not blood levels
+  - **Deficiency rare**: Clinical relevance of tracking is limited in well-nourished populations
+  - **Limited clinical applications**: Few specific conditions where pantothenic acid
+    supplementation is indicated
+  - **Combined deficiencies**: In malnutrition, deficiency occurs with multiple B-vitamins
+  - **Pantethine distinct**: Lipid-lowering effects of pantethine do not apply to pantothenic acid
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "The type of food or meal providing the pantothenic acid intake"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier used to sync data across multiple devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for synced nutrition data"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External unique identifier from the source app"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryBiotin"
+    relationship: "Related B-vitamin that may compete for absorption; both involved in CoA-related pathways"
+  - identifier: "HKQuantityTypeIdentifierDietaryThiamin"
+    relationship: "B-vitamin involved in related energy metabolism pathways"
+  - identifier: "HKQuantityTypeIdentifierDietaryRiboflavin"
+    relationship: "B-vitamin involved in related energy metabolism pathways"
+  - identifier: "HKQuantityTypeIdentifierDietaryNiacin"
+    relationship: "B-vitamin involved in related energy metabolism pathways"
+  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
+    relationship: "CoA derived from pantothenic acid is essential for fatty acid metabolism"
+  - identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
+    relationship: "CoA is required for cholesterol synthesis"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryPantothenicAcid"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarypantothenicacid"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Pantothenic Acid Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/PantothenicAcid-HealthProfessional/"
+    type: "medical"
+  - title: "Institute of Medicine - Dietary Reference Intakes for Thiamin, Riboflavin, Niacin, Vitamin B6, Folate, Vitamin B12, Pantothenic Acid, Biotin, and Choline"
+    url: "https://nap.nationalacademies.org/catalog/6015/dietary-reference-intakes-for-thiamin-riboflavin-niacin-vitamin-b6-folate-vitamin-b12-pantothenic-acid-biotin-and-choline"
+    type: "research"
+  - title: "Pantothenate Kinase-Associated Neurodegeneration - GeneReviews"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK1490/"
+    type: "medical"
+last_updated: "2026-01-27"

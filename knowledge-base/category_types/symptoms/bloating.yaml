@@ -1,0 +1,119 @@
+identifier: "HKCategoryTypeIdentifierBloating"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Bloating"
+short_description: "Tracks episodes of abdominal bloating and distension."
+icon: "circle.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Bloating refers to a subjective sensation of abdominal fullness, pressure, or distension, often accompanied by visible abdominal swelling. This HealthKit category type enables users to track bloating episodes and their severity, helping identify dietary triggers, hormonal patterns, and potential gastrointestinal conditions.
+
+  ## Health Significance
+  Bloating is one of the most common gastrointestinal complaints, affecting up to 30% of the general population. While often benign, persistent or severe bloating can indicate underlying conditions requiring medical evaluation. Tracking patterns helps clinicians identify causes and guide treatment.
+
+  Common causes include:
+  - Dietary factors (high-FODMAP foods, carbonated beverages, excessive fiber)
+  - Irritable bowel syndrome (IBS)
+  - Small intestinal bacterial overgrowth (SIBO)
+  - Food intolerances (lactose, fructose, gluten)
+  - Constipation
+  - Menstrual cycle hormonal changes
+  - Gastroparesis
+  - Celiac disease
+  - Aerophagia (air swallowing)
+
+  More concerning causes to rule out:
+  - Ovarian cancer (persistent bloating is a key symptom)
+  - Ascites (fluid accumulation)
+  - Bowel obstruction
+  - Inflammatory bowel disease
+
+  ## When to Seek Medical Attention
+  Users should consult a healthcare provider when bloating:
+  - Is persistent or progressively worsening
+  - Is accompanied by unexplained weight loss
+  - Occurs with blood in stool or changes in bowel habits
+  - Is associated with severe pain or vomiting
+  - Causes significant abdominal distension that doesn't resolve
+  - Is new and persistent in women over 50 (ovarian cancer screening)
+  - Interferes with eating or daily activities
+  - Is accompanied by fever
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Post-meal patterns suggesting food triggers
+  - Menstrual cycle correlation (perimenstrual bloating)
+  - Response to dietary interventions (low-FODMAP, elimination diets)
+  - Stress-related exacerbations
+  - Time-of-day patterns
+  - Correlation with constipation episodes
+
+  ## Caveats & Limitations
+  - Subjective sensation may not correlate with measurable distension
+  - Specific food triggers cannot be identified without additional logging
+  - Does not differentiate between bloating causes
+  - Severity perception varies significantly between individuals
+  - Cannot assess for serious underlying conditions
+  - Limited value without dietary and bowel movement context
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+    relationship: "Bloating and cramps often co-occur in GI disorders"
+  - identifier: "HKCategoryTypeIdentifierConstipation"
+    relationship: "Constipation commonly causes bloating"
+  - identifier: "HKCategoryTypeIdentifierDiarrhea"
+    relationship: "Alternating constipation/diarrhea with bloating suggests IBS"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Hormonal changes cause perimenstrual bloating"
+  - identifier: "HKCategoryTypeIdentifierNausea"
+    relationship: "Severe bloating may be accompanied by nausea"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierBloating"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierbloating"
+    type: "official"
+  - title: "Bloating and Distension - ACG Clinical Guidelines"
+    url: "https://gi.org/topics/bloating-and-distension/"
+    type: "medical"
+  - title: "Abdominal Bloating and Distension - Gastroenterology Research"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3264926/"
+    type: "research"
+last_updated: "2026-01-27"

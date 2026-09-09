@@ -1,0 +1,315 @@
+identifier: "HKQuantityTypeIdentifierBloodGlucose"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Blood Glucose"
+short_description: "The concentration of glucose in the blood, a key indicator for diabetes management and metabolic health."
+icon: "drop.fill"
+color: "#FF9500"
+default_unit: "mg/dL"
+supported_units:
+  - "mg/dL"
+  - "mmol/L"
+unit_description: "Milligrams per deciliter (mg/dL) in the US, or millimoles per liter (mmol/L) internationally. Conversion: mg/dL / 18.0182 = mmol/L"
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+typical_range:
+  min: 70
+  max: 140
+  unit: "mg/dL"
+  notes: "Fasting typically 70-100 mg/dL; post-meal can rise to 140 mg/dL in non-diabetic individuals."
+clinical_ranges:
+  - population: "Non-diabetic adults (fasting)"
+    normal: "70-99 mg/dL (3.9-5.5 mmol/L)"
+    prediabetes: "100-125 mg/dL (5.6-6.9 mmol/L)"
+    diabetes: ">=126 mg/dL (>=7.0 mmol/L)"
+  - population: "Non-diabetic adults (2-hour postprandial)"
+    normal: "<140 mg/dL (<7.8 mmol/L)"
+    prediabetes: "140-199 mg/dL (7.8-11.0 mmol/L)"
+    diabetes: ">=200 mg/dL (>=11.1 mmol/L)"
+  - population: "Random glucose (any time)"
+    diabetes_diagnostic: ">=200 mg/dL with symptoms"
+  - population: "Adults with diabetes (ADA targets)"
+    preprandial_target: "80-130 mg/dL (4.4-7.2 mmol/L)"
+    postprandial_target: "<180 mg/dL (<10.0 mmol/L)"
+    notes: "Individual targets may vary; consult endocrinologist"
+  - population: "Pregnant women (gestational diabetes)"
+    fasting_target: "<95 mg/dL (<5.3 mmol/L)"
+    one_hour_postprandial: "<140 mg/dL (<7.8 mmol/L)"
+    two_hour_postprandial: "<120 mg/dL (<6.7 mmol/L)"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "Continuous Glucose Monitors (CGM)"
+    examples: ["Dexcom G6/G7", "Abbott FreeStyle Libre 2/3", "Medtronic Guardian"]
+    capability: "Real-time interstitial glucose readings every 1-5 minutes"
+  - name: "Blood Glucose Meters (fingerstick)"
+    examples: ["OneTouch", "Contour", "Accu-Chek"]
+    capability: "Point-in-time capillary blood glucose measurement"
+  - name: "Lab testing"
+    capability: "Plasma glucose measurement (gold standard)"
+  - name: "Manual entry"
+    capability: "User can log readings from any device"
+primary_source: "CGM devices and blood glucose meters"
+description: |
+  ## Overview
+
+  Blood glucose (blood sugar) measures the concentration of glucose circulating in the blood.
+  Glucose is the primary energy source for cells and its regulation is critical for metabolic
+  health. Abnormal blood glucose levels are the defining characteristic of diabetes mellitus
+  and are associated with numerous short-term and long-term health complications.
+
+  In HealthKit, blood glucose data typically comes from continuous glucose monitors (CGMs) or
+  traditional fingerstick blood glucose meters. This data is essential for diabetes management,
+  metabolic health optimization, and identifying patterns related to diet, exercise, stress,
+  and sleep.
+
+  ## How It's Measured
+
+  ### Continuous Glucose Monitors (CGM)
+  CGMs use a small sensor inserted under the skin (usually on the arm or abdomen) to measure
+  glucose in the interstitial fluid:
+
+  - **Sensor**: Tiny electrode coated with glucose oxidase enzyme
+  - **Measurement**: Interstitial fluid glucose (not blood glucose directly)
+  - **Frequency**: Every 1-5 minutes depending on device
+  - **Duration**: Sensors last 7-14 days typically
+  - **Calibration**: Some require fingerstick calibration; newer models are factory-calibrated
+
+  **Key CGM Limitations**:
+  - 5-20 minute lag behind actual blood glucose
+  - Less accurate during rapid glucose changes
+  - Accuracy decreases in hypoglycemic range
+  - MARD (Mean Absolute Relative Difference) typically 9-15%
+  - Affected by pressure on sensor site, temperature, and hydration
+
+  ### Fingerstick Blood Glucose Meters
+  Traditional meters measure capillary blood glucose from a finger prick:
+
+  - **Measurement**: Direct blood sample via test strip
+  - **Accuracy**: FDA requires 95% of readings within 15% of lab values (for >100 mg/dL)
+  - **Advantages**: Direct blood measurement, no lag time, lower cost per test
+  - **Disadvantages**: Point-in-time only, requires finger prick, no trend data
+
+  ### CGM vs Fingerstick: Key Differences
+
+  | Aspect | CGM | Fingerstick |
+  |--------|-----|-------------|
+  | What's measured | Interstitial fluid glucose | Capillary blood glucose |
+  | Frequency | Continuous (every 1-5 min) | Point-in-time |
+  | Lag time | 5-20 minutes behind blood | No lag |
+  | Trend data | Yes | No |
+  | Typical MARD | 9-15% | 5-12% |
+  | Hypoglycemia accuracy | Reduced | Better |
+
+  **Clinical Recommendation**: CGM values can differ from fingerstick by up to 20%. For
+  treatment decisions, especially hypoglycemia, fingerstick confirmation is recommended.
+
+  ## Health Significance
+
+  Blood glucose monitoring is critical for:
+  - **Diabetes management**: Adjusting insulin, medications, diet, and activity
+  - **Hypoglycemia prevention**: Detecting and treating low blood sugar
+  - **Prediabetes identification**: Early intervention opportunity
+  - **Metabolic health optimization**: Understanding glucose response to foods
+  - **Gestational diabetes monitoring**: Protecting maternal and fetal health
+
+  Chronic hyperglycemia leads to:
+  - Microvascular complications: retinopathy, nephropathy, neuropathy
+  - Macrovascular complications: cardiovascular disease, stroke
+  - Increased infection risk
+  - Impaired wound healing
+
+  ## Clinical Interpretation Guidelines
+
+  ### Fasting Blood Glucose (8+ hours without food)
+  | Range (mg/dL) | Range (mmol/L) | Interpretation |
+  |---------------|----------------|----------------|
+  | 70-99 | 3.9-5.5 | Normal |
+  | 100-125 | 5.6-6.9 | Prediabetes (IFG) |
+  | >=126 | >=7.0 | Diabetes (confirm with repeat) |
+
+  ### Post-Meal (2-hour postprandial)
+  | Range (mg/dL) | Range (mmol/L) | Interpretation |
+  |---------------|----------------|----------------|
+  | <140 | <7.8 | Normal |
+  | 140-199 | 7.8-11.0 | Prediabetes (IGT) |
+  | >=200 | >=11.1 | Diabetes |
+
+  ### Hypoglycemia Thresholds
+  | Level | Threshold | Symptoms | Action |
+  |-------|-----------|----------|--------|
+  | Alert | <70 mg/dL | May be asymptomatic | Treat with 15-20g fast carbs |
+  | Level 2 | <54 mg/dL | Shakiness, sweating, confusion | Immediate treatment |
+  | Level 3 | Severe | Altered consciousness, seizure | Glucagon, emergency services |
+
+  ### Elevated Blood Glucose May Indicate
+  - **Diabetes mellitus** (Type 1, Type 2, or gestational)
+  - **Prediabetes** (impaired fasting glucose or impaired glucose tolerance)
+  - **Medication effects**: Steroids, thiazides, atypical antipsychotics
+  - **Stress response**: Illness, trauma, surgery (stress hyperglycemia)
+  - **Hormonal disorders**: Cushing's syndrome, acromegaly, pheochromocytoma
+  - **Pancreatic disease**: Pancreatitis, pancreatic cancer
+
+  ### Low Blood Glucose May Indicate
+  - **Insulin or sulfonylurea excess** (most common in diabetics)
+  - **Missed or delayed meals** in patients on glucose-lowering therapy
+  - **Excessive alcohol intake** (inhibits gluconeogenesis)
+  - **Adrenal insufficiency**
+  - **Insulinoma** (rare insulin-secreting tumor)
+  - **Reactive hypoglycemia** (post-meal in non-diabetics)
+
+  ### Red Flags for Immediate Consultation
+  - Blood glucose <54 mg/dL (<3.0 mmol/L) with symptoms
+  - Blood glucose >300 mg/dL (>16.7 mmol/L) with symptoms
+  - Signs of diabetic ketoacidosis (DKA): high glucose + nausea/vomiting + fruity breath
+  - Signs of hyperosmolar hyperglycemic state (HHS): extreme hyperglycemia + dehydration + confusion
+  - Recurrent hypoglycemia unawareness
+  - Persistent hyperglycemia despite medication adherence
+
+  ## CGM-Specific Metrics
+
+  For patients using CGM, additional metrics provide insight beyond individual readings:
+
+  ### Time in Range (TIR)
+  - **Target range**: 70-180 mg/dL (or personalized)
+  - **Goal for most adults with diabetes**: >70% time in range
+  - **Hypoglycemia**: <4% time below 70 mg/dL, <1% below 54 mg/dL
+
+  ### Glucose Management Indicator (GMI)
+  - Estimated HbA1c based on CGM average glucose
+  - Formula: GMI (%) = 3.31 + 0.02392 x mean glucose (mg/dL)
+
+  ### Glycemic Variability
+  - **Coefficient of Variation (CV)**: Target <36% indicates stable glucose
+  - High variability associated with hypoglycemia risk and complications
+
+  ## Caveats & Limitations
+
+  ### CGM Limitations
+  - **Lag time**: Interstitial glucose lags blood glucose by 5-20 minutes
+  - **Rapid changes**: Less accurate during fast glucose rises or falls
+  - **Hypoglycemia range**: Accuracy degrades below 70 mg/dL
+  - **Sensor issues**: Compression artifacts, early sensor failures
+  - **Calibration**: Some devices require fingerstick calibration
+  - **Cost**: Significant ongoing expense for sensors
+  - **Not FDA-approved for diagnosis**: CGM is for monitoring, not diagnostic testing
+
+  ### Fingerstick Limitations
+  - **User technique**: Improper sampling affects accuracy
+  - **Strip storage**: Expired or improperly stored strips give errors
+  - **Interfering substances**: High vitamin C, acetaminophen (some meters)
+  - **Hematocrit**: Extreme anemia or polycythemia affects readings
+  - **No trend data**: Single snapshot misses patterns
+
+  ### General Limitations
+  - **Individual variation**: Same glucose level has different implications per person
+  - **Context matters**: Timing relative to meals, exercise, stress affects interpretation
+  - **Medication interactions**: Some drugs affect glucose or meter accuracy
+  - **Hemoglobin variants**: Affect HbA1c accuracy in some populations
+
+  ## Additional Notes
+
+  ### Meal Timing Metadata
+  HealthKit supports meal-related metadata for blood glucose samples:
+  - **HKMetadataKeyBloodGlucoseMealTime**: Indicates preprandial (before meal) or
+    postprandial (after meal) timing
+  - This context is essential for proper interpretation of glucose values
+
+  ### Carbohydrate Counting Integration
+  Blood glucose data is most actionable when paired with:
+  - Dietary carbohydrate intake (HKQuantityTypeIdentifierDietaryCarbohydrates)
+  - Insulin delivery records (HKQuantityTypeIdentifierInsulinDelivery)
+  - Activity data (exercise affects glucose utilization)
+
+  ### Pattern Recognition
+  Clinicians and patients should look for:
+  - **Dawn phenomenon**: Early morning glucose rise (3-8 AM)
+  - **Post-meal spikes**: Which foods cause highest glucose excursions
+  - **Exercise effects**: Both acute and delayed hypoglycemia risk
+  - **Stress and illness patterns**: Sick day management needs
+  - **Nocturnal hypoglycemia**: Overnight lows may go undetected
+
+  ### Special Populations
+  - **Elderly**: May have higher glucose targets to avoid hypoglycemia
+  - **Pregnant**: Tighter targets for gestational diabetes
+  - **Children**: Age-appropriate targets; hypoglycemia awareness varies
+  - **Athletes**: Exercise-induced glucose fluctuations are normal
+
+  ### Technology Trends
+  - **Closed-loop systems**: CGM integrated with insulin pumps for automated delivery
+  - **Non-invasive monitoring**: Under development but not yet clinically validated
+  - **CGM for non-diabetics**: Growing use for metabolic health optimization
+
+metadata_keys:
+  - key: "HKMetadataKeyBloodGlucoseMealTime"
+    description: "Indicates whether reading was preprandial (before meal) or postprandial (after meal)"
+    values:
+      - "preprandial (1)"
+      - "postprandial (2)"
+  - key: "HKMetadataKeyDeviceName"
+    description: "Name of the device that recorded the measurement"
+  - key: "HKMetadataKeyDeviceManufacturerName"
+    description: "Manufacturer of the device used for measurement"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Boolean indicating whether the value was manually entered by the user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External unique identifier from the source system"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierInsulinDelivery"
+    relationship: "Insulin dosing affects blood glucose levels"
+  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
+    relationship: "Carbohydrate intake directly impacts glucose"
+  - identifier: "HKCorrelationTypeIdentifierFood"
+    relationship: "Meal logging provides context for glucose readings"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "Exercise affects glucose utilization"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Weight affects insulin sensitivity"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Sleep affects glucose regulation"
+references:
+  - title: "HKQuantityTypeIdentifierBloodGlucose - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierbloodglucose"
+    type: "official"
+  - title: "HKMetadataKeyBloodGlucoseMealTime - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkmetadatakeybloodglucosemealtime"
+    type: "official"
+  - title: "Diagnosis and Classification of Diabetes: Standards of Care 2025 - ADA"
+    url: "https://diabetesjournals.org/care/article/48/Supplement_1/S27/157566/2-Diagnosis-and-Classification-of-Diabetes"
+    type: "medical"
+  - title: "Diagnosis and Classification of Diabetes: Standards of Care 2026 - ADA"
+    url: "https://diabetesjournals.org/care/article/49/Supplement_1/S27/163926/2-Diagnosis-and-Classification-of-Diabetes"
+    type: "medical"
+  - title: "Glycemic Goals and Hypoglycemia: Standards of Care 2025 - ADA"
+    url: "https://diabetesjournals.org/care/article/48/Supplement_1/S128/157561/6-Glycemic-Goals-and-Hypoglycemia-Standards-of"
+    type: "medical"
+  - title: "Hypoglycemia - StatPearls (NCBI)"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK534841/"
+    type: "medical"
+  - title: "Low Blood Glucose (Hypoglycemia) - American Diabetes Association"
+    url: "https://diabetes.org/living-with-diabetes/hypoglycemia-low-blood-glucose"
+    type: "medical"
+  - title: "Diabetic Hypoglycemia - Mayo Clinic"
+    url: "https://www.mayoclinic.org/diseases-conditions/diabetic-hypoglycemia/symptoms-causes/syc-20371525"
+    type: "medical"
+  - title: "CGM vs Fingerstick Accuracy - TCOYD"
+    url: "https://tcoyd.org/2022/02/cgm-values-vs-finger-sticks-how-close-should-the-values-be/"
+    type: "research"
+  - title: "Continuous Glucose Monitoring vs Self-monitoring - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6822918/"
+    type: "research"
+last_updated: "2026-01-27"

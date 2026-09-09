@@ -1,0 +1,117 @@
+identifier: "HKCategoryTypeIdentifierInfrequentMenstrualCycles"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Infrequent Menstrual Cycles"
+short_description: "System-generated notification indicating menstrual cycles are occurring less frequently than typical, potentially signaling oligomenorrhea."
+icon: "calendar"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "notApplicable"
+    description: "Infrequent menstrual cycles have been detected. This is a system notification indicating the user's cycle data shows fewer than expected periods over a defined tracking period."
+ios_introduced:
+  version: "16.0"
+  year: 2022
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Automatic detection through Cycle Tracking analysis when sufficient period data is logged"
+  - name: "Apple Watch"
+    capability: "Supports cycle tracking data collection for deviation detection"
+primary_source: "System-generated"
+description: |
+  ## Overview
+  Infrequent Menstrual Cycles is a system-generated notification (not user-logged data) that alerts users when their tracked menstrual cycles are occurring less often than typical. This feature, introduced in iOS 16, analyzes period data logged over multiple months to identify patterns of oligomenorrhea - cycles longer than 35-38 days occurring consistently.
+
+  The notification is triggered when Apple's Cycle Tracking algorithm detects that the user has had fewer than the expected number of periods over a 6-month tracking period, based on logged menstrual flow data. This serves as an early warning system to prompt users to discuss cycle irregularities with their healthcare provider.
+
+  ## Health Significance
+  Infrequent menstrual cycles (oligomenorrhea) may indicate underlying health conditions requiring evaluation:
+  - **Polycystic ovary syndrome (PCOS)**: The most common cause of oligomenorrhea, associated with hormonal imbalances, insulin resistance, and fertility challenges
+  - **Thyroid dysfunction**: Both hypothyroidism and hyperthyroidism can cause cycle irregularities
+  - **Hyperprolactinemia**: Elevated prolactin levels suppress normal menstrual cycling
+  - **Hypothalamic amenorrhea**: Stress, excessive exercise, or low body weight can disrupt the hormonal axis
+  - **Perimenopause**: Cycle irregularity often marks the transition to menopause
+  - **Primary ovarian insufficiency**: Early decline in ovarian function causes cycle changes
+  - **Eating disorders**: Restrictive eating patterns affect menstrual regularity
+
+  Early detection of infrequent cycles enables timely evaluation and intervention for underlying conditions.
+
+  ## Clinical Interpretation Guidelines
+  When a patient presents with this notification:
+  - **Review cycle history**: Examine logged period data to confirm pattern (cycles > 35 days consistently)
+  - **Normal cycle range**: Cycles between 21-35 days are considered normal; > 35 days is clinically significant
+  - **Pattern assessment**:
+    - Occasional long cycle: May be stress-related or physiological
+    - Consistent oligomenorrhea (> 35 days between periods): Warrants evaluation
+    - Fewer than 4-6 periods per year: Consider more severe oligomenorrhea/amenorrhea
+  - **Clinical workup considerations**:
+    - Pregnancy test (always first step)
+    - TSH for thyroid function
+    - Prolactin level
+    - FSH, LH, estradiol for ovarian function
+    - Testosterone, DHEA-S if PCOS suspected
+    - Pelvic ultrasound for ovarian morphology
+  - **Lifestyle factors to assess**:
+    - Recent weight changes (gain or loss)
+    - Exercise patterns (excessive training)
+    - Stress levels
+    - Eating habits
+    - Recent contraceptive changes
+
+  ## Caveats & Limitations
+  - Read-only system notification; users cannot manually create this sample
+  - Requires consistent period logging over multiple months for accurate detection
+  - Algorithm specifics (exact thresholds, minimum data requirements) are not publicly disclosed
+  - Does not identify cause of infrequency; clinical evaluation required
+  - Users with naturally long but regular cycles may trigger notification
+  - Hormonal contraceptive use (especially methods causing amenorrhea) may affect detection
+  - Postpartum and breastfeeding periods create expected cycle infrequency
+  - Perimenopause naturally causes cycle irregularity
+  - Recent hormonal contraceptive discontinuation may cause temporary irregularity
+  - Notification does not appear immediately; requires longitudinal pattern recognition
+metadata_keys:
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Source data analyzed to detect infrequent cycle patterns"
+  - identifier: "HKCategoryTypeIdentifierIrregularMenstrualCycles"
+    relationship: "Related deviation detection for cycle length variability"
+  - identifier: "HKCategoryTypeIdentifierProlongedMenstrualPeriods"
+    relationship: "Related deviation detection for extended bleeding duration"
+  - identifier: "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding"
+    relationship: "Related deviation detection for bleeding between periods"
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "May help identify ovulatory vs anovulatory cycles"
+references:
+  - title: "HKCategoryTypeIdentifierInfrequentMenstrualCycles - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierinfrequentmenstrualcycles"
+    type: "official"
+  - title: "Cycle Tracking in iOS 16 - Apple"
+    url: "https://www.apple.com/newsroom/2022/06/apple-previews-ios-16/"
+    type: "official"
+  - title: "Oligomenorrhea - ACOG"
+    url: "https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2015/01/menstruation-in-girls-and-adolescents-using-the-menstrual-cycle-as-a-vital-sign"
+    type: "medical"
+  - title: "Evaluation of Menstrual Irregularities - AAFP"
+    url: "https://www.aafp.org/pubs/afp/issues/2019/0301/p295.html"
+    type: "medical"
+last_updated: "2026-01-27"

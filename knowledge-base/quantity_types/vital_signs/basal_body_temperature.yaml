@@ -1,0 +1,441 @@
+# ============================================
+# HEALTHKIT DATA TYPE: BASAL BODY TEMPERATURE
+# ============================================
+# Clinical reference for health consultants and clinicians
+# Last updated: 2026-01-27
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Basal Body Temperature"
+short_description: "The lowest body temperature attained during rest, typically measured immediately upon waking, used primarily for fertility awareness and ovulation tracking."
+
+# --- APPLE HEALTH UI ---
+icon: "thermometer"
+color: "#FF2D55"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "degC"
+supported_units:
+  - "degC"
+  - "degF"
+  - "K"
+unit_description: "Basal body temperature is recorded in degrees Celsius (degC) or degrees Fahrenheit (degF). Precision to 0.01 degrees is important for detecting the subtle temperature shifts associated with ovulation."
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "mostRecent"
+  - "separateBySource"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 35.5
+  max: 37.3
+  unit: "degC"
+  notes: "BBT typically ranges from 36.1-36.4 degC (97.0-97.5 degF) in the follicular phase and rises to 36.4-37.0 degC (97.5-98.6 degF) in the luteal phase after ovulation."
+
+clinical_ranges:
+  - population: "Women - Follicular Phase (pre-ovulation)"
+    normal: "36.1-36.4 degC (97.0-97.5 degF)"
+    low: "<35.8 degC (96.4 degF)"
+    high: ">36.5 degC (97.7 degF) - may indicate early ovulation or illness"
+    notes: "Lower temperatures from menstruation until ovulation"
+  - population: "Women - Luteal Phase (post-ovulation)"
+    normal: "36.4-37.0 degC (97.5-98.6 degF)"
+    low: "<36.3 degC (97.3 degF) - may indicate luteal phase defect"
+    high: ">37.2 degC (99.0 degF) - may indicate pregnancy or illness"
+    notes: "Sustained elevation of at least 0.2-0.5 degC above follicular phase baseline"
+  - population: "Women - Biphasic Shift"
+    normal: "0.2-0.5 degC (0.4-1.0 degF) rise post-ovulation"
+    low: "<0.2 degC shift - may indicate anovulation"
+    high: ">0.5 degC shift - normal variation"
+    notes: "The temperature shift typically occurs 1-2 days after ovulation due to progesterone"
+  - population: "Pregnancy (early)"
+    normal: "Sustained elevation >36.5 degC (97.7 degF) for 18+ days"
+    low: "Drop in temperature may indicate impending menstruation or early pregnancy loss"
+    high: ">37.5 degC (99.5 degF) - evaluate for illness"
+    notes: "Persistently elevated BBT beyond expected menstruation is an early pregnancy indicator"
+
+# --- CATEGORY VALUES ---
+category_values: null
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "9.0"
+  year: 2015
+  notes: "Introduced to support fertility awareness methods and cycle tracking"
+watchos_introduced:
+  version: "2.0"
+  year: 2015
+  notes: "Apple Watch does not directly measure BBT; data comes from dedicated BBT thermometers or manual entry. Apple Watch Series 8+ measures wrist temperature during sleep (separate data type) which can inform cycle tracking."
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: true  # Fertility and reproductive health data
+
+# --- DATA SOURCES ---
+devices:
+  - name: "BBT Thermometers"
+    capability: "Specialized thermometers with 0.01 degree precision for detecting subtle ovulatory shifts"
+    examples:
+      - "Tempdrop"
+      - "Ava Bracelet"
+      - "Natural Cycles thermometer"
+      - "Easy@Home BBT Thermometer"
+  - name: "Wearable Temperature Sensors"
+    capability: "Continuous overnight temperature monitoring during sleep"
+    examples:
+      - "Tempdrop (armband)"
+      - "Ava Bracelet (wrist)"
+      - "Oura Ring"
+  - name: "Apple Watch Series 8+"
+    capability: "Measures wrist temperature during sleep (stored as appleSleepingWristTemperature). Apple's Cycle Tracking feature uses this for retrospective ovulation estimates, though it's a separate data type."
+    series: "Series 8, Ultra, SE 3 and later"
+  - name: "Manual Entry"
+    capability: "Users can manually log BBT readings from standard thermometers"
+  - name: "Fertility Tracking Apps"
+    capability: "Apps like Natural Cycles, Clue, Flo, and Kindara can write BBT data to HealthKit"
+primary_source: "BBT Thermometers"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Basal Body Temperature (BBT) is the lowest body temperature attained during rest,
+  typically measured immediately upon waking before any physical activity. BBT is
+  a cornerstone of fertility awareness-based methods (FABMs) and natural family
+  planning, as it reflects the thermogenic effect of progesterone produced after
+  ovulation.
+
+  The hypothalamus regulates core body temperature, and progesterone—secreted by
+  the corpus luteum after ovulation—raises the hypothalamic temperature set-point
+  by approximately 0.2-0.5 degC (0.4-1.0 degF). This creates a characteristic
+  biphasic temperature pattern throughout the menstrual cycle.
+
+  ## How It's Measured
+
+  ### Traditional BBT Measurement Protocol
+  For accurate BBT tracking, strict measurement protocols are essential:
+
+  1. **Timing**: Measure immediately upon waking, before getting out of bed, talking,
+     eating, drinking, or any physical activity
+  2. **Consistency**: Measure at the same time each day (variation >30 minutes can
+     affect readings by 0.1 degC)
+  3. **Sleep requirement**: At least 3-4 consecutive hours of sleep before measurement
+  4. **Thermometer**: Use a BBT-specific thermometer with 0.01 degree precision
+     (standard clinical thermometers measure only to 0.1 degrees)
+  5. **Site**: Oral (sublingual) is most common; vaginal or rectal may be more accurate
+  6. **Duration**: Keep thermometer in place for the full measurement period
+     (digital: until beep; glass: 5 minutes)
+
+  ### Measurement Location Options
+  - **Oral (sublingual)**: Most practical; place under tongue in posterior pocket
+  - **Vaginal**: More accurate and less affected by mouth breathing or ambient temperature
+  - **Rectal**: Most accurate core temperature approximation
+
+  **Important**: Always use the same measurement site throughout a cycle, as sites
+  cannot be directly compared.
+
+  ### Wearable Temperature Monitoring
+  Modern wearables offer continuous temperature monitoring during sleep:
+
+  - **Wrist-based sensors** (Apple Watch, Ava): Measure skin temperature; correlates
+    with but is not identical to core BBT
+  - **Armband sensors** (Tempdrop): Measure axillary temperature during sleep
+  - **Ring sensors** (Oura): Measure finger temperature
+
+  Apple Watch Series 8 and later measure wrist temperature during sleep, but this
+  data is stored separately as `appleSleepingWristTemperature` and represents
+  deviation from a personal baseline rather than absolute temperature. Apple's
+  Cycle Tracking feature uses this data to provide retrospective ovulation estimates.
+
+  **Note**: Wrist skin temperature and oral BBT are distinct measurements and should
+  not be directly compared. Research shows wrist temperature may detect ovulation
+  with high sensitivity but with a 1-2 day delay compared to traditional BBT.
+
+  ## The Biphasic Temperature Pattern
+
+  A normal ovulatory menstrual cycle shows a characteristic biphasic pattern:
+
+  ### Follicular Phase (Pre-ovulation)
+  - **Days**: From menstruation until ovulation (approximately days 1-14 in a 28-day cycle)
+  - **Temperature**: Lower baseline, typically 36.1-36.4 degC (97.0-97.5 degF)
+  - **Cause**: Estrogen dominance; no significant progesterone production
+
+  ### Ovulation Transition
+  - **Temperature dip**: Some women experience a slight temperature dip (0.1-0.2 degC)
+    immediately before or at ovulation, though this is not universal
+  - **LH surge**: Occurs 24-36 hours before ovulation; BBT rise follows ovulation
+
+  ### Luteal Phase (Post-ovulation)
+  - **Days**: From ovulation until menstruation (approximately days 15-28)
+  - **Temperature**: Elevated plateau, typically 36.4-37.0 degC (97.5-98.6 degF)
+  - **Shift magnitude**: Rise of at least 0.2 degC (0.4 degF) above the highest
+    of the previous 6 days
+  - **Cause**: Progesterone from corpus luteum is thermogenic
+  - **Duration**: Sustained elevation for 10-16 days in normal luteal phase
+
+  ### Pregnancy Indication
+  If conception occurs, BBT remains elevated beyond the expected menstruation date:
+  - **Triphasic pattern**: Some pregnant women show a secondary rise around 7-10 days
+    post-ovulation (possible implantation)
+  - **Sustained elevation**: BBT elevated for 18+ days strongly suggests pregnancy
+
+  ### Menstruation
+  - Temperature drops as progesterone falls
+  - Return to follicular phase baseline
+
+  ## Health Significance
+
+  ### Fertility Applications
+
+  **Achieving Pregnancy:**
+  - BBT confirms ovulation occurred (retrospectively)
+  - Helps identify the fertile window when combined with cervical mucus observation
+  - Sustained elevated BBT indicates adequate luteal phase progesterone
+
+  **Avoiding Pregnancy:**
+  - BBT is part of symptothermal method (combined with cervical mucus)
+  - Temperature shift indicates end of fertile window
+  - Typical use effectiveness: 76-88%; perfect use: 95-99% when combined with other markers
+
+  **Important Limitation:** BBT only confirms ovulation AFTER it has occurred. It does
+  NOT predict ovulation. For conception timing, BBT should be combined with other
+  fertility signs (cervical mucus, LH testing).
+
+  ### Diagnostic Applications
+
+  **Ovulation Confirmation:**
+  - Biphasic pattern indicates ovulation occurred
+  - Monophasic pattern (no sustained rise) may indicate anovulation
+
+  **Luteal Phase Assessment:**
+  - Short elevated phase (<10 days) may indicate luteal phase defect
+  - Inadequate temperature rise may suggest low progesterone
+
+  **Thyroid Function:**
+  - Chronically low BBT may correlate with hypothyroidism
+  - Persistently elevated BBT may indicate hyperthyroidism
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Biphasic Pattern
+  - Clear temperature shift of at least 0.2 degC (0.4 degF)
+  - Elevated temperatures sustained for 10-16 days (luteal phase)
+  - Temperature drop coincides with menstruation onset
+  - Pattern repeats consistently across cycles
+
+  ### Abnormal Patterns May Indicate
+
+  **Monophasic Pattern (No Temperature Rise):**
+  - Anovulatory cycle
+  - Polycystic ovary syndrome (PCOS)
+  - Hypothalamic amenorrhea
+  - Perimenopause
+  - Note: 20-30% of ovulatory cycles may not show clear biphasic pattern on BBT alone
+
+  **Erratic/Unstable Temperatures:**
+  - Inconsistent sleep patterns
+  - Illness or infection
+  - Alcohol consumption
+  - Stress
+  - Thyroid dysfunction
+  - Measurement technique issues
+
+  **Short Luteal Phase (<10 days elevated):**
+  - Luteal phase defect
+  - Inadequate progesterone production
+  - May affect implantation and early pregnancy
+
+  **Very Short Follicular Phase:**
+  - Diminished ovarian reserve
+  - Perimenopause
+  - May indicate accelerated follicular recruitment
+
+  **Persistently Elevated Beyond Expected Period:**
+  - Pregnancy (most common)
+  - Illness
+  - Hormonal supplementation (progesterone)
+
+  ### Red Flags for Consultation
+  - Consistently monophasic patterns (3+ cycles) in women trying to conceive
+  - Luteal phase consistently <10 days
+  - Very erratic temperatures that cannot be explained by technique or lifestyle
+  - BBT consistently >37.5 degC (99.5 degF) or <35.8 degC (96.4 degF)
+  - No temperature drop after 18+ days elevation (requires pregnancy test)
+  - Temperature patterns inconsistent with other fertility signs
+
+  ## Caveats & Limitations
+
+  ### Accuracy Limitations
+  - **Retrospective only**: BBT confirms ovulation AFTER it occurs (1-2 days post)
+  - **Single measurement**: One reading per day provides limited data
+  - **22% accuracy**: Research shows BBT alone correctly identifies ovulation day
+    (+/- 1 day) in only about 22% of cycles
+  - **Biphasic pattern sensitivity**: 20-30% of ovulatory cycles may not show clear
+    biphasic pattern on BBT charting
+
+  ### Factors Affecting BBT
+  - **Sleep disruption**: Fragmented sleep or sleeping <3 hours affects reading
+  - **Time variation**: Measuring at different times affects temperature
+  - **Alcohol**: Even moderate alcohol consumption elevates BBT
+  - **Illness/fever**: Any febrile illness invalidates that day's reading
+  - **Medications**: Progesterone, some sedatives, thyroid medications
+  - **Shift work**: Irregular schedules make consistent measurement difficult
+  - **Travel/jet lag**: Time zone changes disrupt circadian temperature patterns
+  - **Electric blankets**: Artificial warming affects peripheral temperature
+  - **Ambient temperature**: Sleeping in very hot/cold environments
+
+  ### What BBT Cannot Tell You
+  - Does not predict when ovulation will occur
+  - Cannot confirm egg quality
+  - Single cycle BBT is not diagnostic—patterns over 3+ cycles needed
+  - Elevated BBT does not guarantee adequate progesterone levels
+  - Does not indicate whether fertilization occurred
+
+  ### Comparison with Wrist Temperature (Apple Watch)
+  - Wrist temperature shows similar biphasic pattern but with 1-2 day delay
+  - Wrist temperature may be more sensitive for detecting shifts (62% vs 23% in one study)
+  - Wrist temperature is recorded as deviation from baseline, not absolute value
+  - Cannot directly compare wrist and oral BBT measurements
+
+  ## Apple Cycle Tracking Integration
+
+  Apple's Cycle Tracking feature (iOS 13+) integrates BBT data for fertility insights:
+
+  **Data Sources Accepted:**
+  - Manual BBT entry in Health app
+  - Third-party BBT thermometers via HealthKit
+  - Apple Watch wrist temperature (Series 8+) for retrospective ovulation estimates
+
+  **Features:**
+  - Predicted fertile window based on historical data
+  - Retrospective ovulation estimates (when sufficient wrist temperature data available)
+  - Period predictions
+  - Cycle length tracking
+
+  **Privacy Note:** Reproductive health data is classified as sensitive in HealthKit.
+  This data receives enhanced privacy protections and requires explicit user consent
+  for each app requesting access.
+
+  ## Additional Notes
+
+  **Historical Context:**
+  BBT charting has been used for fertility awareness since the 1930s. While modern
+  fertility tracking includes more sophisticated methods (LH testing, ultrasound
+  monitoring), BBT remains a valuable, non-invasive, low-cost tool that provides
+  insight into hormonal function across the menstrual cycle.
+
+  **Symptothermal Method:**
+  For maximum effectiveness, BBT should be combined with:
+  - Cervical mucus observation (Billings method)
+  - Cervical position assessment
+  - LH surge detection (ovulation predictor kits)
+  - Calendar calculations
+
+  This combination (symptothermal method) significantly improves both conception
+  timing and contraceptive effectiveness compared to any single method.
+
+  **For Health Consultants:**
+  When reviewing client BBT data:
+  1. Assess measurement consistency (time, technique, site)
+  2. Look for biphasic pattern across multiple cycles
+  3. Note luteal phase length (days from shift to menstruation)
+  4. Identify factors that may be affecting readings (illness, alcohol, sleep)
+  5. Consider BBT in context of other fertility signs if available
+  6. Recommend professional evaluation for concerning patterns persisting 3+ cycles
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyBodyTemperatureSensorLocation"
+    description: "Indicates where on the body the temperature was measured"
+    values:
+      - "HKBodyTemperatureSensorLocationOther (0)"
+      - "HKBodyTemperatureSensorLocationArmpit (1)"
+      - "HKBodyTemperatureSensorLocationBody (2)"
+      - "HKBodyTemperatureSensorLocationEar (3)"
+      - "HKBodyTemperatureSensorLocationFinger (4)"
+      - "HKBodyTemperatureSensorLocationGastroIntestinal (5)"
+      - "HKBodyTemperatureSensorLocationMouth (6)"
+      - "HKBodyTemperatureSensorLocationRectum (7)"
+      - "HKBodyTemperatureSensorLocationToe (8)"
+      - "HKBodyTemperatureSensorLocationEarDrum (9)"
+      - "HKBodyTemperatureSensorLocationTemporalArtery (10)"
+      - "HKBodyTemperatureSensorLocationForehead (11)"
+  - key: "HKMetadataKeyMenstrualCycleStart"
+    description: "Indicates if this sample corresponds to the start of a menstrual cycle"
+    values:
+      - "true"
+      - "false"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
+    relationship: "General body temperature measurement; BBT is a specialized subset measured at rest"
+  - identifier: "HKQuantityTypeIdentifierAppleSleepingWristTemperature"
+    relationship: "Apple Watch wrist temperature during sleep; used by Cycle Tracking for ovulation estimates"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Menstrual cycle tracking; BBT patterns correlate with cycle phases"
+  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
+    relationship: "LH surge detection; confirms ovulation timing that BBT retrospectively indicates"
+  - identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
+    relationship: "Complementary fertility sign; combined with BBT in symptothermal method"
+  - identifier: "HKCategoryTypeIdentifierSexualActivity"
+    relationship: "Relevant for fertility tracking context and conception timing"
+  - identifier: "HKCategoryTypeIdentifierPregnancyTestResult"
+    relationship: "Pregnancy confirmation when BBT remains elevated beyond expected period"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariability"
+    relationship: "Some research correlates HRV changes with ovulation"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - basalBodyTemperature"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/basalbodytemperature"
+    type: "official"
+  - title: "Apple Support - Track your period with Cycle Tracking"
+    url: "https://support.apple.com/en-us/120356"
+    type: "official"
+  - title: "Apple Support - Retrospective ovulation estimates on Apple Watch"
+    url: "https://support.apple.com/guide/watch/receive-retrospective-ovulation-estimates-apd3ee429691/watchos"
+    type: "official"
+  - title: "Physiology, Ovulation And Basal Body Temperature - NCBI Bookshelf"
+    url: "https://www.ncbi.nlm.nih.gov/books/NBK546686/"
+    type: "medical"
+  - title: "Basal body temperature for natural family planning - Mayo Clinic"
+    url: "https://www.mayoclinic.org/tests-procedures/basal-body-temperature/about/pac-20393026"
+    type: "medical"
+  - title: "Cleveland Clinic - Basal Body Temperature Method"
+    url: "https://my.clevelandclinic.org/health/articles/21065-basal-body-temperature"
+    type: "medical"
+  - title: "Planned Parenthood - Temperature Method"
+    url: "https://www.plannedparenthood.org/learn/birth-control/fertility-awareness/whats-temperature-method-fams"
+    type: "medical"
+  - title: "Accuracy of Wrist Skin Temperature in Detecting Ovulation - PMC"
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8238491/"
+    type: "research"
+  - title: "Performance of algorithms using wrist temperature for ovulation - Human Reproduction"
+    url: "https://academic.oup.com/humrep/article/40/3/469/7989515"
+    type: "research"
+  - title: "Basal body temperature: unreliable method of ovulation detection - PubMed"
+    url: "https://pubmed.ncbi.nlm.nih.gov/7308516/"
+    type: "research"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 9.0 introduction based on Apple documentation referencing fertility tracking support
+  - Marked as sensitive_data: true due to reproductive health implications
+  - Clinical ranges derived from fertility awareness literature (Mayo Clinic, Cleveland Clinic)
+  - Biphasic pattern characteristics from StatPearls and NCBI Bookshelf
+  - 22% accuracy figure from PubMed research on BBT ovulation detection
+  - Wrist temperature comparison data from PMC research studies
+  - Apple Watch retrospective ovulation accuracy from Human Reproduction study (2025)
+  - Symptothermal method effectiveness from planned parenthood and clinical guidelines

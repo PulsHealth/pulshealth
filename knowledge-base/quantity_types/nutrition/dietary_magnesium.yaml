@@ -1,0 +1,224 @@
+identifier: "HKQuantityTypeIdentifierDietaryMagnesium"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Nutrition"
+human_readable_name: "Dietary Magnesium"
+short_description: "Magnesium intake from food and supplements, essential for energy metabolism, muscle function, and bone health."
+
+# --- APPLE HEALTH UI ---
+icon: "pills.fill"
+color: "#5856D6"
+
+default_unit: "mg"
+supported_units: ["mg", "g", "mcg"]
+aggregation_type: "cumulative"
+statistics_options: ["cumulativeSum", "separateBySource"]
+typical_range:
+  min: 0
+  max: 600
+  unit: "mg"
+clinical_ranges:
+  - population: "Infants 0-6 months"
+    rda: "30 mg/day (AI)"
+  - population: "Infants 7-12 months"
+    rda: "75 mg/day (AI)"
+  - population: "Children 1-3 years"
+    rda: "80 mg/day"
+  - population: "Children 4-8 years"
+    rda: "130 mg/day"
+  - population: "Children 9-13 years"
+    rda: "240 mg/day"
+  - population: "Teen boys 14-18 years"
+    rda: "410 mg/day"
+  - population: "Teen girls 14-18 years"
+    rda: "360 mg/day"
+  - population: "Adult men 19-30 years"
+    rda: "400 mg/day"
+  - population: "Adult men 31+ years"
+    rda: "420 mg/day"
+  - population: "Adult women 19-30 years"
+    rda: "310 mg/day"
+  - population: "Adult women 31+ years"
+    rda: "320 mg/day"
+  - population: "Pregnant women 14-18 years"
+    rda: "400 mg/day"
+  - population: "Pregnant women 19-30 years"
+    rda: "350 mg/day"
+  - population: "Pregnant women 31+ years"
+    rda: "360 mg/day"
+  - population: "Adults (supplemental magnesium only)"
+    upper_limit: "350 mg/day"
+ios_introduced:
+  version: "8.0"
+  year: 2014
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Food tracking apps"
+    capability: "Log dietary magnesium from foods and supplements"
+    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
+  - name: "Nutrition coaching platforms"
+    capability: "Track magnesium intake against personalized targets"
+    examples: ["Noom", "Nutritionix"]
+primary_source: "Food logging apps"
+description: |
+  ## Overview
+  Magnesium is the fourth most abundant mineral in the body and second most abundant intracellular cation (after potassium). Approximately 60% is stored in bone, 39% in soft tissues, and only 1% in extracellular fluid. Magnesium serves as a cofactor for over 300 enzymatic reactions, making it essential for virtually every physiological process. Despite its importance, magnesium deficiency is common in Western diets due to processed food consumption and declining soil mineral content.
+
+  ## Biological Functions
+  - **ATP metabolism**: Magnesium binds to ATP; Mg-ATP complex is the active substrate for most kinases and ATPases
+  - **Protein synthesis**: Required for ribosomal function and mRNA binding
+  - **DNA/RNA synthesis**: Essential for DNA polymerase and other nucleic acid enzymes
+  - **Neuromuscular function**: Regulates calcium channels; natural calcium antagonist preventing excessive excitation
+  - **Bone structure**: About 60% of body magnesium is in bone; contributes to crystal structure
+  - **Glucose metabolism**: Required for insulin signaling; influences glucose transporter activity
+  - **Blood pressure regulation**: Modulates vascular tone through calcium channel effects
+  - **Cardiac rhythm**: Stabilizes cardiac cell membranes; prevents arrhythmias
+
+  ## Health Significance
+  Magnesium status affects cardiovascular health, metabolic function, neurological status, and bone density. Low magnesium intake is associated with increased risk of type 2 diabetes, hypertension, cardiovascular disease, osteoporosis, and migraine. The mineral also plays important roles in sleep quality, stress response, and mood regulation through its effects on the HPA axis and GABA receptors.
+
+  ## Clinical Interpretation Guidelines
+  When reviewing magnesium intake data:
+  - **Recognize widespread inadequacy**: NHANES data shows 50% of Americans consume less than the EAR
+  - **Assess total diet quality**: Magnesium-rich foods (nuts, seeds, whole grains, leafy greens) correlate with overall healthy eating
+  - **Consider absorption variability**: Gut absorption ranges from 30-50%; decreases with age and certain medications
+  - **Review related conditions**: Diabetes, alcoholism, GI disease, diuretic use all increase magnesium requirements
+  - **Note supplement forms**: Oxide is poorly absorbed but cheap; citrate, glycinate have better bioavailability
+  - **Correlate with symptoms**: Muscle cramps, poor sleep, anxiety may suggest inadequacy even with "normal" intake
+
+  ## Deficiency
+  **Causes of hypomagnesemia**:
+  - Inadequate dietary intake
+  - Alcoholism (increased renal excretion, poor diet)
+  - Diabetes mellitus (glycosuria-induced urinary losses)
+  - GI losses: Chronic diarrhea, malabsorption, short bowel syndrome
+  - Medications: Loop/thiazide diuretics, PPIs, certain antibiotics
+  - Renal diseases causing magnesium wasting
+
+  **Symptoms**:
+  - Neuromuscular: Muscle cramps, tremor, fasciculations, tetany
+  - Cardiac: Arrhythmias (especially ventricular), prolonged QT, torsades de pointes
+  - Neurological: Seizures, altered mental status, depression, anxiety
+  - Metabolic: Hypocalcemia (impairs PTH secretion/action), hypokalemia (renal potassium wasting)
+  - General: Fatigue, weakness, loss of appetite
+
+  **Clinical pearl**: Hypomagnesemia often causes refractory hypokalemia and hypocalcemia; must correct magnesium first.
+
+  ## Toxicity/Excess
+  **Hypermagnesemia** (rare without renal impairment or iatrogenic cause):
+  - Early: Nausea, flushing, hypotension, bradycardia
+  - Moderate: Loss of deep tendon reflexes, muscle weakness
+  - Severe: Respiratory depression, cardiac arrest
+
+  **Risk populations**:
+  - Chronic kidney disease (impaired excretion)
+  - Excessive antacid/laxative use (especially in elderly with reduced renal function)
+  - IV magnesium overdose (eclampsia treatment)
+
+  **Note**: The UL of 350 mg applies only to supplemental magnesium, not food. No UL for food magnesium as no adverse effects reported from dietary sources.
+
+  ## Food Sources
+  **High magnesium foods** (>50 mg per serving):
+  - Seeds: Pumpkin seeds (156 mg/oz), chia seeds, flaxseeds
+  - Nuts: Almonds (80 mg/oz), cashews, Brazil nuts
+  - Dark chocolate (70%+ cacao): 64 mg/oz
+  - Legumes: Black beans, edamame, lima beans
+  - Whole grains: Quinoa, brown rice, oatmeal
+  - Fish: Mackerel, salmon, halibut
+
+  **Moderate sources** (25-50 mg per serving):
+  - Leafy greens: Spinach, Swiss chard, kale
+  - Avocado
+  - Bananas
+  - Tofu
+  - Fortified cereals
+
+  **Note**: Processing removes significant magnesium (e.g., refined grains lose 80-90% of magnesium).
+
+  ## Absorption Factors
+  **Enhancers**:
+  - Adequate protein intake
+  - Vitamin D: May increase intestinal magnesium absorption
+  - Low magnesium status: Body upregulates absorption when deficient
+  - Fermentable fibers: May increase colonic absorption
+
+  **Inhibitors**:
+  - Phytates: Bind magnesium (though effect less pronounced than with zinc/iron)
+  - Very high fiber intake
+  - High-dose zinc supplements: Competitive absorption
+  - Very high calcium intake (>1200 mg) may reduce magnesium absorption
+  - Oxalates: Moderate inhibitory effect
+
+  **Bioavailability by form**:
+  - Food sources: 30-40% absorbed
+  - Magnesium citrate: Well absorbed
+  - Magnesium glycinate: Well absorbed, less GI distress
+  - Magnesium oxide: Poorly absorbed (~4%), more likely to cause GI symptoms
+  - Magnesium sulfate: Moderate absorption
+
+  ## Special Populations
+  - **Type 2 diabetes**: Higher urinary losses; 25-38% prevalence of hypomagnesemia; adequate magnesium may improve insulin sensitivity
+  - **Alcoholics**: Multiple mechanisms of depletion; often require supplementation during recovery
+  - **Elderly**: Decreased absorption, increased renal excretion, medication effects, reduced dietary intake
+  - **Athletes**: Increased losses through sweat; may need 10-20% higher intake than RDA
+  - **GI diseases**: IBD, celiac disease, short bowel syndrome impair absorption
+  - **Diuretic users**: Loop and thiazide diuretics increase renal magnesium wasting
+  - **PPI users**: Long-term use associated with hypomagnesemia; mechanism involves reduced intestinal absorption
+  - **Pregnant women**: Requirements increase; deficiency linked to preeclampsia, preterm labor, fetal growth restriction
+
+  ## Drug Interactions
+  - **Loop diuretics (furosemide)**: Increase renal magnesium excretion significantly
+  - **Thiazide diuretics**: Moderate increase in magnesium loss
+  - **Proton pump inhibitors**: Long-term use can cause hypomagnesemia
+  - **Aminoglycoside antibiotics**: Can cause renal magnesium wasting
+  - **Cisplatin**: Severe renal magnesium wasting
+  - **Amphotericin B**: Causes renal tubular damage and magnesium loss
+  - **Digoxin**: Hypomagnesemia increases digoxin toxicity risk
+  - **Bisphosphonates**: Separate from magnesium supplements by 2 hours
+  - **Tetracyclines/fluoroquinolones**: Magnesium can reduce absorption; separate by 2-4 hours
+  - **Potassium-sparing diuretics**: May reduce magnesium excretion
+  - **Calcineurin inhibitors (tacrolimus, cyclosporine)**: Increase renal magnesium loss
+
+  ## Caveats & Limitations
+  - HealthKit captures intake, not serum levels or total body stores
+  - Serum magnesium represents only 1% of total body magnesium; normal levels don't exclude deficiency
+  - RBC magnesium or 24-hour urine magnesium are better status indicators than serum
+  - Supplement form significantly affects bioavailability but may not be captured in logging
+  - Processed food databases may overestimate magnesium if based on unprocessed equivalents
+  - Soil depletion has reduced magnesium in foods over decades; database values may be outdated
+  - Magnesium content in water varies significantly by region (hard vs. soft water)
+  - The UL applies only to supplemental magnesium; no upper limit for food sources
+metadata_keys:
+  - key: "HKMetadataKeyFoodType"
+    description: "Type of food or supplement providing magnesium"
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates if value was manually entered by user"
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Identifier from external nutrition tracking service"
+related_types:
+  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
+    relationship: "Calcium and magnesium compete for absorption; balance important for bone health"
+  - identifier: "HKQuantityTypeIdentifierDietaryPotassium"
+    relationship: "Magnesium deficiency can cause refractory hypokalemia"
+  - identifier: "HKQuantityTypeIdentifierDietaryVitaminD"
+    relationship: "Magnesium required for vitamin D activation; vitamin D may enhance magnesium absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
+    relationship: "High-dose zinc can impair magnesium absorption"
+  - identifier: "HKQuantityTypeIdentifierDietaryPhosphorus"
+    relationship: "Both minerals contribute to bone mineralization"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryMagnesium"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarymagnesium"
+    type: "official"
+  - title: "NIH Office of Dietary Supplements - Magnesium Fact Sheet for Health Professionals"
+    url: "https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/"
+    type: "medical"
+  - title: "American Family Physician - Magnesium Deficiency"
+    url: "https://www.aafp.org/pubs/afp/issues/2021/0901/p240.html"
+    type: "medical"
+  - title: "Nutrients Journal - Magnesium in Prevention and Therapy"
+    url: "https://www.mdpi.com/2072-6643/7/9/5388"
+    type: "research"
+last_updated: "2026-01-27"

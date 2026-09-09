@@ -1,0 +1,136 @@
+identifier: "HKCategoryTypeIdentifierMoodChanges"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Mood Changes"
+short_description: "Tracks changes in emotional state or mood stability"
+icon: "brain"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "No notable mood changes; stable emotional state"
+  - value: 1
+    name: "present"
+    description: "Mild mood changes - slight emotional variability"
+  - value: 2
+    name: "moderate"
+    description: "Moderate mood changes - noticeable emotional shifts affecting daily life"
+  - value: 3
+    name: "severe"
+    description: "Severe mood changes - significant emotional instability, difficult to manage"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging with severity"
+  - name: "Apple Watch"
+    capability: "Quick symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Mood changes encompass fluctuations in emotional state, including irritability,
+  sadness, anxiety, or emotional lability. This data type enables tracking of
+  mood variability as a symptom, supporting identification of patterns related
+  to hormonal cycles, medications, or health conditions.
+
+  ## Health Significance
+  - **Hormonal Correlations**: Mood changes commonly occur with menstrual cycles,
+    perimenopause, menopause, and hormonal therapies
+  - **Medication Effects**: Many medications can cause mood changes as side effects
+  - **Mental Health Screening**: Persistent mood changes may indicate depression,
+    anxiety, or bipolar disorder
+  - **Sleep Impact**: Mood and sleep are bidirectionally related
+  - **Quality of Life**: Mood instability affects relationships and functioning
+
+  ## Clinical Context
+  Mood changes may be associated with:
+  - **Reproductive Hormones**: PMS/PMDD, perimenopause, postpartum period
+  - **Thyroid Disorders**: Both hyper- and hypothyroidism affect mood
+  - **Medications**: Corticosteroids, beta-blockers, hormonal contraceptives,
+    some seizure medications
+  - **Chronic Illness**: Pain conditions, autoimmune diseases, cancer
+  - **Substance Use**: Alcohol, cannabis, stimulants, withdrawal states
+  - **Sleep Disorders**: Insomnia, sleep apnea
+  - **Nutritional Deficiencies**: B12, iron, vitamin D
+
+  ## When to Seek Medical Attention
+  - Mood changes significantly impacting relationships or work
+  - Persistent low mood lasting more than 2 weeks
+  - Thoughts of self-harm or suicide (seek immediate help)
+  - Mood changes with other concerning symptoms (weight changes, fatigue)
+  - Rapid mood cycling or periods of unusually elevated mood
+  - New medication and mood changes began together
+  - Mood changes affecting ability to care for self or others
+  - Mood symptoms that feel uncontrollable
+
+  ## Pattern Recognition
+  Tracking mood changes can reveal:
+  - Menstrual cycle correlations (PMS, PMDD patterns)
+  - Perimenopause symptom clusters
+  - Medication timing relationships
+  - Sleep quality correlations
+  - Stress and lifestyle trigger identification
+  - Seasonal patterns (SAD)
+  - Response to interventions
+
+  ## Caveats & Limitations
+  - Does not capture specific emotions (anxiety vs. irritability vs. sadness)
+  - Subjective nature makes cross-individual comparison difficult
+  - Not a diagnostic tool for mental health conditions
+  - Cannot differentiate primary mood disorder from secondary causes
+  - Limited granularity for nuanced emotional tracking
+  - Does not integrate with formal mood assessment scales (PHQ-9, GAD-7)
+  - User may not recognize or report mood changes accurately
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "External identifier for cross-referencing symptom entries"
+  - key: "HKMetadataKeyTimeZone"
+    description: "Time zone where symptom was logged"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierSleepChanges"
+    relationship: "Sleep and mood bidirectionally influence each other"
+  - identifier: "HKCategoryTypeIdentifierHotFlashes"
+    relationship: "Co-occurring menopause symptoms"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Often accompanies mood changes"
+  - identifier: "HKCategoryTypeIdentifierAppetiteChanges"
+    relationship: "May co-occur in depression or hormonal changes"
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Cycle tracking for PMDD/PMS identification"
+  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
+    relationship: "Objective sleep data for correlation"
+  - identifier: "HKStateOfMind"
+    relationship: "More detailed emotional state tracking in iOS 18+"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierMoodChanges"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiermoodchanges"
+    type: "official"
+  - title: "Depression Screening - USPSTF"
+    url: "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/depression-in-adults-screening"
+    type: "medical"
+  - title: "PMDD Information - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/premenstrual-syndrome"
+    type: "medical"
+  - title: "Mood and Hormones - Endocrine Society"
+    url: "https://www.endocrine.org/patient-engagement/endocrine-library"
+    type: "medical"
+last_updated: "2026-01-27"

@@ -1,0 +1,131 @@
+identifier: "HKCategoryTypeIdentifierHandwashing"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Other"
+human_readable_name: "Handwashing"
+short_description: "Records handwashing events detected automatically or logged manually, tracking hygiene behavior."
+icon: "hands.sparkles.fill"
+color: "#5AC8FA"
+default_unit: null
+supported_units: null
+unit_description: "Category type - uses time interval (start/end) rather than units"
+aggregation_type: null
+statistics_options: null
+typical_range:
+  frequency: "6-10+ times daily"
+  duration_seconds: "20-40"
+  notes: "CDC recommends washing hands for at least 20 seconds"
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notApplicable"
+    description: "The only valid value for handwashing events - indicates a washing session occurred"
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Automatic detection using motion sensors and microphone to detect water sounds and scrubbing motions"
+  - name: "iPhone"
+    capability: "Manual entry via Health app or third-party apps"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+
+  HKCategoryTypeIdentifierHandwashing tracks handwashing events, introduced during the COVID-19 pandemic
+  as part of Apple's public health features. Apple Watch Series 4 and later can automatically detect
+  handwashing using a combination of motion sensors (detecting scrubbing movements) and the microphone
+  (detecting water sounds). The watch provides real-time feedback with a 20-second countdown timer to
+  encourage adequate washing duration.
+
+  ## Health Significance
+
+  Hand hygiene is one of the most effective measures for preventing infectious disease transmission:
+
+  - **Respiratory infections**: Proper handwashing reduces transmission of influenza, COVID-19, RSV, and
+    common cold viruses
+  - **Gastrointestinal illness**: Prevents spread of norovirus, rotavirus, and bacterial pathogens
+  - **Healthcare-associated infections**: Critical for infection control in clinical settings
+  - **Parasitic infections**: Reduces transmission of intestinal parasites
+  - **Antibiotic resistance**: Good hygiene reduces infection rates and antibiotic use
+
+  The CDC estimates that handwashing can prevent about 30% of diarrhea-related illnesses and about 20%
+  of respiratory infections.
+
+  ## Clinical Interpretation
+
+  When reviewing handwashing data with patients, clinicians should consider:
+
+  - **Frequency**: Key moments for handwashing include before eating, after using the toilet, after
+    coughing/sneezing, after touching public surfaces, and when caring for someone ill. Healthcare
+    workers require more frequent washing per WHO guidelines.
+
+  - **Duration**: Each wash should be at least 20 seconds. The Apple Watch timer encourages this minimum.
+    Consistently short durations may indicate inadequate technique.
+
+  - **Context**: Data is most meaningful when correlated with activities (meal times, bathroom visits)
+    or during illness episodes to assess hygiene compliance.
+
+  - **Trends during illness**: Increased handwashing during infectious illness periods suggests good
+    hygiene awareness; decreased frequency during illness may indicate fatigue or need for support.
+
+  - **Immunocompromised patients**: For patients with weakened immune systems, handwashing data can
+    help verify compliance with infection prevention recommendations.
+
+  ## Caveats & Limitations
+
+  - **Detection accuracy**: Automatic detection may have false positives (other water activities) or
+    false negatives (quiet water, unusual sinks). The algorithm works best with typical handwashing
+    motions at standard sinks.
+
+  - **Apple Watch required**: Automatic detection requires Apple Watch Series 4 or later with watchOS 7+.
+    Manual entry is less reliable for tracking actual behavior.
+
+  - **Technique not assessed**: Duration is tracked but not technique quality - whether all hand surfaces
+    are adequately cleaned, whether soap is used, or whether hands are properly dried.
+
+  - **Privacy considerations**: The microphone access for water sound detection may concern some users.
+    This processing happens on-device and audio is not stored.
+
+  - **Single value category**: Like toothbrushing, all samples use value 0 - the meaningful information
+    is in timestamps and duration.
+
+  - **Does not distinguish soap use**: The system cannot verify whether soap was used, which is critical
+    for effective pathogen removal.
+
+  - **Location context absent**: Cannot determine where handwashing occurred (home, workplace, public
+    restroom) which could provide additional hygiene insights.
+metadata_keys:
+  - key: "HKMetadataKeyExternalUUID"
+    description: "Unique identifier from the source device or app"
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Identifier for syncing across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierToothbrushing"
+    relationship: "related_hygiene_behavior"
+  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
+    relationship: "same_device_source"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierHandwashing"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierhandwashing"
+    type: "official"
+  - title: "Apple Support - Use handwashing timer on Apple Watch"
+    url: "https://support.apple.com/guide/watch/use-the-handwashing-timer-apd0d7d0087b/watchos"
+    type: "tutorial"
+  - title: "CDC - When and How to Wash Your Hands"
+    url: "https://www.cdc.gov/handwashing/when-how-handwashing.html"
+    type: "medical"
+  - title: "WHO Guidelines on Hand Hygiene in Health Care"
+    url: "https://www.who.int/publications/i/item/9789241597906"
+    type: "medical"
+last_updated: "2026-01-27"

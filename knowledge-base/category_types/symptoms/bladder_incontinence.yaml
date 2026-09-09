@@ -1,0 +1,117 @@
+identifier: "HKCategoryTypeIdentifierBladderIncontinence"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Symptoms"
+human_readable_name: "Bladder Incontinence"
+short_description: "Tracks episodes of involuntary urine leakage."
+icon: "drop.fill"
+color: "#FF9500"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "notPresent"
+    description: "Symptom not experienced"
+  - value: 1
+    name: "present"
+    description: "Symptom present - mild"
+  - value: 2
+    name: "present"
+    description: "Symptom present - moderate"
+  - value: 3
+    name: "present"
+    description: "Symptom present - severe"
+ios_introduced:
+  version: "13.6"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: true
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone Health App"
+    capability: "Manual symptom logging"
+primary_source: "Manual entry via Health app"
+description: |
+  ## Overview
+  Bladder incontinence (urinary incontinence) refers to the involuntary leakage of urine. This HealthKit category type allows users to track incontinence episodes and their severity, providing valuable data for diagnosing the type of incontinence and monitoring treatment effectiveness.
+
+  ## Health Significance
+  Urinary incontinence affects millions of people and can significantly impact quality of life. Tracking frequency and severity helps clinicians differentiate between types of incontinence and guide appropriate treatment strategies.
+
+  Types of urinary incontinence include:
+  - **Stress incontinence**: Leakage during activities that increase abdominal pressure (coughing, sneezing, exercise)
+  - **Urge incontinence**: Sudden, intense urge followed by involuntary leakage (overactive bladder)
+  - **Mixed incontinence**: Combination of stress and urge incontinence
+  - **Overflow incontinence**: Frequent or constant dribbling due to incomplete bladder emptying
+  - **Functional incontinence**: Physical or cognitive limitations preventing timely bathroom access
+
+  Common associated conditions:
+  - Pelvic floor dysfunction
+  - Pregnancy and postpartum changes
+  - Menopause and estrogen deficiency
+  - Prostate enlargement or surgery
+  - Neurological conditions (multiple sclerosis, Parkinson's, stroke)
+  - Urinary tract infections
+  - Diabetes mellitus
+  - Obesity
+  - Chronic constipation
+
+  ## When to Seek Medical Attention
+  Users should consult a healthcare provider when:
+  - Incontinence is new or worsening
+  - Episodes significantly affect quality of life or daily activities
+  - Incontinence is accompanied by pain, blood in urine, or fever
+  - There is difficulty emptying the bladder completely
+  - Neurological symptoms are present (numbness, weakness)
+  - Incontinence occurs after surgery or trauma
+  - Conservative measures (pelvic floor exercises) are ineffective
+
+  ## Pattern Recognition
+  Clinicians can use longitudinal data to identify:
+  - Triggers (exercise, caffeine, alcohol, certain activities)
+  - Time of day patterns (nocturnal vs. daytime)
+  - Correlation with fluid intake
+  - Treatment response to pelvic floor therapy or medications
+  - Progression or improvement over time
+  - Postpartum recovery trajectory
+
+  ## Caveats & Limitations
+  - Does not distinguish between types of incontinence (stress vs. urge)
+  - Volume of leakage is not captured
+  - Cannot assess underlying cause without additional evaluation
+  - Sensitive data that users may underreport due to embarrassment
+  - Does not capture associated urgency or frequency
+  - Pad usage and impact on daily life not recorded
+metadata_keys:
+  - key: "HKMetadataKeyWasUserEntered"
+    description: "Indicates whether the data was manually entered by the user"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierConstipation"
+    relationship: "Chronic constipation can contribute to incontinence"
+  - identifier: "HKQuantityTypeIdentifierNumberOfTimesFallen"
+    relationship: "Falls may indicate functional incontinence in elderly"
+  - identifier: "HKCategoryTypeIdentifierPregnancyTestResult"
+    relationship: "Pregnancy significantly affects bladder function"
+  - identifier: "HKQuantityTypeIdentifierBodyMass"
+    relationship: "Obesity is a risk factor for urinary incontinence"
+references:
+  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierBladderIncontinence"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierbladderincontinence"
+    type: "official"
+  - title: "Urinary Incontinence in Women - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/urinary-incontinence"
+    type: "medical"
+  - title: "Urinary Incontinence - NIDDK"
+    url: "https://www.niddk.nih.gov/health-information/urologic-diseases/bladder-control-problems"
+    type: "medical"
+last_updated: "2026-01-27"

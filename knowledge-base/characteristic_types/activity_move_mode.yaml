@@ -1,0 +1,139 @@
+identifier: "HKCharacteristicTypeIdentifierActivityMoveMode"
+source: "HealthKit"
+type: "HKCharacteristicType"
+category: "Characteristics"
+human_readable_name: "Activity Move Mode"
+short_description: "Specifies whether the Activity ring tracks Active Calories or Exercise Minutes as the Move goal."
+icon: "flame.fill"
+color: "#FF2D55"
+default_unit: null
+supported_units: null
+unit_description: "Enumerated value representing the Move ring tracking mode"
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 0
+    name: "activeEnergy"
+    description: "Move ring tracks Active Energy Burned (calories/kilocalories) - the default mode"
+  - value: 1
+    name: "appleMoveTime"
+    description: "Move ring tracks Apple Move Time (exercise minutes) instead of active calories"
+ios_introduced:
+  version: "14.0"
+  year: 2020
+watchos_introduced:
+  version: "7.0"
+  year: 2020
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "User selects mode during Activity setup or changes in Watch app settings"
+  - name: "iPhone"
+    capability: "User can view/change setting in Watch app on paired iPhone"
+primary_source: "User Input"
+description: |
+  ## Overview
+
+  HKCharacteristicTypeIdentifierActivityMoveMode determines how the red Move ring in Apple's Activity
+  tracking system measures daily activity goals. By default, the Move ring tracks Active Energy Burned
+  (calories), but users can switch to Apple Move Time mode, which tracks minutes of brisk activity
+  instead. This characteristic was introduced to better accommodate users for whom calorie-based goals
+  may be inappropriate, confusing, or potentially harmful.
+
+  ## Health Significance
+
+  The choice of activity tracking mode has implications for health motivation and behavior:
+
+  - **Eating disorder considerations**: Calorie-focused tracking can be triggering for individuals with
+    eating disorders or disordered eating patterns. Move Time mode removes visible calorie counts from
+    the primary Activity display.
+
+  - **Simplicity for some populations**: Older adults, children (Apple Watch SE Family Setup), and
+    users unfamiliar with calorie concepts may find minutes-based goals more intuitive and actionable.
+
+  - **Activity focus**: Move Time emphasizes movement duration rather than energy expenditure, which
+    may better align with exercise guidelines (e.g., 150 minutes/week of moderate activity).
+
+  - **Condition-specific needs**: Users with conditions affecting metabolism (thyroid disorders,
+    certain medications) may find calorie estimates unreliable, making time-based goals more meaningful.
+
+  - **Consistency**: Time-based goals are less affected by variables like body composition,
+    environmental temperature, or algorithmic estimation errors.
+
+  ## Clinical Interpretation
+
+  When reviewing activity data, clinicians should understand:
+
+  - **Mode affects presentation**: The primary Move metric shown to the user depends on this setting.
+    Verify which mode the patient is using when discussing activity goals.
+
+  - **Both metrics still tracked**: Regardless of display mode, HealthKit still records both Active
+    Energy Burned and Apple Exercise Time. Apps with appropriate permissions can access both.
+
+  - **Goal translation**: Active Energy goals (e.g., 500 kcal) don't directly translate to Move Time
+    goals (e.g., 30 minutes). The appropriate goal depends on the user's fitness level and objectives.
+
+  - **Clinical recommendations**: Consider recommending Move Time mode for:
+    - Patients with history of eating disorders
+    - Patients who express anxiety about calorie counting
+    - Older adults or those new to fitness tracking
+    - Pediatric patients using Family Setup
+    - Patients focused on meeting exercise duration guidelines
+
+  - **Calorie mode benefits**: Active Energy mode may be preferable for:
+    - Weight management programs where energy balance is central
+    - Users who understand and are motivated by calorie metrics
+    - Athletic training where energy expenditure monitoring is relevant
+
+  ## Caveats & Limitations
+
+  - **Read-only access**: Apps cannot change this setting - only the user can modify it through Apple
+    Watch or the paired iPhone's Watch app.
+
+  - **Apple ecosystem specific**: This characteristic only affects Apple's Activity ring display.
+    Third-party apps may present activity data differently regardless of this setting.
+
+  - **Not a complete solution**: While Move Time mode removes calories from the Activity rings,
+    calorie data is still visible elsewhere in Health app and may be shown by third-party apps.
+
+  - **Goal adjustment needed**: When switching modes, users need to set new appropriate goals. The
+    previous calorie goal doesn't automatically convert to a time goal.
+
+  - **Limited clinical awareness**: Many clinicians may not know this option exists or understand how
+    to guide patients in selecting the appropriate mode.
+
+  - **Move Time definition**: Apple Move Time counts minutes where activity exceeds a brisk walk
+    threshold. The exact algorithm and intensity threshold aren't publicly documented.
+
+  - **Newer feature**: Introduced in 2020, this feature may not be familiar to long-term Apple Watch
+    users who set up their devices before it was available.
+metadata_keys: []
+related_types:
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "activeEnergy_mode_metric"
+  - identifier: "HKQuantityTypeIdentifierAppleMoveTime"
+    relationship: "appleMoveTime_mode_metric"
+  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
+    relationship: "exercise_ring_metric"
+  - identifier: "HKCharacteristicTypeIdentifierWheelchairUse"
+    relationship: "activity_tracking_preference"
+references:
+  - title: "Apple Developer Documentation - HKCharacteristicTypeIdentifierActivityMoveMode"
+    url: "https://developer.apple.com/documentation/healthkit/hkcharacteristictypeidentifieractivitymovemode"
+    type: "official"
+  - title: "Apple Developer Documentation - HKActivityMoveMode"
+    url: "https://developer.apple.com/documentation/healthkit/hkactivitymovemode"
+    type: "official"
+  - title: "Apple Support - Change your Activity goals on Apple Watch"
+    url: "https://support.apple.com/guide/watch/change-your-activity-goals-apd3bf6d85a6/watchos"
+    type: "tutorial"
+  - title: "Apple - Family Setup for Apple Watch"
+    url: "https://www.apple.com/apple-watch/family-setup/"
+    type: "official"
+last_updated: "2026-01-27"

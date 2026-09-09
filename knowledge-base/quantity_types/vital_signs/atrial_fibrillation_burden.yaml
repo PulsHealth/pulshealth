@@ -1,0 +1,219 @@
+identifier: "HKQuantityTypeIdentifierAtrialFibrillationBurden"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Atrial Fibrillation Burden"
+short_description: "An estimate of the percentage of time a person's heart shows signs of atrial fibrillation over a defined monitoring period."
+icon: "waveform.path.ecg"
+color: "#FF9500"
+default_unit: "%"
+supported_units:
+  - "%"
+unit_description: "Expressed as a percentage (0-100%) representing the proportion of monitored time during which AFib was detected."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteMin"
+  - "discreteMax"
+  - "discreteAverage"
+  - "mostRecent"
+typical_range:
+  min: 0
+  max: 100
+  unit: "%"
+  notes: "0% indicates no AFib detected; 100% indicates persistent/permanent AFib. Most paroxysmal AFib patients show intermittent burden."
+clinical_ranges:
+  - population: "Adults with diagnosed AFib"
+    no_afib_detected: "<2% (may display as 'Less than 2%')"
+    low_burden: "2-10%"
+    moderate_burden: "10-50%"
+    high_burden: ">50%"
+    persistent: "Approaching 100%"
+  - population: "Post-Ablation Patients"
+    notes: "Success is often defined as <0.5% or <1% AFib burden. Higher thresholds (e.g., >30 seconds of AFib) may indicate recurrence."
+ios_introduced:
+  version: "16.0"
+  year: 2022
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "Apple Watch Series 4 or later"
+    capability: "Optical heart sensor (PPG) analyzes pulse patterns to detect irregular rhythms consistent with AFib"
+  - name: "Apple Watch SE (all models)"
+    capability: "Same PPG-based detection capability"
+  - name: "Apple Watch Ultra (all models)"
+    capability: "Same PPG-based detection capability"
+primary_source: "Apple Watch (PPG-based detection)"
+description: |
+  ## Overview
+
+  Atrial Fibrillation Burden represents an estimate of the percentage of time a person's heart exhibits signs of atrial fibrillation (AFib) during a monitoring period. This metric was introduced by Apple with iOS 16 and watchOS 9 as part of the AFib History feature, which received FDA clearance as a Class II medical device.
+
+  Unlike simple AFib detection (which provides a binary yes/no), AFib burden quantifies the temporal extent of the arrhythmia, providing valuable information about disease progression, treatment effectiveness, and potentially stroke risk stratification.
+
+  **FDA Qualification:** On May 1, 2024, the FDA qualified Apple Watch's AFib History feature as a Medical Device Development Tool (MDDT), the first digital health technology to receive this qualification. This allows the feature to be used as a biomarker test to estimate AFib burden in clinical trials.
+
+  ## How It's Measured
+
+  **Photoplethysmography (PPG) Analysis:**
+  The Apple Watch uses its optical heart sensor to detect blood volume changes in the wrist. The PPG waveform is analyzed for irregularities in pulse timing (R-R intervals) characteristic of AFib.
+
+  **Background Monitoring:**
+  - The watch opportunistically checks for irregular rhythms throughout the day
+  - Checks occur during periods of relative stillness (not during active exercise)
+  - The feature does NOT provide real-time alerts for AFib episodes
+
+  **Burden Calculation:**
+  - Requires at least 12 hours of wear per day for 5 days per week
+  - Weekly estimates are generated based on the proportion of analyzed segments showing AFib
+  - Results are typically available weekly, with estimates reflecting the prior 7-day period
+
+  **Validation:**
+  In clinical validation studies, the average difference between Apple Watch AFib burden estimates and a reference ECG patch (Cardea SOLO) was 0.67% (95% CI: -0.05% to 1.38%). 92.9% of participants had weekly burden differences within ±5% of the reference device.
+
+  ## Health Significance
+
+  **Disease Monitoring:**
+  AFib burden provides insight into the temporal pattern of arrhythmia that a snapshot ECG cannot capture. Patients with paroxysmal AFib may have normal rhythm during clinic visits but significant AFib burden overall.
+
+  **Treatment Response:**
+  - Track effectiveness of rate/rhythm control medications
+  - Monitor success after cardioversion
+  - Assess outcomes following catheter ablation
+  - Guide decisions about treatment intensification
+
+  **Potential Stroke Risk Stratification:**
+  While current guidelines (CHA2DS2-VASc) do not incorporate AFib burden, emerging research suggests higher burden correlates with increased thromboembolic risk:
+  - KP-RHYTHM study: AFib burden ≥11.4% associated with >3-fold increased stroke risk
+  - ASSERT study: Episodes >24 hours associated with increased stroke risk
+  - However, no consensus threshold has been established for anticoagulation decisions
+
+  **Symptom Correlation:**
+  Helps correlate patient-reported symptoms (palpitations, fatigue, dyspnea) with objective arrhythmia data.
+
+  ## Clinical Interpretation Guidelines
+
+  ### Understanding the Percentage
+
+  | AFib Burden | Interpretation | Typical Clinical Context |
+  |-------------|----------------|-------------------------|
+  | **<2%** | No AFib detected or minimal | Display shows "Less than 2%"; baseline for stable patients |
+  | **2-10%** | Low burden | Paroxysmal AFib with infrequent episodes |
+  | **10-25%** | Moderate burden | More frequent paroxysmal episodes; may impact symptoms and quality of life |
+  | **25-50%** | Moderate-high burden | Frequent episodes; approaching persistent pattern |
+  | **>50%** | High burden | Persistent AFib pattern; significant portion of time in arrhythmia |
+  | **~100%** | Persistent/Permanent | Continuous AFib; rhythm control unlikely without intervention |
+
+  ### Trend Interpretation
+
+  - **Decreasing burden:** May indicate effective treatment, successful ablation, or lifestyle modification impact
+  - **Increasing burden:** May indicate disease progression, medication ineffectiveness, or need for intervention
+  - **Stable burden:** Current management maintaining status quo
+  - **High variability:** Common in paroxysmal AFib; look at multi-week trends
+
+  ### Red Flags for Consultation
+
+  - **New detection of AFib:** Any AFib burden in a patient not previously diagnosed warrants cardiology evaluation
+  - **Significant increase:** >10-15% increase from baseline, especially if symptomatic
+  - **Very high burden (>75%):** In patients supposedly on rhythm control strategy
+  - **Symptomatic episodes:** Burden increasing coincident with worsening symptoms
+  - **Post-ablation recurrence:** Increasing burden months after ablation procedure
+
+  ### When to Refer
+
+  - New AFib detection for diagnosis confirmation and stroke risk assessment
+  - Symptomatic patients despite rate control
+  - Consideration for rhythm control or ablation
+  - Anticoagulation decision-making in borderline cases
+  - Failure of current treatment strategy
+
+  ## Caveats & Limitations
+
+  ### Technical Limitations
+
+  - **Not Real-Time:** Does not alert users during AFib episodes; provides retrospective estimates only
+  - **Requires Consistent Wear:** Minimum 12 hours/day, 5 days/week; gaps reduce accuracy
+  - **Periodic Sampling:** Only checks during opportunistic windows; may miss brief episodes
+  - **AFib Only:** Does not detect atrial flutter, atrial tachycardia, or other arrhythmias
+  - **Not a Diagnostic Tool:** Intended for monitoring in those already diagnosed; abnormal readings require clinical confirmation
+
+  ### Clinical Limitations
+
+  - **Post-Ablation Accuracy:** Reduced heart rate variability after ablation may adversely affect accuracy (per FDA review)
+  - **No Established Thresholds:** Clinical guidelines do not yet incorporate AFib burden for anticoagulation decisions
+  - **Age Restriction:** Feature is intended for users 22 years and older
+  - **Motion Artifacts:** Physical activity can interfere with detection
+  - **Irregular Rhythms:** Other causes of irregular pulse (frequent PACs, wandering pacemaker) may affect accuracy
+
+  ### Comparison with Medical Monitoring
+
+  - Holter monitors and event recorders provide continuous ECG, not PPG-based estimates
+  - Implantable loop recorders offer longer-term continuous monitoring
+  - The Apple Watch provides convenient, passive monitoring but should complement, not replace, medical-grade devices when clinically indicated
+
+  ## Additional Notes
+
+  **Patient Education:**
+  - Emphasize this is an estimate, not precise measurement
+  - Encourage consistent watch wear for reliable trending
+  - Remind patients this does not replace prescribed monitoring or medications
+  - Discuss what changes warrant contacting their healthcare provider
+
+  **Integration with Care:**
+  - Review AFib History data at appointments
+  - Use trends to guide treatment discussions
+  - Consider in context of symptoms and other clinical data
+  - Document in medical record when used for clinical decisions
+
+  **Emerging Role in Clinical Trials:**
+  The FDA MDDT qualification enables use of Apple Watch AFib burden as an endpoint in clinical trials, particularly for ablation effectiveness studies. This may lead to more standardized interpretation guidelines in the future.
+
+  **Anticoagulation Considerations:**
+  Current anticoagulation guidelines are based on CHA2DS2-VASc score and do not incorporate AFib burden. While research suggests higher burden may increase stroke risk, no threshold has been validated for changing anticoagulation decisions. Clinical judgment remains essential.
+
+metadata_keys:
+  - key: "HKMetadataKeyAppleDeviceCalibrated"
+    description: "Indicates whether the device was calibrated for this measurement"
+  - key: "HKMetadataKeyAlgorithmVersion"
+    description: "Version of the algorithm used to calculate AFib burden"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierHighHeartRateEvent"
+    relationship: "related_cardiac"
+    description: "High heart rate events may co-occur with AFib episodes"
+  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
+    relationship: "detection_alert"
+    description: "Irregular rhythm notifications may prompt AFib History setup"
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "source_data"
+    description: "Heart rate data underlies AFib detection algorithms"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "related_metric"
+    description: "HRV patterns may correlate with AFib episodes"
+  - identifier: "HKElectrocardiogramType"
+    relationship: "confirmatory"
+    description: "ECG recordings can confirm AFib detected by AFib History"
+references:
+  - title: "HKQuantityTypeIdentifierAtrialFibrillationBurden - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifieratrialfibrillationburden"
+    type: "official"
+  - title: "Track your AFib History with Apple Watch - Apple Support"
+    url: "https://support.apple.com/en-us/108375"
+    type: "official"
+  - title: "Atrial Fibrillation History Feature Instructions for Use - Apple"
+    url: "https://www.apple.com/legal/ifu/afhf/afhf-ifu-en_US.pdf"
+    type: "official"
+  - title: "FDA MDDT Qualification - Apple AFib History Feature"
+    url: "https://www.fda.gov/media/178230/download"
+    type: "official"
+  - title: "Atrial Fibrillation Burden: Moving Beyond AF as a Binary Entity - AHA Scientific Statement"
+    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000568"
+    type: "medical"
+  - title: "Atrial Fibrillation Burden: A New Outcome Predictor and Therapeutic Target - European Heart Journal"
+    url: "https://academic.oup.com/eurheartj/article/45/31/2824/7702745"
+    type: "research"
+last_updated: "2026-01-27"

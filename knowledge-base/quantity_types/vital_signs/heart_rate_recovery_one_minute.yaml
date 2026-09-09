@@ -1,0 +1,334 @@
+# ============================================
+# HEALTHKIT DATA TYPE: Heart Rate Recovery One Minute
+# ============================================
+
+# --- CORE IDENTIFICATION ---
+identifier: "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Vital Signs"
+human_readable_name: "Heart Rate Recovery (1 Minute)"
+short_description: "Measures the reduction in heart rate from peak exercise intensity to one minute after exercise cessation, a powerful indicator of cardiovascular fitness and autonomic function."
+
+# --- APPLE HEALTH UI ---
+icon: "heart.fill"
+color: "#FF2D55"
+
+# --- UNITS & MEASUREMENT ---
+default_unit: "count/min"
+supported_units:
+  - "count/min"
+  - "count/s"
+unit_description: "Beats per minute (BPM) - represents the difference between peak exercise heart rate and heart rate measured one minute after stopping exercise"
+
+# --- STATISTICS ---
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+  - "separateBySource"
+  - "mostRecent"
+
+# --- TYPICAL VALUES ---
+typical_range:
+  min: 5
+  max: 80
+  unit: "count/min"
+  notes: "Range varies by fitness level, exercise intensity, and individual physiology. Very fit individuals may show recovery >50 bpm while those with cardiac conditions may show <12 bpm."
+
+clinical_ranges:
+  - population: "General adults"
+    normal: "18-25+ bpm"
+    low: "<12 bpm (abnormal - associated with increased mortality)"
+    high: ">30 bpm (excellent cardiovascular fitness)"
+  - population: "Well-trained athletes"
+    normal: "30-50+ bpm"
+    low: "<25 bpm (may indicate deconditioning or overtraining)"
+    high: ">50 bpm (exceptional vagal reactivation)"
+  - population: "Clinical threshold (abnormal)"
+    normal: ">12 bpm"
+    low: "<=12 bpm (2x mortality risk in landmark Cleveland Clinic study)"
+  - population: "Older adults (65+)"
+    normal: "15-25 bpm"
+    low: "<12 bpm"
+    high: ">25 bpm (good fitness indicator)"
+  - population: "Cardiac rehabilitation patients"
+    normal: ">12 bpm (prognostic threshold)"
+    low: "<12 bpm (requires close monitoring)"
+    high: "Improvement over time indicates positive adaptation"
+
+# --- PLATFORM & AVAILABILITY ---
+ios_introduced:
+  version: "16.0"
+  year: 2022
+  notes: "Introduced as part of expanded workout metrics"
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+  notes: "Requires Apple Watch Series 4 or later for automatic calculation after workouts"
+deprecated: false
+deprecated_in: null
+
+# --- PERMISSIONS & ACCESS ---
+writable: true
+requires_authorization: true
+sensitive_data: false
+
+# --- DATA SOURCES ---
+devices:
+  - name: "Apple Watch"
+    capability: "Automatically calculates HRR after outdoor walking, running, or hiking workouts when the workout ends naturally (not manually stopped during exercise). Requires continuous heart rate monitoring during workout and recovery period."
+    series: "Series 4 and later"
+    accuracy: "Depends on accurate peak HR detection and continuous monitoring during recovery minute"
+  - name: "iPhone"
+    capability: "Displays HRR data but cannot measure directly. Requires Apple Watch."
+  - name: "Third-party devices"
+    capability: "Some fitness devices can calculate and write HRR to HealthKit"
+    examples: ["Garmin", "Polar", "Whoop"]
+primary_source: "Apple Watch"
+
+# --- DETAILED DESCRIPTION ---
+description: |
+  ## Overview
+  Heart Rate Recovery (HRR) measures how quickly the heart rate decreases after stopping exercise. Specifically, the one-minute HRR captures the drop in beats per minute from peak exercise heart rate to the heart rate measured exactly one minute after exercise cessation. This metric is one of the most powerful and well-validated predictors of cardiovascular health and all-cause mortality, reflecting the autonomic nervous system's ability to shift from sympathetic (exercise) to parasympathetic (recovery) dominance.
+
+  ## How It's Measured
+
+  **Formula:**
+  HRR = Peak Exercise Heart Rate - Heart Rate at 1 Minute Post-Exercise
+
+  **Example:**
+  - Peak HR during running: 165 bpm
+  - HR at 1 minute after stopping: 135 bpm
+  - HRR = 165 - 135 = 30 bpm
+
+  **Apple Watch Measurement Protocol:**
+  - Tracks heart rate continuously during workout
+  - Records peak heart rate achieved during exercise
+  - After workout ends, continues monitoring during cooldown
+  - Calculates HR at exactly 1 minute post-exercise
+  - Records the difference as HRR
+
+  **Measurement conditions:**
+  - Works best with walking, running, and hiking workouts
+  - Workout must end naturally (cooldown, not abrupt stop)
+  - User should remain upright (standing or walking slowly) during recovery
+  - Supine recovery would show different (typically larger) HRR values
+
+  **Timing requirements:**
+  - Requires sufficient workout intensity to elevate heart rate
+  - Needs continuous heart rate data during recovery period
+  - May not record if workout is manually stopped mid-exercise
+
+  ## Health Significance
+  HRR is a powerful prognostic marker because it reflects parasympathetic reactivation:
+
+  **Physiological basis:**
+  - During exercise, sympathetic nervous system dominates (elevated HR)
+  - Upon cessation, parasympathetic (vagal) tone rapidly reasserts
+  - Vagal reactivation causes rapid heart rate decrease
+  - Faster recovery = stronger vagal tone = better autonomic function
+
+  **Prognostic significance:**
+  - 1999 NEJM landmark study (Cleveland Clinic): Abnormal HRR (<=12 bpm) associated with 2x mortality risk
+  - This association persists after adjusting for age, fitness, medications, and heart disease
+  - Meta-analyses confirm 1.68x higher all-cause mortality with impaired HRR
+  - HRR predicts both cardiovascular and non-cardiovascular mortality
+
+  **Why it matters:**
+  - Reduced vagal tone is a final common pathway to increased mortality
+  - Low HRR indicates impaired autonomic regulation
+  - Can improve with exercise training (trainable marker)
+  - Provides actionable feedback for fitness programs
+
+  ## Clinical Interpretation Guidelines
+
+  ### Normal Values
+  - **General population:** 18-25+ bpm (NASM guidelines)
+  - **Good recovery:** >22 bpm
+  - **Excellent recovery:** >30 bpm
+  - **Athlete-level:** 35-50+ bpm
+  - **Abnormal threshold:** <=12 bpm (clinical consensus)
+
+  **Percentile estimates:**
+  - 25th percentile: ~18 bpm
+  - Average (Apple Watch users): ~26 bpm (per Empirical Health data)
+  - 75th percentile: ~33 bpm
+
+  ### Abnormal (Low) HRR May Indicate
+  **Cardiovascular conditions:**
+  - Coronary artery disease
+  - Heart failure
+  - Autonomic dysfunction
+  - Post-myocardial infarction
+  - Atrial fibrillation
+
+  **Metabolic/systemic:**
+  - Diabetes mellitus
+  - Metabolic syndrome
+  - Chronic kidney disease
+  - Obstructive sleep apnea
+
+  **Lifestyle/modifiable factors:**
+  - Poor cardiovascular fitness
+  - Deconditioning
+  - Chronic stress
+  - Insufficient sleep
+  - Overtraining (in athletes)
+
+  **Other:**
+  - Autonomic neuropathy
+  - POTS (Postural Orthostatic Tachycardia Syndrome)
+  - Post-viral syndromes
+  - Certain medications (though beta-blockers may improve HRR)
+
+  ### Good/Excellent HRR Indicates
+  - Strong parasympathetic (vagal) tone
+  - Good cardiovascular fitness
+  - Effective autonomic regulation
+  - Lower mortality risk
+  - Adequate recovery between training sessions
+  - Healthy stress response
+
+  ### Red Flags for Consultation
+  - **HRR consistently <=12 bpm** across multiple workouts
+  - **Sudden decline in HRR** (>10 bpm drop from typical values) without explanation
+  - **HRR <=12 bpm combined with symptoms:** dizziness post-exercise, prolonged palpitations, chest discomfort
+  - **Failure to improve HRR** despite weeks of consistent aerobic training
+  - **Very low HRR in young individual** (<35 years) without cardiac history
+  - **HRR <20 bpm in active, apparently healthy individual** warrants evaluation
+  - **Progressive HRR decline** over weeks/months
+
+  ## Caveats & Limitations
+
+  ### Measurement Considerations
+  - **Exercise intensity matters:** Low-intensity workouts may not elevate HR enough for meaningful HRR
+  - **Recovery posture:** Standing vs. supine recovery produces different values (supine = higher HRR)
+  - **Active vs. passive recovery:** Slow walking during recovery differs from standing still
+  - **Environmental factors:** Heat, humidity, and altitude affect both peak HR and recovery
+  - **Hydration status:** Dehydration impairs recovery
+  - **Time of day:** May vary somewhat with circadian rhythm
+
+  ### Interpretation Caveats
+  - **Beta-blockers:** May actually improve HRR by reducing peak HR and enhancing vagal tone
+  - **Workout type:** HRR varies by exercise modality (running vs. cycling vs. swimming)
+  - **Individual variation:** Compare to person's own baseline, not just population norms
+  - **Single values:** Day-to-day variation of 5-10 bpm is normal; track trends
+  - **Age effect:** HRR naturally decreases slightly with age
+
+  ### Limitations
+  - Cannot diagnose specific cardiac conditions
+  - Does not replace exercise stress testing
+  - Single metric - should be interpreted alongside other fitness markers
+  - Measurement conditions in real-world differ from clinical protocols
+  - Apple Watch may not capture HRR if workout ended abruptly
+
+  ## Additional Notes
+
+  **For health consultants - clinical applications:**
+
+  **Fitness assessment:**
+  - HRR is a practical, no-cost fitness biomarker
+  - Track average HRR over 2-4 weeks for baseline
+  - Expect improvement (5-15 bpm) after 8-12 weeks of aerobic training
+  - Use as motivation: "Your heart is recovering faster than 3 months ago"
+
+  **Training guidance:**
+  - Low HRR may suggest need for more aerobic base training
+  - Acute HRR drop during heavy training may indicate overreaching
+  - Can help optimize training load - back off if HRR declining
+
+  **Health screening:**
+  - HRR <12 bpm warrants medical evaluation before intense exercise programs
+  - Useful adjunct in cardiac rehabilitation monitoring
+  - Can track response to lifestyle interventions (diet, sleep, stress management)
+
+  **Comparison with other metrics:**
+  - Complements resting heart rate (RHR) and HRV
+  - All three reflect autonomic function from different angles
+  - Consider together: good RHR + good HRV + good HRR = robust autonomic health
+
+  **Conversation points with clients:**
+  - "HRR shows how well your nervous system shifts gears after exercise"
+  - "Values below 12 bpm are concerning and worth discussing with a doctor"
+  - "This is one of the best predictors we have for overall cardiovascular health"
+  - "The good news: HRR can improve with consistent exercise"
+
+  **Improving HRR - evidence-based strategies:**
+  1. Regular aerobic exercise (most important)
+  2. High-intensity interval training (HIIT)
+  3. Adequate sleep (7-9 hours)
+  4. Stress management
+  5. Maintain healthy weight
+  6. Limit alcohol
+  7. Stay hydrated
+  8. Cool-down properly after workouts
+
+# --- METADATA KEYS ---
+metadata_keys:
+  - key: "HKMetadataKeyHeartRateRecoveryTestType"
+    description: "Indicates the type of test or workout from which HRR was derived"
+    values:
+      - "maxExercise (1) - From maximal exercise test"
+      - "predictionSubMaxExercise (2) - From submaximal exercise"
+  - key: "HKMetadataKeyHeartRateRecoveryActivityType"
+    description: "The workout activity type associated with the HRR measurement"
+    values:
+      - "Running"
+      - "Walking"
+      - "Hiking"
+  - key: "HKMetadataKeyHeartRateRecoveryActivityDuration"
+    description: "Duration of the workout activity in seconds"
+    values:
+      - "Numeric value in seconds"
+  - key: "HKMetadataKeyHeartRateRecoveryMaxObservedRecoveryHeartRate"
+    description: "The peak heart rate recorded during recovery period"
+    values:
+      - "Numeric value in bpm"
+
+# --- RELATED TYPES ---
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Source data - HRR calculated from peak exercise HR and recovery HR samples"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Complementary - Both reflect cardiovascular fitness and autonomic function"
+  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
+    relationship: "Complementary - Both assess parasympathetic/vagal function; often correlated"
+  - identifier: "HKQuantityTypeIdentifierVO2Max"
+    relationship: "Correlated - Higher VO2max generally associated with better HRR"
+  - identifier: "HKQuantityTypeIdentifierWalkingHeartRateAverage"
+    relationship: "Context - Walking HR during workout contributes to peak HR determination"
+  - identifier: "HKWorkout"
+    relationship: "Trigger - HRR is calculated following workout sessions"
+
+# --- REFERENCES ---
+references:
+  - title: "Apple Developer Documentation - heartRateRecoveryOneMinute"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/heartraterecoveryoneminute"
+    type: "official"
+  - title: "Heart-rate recovery immediately after exercise as a predictor of mortality - NEJM (1999)"
+    url: "https://pubmed.ncbi.nlm.nih.gov/10536127/"
+    type: "research"
+  - title: "Heart Rate Recovery: What It Is and How to Calculate It - Cleveland Clinic"
+    url: "https://my.clevelandclinic.org/health/articles/23490-heart-rate-recovery"
+    type: "medical"
+  - title: "Heart Rate Recovery and Risk - GE HealthCare"
+    url: "https://www.gehealthcare.com/insights/article/heart-rate-recovery-and-risk-understanding-this-powerful-marker"
+    type: "medical"
+  - title: "Heart Rate Recovery 10 Seconds After Cessation of Exercise Predicts Death - JAHA"
+    url: "https://www.ahajournals.org/doi/10.1161/JAHA.117.008341"
+    type: "research"
+  - title: "Average Heart Rate Recovery on Apple Watch - Empirical Health"
+    url: "https://www.empirical.health/metrics/heart-rate-recovery/"
+    type: "research"
+
+# --- KNOWLEDGE BASE METADATA ---
+last_updated: "2026-01-27"
+research_notes: |
+  - iOS 16.0/watchOS 9.0 introduction based on Apple feature announcements (WWDC 2022)
+  - Clinical threshold of 12 bpm from seminal 1999 NEJM Cleveland Clinic study (Cole et al.)
+  - Mortality associations from multiple meta-analyses confirm robust predictive value
+  - NASM guidelines for normal ranges (15-25 bpm general population)
+  - Apple Watch average HRR of 26 bpm from Empirical Health population data
+  - Trainability of HRR well-documented in exercise physiology literature

@@ -1,0 +1,170 @@
+identifier: "HKQuantityTypeIdentifierVO2Max"
+source: "HealthKit"
+type: "HKQuantityType"
+category: "Activity"
+human_readable_name: "VO2 Max"
+short_description: "Maximum oxygen uptake during exercise, a key indicator of cardiorespiratory fitness."
+icon: "lungs.fill"
+color: "#5AC8FA"
+default_unit: "mL/kg/min"
+supported_units:
+  - "mL/kg/min"
+unit_description: "Milliliters of oxygen consumed per kilogram of body weight per minute. This normalized unit allows comparison across individuals of different body sizes."
+aggregation_type: "discrete"
+statistics_options:
+  - "discreteAverage"
+  - "discreteMin"
+  - "discreteMax"
+typical_range:
+  min: 20
+  max: 60
+  unit: "mL/kg/min"
+  notes: "Wide variation based on age, sex, and fitness level. Elite endurance athletes may exceed 70-80 mL/kg/min. Sedentary adults typically range 25-40 mL/kg/min."
+clinical_ranges:
+  - population: "Men (20-29 years)"
+    values: "Poor: <38, Fair: 38-41, Good: 42-45, Excellent: 46-52, Superior: >52"
+  - population: "Men (30-39 years)"
+    values: "Poor: <35, Fair: 35-38, Good: 39-42, Excellent: 43-48, Superior: >48"
+  - population: "Men (40-49 years)"
+    values: "Poor: <32, Fair: 32-35, Good: 36-40, Excellent: 41-46, Superior: >46"
+  - population: "Men (50-59 years)"
+    values: "Poor: <28, Fair: 28-32, Good: 33-37, Excellent: 38-43, Superior: >43"
+  - population: "Men (60+ years)"
+    values: "Poor: <24, Fair: 24-28, Good: 29-33, Excellent: 34-39, Superior: >39"
+  - population: "Women (20-29 years)"
+    values: "Poor: <31, Fair: 31-34, Good: 35-38, Excellent: 39-44, Superior: >44"
+  - population: "Women (30-39 years)"
+    values: "Poor: <28, Fair: 28-31, Good: 32-35, Excellent: 36-41, Superior: >41"
+  - population: "Women (40-49 years)"
+    values: "Poor: <25, Fair: 25-28, Good: 29-32, Excellent: 33-38, Superior: >38"
+  - population: "Women (50-59 years)"
+    values: "Poor: <22, Fair: 22-25, Good: 26-30, Excellent: 31-36, Superior: >36"
+  - population: "Women (60+ years)"
+    values: "Poor: <19, Fair: 19-22, Good: 23-27, Excellent: 28-33, Superior: >33"
+ios_introduced:
+  version: "11.0"
+  year: 2017
+watchos_introduced:
+  version: "4.0"
+  year: 2017
+deprecated: false
+writable: true
+requires_authorization: true
+sensitive_data: false
+devices:
+  - name: "Apple Watch"
+    capability: "Estimates VO2 max using submaximal prediction algorithms during outdoor walks and runs"
+    examples:
+      - "Apple Watch Series 3"
+      - "Apple Watch Series 4"
+      - "Apple Watch Series 5"
+      - "Apple Watch Series 6"
+      - "Apple Watch Series 7"
+      - "Apple Watch Series 8"
+      - "Apple Watch Series 9"
+      - "Apple Watch Ultra"
+      - "Apple Watch Ultra 2"
+  - name: "Third-party fitness devices"
+    capability: "Various devices can write VO2 max estimates to HealthKit"
+    examples:
+      - "Garmin watches"
+      - "Polar watches"
+      - "COROS watches"
+primary_source: "Apple Watch"
+description: |
+  ## Overview
+  VO2 max (maximal oxygen uptake) represents the maximum rate at which the body can consume oxygen during intense exercise. It is widely considered the gold standard measure of cardiorespiratory fitness and aerobic endurance capacity. Higher values indicate greater cardiovascular efficiency and exercise tolerance.
+
+  ## How It's Measured
+  Apple Watch estimates VO2 max using a submaximal prediction method rather than direct measurement. The algorithm analyzes:
+
+  - **Heart rate response** during outdoor walks or runs
+  - **Walking/running speed** from GPS data
+  - **Terrain grade** (elevation changes)
+  - **User characteristics** (age, sex, height, weight)
+
+  The watch requires outdoor activities because GPS is needed for accurate speed measurement. Estimates are generated after walks or runs of sufficient duration and intensity. Apple's algorithm uses the well-established relationship between heart rate and oxygen consumption to extrapolate maximal capacity from submaximal exercise data.
+
+  For optimal accuracy:
+  - Ensure the watch fits snugly for accurate heart rate
+  - Perform outdoor walks/runs on varied terrain
+  - Allow several workouts for the algorithm to calibrate
+  - Keep personal metrics (height, weight, age) updated
+
+  ## Health Significance
+  VO2 max is one of the strongest predictors of all-cause mortality and cardiovascular health:
+
+  - **Mortality prediction**: Low cardiorespiratory fitness is associated with 2-3x higher risk of all-cause mortality compared to high fitness levels
+  - **Cardiovascular risk**: Each 1 MET (3.5 mL/kg/min) increase in fitness is associated with approximately 10-15% reduction in cardiovascular mortality
+  - **Disease prevention**: Higher VO2 max correlates with reduced risk of type 2 diabetes, certain cancers, and cognitive decline
+  - **Functional capacity**: Directly impacts ability to perform daily activities and maintain independence with aging
+  - **Training effectiveness**: Tracks response to exercise interventions and guides training intensity
+
+  ## Clinical Interpretation Guidelines
+  When interpreting VO2 max values for patients/clients:
+
+  1. **Compare to age/sex norms**: Use the clinical ranges provided to classify fitness level
+  2. **Track longitudinal trends**: Individual changes over time are often more meaningful than single values
+  3. **Consider context**: Values may be affected by illness, medication (especially beta-blockers), altitude, heat, and hydration status
+  4. **Set realistic goals**: A 10-15% improvement over 3-6 months is achievable with consistent training for most individuals
+  5. **Risk stratification**: Values below the 20th percentile for age/sex warrant attention and lifestyle intervention discussion
+
+  For clinical decision-making, note that Apple Watch estimates correlate reasonably well with laboratory VO2 max testing (typical correlation r=0.8-0.9) but may have individual error margins of +/- 3-5 mL/kg/min.
+
+  ## Caveats & Limitations
+  - **Estimation vs. direct measurement**: Apple Watch provides estimates, not direct laboratory measurements. Gold-standard VO2 max requires a graded exercise test with gas exchange analysis.
+  - **Outdoor activity required**: Estimates are only generated during outdoor walks/runs where GPS is available.
+  - **Heart rate accuracy**: Optical heart rate sensors may be less accurate during high-intensity exercise, in users with darker skin tones, or with excessive wrist movement.
+  - **Population validation**: Apple's algorithm may be less accurate for populations underrepresented in validation studies (elderly, those with chronic conditions, elite athletes).
+  - **Beta-blockers and medications**: Heart rate-limiting medications will affect estimates, often resulting in underestimation.
+  - **Cardiac conditions**: Arrhythmias or other cardiac conditions affecting heart rate response may invalidate estimates.
+  - **Single data point**: Each estimate represents performance during one activity; multiple measurements provide more reliable assessment.
+
+  ## Additional Notes
+  - The American Heart Association now recommends cardiorespiratory fitness be assessed as a clinical vital sign
+  - VO2 max naturally declines with age (approximately 1% per year after age 25) but regular exercise can slow this decline significantly
+  - Low VO2 max in middle age is associated with accelerated biological aging and increased healthcare costs
+  - For patients unable to perform outdoor walks/runs, consider alternative fitness assessments or referral for formal exercise testing
+metadata_keys:
+  - key: "HKMetadataKeyVO2MaxTestType"
+    description: "Indicates the type of test used to estimate VO2 max. Values include HKVO2MaxTestTypeMaxExercise (gold-standard lab test), HKVO2MaxTestTypePredictionSubMaxExercise (Apple Watch submaximal estimate), and HKVO2MaxTestTypePredictionNonExercise (estimated from demographics only)."
+  - key: "HKMetadataKeyHeartRateSensorLocation"
+    description: "Location of the heart rate sensor used during measurement (e.g., wrist for Apple Watch)."
+  - key: "HKMetadataKeyWeatherTemperature"
+    description: "Ambient temperature during the workout, which can affect cardiovascular response."
+  - key: "HKMetadataKeyWeatherHumidity"
+    description: "Ambient humidity during the workout, which can affect cardiovascular response."
+  - key: "HKMetadataKeyElevationAscended"
+    description: "Total elevation gain during the workout, factored into VO2 max estimation."
+related_types:
+  - identifier: "HKQuantityTypeIdentifierHeartRate"
+    relationship: "Primary input for VO2 max estimation; heart rate response to exercise is the key variable"
+  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
+    relationship: "Lower resting heart rate generally correlates with higher VO2 max and better cardiovascular fitness"
+  - identifier: "HKQuantityTypeIdentifierRunningSpeed"
+    relationship: "Speed during outdoor runs is used in the VO2 max estimation algorithm"
+  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
+    relationship: "Walking speed during outdoor walks contributes to VO2 max estimates"
+  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
+    relationship: "VO2 max influences the efficiency of energy expenditure during activity"
+  - identifier: "HKWorkoutTypeRunning"
+    relationship: "Outdoor running workouts are primary triggers for VO2 max estimation"
+  - identifier: "HKWorkoutTypeWalking"
+    relationship: "Outdoor walking workouts can also generate VO2 max estimates"
+references:
+  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierVO2Max"
+    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifiervo2max"
+    type: "official"
+  - title: "Apple Support - About Cardio Fitness levels"
+    url: "https://support.apple.com/en-us/HT211856"
+    type: "official"
+  - title: "Cardiorespiratory Fitness as a Quantitative Predictor of All-Cause Mortality - JAMA"
+    url: "https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2707428"
+    type: "research"
+  - title: "American Heart Association Scientific Statement on Cardiorespiratory Fitness"
+    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000461"
+    type: "medical"
+  - title: "Validation of Apple Watch VO2max Estimation"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8227157/"
+    type: "research"
+last_updated: "2026-01-27"

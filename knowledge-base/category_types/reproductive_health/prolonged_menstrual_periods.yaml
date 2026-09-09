@@ -1,0 +1,131 @@
+identifier: "HKCategoryTypeIdentifierProlongedMenstrualPeriods"
+source: "HealthKit"
+type: "HKCategoryType"
+category: "Reproductive Health"
+human_readable_name: "Prolonged Menstrual Periods"
+short_description: "System-generated notification indicating menstrual bleeding is lasting longer than typical, potentially signaling menorrhagia."
+icon: "calendar"
+color: "#AF52DE"
+default_unit: null
+supported_units: null
+unit_description: null
+aggregation_type: null
+statistics_options: null
+typical_range: null
+clinical_ranges: null
+category_values:
+  - value: 1
+    name: "notApplicable"
+    description: "Prolonged menstrual periods have been detected. This is a system notification indicating the user's logged period duration consistently exceeds typical ranges."
+ios_introduced:
+  version: "16.0"
+  year: 2022
+watchos_introduced:
+  version: "9.0"
+  year: 2022
+deprecated: false
+deprecated_in: null
+writable: false
+requires_authorization: true
+sensitive_data: true
+devices:
+  - name: "iPhone"
+    capability: "Automatic detection through Cycle Tracking analysis when period duration exceeds normal ranges"
+  - name: "Apple Watch"
+    capability: "Supports cycle tracking data collection for deviation detection"
+primary_source: "System-generated"
+description: |
+  ## Overview
+  Prolonged Menstrual Periods is a system-generated notification that alerts users when their logged menstrual bleeding consistently lasts longer than typical duration. While normal menstrual periods last 3-7 days, periods extending beyond 7-8 days are considered prolonged and may indicate underlying conditions requiring evaluation.
+
+  The Cycle Tracking feature analyzes multiple months of logged menstrual flow data to identify patterns of extended bleeding. When periods consistently exceed normal duration thresholds, this notification is generated to prompt users to discuss their bleeding patterns with a healthcare provider.
+
+  ## Health Significance
+  Prolonged menstrual bleeding (menorrhagia component) has significant health implications:
+  - **Iron deficiency anemia**: Extended bleeding increases blood loss and iron depletion risk
+  - **Uterine fibroids**: Common cause of prolonged and heavy periods, affecting quality of life
+  - **Endometrial polyps**: Benign growths that can extend bleeding duration
+  - **Adenomyosis**: Endometrial tissue within uterine muscle causes prolonged, heavy periods
+  - **Coagulation disorders**: Von Willebrand disease and other bleeding disorders may manifest as prolonged periods
+  - **Endometrial hyperplasia**: Thickened uterine lining causes extended bleeding; may be precancerous
+  - **Thyroid dysfunction**: Particularly hypothyroidism can cause prolonged, heavy periods
+  - **Hormonal imbalances**: Anovulatory cycles often result in prolonged, irregular bleeding
+  - **IUD-related**: Copper IUDs commonly cause longer, heavier periods
+
+  ## Clinical Interpretation Guidelines
+  When evaluating prolonged menstrual period notifications:
+  - **Duration thresholds**:
+    - Normal: 3-7 days
+    - Prolonged: > 7 days consistently
+    - Severe: > 10 days or continuous bleeding
+  - **Bleeding assessment**:
+    - Combined assessment of duration AND flow intensity provides fuller picture
+    - Prolonged light bleeding differs clinically from prolonged heavy bleeding
+    - Calculate Pictorial Blood loss Assessment Chart (PBAC) score if possible
+  - **Pattern analysis**:
+    - Single prolonged period: May be situational (stress, hormonal fluctuation)
+    - Recurrent prolonged periods: Requires systematic evaluation
+    - Progressive lengthening: May indicate evolving pathology
+  - **Clinical evaluation approach**:
+    - Complete blood count (CBC) to assess for anemia
+    - Iron studies (ferritin) to evaluate iron status
+    - TSH for thyroid function
+    - Coagulation studies if bleeding disorder suspected (especially in adolescents)
+    - Pelvic ultrasound to assess uterine structure
+    - Consider endometrial biopsy based on age and risk factors
+  - **Age-specific considerations**:
+    - Adolescents: Anovulatory cycles common in first 2 years after menarche; consider coagulation disorders
+    - Reproductive age: Structural causes (fibroids, polyps) more common
+    - Perimenopause: Hormonal fluctuation common but endometrial evaluation still important
+  - **Impact assessment**:
+    - Quality of life effects
+    - Anemia symptoms (fatigue, weakness, shortness of breath)
+    - Need for lifestyle limitations during extended periods
+
+  ## Caveats & Limitations
+  - Read-only system notification; users cannot manually create this sample
+  - Requires consistent period logging including start AND end dates for duration calculation
+  - Algorithm thresholds and specific criteria are not publicly specified
+  - Does not capture bleeding amount, only duration
+  - Light prolonged bleeding differs from heavy prolonged bleeding but notification does not distinguish
+  - Postpartum lochia (normal extended bleeding) may trigger notification inappropriately
+  - Breakthrough bleeding on hormonal contraceptives may be logged as extended period
+  - Incomplete logging of period end dates affects algorithm accuracy
+  - Perimenopause naturally causes bleeding pattern changes
+  - Does not identify underlying cause; clinical evaluation required
+  - Single prolonged period may trigger notification; clinical significance depends on pattern
+metadata_keys:
+  - key: "HKMetadataKeySyncIdentifier"
+    description: "Unique identifier used to sync samples across devices"
+  - key: "HKMetadataKeySyncVersion"
+    description: "Version number for sync conflict resolution"
+related_types:
+  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
+    relationship: "Source data analyzed to detect prolonged bleeding patterns"
+  - identifier: "HKCategoryTypeIdentifierIrregularMenstrualCycles"
+    relationship: "Related deviation detection for cycle length variability"
+  - identifier: "HKCategoryTypeIdentifierInfrequentMenstrualCycles"
+    relationship: "Related deviation detection for cycles occurring less frequently"
+  - identifier: "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding"
+    relationship: "Related deviation detection for bleeding between periods"
+  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
+    relationship: "Prolonged periods often associated with extended cramping symptoms"
+  - identifier: "HKCategoryTypeIdentifierFatigue"
+    relationship: "Extended bleeding may contribute to anemia and fatigue"
+references:
+  - title: "HKCategoryTypeIdentifierProlongedMenstrualPeriods - Apple Developer Documentation"
+    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierprolongedmenstrualperiods"
+    type: "official"
+  - title: "Cycle Tracking Deviation Notifications - Apple Support"
+    url: "https://support.apple.com/en-us/HT212899"
+    type: "official"
+  - title: "Heavy Menstrual Bleeding - ACOG"
+    url: "https://www.acog.org/womens-health/faqs/heavy-menstrual-bleeding"
+    type: "medical"
+  - title: "Abnormal Uterine Bleeding Evaluation - ACOG Practice Bulletin"
+    url: "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2021/03/abnormal-uterine-bleeding"
+    type: "medical"
+  - title: "FIGO Classification of Abnormal Uterine Bleeding"
+    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3232027/"
+    type: "research"
+last_updated: "2026-01-27"
