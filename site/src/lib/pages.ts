@@ -29,7 +29,7 @@ export const STATIC_PAGES: SearchItem[] = [
     id: 'page-consulting',
     type: 'page',
     title: 'Consulting',
-    description: 'Expert consulting for health data integration and HealthKit development',
+    description: 'Help setting up, self-hosting, and building with PulsHealth — from the person who wrote it',
     href: '/consulting',
     icon: 'Users',
   },
