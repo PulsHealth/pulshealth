@@ -270,6 +270,57 @@ import Testing
         #expect(AggregateSchedule.lookback(intervalSeconds: 3_600) == 7 * 86_400)
         #expect(AggregateSchedule.lookback(intervalSeconds: 5 * 86_400) == 15 * 86_400)
     }
+
+    // MARK: Priority window
+
+    @Test func priorityWindowTrailsNowAndIgnoresEveryWatermark() {
+        let anchor = Date(timeIntervalSince1970: 1_700_000_000)
+        let b = AggregateBucketing(anchor: anchor, intervalValue: 1, intervalUnit: .day, calendar: utc)
+        // A year of history, so the 30-day window is a small slice of it.
+        let now = anchor.addingTimeInterval(365 * 86_400)
+
+        let window = AggregateSchedule.priorityWindow(
+            startDate: anchor, settleDelay: 0, now: now,
+            bucketing: b, intervalSeconds: 86_400)
+        #expect(window?.to == anchor.addingTimeInterval(365 * 86_400))
+        #expect(window?.from == anchor.addingTimeInterval(335 * 86_400),
+                "30 days back from the settled boundary")
+
+        // The settle delay moves both ends, exactly as it does for a scheduled run.
+        let settled = AggregateSchedule.priorityWindow(
+            startDate: anchor, settleDelay: 2 * 86_400, now: now,
+            bucketing: b, intervalSeconds: 86_400)
+        #expect(settled?.to == anchor.addingTimeInterval(363 * 86_400))
+        #expect(settled?.from == anchor.addingTimeInterval(333 * 86_400))
+    }
+
+    @Test func priorityWindowClampsToStartDateAndWidensForCoarseBuckets() {
+        let anchor = Date(timeIntervalSince1970: 1_700_000_000)
+        let day = AggregateBucketing(anchor: anchor, intervalValue: 1, intervalUnit: .day, calendar: utc)
+
+        // Less history than the window: it cannot reach past the start date.
+        let short = AggregateSchedule.priorityWindow(
+            startDate: anchor, settleDelay: 0, now: anchor.addingTimeInterval(5 * 86_400),
+            bucketing: day, intervalSeconds: 86_400)
+        #expect(short?.from == anchor)
+        #expect(short?.to == anchor.addingTimeInterval(5 * 86_400))
+
+        // Nothing settled yet — no window at all rather than an empty one.
+        #expect(AggregateSchedule.priorityWindow(
+            startDate: anchor, settleDelay: 0, now: anchor,
+            bucketing: day, intervalSeconds: 86_400) == nil)
+
+        // A month-bucket series would get a single point from a flat 30 days, so
+        // the span widens to three buckets — the same shape as `lookback`.
+        let month = AggregateBucketing(anchor: anchor, intervalValue: 1, intervalUnit: .month, calendar: utc)
+        let now = anchor.addingTimeInterval(365 * 86_400)
+        let coarse = AggregateSchedule.priorityWindow(
+            startDate: anchor, settleDelay: 0, now: now,
+            bucketing: month, intervalSeconds: 30 * 86_400)
+        let buckets = month.chunks(from: coarse!.from, to: coarse!.to)
+            .reduce(0) { $0 + month.index(of: $1.end) - month.index(of: $1.start) }
+        #expect(buckets >= 3, "coarse intervals still get a usable series")
+    }
 }
 
 // MARK: - Wire format
@@ -391,6 +442,44 @@ import Testing
         state = await store.aggregateState(for: configID)
         #expect(state.computedThrough == mark)
         #expect(state.totalBucketsUploaded == 25)
+    }
+
+    @Test func priorityUploadsCountButMoveNoWatermark() async {
+        let store = SyncStateStore(directory: makeDir())
+        let configID = UUID()
+        let now = Date(timeIntervalSince1970: 2_000_000)
+
+        // The priority pass runs before anything has been computed. Its chunks
+        // end near now; recording that as progress would tell the full pass the
+        // whole history was already done.
+        await store.recordAggregateUploadWithoutWatermark(
+            configID: configID, buckets: 30, bytes: 900)
+        var state = await store.aggregateState(for: configID)
+        #expect(state.computedThrough == nil, "the full pass must still start at the start date")
+        #expect(state.fullRecomputeThrough == nil)
+        #expect(state.totalBucketsUploaded == 30, "the buckets really were uploaded")
+        #expect(state.totalBatchesUploaded == 1)
+        #expect(state.totalBytesUploaded == 900)
+        #expect(state.lastComputedAt != nil)
+
+        // Same during an in-flight full pass, where advancing `fullRecomputeThrough`
+        // would make the pass skip everything older than the recent window.
+        await store.beginAggregateFullRecompute(configID: configID, at: now, resumeThrough: nil)
+        await store.recordAggregateUploadWithoutWatermark(
+            configID: configID, buckets: 30, bytes: 900)
+        state = await store.aggregateState(for: configID)
+        #expect(state.fullRecomputeStartedAt == now)
+        #expect(state.fullRecomputeThrough == nil)
+        #expect(state.computedThrough == nil)
+        #expect(state.totalBucketsUploaded == 60)
+
+        // A scheduled ack still advances both, so the priority pass is the only
+        // thing this changes.
+        await store.recordAggregateUpload(
+            configID: configID, newComputedThrough: now, buckets: 1, bytes: 10)
+        state = await store.aggregateState(for: configID)
+        #expect(state.computedThrough == now)
+        #expect(state.fullRecomputeThrough == now)
     }
 
     @Test func errorsRecordedAndClearedOnSuccess() async {

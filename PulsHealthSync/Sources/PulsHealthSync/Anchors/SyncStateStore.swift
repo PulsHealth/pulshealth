@@ -543,6 +543,28 @@ public actor SyncStateStore {
         }
     }
 
+    /// Record an aggregate upload that must move no watermark.
+    ///
+    /// The priority pass covers a recent window before the full pass has run, so
+    /// its chunks end near *now*. Feeding those ends to `recordAggregateUpload`
+    /// would push `computedThrough` — and, mid-full-pass, `fullRecomputeThrough`
+    /// — past the whole unprocessed history, and the full pass would then
+    /// compute nothing older than the window. The counters are still real bytes
+    /// and buckets that went to the server, so those advance.
+    public func recordAggregateUploadWithoutWatermark(
+        configID: UUID,
+        buckets: Int,
+        bytes: Int
+    ) {
+        updateAggregate(configID) { s in
+            s.lastComputedAt = Date()
+            s.totalBucketsUploaded += buckets
+            s.totalBatchesUploaded += 1
+            s.totalBytesUploaded += bytes
+            s.lastError = nil
+        }
+    }
+
     public func recordAggregateError(configID: UUID, error: Error) {
         let text = errorText(error)
         updateAggregate(configID) { s in
