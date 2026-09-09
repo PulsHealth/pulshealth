@@ -146,7 +146,7 @@ This knowledge base is designed to be consumed by AI agents building health prod
 - **Compaction Policies**: How HealthKit compacts historical data over time, affecting data availability and granularity for long-term analysis.
 - **Clinical Grounding**: Each metric includes clinical ranges, red flags, and limitations that help AI agents avoid hallucinating health information and provide accurate, grounded responses.
 
-The PulsHealth AI Health Agent uses this knowledge base as its primary grounding source. You can also integrate it directly into your own AI agent for clinical context.
+Nothing in this repository reads these files as model context yet; the MCP server answers from the database instead. They are written to be usable that way, and to be read directly by anyone building on health data.
 
 ## References
 

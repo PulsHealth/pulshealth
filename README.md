@@ -174,8 +174,10 @@ The stack includes a read-only [MCP](https://modelcontextprotocol.io) server
 last month", "did I close my rings yesterday". It talks only to the product
 API, returns deduplicated daily values with their units, and carries a
 guide for the model on the data's traps (iPhone + Watch double counting,
-cumulative versus discrete metrics, the time-zone rule). Sleep is not
-exposed yet — the assistant will say so.
+cumulative versus discrete metrics, the time-zone rule). Eleven tools cover
+profile, the type catalogue, latest and daily metrics, activity rings,
+workouts and their intra-workout series, raw samples, sleep, and state of
+mind.
 
 Local clients (Claude Desktop, Claude Code, Cursor) run the binary in stdio
 mode against your API; for example, in Claude Code:
