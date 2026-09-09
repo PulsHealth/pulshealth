@@ -2,7 +2,10 @@ import Foundation
 import os
 
 public enum PulsLog {
-    public static let subsystem = "com.puls.healthsync"
+    /// Tracks the app's bundle identifier (`com.pulsHealth.PulsHealth`), as a
+    /// logging subsystem conventionally does; the suffix names the library
+    /// rather than the app so `log stream` can select its output alone.
+    public static let subsystem = "com.pulsHealth.healthsync"
     /// Signpost-enabled logger for Instruments profiling of sync phases.
     public static let signposter = OSSignposter(subsystem: subsystem, category: "sync")
 }

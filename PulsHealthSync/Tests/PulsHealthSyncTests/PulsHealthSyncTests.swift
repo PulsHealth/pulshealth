@@ -563,24 +563,28 @@ import Testing
 #if canImport(BackgroundTasks) && !os(macOS)
 @Suite struct BackgroundSchedulerIdentifierTests {
     @Test func continuedBackfillRegistersConcreteIdentifierMatchedByPermittedWildcard() {
-        let bundleID = "com.puls.PulsHealth"
+        let bundleID = BackgroundSyncScheduler.fallbackBundleIdentifier
+        #expect(bundleID == "com.pulsHealth.PulsHealth")
 
         #expect(BackgroundSyncScheduler.continuedBackfillPermittedIdentifier(
             bundleIdentifier: bundleID
-        ) == "com.puls.PulsHealth.backfill.*")
+        ) == "com.pulsHealth.PulsHealth.backfill.*")
         #expect(BackgroundSyncScheduler.continuedBackfillRegistrationIdentifier(
             bundleIdentifier: bundleID
-        ) == "com.puls.PulsHealth.backfill.run")
+        ) == "com.pulsHealth.PulsHealth.backfill.run")
     }
 
     @Test func catchupIdentifierDerivesFromBundleIdentifier() {
         // Info.plist lists `$(PRODUCT_BUNDLE_IDENTIFIER).healthsync.catchup`;
         // the scheduler must derive the same string from the same bundle ID.
         #expect(BackgroundSyncScheduler.catchupTaskIdentifier(
-            bundleIdentifier: "com.puls.PulsHealth") == "com.puls.PulsHealth.healthsync.catchup")
+            bundleIdentifier: "com.pulsHealth.PulsHealth")
+            == "com.pulsHealth.PulsHealth.healthsync.catchup")
         #expect(BackgroundSyncScheduler.catchupTaskIdentifier(
             bundleIdentifier: "org.example.Fork") == "org.example.Fork.healthsync.catchup")
-        // No main bundle (tests, tools): the historical literal.
+        // No main bundle (tests, tools): the historical literal, frozen at the
+        // string pre-derivation builds hardcoded. It does not follow the app's
+        // bundle-ID rename, so it is spelled out rather than derived here.
         #expect(BackgroundSyncScheduler.catchupTaskIdentifier(bundleIdentifier: nil)
             == "com.puls.healthsync.catchup")
         #expect(BackgroundSyncScheduler.catchupTaskIdentifier(bundleIdentifier: "")

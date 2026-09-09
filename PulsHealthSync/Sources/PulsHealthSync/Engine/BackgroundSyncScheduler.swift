@@ -75,11 +75,17 @@ public final class BackgroundSyncScheduler: Sendable {
     public let backfillTaskIdentifier: String
 
     /// Bundle identifier the derivations fall back to when the main bundle has
-    /// none (unit tests, command-line hosts); matches the reference app's.
-    public static let fallbackBundleIdentifier = "com.puls.PulsHealth"
+    /// none (unit tests, command-line hosts); matches the reference app's,
+    /// which is the identifier on its App Store record.
+    public static let fallbackBundleIdentifier = "com.pulsHealth.PulsHealth"
 
     /// Catch-up identifier for a bundle ID. Nil/empty (no main bundle) keeps
-    /// the historical literal `com.puls.healthsync.catchup`.
+    /// the historical literal `com.puls.healthsync.catchup` — the string this
+    /// class hardcoded before identifiers were derived from the bundle ID. It
+    /// is frozen on purpose and deliberately does *not* follow the app's
+    /// bundle-ID rename: it is a record of what older builds registered, not a
+    /// derivative of the current prefix, and no shipping app reaches it
+    /// (`Bundle.main.bundleIdentifier` is always set in an app bundle).
     public static func catchupTaskIdentifier(bundleIdentifier: String?) -> String {
         guard let bundleIdentifier, !bundleIdentifier.isEmpty else {
             return "com.puls.healthsync.catchup"
