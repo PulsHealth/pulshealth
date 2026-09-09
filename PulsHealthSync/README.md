@@ -222,6 +222,11 @@ produced a batch.
    pipeline crash-safe (server dedupes re-sent pages by UUID).
 5. Deletions arrive as anchored-query tombstones and ride along in the same batch.
 
+`syncAllEnabled` orders the whole sweep so the cheap, immediately useful things
+land before the long one: activity rings, then the recent aggregate window
+(below), then the raw types, then the full aggregate pass, then workout routes
+and streams. Every phase boundary is a safe place to be interrupted.
+
 Incremental sync is the same loop, triggered by one multi-type `HKObserverQuery`
 with `.immediate` background delivery, plus a `BGProcessingTask` safety net and a
 full pass on every foreground open — with two differences, both added 2026-08-14
@@ -274,7 +279,26 @@ watermark instead (advanced only after the server acks, like anchors):
 
 Triggers are shared with raw sync: the observer covers the *union* of raw-enabled
 and aggregate types (aggregate-only types never get a raw sync), and
-`syncAllEnabled` runs aggregates after the raw pass.
+`syncAllEnabled` runs the full aggregate pass after the raw pass.
+
+Ahead of the raw pass it runs one more thing: `syncRecentAggregates`, a bounded
+recent window (`AggregateSchedule.priorityWindow` — 30 days, or three buckets for
+intervals coarser than that) over every enabled config whose `computedThrough` is
+still nil. The full pass walks a series oldest-first from the start date, so on
+years of history the newest buckets are the last thing it produces; and the
+server's `metric_daily` joins `aggregate_series`, a table only an aggregate line
+writes, so before any aggregate lands the viewer's daily charts are empty no
+matter how much raw data has arrived. A few dozen buckets per config fixes both.
+
+The pass moves **no watermark** — it records through
+`recordAggregateUploadWithoutWatermark`. Its chunks end near *now*, so feeding
+them to `recordAggregateUpload` would push `computedThrough`, and mid-full-pass
+`fullRecomputeThrough`, past the entire unprocessed history and the full pass
+would then compute nothing older than the window. It is the aggregate twin of
+reusing a raw type's `HKQueryAnchor` for a date-bounded query. Because it moves
+nothing, it is safe to run, repeat or skip: it self-gates on `computedThrough ==
+nil`, so it stops once the full pass makes its first acked progress, and an
+interrupted first backfill keeps the recent window fresh until then.
 
 Function legality is the sharp edge: HealthKit raises an uncatchable
 NSInvalidArgumentException at query *execution* for illegal option×type combos.

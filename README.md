@@ -216,11 +216,16 @@ is a small CLI for it: [`docs/export.md`](docs/export.md).
   series last) so one large workout cannot stall the rest.
 - **Backfill order is chosen, not alphabetical.** Activity rings go first —
   one row per day, seconds of work, and the first thing a dashboard can show.
-  Then the raw sweep, which starts the single heaviest type (heart rate, over
-  half of all samples for a Watch wearer) immediately so the long pole holds a
-  slot from the start, and runs everything else cheapest-first so the tail of
-  once-a-day types lands in the opening minutes. Aggregates and workout
-  enrichment follow. Batches therefore arrive out of chronological order — the
+  Then a bounded recent window (30 days, or three buckets for coarser
+  intervals) over any aggregate series that has never been computed: the
+  server's daily views join `aggregate_series`, and only an aggregate line
+  creates a row there, so until one has landed there is nothing daily to show
+  however many raw samples have arrived. Then the raw sweep, which starts the
+  single heaviest type (heart rate, over half of all samples for a Watch
+  wearer) immediately so the long pole holds a slot from the start, and runs
+  everything else cheapest-first so the tail of once-a-day types lands in the
+  opening minutes. The full aggregate pass and workout enrichment follow.
+  Batches therefore arrive out of chronological order — the
   [protocol](docs/protocol/README.md) requires receivers to cope with that.
 - **Incremental sync** merges one page per changed type into shared uploads,
   never splitting a page across batches, so anchor-after-ack still holds

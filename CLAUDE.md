@@ -156,6 +156,16 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   per-config `computedThrough` watermark advances only after upload ack (mirrors
   anchor-after-ack), and every run recomputes a trailing lookback window so late
   Watch data self-heals; a ~monthly full pass repairs older edits/deletes.
+  **The one pass that uploads without advancing a watermark is the priority
+  window** (`syncRecentAggregates`, `AggregatePass.priority`): on a first
+  backfill it covers ~30 recent days ahead of the raw sweep so the viewer has
+  something daily to show, and it acks through
+  `recordAggregateUploadWithoutWatermark`. Its chunks end near *now*, so
+  recording them as progress would push `computedThrough` — and, mid-full-pass,
+  `fullRecomputeThrough` — past the whole unprocessed history and the full pass
+  would compute nothing older than the window. Keep any future bounded pass on
+  that recorder; it is the aggregate twin of reusing a raw type's anchor for a
+  date-bounded query.
   Day-grain buckets are computed in the phone's calendar; the server re-buckets
   raw samples for `metric_daily` in `PULS_TIME_ZONE` (exposed as
   `puls_time_zone()`) to line up with them, so that setting must match the phone.

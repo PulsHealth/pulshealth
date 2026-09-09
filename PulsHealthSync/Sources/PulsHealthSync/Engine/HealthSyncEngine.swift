@@ -406,11 +406,15 @@ public actor HealthSyncEngine {
 
     // MARK: - Backfill
 
-    /// Run a full sync: activity summaries, then every enabled type
-    /// `maxConcurrentTypes` at a time, then every enabled aggregate config, then
-    /// workout enrichment. Each type pages independently and persists its anchor
-    /// after every uploaded batch, so this is fully resumable at batch
-    /// granularity, and every phase boundary is a safe place to be interrupted.
+    /// Run a full sync: activity summaries, a bounded recent aggregate window,
+    /// every enabled type `maxConcurrentTypes` at a time, every enabled aggregate
+    /// config, then workout enrichment. Each type pages independently and
+    /// persists its anchor after every uploaded batch, so this is fully resumable
+    /// at batch granularity, and every phase boundary is a safe place to be
+    /// interrupted.
+    ///
+    /// The first two phases are there because a first backfill is long and the
+    /// things worth looking at soonest are the cheapest to produce.
     public func syncAllEnabled(reason: SyncReason = .backfill) async {
         let config = await store.configuration
         // Activity summaries aren't anchored/sample-based — they ride their own
@@ -441,17 +445,28 @@ public actor HealthSyncEngine {
         if activitySummaryEnabled {
             await syncActivitySummary(reason: reason)           // phase 1
         }
-        await syncTypes(sampleIDs, reason: reason)              // phase 2 (workouts: basic only)
+        // Phase 2: a bounded recent window over aggregates that have never been
+        // computed. The server's daily views join `aggregate_series`, and only an
+        // aggregate line creates a row there, so before this phase existed the
+        // viewer's daily charts stayed empty through the whole raw sweep and then
+        // through a full aggregate pass that runs oldest-first. A few dozen
+        // buckets per config fixes that. It moves no watermark, so phase 4 still
+        // recomputes each series from the start date; it self-gates to configs
+        // that have never been computed, so it is a no-op after the first run.
         if hasAggregates {
-            await syncAllAggregates(reason: reason)             // phase 3
+            await syncRecentAggregates(reason: reason)          // phase 2
         }
-        // Phases 4 & 5 (LAST): enrich the now-uploaded workout rows — routes
+        await syncTypes(sampleIDs, reason: reason)              // phase 3 (workouts: basic only)
+        if hasAggregates {
+            await syncAllAggregates(reason: reason)             // phase 4
+        }
+        // Phases 5 & 6 (LAST): enrich the now-uploaded workout rows — routes
         // first, then the heavier intra-workout streams. Only when workouts are
         // raw-synced (the basic rows must exist server-side for the UUID join);
         // each phase also self-gates on its config flag.
         if sampleIDs.contains(HealthTypeCatalog.workoutIdentifier) {
-            await syncWorkoutRoutes(reason: reason)             // phase 4 (routes)
-            await syncWorkoutStreams(reason: reason)            // phase 5 (streams)
+            await syncWorkoutRoutes(reason: reason)             // phase 5 (routes)
+            await syncWorkoutStreams(reason: reason)            // phase 6 (streams)
         }
     }
 
