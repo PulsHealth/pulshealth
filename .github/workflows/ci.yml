@@ -102,6 +102,50 @@ jobs:
           fi
           shellcheck "${scripts[@]}"
 
+  # The pulshealth.com marketing site (site/), which is a static export and
+  # nothing to do with web/, the self-hosted viewer. It is its own job because
+  # it is the one thing here built with bun, and because it must not gate the
+  # server on an unrelated site change.
+  site:
+    name: Marketing site
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up bun
+        # Not on the runner image, unlike node and go.
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.8
+
+      - name: Validate the marketing site
+        working-directory: site
+        run: |
+          bun install --frozen-lockfile
+          bun run lint
+          bun run build
+
+      - name: Check the export is complete
+        shell: bash
+        run: |
+          set -euo pipefail
+          # site/ reads knowledge-base/ and blog/ as repository-root siblings,
+          # by relative path (src/lib/api.ts, src/lib/blog.ts). Break that and
+          # the loaders log and return nothing: the build still SUCCEEDS, it
+          # just exports far fewer pages. So assert the counts.
+          types=$(git ls-files 'knowledge-base/*/**.yaml' | wc -l)
+          built=$(find site/out/knowledge-base/types -name index.html | wc -l)
+          posts=$(git ls-files 'blog/articles/*.mdx' | wc -l)
+          blogs=$(find site/out/blog -mindepth 1 -maxdepth 1 -type d | wc -l)
+          echo "knowledge-base types: $types sources, $built pages"
+          echo "blog articles: $posts sources, $blogs pages"
+          test "$built" -eq "$types"
+          test "$blogs" -eq "$posts"
+          test -f site/out/index.html
+          test -f site/out/sitemap.xml
+
   # The four app images build for linux/amd64 (no push) so a broken
   # Dockerfile fails a pull request instead of the next release. Same
   # contexts and build args as .github/workflows/release.yml and

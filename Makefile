@@ -1,5 +1,6 @@
-# Convenience targets for the reference server stack (server/docker-compose.yml).
-# Every target runs Compose against server/ so it works from the repository
+# Convenience targets for the reference server stack (server/docker-compose.yml)
+# and the pulshealth.com marketing site (site/).
+# Every stack target runs Compose against server/ so it works from the repository
 # root; ARGS passes extra flags through (e.g. `make bootstrap ARGS=--lan`,
 # `make logs ARGS=ingest`).
 
@@ -8,7 +9,7 @@ COMPOSE_BUILD := $(COMPOSE) -f server/compose.build.yml
 ARGS          ?=
 
 .PHONY: help bootstrap up down pull logs ps migrate baseline pairing dev-up \
-        backup backup-list restore
+        backup backup-list restore site-dev site-build site-lint deploy-site
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{ printf "  %-12s %s\n", $$1, $$2 }'
@@ -52,3 +53,18 @@ backup-list: ## List the dumps in the backup store
 restore: ## Restore a dump, DESTROYING the current database (FILE=<path or name from backup-list>)
 	@test -n "$(FILE)" || { echo "usage: make restore FILE=<dump path, or a name from 'make backup-list'>"; exit 1; }
 	server/backup/restore.sh $(ARGS) "$(FILE)"
+
+# The marketing site (pulshealth.com). Distinct from web/, the self-hosted
+# viewer: site/ is a static export that reads knowledge-base/ and blog/ as
+# repository-root siblings, so these run from the root like everything else.
+site-dev: ## Marketing site dev server on :3000 (site/, needs bun)
+	cd site && bun install && bun run dev $(ARGS)
+
+site-build: ## Static export of the marketing site to site/out (197 pages)
+	cd site && bun install && bun run build
+
+site-lint: ## ESLint the marketing site
+	cd site && bun install && bun run lint
+
+deploy-site: ## Build the marketing site and publish it to S3 + CloudFront (ARGS=--dry-run)
+	scripts/deploy-site.sh $(ARGS)
