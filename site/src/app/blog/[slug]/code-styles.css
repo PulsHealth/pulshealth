@@ -1,0 +1,37 @@
+@reference "../../../app/globals.css";
+
+/* Code block styling with rehype-pretty-code */
+[data-rehype-pretty-code-figure] {
+  @apply my-6;
+}
+
+[data-rehype-pretty-code-figure] pre {
+  @apply overflow-x-auto rounded-lg border border-zinc-700 bg-[#0d1117] py-4 text-sm leading-relaxed;
+}
+
+[data-rehype-pretty-code-figure] code {
+  @apply grid font-mono;
+}
+
+[data-rehype-pretty-code-figure] [data-line] {
+  @apply px-4 border-l-2 border-transparent;
+}
+
+/* Line highlighting */
+[data-rehype-pretty-code-figure] [data-highlighted-line] {
+  @apply bg-zinc-800/50 border-l-brand;
+}
+
+/* Code title/caption (filename) */
+[data-rehype-pretty-code-title] {
+  @apply px-4 py-2.5 text-xs font-medium font-mono text-zinc-400 bg-zinc-800 border border-b-0 border-zinc-700 rounded-t-lg;
+}
+
+[data-rehype-pretty-code-title] + pre {
+  @apply rounded-t-none border-t-0;
+}
+
+/* Word highlighting */
+[data-highlighted-chars] {
+  @apply bg-zinc-700/50 rounded px-1 py-0.5;
+}

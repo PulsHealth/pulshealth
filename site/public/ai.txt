@@ -1,0 +1,5 @@
+User-Agent: *
+Disallow: /knowledge-base/
+Scraping: Allow
+Training: Disallow
+Summarization: Allow
