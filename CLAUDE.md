@@ -246,12 +246,12 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   Two consequences. `docs/appstore/` is a **record** of what shipped as well as
   material for the next submission — `docs/appstore/README.md` § Release record
   is the version/date log, and it is what a submission starts from. And the
-  store record's bundle ID is `com.pulsHealth.PulsHealth`, which
-  `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.puls`) does **not**
-  produce: an archive for that App ID has to be built with the prefix the
-  record uses, and `BackgroundSyncScheduler.fallbackBundleIdentifier` plus the
-  BGTask-identifier assertions in `PulsHealthSyncTests` still carry the old
-  value.
+  store record's bundle ID is `com.pulsHealth.PulsHealth` — immutable, so
+  `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) is fixed by
+  the record rather than chosen, and an archive only updates the listing if it
+  carries that identifier. `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` must
+  likewise stay ahead of what shipped (currently 1.4 / 14 against 1.3 / 13 on
+  the store).
 - **The published privacy claims are load-bearing.**
   `docs/privacy-policy.md`, `docs/appstore/` and the site's `/privacy` page
   state as fact that the app has

@@ -29,8 +29,8 @@ enterprise or ad-hoc channel, or as a binary download — it must:
   it for the official app;
 - use a **different bundle identifier** (change `bundleIdPrefix` in
   `PulsHealth/project.yml`; the official app on the App Store is
-  `com.pulsHealth.PulsHealth`, and the `com.puls` prefix in this repository is
-  reserved to it as well);
+  `com.pulsHealth.PulsHealth`, which is also what this repository's
+  `com.pulsHealth` prefix builds, and that prefix is reserved to it);
 - not describe itself as the official or endorsed PulsHealth app.
 
 Building the unmodified source yourself and installing it on your own devices

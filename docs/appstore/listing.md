@@ -202,9 +202,9 @@ flags.
 | Field | Value |
 |---|---|
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
-| Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record. `PulsHealth/project.yml`'s `bundleIdPrefix` is `com.puls`, which does **not** produce it |
-| Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `0.1.0`, which is behind what is on the store — see [Release record](README.md#release-record) |
-| Build | `CURRENT_PROJECT_VERSION`, currently `1` |
+| Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
+| Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.4`, ahead of the `1.3` on the store — see [Release record](README.md#release-record) |
+| Build | `CURRENT_PROJECT_VERSION`, currently `14`, ahead of the shipped `13` |
 | Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
 | Devices | iPhone only (`TARGETED_DEVICE_FAMILY = 1`) |
 

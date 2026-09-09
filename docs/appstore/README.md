@@ -41,10 +41,10 @@ and cannot be prepared in the repository.
 
 - [x] **maintainer only** — Reserve the name **PulsHealth** in App Store
       Connect and create the app record. Done: the record exists with bundle
-      ID `com.pulsHealth.PulsHealth`, primary language English (U.S.). Note
-      that `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.puls`) does not
-      produce that identifier — an archive for this App ID has to be built
-      with the prefix the record uses.
+      ID `com.pulsHealth.PulsHealth`, primary language English (U.S.). That
+      identifier is immutable, so `PulsHealth/project.yml`'s `bundleIdPrefix`
+      (`com.pulsHealth`) is set to produce it — an archive only updates this
+      record if it carries that bundle ID.
 - [ ] **maintainer only** — Confirm the paid Apple Developer team, and that the
       HealthKit and HealthKit background-delivery entitlements are on the App ID.
 - [ ] Put `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig` (gitignored,
@@ -99,7 +99,9 @@ and cannot be prepared in the repository.
 - [ ] `cd PulsHealth && xcodegen` — the Xcode project is generated and
       untracked.
 - [ ] Bump `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in
-      `PulsHealth/project.yml` if this is not the first build.
+      `PulsHealth/project.yml` if this is not the first build. They are `1.4` /
+      `14` against the `1.3` / `13` on the store, so the next archive needs no
+      bump; the one after it does.
 - [ ] Archive for a real device with the maintainer's team and upload.
       `ITSAppUsesNonExemptEncryption` is already `false` in `Info.plist`, so
       there is no export-compliance questionnaire per build.

@@ -383,7 +383,7 @@ No. The app requests read access only, and its usage strings say so.
   last sync time and duration, live rate and ETA, last error.
 - **App → Log:** filterable live event stream (persisted across launches and
   mirrored to `os.Logger` — `log stream --predicate 'subsystem ==
-  "com.puls.healthsync"'` from a Mac). **Log → Background Activity** keeps one
+  "com.pulsHealth.healthsync"'` from a Mac). **Log → Background Activity** keeps one
   durable record per wake (trigger, duration, outcome, work done, Low Power
   Mode, thermal state) and exports them for analysis.
 - **Instruments:** signposts (`syncAll`, `syncType`) profile every phase.

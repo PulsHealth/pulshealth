@@ -25,10 +25,10 @@ xcodegen && xcodebuild build -scheme PulsHealth \
 
 Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
 
-- Bundle ID `com.puls.PulsHealth`, iOS 17.0 target, Swift 6. **The App Store
-  record uses `com.pulsHealth.PulsHealth`**, which this `bundleIdPrefix` does
-  not produce — an archive for that App ID has to be built with the prefix the
-  record uses.
+- Bundle ID `com.pulsHealth.PulsHealth`, iOS 17.0 target, Swift 6. That is the
+  identifier on the App Store record, and a bundle identifier is immutable once
+  a record exists — so `bundleIdPrefix` is fixed by the listing, not a
+  preference, and only an archive carrying it can update the app.
 - Entitlements: `healthkit` + `healthkit.background-delivery` (device builds need a
   paid developer team).
 - Signing is per-developer and untracked. `DEVELOPMENT_TEAM` lives in
@@ -43,7 +43,8 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
   the bundle ID — `$(PRODUCT_BUNDLE_IDENTIFIER).healthsync.catchup` and the
   `$(PRODUCT_BUNDLE_IDENTIFIER).backfill.*` wildcard (Xcode expands build
   settings in Info.plist values, so the built app carries
-  `com.puls.PulsHealth.healthsync.catchup` and `com.puls.PulsHealth.backfill.*`,
+  `com.pulsHealth.PulsHealth.healthsync.catchup` and
+  `com.pulsHealth.PulsHealth.backfill.*`,
   the latter permitting the concrete `….backfill.run` continued-processing
   task on iOS 26). `BackgroundSyncScheduler` derives the same strings from
   `Bundle.main.bundleIdentifier`, so a fork with its own bundle ID changes
@@ -153,7 +154,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   FB22735935) are remembered per session and skipped from auth requests, with a
   dashboard hint pointing at Settings → Privacy & Security → Health — see the
   CLAUDE.md gotcha for the retest plan.
-- Live logs from a Mac: `log stream --predicate 'subsystem == "com.puls.healthsync"'`.
+- Live logs from a Mac: `log stream --predicate 'subsystem == "com.pulsHealth.healthsync"'`.
 - **Background-time field study.** Every entry point that gives the engine
   execution time (HKObserver delivery, the catch-up `BGProcessingTask`, the iOS 26
   continued-processing backfill, foregrounding, and manual sync) opens a *wake*:
