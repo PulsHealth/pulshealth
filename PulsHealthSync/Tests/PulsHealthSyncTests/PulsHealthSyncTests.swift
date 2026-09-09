@@ -201,6 +201,47 @@ import Testing
             #expect(ids.contains(HKObjectType.medicationDoseEventType().identifier))
         }
     }
+
+    // MARK: Backfill order
+
+    @Test func backfillOrderStartsTheHeaviestTypeThenGoesCheapestFirst() {
+        let ids = [
+            HKQuantityTypeIdentifier.stepCount.rawValue,          // 250/day
+            HKQuantityTypeIdentifier.heartRate.rawValue,          // 3500/day — the pole
+            HKQuantityTypeIdentifier.bodyMass.rawValue,           // 1/day
+            HKQuantityTypeIdentifier.activeEnergyBurned.rawValue, // 700/day
+        ]
+        let order = HealthTypeCatalog.backfillOrder(ids)
+        #expect(order == [
+            HKQuantityTypeIdentifier.heartRate.rawValue,
+            HKQuantityTypeIdentifier.bodyMass.rawValue,
+            HKQuantityTypeIdentifier.stepCount.rawValue,
+            HKQuantityTypeIdentifier.activeEnergyBurned.rawValue,
+        ])
+    }
+
+    @Test func backfillOrderIsAPermutationAndIsDeterministic() {
+        let ids = HealthTypeCatalog.all.map(\.identifier)
+        let order = HealthTypeCatalog.backfillOrder(ids)
+        #expect(Set(order) == Set(ids), "no type may be dropped or duplicated")
+        #expect(order.count == ids.count)
+        // Same input in a different arrangement produces the same sweep order:
+        // ties and unknown identifiers fall back to identifier order, so nothing
+        // depends on how the caller happened to build its array.
+        #expect(HealthTypeCatalog.backfillOrder(ids.reversed()) == order)
+        #expect(HealthTypeCatalog.backfillOrder(ids.shuffled()) == order)
+    }
+
+    @Test func backfillOrderHandlesEmptySingletonAndUnknownIdentifiers() {
+        #expect(HealthTypeCatalog.backfillOrder([]).isEmpty)
+        let one = [HKQuantityTypeIdentifier.heartRate.rawValue]
+        #expect(HealthTypeCatalog.backfillOrder(one) == one)
+        // An identifier with no descriptor on this OS costs 0 — it sorts with
+        // the cheap tail rather than being dropped or crashing the sweep.
+        let mixed = HealthTypeCatalog.backfillOrder(
+            ["zz.not.a.real.type", HKQuantityTypeIdentifier.heartRate.rawValue])
+        #expect(mixed == [HKQuantityTypeIdentifier.heartRate.rawValue, "zz.not.a.real.type"])
+    }
 }
 
 // MARK: - Serialization

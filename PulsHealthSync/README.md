@@ -206,7 +206,13 @@ produced a batch.
 ## How a sync runs
 
 1. `HealthSyncEngine.syncAll` fans out over enabled types with a `TaskGroup`
-   (default 4 concurrent — HealthKit query throughput degrades beyond that).
+   (default 4 concurrent — HealthKit query throughput degrades beyond that), in
+   `HealthTypeCatalog.backfillOrder`: heaviest type first, then cheapest-first.
+   Summed over the catalog heart rate alone is a little over half of
+   `estimatedSamplesPerDay`, so ascending order would leave it to start last and
+   then run by itself, and descending would park all four slots on heavy types
+   and land nothing visible early. One slot on the pole from t=0 plus three
+   retiring the tail is both the shorter sweep and the more useful one.
 2. Per type: `HKAnchoredObjectQuery` pages from the stored anchor (nil anchor +
    start-date predicate = backfill), 1,000 samples/page.
 3. `SampleMapper` converts to DTOs; `SeriesEnricher` fills in series payloads;
@@ -294,9 +300,10 @@ not an `HKSampleType`, so its catalog entry has `sampleType == nil` (kept out of
 `bulkReadAuthorizationSampleTypes` and the observer) and the engine unions
 `HKObjectType.activitySummaryType()` into the read-auth set separately. There is
 **no observer / no background delivery** for summaries, so they ride other wakes:
-`syncAllEnabled` (foreground/periodic/scheduled, after the aggregate pass), and
-since 2026-08-14 also `refreshActivitySummaryIfStale()` at the tail of every
-observer wake.
+`syncAllEnabled` (foreground/periodic/scheduled — the *first* phase, ahead of the
+raw sweep, since a first backfill otherwise left the dashboard with no ring data
+until every type had drained), and since 2026-08-14 also
+`refreshActivitySummaryIfStale()` at the tail of every observer wake.
 
 That second path is load-bearing, not a nicety. The scheduled path runs from the
 `BGProcessingTask`, which iOS starts while the device is idle and therefore

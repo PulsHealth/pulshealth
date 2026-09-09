@@ -406,10 +406,11 @@ public actor HealthSyncEngine {
 
     // MARK: - Backfill
 
-    /// Run a full sync of every enabled type, `maxConcurrentTypes` at a time,
-    /// then every enabled aggregate config. Each type pages independently and
-    /// persists its anchor after every uploaded batch, so this is fully
-    /// resumable at batch granularity.
+    /// Run a full sync: activity summaries, then every enabled type
+    /// `maxConcurrentTypes` at a time, then every enabled aggregate config, then
+    /// workout enrichment. Each type pages independently and persists its anchor
+    /// after every uploaded batch, so this is fully resumable at batch
+    /// granularity, and every phase boundary is a safe place to be interrupted.
     public func syncAllEnabled(reason: SyncReason = .backfill) async {
         let config = await store.configuration
         // Activity summaries aren't anchored/sample-based — they ride their own
@@ -432,12 +433,17 @@ public actor HealthSyncEngine {
                 "Device locked — HealthKit is unreadable; skipping \(reason.rawValue) sync of \(sampleIDs.count) types")
             return
         }
-        await syncTypes(sampleIDs, reason: reason)              // phase 1 (workouts: basic only)
-        if hasAggregates {
-            await syncAllAggregates(reason: reason)             // phase 2
-        }
+        // Phase 1: the rings. One row per day and no dependency on any other
+        // phase, so this is seconds of work — but it used to run after the raw
+        // sweep, which on a first backfill meant the dashboard had no activity
+        // data until every type had drained. Cheapest useful thing there is;
+        // put it first.
         if activitySummaryEnabled {
-            await syncActivitySummary(reason: reason)           // phase 3
+            await syncActivitySummary(reason: reason)           // phase 1
+        }
+        await syncTypes(sampleIDs, reason: reason)              // phase 2 (workouts: basic only)
+        if hasAggregates {
+            await syncAllAggregates(reason: reason)             // phase 3
         }
         // Phases 4 & 5 (LAST): enrich the now-uploaded workout rows — routes
         // first, then the heavier intra-workout streams. Only when workouts are
@@ -456,6 +462,12 @@ public actor HealthSyncEngine {
     /// data, is the cost. Backfill keeps the per-type path, where pages are full
     /// and running four independent type pipelines overlaps query and upload
     /// better than a fetch-all-then-upload-all pass would.
+    ///
+    /// The sweep runs in `HealthTypeCatalog.backfillOrder` rather than in the
+    /// caller's order: heaviest type first so the critical path holds a slot
+    /// from the start, then cheapest-first so the long tail of once-a-day types
+    /// is on the server within the opening minutes. The types are independent,
+    /// so this only changes what finishes when.
     public func syncTypes(_ ids: [String], reason: SyncReason = .backfill) async {
         guard !ids.isEmpty else { return }
         if reason == .incremental {
@@ -465,6 +477,7 @@ public actor HealthSyncEngine {
             notifyChanged()
             return
         }
+        let ordered = HealthTypeCatalog.backfillOrder(ids)
         let config = await store.configuration
         await eventLog.log(.info, "Starting \(reason.rawValue) sync of \(ids.count) types (\(config.maxConcurrentTypes) concurrent)")
         let signpostID = PulsLog.signposter.makeSignpostID()
@@ -472,7 +485,7 @@ public actor HealthSyncEngine {
         defer { PulsLog.signposter.endInterval("syncAll", signpostState) }
 
         await withTaskGroup(of: Void.self) { group in
-            var iterator = ids.makeIterator()
+            var iterator = ordered.makeIterator()
             var inFlight = 0
             func addNext(_ group: inout TaskGroup<Void>) {
                 if let id = iterator.next() {
