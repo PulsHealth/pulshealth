@@ -3,8 +3,11 @@
 Everything needed to put the iOS app on the App Store, written so a submission
 can be assembled from this directory without inventing facts about the app.
 
-The app is **not submitted yet**. This is the material, not a record of a
-submission.
+The app is **live on the App Store**:
+[PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) (free,
+Health & Fitness, 4+). This directory stays the source material for the
+listing and for every submission after the first; what actually shipped is at
+the bottom, under [Release record](#release-record).
 
 | Document | What it is |
 |---|---|
@@ -18,8 +21,8 @@ Collected"), **STORE-2** (review backend), **STORE-3** (listing, screenshots,
 a description that states plainly where data goes) and **STORE-5** (the
 guideline 5.1.3 statement) from
 [`docs/open-source-plan.md`](../open-source-plan.md). **STORE-4** (a TestFlight
-public link as the beta channel) is not covered here; it is a step to take
-before the store listing, not paperwork to write.
+public link as the beta channel) is not covered here, and in the event was
+skipped: the app went straight to the store.
 
 ## The one-sentence version
 
@@ -36,9 +39,12 @@ and cannot be prepared in the repository.
 
 ### Before anything else
 
-- [ ] **maintainer only** — Reserve the name **PulsHealth** in App Store
-      Connect and create the app record: bundle ID `com.puls.PulsHealth`,
-      primary language English (U.S.), SKU of your choosing.
+- [x] **maintainer only** — Reserve the name **PulsHealth** in App Store
+      Connect and create the app record. Done: the record exists with bundle
+      ID `com.pulsHealth.PulsHealth`, primary language English (U.S.). Note
+      that `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.puls`) does not
+      produce that identifier — an archive for this App ID has to be built
+      with the prefix the record uses.
 - [ ] **maintainer only** — Confirm the paid Apple Developer team, and that the
       HealthKit and HealthKit background-delivery entitlements are on the App ID.
 - [ ] Put `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig` (gitignored,
@@ -46,8 +52,9 @@ and cannot be prepared in the repository.
 
 ### Host the privacy policy
 
-- [ ] Decide the Privacy Policy URL — the repository page works today; see
-      [`listing.md`](listing.md) → URLs.
+- [x] Decide the Privacy Policy URL — `https://pulshealth.com/privacy`, served
+      by `site/`; see [`listing.md`](listing.md) → URLs. Confirm the App Store
+      Connect record points there and not at the older repository URL.
 - [ ] If you choose a different URL, update it in `listing.md` **and** in the
       "Privacy policy:" line inside the description block.
 - [ ] Re-read [`../privacy-policy.md`](../privacy-policy.md) against the build
@@ -114,10 +121,9 @@ and cannot be prepared in the repository.
 
 - [ ] Tear the review instance down, volume included, and rotate `PULS_TOKEN`
       (see [`review-backend.md`](review-backend.md) § 6).
-- [ ] Update the root `README.md` — it currently says the app is not on the
-      App Store yet.
-- [ ] Note the submitted version and date here, so the next submission starts
-      from a record rather than from memory.
+- [x] Update the root `README.md` if it still describes the app as unreleased.
+- [x] Add the version and date to [Release record](#release-record) below, so
+      the next submission starts from a record rather than from memory.
 
 ## Keeping these documents true
 
@@ -133,3 +139,20 @@ changes, revisit them in the same pull request:
 | The first-run flow's steps | `review-notes.md` — the reviewer walkthrough is step-by-step |
 | `ServerURLValidation`'s rules | `review-notes.md` — the ATS justification quotes them |
 | Anything about HealthKit write access | everything; read-only is the load-bearing claim |
+| What ships to the store | [Release record](#release-record) — these documents describe the shipped binary, not whatever `main` happens to be |
+
+## Release record
+
+What is actually on the store, so the next submission starts from a record
+rather than from memory. Add a row per release.
+
+| | |
+|---|---|
+| Listing | [apps.apple.com/us/app/pulshealth/id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
+| Bundle ID | `com.pulsHealth.PulsHealth` |
+| Category / rating / price | Health & Fitness · 4+ · Free |
+| First released | 2026-01-21 |
+
+| Version | Released | Notes |
+|---|---|---|
+| 1.3 | 2026-01-24 | Current version on the store. |

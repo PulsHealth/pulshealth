@@ -307,10 +307,10 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 
 | # | Requirement | Pri |
 |---|---|---|
-| STORE-1 | Privacy policy + support URLs on `pulshealth.com`; nutrition label "Data Not Collected" (developer never receives data; Health Auto Export precedent). | M |
+| STORE-1 | Privacy policy + support URLs on `pulshealth.com`; nutrition label "Data Not Collected" (developer never receives data; Health Auto Export precedent). | M — **done**, `site/` serves `/privacy`, `/support`, `/terms` |
 | STORE-2 | Review path: a throwaway hosted review backend (URL + token in review notes) so reviewers can exercise sync end to end. | M |
 | STORE-3 | Reserve the app name in App Store Connect; screenshots; description that states plainly where data goes. | M |
-| STORE-4 | TestFlight public link as the beta channel before the store listing. | S |
+| STORE-4 | TestFlight public link as the beta channel before the store listing. | S — **skipped**, the app went straight to the store |
 | STORE-5 | Guideline 5.1.3 check: read-only HealthKit, no iCloud storage of health data, no advertising use. Already true; document it in the review notes. | M |
 
 ## 5. Phases
@@ -372,6 +372,12 @@ Claude Code against a self-hosted stack, and the README shows it.
 
 Exit: the app is on the store and the README's quickstart starts with "install
 PulsHealth from the App Store".
+
+**Done** — the app is on the App Store:
+[PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354), first
+released 2026-01-21. The listing material and the shipped record are in
+[`docs/appstore/`](appstore/README.md). STORE-4 (TestFlight as the beta
+channel) was skipped; the app went straight to the store.
 
 ### Later
 

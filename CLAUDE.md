@@ -238,13 +238,29 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   the `site` CI job asserts it (177 type pages, one per tracked YAML file, and
   one page per `blog/articles/*.mdx`). Keep that check honest rather than
   loosening it.
+- **The app is shipped software, not a source drop.** It is published on the
+  App Store as
+  [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) (free,
+  Health & Fitness, 4+, first released 2026-01-21), so the privacy policy, the
+  listing copy and the entitlements describe a binary real people are running.
+  Two consequences. `docs/appstore/` is a **record** of what shipped as well as
+  material for the next submission — `docs/appstore/README.md` § Release record
+  is the version/date log, and it is what a submission starts from. And the
+  store record's bundle ID is `com.pulsHealth.PulsHealth`, which
+  `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.puls`) does **not**
+  produce: an archive for that App ID has to be built with the prefix the
+  record uses, and `BackgroundSyncScheduler.fallbackBundleIdentifier` plus the
+  BGTask-identifier assertions in `PulsHealthSyncTests` still carry the old
+  value.
 - **The published privacy claims are load-bearing.**
-  `docs/privacy-policy.md` and `docs/appstore/` state as fact that the app has
+  `docs/privacy-policy.md`, `docs/appstore/` and the site's `/privacy` page
+  state as fact that the app has
   zero third-party dependencies, sends data only to the configured server,
   never writes HealthKit, keeps the token in the Keychain, and stores no health
   samples on the device. A change to any of those — a dependency, a new
   outbound request, a new permission, a new on-disk store — has to update those
-  documents in the same pull request. `docs/appstore/README.md` has the table.
+  documents in the same pull request, and the App Store listing's privacy
+  answers with them. `docs/appstore/README.md` has the table.
 
 ## Gotchas
 

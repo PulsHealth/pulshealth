@@ -75,7 +75,7 @@ BACKGROUND MODES
 UIBackgroundModes "processing" plus HealthKit background delivery, so new samples upload without the user opening the app. Nothing else runs in the background. The app has no accounts, so there is no demo account to give you.
 
 The app is open source (Apache-2.0): https://github.com/PulsHealth/pulshealth
-Privacy policy: https://github.com/PulsHealth/pulshealth/blob/main/docs/privacy-policy.md
+Privacy policy: https://pulshealth.com/privacy
 ```
 
 ---

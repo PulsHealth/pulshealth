@@ -19,7 +19,10 @@ An iOS app and the Swift package under it read HealthKit and stream every
 sample as gzip NDJSON to an HTTP endpoint; a reference backend (PostgreSQL 17 +
 TimescaleDB, a Go ingest server, a read-only Go product API, Grafana, a Next.js
 viewer, an MCP server) stores and serves it. The sync protocol is specified
-here, so anyone can write their own receiver. Apache-2.0. Pre-release.
+here, so anyone can write their own receiver. Apache-2.0. The iOS app is on
+the App Store
+([PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354), free);
+the self-hosted backend is pre-release.
 
 | Path | What | Its own docs |
 |---|---|---|
@@ -30,7 +33,9 @@ here, so anyone can write their own receiver. Apache-2.0. Pre-release.
 | `server/mcp/` | Go MCP server, read-only, over the product API only | `server/mcp/README.md`, `docs/ai.md` |
 | `server/db/` | `migrate.sh` and the numbered migrations it applies | `server/README.md` |
 | `server/backup/` | The opt-in `backup` Compose profile: scheduled `pg_dump`s and the restore drill | `server/README.md` |
-| `web/` | Next.js viewer, reads Postgres directly | `web/README.md` |
+| `web/` | Next.js viewer, reads Postgres directly. **Not** `site/` | `web/README.md` |
+| `site/` | Next.js static export behind **pulshealth.com**: marketing pages, blog, knowledge-base viewer. Built with **bun**, not npm | `site/README.md` |
+| `knowledge-base/`, `blog/` | The site's content: 177 YAML HealthKit type files and the MDX posts with their images | `knowledge-base/README.md`, `blog/BLOG_SYSTEM.md` |
 | `docs/protocol/` | The Puls Sync Protocol v1 spec, JSON Schemas, fixtures | `docs/protocol/README.md` |
 | `tools/protocol-check/` | Validates a batch against the schemas | — |
 | `tools/puls-export/` | CLI for `GET /v1/export` | `docs/export.md` |
@@ -153,6 +158,15 @@ cd web && npm ci && npm run check:catalog && npm run lint && \
   npm run typecheck && npm test && npm run build
 ```
 
+**Marketing site** (bun, not npm — it exports 197 static pages, 177 of them
+rendered from `knowledge-base/`, and the CI job asserts those counts, so a
+content directory that goes missing fails the build rather than silently
+shrinking it):
+
+```bash
+cd site && bun install && bun run lint && bun run build
+```
+
 **Swift package** (macOS with Xcode 26):
 
 ```bash
@@ -190,7 +204,8 @@ it too.
 - **Sign off every commit.** `git commit -s` adds the
   `Signed-off-by:` trailer the DCO requires. There is no CLA.
 - **Commit subject:** short, imperative, with a component prefix — `ingest:`,
-  `app:`, `sync:`, `web:`, `db:`, `docs:`, `api:`, `mcp:`. The body says why.
+  `app:`, `sync:`, `web:`, `site:`, `db:`, `docs:`, `api:`, `mcp:`. The body
+  says why.
 - **Never edit a generated file.** `PulsHealth/PulsHealth.xcodeproj`
   (`xcodegen`), `docs/protocol/catalog.json` (the Swift catalog test),
   `web/lib/catalog.generated.ts` (`npm run gen:catalog`).

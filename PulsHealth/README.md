@@ -4,6 +4,11 @@ SwiftUI front end for the `PulsHealthSync` library — all sync logic lives in t
 package; this app is configuration, visibility, and lifecycle wiring. See the root
 `README.md` for architecture and `CLAUDE.md` for build invariants.
 
+Shipping as
+[PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) on the App
+Store (free). The listing material and the record of what shipped are in
+[`docs/appstore/`](../docs/appstore/README.md).
+
 ## Project generation
 
 `PulsHealth.xcodeproj` is **generated** from `project.yml` by
@@ -20,7 +25,10 @@ xcodegen && xcodebuild build -scheme PulsHealth \
 
 Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
 
-- Bundle ID `com.puls.PulsHealth`, iOS 17.0 target, Swift 6.
+- Bundle ID `com.puls.PulsHealth`, iOS 17.0 target, Swift 6. **The App Store
+  record uses `com.pulsHealth.PulsHealth`**, which this `bundleIdPrefix` does
+  not produce — an archive for that App ID has to be built with the prefix the
+  record uses.
 - Entitlements: `healthkit` + `healthkit.background-delivery` (device builds need a
   paid developer team).
 - Signing is per-developer and untracked. `DEVELOPMENT_TEAM` lives in

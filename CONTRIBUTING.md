@@ -4,8 +4,10 @@ Thanks for helping. This document covers the sign-off every commit needs, how
 to get each component building, the rules that keep the app and the server in
 step, and what to run before opening a pull request.
 
-The project is pre-release. `docs/open-source-plan.md` is the roadmap: it
-lists the decisions already made and the requirements for the first release.
+The iOS app is [on the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354);
+the self-hosted backend is still pre-release. `docs/open-source-plan.md` is
+the roadmap: it lists the decisions already made and the requirements for the
+first release.
 For anything bigger than a bug fix, open an issue first so the design can be
 agreed before the code exists.
 
@@ -111,6 +113,28 @@ npm run lint && npm run typecheck && npm test && npm run build
 npm run dev                     # demo data when DATABASE_URL is unset
 ```
 
+### `site` (pulshealth.com marketing site)
+
+Built with **bun**, not npm, and distinct from `web/`. It reads
+`knowledge-base/` and `blog/` as repository-root siblings by relative path, so
+a full export is 197 static pages — 177 of them knowledge-base types. CI
+asserts that source count and built count match, because a moved content
+directory makes the build emit fewer pages instead of failing.
+
+```bash
+cd site
+bun install
+bun run lint && bun run build      # static export to site/out
+bun run dev                        # localhost:3000
+```
+
+`make site-lint`, `make site-build` and `make site-dev` run the same things
+from the repository root. If you edited `knowledge-base/`, validate it:
+
+```bash
+cd knowledge-base && python3 validate.py    # needs PyYAML and jsonschema
+```
+
 ### Compose and shell
 
 ```bash
@@ -121,6 +145,10 @@ docker compose -f server/docker-compose.yml -f server/compose.build.yml config -
 shellcheck server/db/migrate.sh server/db/migrations/*.sh scripts/*.sh
 make dev-up                     # run the whole stack from this checkout
 ```
+
+The `site` job in `ci.yml` builds the marketing site on its own — it is the
+one thing here built with bun, and an unrelated site change must not gate the
+server.
 
 CI also builds the four app images for `linux/amd64` on every pull request
 (`images` job), so a Dockerfile change is checked before it is merged.
@@ -172,8 +200,8 @@ there).
 ## Before you open a pull request
 
 - Run the checks for every component you touched (commands above). CI runs
-  the Go, web, Compose, shell, and workflow checks on Ubuntu and the Swift
-  package and app tests on macOS.
+  the Go, web, site, Compose, shell, and workflow checks on Ubuntu and the
+  Swift package and app tests on macOS.
 - If you changed `PulsHealth/project.yml`, re-run `xcodegen` and make sure
   the generated project still builds; `project.pbxproj` itself is not tracked.
 - If you changed the wire format, walk the list above and tick the box in the
@@ -205,7 +233,8 @@ order they must ship in.
 - **SQL:** idempotent DDL, and predicates on compressed hypertables must
   include `start_ts` (see the gotchas in `CLAUDE.md`).
 - Commit messages: a short imperative subject with a component prefix
-  (`ingest:`, `app:`, `sync:`, `web:`, `db:`, `docs:`), a body that says why.
+  (`ingest:`, `app:`, `sync:`, `web:`, `site:`, `db:`, `docs:`), a body that
+  says why.
 
 ## Reporting bugs and security problems
 

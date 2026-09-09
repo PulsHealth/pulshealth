@@ -1,8 +1,13 @@
 # PulsHealth
 
-> Sync Apple Health data from an iPhone to a backend you run, then use it with your own tools — SQL, Grafana, notebooks and AI assistants. An iOS app and the Swift package under it read HealthKit and stream every sample as gzip NDJSON to an HTTP endpoint you configure; the repository also ships a reference backend (PostgreSQL 17 + TimescaleDB, a Go ingest server, a read-only Go product API with OpenAPI, Grafana dashboards, a Next.js viewer and an MCP server) and the open sync protocol, so anyone can write their own receiver. Apache-2.0, pre-release. Source: https://github.com/PulsHealth/pulshealth
+> Sync Apple Health data from an iPhone to a backend you run, then use it with your own tools — SQL, Grafana, notebooks and AI assistants. An iOS app and the Swift package under it read HealthKit and stream every sample as gzip NDJSON to an HTTP endpoint you configure; the repository also ships a reference backend (PostgreSQL 17 + TimescaleDB, a Go ingest server, a read-only Go product API with OpenAPI, Grafana dashboards, a Next.js viewer and an MCP server) and the open sync protocol, so anyone can write their own receiver. Apache-2.0. The iOS app is free on the App Store (https://apps.apple.com/us/app/pulshealth/id6757657354); the self-hosted backend is pre-release. Site: https://pulshealth.com. Source: https://github.com/PulsHealth/pulshealth
 
 Dates on the wire are epoch milliseconds; every quantity type has one canonical unit; daily values are deduplicated across an iPhone and an Apple Watch, raw samples deliberately are not. Read `docs/database-guide.md` before drawing a conclusion from the data.
+
+## Get it
+
+- The iOS app: https://apps.apple.com/us/app/pulshealth/id6757657354 — free, iPhone. It needs a backend of your own to sync to; `README.md` brings one up with one command.
+- The website: https://pulshealth.com — what the app does, the HealthKit knowledge base, and the blog. Its source is `site/` in this repository.
 
 ## Start here
 
@@ -35,4 +40,6 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 - [web/README.md](web/README.md): the Next.js viewer.
 - [PulsHealthSync/README.md](PulsHealthSync/README.md): the Swift sync package — architecture, wire format and performance numbers.
 - [PulsHealth/README.md](PulsHealth/README.md): the iOS app.
-- [SECURITY.md](SECURITY.md): how to report a vulnerability, and the pre-release security properties to know about.
+- [site/README.md](site/README.md): the marketing site behind pulshealth.com — a Next.js static export built with bun, distinct from the self-hosted viewer in `web/`.
+- [knowledge-base/README.md](knowledge-base/README.md): the 177 YAML files behind the site's HealthKit type pages — clinical prose, ranges and sources, one per type.
+- [SECURITY.md](SECURITY.md): how to report a vulnerability, which versions are supported, and the design properties to know about.

@@ -13,12 +13,13 @@ viewer, and an MCP server so Claude, Cursor and other AI assistants can
 answer questions from your data) that runs with one `docker compose up`, and
 it is where the sync protocol is written.
 
-> **Pre-release.** This is usable today by people comfortable with Xcode and
-> Docker, and honest about what is missing:
+**[PulsHealth is on the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354)** —
+free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
+
+> **The backend is pre-release.** The app ships from the store, but standing
+> up the server it syncs to still expects someone comfortable with Docker, and
+> this is honest about what is missing:
 >
-> - The app is **not on the App Store yet.** You build it from source with a
->   paid Apple Developer team (the HealthKit background-delivery entitlement
->   requires one).
 > - The wire protocol, the **Puls Sync Protocol v1**, is specified in
 >   [`docs/protocol/`](docs/protocol/README.md) with JSON Schema and a
 >   fixture corpus, but it is young: expect clarifications, and report gaps
@@ -49,6 +50,7 @@ it is where the sync protocol is written.
 | **Web viewer** | [`web/`](web/README.md) | Next.js viewer (activity rings, trends, workouts, catalog) reading Postgres directly. |
 | **Marketing site** | [`site/`](site/README.md) | Next.js static export behind pulshealth.com: product pages, blog, and the knowledge-base viewer. Distinct from `web/`. |
 | **Knowledge base** | [`knowledge-base/`](knowledge-base/README.md) | 177 YAML files describing every HealthKit type — what it measures, how it is interpreted, typical and notable ranges, sources. Read by `site/` at build time; useful on its own. |
+| **Blog** | [`blog/`](blog/BLOG_SYSTEM.md) | The site's MDX posts and their images, also read by `site/` at build time. |
 | **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
 | **MCP server** | [`server/mcp/`](server/mcp/README.md) | Read-only MCP server over the product API for Claude Desktop, Claude Code, Cursor and remote connectors: daily metrics, rings, workouts, latest readings, with an embedded guide for the model. Setup in [`docs/ai.md`](docs/ai.md). |
 
@@ -127,9 +129,13 @@ through the `server/compose.build.yml` overlay.
 
 ### App
 
-Until the App Store build exists, build it yourself. You need Xcode 26,
+Install it from the App Store —
+**[PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354)**, free.
+
+To build it from source instead you need Xcode 26,
 [XcodeGen](https://github.com/yonaskolb/XcodeGen), and — for running on a
-real iPhone — a paid Apple Developer team.
+real iPhone — a paid Apple Developer team (the HealthKit background-delivery
+entitlement requires one).
 
 ```bash
 brew install xcodegen
@@ -139,14 +145,15 @@ open PulsHealth.xcodeproj
 ```
 
 Put your Team ID in `PulsHealth/Config/Local.xcconfig` (gitignored; the
-generated project is too), select your device, and run. In the app:
+generated project is too), select your device, and run.
+
+Either way, in the app:
 
 1. Grant Health access when asked (the app is read-only; it never writes to
    HealthKit).
-2. **Settings → Server:** enter the server URL and token from the pairing
-   block (`make pairing` re-prints it; the QR code encodes the same values
-   for the app's scan-to-pair flow, APP-9 on the roadmap), then tap
-   **Test Connection**.
+2. **Settings → Server:** scan the pairing block's QR code, or enter the
+   server URL and token by hand (`make pairing` re-prints the block; the QR
+   code encodes the same values). Then tap **Test Connection**.
 3. **Data Types:** pick what to sync (a "Common" preset covers the usual
    types) and tap Apply. Types with no history sync from your chosen start
    date; the dashboard shows per-type progress, rate, and ETA.

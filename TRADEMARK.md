@@ -15,8 +15,9 @@ named in `NOTICE`) and are not covered by the code license:
 - the name **PulsHealth**, alone or combined with other words, as the name of
   an app, service, package, website, or organisation;
 - the PulsHealth app icon and logo, and any confusingly similar mark;
-- the PulsHealth App Store and TestFlight listings, which only the maintainer
-  publishes.
+- the PulsHealth App Store listing
+  ([id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354)) and
+  any TestFlight listing, which only the maintainer publishes.
 
 ## Forks and redistributed builds
 
@@ -27,7 +28,9 @@ enterprise or ad-hoc channel, or as a binary download — it must:
 - ship under a **different name** and a **different icon**, so nobody mistakes
   it for the official app;
 - use a **different bundle identifier** (change `bundleIdPrefix` in
-  `PulsHealth/project.yml`; the `com.puls` prefix is the official app's);
+  `PulsHealth/project.yml`; the official app on the App Store is
+  `com.pulsHealth.PulsHealth`, and the `com.puls` prefix in this repository is
+  reserved to it as well);
 - not describe itself as the official or endorsed PulsHealth app.
 
 Building the unmodified source yourself and installing it on your own devices

@@ -5,7 +5,7 @@ A comprehensive, structured knowledge base of Apple HealthKit data types designe
 ## Directory Structure
 
 ```
-healthkit_knowledge_base/
+knowledge-base/
 ├── README.md                    # This file
 ├── schema.yaml                  # Reference schema with field descriptions
 ├── schema.json                  # JSON Schema for validation
@@ -31,11 +31,15 @@ healthkit_knowledge_base/
 
 | Type | Count | Description |
 |------|-------|-------------|
-| HKQuantityType | ~85 | Numeric measurements with units |
-| HKCategoryType | ~55 | Categorical/enum values |
+| HKQuantityType | 110 | Numeric measurements with units |
+| HKCategoryType | 59 | Categorical/enum values |
 | HKCharacteristicType | 6 | Static user characteristics |
 | HKCorrelationType | 2 | Grouped related samples |
-| **Total** | **~150** | All HealthKit data types |
+| **Total** | **177** | All HealthKit data types |
+
+One page per file is exported by `site/` to
+`https://pulshealth.com/knowledge-base/types/<identifier>/`, and CI asserts
+the two counts match — add a file and the site gains a page.
 
 ## Using This Knowledge Base
 

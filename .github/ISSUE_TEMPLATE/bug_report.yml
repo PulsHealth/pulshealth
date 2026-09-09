@@ -64,8 +64,8 @@ body:
     id: app-version
     attributes:
       label: App or package version
-      description: The commit you built from (`git rev-parse --short HEAD`), or the version shown under Settings → About.
-      placeholder: "abc1234"
+      description: The App Store version you are running, or — for a build from source — the commit (`git rev-parse --short HEAD`).
+      placeholder: "1.3, or abc1234"
   - type: input
     id: server-version
     attributes:

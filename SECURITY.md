@@ -7,9 +7,13 @@ before anything is public.
 
 ## Supported versions
 
-The project is **pre-release**. There are no tagged releases yet; the `main`
-branch is the only supported line, and fixes land there. Once tagged releases
-exist, this section will name the supported ones.
+The **iOS app** ships from the App Store; the current version there is the
+supported one, and a fix reaches users in the next store release. Report
+against it even if you cannot build the source.
+
+The **server stack, the Swift package and the protocol tooling** have no
+tagged releases yet: `main` is the only supported line, and fixes land there.
+Once tagged releases exist, this section will name the supported ones.
 
 ## Reporting a vulnerability
 
@@ -75,7 +79,7 @@ Out of scope:
 
 ## Things to know about the current design
 
-These are documented properties of the pre-release design, tracked in
+These are documented properties of the current design, tracked in
 `docs/open-source-plan.md`. They are not vulnerabilities to report; they are
 context for judging what is.
 

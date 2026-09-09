@@ -71,7 +71,7 @@ PRIVACY
 • Your bearer token lives in the iOS Keychain, bound to this device.
 • The camera is used for exactly one thing: reading the pairing QR code. No image is stored or sent, and declining camera access simply means typing the details instead.
 
-Privacy policy: github.com/PulsHealth/pulshealth/blob/main/docs/privacy-policy.md
+Privacy policy: pulshealth.com/privacy
 
 OPEN SOURCE
 
@@ -101,20 +101,22 @@ healthkit,sync,export,self-hosted,backup,postgres,grafana,quantified,csv,privacy
 
 | Field | Value |
 |---|---|
-| Support URL | `https://github.com/PulsHealth/pulshealth/issues` |
-| Marketing URL | `https://github.com/PulsHealth/pulshealth` |
-| Privacy Policy URL | see below |
+| Support URL | `https://pulshealth.com/support` |
+| Marketing URL | `https://pulshealth.com` |
+| Privacy Policy URL | `https://pulshealth.com/privacy` |
 
-The privacy policy has to be a public web page. The text lives in the
-repository at [`docs/privacy-policy.md`](../privacy-policy.md); the maintainer
-picks how it is served:
+All three are pages of the marketing site (`site/src/app/support`, `/privacy`,
+`/terms`), which is what the plan meant by hosting the docs on the project's
+own domain. **Check the App Store Connect record actually points there** — a
+submission made before the site existed would carry the repository URLs
+instead:
 
-- **Now, with no extra work:**
-  `https://github.com/PulsHealth/pulshealth/blob/main/docs/privacy-policy.md`.
-  Public, versioned, and it renders. Apple accepts a repository page.
-- **Later:** a page on the project's own domain, or GitHub Pages. If that
-  happens, update this table and the "Privacy policy:" line in the description
-  above, and keep the repository copy as the source of truth.
+- The repository page `https://github.com/PulsHealth/pulshealth/blob/main/docs/privacy-policy.md`
+  also works, and Apple accepts it. It is the fallback if the site is down.
+- [`docs/privacy-policy.md`](../privacy-policy.md) stays the source of truth
+  for the text. Change it and the site page changes with it — and the
+  "Privacy policy:" line in the description above has to match whichever URL
+  is on the record.
 
 ## Category
 
@@ -199,13 +201,14 @@ flags.
 
 | Field | Value |
 |---|---|
-| Bundle ID | `com.puls.PulsHealth` |
-| Version | `0.1.0` (`MARKETING_VERSION` in `PulsHealth/project.yml`) |
-| Build | `1` (`CURRENT_PROJECT_VERSION`) |
-| Minimum iOS | 17.0 |
+| App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
+| Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record. `PulsHealth/project.yml`'s `bundleIdPrefix` is `com.puls`, which does **not** produce it |
+| Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `0.1.0`, which is behind what is on the store — see [Release record](README.md#release-record) |
+| Build | `CURRENT_PROJECT_VERSION`, currently `1` |
+| Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
 | Devices | iPhone only (`TARGETED_DEVICE_FAMILY = 1`) |
 
-"What's New in This Version" for the first submission:
+"What's New in This Version" — one entry per submission. The first was:
 
 ```
 First release.

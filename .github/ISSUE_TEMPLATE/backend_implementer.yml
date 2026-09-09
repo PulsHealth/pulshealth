@@ -6,9 +6,10 @@ body:
     attributes:
       value: |
         The app posts gzip NDJSON batches to `POST /v1/batches` with a bearer token; any HTTP server that
-        accepts them can be a backend. Until the spec lands in `docs/protocol/`, the reference is the
-        **API** section of `server/README.md` (line types, headers, limits, the curl example) and the parser
-        in `server/ingest/parse.go`. Questions about gaps in that description are exactly what this
+        accepts them can be a backend. The reference is the **Puls Sync Protocol** spec in
+        `docs/protocol/` (with JSON Schemas and a fixture corpus), backed by the **API** section of
+        `server/README.md` (limits, the curl example) and the parser in `server/ingest/parse.go`.
+        Questions about gaps in that description are exactly what this
         template is for: they turn into spec text.
   - type: input
     id: language
@@ -48,7 +49,7 @@ body:
     id: app-version
     attributes:
       label: App version
-      description: The commit the app was built from, or the version under Settings → About.
+      description: The App Store version, or the commit the app was built from.
   - type: checkboxes
     id: checks
     attributes:
