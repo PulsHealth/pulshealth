@@ -1,10 +1,15 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Bot, Database, FileCode2, Github, Lock, Server, Smartphone } from "lucide-react";
+import dynamic from "next/dynamic";
+import { ArrowRight, BookOpen, Bot, Database, FileCode2, Github, Lock, Mail, Server, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AppStoreBadge } from "@/components/app-store-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedWord } from "@/components/animated-word";
+
+const UpdatesDialog = dynamic(
+  () => import("@/components/updates-dialog").then((mod) => mod.UpdatesDialog),
+);
 
 const GITHUB = "https://github.com/PulsHealth/pulshealth";
 
@@ -252,6 +257,28 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Stay Updated */}
+      <section className="border-t">
+        <div className="container mx-auto max-w-7xl px-4 py-16">
+          <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
+            <div className="p-3 rounded-xl bg-brand-muted text-brand">
+              <Mail className="h-5 w-5" />
+            </div>
+            <h2 className="text-xl font-semibold tracking-tight">Follow the project</h2>
+            <p className="text-muted-foreground">
+              An occasional email when there is a release, news about the app, or a change
+              to the sync protocol or the server stack. Your name and address, nothing more.
+            </p>
+            <UpdatesDialog>
+              <Button variant="outline">
+                Sign Up for Updates
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </UpdatesDialog>
           </div>
         </div>
       </section>
