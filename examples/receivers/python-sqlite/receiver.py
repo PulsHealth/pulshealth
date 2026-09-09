@@ -8,7 +8,7 @@ Implements the receiver side of docs/protocol/README.md:
     GET  /healthz          {"ok":true}
 
 Environment: PULS_TOKEN (required), PULS_DB (default puls.sqlite),
-PULS_BIND (default 0.0.0.0), PULS_PORT (default 8080). Python 3.11+.
+PULS_BIND (default 127.0.0.1), PULS_PORT (default 8080). Python 3.11+.
 """
 from __future__ import annotations
 
@@ -309,7 +309,11 @@ def main():
         sys.exit("PULS_TOKEN must be set")
     db = sqlite3.connect(os.environ.get("PULS_DB", "puls.sqlite"), check_same_thread=False)
     db.executescript(SCHEMA)
-    bind, port = os.environ.get("PULS_BIND", "0.0.0.0"), int(os.environ.get("PULS_PORT", "8080"))
+    # Loopback by default, mirroring the reference stack's INGEST_BIND_ADDR:
+    # this receiver has no TLS and no throttling on failed authentications, so
+    # reaching it from another machine should be something you ask for, not
+    # something you get by running it.
+    bind, port = os.environ.get("PULS_BIND", "127.0.0.1"), int(os.environ.get("PULS_PORT", "8080"))
     server = ThreadingHTTPServer((bind, port), Handler)
     server.token, server.db, server.lock = token, db, threading.Lock()
     print(f"puls-sqlite-receiver listening on {bind}:{server.server_address[1]}", flush=True)

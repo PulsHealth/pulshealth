@@ -256,6 +256,46 @@ func TestNewAPIClient_ValidatesURL(t *testing.T) {
 	}
 }
 
+// This server hands its errors to a language model and its startup line to a
+// log. A PULS_API_URL carrying userinfo used to print the password to both.
+func TestNewAPIClient_DropsCredentialsFromTheURL(t *testing.T) {
+	const secret = "sup3rsecret"
+
+	c, err := NewAPIClient("http://alice:"+secret+"@host.example:8081/", "t", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := c.BaseURL(); strings.Contains(got, secret) || strings.Contains(got, "alice") {
+		t.Fatalf("BaseURL = %q, want no userinfo", got)
+	}
+	if got, want := c.BaseURL(), "http://host.example:8081"; got != want {
+		t.Fatalf("BaseURL = %q, want %q", got, want)
+	}
+
+	// The same string reaches the model on a transport error, so the request
+	// path must not reintroduce it either. Point at a closed port to force one.
+	closed, err := NewAPIClient("http://alice:"+secret+"@127.0.0.1:1/", "t", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = closed.get(context.Background(), "/v1/profile", nil, &struct{}{})
+	if err == nil {
+		t.Fatal("expected a transport error from a closed port")
+	}
+	if strings.Contains(err.Error(), secret) || strings.Contains(err.Error(), "alice") {
+		t.Fatalf("the error handed to the model leaks credentials: %v", err)
+	}
+
+	// And the message for a URL that does not parse as http(s) is redacted too.
+	_, err = NewAPIClient("ftp://alice:"+secret+"@host.example/", "t", nil)
+	if err == nil {
+		t.Fatal("expected an error for a non-http scheme")
+	}
+	if strings.Contains(err.Error(), secret) {
+		t.Fatalf("the validation error leaks the password: %v", err)
+	}
+}
+
 func TestAPIClient_SendsBearerAndPath(t *testing.T) {
 	f := newFakeAPI(t)
 	f.respond("/v1/profile", http.StatusOK, fixtureProfile)

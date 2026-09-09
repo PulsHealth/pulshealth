@@ -140,6 +140,10 @@ services:
       # Same calendar zone as the database (see the db service). The api
       # refuses to start on an unknown zone name.
       PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
+      # Whether X-Forwarded-* may be believed: the client an auth failure is
+      # charged to, and the host /openapi.json advertises. Same switch and
+      # same default as ingest's.
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
     ports:
       # Loopback only: expose it through an authenticated HTTPS proxy (e.g.
       # Tailscale Serve). Do not publish the bearer-token surface on the LAN.

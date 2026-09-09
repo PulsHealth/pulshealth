@@ -120,9 +120,13 @@ comments). Beyond the passwords and tokens, two settings deserve attention:
   every interface so a phone on the same Wi-Fi can sync to plain
   `http://<this host's LAN IP>:8080` with no proxy at all. See "Exposing the
   server" for the trade-off.
-- `TRUST_PROXY_HEADERS` — whether ingest believes `X-Forwarded-For` when
-  attributing a failed authentication to a client. Default `false`. Turn it
-  on only behind a proxy that owns that header — see "Rate limiting".
+- `TRUST_PROXY_HEADERS` — whether **ingest and the product API** believe
+  `X-Forwarded-*`. It decides which client a failed authentication is charged
+  to on both, and additionally which host `GET /openapi.json` advertises in
+  `servers[0].url`. Default `false`. Turn it on only behind a proxy that owns
+  those headers — see "Rate limiting". Untrusted, the API answers from its own
+  `Host`, so an unauthenticated caller cannot choose the host the OpenAPI
+  document names.
 - `PULS_VERSION` — which image tag the four app services run (`latest` when
   unset); `PULS_PUBLIC_URL` — the URL the pairing block should carry instead
   of the LAN address (read by `scripts/bootstrap.sh` only). See "Images and
@@ -387,11 +391,11 @@ user ID.
 
 ### Rate limiting
 
-One static token on a published port is guessable, so ingest throttles **failed
-authentications** per client IP. Each address gets a token bucket holding **10
-failures**, refilling at **10 per minute**. While the bucket has tokens a wrong
-token answers `401` as before; once it is empty every attempt from that address
-answers
+One static token on a published port is guessable, so **ingest and the product
+API** both throttle **failed authentications** per client IP. Each address gets
+a token bucket holding **10 failures**, refilling at **10 per minute**. While
+the bucket has tokens a wrong token answers `401` as before; once it is empty
+every attempt from that address answers
 
 ```
 HTTP/1.1 429 Too Many Requests
@@ -400,8 +404,10 @@ Retry-After: 7
 {"error":"too many failed authentications"}
 ```
 
-and the server logs `auth attempts throttled` with the address, the path and
-the wait. Two properties matter:
+and the server logs the address, the path and the wait. The product API also
+logs every failed authentication (`auth failed`, with the address and path, and
+never the token) — a token brute-force against `/v1/profile` used to leave no
+trace at all. Two properties matter:
 
 - **A correct token is never throttled.** Only failures draw from the bucket, so
   a backfill — thousands of authenticated uploads in a row — never touches it,

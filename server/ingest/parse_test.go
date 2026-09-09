@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -648,6 +649,9 @@ type fakeStore struct {
 	routeCalls   int
 	rejections   []IngestRejection
 	rejectionErr error
+	// Counts database liveness probes, so a test can assert /healthz does not
+	// make one per request (see health.go).
+	pings atomic.Int64
 }
 
 func (f *fakeStore) InsertBatch(_ context.Context, b *Batch, n int64) (IngestResult, error) {
@@ -690,7 +694,10 @@ func (f *fakeStore) RouteMetrics(_ context.Context, userID, uuid string) ([]Rout
 	f.routeCalls++
 	return f.metricsRes, nil
 }
-func (f *fakeStore) Ping(context.Context) error { return nil }
+func (f *fakeStore) Ping(context.Context) error {
+	f.pings.Add(1)
+	return nil
+}
 
 func newTestServer(fs *fakeStore) *Server {
 	return newServer(fs, "secret", false, slog.New(slog.NewJSONHandler(io.Discard, nil)))

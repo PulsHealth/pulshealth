@@ -410,11 +410,21 @@ outside this repository — nothing here assumes a particular machine.
   docker network as the read-only `grafana` role (`DATABASE_URL` built from
   `GRAFANA_DB_PASSWORD` in `.env`), so it never needs the
   SSH-tunnel/`DATABASE_URL` dance used for local `npm run dev`.
-- **Ingest throttles failed authentications, never successful ones**
-  (`server/ingest/ratelimit.go`): a per-client-IP token bucket, 10 failures
-  with a 10/minute refill, `429` + `Retry-After` once empty — and the refusal
-  happens *before* the token comparison, or the limit would only change the
-  status code an attacker sees rather than their guessing rate. A backfill is
-  thousands of authenticated requests, so successes must never draw from the
-  bucket. The client is the TCP peer address unless `TRUST_PROXY_HEADERS=true`
-  declares a proxy that owns `X-Forwarded-For`.
+- **Ingest and the product API throttle failed authentications, never
+  successful ones** (`server/ingest/ratelimit.go`, `server/api/ratelimit.go` —
+  a copy, because they are separate Go modules; keep the two in step): a
+  per-client-IP token bucket, 10 failures with a 10/minute refill, `429` +
+  `Retry-After` once empty — and the refusal happens *before* the token
+  comparison, or the limit would only change the status code an attacker sees
+  rather than their guessing rate. A backfill is thousands of authenticated
+  requests, so successes must never draw from the bucket. The client is the TCP
+  peer address unless `TRUST_PROXY_HEADERS=true` declares a proxy that owns
+  `X-Forwarded-For`; on the API that same switch also decides whether
+  `X-Forwarded-Host` may choose the host `/openapi.json` advertises, which
+  matters because that endpoint is unauthenticated and `docs/ai.md` tells
+  people to hand the document to ChatGPT alongside the token.
+- **`/healthz` is unauthenticated on both services, so it must not touch the
+  pool per request** (`server/ingest/health.go`, `server/api/health.go` — again
+  a copy). The database status is cached for two seconds and concurrent callers
+  collapse onto one probe; without that, a loop of GETs from anyone who can
+  reach the port holds every pooled connection and stalls the service.
