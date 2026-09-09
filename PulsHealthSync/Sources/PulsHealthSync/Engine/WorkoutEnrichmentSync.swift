@@ -1,8 +1,8 @@
 import Foundation
 import HealthKit
 
-// Late workout-enrichment phases: GPS routes (phase 4) and intra-workout streams
-// (phase 5), run *after* all basic data is synced.
+// The last two phases of `syncAllEnabled`: GPS routes, then intra-workout
+// streams, run *after* all basic data is synced.
 //
 // Two failures motivated this design, both seen on real devices:
 //
@@ -24,8 +24,9 @@ import HealthKit
 // No wire/server changes are needed for either fix. Routes and series already ride
 // their own NDJSON lines (`{"route":...}` / `{"series":...}`) carrying the workout
 // UUID, and the server inserts them by joining on that UUID with
-// `ON CONFLICT DO NOTHING`. So a workout row can land in phase 1, and its routes/
-// series can arrive split across many later batches — fully idempotent end-to-end.
+// `ON CONFLICT DO NOTHING`. So a workout row can land in the raw sweep, and its
+// routes/series can arrive split across many later batches — fully idempotent
+// end-to-end.
 //
 // Like activity summaries (see ActivitySummarySync) these have no HKQueryAnchor:
 // each phase enumerates workouts ascending by `endDate`, uploads point-capped
@@ -145,12 +146,12 @@ extension HealthSyncEngine {
         return true // unsure → query rather than risk dropping a route
     }
 
-    /// Phase 4: fetch and upload GPS routes for workouts. Overlap-guarded.
+    /// Routes phase: fetch and upload GPS routes for workouts. Overlap-guarded.
     public func syncWorkoutRoutes(reason: SyncReason = .incremental) async {
         await runGuardedWorkoutEnrichment(.routes, reason: reason)
     }
 
-    /// Phase 5: fetch and upload the intra-workout streams (HR/power/cadence/…).
+    /// Streams phase: fetch and upload the intra-workout streams (HR/power/cadence/…).
     /// Overlap-guarded.
     public func syncWorkoutStreams(reason: SyncReason = .incremental) async {
         await runGuardedWorkoutEnrichment(.streams, reason: reason)

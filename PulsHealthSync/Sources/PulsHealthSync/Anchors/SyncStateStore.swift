@@ -122,7 +122,7 @@ public enum WorkoutEnrichmentKind: String, Codable, Sendable, CaseIterable, Hash
 /// Everything we persist about one workout-enrichment phase's progress (GPS
 /// routes or intra-workout streams). Enrichment rides separate NDJSON lines
 /// (`{"route":...}` / `{"series":...}`) keyed on the workout UUID, so the basic
-/// workout row can land in phase 1 and its enrichment in a later phase — fully
+/// workout row can land in the raw sweep and its enrichment in a later phase — fully
 /// idempotent server-side (`ON CONFLICT DO NOTHING`). Like activity summaries
 /// these have no `HKQueryAnchor`: progress is a singleton `computedThrough`
 /// watermark (the workout `endDate` covered so far) advanced only after the

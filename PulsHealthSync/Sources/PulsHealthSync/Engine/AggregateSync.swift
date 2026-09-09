@@ -182,7 +182,8 @@ enum FullRecomputeMigration {
 
 extension HealthSyncEngine {
     /// Run every enabled aggregate config, `maxConcurrentTypes` at a time.
-    /// Called after raw syncs by `syncAllEnabled`, and directly by the app.
+    /// Called after the raw sweep by `syncAllEnabled`, and directly by the app.
+    /// `syncRecentAggregates` is the sibling that runs *before* it.
     public func syncAllAggregates(reason: SyncReason = .incremental) async {
         await fanOutAggregates(
             await store.configuration.aggregates.filter(\.enabled),

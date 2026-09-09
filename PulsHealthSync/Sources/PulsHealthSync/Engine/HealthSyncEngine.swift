@@ -615,7 +615,7 @@ public actor HealthSyncEngine {
                 var samples = result.addedSamples.compactMap {
                     SampleMapper.map($0, descriptor: descriptor)
                 }
-                // Phase 1 defers the expensive per-workout route/series fetches to
+                // The raw sweep defers the expensive per-workout route/series fetches to
                 // the dedicated route/stream phases (see WorkoutEnrichmentSync) so
                 // basic data isn't starved waiting on enrichment queries. The
                 // workout row (incl. enhanced stats/events/activities/effort) and
@@ -827,14 +827,14 @@ public actor HealthSyncEngine {
             for i in samples.indices {
                 guard let workout = byUUID[samples[i].uuid] else { continue }
                 // Routes are best-effort: a workout without route access (or
-                // without GPS) just uploads with no points. Deferred in phase 1
+                // without GPS) just uploads with no points. Deferred in the raw sweep
                 // (the route phase owns the fetch).
                 if includeRoutes, !deferEnrichment {
                     enrichment.routes += (try? await enricher.routePayloads(for: workout)) ?? []
                 }
                 if includeEnhanced {
                     // Full intra-workout curves (HR/power/cadence/speed/…), best-effort.
-                    // Deferred in phase 1 (the stream phase owns the fetch); the
+                    // Deferred in the raw sweep (the stream phase owns the fetch); the
                     // enhanced fields baked into the row by the mapper still ship now.
                     if !deferEnrichment {
                         enrichment.series += try await enricher.seriesPayloads(for: workout)
