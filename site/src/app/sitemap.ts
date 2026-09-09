@@ -32,15 +32,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Legacy product pages not in STATIC_PAGES
-  const productEntries: MetadataRoute.Sitemap = [
-    "/ai",
-    "/privacy-protect",
-  ].map((path) => ({
-    url: `${baseUrl}${path}`,
-    changeFrequency: "monthly" as const,
-    priority: 0.8,
-  }));
-
-  return [...staticEntries, ...productEntries, ...blogEntries, ...typeEntries];
+  return [...staticEntries, ...blogEntries, ...typeEntries];
 }

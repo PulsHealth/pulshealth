@@ -13,7 +13,7 @@ export const metadata = {
 const values = [
   {
     title: "Privacy First",
-    description: "Health data is deeply personal. Every layer of PulsHealth — from on-device PrivacyProtect to encrypted sync — is designed so users stay in control of their data.",
+    description: "Health data is deeply personal. Every layer of PulsHealth — read-only access to Apple Health, one destination you choose, a database you own — is designed so users stay in control of their data.",
     icon: Shield,
   },
   {
@@ -58,7 +58,7 @@ export default function AboutPage() {
               Consumer wearables generate thousands of health data points daily — heart rate, sleep stages, blood oxygen, activity metrics. Yet this data remains siloed across device ecosystems, fragmented across sampling rates and units, and difficult to interpret without clinical context. AI agents have the potential to unlock actionable insights, but they face significant challenges around privacy, accuracy, and interoperability.
             </p>
             <p>
-              We are building the foundation that bridges this gap. Our Knowledge Base distills clinical expertise into structured, AI-ready references. Our AI Health Agent provides privacy-preserving reasoning with clinical grounding. PulsHealthSync handles the real-time collection, normalization, and sync pipeline. And our free iOS app gives individuals direct access to understand and export their own health data.
+              We are building the foundation that bridges this gap. Our Knowledge Base distills clinical expertise into structured, AI-ready references. PulsHealthSync handles the real-time collection, normalization, and sync pipeline. A read-only MCP server puts the result in reach of AI assistants without it ever leaving your own server. And our free iOS app gives individuals direct access to understand and export their own health data.
             </p>
             <p>
               Our goal: make wearable health data work — for the builders creating the next generation of health AI, and for the people whose data it is.
