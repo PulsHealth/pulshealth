@@ -634,19 +634,56 @@ public actor HealthSyncEngine {
                 let newAnchor = result.newAnchor
 
                 let newAnchorData = try encodeAnchor(newAnchor)
-                if samples.isEmpty && deletions.isEmpty {
-                    // Drained. Persist the final anchor so observer-triggered syncs
-                    // start from here. Clear any stale error: the query just
-                    // executed successfully, so a prior auth-not-determined error
-                    // (e.g. recorded before the grant) no longer holds. Without this,
-                    // a 0-sample type never reaches recordUploadedBatch — the only
-                    // other place lastError is cleared — and the error sticks forever.
+
+                // Samples HealthKit returned that SampleMapper could not convert.
+                // map() returns nil when the quantity is not compatible with the
+                // catalog's unitString — a whole-type property — so one wrong unit
+                // makes EVERY sample of that type unmappable. Counting mapped
+                // samples here (rather than raw ones) is how such a type reported
+                // "0 samples, drained, backfill complete" with no error and no
+                // counter anywhere. The short-page check at the foot of this loop
+                // has always compared raw counts; this branch now agrees with it.
+                let dropped = result.addedSamples.count - samples.count
+
+                if result.addedSamples.isEmpty && result.deletedObjects.isEmpty {
+                    // Genuinely drained. Persist the final anchor so
+                    // observer-triggered syncs start from here. Clear any stale
+                    // error: the query just executed successfully, so a prior
+                    // auth-not-determined error (e.g. recorded before the grant) no
+                    // longer holds. Without this, a 0-sample type never reaches
+                    // recordUploadedBatch — the only other place lastError is
+                    // cleared — and the error sticks forever.
                     await store.update(identifier) {
                         $0.anchorData = newAnchorData
                         $0.lastSyncAt = Date()
                         $0.lastError = nil
                     }
                     break
+                }
+
+                if dropped > 0 {
+                    await eventLog.log(
+                        .warn, type: identifier,
+                        "Dropped \(dropped) of \(result.addedSamples.count) samples that could not be mapped — check this type's unitString in HealthTypeCatalog"
+                    )
+                }
+
+                if samples.isEmpty && deletions.isEmpty {
+                    // HealthKit returned a page, but nothing on it survived mapping.
+                    // There is nothing to upload, so advance past it — re-querying
+                    // the same unmappable samples forever is worse — but do NOT
+                    // treat it as drained: whether more pages remain is the raw
+                    // short-page question below, not a mapped one.
+                    await store.update(identifier) {
+                        $0.anchorData = newAnchorData
+                        $0.lastSyncAt = Date()
+                    }
+                    anchor = newAnchor
+                    pages += 1
+                    if result.addedSamples.count + result.deletedObjects.count < config.batchSize {
+                        break
+                    }
+                    continue
                 }
 
                 let batch = SyncBatch(

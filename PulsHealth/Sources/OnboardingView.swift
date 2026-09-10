@@ -229,9 +229,16 @@ struct OnboardingView: View {
                         .foregroundStyle(.orange)
                 }
                 if !model.needsAuthorization && model.authorizationRequested {
-                    Label("Access granted for the current selection.", systemImage: "checkmark.circle.fill")
+                    // Deliberately NOT "access granted": HealthKit never tells an
+                    // app whether a read request was granted. Once the sheet has
+                    // been shown, statusForAuthorizationRequest answers
+                    // .unnecessary whether the user allowed everything or denied
+                    // everything, so the only honest claim is that iOS was asked.
+                    // Whether anything was actually granted shows up later, as
+                    // samples arriving — or not (see AppModel.readsLookBlocked).
+                    Label("iOS has been asked for the current selection.", systemImage: "checkmark.circle.fill")
                         .font(.footnote)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding()

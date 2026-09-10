@@ -101,6 +101,10 @@ extension HealthSyncEngine {
         /// cancellation has *not* been fully read, and claiming otherwise would
         /// permanently skip its remaining history.
         var drainedCleanly: Set<String> = []
+        // Types where at least one page had samples that would not map. Such a
+        // type must not be reported "backfill complete": we swept it, but we
+        // uploaded nothing, and a green dashboard row would hide that.
+        var droppedAnything: Set<String> = []
 
         while !pending.isEmpty, !Task.isCancelled {
             var carried: Set<String> = []
@@ -123,17 +127,41 @@ extension HealthSyncEngine {
                     .compactMap { $0 }
 
                 for page in pages {
-                    // An empty page means the type is drained: persist the final
-                    // anchor so the next run starts here, and clear any stale
-                    // error — the query just succeeded, so an older
-                    // authorization failure no longer holds.
-                    if page.isEmpty {
+                    if page.dropped > 0 {
+                        // SampleMapper.map returns nil when the quantity is not
+                        // compatible with the catalog's unitString — a whole-type
+                        // property — so one wrong unit makes every sample of that
+                        // type unmappable. Silently, until now.
+                        droppedAnything.insert(page.identifier)
+                        await eventLog.log(
+                            .warn, type: page.identifier,
+                            "Dropped \(page.dropped) of \(page.rawCount) samples that could not be mapped — check this type's unitString in HealthTypeCatalog"
+                        )
+                    }
+                    // Only a page HealthKit returned nothing for means the type is
+                    // drained: persist the final anchor so the next run starts
+                    // here, and clear any stale error — the query just succeeded,
+                    // so an older authorization failure no longer holds.
+                    if page.isRawEmpty {
                         await store.update(page.identifier) {
                             $0.anchorData = page.newAnchorData
                             $0.lastSyncAt = Date()
                             $0.lastError = nil
                         }
                         drainedCleanly.insert(page.identifier)
+                    } else if page.isEmpty {
+                        // HealthKit returned a page, but nothing on it survived
+                        // mapping. There is nothing to upload and nothing to ack,
+                        // so advance past it rather than re-querying the same
+                        // unmappable samples forever — but let HealthKit's own
+                        // short-page signal say whether more remain.
+                        await store.update(page.identifier) {
+                            $0.anchorData = page.newAnchorData
+                            $0.lastSyncAt = Date()
+                        }
+                        if page.drained {
+                            drainedCleanly.insert(page.identifier)
+                        }
                     } else {
                         buffer.append(page)
                         buffered += page.count
@@ -168,7 +196,8 @@ extension HealthSyncEngine {
         }
 
         for id in ids where activities[id] != .failed {
-            if drainedCleanly.contains(id), !(await store.state(for: id)).backfillComplete {
+            if drainedCleanly.contains(id), !droppedAnything.contains(id),
+               !(await store.state(for: id)).backfillComplete {
                 await store.markBackfillComplete(id)
                 backfillRuns[id] = nil
             }
@@ -310,7 +339,9 @@ extension HealthSyncEngine {
                 newAnchorData: try encodeAnchor(result.newAnchor),
                 enrichment: enrichment,
                 queryDuration: queryDuration,
-                drained: drained
+                drained: drained,
+                rawCount: result.addedSamples.count + result.deletedObjects.count,
+                dropped: result.addedSamples.count - samples.count
             )
         } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
             activities[identifier] = .failed
@@ -462,7 +493,17 @@ struct MergedPage {
     let queryDuration: TimeInterval
     /// HealthKit returned a short page: nothing more for this type right now.
     let drained: Bool
+    /// How many objects HealthKit returned, before mapping. `isEmpty` is a
+    /// mapped-count question and `count` a mapped-count answer; this is the
+    /// raw one, and it is what may be used to decide the type is drained.
+    let rawCount: Int
+    /// Samples HealthKit returned that `SampleMapper` could not convert —
+    /// a unit-incompatible quantity, a wrong-class sample.
+    let dropped: Int
 
     var count: Int { samples.count + deletions.count }
     var isEmpty: Bool { samples.isEmpty && deletions.isEmpty }
+    /// HealthKit returned nothing at all, as opposed to returning samples that
+    /// did not survive mapping. Only this means the type has no more data.
+    var isRawEmpty: Bool { rawCount == 0 }
 }

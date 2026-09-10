@@ -1,3 +1,4 @@
+import Compression
 import Foundation
 import HealthKit
 import Testing
@@ -299,16 +300,86 @@ import Testing
         #expect(isize == UInt32(payload.count))
     }
 
-    @Test func gzipRoundTripsThroughSystemGunzip() throws {
+    /// Inflates a raw DEFLATE stream. compression_decode_buffer with
+    /// COMPRESSION_ZLIB is the exact counterpart of the encoder gzip() uses, so
+    /// this proves the bytes between the gzip header and trailer really are a
+    /// DEFLATE stream — which a length check never did.
+    private func inflate(_ deflated: Data, expecting size: Int) -> Data? {
+        guard !deflated.isEmpty else { return nil }
+        let capacity = max(64, size * 2 + 64)
+        var out = Data(count: capacity)
+        let written = out.withUnsafeMutableBytes { dst -> Int in
+            deflated.withUnsafeBytes { src -> Int in
+                guard let d = dst.baseAddress, let s = src.baseAddress else { return 0 }
+                return compression_decode_buffer(
+                    d.assumingMemoryBound(to: UInt8.self), capacity,
+                    s.assumingMemoryBound(to: UInt8.self), deflated.count,
+                    nil, COMPRESSION_ZLIB
+                )
+            }
+        }
+        guard written > 0 else { return nil }
+        return out.prefix(written)
+    }
+
+    /// Strips gzip framing and returns (deflate stream, CRC32, ISIZE).
+    private func unframe(_ gz: Data) -> (deflate: Data, crc: UInt32, size: UInt32)? {
+        guard gz.count >= 18, gz[gz.startIndex] == 0x1F, gz[gz.startIndex + 1] == 0x8B else {
+            return nil
+        }
+        let body = gz.dropFirst(10).dropLast(8)
+        let trailer = Array(gz.suffix(8))
+        let crc = UInt32(trailer[0]) | UInt32(trailer[1]) << 8
+            | UInt32(trailer[2]) << 16 | UInt32(trailer[3]) << 24
+        let size = UInt32(trailer[4]) | UInt32(trailer[5]) << 8
+            | UInt32(trailer[6]) << 16 | UInt32(trailer[7]) << 24
+        return (Data(body), crc, size)
+    }
+
+    @Test func gzipProducesADecodableDeflateStream() throws {
         let payload = Data("hello puls health sync — \(UUID())".utf8)
         let gz = BatchSerializer.gzip(payload)
-        let tmp = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(UUID()).gz")
-        try gz.write(to: tmp)
-        defer { try? FileManager.default.removeItem(at: tmp) }
-        // Decode with zlib-compatible Foundation API on-device isn't exposed;
-        // validate CRC by decoding header + framing instead.
-        #expect(gz.count > 18)
+
+        let framed = try #require(unframe(gz))
+        let inflated = try #require(inflate(framed.deflate, expecting: payload.count))
+        #expect(inflated == payload)
+        #expect(framed.size == UInt32(payload.count))
+    }
+
+    /// The fallback taken when compression_encode_buffer declines — it returns 0
+    /// both on failure and when the compressed form would not fit, which happens
+    /// on incompressible input. It used to return the RAW bytes, which gzip()
+    /// then framed as though they were DEFLATE: a body advertised as gzip that
+    /// no reader can decode, answered 400, never retried, page stalled forever.
+    @Test func storedDeflateFallbackIsValidDeflate() throws {
+        let cases: [Data] = [
+            Data(),
+            Data("x".utf8),
+            Data("hello puls health sync".utf8),
+            // Larger than one 65,535-byte stored block, so this covers the
+            // multi-block path and the BFINAL bit only being set on the last.
+            Data((0..<70_000).map { UInt8($0 % 251) }),
+        ]
+        for payload in cases {
+            let stored = BatchSerializer.storedDeflate(payload)
+            let inflated = inflate(stored, expecting: payload.count) ?? Data()
+            #expect(inflated == payload, "stored block did not round-trip at \(payload.count) bytes")
+        }
+    }
+
+    /// Whatever path gzip() takes internally, the framing must describe the
+    /// payload: same uncompressed size, and a stream that inflates back to it.
+    @Test func gzipFramingSurvivesIncompressibleInput() throws {
+        // Random bytes: the case where the encoder is most likely to decline.
+        var payload = Data(count: 4096)
+        payload.withUnsafeMutableBytes { buf in
+            for i in 0..<buf.count { buf[i] = UInt8.random(in: 0...255) }
+        }
+        let gz = BatchSerializer.gzip(payload)
+        let framed = try #require(unframe(gz))
+        #expect(framed.size == UInt32(payload.count))
+        let inflated = try #require(inflate(framed.deflate, expecting: payload.count))
+        #expect(inflated == payload)
     }
 
     @Test func metadataValueRoundTrips() throws {

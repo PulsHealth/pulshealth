@@ -207,6 +207,14 @@ public actor SyncStateStore {
         var workoutRoutesState: WorkoutEnrichmentState
         var workoutStreamsState: WorkoutEnrichmentState
         var serverIdentity: ServerIdentity?
+        /// The bearer token, kept inline ONLY while the token store is
+        /// refusing it. Normally absent: the token lives in the Keychain and
+        /// `SyncConfiguration` will not encode it. Written when a Keychain
+        /// write has failed, so the token survives until the store accepts it —
+        /// which is what the migration comment always promised and, until this
+        /// field existed, did not deliver: the first `persist()` of the session
+        /// rewrote the file without the token and it existed only in memory.
+        var fallbackAuthToken: String?
 
         init(
             configuration: SyncConfiguration,
@@ -216,8 +224,10 @@ public actor SyncStateStore {
             activitySummaryState: ActivitySummaryState,
             workoutRoutesState: WorkoutEnrichmentState,
             workoutStreamsState: WorkoutEnrichmentState,
-            serverIdentity: ServerIdentity?
+            serverIdentity: ServerIdentity?,
+            fallbackAuthToken: String? = nil
         ) {
+            self.fallbackAuthToken = fallbackAuthToken
             self.configuration = configuration
             self.typeStates = typeStates
             self.deviceID = deviceID
@@ -245,6 +255,7 @@ public actor SyncStateStore {
             workoutStreamsState = try c.decodeIfPresent(
                 WorkoutEnrichmentState.self, forKey: .workoutStreamsState) ?? WorkoutEnrichmentState()
             serverIdentity = try c.decodeIfPresent(ServerIdentity.self, forKey: .serverIdentity)
+            fallbackAuthToken = try c.decodeIfPresent(String.self, forKey: .fallbackAuthToken)
         }
     }
 
@@ -295,6 +306,20 @@ public actor SyncStateStore {
                     tokenStoreDirty = true
                     logger.error("Token store rejected the legacy token; leaving it in the state file for now: \(error)")
                 }
+            } else if let stranded = decoded.fallbackAuthToken {
+                // A previous session's Keychain write failed and the token was
+                // parked in the file. Try the store again; either way the token
+                // is back in memory, so syncing continues rather than stalling
+                // until the user retypes it.
+                do {
+                    try tokenStore.setToken(stranded)
+                    rewrite = true
+                    logger.notice("Token store accepted the token parked in sync-state.json; removing it from the file")
+                } catch {
+                    tokenStoreDirty = true
+                    logger.error("Token store still refusing; the token stays in the state file: \(error)")
+                }
+                decoded.configuration.authToken = stranded
             } else {
                 do {
                     decoded.configuration.authToken = try tokenStore.token()
@@ -319,8 +344,12 @@ public actor SyncStateStore {
             self.deviceID = decoded.deviceID
             if rewrite {
                 // Can't call the isolated persistNow() from the nonisolated
-                // init; the shared writer strips the token the same way.
-                Self.writeSnapshot(decoded, to: fileURL, logger: logger)
+                // init; the shared writer strips the token the same way — and
+                // parks it inline only while the store is refusing it.
+                Self.writeSnapshot(
+                    decoded, to: fileURL, logger: logger,
+                    fallbackToken: tokenStoreDirty ? decoded.configuration.authToken : nil
+                )
             }
         } else {
             self.configuration = SyncConfiguration()
@@ -819,17 +848,24 @@ public actor SyncStateStore {
             workoutRoutesState: workoutRoutesState, workoutStreamsState: workoutStreamsState,
             serverIdentity: serverIdentity
         )
-        Self.writeSnapshot(snapshot, to: fileURL, logger: logger)
+        Self.writeSnapshot(
+            snapshot, to: fileURL, logger: logger,
+            fallbackToken: tokenStoreDirty ? configuration.authToken : nil
+        )
     }
 
     /// The one path to disk. The token is stripped here (belt and braces —
     /// `SyncConfiguration` refuses to encode it anyway) and the file is written
     /// atomically with protection and backup exclusion.
     private nonisolated static func writeSnapshot(
-        _ snapshot: PersistedState, to url: URL, logger: Logger
+        _ snapshot: PersistedState, to url: URL, logger: Logger,
+        fallbackToken: String? = nil
     ) {
         var snapshot = snapshot
         snapshot.configuration.authToken = nil
+        // Only non-nil when the token store has refused the token; otherwise
+        // the field is omitted entirely and the Keychain remains the one copy.
+        snapshot.fallbackAuthToken = fallbackToken
         do {
             let data = try JSONEncoder.puls.encode(snapshot)
             try ProtectedStateFile.write(data, to: url)

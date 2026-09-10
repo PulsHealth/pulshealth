@@ -127,6 +127,30 @@ struct DashboardView: View {
                 }
             }
 
+            // A read denial is invisible to HealthKit's own API — after the
+            // sheet, granted and denied report the same status, and a denied
+            // read returns an empty set rather than an error. So nothing above
+            // this fires: no banner, no failed type, no error. Every enabled
+            // type finishing a sync with zero samples is the only evidence
+            // left, and without this the app just looks idle and healthy.
+            if model.readsLookBlocked {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("No data is coming through").font(.headline)
+                        Text("Every enabled type has synced and returned nothing. Either Apple Health has no data for them yet, or read access was declined — iOS doesn't tell apps which. Check Settings → Privacy & Security → Health → PulsHealth.")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                        Button("Open Health Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+
             overviewSection
 
             Section("Types") {

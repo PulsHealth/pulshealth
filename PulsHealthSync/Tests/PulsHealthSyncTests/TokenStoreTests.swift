@@ -150,6 +150,78 @@ private func writeLegacyState(_ json: String, in dir: URL) throws {
         #expect(raw.contains("legacy-secret"))
     }
 
+    /// The migration comment promises the file keeps the token until the store
+    /// accepts it. It did not: every write goes through `writeSnapshot`, which
+    /// strips the token unconditionally, and `SyncConfiguration` never encodes
+    /// it — so the FIRST persist of the session (any `update()`, i.e. the first
+    /// uploaded page) rewrote the file without it. The token then existed
+    /// nowhere but memory, and syncing stalled after the next launch with no
+    /// explanation. The old test stopped at init, so it passed throughout.
+    @Test func aRejectedTokenSurvivesLaterWrites() async throws {
+        struct Refusing: TokenStore {
+            struct Nope: Error {}
+            func token() throws -> String? { nil }
+            func setToken(_ token: String?) throws { throw Nope() }
+        }
+        let dir = makeDir()
+        try writeLegacyState(#"{"configuration":{"enabledTypes":[],"startDate":0,"maxConcurrentTypes":4,"batchSize":1000,"authToken":"legacy-secret"},"typeStates":{},"deviceID":"dev-1"}"#, in: dir)
+        let file = dir.appendingPathComponent("sync-state.json")
+
+        do {
+            let store = SyncStateStore(directory: dir, tokenStore: Refusing())
+            // Exactly what an uploaded page does.
+            await store.update("HKQuantityTypeIdentifierStepCount") { $0.lastSyncAt = Date() }
+            await store.persistNow()
+
+            let raw = try String(contentsOf: file, encoding: .utf8)
+            #expect(raw.contains("legacy-secret"), "the token was dropped by a later write")
+        }
+
+        // And it comes back on the next launch, still refused, still usable.
+        let reopened = SyncStateStore(directory: dir, tokenStore: Refusing())
+        #expect(await reopened.configuration.authToken == "legacy-secret")
+        await reopened.persistNow()
+        let rawAgain = try String(contentsOf: file, encoding: .utf8)
+        #expect(rawAgain.contains("legacy-secret"), "the token was lost across a relaunch")
+    }
+
+    /// Once the store accepts it, the inline copy must go: the Keychain is the
+    /// only place it belongs, and a token left in a plaintext file would
+    /// contradict the published privacy claim.
+    @Test func anAcceptedTokenIsRemovedFromTheFile() async throws {
+        /// Refuses once, then accepts — a Keychain unavailable at first unlock.
+        final class RefusesOnce: TokenStore, @unchecked Sendable {
+            struct Nope: Error {}
+            private let box = NSMutableDictionary()
+            var stored: String? { box["t"] as? String }
+            func token() throws -> String? { box["t"] as? String }
+            func setToken(_ token: String?) throws {
+                if box["tried"] == nil {
+                    box["tried"] = true
+                    throw Nope()
+                }
+                box["t"] = token
+            }
+        }
+        let dir = makeDir()
+        try writeLegacyState(#"{"configuration":{"enabledTypes":[],"startDate":0,"maxConcurrentTypes":4,"batchSize":1000,"authToken":"legacy-secret"},"typeStates":{},"deviceID":"dev-1"}"#, in: dir)
+        let file = dir.appendingPathComponent("sync-state.json")
+
+        let flaky = RefusesOnce()
+        do {
+            let store = SyncStateStore(directory: dir, tokenStore: flaky)
+            await store.persistNow()
+            #expect(try String(contentsOf: file, encoding: .utf8).contains("legacy-secret"))
+        }
+        // Next launch: the store accepts the parked token and the file drops it.
+        let reopened = SyncStateStore(directory: dir, tokenStore: flaky)
+        #expect(await reopened.configuration.authToken == "legacy-secret")
+        #expect(flaky.stored == "legacy-secret", "the token never reached the store")
+        await reopened.persistNow()
+        let raw = try String(contentsOf: file, encoding: .utf8)
+        #expect(!raw.contains("legacy-secret"), "the token stayed in the file after the store accepted it")
+    }
+
     @Test func stateFilesAreExcludedFromBackup() async throws {
         let dir = makeDir()
         let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
