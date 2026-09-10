@@ -60,8 +60,9 @@ cd PulsHealth && xcodebuild test -scheme PulsHealth \
 scripts/bootstrap.sh --build                   # first run, from source
 make dev-up                                    # thereafter (compose.build.yml)
 
-# Marketing site (bun, not npm). Exports 190 static pages to site/out —
-# 177 of them from knowledge-base/. `make site-dev|site-build|site-lint` and
+# Marketing site (bun, not npm). Exports to site/out: the marketing pages plus
+# 177 knowledge-base type pages and one page per blog article — the two counts
+# CI asserts. `make site-dev|site-build|site-lint` and
 # `scripts/deploy-site.sh` (S3 + CloudFront) wrap this from the repo root.
 cd site && bun install && bun run lint && bun run build
 
