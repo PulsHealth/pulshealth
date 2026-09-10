@@ -94,7 +94,10 @@ context for judging what is.
   grants. Per-device tokens bound to a user are on the roadmap.
 - **The token lives on the phone.** It is held in the Keychain, accessible
   after the first unlock so background syncs still run, and the sync-state and
-  log files carry file protection and are excluded from device backups.
+  log files carry file protection and are excluded from device backups. If a
+  Keychain write fails the app parks the token in that protected state file
+  instead of dropping it — losing it would stall syncing until the user
+  re-entered it — and removes it once the Keychain accepts it.
 - **TLS is yours to provide.** Every service binds to loopback by default. The
   phone must reach the ingest port over HTTPS through a TLS-terminating
   reverse proxy or a VPN; the token is only a second layer.
