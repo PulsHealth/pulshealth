@@ -108,8 +108,15 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   default user, `ensureUser`s the row (FK target) before any insert, and tags
   every row with it. The `{"profile":…}` line carries the complete identity
   snapshot (name/email/dob/sex); null or omitted fields clear stored values.
-  DOB/sex feed HR zones. There is no in-place migration for the `user_id` columns — adding
-  users to a populated DB means dropping the volume and resyncing. `user_id` joins
+  DOB/sex feed HR zones. **Writes are already multi-user and reads are not:**
+  every schema this repository can build carries `user_id` from file 000, and
+  `ensureUser` creates whatever id arrives in the header, so a second phone's
+  rows land in a populated database without a wipe — but the product API and
+  the web viewer each serve exactly one `PULS_USER_ID`, so those rows are
+  stored and nothing shows them. Grafana's health dashboard is the one
+  exception: it has a `user` template variable over the `users` table. Nothing
+  binds the token to a user either, so `X-User-ID` remains unauthenticated
+  tenant selection (SRV-8). `user_id` joins
   the conflict target where identity would otherwise collide across users
   (`activity_summaries` PK `(user_id, date)`; `aggregate_samples` PK
   `(series_id, bucket_start, user_id)`); UUID-keyed sample tables keep their UUID

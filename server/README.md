@@ -376,10 +376,21 @@ docker compose exec db psql -U postgres -d postgres -tA \
 ```
 
 `000_users.sql` adds the `users` table (which the per-row `user_id` foreign keys
-and the profile line's user upsert reference) and seeds the default user. It runs
-first on a fresh volume; there is no in-place migration for the `user_id`
-columns, so adding users to a database with existing data means a full reset —
-drop the volume, let `migrate` rebuild the schema, and resync from the app.
+and the profile line's user upsert reference) and seeds the default user. It is
+file 000 because every data table in 001+ references it, so every schema this
+repository can build has been multi-user from its first migration.
+
+Storing a second person's data therefore needs nothing: point another phone at
+the same ingest URL with its own user ID and `ensureUser` creates the row before
+the first insert — no reset, no volume drop. **Reading it back is the part that
+does not exist yet.** The product API and the web viewer are each configured
+with one `PULS_USER_ID` and answer for that user alone, so a second user's rows
+accumulate where nothing displays them; the exception is Grafana's PulsHealth
+dashboard, which has a `user` variable listing everyone in `users`. Serving two
+people properly means a second API/viewer pair (a second compose project with a
+different `PULS_USER_ID`) until the API learns to scope per request. Nothing
+binds the token to a user either — see "The token" below — so `X-User-ID` is
+selection, not authentication, and everyone with the token can write as anyone.
 
 ### The token
 
