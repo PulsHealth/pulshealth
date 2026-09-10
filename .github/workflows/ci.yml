@@ -320,6 +320,100 @@ jobs:
           docker rm -f puls-ci-db >/dev/null 2>&1 || true
           docker network rm puls-ci >/dev/null 2>&1 || true
 
+  # The suites that need a real database. Every `Integration` test in
+  # server/ingest and server/api skips itself when DATABASE_URL is unset, so
+  # until this job existed not one of them ran anywhere — including
+  # TestIntegration_DeletionsOnCompressedChunk, which is the named guard for
+  # the compressed-chunk deletion rule (a bare `uuid` predicate trips
+  # TimescaleDB's decompression limit and stalls sync). The schema is applied
+  # by server/db/migrate.sh against the pinned TimescaleDB, the same path a
+  # self-hoster takes, and each suite connects as the scoped role it uses in
+  # production — `ingest` writes, `api_reader` reads — with ADMIN_DATABASE_URL
+  # for the few steps those roles are deliberately not allowed to perform
+  # (applying DDL, compress_chunk, inserting fixtures). Running the suites as
+  # the superuser instead would pass while a real deployment 500s on a
+  # missing grant.
+  db-integration:
+    name: Database integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # America/Los_Angeles, where db-migrate uses Europe/Berlin, because the
+      # API's day-range fixtures were written against LA dates and
+      # metric_daily buckets in puls_time_zone(): the database's zone and the
+      # fixtures' must agree or server-computed days land on the wrong row.
+      PULS_TIME_ZONE: America/Los_Angeles
+      # 55432, not 5432: the runner image ships a PostgreSQL of its own.
+      ADMIN_DATABASE_URL: postgres://postgres:ci-secret@127.0.0.1:55432/postgres
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: 1.26.6
+          cache-dependency-path: |
+            server/api/go.sum
+            server/ingest/go.sum
+
+      - name: Start a throwaway TimescaleDB and apply the schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The exact image the compose stack pins (x-db-image), so the tests
+          # run against the TimescaleDB a self-hoster actually gets.
+          DB_IMAGE=$(grep -oE -m1 'timescale/timescaledb-ha:[A-Za-z0-9._-]+' server/docker-compose.yml)
+          echo "using $DB_IMAGE"
+          docker network create puls-integration
+          docker run -d --name puls-integration-db --network puls-integration \
+            -p 127.0.0.1:55432:5432 -e POSTGRES_PASSWORD=ci-secret "$DB_IMAGE"
+          ready=
+          for _ in $(seq 1 60); do
+            if docker exec puls-integration-db pg_isready -h 127.0.0.1 -U postgres -d postgres >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ -z "$ready" ]; then
+            echo "database did not become ready" >&2
+            docker logs puls-integration-db
+            exit 1
+          fi
+          # The real migrator, in the database image, exactly as the compose
+          # `migrate` service runs it — 099_read_roles.sh included, since it
+          # creates the scoped roles the two test steps then connect as.
+          docker run --rm --network puls-integration \
+            -v "$PWD/server/db/migrate.sh:/puls/migrate.sh:ro" \
+            -v "$PWD/server/db/migrations:/puls/migrations:ro" \
+            -e PGHOST=puls-integration-db -e PGPASSWORD=ci-secret -e MIGRATIONS_DIR=/puls/migrations \
+            -e GRAFANA_DB_PASSWORD=ci-grafana -e API_DB_PASSWORD=ci-api \
+            -e INGEST_DB_PASSWORD=ci-ingest -e PULS_TIME_ZONE="$PULS_TIME_ZONE" \
+            --entrypoint bash "$DB_IMAGE" /puls/migrate.sh
+
+      - name: Ingest, as the scoped `ingest` role
+        working-directory: server/ingest
+        env:
+          DATABASE_URL: postgres://ingest:ci-ingest@127.0.0.1:55432/postgres
+        run: go test -race -count=1 -run Integration ./...
+
+      - name: Product API, as the read-only `api_reader` role
+        working-directory: server/api
+        env:
+          DATABASE_URL: postgres://api_reader:ci-api@127.0.0.1:55432/postgres
+          # Opt-in because they write: fixture rows go in through
+          # ADMIN_DATABASE_URL and are read back through the reader role, so
+          # the grants under test are the ones production uses.
+          PULS_API_WRITE_INTEGRATION_TESTS: "1"
+        run: go test -race -count=1 -run Integration ./...
+
+      - name: Remove the throwaway database
+        if: always()
+        run: |
+          docker rm -f puls-integration-db >/dev/null 2>&1 || true
+          docker network rm puls-integration >/dev/null 2>&1 || true
+
   # The public-tree gate: no tracked file may carry owner-specific or
   # private-infrastructure content (tailnet hostnames, personal mailboxes,
   # home directories, an Apple Team ID, the retired private deploy tooling).

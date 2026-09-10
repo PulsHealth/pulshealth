@@ -81,6 +81,10 @@ cd web && npm ci && npm run check:catalog && npm run lint && \
   npm run typecheck && npm test && npm run build
 
 # Server integration tests (gated on DATABASE_URL; schema must be applied).
+# CI runs both suites on every push — the `db-integration` job in ci.yml starts
+# the pinned TimescaleDB, applies the schema with migrate.sh and connects as
+# the scoped roles — so a break here fails a pull request rather than waiting
+# for someone to run them by hand.
 # There is no module at server/ — ingest, api and mcp are each their own
 # module, so run these from the module directory, not from server/.
 cd server && docker compose up -d migrate      # db + schema, nothing else
