@@ -327,6 +327,16 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   sheet (FB15315876), leaving the request stuck at `.shouldRequest` and making
   the sheet flash-dismiss, which blocks grants for every other pending type.
   Effort scores ship attached to workout payloads via `SeriesEnricher` instead.
+- The iOS 26 medication picker (`requestPerObjectReadAuthorization`) presents
+  itself over whatever HealthKit view controller is on screen. Ask for it while
+  the bulk permission sheet is still tearing down and UIKit logs "Attempt to
+  present <HKHealthPrivacyHostObjectPickerViewController…> whose view is not in
+  the window hierarchy" — and the call **never returns**. Awaited inline in
+  Apply, that deadlocked the first run on its spinner for any selection that
+  included Medication Doses. `AppModel.scheduleMedicationAccessRequest()` starts
+  it instead of awaiting it, after the onboarding cover is down and the bulk
+  sheet has settled, with a watchdog that logs when the picker never appears.
+  Keep per-object requests off Apply's awaited path.
 - iOS silently throttles "immediate" background delivery to ~hourly for
   steps/energy/distance, and Watch→iPhone sync can't be forced. Latency complaints
   are usually iOS behavior, not bugs — see the latency table in the root README.
