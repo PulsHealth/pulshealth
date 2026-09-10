@@ -142,6 +142,22 @@ generated files; never edit them by hand. `npm run check:catalog` (run in CI)
 fails when the generated file is stale, and `lib/catalog.test.ts` pins the
 merged catalog to the JSON.
 
+## Map tiles
+
+The workout route map (`lib/mapStyles.ts`) draws its basemap from free public
+tile endpoints that need no API key: CARTO (`basemaps.cartocdn.com` — the dark,
+light and Voyager styles, and so the `auto` default), OpenStreetMap
+(`tile.openstreetmap.org`), Esri World Imagery, and OpenTopoMap. Each style
+carries the attribution its operator requires, set in `mapStyles.ts` and
+rendered by Leaflet's attribution control — that is a licence condition, not
+decoration. These are other people's servers, though, offered under usage
+policies written for modest, non-redistributed use (the
+[OSMF tile usage policy](https://operations.osmfoundation.org/policies/tiles/),
+[CARTO's basemap terms](https://carto.com/basemaps/)). One person's viewer sits
+well inside them; a public or heavily-trafficked deployment does not, and should
+point at its own tile server or a paid provider rather than lean on the free
+endpoints.
+
 ## Notes
 
 - Read-only by design — this is a viewer; it never writes to the health store.
