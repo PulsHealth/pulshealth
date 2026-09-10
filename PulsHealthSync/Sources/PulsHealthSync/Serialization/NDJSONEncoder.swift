@@ -168,8 +168,8 @@ enum BatchSerializer {
     }
 
     private static func rawDeflate(_ data: Data) -> Data {
-        data.withUnsafeBytes { (src: UnsafeRawBufferPointer) -> Data in
-            guard let srcBase = src.baseAddress, !src.isEmpty else { return Data() }
+        let compressed: Data? = data.withUnsafeBytes { (src: UnsafeRawBufferPointer) -> Data? in
+            guard let srcBase = src.baseAddress, !src.isEmpty else { return nil }
             let dstCapacity = max(64, data.count + data.count / 2)
             let dst = UnsafeMutablePointer<UInt8>.allocate(capacity: dstCapacity)
             defer { dst.deallocate() }
@@ -178,9 +178,52 @@ enum BatchSerializer {
                 srcBase.assumingMemoryBound(to: UInt8.self), data.count,
                 nil, COMPRESSION_ZLIB
             )
-            guard written > 0 else { return data }
+            // 0 means both "failed" and "the compressed form did not fit
+            // dstCapacity" — the latter happens on incompressible input. Either
+            // way there is no DEFLATE stream here.
+            guard written > 0 else { return nil }
             return Data(bytes: dst, count: written)
         }
+        // Never hand back the raw bytes: gzip() frames whatever this returns
+        // with a header, CRC and ISIZE as though it were DEFLATE, so returning
+        // the input produced a body advertised as Content-Encoding: gzip that
+        // no gzip reader can decode. The server answers 400, which isRetryable
+        // treats as terminal, so the anchor stays put and that page retries
+        // forever. Stored blocks are valid DEFLATE, so the framing stays honest.
+        return compressed ?? storedDeflate(data)
+    }
+
+    /// DEFLATE "stored" (uncompressed) blocks — RFC 1951 § 3.2.4.
+    ///
+    /// Each block is a 1-byte header (BFINAL in bit 0, BTYPE = 00), a 16-bit
+    /// little-endian length, its one's complement, then the literal bytes. A
+    /// block carries at most 65,535 bytes, so long input becomes several with
+    /// BFINAL set only on the last.
+    ///
+    /// Internal rather than private so the tests can inflate it directly and
+    /// prove the fallback is decodable, which is the whole point of it.
+    static func storedDeflate(_ data: Data) -> Data {
+        let maxBlock = 65_535
+        // An empty payload still needs one final, empty block: a zero-byte
+        // DEFLATE stream is not valid.
+        guard !data.isEmpty else {
+            return Data([0x01, 0x00, 0x00, 0xFF, 0xFF])
+        }
+        var out = Data(capacity: data.count + 5 * (data.count / maxBlock + 1))
+        var offset = 0
+        while offset < data.count {
+            let len = min(maxBlock, data.count - offset)
+            let isFinal = offset + len >= data.count
+            out.append(isFinal ? 0x01 : 0x00)
+            var length = UInt16(len).littleEndian
+            withUnsafeBytes(of: &length) { out.append(contentsOf: $0) }
+            var complement = (~UInt16(len)).littleEndian
+            withUnsafeBytes(of: &complement) { out.append(contentsOf: $0) }
+            let start = data.index(data.startIndex, offsetBy: offset)
+            out.append(data[start..<data.index(start, offsetBy: len)])
+            offset += len
+        }
+        return out
     }
 
     private static let crcTable: [UInt32] = (0..<256).map { i -> UInt32 in

@@ -129,7 +129,16 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `profile` table is gone — folded into `users`.
 - **Canonical units.** Every quantity type has one `unitString` in
   `HealthTypeCatalog`; `SampleMapper` converts before encoding. Never send raw
-  device units.
+  device units. **A wrong one is silent by construction:** `SampleMapper.map`
+  returns nil when the quantity is not compatible with that unit, and
+  compatibility is a whole-type property, so one bad `unitString` makes every
+  sample of that type unmappable. Which is why **"drained" is always a raw-count
+  question, never a mapped-count one** — `result.addedSamples.count`, not
+  `samples.count`; `MergedPage.isRawEmpty`, not `isEmpty`. Deciding it on mapped
+  counts made such a type report zero samples, drained, backfill complete, with
+  no error and no counter. Both sweeps now log any drop
+  (`HealthSyncEngine.syncPages`, `MergedSync`) and a type that dropped anything
+  is never marked backfill-complete.
 - **One type vocabulary.** `HealthTypeCatalog.swift` is the only hand-written
   list of types. `docs/protocol/catalog.json` is rendered from it by
   `CatalogVocabularyTests` (write mode `TEST_RUNNER_PULS_WRITE_CATALOG=1`;

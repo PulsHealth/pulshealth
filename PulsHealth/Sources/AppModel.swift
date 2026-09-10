@@ -48,6 +48,28 @@ final class AppModel {
     /// "succeeds" but the types never appear in the sheet and stay undetermined.
     /// Cleared when a later request actually determines them.
     var authorizationHint: String?
+
+    /// Every enabled type has completed at least one sync and not one of them
+    /// returned a single sample.
+    ///
+    /// This exists because HealthKit never reports a read *denial*. Once the
+    /// permission sheet has been shown, `statusForAuthorizationRequest` answers
+    /// `.unnecessary` whether the user allowed everything or denied everything,
+    /// and a denied read returns an empty result set rather than an error — so
+    /// `needsAuthorization` goes false, no type is ever marked `.failed`, and
+    /// the app happily reports success while uploading nothing, forever. The
+    /// only signal left is the outcome, which is what this reads.
+    ///
+    /// It is a heuristic, not a verdict: a phone with no recorded health data
+    /// looks identical. The copy it drives says so rather than accusing.
+    var readsLookBlocked: Bool {
+        let observed = statuses.filter { !HealthTypeCatalog.isActivitySummary($0.id) }
+        guard !observed.isEmpty else { return false }
+        // Only judge once every type has actually run — mid-backfill counts are
+        // legitimately zero.
+        guard observed.allSatisfy({ $0.state.lastSyncAt != nil }) else { return false }
+        return observed.allSatisfy { $0.state.totalSamplesExported == 0 }
+    }
     var lastErrorMessage: String?
     /// True while the first-run flow covers the app (`OnboardingView`). Set
     /// synchronously in `init` so a fresh launch never flashes an unconfigured

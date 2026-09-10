@@ -9,7 +9,16 @@ import Testing
 /// the single upload carrying its data is acked. These tests pin that down.
 @Suite struct MergedSyncPackingTests {
 
-    private func page(_ identifier: String, samples: Int, deletions: Int = 0, drained: Bool = true) -> MergedPage {
+    /// `rawCount` defaults to the mapped total, i.e. nothing was dropped. Pass
+    /// it explicitly to build the case that matters: a page HealthKit filled
+    /// but `SampleMapper` could not convert.
+    private func page(
+        _ identifier: String,
+        samples: Int,
+        deletions: Int = 0,
+        drained: Bool = true,
+        rawCount: Int? = nil
+    ) -> MergedPage {
         MergedPage(
             identifier: identifier,
             samples: (0..<samples).map { i in
@@ -25,8 +34,33 @@ import Testing
             newAnchorData: Data(),
             enrichment: HealthSyncEngine.WorkoutEnrichment(),
             queryDuration: 0,
-            drained: drained
+            drained: drained,
+            rawCount: rawCount ?? (samples + deletions),
+            dropped: max(0, (rawCount ?? (samples + deletions)) - deletions - samples)
         )
+    }
+
+    /// The distinction the drained decision now turns on. `isEmpty` is a
+    /// mapped-count question; `isRawEmpty` is the raw one. Treating the first
+    /// as "HealthKit has nothing more" is how a type with a wrong `unitString`
+    /// reported zero samples and backfill complete, silently.
+    @Test func rawEmptyIsNotTheSameAsMappedEmpty() {
+        let nothingAtAll = page("a", samples: 0, rawCount: 0)
+        #expect(nothingAtAll.isEmpty)
+        #expect(nothingAtAll.isRawEmpty)
+        #expect(nothingAtAll.dropped == 0)
+
+        // HealthKit returned a full page; none of it mapped.
+        let allDropped = page("b", samples: 0, drained: false, rawCount: 1_000)
+        #expect(allDropped.isEmpty, "nothing mapped, so there is nothing to upload")
+        #expect(!allDropped.isRawEmpty, "but HealthKit did return data — not drained")
+        #expect(allDropped.dropped == 1_000)
+
+        // A partial drop still counts what was lost.
+        let partial = page("c", samples: 10, rawCount: 25)
+        #expect(!partial.isEmpty)
+        #expect(!partial.isRawEmpty)
+        #expect(partial.dropped == 15)
     }
 
     private func identifiers(_ packs: [[MergedPage]]) -> [[String]] {
