@@ -1,23 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { MoonIcon, SunIcon } from "./Icons";
+import { useClientPref } from "@/lib/clientPref";
+import { themePref, writeTheme } from "@/lib/theme";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-
-  useEffect(() => {
-    const t = (document.documentElement.dataset.theme as "dark" | "light") || "dark";
-    setTheme(t);
-  }, []);
+  const theme = useClientPref(themePref);
 
   function toggle() {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem("puls-theme", next);
-    } catch {}
+    writeTheme(theme === "dark" ? "light" : "dark");
   }
 
   return (
