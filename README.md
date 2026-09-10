@@ -37,7 +37,8 @@ free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 >   dump). Until then your Postgres volume is the only copy of your data.
 >   Nothing verifies a backup except the restore drill in `server/README.md`.
 >
-> Decisions, requirements, and phases are in
+> What is still outstanding is [`docs/roadmap.md`](docs/roadmap.md); the
+> decisions, requirements and phases behind it are in
 > [`docs/open-source-plan.md`](docs/open-source-plan.md).
 
 ## Components

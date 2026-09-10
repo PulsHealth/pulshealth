@@ -20,7 +20,9 @@ plus two standalone CLIs and the public website:
 an automated contributor (components, where the authoritative facts live, the
 test command for each suite); [`llms.txt`](llms.txt) indexes the
 documentation. Both point back here for the invariants below rather than
-restating them — keep it that way.
+restating them — keep it that way. What is still outstanding is
+[`docs/roadmap.md`](docs/roadmap.md), over the requirements in
+[`docs/open-source-plan.md`](docs/open-source-plan.md).
 
 ## Build & test
 

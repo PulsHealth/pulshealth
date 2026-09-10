@@ -1,6 +1,10 @@
 # Open-sourcing PulsHealth — requirements and plan
 
-Status: approved 2026-09-04; Phase 0 in progress on the `open` branch.
+Status: approved 2026-09-04. Phases 0-4 are complete — the repository is
+public, the protocol is specified, the stack self-hosts, the MCP server ships,
+and the app is on the App Store (see Phase 4 below). This file stays as the
+record of what was decided and why; **what is still outstanding lives in
+[`roadmap.md`](roadmap.md)**, which is the list to work from.
 
 ## 1. Goal
 
@@ -252,7 +256,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | PROTO-1 | `schemaVersion` (int) and `clientVersion` in the batch header; `X-Puls-Protocol: 1` request header. Servers reject unknown major with 400 + `{"error","supportedVersions"}`. | M |
 | PROTO-2 | `docs/protocol/` spec: transport (headers, gzip, limits), line types, canonical units, epoch-ms, idempotency contract (UUID no-op, aggregate upsert key, activity upsert key, explicit null clears), ack contract (any 2xx, body optional), retry contract (4xx never retried, 429/5xx retried, single retry on observer wakes, 60 s timeout). | M |
 | PROTO-3 | JSON Schema for the header and every line type, generated from or tested against `SyncModels.swift` and `parse.go`. | M |
-| PROTO-4 | Conformance corpus: gzip NDJSON fixtures + expected outcomes, runnable against any receiver URL (`puls-conformance <url> <token>`). | S |
+| PROTO-4 | Conformance corpus: gzip NDJSON fixtures + expected outcomes, runnable against any receiver URL (`puls-conformance <url> <token>`). | S — **done** under another name: `examples/receivers/python-sqlite/smoke_test.py --url <url> --token <token>` posts `docs/protocol/fixtures/` at any receiver and checks the `.expected.json` outcomes, replay idempotency and the documented rejections. `tools/protocol-check` is the offline half (corpus against the JSON Schemas). Both run in CI. |
 | PROTO-5 | Minimal reference receiver (~150 lines, Python or Go) writing to SQLite or JSONL, to prove the spec is implementable in an afternoon. | S |
 | PROTO-6 | Optional `GET /v1/capabilities` → `{"protocol":[1],"features":["digest","uuids","stats","aggregates","routes","series"]}`. | S |
 | PROTO-7 | Type vocabulary v1 = HealthKit identifiers + `HealthTypeCatalog` canonical units, published as a JSON file both Swift and web catalogs are generated from (kills the duplicate). | S |
@@ -272,7 +276,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | SRV-8 | Per-device tokens: enroll → pending → approve via CLI; hashed at rest; last-seen; revoke; token bound to user (closes the `X-User-ID` hole). Shared `PULS_TOKEN` stays valid during migration. | S |
 | SRV-9 | Backups: opt-in `pg_dump` sidecar service with retention, and a documented restore drill. | S |
 | SRV-10 | Web viewer auth (basic auth or the API token) and a viewer-scoped DB role instead of `grafana`. | S |
-| SRV-11 | Second-user story without a volume wipe. | S |
+| SRV-11 | Second-user story without a volume wipe. | S — half true already: writes have always been multi-user (`ensureUser` creates any id the header carries), so no wipe is involved. What is missing is the **read** side — the API and web viewer each serve one `PULS_USER_ID`. |
 | SRV-12 | Grafana contact point from `${GRAFANA_ALERT_EMAIL}`; alert thresholds documented as tunables. | S |
 | SRV-13 | Product API additions agents ask for first: `/v1/sleep/daily` (category daily), `/v1/samples` (bounded raw window), `/v1/workouts/{uuid}/series`, `/v1/state-of-mind`; pagination on daily metrics. | S |
 
@@ -308,10 +312,10 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | # | Requirement | Pri |
 |---|---|---|
 | STORE-1 | Privacy policy + support URLs on `pulshealth.com`; nutrition label "Data Not Collected" (developer never receives data; Health Auto Export precedent). | M — **done**, `site/` serves `/privacy`, `/support`, `/terms` |
-| STORE-2 | Review path: a throwaway hosted review backend (URL + token in review notes) so reviewers can exercise sync end to end. | M |
-| STORE-3 | Reserve the app name in App Store Connect; screenshots; description that states plainly where data goes. | M |
+| STORE-2 | Review path: a throwaway hosted review backend (URL + token in review notes) so reviewers can exercise sync end to end. | M — **done**, `docs/appstore/review-backend.md` + the placeholders in `review-notes.md` |
+| STORE-3 | Reserve the app name in App Store Connect; screenshots; description that states plainly where data goes. | M — **done**, `docs/appstore/listing.md`; the screenshots themselves live in App Store Connect, not here |
 | STORE-4 | TestFlight public link as the beta channel before the store listing. | S — **skipped**, the app went straight to the store |
-| STORE-5 | Guideline 5.1.3 check: read-only HealthKit, no iCloud storage of health data, no advertising use. Already true; document it in the review notes. | M |
+| STORE-5 | Guideline 5.1.3 check: read-only HealthKit, no iCloud storage of health data, no advertising use. Already true; document it in the review notes. | M — **done**, the HEALTHKIT block in `docs/appstore/review-notes.md` |
 
 ## 5. Phases
 
@@ -381,9 +385,11 @@ channel) was skipped; the app went straight to the store.
 
 ### Later
 
-- SRV-8 per-device tokens, SRV-11 multi-user without wipe, APP-11 sink
-  factory, APP-12 file export, AI-6..8, PROTO-4 conformance runner,
-  PROTO-8.
+- SRV-8 per-device tokens, SRV-11 multi-user reads, APP-11 sink factory,
+  APP-12 file export, AI-6..8, PROTO-8.
+
+These, plus the release and submission work the phases above did not cover,
+are tracked with current status and sequencing in [`roadmap.md`](roadmap.md).
 
 ## 6. Launch definition of done
 
