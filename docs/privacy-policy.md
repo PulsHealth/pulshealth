@@ -66,9 +66,14 @@ Transport Security (`NSAllowsLocalNetworking`).
   (`kSecClassGenericPassword`, accessibility
   `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` — readable after the first
   unlock following a restart so background syncs can run, and bound to this
-  device so it is never restored onto another one from a backup). It is never
-  written to the app's state file, and it is scrubbed out of logged error
-  messages and anything the app exports.
+  device so it is never restored onto another one from a backup). It is
+  scrubbed out of logged error messages and anything the app exports.
+  **One exception, and only when the Keychain refuses a write:** rather than
+  lose the token — which would stall every sync until you typed it in again —
+  the app keeps it in its own state file until the Keychain accepts it, then
+  removes it. That file carries the same protection as the rest of the app's
+  data: unreadable until the first unlock after a restart, and excluded from
+  device and iCloud backups, so a parked token is never carried off the phone.
 - **Sync state** — one file, `sync-state.json`, in the app's private container,
   holding your configuration (server URL, chosen types, start date, and the
   identity fields if you filled them in), the opaque HealthKit query anchors,

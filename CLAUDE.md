@@ -139,6 +139,20 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   no error and no counter. Both sweeps now log any drop
   (`HealthSyncEngine.syncPages`, `MergedSync`) and a type that dropped anything
   is never marked backfill-complete.
+- **The bearer token has a second home, and it is load-bearing for the privacy
+  claims.** Normally it lives only in the Keychain: `writeSnapshot` strips it
+  and `SyncConfiguration.encode` omits it, so it is not in `sync-state.json`.
+  **When a Keychain write fails** it is parked in that file under
+  `PersistedState.fallbackAuthToken`, read back on the next launch, retried, and
+  removed the moment the store accepts it — because the alternative, which is
+  what used to happen, was the first `persist()` of the session silently
+  dropping the token and stalling every sync until the user retyped it. That
+  file is `.completeUntilFirstUserAuthentication` and backup-excluded
+  (`ProtectedStateFile`), which is what keeps a parked token off iCloud and off
+  other devices. Anything that changes where the token can rest — including
+  removing this fallback — changes `docs/privacy-policy.md`, `SECURITY.md` and
+  the site's `/privacy` page with it (`docs/appstore/README.md` routes "what is
+  stored on the device, or where" to the policy).
 - **One type vocabulary.** `HealthTypeCatalog.swift` is the only hand-written
   list of types. `docs/protocol/catalog.json` is rendered from it by
   `CatalogVocabularyTests` (write mode `TEST_RUNNER_PULS_WRITE_CATALOG=1`;

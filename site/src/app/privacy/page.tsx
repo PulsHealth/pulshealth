@@ -131,9 +131,13 @@ export default function PrivacyPage() {
             <li>
               <strong>The bearer token</strong> is stored in the iOS Keychain, readable after the
               first unlock following a restart so background syncs can run, and bound to this device
-              so it is never restored onto another one from a backup. It is never written to the
-              app&apos;s state file, and it is scrubbed out of logged error messages and anything
-              the app exports.
+              so it is never restored onto another one from a backup. It is scrubbed out of logged
+              error messages and anything the app exports. <strong>One exception, and only when the
+              Keychain refuses a write:</strong> rather than lose the token — which would stall every
+              sync until you typed it in again — the app keeps it in its own state file until the
+              Keychain accepts it, then removes it. That file carries the same protection as the rest
+              of the app&apos;s data: unreadable until the first unlock after a restart, and excluded
+              from device and iCloud backups, so a parked token is never carried off the phone.
             </li>
             <li>
               <strong>Sync state</strong> — one file, <code>sync-state.json</code>, in the app&apos;s
