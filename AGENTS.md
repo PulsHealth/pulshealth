@@ -158,10 +158,10 @@ cd web && npm ci && npm run check:catalog && npm run lint && \
   npm run typecheck && npm test && npm run build
 ```
 
-**Marketing site** (bun, not npm — it exports 190 static pages, 177 of them
-rendered from `knowledge-base/`, and the CI job asserts those counts, so a
-content directory that goes missing fails the build rather than silently
-shrinking it):
+**Marketing site** (bun, not npm — it exports 177 type pages rendered from
+`knowledge-base/` and one page per `blog/articles/*.mdx`, and the CI job asserts
+both counts against their sources, so a content directory that goes missing
+fails the build rather than silently shrinking it):
 
 ```bash
 cd site && bun install && bun run lint && bun run build
