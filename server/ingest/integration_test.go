@@ -822,7 +822,9 @@ func TestIntegration_DigestAndUUIDs(t *testing.T) {
 		t.Fatalf("insert: %+v", res)
 	}
 
-	srv := &Server{store: store, token: "itest-token", log: slog.New(slog.NewJSONHandler(io.Discard, nil))}
+	// newServer, not a bare &Server{}: the auth middleware charges every
+	// request against the failure limiter that constructor installs.
+	srv := newServer(store, "itest-token", false, slog.New(slog.NewJSONHandler(io.Discard, nil)))
 	ts := httptest.NewServer(srv.routes())
 	defer ts.Close()
 
