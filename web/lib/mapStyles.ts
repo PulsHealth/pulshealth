@@ -3,6 +3,8 @@
 // localStorage and is read by RouteMap; "auto" follows the app's dark/light
 // theme so the map always matches the surrounding UI.
 
+import type { ClientPref } from "./clientPref";
+
 export type MapStyleId =
   | "auto"
   | "dark"
@@ -148,6 +150,21 @@ export function readMapStyle(): MapStyleId {
     return DEFAULT_MAP_STYLE;
   }
 }
+
+// The saved style as a subscribable preference. `writeMapStyle` already fires
+// MAP_STYLE_EVENT for same-tab listeners, and `storage` covers other tabs.
+export const mapStylePref: ClientPref<MapStyleId> = {
+  read: readMapStyle,
+  subscribe: (onChange) => {
+    window.addEventListener(MAP_STYLE_EVENT, onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener(MAP_STYLE_EVENT, onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  },
+  serverDefault: DEFAULT_MAP_STYLE,
+};
 
 export function writeMapStyle(id: MapStyleId): void {
   try {

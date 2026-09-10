@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { RouteMap } from "./RouteMap";
-import { MAP_STYLES, readMapStyle, writeMapStyle, type MapStyleId } from "@/lib/mapStyles";
+import { useClientPref } from "@/lib/clientPref";
+import { MAP_STYLES, mapStylePref, writeMapStyle, type MapStyleId } from "@/lib/mapStyles";
 import type { RoutePoint } from "@/lib/types";
 
 // A small synthetic loop (around Central Park) purely to preview tile styles.
@@ -25,23 +25,23 @@ function sampleRoute(): RoutePoint[] {
   return pts;
 }
 
-export function MapStyleSettings() {
-  const [selected, setSelected] = useState<MapStyleId>("auto");
-  const route = useMemo(sampleRoute, []);
+// Constant for the life of the module: the preview loop never changes, and a
+// stable reference keeps RouteMap from rebuilding its map on every render.
+const SAMPLE_ROUTE = sampleRoute();
 
-  useEffect(() => {
-    setSelected(readMapStyle());
-  }, []);
+export function MapStyleSettings() {
+  // No local copy of the selection: writeMapStyle notifies every subscriber,
+  // so the preview below and any open map re-render from the same source.
+  const selected = useClientPref(mapStylePref);
 
   function choose(id: MapStyleId) {
-    setSelected(id);
     writeMapStyle(id); // persists + notifies the preview / any open map
   }
 
   return (
     <>
       <div className="panel rise" style={{ padding: 14, marginBottom: 18 }}>
-        <RouteMap route={route} color="#30d158" height={260} />
+        <RouteMap route={SAMPLE_ROUTE} color="#30d158" height={260} />
         <p style={{ margin: "12px 4px 2px", fontSize: 12, color: "var(--faint)" }}>
           Live preview · map tiles are fetched from the selected provider when you view a route.
         </p>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import type { RoutePoint } from "@/lib/types";
-import { getTileSpec, readMapStyle, MAP_STYLE_EVENT, type MapStyleId } from "@/lib/mapStyles";
+import { useClientPref } from "@/lib/clientPref";
+import { getTileSpec, mapStylePref, type MapStyleId } from "@/lib/mapStyles";
 
 // Leaflet touches `window` at import time, so it's loaded dynamically inside
 // the effect (never during SSR). Markers use circleMarker so there are no
@@ -23,24 +24,13 @@ export function RouteMap({
   const tileRef = useRef<import("leaflet").TileLayer | null>(null);
   const lRef = useRef<typeof import("leaflet") | null>(null);
   const styleRef = useRef<MapStyleId>("auto");
-  const [styleId, setStyleId] = useState<MapStyleId>("auto");
-
-  // Track the saved style and react to changes from the settings page
-  // (same-tab custom event) and other tabs (storage event).
-  useEffect(() => {
-    setStyleId(readMapStyle());
-    const onChange = () => setStyleId(readMapStyle());
-    window.addEventListener(MAP_STYLE_EVENT, onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener(MAP_STYLE_EVENT, onChange);
-      window.removeEventListener("storage", onChange);
-    };
-  }, []);
+  // Changes from the settings page (same-tab event) and other tabs (storage).
+  const styleId = useClientPref(mapStylePref);
 
   // (Re)point the active tile layer at the resolved style. Reads from refs so
-  // it's safe to call from the MutationObserver's stale closure.
-  function applyTiles() {
+  // it's safe to call from the MutationObserver's stale closure — which is also
+  // why it has no dependencies and stays referentially stable.
+  const applyTiles = useCallback(() => {
     const L = lRef.current;
     const map = mapRef.current;
     if (!L || !map) return;
@@ -53,7 +43,7 @@ export function RouteMap({
       maxZoom: spec.maxZoom,
     }).addTo(map);
     tileRef.current.bringToBack();
-  }
+  }, []);
 
   // Build the map once per route.
   useEffect(() => {
@@ -99,15 +89,13 @@ export function RouteMap({
       mapRef.current = null;
       tileRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route, color]);
+  }, [route, color, applyTiles]);
 
   // Swap tiles when the chosen style changes.
   useEffect(() => {
     styleRef.current = styleId;
     applyTiles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [styleId]);
+  }, [styleId, applyTiles]);
 
   return (
     <div

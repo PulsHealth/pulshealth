@@ -152,31 +152,7 @@ contradicts the standing invariant that `server/mcp` is a read-only client of
 the product API and never holds a database URL. Anyone who wants SQL has
 `psql` and `docs/database-guide.md`.
 
-## 10. The viewer's lint config is a major behind
-
-`web/package.json` pins `eslint-config-next` at 15.5.19 while `next` resolves
-to 16.3.4; `site/` pairs the two correctly. This is not a version bump: v16 of
-that config is flat-config only and needs eslint 9, so `web` has to move off
-`.eslintrc.json`/`.eslintignore` to an `eslint.config.mjs` — `site/eslint.config.mjs`
-is the in-repo precedent.
-
-The bump also carries `eslint-plugin-react-hooks` 5.2.0 → 7.1.1 and its React
-Compiler rules, which flag five errors in `web/components/`:
-`react-hooks/use-memo` in `MapStyleSettings.tsx`, and `react-hooks/set-state-in-effect`
-in `MapStyleSettings.tsx`, `RouteMap.tsx`, `ThemeToggle.tsx` and
-`UnitsProvider.tsx` (plus two `eslint-disable` directives in `RouteMap.tsx` that
-become unused, which `--max-warnings=0` also fails on).
-
-Those four are all the same deliberate pattern — render a server-safe default,
-then read a client-only source (`localStorage`, `document.documentElement.dataset`)
-in a mount effect so SSR and the first client render agree, as
-`UnitsProvider.tsx`'s header comment says. Moving the read into the `useState`
-initializer would *introduce* a hydration mismatch. The real fix is
-`useSyncExternalStore` with a server snapshot across theme, units and map style;
-do that on its own, and the lint bump lands behind it. Suppressing the rules
-instead would be the wrong trade — they are pointing at something true.
-
-## 11. Standing maintenance
+## 10. Standing maintenance
 
 Not backlog — things that come due on someone else's schedule.
 
@@ -186,5 +162,6 @@ Not backlog — things that come due on someone else's schedule.
 | A new iOS runtime, again | Re-run the app-hosted `AggregateMatrixTests` — 372 type×function combos — since the legal set is HealthKit's, not ours. |
 | A major Xcode/iOS SDK update | Refresh `010_category_labels.sql` from `HKCategoryValues.h` and check the seed shape (`server/README.md`). |
 | Never yet done on real data | The backup restore drill. The one recorded in `server/README.md` ran against a throwaway stack; nothing else verifies that a dump restores. |
+| Dependabot re-proposes eslint 10 or TypeScript 7 for `web`/`site` | Check upstream first, then close as before. Both are blocked by `eslint-config-next`'s own dependencies, not by this repository: `typescript-eslint` refuses TS >= 7.0 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)), and `eslint-plugin-react` still calls `context.getFilename()`, which ESLint 10 removed. |
 | A red `advisories` workflow run | Bump the dependency in its own pull request. `advisories.yml` is a separate workflow precisely so it can go red without blocking a merge — or a release, which now calls `ci.yml` and would otherwise be gated on it. |
 | `tests/test_healthkit_notebook.py` | Referenced by no workflow, so it only runs by hand. Either wire it into CI or say in the file that it is manual. |
