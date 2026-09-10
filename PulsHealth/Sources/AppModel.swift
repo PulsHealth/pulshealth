@@ -72,6 +72,10 @@ final class AppModel {
     /// purpose: after an iOS update fixes the bug, a fresh launch retries once.
     @ObservationIgnored private var undeterminableTypes: Set<String> = []
 
+    /// True while a medication access request is scheduled or in flight, so a
+    /// second Apply doesn't stack another one on top of it.
+    @ObservationIgnored private var requestingMedicationAccess = false
+
     private var started = false
 
     init() {
@@ -340,9 +344,11 @@ final class AppModel {
             if !enabled.isEmpty { markAuthorizationRequested() }
         }
         // Medications use a separate per-object sheet (the user picks which
-        // medications the app may read); show it after the bulk one so the main
-        // grant always comes first.
-        await requestMedicationAccessIfNeeded()
+        // medications the app may read). It follows the bulk one so the main
+        // grant always comes first — but it is started, never awaited, because
+        // iOS can swallow its presentation and never call back
+        // (`scheduleMedicationAccessRequest()`).
+        scheduleMedicationAccessRequest()
         await refreshNeedsAuthorization()
     }
 
@@ -627,18 +633,74 @@ final class AppModel {
         }
     }
 
+    private static let medicationAuthRequestedKey = "medicationAuthRequested"
+
+    /// True while the per-object medication sheet still has to be shown: the type
+    /// is enabled and this install has never asked. One-shot per install, like
+    /// the main grant.
+    private var medicationAccessNeeded: Bool {
+        guard #available(iOS 26.0, *) else { return false }
+        return config.enabledTypes.contains(HealthTypeCatalog.medicationDoseIdentifier)
+            && !UserDefaults.standard.bool(forKey: Self.medicationAuthRequestedKey)
+    }
+
     /// Medications need HealthKit's per-object authorization sheet (the user picks
-    /// which medications the app may read). One-shot per install, like the main grant.
-    func requestMedicationAccessIfNeeded() async {
-        guard #available(iOS 26.0, *),
-              config.enabledTypes.contains(HealthTypeCatalog.medicationDoseIdentifier),
-              !UserDefaults.standard.bool(forKey: "medicationAuthRequested") else { return }
+    /// which medications the app may read). Apply *starts* it and moves on; it is
+    /// deliberately never awaited.
+    ///
+    /// iOS presents this picker on top of whatever HealthKit view controller is on
+    /// screen, and presenting it into one that is still tearing down — the bulk
+    /// permission sheet Apply just showed — fails ("whose view is not in the window
+    /// hierarchy") *without ever calling back*. Awaited inline, that deadlocked the
+    /// first run: `finishOnboarding` never returned, so its spinner never stopped
+    /// and the cover never came down, for any selection that merely included
+    /// Medication Doses. So the request waits for the flow's cover to go and the
+    /// bulk sheet to settle, and it does that off the critical path.
+    func scheduleMedicationAccessRequest() {
+        guard medicationAccessNeeded, !requestingMedicationAccess else { return }
+        requestingMedicationAccess = true
+        Task { [weak self] in await self?.requestMedicationAccess() }
+    }
+
+    private func requestMedicationAccess() async {
+        defer { requestingMedicationAccess = false }
+        // Never present over the first-run cover: this can be scheduled from the
+        // flow's own Health-access step, minutes before the user reaches the end.
+        // Giving up is safe — the final Apply schedules it again.
+        var waited = 0
+        while showsOnboarding {
+            guard waited < 480 else { return }  // 2 minutes
+            try? await Task.sleep(for: .milliseconds(250))
+            waited += 1
+        }
+        // Let the bulk sheet's remote view controller finish dismissing.
+        try? await Task.sleep(for: .milliseconds(600))
+        guard #available(iOS 26.0, *), medicationAccessNeeded else { return }
+        // If iOS swallows the presentation anyway the call below never returns, so
+        // the user hears it from here rather than waiting on a picker that never
+        // appears. (The stuck request costs nothing: it blocks no UI, and the
+        // one-shot flag stays clear so the next Apply retries.)
+        let watchdog = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(20))
+            guard let self, !Task.isCancelled, self.requestingMedicationAccess else { return }
+            await self.engine.eventLog.log(
+                .warn,
+                "iOS did not show the medication picker; medication doses stay unauthorized")
+            if self.authorizationHint == nil {
+                self.authorizationHint = """
+                iOS didn't show the medication picker, so medication doses stay \
+                unauthorized. Try Save & Apply again, or turn Medication Doses off \
+                in Data Types.
+                """
+            }
+        }
         do {
             try await engine.requestMedicationAuthorization()
-            UserDefaults.standard.set(true, forKey: "medicationAuthRequested")
+            UserDefaults.standard.set(true, forKey: Self.medicationAuthRequestedKey)
         } catch {
             lastErrorMessage = error.localizedDescription
         }
+        watchdog.cancel()
     }
 
     /// Clears both the engine's persisted ring buffer and the on-screen list —
