@@ -24,7 +24,7 @@ site's export-count assertion.
 is the right stopgap and not a substitute.
 
 **0.1.0 is chosen and written up**: `CHANGELOG.md` carries the entry, dated
-2026-09-09 — move the date if the tag slips. 0.x rather than 1.0.0 deliberately,
+2026-09-14 — move the date if the tag slips. 0.x rather than 1.0.0 deliberately,
 so config and schema can still change without a major. The app's 1.4 (§2) and
 the protocol's 1 are two other numbers; the changelog's header says which is
 which.

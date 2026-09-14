@@ -26,7 +26,7 @@ operator action, and when it does this file says so at the top of the entry.
 
 Nothing since 0.1.0.
 
-## [0.1.0] - 2026-09-09
+## [0.1.0] - 2026-09-14
 
 The first tagged release, and the one that first publishes
 `ghcr.io/pulshealth/{ingest,api,mcp,web}` — before it, a compose install had
