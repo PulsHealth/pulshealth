@@ -260,10 +260,11 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
   (`openssl rand -hex 32`), set `PULS_API_TOKEN` in `server/.env`,
   `docker compose up -d api mcp`, and update your other clients. Take the
   public endpoint down at the same time (`tailscale funnel --https=443 off`).
-- **A public endpoint is a public endpoint.** The product API has no rate
-  limiting of its own (ingest's is a different service on a different port)
-  and no IP allowlist; the token is all that stands between the internet and
-  the data. Keep the window short.
+- **A public endpoint is a public endpoint.** The product API throttles
+  failed token guesses per client IP (`server/README.md`, "Rate limiting")
+  and nothing else: no IP allowlist, no limit on requests that carry the
+  right token. The token is all that stands between the internet and the
+  data. Keep the window short.
 - **Actions time out (tens of seconds) and truncate large answers.** Ask for
   narrow ranges. `exportDataset` streams a CSV or JSONL *file*, which is
   exactly the wrong shape for a chat turn — use the JSON endpoints for
