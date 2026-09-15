@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+
 import { PageHero } from "@/components/page-hero";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { docHref, getDocsByGroup } from "@/lib/docs";
 
 const GITHUB = "https://github.com/PulsHealth/pulshealth";
 
@@ -13,43 +16,11 @@ export const metadata = {
   },
 };
 
-const docs = [
-  {
-    title: "Server setup and operations",
-    description: "Bootstrap, configuration, exposing ingest, migrations, backups and restore, upgrades.",
-    href: `${GITHUB}/blob/main/server/README.md`,
-  },
-  {
-    title: "Puls Sync Protocol v1",
-    description: "The wire format the app speaks: line types, JSON Schemas, canonical units, idempotency and retry rules, and how to write a receiver.",
-    href: `${GITHUB}/blob/main/docs/protocol/README.md`,
-  },
-  {
-    title: "Database guide",
-    description: "Tables, views and query patterns, including how to avoid iPhone plus Watch double counting.",
-    href: `${GITHUB}/blob/main/docs/database-guide.md`,
-  },
-  {
-    title: "Use it with AI",
-    description: "The read-only MCP server for Claude, Claude Code and Cursor, and the OpenAPI route for ChatGPT.",
-    href: `${GITHUB}/blob/main/docs/ai.md`,
-  },
-  {
-    title: "Exporting to CSV and JSONL",
-    description: "The product API's streaming export endpoint and the puls-export command-line wrapper.",
-    href: `${GITHUB}/blob/main/docs/export.md`,
-  },
-  {
-    title: "Security policy",
-    description: "What the project considers in scope, how to report privately, and the known limitations of a single bearer token.",
-    href: `${GITHUB}/blob/main/SECURITY.md`,
-  },
-  {
-    title: "PulsHealthSync, the Swift package",
-    description: "The sync engine underneath the app, embeddable in another iOS app.",
-    href: `${GITHUB}/blob/main/PulsHealthSync/README.md`,
-  },
-];
+const groupLedes: Record<string, string> = {
+  "Getting started": "Bring the stack up and point the app at it.",
+  Reference: "The wire format, the database, the APIs and the pieces around them.",
+  Project: "How the project is run: reporting problems, what shipped, what is next.",
+};
 
 export default function DocsPage() {
   return (
@@ -58,24 +29,42 @@ export default function DocsPage() {
         eyebrow="Documentation"
         size="compact"
         title="The manuals"
-        lede="Everything is written next to the code it describes. These are the entry points."
+        lede="Everything is written next to the code it describes and rendered here from the same files, so the page you read is the file in the repository."
       />
       <section className="container mx-auto max-w-5xl px-4 py-16">
-        <div className="grid gap-6 sm:grid-cols-2">
-          {docs.map((doc) => (
-            <a key={doc.title} href={doc.href} target="_blank" rel="noopener noreferrer" className="group">
-              <Card className="h-full transition-colors hover:border-brand/40">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 group-hover:text-brand transition-colors">
-                    {doc.title}
-                    <ArrowUpRight className="h-4 w-4 opacity-60" />
-                  </CardTitle>
-                  <CardDescription className="text-base">{doc.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            </a>
-          ))}
-        </div>
+        {getDocsByGroup().map(({ group, docs }) => (
+          <div key={group} className="mb-14 last:mb-0">
+            <h2 className="text-2xl font-bold tracking-tight">{group}</h2>
+            {groupLedes[group] && <p className="mt-1 mb-6 text-muted-foreground">{groupLedes[group]}</p>}
+            <div className="grid gap-6 sm:grid-cols-2">
+              {docs.map((doc) => (
+                <Link key={doc.slug} href={docHref(doc.slug)} className="group">
+                  <Card className="h-full transition-colors hover:border-brand/40">
+                    <CardHeader>
+                      <CardTitle className="transition-colors group-hover:text-brand">{doc.title}</CardTitle>
+                      <CardDescription className="text-base">{doc.description}</CardDescription>
+                      <p className="pt-1 font-mono text-xs text-muted-foreground">{doc.repoPath}</p>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <p className="mt-16 border-t pt-8 text-sm text-muted-foreground">
+          Looking for something not listed here? Every other document, the schemas and the code itself are in the
+          repository.{" "}
+          <a
+            href={GITHUB}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-0.5 text-brand hover:underline"
+          >
+            Browse the repository
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </a>
+        </p>
       </section>
     </main>
   );

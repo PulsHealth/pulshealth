@@ -201,3 +201,44 @@
 .prose code::after {
   content: none;
 }
+
+/*
+ * rehype-pretty-code with a {light, dark} theme pair emits both palettes on
+ * every token as --shiki-light / --shiki-dark and marks the <code> with
+ * data-theme="light dark"; pick one per colour scheme. Blog posts use a
+ * single theme (no space in data-theme), so they are untouched.
+ */
+code[data-theme*=" "],
+code[data-theme*=" "] span {
+  color: var(--shiki-light);
+}
+
+.dark code[data-theme*=" "],
+.dark code[data-theme*=" "] span {
+  color: var(--shiki-dark);
+}
+
+/* Code blocks in documents rendered from the repository (/docs, /privacy) */
+.docs-prose figure[data-rehype-pretty-code-figure] {
+  @apply my-6;
+}
+
+.docs-prose figure[data-rehype-pretty-code-figure] pre {
+  @apply overflow-x-auto rounded-lg border bg-zinc-50 dark:bg-zinc-900 py-4 text-sm leading-relaxed;
+}
+
+.docs-prose [data-rehype-pretty-code-figure] code {
+  @apply grid font-mono;
+}
+
+.docs-prose [data-rehype-pretty-code-figure] [data-line] {
+  @apply px-4;
+}
+
+.docs-prose [data-rehype-pretty-code-title] {
+  @apply rounded-t-lg border border-b-0 bg-muted px-4 py-2 font-mono text-xs text-muted-foreground;
+}
+
+.docs-prose [data-rehype-pretty-code-title] + pre {
+  @apply rounded-t-none;
+}

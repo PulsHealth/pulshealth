@@ -5,18 +5,19 @@ pages, the blog, and the HealthKit knowledge-base viewer. It is a separate
 thing from [`web/`](../web/README.md), which is the self-hosted viewer that
 reads your own Postgres.
 
-It reads content from two **sibling directories at the repository root**, by
-relative path, so the three must stay where they are:
+It reads content from the **repository around it**, by relative path, so
+`site/` and the things it reads must stay where they are:
 
-| Directory | Read by | How |
+| Source | Read by | How |
 |---|---|---|
 | [`../knowledge-base/`](../knowledge-base/README.md) | `src/lib/api.ts` | `path.join(process.cwd(), "..", "knowledge-base")` — 177 YAML type files become `/knowledge-base/types/<slug>/` |
 | [`../blog/`](../blog/BLOG_SYSTEM.md) | `src/lib/blog.ts`, `package.json` | `../blog/articles/*.mdx` become `/blog/<slug>/`; `copy-blog-images` copies `../blog/images` into `public/blog/` before every dev run and build |
+| Eleven Markdown documents: `server/README.md`, `docs/protocol/README.md`, `docs/database-guide.md`, `docs/export.md`, `docs/ai.md`, `server/mcp/README.md`, `web/README.md`, `PulsHealthSync/README.md`, `SECURITY.md`, `CHANGELOG.md`, `docs/roadmap.md` (and `docs/privacy-policy.md` for `/privacy`) | `src/lib/docs.ts` (the registry), `src/lib/markdown.tsx` (the renderer) | Each becomes `/docs/<slug>/`, rendered at build time from the file itself. Relative links inside a document resolve to the other rendered documents where there is one, otherwise to the file on GitHub |
 
-Moving `site/` (or either sibling) breaks both without a build error — the
-loaders log "dir not found" and simply emit fewer pages. The page count is
-the tell: a full build exports **190** static pages, 177 of them under
-`knowledge-base/types/`.
+Moving `site/` (or anything it reads) breaks the loaders without a build
+error — they log "not found" and simply emit fewer pages. The page count is
+the tell: a full build exports **206** static pages, 177 of them under
+`knowledge-base/types/` and 11 under `docs/`.
 
 ## Develop
 
@@ -29,7 +30,7 @@ bun run dev        # localhost:3000
 ## Build and lint
 
 ```bash
-bun run build      # static export to site/out/ (190 pages)
+bun run build      # static export to site/out/ (206 pages)
 bun run lint       # ESLint (2 known warnings, no errors)
 ```
 
