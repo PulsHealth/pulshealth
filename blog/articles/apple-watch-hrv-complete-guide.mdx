@@ -26,23 +26,31 @@ A healthy heart doesn't beat like a metronome. More variability means your heart
 
 ## How Apple Watch Measures It
 
-Apple Watch uses its optical heart sensor to detect blood flow changes in your wrist. Green LEDs shine into your skin, photodiodes measure light absorption, and algorithms identify individual beats from the signal. The watch then calculates the time between consecutive beats (called NN intervals) and reports their standard deviation — a metric called **SDNN**.
+Apple Watch uses its optical heart sensor to detect blood flow changes in your wrist. Green LEDs shine into your skin, photodiodes measure light absorption, and algorithms identify individual beats from the signal. The watch then calculates the time between consecutive beats (called NN intervals) and reports their standard deviation — a metric called **SDNN**, stored in Apple Health as <DataTypeLink identifier="HKQuantityTypeIdentifierHeartRateVariabilitySDNN">Heart Rate Variability SDNN</DataTypeLink>.
 
-Apple Watch captures these readings periodically throughout the day, especially during inactivity. The most reliable readings come overnight while you're in a stable, rested state. You can also trigger one through the Breathe app.
+Apple Watch captures these readings periodically throughout the day, especially during inactivity. The most reliable readings come overnight while you're in a stable, rested state. You can also trigger one by starting a Breathe session in the Mindfulness app on the watch.
 
 ## What the Numbers Mean
 
-There's no universal "good" HRV. Values vary dramatically by age, fitness, and genetics.
+There's no universal "good" HRV. Values vary dramatically by age, fitness, and genetics — and, just as much, by how long the recording is. Apple Watch takes short samples of about a minute; the numbers in medical literature usually come from overnight or 24-hour recordings, which are always higher. The two tables below are on different scales and must not be compared with each other.
 
-| Population | Typical Range | Notes |
+### Short recordings (Apple Watch)
+
+| Population | Typical SDNN | Notes |
 |---|---|---|
-| Adults (short-term) | 20–70 ms | Apple Watch typical range |
-| Healthy young adults | 100–200 ms | Overnight measurements |
-| Older adults (65+) | 50–100 ms | Age-related decline is normal |
-| Athletes | Often &gt;100 ms | High baseline is common |
+| Adults (~1–5 minute sample) | 20–70 ms | Below 20 ms is reduced variability; above 70 ms is excellent, common in fit people |
+| Athletes | Often &gt;100 ms | High baseline even in short recordings; a sharp drop from baseline can mean overtraining |
+
+### Long recordings (overnight and 24-hour, clinical)
+
+| Population | Typical SDNN | Notes |
+|---|---|---|
+| Adults (24-hour Holter monitor) | 100–180 ms | The clinical standard; below 70 ms is treated as moderate risk |
+| Healthy young adults (overnight) | 100–200 ms | Above 200 ms reflects excellent parasympathetic function |
+| Older adults, 65+ (overnight) | 50–100 ms | Age-related decline is normal |
 
 <Callout type="warning" title="Apple Watch vs. Clinical Numbers">
-Clinical studies report 24-hour Holter monitor SDNN values (typically 100–180 ms). These are **not comparable** to Apple Watch short-term readings. A 40 ms reading from your watch is not the same as a 40 ms clinical SDNN. Only compare Apple Watch readings to other Apple Watch readings.
+The second table is what clinical studies report from 24-hour Holter monitors. Those values are **not comparable** to Apple Watch short-term readings: a 40 ms reading from your watch is not the same as a 40 ms clinical SDNN. Only compare Apple Watch readings to other Apple Watch readings.
 </Callout>
 
 **Higher HRV** generally reflects good cardiovascular fitness, effective recovery, and strong parasympathetic activity. **Lower HRV** may indicate chronic stress, poor sleep, overtraining, or the early stages of illness.

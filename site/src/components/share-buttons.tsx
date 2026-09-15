@@ -1,149 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { Check, Link2, Share2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Link2, Check, Twitter, Facebook, Linkedin, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const noopSubscribe = () => () => {};
 
 interface ShareButtonsProps {
   url: string;
   title: string;
   description?: string;
-  tags?: string[];
   className?: string;
 }
 
-export function ShareButtons({
-  url,
-  title,
-  description,
-  className,
-}: ShareButtonsProps) {
+/**
+ * Copy the link, or hand it to the OS share sheet where one exists. No
+ * network-specific buttons: they add third-party requests for a page that
+ * makes none, and a share sheet already knows where the reader posts.
+ */
+export function ShareButtons({ url, title, description, className }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
+  // Read on the client only: `navigator` does not exist during the static
+  // export, and the server snapshot keeps hydration consistent.
+  const canShare = useSyncExternalStore(
+    noopSubscribe,
+    () => typeof navigator.share === "function",
+    () => false,
+  );
 
-  const encodedUrl = encodeURIComponent(url);
-  const encodedTitle = encodeURIComponent(title);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
 
-  const shareLinks = {
-    twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-  };
-
-  const handleCopyLink = async () => {
+  const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for older browsers
-      const textArea = document.createElement("textarea");
-      textArea.value = url;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Clipboard access refused (insecure context or permission); the
+      // address bar still has the URL, so there is nothing to show.
     }
   };
 
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title,
-          text: description,
-          url,
-        });
-      } catch {
-        // User cancelled or share failed silently
-      }
+  const share = async () => {
+    try {
+      await navigator.share({ title, text: description, url });
+    } catch {
+      // The reader dismissed the sheet.
     }
   };
-
-  const hasNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      {/* Native Share (mobile) */}
-      {hasNativeShare && (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={handleNativeShare}
-          aria-label="Share"
-          className="md:hidden"
-        >
-          <Share2 className="h-4 w-4" />
+    <div className={cn("flex items-center gap-1", className)}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={copyLink}
+        aria-live="polite"
+        className="text-muted-foreground"
+      >
+        {copied ? <Check className="text-green-600 dark:text-green-500" /> : <Link2 />}
+        {copied ? "Copied" : "Copy link"}
+      </Button>
+      {canShare && (
+        <Button variant="ghost" size="sm" onClick={share} className="text-muted-foreground">
+          <Share2 />
+          Share
         </Button>
       )}
-
-      {/* Copy Link */}
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={handleCopyLink}
-        aria-label={copied ? "Copied!" : "Copy link"}
-        className={cn(hasNativeShare && "hidden md:inline-flex")}
-      >
-        {copied ? (
-          <Check className="h-4 w-4 text-green-500" />
-        ) : (
-          <Link2 className="h-4 w-4" />
-        )}
-      </Button>
-
-      {/* Twitter/X */}
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        asChild
-        className={cn(hasNativeShare && "hidden md:inline-flex")}
-      >
-        <a
-          href={shareLinks.twitter}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Share on X (Twitter)"
-        >
-          <Twitter className="h-4 w-4" />
-        </a>
-      </Button>
-
-      {/* Facebook */}
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        asChild
-        className={cn(hasNativeShare && "hidden md:inline-flex")}
-      >
-        <a
-          href={shareLinks.facebook}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Share on Facebook"
-        >
-          <Facebook className="h-4 w-4" />
-        </a>
-      </Button>
-
-      {/* LinkedIn */}
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        asChild
-        className={cn(hasNativeShare && "hidden md:inline-flex")}
-      >
-        <a
-          href={shareLinks.linkedin}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Share on LinkedIn"
-        >
-          <Linkedin className="h-4 w-4" />
-        </a>
-      </Button>
     </div>
   );
 }

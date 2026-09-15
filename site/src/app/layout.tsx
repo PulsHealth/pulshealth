@@ -4,7 +4,6 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SearchProvider } from "@/components/search-context";
 import { SearchDialogLoader } from "@/components/search-dialog-loader";
-import { getAllSearchItems } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { getRepoStats } from "@/lib/github";
@@ -25,6 +24,9 @@ export const metadata: Metadata = {
   description: "Open-source iOS app that syncs Apple Health to a backend you host yourself, plus a reference server stack, a documented wire protocol, and a read-only MCP server for AI assistants. Apache-2.0.",
   alternates: {
     canonical: '/',
+    types: {
+      'application/rss+xml': [{ url: '/feed.xml', title: 'PulsHealth writing' }],
+    },
   },
   openGraph: {
     siteName: "PulsHealth",
@@ -50,7 +52,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const searchItems = await getAllSearchItems();
   const { stars } = await getRepoStats();
 
   return (
@@ -68,7 +69,7 @@ export default async function RootLayout({
             <SiteHeader stars={stars} />
             {children}
             <SiteFooter />
-            <SearchDialogLoader items={searchItems} />
+            <SearchDialogLoader />
           </SearchProvider>
         </ThemeProvider>
       </body>
