@@ -63,7 +63,7 @@ export default function ConsultingPage() {
         lede="I wrote PulsHealth — the iOS app, the sync library, the server stack and the protocol. If you want it running for you, adapted to a backend you already have, or built on top of, that is what this page is for."
       >
         <QuoteRequestDialog>
-          <Button size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
+          <Button size="lg">
             <Mail className="mr-2 h-4 w-4" />
             Get in Touch
           </Button>
@@ -181,7 +181,7 @@ export default function ConsultingPage() {
 
           <div className="mb-8">
             <QuoteRequestDialog>
-              <Button size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
+              <Button size="lg">
                 <Mail className="mr-2 h-4 w-4" />
                 Get in Touch
               </Button>

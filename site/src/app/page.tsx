@@ -149,7 +149,7 @@ export default async function HomePage() {
 
           <div className="flex flex-col items-center gap-4 pt-2 sm:flex-row">
             <AppStoreBadge />
-            <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand-dark">
+            <Button asChild size="lg">
               <Link href="/server">
                 <Server className="mr-2 h-4 w-4" />
                 Run the server

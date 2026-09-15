@@ -53,7 +53,7 @@ export default function SyncPage() {
         title={<>Your server, your <span className="text-brand">health database</span></>}
         lede="The reference backend the PulsHealth app syncs to. It runs on a home machine, a NAS, or a rented box — whichever you own. There is no hosted option and no managed tier, and that is deliberate."
       >
-        <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
+        <Button asChild size="lg">
           <Link href="/docs/server">
             <FileText className="mr-2 h-4 w-4" />
             Server Documentation
@@ -244,7 +244,7 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
           rather than glossing over them.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
+          <Button asChild size="lg">
             <Link href="/docs/security">
               Security Policy
               <ArrowRight className="ml-2 h-4 w-4" />

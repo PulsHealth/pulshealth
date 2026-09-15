@@ -28,7 +28,7 @@ export default function AboutPage() {
         }
         lede="PulsHealth is a one-maintainer open-source project: an iPhone app that copies Apple Health into a database you run, and everything needed to make that useful."
       >
-        <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand-dark">
+        <Button asChild size="lg">
           <a href={GITHUB} target="_blank" rel="noopener noreferrer">
             <Github className="mr-2 h-4 w-4" />
             Read the Source

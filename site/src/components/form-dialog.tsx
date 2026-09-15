@@ -170,7 +170,7 @@ export function FormDialog({ children, config }: FormDialogProps) {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-brand hover:bg-brand-dark text-brand-foreground"
+                  className="w-full"
                 >
                   {isSubmitting ? (
                     <>
