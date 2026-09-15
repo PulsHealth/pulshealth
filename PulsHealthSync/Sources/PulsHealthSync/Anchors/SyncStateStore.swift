@@ -25,6 +25,12 @@ public struct TypeSyncState: Codable, Sendable, Equatable {
     /// Most recent server reconciliation pass (nil = never reconciled).
     public var lastReconcileAt: Date?
     public var lastReconcileSummary: String?
+    /// What the server reported for the most recent batch that carried only
+    /// this type (`IngestReceipt`): rows created and UUIDs it already had. Nil
+    /// when the server sent no counts, or the batch was shared with other
+    /// types and the counts cannot be attributed to this one.
+    public var lastBatchAccepted: Int?
+    public var lastBatchDuplicates: Int?
 
     public init(identifier: String) {
         self.identifier = identifier
@@ -470,7 +476,8 @@ public actor SyncStateStore {
         bytes: Int,
         sampleDateRange: ClosedRange<Date>?,
         duration: TimeInterval,
-        latency: TimeInterval?
+        latency: TimeInterval?,
+        receipt: IngestReceipt? = nil
     ) {
         update(identifier) { s in
             s.anchorData = newAnchorData
@@ -481,6 +488,10 @@ public actor SyncStateStore {
             s.lastSyncAt = Date()
             s.lastSyncDuration = duration
             s.lastError = nil
+            // Overwritten on every batch, so a server that stopped reporting
+            // does not leave a stale count behind.
+            s.lastBatchAccepted = receipt?.accepted
+            s.lastBatchDuplicates = receipt?.duplicates
             if let latency { s.lastObservedLatency = latency }
             if let range = sampleDateRange {
                 s.earliestExported = s.earliestExported.map { min($0, range.lowerBound) } ?? range.lowerBound

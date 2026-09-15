@@ -100,18 +100,7 @@ per request — most naturally by the token of §4, which is why that comes firs
 and to give the viewer a way to choose. Until then the honest workaround is a
 second API/viewer pair on a different `PULS_USER_ID`.
 
-## 6. Surface the ingest response in the client — PROTO-8
-
-The smallest item here. The server already answers with `{"accepted","duplicates"}`
-(`server/ingest/store.go`, specified in `docs/protocol/README.md`), and
-`HTTPSyncTransport.upload` throws the body away —
-`UploadResult` carries only `bytesSent` and `duration`
-(`PulsHealthSync/Sources/PulsHealthSync/Transport/SyncTransport.swift`). Decoding
-it would let the app's log say how much of a batch was new rather than only how
-much it sent, which is exactly what a user re-running a backfill wants to know.
-Optional field, tolerant decoding, no protocol bump.
-
-## 7. Put the documentation on the site — Phase 2 leftover
+## 6. Put the documentation on the site — Phase 2 leftover
 
 `site/` exports the marketing pages, the blog and the knowledge-base viewer; its
 loaders read `knowledge-base/` and `blog/` and nothing else. The protocol spec,
@@ -123,7 +112,7 @@ Worth doing after §1, when there is a released thing to document, and worth
 doing as a third content source in the existing static export rather than a
 second site.
 
-## 8. Alternative sinks and local export — APP-11, APP-12
+## 7. Alternative sinks and local export — APP-11, APP-12
 
 `HealthSyncEngine.buildTransport` hardcodes `HTTPSyncTransport` and a concrete
 `ServerAPIClient`, and `apiClient` is typed as that concrete class rather than a
@@ -139,7 +128,7 @@ health data (today's `ShareLink` exports the diagnostics bundle, not samples).
 Both are "later" for a reason: the HTTP path is what everyone uses. Do APP-11
 only when a second sink actually exists to justify it.
 
-## 9. AI extras — AI-6, AI-8
+## 8. AI extras — AI-6, AI-8
 
 - **AI-6, `GET /v1/summary?range=7d` returning compact markdown.** Cheap, and
   useful for pasting into a chat that has no MCP connection.
@@ -152,7 +141,7 @@ contradicts the standing invariant that `server/mcp` is a read-only client of
 the product API and never holds a database URL. Anyone who wants SQL has
 `psql` and `docs/database-guide.md`.
 
-## 10. Standing maintenance
+## 9. Standing maintenance
 
 Not backlog — things that come due on someone else's schedule.
 

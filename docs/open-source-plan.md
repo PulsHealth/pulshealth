@@ -386,7 +386,7 @@ channel) was skipped; the app went straight to the store.
 ### Later
 
 - SRV-8 per-device tokens, SRV-11 multi-user reads, APP-11 sink factory,
-  APP-12 file export, AI-6..8, PROTO-8.
+  APP-12 file export, AI-6..8.
 
 These, plus the release and submission work the phases above did not cover,
 are tracked with current status and sequencing in [`roadmap.md`](roadmap.md).

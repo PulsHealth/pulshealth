@@ -546,8 +546,10 @@ any row is stored.
 
 ### 7.1 Success
 
-Any **2xx** acknowledges the batch. The body is optional and the app does
-not read it beyond logging; the reference server returns `200` with
+Any **2xx** acknowledges the batch. The body is optional: the app reads
+`accepted` and `duplicates` when they are present, for its own log and
+per-type statistics, and treats an empty or unreadable body as no counts —
+never as a failure. The reference server returns `200` with
 
 ```json
 {"accepted":3,"deleted":0,"duplicates":0,"routePoints":0,"seriesPoints":0,"aggregateSamples":0,"activitySummaries":0}
