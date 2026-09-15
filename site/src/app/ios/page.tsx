@@ -1,15 +1,12 @@
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import { Activity, ArrowRight, BarChart3, Bot, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Github, Heart, History, Lock, Mail, Moon, QrCode, RefreshCw, Scale, Server, Terminal, Utensils, Wind } from "lucide-react";
+import { Activity, ArrowRight, BarChart3, Bot, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Heart, History, Lock, Moon, QrCode, RefreshCw, Scale, Server, Terminal, Utensils, Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppStoreBadge } from "@/components/app-store-badge";
+import { FollowProject } from "@/components/follow-project";
+import { PageHero } from "@/components/page-hero";
 import { getCatalog, getCatalogByGroup } from "@/lib/catalog";
-
-const UpdatesDialog = dynamic(
-  () => import("@/components/updates-dialog").then((mod) => mod.UpdatesDialog),
-);
 
 const GITHUB = "https://github.com/PulsHealth/pulshealth";
 
@@ -93,40 +90,22 @@ const outputs = [
 export default function AppPage() {
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Hero Section */}
-      <section className="w-full bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-zinc-900 pt-20 pb-32 border-b">
-        <div className="container mx-auto max-w-7xl px-4 flex flex-col items-center text-center space-y-8">
-          <Badge variant="outline" className="px-4 py-1 text-sm rounded-full border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-            Free on the App Store &middot; Open source
-          </Badge>
-
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 max-w-3xl">
-            Apple Health,{" "}
-            <span className="text-brand">in your own database</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-zinc-500 max-w-2xl leading-relaxed">
-            PulsHealth for iOS reads Apple Health — read-only, it never writes back — and streams
-            every sample to a server you run. Full history first, then it keeps up on its own.
-            There is no PulsHealth account and no PulsHealth cloud.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-            <AppStoreBadge />
-            <Button asChild size="lg" variant="outline">
-              <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
-                Get the Source
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="#features">
-                How It Works
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow={<>Free on the App Store &middot; Open source</>}
+        title={<>Apple Health, <span className="text-brand">in your own database</span></>}
+        lede="PulsHealth for iOS reads Apple Health — read-only, it never writes back — and streams every sample to a server you run. Full history first, then it keeps up on its own. There is no PulsHealth account and no PulsHealth cloud."
+      >
+        <AppStoreBadge />
+        <Button asChild size="lg" variant="outline">
+          <Link href="/server">
+            <Server className="mr-2 h-4 w-4" />
+            Set Up the Server
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="lg">
+          <Link href="#features">How It Works</Link>
+        </Button>
+      </PageHero>
 
       {/* Honest status */}
       <section className="container mx-auto max-w-7xl px-4 py-16">
@@ -347,10 +326,10 @@ export default function AppPage() {
 
               <div className="mt-8">
                 <Button asChild variant="outline">
-                  <a href={`${GITHUB}/tree/main/docs/protocol`} target="_blank" rel="noopener noreferrer">
+                  <Link href="/docs/protocol">
                     Read the Specification
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -404,27 +383,7 @@ X-User-ID: <your user id>
         </div>
       </section>
 
-      {/* Stay Updated */}
-      <section className="bg-muted/30 border-y">
-        <div className="container mx-auto max-w-7xl px-4 py-16">
-          <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
-            <div className="p-3 rounded-xl bg-brand-muted text-brand">
-              <Mail className="h-5 w-5" />
-            </div>
-            <h2 className="text-xl font-semibold tracking-tight">Follow the project</h2>
-            <p className="text-muted-foreground">
-              An occasional email when there is a release, news about the app, or a change
-              to the sync protocol or the server stack. Your name and address, nothing more.
-            </p>
-            <UpdatesDialog>
-              <Button variant="outline">
-                Sign Up for Updates
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </UpdatesDialog>
-          </div>
-        </div>
-      </section>
+      <FollowProject className="border-y bg-muted/30" />
 
       {/* Requirements + CTA Section */}
       <section className="cta-gradient text-white">

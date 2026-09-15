@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Mail, MessageSquare, BarChart3, Bot, Database, FileCode2, Github, Server } from "lucide-react";
+import { Mail, MessageSquare, BarChart3, Bot, Database, FileCode2, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { PageHero } from "@/components/page-hero";
 import dynamic from "next/dynamic";
 
 const QuoteRequestDialog = dynamic(
@@ -57,40 +57,23 @@ const facts = [
 export default function ConsultingPage() {
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Hero Section */}
-      <section className="w-full bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-zinc-900 pt-20 pb-32 border-b">
-        <div className="container mx-auto max-w-7xl px-4 flex flex-col items-center text-center space-y-8">
-          <Badge variant="outline" className="px-4 py-1 text-sm rounded-full border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-            Consulting
-          </Badge>
-
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 max-w-4xl">
-            Help setting up, self-hosting, and{" "}
-            <span className="text-brand">building with PulsHealth</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-zinc-500 max-w-2xl leading-relaxed">
-            I wrote PulsHealth — the iOS app, the sync library, the server stack and the
-            protocol. If you want it running for you, adapted to a backend you already have,
-            or built on top of, that is what this page is for.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <QuoteRequestDialog>
-              <Button size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
-                <Mail className="mr-2 h-4 w-4" />
-                Get in Touch
-              </Button>
-            </QuoteRequestDialog>
-            <Button asChild size="lg" variant="outline">
-              <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
-                Read the Source First
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Consulting"
+        title={<>Help setting up, self-hosting, and <span className="text-brand">building with PulsHealth</span></>}
+        lede="I wrote PulsHealth — the iOS app, the sync library, the server stack and the protocol. If you want it running for you, adapted to a backend you already have, or built on top of, that is what this page is for."
+      >
+        <QuoteRequestDialog>
+          <Button size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
+            <Mail className="mr-2 h-4 w-4" />
+            Get in Touch
+          </Button>
+        </QuoteRequestDialog>
+        <Button asChild size="lg" variant="outline">
+          <Link href="/docs">
+            Read the Docs First
+          </Link>
+        </Button>
+      </PageHero>
 
       {/* Honest framing */}
       <section className="container mx-auto max-w-7xl px-4 py-16">
@@ -117,9 +100,11 @@ export default function ConsultingPage() {
               </li>
               <li>
                 <strong className="text-foreground">Read it and decide.</strong>{" "}
-                The quickstart, the protocol spec and the database guide are all in the
-                repository. If they get you where you are going, that is a good outcome and
-                you should take it.
+                The <Link href="/server" className="text-brand hover:underline">quickstart</Link>,
+                the <Link href="/docs/protocol" className="text-brand hover:underline">protocol spec</Link>{" "}
+                and the <Link href="/docs/database" className="text-brand hover:underline">database guide</Link>{" "}
+                are all on this site. If they get you where you are going, that is a good outcome
+                and you should take it.
               </li>
             </ul>
           </CardContent>

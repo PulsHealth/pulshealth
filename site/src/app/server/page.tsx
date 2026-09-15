@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, Bot, Code2, Database, Github, Globe, HardDriveDownload, LayoutDashboard, LineChart, Package, Plug, Server, ShieldCheck, Smartphone, Terminal } from "lucide-react";
+import { ArrowRight, Bot, Code2, Database, FileText, Globe, HardDriveDownload, LayoutDashboard, LineChart, Package, Plug, Server, ShieldCheck, Smartphone, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-const GITHUB = "https://github.com/PulsHealth/pulshealth";
+import { PageHero } from "@/components/page-hero";
 
 export const metadata = {
   title: "The Self-Hosted PulsHealth Stack",
@@ -50,40 +48,24 @@ const services = [
 export default function SyncPage() {
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Hero Section */}
-      <section className="w-full bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-zinc-900 pt-20 pb-32 border-b">
-        <div className="container mx-auto max-w-7xl px-4 flex flex-col items-center text-center space-y-8">
-          <Badge variant="outline" className="px-4 py-1 text-sm rounded-full border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-            Docker Compose &middot; Apache-2.0
-          </Badge>
-
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 max-w-4xl">
-            Your server, your{" "}
-            <span className="text-brand">health database</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-zinc-500 max-w-2xl leading-relaxed">
-            The reference backend the PulsHealth app syncs to. It runs on a home machine, a NAS,
-            or a rented box — whichever you own. There is no hosted option and no managed tier,
-            and that is deliberate.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
-              <a href={`${GITHUB}/tree/main/server`} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
-                Server Documentation
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="/ios">
-                <Smartphone className="mr-2 h-4 w-4" />
-                The iOS App
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow={<>Docker Compose &middot; Apache-2.0</>}
+        title={<>Your server, your <span className="text-brand">health database</span></>}
+        lede="The reference backend the PulsHealth app syncs to. It runs on a home machine, a NAS, or a rented box — whichever you own. There is no hosted option and no managed tier, and that is deliberate."
+      >
+        <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
+          <Link href="/docs/server">
+            <FileText className="mr-2 h-4 w-4" />
+            Server Documentation
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="lg">
+          <Link href="/ios">
+            <Smartphone className="mr-2 h-4 w-4" />
+            The iOS App
+          </Link>
+        </Button>
+      </PageHero>
 
       {/* Quickstart */}
       <section className="container mx-auto max-w-7xl px-4 py-24">
@@ -212,10 +194,10 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
               </CardHeader>
               <CardContent>
                 <Button asChild variant="outline">
-                  <a href={`${GITHUB}/tree/main/PulsHealthSync`} target="_blank" rel="noopener noreferrer">
+                  <Link href="/docs/swift-package">
                     Read the Package Docs
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
@@ -236,10 +218,10 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
               </CardHeader>
               <CardContent>
                 <Button asChild variant="outline">
-                  <a href={`${GITHUB}/tree/main/docs/protocol`} target="_blank" rel="noopener noreferrer">
+                  <Link href="/docs/protocol">
                     Read the Specification
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
@@ -263,10 +245,10 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
-            <a href={`${GITHUB}/blob/main/SECURITY.md`} target="_blank" rel="noopener noreferrer">
-              Security Notes
+            <Link href="/docs/security">
+              Security Policy
               <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
+            </Link>
           </Button>
           <Button asChild size="lg" variant="outline">
             <Link href="/privacy">
