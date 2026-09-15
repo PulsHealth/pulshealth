@@ -22,7 +22,9 @@ const GITHUB_BLOB = "https://github.com/PulsHealth/pulshealth/blob/main";
 const prettyCodeOptions: PrettyCodeOptions = {
   theme: { light: "github-light", dark: "github-dark" },
   keepBackground: false,
-  defaultLang: "plaintext",
+  // Block only: a bare string here also runs every inline `code` span through
+  // shiki, wrapping it in figure markup and per-token colours.
+  defaultLang: { block: "plaintext" },
 };
 
 /** Repo-relative path → site route, for documents the site renders itself. */

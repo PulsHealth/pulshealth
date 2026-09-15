@@ -1,4 +1,15 @@
+import { docHref, getAllDocs } from './docs';
 import { SearchItem } from './types';
+
+/** One search entry per document rendered under /docs/, from the docs registry. */
+const DOC_PAGES: SearchItem[] = getAllDocs().map((doc) => ({
+  id: `page-docs-${doc.slug}`,
+  type: 'page',
+  title: doc.title,
+  description: doc.description,
+  href: docHref(doc.slug),
+  icon: 'FileText',
+}));
 
 export const STATIC_PAGES: SearchItem[] = [
   {
@@ -89,4 +100,5 @@ export const STATIC_PAGES: SearchItem[] = [
     href: '/docs',
     icon: 'FileText',
   },
+  ...DOC_PAGES,
 ];
