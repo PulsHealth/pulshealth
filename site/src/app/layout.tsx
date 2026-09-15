@@ -4,7 +4,6 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SearchProvider } from "@/components/search-context";
 import { SearchDialogLoader } from "@/components/search-dialog-loader";
-import { getAllSearchItems } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -47,13 +46,11 @@ export const viewport: Viewport = {
   ],
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const searchItems = await getAllSearchItems();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -69,7 +66,7 @@ export default async function RootLayout({
             <SiteHeader />
             {children}
             <SiteFooter />
-            <SearchDialogLoader items={searchItems} />
+            <SearchDialogLoader />
           </SearchProvider>
         </ThemeProvider>
       </body>

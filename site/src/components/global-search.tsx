@@ -13,6 +13,7 @@ import {
   BookOpen,
   Search,
   Newspaper,
+  Server,
   Shield,
   FileText,
   LucideIcon,
@@ -39,6 +40,7 @@ const PAGE_ICONS: Record<string, LucideIcon> = {
   BookOpen,
   Search,
   Newspaper,
+  Server,
   Shield,
   FileText,
 };
@@ -69,9 +71,11 @@ function TypeBadge({ type, category }: { type: SearchItemType; category?: string
 
 interface GlobalSearchDialogProps {
   items: SearchItem[];
+  /** True while the index is still being fetched; `items` is empty then. */
+  loading?: boolean;
 }
 
-export default function GlobalSearchDialog({ items }: GlobalSearchDialogProps) {
+export default function GlobalSearchDialog({ items, loading = false }: GlobalSearchDialogProps) {
   const [search, setSearch] = React.useState("");
   const router = useRouter();
   const { open, setOpen } = useSearch();
@@ -188,9 +192,13 @@ export default function GlobalSearchDialog({ items }: GlobalSearchDialogProps) {
         placeholder="Search pages, articles, and health data..."
       />
       <CommandList className="max-h-[60vh] custom-scrollbar">
-        <CommandEmpty>No results found.</CommandEmpty>
+        {loading ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">Loading…</div>
+        ) : (
+          <CommandEmpty>No results found.</CommandEmpty>
+        )}
 
-        {search && groupedResults ? (
+        {loading ? null : search && groupedResults ? (
           <>
             {groupedResults.pages.length > 0 && (
               <CommandGroup heading="Pages">
