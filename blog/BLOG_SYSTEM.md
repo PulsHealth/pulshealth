@@ -26,11 +26,11 @@ Besides plain Markdown (GFM tables, fenced code with syntax highlighting),
 these are available in every post. They are defined in
 `site/src/components/mdx-components.tsx`; add one there and here together.
 
-- `<Callout type="info|warning|success|tip" title="…" icon={true}>` — highlighted aside. `type` defaults to `info`.
-- `<KeyTakeaways title="Key Takeaways">` — summary box; put a Markdown bullet list inside, with a blank line after the opening tag.
-- `<Definition term="Heart Rate Variability">…</Definition>` — inline term with the definition in a hover tooltip.
-- `<DataTypeLink identifier="HKQuantityTypeIdentifierHeartRateVariabilitySDNN">Heart Rate Variability</DataTypeLink>` — link to a knowledge-base type page; the child text is optional (defaults to the identifier minus its `HK…TypeIdentifier` prefix).
-- `<BlogImage src="/blog/my-post/figure.webp" alt="…" caption="…" width={1920} height={1080} priority />` — figure with caption. `width`/`height` are the file's pixel size (default 800×600); `priority` only on the first image above the fold.
+- `<Callout type="info|warning|success|tip" title="…" icon={true}>`: highlighted aside. `type` defaults to `info`.
+- `<KeyTakeaways title="Key Takeaways">`: summary box; put a Markdown bullet list inside, with a blank line after the opening tag.
+- `<Definition term="Heart Rate Variability">…</Definition>`: inline term with the definition in a hover tooltip.
+- `<DataTypeLink identifier="HKQuantityTypeIdentifierHeartRateVariabilitySDNN">Heart Rate Variability</DataTypeLink>`: link to a knowledge-base type page; the child text is optional (defaults to the identifier minus its `HK…TypeIdentifier` prefix).
+- `<BlogImage src="/blog/my-post/figure.webp" alt="…" caption="…" width={1920} height={1080} priority />`: figure with caption. `width`/`height` are the file's pixel size (default 800×600); `priority` only on the first image above the fold.
 
 ## Images
 
@@ -48,5 +48,5 @@ cd site && bun install && bun run lint && bun run build
 The build exports one directory per article under `site/out/blog/`, and CI
 asserts that count equals the number of tracked `blog/articles/*.mdx` files.
 Both files are read by relative path from `site/` (`../blog/articles`,
-`../blog/images`), so moving `blog/` silently exports fewer pages — the count
+`../blog/images`), so moving `blog/` silently exports fewer pages; the count
 check is what catches it.
