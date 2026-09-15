@@ -7,6 +7,7 @@ import { SearchDialogLoader } from "@/components/search-dialog-loader";
 import { getAllSearchItems } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { getRepoStats } from "@/lib/github";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,6 +51,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const searchItems = await getAllSearchItems();
+  const { stars } = await getRepoStats();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -63,7 +65,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <SearchProvider>
-            <SiteHeader />
+            <SiteHeader stars={stars} />
             {children}
             <SiteFooter />
             <SearchDialogLoader items={searchItems} />
