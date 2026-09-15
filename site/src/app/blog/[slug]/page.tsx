@@ -158,6 +158,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 <Calendar className="h-4 w-4" />
                 <time dateTime={post.date}>
                   {new Date(post.date).toLocaleDateString("en-US", {
+                  timeZone: "UTC",
                     month: "long",
                     day: "numeric",
                     year: "numeric",
