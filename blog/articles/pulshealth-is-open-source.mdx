@@ -1,5 +1,5 @@
 ---
-title: "PulsHealth is open source, and here is what it is"
+title: "PulsHealth is open source"
 date: "2026-09-15"
 tags: ["announcement", "self-hosting", "apple-health", "open-source"]
 excerpt: "The iPhone app, the sync library, the reference server, the wire protocol and this site are all in one Apache-2.0 repository. What is in it, what is pre-release, and how to try it."
@@ -7,7 +7,7 @@ excerpt: "The iPhone app, the sync library, the reference server, the wire proto
 
 PulsHealth is an iPhone app that copies Apple Health into a database you run. Every part of it is now public under the Apache License 2.0, in one repository: the app, the Swift package underneath it, the server stack, the wire protocol, the dashboards, the knowledge base and this website.
 
-This post replaces an earlier one that described a hosted product, an AI agent and a team. None of that exists. What exists is below.
+This replaces an earlier post that described a hosted product and an AI agent. Neither was built. This is what the project actually is.
 
 <KeyTakeaways>
 - The app is free on the App Store and reads Apple Health read-only. It posts to one URL you choose and nowhere else.
@@ -38,7 +38,7 @@ Once the data is in Postgres it is yours to use. Query it with SQL, open the pro
 The container images are not on GHCR yet. Until the first tagged release, `scripts/bootstrap.sh --build` compiles them from the checkout. The README says so, and so does the server page here.
 </Callout>
 
-Two other things are worth knowing. Ingest accepts a single static bearer token, so whoever holds it can upload and delete for any user on that server; per-device tokens are the next item on the roadmap. And backups ship with the stack but are an opt-in Compose profile, off until you turn them on.
+Two other caveats. Ingest accepts a single static bearer token, so whoever holds it can upload and delete for any user on that server; per-device tokens are the next item on the roadmap. And backups ship with the stack but are an opt-in Compose profile, off until you turn them on.
 
 ## Why the protocol is public
 

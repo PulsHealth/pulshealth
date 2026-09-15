@@ -13,7 +13,7 @@ const consultingConfig: FormDialogConfig = {
     "What you have, what you want it to do, and what is in the way. I read every message myself and reply from support@pulshealth.com.",
   successTitle: "Got it",
   successDescription:
-    "I will reply within a few days. If the answer is already in the docs, I will point you at it instead of quoting for it.",
+    "I will reply within a few days. If the answer is in the docs, I will point you to it.",
   submitLabel: "Send",
   submittingLabel: "Sending...",
   fields: [

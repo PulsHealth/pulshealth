@@ -62,13 +62,13 @@ export default function SupportPage() {
         eyebrow="Support"
         size="compact"
         title="Getting help"
-        lede="PulsHealth is an open-source project, so most support happens in the open, where the answers stay findable for the next person. Start with the FAQ; most sync questions are iOS behaviour rather than bugs."
+        lede="Most support happens in the open on GitHub, where the answers help the next person too. Start with the FAQ. Most sync questions turn out to be iOS behaviour rather than bugs."
       />
 
       <section className="container mx-auto max-w-4xl px-4 py-16">
         <h2 className="text-2xl font-bold tracking-tight mb-2">Frequently asked</h2>
         <p className="text-muted-foreground mb-8">
-          The same answers as the README, kept here so you do not have to leave the site.
+          The same answers as the README.
         </p>
         <dl className="divide-y rounded-lg border bg-card">
           {faq.map((item) => (

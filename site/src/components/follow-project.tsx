@@ -24,8 +24,8 @@ export function FollowProject({ className }: { className?: string }) {
           </div>
           <h2 className="text-xl font-semibold tracking-tight">Follow the project</h2>
           <p className="text-muted-foreground">
-            Releases are tagged on GitHub and written up here. Watch the repository, subscribe to
-            the feed, or leave an address for the occasional email. Nothing more than that.
+            Watch the repository for releases, subscribe to the feed, or leave your email for
+            occasional updates.
           </p>
           <div className="flex flex-col items-center gap-3 sm:flex-row">
             <Button asChild variant="outline">

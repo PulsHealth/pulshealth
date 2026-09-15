@@ -26,7 +26,7 @@ const syncFeatures = [
   },
   {
     title: "Then It Keeps Up",
-    description: "A HealthKit observer plus background delivery drains new samples — and deletions — as iOS allows. A background processing task catches up when the phone is idle, and every time you open the app it runs a full pass.",
+    description: "A HealthKit observer and background delivery pick up new samples and deletions as iOS allows. A background task catches up while the phone is idle, and opening the app runs a full pass.",
     icon: RefreshCw,
   },
   {
@@ -36,17 +36,17 @@ const syncFeatures = [
   },
   {
     title: "Pair by Scanning",
-    description: "Your server prints a pairing block — URL, bearer token and user ID — with a QR code encoding all three. Scan it, or type the three values in by hand.",
+    description: "Your server prints a pairing block with the URL, bearer token and user ID, plus a QR code that encodes all three. Scan it, or type the values in by hand.",
     icon: QrCode,
   },
   {
     title: "Aggregates and Rings",
-    description: "Any quantity type can also be sent as on-device buckets — hourly sums, daily averages, optionally split by Watch versus iPhone — and daily activity rings arrive as one upserted row per day.",
+    description: "Any quantity type can also be sent as on-device buckets (hourly sums, daily averages, optionally split by Watch and iPhone). Daily activity rings arrive as one row per day.",
     icon: BarChart3,
   },
   {
-    title: "Nothing Hidden",
-    description: "A live event log, per-type progress, and a record of every background wake iOS granted. All of it exports for offline analysis, and a built-in benchmark tells you how fast your phone can read.",
+    title: "Logs and Diagnostics",
+    description: "A live event log, per-type progress, and a record of every background wake iOS granted. You can export all of it, and a built-in benchmark shows how fast your phone can read HealthKit.",
     icon: Activity,
   },
 ];
@@ -109,7 +109,7 @@ export default function AppPage() {
       <PageHero
         eyebrow={<>Free on the App Store &middot; Open source</>}
         title={<>Apple Health, <span className="text-brand">in your own database</span></>}
-        lede="PulsHealth for iOS reads Apple Health — read-only, it never writes back — and streams every sample to a server you run. Full history first, then it keeps up on its own. There is no PulsHealth account and no PulsHealth cloud."
+        lede="PulsHealth for iOS reads Apple Health and sends every sample to a server you run. It never writes back to Apple Health. It syncs the full history first, then keeps up in the background. There is no PulsHealth account and no PulsHealth cloud."
       >
         <AppStoreBadge />
         <Button asChild size="lg" variant="outline">
@@ -127,19 +127,18 @@ export default function AppPage() {
       <section className="container mx-auto max-w-7xl px-4 py-16">
         <Card className="max-w-3xl mx-auto border-brand/30">
           <CardHeader>
-            <CardTitle>Before You Start</CardTitle>
+            <CardTitle>The basics</CardTitle>
             <CardDescription className="text-base">
-              Three things are worth knowing up front, because none of them is the usual
-              arrangement.
+              What to know before you install.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-4 text-muted-foreground">
               <li>
                 <strong className="text-foreground">It is on the App Store.</strong> Free, for
-                iPhone. You can also build it yourself with Xcode 26 and XcodeGen — but running
-                your own build on a real iPhone needs a paid Apple Developer team, because the
-                HealthKit background-delivery entitlement requires one.
+                iPhone. You can also build it yourself with Xcode 26 and XcodeGen. Running your own
+                build on a real iPhone needs a paid Apple Developer team, because the HealthKit
+                background-delivery entitlement requires one.
               </li>
               <li>
                 <strong className="text-foreground">You need a server first.</strong> The app has
@@ -147,9 +146,9 @@ export default function AppPage() {
                 command; anything that speaks the documented protocol works just as well.
               </li>
               <li>
-                <strong className="text-foreground">Both halves are open source.</strong> The app,
-                the sync library, the server stack, the protocol and the dashboards are all in one
-                Apache-2.0 repository, so every claim on this page is checkable against the code.
+                <strong className="text-foreground">All of it is open source.</strong> The app,
+                the sync library, the server stack, the protocol and the dashboards are in one
+                Apache-2.0 repository.
               </li>
             </ul>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -175,9 +174,9 @@ export default function AppPage() {
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">How the Sync Works</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Each HealthKit type has its own cursor, persisted only after your server confirms the
-            batch. A failed upload re-sends the same page, and the server deduplicates by sample
-            UUID — so the pipeline is idempotent end to end.
+            Each HealthKit type has its own cursor, saved only after your server confirms the
+            batch. A failed upload re-sends the same page and the server deduplicates by sample
+            UUID, so nothing is lost or duplicated.
           </p>
         </div>
 
@@ -228,7 +227,7 @@ export default function AppPage() {
           <h2 className="text-3xl font-bold tracking-tight mb-4">What You Can Sync</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             80 HealthKit types, grouped the way Apple Health groups them. Turn on a starter
-            set in one tap, or choose type by type — nothing is read until you enable it and iOS
+            set in one tap, or choose type by type. Nothing is read until you enable it and iOS
             grants permission.
           </p>
         </div>
@@ -305,9 +304,9 @@ export default function AppPage() {
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
                 The app posts gzip-compressed NDJSON over HTTPS to the address you enter, with a
-                bearer token you also choose. That is its only network destination. The format is
-                specified — not merely implemented — so the reference stack is one possible receiver
-                rather than the only one.
+                bearer token you also choose. That is its only network destination. The format has
+                a written spec, so the reference stack is one possible receiver rather than the
+                only one.
               </p>
 
               <div className="space-y-6">
@@ -326,7 +325,7 @@ export default function AppPage() {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">Write Your Own Backend</h4>
-                    <p className="text-muted-foreground text-sm">A fixture corpus, a batch checker, and a complete receiver in one standard-library Python file writing to SQLite — copy it, or read it alongside the spec.</p>
+                    <p className="text-muted-foreground text-sm">A fixture corpus, a batch checker, and a complete receiver in one standard-library Python file that writes to SQLite. Copy it, or read it alongside the spec.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -334,8 +333,8 @@ export default function AppPage() {
                     <Gauge className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-1">Measured, Not Guessed</h4>
-                    <p className="text-muted-foreground text-sm">Device-side HealthKit reads are the bottleneck, not the network. The in-app throughput benchmark reads real data through a discarding transport so you can size a backfill before you start one.</p>
+                    <h4 className="font-semibold mb-1">Benchmark Before You Backfill</h4>
+                    <p className="text-muted-foreground text-sm">Reading HealthKit on the phone is the slow part, not the network. The in-app benchmark reads real data without uploading it, so you can see how long a backfill will take before starting one.</p>
                   </div>
                 </div>
               </div>
@@ -372,10 +371,9 @@ X-User-ID: <your user id>
       {/* Outputs Section */}
       <section className="container mx-auto max-w-7xl px-4 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">Once It Is Yours</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-4">What you can do with it</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            The point of moving the data is being able to use it. Nothing here is a separate
-            product — it all ships in the same repository.
+            All of this ships in the same repository as the app.
           </p>
         </div>
 
@@ -408,9 +406,9 @@ X-User-ID: <your user id>
             Install it, then point it at your server
           </h2>
           <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            An iPhone on iOS 17 or later and a server you can reach. Apple Watch data arrives once
-            iOS syncs it to the phone. Prefer to build it yourself? The repository has the Xcode
-            instructions.
+            You need an iPhone on iOS 17 or later and a server you can reach. Apple Watch data
+            arrives once iOS syncs it to the phone. If you would rather build it yourself, the
+            repository has the Xcode instructions.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
             <AppStoreBadge />
@@ -427,9 +425,9 @@ X-User-ID: <your user id>
             </Button>
           </div>
           <p className="mt-8 text-sm opacity-75 max-w-2xl mx-auto">
-            PulsHealth moves data; it is not a medical device and gives no medical advice. Accuracy
-            is that of whatever recorded the sample into Apple Health. The name and logo are the
-            developer&apos;s; the code is Apache-2.0, so a fork ships under its own name.
+            PulsHealth is not a medical device and gives no medical advice. Data is only as
+            accurate as whatever recorded it into Apple Health. The name and logo belong to the
+            developer; the code is Apache-2.0, so a fork ships under its own name.
           </p>
         </div>
       </section>

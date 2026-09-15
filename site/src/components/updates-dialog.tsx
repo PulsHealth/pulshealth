@@ -10,10 +10,10 @@ interface UpdatesDialogProps {
 const updatesConfig: FormDialogConfig = {
   title: "Stay updated on the project",
   description:
-    "Occasional email about PulsHealth releases, app availability, and changes to the sync protocol or the server stack. Nothing else, and no health data is involved.",
+    "An occasional email about releases, the app, and changes to the sync protocol or the server stack. Nothing else.",
   successTitle: "You're signed up",
   successDescription:
-    "We'll email you when there is something worth reporting — a release, a protocol change, or news about the app.",
+    "We'll email you when there is a release, a protocol change, or news about the app.",
   submitLabel: "Sign Up",
   submittingLabel: "Signing up...",
   fields: [

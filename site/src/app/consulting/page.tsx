@@ -21,13 +21,13 @@ export const metadata = {
 
 const services = [
   {
-    title: "Get the Stack Running — and Keep It Running",
-    description: "Standing up the reference backend: Docker Compose, PostgreSQL 17 with TimescaleDB, the ingest and product APIs, Grafana, the web viewer. Then the part that comes after — migrations, backups, upgrades, alerting, and working out why a sync stalled.",
+    title: "Get the Stack Running, and Keep It Running",
+    description: "Standing up the reference backend: Docker Compose, PostgreSQL 17 with TimescaleDB, the ingest and product APIs, Grafana, the web viewer. Then everything after that: migrations, backups, upgrades, alerting, and working out why a sync stalled.",
     icon: Server,
   },
   {
     title: "Health Data in Your AI Tooling",
-    description: "Wiring your own data into Claude, Claude Code, Cursor or a remote connector through the read-only MCP server, or into ChatGPT through the product API's OpenAPI document. Including the parts that decide whether the answers are any good — deduplication, time zones, and which questions the tools can actually answer.",
+    description: "Wiring your own data into Claude, Claude Code, Cursor or a remote connector through the read-only MCP server, or into ChatGPT through the product API's OpenAPI document. Including the parts that decide whether the answers are any good: deduplication, time zones, and which questions the tools can actually answer.",
     icon: Bot,
   },
   {
@@ -37,7 +37,7 @@ const services = [
   },
   {
     title: "Build on the Data",
-    description: "Once the samples are in Postgres they are yours to use. Dashboards, analysis notebooks, exports, and integrations with whatever else you run — plus the schema and query patterns that keep iPhone and Watch from double counting.",
+    description: "Once the samples are in Postgres they are yours to use. Dashboards, analysis notebooks, exports, and integrations with whatever else you run, plus the schema and query patterns that keep iPhone and Watch from double counting.",
     icon: BarChart3,
   },
   {
@@ -60,7 +60,7 @@ export default function ConsultingPage() {
       <PageHero
         eyebrow="Consulting"
         title={<>Help setting up, self-hosting, and <span className="text-brand">building with PulsHealth</span></>}
-        lede="I wrote PulsHealth — the iOS app, the sync library, the server stack and the protocol. If you want it running for you, adapted to a backend you already have, or built on top of, that is what this page is for."
+        lede="I wrote PulsHealth: the iOS app, the sync library, the server stack and the protocol. If you want it set up for you, adapted to a backend you already have, or built on, I do that work."
       >
         <QuoteRequestDialog>
           <Button size="lg">
@@ -81,7 +81,7 @@ export default function ConsultingPage() {
           <CardHeader>
             <CardTitle>Everything here is also free</CardTitle>
             <CardDescription className="text-base">
-              Worth saying before you read any further.
+              You may not need to hire anyone.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -89,22 +89,19 @@ export default function ConsultingPage() {
               <li>
                 <strong className="text-foreground">The whole project is Apache-2.0.</strong>{" "}
                 The app, the sync library, the server stack, the protocol specification and the
-                dashboards are all in one public repository. Nothing on this page is a paid
-                feature, and none of it is held back.
+                dashboards are all in one public repository. There are no paid features.
               </li>
               <li>
                 <strong className="text-foreground">The backend is pre-release.</strong>{" "}
-                The README says so plainly: standing up the server still expects someone
-                comfortable with Docker. That gap is the honest reason this page exists — not
-                because the documentation is missing, but because time often is.
+                Standing up the server still expects someone comfortable with Docker. The
+                documentation covers it, but not everyone has the time.
               </li>
               <li>
-                <strong className="text-foreground">Read it and decide.</strong>{" "}
+                <strong className="text-foreground">Try the docs first.</strong>{" "}
                 The <Link href="/server" className="text-brand hover:underline">quickstart</Link>,
                 the <Link href="/docs/protocol" className="text-brand hover:underline">protocol spec</Link>{" "}
                 and the <Link href="/docs/database" className="text-brand hover:underline">database guide</Link>{" "}
-                are all on this site. If they get you where you are going, that is a good outcome
-                and you should take it.
+                are all on this site. If they get you there, you do not need me.
               </li>
             </ul>
           </CardContent>
@@ -116,8 +113,8 @@ export default function ConsultingPage() {
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">What I can help with</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Roughly in the order people ask. If your problem is next to one of these rather than
-            inside it, say so — it is usually the same work.
+            Roughly in the order people ask. If your problem is close to one of these but not
+            quite the same, ask anyway.
           </p>
         </div>
 
@@ -144,8 +141,8 @@ export default function ConsultingPage() {
           <div className="text-center mb-12">
             <h2 className="text-2xl font-bold tracking-tight mb-3">What already exists</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Not a pitch — just what is in the repository today, so you can judge how much of
-              your problem is already solved.
+              What is in the repository today, so you can judge how much of your problem is
+              already solved.
             </p>
           </div>
 
@@ -159,11 +156,10 @@ export default function ConsultingPage() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-10 max-w-2xl mx-auto">
-            The README puts a heavy five-year backfill at fifteen to twenty-five million
-            samples and the ingest server at 50–100 K rows per second — which is why the phone,
-            not the database, is the bottleneck. Those are documented planning figures rather
-            than benchmark results; the app ships a throughput benchmark so you can measure
-            your own device.
+            The README estimates a heavy five-year backfill at fifteen to twenty-five million
+            samples and the ingest server at 50 to 100 thousand rows per second, which is why the
+            phone, not the database, is the bottleneck. Those are planning figures, not benchmark
+            results. The app includes a throughput benchmark so you can measure your own device.
           </p>
         </div>
       </section>
@@ -172,11 +168,10 @@ export default function ConsultingPage() {
       <section className="container mx-auto max-w-7xl px-4 py-24">
         <div className="max-w-2xl mx-auto text-center">
           <MessageSquare className="h-12 w-12 text-brand mx-auto mb-6" />
-          <h2 className="text-3xl font-bold tracking-tight mb-4">Tell me what you are building</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-4">Get in touch</h2>
           <p className="text-lg text-muted-foreground mb-8">
-            What you have, what you want it to do, and what is in the way. I will tell you
-            whether I can help — and if the answer is in the docs, I will point you at it
-            instead.
+            Tell me what you have, what you want it to do, and what is in the way. I will say
+            whether I can help. If the answer is already in the docs, I will point you to it.
           </p>
 
           <div className="mb-8">
@@ -211,7 +206,7 @@ export default function ConsultingPage() {
             <a href={`${GITHUB}/issues`} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">
               GitHub issues
             </a>
-            , where the answer helps the next person too — see the{" "}
+            , where the answer helps the next person too. See the{" "}
             <Link href="/support" className="text-brand hover:underline">
               support page
             </Link>

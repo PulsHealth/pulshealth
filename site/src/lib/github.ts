@@ -8,8 +8,8 @@ export interface RepoStats {
 }
 
 /**
- * Fetched once at build time (the site is a static export). Any failure —
- * offline build, rate limit, no releases yet — degrades to nulls and the UI
+ * Fetched once at build time (the site is a static export). Any failure
+ * (offline build, rate limit, no releases yet) degrades to nulls and the UI
  * simply omits the number. `GITHUB_TOKEN`, if set, lifts the anonymous rate
  * limit in CI.
  */

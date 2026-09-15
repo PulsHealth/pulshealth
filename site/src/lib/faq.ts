@@ -13,17 +13,17 @@ export interface FaqItem {
 export const faq: FaqItem[] = [
   {
     q: "Is the app really free? What is the catch?",
-    a: "Free, no in-app purchases, no account. The catch is that you have to run the server, because there is no PulsHealth server to send data to. The reference stack comes up with one command on any Docker host.",
+    a: "Free, no in-app purchases, no account. The catch is that you run the server yourself; there is no PulsHealth server to send data to. The reference stack comes up with one command on any Docker host.",
     home: true,
   },
   {
     q: "Do I need a domain, a VPN or Tailscale?",
-    a: "No. On the same Wi-Fi the phone can reach the server over plain HTTP; the app permits that for local-network addresses only. From anywhere else you need HTTPS, which means a TLS proxy or a VPN such as Tailscale in front of the ingest port. Which of those you use is up to you.",
+    a: "No. On the same Wi-Fi the phone can reach the server over plain HTTP; the app allows that for local-network addresses only. From anywhere else you need HTTPS, which means a TLS proxy or a VPN such as Tailscale in front of the ingest port.",
     home: true,
   },
   {
     q: "Where does my data go?",
-    a: "To the one URL you enter in the app, and nowhere else. The developer runs no server, has no account system and receives nothing. The app has zero third-party dependencies, so there is no analytics SDK to disagree with that.",
+    a: "To the URL you enter in the app, and nowhere else. The developer runs no server, has no account system and receives nothing. The app has zero third-party dependencies and no analytics SDK.",
     home: true,
   },
   {
@@ -33,7 +33,7 @@ export const faq: FaqItem[] = [
   },
   {
     q: "How long does a first backfill take?",
-    a: "It depends on the phone, not the server: reading HealthKit is the bottleneck. The app includes a throughput benchmark that reads real data through a discarding transport so you can measure your own device before starting. Progress is saved after every acknowledged batch, so interrupting it costs nothing.",
+    a: "It depends on the phone, not the server, because reading HealthKit is the slow part. The app includes a benchmark that reads real data without uploading it, so you can measure your own device first. Progress is saved after every confirmed batch, so you can interrupt it safely.",
     home: true,
   },
   {

@@ -34,7 +34,7 @@ export default async function BlogPage() {
         size="compact"
         eyebrow="Blog"
         title="The PulsHealth blog"
-        lede="Occasional, long-form: what the metrics mean, and the engineering of moving them around."
+        lede="Posts about health metrics and the engineering of syncing them."
       />
 
       <div className="container mx-auto w-full max-w-3xl px-4 py-12 md:py-16">

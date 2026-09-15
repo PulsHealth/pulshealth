@@ -30,7 +30,7 @@ const services = [
   },
   {
     title: "Grafana",
-    description: "Provisioned dashboards for the health data itself and for ingest health — batches per hour, rows per day, per-type totals, last-batch age — with alert rules already defined.",
+    description: "Provisioned dashboards for the health data and for ingest health (batches per hour, rows per day, per-type totals, last-batch age), with alert rules already defined.",
     icon: LineChart,
   },
   {
@@ -51,7 +51,7 @@ export default function SyncPage() {
       <PageHero
         eyebrow={<>Docker Compose &middot; Apache-2.0</>}
         title={<>Your server, your <span className="text-brand">health database</span></>}
-        lede="The reference backend the PulsHealth app syncs to. It runs on a home machine, a NAS, or a rented box — whichever you own. There is no hosted option and no managed tier, and that is deliberate."
+        lede="The reference backend the PulsHealth app syncs to. It runs on a home machine, a NAS, or a rented box. There is no hosted option and no managed tier."
       >
         <Button asChild size="lg">
           <Link href="/docs/server">
@@ -70,7 +70,7 @@ export default function SyncPage() {
       {/* Quickstart */}
       <section className="container mx-auto max-w-7xl px-4 py-24">
         <div className="max-w-3xl mx-auto text-center mb-10">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">One command to bring it up</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-4">Setup</h2>
           <p className="text-lg text-muted-foreground">
             You need a Linux or macOS box with Docker and its Compose plugin. The bootstrap script
             generates every secret, starts the stack, waits for ingest to answer, and prints a
@@ -88,13 +88,13 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
         </div>
 
         <p className="mx-auto max-w-2xl text-center text-sm text-muted-foreground mt-4">
-          Pass the time zone your phone lives in — every daily view buckets by that calendar.
-          Re-running the script is safe; it never regenerates secrets.
+          Pass the time zone your phone lives in, since every daily view buckets by that
+          calendar. Re-running the script is safe; it never regenerates secrets.
         </p>
         <p className="mx-auto max-w-2xl text-center text-sm text-muted-foreground mt-3">
           <strong className="text-foreground">Pre-release:</strong> the container images are not
-          on GHCR yet, so <code>--build</code> compiles them from the checkout. Once the first
-          tagged release publishes them the flag goes away and the same script pulls instead.
+          published yet, so <code>--build</code> compiles them from the checkout. After the first
+          tagged release the flag is no longer needed and the script pulls the images instead.
         </p>
       </section>
 
@@ -132,9 +132,8 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">How the phone reaches it</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            The one decision the script leaves to you. Everything binds to loopback by default,
-            ingest included — the product API, the MCP server, Grafana, the viewer and Postgres
-            too. Where the phone reaches ingest is the part you choose.
+            Everything binds to loopback by default, including ingest, the product API, the MCP
+            server, Grafana, the viewer and Postgres. How the phone reaches ingest is up to you.
           </p>
         </div>
 
@@ -147,7 +146,7 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
             <p className="text-muted-foreground">
               Bind ingest to the LAN and the pairing block carries a local address; the app accepts
               plain HTTP for local-network hosts. That is plaintext with the token as the only
-              protection — fine on a network you control, nowhere else.
+              protection, so use it only on a network you control.
             </p>
           </div>
           <div className="text-center">
@@ -185,11 +184,10 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
                 </div>
                 <CardTitle>PulsHealthSync, the Swift package</CardTitle>
                 <CardDescription className="text-base">
-                  The sync engine underneath the app, and a package in its own right: iOS 17+,
-                  Swift 6 strict concurrency, zero third-party dependencies. Anchored-query sync,
-                  on-device aggregates, activity rings, background scheduling, the HTTP transport
-                  and the NDJSON encoding — embeddable in another app if you want the pipeline
-                  without the UI.
+                  The sync engine underneath the app, usable on its own: iOS 17+, Swift 6 strict
+                  concurrency, zero third-party dependencies. Anchored-query sync, on-device
+                  aggregates, activity rings, background scheduling, the HTTP transport and the
+                  NDJSON encoding. Embed it in another app if you want the pipeline without the UI.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -235,13 +233,13 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
           <ShieldCheck className="h-8 w-8" />
         </div>
         <h2 className="text-3xl font-bold tracking-tight mb-4">
-          Self-hosting means self-securing
+          Security is your job too
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
           The database holds identifiable health data, and ingest currently accepts a single static
-          bearer token, so whoever holds it can upload and delete for any user on that server. TLS,
-          exposure and retention are yours to arrange. The project documents its own limitations
-          rather than glossing over them.
+          bearer token, so anyone who has it can upload and delete for any user on that server. TLS,
+          network exposure and retention are yours to set up. The security policy lists the known
+          limitations.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild size="lg">

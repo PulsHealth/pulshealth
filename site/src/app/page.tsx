@@ -62,7 +62,7 @@ const pieces = [
     title: "PostgreSQL + TimescaleDB",
     href: "/server",
     icon: Database,
-    description: "Samples land in hypertables with compression on older chunks. Migrations apply themselves on every start. Backups are one profile away.",
+    description: "Samples land in hypertables with compression on older chunks. Migrations run automatically on every start. Backups are built in but off by default.",
   },
   {
     title: "Grafana and a web viewer",
@@ -74,7 +74,7 @@ const pieces = [
     title: "Open wire protocol",
     href: "/docs/protocol",
     icon: FileCode2,
-    description: "Gzip NDJSON over HTTPS, a JSON Schema per line type, canonical units, a fixture corpus and a Python reference receiver. Write your own backend if you would rather.",
+    description: "Gzip NDJSON over HTTPS, a JSON Schema per line type, canonical units, a fixture corpus and a Python reference receiver. Or write your own backend.",
   },
   {
     title: "MCP server for AI",
@@ -86,14 +86,14 @@ const pieces = [
     title: "CSV and JSONL export",
     href: "/docs/export",
     icon: FileSpreadsheet,
-    description: "The product API streams any dataset out, and a small CLI wraps it. For a spreadsheet or a notebook, that is the shortest path.",
+    description: "The product API streams any dataset out, and a small CLI wraps it. The quickest route to a spreadsheet or a notebook.",
   },
 ];
 
 const claims = [
   {
     title: "The developer never sees your data",
-    body: "There is no PulsHealth service and no account. The app posts to the one URL you enter. If it wanted to phone home there would be nowhere to call.",
+    body: "There is no PulsHealth service and no account. The app posts to the one URL you enter and nowhere else.",
     check: { label: "Transport/", href: `${GITHUB_URL}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Transport` },
   },
   {
@@ -103,7 +103,7 @@ const claims = [
   },
   {
     title: "Read-only, in the code",
-    body: "The app asks HealthKit for read permission only and never writes, edits or deletes. The usage strings say so, and so does the sync engine.",
+    body: "The app asks HealthKit for read permission only and never writes, edits or deletes. The usage strings say so, and the code shows it.",
     check: { label: "HealthSyncEngine.swift", href: `${BLOB}/PulsHealthSync/Sources/PulsHealthSync/Engine/HealthSyncEngine.swift` },
   },
 ];
@@ -143,9 +143,9 @@ export default async function HomePage() {
           </h1>
 
           <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-            A free iPhone app that syncs 80 HealthKit types into your own PostgreSQL, where you
-            can query them in SQL, chart them in Grafana, and ask Claude about them. Nothing sits
-            in between, because there is no PulsHealth service.
+            A free iPhone app that syncs 80 HealthKit types into your own PostgreSQL. Query it
+            in SQL, chart it in Grafana, or ask Claude about it. There is no PulsHealth service
+            in the middle.
           </p>
 
           <div className="flex flex-col items-center gap-4 pt-2 sm:flex-row">
@@ -199,10 +199,10 @@ export default async function HomePage() {
       {/* Three steps */}
       <section className="container mx-auto max-w-7xl px-4 py-24">
         <div className="mb-12 text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Three steps, no third party</h2>
+          <h2 className="mb-4 text-3xl font-bold tracking-tight">How it works</h2>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Apple Health holds years of your data behind an API only apps can read. This gets it
-            into a database you own.
+            Apple Health keeps years of your data behind an API only apps can read. PulsHealth
+            moves it into a database you own.
           </p>
         </div>
 
@@ -232,8 +232,8 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
             </pre>
           </div>
           <p className="mt-3 text-center text-sm text-muted-foreground">
-            Pass the time zone your phone lives in. <code>--build</code> is a pre-release detail:
-            the images are not published yet, so the script compiles them from the checkout.
+            Pass the time zone your phone lives in. <code>--build</code> is needed until the
+            first release, because the container images are not published yet.
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild variant="outline">
@@ -256,9 +256,9 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
       <section className="border-y bg-muted/30">
         <div className="container mx-auto max-w-7xl px-4 py-24">
           <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight">Everything in one repository</h2>
+            <h2 className="mb-4 text-3xl font-bold tracking-tight">What is included</h2>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Nothing here is a separate product or a paid tier. It all ships together, Apache-2.0.
+              All of it is in one Apache-2.0 repository. There are no paid tiers.
             </p>
           </div>
 
@@ -303,10 +303,9 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
       {/* Why self-hosted: checkable claims */}
       <section className="container mx-auto max-w-7xl px-4 py-24">
         <div className="mb-12 text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Claims you can check</h2>
+          <h2 className="mb-4 text-3xl font-bold tracking-tight">Privacy, with the code to show for it</h2>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Health data is about as personal as data gets. Every privacy statement on this site
-            points at the source that makes it true.
+            Health data is personal. Each claim below links to the code behind it.
           </p>
         </div>
 
@@ -396,8 +395,8 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
                 </div>
                 <CardTitle className="transition-colors group-hover:text-brand">Knowledge base</CardTitle>
                 <CardDescription className="text-base">
-                  What each of 177 Apple Health types actually measures: sampling, typical ranges,
-                  how devices differ, and what the number cannot tell you.
+                  What each of the 177 Apple Health types measures: sampling, typical ranges, how
+                  devices differ, and the limits of the number.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -410,8 +409,7 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
                 </div>
                 <CardTitle className="transition-colors group-hover:text-brand">Blog</CardTitle>
                 <CardDescription className="text-base">
-                  Occasional, long-form: what the metrics mean, and the engineering of moving them
-                  around.
+                  Posts about health metrics and the engineering of syncing them.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -422,7 +420,7 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
       {/* FAQ */}
       <section className="border-t bg-muted/30">
         <div className="container mx-auto max-w-3xl px-4 py-24">
-          <h2 className="mb-8 text-center text-3xl font-bold tracking-tight">Questions people ask first</h2>
+          <h2 className="mb-8 text-center text-3xl font-bold tracking-tight">Common questions</h2>
           <div className="divide-y rounded-xl border bg-card">
             {homeFaq.map((item) => (
               <details key={item.q} className="group px-5 py-4">
@@ -435,11 +433,11 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
             ))}
           </div>
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            More, including the iOS quirks that look like bugs, on the{" "}
+            More on the{" "}
             <Link href="/support" className="text-brand underline-offset-4 hover:underline">
               support page
             </Link>
-            .
+            , including the iOS behaviours that look like bugs.
           </p>
         </div>
       </section>
@@ -450,12 +448,11 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
           <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.2fr_1fr]">
             <div>
               <Badge variant="outline" className="mb-4">Consulting</Badge>
-              <h2 className="mb-4 text-3xl font-bold tracking-tight">Need it running, or built on?</h2>
+              <h2 className="mb-4 text-3xl font-bold tracking-tight">Consulting</h2>
               <p className="text-lg text-muted-foreground">
-                Everything on this site is free and Apache-2.0. If you would rather have the
-                person who wrote it stand the stack up, connect your data to your AI tooling,
-                implement the protocol against a backend you already have, or build on the data,
-                that is available too.
+                Everything on this site is free. If you want help setting up the stack,
+                connecting your data to AI tools, implementing the protocol against your own
+                backend, or building on the data, I do that work.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">

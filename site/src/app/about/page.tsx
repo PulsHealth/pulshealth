@@ -19,13 +19,7 @@ export default function AboutPage() {
     <main className="flex min-h-screen flex-col">
       <PageHero
         eyebrow="About the project"
-        title={
-          <>
-            Health data is yours.
-            <br />
-            The tooling should be too.
-          </>
-        }
+        title="About PulsHealth"
         lede="PulsHealth is a one-maintainer open-source project: an iPhone app that copies Apple Health into a database you run, and everything needed to make that useful."
       >
         <Button asChild size="lg">
@@ -46,16 +40,15 @@ export default function AboutPage() {
         <div className="prose prose-lg mx-auto max-w-3xl dark:prose-invert prose-a:text-brand prose-a:no-underline hover:prose-a:underline">
           <h2>Why it exists</h2>
           <p>
-            Apple Health holds years of your data behind an API that only apps on your phone can
-            read. The built-in export is a zip file of XML. The apps that get the data out for you
-            mostly keep a copy, or charge a subscription, or both. I wanted my own history in a
-            database I could query with SQL, chart in Grafana, and hand to an AI assistant, without
-            trusting anyone else with it along the way.
+            Apple Health keeps years of your data behind an API that only apps on your phone can
+            read. The built-in export is a zip file of XML. Most apps that get the data out keep a
+            copy, charge a subscription, or both. I wanted my own history in a database I could
+            query with SQL, chart in Grafana, and use with an AI assistant, without handing it to
+            anyone else.
           </p>
           <p>
-            So the app has one job. It reads Apple Health, read-only, and posts every sample to the
-            one URL you give it. There is no PulsHealth account and no PulsHealth server. If the
-            developer wanted your health data there would be nowhere for it to arrive.
+            The app does one thing. It reads Apple Health and posts every sample to the URL you
+            give it. There is no PulsHealth account and no PulsHealth server.
           </p>
 
           <h2>Why the wire format is public</h2>
@@ -63,15 +56,13 @@ export default function AboutPage() {
             The reference server in the repository is one receiver, not the only one. The format
             the app speaks, the Puls Sync Protocol, is written down with a JSON Schema for every
             line type, a fixture corpus, a conformance checker and a complete receiver in one
-            Python file. If you would rather write your own backend, that is a supported path
-            rather than a reverse-engineering job. The format matters more than the code.
+            Python file. If you would rather write your own backend, the spec is enough to do it.
           </p>
 
           <h2>Who maintains it</h2>
           <p>
-            One person, in the open. I wrote the app, the sync library, the server stack, the
-            protocol and this site, and I run the stack on my own data. Bugs, questions and
-            protocol gaps go through{" "}
+            One person. I wrote the app, the sync library, the server stack, the protocol and this
+            site, and I run the stack on my own data. Bugs, questions and protocol gaps go through{" "}
             <a href={`${GITHUB}/issues`} target="_blank" rel="noopener noreferrer">
               GitHub issues
             </a>
@@ -84,22 +75,18 @@ export default function AboutPage() {
             <li>Not a company, and not a service. There is nothing to sign up for.</li>
             <li>Not a hosted tier, and there are no plans for one. The point is that you host it.</li>
             <li>
-              Not a source of telemetry. The app has zero third-party dependencies and phones home
-              to nobody; the <Link href="/privacy">privacy policy</Link> is short because there is
-              little to say.
+              No telemetry. The app has zero third-party dependencies and sends nothing to the
+              developer. The <Link href="/privacy">privacy policy</Link> has the details.
             </li>
-            <li>
-              Not a medical device. It moves data. Interpreting it is between you and someone
-              qualified to.
-            </li>
+            <li>Not a medical device. It moves data; it does not interpret it.</li>
           </ul>
 
           <h2>How to help</h2>
           <p>
-            Try it and report what breaks. Implement the protocol against a backend of your own
-            and tell me where the spec was unclear. Fix a knowledge-base page that is wrong. Star
-            the repository if you want to follow along. All of it is Apache-2.0, so it stays yours
-            to fork if I ever stop.
+            Try it and report what breaks. Implement the protocol against your own backend and
+            tell me where the spec was unclear. Fix a knowledge-base page that is wrong. Star the
+            repository to follow along. It is Apache-2.0, so you can fork it if the project ever
+            stops.
           </p>
         </div>
       </section>
