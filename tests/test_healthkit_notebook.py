@@ -1,3 +1,22 @@
+"""Executes notebooks/healthkit_database_exploration.ipynb end to end.
+
+Runs in CI: the `db-integration` job in .github/workflows/ci.yml installs
+notebooks/requirements.txt and runs this file after the Go integration
+suites. The main test needs Docker and `psql` on the host — it starts its own
+throwaway TimescaleDB (the image pinned in server/docker-compose.yml) on a
+random loopback port, applies the schema with server/db/migrate.sh, seeds a
+few HealthKit rows, writes a temporary `.env` at the repository root and
+executes every cell with nbclient. Locally:
+
+    pip install -r notebooks/requirements.txt
+    python -m pytest tests/test_healthkit_notebook.py -rs
+
+Without Docker that test skips. The second test runs the notebook against
+whatever a real `.env` at the repository root points at and skips when there
+is none (CI), so it is the one to run by hand after changing the notebook's
+connection code.
+"""
+
 import os
 import re
 import subprocess

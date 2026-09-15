@@ -1,8 +1,14 @@
-pandas>=2.3
-sqlalchemy>=2.0
-psycopg[binary]>=3.2
-matplotlib>=3.10
-seaborn>=0.13
-ipykernel>=6.29
-nbclient>=0.10
-nbformat>=5.10
+# What notebooks/healthkit_database_exploration.ipynb imports, plus what it
+# takes to execute it headlessly (ipykernel, nbclient, nbformat) and the test
+# runner for tests/test_healthkit_notebook.py. Exact pins, not floors: CI's
+# db-integration job installs this file and runs that test, so the set has to
+# resolve the same way on every run. Dependabot keeps it moving.
+pandas==3.0.5
+sqlalchemy==2.0.53
+psycopg[binary]==3.3.5
+matplotlib==3.11.2
+seaborn==0.13.2
+ipykernel==7.3.0
+nbclient==0.11.0
+nbformat==5.11.1
+pytest==9.1.1

@@ -136,10 +136,10 @@ only when a second sink actually exists to justify it.
   is still framed as a database tour; the plan wanted an "analyze your data"
   version with an LLM section.
 
-**AI-7 (a raw-SQL MCP tool) should be dropped rather than deferred.** It
-contradicts the standing invariant that `server/mcp` is a read-only client of
-the product API and never holds a database URL. Anyone who wants SQL has
-`psql` and `docs/database-guide.md`.
+**AI-7 (a raw-SQL MCP tool) is dropped**, not deferred: it contradicts the
+standing invariant that `server/mcp` is a read-only client of the product API
+and never holds a database URL. Anyone who wants SQL has `psql` and
+`docs/database-guide.md`.
 
 ## 9. Standing maintenance
 
@@ -154,4 +154,3 @@ Not backlog — things that come due on someone else's schedule.
 | Dependabot re-proposes eslint 10 or TypeScript 7 for `web`/`site` | Check upstream first, then close against [#37](https://github.com/PulsHealth/pulshealth/issues/37), which records the state of both blockers. Both are `eslint-config-next`'s own dependencies, not this repository: `typescript-eslint` refuses TS >= 7.0 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)), and `eslint-plugin-react` still calls `context.getFilename()`, which ESLint 10 removed. Still true against `eslint-config-next` 16.3.5 (2026-09-14). |
 | Dependabot re-proposes `lucide-react` 1.x for `site` | Close against [#39](https://github.com/PulsHealth/pulshealth/issues/39). v1 removed the brand marks (`Github`, `Twitter`, `Facebook`, `Linkedin`) that the header, footer and share links draw, and they are not coming back; landing it means choosing replacement marks, which is a visual change, not a bump. Land the rest of the group by hand, as #38 and #45 did. |
 | A red `advisories` workflow run | Bump the dependency in its own pull request. `advisories.yml` is a separate workflow precisely so it can go red without blocking a merge — or a release, which now calls `ci.yml` and would otherwise be gated on it. |
-| `tests/test_healthkit_notebook.py` | Referenced by no workflow, so it only runs by hand. Either wire it into CI or say in the file that it is manual. |

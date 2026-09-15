@@ -201,7 +201,7 @@ Over the API rather than Postgres because the token boundary and the
 shape, and it keeps the double-counting gotchas out of the model's hands. A
 raw-SQL tool over the `grafana` role is more powerful but hands an agent
 arbitrary SQL against a table holding name and DOB; offer it later as an
-explicit opt-in.
+explicit opt-in. (That later offer, AI-7, was dropped: see the AI table.)
 
 Go keeps the server side single-language and distroless, reuses the API's
 types, and produces one binary for `stdio` (Claude Desktop, Claude Code,
@@ -290,7 +290,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | AI-4 | `llms.txt` at the docs site and an `AGENTS.md` in the repo built from the database guide and the type catalog. | S |
 | AI-5 | ChatGPT Action / custom GPT recipe straight from `/openapi.json`. Near-free once the API is reachable. | S |
 | AI-6 | `GET /v1/summary?range=7d` returning compact markdown for paste-into-any-chat use. | C |
-| AI-7 | Opt-in raw SQL MCP tool over a read-only role, off by default. | C |
+| AI-7 | Opt-in raw SQL MCP tool over a read-only role, off by default. | C — **dropped**: it contradicts the invariant that `server/mcp` is a read-only client of the product API and never holds a database URL. Anyone who wants SQL has `psql` and `docs/database-guide.md`. |
 | AI-8 | The existing exploration notebook reframed as "analyze your data" with an LLM section. | C |
 
 ### OSS hygiene (R-OSS)
