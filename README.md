@@ -49,7 +49,7 @@ free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 | **`PulsHealthSync`** | [`PulsHealthSync/`](PulsHealthSync/README.md) | Swift package (iOS 17+, Swift 6 strict concurrency, zero dependencies): anchored-query sync engine, on-device aggregates, activity rings, background scheduling, HTTP transport, NDJSON encoding. Embeddable in other apps. |
 | **Reference server** | [`server/`](server/README.md) | Docker Compose stack: TimescaleDB, Go ingest API, Go product API (OpenAPI 3.1), Grafana with provisioned dashboards and alert rules. |
 | **Web viewer** | [`web/`](web/README.md) | Next.js viewer (activity rings, trends, workouts, catalog) reading Postgres directly. |
-| **Marketing site** | [`site/`](site/README.md) | Next.js static export behind pulshealth.com: product pages, blog, and the knowledge-base viewer. Distinct from `web/`. |
+| **Marketing site** | [`site/`](site/README.md) | Next.js static export behind pulshealth.com: product pages, the documentation rendered from this repository's Markdown (`/docs`), the blog, and the knowledge-base viewer. Distinct from `web/`. |
 | **Knowledge base** | [`knowledge-base/`](knowledge-base/README.md) | 177 YAML files describing every HealthKit type — what it measures, how it is interpreted, typical and notable ranges, sources. Read by `site/` at build time; useful on its own. |
 | **Blog** | [`blog/`](blog/BLOG_SYSTEM.md) | The site's MDX posts and their images, also read by `site/` at build time. |
 | **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
@@ -486,8 +486,8 @@ cd ../mcp      && go vet ./... && go test ./...
 # Web viewer
 cd web && npm ci && npm run lint && npm run typecheck && npm test && npm run build
 
-# Marketing site (bun; exports 190 static pages to site/out, 177 of them from
-# knowledge-base/, which it reads as a repository-root sibling)
+# Marketing site (bun; exports 211 static pages to site/out, 177 of them from
+# knowledge-base/ and 11 from docs it renders, all read as repository-root siblings)
 cd site && bun install && bun run lint && bun run build
 
 # The whole stack from this checkout (server/compose.build.yml overlay)

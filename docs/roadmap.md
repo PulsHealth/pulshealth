@@ -113,15 +113,14 @@ Optional field, tolerant decoding, no protocol bump.
 
 ## 7. Put the documentation on the site — Phase 2 leftover
 
-`site/` exports the marketing pages, the blog and the knowledge-base viewer; its
-loaders read `knowledge-base/` and `blog/` and nothing else. The protocol spec,
-the self-hosting guide, `docs/ai.md` and `docs/export.md` are readable only on
-GitHub. The plan put a docs site on `pulshealth.com` in Phase 2 and it did not
-happen — the `/sync` marketing page links to the repository instead.
-
-Worth doing after §1, when there is a released thing to document, and worth
-doing as a third content source in the existing static export rather than a
-second site.
+**Done 2026-09-15.** `site/` renders eleven repository documents under
+`/docs/<slug>/` from the files themselves (`site/src/lib/docs.ts` is the
+registry, `site/src/lib/markdown.tsx` the renderer), as a third content source
+in the same static export; `/privacy` renders `docs/privacy-policy.md` the same
+way. Relative links between documents resolve on-site, everything else to
+GitHub. Left for later: the two `mermaid` fences in the database guide render
+as code, not diagrams, and the knowledge-base pages still lack per-page
+metadata (a separate piece of work).
 
 ## 8. Alternative sinks and local export — APP-11, APP-12
 
