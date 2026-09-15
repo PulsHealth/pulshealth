@@ -48,7 +48,9 @@ from anywhere, it locates the repository itself.
 
 ## Configuration
 
-`.env.production` carries the two public build-time values (the form
-endpoint and the GA measurement ID) and is tracked, since a static export
-bakes them into the HTML anyway. `.env.example` documents them for a local
-`.env.local`.
+`.env.production` carries the one public build-time value, the endpoint the
+two forms post to, and is tracked, since a static export bakes it into the
+HTML anyway. `.env.example` documents it for a local `.env.local`. The site
+loads no analytics and sets no cookies; `docs/privacy-policy.md` says so in
+its website section, and `/privacy` renders that file, so keep the two true
+together.

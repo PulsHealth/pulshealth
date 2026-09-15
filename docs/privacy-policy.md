@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-09-08**
+**Last updated: 2026-09-15**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 server **you** run. This policy describes what the app does with your data. It
@@ -140,6 +140,24 @@ provider's responsibility are yours:
   server for AI assistants, notebooks, and your own queries all read the same
   database. What you point at it, and what those tools do with the data, is
   outside the app's control.
+
+## The website
+
+Everything above is about the app. This section is about pulshealth.com,
+which is a separate thing.
+
+The site is a set of static files. It loads no analytics, sets no cookies,
+and includes no tracking scripts or third-party embeds. No health data ever
+passes through it: the app does not talk to it, and there is nothing to sign
+in to.
+
+Two forms on the site — "Sign up for updates" and the consulting contact
+form — send exactly what you type into them (a name, an email address, and
+for the consulting form an optional organisation and a message) to a form
+endpoint the maintainer runs on Amazon Web Services, tagged with which form it
+came from. That is the only thing the site sends anywhere, and it happens only
+when you press the button. The updates list is used for the occasional
+project announcement and nothing else.
 
 ## Changes to this policy
 

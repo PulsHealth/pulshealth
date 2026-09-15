@@ -25,8 +25,8 @@ const footerLinks: Record<string, FooterLink[]> = {
   ],
   legal: [
     { title: "Privacy Policy", href: "/privacy" },
-    { title: "Terms of Service", href: "/terms" },
     { title: "License (Apache-2.0)", href: `${GITHUB}/blob/main/LICENSE`, external: true },
+    { title: "Security Policy", href: `${GITHUB}/blob/main/SECURITY.md`, external: true },
   ],
 }
 

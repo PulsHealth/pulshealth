@@ -82,11 +82,11 @@ export const STATIC_PAGES: SearchItem[] = [
     icon: 'Shield',
   },
   {
-    id: 'page-terms',
+    id: 'page-docs',
     type: 'page',
-    title: 'Terms of Service',
-    description: 'Terms and conditions for using PulsHealth',
-    href: '/terms',
+    title: 'Documentation',
+    description: 'Server setup, the sync protocol, the database guide, exports, and AI assistants',
+    href: '/docs',
     icon: 'FileText',
   },
 ];
