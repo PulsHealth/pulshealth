@@ -65,6 +65,14 @@ struct TypeDetailView: View {
                 if let duration = state.lastSyncDuration {
                     LabeledContent("Last batch duration", value: duration.shortDuration)
                 }
+                // Only a server that reports its counts fills these in, and
+                // only for a batch that carried this type alone.
+                if let accepted = state.lastBatchAccepted {
+                    LabeledContent("Last batch new on server", value: accepted.formatted())
+                }
+                if let duplicates = state.lastBatchDuplicates {
+                    LabeledContent("Last batch already on server", value: duplicates.formatted())
+                }
                 if let latency = state.lastObservedLatency {
                     LabeledContent("Sample→upload latency", value: latency.shortDuration)
                 }

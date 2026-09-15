@@ -6,10 +6,68 @@ public struct UploadResult: Sendable {
     /// Compressed bytes actually sent on the wire.
     public var bytesSent: Int
     public var duration: TimeInterval
+    /// What the server said it did with the batch, when it said anything
+    /// (`docs/protocol/README.md` § 7.1). Nil for a receiver that answers
+    /// with an empty or unrecognised body — the upload is acked by the 2xx
+    /// status, never by this.
+    public var receipt: IngestReceipt?
 
-    public init(bytesSent: Int, duration: TimeInterval) {
+    public init(bytesSent: Int, duration: TimeInterval, receipt: IngestReceipt? = nil) {
         self.bytesSent = bytesSent
         self.duration = duration
+        self.receipt = receipt
+    }
+}
+
+/// The optional JSON body of a successful `POST /v1/batches`. Every field is
+/// optional and unknown fields are ignored, so a receiver that reports only
+/// some counts — or none — still decodes; the reference server returns all of
+/// them. Informational only: nothing here decides whether an anchor advances.
+public struct IngestReceipt: Sendable, Equatable, Decodable {
+    /// Sample lines that created a row.
+    public var accepted: Int?
+    /// Sample lines whose UUID was already stored.
+    public var duplicates: Int?
+    /// Sample rows actually removed by deletion lines.
+    public var deleted: Int?
+    public var routePoints: Int?
+    public var seriesPoints: Int?
+    public var aggregateSamples: Int?
+    public var activitySummaries: Int?
+
+    public init(
+        accepted: Int? = nil, duplicates: Int? = nil, deleted: Int? = nil,
+        routePoints: Int? = nil, seriesPoints: Int? = nil,
+        aggregateSamples: Int? = nil, activitySummaries: Int? = nil
+    ) {
+        self.accepted = accepted
+        self.duplicates = duplicates
+        self.deleted = deleted
+        self.routePoints = routePoints
+        self.seriesPoints = seriesPoints
+        self.aggregateSamples = aggregateSamples
+        self.activitySummaries = activitySummaries
+    }
+
+    /// Tolerant decode of a response body: nil for an empty body, a body that
+    /// is not a JSON object, or one that carries none of the known counts.
+    /// Never throws — a receipt the client cannot read is the same as none.
+    public static func decode(_ body: Data) -> IngestReceipt? {
+        guard !body.isEmpty,
+              let receipt = try? JSONDecoder().decode(IngestReceipt.self, from: body),
+              receipt != IngestReceipt()
+        else { return nil }
+        return receipt
+    }
+
+    /// `"812 new, 188 duplicates"` — the sample-level outcome for a log line,
+    /// or nil when the server reported neither count. Either count alone is
+    /// still reported (`"812 new"`).
+    public var sampleOutcome: String? {
+        var parts: [String] = []
+        if let accepted { parts.append("\(accepted.formatted()) new") }
+        if let duplicates { parts.append("\(duplicates.formatted()) duplicates") }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 }
 
@@ -146,7 +204,10 @@ public struct HTTPSyncTransport: SyncTransport {
                     throw TransportError.fromResponse(status: http.statusCode, body: data)
                 }
                 logger.debug("Uploaded \(batch.samples.count) samples (\(body.count) bytes gzip, \(ndjson.count) raw) in \(elapsed, format: .fixed(precision: 3))s")
-                return UploadResult(bytesSent: body.count, duration: elapsed)
+                // The 2xx is the ack; the body is a courtesy. Whatever it
+                // holds — the reference server's counts, nothing, an HTML
+                // page from a proxy — the upload has succeeded.
+                return UploadResult(bytesSent: body.count, duration: elapsed, receipt: IngestReceipt.decode(data))
             } catch {
                 // A cancelled request surfaces as URLError.cancelled, which would
                 // otherwise count as a retryable network error and burn a backoff
