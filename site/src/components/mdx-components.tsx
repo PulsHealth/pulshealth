@@ -3,30 +3,12 @@ import { type MDXComponents } from "mdx/types";
 import Link from "next/link";
 import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Info, AlertTriangle, CheckCircle, Lightbulb, ExternalLink } from "lucide-react";
-import { HeartRateChart } from "@/components/charts/heart-rate-chart";
-import { GenericChart, MultiLineChart } from "@/components/charts/generic-chart";
-import {
-  ClinicalRangesTable,
-  DeviceComparisonTable,
-  FeatureComparisonTable,
-  DataTable,
-  ProConComparison,
-} from "@/components/charts/comparison-table";
-// Client components (use useState)
-import {
-  Accordion,
-  AccordionItem,
-  Tabs,
-  Tab,
-  Definition,
-  Citation,
-  KeyTakeaways,
-} from "@/components/mdx-client-components";
 
-// Callout component for highlighting important information
+// The components a post may use. blog/BLOG_SYSTEM.md documents them; add a
+// component there when you add one here.
+
+// Highlighted aside.
 function Callout({
   type = "info",
   title,
@@ -63,7 +45,7 @@ function Callout({
   );
 }
 
-// Link to a HealthKit data type in the knowledge base
+// Link to a HealthKit data type's knowledge-base page.
 function DataTypeLink({
   identifier,
   children,
@@ -71,130 +53,17 @@ function DataTypeLink({
   identifier: string;
   children?: React.ReactNode;
 }) {
-  const displayName = children || identifier.replace(/^HK(Quantity|Category|Characteristic)TypeIdentifier/, "");
+  const displayName =
+    children || identifier.replace(/^HK(Quantity|Category|Characteristic)TypeIdentifier/, "");
 
   return (
-    <Link
-      href={`/knowledge-base/types/${identifier}`}
-      className="inline-flex items-center gap-1 text-brand hover:underline font-medium"
-    >
+    <Link href={`/knowledge-base/types/${identifier}/`} className="font-medium text-brand hover:underline">
       {displayName}
-      <ExternalLink className="h-3 w-3" />
     </Link>
   );
 }
 
-// Feature card for highlighting key points
-function FeatureCard({
-  title,
-  description,
-  icon,
-}: {
-  title: string;
-  description: string;
-  icon?: React.ReactNode;
-}) {
-  return (
-    <Card className="gap-2 py-5">
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          {icon}
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <CardDescription>{description}</CardDescription>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Solution card that links to a solution page
-function SolutionCard({
-  title,
-  description,
-  href,
-  children,
-}: {
-  title: string;
-  description: string;
-  href: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <Link href={href} className="block no-underline hover:no-underline group">
-      <Card className="my-6 border-2 border-border/60 transition-all duration-200 group-hover:border-brand/50 group-hover:shadow-lg group-hover:shadow-brand/5">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-bold text-foreground group-hover:text-brand transition-colors">
-              {title}
-            </CardTitle>
-            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-brand transition-colors shrink-0" />
-          </div>
-          <CardDescription className="text-sm">{description}</CardDescription>
-        </CardHeader>
-        {children && (
-          <CardContent className="text-sm text-muted-foreground">
-            {children}
-          </CardContent>
-        )}
-      </Card>
-    </Link>
-  );
-}
-
-// Stat highlight for showing key numbers
-function StatHighlight({
-  value,
-  label,
-  description,
-}: {
-  value: string;
-  label: string;
-  description?: string;
-}) {
-  return (
-    <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50 border my-4">
-      <span className="text-3xl font-bold text-brand">{value}</span>
-      <span className="text-sm font-medium mt-1">{label}</span>
-      {description && (
-        <span className="text-xs text-muted-foreground mt-1">{description}</span>
-      )}
-    </div>
-  );
-}
-
-// Grid for laying out multiple items
-function Grid({
-  cols = 2,
-  children,
-}: {
-  cols?: 2 | 3 | 4;
-  children: React.ReactNode;
-}) {
-  const gridCols = {
-    2: "grid-cols-1 md:grid-cols-2",
-    3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-    4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
-  };
-
-  return (
-    <div className={`grid ${gridCols[cols]} gap-4 my-6 not-prose`}>
-      {children}
-    </div>
-  );
-}
-
-// Tag/badge for inline highlighting
-function Tag({ children, variant = "default" }: { children: React.ReactNode; variant?: "default" | "secondary" | "outline" }) {
-  return (
-    <Badge variant={variant} className="mx-0.5">
-      {children}
-    </Badge>
-  );
-}
-
-// Optimized blog image component with Next.js Image
+// Figure with an optional caption, sized through next/image.
 function BlogImage({
   src,
   alt,
@@ -232,209 +101,57 @@ function BlogImage({
   );
 }
 
-// Quote component for attributed quotes from experts/studies
-function Quote({
-  author,
-  role,
-  source,
+// Inline term with its definition in a hover tooltip.
+function Definition({
+  term,
   children,
 }: {
-  author: string;
-  role?: string;
-  source?: string;
+  term: string;
   children: React.ReactNode;
 }) {
   return (
-    <figure className="my-8 not-prose">
-      <div className="relative border-l-4 border-brand bg-muted/30 dark:bg-muted/20 rounded-r-lg px-6 py-5">
-        <span
-          className="absolute -top-2 left-4 text-6xl font-serif text-brand/20 dark:text-brand/30 leading-none select-none"
-          aria-hidden="true"
-        >
-          &ldquo;
-        </span>
-        <blockquote className="relative z-10 text-lg italic text-foreground/90 dark:text-foreground/85 leading-relaxed">
-          {children}
-        </blockquote>
-      </div>
-      <figcaption className="mt-4 flex flex-col gap-0.5 pl-6">
-        <cite className="not-italic font-medium text-foreground">{author}</cite>
-        {(role || source) && (
-          <span className="text-sm text-muted-foreground">
-            {role}
-            {role && source && " — "}
-            {source && <em>{source}</em>}
-          </span>
-        )}
-      </figcaption>
-    </figure>
+    <span className="relative inline-block group">
+      <span className="border-b border-dotted border-muted-foreground/60 cursor-help hover:border-brand dark:border-muted-foreground/40 dark:hover:border-brand transition-colors duration-150">
+        {term}
+      </span>
+      <span
+        className="invisible group-hover:visible opacity-0 group-hover:opacity-100 absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-sm leading-relaxed bg-popover text-popover-foreground border border-border rounded-md shadow-md min-w-[200px] max-w-[300px] w-max transition-opacity duration-150 before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-transparent before:border-t-border after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-[7px] after:border-transparent after:border-t-popover"
+        role="tooltip"
+      >
+        <span className="font-medium text-foreground">{term}:</span>{" "}
+        <span className="text-muted-foreground">{children}</span>
+      </span>
+    </span>
   );
 }
 
-// Timeline item for showing progression steps
-function TimelineItem({
-  date,
-  label,
-  title,
+// Summary box; children are a Markdown bullet list.
+function KeyTakeaways({
+  title = "Key Takeaways",
   children,
 }: {
-  date?: string;
-  label?: string;
   title?: string;
   children: React.ReactNode;
 }) {
-  const displayLabel = date || label;
-
   return (
-    <div className="relative pl-8 pb-8 last:pb-0 group">
-      <div className="absolute left-[7px] top-3 bottom-0 w-0.5 bg-border group-last:hidden" />
-      <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-brand border-4 border-background" />
-      <div className="space-y-1">
-        {displayLabel && (
-          <span className="text-sm font-semibold text-brand">{displayLabel}</span>
-        )}
-        {title && (
-          <h4 className="text-base font-semibold text-foreground">{title}</h4>
-        )}
-        <div className="text-sm text-muted-foreground">{children}</div>
+    <div className="my-6 rounded-lg border-l-4 border-brand bg-brand/5 dark:bg-brand/10 p-4 md:p-6">
+      <div className="flex items-center gap-2 mb-3">
+        <Lightbulb className="h-5 w-5 text-brand shrink-0" />
+        <h3 className="text-base font-semibold text-foreground m-0">{title}</h3>
+      </div>
+      <div className="prose-sm prose-ul:my-0 prose-li:my-1 text-foreground/90 dark:text-foreground/80 [&>ul]:list-none [&>ul]:pl-0 [&>ul>li]:relative [&>ul>li]:pl-5 [&>ul>li]:before:content-[''] [&>ul>li]:before:absolute [&>ul>li]:before:left-0 [&>ul>li]:before:top-[0.6em] [&>ul>li]:before:w-2 [&>ul>li]:before:h-2 [&>ul>li]:before:rounded-full [&>ul>li]:before:bg-brand/60">
+        {children}
       </div>
     </div>
-  );
-}
-
-// Timeline container
-function Timeline({ children }: { children: React.ReactNode }) {
-  return <div className="my-6 not-prose">{children}</div>;
-}
-
-// Step component for individual steps
-function Step({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="step-content">
-      <h3 className="font-semibold text-foreground mb-2">{title}</h3>
-      <div className="text-muted-foreground text-sm">{children}</div>
-    </div>
-  );
-}
-
-// Steps container for step-by-step instructions
-function Steps({ children }: { children: React.ReactNode }) {
-  const childArray = React.Children.toArray(children);
-  const stepCount = childArray.filter((child) => React.isValidElement(child)).length;
-
-  return (
-    <div className="my-8 not-prose">
-      <div className="relative">
-        {childArray.map((child, index) => {
-          if (!React.isValidElement(child)) return child;
-          const isLast = index === stepCount - 1;
-
-          return (
-            <div key={index} className="relative pl-10 pb-8 last:pb-0">
-              {!isLast && (
-                <div className="absolute left-[15px] top-8 bottom-0 w-0.5 bg-border" aria-hidden="true" />
-              )}
-              <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white text-sm font-semibold">
-                {index + 1}
-              </div>
-              {child}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// Video embed component for YouTube and Vimeo
-function Video({
-  src,
-  title,
-  caption,
-}: {
-  src: string;
-  title: string;
-  caption?: string;
-}) {
-  const getEmbedUrl = (url: string): string | null => {
-    const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-    if (youtubeMatch) return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
-    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-    if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-    return null;
-  };
-
-  const embedUrl = getEmbedUrl(src);
-
-  if (!embedUrl) {
-    return (
-      <div className="my-8 p-4 rounded-lg border border-destructive/50 bg-destructive/10 text-destructive text-sm">
-        Invalid video URL. Please use a YouTube or Vimeo link.
-      </div>
-    );
-  }
-
-  return (
-    <figure className="my-8 not-prose">
-      <div className="relative overflow-hidden rounded-lg border bg-muted/30 aspect-video">
-        <iframe
-          src={embedUrl}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="absolute inset-0 w-full h-full"
-        />
-      </div>
-      {caption && (
-        <figcaption className="mt-3 text-center text-sm text-muted-foreground">
-          {caption}
-        </figcaption>
-      )}
-    </figure>
   );
 }
 
 export const mdxComponents: MDXComponents = {
-  // Custom components
   Callout,
   DataTypeLink,
-  FeatureCard,
-  SolutionCard,
-  StatHighlight,
-  Grid,
-  Tag,
-  HeartRateChart,
   BlogImage,
-  // New components
-  Quote,
-  Timeline,
-  TimelineItem,
-  Steps,
-  Step,
-  Video,
-  // Client components
-  Accordion,
-  AccordionItem,
-  Tabs,
-  Tab,
   Definition,
-  Citation,
   KeyTakeaways,
-  // Chart components
-  GenericChart,
-  MultiLineChart,
-  // Table components
-  ClinicalRangesTable,
-  DeviceComparisonTable,
-  FeatureComparisonTable,
-  DataTable,
-  ProConComparison,
 
   // Override default elements with better styling
   a: ({ href, children, ...props }) => {

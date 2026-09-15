@@ -29,9 +29,6 @@ export async function getAllPosts(): Promise<BlogPost[]> {
 
     for (const file of files) {
       if (file.endsWith('.md') || file.endsWith('.mdx')) {
-        // Skip ideas.md as it's not a real article
-        if (file === 'ideas.md') continue;
-
         const filePath = path.join(ARTICLES_DIR, file);
         const fileContent = fs.readFileSync(filePath, 'utf8');
         const { data, content } = matter(fileContent);
