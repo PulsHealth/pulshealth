@@ -16,14 +16,14 @@ const GITHUB = "https://github.com/PulsHealth/pulshealth";
 const pieces = [
   {
     title: "iOS App",
-    href: "/app",
+    href: "/ios",
     external: false,
     description: "Reads Apple Health — read-only, it never writes back — and streams every sample to your server. A full historical backfill first, then continuous near-real-time updates. Around 80 HealthKit types, workouts with GPS routes, and activity rings.",
     icon: Smartphone,
   },
   {
     title: "Reference Server",
-    href: "/sync",
+    href: "/server",
     external: false,
     description: "A Docker Compose stack you run yourself: PostgreSQL 17 with TimescaleDB, a Go ingest API, a read-only product API, provisioned Grafana dashboards, and a web viewer. One command to bring it up.",
     icon: Server,
@@ -93,7 +93,7 @@ export default function HomePage() {
               </a>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link href="/app">
+              <Link href="/ios">
                 About the App
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -241,9 +241,13 @@ export default function HomePage() {
             <pre className="text-sm font-mono text-muted-foreground">
               <code>{`git clone https://github.com/PulsHealth/pulshealth.git
 cd pulshealth
-scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
+scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
             </pre>
           </div>
+          <p className="mx-auto mb-8 max-w-xl text-sm text-muted-foreground">
+            Pre-release: <code>--build</code> compiles the images from the checkout, because they
+            are not published yet. The flag goes away with the first tagged release.
+          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
               <a href={GITHUB} target="_blank" rel="noopener noreferrer">
@@ -252,7 +256,7 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
               </a>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href="/sync">
+              <Link href="/server">
                 The Self-Hosted Stack
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>

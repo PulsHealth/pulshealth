@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppStoreBadge } from "@/components/app-store-badge";
+import { getCatalog, getCatalogByGroup } from "@/lib/catalog";
 
 const UpdatesDialog = dynamic(
   () => import("@/components/updates-dialog").then((mod) => mod.UpdatesDialog),
@@ -16,7 +17,7 @@ export const metadata = {
   title: "PulsHealth for iOS - Apple Health, Synced to Your Own Server",
   description: "A free, open-source iOS app that reads Apple Health read-only and streams every sample to a backend you run yourself. Full historical backfill, then continuous near-real-time sync. On the App Store, Apache-2.0.",
   alternates: {
-    canonical: '/app/',
+    canonical: '/ios/',
   },
 };
 
@@ -48,22 +49,25 @@ const syncFeatures = [
   },
   {
     title: "Nothing Hidden",
-    description: "A live event log, per-type counters and anchors, a screen recording every background wake iOS granted, a throughput benchmark, and an export of all of it for offline analysis.",
+    description: "A live event log, per-type progress, and a record of every background wake iOS granted. All of it exports for offline analysis, and a built-in benchmark tells you how fast your phone can read.",
     icon: Activity,
   },
 ];
 
-const dataCategories = [
-  { name: "Activity", icon: Footprints },
-  { name: "Heart", icon: Heart },
-  { name: "Body", icon: Scale },
-  { name: "Respiratory", icon: Wind },
-  { name: "Sleep", icon: Moon },
-  { name: "Nutrition", icon: Utensils },
-  { name: "Vitals", icon: Activity },
-  { name: "Workouts", icon: Dumbbell },
-  { name: "Other", icon: Ear },
-];
+const groupIcons: Record<string, typeof Activity> = {
+  activity: Footprints,
+  heart: Heart,
+  body: Scale,
+  respiratory: Wind,
+  sleep: Moon,
+  nutrition: Utensils,
+  vitals: Activity,
+  workouts: Dumbbell,
+  other: Ear,
+};
+
+const catalogGroups = getCatalogByGroup();
+const catalogTypeCount = getCatalog().types.length;
 
 const outputs = [
   {
@@ -130,7 +134,8 @@ export default function AppPage() {
           <CardHeader>
             <CardTitle>Before You Start</CardTitle>
             <CardDescription className="text-base">
-              Two things are worth knowing up front, because neither is the usual arrangement.
+              Three things are worth knowing up front, because none of them is the usual
+              arrangement.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -154,7 +159,7 @@ export default function AppPage() {
             </ul>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Button asChild variant="outline">
-                <Link href="/sync">
+                <Link href="/server">
                   <Server className="mr-2 h-4 w-4" />
                   Set Up the Server
                 </Link>
@@ -204,19 +209,19 @@ export default function AppPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-4xl font-bold text-brand mb-2">80</div>
-              <div className="text-muted-foreground">Syncable HealthKit Types</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-brand mb-2">9</div>
-              <div className="text-muted-foreground">Data Categories</div>
+              <div className="text-muted-foreground">HealthKit types it can sync</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-brand mb-2">0</div>
-              <div className="text-muted-foreground">Third-Party Dependencies</div>
+              <div className="text-muted-foreground">Third-party dependencies</div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-brand mb-2">1</div>
-              <div className="text-muted-foreground">Destination: Your Server</div>
+              <div className="text-4xl font-bold text-brand mb-2">0</div>
+              <div className="text-muted-foreground">Accounts, servers or trackers run by the developer</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-brand mb-2">iOS 17+</div>
+              <div className="text-muted-foreground">Free on the App Store</div>
             </div>
           </div>
         </div>
@@ -227,20 +232,56 @@ export default function AppPage() {
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">What You Can Sync</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Around 80 HealthKit types, grouped the way Apple Health groups them. Turn on a starter
+            80 HealthKit types, grouped the way Apple Health groups them. Turn on a starter
             set in one tap, or choose type by type — nothing is read until you enable it and iOS
             grants permission.
           </p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {dataCategories.map((category) => (
-            <div key={category.name} className="flex items-center gap-3 p-4 rounded-lg border bg-card">
-              <category.icon className="h-5 w-5 text-brand" />
-              <span className="font-medium text-sm">{category.name}</span>
-            </div>
-          ))}
+          {catalogGroups.map(({ group, types }) => {
+            const Icon = groupIcons[group.key] ?? Activity;
+            return (
+              <div key={group.key} className="flex items-center justify-between gap-3 p-4 rounded-lg border bg-card">
+                <span className="flex items-center gap-3">
+                  <Icon className="h-5 w-5 text-brand" />
+                  <span className="font-medium text-sm">{group.label}</span>
+                </span>
+                <span className="font-mono text-xs text-muted-foreground">{types.length}</span>
+              </div>
+            );
+          })}
         </div>
+
+        <details className="group mt-8 mx-auto max-w-4xl rounded-lg border bg-card">
+          <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium flex items-center justify-between">
+            <span>Every type, by name</span>
+            <span className="font-mono text-xs text-muted-foreground group-open:hidden">show {catalogTypeCount}</span>
+            <span className="font-mono text-xs text-muted-foreground hidden group-open:inline">hide</span>
+          </summary>
+          <div className="border-t px-5 py-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {catalogGroups.map(({ group, types }) => (
+              <div key={group.key}>
+                <h3 className="text-sm font-semibold mb-2">{group.label}</h3>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  {types.map((t) => (
+                    <li key={t.identifier} className="flex items-baseline justify-between gap-2">
+                      <span>{t.displayName}</span>
+                      {t.unit && <span className="font-mono text-xs opacity-70">{t.unit}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <p className="border-t px-5 py-3 text-xs text-muted-foreground">
+            Rendered at build time from the protocol&apos;s published vocabulary,{" "}
+            <a href={`${GITHUB}/blob/main/docs/protocol/catalog.json`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
+              catalog.json
+            </a>
+            . Units are the canonical ones every sample is converted to before upload.
+          </p>
+        </details>
 
         <p className="text-center text-muted-foreground mt-8 max-w-2xl mx-auto">
           Workouts carry their GPS routes and per-second sensor series; ECGs bring their microvolt
@@ -250,14 +291,8 @@ export default function AppPage() {
 
         <div className="text-center mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <Button asChild variant="outline">
-            <a href={`${GITHUB}/blob/main/docs/protocol/catalog.json`} target="_blank" rel="noopener noreferrer">
-              The Full Type Catalog
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
-          </Button>
-          <Button asChild variant="outline">
             <Link href="/knowledge-base">
-              Browse the Knowledge Base
+              What each type measures
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -395,32 +430,32 @@ X-User-ID: <your user id>
       <section className="cta-gradient text-white">
         <div className="container mx-auto max-w-7xl px-4 py-24 text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">
-            Build it and run it yourself
+            Install it, then point it at your server
           </h2>
           <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            An iPhone on iOS 17 or later, Xcode 26 with XcodeGen, a paid Apple Developer team for
-            device builds, and a server you can reach. Apple Watch data arrives once iOS syncs it to
-            the phone.
+            An iPhone on iOS 17 or later and a server you can reach. Apple Watch data arrives once
+            iOS syncs it to the phone. Prefer to build it yourself? The repository has the Xcode
+            instructions.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="bg-white text-zinc-900 hover:bg-zinc-100">
-              <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
-                View on GitHub
-              </a>
-            </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+            <AppStoreBadge />
             <Button
               asChild
               size="lg"
               variant="outline"
               className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white dark:bg-transparent dark:border-white/40 dark:hover:bg-white/10"
             >
-              <Link href="/sync">
+              <Link href="/server">
                 <Server className="mr-2 h-4 w-4" />
                 Set Up the Server
               </Link>
             </Button>
           </div>
+          <p className="mt-8 text-sm opacity-75 max-w-2xl mx-auto">
+            PulsHealth moves data; it is not a medical device and gives no medical advice. Accuracy
+            is that of whatever recorded the sample into Apple Health. The name and logo are the
+            developer&apos;s; the code is Apache-2.0, so a fork ships under its own name.
+          </p>
         </div>
       </section>
     </main>

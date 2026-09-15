@@ -41,13 +41,13 @@ type NavItem = {
 const project: NavItem[] = [
   {
     title: "iOS App",
-    href: "/app",
+    href: "/ios",
     description: "Sync Apple Health to a server you run",
     icon: Smartphone,
   },
   {
     title: "Self-Hosted Server",
-    href: "/sync",
+    href: "/server",
     description: "Postgres, Grafana and a web viewer via Docker Compose",
     icon: Server,
   },

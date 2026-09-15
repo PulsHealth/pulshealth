@@ -1,0 +1,53 @@
+---
+title: "PulsHealth is open source, and here is what it is"
+date: "2026-09-15"
+tags: ["announcement", "self-hosting", "apple-health", "open-source"]
+excerpt: "The iPhone app, the sync library, the reference server, the wire protocol and this site are all in one Apache-2.0 repository. What is in it, what is pre-release, and how to try it."
+---
+
+PulsHealth is an iPhone app that copies Apple Health into a database you run. Every part of it is now public under the Apache License 2.0, in one repository: the app, the Swift package underneath it, the server stack, the wire protocol, the dashboards, the knowledge base and this website.
+
+This post replaces an earlier one that described a hosted product, an AI agent and a team. None of that exists. What exists is below.
+
+<KeyTakeaways>
+- The app is free on the App Store and reads Apple Health read-only. It posts to one URL you choose and nowhere else.
+- The reference server is a Docker Compose stack: PostgreSQL 17 with TimescaleDB, a Go ingest API, a read-only product API, Grafana, a web viewer and an MCP server.
+- The wire format is specified, not just implemented, so a backend of your own is a supported path.
+- The server side is pre-release: the container images are not published yet, so the bootstrap script builds them from the checkout.
+</KeyTakeaways>
+
+## What the app does
+
+It asks Apple Health for read permission on the types you pick, exports the full history from a start date you choose, and then keeps up: a HealthKit observer plus background delivery drains new samples and deletions as iOS allows, a background processing task catches up while the phone is idle, and every foreground open runs a full pass.
+
+Each type has its own cursor, and the cursor is saved only after your server confirms the batch. A failed upload re-sends the same page, and the server deduplicates by sample UUID, so the pipeline is idempotent end to end. The app stores no health samples on the phone; they stream through it.
+
+Eighty HealthKit types are in the catalog today, grouped the way Apple Health groups them, with canonical units for every quantity. Workouts carry their GPS routes and per-second sensor series. Activity rings arrive as one row per day. Any quantity type can also be sent as on-device aggregates, hourly sums or daily averages, optionally split by Watch versus iPhone.
+
+## What the server does
+
+`scripts/bootstrap.sh` generates every secret, starts the stack, waits for ingest to answer, and prints a pairing block: the URL the phone should use, the bearer token, the user ID, and a QR code encoding all three. Scan it in the app and you are connected.
+
+Everything binds to loopback by default, ingest included. Where the phone reaches ingest is the one decision the script leaves to you: bind it to the LAN for a phone on the same Wi-Fi, or put a TLS proxy or a VPN such as Tailscale in front of it.
+
+Once the data is in Postgres it is yours to use. Query it with SQL, open the provisioned Grafana dashboards or the web viewer, stream any dataset out as CSV or JSONL, or point Claude, Claude Code or Cursor at the read-only MCP server and ask questions.
+
+## What is pre-release
+
+<Callout type="warning">
+The container images are not on GHCR yet. Until the first tagged release, `scripts/bootstrap.sh --build` compiles them from the checkout. The README says so, and so does the server page here.
+</Callout>
+
+Two other things are worth knowing. Ingest accepts a single static bearer token, so whoever holds it can upload and delete for any user on that server; per-device tokens are the next item on the roadmap. And backups ship with the stack but are an opt-in Compose profile, off until you turn them on.
+
+## Why the protocol is public
+
+The reference stack is one receiver, not the only one. The Puls Sync Protocol v1 is written down with a JSON Schema for every line type, a fixture corpus, a conformance checker and a complete receiver in one standard-library Python file writing to SQLite. If the spec is unclear somewhere, there is an issue template for exactly that.
+
+## How to try it
+
+1. On a machine with Docker, clone the repository and run the bootstrap script with the time zone your phone lives in.
+2. Install [PulsHealth from the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354) and scan the pairing code.
+3. Pick the types you want, choose a start date, and let the backfill run.
+
+Bugs, questions and protocol gaps go through [GitHub issues](https://github.com/PulsHealth/pulshealth/issues). If you want it set up for you or built on, there is a [consulting page](/consulting). Everything on it is also free.

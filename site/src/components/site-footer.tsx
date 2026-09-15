@@ -7,8 +7,8 @@ type FooterLink = { title: string; href: string; external?: boolean }
 
 const footerLinks: Record<string, FooterLink[]> = {
   project: [
-    { title: "iOS App", href: "/app" },
-    { title: "Self-Hosted Server", href: "/sync" },
+    { title: "iOS App", href: "/ios" },
+    { title: "Self-Hosted Server", href: "/server" },
     { title: "Source on GitHub", href: GITHUB, external: true },
     { title: "Sync Protocol", href: `${GITHUB}/tree/main/docs/protocol`, external: true },
     { title: "Use It With AI", href: `${GITHUB}/blob/main/docs/ai.md`, external: true },

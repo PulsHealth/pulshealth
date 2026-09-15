@@ -10,7 +10,7 @@ export const metadata = {
   title: "The Self-Hosted PulsHealth Stack",
   description: "The open-source reference backend for PulsHealth: PostgreSQL 17 with TimescaleDB, a Go ingest API, a read-only product API, Grafana, a web viewer and an MCP server, all via Docker Compose on a machine you own.",
   alternates: {
-    canonical: '/sync/',
+    canonical: '/server/',
   },
 };
 
@@ -63,9 +63,9 @@ export default function SyncPage() {
           </h1>
 
           <p className="text-lg md:text-xl text-zinc-500 max-w-2xl leading-relaxed">
-            The reference backend the PulsHealth app syncs to. It runs on a home machine, a NAS, a
-            Raspberry Pi, or a rented box — whichever you own. There is no hosted option and no
-            managed tier, and that is deliberate.
+            The reference backend the PulsHealth app syncs to. It runs on a home machine, a NAS,
+            or a rented box — whichever you own. There is no hosted option and no managed tier,
+            and that is deliberate.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -76,7 +76,7 @@ export default function SyncPage() {
               </a>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link href="/app">
+              <Link href="/ios">
                 <Smartphone className="mr-2 h-4 w-4" />
                 The iOS App
               </Link>
@@ -101,13 +101,18 @@ export default function SyncPage() {
           <pre className="text-sm font-mono leading-relaxed text-muted-foreground">
             <code>{`git clone https://github.com/PulsHealth/pulshealth.git
 cd pulshealth
-scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
+scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
           </pre>
         </div>
 
         <p className="mx-auto max-w-2xl text-center text-sm text-muted-foreground mt-4">
           Pass the time zone your phone lives in — every daily view buckets by that calendar.
           Re-running the script is safe; it never regenerates secrets.
+        </p>
+        <p className="mx-auto max-w-2xl text-center text-sm text-muted-foreground mt-3">
+          <strong className="text-foreground">Pre-release:</strong> the container images are not
+          on GHCR yet, so <code>--build</code> compiles them from the checkout. Once the first
+          tagged release publishes them the flag goes away and the same script pulls instead.
         </p>
       </section>
 
@@ -117,7 +122,8 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight mb-4">What comes up</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Six services, all in the same repository as the app, all yours to inspect and change.
+              Six services plus a one-shot migrator, all in the same repository as the app, all
+              yours to inspect and change.
             </p>
           </div>
 
@@ -144,8 +150,9 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">How the phone reaches it</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            The one decision the script leaves to you. Everything except ingest binds to loopback by
-            default — the product API, the MCP server, Grafana, the viewer and Postgres included.
+            The one decision the script leaves to you. Everything binds to loopback by default,
+            ingest included — the product API, the MCP server, Grafana, the viewer and Postgres
+            too. Where the phone reaches ingest is the part you choose.
           </p>
         </div>
 
