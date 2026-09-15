@@ -151,6 +151,13 @@ cd tools/protocol-check && go test ./... && go run . ../../docs/protocol/fixture
 python3 examples/receivers/python-sqlite/smoke_test.py
 ```
 
+**Exploration notebook** — every cell must execute against a seeded schema
+(the test starts its own throwaway TimescaleDB; needs Docker and `psql`):
+
+```bash
+pip install -r notebooks/requirements.txt && python -m pytest tests/test_healthkit_notebook.py -rs
+```
+
 **Web:**
 
 ```bash

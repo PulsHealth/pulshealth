@@ -1,4 +1,4 @@
-# Dependabot keeps the five ecosystems moving. The `advisories` CI job reports
+# Dependabot keeps the six ecosystems moving. The `advisories` CI job reports
 # what is vulnerable; nothing here raised a fix, so reports accumulated instead
 # of being acted on — js-yaml sat on a HIGH advisory as a direct production
 # dependency of site/, and tools/protocol-check drifted 25 minor versions
@@ -59,6 +59,21 @@ updates:
         exclude-patterns: ["next", "react", "react-dom", "eslint-config-next"]
       site-framework:
         patterns: ["next", "react", "react-dom", "eslint-config-next"]
+    commit-message:
+      prefix: "deps"
+
+  # The exploration notebook and its test. notebooks/requirements.txt is
+  # exact-pinned because CI's db-integration job installs it and executes the
+  # notebook; this is what moves those pins.
+  - package-ecosystem: pip
+    directory: /notebooks
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    groups:
+      notebook-dependencies:
+        patterns: ["*"]
     commit-message:
       prefix: "deps"
 

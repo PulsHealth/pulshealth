@@ -77,6 +77,10 @@ cd ../../tools/puls-export && go vet ./... && go test ./...   # export CLI (own 
 cd tools/protocol-check && go test ./... && go run . ../../docs/protocol/fixtures/*.ndjson
 python3 examples/receivers/python-sqlite/smoke_test.py
 
+# Exploration notebook, executed cell by cell against a throwaway TimescaleDB
+# the test starts itself (needs Docker and psql; CI's db-integration job runs it)
+pip install -r notebooks/requirements.txt && python -m pytest tests/test_healthkit_notebook.py -rs
+
 # Self-hosted viewer (npm, not bun — the mirror image of site/), from the root
 cd web && npm ci && npm run check:catalog && npm run lint && \
   npm run typecheck && npm test && npm run build
