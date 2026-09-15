@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   description: "Open-source iOS app that syncs Apple Health to a backend you host yourself, plus a reference server stack, a documented wire protocol, and a read-only MCP server for AI assistants. Apache-2.0.",
   alternates: {
     canonical: '/',
+    types: {
+      'application/rss+xml': [{ url: '/feed.xml', title: 'PulsHealth writing' }],
+    },
   },
   openGraph: {
     siteName: "PulsHealth",

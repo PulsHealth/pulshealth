@@ -1,7 +1,7 @@
 import "./code-styles.css";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, ArrowLeft } from "lucide-react";
+import { Calendar, Clock, User, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
@@ -37,11 +37,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Post Not Found" };
   }
 
-  const url = `https://pulshealth.com/blog/${slug}`;
+  const url = `https://pulshealth.com/blog/${slug}/`;
   const ogImage = post.featured_image || "https://pulshealth.com/og-default.png";
 
   return {
-    title: `${post.title} | PulsHealth Blog`,
+    title: `${post.title} - PulsHealth`,
     description: post.excerpt,
     authors: post.author ? [{ name: post.author }] : undefined,
     keywords: post.tags,
@@ -94,7 +94,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
-  const url = `https://pulshealth.com/blog/${slug}`;
+  const url = `https://pulshealth.com/blog/${slug}/`;
   const ogImage = post.featured_image || "https://pulshealth.com/og-default.png";
 
   const jsonLd = {
@@ -135,11 +135,11 @@ export default async function BlogPostPage({ params }: PageProps) {
       <header className="border-b bg-muted/30">
         <div className="container mx-auto max-w-4xl px-4 py-10">
           <Link
-            href="/blog"
+            href="/blog/"
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Blog
+            All writing
           </Link>
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground leading-tight">
@@ -156,20 +156,21 @@ export default async function BlogPostPage({ params }: PageProps) {
               )}
               <span className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
-                {new Date(post.date).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
+                <time dateTime={post.date}>
+                  {new Date(post.date).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </time>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Clock className="h-4 w-4" />
+                {post.readingTime} min read
               </span>
             </div>
 
-            <ShareButtons
-              url={`https://pulshealth.com/blog/${slug}`}
-              title={post.title}
-              description={post.excerpt}
-              tags={post.tags}
-            />
+            <ShareButtons url={url} title={post.title} description={post.excerpt} />
           </div>
         </div>
       </header>
@@ -206,23 +207,23 @@ export default async function BlogPostPage({ params }: PageProps) {
         <div className="container mx-auto max-w-4xl px-4 py-12">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold">Explore More</h3>
+              <h3 className="text-lg font-semibold">Keep reading</h3>
               <p className="text-muted-foreground text-sm">
-                Dive deeper into health data with our knowledge base.
+                The rest of the writing, or the reference pages for every health data type.
               </p>
             </div>
             <div className="flex gap-3">
               <Link
-                href="/blog"
+                href="/blog/"
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
               >
-                More Articles
+                More writing
               </Link>
               <Link
-                href="/knowledge-base"
+                href="/knowledge-base/"
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-brand text-white hover:bg-brand/90 h-10 px-4 py-2"
               >
-                Knowledge Base
+                Knowledge base
               </Link>
             </div>
           </div>

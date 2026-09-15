@@ -5,6 +5,17 @@ import { BlogPost } from './types';
 
 const ARTICLES_DIR = path.join(process.cwd(), '..', 'blog', 'articles');
 
+const WORDS_PER_MINUTE = 220;
+
+/** Whole minutes to read `content`, JSX tags stripped, never below 1. */
+function readingTime(content: string): number {
+  const words = content
+    .replace(/<[^>]+>/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean).length;
+  return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
+}
+
 export async function getAllPosts(): Promise<BlogPost[]> {
   const posts: BlogPost[] = [];
 
@@ -39,6 +50,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
           excerpt: data.excerpt || content.slice(0, 160).replace(/[#*_]/g, '') + '...',
           content,
           featured_image: data.featured_image,
+          readingTime: readingTime(content),
         });
       }
     }
@@ -53,11 +65,4 @@ export async function getAllPosts(): Promise<BlogPost[]> {
 export async function getPostBySlug(slug: string): Promise<BlogPost | undefined> {
   const all = await getAllPosts();
   return all.find((p) => p.slug === slug);
-}
-
-export async function getAllTags(): Promise<string[]> {
-  const posts = await getAllPosts();
-  const tagSet = new Set<string>();
-  posts.forEach((post) => post.tags.forEach((tag) => tagSet.add(tag)));
-  return Array.from(tagSet).sort();
 }
