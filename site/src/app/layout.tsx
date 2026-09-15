@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     siteName: "PulsHealth",
-    images: [{ url: '/og-default.png', width: 1200, height: 600 }],
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'PulsHealth: Apple Health, on a server you run.' }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -43,7 +43,31 @@ export const viewport: Viewport = {
   initialScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#252525" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+};
+
+const GITHUB_URL = "https://github.com/PulsHealth/pulshealth";
+
+/** Organization + WebSite, once, on every page. Pages add their own types. */
+const siteJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://pulshealth.com/#org",
+      name: "PulsHealth",
+      url: "https://pulshealth.com/",
+      logo: "https://pulshealth.com/logo.png",
+      sameAs: [GITHUB_URL],
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://pulshealth.com/#site",
+      url: "https://pulshealth.com/",
+      name: "PulsHealth",
+      publisher: { "@id": "https://pulshealth.com/#org" },
+    },
   ],
 };
 
@@ -59,9 +83,13 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-background font-sans text-foreground`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+        />
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >

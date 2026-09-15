@@ -6,6 +6,9 @@ import { STATIC_PAGES } from "@/lib/pages";
 
 export const dynamic = "force-static";
 
+/** The site exports with `trailingSlash: true`; canonicals and the sitemap must agree. */
+const withSlash = (href: string) => (href.endsWith("/") ? href : `${href}/`);
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://pulshealth.com";
 
@@ -14,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // so the two sources cannot disagree about which /docs/ pages exist.
   const staticEntries: MetadataRoute.Sitemap = STATIC_PAGES.filter((page) => !page.href.startsWith("/docs/")).map(
     (page) => ({
-      url: `${baseUrl}${page.href}`,
+      url: `${baseUrl}${withSlash(page.href)}`,
       changeFrequency: page.href === "/" ? "weekly" : "monthly",
       priority: page.href === "/" ? 1.0 : 0.7,
     }),
@@ -22,7 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Documentation rendered from the repository
   const docEntries: MetadataRoute.Sitemap = getAllDocs().map((doc) => ({
-    url: `${baseUrl}${docHref(doc.slug)}`,
+    url: `${baseUrl}${withSlash(docHref(doc.slug))}`,
     changeFrequency: "monthly",
     priority: 0.7,
   }));
@@ -30,7 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Knowledge base type pages
   const types = await getAllTypes();
   const typeEntries: MetadataRoute.Sitemap = types.map((type) => ({
-    url: `${baseUrl}/knowledge-base/types/${type.identifier}`,
+    url: `${baseUrl}/knowledge-base/types/${type.identifier}/`,
+    lastModified: type.last_updated ? new Date(type.last_updated) : undefined,
     changeFrequency: "monthly",
     priority: 0.6,
   }));
@@ -38,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Blog posts
   const posts = await getAllPosts();
   const blogEntries: MetadataRoute.Sitemap = posts.map((post) => ({
-    url: `${baseUrl}/blog/${post.slug}`,
+    url: `${baseUrl}/blog/${post.slug}/`,
     lastModified: new Date(post.date),
     changeFrequency: "monthly",
     priority: 0.8,

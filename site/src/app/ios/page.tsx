@@ -3,7 +3,7 @@ import { Activity, ArrowRight, BarChart3, Bot, Database, Dumbbell, Ear, FileJson
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AppStoreBadge } from "@/components/app-store-badge";
+import { APP_STORE_URL, AppStoreBadge } from "@/components/app-store-badge";
 import { FollowProject } from "@/components/follow-project";
 import { PageHero } from "@/components/page-hero";
 import { getCatalog, getCatalogByGroup } from "@/lib/catalog";
@@ -87,9 +87,25 @@ const outputs = [
   },
 ];
 
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "PulsHealth",
+  operatingSystem: "iOS 17 or later",
+  applicationCategory: "HealthApplication",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  installUrl: APP_STORE_URL,
+  license: "https://www.apache.org/licenses/LICENSE-2.0",
+  codeRepository: GITHUB,
+  isAccessibleForFree: true,
+  description:
+    "Syncs Apple Health, read-only, to a server you run. Full historical backfill, then continuous background sync. No account, no PulsHealth service.",
+};
+
 export default function AppPage() {
   return (
     <main className="flex min-h-screen flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
       <PageHero
         eyebrow={<>Free on the App Store &middot; Open source</>}
         title={<>Apple Health, <span className="text-brand">in your own database</span></>}
