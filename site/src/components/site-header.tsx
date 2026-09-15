@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { BookOpen, FileText, Github, Menu, PenLine, Server, Smartphone, Star } from "lucide-react"
+import { BookOpen, Briefcase, FileText, Github, Menu, PenLine, Server, Smartphone, Star } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { GITHUB_URL, formatStars } from "@/lib/github"
@@ -27,22 +27,22 @@ type NavItem = {
 }
 
 /**
- * Five items, all on-site. Docs are the way into the protocol, the AI setup
- * and the server manual; GitHub is the star pill on the right. Consulting,
- * About and Support live in the footer, where an open-source project keeps
- * them.
+ * Six items, all on-site. Docs are the way into the protocol, the AI setup
+ * and the server manual; GitHub is the star pill on the right. Consulting is
+ * the business behind the project and stays visible; About and Support live
+ * in the footer.
  */
 const primary: NavItem[] = [
   { title: "App", href: "/ios", description: "The free iOS app", icon: Smartphone },
   { title: "Server", href: "/server", description: "The self-hosted stack", icon: Server },
   { title: "Docs", href: "/docs", description: "Setup, protocol, database, AI", icon: FileText },
   { title: "Knowledge Base", href: "/knowledge-base", description: "What each Apple Health type measures", icon: BookOpen },
-  { title: "Writing", href: "/blog", description: "Notes from the project", icon: PenLine },
+  { title: "Blog", href: "/blog", description: "Posts from the project", icon: PenLine },
+  { title: "Consulting", href: "/consulting", description: "Setup, hosting and custom work, from the maintainer", icon: Briefcase },
 ]
 
 const secondary: { title: string; href: string }[] = [
   { title: "Support & FAQ", href: "/support" },
-  { title: "Consulting", href: "/consulting" },
   { title: "About", href: "/about" },
   { title: "Privacy", href: "/privacy" },
 ]

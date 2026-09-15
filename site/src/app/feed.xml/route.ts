@@ -35,7 +35,7 @@ ${post.tags.map((tag) => `      <category>${escape(tag)}</category>`).join("\n")
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>PulsHealth writing</title>
+    <title>PulsHealth blog</title>
     <link>${SITE}/blog/</link>
     <atom:link href="${SITE}/feed.xml" rel="self" type="application/rss+xml" />
     <description>Occasional, long-form notes from the PulsHealth project: what the metrics mean, and the engineering of moving them around.</description>

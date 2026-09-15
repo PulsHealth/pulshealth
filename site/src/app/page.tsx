@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
+  Briefcase,
   Bot,
   Check,
   Database,
@@ -407,7 +408,7 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
                 <div className="mb-4 w-fit rounded-xl bg-brand-muted p-3 text-brand">
                   <PenLine className="h-6 w-6" />
                 </div>
-                <CardTitle className="transition-colors group-hover:text-brand">Writing</CardTitle>
+                <CardTitle className="transition-colors group-hover:text-brand">Blog</CardTitle>
                 <CardDescription className="text-base">
                   Occasional, long-form: what the metrics mean, and the engineering of moving them
                   around.
@@ -440,6 +441,49 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
             </Link>
             .
           </p>
+        </div>
+      </section>
+
+      {/* Consulting */}
+      <section className="border-t">
+        <div className="container mx-auto max-w-7xl px-4 py-24">
+          <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.2fr_1fr]">
+            <div>
+              <Badge variant="outline" className="mb-4">Consulting</Badge>
+              <h2 className="mb-4 text-3xl font-bold tracking-tight">Need it running, or built on?</h2>
+              <p className="text-lg text-muted-foreground">
+                Everything on this site is free and Apache-2.0. If you would rather have the
+                person who wrote it stand the stack up, connect your data to your AI tooling,
+                implement the protocol against a backend you already have, or build on the data,
+                that is available too.
+              </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Button asChild size="lg">
+                  <Link href="/consulting">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    Consulting
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <a href="mailto:support@pulshealth.com">Email the maintainer</a>
+                </Button>
+              </div>
+            </div>
+            <ul className="space-y-3 rounded-xl border bg-card p-6 text-sm">
+              {[
+                "Get the self-hosted stack running, and keep it running",
+                "Wire your health data into Claude, Cursor or ChatGPT",
+                "Implement or review a Puls Sync Protocol receiver",
+                "Dashboards, exports and analysis on your own data",
+                "Health-data engineering beyond this project",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                  <span className="text-muted-foreground">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 

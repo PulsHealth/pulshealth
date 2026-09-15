@@ -5,13 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { getAllPosts } from "@/lib/blog";
 
 export const metadata = {
-  title: "Writing - PulsHealth",
+  title: "Blog - PulsHealth",
   description:
     "Occasional, long-form notes from the PulsHealth project: what the health metrics mean, and the engineering of moving them around.",
   alternates: {
     canonical: "/blog/",
     types: {
-      "application/rss+xml": [{ url: "/feed.xml", title: "PulsHealth writing" }],
+      "application/rss+xml": [{ url: "/feed.xml", title: "PulsHealth blog" }],
     },
   },
 };
@@ -32,8 +32,8 @@ export default async function BlogPage() {
     <main className="flex min-h-screen flex-col">
       <PageHero
         size="compact"
-        eyebrow="Writing"
-        title="Notes from the project"
+        eyebrow="Blog"
+        title="The PulsHealth blog"
         lede="Occasional, long-form: what the metrics mean, and the engineering of moving them around."
       />
 

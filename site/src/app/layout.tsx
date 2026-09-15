@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
     types: {
-      'application/rss+xml': [{ url: '/feed.xml', title: 'PulsHealth writing' }],
+      'application/rss+xml': [{ url: '/feed.xml', title: 'PulsHealth blog' }],
     },
   },
   openGraph: {
