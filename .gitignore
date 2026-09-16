@@ -11,6 +11,7 @@ server/.env
 server/ingest/ingest
 server/api/pulshealth-api
 server/api/api
+server/mcp/mcp
 *.log
 build/
 
