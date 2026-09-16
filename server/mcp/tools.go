@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -89,6 +90,7 @@ func readOnlyTool(name, title, description string) *mcp.Tool {
 
 func (s *service) addTools(server *mcp.Server) {
 	mcp.AddTool(server, readOnlyTool("list_users", "Users", descListUsers), s.listUsers)
+	mcp.AddTool(server, readOnlyTool("get_summary", "Recent summary", descGetSummary), s.getSummary)
 	mcp.AddTool(server, readOnlyTool("get_profile", "Profile", descGetProfile), s.getProfile)
 	mcp.AddTool(server, readOnlyTool("list_available_types", "Available data types", descListAvailableTypes), s.listAvailableTypes)
 	mcp.AddTool(server, readOnlyTool("get_latest_metrics", "Latest readings", descGetLatestMetrics), s.getLatestMetrics)
@@ -121,6 +123,15 @@ const descGetProfile = `Who this data belongs to: name, email, date of birth (YY
 // everywhere, so the model learns the rule once.
 const descUserSuffix = `user is optional: omit it for the server's default person, or pass a user_id from list_users to read another ` +
 	`person's data on a server several people share.`
+
+const descGetSummary = `The cheapest first call for "how have I been doing lately": one short markdown page (under sixty lines) ` +
+	`summarising the last range calendar days — 7d (the default), 14d, 30d or 90d, ending today in the server's time zone — ` +
+	`with a section for each kind of data that exists: activity (steps, active energy, exercise minutes and stand hours as daily ` +
+	`means and totals), heart (resting heart rate, HRV), sleep (time asleep per night), workouts (count, total time, distance, most ` +
+	`frequent activities), body (newest weight and body fat, whenever taken) and a coverage line (last sync, days with data). ` +
+	`Every figure is the deduplicated daily value — iPhone and Watch overlap already removed — never a sum of raw samples, and ` +
+	`units are in the text. Days without data are left out of the averages, not counted as zero. Use the other tools when a ` +
+	`question needs a particular day, workout or reading; this page has averages and totals only. ` + descUserSuffix
 
 const descListAvailableTypes = `Lists every HealthKit data type this person has data for, with its unit, row counts and the earliest and latest ` +
 	`timestamps — the natural first call: it tells you which identifiers exist, how far back the history goes and how current it is, ` +
@@ -225,6 +236,11 @@ const descGetStateOfMind = `State of Mind entries — the moods and emotions log
 // userInput is the whole input of the tools that need nothing else.
 type userInput struct {
 	User string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+}
+
+type summaryInput struct {
+	Range string `json:"range,omitempty" jsonschema:"How many calendar days, ending today, to summarise: 7d, 14d, 30d or 90d. Optional; default 7d"`
+	User  string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
 }
 
 type typesInput struct {
@@ -584,6 +600,31 @@ func (s *service) getProfile(ctx context.Context, _ *mcp.CallToolRequest, in use
 		out.AgeYears = &age
 	}
 	return jsonResult(out)
+}
+
+// summaryRanges is the product API's accepted set for GET /v1/summary.
+var summaryRanges = []string{"7d", "14d", "30d", "90d"}
+
+// getSummary returns the API's markdown page as the tool's text: the one
+// tool whose answer is prose rather than JSON, because the page is written
+// for reading and the model reads markdown as well as anyone.
+func (s *service) getSummary(ctx context.Context, _ *mcp.CallToolRequest, in summaryInput) (*mcp.CallToolResult, any, error) {
+	rng := strings.TrimSpace(in.Range)
+	if rng == "" {
+		rng = summaryRanges[0]
+	}
+	if !slices.Contains(summaryRanges, rng) {
+		return nil, nil, fmt.Errorf("range %q is not one of %s", in.Range, strings.Join(summaryRanges, ", "))
+	}
+	api, _, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	page, err := api.Summary(ctx, rng)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: page}}}, nil, nil
 }
 
 // catalog is shared by list_available_types and the pulshealth://types

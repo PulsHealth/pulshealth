@@ -330,7 +330,22 @@ func (c *APIClient) ForUser(userID string) *APIClient {
 // API's default.
 func (c *APIClient) User() string { return c.user }
 
+// get fetches a JSON answer into out.
 func (c *APIClient) get(ctx context.Context, path string, query url.Values, out any) error {
+	body, err := c.fetch(ctx, path, query, "application/json")
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(body, out); err != nil {
+		return fmt.Errorf("product API returned malformed JSON for GET %s: %w", path, err)
+	}
+	return nil
+}
+
+// fetch performs one GET — the client's user added to the query, the
+// bearer token and accept on the request — and returns a 2xx body whole.
+// Anything else is an APIError carrying the status.
+func (c *APIClient) fetch(ctx context.Context, path string, query url.Values, accept string) ([]byte, error) {
 	u := *c.base
 	u.Path = c.base.Path + path
 	if c.user != "" {
@@ -342,32 +357,29 @@ func (c *APIClient) get(ctx context.Context, path string, query url.Values, out 
 	u.RawQuery = query.Encode()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+c.token)
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", accept)
 
 	resp, err := c.http.Do(req)
 	if err != nil {
 		// c.BaseURL(), not c.base: this string is handed to the model.
-		return fmt.Errorf("product API unreachable at %s: %w", c.BaseURL(), err)
+		return nil, fmt.Errorf("product API unreachable at %s: %w", c.BaseURL(), err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxAPIResponseBytes+1))
 	if err != nil {
-		return fmt.Errorf("reading product API response for GET %s: %w", path, err)
+		return nil, fmt.Errorf("reading product API response for GET %s: %w", path, err)
 	}
 	if len(body) > maxAPIResponseBytes {
-		return fmt.Errorf("product API response for GET %s exceeds %d bytes; ask for a narrower range", path, maxAPIResponseBytes)
+		return nil, fmt.Errorf("product API response for GET %s exceeds %d bytes; ask for a narrower range", path, maxAPIResponseBytes)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return &APIError{Method: http.MethodGet, Path: path, Status: resp.StatusCode, Message: apiErrorMessage(body)}
+		return nil, &APIError{Method: http.MethodGet, Path: path, Status: resp.StatusCode, Message: apiErrorMessage(body)}
 	}
-	if err := json.Unmarshal(body, out); err != nil {
-		return fmt.Errorf("product API returned malformed JSON for GET %s: %w", path, err)
-	}
-	return nil
+	return body, nil
 }
 
 // apiErrorMessage extracts {"error": "..."} from an error body; anything
@@ -542,6 +554,18 @@ func (c *APIClient) StateOfMind(ctx context.Context, startMS, endMS int64) ([]St
 		return nil, err
 	}
 	return out.Entries, nil
+}
+
+// Summary is GET /v1/summary?range=<7d|14d|30d|90d>: the markdown page
+// itself, not a JSON shape — the one product API answer that is prose,
+// handed to the model verbatim.
+func (c *APIClient) Summary(ctx context.Context, rng string) (string, error) {
+	q := url.Values{"range": {rng}, "format": {"markdown"}}
+	body, err := c.fetch(ctx, "/v1/summary", q, "text/markdown")
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }
 
 // Users is GET /v1/users. It is a listing, not a per-user read, so the

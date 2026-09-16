@@ -22,6 +22,7 @@ var wantTools = []string{
 	"get_samples",
 	"get_sleep",
 	"get_state_of_mind",
+	"get_summary",
 	"get_workout",
 	"get_workout_series",
 	"list_available_types",

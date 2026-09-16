@@ -15,14 +15,20 @@ that database through a read-only API. Nothing here can change any data.
    carries `pinned_user_id` this instance serves that one person only. Every
    data tool takes an optional `user`; pass a `user_id` from `list_users` to
    read that person's data, and say whose data you are reporting.
-2. Call `list_available_types` next. It tells you which HealthKit types
+2. For a broad "how have I been doing lately" question, `get_summary` is the
+   cheapest first call: one short markdown page over the last 7, 14, 30 or
+   90 days — activity, heart, sleep, workouts, body and a coverage line —
+   with units in the text and every figure already deduplicated. It carries
+   averages and totals only; anything about a particular day, workout or
+   reading needs the tools below.
+3. Call `list_available_types` next. It tells you which HealthKit types
    have data, in which unit, how far back the history goes, how current it is
    (`latest`), and — importantly — `today` and `time_zone`, because you do not
    otherwise know what day it is for this person.
-3. Pick the tool by the question (recipes below). Prefer the daily tools for
+4. Pick the tool by the question (recipes below). Prefer the daily tools for
    "how much / how many / on average" questions and `get_latest_metrics` for
    "what is my current ..." questions.
-4. Quote units. Say which days have no data rather than treating them as
+5. Quote units. Say which days have no data rather than treating them as
    zero. Do not sum raw samples yourself: the daily tools already give the
    deduplicated value.
 
@@ -31,6 +37,7 @@ that database through a read-only API. Nothing here can change any data.
 | Tool | Answers |
 |---|---|
 | `list_users` | Who has data on this server, which of them is the default, whether another can be asked for (`multi_user`). |
+| `get_summary(range?)` | The last 7d (default), 14d, 30d or 90d as one short markdown page: activity, heart, sleep, workouts, body, coverage. Averages and totals only. |
 | `list_available_types` | What data exists, its units, its time bounds, today's date and the time zone. |
 | `get_profile` | Name, email, date of birth, age, biological sex. |
 | `get_latest_metrics(types)` | The newest single reading per quantity type (weight, resting heart rate, HRV, VO2 max, blood oxygen, ...). |
@@ -43,8 +50,9 @@ that database through a read-only API. Nothing here can change any data.
 | `get_samples(type, start_date, end_date, limit?, offset?)` | The individual records of one type — raw, undeduplicated. Up to 31 days per call. |
 | `get_state_of_mind(start_date, end_date)` | Logged moods and emotions: valence, labels, associations. |
 
-Every tool except `list_users` also takes an optional `user`. Every tool
-returns one compact JSON object; the per-user ones carry `user_id` when a
+Every tool except `list_users` also takes an optional `user`. Every tool but
+`get_summary` (which returns the page as markdown text) returns one compact
+JSON object; the per-user ones carry `user_id` when a
 user was named or the instance is pinned, and omit it when the answer is the
 default person's. Errors come back as tool errors with the reason (a date in
 the wrong format, an unknown workout, a user this instance cannot read, the
@@ -179,6 +187,7 @@ in the configured zone.
 | Question | Do this |
 |---|---|
 | "What data do you have about me?" | `list_available_types`; summarise kinds, units, date range, freshness. |
+| "How have I been doing lately?" / "Give me an overview of my month" | `get_summary(range="30d")`; relay the page's figures with their units, then offer to go deeper with the tools below. |
 | "How many steps did I take last week?" | `get_daily_metrics(types=[HKQuantityTypeIdentifierStepCount], start_date, end_date)`; sum the days, name any missing day. |
 | "What's my resting heart rate trend?" | `get_daily_metrics` with RestingHeartRate (and HeartRateVariabilitySDNN) over 30–90 days; compare first and last weeks. |
 | "What do I weigh now?" / "Has my weight changed?" | `get_latest_metrics([HKQuantityTypeIdentifierBodyMass])` for now; `get_daily_metrics` over months for the trend. |
