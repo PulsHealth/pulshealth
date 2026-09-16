@@ -16,7 +16,8 @@ prompts) see [`docs/ai.md`](../../docs/ai.md).
 | Tool | Answers |
 |---|---|
 | `list_users` | Everyone with data on the server, which one is the API's default, whether `multi_user` reads are on, and which user this instance is pinned to (if any). |
-| `list_available_types` | Every HealthKit type with data: unit, row counts, earliest/latest, plus today's date and the time zone. The natural first call. |
+| `get_summary(range?)` | `GET /v1/summary` as markdown text: the last 7d (default), 14d, 30d or 90d in under sixty lines — activity, heart, sleep, workouts, body, coverage. The cheapest first call for a broad question. |
+| `list_available_types` | Every HealthKit type with data: unit, row counts, earliest/latest, plus today's date and the time zone. The natural first call for anything specific. |
 | `get_profile` | Name, email, date of birth, age, biological sex. |
 | `get_latest_metrics(types)` | Newest raw sample per quantity type. |
 | `get_daily_metrics(types, start_date, end_date)` | One deduplicated value per local day: sums for cumulative types, averages for discrete ones. |
@@ -39,6 +40,8 @@ answers for its own `PULS_USER_ID`. Naming anyone else needs the API's
 `PULS_MULTI_USER` on, or the 403 it answers with reaches the model as a tool
 error saying so. Per-user answers carry `user_id` whenever a user was named
 or the instance is pinned. Every tool is annotated read-only and idempotent.
+`get_summary` is the one tool whose answer is markdown text rather than
+JSON: the product API renders the page and the tool hands it over verbatim.
 Tool inputs and outputs use `YYYY-MM-DD` calendar days and ISO 8601 instants
 in the server's time zone; the server translates them to the product API's epoch-millisecond,
 half-open ranges (an inclusive `start_date`…`end_date` becomes

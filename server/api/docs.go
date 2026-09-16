@@ -170,6 +170,7 @@ const productAPIDocsHTML = `<!doctype html>
       <tr><td><code>GET</code></td><td><code>/v1/sleep/daily</code></td><td><code>start=ms&amp;end=ms</code></td><td>One row per night, attributed to the wake-up day, with stage minutes.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/samples</code></td><td><code>type</code>, <code>start=ms&amp;end=ms</code>, <code>limit?</code>, <code>offset?</code></td><td>Raw samples of one quantity or category type.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/state-of-mind</code></td><td><code>start=ms&amp;end=ms</code></td><td>State of Mind entries: valence, labels, associations.</td></tr>
+      <tr><td><code>GET</code></td><td><code>/v1/summary</code></td><td><code>range?</code> (<code>7d</code>, <code>14d</code>, <code>30d</code>, <code>90d</code>), <code>format?</code> (<code>markdown</code>, <code>json</code>)</td><td>The last N days as one short markdown page &mdash; activity, heart, sleep, workouts, body, coverage &mdash; for pasting into a chat.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/export</code></td><td><code>format</code>, <code>dataset</code>, <code>start=ms&amp;end=ms</code>, plus that dataset's filters</td><td>A whole range as a streamed CSV or JSONL download.</td></tr>
     </tbody>
   </table>
@@ -180,6 +181,10 @@ const productAPIDocsHTML = `<!doctype html>
 
   <h2>Raw samples</h2>
   <p><code>/v1/samples</code> serves individual HealthKit records for exactly one type, ordered by start time, at most 31 days per request (<code>limit</code> defaults to 1000, caps at 5000; page with <code>nextOffset</code>). Unlike <code>/v1/metrics/daily</code> these are <strong>not</strong> deduplicated: if an iPhone and an Apple Watch both recorded the same minutes, both rows come back. A quantity sample carries <code>value</code> in the page's canonical <code>unit</code>; a category sample carries the integer <code>value</code> and its HealthKit <code>label</code>.</p>
+
+  <h2>Summary</h2>
+  <p><code>/v1/summary</code> is the endpoint for a chat that has no MCP connection: one short markdown page (under sixty lines) covering the last <code>range</code> calendar days &mdash; <code>7d</code> (the default), <code>14d</code>, <code>30d</code> or <code>90d</code>, ending today in <code>PULS_TIME_ZONE</code> &mdash; that you fetch with <code>curl</code> and paste. It carries a header (whose data, which days, when it was generated and in which zone), then a section for each kind of data that exists: activity (steps, active energy, exercise minutes and stand hours, each as a daily mean and, where a sum means something, a total), heart (resting heart rate and HRV), sleep (time asleep per night over the longest session of each wake-up day), workouts (count, total time, distance, the most frequent activities), body (the newest weight and body-fat readings, whenever they were taken) and a coverage line (last sync, days with data, and the reminder that daily figures are already deduplicated across devices). Every figure comes from the same daily surfaces as the endpoints above &mdash; <code>metric_daily</code>, the Activity rings, <code>/v1/sleep/daily</code>, <code>/v1/workouts</code>, <code>/v1/metrics/latest</code> &mdash; so it is cheap, and nothing in it is a sum of raw samples. <code>format=json</code> returns the same numbers as a <code>Summary</code> object instead of prose.</p>
+  <pre><code>curl -H "Authorization: Bearer $PULS_API_TOKEN" "$PULS_API_BASE_URL/v1/summary?range=7d"</code></pre>
 
   <h2>Export</h2>
   <p><code>/v1/export</code> returns a whole range as a file rather than a JSON document, for a spreadsheet, a notebook, or a chat attachment. Both parameters are required: <code>format</code> is <code>csv</code> or <code>jsonl</code>, <code>dataset</code> is one of <code>daily_metrics</code>, <code>samples</code>, <code>workouts</code>, <code>sleep</code>, <code>activity</code>, <code>state_of_mind</code>. <code>start</code> and <code>end</code> are required for every dataset; <code>daily_metrics</code> also takes <code>types</code>, <code>samples</code> takes <code>type</code>, and <code>workouts</code> takes an optional <code>activityType</code>.</p>
@@ -409,6 +414,95 @@ const productAPIOpenAPIJSON = `{
           "labels": { "type": "array", "items": { "type": "string" }, "description": "Feelings picked, e.g. calm, stressed." },
           "associations": { "type": "array", "items": { "type": "string" }, "description": "What they are about, e.g. work, family." }
         }
+      },
+      "SummaryStat": {
+        "type": "object",
+        "description": "One daily series over the summary's range: the days that had a value and the mean, minimum and maximum of those days. total is present for cumulative series only (steps, energy, exercise minutes). source names the table the values came from.",
+        "properties": {
+          "unit": { "type": "string" },
+          "days": { "type": "integer" },
+          "mean": { "type": "number" },
+          "min": { "type": "number" },
+          "max": { "type": "number" },
+          "total": { "type": "number" },
+          "source": { "type": "string", "enum": ["metric_daily", "activity_summaries"] }
+        }
+      },
+      "SummaryReading": {
+        "type": "object",
+        "description": "The newest raw sample of a body metric, whenever it was taken.",
+        "properties": {
+          "value": { "type": "number" },
+          "unit": { "type": "string" },
+          "timestamp": { "type": "integer", "format": "int64" }
+        }
+      },
+      "Summary": {
+        "type": "object",
+        "description": "GET /v1/summary?format=json: the numbers behind the markdown page. A section is absent when the range holds no data for it.",
+        "properties": {
+          "userID": { "type": "string", "format": "uuid" },
+          "name": { "type": ["string", "null"] },
+          "range": { "type": "string", "enum": ["7d", "14d", "30d", "90d"] },
+          "days": { "type": "integer" },
+          "startDate": { "type": "string", "format": "date", "description": "First local calendar day covered." },
+          "endDate": { "type": "string", "format": "date", "description": "Last local calendar day covered: today in timeZone." },
+          "generatedAt": { "type": "integer", "format": "int64" },
+          "timeZone": { "type": "string", "description": "The IANA zone (PULS_TIME_ZONE) whose calendar cut the days." },
+          "activity": {
+            "type": "object",
+            "properties": {
+              "steps": { "$ref": "#/components/schemas/SummaryStat" },
+              "activeEnergy": { "$ref": "#/components/schemas/SummaryStat" },
+              "exercise": { "$ref": "#/components/schemas/SummaryStat" },
+              "stand": { "$ref": "#/components/schemas/SummaryStat" }
+            }
+          },
+          "heart": {
+            "type": "object",
+            "properties": {
+              "restingHeartRate": { "$ref": "#/components/schemas/SummaryStat" },
+              "hrvSDNN": { "$ref": "#/components/schemas/SummaryStat" }
+            }
+          },
+          "sleep": {
+            "type": "object",
+            "description": "The longest sleep session of each wake-up day in the range.",
+            "properties": {
+              "nights": { "type": "integer" },
+              "meanAsleepMinutes": { "type": "number" },
+              "minAsleepMinutes": { "type": "number" },
+              "maxAsleepMinutes": { "type": "number" }
+            }
+          },
+          "workouts": {
+            "type": "object",
+            "properties": {
+              "count": { "type": "integer" },
+              "totalMinutes": { "type": "number" },
+              "totalDistanceM": { "type": "number", "description": "Absent when no workout in the range recorded a distance." },
+              "byActivityType": {
+                "type": "array",
+                "description": "Most frequent first, at most three.",
+                "items": { "type": "object", "properties": { "activityType": { "type": "string" }, "count": { "type": "integer" } } }
+              }
+            }
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "weight": { "$ref": "#/components/schemas/SummaryReading" },
+              "bodyFat": { "$ref": "#/components/schemas/SummaryReading" }
+            }
+          },
+          "coverage": {
+            "type": "object",
+            "properties": {
+              "lastSync": { "type": ["integer", "null"], "format": "int64", "description": "Epoch milliseconds of the most recent upload; null when nothing has been uploaded." },
+              "daysWithData": { "type": "integer", "description": "Days in the range on which at least one section has a value." }
+            }
+          }
+        }
       }
     }
   },
@@ -582,6 +676,29 @@ const productAPIOpenAPIJSON = `{
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
         ],
         "responses": { "200": { "description": "Entries", "content": { "application/json": { "schema": { "type": "object", "properties": { "entries": { "type": "array", "items": { "$ref": "#/components/schemas/StateOfMindEntry" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" } }
+      }
+    },
+    "/v1/summary": {
+      "get": {
+        "operationId": "getSummary",
+        "summary": "A short markdown summary of recent data",
+        "description": "The last range calendar days (7d by default; ending today in the server's PULS_TIME_ZONE) as one markdown page of under sixty lines, meant to be pasted into a chat that has no MCP connection: a header naming the user, the days and the zone, then a section for each kind of data that exists — activity (steps, active energy, exercise minutes, stand hours as daily means and totals), heart (resting heart rate, HRV), sleep (time asleep per night), workouts (count, total time, distance, most frequent activities), body (newest weight and body fat) — and a coverage line (last sync, days with data, and the reminder that daily figures are already deduplicated across devices). Every figure comes from the daily surfaces the other endpoints serve, never from raw samples. format=json returns the same numbers as a Summary object.",
+        "parameters": [
+          { "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." },
+          { "name": "range", "in": "query", "required": false, "schema": { "type": "string", "enum": ["7d", "14d", "30d", "90d"], "default": "7d" }, "description": "How many calendar days, ending today, the summary covers." },
+          { "name": "format", "in": "query", "required": false, "schema": { "type": "string", "enum": ["markdown", "json"], "default": "markdown" }, "description": "markdown for the page (text/markdown), json for the Summary object it is rendered from." }
+        ],
+        "responses": {
+          "200": {
+            "description": "The summary",
+            "content": {
+              "text/markdown": { "schema": { "type": "string" } },
+              "application/json": { "schema": { "$ref": "#/components/schemas/Summary" } }
+            }
+          },
+          "400": { "description": "A range or format outside the accepted values" },
+          "401": { "description": "Unauthorized" }
+        }
       }
     },
     "/v1/export": {

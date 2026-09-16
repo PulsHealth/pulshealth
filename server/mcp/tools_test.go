@@ -906,3 +906,64 @@ func TestTools_ForbiddenUserIsExplained(t *testing.T) {
 	_, _, err := s.getSleep(context.Background(), nil, rangeInput{StartDate: "2026-09-06", EndDate: "2026-09-06", User: otherUserID})
 	wantToolError(t, err, "403", "multi-user reads are disabled", "PULS_MULTI_USER", "list_users")
 }
+
+// resultText asserts a successful tool result with one text block and
+// returns it: get_summary hands the API's markdown through unchanged.
+func resultText(t *testing.T, res *mcp.CallToolResult, err error) string {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("tool error: %v", err)
+	}
+	if res == nil || len(res.Content) != 1 {
+		t.Fatalf("result = %+v, want exactly one content block", res)
+	}
+	tc, ok := res.Content[0].(*mcp.TextContent)
+	if !ok {
+		t.Fatalf("content = %T, want *mcp.TextContent", res.Content[0])
+	}
+	return tc.Text
+}
+
+const fixtureSummary = "# Health summary for Test Person — last 7 days\n\n" +
+	"2026-09-01 to 2026-09-07, 7 calendar days in Europe/Berlin (the server's time zone). Generated 2026-09-07 10:00.\n\n" +
+	"## Activity\n- Steps: 8,412 per day on average (58,884 in total; 7 days with data)\n\n" +
+	"## Coverage\n- Last sync: 2026-09-07 09:58. 7 of 7 days have data.\n"
+
+func TestGetSummary(t *testing.T) {
+	f := newFakeAPI(t)
+	f.raw("/v1/summary", http.StatusOK, fixtureSummary)
+	s := f.service(t, "Europe/Berlin")
+
+	res, _, err := s.getSummary(context.Background(), nil, summaryInput{})
+	if got := resultText(t, res, err); got != fixtureSummary {
+		t.Errorf("summary = %q, want the API's markdown verbatim", got)
+	}
+	q := f.lastQuery(t, "/v1/summary")
+	if q.Get("range") != "7d" || q.Get("format") != "markdown" || q.Has("user") {
+		t.Errorf("query = %v, want range=7d&format=markdown and no user", q)
+	}
+
+	res, _, err = s.getSummary(context.Background(), nil, summaryInput{Range: " 30d ", User: fixtureProfile.UserID})
+	resultText(t, res, err)
+	q = f.lastQuery(t, "/v1/summary")
+	if q.Get("range") != "30d" || q.Get("user") != fixtureProfile.UserID {
+		t.Errorf("query = %v, want range=30d and the user", q)
+	}
+}
+
+func TestGetSummary_ValidatesRangeBeforeCalling(t *testing.T) {
+	f := newFakeAPI(t)
+	s := f.service(t, "UTC")
+	_, _, err := s.getSummary(context.Background(), nil, summaryInput{Range: "365d"})
+	wantToolError(t, err, "365d", "7d, 14d, 30d, 90d")
+	if calls := f.callsTo("/v1/summary"); len(calls) != 0 {
+		t.Errorf("invalid input reached the API: %v", calls)
+	}
+}
+
+func TestGetSummary_PropagatesAPIErrors(t *testing.T) {
+	f := newFakeAPI(t)
+	f.respond("/v1/summary", http.StatusForbidden, map[string]string{"error": "multi-user reads are disabled"})
+	_, _, err := f.service(t, "UTC").getSummary(context.Background(), nil, summaryInput{User: fixtureProfile.UserID})
+	wantToolError(t, err, "403", "multi-user reads are disabled", "PULS_MULTI_USER")
+}

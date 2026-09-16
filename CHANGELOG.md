@@ -61,6 +61,11 @@ exactly as before, and the new migration applies itself on the next
 - MCP: `list_users`, and a `user` argument on every tool; `PULS_USER_ID`
   pins an instance to one person (`PULS_MCP_USER_ID` for the Compose
   service). Needs the product API's `user` parameter and `/v1/users` (SRV-11).
+- `GET /v1/summary?range=7d|14d|30d|90d` on the product API: the last N
+  calendar days as one short markdown page (activity, heart, sleep,
+  workouts, body, coverage) for pasting into a chat that has no MCP
+  connection; `format=json` for the numbers. The MCP server exposes it as
+  `get_summary` (AI-6).
 
 ### Changed
 

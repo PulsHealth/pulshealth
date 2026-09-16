@@ -15,6 +15,7 @@ page is the client-side setup; the server's own README is
 |---|---|
 | Who has data on the server, if more than one person does | `list_users` |
 | Which data exists, how current it is, what day it is | `list_available_types` |
+| How the last week or month went, in one page | `get_summary` |
 | Who the data belongs to (name, age, sex) | `get_profile` |
 | Current weight, resting heart rate, HRV, VO2 max, blood oxygen, ... | `get_latest_metrics` |
 | Daily steps, energy, distance, exercise minutes, heart-rate averages, weight trend, ... | `get_daily_metrics` |
@@ -49,6 +50,25 @@ are in the database; no tool serves them.
 For a whole range as a *file* rather than an answer in a chat — a spreadsheet,
 a notebook, something to attach — use `GET /v1/export` or the `puls-export`
 CLI instead of a tool call: [`export.md`](export.md).
+
+## No MCP at all: paste a summary
+
+Any chat can read markdown. `GET /v1/summary` renders the last 7, 14, 30 or
+90 days as one page of under sixty lines — activity, heart, sleep, workouts,
+body and a coverage line, every figure with its unit and already
+deduplicated across iPhone and Watch — so a chat with no connector at all
+gets a usable picture from one `curl` and a paste:
+
+```bash
+curl -H "Authorization: Bearer $PULS_API_TOKEN" "$API/v1/summary?range=7d"
+```
+
+`range` is `7d` (the default), `14d`, `30d` or `90d`; `format=json` returns
+the same numbers as a `Summary` object. The page carries averages and totals
+only, and the header says which calendar days and which time zone it covers,
+so the model does not have to guess either. Add `user=<uuid>` on a shared
+server, under the same `PULS_MULTI_USER` rule as every other route. The MCP
+server exposes the same page as `get_summary`.
 
 ## Two ways to connect
 
@@ -294,6 +314,9 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
 - **"What data do you have about me, and how current is it?"** — one
   `list_available_types` call; a good first question, it also tells the
   assistant today's date.
+- **"How have I been doing this month?"** — one `get_summary` call with
+  `range: 30d`; the same page `GET /v1/summary` serves, so it is also the
+  thing to paste into a chat that has no connector.
 - **"How did I sleep last week?"** — one `get_sleep` call for the seven
   days; each row is a night, dated by the morning you woke up, with time
   asleep, time in bed and the core / deep / REM split in minutes. The

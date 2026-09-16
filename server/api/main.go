@@ -60,6 +60,8 @@ type apiStore interface {
 	Samples(context.Context, string, SampleFilters) (*SamplesPage, error)
 	WorkoutSeries(context.Context, string, string, []string, int) (*WorkoutSeriesResponse, error)
 	StateOfMind(context.Context, string, time.Time, time.Time) ([]StateOfMindEntry, error)
+	// The last N calendar days as one small document (see summary.go).
+	Summary(context.Context, string, int) (*SummaryData, error)
 	// The export's paths: the type behind /v1/samples resolved on its own,
 	// so a bad identifier is a 400 before the download starts, and the two
 	// row-at-a-time scans a whole range is streamed through.
@@ -78,6 +80,12 @@ type Server struct {
 	// else (PULS_MULTI_USER, off by default). See scopeUser.
 	defaultUserID string
 	multiUser     bool
+
+	// The calendar zone (PULS_TIME_ZONE) instants are rendered in where a
+	// response is prose rather than JSON — the markdown summary. The store
+	// cuts its days in the same zone. Nil means UTC (a Server built as a
+	// struct literal, every test).
+	loc *time.Location
 
 	// Whether X-Forwarded-* may be believed: for the rate-limit key, and for
 	// the host the OpenAPI document advertises. Off unless a proxy that
@@ -175,6 +183,7 @@ func run(logger *slog.Logger) error {
 		log:               logger,
 		defaultUserID:     userID,
 		multiUser:         multiUser,
+		loc:               loc,
 		trustProxyHeaders: trustProxyHeaders,
 	}
 	logger.Info("starting",
@@ -285,6 +294,7 @@ func (s *Server) apiRoutes() []route {
 		{"GET /v1/sleep/daily", "/v1/sleep/daily", s.handleSleepDaily, true},
 		{"GET /v1/samples", "/v1/samples", s.handleSamples, true},
 		{"GET /v1/state-of-mind", "/v1/state-of-mind", s.handleStateOfMind, true},
+		{"GET /v1/summary", "/v1/summary", s.handleSummary, true},
 		{"GET /v1/export", "/v1/export", s.handleExport, true},
 	}
 }
@@ -934,6 +944,15 @@ func (s *Server) defaultUser() string {
 		return defaultUserID
 	}
 	return strings.ToLower(s.defaultUserID)
+}
+
+// location is the zone prose responses render instants in: PULS_TIME_ZONE,
+// or UTC for a Server built as a struct literal.
+func (s *Server) location() *time.Location {
+	if s.loc == nil {
+		return time.UTC
+	}
+	return s.loc
 }
 
 // sameUser compares two UUIDs the way Postgres does: case does not matter.

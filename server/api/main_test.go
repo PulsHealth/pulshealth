@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -26,12 +27,15 @@ type fakeStore struct {
 	series   *WorkoutSeriesResponse
 	moods    []StateOfMindEntry
 	users    []User
+	summary  *SummaryData
 	calls    struct {
 		catalog int
 	}
 	// The user the most recent per-user call was asked about, so handler
 	// tests can prove the request user reached the store.
 	lastUser string
+	// The day count of the most recent Summary call.
+	lastSummaryDays int
 	// The arguments of the most recent samples / workouts / series call, so
 	// handler tests can assert on what the parsers produced.
 	lastSamples  SampleFilters
@@ -130,6 +134,18 @@ func (f *fakeStore) StateOfMind(_ context.Context, user string, _, _ time.Time) 
 		return nil, f.err
 	}
 	return f.moods, nil
+}
+
+func (f *fakeStore) Summary(_ context.Context, user string, days int) (*SummaryData, error) {
+	f.lastUser = user
+	f.lastSummaryDays = days
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.summary == nil {
+		return &SummaryData{UserID: user, Range: fmt.Sprintf("%dd", days), Days: days, TimeZone: "UTC"}, nil
+	}
+	return f.summary, nil
 }
 
 func (f *fakeStore) Ping(context.Context) error {
