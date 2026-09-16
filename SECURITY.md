@@ -85,13 +85,18 @@ context for judging what is.
 
 - **Self-hosted.** No PulsHealth service ever receives your data. Where your
   server runs, how it is exposed, and who can reach it are your decisions.
-- **One bearer token.** The ingest server accepts a single static
-  `PULS_TOKEN`. Anyone who holds it can upload, delete, and (via the
-  reconciliation endpoints) enumerate samples. The `X-User-ID` header selects
-  the user without further authentication, so the token is the whole boundary
-  between users on one server. Failed authentications are rate-limited per
-  client IP, which slows guessing but does not change what a leaked token
-  grants. Per-device tokens bound to a user are on the roadmap.
+- **Bearer tokens.** The ingest server accepts two kinds. The shared
+  `PULS_TOKEN` is a single static value: anyone who holds it can upload,
+  delete, and (via the reconciliation endpoints) enumerate samples for *any*
+  user, because with it the `X-User-ID` header selects the user without
+  further authentication. Per-device tokens (`make devices`) are stored only
+  as a SHA-256, bound to one user — a request naming another is refused with
+  403 — revocable one at a time and stamped with their last use, so a lost
+  phone costs one `revoke`. The shared token stays enabled by default so an
+  existing install is unchanged; `PULS_ALLOW_SHARED_TOKEN=false` (or an empty
+  `PULS_TOKEN`) turns it off, and the `X-User-ID` hole exists only while it
+  is on. Failed authentications are rate-limited per client IP, which slows
+  guessing but does not change what a leaked token grants.
 - **The token lives on the phone.** It is held in the Keychain, accessible
   after the first unlock so background syncs still run, and the sync-state and
   log files carry file protection and are excluded from device backups. If a

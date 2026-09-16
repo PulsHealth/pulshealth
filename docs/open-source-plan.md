@@ -273,7 +273,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | SRV-5 | Published images on `ghcr.io/pulshealth/{ingest,api,web,mcp}` with semver tags; compose pulls by default, `compose.build.yml` override for developers. | M |
 | SRV-6 | Ingest connects as the scoped `ingest` role by default on fresh installs. | M |
 | SRV-7 | Auth-failure rate limiting on ingest and API (per-IP token bucket). | S |
-| SRV-8 | Per-device tokens: enroll → pending → approve via CLI; hashed at rest; last-seen; revoke; token bound to user (closes the `X-User-ID` hole). Shared `PULS_TOKEN` stays valid during migration. | S |
+| SRV-8 | Per-device tokens: enroll → pending → approve via CLI; hashed at rest; last-seen; revoke; token bound to user (closes the `X-User-ID` hole). Shared `PULS_TOKEN` stays valid during migration. | S — server side done 2026-09: CLI-issued (`make devices`), hashed, last-seen, revocable, bound to a user, shared token optional. Phone-side enroll/approve remains ([`roadmap.md`](roadmap.md) § 4). |
 | SRV-9 | Backups: opt-in `pg_dump` sidecar service with retention, and a documented restore drill. | S |
 | SRV-10 | Web viewer auth (basic auth or the API token) and a viewer-scoped DB role instead of `grafana`. | S |
 | SRV-11 | Second-user story without a volume wipe. | S — half true already: writes have always been multi-user (`ensureUser` creates any id the header carries), so no wipe is involved. What is missing is the **read** side — the API and web viewer each serve one `PULS_USER_ID`. |
@@ -385,7 +385,8 @@ channel) was skipped; the app went straight to the store.
 
 ### Later
 
-- SRV-8 per-device tokens, SRV-11 multi-user reads, APP-11 sink factory,
+- SRV-8 per-device tokens (server side done; phone-side enrollment remains),
+  SRV-11 multi-user reads, APP-11 sink factory,
   APP-12 file export, AI-6..8.
 
 These, plus the release and submission work the phases above did not cover,

@@ -120,6 +120,10 @@ comments). Beyond the passwords and tokens, two settings deserve attention:
   every interface so a phone on the same Wi-Fi can sync to plain
   `http://<this host's LAN IP>:8080` with no proxy at all. See "Exposing the
   server" for the trade-off.
+- `PULS_ALLOW_SHARED_TOKEN` — whether ingest accepts the shared `PULS_TOKEN`
+  at all; default `true`. `false` (or an empty `PULS_TOKEN`) leaves only
+  per-device tokens, which is the setting that closes the `X-User-ID` hole —
+  see "Tokens".
 - `TRUST_PROXY_HEADERS` — whether **ingest and the product API** believe
   `X-Forwarded-*`. It decides which client a failed authentication is charged
   to on both, and additionally which host `GET /openapi.json` advertises in
@@ -231,7 +235,9 @@ underscore, a name), write plain DDL/DML — no `BEGIN`/`COMMIT`, the migrator
 wraps it; `IF NOT EXISTS` is still welcome — and `docker compose up -d`.
 Fresh installs and existing installs take the same path. Tables created this
 way are readable by `grafana` and writable by `ingest` at once through the
-default privileges `099_read_roles.sh` sets; `api_reader` has an exact grant
+default privileges `099_read_roles.sh` sets (which is why that script then
+revokes `grafana`'s SELECT on `device_tokens`, on every run — credential
+hashes are not dashboard material); `api_reader` has an exact grant
 list, so extend that script (and its assertion) when the product API needs a
 new table. Never edit a file that has been applied anywhere — put the change
 in a new file. Ordering between schema and code is automatic: `migrate`
@@ -388,17 +394,72 @@ with one `PULS_USER_ID` and answer for that user alone, so a second user's rows
 accumulate where nothing displays them; the exception is Grafana's PulsHealth
 dashboard, which has a `user` variable listing everyone in `users`. Serving two
 people properly means a second API/viewer pair (a second compose project with a
-different `PULS_USER_ID`) until the API learns to scope per request. Nothing
-binds the token to a user either — see "The token" below — so `X-User-ID` is
-selection, not authentication, and everyone with the token can write as anyone.
+different `PULS_USER_ID`) until the API learns to scope per request. Whether
+the token is bound to a user depends on which kind it is — see "Tokens"
+below: a per-device token is, so with it `X-User-ID` must be absent or match
+(403 otherwise); the shared `PULS_TOKEN` is not, so with it `X-User-ID` is
+selection, not authentication, and everyone holding it can write as anyone.
 
-### The token
+### Tokens
 
-`PULS_TOKEN` is a single static bearer token shared by the server and the iOS
-app. Create it with `openssl rand -hex 32` (or let `scripts/bootstrap.sh`
-do it), put it in `.env`, and paste the same value into PulsHealth's server
-settings — the pairing block (`make pairing`) shows it next to the URL and
-user ID.
+Ingest accepts two kinds of bearer token, and a request may present either.
+
+**The shared token.** `PULS_TOKEN` is one static value known to the server
+and every phone. Create it with `openssl rand -hex 32` (or let
+`scripts/bootstrap.sh` do it), put it in `.env`, and paste the same value
+into PulsHealth's server settings — the pairing block (`make pairing`) shows
+it next to the URL and user ID. It is compared in memory, in constant time,
+before anything else, and it carries no user: `X-User-ID` picks the user.
+
+**Per-device tokens.** Each is issued from the CLI for one user, stored only
+as its SHA-256 (the plaintext is 32 random bytes hex-encoded — the same shape
+as the shared token, so the app's token field, the QR payload and every
+example here are unchanged), bound to that user, revocable on its own, and
+stamped with when it was last used. The `ingest` image is distroless, so the
+CLI is the same binary run with `devices` as its first argument; `make
+devices` wraps `docker compose run --rm --no-deps ingest devices …`:
+
+```bash
+make devices ARGS='issue --user 5ea4d000-0000-4000-8000-000000000001 --name "Sean iPhone"'
+#   prints the token ONCE — only its hash is stored, a lost token is revoked and reissued
+make devices ARGS='list'            # id, prefix, status, user, name, created, last seen
+make devices ARGS='list --all'      # revoked ones too
+make devices ARGS='rename 3 "Old phone"'
+make devices ARGS='revoke 3'        # refused from the next request on; nothing to restart
+```
+
+`issue` creates the `users` row if it does not exist, so a household member
+can be given a token before their phone has ever synced — which also means a
+mistyped `--user` UUID quietly creates a new user; check `list` after. A
+request authenticated with a device token acts as that token's user:
+`X-User-ID` may be absent or equal to it, and any other value is refused
+with 403 before the body is read. The app sets the header from its own user
+ID setting, so the ID entered on the phone must match the one the token was
+issued for.
+
+**Order and failure modes.** The shared token is checked first, in memory;
+only then is the presented value hashed and looked up in `device_tokens`
+(one indexed probe, which also advances `last_seen_at` at most once a minute
+per token). If that lookup fails because the database is unreachable the
+answer is **503 `authentication unavailable`**, not 401 — the app retries 5xx
+but treats 401 as terminal, so a 401 there would tell the user their token
+is wrong and stall syncing until they retyped it. Only wrong credentials (a
+missing bearer, an unknown value, a revoked token) draw from the failure
+budget below; a user mismatch, a database error and every success cost
+nothing. Every `batches` row records which device wrote it
+(`device_token_id`, NULL for the shared token), and the per-batch log line
+carries it as `token_id`.
+
+**Turning the shared token off.** It stays enabled by default so an existing
+install is unchanged. Once every phone has its own token, set
+`PULS_ALLOW_SHARED_TOKEN=false` in `.env` (or empty `PULS_TOKEN`) and
+`docker compose up -d ingest`: the shared value stops authenticating, and
+with it the `X-User-ID` hole closes — no credential can then write as a
+user it was not issued for. `docker compose logs ingest` prints the auth
+mode at startup and warns (never fails) when the shared token is off and
+no device token is active, since nothing could authenticate. `make pairing`
+and `scripts/bootstrap.sh` accept a 401 on their probe in that mode and
+point at `make devices` instead of printing a token.
 
 ### Rate limiting
 
@@ -462,6 +523,7 @@ set of secrets would strand both. Rotate one value at a time instead:
 | Secret | How |
 |---|---|
 | `PULS_TOKEN` | Edit `.env`, `docker compose up -d ingest`, paste the new token into the app (`make pairing` shows it). |
+| A device token | `make devices ARGS='revoke <id>'`, then `make devices ARGS='issue --user <uuid> --name <label>'` and enter the new value on that phone. Effective on the next request; nothing restarts, and no other phone is affected. |
 | `PULS_API_TOKEN`, `PULS_MCP_TOKEN` | Edit `.env`, `docker compose up -d api mcp`, update the API consumers and AI clients (`docs/ai.md`). |
 | `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` | Edit `.env`, `docker compose up -d`: `migrate` re-runs `099_read_roles.sh`, which sets the roles' passwords to the new values, and the containers restart with them. |
 | `POSTGRES_PASSWORD` | The superuser password lives in the database, not in `.env`: `docker compose exec db psql -U postgres -c "ALTER USER postgres PASSWORD '<new>'"` first, then edit `.env` and `docker compose up -d`. |

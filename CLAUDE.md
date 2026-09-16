@@ -123,9 +123,12 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   rows land in a populated database without a wipe — but the product API and
   the web viewer each serve exactly one `PULS_USER_ID`, so those rows are
   stored and nothing shows them. Grafana's health dashboard is the one
-  exception: it has a `user` template variable over the `users` table. Nothing
-  binds the token to a user either, so `X-User-ID` remains unauthenticated
-  tenant selection (SRV-8). `user_id` joins
+  exception: it has a `user` template variable over the `users` table. A
+  per-device token (`device_tokens`, `server/ingest/auth.go`, issued with
+  `make devices`) is bound to a user: `X-User-ID` must be absent or equal to
+  it, anything else is 403. The shared `PULS_TOKEN` is not, so while it is
+  enabled (`PULS_ALLOW_SHARED_TOKEN`, default true) `X-User-ID` remains
+  unauthenticated tenant selection with it. `user_id` joins
   the conflict target where identity would otherwise collide across users
   (`activity_summaries` PK `(user_id, date)`; `aggregate_samples` PK
   `(series_id, bucket_start, user_id)`); UUID-keyed sample tables keep their UUID
@@ -498,6 +501,19 @@ outside this repository — nothing here assumes a particular machine.
   `X-Forwarded-Host` may choose the host `/openapi.json` advertises, which
   matters because that endpoint is unauthenticated and `docs/ai.md` tells
   people to hand the document to ChatGPT alongside the token.
+- **Ingest checks the shared token first, in memory, then hashes the bearer
+  and looks it up in `device_tokens`** (`server/ingest/auth.go`; the limiter
+  check still comes before both). A database error during that lookup is
+  **503 `authentication unavailable`, never 401**, and is not charged to the
+  failure limiter: the app retries 5xx but treats 401 as terminal, so a 401
+  there would tell the user their token is wrong and stall syncing until they
+  retyped it. Only wrong credentials — missing bearer, unknown hash, revoked
+  token — charge the limiter; a user mismatch (403) does not, because it is a
+  misconfigured phone holding a valid credential. Tokens are stored as a
+  plain SHA-256 (the preimage is 256 random bits; a salt would only cost the
+  UNIQUE lookup), and `grafana` has SELECT on every table by default
+  privilege, so `099_read_roles.sh` revokes it on `device_tokens` on every
+  run. `PULS_TOKEN` is optional now; do not make it required again.
 - **`/healthz` is unauthenticated on both services, so it must not touch the
   pool per request** (`server/ingest/health.go`, `server/api/health.go` — again
   a copy). The database status is cached for two seconds and concurrent callers
