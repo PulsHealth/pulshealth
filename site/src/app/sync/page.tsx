@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Bot, Code2, Database, Github, Globe, HardDriveDownload, LayoutDashboard, LineChart, Package, Plug, Server, ShieldCheck, Smartphone, Terminal } from "lucide-react";
+import { ArrowRight, Bot, Code2, Database, Globe, HardDriveDownload, LayoutDashboard, LineChart, Package, Plug, Server, ShieldCheck, Smartphone, Terminal } from "lucide-react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +72,7 @@ export default function SyncPage() {
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
               <a href={`${GITHUB}/tree/main/server`} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
+                <GitHubIcon className="mr-2 h-4 w-4" />
                 Server Documentation
               </a>
             </Button>

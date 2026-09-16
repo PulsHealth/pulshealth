@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Link2, Check, Twitter, Facebook, Linkedin, Share2 } from "lucide-react";
+import { Link2, Check, Share2 } from "lucide-react";
+import { XIcon, FacebookIcon, LinkedInIcon } from "@/components/brand-icons";
 import { cn } from "@/lib/utils";
 
 interface ShareButtonsProps {
@@ -94,7 +95,7 @@ export function ShareButtons({
         )}
       </Button>
 
-      {/* Twitter/X */}
+      {/* X */}
       <Button
         variant="ghost"
         size="icon-sm"
@@ -105,9 +106,9 @@ export function ShareButtons({
           href={shareLinks.twitter}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Share on X (Twitter)"
+          aria-label="Share on X"
         >
-          <Twitter className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </a>
       </Button>
 
@@ -124,7 +125,7 @@ export function ShareButtons({
           rel="noopener noreferrer"
           aria-label="Share on Facebook"
         >
-          <Facebook className="h-4 w-4" />
+          <FacebookIcon className="h-4 w-4" />
         </a>
       </Button>
 
@@ -141,7 +142,7 @@ export function ShareButtons({
           rel="noopener noreferrer"
           aria-label="Share on LinkedIn"
         >
-          <Linkedin className="h-4 w-4" />
+          <LinkedInIcon className="h-4 w-4" />
         </a>
       </Button>
     </div>

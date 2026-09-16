@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BookOpen, Bug, Github, Mail } from "lucide-react";
+import { BookOpen, Bug, Mail } from "lucide-react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ const supportOptions = [
   {
     title: "Project Documentation",
     description: "Setup, the sync protocol, the database guide, and the AI assistant recipes — all in the repository, alongside the code they describe.",
-    icon: Github,
+    icon: GitHubIcon,
     href: GITHUB,
     cta: "Read the Docs",
     external: true,
