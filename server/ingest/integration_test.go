@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -1337,5 +1339,194 @@ func TestIntegration_LookupSequencesDoNotBurnOnRepeat(t *testing.T) {
 			t.Errorf("%s advanced %d -> %d on a repeat batch; nextval is being burned on conflicts",
 				s, before[s], after[s])
 		}
+	}
+}
+
+// TestIntegration_DeviceTokens runs the per-device token path (SRV-8) end to
+// end against the real schema: issue through the Store, authenticate through
+// the middleware, land a batch stamped with the token, watch last_seen_at,
+// revoke. Gated on DATABASE_URL like TestIntegration_IngestRoundTrip.
+func TestIntegration_DeviceTokens(t *testing.T) {
+	url := os.Getenv("DATABASE_URL")
+	if url == "" {
+		t.Skip("DATABASE_URL not set; skipping integration test")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, url)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	// Cleanup, not defer: the row deletions registered below must run
+	// before the pool closes, and t.Cleanup runs last-in first-out.
+	t.Cleanup(pool.Close)
+	store := NewStore(pool)
+
+	run := time.Now().UnixNano()
+	tokenUser := fmt.Sprintf("%08x-0200-4000-8000-%012x", run>>32, run&0xffffffffffff)
+	otherUser := fmt.Sprintf("%08x-0201-4000-8000-%012x", run>>32, run&0xffffffffffff)
+
+	plaintext, issued, err := store.IssueDeviceToken(ctx, tokenUser, "itest phone")
+	if err != nil {
+		t.Fatalf("IssueDeviceToken: %v", err)
+	}
+	t.Cleanup(func() {
+		cctx, ccancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer ccancel()
+		_, _ = pool.Exec(cctx, `DELETE FROM batches WHERE device_token_id = $1`, issued.ID)
+		_, _ = pool.Exec(cctx, `DELETE FROM device_tokens WHERE id = $1`, issued.ID)
+	})
+	if len(plaintext) != 64 || issued.ID == 0 || issued.TokenPrefix != plaintext[:8] {
+		t.Fatalf("issued = %q / %+v", plaintext, issued)
+	}
+	// Only the hash is stored, and the user row exists before any sync.
+	var stored []byte
+	var userExists bool
+	if err := pool.QueryRow(ctx, `SELECT token_hash, EXISTS (SELECT 1 FROM users WHERE id = $2)
+		FROM device_tokens WHERE id = $1`, issued.ID, tokenUser).Scan(&stored, &userExists); err != nil {
+		t.Fatalf("read back: %v", err)
+	}
+	if string(stored) == plaintext || !bytes.Equal(stored, hashToken(plaintext)) || !userExists {
+		t.Fatalf("stored hash/user wrong: hash matches=%v user=%v", bytes.Equal(stored, hashToken(plaintext)), userExists)
+	}
+	// The credential table is not for dashboards (099_read_roles.sh).
+	var grafanaCanRead bool
+	if err := pool.QueryRow(ctx,
+		`SELECT has_table_privilege('grafana', 'device_tokens', 'SELECT')`).Scan(&grafanaCanRead); err == nil && grafanaCanRead {
+		t.Fatal("grafana can SELECT device_tokens")
+	}
+
+	srv := newServer(store, store, "itest-shared", true, false, slog.New(slog.NewJSONHandler(io.Discard, nil)))
+	ts := httptest.NewServer(srv.routes())
+	defer ts.Close()
+
+	do := func(method, path, token, userHeader string, body string) (int, string) {
+		t.Helper()
+		var rdr io.Reader
+		if body != "" {
+			rdr = strings.NewReader(body)
+		}
+		req, err := http.NewRequestWithContext(ctx, method, ts.URL+path, rdr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("X-Puls-Protocol", "1")
+		if userHeader != "" {
+			req.Header.Set("X-User-ID", userHeader)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(b)
+	}
+
+	if code, body := do(http.MethodGet, "/v1/capabilities", plaintext, "", ""); code != http.StatusOK {
+		t.Fatalf("capabilities with device token: %d %s", code, body)
+	}
+	if code, body := do(http.MethodGet, "/v1/capabilities", "itest-shared", otherUser, ""); code != http.StatusOK {
+		t.Fatalf("capabilities with shared token: %d %s", code, body)
+	}
+
+	batchID := fmt.Sprintf("%08x-0202-4000-8000-%012x", run>>32, run&0xffffffffffff)
+	batch := fmt.Sprintf(`{"batchID":"%s","deviceID":"itest","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"sampleCount":0,"deletionCount":0}
+`, batchID)
+
+	if code, body := do(http.MethodPost, "/v1/batches", plaintext, otherUser, batch); code != http.StatusForbidden {
+		t.Fatalf("batch for another user: %d %s, want 403", code, body)
+	}
+	var n int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM batches WHERE batch_id = $1`, batchID).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("batches rows after 403 = %d, %v; want 0", n, err)
+	}
+
+	if code, body := do(http.MethodPost, "/v1/batches", plaintext, "", batch); code != http.StatusOK {
+		t.Fatalf("batch without header: %d %s", code, body)
+	}
+	var gotUser string
+	var gotToken *int64
+	if err := pool.QueryRow(ctx, `SELECT user_id::text, device_token_id FROM batches WHERE batch_id = $1`, batchID).
+		Scan(&gotUser, &gotToken); err != nil {
+		t.Fatalf("batches row: %v", err)
+	}
+	if gotUser != tokenUser || gotToken == nil || *gotToken != issued.ID {
+		t.Fatalf("batches row user/token = %s/%v, want %s/%d", gotUser, gotToken, tokenUser, issued.ID)
+	}
+
+	// last_seen_at was stamped by the first request and is not advanced by
+	// the next one inside the minute.
+	var seen1 *time.Time
+	if err := pool.QueryRow(ctx, `SELECT last_seen_at FROM device_tokens WHERE id = $1`, issued.ID).Scan(&seen1); err != nil {
+		t.Fatal(err)
+	}
+	if seen1 == nil {
+		t.Fatal("last_seen_at is null after an authenticated request")
+	}
+	if code, _ := do(http.MethodGet, "/v1/stats", plaintext, tokenUser, ""); code != http.StatusOK {
+		t.Fatalf("stats: %d", code)
+	}
+	var seen2 *time.Time
+	if err := pool.QueryRow(ctx, `SELECT last_seen_at FROM device_tokens WHERE id = $1`, issued.ID).Scan(&seen2); err != nil {
+		t.Fatal(err)
+	}
+	if seen2 == nil || !seen2.Equal(*seen1) {
+		t.Fatalf("last_seen_at advanced within a minute: %v -> %v", seen1, seen2)
+	}
+
+	// The listing shows it, revoke takes effect on the next request, and the
+	// shared token is unaffected throughout.
+	tokens, err := store.ListDeviceTokens(ctx, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var listed bool
+	for _, d := range tokens {
+		if d.ID == issued.ID && d.Name == "itest phone" && d.LastSeenAt != nil {
+			listed = true
+		}
+	}
+	if !listed {
+		t.Fatalf("issued token not in the active listing: %+v", tokens)
+	}
+	if err := store.RenameDeviceToken(ctx, issued.ID, "itest phone (old)"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.RevokeDeviceToken(ctx, issued.ID); err != nil {
+		t.Fatal(err)
+	}
+	if code, _ := do(http.MethodGet, "/v1/capabilities", plaintext, "", ""); code != http.StatusUnauthorized {
+		t.Fatalf("revoked token: %d, want 401", code)
+	}
+	tokens, err = store.ListDeviceTokens(ctx, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range tokens {
+		if d.ID == issued.ID {
+			t.Fatal("revoked token still in the active listing")
+		}
+	}
+	all, err := store.ListDeviceTokens(ctx, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var found *deviceToken
+	for i := range all {
+		if all[i].ID == issued.ID {
+			found = &all[i]
+		}
+	}
+	if found == nil || found.Status != "revoked" || found.RevokedAt == nil || found.Name != "itest phone (old)" {
+		t.Fatalf("revoked row = %+v", found)
+	}
+	if err := store.RevokeDeviceToken(ctx, issued.ID+1_000_000); !errors.Is(err, errTokenNotFound) {
+		t.Fatalf("revoking a missing id: %v, want errTokenNotFound", err)
+	}
+	if code, _ := do(http.MethodGet, "/v1/capabilities", "itest-shared", "", ""); code != http.StatusOK {
+		t.Fatalf("shared token after revoke: %d", code)
 	}
 }
