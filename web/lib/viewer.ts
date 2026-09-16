@@ -30,6 +30,28 @@ export function parseViewerUser(cookieValue: string | undefined, fallback: strin
   return fallback;
 }
 
+/**
+ * Where to send the browser after a choice: `value` when it is a same-origin
+ * path, otherwise `/`. Anything with a scheme or host (`https://…`, `//…`,
+ * `\\…`) is refused so the form's `next` field cannot be pointed off-site.
+ */
+export function safeReturnPath(value: string | null | undefined): string {
+  if (!value || !value.startsWith("/")) return "/";
+  if (value.startsWith("//") || value.startsWith("/\\")) return "/";
+  return value;
+}
+
+/** Cookie attributes for the chosen user; `Secure` only where the page is. */
+export function userCookieOptions(secure: boolean) {
+  return {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax" as const,
+    maxAge: USER_COOKIE_MAX_AGE,
+    secure,
+  };
+}
+
 /** The user this request shows: the cookie's choice, else PULS_USER_ID. */
 export async function viewerUser(): Promise<string> {
   const jar = await cookies();

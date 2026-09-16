@@ -23,6 +23,7 @@ import {
   demoSeries,
   demoStats,
   demoTodaySum,
+  demoUsers,
   demoWorkoutDetail,
   demoWorkouts,
   demoWorkoutSeries,
@@ -37,6 +38,7 @@ import type {
   Series,
   SeriesPoint,
   TypeStat,
+  User,
   Workout,
   WorkoutActivitySegment,
   WorkoutDetail,
@@ -914,6 +916,26 @@ export async function getWorkoutSeries(userId: string, uuid: string): Promise<Wo
   } catch (e) {
     console.error("[queries] getWorkoutSeries failed:", e);
     return ALLOW_DEMO ? demoWorkoutSeries(uuid) : [];
+  }
+}
+
+// ── the users the database holds (for the switcher) ──────────────────────
+// Oldest first, so the seeded default user — created by migration 000 before
+// any phone syncs — leads the list. Name and email are null until the
+// phone's first {"profile":…} line lands.
+export async function getUsers(): Promise<User[]> {
+  const src = await source();
+  if (src !== "live") return notLive(src, demoUsers, []);
+  try {
+    const rows = await query<{ id: string; name: string | null; email: string | null }>(
+      `SELECT id::text AS id, name, email
+         FROM users
+        ORDER BY created_at, id`,
+    );
+    return rows.map((r) => ({ id: r.id, name: r.name, email: r.email }));
+  } catch (e) {
+    console.error("[queries] getUsers failed:", e);
+    return ALLOW_DEMO ? demoUsers() : [];
   }
 }
 
