@@ -5,8 +5,9 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { UnitsProvider } from "@/components/UnitsProvider";
-import { getDataSource } from "@/lib/queries";
+import { getDataSource, getUsers } from "@/lib/queries";
 import { configuredTimeZone } from "@/lib/config";
+import { viewerUser } from "@/lib/viewer";
 
 export const metadata: Metadata = {
   title: "PulsHealth",
@@ -27,7 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // into every unmatched URL. Defer to request time so the sidebar status is
   // always live.
   await connection();
-  const source = await getDataSource();
+  const [source, users, currentUserId] = await Promise.all([getDataSource(), getUsers(), viewerUser()]);
   const timeZone = configuredTimeZone();
   const runtimeScript = `window.__PULS_TIME_ZONE__=${JSON.stringify(timeZone).replace(/</g, "\\u003c")};${themeScript}`;
   return (
@@ -40,7 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="grain" />
         <UnitsProvider>
           <div className="shell">
-            <Sidebar source={source} />
+            <Sidebar source={source} users={users} currentUserId={currentUserId} />
             <main className="content">{children}</main>
           </div>
         </UnitsProvider>

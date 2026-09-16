@@ -91,6 +91,15 @@ export interface WorkoutDetail extends Workout {
   route: RoutePoint[];
 }
 
+// One row of the `users` table, as the switcher lists them. `name` and
+// `email` arrive with the phone's first {"profile":…} line and stay null
+// until then, so the UI falls back to the id.
+export interface User {
+  id: string; // uuid
+  name: string | null;
+  email: string | null;
+}
+
 // User characteristics for derived metrics.
 export interface Profile {
   dob: number | null; // epoch ms of date of birth

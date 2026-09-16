@@ -3,11 +3,12 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const queryMock = vi.hoisted(() => vi.fn());
 vi.mock("./db", () => ({ query: queryMock }));
 
+// Passed to every query explicitly: the user is an argument, never read from
+// the environment or a cookie inside lib/queries.ts.
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 
 beforeAll(() => {
   process.env.DATABASE_URL = "postgres://test";
-  process.env.PULS_USER_ID = USER_ID;
   process.env.PULS_TIME_ZONE = "America/Los_Angeles";
 });
 
@@ -71,7 +72,7 @@ describe("query semantics", () => {
 
   it("computes Today from raw local-day source totals", async () => {
     const { getTodayTotals } = await import("./queries");
-    await getTodayTotals(["HKQuantityTypeIdentifierStepCount"]);
+    await getTodayTotals(USER_ID, ["HKQuantityTypeIdentifierStepCount"]);
 
     const calls = queryMock.mock.calls.filter(([sql]) => sql !== "SELECT 1");
     expect(calls.some(([sql]) => sql.includes("metric_daily"))).toBe(false);
@@ -85,8 +86,8 @@ describe("query semantics", () => {
 
   it("deduplicates cumulative sources before coarser chart rollups", async () => {
     const { getSeries } = await import("./queries");
-    await getSeries("HKQuantityTypeIdentifierStepCount", "D");
-    await getSeries("HKQuantityTypeIdentifierStepCount", "Y");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "D");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "Y");
 
     const calls = queryMock.mock.calls.filter(([sql]) =>
       sql.includes("WITH per_source") && sql.includes("truth AS"),
@@ -94,6 +95,7 @@ describe("query semantics", () => {
     expect(calls).toHaveLength(2);
     const [intradaySql, intradayParams] = calls[0];
     expect(intradayParams.slice(0, 2)).toEqual(["1 hour", "1 hour"]);
+    expect(intradayParams[4]).toBe(USER_ID);
     expect(intradaySql).toContain("GROUP BY truth_bucket");
     expect(intradaySql).toContain("sum(value)::float8 AS sum");
 
@@ -105,9 +107,9 @@ describe("query semantics", () => {
 
   it("aligns chart windows to the bucket grain in the viewer's zone", async () => {
     const { getSeries } = await import("./queries");
-    await getSeries("HKQuantityTypeIdentifierHeartRate", "W");
-    await getSeries("HKQuantityTypeIdentifierStepCount", "Y");
-    await getSeries("HKCategoryTypeIdentifierAppleStandHour", "M");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", "W");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "Y");
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "M");
 
     const windows = queryMock.mock.calls
       .map(([sql]) => sql as string)
@@ -123,8 +125,8 @@ describe("query semantics", () => {
 
   it("attributes sleep to the wake day and dedups duration sources", async () => {
     const { getSeries } = await import("./queries");
-    await getSeries("HKCategoryTypeIdentifierSleepAnalysis", "M");
-    await getSeries("HKCategoryTypeIdentifierMindfulSession", "M");
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", "M");
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierMindfulSession", "M");
 
     const [sleep, mindful] = queryMock.mock.calls
       .map(([sql]) => sql as string)
@@ -142,17 +144,17 @@ describe("query semantics", () => {
 
   it("scopes all health-data SQL and uses local Today boundaries", async () => {
     const queries = await import("./queries");
-    await queries.getSeries("HKQuantityTypeIdentifierStepCount", "D");
-    await queries.getSeries("HKCategoryTypeIdentifierAppleStandHour", "M");
-    await queries.getLatestMany(["HKQuantityTypeIdentifierHeartRate"]);
-    await queries.getTodayTotals(["HKQuantityTypeIdentifierStepCount"]);
-    await queries.getActivityRings();
-    await queries.getStats();
-    await queries.getDailySparklines(["HKQuantityTypeIdentifierStepCount"]);
-    await queries.getWorkouts(3);
-    await queries.getWorkoutDetail("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
-    await queries.getWorkoutSeries("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
-    await queries.getProfile();
+    await queries.getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "D");
+    await queries.getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "M");
+    await queries.getLatestMany(USER_ID, ["HKQuantityTypeIdentifierHeartRate"]);
+    await queries.getTodayTotals(USER_ID, ["HKQuantityTypeIdentifierStepCount"]);
+    await queries.getActivityRings(USER_ID);
+    await queries.getStats(USER_ID);
+    await queries.getDailySparklines(USER_ID, ["HKQuantityTypeIdentifierStepCount"]);
+    await queries.getWorkouts(USER_ID, 3);
+    await queries.getWorkoutDetail(USER_ID, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    await queries.getWorkoutSeries(USER_ID, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    await queries.getProfile(USER_ID);
 
     const healthCalls = queryMock.mock.calls.filter(([sql]) =>
       /(metric_daily|quantity_samples|category_samples|activity_summaries|workouts|workout_route_points|workout_series_points|FROM users)/.test(sql),
@@ -168,5 +170,22 @@ describe("query semantics", () => {
 
     const cumulativeSql = healthCalls.find(([sql]) => sql.includes("WITH per_source") && sql.includes("truth AS"))?.[0];
     expect(cumulativeSql).toBeTruthy();
+  });
+
+  it("keeps the per-user caches apart when users alternate", async () => {
+    const OTHER = "22222222-2222-4222-8222-222222222222";
+    // The caches are module-scoped and earlier tests already warmed USER_ID's.
+    vi.resetModules();
+    const { getStats } = await import("./queries");
+    const first = await getStats(USER_ID);
+    const second = await getStats(OTHER);
+    const firstAgain = await getStats(USER_ID);
+
+    // Both users' scans ran, each bound to its own id, and the first user's
+    // entry survived the second user's — same-instance from the TTL cache.
+    const scans = queryMock.mock.calls.filter(([sql]) => sql.includes("UNION ALL"));
+    expect(scans.map(([, params]) => params[0])).toEqual([USER_ID, OTHER]);
+    expect(firstAgain).toBe(first);
+    expect(second).not.toBe(first);
   });
 });

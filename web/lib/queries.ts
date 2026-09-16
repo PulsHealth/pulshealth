@@ -1,4 +1,7 @@
 // The single data API the UI talks to. Each function tries Postgres first.
+// Every health-data function takes the user to read as its first argument;
+// pages resolve it once per request with lib/viewer.ts (`viewerUser()`),
+// which keeps this module free of `cookies()` and testable without a request.
 //
 // Demo fallback is a DEV-ONLY convenience: when running outside production
 // (`NODE_ENV !== "production"`) and the database is unconfigured/unreachable,
@@ -11,7 +14,7 @@
 import { cache } from "react";
 import { query } from "./db";
 import { typeByIdentifier } from "./catalog";
-import { configuredTimeZone, viewerUserId } from "./config";
+import { configuredTimeZone } from "./config";
 import { defaultAgg, RANGES } from "./metrics";
 import {
   demoActivityRings,
@@ -20,6 +23,7 @@ import {
   demoSeries,
   demoStats,
   demoTodaySum,
+  demoUsers,
   demoWorkoutDetail,
   demoWorkouts,
   demoWorkoutSeries,
@@ -34,6 +38,7 @@ import type {
   Series,
   SeriesPoint,
   TypeStat,
+  User,
   Workout,
   WorkoutActivitySegment,
   WorkoutDetail,
@@ -161,28 +166,31 @@ async function metricDailyUsable(): Promise<boolean> {
   return false;
 }
 
-// Types for which this viewer user actually has canonical metric_daily rows.
-// The view is daily-grain, so callers use it only for day-or-coarser buckets.
-// Querying the view itself avoids treating min/max/mostRecent-only aggregate
-// configs as daily truth. Cached briefly to avoid a round-trip per query.
+// Types for which a user actually has canonical metric_daily rows. The view
+// is daily-grain, so callers use it only for day-or-coarser buckets. Querying
+// the view itself avoids treating min/max/mostRecent-only aggregate configs as
+// daily truth. Cached briefly, per user, to avoid a round-trip per query —
+// keyed by user so two people alternating in the switcher do not evict each
+// other's entry.
 const DAY_MS = 86_400_000;
-let mdTypesCache: { userId: string; set: Set<string>; at: number } | null = null;
-let mdTypesInFlight: { userId: string; promise: Promise<Set<string>> } | null = null;
-async function metricDailyTypes(): Promise<Set<string>> {
+const mdTypesCache = new Map<string, { set: Set<string>; at: number }>();
+const mdTypesInFlight = new Map<string, Promise<Set<string>>>();
+async function metricDailyTypes(userId: string): Promise<Set<string>> {
   if (!(await metricDailyUsable())) return new Set();
-  const userId = viewerUserId();
-  if (mdTypesCache?.userId === userId && Date.now() - mdTypesCache.at < 60_000) return mdTypesCache.set;
-  if (mdTypesInFlight?.userId === userId) return mdTypesInFlight.promise;
+  const cached = mdTypesCache.get(userId);
+  if (cached && Date.now() - cached.at < 60_000) return cached.set;
+  const inFlight = mdTypesInFlight.get(userId);
+  if (inFlight) return inFlight;
   const promise = query<{ identifier: string }>(
     `SELECT DISTINCT identifier FROM metric_daily WHERE user_id = $1::uuid`, [userId],
   ).then((rows) => new Set(rows.map((row) => row.identifier)));
-  mdTypesInFlight = { userId, promise };
+  mdTypesInFlight.set(userId, promise);
   try {
     const set = await promise;
-    mdTypesCache = { userId, set, at: Date.now() };
+    mdTypesCache.set(userId, { set, at: Date.now() });
     return set;
   } finally {
-    if (mdTypesInFlight?.promise === promise) mdTypesInFlight = null;
+    if (mdTypesInFlight.get(userId) === promise) mdTypesInFlight.delete(userId);
   }
 }
 
@@ -231,7 +239,7 @@ export function categoryAggregation(identifier: string): CategoryAggregation {
   return { mode: "count", unit: "count" };
 }
 
-export async function getSeries(identifier: string, range: RangeKey): Promise<Series> {
+export async function getSeries(userId: string, identifier: string, range: RangeKey): Promise<Series> {
   const spec = RANGES[range];
   const type = typeByIdentifier(identifier);
   const agg = defaultAgg(identifier);
@@ -247,7 +255,6 @@ export async function getSeries(identifier: string, range: RangeKey): Promise<Se
     // partial slice (10:37 → midnight), rendered as a low bar, and became the
     // range's "Minimum".
     const from = new Date(Date.now() - spec.spanMs);
-    const userId = viewerUserId();
     const timeZone = configuredTimeZone();
 
     if (type?.kind === "category") {
@@ -312,7 +319,7 @@ export async function getSeries(identifier: string, range: RangeKey): Promise<Se
     // Best-guess-of-truth view for covered types (steps/energy/distance/…) at
     // day-or-coarser buckets. metric_daily is daily-grain, so the intraday (Day)
     // view falls through to raw samples below.
-    const mdTypes = await metricDailyTypes();
+    const mdTypes = await metricDailyTypes(userId);
     if (mdTypes.has(identifier) && spec.bucketMs >= DAY_MS) {
       const rows = await query<{ t: string; value: number }>(
         `SELECT (extract(epoch from time_bucket($1::interval, day::timestamp AT TIME ZONE $5::text, $5::text)) * 1000)::bigint AS t,
@@ -398,7 +405,7 @@ export async function getSeries(identifier: string, range: RangeKey): Promise<Se
 }
 
 // ── latest reading per type ──────────────────────────────────────────────
-export async function getLatestMany(identifiers: string[]): Promise<Map<string, Latest>> {
+export async function getLatestMany(userId: string, identifiers: string[]): Promise<Map<string, Latest>> {
   const out = new Map<string, Latest>();
   if (!identifiers.length) return out;
 
@@ -418,7 +425,7 @@ export async function getLatestMany(identifiers: string[]): Promise<Map<string, 
         WHERE st.identifier = ANY($1::text[])
           AND q.user_id = $2::uuid
         ORDER BY st.identifier, q.start_ts DESC`,
-      [identifiers, viewerUserId()],
+      [identifiers, userId],
     );
     for (const r of rows) {
       out.set(r.identifier, {
@@ -437,7 +444,7 @@ export async function getLatestMany(identifiers: string[]): Promise<Map<string, 
 }
 
 // ── today's cumulative totals (for activity rings / summary) ──────────────
-export async function getTodayTotals(identifiers: string[]): Promise<Map<string, number>> {
+export async function getTodayTotals(userId: string, identifiers: string[]): Promise<Map<string, number>> {
   const out = new Map<string, number>();
   if (!identifiers.length) return out;
 
@@ -449,7 +456,6 @@ export async function getTodayTotals(identifiers: string[]): Promise<Map<string,
 
   try {
     for (const id of identifiers) out.set(id, 0);
-    const userId = viewerUserId();
     const timeZone = configuredTimeZone();
 
     // Read Today directly from raw local-day samples so the live headline does
@@ -481,7 +487,7 @@ export async function getTodayTotals(identifiers: string[]): Promise<Map<string,
 }
 
 // ── activity rings (today's HKActivitySummary) ───────────────────────────
-export async function getActivityRings(): Promise<ActivityRingsData> {
+export async function getActivityRings(userId: string): Promise<ActivityRingsData> {
   // Apple's standard goals stand in for any null goal column.
   const fallback: ActivityRingsData = {
     date: null, moveMode: 0,
@@ -517,7 +523,7 @@ export async function getActivityRings(): Promise<ActivityRingsData> {
         WHERE user_id = $1::uuid
           AND date = (now() AT TIME ZONE $2::text)::date
         LIMIT 1`,
-      [viewerUserId(), configuredTimeZone()],
+      [userId, configuredTimeZone()],
     );
     if (!rows.length) return fallback;
     const r = rows[0];
@@ -541,23 +547,24 @@ export async function getActivityRings(): Promise<ActivityRingsData> {
 }
 
 // ── catalog-wide stats (rows + date range per type) ──────────────────────
+// Cached per user for a short TTL (the scan is the heaviest query here).
 const STATS_TTL = 30_000;
-let statsCache: { userId: string; value: Map<string, TypeStat>; at: number } | null = null;
-let statsInFlight: Promise<Map<string, TypeStat>> | null = null;
+const statsCache = new Map<string, { value: Map<string, TypeStat>; at: number }>();
+const statsInFlight = new Map<string, Promise<Map<string, TypeStat>>>();
 
-export async function getStats(): Promise<Map<string, TypeStat>> {
-  const userId = viewerUserId();
-  if (statsCache?.userId === userId && Date.now() - statsCache.at < STATS_TTL) {
-    return statsCache.value;
-  }
-  if (statsInFlight) return statsInFlight;
-  statsInFlight = loadStats(userId);
+export async function getStats(userId: string): Promise<Map<string, TypeStat>> {
+  const cached = statsCache.get(userId);
+  if (cached && Date.now() - cached.at < STATS_TTL) return cached.value;
+  const inFlight = statsInFlight.get(userId);
+  if (inFlight) return inFlight;
+  const promise = loadStats(userId);
+  statsInFlight.set(userId, promise);
   try {
-    const value = await statsInFlight;
-    statsCache = { userId, value, at: Date.now() };
+    const value = await promise;
+    statsCache.set(userId, { value, at: Date.now() });
     return value;
   } finally {
-    statsInFlight = null;
+    if (statsInFlight.get(userId) === promise) statsInFlight.delete(userId);
   }
 }
 
@@ -619,7 +626,7 @@ async function loadStats(userId: string): Promise<Map<string, TypeStat>> {
 }
 
 // ── batched daily sparklines for a set of quantity types (one round-trip) ──
-export async function getDailySparklines(identifiers: string[], days = 21): Promise<Map<string, number[]>> {
+export async function getDailySparklines(userId: string, identifiers: string[], days = 21): Promise<Map<string, number[]>> {
   const out = new Map<string, number[]>();
   if (!identifiers.length) return out;
 
@@ -635,12 +642,11 @@ export async function getDailySparklines(identifiers: string[], days = 21): Prom
 
   try {
     const byId = new Map<string, number[]>();
-    const mdTypes = await metricDailyTypes();
+    const mdTypes = await metricDailyTypes(userId);
     const mdIds = identifiers.filter((id) => mdTypes.has(id));
     const rawIds = identifiers.filter((id) => !mdTypes.has(id));
     const rawCumIds = rawIds.filter((id) => defaultAgg(id) === "sum");
     const rawDiscIds = rawIds.filter((id) => defaultAgg(id) === "avg");
-    const userId = viewerUserId();
     const timeZone = configuredTimeZone();
 
     // Covered types: daily best-guess-of-truth.
@@ -725,7 +731,7 @@ export async function getDailySparklines(identifiers: string[], days = 21): Prom
 }
 
 // ── workouts ─────────────────────────────────────────────────────────────
-export async function getWorkouts(limit = 40): Promise<Workout[]> {
+export async function getWorkouts(userId: string, limit = 40): Promise<Workout[]> {
   const src = await source();
   if (src !== "live") return notLive(src, () => demoWorkouts(limit), []);
   try {
@@ -749,7 +755,7 @@ export async function getWorkouts(limit = 40): Promise<Workout[]> {
         WHERE user_id = $2::uuid
         ORDER BY start_ts DESC
         LIMIT $1`,
-      [limit, viewerUserId()],
+      [limit, userId],
     );
     if (!rows.length) return [];
     return rows.map((r) => ({
@@ -768,7 +774,9 @@ export async function getWorkouts(limit = 40): Promise<Workout[]> {
 }
 
 // ── one workout + its route ───────────────────────────────────────────────
-export const getWorkoutDetail = cache(async function getWorkoutDetail(uuid: string): Promise<WorkoutDetail | null> {
+// React-cached per request on (userId, uuid): generateMetadata and the page
+// both ask for the same workout.
+export const getWorkoutDetail = cache(async function getWorkoutDetail(userId: string, uuid: string): Promise<WorkoutDetail | null> {
   const src = await source();
   if (src !== "live") return notLive(src, () => demoWorkoutDetail(uuid), null);
 
@@ -809,7 +817,7 @@ export const getWorkoutDetail = cache(async function getWorkoutDetail(uuid: stri
          LEFT JOIN sources s ON s.source_id = w.source_id
         WHERE w.uuid = $1::uuid
           AND w.user_id = $2::uuid`,
-      [uuid, viewerUserId()],
+      [uuid, userId],
     );
     const r = rows[0];
     if (!r) return null;
@@ -827,7 +835,7 @@ export const getWorkoutDetail = cache(async function getWorkoutDetail(uuid: stri
         WHERE workout_uuid = $1::uuid
           AND user_id = $2::uuid
         ORDER BY ts`,
-      [uuid, viewerUserId()],
+      [uuid, userId],
     );
     const route: RoutePoint[] = routeRows.map((p) => ({
       t: Number(p.t),
@@ -878,7 +886,7 @@ interface RawActivity {
 }
 
 // ── one workout's intra-workout series streams ────────────────────────────
-export async function getWorkoutSeries(uuid: string): Promise<WorkoutSeries[]> {
+export async function getWorkoutSeries(userId: string, uuid: string): Promise<WorkoutSeries[]> {
   const src = await source();
   if (src !== "live") return notLive(src, () => demoWorkoutSeries(uuid), []);
   if (!UUID_RE.test(uuid)) return [];
@@ -893,7 +901,7 @@ export async function getWorkoutSeries(uuid: string): Promise<WorkoutSeries[]> {
         WHERE p.workout_uuid = $1::uuid
           AND p.user_id = $2::uuid
         ORDER BY st.identifier, p.ts`,
-      [uuid, viewerUserId()],
+      [uuid, userId],
     );
     const byType = new Map<string, WorkoutSeries>();
     for (const r of rows) {
@@ -911,10 +919,30 @@ export async function getWorkoutSeries(uuid: string): Promise<WorkoutSeries[]> {
   }
 }
 
+// ── the users the database holds (for the switcher) ──────────────────────
+// Oldest first, so the seeded default user — created by migration 000 before
+// any phone syncs — leads the list. Name and email are null until the
+// phone's first {"profile":…} line lands.
+export async function getUsers(): Promise<User[]> {
+  const src = await source();
+  if (src !== "live") return notLive(src, demoUsers, []);
+  try {
+    const rows = await query<{ id: string; name: string | null; email: string | null }>(
+      `SELECT id::text AS id, name, email
+         FROM users
+        ORDER BY created_at, id`,
+    );
+    return rows.map((r) => ({ id: r.id, name: r.name, email: r.email }));
+  } catch (e) {
+    console.error("[queries] getUsers failed:", e);
+    return ALLOW_DEMO ? demoUsers() : [];
+  }
+}
+
 // ── user profile (DOB/max HR + resting HR for HRR zones) ──────────────────
 export const DEFAULT_MAX_HR = 190;
 
-export async function getProfile(): Promise<Profile> {
+export async function getProfile(userId: string): Promise<Profile> {
   const fallback: Profile = { dob: null, biologicalSex: null, age: null, maxHr: DEFAULT_MAX_HR, restingHr: null };
   const src = await source();
   if (src !== "live") return notLive(src, demoProfile, fallback);
@@ -934,7 +962,7 @@ export async function getProfile(): Promise<Profile> {
             LIMIT 1
          ) r ON true
         WHERE u.id = $1::uuid`,
-      [viewerUserId(), configuredTimeZone()],
+      [userId, configuredTimeZone()],
     );
     const r = rows[0];
     if (!r) return fallback;

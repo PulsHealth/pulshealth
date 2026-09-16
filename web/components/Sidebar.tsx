@@ -4,12 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GROUPS, GROUP_LABELS } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
-import type { DataSourceInfo } from "@/lib/types";
+import type { DataSourceInfo, User } from "@/lib/types";
 import { GridIcon, GroupIcon, HomeIcon, SettingsIcon, WorkoutIcon } from "./Icons";
 import { ThemeToggle } from "./ThemeToggle";
+import { UserSwitcher } from "./UserSwitcher";
 
-export function Sidebar({ source }: { source: DataSourceInfo }) {
+export function Sidebar({
+  source,
+  users,
+  currentUserId,
+}: {
+  source: DataSourceInfo;
+  users: User[];
+  currentUserId: string;
+}) {
   const path = usePathname();
+  // A choice is only worth offering when there is one — or when the current
+  // user (from a stale cookie or a bad ?user= link) is not in the list at
+  // all, so the way back to a real user is one click away.
+  const showSwitcher = users.length >= 2 || (users.length >= 1 && !users.some((u) => u.id === currentUserId));
 
   const primary = [
     { href: "/", label: "Today", icon: <HomeIcon className="nav-icon" /> },
@@ -61,6 +74,7 @@ export function Sidebar({ source }: { source: DataSourceInfo }) {
       <div style={{ flex: 1 }} />
 
       <div className="nav-section" style={{ marginTop: 0 }}>
+        {showSwitcher && <UserSwitcher users={users} currentUserId={currentUserId} />}
         <Link href="/settings" className={`nav-link${path === "/settings" ? " active" : ""}`}>
           <SettingsIcon className="nav-icon" />
           <span>Settings</span>
