@@ -599,6 +599,6 @@ type streamingStore struct {
 	workoutRows func(fn func(WorkoutSummary) error) error
 }
 
-func (s *streamingStore) StreamWorkouts(_ context.Context, _ WorkoutFilters, fn func(WorkoutSummary) error) error {
+func (s *streamingStore) StreamWorkouts(_ context.Context, _ string, _ WorkoutFilters, fn func(WorkoutSummary) error) error {
 	return s.workoutRows(fn)
 }
