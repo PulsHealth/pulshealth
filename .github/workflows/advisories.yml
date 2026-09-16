@@ -8,15 +8,25 @@
 # ci.yml before it builds anything: a job that is *designed* to go red would
 # otherwise block every release, which is the opposite of non-blocking.
 #
-# The schedule matters as much as the PR trigger — an advisory is published
-# against code that has not changed, so a repository with no commits this week
-# still needs to hear about it.
+# The schedule is the load-bearing trigger — an advisory is published against
+# code that has not changed, so a repository with no commits this week still
+# needs to hear about it. Which is also why this does not run on every push.
+# A red run here reports the state of the dependency tree, not the state of the
+# commit that happened to trigger it: the same finding is still true tomorrow,
+# and it stays true until an upstream release exists to bump to. Re-running it
+# per push re-reports one standing fact, and GitHub mails a failure notice each
+# time, which buries the CI failures that *are* about the commit. So the push
+# trigger is gone and the pull_request one is scoped to the files that can
+# actually change the answer: the lockfiles, and this workflow itself.
 name: Advisories
 
 on:
-  push:
-    branches: [main]
   pull_request:
+    paths:
+      - "**/package-lock.json"
+      - "**/bun.lock"
+      - "**/go.sum"
+      - ".github/workflows/advisories.yml"
   schedule:
     # Mondays, a little before Dependabot's weekly run.
     - cron: "0 6 * * 1"
