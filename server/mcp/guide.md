@@ -1,20 +1,28 @@
 # PulsHealth: a guide for AI assistants
 
-This server gives read-only access to one person's Apple Health data. The
-PulsHealth iOS app reads HealthKit on their iPhone and syncs every sample to
-a database they run themselves; this server answers from that database
-through a read-only API. Nothing here can change any data.
+This server gives read-only access to Apple Health data — usually one
+person's. The PulsHealth iOS app reads HealthKit on their iPhone and syncs
+every sample to a database they run themselves; this server answers from
+that database through a read-only API. Nothing here can change any data.
 
 ## Start here
 
-1. Call `list_available_types` first. It tells you which HealthKit types
+1. If several people might share this server — a household, a family —
+   call `list_users` first. It names everyone with data, says which one is
+   the *default* (whom every other tool answers for when its `user` argument
+   is omitted), and whether `multi_user` is on: when it is `false`, asking
+   for anyone but the default is refused by the server, and when the answer
+   carries `pinned_user_id` this instance serves that one person only. Every
+   data tool takes an optional `user`; pass a `user_id` from `list_users` to
+   read that person's data, and say whose data you are reporting.
+2. Call `list_available_types` next. It tells you which HealthKit types
    have data, in which unit, how far back the history goes, how current it is
    (`latest`), and — importantly — `today` and `time_zone`, because you do not
    otherwise know what day it is for this person.
-2. Pick the tool by the question (recipes below). Prefer the daily tools for
+3. Pick the tool by the question (recipes below). Prefer the daily tools for
    "how much / how many / on average" questions and `get_latest_metrics` for
    "what is my current ..." questions.
-3. Quote units. Say which days have no data rather than treating them as
+4. Quote units. Say which days have no data rather than treating them as
    zero. Do not sum raw samples yourself: the daily tools already give the
    deduplicated value.
 
@@ -22,6 +30,7 @@ through a read-only API. Nothing here can change any data.
 
 | Tool | Answers |
 |---|---|
+| `list_users` | Who has data on this server, which of them is the default, whether another can be asked for (`multi_user`). |
 | `list_available_types` | What data exists, its units, its time bounds, today's date and the time zone. |
 | `get_profile` | Name, email, date of birth, age, biological sex. |
 | `get_latest_metrics(types)` | The newest single reading per quantity type (weight, resting heart rate, HRV, VO2 max, blood oxygen, ...). |
@@ -34,10 +43,13 @@ through a read-only API. Nothing here can change any data.
 | `get_samples(type, start_date, end_date, limit?, offset?)` | The individual records of one type — raw, undeduplicated. Up to 31 days per call. |
 | `get_state_of_mind(start_date, end_date)` | Logged moods and emotions: valence, labels, associations. |
 
-Every tool returns one compact JSON object. Errors come back as tool errors
-with the reason (a date in the wrong format, an unknown workout, the product
-API rejecting the token, the API being unreachable). Values are rounded to
-four decimals.
+Every tool except `list_users` also takes an optional `user`. Every tool
+returns one compact JSON object; the per-user ones carry `user_id` when a
+user was named or the instance is pinned, and omit it when the answer is the
+default person's. Errors come back as tool errors with the reason (a date in
+the wrong format, an unknown workout, a user this instance cannot read, the
+product API rejecting the token, the API being unreachable). Values are
+rounded to four decimals.
 
 ## The data model in brief
 
@@ -181,6 +193,7 @@ in the configured zone.
 | "When exactly did my heart rate spike yesterday?" | `get_samples(type=HKQuantityTypeIdentifierHeartRate, start_date, end_date)`; read the individual samples, never total them. |
 | "How have I been feeling lately?" | `get_state_of_mind(start_date, end_date)`; report the entries and their labels plainly, and say most days have none if so. |
 | "How old am I?" / "Who is this data for?" | `get_profile`. |
+| "Is my partner's data here too?" / "How did Alex sleep?" | `list_users`; if `multi_user` is true, pass their `user_id` as `user` to `get_sleep` (or any tool) and say whose data it is. If it is false, only the default person can be read — say so. |
 
 When a range is longer than 366 days, split it into several calls. When the
 person asks about "this week" or "last month", compute the dates from

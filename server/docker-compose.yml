@@ -176,6 +176,12 @@ services:
       # Every date the tools speak is a calendar day in this zone; the
       # product API does not report its own, so the two must agree.
       PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
+      # Optional: pin this connector to one person. Empty (the default)
+      # leaves the choice to each tool call — the API's PULS_USER_ID unless
+      # a call names another user, which the API's PULS_MULTI_USER gates.
+      # Deliberately not the API's PULS_USER_ID: pinning to that would make
+      # the connector unable to read anyone else even with the gate open.
+      PULS_USER_ID: ${PULS_MCP_USER_ID:-}
     ports:
       # Loopback only: the token grants read access to the health data, so
       # publish it only through an HTTPS proxy, like the API (e.g.
