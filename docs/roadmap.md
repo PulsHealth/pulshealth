@@ -71,19 +71,30 @@ viewer; never a real export). `README.md` § Components is where they belong.
 
 ## 4. Per-device tokens — SRV-8
 
-The weakest part of a published ingest surface, and the one the README and the
-protocol spec both already admit: one static `PULS_TOKEN` (`server/ingest/main.go`),
-and `X-User-ID` is unauthenticated tenant selection, so anyone holding the token
-can write — or delete — as any user. Failed-auth rate limiting narrows guessing;
-it does nothing about a leaked token.
+**Server side shipped (unreleased).** The ingest server issues per-device
+tokens from the CLI (`make devices ARGS='issue|list|rename|revoke …'`,
+`server/ingest/devices_cli.go`), stores only their SHA-256
+(`014_device_tokens.sql`), binds each to a user so `X-User-ID` must be absent
+or equal (403 otherwise, `server/ingest/auth.go`), records last use, revokes
+one at a time, and stamps every batch with the device that wrote it. The
+shared `PULS_TOKEN` keeps working and is on by default;
+`PULS_ALLOW_SHARED_TOKEN=false` turns it off, which is the setting that
+closes the `X-User-ID` hole. `schemaVersion` did not move: a v1 receiver is
+unaffected by how a server chose to issue tokens, and the protocol spec now
+says a receiver MAY bind a token to a user.
 
-The shape the plan settled on: enroll → pending → approve from the CLI, hashed
-at rest, last-seen recorded, revocable, and **bound to a user id** so the header
-stops being a free choice. The shared token keeps working through the
-transition. This is a schema change (a new `NNN_` migration), an ingest change,
-and a protocol documentation change in the same pull request — it does not move
-`schemaVersion`, because a v1 receiver is unaffected by how the server chose to
-issue tokens.
+What was deliberately left for a **client follow-up**, since each needs an
+app release:
+
+- Phone-side enrollment — an unauthenticated `POST /v1/devices/enroll` that
+  creates a *pending* row the operator approves (`devices approve`), so the
+  pairing flow is "scan, then approve on the server" rather than "issue on the
+  server, then type". The plan's enroll → pending → approve shape; the
+  `status` column already admits it.
+- The app's connection test telling a 403 (token bound to a different user
+  ID than the one configured on the phone) apart from a wrong token.
+- `scripts/bootstrap.sh` issuing a device token for the pairing block instead
+  of printing `PULS_TOKEN`, once the app can be paired that way.
 
 ## 5. Multi-user reads — SRV-11
 

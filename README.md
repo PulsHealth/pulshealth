@@ -164,8 +164,10 @@ Open the web viewer at `http://localhost:3001` on the server, or Grafana at
 
 Several people on one server: give each phone its own user ID under
 **Settings → User** (the default is a fixed UUID so a reinstall keeps its
-identity), and set `PULS_USER_ID` on the server to choose which user the
-product API and web viewer show.
+identity), issue each its own token with `make devices ARGS='issue --user
+<that user ID> --name "<label>"'` — a device token is bound to its user, so
+no phone can write as another — and set `PULS_USER_ID` on the server to
+choose which user the product API and web viewer show.
 
 ## Use it with AI
 
@@ -412,9 +414,13 @@ No. The app requests read access only, and its usage strings say so.
 - **Your data goes only to your server.** There is no PulsHealth service, no
   analytics, no crash reporting. The app makes requests to the URL you
   configure and nowhere else.
-- **One bearer token, today.** The ingest server accepts a single static
-  `PULS_TOKEN`; whoever holds it can upload and delete data for any user ID.
-  Per-device tokens bound to a user are planned. On the phone the token is
+- **Bearer tokens.** The ingest server accepts a shared static `PULS_TOKEN`
+  — whoever holds it can upload and delete data for any user ID — and
+  per-device tokens (`make devices ARGS='issue --user <uuid> --name <label>'`)
+  that are hashed at rest, bound to one user, revocable one at a time and
+  show when they were last used. The shared token stays on by default; set
+  `PULS_ALLOW_SHARED_TOKEN=false` once every phone has its own and it stops
+  authenticating. On the phone the token is
   kept in the Keychain (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, so
   background wakes can still reach it and a backup cannot carry it to another
   device), never in the sync-state file. Guessing it is slow, at least: ingest

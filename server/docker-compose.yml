@@ -100,7 +100,11 @@ services:
       # as the superuser instead, set INGEST_DB_USER=postgres and
       # INGEST_DB_PASSWORD to the same value as POSTGRES_PASSWORD in .env.
       DATABASE_URL: postgres://${INGEST_DB_USER:-ingest}:${INGEST_DB_PASSWORD:?set in .env}@db:5432/postgres?sslmode=disable
-      PULS_TOKEN: ${PULS_TOKEN:?set in .env}
+      # The shared bearer token. Optional since per-device tokens exist
+      # (`make devices ARGS='issue …'`): leave it empty, or set
+      # PULS_ALLOW_SHARED_TOKEN=false, and only device tokens authenticate.
+      PULS_TOKEN: ${PULS_TOKEN:-}
+      PULS_ALLOW_SHARED_TOKEN: ${PULS_ALLOW_SHARED_TOKEN:-true}
       LISTEN_ADDR: ":8080"
       # Whether to believe X-Forwarded-For when identifying the client an
       # auth-failure budget belongs to. Only true when a proxy that

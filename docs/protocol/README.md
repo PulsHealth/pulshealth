@@ -82,7 +82,7 @@ for hosts on the local network, where plain `http` is allowed.
 
 | Header | Value | Required | Notes |
 |---|---|---|---|
-| `Authorization` | `Bearer <token>` | yes | One static token per receiver. Compare in constant time. Wrong or missing: **401**. |
+| `Authorization` | `Bearer <token>` | yes | A bearer token. A receiver MAY accept one shared token, per-device tokens it issues itself, or both (the reference server does both — `server/README.md`, "Tokens"). Compare in constant time, or by hash lookup. Wrong, missing or revoked: **401**. |
 | `Content-Type` | `application/x-ndjson` | sent always | Receivers SHOULD NOT reject other values. |
 | `Content-Encoding` | `gzip` | sent always | Receivers MUST accept `gzip`; the reference server also accepts an absent or `identity` encoding (a plain body) and rejects anything else with 400. |
 | `X-Puls-Protocol` | `1` | sent by versioned clients | Absent on clients that predate versioning: treat as `1`. Any other value, including a non-integer, is refused with the fixed body in [7.3](#73-unsupported-protocol-version) **before the body is read**. Sent on every request, reads included. |
@@ -113,8 +113,12 @@ Authentication proves access to the receiver; `X-User-ID` selects the
 dataset. A receiver MUST scope every write and read by it, MUST create the
 user on first sight, and MUST NOT let one user's deletions touch another's
 rows. The app's default user ID is a fixed UUID so a reinstall keeps its
-identity; households set distinct IDs per phone. There is no binding of token
-to user in v1 (a planned reference-server feature, not a protocol change).
+identity; households set distinct IDs per phone. A receiver MAY bind a
+token to a user, in which case `X-User-ID` MUST be absent or equal to that
+user and any other value is **403** ([7.2](#72-errors)); the reference server
+does this for the per-device tokens it issues and not for its shared token.
+How tokens are issued and bound is the receiver's business, not the
+protocol's, so it does not move `schemaVersion`.
 
 ### 2.5 Size limits
 
@@ -576,7 +580,8 @@ a generic one.
 | Status | When | Retried by the app |
 |---|---|---|
 | 400 | Malformed input: bad JSON, header counts that do not match the lines, unknown `kind` or wrapper key, missing required field, malformed UUID, timestamp out of range, bad enum value, malformed `X-User-ID` or `X-Wake-ID`, bad gzip, unsupported `Content-Encoding`; and the fixed body of [7.3](#73-unsupported-protocol-version) | **no** |
-| 401 | Missing or wrong bearer token | no |
+| 401 | Missing, wrong or revoked bearer token | no |
+| 403 | `X-User-ID` names a user other than the one the token is bound to ([2.4](#24-user-identity)) | no |
 | 413 | Body or line over the receiver's limits | no |
 | 429 | Receiver asks the app to back off | yes |
 | 5xx | Anything transient: database down, deadlock, timeout, disk full | yes |
@@ -669,7 +674,9 @@ When the app tests a connection it calls `GET /v1/capabilities`
 ([9.1](#91-get-v1capabilities)). If that returns 404 it sends a header-only
 batch instead: every count 0, `reason` `manual`, a fresh `batchID`, `type`
 set to the heart-rate identifier. Any 2xx means the URL, the token, and the
-upload path work. Receivers MUST accept a header-only batch (fixture
+upload path work; a 401 is a wrong token and a 403 a token bound to a user
+other than the one the app is configured with ([2.4](#24-user-identity)).
+Receivers MUST accept a header-only batch (fixture
 [`06-empty-probe`](fixtures/06-empty-probe.ndjson)).
 
 ## 9. Optional read endpoints
@@ -694,7 +701,8 @@ signal, and `features` in the capabilities body is the explicit one).
 
 The endpoint sits behind bearer auth on purpose: the app's "Test connection"
 step validates URL and token together here, and a 401 is the earliest signal
-of a mistyped token. The minimal Python receiver advertises
+of a mistyped token (a 403, of a user ID that does not match the token's
+user). The minimal Python receiver advertises
 `["batches","profile"]`.
 
 ### 9.2 `GET /v1/stats`

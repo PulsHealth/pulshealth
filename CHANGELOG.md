@@ -24,7 +24,33 @@ operator action, and when it does this file says so at the top of the entry.
 
 ## Unreleased
 
-Nothing since 0.1.0.
+No operator action is required: the shared `PULS_TOKEN` keeps working
+exactly as before, and the new migration applies itself on the next
+`docker compose up -d`.
+
+### Added
+
+- **Per-device tokens** (`make devices ARGS='issue --user <uuid> --name
+  <label>'`, `list`, `rename`, `revoke`; SRV-8). Each is stored only as its
+  SHA-256, bound to one user, revocable on its own and stamped with its last
+  use. A request that presents one acts as that user: `X-User-ID` may be
+  absent or equal, anything else is **403** before the body is read. Every
+  `batches` row now records which device wrote it (`device_token_id`, NULL
+  for the shared token) and the per-batch log line carries `token_id`.
+  Migration `014_device_tokens.sql`.
+
+### Changed
+
+- `PULS_TOKEN` is optional. `PULS_ALLOW_SHARED_TOKEN` (default `true`) turns
+  the shared token off once every phone has its own; empty `PULS_TOKEN` does
+  the same. Ingest logs its auth mode at startup and warns when nothing at
+  all could authenticate. `scripts/bootstrap.sh` and `make pairing` accept
+  that mode instead of dying on an empty token.
+- A device-token lookup that fails because the database is unreachable is
+  **503 `authentication unavailable`**, never 401, and is not charged to the
+  auth-failure limiter; neither is a 403 user mismatch.
+- The `grafana` role loses SELECT on `device_tokens` (revoked by
+  `099_read_roles.sh` on every run).
 
 ## [0.1.0] - 2026-09-14
 
