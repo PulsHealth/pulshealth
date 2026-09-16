@@ -6,6 +6,7 @@ import { GROUP_LABELS, GROUPS, type Group, typesInGroup } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
 import { isCumulative } from "@/lib/metrics";
 import { getDailySparklines, getLatestMany, getSeries, getStats, getTodayTotals } from "@/lib/queries";
+import { viewerUser } from "@/lib/viewer";
 import { formatCompact } from "@/lib/format";
 
 // Always render live from the DB — no build-time demo snapshot, no stale cache.
@@ -42,12 +43,13 @@ export default async function CategoryPage({ params }: { params: Promise<{ group
   const discIds = quantityIds.filter((id) => !isCumulative(id));
   const otherTypes = types.filter((t) => t.kind !== "quantity");
 
+  const user = await viewerUser();
   const [sparks, todays, latest, stats, otherSeries] = await Promise.all([
-    getDailySparklines(quantityIds),
-    getTodayTotals(cumIds),
-    getLatestMany(discIds),
-    getStats(),
-    Promise.all(otherTypes.map((t) => getSeries(t.identifier, "M"))),
+    getDailySparklines(user, quantityIds),
+    getTodayTotals(user, cumIds),
+    getLatestMany(user, discIds),
+    getStats(user),
+    Promise.all(otherTypes.map((t) => getSeries(user, t.identifier, "M"))),
   ]);
   const otherById = new Map(otherSeries.map((s) => [s.identifier, s]));
 

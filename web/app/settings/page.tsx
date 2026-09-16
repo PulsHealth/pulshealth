@@ -2,12 +2,13 @@ import { PageHeader } from "@/components/PageHeader";
 import { MapStyleSettings } from "@/components/MapStyleSettings";
 import { SettingsView } from "@/components/SettingsView";
 import { getProfile } from "@/lib/queries";
+import { viewerUser } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings — PulsHealth" };
 
 export default async function SettingsPage() {
-  const profile = await getProfile();
+  const profile = await getProfile(await viewerUser());
   return (
     <>
       <PageHeader

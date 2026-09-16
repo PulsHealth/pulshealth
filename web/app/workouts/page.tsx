@@ -5,6 +5,7 @@ import { WorkoutIcon, ChevronRight } from "@/components/Icons";
 import { formatActivity } from "@/lib/activity";
 import { GROUP_COLOR } from "@/lib/colors";
 import { getWorkouts } from "@/lib/queries";
+import { viewerUser } from "@/lib/viewer";
 import { formatCompact, formatDuration, formatFull } from "@/lib/format";
 
 // Always render live from the DB — no build-time demo snapshot, no stale cache.
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Workouts — PulsHealth" };
 
 export default async function WorkoutsPage() {
-  const workouts = await getWorkouts(120);
+  const workouts = await getWorkouts(await viewerUser(), 120);
   const color = GROUP_COLOR.workouts;
 
   const totalDur = workouts.reduce((s, w) => s + w.durationS, 0);

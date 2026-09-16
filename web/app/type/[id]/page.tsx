@@ -8,6 +8,7 @@ import { GROUP_LABELS, typeByIdentifier } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
 import { isCumulative, parseRange, RANGES } from "@/lib/metrics";
 import { getLatestMany, getSeries, getStats, getTodayTotals } from "@/lib/queries";
+import { viewerUser } from "@/lib/viewer";
 import { displayUnit, formatCompact, formatFull, formatValue, relativeTime } from "@/lib/format";
 
 // Always render live from the DB — no build-time demo snapshot, no stale cache.
@@ -48,11 +49,12 @@ export default async function TypePage({
   const color = GROUP_COLOR[type.group];
   const cumulative = isCumulative(id);
 
+  const user = await viewerUser();
   const [series, latestMap, todays, stats] = await Promise.all([
-    getSeries(id, range),
-    getLatestMany([id]),
-    cumulative ? getTodayTotals([id]) : Promise.resolve(new Map<string, number>()),
-    getStats(),
+    getSeries(user, id, range),
+    getLatestMany(user, [id]),
+    cumulative ? getTodayTotals(user, [id]) : Promise.resolve(new Map<string, number>()),
+    getStats(user),
   ]);
 
   const vals = series.points.map((p) => p.value).filter(Number.isFinite);

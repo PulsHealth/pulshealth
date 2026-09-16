@@ -6,22 +6,24 @@ import { ChevronRight } from "@/components/Icons";
 import { formatActivity } from "@/lib/activity";
 import { GROUP_COLOR } from "@/lib/colors";
 import { getProfile, getWorkoutDetail, getWorkoutSeries } from "@/lib/queries";
+import { viewerUser } from "@/lib/viewer";
 import { formatFull, formatTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ uuid: string }> }) {
   const { uuid } = await params;
-  const w = await getWorkoutDetail(uuid);
+  const w = await getWorkoutDetail(await viewerUser(), uuid);
   return { title: w ? `${formatActivity(w.activityType)} — PulsHealth` : "Workout — PulsHealth" };
 }
 
 export default async function WorkoutDetailPage({ params }: { params: Promise<{ uuid: string }> }) {
   const { uuid } = await params;
-  const w = await getWorkoutDetail(uuid);
+  const user = await viewerUser();
+  const w = await getWorkoutDetail(user, uuid);
   if (!w) notFound();
 
-  const [series, profile] = await Promise.all([getWorkoutSeries(uuid), getProfile()]);
+  const [series, profile] = await Promise.all([getWorkoutSeries(user, uuid), getProfile(user)]);
   const title = formatActivity(w.activityType);
 
   return (
