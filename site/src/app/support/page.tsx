@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Bug, Mail } from "lucide-react";
-import { GitHubIcon } from "@/components/brand-icons";
+import { BookMarked, BookOpen, Bug, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +15,10 @@ export const metadata = {
 const supportOptions = [
   {
     title: "Project Documentation",
-    description: "Setup, the sync protocol, the database guide, and the AI assistant recipes — all in the repository, alongside the code they describe.",
-    icon: GitHubIcon,
-    href: GITHUB,
+    description: "Setup, the sync protocol, the database guide, and the AI assistant recipes — rendered here from the repository, alongside the code they describe.",
+    icon: BookMarked,
+    href: "/docs",
     cta: "Read the Docs",
-    external: true,
   },
   {
     title: "Report an Issue",

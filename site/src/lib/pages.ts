@@ -66,6 +66,14 @@ export const STATIC_PAGES: SearchItem[] = [
     icon: 'Search',
   },
   {
+    id: 'page-docs',
+    type: 'page',
+    title: 'Documentation',
+    description: 'The sync protocol spec, self-hosting, AI assistants, bulk export and the database guide',
+    href: '/docs',
+    icon: 'BookOpen',
+  },
+  {
     id: 'page-blog',
     type: 'page',
     title: 'Blog',

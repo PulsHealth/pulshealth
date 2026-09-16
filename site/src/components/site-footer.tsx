@@ -10,10 +10,11 @@ const footerLinks: Record<string, FooterLink[]> = {
     { title: "iOS App", href: "/app" },
     { title: "Self-Hosted Server", href: "/sync" },
     { title: "Source on GitHub", href: GITHUB, external: true },
-    { title: "Sync Protocol", href: `${GITHUB}/tree/main/docs/protocol`, external: true },
-    { title: "Use It With AI", href: `${GITHUB}/blob/main/docs/ai.md`, external: true },
+    { title: "Sync Protocol", href: "/docs/protocol" },
+    { title: "Use It With AI", href: "/docs/ai" },
   ],
   resources: [
+    { title: "Documentation", href: "/docs" },
     { title: "Knowledge Base", href: "/knowledge-base" },
     { title: "Blog", href: "/blog" },
     { title: "Support", href: "/support" },
