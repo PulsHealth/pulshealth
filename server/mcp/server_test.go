@@ -25,7 +25,25 @@ var wantTools = []string{
 	"get_workout",
 	"get_workout_series",
 	"list_available_types",
+	"list_users",
 	"list_workouts",
+}
+
+// schemaProperties returns the "properties" of a tool's input schema,
+// whatever concrete type the transport decoded it into.
+func schemaProperties(t *testing.T, schema any) map[string]any {
+	t.Helper()
+	b, err := json.Marshal(schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Properties map[string]any `json:"properties"`
+	}
+	if err := json.Unmarshal(b, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	return decoded.Properties
 }
 
 func toolNames(res *mcp.ListToolsResult) []string {
@@ -87,6 +105,18 @@ func TestServer_EndToEndInMemory(t *testing.T) {
 		}
 		if tool.InputSchema == nil {
 			t.Errorf("tool %s has no input schema", tool.Name)
+			continue
+		}
+		// Every per-user tool advertises the optional user property;
+		// list_users, which is about users rather than for one, does not.
+		props := schemaProperties(t, tool.InputSchema)
+		_, hasUser := props["user"]
+		if tool.Name == "list_users" {
+			if hasUser {
+				t.Errorf("list_users takes a user argument")
+			}
+		} else if !hasUser {
+			t.Errorf("tool %s has no user property in its input schema: %v", tool.Name, props)
 		}
 	}
 
