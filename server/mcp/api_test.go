@@ -241,6 +241,29 @@ var fixtureStateOfMind = map[string]any{"entries": []StateOfMindEntry{{
 	Associations:          []string{"family"},
 }}}
 
+const (
+	defaultUserID = "5ea4d000-0000-4000-8000-000000000001"
+	otherUserID   = "7b2c9e10-1111-4222-8333-444455556666"
+)
+
+// Two people share the server: the seeded default, who synced, and a
+// second phone that has not yet.
+var fixtureUsers = UsersResponse{
+	Users: []User{
+		{
+			UserID: defaultUserID, Name: ptr("Test Person"), Email: ptr("test@example.com"),
+			CreatedAt: time.Date(2026, 1, 21, 9, 0, 0, 0, time.UTC).UnixMilli(),
+			LastSync:  ptr(time.Date(2026, 9, 6, 22, 30, 0, 0, time.UTC).UnixMilli()),
+			Batches:   1200, UploadedSamples: 3_400_000,
+		},
+		{
+			UserID: otherUserID, CreatedAt: time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC).UnixMilli(),
+		},
+	},
+	Default:   defaultUserID,
+	MultiUser: false,
+}
+
 func TestNewAPIClient_ValidatesURL(t *testing.T) {
 	for _, bad := range []string{"", "localhost:8081", "ftp://host", "http://", "not a url"} {
 		if _, err := NewAPIClient(bad, "t", nil); err == nil {
@@ -315,6 +338,81 @@ func TestAPIClient_SendsBearerAndPath(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "401") || !strings.Contains(err.Error(), "PULS_API_TOKEN") {
 		t.Errorf("401 message lacks status or hint: %s", err)
+	}
+}
+
+// A pinned client names its user on every read, an unpinned one on none —
+// the API's default applies then — and /v1/users, a listing rather than a
+// per-user read, never carries it.
+func TestAPIClient_SendsUserWhenPinned(t *testing.T) {
+	f := newFakeAPI(t)
+	f.respond("/v1/profile", http.StatusOK, fixtureProfile)
+	f.respond("/v1/metrics/latest", http.StatusOK, fixtureLatest)
+	f.respond("/v1/users", http.StatusOK, fixtureUsers)
+	ctx := context.Background()
+
+	plain := f.client(t)
+	if _, err := plain.Profile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if q := f.lastQuery(t, "/v1/profile"); q.Has("user") {
+		t.Errorf("unpinned client sent user=%q", q.Get("user"))
+	}
+	if plain.User() != "" {
+		t.Errorf("User() = %q, want empty", plain.User())
+	}
+
+	pinned := plain.ForUser(otherUserID)
+	if plain.User() != "" {
+		t.Error("ForUser changed the receiver")
+	}
+	if pinned.User() != otherUserID {
+		t.Errorf("User() = %q", pinned.User())
+	}
+	if _, err := pinned.Profile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.lastQuery(t, "/v1/profile").Get("user"); got != otherUserID {
+		t.Errorf("user = %q, want %q (a nil query must still carry it)", got, otherUserID)
+	}
+	// Alongside the call's own parameters, not instead of them.
+	if _, err := pinned.LatestMetrics(ctx, []string{"HKQuantityTypeIdentifierBodyMass"}); err != nil {
+		t.Fatal(err)
+	}
+	q := f.lastQuery(t, "/v1/metrics/latest")
+	if q.Get("user") != otherUserID || q.Get("types") != "HKQuantityTypeIdentifierBodyMass" {
+		t.Errorf("query = %v", q)
+	}
+
+	users, err := pinned.Users(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q := f.lastQuery(t, "/v1/users"); q.Has("user") {
+		t.Errorf("/v1/users carried user=%q", q.Get("user"))
+	}
+	if len(users.Users) != 2 || users.Default != defaultUserID || users.MultiUser {
+		t.Errorf("users = %+v", users)
+	}
+	if u := users.Users[1]; u.LastSync != nil || u.Name != nil {
+		t.Errorf("never-synced user = %+v, want nil lastSync and name", u)
+	}
+}
+
+// The API's 403 is the multi-user gate; the model needs to be told what it
+// means rather than left to retry.
+func TestAPIClient_ForbiddenExplainsMultiUserGate(t *testing.T) {
+	f := newFakeAPI(t)
+	f.respond("/v1/profile", http.StatusForbidden, map[string]string{"error": "multi-user reads are disabled"})
+	_, err := f.client(t).ForUser(otherUserID).Profile(context.Background())
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.Status != http.StatusForbidden {
+		t.Fatalf("err = %v, want 403 APIError", err)
+	}
+	for _, want := range []string{"403", "multi-user reads are disabled", "PULS_MULTI_USER", "list_users"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("403 message %q lacks %q", err, want)
+		}
 	}
 }
 

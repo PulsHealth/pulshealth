@@ -300,7 +300,22 @@ func TestLoadConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.apiURL != "http://api:8081/" || cfg.loc.String() != "Europe/Berlin" || cfg.mcpToken != "m" {
+	if cfg.apiURL != "http://api:8081/" || cfg.loc.String() != "Europe/Berlin" || cfg.mcpToken != "m" || cfg.userID != "" {
 		t.Errorf("config = %+v", cfg)
+	}
+
+	// PULS_USER_ID pins the instance; it must be a UUID, and it is
+	// normalised to the lower-case form the API renders.
+	cfg, err = loadConfig(env(map[string]string{"PULS_API_TOKEN": "t", "PULS_USER_ID": " " + strings.ToUpper(otherUserID) + " "}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.userID != otherUserID {
+		t.Errorf("userID = %q, want %q", cfg.userID, otherUserID)
+	}
+	for _, bad := range []string{"alice", "5ea4d000", "5ea4d000-0000-4000-8000-00000000000g"} {
+		if _, err := loadConfig(env(map[string]string{"PULS_API_TOKEN": "t", "PULS_USER_ID": bad})); err == nil || !strings.Contains(err.Error(), "PULS_USER_ID") {
+			t.Errorf("PULS_USER_ID=%q: err = %v, want a PULS_USER_ID error", bad, err)
+		}
 	}
 }

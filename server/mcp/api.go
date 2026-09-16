@@ -221,6 +221,27 @@ type StateOfMindEntry struct {
 	Associations          []string `json:"associations"`
 }
 
+// User is one entry of GET /v1/users. createdAt and lastSync are epoch
+// milliseconds; lastSync is nil for a user that never synced.
+type User struct {
+	UserID          string  `json:"userID"`
+	Name            *string `json:"name"`
+	Email           *string `json:"email"`
+	CreatedAt       int64   `json:"createdAt"`
+	LastSync        *int64  `json:"lastSync"`
+	Batches         int64   `json:"batches"`
+	UploadedSamples int64   `json:"uploadedSamples"`
+}
+
+// UsersResponse is GET /v1/users: every user with rows, which one the API
+// answers for when no user is named, and whether it will answer for any
+// other (PULS_MULTI_USER).
+type UsersResponse struct {
+	Users     []User `json:"users"`
+	Default   string `json:"default"`
+	MultiUser bool   `json:"multiUser"`
+}
+
 // APIError is a non-2xx answer from the product API. It surfaces to the
 // model as a tool error carrying the status, so the assistant can say what
 // went wrong (token rejected, workout not found, ...) instead of guessing.
@@ -238,17 +259,26 @@ func (e *APIError) Error() string {
 		b.WriteString(": ")
 		b.WriteString(e.Message)
 	}
-	if e.Status == http.StatusUnauthorized {
+	switch e.Status {
+	case http.StatusUnauthorized:
 		b.WriteString(" (the MCP server's PULS_API_TOKEN does not match the product API's)")
+	case http.StatusForbidden:
+		// The API's one 403: a user other than its default was named while
+		// PULS_MULTI_USER is off. Say so, or the model retries blindly.
+		b.WriteString(" (the product API's PULS_MULTI_USER is off, so only its default user can be read: " +
+			"omit user, or call list_users to see who that is)")
 	}
 	return b.String()
 }
 
-// APIClient reads the product API with one bearer token.
+// APIClient reads the product API with one bearer token, optionally for
+// one user: when user is set every request carries user=<uuid>, which the
+// API resolves per request (its own PULS_USER_ID when absent).
 type APIClient struct {
 	base  *url.URL
 	token string
 	http  *http.Client
+	user  string
 }
 
 // NewAPIClient validates baseURL (an absolute http(s) URL, any trailing slash
@@ -287,9 +317,28 @@ func NewAPIClient(baseURL, token string, hc *http.Client) (*APIClient, error) {
 // built by some other path.
 func (c *APIClient) BaseURL() string { return c.base.Redacted() }
 
+// ForUser returns a client that names userID on every request. An empty
+// userID returns a client that names none, so the API answers for its
+// default user. The receiver is not changed.
+func (c *APIClient) ForUser(userID string) *APIClient {
+	cp := *c
+	cp.user = userID
+	return &cp
+}
+
+// User is the user id this client names on every request; empty means the
+// API's default.
+func (c *APIClient) User() string { return c.user }
+
 func (c *APIClient) get(ctx context.Context, path string, query url.Values, out any) error {
 	u := *c.base
 	u.Path = c.base.Path + path
+	if c.user != "" {
+		if query == nil {
+			query = url.Values{}
+		}
+		query.Set("user", c.user)
+	}
 	u.RawQuery = query.Encode()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
@@ -493,6 +542,17 @@ func (c *APIClient) StateOfMind(ctx context.Context, startMS, endMS int64) ([]St
 		return nil, err
 	}
 	return out.Entries, nil
+}
+
+// Users is GET /v1/users. It is a listing, not a per-user read, so the
+// client's user is deliberately not sent: a pinned instance can still learn
+// who the API's default is and whether multi-user reads are on.
+func (c *APIClient) Users(ctx context.Context) (*UsersResponse, error) {
+	var out UsersResponse
+	if err := c.ForUser("").get(ctx, "/v1/users", nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // Healthz probes the API's unauthenticated liveness endpoint, which also
