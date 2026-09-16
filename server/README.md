@@ -758,6 +758,7 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
 - `GET /v1/sleep/daily?start=...&end=...`
 - `GET /v1/samples?type=...&start=...&end=...&limit=1000&offset=0`
 - `GET /v1/state-of-mind?start=...&end=...`
+- `GET /v1/summary?range=7d|14d|30d|90d&format=markdown|json`
 - `GET /v1/export?format=csv|jsonl&dataset=...&start=...&end=...`
 - `GET /healthz`
 
@@ -786,6 +787,21 @@ each stream by bucket-averaging while keeping the true first and last point
 (`maxPoints` defaults to 500, caps at 5000); `totalPoints` says how many were
 recorded. `/v1/state-of-mind` returns logged State of Mind entries, at most
 366 days per request.
+
+`/v1/summary` returns the last `range` calendar days (`7d` by default;
+`14d`, `30d`, `90d`; ending today in `PULS_TIME_ZONE`) as one **markdown
+page** of under sixty lines, for pasting into a chat that has no MCP
+connection ([`docs/ai.md`](../docs/ai.md)): a header naming the user, the
+days and the zone, then a section for each kind of data that exists —
+activity (steps, active energy, exercise minutes, stand hours as daily means
+and totals), heart (resting heart rate, HRV), sleep (time asleep per night),
+workouts (count, time, distance, most frequent activities), body (newest
+weight and body fat) — and a coverage line (last sync, days with data, and
+the deduplication reminder). It reads the same daily surfaces as the
+endpoints above — `metric_daily`, `activity_summaries`, the sleep nights,
+the workout summaries, the newest sample of two body types — and never a
+raw hypertable, so it is cheap. `format=json` returns the same numbers as
+a `Summary` object; `/openapi.json` describes both.
 
 `/v1/export` returns a whole range as a **file** — streamed CSV or JSONL,
 `Content-Disposition: attachment` — instead of a JSON document, for a

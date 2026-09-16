@@ -148,10 +148,8 @@ health data (today's `ShareLink` exports the diagnostics bundle, not samples).
 Both are "later" for a reason: the HTTP path is what everyone uses. Do APP-11
 only when a second sink actually exists to justify it.
 
-## 8. AI extras — AI-6, AI-8
+## 8. AI extras — AI-8
 
-- **AI-6, `GET /v1/summary?range=7d` returning compact markdown.** Cheap, and
-  useful for pasting into a chat that has no MCP connection.
 - **AI-8, reframe the exploration notebook.** `notebooks/healthkit_database_exploration.ipynb`
   is still framed as a database tour; the plan wanted an "analyze your data"
   version with an LLM section.
