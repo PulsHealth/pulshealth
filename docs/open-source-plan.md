@@ -352,7 +352,11 @@ the app syncs to it, with version negotiation and safe token handling.
   SRV-6 scoped role default, SRV-7 rate limit, SRV-9 backups, SRV-10 web
   auth, SRV-12.
 - APP-9 QR pairing on the client side of SRV-4's printed QR.
-- Docs site on `pulshealth.com` (static, from `docs/`).
+- Docs site on `pulshealth.com` (static, from `docs/`) — **done** (2026-09),
+  as a third content source in the existing `site/` export rather than a
+  second site: `/docs/` renders the protocol spec, `server/README.md`,
+  `docs/ai.md`, `docs/export.md` and `docs/database-guide.md` from the
+  repository (`site/src/lib/docs.ts`).
 
 Exit: a Linux box with Docker goes from nothing to paired and syncing in
 under ten minutes without editing a file by hand.
