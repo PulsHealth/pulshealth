@@ -51,7 +51,7 @@ func TestGetProfile(t *testing.T) {
 	s := f.service(t, "Europe/Berlin")
 
 	var out profileOutput
-	res, _, err := s.getProfile(context.Background(), nil, nil)
+	res, _, err := s.getProfile(context.Background(), nil, userInput{})
 	resultJSON(t, res, err, &out)
 
 	if out.UserID != fixtureProfile.UserID || *out.Name != "Test Person" || *out.BiologicalSex != "female" {
@@ -72,7 +72,7 @@ func TestGetProfile(t *testing.T) {
 func TestGetProfile_PropagatesNotFound(t *testing.T) {
 	f := newFakeAPI(t)
 	f.respond("/v1/profile", http.StatusNotFound, map[string]string{"error": "profile not found"})
-	_, _, err := f.service(t, "UTC").getProfile(context.Background(), nil, nil)
+	_, _, err := f.service(t, "UTC").getProfile(context.Background(), nil, userInput{})
 	wantToolError(t, err, "404", "profile not found")
 }
 
@@ -87,7 +87,7 @@ func TestListAvailableTypes(t *testing.T) {
 	var generic struct {
 		Types []map[string]any `json:"types"`
 	}
-	res, _, err := s.listAvailableTypes(context.Background(), nil, nil)
+	res, _, err := s.listAvailableTypes(context.Background(), nil, userInput{})
 	resultJSON(t, res, err, &out)
 	resultJSON(t, res, err, &generic)
 
@@ -676,4 +676,233 @@ func TestGetStateOfMind(t *testing.T) {
 
 	_, _, err = s.getStateOfMind(ctx, nil, rangeInput{StartDate: "2025-01-01", EndDate: "2026-09-07"})
 	wantToolError(t, err, "at most 366 days")
+}
+
+func TestListUsers(t *testing.T) {
+	f := newFakeAPI(t)
+	f.respond("/v1/users", http.StatusOK, fixtureUsers)
+	s := f.service(t, "Europe/Berlin")
+
+	var out usersOutput
+	var generic map[string]any
+	res, _, err := s.listUsers(context.Background(), nil, nil)
+	resultJSON(t, res, err, &out)
+	resultJSON(t, res, err, &generic)
+
+	if out.DefaultUserID != defaultUserID || out.MultiUser || out.PinnedUserID != "" {
+		t.Errorf("header = %+v", out)
+	}
+	if _, present := generic["pinned_user_id"]; present {
+		t.Errorf("pinned_user_id rendered on an unpinned instance: %v", generic)
+	}
+	if len(out.Users) != 2 {
+		t.Fatalf("users = %+v", out.Users)
+	}
+	u := out.Users[0]
+	if u.UserID != defaultUserID || *u.Name != "Test Person" || !u.IsDefault || u.Batches != 1200 || u.UploadedSamples != 3_400_000 {
+		t.Errorf("default user = %+v", u)
+	}
+	if u.CreatedAt != "2026-01-21T10:00:00+01:00" || u.LastSync == nil || *u.LastSync != "2026-09-07T00:30:00+02:00" {
+		t.Errorf("instants = %s / %v (epoch-ms should read as local ISO 8601)", u.CreatedAt, u.LastSync)
+	}
+	other := out.Users[1]
+	if other.UserID != otherUserID || other.IsDefault || other.LastSync != nil || other.Name != nil {
+		t.Errorf("never-synced user = %+v", other)
+	}
+
+	// A pinned instance says so, so the model knows the other rows are
+	// out of reach here.
+	pinned := newService(f.client(t).ForUser(otherUserID), mustZone(t, "UTC"))
+	res, _, err = pinned.listUsers(context.Background(), nil, nil)
+	resultJSON(t, res, err, &out)
+	if out.PinnedUserID != otherUserID {
+		t.Errorf("pinned_user_id = %q, want %q", out.PinnedUserID, otherUserID)
+	}
+	if q := f.lastQuery(t, "/v1/users"); q.Has("user") {
+		t.Errorf("/v1/users carried user=%q from the pin", q.Get("user"))
+	}
+
+	f.respond("/v1/users", http.StatusInternalServerError, map[string]string{"error": "users failed"})
+	_, _, err = s.listUsers(context.Background(), nil, nil)
+	wantToolError(t, err, "500", "users failed")
+}
+
+// perUserCall drives one tool with the given user and returns the API
+// path it reads, so the same table serves the pass-through and the pinned
+// cases.
+type perUserCall struct {
+	tool string
+	path string
+	call func(s *service, user string) (*mcp.CallToolResult, error)
+}
+
+func perUserCalls() []perUserCall {
+	ctx := context.Background()
+	rng := func(user string) rangeInput {
+		return rangeInput{StartDate: "2026-09-06", EndDate: "2026-09-06", User: user}
+	}
+	return []perUserCall{
+		{"get_profile", "/v1/profile", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.getProfile(ctx, nil, userInput{User: u})
+			return r, err
+		}},
+		{"list_available_types", "/v1/catalog/types", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.listAvailableTypes(ctx, nil, userInput{User: u})
+			return r, err
+		}},
+		{"get_latest_metrics", "/v1/metrics/latest", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.getLatestMetrics(ctx, nil, typesInput{Types: []string{"HKQuantityTypeIdentifierBodyMass"}, User: u})
+			return r, err
+		}},
+		{"get_daily_metrics", "/v1/metrics/daily", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.getDailyMetrics(ctx, nil, dailyInput{Types: []string{"HKQuantityTypeIdentifierStepCount"}, StartDate: "2026-03-28", EndDate: "2026-03-29", User: u})
+			return r, err
+		}},
+		{"get_activity_rings", "/v1/activity/summary", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.getActivityRings(ctx, nil, rng(u))
+			return r, err
+		}},
+		{"list_workouts", "/v1/workouts", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.listWorkouts(ctx, nil, workoutsInput{User: u})
+			return r, err
+		}},
+		{"get_workout", "/v1/workouts/" + workoutUUID, func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.getWorkout(ctx, nil, workoutInput{UUID: workoutUUID, User: u})
+			return r, err
+		}},
+		{"get_sleep", "/v1/sleep/daily", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.getSleep(ctx, nil, rng(u))
+			return r, err
+		}},
+		{"get_samples", "/v1/samples", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.getSamples(ctx, nil, samplesInput{Type: "HKCategoryTypeIdentifierSleepAnalysis", StartDate: "2026-09-20", EndDate: "2026-09-21", User: u})
+			return r, err
+		}},
+		{"get_workout_series", "/v1/workouts/" + workoutUUID + "/series", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.getWorkoutSeries(ctx, nil, workoutSeriesInput{UUID: workoutUUID, User: u})
+			return r, err
+		}},
+		{"get_state_of_mind", "/v1/state-of-mind", func(s *service, u string) (*mcp.CallToolResult, error) {
+			r, _, err := s.getStateOfMind(ctx, nil, rng(u))
+			return r, err
+		}},
+	}
+}
+
+// fakeAPIWithEveryRoute answers every per-user route with its fixture.
+func fakeAPIWithEveryRoute(t *testing.T) *fakeAPI {
+	t.Helper()
+	f := newFakeAPI(t)
+	f.respond("/v1/profile", http.StatusOK, fixtureProfile)
+	f.respond("/v1/catalog/types", http.StatusOK, fixtureCatalog)
+	f.respond("/v1/metrics/latest", http.StatusOK, fixtureLatest)
+	f.respond("/v1/metrics/daily", http.StatusOK, fixtureDaily)
+	f.respond("/v1/activity/summary", http.StatusOK, fixtureActivity)
+	f.respond("/v1/workouts", http.StatusOK, WorkoutsPage{Workouts: []WorkoutSummary{fixtureWorkoutSummary}})
+	f.respond("/v1/workouts/"+workoutUUID, http.StatusOK, fixtureWorkoutDetail())
+	f.respond("/v1/sleep/daily", http.StatusOK, fixtureSleep)
+	f.respond("/v1/samples", http.StatusOK, fixtureSamples)
+	f.respond("/v1/workouts/"+workoutUUID+"/series", http.StatusOK, fixtureSeries())
+	f.respond("/v1/state-of-mind", http.StatusOK, fixtureStateOfMind)
+	return f
+}
+
+// userIDOf reads the user_id a tool result carries ("" when absent).
+func userIDOf(t *testing.T, res *mcp.CallToolResult) string {
+	t.Helper()
+	var generic map[string]any
+	resultJSON(t, res, nil, &generic)
+	id, _ := generic["user_id"].(string)
+	return id
+}
+
+// Every per-user tool forwards user= to the API when the call names one,
+// omits it otherwise, and echoes the user it read in its output.
+func TestTools_PassUserArgument(t *testing.T) {
+	f := fakeAPIWithEveryRoute(t)
+	s := f.service(t, "Europe/Berlin")
+
+	for _, tc := range perUserCalls() {
+		t.Run(tc.tool, func(t *testing.T) {
+			res, err := tc.call(s, "")
+			if err != nil {
+				t.Fatalf("without user: %v", err)
+			}
+			if q := f.lastQuery(t, tc.path); q.Has("user") {
+				t.Errorf("no user named, yet the API saw user=%q", q.Get("user"))
+			}
+			// get_profile's user_id comes from the API and is always set; the
+			// others carry it only when the user was named or pinned.
+			if id := userIDOf(t, res); tc.tool != "get_profile" && id != "" {
+				t.Errorf("user_id = %q on a default-user read, want none", id)
+			}
+
+			res, err = tc.call(s, " "+strings.ToUpper(otherUserID)+" ")
+			if err != nil {
+				t.Fatalf("with user: %v", err)
+			}
+			if got := f.lastQuery(t, tc.path).Get("user"); got != otherUserID {
+				t.Errorf("user = %q, want %q (trimmed, lower-cased)", got, otherUserID)
+			}
+			if tc.tool != "get_profile" {
+				if id := userIDOf(t, res); id != otherUserID {
+					t.Errorf("user_id = %q, want %q", id, otherUserID)
+				}
+			}
+
+			before := len(f.callsTo(tc.path))
+			if _, err := tc.call(s, "alice"); err == nil || !strings.Contains(err.Error(), "not a user id") {
+				t.Errorf("user=alice: err = %v, want a user id error", err)
+			}
+			if len(f.callsTo(tc.path)) != before {
+				t.Error("a malformed user reached the API")
+			}
+		})
+	}
+}
+
+// A pinned instance names its user on every read, accepts a call that
+// names the same user, and refuses one that names anyone else without
+// asking the API.
+func TestTools_PinnedInstanceRejectsOtherUser(t *testing.T) {
+	f := fakeAPIWithEveryRoute(t)
+	s := newService(f.client(t).ForUser(otherUserID), mustZone(t, "Europe/Berlin"))
+	s.now = func() time.Time { return fixedNow }
+
+	for _, tc := range perUserCalls() {
+		t.Run(tc.tool, func(t *testing.T) {
+			res, err := tc.call(s, "")
+			if err != nil {
+				t.Fatalf("pinned, no user: %v", err)
+			}
+			if got := f.lastQuery(t, tc.path).Get("user"); got != otherUserID {
+				t.Errorf("user = %q, want the pin %q", got, otherUserID)
+			}
+			if tc.tool != "get_profile" {
+				if id := userIDOf(t, res); id != otherUserID {
+					t.Errorf("user_id = %q, want the pin %q", id, otherUserID)
+				}
+			}
+
+			if _, err := tc.call(s, otherUserID); err != nil {
+				t.Errorf("naming the pinned user itself: %v", err)
+			}
+
+			before := len(f.callsTo(tc.path))
+			_, err = tc.call(s, defaultUserID)
+			wantToolError(t, err, "pinned", otherUserID, defaultUserID)
+			if len(f.callsTo(tc.path)) != before {
+				t.Error("a call for another user reached the API")
+			}
+		})
+	}
+}
+
+// The API's multi-user gate refuses with 403; the tool error explains it.
+func TestTools_ForbiddenUserIsExplained(t *testing.T) {
+	f := newFakeAPI(t)
+	f.respond("/v1/sleep/daily", http.StatusForbidden, map[string]string{"error": "multi-user reads are disabled"})
+	s := f.service(t, "UTC")
+	_, _, err := s.getSleep(context.Background(), nil, rangeInput{StartDate: "2026-09-06", EndDate: "2026-09-06", User: otherUserID})
+	wantToolError(t, err, "403", "multi-user reads are disabled", "PULS_MULTI_USER", "list_users")
 }

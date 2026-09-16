@@ -58,6 +58,11 @@ type config struct {
 	apiToken string
 	mcpToken string
 	loc      *time.Location
+	// userID pins this instance to one person: every request to the API
+	// names it, and a tool call naming anyone else is refused before the
+	// API is asked. Empty means unpinned — the API's own default user
+	// unless a call names one.
+	userID string
 }
 
 func loadConfig(getenv func(string) string) (config, error) {
@@ -72,12 +77,32 @@ func loadConfig(getenv func(string) string) (config, error) {
 	if cfg.apiToken == "" {
 		return cfg, errors.New("PULS_API_TOKEN must be set (the product API's bearer token, from server/.env)")
 	}
+	userID, err := loadUserID(getenv("PULS_USER_ID"))
+	if err != nil {
+		return cfg, err
+	}
+	cfg.userID = userID
 	loc, err := loadTimeZone(getenv("PULS_TIME_ZONE"))
 	if err != nil {
 		return cfg, err
 	}
 	cfg.loc = loc
 	return cfg, nil
+}
+
+// loadUserID validates the optional PULS_USER_ID (a UUID; empty means the
+// instance is not pinned). It is normalised to lower case, the form the
+// product API renders ids in, so a pinned id compares equal to one a tool
+// call copies out of list_users.
+func loadUserID(raw string) (string, error) {
+	id := strings.ToLower(strings.TrimSpace(raw))
+	if id == "" {
+		return "", nil
+	}
+	if !isUUID(id) {
+		return "", fmt.Errorf("PULS_USER_ID %q is not a UUID (leave it empty to serve the product API's default user)", strings.TrimSpace(raw))
+	}
+	return id, nil
 }
 
 // loadTimeZone resolves PULS_TIME_ZONE (an IANA name; empty means UTC). The
@@ -127,6 +152,7 @@ func run(httpAddr string, logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	api = api.ForUser(cfg.userID)
 	svc := newService(api, cfg.loc)
 	server := svc.newServer(version())
 
@@ -134,7 +160,7 @@ func run(httpAddr string, logger *slog.Logger) error {
 	defer stop()
 
 	if httpAddr == "" {
-		logger.Info("serving stdio", "api", api.BaseURL(), "time_zone", cfg.loc.String(), "version", version())
+		logger.Info("serving stdio", "api", api.BaseURL(), "time_zone", cfg.loc.String(), "user", userLogValue(cfg.userID), "version", version())
 		return server.Run(ctx, &mcp.StdioTransport{})
 	}
 
@@ -148,7 +174,7 @@ func run(httpAddr string, logger *slog.Logger) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("listening", "addr", httpAddr, "api", api.BaseURL(), "time_zone", cfg.loc.String(), "version", version())
+		logger.Info("listening", "addr", httpAddr, "api", api.BaseURL(), "time_zone", cfg.loc.String(), "user", userLogValue(cfg.userID), "version", version())
 		if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
@@ -164,6 +190,14 @@ func run(httpAddr string, logger *slog.Logger) error {
 	shCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	return httpSrv.Shutdown(shCtx)
+}
+
+// userLogValue renders the pin for the startup line.
+func userLogValue(userID string) string {
+	if userID == "" {
+		return "api default"
+	}
+	return userID
 }
 
 // httpHandler serves /mcp behind the bearer token and /healthz without it.

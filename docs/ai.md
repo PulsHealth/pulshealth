@@ -13,6 +13,7 @@ page is the client-side setup; the server's own README is
 
 | Ask about | Tool the assistant uses |
 |---|---|
+| Who has data on the server, if more than one person does | `list_users` |
 | Which data exists, how current it is, what day it is | `list_available_types` |
 | Who the data belongs to (name, age, sex) | `get_profile` |
 | Current weight, resting heart rate, HRV, VO2 max, blood oxygen, ... | `get_latest_metrics` |
@@ -34,6 +35,13 @@ records — that is what makes it useful for looking at particular readings and
 useless for totals. The assistant can also read `pulshealth://guide`, a short
 manual on the data model and its traps, and two ready-made prompts
 (`weekly_summary`, `compare_workouts`).
+
+When several phones sync to one server, every tool takes an optional `user`
+(a `user_id` from `list_users`); without it the assistant reads the API's
+default person. The API only honours another user when its `PULS_MULTI_USER`
+is on, and an MCP instance can be pinned to one person with `PULS_USER_ID`
+(`PULS_MCP_USER_ID` for the Compose service) so that a connector you hand
+to one household member can never be asked about another.
 
 **Not yet:** GPS routes, medication doses, ECGs and heartbeat series. They
 are in the database; no tool serves them.
@@ -272,6 +280,11 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
 - **Dates are epoch milliseconds** and the API does not report its zone, so
   tell the GPT which zone the server runs in (`PULS_TIME_ZONE`) in its
   instructions, or it will guess.
+- **The Action can name a user.** Every `/v1/*` operation takes an optional
+  `user` query parameter and `listUsers` names everyone with data, so a GPT
+  built on a shared server can read another household member's records if
+  the API's `PULS_MULTI_USER` is on — one more reason to keep the GPT
+  private. Leave `PULS_MULTI_USER` off unless you mean it.
 - The MCP server remains the better route wherever the client supports it:
   it speaks calendar days, keeps the model honest about units and
   double counting, and never needs a public endpoint.
@@ -331,8 +344,12 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
 - **HTTP mode only behind TLS.** The compose service binds to loopback;
   never publish port 8082 directly or over plain HTTP. See the security
   notes in `server/mcp/README.md`.
-- The assistant sees only what the product API serves for `PULS_USER_ID`;
-  nothing here can write to the database or to Apple Health.
+- With the API's `PULS_MULTI_USER` off (the default) the assistant sees only
+  what the product API serves for its `PULS_USER_ID`; naming anyone else is
+  a 403 the tool reports as such. With it on, every user with data is
+  readable through `user`, and pinning the MCP instance (`PULS_USER_ID`,
+  `PULS_MCP_USER_ID` in Compose) is how you narrow a given connector back to
+  one person. Nothing here can write to the database or to Apple Health.
 
 ## Troubleshooting
 

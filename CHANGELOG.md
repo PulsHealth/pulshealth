@@ -58,6 +58,9 @@ exactly as before, and the new migration applies itself on the next
   whose data to export, and a 403 is explained the way a 401 is.
 - web: a user switcher when the database holds more than one user;
   `?user=<uuid>` picks one (SRV-11).
+- MCP: `list_users`, and a `user` argument on every tool; `PULS_USER_ID`
+  pins an instance to one person (`PULS_MCP_USER_ID` for the Compose
+  service). Needs the product API's `user` parameter and `/v1/users` (SRV-11).
 
 ### Changed
 
