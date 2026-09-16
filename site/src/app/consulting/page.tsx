@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Mail, MessageSquare, BarChart3, Bot, Database, FileCode2, Github, Server } from "lucide-react";
+import { Mail, MessageSquare, BarChart3, Bot, Database, FileCode2, Server } from "lucide-react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -84,7 +85,7 @@ export default function ConsultingPage() {
             </QuoteRequestDialog>
             <Button asChild size="lg" variant="outline">
               <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
+                <GitHubIcon className="mr-2 h-4 w-4" />
                 Read the Source First
               </a>
             </Button>

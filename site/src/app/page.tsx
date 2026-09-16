@@ -1,6 +1,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowRight, BookOpen, Bot, Database, FileCode2, Github, Lock, Mail, Server, Smartphone } from "lucide-react";
+import { ArrowRight, BookOpen, Bot, Database, FileCode2, Lock, Mail, Server, Smartphone } from "lucide-react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AppStoreBadge } from "@/components/app-store-badge";
@@ -58,7 +59,7 @@ const valueProps = [
   {
     title: "Auditable by Design",
     description: "App, sync library, server stack, protocol and dashboards are all in one Apache-2.0 repository. Every privacy claim on this site is something you can check against the source rather than take on trust.",
-    icon: Github,
+    icon: GitHubIcon,
   },
 ];
 
@@ -88,7 +89,7 @@ export default function HomePage() {
             <AppStoreBadge />
             <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
               <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
+                <GitHubIcon className="mr-2 h-4 w-4" />
                 View on GitHub
               </a>
             </Button>
@@ -247,7 +248,7 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
               <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
+                <GitHubIcon className="mr-2 h-4 w-4" />
                 Read the Docs on GitHub
               </a>
             </Button>

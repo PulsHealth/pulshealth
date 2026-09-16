@@ -4,7 +4,8 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Menu, Smartphone, BookOpen, Bot, LifeBuoy, MessageCircle, FileText, Server, FileCode2, Github, Bug, Info } from "lucide-react"
+import { Menu, Smartphone, BookOpen, Bot, LifeBuoy, MessageCircle, FileText, Server, FileCode2, Bug, Info } from "lucide-react"
+import { GitHubIcon } from "@/components/brand-icons"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -32,7 +33,7 @@ type NavItem = {
   title: string;
   href: string;
   description: string;
-  icon: typeof LifeBuoy;
+  icon: React.ComponentType<{ className?: string }>;
   external?: boolean;
   section?: string;
   disabled?: boolean;
@@ -69,7 +70,7 @@ const project: NavItem[] = [
     title: "Source on GitHub",
     href: GITHUB,
     description: "App, server, protocol and dashboards — Apache-2.0",
-    icon: Github,
+    icon: GitHubIcon,
     external: true,
   },
 ]
@@ -221,7 +222,7 @@ export function SiteHeader() {
           <SearchTrigger />
           <Button asChild variant="ghost" size="icon" className="hidden md:inline-flex">
             <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-              <Github className="h-5 w-5" />
+              <GitHubIcon className="h-5 w-5" />
               <span className="sr-only">PulsHealth on GitHub</span>
             </a>
           </Button>
@@ -264,7 +265,7 @@ export function SiteHeader() {
                 <div className="pt-4 mt-auto border-t">
                   <Button asChild className="w-full bg-brand hover:bg-brand-dark text-brand-foreground h-12 text-base">
                     <a href={GITHUB} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
-                      <Github className="mr-2 h-4 w-4" />
+                      <GitHubIcon className="mr-2 h-4 w-4" />
                       View on GitHub
                     </a>
                   </Button>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Activity, ArrowRight, BarChart3, Bot, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Github, Heart, History, Lock, Mail, Moon, QrCode, RefreshCw, Scale, Server, Terminal, Utensils, Wind } from "lucide-react";
+import { Activity, ArrowRight, BarChart3, Bot, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Heart, History, Lock, Mail, Moon, QrCode, RefreshCw, Scale, Server, Terminal, Utensils, Wind } from "lucide-react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -111,7 +112,7 @@ export default function AppPage() {
             <AppStoreBadge />
             <Button asChild size="lg" variant="outline">
               <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
+                <GitHubIcon className="mr-2 h-4 w-4" />
                 Get the Source
               </a>
             </Button>
@@ -405,7 +406,7 @@ X-User-ID: <your user id>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="bg-white text-zinc-900 hover:bg-zinc-100">
               <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
+                <GitHubIcon className="mr-2 h-4 w-4" />
                 View on GitHub
               </a>
             </Button>
