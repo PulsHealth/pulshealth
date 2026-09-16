@@ -111,8 +111,8 @@ quiet answer for the default user); `GET /v1/users` lists who exists with
 their upload counts; `puls-export --user` and the OpenAPI document carry the
 parameter; `api_reader` reads `batches` for it. Built on that contract: the
 **web viewer** (merged alongside) lets you choose a user per session over the
-same parameter, and the **MCP server** takes the user as a tool argument and
-lists users in its own change. Still open after those: nothing
+same parameter, and the **MCP server** (merged too) takes the user as a tool
+argument, lists users, and can be pinned to one person. Still open: nothing
 binds the product API token to a user — with the gate on, `PULS_API_TOKEN`
 reads everyone — so a per-user read token (the read-side twin of §4) is the
 next step if a household wants a token per person rather than one for the

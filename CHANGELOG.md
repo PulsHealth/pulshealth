@@ -39,8 +39,8 @@ exactly as before, and the new migration applies itself on the next
   for the shared token) and the per-batch log line carries `token_id`.
   Migration `014_device_tokens.sql`.
 - **Per-request user scoping on the product API** (SRV-11, the API side;
-  the web viewer's switcher below rides on it and the MCP server follows
-  in its own change). Every
+  the web viewer's switcher and the MCP server's `user` argument below
+  ride on it). Every
   `/v1` route takes an optional `user=<uuid>` query parameter; absent, the
   request is answered for `PULS_USER_ID` exactly as before. `GET /v1/users`
   lists the users the deployment answers for — name, e-mail, `createdAt`,

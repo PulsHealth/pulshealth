@@ -386,7 +386,7 @@ channel) was skipped; the app went straight to the store.
 ### Later
 
 - SRV-8 per-device tokens (server side done; phone-side enrollment remains),
-  SRV-11 multi-user reads (API and web viewer done; MCP in flight), APP-11 sink factory,
+  SRV-11 multi-user reads (API, web viewer and MCP done; no per-user read token yet), APP-11 sink factory,
   APP-12 file export, AI-6..8.
 
 These, plus the release and submission work the phases above did not cover,
