@@ -336,6 +336,44 @@ button {
   color: var(--faint);
 }
 
+/* ── user switcher (sidebar) ───────────────────────────────────────────── */
+.user-switcher {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.user-switcher:hover,
+.user-switcher:focus-within {
+  background: var(--panel-strong);
+  color: var(--fg);
+}
+.user-switcher select {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 450;
+  cursor: pointer;
+  appearance: none;
+  text-overflow: ellipsis;
+}
+.user-switcher select:focus-visible {
+  outline: none;
+}
+.user-switcher option {
+  color: var(--fg);
+  background: var(--bg-elevated);
+}
+
 /* ── range selector / segmented control ────────────────────────────────── */
 .segmented {
   display: inline-flex;
