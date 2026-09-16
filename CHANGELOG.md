@@ -38,6 +38,24 @@ exactly as before, and the new migration applies itself on the next
   `batches` row now records which device wrote it (`device_token_id`, NULL
   for the shared token) and the per-batch log line carries `token_id`.
   Migration `014_device_tokens.sql`.
+- **Per-request user scoping on the product API** (SRV-11, the API side;
+  the web viewer's switcher below rides on it and the MCP server follows
+  in its own change). Every
+  `/v1` route takes an optional `user=<uuid>` query parameter; absent, the
+  request is answered for `PULS_USER_ID` exactly as before. `GET /v1/users`
+  lists the users the deployment answers for — name, e-mail, `createdAt`,
+  `lastSync`, `batches`, `uploadedSamples` from the `batches` log — plus
+  `default` and `multiUser`. `/openapi.json` describes the parameter on
+  every scoped operation.
+- `PULS_MULTI_USER` (`.env`, default `false`) decides whether `user=` may
+  name anyone but the default. **Off, another user is 403 `multi-user reads
+  are disabled`**, never a quiet answer for the default user; a value that
+  is not a UUID is 400; neither charges the auth-failure limiter. Turning it
+  on means the one static `PULS_API_TOKEN` — the token `docs/ai.md` says to
+  hand to a ChatGPT Action — reads every user on the server, so it stays
+  off until you want that.
+- `puls-export --user <uuid>` (default `$PULS_USER_ID`, else none) picks
+  whose data to export, and a 403 is explained the way a 401 is.
 - web: a user switcher when the database holds more than one user;
   `?user=<uuid>` picks one (SRV-11).
 
@@ -53,6 +71,9 @@ exactly as before, and the new migration applies itself on the next
   auth-failure limiter; neither is a 403 user mismatch.
 - The `grafana` role loses SELECT on `device_tokens` (revoked by
   `099_read_roles.sh` on every run).
+- The `api_reader` role gains SELECT on `batches` (for `/v1/users`; the
+  table holds no credential). No operator action: `099_read_roles.sh`
+  re-runs on the next `docker compose up -d`.
 
 ## [0.1.0] - 2026-09-14
 

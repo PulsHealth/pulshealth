@@ -138,9 +138,11 @@ services:
       DATABASE_URL: postgres://api_reader:${API_DB_PASSWORD}@db:5432/postgres?sslmode=disable
       PULS_API_TOKEN: ${PULS_API_TOKEN:?set in .env}
       LISTEN_ADDR: ":8081"
-      # Same viewer user as the web container; the API used to hardcode the
-      # seeded default regardless of this setting.
+      # The user a request is answered for when it names none (the same
+      # viewer user as the web container). ?user=<uuid> selects another one
+      # only when PULS_MULTI_USER is true; off, any other user is a 403.
       PULS_USER_ID: ${PULS_USER_ID:-5ea4d000-0000-4000-8000-000000000001}
+      PULS_MULTI_USER: ${PULS_MULTI_USER:-false}
       # Same calendar zone as the database (see the db service). The api
       # refuses to start on an unknown zone name.
       PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}

@@ -117,14 +117,23 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   default user, `ensureUser`s the row (FK target) before any insert, and tags
   every row with it. The `{"profile":…}` line carries the complete identity
   snapshot (name/email/dob/sex); null or omitted fields clear stored values.
-  DOB/sex feed HR zones. **Writes are already multi-user and reads are not:**
-  every schema this repository can build carries `user_id` from file 000, and
-  `ensureUser` creates whatever id arrives in the header, so a second phone's
-  rows land in a populated database without a wipe — but the product API and
-  the web viewer each serve exactly one `PULS_USER_ID`, so those rows are
-  stored and nothing shows them. Grafana's health dashboard is the one
-  exception: it has a `user` template variable over the `users` table. A
-  per-device token (`device_tokens`, `server/ingest/auth.go`, issued with
+  DOB/sex feed HR zones. **Writes are multi-user, and reads are scoped per
+  request:** every schema this repository can build carries `user_id` from
+  file 000, and `ensureUser` creates whatever id arrives in the header, so a
+  second phone's rows land in a populated database without a wipe. The
+  product API answers every `/v1` request for one user — the `user=<uuid>`
+  query parameter, else `PULS_USER_ID` — settled once by the `scopeUser`
+  middleware (`server/api/main.go`, after `auth`) and passed to every `Store`
+  read as an explicit argument; `GET /v1/users` lists who exists. Naming
+  anyone but the default is gated by `PULS_MULTI_USER` (default off): off, it
+  is **403 `multi-user reads are disabled`**, never a quiet answer for the
+  default user, and neither that nor a malformed value (400) charges the
+  auth-failure limiter. The MCP server takes the user as a tool argument and
+  the web viewer picks one per session (a cookie), both over that same
+  parameter; Grafana's health dashboard has its own `user` template variable
+  over the `users` table. The one static `PULS_API_TOKEN` is bound to nobody,
+  so turning the gate on widens what it reads to everyone on the server — the
+  reason it defaults to off. A per-device token (`device_tokens`, `server/ingest/auth.go`, issued with
   `make devices`) is bound to a user: `X-User-ID` must be absent or equal to
   it, anything else is 403. The shared `PULS_TOKEN` is not, so while it is
   enabled (`PULS_ALLOW_SHARED_TOKEN`, default true) `X-User-ID` remains
@@ -513,7 +522,12 @@ outside this repository — nothing here assumes a particular machine.
   plain SHA-256 (the preimage is 256 random bits; a salt would only cost the
   UNIQUE lookup), and `grafana` has SELECT on every table by default
   privilege, so `099_read_roles.sh` revokes it on `device_tokens` on every
-  run. `PULS_TOKEN` is optional now; do not make it required again.
+  run. `api_reader` is the opposite: an exact grant list with a `DO` block
+  that raises if the ACL set differs, so a table the product API newly reads
+  goes on BOTH the `GRANT` and the `expected_public` rows — `batches` joined
+  it for `/v1/users` (it holds no credential; a batch's token is an integer
+  id into `device_tokens`). `PULS_TOKEN` is optional now; do not make it
+  required again.
 - **`/healthz` is unauthenticated on both services, so it must not touch the
   pool per request** (`server/ingest/health.go`, `server/api/health.go` — again
   a copy). The database status is cached for two seconds and concurrent callers

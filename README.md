@@ -164,10 +164,15 @@ Open the web viewer at `http://localhost:3001` on the server, or Grafana at
 
 Several people on one server: give each phone its own user ID under
 **Settings → User** (the default is a fixed UUID so a reinstall keeps its
-identity), issue each its own token with `make devices ARGS='issue --user
+identity) and issue each its own token with `make devices ARGS='issue --user
 <that user ID> --name "<label>"'` — a device token is bound to its user, so
-no phone can write as another — and set `PULS_USER_ID` on the server to
-choose which user the product API and web viewer show.
+no phone can write as another. On the reading side `PULS_USER_ID` is the user
+shown by default; set `PULS_MULTI_USER=true` in `server/.env` and the product
+API answers for any user a request names (`?user=<uuid>`, listed by
+`GET /v1/users`), which the MCP server and the web viewer use to let you pick
+whose data you are looking at. Off, which is the default, every read is
+`PULS_USER_ID`'s and naming anyone else is refused — the API's one token
+reads everyone once the gate is on, so it is a deliberate switch.
 
 ## Use it with AI
 
