@@ -110,3 +110,12 @@ export interface SearchItem {
   category?: string;
   tags?: string[];
 }
+
+// A repository markdown document rendered under /docs/ (see lib/docs.ts)
+export interface DocPage {
+  slug: string;
+  source: string;
+  title: string;
+  description: string;
+  content: string;
+}
