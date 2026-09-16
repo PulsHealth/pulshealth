@@ -7,7 +7,6 @@ package main
 import (
 	"compress/gzip"
 	"context"
-	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -87,10 +86,19 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
+	// The shared token is optional since per-device tokens exist (SRV-8):
+	// empty, or PULS_ALLOW_SHARED_TOKEN=false, means only device tokens
+	// authenticate. See auth.go for the order the two are checked in.
 	token := os.Getenv("PULS_TOKEN")
-	if token == "" {
-		return errors.New("PULS_TOKEN must be set")
+	allowShared := true
+	if raw := os.Getenv("PULS_ALLOW_SHARED_TOKEN"); raw != "" {
+		parsed, err := strconv.ParseBool(raw)
+		if err != nil {
+			return fmt.Errorf("PULS_ALLOW_SHARED_TOKEN must be true or false, got %q", raw)
+		}
+		allowShared = parsed
 	}
+	allowShared = allowShared && token != ""
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		return errors.New("DATABASE_URL must be set")
@@ -120,10 +128,24 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
-	srv := newServer(NewStore(pool), token, trustProxyHeaders, logger)
+	store := NewStore(pool)
+	srv := newServer(store, store, token, allowShared, trustProxyHeaders, logger)
+	logAuthMode(logger, allowShared)
 	logger.Info("auth failure limiting",
 		"burst", authFailureBurst, "per_minute", authFailurePerMinute,
 		"trust_proxy_headers", trustProxyHeaders)
+	if !allowShared {
+		// Never fatal: the operator may be about to issue one. But an
+		// install with no accepted credential at all should say so.
+		n, err := store.ActiveDeviceTokenCount(ctx)
+		switch {
+		case err != nil:
+			logger.Warn("could not count device tokens", "err", err.Error())
+		case n == 0:
+			logger.Warn("no active device tokens and the shared token is disabled: nothing can authenticate",
+				"hint", "make devices ARGS='issue --user <uuid> --name <label>'")
+		}
+	}
 
 	httpSrv := &http.Server{
 		Addr:              addr,
@@ -197,8 +219,13 @@ type ingester interface {
 // Server holds handler dependencies.
 type Server struct {
 	store ingester
-	token string
-	log   *slog.Logger
+	// tokens resolves per-device bearer tokens (auth.go); nil means none.
+	tokens tokenResolver
+	// sharedToken is PULS_TOKEN; allowShared says whether it authenticates
+	// (false when PULS_ALLOW_SHARED_TOKEN=false or the token is empty).
+	sharedToken string
+	allowShared bool
+	log         *slog.Logger
 
 	// Per-client-IP token bucket charged by failed authentications only
 	// (see ratelimit.go).
@@ -212,10 +239,12 @@ type Server struct {
 	health healthCache
 }
 
-func newServer(store ingester, token string, trustProxyHeaders bool, log *slog.Logger) *Server {
+func newServer(store ingester, tokens tokenResolver, sharedToken string, allowShared, trustProxyHeaders bool, log *slog.Logger) *Server {
 	return &Server{
 		store:             store,
-		token:             token,
+		tokens:            tokens,
+		sharedToken:       sharedToken,
+		allowShared:       allowShared && sharedToken != "",
 		log:               log,
 		authFailures:      newFailureLimiter(),
 		trustProxyHeaders: trustProxyHeaders,
@@ -234,60 +263,6 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("GET /v1/capabilities", s.auth(s.handleCapabilities))
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
 	return mux
-}
-
-// auth gates every /v1 route on the shared bearer token, and gates the token
-// check itself on the caller's auth-failure budget. A client that presents the
-// right token is never throttled, however many requests it makes — a backfill
-// is thousands of them. A client that keeps getting it wrong runs out of
-// budget and is refused before the comparison happens, which is what makes
-// this a brute-force limit rather than a different error code.
-func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ip := clientIP(r, s.trustProxyHeaders)
-		if ok, retryAfter := s.authFailures.allow(ip, time.Now()); !ok {
-			seconds := int(retryAfter.Seconds())
-			if seconds < 1 {
-				seconds = 1
-			}
-			s.log.Warn("auth attempts throttled",
-				"ip", ip, "path", r.URL.Path, "retry_after_s", seconds)
-			w.Header().Set("Retry-After", strconv.Itoa(seconds))
-			writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many failed authentications"})
-			return
-		}
-		got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if !ok || subtle.ConstantTimeCompare([]byte(got), []byte(s.token)) != 1 {
-			s.authFailures.recordFailure(ip, time.Now())
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
-			return
-		}
-		next(w, r)
-	}
-}
-
-// requestUserID applies the same identity contract to reads and writes: older
-// clients with no header use the seeded default user; an explicit value must be
-// a UUID. Authentication proves access to the service, while this header
-// selects the user's isolated dataset.
-func requestUserID(r *http.Request) (string, error) {
-	userID := r.Header.Get("X-User-ID")
-	if userID == "" {
-		return defaultUserID, nil
-	}
-	if !isUUID(userID) {
-		return "", errors.New("X-User-ID is not a UUID")
-	}
-	return userID, nil
-}
-
-func readUserID(w http.ResponseWriter, r *http.Request) (string, bool) {
-	userID, err := requestUserID(r)
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return "", false
-	}
-	return userID, true
 }
 
 // countingReader tracks compressed bytes read off the wire.
@@ -362,16 +337,19 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 			"header", headerBatchID, "body", batch.Header.BatchID)
 	}
 
-	// The client tags every batch with its user via X-User-ID; absent (older
-	// clients / direct curl) defaults to the seeded default user. Every data
-	// row is stored under this id and the {"profile":…} line upserts the
-	// matching users row.
+	// The auth middleware settled the user before the body was read: the
+	// device token's user, or (shared token) X-User-ID / the default user.
+	// Every data row is stored under this id and the {"profile":…} line
+	// upserts the matching users row. The token id is recorded on the batch.
 	userID, ok := readUserID(w, r)
 	if !ok {
 		s.recordBatchRejection(r, http.StatusBadRequest, "identity", "X-User-ID is not a UUID", cr.n)
 		return
 	}
 	batch.Header.UserID = userID
+	if p, ok := principalFrom(r.Context()); ok {
+		batch.Header.DeviceTokenID = p.tokenID
+	}
 
 	// Wake correlation: the iOS wake that produced this upload (HTTP headers, like
 	// X-User-ID). Both optional; reject only a malformed wake id.
@@ -471,9 +449,13 @@ func (s *Server) recordBatchRejection(r *http.Request, status int, stage, messag
 		}
 		return value
 	}
+	userID := r.Header.Get("X-User-ID")
+	if p, ok := principalFrom(r.Context()); ok {
+		userID = p.userID
+	}
 	rejection := IngestRejection{
 		BatchID:         trim(r.Header.Get("X-Batch-ID")),
-		UserID:          trim(r.Header.Get("X-User-ID")),
+		UserID:          trim(userID),
 		WakeID:          trim(r.Header.Get("X-Wake-ID")),
 		Trigger:         trim(r.Header.Get("X-Wake-Trigger")),
 		Status:          status,

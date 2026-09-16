@@ -700,7 +700,7 @@ func (f *fakeStore) Ping(context.Context) error {
 }
 
 func newTestServer(fs *fakeStore) *Server {
-	return newServer(fs, "secret", false, slog.New(slog.NewJSONHandler(io.Discard, nil)))
+	return newServer(fs, nil, "secret", true, false, slog.New(slog.NewJSONHandler(io.Discard, nil)))
 }
 
 func gzipBody(t *testing.T, s string) *bytes.Buffer {

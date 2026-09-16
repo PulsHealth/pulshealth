@@ -115,7 +115,7 @@ func TestForwardedHeaderIsIgnoredUnlessTrusted(t *testing.T) {
 }
 
 func TestForwardedHeaderIsUsedWhenTrusted(t *testing.T) {
-	srv := newServer(&fakeStore{}, "secret", true, slog.New(slog.NewJSONHandler(io.Discard, nil)))
+	srv := newServer(&fakeStore{}, nil, "secret", true, true, slog.New(slog.NewJSONHandler(io.Discard, nil)))
 	// Every request arrives from the proxy's address; the clients differ.
 	for range authFailureBurst {
 		authAttempt(t, srv, "wrong", "172.17.0.2:5000", map[string]string{"X-Forwarded-For": "198.51.100.20"})
