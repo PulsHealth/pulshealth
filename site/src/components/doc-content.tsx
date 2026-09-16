@@ -10,11 +10,14 @@ import { resolveDocLink } from "@/lib/docs";
 import { rehypeHeadingIds, type TocEntry } from "@/lib/markdown-headings";
 import type { DocPage } from "@/lib/types";
 
-// The blog's highlighter settings, so code looks the same on both.
+// The blog's highlighter settings, so code blocks look the same on both —
+// except that inline code is left alone. A bare string `defaultLang` applies
+// to inline code too, and these documents are dense with `paths` and
+// `identifiers` in prose that would each become a highlighted block.
 const prettyCodeOptions: Options = {
   theme: "github-dark",
   keepBackground: true,
-  defaultLang: "plaintext",
+  defaultLang: { block: "plaintext" },
 };
 
 // Element overrides the blog already styles and that plain markdown produces.
