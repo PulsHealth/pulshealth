@@ -1,9 +1,14 @@
 """Executes notebooks/healthkit_database_exploration.ipynb end to end.
 
 The notebook analyzes one user's synced data — coverage, activity trends,
-resting heart rate and HRV, sleep, workouts, a few correlations. Every
+resting heart rate and HRV, sleep, workouts, a few correlations — and ends
+by rendering the same markdown summary the product API serves at
+GET /v1/summary, with an optional cell that sends it to Claude. Every
 analysis cell must run on a sparse database (it prints a note and skips
-the chart when a type has nothing).
+the chart when a type has nothing), and the optional cell must stay
+skipped here: it only runs when ANTHROPIC_API_KEY is set, so both tests
+blank that variable and the first asserts the cell printed its skip line
+rather than anything a model wrote.
 
 Runs in CI: the `db-integration` job in .github/workflows/ci.yml installs
 notebooks/requirements.txt and runs this file after the Go integration
@@ -284,6 +289,9 @@ def test_healthkit_notebook_executes_against_seeded_database(tmp_path):
                 "DATABASE_URL": "",
                 "PULS_DB_PASSWORD": "",
                 "POSTGRES_PASSWORD": "",
+                # Never a network call from the test: the last cell only
+                # talks to the API when this is set.
+                "ANTHROPIC_API_KEY": "",
                 # No PULS_ANALYSIS_TZ: the notebook must pick the zone up
                 # from the database's puls_time_zone() (UTC, from apply_schema).
                 "PULS_LOOKBACK_DAYS": "30",
@@ -296,6 +304,17 @@ def test_healthkit_notebook_executes_against_seeded_database(tmp_path):
         code_cells = [cell for cell in notebook.cells if cell.cell_type == "code"]
         assert code_cells
         assert any(cell.get("outputs") for cell in code_cells)
+
+        # The seeded fortnight reached the summary: the rendered page carries
+        # the sections the product API's GET /v1/summary would.
+        summary_cell = next(c for c in code_cells if "build_summary_markdown()" in c.source)
+        summary_text = "".join(o.get("text", "") for o in summary_cell.outputs)
+        for heading in ("## Activity", "## Heart", "## Sleep", "## Workouts", "## Body", "## Coverage"):
+            assert heading in summary_text, f"summary is missing {heading!r}"
+
+        llm_cell = next(c for c in code_cells if "ANTHROPIC_API_KEY" in c.source)
+        llm_text = "".join(o.get("text", "") for o in llm_cell.outputs)
+        assert "ANTHROPIC_API_KEY is not set" in llm_text
     finally:
         if original_env is None:
             env_path.unlink(missing_ok=True)
@@ -328,6 +347,7 @@ def test_healthkit_notebook_executes_from_notebooks_directory_with_root_env():
         env.pop(key, None)
     env.update(
         {
+            "ANTHROPIC_API_KEY": "",
             "PULS_ANALYSIS_TZ": "America/Los_Angeles",
             "PULS_LOOKBACK_DAYS": "7",
         }
