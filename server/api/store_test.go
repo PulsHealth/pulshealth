@@ -41,7 +41,7 @@ func integrationStore(t *testing.T) (*Store, context.Context, func()) {
 		cleanup()
 		t.Fatalf("losAngelesLocation: %v", err)
 	}
-	return NewStore(pool, defaultUserID, loc), ctx, cleanup
+	return NewStore(pool, loc), ctx, cleanup
 }
 
 // The day-range fixtures below were written against America/Los_Angeles. The
@@ -251,7 +251,7 @@ func TestIntegrationCatalogTypesEmptyOrLive(t *testing.T) {
 	store, ctx, cleanup := integrationStore(t)
 	defer cleanup()
 
-	types, err := store.CatalogTypes(ctx)
+	types, err := store.CatalogTypes(ctx, defaultUserID)
 	if err != nil {
 		t.Fatalf("CatalogTypes: %v", err)
 	}
@@ -266,7 +266,7 @@ func TestIntegrationUnknownLatestMetricIsEmpty(t *testing.T) {
 	store, ctx, cleanup := integrationStore(t)
 	defer cleanup()
 
-	metrics, err := store.LatestMetrics(ctx, []string{"HKQuantityTypeIdentifierDefinitelyMissingForIntegrationTest"})
+	metrics, err := store.LatestMetrics(ctx, defaultUserID, []string{"HKQuantityTypeIdentifierDefinitelyMissingForIntegrationTest"})
 	if err != nil {
 		t.Fatalf("LatestMetrics: %v", err)
 	}
@@ -284,7 +284,7 @@ func TestIntegrationActivitySummaryEmptyRangeIsNonNil(t *testing.T) {
 
 	start := time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
 	end := start.Add(24 * time.Hour)
-	days, err := store.ActivitySummary(ctx, start, end)
+	days, err := store.ActivitySummary(ctx, defaultUserID, start, end)
 	if err != nil {
 		t.Fatalf("ActivitySummary: %v", err)
 	}
@@ -328,7 +328,7 @@ func TestIntegrationActivitySummaryUsesTouchedLocalDays(t *testing.T) {
 
 	start := time.Date(2099, 9, 17, 23, 30, 0, 0, loc)
 	end := time.Date(2099, 9, 18, 1, 30, 0, 0, loc)
-	days, err := store.ActivitySummary(ctx, start, end)
+	days, err := store.ActivitySummary(ctx, defaultUserID, start, end)
 	if err != nil {
 		t.Fatalf("ActivitySummary: %v", err)
 	}
@@ -346,7 +346,7 @@ func TestIntegrationWorkoutsEmptyFilterIsNonNil(t *testing.T) {
 
 	start := time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
 	end := start.Add(24 * time.Hour)
-	workouts, err := store.Workouts(ctx, WorkoutFilters{
+	workouts, err := store.Workouts(ctx, defaultUserID, WorkoutFilters{
 		Start:  &start,
 		End:    &end,
 		Limit:  10,
@@ -407,7 +407,7 @@ func TestIntegrationDailyMetricsFixture(t *testing.T) {
 
 	rangeStart := time.Date(2099, 7, 3, 0, 0, 0, 0, loc)
 	rangeEnd := time.Date(2099, 7, 4, 0, 0, 0, 0, loc)
-	metrics, err := store.DailyMetrics(ctx, []string{identifier}, rangeStart, rangeEnd)
+	metrics, err := store.DailyMetrics(ctx, defaultUserID, []string{identifier}, rangeStart, rangeEnd)
 	if err != nil {
 		t.Fatalf("DailyMetrics: %v", err)
 	}
@@ -424,7 +424,7 @@ func TestIntegrationDailyMetricsFixture(t *testing.T) {
 		t.Fatalf("value = %v, want 123", metrics[0].Days[0].Value)
 	}
 
-	catalog, err := store.CatalogTypes(ctx)
+	catalog, err := store.CatalogTypes(ctx, defaultUserID)
 	if err != nil {
 		t.Fatalf("CatalogTypes: %v", err)
 	}
@@ -498,7 +498,7 @@ func TestIntegrationWorkoutFixture(t *testing.T) {
 		t.Fatalf("insert workout_route_points: %v", err)
 	}
 
-	detail, err := store.Workout(ctx, workoutUUID)
+	detail, err := store.Workout(ctx, defaultUserID, workoutUUID)
 	if err != nil {
 		t.Fatalf("Workout: %v", err)
 	}
@@ -527,11 +527,11 @@ func TestIntegrationWorkoutFixture(t *testing.T) {
 
 	rangeStart := start.Add(-time.Second)
 	rangeEnd := end.Add(time.Second)
-	firstPage, err := store.Workouts(ctx, WorkoutFilters{Start: &rangeStart, End: &rangeEnd, Limit: 1})
+	firstPage, err := store.Workouts(ctx, defaultUserID, WorkoutFilters{Start: &rangeStart, End: &rangeEnd, Limit: 1})
 	if err != nil {
 		t.Fatalf("Workouts first page: %v", err)
 	}
-	secondPage, err := store.Workouts(ctx, WorkoutFilters{Start: &rangeStart, End: &rangeEnd, Limit: 1, Offset: 1})
+	secondPage, err := store.Workouts(ctx, defaultUserID, WorkoutFilters{Start: &rangeStart, End: &rangeEnd, Limit: 1, Offset: 1})
 	if err != nil {
 		t.Fatalf("Workouts second page: %v", err)
 	}
@@ -545,7 +545,7 @@ func TestIntegrationWorkoutFixture(t *testing.T) {
 	// The export path: a zero Limit is "no limit", so both tied workouts
 	// come back from one scan in the same order the paged reads produced.
 	var streamed []string
-	if err := store.StreamWorkouts(ctx, WorkoutFilters{Start: &rangeStart, End: &rangeEnd}, func(w WorkoutSummary) error {
+	if err := store.StreamWorkouts(ctx, defaultUserID, WorkoutFilters{Start: &rangeStart, End: &rangeEnd}, func(w WorkoutSummary) error {
 		streamed = append(streamed, w.UUID)
 		return nil
 	}); err != nil {
@@ -645,7 +645,7 @@ func TestIntegrationSleepDailyAcrossMidnightFromTwoSources(t *testing.T) {
 	// An afternoon nap, more than three hours after waking.
 	add(watch, "HKCategoryValueSleepAnalysisAsleepCore", wake, "14:00", wake, "15:00")
 
-	nights, err := store.SleepDaily(ctx, local(wake, "00:00"), local(after, "00:00"))
+	nights, err := store.SleepDaily(ctx, defaultUserID, local(wake, "00:00"), local(after, "00:00"))
 	if err != nil {
 		t.Fatalf("SleepDaily: %v", err)
 	}
@@ -694,7 +694,7 @@ func TestIntegrationSleepDailyAcrossMidnightFromTwoSources(t *testing.T) {
 	}
 
 	// The evening the night began is not a wake-up day, so it has no row.
-	before, err := store.SleepDaily(ctx, local(eve, "00:00"), local(wake, "00:00"))
+	before, err := store.SleepDaily(ctx, defaultUserID, local(eve, "00:00"), local(wake, "00:00"))
 	if err != nil {
 		t.Fatalf("SleepDaily (previous day): %v", err)
 	}
@@ -704,7 +704,7 @@ func TestIntegrationSleepDailyAcrossMidnightFromTwoSources(t *testing.T) {
 		}
 	}
 
-	if _, err := store.SleepDaily(ctx, fixtureDay(2090, loc, suffix).AddDate(-2, 0, 0), local(after, "00:00")); err == nil {
+	if _, err := store.SleepDaily(ctx, defaultUserID, fixtureDay(2090, loc, suffix).AddDate(-2, 0, 0), local(after, "00:00")); err == nil {
 		t.Error("a range over 366 days was accepted")
 	} else {
 		wantRequestError(t, err, "at most 366 days")
@@ -756,7 +756,7 @@ func TestIntegrationSamplesQuantityAndCategory(t *testing.T) {
 	t.Run("quantity", func(t *testing.T) {
 		f := window
 		f.Type = quantityType
-		page, err := store.Samples(ctx, f)
+		page, err := store.Samples(ctx, defaultUserID, f)
 		if err != nil {
 			t.Fatalf("Samples: %v", err)
 		}
@@ -787,12 +787,12 @@ func TestIntegrationSamplesQuantityAndCategory(t *testing.T) {
 	t.Run("paging", func(t *testing.T) {
 		f := window
 		f.Type, f.Limit = quantityType, 2
-		first, err := store.Samples(ctx, f)
+		first, err := store.Samples(ctx, defaultUserID, f)
 		if err != nil {
 			t.Fatalf("Samples page 1: %v", err)
 		}
 		f.Offset = first.NextOffset
-		second, err := store.Samples(ctx, f)
+		second, err := store.Samples(ctx, defaultUserID, f)
 		if err != nil {
 			t.Fatalf("Samples page 2: %v", err)
 		}
@@ -821,7 +821,7 @@ func TestIntegrationSamplesQuantityAndCategory(t *testing.T) {
 		}
 
 		var streamed []Sample
-		if err := store.StreamSamples(ctx, meta, f, func(s Sample) error {
+		if err := store.StreamSamples(ctx, defaultUserID, meta, f, func(s Sample) error {
 			streamed = append(streamed, s)
 			return nil
 		}); err != nil {
@@ -833,7 +833,7 @@ func TestIntegrationSamplesQuantityAndCategory(t *testing.T) {
 
 		stop := errors.New("stop")
 		seen := 0
-		if err := store.StreamSamples(ctx, meta, f, func(Sample) error {
+		if err := store.StreamSamples(ctx, defaultUserID, meta, f, func(Sample) error {
 			seen++
 			return stop
 		}); !errors.Is(err, stop) {
@@ -847,7 +847,7 @@ func TestIntegrationSamplesQuantityAndCategory(t *testing.T) {
 	t.Run("category decodes its label", func(t *testing.T) {
 		f := window
 		f.Type = sleepTypeIdentifier
-		page, err := store.Samples(ctx, f)
+		page, err := store.Samples(ctx, defaultUserID, f)
 		if err != nil {
 			t.Fatalf("Samples: %v", err)
 		}
@@ -874,11 +874,11 @@ func TestIntegrationSamplesQuantityAndCategory(t *testing.T) {
 	t.Run("rejects types it cannot serve", func(t *testing.T) {
 		f := window
 		f.Type = "HKQuantityTypeIdentifierDefinitelyMissingForIntegrationTest"
-		_, err := store.Samples(ctx, f)
+		_, err := store.Samples(ctx, defaultUserID, f)
 		wantRequestError(t, err, "unknown type")
 
 		f.Type = workoutType
-		_, err = store.Samples(ctx, f)
+		_, err = store.Samples(ctx, defaultUserID, f)
 		wantRequestError(t, err, "workout")
 	})
 }
@@ -930,7 +930,7 @@ func TestIntegrationWorkoutSeriesFiltersAndDownsamples(t *testing.T) {
 		t.Fatalf("insert power point: %v", err)
 	}
 
-	all, err := store.WorkoutSeries(ctx, workoutUUID, nil, 500)
+	all, err := store.WorkoutSeries(ctx, defaultUserID, workoutUUID, nil, 500)
 	if err != nil {
 		t.Fatalf("WorkoutSeries: %v", err)
 	}
@@ -957,7 +957,7 @@ func TestIntegrationWorkoutSeriesFiltersAndDownsamples(t *testing.T) {
 	}
 
 	// Downsampled, the endpoints survive verbatim and the shape is kept.
-	small, err := store.WorkoutSeries(ctx, workoutUUID, []string{heartType}, 11)
+	small, err := store.WorkoutSeries(ctx, defaultUserID, workoutUUID, []string{heartType}, 11)
 	if err != nil {
 		t.Fatalf("WorkoutSeries (downsampled): %v", err)
 	}
@@ -980,7 +980,7 @@ func TestIntegrationWorkoutSeriesFiltersAndDownsamples(t *testing.T) {
 		}
 	}
 
-	missing, err := store.WorkoutSeries(ctx, fixtureUUID("bcbcbcbc", suffix, 2), nil, 500)
+	missing, err := store.WorkoutSeries(ctx, defaultUserID, fixtureUUID("bcbcbcbc", suffix, 2), nil, 500)
 	if err != nil {
 		t.Fatalf("WorkoutSeries (unknown): %v", err)
 	}
@@ -1021,7 +1021,7 @@ func TestIntegrationStateOfMind(t *testing.T) {
 		t.Fatalf("insert state_of_mind: %v", err)
 	}
 
-	entries, err := store.StateOfMind(ctx, dayStart, dayStart.AddDate(0, 0, 1))
+	entries, err := store.StateOfMind(ctx, defaultUserID, dayStart, dayStart.AddDate(0, 0, 1))
 	if err != nil {
 		t.Fatalf("StateOfMind: %v", err)
 	}
@@ -1060,7 +1060,7 @@ func TestIntegrationStateOfMind(t *testing.T) {
 		t.Errorf("labels = %#v, want an empty slice", entries[secondAt].Labels)
 	}
 
-	if _, err := store.StateOfMind(ctx, dayStart.AddDate(-2, 0, 0), dayStart); err == nil {
+	if _, err := store.StateOfMind(ctx, defaultUserID, dayStart.AddDate(-2, 0, 0), dayStart); err == nil {
 		t.Error("a range over 366 days was accepted")
 	} else {
 		wantRequestError(t, err, "at most 366 days")

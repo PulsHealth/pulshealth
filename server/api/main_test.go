@@ -25,9 +25,13 @@ type fakeStore struct {
 	samples  *SamplesPage
 	series   *WorkoutSeriesResponse
 	moods    []StateOfMindEntry
+	users    []User
 	calls    struct {
 		catalog int
 	}
+	// The user the most recent per-user call was asked about, so handler
+	// tests can prove the request user reached the store.
+	lastUser string
 	// The arguments of the most recent samples / workouts / series call, so
 	// handler tests can assert on what the parsers produced.
 	lastSamples  SampleFilters
@@ -46,14 +50,16 @@ type fakeStore struct {
 	pings atomic.Int64
 }
 
-func (f *fakeStore) SleepDaily(context.Context, time.Time, time.Time) ([]SleepNight, error) {
+func (f *fakeStore) SleepDaily(_ context.Context, user string, _, _ time.Time) ([]SleepNight, error) {
+	f.lastUser = user
 	if f.err != nil {
 		return nil, f.err
 	}
 	return f.nights, nil
 }
 
-func (f *fakeStore) Samples(_ context.Context, filters SampleFilters) (*SamplesPage, error) {
+func (f *fakeStore) Samples(_ context.Context, user string, filters SampleFilters) (*SamplesPage, error) {
+	f.lastUser = user
 	f.lastSamples = filters
 	if f.err != nil {
 		return nil, f.err
@@ -78,7 +84,8 @@ func (f *fakeStore) SampleType(_ context.Context, identifier string) (SampleMeta
 	return meta, nil
 }
 
-func (f *fakeStore) StreamSamples(_ context.Context, meta SampleMeta, filters SampleFilters, fn func(Sample) error) error {
+func (f *fakeStore) StreamSamples(_ context.Context, user string, meta SampleMeta, filters SampleFilters, fn func(Sample) error) error {
+	f.lastUser = user
 	f.lastSamples = filters
 	if f.err != nil {
 		return f.err
@@ -94,7 +101,8 @@ func (f *fakeStore) StreamSamples(_ context.Context, meta SampleMeta, filters Sa
 	return nil
 }
 
-func (f *fakeStore) StreamWorkouts(_ context.Context, filters WorkoutFilters, fn func(WorkoutSummary) error) error {
+func (f *fakeStore) StreamWorkouts(_ context.Context, user string, filters WorkoutFilters, fn func(WorkoutSummary) error) error {
+	f.lastUser = user
 	f.lastWorkouts = filters
 	if f.err != nil {
 		return f.err
@@ -107,7 +115,8 @@ func (f *fakeStore) StreamWorkouts(_ context.Context, filters WorkoutFilters, fn
 	return nil
 }
 
-func (f *fakeStore) WorkoutSeries(_ context.Context, uuid string, types []string, maxPoints int) (*WorkoutSeriesResponse, error) {
+func (f *fakeStore) WorkoutSeries(_ context.Context, user, uuid string, types []string, maxPoints int) (*WorkoutSeriesResponse, error) {
+	f.lastUser = user
 	f.lastSeries.uuid, f.lastSeries.types, f.lastSeries.maxPoints = uuid, types, maxPoints
 	if f.err != nil {
 		return nil, f.err
@@ -115,7 +124,8 @@ func (f *fakeStore) WorkoutSeries(_ context.Context, uuid string, types []string
 	return f.series, nil
 }
 
-func (f *fakeStore) StateOfMind(context.Context, time.Time, time.Time) ([]StateOfMindEntry, error) {
+func (f *fakeStore) StateOfMind(_ context.Context, user string, _, _ time.Time) ([]StateOfMindEntry, error) {
+	f.lastUser = user
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -127,7 +137,15 @@ func (f *fakeStore) Ping(context.Context) error {
 	return f.err
 }
 
-func (f *fakeStore) Profile(context.Context) (*Profile, error) {
+func (f *fakeStore) Users(context.Context) ([]User, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.users, nil
+}
+
+func (f *fakeStore) Profile(_ context.Context, user string) (*Profile, error) {
+	f.lastUser = user
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -135,7 +153,8 @@ func (f *fakeStore) Profile(context.Context) (*Profile, error) {
 	return &profile, nil
 }
 
-func (f *fakeStore) CatalogTypes(context.Context) ([]CatalogType, error) {
+func (f *fakeStore) CatalogTypes(_ context.Context, user string) ([]CatalogType, error) {
+	f.lastUser = user
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -143,35 +162,40 @@ func (f *fakeStore) CatalogTypes(context.Context) ([]CatalogType, error) {
 	return f.catalog, nil
 }
 
-func (f *fakeStore) LatestMetrics(context.Context, []string) ([]LatestMetric, error) {
+func (f *fakeStore) LatestMetrics(_ context.Context, user string, _ []string) ([]LatestMetric, error) {
+	f.lastUser = user
 	if f.err != nil {
 		return nil, f.err
 	}
 	return f.latest, nil
 }
 
-func (f *fakeStore) DailyMetrics(context.Context, []string, time.Time, time.Time) ([]DailyMetric, error) {
+func (f *fakeStore) DailyMetrics(_ context.Context, user string, _ []string, _, _ time.Time) ([]DailyMetric, error) {
+	f.lastUser = user
 	if f.err != nil {
 		return nil, f.err
 	}
 	return f.daily, nil
 }
 
-func (f *fakeStore) ActivitySummary(context.Context, time.Time, time.Time) ([]ActivityDay, error) {
+func (f *fakeStore) ActivitySummary(_ context.Context, user string, _, _ time.Time) ([]ActivityDay, error) {
+	f.lastUser = user
 	if f.err != nil {
 		return nil, f.err
 	}
 	return f.activity, nil
 }
 
-func (f *fakeStore) Workouts(context.Context, WorkoutFilters) ([]WorkoutSummary, error) {
+func (f *fakeStore) Workouts(_ context.Context, user string, _ WorkoutFilters) ([]WorkoutSummary, error) {
+	f.lastUser = user
 	if f.err != nil {
 		return nil, f.err
 	}
 	return f.workouts, nil
 }
 
-func (f *fakeStore) Workout(context.Context, string) (*WorkoutDetail, error) {
+func (f *fakeStore) Workout(_ context.Context, user, _ string) (*WorkoutDetail, error) {
+	f.lastUser = user
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -298,12 +322,13 @@ func TestOpenAPIWithoutAuthAdvertisesProductPaths(t *testing.T) {
 	for _, path := range []string{
 		"/v1/profile", "/v1/catalog/types", "/v1/metrics/latest", "/v1/metrics/daily", "/v1/activity/summary",
 		"/v1/workouts", "/v1/workouts/{uuid}", "/v1/workouts/{uuid}/series", "/v1/sleep/daily", "/v1/samples", "/v1/state-of-mind",
+		"/v1/users",
 	} {
 		if _, ok := body.Paths[path]; !ok {
 			t.Fatalf("openapi paths missing %s", path)
 		}
 	}
-	for _, schema := range []string{"WorkoutDetail", "SleepNight", "SamplesPage", "WorkoutSeriesResponse", "StateOfMindEntry"} {
+	for _, schema := range []string{"WorkoutDetail", "SleepNight", "SamplesPage", "WorkoutSeriesResponse", "StateOfMindEntry", "User"} {
 		if _, ok := body.Components.Schemas[schema]; !ok {
 			t.Fatalf("openapi schemas missing %s", schema)
 		}
@@ -1047,6 +1072,26 @@ func TestResponseContractJSONShapes(t *testing.T) {
 		t.Fatalf("statisticsDetail metric type = %T, want object", stats["HKQuantityTypeIdentifierHeartRate"])
 	} else if got := metric["avg"].(float64); got != 68 {
 		t.Fatalf("statisticsDetail avg = %v, want 68", got)
+	}
+
+	// A user who has never synced: numeric counts, an explicit null for
+	// lastSync, and epoch milliseconds for createdAt.
+	userJSON := mustMarshal(t, User{UserID: defaultUserID, CreatedAt: timestamp})
+	var userBody map[string]any
+	if err := json.Unmarshal(userJSON, &userBody); err != nil {
+		t.Fatalf("decode user: %v", err)
+	}
+	if got, ok := userBody["createdAt"].(float64); !ok || int64(got) != timestamp {
+		t.Fatalf("createdAt = %#v, want %d", userBody["createdAt"], timestamp)
+	}
+	if value, ok := userBody["lastSync"]; !ok || value != nil {
+		t.Fatalf("lastSync = %#v (present %v), want an explicit null", value, ok)
+	}
+	if got, ok := userBody["batches"].(float64); !ok || got != 0 {
+		t.Fatalf("batches = %#v, want 0", userBody["batches"])
+	}
+	if got, ok := userBody["uploadedSamples"].(float64); !ok || got != 0 {
+		t.Fatalf("uploadedSamples = %#v, want 0", userBody["uploadedSamples"])
 	}
 }
 

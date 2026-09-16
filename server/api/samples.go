@@ -96,7 +96,7 @@ func (st *Store) SampleType(ctx context.Context, identifier string) (SampleMeta,
 // the export streams hundreds of thousands of them. A Limit of zero or less
 // means every matching row; Samples passes the endpoint's page size. fn's
 // error stops the scan and comes back unchanged.
-func (st *Store) StreamSamples(ctx context.Context, meta SampleMeta, f SampleFilters, fn func(Sample) error) error {
+func (st *Store) StreamSamples(ctx context.Context, userID string, meta SampleMeta, f SampleFilters, fn func(Sample) error) error {
 	var (
 		rows pgx.Rows
 		err  error
@@ -113,7 +113,7 @@ func (st *Store) StreamSamples(ctx context.Context, meta SampleMeta, f SampleFil
 			  AND q.start_ts < $4
 			ORDER BY q.start_ts, q.uuid
 			LIMIT $5 OFFSET $6`,
-			st.userID, meta.TypeID, f.Start, f.End, nullableLimit(f.Limit), f.Offset)
+			userID, meta.TypeID, f.Start, f.End, nullableLimit(f.Limit), f.Offset)
 	case "category":
 		// Category values are only meaningful with their type; the label
 		// join is keyed on the identifier so the same integer decodes
@@ -129,7 +129,7 @@ func (st *Store) StreamSamples(ctx context.Context, meta SampleMeta, f SampleFil
 			  AND c.start_ts < $4
 			ORDER BY c.start_ts, c.uuid
 			LIMIT $5 OFFSET $6`,
-			st.userID, meta.TypeID, f.Start, f.End, nullableLimit(f.Limit), f.Offset, meta.Type)
+			userID, meta.TypeID, f.Start, f.End, nullableLimit(f.Limit), f.Offset, meta.Type)
 	default:
 		return badRequestf("type %q is a %s type; only quantity and category samples are served here (workouts have /v1/workouts)", meta.Type, meta.Kind)
 	}
@@ -162,13 +162,13 @@ func (st *Store) StreamSamples(ctx context.Context, meta SampleMeta, f SampleFil
 // Samples collects one page of StreamSamples into the endpoint's envelope.
 // An identifier the database has never seen, or one that is not a quantity
 // or category type, is a request error.
-func (st *Store) Samples(ctx context.Context, f SampleFilters) (*SamplesPage, error) {
+func (st *Store) Samples(ctx context.Context, userID string, f SampleFilters) (*SamplesPage, error) {
 	meta, err := st.SampleType(ctx, f.Type)
 	if err != nil {
 		return nil, err
 	}
 	page := &SamplesPage{Type: meta.Type, Kind: meta.Kind, Unit: meta.Unit, Samples: make([]Sample, 0)}
-	if err := st.StreamSamples(ctx, meta, f, func(s Sample) error {
+	if err := st.StreamSamples(ctx, userID, meta, f, func(s Sample) error {
 		page.Samples = append(page.Samples, s)
 		return nil
 	}); err != nil {

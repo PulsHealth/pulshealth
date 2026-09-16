@@ -276,7 +276,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | SRV-8 | Per-device tokens: enroll → pending → approve via CLI; hashed at rest; last-seen; revoke; token bound to user (closes the `X-User-ID` hole). Shared `PULS_TOKEN` stays valid during migration. | S — server side done 2026-09: CLI-issued (`make devices`), hashed, last-seen, revocable, bound to a user, shared token optional. Phone-side enroll/approve remains ([`roadmap.md`](roadmap.md) § 4). |
 | SRV-9 | Backups: opt-in `pg_dump` sidecar service with retention, and a documented restore drill. | S |
 | SRV-10 | Web viewer auth (basic auth or the API token) and a viewer-scoped DB role instead of `grafana`. | S |
-| SRV-11 | Second-user story without a volume wipe. | S — half true already: writes have always been multi-user (`ensureUser` creates any id the header carries), so no wipe is involved. What is missing is the **read** side — the API and web viewer each serve one `PULS_USER_ID`. |
+| SRV-11 | Second-user story without a volume wipe. | S — writes have always been multi-user (`ensureUser` creates any id the header carries), so no wipe is involved. Read side, API half done 2026-09: `?user=` on every `/v1` route behind `PULS_MULTI_USER`, `GET /v1/users`, `puls-export --user`. The web viewer's per-session switcher is in; the MCP server (tool argument) lands in a sibling change ([`roadmap.md`](roadmap.md) § 5). |
 | SRV-12 | Grafana contact point from `${GRAFANA_ALERT_EMAIL}`; alert thresholds documented as tunables. | S |
 | SRV-13 | Product API additions agents ask for first: `/v1/sleep/daily` (category daily), `/v1/samples` (bounded raw window), `/v1/workouts/{uuid}/series`, `/v1/state-of-mind`; pagination on daily metrics. | S |
 
@@ -386,7 +386,7 @@ channel) was skipped; the app went straight to the store.
 ### Later
 
 - SRV-8 per-device tokens (server side done; phone-side enrollment remains),
-  SRV-11 multi-user reads, APP-11 sink factory,
+  SRV-11 multi-user reads (API and web viewer done; MCP in flight), APP-11 sink factory,
   APP-12 file export, AI-6..8.
 
 These, plus the release and submission work the phases above did not cover,

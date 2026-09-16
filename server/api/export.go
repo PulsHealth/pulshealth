@@ -224,7 +224,7 @@ func (s *Server) exportDailyMetrics(r *http.Request) (*exportDataset, error) {
 	if err := capExportRange(start, end, maxExportRange); err != nil {
 		return nil, err
 	}
-	metrics, err := s.store.DailyMetrics(r.Context(), types, start, end)
+	metrics, err := s.store.DailyMetrics(r.Context(), s.requestUser(r), types, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -262,6 +262,7 @@ func (s *Server) exportSamples(r *http.Request) (*exportDataset, error) {
 	if err != nil {
 		return nil, err
 	}
+	user := s.requestUser(r)
 	return &exportDataset{
 		Name:    "samples",
 		StartMS: filters.Start.UnixMilli(),
@@ -270,7 +271,7 @@ func (s *Server) exportSamples(r *http.Request) (*exportDataset, error) {
 		// flat file has to carry them per row to stay self-describing.
 		Columns: []string{"type", "unit", "uuid", "start", "end", "value", "label", "source"},
 		Rows: func(ctx context.Context, emit func([]any) error) error {
-			return s.store.StreamSamples(ctx, meta, filters, func(sample Sample) error {
+			return s.store.StreamSamples(ctx, user, meta, filters, func(sample Sample) error {
 				return emit([]any{
 					meta.Type, meta.Unit, sample.UUID, sample.Start, sample.End,
 					sample.Value, sample.Label, sample.Source,
@@ -291,6 +292,7 @@ func (s *Server) exportWorkouts(r *http.Request) (*exportDataset, error) {
 	// Unlike GET /v1/workouts the range is required and the whole of it is
 	// returned: an export is bounded by its range, not by a page size.
 	filters := WorkoutFilters{Start: &start, End: &end, ActivityType: r.URL.Query().Get("activityType")}
+	user := s.requestUser(r)
 	return &exportDataset{
 		Name:    "workouts",
 		StartMS: start.UnixMilli(),
@@ -300,7 +302,7 @@ func (s *Server) exportWorkouts(r *http.Request) (*exportDataset, error) {
 			"durationS", "distanceM", "energyKcal", "hasRoute", "availableMetrics",
 		},
 		Rows: func(ctx context.Context, emit func([]any) error) error {
-			return s.store.StreamWorkouts(ctx, filters, func(workout WorkoutSummary) error {
+			return s.store.StreamWorkouts(ctx, user, filters, func(workout WorkoutSummary) error {
 				return emit([]any{
 					workout.UUID, workout.ActivityType, workout.Start, workout.End,
 					workout.DurationS, workout.DistanceM, workout.EnergyKcal,
@@ -319,7 +321,7 @@ func (s *Server) exportSleep(r *http.Request) (*exportDataset, error) {
 	if err := capExportRange(start, end, maxExportRange); err != nil {
 		return nil, err
 	}
-	nights, err := s.store.SleepDaily(r.Context(), start, end)
+	nights, err := s.store.SleepDaily(r.Context(), s.requestUser(r), start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +359,7 @@ func (s *Server) exportActivity(r *http.Request) (*exportDataset, error) {
 	if err := capExportRange(start, end, maxExportRange); err != nil {
 		return nil, err
 	}
-	days, err := s.store.ActivitySummary(r.Context(), start, end)
+	days, err := s.store.ActivitySummary(r.Context(), s.requestUser(r), start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +393,7 @@ func (s *Server) exportStateOfMind(r *http.Request) (*exportDataset, error) {
 	if err := capExportRange(start, end, maxExportRange); err != nil {
 		return nil, err
 	}
-	entries, err := s.store.StateOfMind(r.Context(), start, end)
+	entries, err := s.store.StateOfMind(r.Context(), s.requestUser(r), start, end)
 	if err != nil {
 		return nil, err
 	}

@@ -111,7 +111,7 @@ type sleepSample struct {
 // SleepDaily returns one row per night whose wake-up day (in the store's
 // zone) falls on a local calendar day overlapping [start, end), ordered by
 // date then start.
-func (st *Store) SleepDaily(ctx context.Context, start, end time.Time) ([]SleepNight, error) {
+func (st *Store) SleepDaily(ctx context.Context, userID string, start, end time.Time) ([]SleepNight, error) {
 	firstDay, afterLastDay, err := localDayBounds(start, end, st.loc)
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (st *Store) SleepDaily(ctx context.Context, start, end time.Time) ([]SleepN
 		  AND c.end_ts > $3
 		  AND c.start_ts < $4
 		ORDER BY c.start_ts, c.end_ts`,
-		st.userID, sleepTypeIdentifier,
+		userID, sleepTypeIdentifier,
 		firstDay.Add(-sleepQueryPadding), afterLastDay.Add(sleepQueryPadding))
 	if err != nil {
 		return nil, err

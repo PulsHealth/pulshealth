@@ -138,10 +138,14 @@ $$;
 -- Keep product API credentials scoped to the exact current query surface.
 -- `sources` names the device or app behind a raw sample and `category_labels`
 -- decodes a category sample's integer value; both joined by /v1/samples and
--- /v1/sleep/daily. An install created before those endpoints picks the two up
--- on its next migrate run, because this file runs every time.
+-- /v1/sleep/daily. `batches` is the upload log /v1/users aggregates per user
+-- (last sync, batch and sample counts); it holds no credential — the token
+-- that wrote a batch is only an integer id into device_tokens, which stays
+-- off this list. An install created before those endpoints picks the tables
+-- up on its next migrate run, because this file runs every time.
 GRANT SELECT ON TABLE
   users,
+  batches,
   sources,
   sample_types,
   category_labels,
@@ -199,6 +203,7 @@ BEGIN
   IF EXISTS (
     WITH expected_public(nspname, relname, privilege_type, is_grantable) AS (VALUES
       ('public', 'users', 'SELECT', false),
+      ('public', 'batches', 'SELECT', false),
       ('public', 'sources', 'SELECT', false),
       ('public', 'sample_types', 'SELECT', false),
       ('public', 'category_labels', 'SELECT', false),

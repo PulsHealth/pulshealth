@@ -388,17 +388,20 @@ repository can build has been multi-user from its first migration.
 
 Storing a second person's data therefore needs nothing: point another phone at
 the same ingest URL with its own user ID and `ensureUser` creates the row before
-the first insert — no reset, no volume drop. **Reading it back is the part that
-does not exist yet.** The product API and the web viewer are each configured
-with one `PULS_USER_ID` and answer for that user alone, so a second user's rows
-accumulate where nothing displays them; the exception is Grafana's PulsHealth
-dashboard, which has a `user` variable listing everyone in `users`. Serving two
-people properly means a second API/viewer pair (a second compose project with a
-different `PULS_USER_ID`) until the API learns to scope per request. Whether
-the token is bound to a user depends on which kind it is — see "Tokens"
-below: a per-device token is, so with it `X-User-ID` must be absent or match
-(403 otherwise); the shared `PULS_TOKEN` is not, so with it `X-User-ID` is
-selection, not authentication, and everyone holding it can write as anyone.
+the first insert — no reset, no volume drop. Reading it back is per request:
+the product API answers for `PULS_USER_ID` unless a request says
+`?user=<uuid>`, which is allowed once the server runs with
+`PULS_MULTI_USER=true` (off by default; another user is then a `403`), and
+`GET /v1/users` lists who exists — see "Product API" below. The MCP server
+takes the user as a tool argument and the web viewer chooses one per session,
+both over that same parameter; Grafana's PulsHealth dashboard has had a
+`user` variable over `users` all along. Whether the *ingest* token is bound to
+a user depends on which kind it is — see "Tokens" below: a per-device token
+is, so with it `X-User-ID` must be absent or match (403 otherwise); the shared
+`PULS_TOKEN` is not, so with it `X-User-ID` is selection, not authentication,
+and everyone holding it can write as anyone. The product API's single
+`PULS_API_TOKEN` is likewise not bound to anyone: with `PULS_MULTI_USER` on it
+reads every user, which is the reason the gate defaults to off.
 
 ### Tokens
 
@@ -690,6 +693,28 @@ ingest keeps using `PULS_TOKEN` on port 8080. The service connects to Postgres
 as the read-only `api_reader` role. That role is limited to schema usage plus
 `SELECT` grants; it is not the ingest/write credential.
 
+**Whose data.** Every `/v1` request is answered for one user: `PULS_USER_ID`
+unless the query carries `user=<uuid>`. Naming anyone else is allowed only when
+the service runs with `PULS_MULTI_USER=true` (`.env`, default `false`);
+otherwise it is a `403 {"error":"multi-user reads are disabled"}` — never a
+quiet answer for the default user — and a value that is not a UUID is a
+`400`. Neither counts against the failed-authentication limit (a valid token
+mis-addressed a request; that is not a guess at the token). There is no
+existence check: an unknown id reads as a user with no data. `GET /v1/users`
+is the discovery surface — every user with the gate on, only the default with
+it off — each with name, e-mail, `createdAt`, `lastSync`, `batches` and
+`uploadedSamples` from the `batches` log, plus `default` and `multiUser` so a
+client can tell what the deployment will answer. Turning the gate on widens
+what the one static `PULS_API_TOKEN` reads from one person to everyone on the
+server; `/openapi.json` describes the parameter on every scoped operation, so
+a ChatGPT Action built from it gets the same reach.
+
+```bash
+curl -s -H "Authorization: Bearer $PULS_API_TOKEN" http://localhost:8081/v1/users
+curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
+  "http://localhost:8081/v1/metrics/latest?types=HKQuantityTypeIdentifierHeartRate&user=<uuid>"
+```
+
 `/v1/catalog/types` is cached briefly by the API service because it computes
 per-type row counts and time bounds. It includes aggregate-only types;
 `rawRows` and `aggregateRows` name the two storage grains and `rows` is their
@@ -721,6 +746,7 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
   http://localhost:8081/v1/catalog/types | python3 -m json.tool
 ```
 
+- `GET /v1/users`
 - `GET /v1/profile`
 - `GET /v1/catalog/types`
 - `GET /v1/metrics/latest?types=...`
@@ -734,6 +760,9 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
 - `GET /v1/state-of-mind?start=...&end=...`
 - `GET /v1/export?format=csv|jsonl&dataset=...&start=...&end=...`
 - `GET /healthz`
+
+Every `/v1` route but `/v1/users` also takes the optional `user` parameter
+above.
 
 `/v1/sleep/daily` returns one row per sleep session rather than one per
 calendar day: a session is attributed to the local day it **ends** on (the
@@ -778,10 +807,13 @@ curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
   "http://localhost:8081/v1/export?format=csv&dataset=sleep&start=1767225600000&end=1798761600000"
 ```
 
-Two of these endpoints need `SELECT` on `sources` and `category_labels`, which
-`db/migrations/099_read_roles.sh` grants to `api_reader`. That script runs on
-every `docker compose up -d`, so an existing install picks the grants up on
-its next migrate run — no manual step.
+Three of these endpoints need tables beyond the sample ones: `/v1/samples`
+and `/v1/sleep/daily` read `sources` and `category_labels`, and `/v1/users`
+aggregates `batches` (no credential lives there — a batch's token is an
+integer id into `device_tokens`, which `api_reader` cannot read). All three
+are on the exact grant list in `db/migrations/099_read_roles.sh`, and that
+script runs on every `docker compose up -d`, so an existing install picks the
+grants up on its next migrate run — no manual step.
 
 Fixture-writing integration tests for this service require
 `PULS_API_WRITE_INTEGRATION_TESTS=1` and should not be run against live or

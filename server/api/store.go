@@ -13,10 +13,10 @@ import (
 
 type Store struct {
 	pool *pgxpool.Pool
-	// Every read is scoped to this user (PULS_USER_ID, default the seeded
-	// user). Multi-user reads are a later feature; for now one deployment
-	// serves one person.
-	userID string
+	// No user lives here: every read takes the user it is for as an
+	// argument, settled per request by the scopeUser middleware in main.go
+	// (the ?user= parameter, else PULS_USER_ID). One Store serves everyone
+	// the database holds.
 	// The calendar zone the daily endpoints bucket in (PULS_TIME_ZONE, loaded
 	// once at startup in main.go). It must match the phone's zone and the
 	// database's puls.time_zone setting, which metric_daily uses for the same
@@ -24,11 +24,11 @@ type Store struct {
 	loc *time.Location
 }
 
-func NewStore(pool *pgxpool.Pool, userID string, loc *time.Location) *Store {
+func NewStore(pool *pgxpool.Pool, loc *time.Location) *Store {
 	if loc == nil {
 		loc = time.UTC
 	}
-	return &Store{pool: pool, userID: userID, loc: loc}
+	return &Store{pool: pool, loc: loc}
 }
 
 func (st *Store) Ping(ctx context.Context) error { return st.pool.Ping(ctx) }
@@ -117,13 +117,13 @@ type WorkoutDetail struct {
 	Activities       []map[string]any             `json:"activities,omitempty"`
 }
 
-func (st *Store) Profile(ctx context.Context) (*Profile, error) {
+func (st *Store) Profile(ctx context.Context, userID string) (*Profile, error) {
 	row := st.pool.QueryRow(ctx, `
 		SELECT id::text, name, email,
 		       (extract(epoch FROM (dob::timestamp AT TIME ZONE 'UTC')) * 1000)::bigint,
 		       biological_sex
 		FROM users
-		WHERE id = $1`, st.userID)
+		WHERE id = $1`, userID)
 
 	var profile Profile
 	if err := row.Scan(
@@ -141,7 +141,7 @@ func (st *Store) Profile(ctx context.Context) (*Profile, error) {
 	return &profile, nil
 }
 
-func (st *Store) CatalogTypes(ctx context.Context) ([]CatalogType, error) {
+func (st *Store) CatalogTypes(ctx context.Context, userID string) ([]CatalogType, error) {
 	rows, err := st.pool.Query(ctx, `
 		WITH per_table AS (
 			SELECT st.identifier, st.kind, st.unit,
@@ -220,7 +220,7 @@ func (st *Store) CatalogTypes(ctx context.Context) ([]CatalogType, error) {
 		       max(latest) AS latest
 		FROM per_table
 		GROUP BY identifier, kind, unit
-		ORDER BY identifier`, st.userID)
+		ORDER BY identifier`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func (st *Store) CatalogTypes(ctx context.Context) ([]CatalogType, error) {
 	return out, rows.Err()
 }
 
-func (st *Store) LatestMetrics(ctx context.Context, types []string) ([]LatestMetric, error) {
+func (st *Store) LatestMetrics(ctx context.Context, userID string, types []string) ([]LatestMetric, error) {
 	rows, err := st.pool.Query(ctx, `
 		SELECT DISTINCT ON (st.identifier)
 		       st.identifier, st.unit, q.value::float8,
@@ -255,7 +255,7 @@ func (st *Store) LatestMetrics(ctx context.Context, types []string) ([]LatestMet
 		JOIN sample_types st ON st.type_id = q.type_id
 		WHERE q.user_id = $1
 		  AND st.identifier = ANY($2::text[])
-		ORDER BY st.identifier, q.start_ts DESC`, st.userID, types)
+		ORDER BY st.identifier, q.start_ts DESC`, userID, types)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +282,7 @@ func (st *Store) LatestMetrics(ctx context.Context, types []string) ([]LatestMet
 	return out, nil
 }
 
-func (st *Store) DailyMetrics(ctx context.Context, types []string, start, end time.Time) ([]DailyMetric, error) {
+func (st *Store) DailyMetrics(ctx context.Context, userID string, types []string, start, end time.Time) ([]DailyMetric, error) {
 	startDay, endDay, err := localDayRange(start, end, st.loc)
 	if err != nil {
 		return nil, err
@@ -296,7 +296,7 @@ func (st *Store) DailyMetrics(ctx context.Context, types []string, start, end ti
 		  AND md.day < $2::date
 		  AND md.user_id = $3
 		  AND md.identifier = ANY($4::text[])
-		ORDER BY md.identifier, md.day`, startDay, endDay, st.userID, types)
+		ORDER BY md.identifier, md.day`, startDay, endDay, userID, types)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +335,7 @@ func (st *Store) DailyMetrics(ctx context.Context, types []string, start, end ti
 	return out, nil
 }
 
-func (st *Store) ActivitySummary(ctx context.Context, start, end time.Time) ([]ActivityDay, error) {
+func (st *Store) ActivitySummary(ctx context.Context, userID string, start, end time.Time) ([]ActivityDay, error) {
 	startDay, endDay, err := localDayRange(start, end, st.loc)
 	if err != nil {
 		return nil, err
@@ -349,7 +349,7 @@ func (st *Store) ActivitySummary(ctx context.Context, start, end time.Time) ([]A
 		FROM activity_summaries
 		WHERE user_id = $1
 		  AND date >= $2::date AND date < $3::date
-		ORDER BY date`, st.userID, startDay, endDay)
+		ORDER BY date`, userID, startDay, endDay)
 	if err != nil {
 		return nil, err
 	}
@@ -404,9 +404,9 @@ const workoutSummarySQL = `
 // never holding more than one row. A Limit of zero or less means every
 // match — what the export passes; Workouts passes the endpoint's page size.
 // fn's error stops the scan and comes back unchanged.
-func (st *Store) StreamWorkouts(ctx context.Context, filters WorkoutFilters, fn func(WorkoutSummary) error) error {
+func (st *Store) StreamWorkouts(ctx context.Context, userID string, filters WorkoutFilters, fn func(WorkoutSummary) error) error {
 	rows, err := st.pool.Query(ctx, workoutSummarySQL,
-		st.userID,
+		userID,
 		filters.Start,
 		filters.End,
 		filters.ActivityType,
@@ -430,9 +430,9 @@ func (st *Store) StreamWorkouts(ctx context.Context, filters WorkoutFilters, fn 
 	return rows.Err()
 }
 
-func (st *Store) Workouts(ctx context.Context, filters WorkoutFilters) ([]WorkoutSummary, error) {
+func (st *Store) Workouts(ctx context.Context, userID string, filters WorkoutFilters) ([]WorkoutSummary, error) {
 	out := make([]WorkoutSummary, 0)
-	if err := st.StreamWorkouts(ctx, filters, func(summary WorkoutSummary) error {
+	if err := st.StreamWorkouts(ctx, userID, filters, func(summary WorkoutSummary) error {
 		out = append(out, summary)
 		return nil
 	}); err != nil {
@@ -451,7 +451,7 @@ func nullableLimit(limit int) *int {
 	return &limit
 }
 
-func (st *Store) Workout(ctx context.Context, uuid string) (*WorkoutDetail, error) {
+func (st *Store) Workout(ctx context.Context, userID, uuid string) (*WorkoutDetail, error) {
 	row := st.pool.QueryRow(ctx, `
 		SELECT w.uuid::text, w.activity_type, w.start_ts, w.end_ts,
 		       w.duration_s::float8, w.distance_m::float8, w.energy_kcal::float8,
@@ -467,7 +467,7 @@ func (st *Store) Workout(ctx context.Context, uuid string) (*WorkoutDetail, erro
 		    AND wsp.user_id = w.user_id
 		) metric_streams ON TRUE
 		WHERE w.user_id = $1
-		  AND w.uuid = $2`, st.userID, uuid)
+		  AND w.uuid = $2`, userID, uuid)
 
 	var (
 		summary         WorkoutSummary

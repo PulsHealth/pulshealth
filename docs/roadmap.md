@@ -104,12 +104,19 @@ repository can build has `user_id` from migration 000, and `ensureUser` creates
 whatever id the header carries, so a second phone's rows land in a populated
 database with no wipe.
 
-What is missing is reading them back. `server/api` and `web` are each
-configured with a single `PULS_USER_ID` and answer for that user alone; only
-Grafana's health dashboard has a `user` variable. The work is to scope the API
-per request — most naturally by the token of §4, which is why that comes first —
-and to give the viewer a way to choose. Until then the honest workaround is a
-second API/viewer pair on a different `PULS_USER_ID`.
+What was missing was reading them back. **The API side is done** (2026-09):
+every `/v1` route takes `?user=<uuid>`, defaulting to `PULS_USER_ID`; naming
+anyone else is gated by `PULS_MULTI_USER` (default off, 403 otherwise — never a
+quiet answer for the default user); `GET /v1/users` lists who exists with
+their upload counts; `puls-export --user` and the OpenAPI document carry the
+parameter; `api_reader` reads `batches` for it. Built on that contract: the
+**web viewer** (merged alongside) lets you choose a user per session over the
+same parameter, and the **MCP server** takes the user as a tool argument and
+lists users in its own change. Still open after those: nothing
+binds the product API token to a user — with the gate on, `PULS_API_TOKEN`
+reads everyone — so a per-user read token (the read-side twin of §4) is the
+next step if a household wants a token per person rather than one for the
+server.
 
 ## 6. Put the documentation on the site — Phase 2 leftover
 
