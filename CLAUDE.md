@@ -61,8 +61,9 @@ scripts/bootstrap.sh --build                   # first run, from source
 make dev-up                                    # thereafter (compose.build.yml)
 
 # Marketing site (bun, not npm). Exports to site/out: the marketing pages plus
-# 177 knowledge-base type pages and one page per blog article — the two counts
-# CI asserts. `make site-dev|site-build|site-lint` and
+# 177 knowledge-base type pages, one page per blog article and one page per
+# entry in the docs manifest (site/src/lib/docs.ts: five repository markdown
+# files under /docs/) — the three counts CI asserts. `make site-dev|site-build|site-lint` and
 # `scripts/deploy-site.sh` (S3 + CloudFront) wrap this from the repo root.
 cd site && bun install && bun run lint && bun run build
 
@@ -305,16 +306,22 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   than a copy, so it can push detail screens the footer knows nothing about —
   that is why the `NavigationStack` carries `.id(step)`; removing it leaves a
   pushed category sitting on top of the next step.
-- **`site/`, `knowledge-base/` and `blog/` are siblings at the repository root.**
+- **`site/`, `knowledge-base/` and `blog/` are siblings at the repository root,
+  and `site/` also reads five documentation files from the tree.**
   The site reads its content by relative path —
   `path.join(process.cwd(), "..", "knowledge-base")` in `site/src/lib/api.ts`,
-  `../blog/articles` in `site/src/lib/blog.ts`, and `cp -r ../blog/images/.` in
-  `site/package.json`'s `copy-blog-images`. Move or rename any of the three and
-  the loaders log "dir not found", return nothing, and the build **still
+  `../blog/articles` in `site/src/lib/blog.ts`, `cp -r ../blog/images/.` in
+  `site/package.json`'s `copy-blog-images`, and the explicit manifest in
+  `site/src/lib/docs.ts` (`docs/protocol/README.md`, `server/README.md`,
+  `docs/ai.md`, `docs/export.md`, `docs/database-guide.md` → `/docs/<slug>/`,
+  with relative links rewritten to the site route or to the file on GitHub;
+  the markdown is never edited for the site). Move or rename any of these and
+  the loaders log "not found", return nothing, and the build **still
   succeeds** — it just exports far fewer pages. The count is the only alarm, so
-  the `site` CI job asserts it (177 type pages, one per tracked YAML file, and
-  one page per `blog/articles/*.mdx`). Keep that check honest rather than
-  loosening it.
+  the `site` CI job asserts it (177 type pages, one per tracked YAML file,
+  one page per `blog/articles/*.mdx`, and one `/docs/` page per manifest
+  entry — the `manifest=5` constant in `ci.yml` moves with the manifest).
+  Keep that check honest rather than loosening it.
 - **The app is shipped software, not a source drop.** It is published on the
   App Store as
   [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) (free,

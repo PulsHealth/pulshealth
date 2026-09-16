@@ -3,6 +3,7 @@ import path from "path";
 import * as yaml from "js-yaml";
 import { HealthKitType, SearchItem } from "./types";
 import { getAllPosts } from "./blog";
+import { getAllDocs } from "./docs";
 import { STATIC_PAGES } from "./pages";
 
 // Points to the knowledge-base directory containing the YAML content files
@@ -96,7 +97,17 @@ export async function getTypeById(
 }
 
 export async function getAllSearchItems(): Promise<SearchItem[]> {
-  const [types, posts] = await Promise.all([getAllTypes(), getAllPosts()]);
+  const [types, posts, docs] = await Promise.all([getAllTypes(), getAllPosts(), getAllDocs()]);
+
+  // Documentation pages rendered from the repository
+  const docItems: SearchItem[] = docs.map((doc) => ({
+    id: `doc-${doc.slug}`,
+    type: "page" as const,
+    title: doc.title,
+    description: doc.description,
+    href: `/docs/${doc.slug}`,
+    icon: "FileText",
+  }));
 
   // Convert blog posts to search items
   const blogItems: SearchItem[] = posts.map((post) => ({
@@ -121,6 +132,6 @@ export async function getAllSearchItems(): Promise<SearchItem[]> {
     category: t.category,
   }));
 
-  // Return combined: pages first, then blog, then healthkit
-  return [...STATIC_PAGES, ...blogItems, ...healthkitItems];
+  // Return combined: pages first, then docs, then blog, then healthkit
+  return [...STATIC_PAGES, ...docItems, ...blogItems, ...healthkitItems];
 }

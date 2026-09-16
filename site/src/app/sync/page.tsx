@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bot, Code2, Database, Globe, HardDriveDownload, LayoutDashboard, LineChart, Package, Plug, Server, ShieldCheck, Smartphone, Terminal } from "lucide-react";
-import { GitHubIcon } from "@/components/brand-icons";
+import { ArrowRight, BookOpen, Bot, Code2, Database, Globe, HardDriveDownload, LayoutDashboard, LineChart, Package, Plug, Server, ShieldCheck, Smartphone, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,10 +70,10 @@ export default function SyncPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
-              <a href={`${GITHUB}/tree/main/server`} target="_blank" rel="noopener noreferrer">
-                <GitHubIcon className="mr-2 h-4 w-4" />
+              <Link href="/docs/self-hosting">
+                <BookOpen className="mr-2 h-4 w-4" />
                 Server Documentation
-              </a>
+              </Link>
             </Button>
             <Button asChild variant="outline" size="lg">
               <Link href="/app">
@@ -230,10 +229,10 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
               </CardHeader>
               <CardContent>
                 <Button asChild variant="outline">
-                  <a href={`${GITHUB}/tree/main/docs/protocol`} target="_blank" rel="noopener noreferrer">
+                  <Link href="/docs/protocol">
                     Read the Specification
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
               </CardContent>
             </Card>

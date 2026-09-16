@@ -1,4 +1,4 @@
-import "./code-styles.css";
+import "@/app/code-styles.css";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, ArrowLeft } from "lucide-react";

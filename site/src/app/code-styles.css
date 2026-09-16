@@ -1,4 +1,4 @@
-@reference "../../../app/globals.css";
+@reference "./globals.css";
 
 /* Code block styling with rehype-pretty-code */
 [data-rehype-pretty-code-figure] {

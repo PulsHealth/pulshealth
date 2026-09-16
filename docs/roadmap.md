@@ -120,15 +120,17 @@ server.
 
 ## 6. Put the documentation on the site — Phase 2 leftover
 
-`site/` exports the marketing pages, the blog and the knowledge-base viewer; its
-loaders read `knowledge-base/` and `blog/` and nothing else. The protocol spec,
-the self-hosting guide, `docs/ai.md` and `docs/export.md` are readable only on
-GitHub. The plan put a docs site on `pulshealth.com` in Phase 2 and it did not
-happen — the `/sync` marketing page links to the repository instead.
-
-Worth doing after §1, when there is a released thing to document, and worth
-doing as a third content source in the existing static export rather than a
-second site.
+**Done** (2026-09), as a third content source in the existing static export
+rather than a second site: `site/src/lib/docs.ts` holds an explicit manifest
+of five repository files — the protocol spec, `server/README.md`, `docs/ai.md`,
+`docs/export.md` and `docs/database-guide.md` — rendered at
+`pulshealth.com/docs/<slug>/` from the markdown as it is on `main`, with the
+spec's own heading anchors preserved and relative links rewritten to the site
+route or to the file on GitHub. The `/sync` page, the header and the footer
+point at those pages now, and the `site` CI job asserts the docs count
+alongside the other two. What is not rendered (the JSON Schemas, the fixture
+corpus, `catalog.md`, the Swift package and MCP READMEs) stays on GitHub, one
+link away from the index.
 
 ## 7. Alternative sinks and local export — APP-11, APP-12
 

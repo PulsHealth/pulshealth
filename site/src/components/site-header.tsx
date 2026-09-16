@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Menu, Smartphone, BookOpen, Bot, LifeBuoy, MessageCircle, FileText, Server, FileCode2, Bug, Info } from "lucide-react"
+import { Menu, Smartphone, BookOpen, BookMarked, Bot, LifeBuoy, MessageCircle, FileText, Server, FileCode2, Bug, Info } from "lucide-react"
 import { GitHubIcon } from "@/components/brand-icons"
 
 import { cn } from "@/lib/utils"
@@ -54,17 +54,15 @@ const project: NavItem[] = [
   },
   {
     title: "Sync Protocol",
-    href: `${GITHUB}/tree/main/docs/protocol`,
+    href: "/docs/protocol",
     description: "The spec, JSON Schema and fixtures for your own backend",
     icon: FileCode2,
-    external: true,
   },
   {
     title: "Use It With AI",
-    href: `${GITHUB}/blob/main/docs/ai.md`,
+    href: "/docs/ai",
     description: "Read-only MCP server for Claude, Claude Code and Cursor",
     icon: Bot,
-    external: true,
   },
   {
     title: "Source on GitHub",
@@ -76,6 +74,13 @@ const project: NavItem[] = [
 ]
 
 const resources: NavItem[] = [
+  {
+    title: "Documentation",
+    href: "/docs",
+    description: "Protocol spec, self-hosting, AI and export guides",
+    icon: BookMarked,
+    section: "Support",
+  },
   {
     title: "Knowledge Base",
     href: "/knowledge-base",
@@ -198,6 +203,21 @@ export function SiteHeader() {
                   </div>
                 </div>
               </NavigationMenuContent>
+            </NavigationMenuItem>
+
+            {/* Docs Link */}
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild>
+                <Link
+                  href="/docs"
+                  className={cn(
+                    "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50",
+                    pathname.startsWith("/docs") && "bg-accent/50"
+                  )}
+                >
+                  Docs
+                </Link>
+              </NavigationMenuLink>
             </NavigationMenuItem>
 
             {/* Consulting Link */}

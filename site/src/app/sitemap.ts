@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAllTypes } from "@/lib/api";
 import { getAllPosts } from "@/lib/blog";
+import { getAllDocs } from "@/lib/docs";
 import { STATIC_PAGES } from "@/lib/pages";
 
 export const dynamic = "force-static";
@@ -32,5 +33,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticEntries, ...blogEntries, ...typeEntries];
+  // Documentation rendered from the repository
+  const docs = await getAllDocs();
+  const docEntries: MetadataRoute.Sitemap = docs.map((doc) => ({
+    url: `${baseUrl}/docs/${doc.slug}`,
+    changeFrequency: "monthly",
+    priority: 0.8,
+  }));
+
+  return [...staticEntries, ...docEntries, ...blogEntries, ...typeEntries];
 }
