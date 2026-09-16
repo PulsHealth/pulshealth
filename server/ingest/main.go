@@ -71,6 +71,12 @@ type protocolRejection struct {
 }
 
 func main() {
+	// `ingest devices …` is the operator CLI for per-device tokens
+	// (devices_cli.go); everything else is the server.
+	if len(os.Args) > 1 && os.Args[1] == "devices" {
+		os.Exit(runDevicesCLI(os.Args[2:], os.Stdout, os.Stderr))
+	}
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
@@ -404,6 +410,7 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 		"batch_id", batch.Header.BatchID,
 		"device_id", batch.Header.DeviceID,
 		"user_id", batch.Header.UserID,
+		"token_id", batch.Header.DeviceTokenID,
 		"wake_id", batch.Header.WakeID,
 		"trigger", batch.Header.Trigger,
 		"protocol", protocol,
