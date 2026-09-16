@@ -44,7 +44,9 @@ const (
 
 type apiStore interface {
 	Ping(context.Context) error
-	// Every read takes the user it is for as its second argument —
+	// Who the database holds: the one read that is not about a single user.
+	Users(context.Context) ([]User, error)
+	// Every other read takes the user it is for as its second argument —
 	// explicit rather than baked into the store, so a handler cannot forget
 	// it and a fake can record which user it was asked about.
 	Profile(context.Context, string) (*Profile, error)
@@ -271,6 +273,7 @@ func (s *Server) apiRoutes() []route {
 		{"GET /docs", "/docs", s.handleDocs, false},
 		{"GET /openapi.json", "/openapi.json", s.handleOpenAPI, false},
 		{"GET /healthz", "/healthz", s.handleHealthz, false},
+		{"GET /v1/users", "/v1/users", s.handleUsers, true},
 		{"GET /v1/profile", "/v1/profile", s.handleProfile, true},
 		{"GET /v1/catalog/types", "/v1/catalog/types", s.handleCatalogTypes, true},
 		{"GET /v1/metrics/latest", "/v1/metrics/latest", s.handleLatestMetrics, true},

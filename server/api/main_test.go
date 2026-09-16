@@ -25,6 +25,7 @@ type fakeStore struct {
 	samples  *SamplesPage
 	series   *WorkoutSeriesResponse
 	moods    []StateOfMindEntry
+	users    []User
 	calls    struct {
 		catalog int
 	}
@@ -134,6 +135,13 @@ func (f *fakeStore) StateOfMind(_ context.Context, user string, _, _ time.Time) 
 func (f *fakeStore) Ping(context.Context) error {
 	f.pings.Add(1)
 	return f.err
+}
+
+func (f *fakeStore) Users(context.Context) ([]User, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.users, nil
 }
 
 func (f *fakeStore) Profile(_ context.Context, user string) (*Profile, error) {
@@ -314,12 +322,13 @@ func TestOpenAPIWithoutAuthAdvertisesProductPaths(t *testing.T) {
 	for _, path := range []string{
 		"/v1/profile", "/v1/catalog/types", "/v1/metrics/latest", "/v1/metrics/daily", "/v1/activity/summary",
 		"/v1/workouts", "/v1/workouts/{uuid}", "/v1/workouts/{uuid}/series", "/v1/sleep/daily", "/v1/samples", "/v1/state-of-mind",
+		"/v1/users",
 	} {
 		if _, ok := body.Paths[path]; !ok {
 			t.Fatalf("openapi paths missing %s", path)
 		}
 	}
-	for _, schema := range []string{"WorkoutDetail", "SleepNight", "SamplesPage", "WorkoutSeriesResponse", "StateOfMindEntry"} {
+	for _, schema := range []string{"WorkoutDetail", "SleepNight", "SamplesPage", "WorkoutSeriesResponse", "StateOfMindEntry", "User"} {
 		if _, ok := body.Components.Schemas[schema]; !ok {
 			t.Fatalf("openapi schemas missing %s", schema)
 		}
@@ -1063,6 +1072,26 @@ func TestResponseContractJSONShapes(t *testing.T) {
 		t.Fatalf("statisticsDetail metric type = %T, want object", stats["HKQuantityTypeIdentifierHeartRate"])
 	} else if got := metric["avg"].(float64); got != 68 {
 		t.Fatalf("statisticsDetail avg = %v, want 68", got)
+	}
+
+	// A user who has never synced: numeric counts, an explicit null for
+	// lastSync, and epoch milliseconds for createdAt.
+	userJSON := mustMarshal(t, User{UserID: defaultUserID, CreatedAt: timestamp})
+	var userBody map[string]any
+	if err := json.Unmarshal(userJSON, &userBody); err != nil {
+		t.Fatalf("decode user: %v", err)
+	}
+	if got, ok := userBody["createdAt"].(float64); !ok || int64(got) != timestamp {
+		t.Fatalf("createdAt = %#v, want %d", userBody["createdAt"], timestamp)
+	}
+	if value, ok := userBody["lastSync"]; !ok || value != nil {
+		t.Fatalf("lastSync = %#v (present %v), want an explicit null", value, ok)
+	}
+	if got, ok := userBody["batches"].(float64); !ok || got != 0 {
+		t.Fatalf("batches = %#v, want 0", userBody["batches"])
+	}
+	if got, ok := userBody["uploadedSamples"].(float64); !ok || got != 0 {
+		t.Fatalf("uploadedSamples = %#v, want 0", userBody["uploadedSamples"])
 	}
 }
 
