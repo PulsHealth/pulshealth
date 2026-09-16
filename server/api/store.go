@@ -22,13 +22,15 @@ type Store struct {
 	// database's puls.time_zone setting, which metric_daily uses for the same
 	// day boundaries.
 	loc *time.Location
+	// The clock the summary's "today" is read from; time.Now outside tests.
+	now func() time.Time
 }
 
 func NewStore(pool *pgxpool.Pool, loc *time.Location) *Store {
 	if loc == nil {
 		loc = time.UTC
 	}
-	return &Store{pool: pool, loc: loc}
+	return &Store{pool: pool, loc: loc, now: time.Now}
 }
 
 func (st *Store) Ping(ctx context.Context) error { return st.pool.Ping(ctx) }
