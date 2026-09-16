@@ -38,6 +38,8 @@ exactly as before, and the new migration applies itself on the next
   `batches` row now records which device wrote it (`device_token_id`, NULL
   for the shared token) and the per-batch log line carries `token_id`.
   Migration `014_device_tokens.sql`.
+- web: a user switcher when the database holds more than one user;
+  `?user=<uuid>` picks one (SRV-11).
 
 ### Changed
 

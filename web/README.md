@@ -39,12 +39,38 @@ DATABASE_URL="postgres://grafana:GRAFANA_DB_PASSWORD@127.0.0.1:15432/postgres?ss
 Inside the compose stack the `web` service gets `DATABASE_URL` built from
 `GRAFANA_DB_PASSWORD` automatically (see `../server/docker-compose.yml`).
 
-`PULS_USER_ID` selects the one user shown by this read-only viewer; it defaults to
-the seeded app user. `PULS_TIME_ZONE` controls Today, greetings, chart buckets,
+`PULS_USER_ID` is the user shown until one is chosen (see "Choosing a user"
+below); it defaults to the seeded app user. `PULS_TIME_ZONE` controls Today, greetings, chart buckets,
 and day boundaries; it defaults to `UTC` and must match the server stack's
 `PULS_TIME_ZONE` (the database exposes its own as `puls_time_zone()`; on a
 mismatch the viewer logs a warning and stops using `metric_daily`). The status
 dot shows **Live data** (green), **Demo data** (amber), or **Database unavailable**.
+
+## Choosing a user
+
+The database can hold more than one person's records — every phone that syncs
+lands its rows under its own `user_id` — and the viewer shows one of them at a
+time. Which one:
+
+- **`PULS_USER_ID`** is the default: the user shown until one is chosen.
+- **The sidebar's user switcher** appears when the database holds two or more
+  users (a single-user install never sees it). Picking one posts to
+  `/api/user`, which remembers the choice in a `puls-user` cookie for a year
+  — a plain form, so it works without JavaScript — and sends you back to the
+  page you were on. Users are listed by name, else e-mail, else the short form
+  of their id; both fields stay empty until that phone's first profile sync.
+- **`?user=<uuid>`** on any page picks a user the same way and then drops the
+  parameter from the URL, so a bookmark or a link from Grafana can open one
+  person directly. The id is the one Grafana's `user` variable shows (or
+  `SELECT id, name FROM users`). Settings shows whose data is on screen.
+
+**This is a preference, not access control.** Everyone behind the one
+`WEB_AUTH_PASSWORD` can look at every user, and the cookie is nothing but the
+chosen id (a forged value is at worst an id the database does not have, which
+renders empty — with the switcher there to pick a real one). A viewer that
+must show one household member only their own records is a different design;
+until then, share the password with the people who may see everything in the
+database.
 
 ## Access control
 
@@ -64,7 +90,7 @@ pairing block (`make pairing` re-prints it). Details:
   rejected username would only be a way to lock yourself out. Type anything.
 - **`/api/healthz` stays open**, so container health checks and deploy probes
   keep working without credentials. Everything else, including static assets,
-  goes through the check.
+  `/api/user` and the `?user=` shortcut, goes through the check.
 - The comparison is constant-time (both sides SHA-256'd, then compared
   branch-free), and nothing about a failed attempt is logged — the
   `Authorization` header holds the password, and a near-miss in a log file is
@@ -104,7 +130,8 @@ web/
 └── lib/
     ├── catalog.generated.ts  # GENERATED from ../docs/protocol/catalog.json (npm run gen:catalog)
     ├── catalog.ts       # the web catalog: generated core + web-only overlay, GROUPS, lookups
-    ├── queries.ts       # the single per-user data API; local demo fallback
+    ├── queries.ts       # the single data API (user id as first argument); local demo fallback
+    ├── viewer.ts        # which user this request shows: puls-user cookie, else PULS_USER_ID
     ├── db.ts            # pg pool (server-only)
     ├── demo.ts          # deterministic synthetic data
     ├── metrics.ts       # cumulative-vs-instantaneous classification, time ranges
@@ -117,7 +144,8 @@ web/
 only GETs return type counts and reconciliation digests, not time series. So, like
 Grafana, this app queries TimescaleDB directly: `quantity_samples` /
 `category_samples` / `workouts` joined to `sample_types`, bucketed with
-`time_bucket()`. Every health-data read is scoped to `PULS_USER_ID`, with calendar
+`time_bucket()`. Every health-data read is scoped to the chosen user (the
+`puls-user` cookie, else `PULS_USER_ID` — see "Choosing a user"), with calendar
 boundaries in `PULS_TIME_ZONE`. Sleep and mindful sessions are durations, Stand
 Hours count only stood records, and other categories are occurrence counts.
 Cumulative raw samples total each source separately and choose the highest source
