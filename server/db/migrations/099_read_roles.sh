@@ -3,6 +3,8 @@
 # environment variables (see docker-compose.yml / .env):
 #
 #   grafana     read-only; Grafana datasource + web viewer   GRAFANA_DB_PASSWORD (required)
+#               (SELECT on every table except device_tokens, which holds
+#               credential hashes and is revoked on every run)
 #   api_reader  read-only; product API, exact SELECT set     API_DB_PASSWORD     (required)
 #   ingest      DML-only writer for the ingest server        INGEST_DB_PASSWORD  (see below)
 #
@@ -117,6 +119,21 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON SEQUENCES TO grafana;
 GRANT USAGE ON SCHEMA _timescaledb_internal TO grafana;
 GRANT SELECT ON ALL TABLES IN SCHEMA _timescaledb_internal TO grafana;
 ALTER DEFAULT PRIVILEGES IN SCHEMA _timescaledb_internal GRANT SELECT ON TABLES TO grafana;
+
+-- device_tokens (014) holds credential hashes and per-device labels: nothing
+-- a dashboard or the web viewer needs, and the one table a read-only role
+-- must not hand to a dashboard editor. The blanket grant above and the
+-- default privileges cover it, so revoke it here — on every run, because
+-- the ALTER DEFAULT PRIVILEGES line re-grants it on a fresh install where
+-- 014 is applied in the same migrate run that created the role. Guarded so
+-- a baseline run on a database that predates 014 does not fail.
+DO $$
+BEGIN
+  IF to_regclass('public.device_tokens') IS NOT NULL THEN
+    REVOKE ALL ON TABLE device_tokens FROM grafana;
+  END IF;
+END
+$$;
 
 -- Keep product API credentials scoped to the exact current query surface.
 -- `sources` names the device or app behind a raw sample and `category_labels`

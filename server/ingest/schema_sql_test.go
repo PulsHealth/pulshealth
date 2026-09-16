@@ -111,3 +111,32 @@ func readSQL(t *testing.T, path string) string {
 	}
 	return string(b)
 }
+
+func TestDeviceTokensSchema(t *testing.T) {
+	sql := readSQL(t, "../db/migrations/014_device_tokens.sql")
+	for _, want := range []string{
+		"CREATE TABLE device_tokens",
+		"token_hash   bytea       NOT NULL UNIQUE CHECK (octet_length(token_hash) = 32)",
+		"user_id      uuid        NOT NULL REFERENCES users(id)",
+		"CHECK (status IN ('active', 'revoked'))",
+		"ALTER TABLE batches ADD COLUMN device_token_id bigint REFERENCES device_tokens(id)",
+	} {
+		if !strings.Contains(sql, want) {
+			t.Fatalf("device_tokens schema missing %q", want)
+		}
+	}
+}
+
+// The grafana role has SELECT on every table by default privilege, so the
+// credential table has to be taken away explicitly, on every run.
+func TestGrafanaCannotReadDeviceTokens(t *testing.T) {
+	script := readSQL(t, "../db/migrations/099_read_roles.sh")
+	for _, want := range []string{
+		"to_regclass('public.device_tokens') IS NOT NULL",
+		"REVOKE ALL ON TABLE device_tokens FROM grafana",
+	} {
+		if !strings.Contains(script, want) {
+			t.Fatalf("read-roles script missing %q", want)
+		}
+	}
+}
