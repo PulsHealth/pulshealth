@@ -291,7 +291,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | AI-5 | ChatGPT Action / custom GPT recipe straight from `/openapi.json`. Near-free once the API is reachable. | S |
 | AI-6 | `GET /v1/summary?range=7d` returning compact markdown for paste-into-any-chat use. | C — **done** 2026-09: `range` of 7d/14d/30d/90d, `format=markdown\|json`, `get_summary` on the MCP server; `docs/ai.md` has the curl-and-paste recipe. |
 | AI-7 | Opt-in raw SQL MCP tool over a read-only role, off by default. | C — **dropped**: it contradicts the invariant that `server/mcp` is a read-only client of the product API and never holds a database URL. Anyone who wants SQL has `psql` and `docs/database-guide.md`. |
-| AI-8 | The existing exploration notebook reframed as "analyze your data" with an LLM section. | C |
+| AI-8 | The existing exploration notebook reframed as "analyze your data" with an LLM section. | C — **done** 2026-09: six analyses over `metric_daily`, the rings, sleep and workouts, then the `/v1/summary` page rendered from the frames and an optional, skipped-by-default Claude cell. |
 
 ### OSS hygiene (R-OSS)
 
@@ -391,7 +391,7 @@ channel) was skipped; the app went straight to the store.
 
 - SRV-8 per-device tokens (server side done; phone-side enrollment remains),
   SRV-11 multi-user reads (API, web viewer and MCP done; no per-user read token yet), APP-11 sink factory,
-  APP-12 file export, AI-8.
+  APP-12 file export.
 
 These, plus the release and submission work the phases above did not cover,
 are tracked with current status and sequencing in [`roadmap.md`](roadmap.md).

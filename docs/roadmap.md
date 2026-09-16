@@ -148,11 +148,16 @@ health data (today's `ShareLink` exports the diagnostics bundle, not samples).
 Both are "later" for a reason: the HTTP path is what everyone uses. Do APP-11
 only when a second sink actually exists to justify it.
 
-## 8. AI extras — AI-8
+## 8. AI extras
 
-- **AI-8, reframe the exploration notebook.** `notebooks/healthkit_database_exploration.ipynb`
-  is still framed as a database tour; the plan wanted an "analyze your data"
-  version with an LLM section.
+Nothing outstanding. **AI-8 is done** (2026-09):
+`notebooks/healthkit_database_exploration.ipynb` analyzes one user's synced
+data — coverage, activity trends, resting heart rate and HRV, sleep,
+workouts, correlations — over the daily surfaces the product API serves,
+and ends by rendering the `GET /v1/summary` page from the frames with the
+three ways to hand it to an assistant (paste, `curl`, MCP) and an optional
+`anthropic` SDK cell that stays skipped unless `ANTHROPIC_API_KEY` is set.
+The schema tour it used to be lives in `docs/database-guide.md`.
 
 **AI-7 (a raw-SQL MCP tool) is dropped**, not deferred: it contradicts the
 standing invariant that `server/mcp` is a read-only client of the product API

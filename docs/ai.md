@@ -68,7 +68,10 @@ the same numbers as a `Summary` object. The page carries averages and totals
 only, and the header says which calendar days and which time zone it covers,
 so the model does not have to guess either. Add `user=<uuid>` on a shared
 server, under the same `PULS_MULTI_USER` rule as every other route. The MCP
-server exposes the same page as `get_summary`.
+server exposes the same page as `get_summary`, and
+[`notebooks/healthkit_database_exploration.ipynb`](../notebooks/healthkit_database_exploration.ipynb)
+renders it straight from the database at the end of its analyses, with an
+optional cell that sends it to Claude.
 
 ## Two ways to connect
 
