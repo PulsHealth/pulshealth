@@ -438,12 +438,61 @@ extension HealthSyncEngine {
                 )
             },
             onChunk: { rows, window in
-                try await self.uploadAggregateRows(
+                // PR #70: the leading-empty skip decides per delivered window.
+                // The flag is read inside the helper, so each subwindow of a
+                // recovery split sees the value the previous one left behind
+                // (the original re-read it before each right half).
+                _ = try await self.prepareAndUploadAggregateRows(
                     rows, config: config, configID: configID, reason: reason,
                     transport: transport, chunk: window, pass: pass
                 )
             }
         )
+    }
+
+    /// Apply sparse storage only to the leading portion of an initial
+    /// scheduled backfill. Once the first real value is materialized, NULL
+    /// buckets remain meaningful and are uploaded normally so recomputations
+    /// and deletions can clear previously stored values.
+    private func prepareAndUploadAggregateRows(
+        _ rows: [AggregateSampleRow],
+        config: AggregateConfig,
+        configID: UUID,
+        reason: SyncReason,
+        transport: any SyncTransport,
+        chunk: DateInterval,
+        pass: AggregatePass
+    ) async throws -> Int {
+        let leadingEmptyBackfill = pass == .scheduled
+            ? await store.aggregateState(for: configID).leadingEmptyBackfill
+            : false
+        guard pass == .scheduled, leadingEmptyBackfill else {
+            try await uploadAggregateRows(
+                rows, config: config, configID: configID, reason: reason,
+                transport: transport, chunk: chunk, pass: pass
+            )
+            return rows.count
+        }
+
+        guard let firstValueIndex = rows.firstIndex(where: { $0.value != nil }) else {
+            await store.recordAggregateSkippedEmptyChunk(
+                configID: configID,
+                newComputedThrough: chunk.end
+            )
+            return 0
+        }
+
+        let materializedRows = Array(rows[firstValueIndex...])
+        try await uploadAggregateRows(
+            materializedRows,
+            config: config,
+            configID: configID,
+            reason: reason,
+            transport: transport,
+            chunk: chunk,
+            pass: pass
+        )
+        return materializedRows.count
     }
 
     private func uploadAggregateRows(
