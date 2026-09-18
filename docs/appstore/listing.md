@@ -214,6 +214,17 @@ flags.
 First release.
 ```
 
+1.4 (submitted 2026-09-18):
+
+```
+• Guided first-run setup: scan the pairing code your server prints, or type the URL and token and test the connection before you continue.
+• Your server token is stored in the iOS Keychain.
+• Sync progress is kept per server, so switching servers never mixes up what was sent.
+• The log shows how much of each upload was new to your server.
+• On a new setup, recent daily summaries upload first, so your server has something to show while history backfills.
+• Fixes: no false "backfill complete" for types that produced no samples, and setup can no longer stall on the medications permission step.
+```
+
 ## Screenshots
 
 Required: 6.9" iPhone (1320 × 2868 or 1290 × 2796). Apple scales those down for
@@ -243,3 +254,12 @@ maintainer's team. The order below tells the story a browser needs:
 
 Do not paste marketing text over them, and do not use another person's health
 data.
+
+**What 1.4 was submitted with:** the four screens that are honest without data
+— 1 Welcome, 2 Your Server (with `https://health.example.net` typed in, token
+field filled), 3 Health Access and 4 Data Types with the starter selection —
+captured at 6.9" (1320 × 2868) on the iPhone 17 Pro Max simulator with the
+status bar overridden to 9:41, plus the Welcome screen at 13" on the iPad
+simulator. They replaced 1.3's set, which advertised CSV/JSON export and QR
+data requests the app no longer has. Swap in the device-only screens above when
+they exist; screenshots can change with any version.
