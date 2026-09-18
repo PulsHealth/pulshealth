@@ -16,31 +16,45 @@ site's export-count assertion.
 
 ## 1. Cut the first release — OSS-8
 
-**This is the one thing that blocks a stranger following the README.**
-`server/docker-compose.yml` pulls `ghcr.io/pulshealth/<name>:${PULS_VERSION:-latest}`,
-`.github/workflows/release.yml` has never run, and there are no tags, so
-`latest` does not exist and the documented quickstart cannot pull. Only
-`scripts/bootstrap.sh --build` works today. The README says so honestly, which
-is the right stopgap and not a substitute.
+**Done.** `v0.1.0` was tagged on 2026-09-14 and `release.yml` published all
+four images for amd64 and arm64; the packages were made public on
+2026-09-18, and 0.2.0 follows (`CHANGELOG.md` has both entries). 0.x rather
+than 1.0.0 deliberately, so config and schema can still change without a
+major. The app's 1.4 (§2) and the protocol's 1 are two other numbers; the
+changelog's header says which is which.
 
-**0.1.0 is chosen and written up**: `CHANGELOG.md` carries the entry, dated
-2026-09-14 — move the date if the tag slips. 0.x rather than 1.0.0 deliberately,
-so config and schema can still change without a major. The app's 1.4 (§2) and
-the protocol's 1 are two other numbers; the changelog's header says which is
-which.
+**Gotcha for anyone publishing from a new organization or a fork:** a
+package `release.yml` creates starts private (its header comment says so),
+and making it public is a by-hand step per package in its settings on
+GitHub — but that step was not available until the PulsHealth
+organization's package-creation policy was changed to allow public
+packages. Change the organization's policy first, then flip each of the
+four.
 
-What is left:
+**The quickstart is verified from published images** (2026-09-18). A fresh
+`git clone --branch v0.1.0` from GitHub, with no ghcr.io login and no local
+`ghcr.io/pulshealth/*` images, then `scripts/bootstrap.sh --no-qr` with no
+`--build`: Compose pulled all four `latest` images anonymously (the same
+digests as `0.1.0`), `migrate` applied the 13 schema files and ran both
+scripts, and ingest answered `/healthz` and `/v1/capabilities` with the
+generated token. `smoke_test.py --url … --token …` posted the whole fixture
+corpus and passed every check — expected counts, replay idempotency, the
+documented rejections — and the product API read the rows back
+(`/v1/profile`, `/v1/samples`, `/v1/workouts`, `/v1/activity/summary`,
+`/v1/sleep/daily`), with the MCP server, the web viewer (Basic auth on) and
+Grafana (datasource OK) all healthy. Its limits, stated plainly: it ran in a
+scratch clone on the maintainer's Mac (Docker Desktop, arm64), not on a
+separate machine; the TimescaleDB and Grafana images were already cached
+there, so their cold pull was not exercised; and **no phone was paired** —
+the fixture corpus stood in for the app.
 
-- push `v0.1.0`, and let `release.yml` publish all four images for amd64 and
-  arm64;
-- flip each new package's visibility to public **once**, by hand, in the GitHub
-  package settings — `release.yml` creates them private (its header comment
-  says so, and nothing in CI can do it for you);
-- run `scripts/bootstrap.sh` on a scratch machine with no `--build`, and get to
-  a paired, syncing stack from published images alone. Until someone has
-  actually done that, the quickstart is unverified;
-- drop the "images are not published yet" bullet from `README.md`'s
-  pre-release block, which stops being true the moment the images exist.
+What it turned up is fixed in the README: an upgrade has to move the
+checkout as well as the images (the compose file and the migrations come
+from it), a default run's pairing block has no URL until `--lan` or `--url`,
+and the host ports are fixed. One thing is left as it is: the quickstart
+clones `main`, which between releases can carry migrations the `latest`
+images have not caught up with. Harmless while every migration is additive;
+if one ever is not, the quickstart should clone the release tag instead.
 
 ## 2. Submit the app's 1.4 — R-STORE, maintainer only
 
@@ -71,7 +85,7 @@ viewer; never a real export). `README.md` § Components is where they belong.
 
 ## 4. Per-device tokens — SRV-8
 
-**Server side shipped (unreleased).** The ingest server issues per-device
+**Server side shipped in 0.2.0.** The ingest server issues per-device
 tokens from the CLI (`make devices ARGS='issue|list|rename|revoke …'`,
 `server/ingest/devices_cli.go`), stores only their SHA-256
 (`014_device_tokens.sql`), binds each to a user so `X-User-ID` must be absent

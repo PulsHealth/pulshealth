@@ -304,7 +304,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | OSS-5 | Personal scrub complete (appendix checklist), verified by a CI grep gate for the known identifiers. | M |
 | OSS-6 | `CLAUDE.md` split: public invariants + gotchas; private ops elsewhere. Delete the old agent-planning docs directory. | M |
 | OSS-7 | CI: `ios-ci.yml` as-is; `validate` + `advisories` jobs moved to a generic `ci.yml`; release workflow builds and pushes images on tag. | M |
-| OSS-8 | `CHANGELOG.md` and tagged releases. | S |
+| OSS-8 | `CHANGELOG.md` and tagged releases. | S — **done** 2026-09: `v0.1.0` published 2026-09-14, images public 2026-09-18, quickstart verified from them ([`roadmap.md`](roadmap.md) § 1). |
 | OSS-9 | Map tile usage-policy note in the web README (OSM/CARTO free endpoints discourage redistribution). | S |
 
 ### App Store (R-STORE)
