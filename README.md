@@ -27,10 +27,6 @@ free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 > - **Schema migrations are automatic** (the `migrate` service applies
 >   `server/db/migrations/` on every start), but an install created before
 >   it existed needs a one-time `make baseline` — see `server/README.md`.
-> - **The container images are not published yet.** Compose pulls
->   `ghcr.io/pulshealth/{ingest,api,mcp,web}`, but nothing is there until the
->   first `v*` release. Until then, build them from the checkout:
->   `scripts/bootstrap.sh --build` (then `make dev-up`).
 > - **Backups are opt-in and off by default.** The stack ships a `backup`
 >   service, but it only runs when you enable its profile
 >   (`docker compose --profile backup up -d backup`, or `make backup` for one
@@ -101,7 +97,10 @@ all three. Leave `--time-zone` out and it uses the host's zone and says so;
 every daily view buckets by this calendar, so it must match the phone's.
 `make pairing` prints the block again whenever you need it.
 
-Where the phone reaches the server is the one decision left to you:
+Where the phone reaches the server is the one decision left to you. Until
+you make it, the pairing block's URL reads `(none yet)` and there is no QR
+code: ingest listens on `127.0.0.1` only, where no phone can reach it.
+Re-run the script with one of these (it changes only that setting):
 
 - **Same Wi-Fi, nothing else to set up:** `scripts/bootstrap.sh --lan` binds
   ingest to every interface (`INGEST_BIND_ADDR=0.0.0.0`), and the pairing
@@ -117,16 +116,21 @@ Where the phone reaches the server is the one decision left to you:
 
 Everything else binds to loopback: the product API on `8081`, the MCP server
 on `8082`, Grafana on `3000`, the web viewer on `3001`, Postgres on `5432`.
+Those host ports are fixed in `server/docker-compose.yml` — only the bind
+addresses are settings — so they must be free: a Postgres already listening
+on 5432, or a dev server on 3000, stops `docker compose up`.
 Re-running `scripts/bootstrap.sh` is safe — it never regenerates secrets —
 and `make up`, `make down`, `make logs`, `make ps` wrap Compose (`make help`
-lists the rest). Upgrading is `make pull up`; `server/README.md` covers
-"Images and versions", configuration, schema migrations, the scoped
-database role for ingest, and Grafana.
+lists the rest). Upgrading is `git pull && make pull up`: the images come
+from the registry, but the compose file and the schema migrations they
+expect come from the checkout, so the two move together (`CHANGELOG.md`
+says what each release needs). `server/README.md` covers "Images and
+versions", configuration, schema migrations, the scoped database role for
+ingest, and Grafana.
 
-**Building from source instead** — after a change in `server/` or `web/`, or
-before the first images are published: `make dev-up` (or
-`scripts/bootstrap.sh --build`) builds the four app images from the checkout
-through the `server/compose.build.yml` overlay.
+**Building from source instead** — after a change in `server/` or `web/`:
+`make dev-up` (or `scripts/bootstrap.sh --build`) builds the four app images
+from the checkout through the `server/compose.build.yml` overlay.
 
 ### App
 

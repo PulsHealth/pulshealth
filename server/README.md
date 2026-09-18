@@ -62,9 +62,10 @@ curl -s localhost:8081/healthz       # → {"db":true,"ok":true}
 
 That is the whole install: the `migrate` service creates the schema on an
 empty volume, records what it applied, and every app service waits for it
-to finish. The same command, after a `docker compose pull`, upgrades a
-running install later. To run the code in this checkout instead of the
-published images, add the developer overlay —
+to finish. The same command, after a `git pull` and a `docker compose
+pull`, upgrades a running install later (see "Deploying and upgrading").
+To run the code in this checkout instead of the published images, add the
+developer overlay —
 `docker compose -f docker-compose.yml -f compose.build.yml up -d --build`,
 or `make dev-up` at the repository root.
 
@@ -182,24 +183,28 @@ manifest list) and every image carries the commit it was built from as the
 - On a git tag `vX.Y.Z`: the exact version (`1.2.3`), a floating `1.2`, and
   `latest`. `latest` and `1.2` move only for non-prerelease tags, so a
   `v1.3.0-rc1` publishes `1.3.0-rc1` and nothing else floats onto it.
-- On a manual run of the workflow (`workflow_dispatch`, e.g. from `main`
-  before the first tag): the tag given as input, or the short commit SHA.
-  Never `latest`.
+- On a manual run of the workflow (`workflow_dispatch`, e.g. to try a
+  branch's images without cutting a release): the tag given as input, or
+  the short commit SHA. Never `latest`.
 
 `PULS_VERSION` in `.env` selects the tag; unset, it is `latest`. Pinning a
-release (`PULS_VERSION=1.2.3`) makes upgrades deliberate: bump it, then
-`docker compose pull && docker compose up -d` (`make pull up`). The `migrate`
-service runs first and applies any schema files the new release brought, and
-the app containers start only after it exits 0. Migrations are forward-only,
-so going back to an older image after a release that migrated the schema is
-not supported — take a `make backup` before upgrading. The database image is
-versioned separately (`x-db-image` in `docker-compose.yml`; see "Upgrading
-the database image").
+release (`PULS_VERSION=1.2.3`) makes upgrades deliberate: bump it, bring the
+checkout to the same release (`git pull`, or `git checkout v1.2.3`), then
+`docker compose pull && docker compose up -d` (`make pull up`). The images
+carry the code, but the compose file and the schema files come from the
+checkout — `migrate` mounts `db/migrations/` from it — so an image newer
+than its checkout starts against a schema that lacks what it expects. The
+`migrate` service runs first and applies any schema files the new release
+brought, and the app containers start only after it exits 0. Migrations are
+forward-only, so going back to an older image after a release that migrated
+the schema is not supported — take a `make backup` before upgrading. The
+database image is versioned separately (`x-db-image` in `docker-compose.yml`;
+see "Upgrading the database image").
 
-To run what is in the checkout — a local change, a branch under review, or
-a fresh clone before any image has been published — add the developer
-overlay, which puts the `build:` blocks back and tags the results
-`pulshealth-<service>:dev` so they never masquerade as a published version:
+To run what is in the checkout — a local change, or a branch under
+review — add the developer overlay, which puts the `build:` blocks back and
+tags the results `pulshealth-<service>:dev` so they never masquerade as a
+published version:
 
 ```bash
 cd server && docker compose -f docker-compose.yml -f compose.build.yml up -d --build
@@ -260,7 +265,7 @@ git pull
 # add INGEST_DB_PASSWORD=<openssl rand -hex 32> to .env (see "The scoped ingest role")
 cd server
 docker compose run --rm migrate baseline
-docker compose up -d --build
+docker compose up -d                  # or `make dev-up` at the root, to run this checkout
 ```
 
 `baseline` records every `*.sql` file as applied, with its checksum,
@@ -1014,8 +1019,8 @@ make restore FILE=<name or path>     # put one back (destroys the current data)
 
 `docker compose --profile backup up -d` with no service named would also
 (re)start everything else, which on an install that builds from the checkout
-means Compose tries to pull `ghcr.io/pulshealth/*` and fails; add
-`-f compose.build.yml` there, or just name `backup` as above.
+means Compose swaps those containers for the published `ghcr.io/pulshealth/*`
+images; add `-f compose.build.yml` there, or just name `backup` as above.
 
 `backup` is a Compose service behind the **`backup` profile**, so a plain
 `docker compose up -d` never starts it and the stack is unchanged for anyone
@@ -1103,7 +1108,7 @@ on a scratch install — not the one holding your data — so the first time you
 use `restore.sh` is not the day you need it.
 
 ```bash
-scripts/bootstrap.sh --build            # a stack with something in it
+scripts/bootstrap.sh                    # a stack with something in it
 # ...sync a batch from the app, or use the curl fixture in
 #    "Verify ingest with curl" — give it a value you will recognise
 
@@ -1115,8 +1120,12 @@ make backup-list
 make down
 docker volume rm pulshealth_db_data
 
-make restore FILE=puls-<timestamp>.dump ARGS="--yes --build"
+make restore FILE=puls-<timestamp>.dump ARGS=--yes
 ```
+
+(The run recorded below predates the published images and passed `--build`
+to both scripts, which drills the same thing against images built from the
+checkout.)
 
 Then check what came back: `docker compose ps` (six services up, `db`
 healthy), `docker compose logs migrate` (it should apply nothing — see below),

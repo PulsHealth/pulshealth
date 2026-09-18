@@ -442,8 +442,11 @@ outside this repository — nothing here assumes a particular machine.
   looks like a release). Anything that changes a Dockerfile, a build context
   or a build arg has to change all three of: that overlay, the `images` job
   in `ci.yml`, and the build matrix in `release.yml`. `PULS_VERSION` in
-  `.env` picks the tag; upgrading is bump it, then `docker compose pull &&
-  docker compose up -d` (`make pull up`), with `migrate` running first.
+  `.env` picks the tag; upgrading is bump it, bring the checkout to the same
+  release (the compose file and `db/migrations/`, which `migrate` mounts, come
+  from it — an image ahead of its checkout meets a schema it does not know),
+  then `docker compose pull && docker compose up -d` (`make pull up`), with
+  `migrate` running first.
 - CI is `.github/workflows/ci.yml` (Go vet/tests, lint, shellcheck,
   `scripts/check-public-tree.sh`, `docker compose config` over **both**
   compose variants, and an `images` job that builds all four images for
