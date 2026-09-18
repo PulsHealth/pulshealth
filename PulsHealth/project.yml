@@ -69,10 +69,20 @@ targets:
         UIBackgroundModes:
           - processing
         ITSAppUsesNonExemptEncryption: false
+        # iPad multitasking requires all four orientations (or
+        # UIRequiresFullScreen); upload validation fails without them.
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
     settings:
       base:
         SWIFT_VERSION: "6.0"
-        TARGETED_DEVICE_FAMILY: "1"
+        # iPhone AND iPad. The store record has been universal since 1.3, and
+        # App Store Connect refuses an update that drops a device family the
+        # previous version supported (QA1623) — "1" alone fails the upload.
+        TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_STYLE: Automatic
         # Must exceed what is on the store — App Store Connect rejects an
         # upload whose build number is not higher than the last one accepted
