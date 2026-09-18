@@ -85,11 +85,12 @@ owed — § 3.
 
 ## 3. Screenshots — OSS-4
 
-There is not one screenshot in the repository. A stranger deciding whether to
-self-host a health-data stack gets no picture of the app, the web viewer or the
-Grafana dashboards. The 6.9" set from §2 covers the app; the viewer and the
-dashboards need their own, taken against demo data (`npm run dev` fills the
-viewer; never a real export). `README.md` § Components is where they belong.
+**The app half is done.** Four screens from the maintainer's phone (dashboard,
+a type's detail, background activity, the log) plus three first-run screens
+from the simulator make up the App Store set submitted with 1.4, and four of
+them are in `README.md` § Components (`docs/images/app/`). Still missing: the
+web viewer and the Grafana dashboards, taken against demo data (`npm run dev`
+fills the viewer; never a real export).
 
 ## 4. Per-device tokens — SRV-8
 
