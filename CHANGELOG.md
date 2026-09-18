@@ -2,7 +2,10 @@
 
 What changed in each release of the **server stack** — the four images
 `ghcr.io/pulshealth/{ingest,api,mcp,web}`, which share one version that
-`PULS_VERSION` in `.env` selects. Upgrading is: bump it, then `make pull up`.
+`PULS_VERSION` in `.env` selects. Upgrading is: bump it, bring the checkout
+to the same release (`git pull`, or `git checkout vX.Y.Z` — the compose file
+and the schema migrations come from it, not from the images), then
+`make pull up`.
 
 Two things are versioned separately and are not in this file:
 
@@ -24,9 +27,19 @@ operator action, and when it does this file says so at the top of the entry.
 
 ## Unreleased
 
-No operator action is required: the shared `PULS_TOKEN` keeps working
-exactly as before, and the new migration applies itself on the next
-`docker compose up -d`.
+Nothing since 0.2.0.
+
+## [0.2.0] - 2026-09-18
+
+**Upgrading:** move the checkout to `v0.2.0` (`git pull`, or
+`git checkout v0.2.0`), set `PULS_VERSION=0.2.0` (or track `latest`), then
+`make pull up`; `migrate` applies `014_device_tokens.sql` and re-runs
+`099_read_roles.sh`. No `.env` changes are required — the shared
+`PULS_TOKEN` keeps working exactly as before, and `PULS_MULTI_USER` defaults
+to off. The checkout step is not optional: 0.2.0's ingest records
+`device_token_id` on every batch, a column only `014` adds, so the new
+images on a 0.1.0 checkout answer every upload with a 500 (the app keeps its
+anchors and retries, so nothing is lost, but nothing syncs either).
 
 ### Added
 
@@ -82,6 +95,7 @@ exactly as before, and the new migration applies itself on the next
 - The `api_reader` role gains SELECT on `batches` (for `/v1/users`; the
   table holds no credential). No operator action: `099_read_roles.sh`
   re-runs on the next `docker compose up -d`.
+- web: Next.js 16.3.5 (from 16.3.4).
 
 ## [0.1.0] - 2026-09-14
 
