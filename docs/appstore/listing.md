@@ -255,11 +255,12 @@ maintainer's team. The order below tells the story a browser needs:
 Do not paste marketing text over them, and do not use another person's health
 data.
 
-**What 1.4 was submitted with:** the four screens that are honest without data
-— 1 Welcome, 2 Your Server (with `https://health.example.net` typed in, token
-field filled), 3 Health Access and 4 Data Types with the starter selection —
-captured at 6.9" (1320 × 2868) on the iPhone 17 Pro Max simulator with the
-status bar overridden to 9:41, plus the Welcome screen at 13" on the iPad
-simulator. They replaced 1.3's set, which advertised CSV/JSON export and QR
-data requests the app no longer has. Swap in the device-only screens above when
-they exist; screenshots can change with any version.
+**What 1.4 was submitted with** (all dark mode, 1290 × 2796 in the 6.9" slot,
+in this order): 1 Welcome, 2 Your Server (with `https://health.example.net`
+typed in) and 4 Data Types from the iPhone 17 Pro Max simulator with the status
+bar at 9:41; 3 Dashboard, 5 a type's detail (Body Weight), 6 Background
+Activity and 7 the Sync Log from the maintainer's iPhone 13 Pro Max (1284 ×
+2778, resized by under 1%). None shows a hostname, token, user ID or health
+value — counts and dates only. The iPad slot has the Welcome screen at 13". This
+set replaced 1.3's, which advertised CSV/JSON export and QR data requests the
+app no longer has.

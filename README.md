@@ -51,6 +51,17 @@ free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 | **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
 | **MCP server** | [`server/mcp/`](server/mcp/README.md) | Read-only MCP server over the product API for Claude Desktop, Claude Code, Cursor and remote connectors: daily metrics, rings, workouts, latest readings, with an embedded guide for the model. Setup in [`docs/ai.md`](docs/ai.md). |
 
+<p align="center">
+  <img src="docs/images/app/welcome.png" alt="First-run welcome screen: the app reads Apple Health and sends it to a server you run" width="200">
+  <img src="docs/images/app/dashboard.png" alt="Dashboard after a backfill: 1.3M samples exported, per-type sync status" width="200">
+  <img src="docs/images/app/type-detail.png" alt="A type's detail screen: backfill state, anchor, volume and timeline" width="200">
+  <img src="docs/images/app/background-activity.png" alt="Background Activity: wakes granted by iOS over the last day and week" width="200">
+</p>
+
+The iOS app: first run, the dashboard after a backfill, one type's sync
+detail, and the background-activity log. Screenshots of the web viewer and
+the Grafana dashboards are still to come.
+
 For the database data model, table guide, and query patterns (including how
 to avoid iPhone + Watch double counting), see
 [`docs/database-guide.md`](docs/database-guide.md).
