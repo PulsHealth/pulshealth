@@ -4,9 +4,10 @@
 # Tags on a `v1.2.3` push: 1.2.3, 1.2, latest (latest and the major.minor
 # tag only for a non-prerelease semver tag, so v1.3.0-rc1 publishes 1.3.0-rc1
 # and nothing floats onto it). A workflow_dispatch run publishes the `tag`
-# input, or the short commit SHA when it is empty — the way to get images out
-# of main before the first tag, and what `docker compose up -d` pulls until
-# then. Never `latest`, so a manual run cannot move installs that track it.
+# input, or the short commit SHA when it is empty — the way to publish a
+# branch's images without cutting a release (and, on a fork with no `v*` tag
+# yet, the only images there are to pull). Never `latest`, so a manual run
+# cannot move installs that track it.
 #
 # Each platform builds natively — ubuntu-24.04 for amd64, ubuntu-24.04-arm for
 # arm64 — and pushes by digest; a merge job per image then assembles the

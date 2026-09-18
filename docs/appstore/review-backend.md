@@ -54,23 +54,30 @@ path, and the reviewer needs HTTPS.
 
 ## 2. Bring the stack up
 
-On the review host, clone the repository at the exact revision you are
-submitting and run the bootstrap script, telling it the public URL so the
-pairing block and QR code carry that instead of a LAN address:
+On the review host, clone the repository and run the bootstrap script,
+telling it the public URL so the pairing block and QR code carry that instead
+of a LAN address:
 
 ```bash
 git clone https://github.com/PulsHealth/pulshealth.git
 cd pulshealth
-scripts/bootstrap.sh --build --url https://<the-public-url>
+scripts/bootstrap.sh --url https://<the-public-url>
 ```
 
 - `--url` is stored as `PULS_PUBLIC_URL` in `server/.env` and is what the
   pairing payload advertises. The script refuses a plain `http://` URL to a
   non-local host, which is the same rule the app enforces.
-- `--build` builds the four images from the checkout. Keep it until the
-  project's first tagged release publishes `ghcr.io/pulshealth/*`; before that
-  the published images do not exist and a plain `scripts/bootstrap.sh` cannot
-  pull them.
+- The stack runs the published `ghcr.io/pulshealth/{ingest,api,mcp,web}`
+  images: `latest`, the newest release, unless `PULS_VERSION` in
+  `server/.env` pins one. The clone supplies the compose file and the schema
+  migrations, so keep it on the same release as the images — clone the
+  release tag (`git clone --branch v<version> …`) if `main` has moved on
+  since.
+- **From source instead:** `scripts/bootstrap.sh --build --url …` builds the
+  four images from the checkout (`server/compose.build.yml`) rather than
+  pulling them. Use it when the build you are submitting needs server code
+  that is not in a release yet, and clone the exact revision you are
+  submitting.
 - The script creates `server/.env` if it is absent, generating every secret
   with `openssl rand -hex 32`, starts the stack, waits for ingest to answer
   `GET /healthz` and `GET /v1/capabilities`, and then prints the pairing block.

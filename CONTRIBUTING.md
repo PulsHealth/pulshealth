@@ -5,9 +5,9 @@ to get each component building, the rules that keep the app and the server in
 step, and what to run before opening a pull request.
 
 The iOS app is [on the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354);
-the self-hosted backend is still pre-release. `docs/open-source-plan.md` is
-the roadmap: it lists the decisions already made and the requirements for the
-first release.
+the self-hosted backend is still pre-release. `docs/roadmap.md` is what is
+still outstanding; `docs/open-source-plan.md` records the decisions and the
+requirements behind it.
 For anything bigger than a bug fix, open an issue first so the design can be
 agreed before the code exists.
 
