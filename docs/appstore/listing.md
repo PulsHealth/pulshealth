@@ -206,7 +206,7 @@ flags.
 | Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.4`, ahead of the `1.3` on the store — see [Release record](README.md#release-record) |
 | Build | `CURRENT_PROJECT_VERSION`, currently `14`, ahead of the shipped `13` |
 | Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
-| Devices | iPhone only (`TARGETED_DEVICE_FAMILY = 1`) |
+| Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
 "What's New in This Version" — one entry per submission. The first was:
 
