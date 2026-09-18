@@ -56,24 +56,32 @@ clones `main`, which between releases can carry migrations the `latest`
 images have not caught up with. Harmless while every migration is additive;
 if one ever is not, the quickstart should clone the release tag instead.
 
-## 2. Submit the app's 1.4 — R-STORE, maintainer only
+## 2. Submit the app's 1.4 — R-STORE
 
-`PulsHealth/project.yml` is at `MARKETING_VERSION 1.4` / `CURRENT_PROJECT_VERSION 14`;
-`docs/appstore/README.md` § Release record shows **1.3** on the store. So first-run
-onboarding with QR pairing, Keychain token storage, per-server sync state, the
-capabilities-gated UI and the published type vocabulary are all built and not in
-anyone's hands.
+**Submitted 2026-09-18: 1.4 (14), waiting for review.** Worked from
+`docs/appstore/README.md`'s checklist, plus what the checklist did not
+anticipate:
 
-The procedure already exists — work `docs/appstore/README.md`'s submission
-checklist top to bottom. The steps that need a person with the developer
-account are: confirming the team and `Local.xcconfig`, capturing the 6.9"
-screenshot set on a real device, standing the review backend up
-(`review-backend.md`) and filling the four placeholders in `review-notes.md`,
-archiving and uploading, submitting, and afterwards tearing the review instance
-down and rotating its token. Add the 1.4 row to the Release record when it goes
-live, and re-read the privacy policy against the build before submitting —
-`docs/appstore/README.md` § Keeping these documents true lists what a change
-would have invalidated.
+- **Upload validation failed twice, both fixed in #64.** The store record has
+  been universal since 1.3, but `project.yml` targeted iPhone only, and an
+  update may not drop a device family (QA1623); and the primary 1024px icon
+  carried an alpha channel.
+- **Walking `review-notes.md` on an erased iOS 26.5 simulator against the live
+  review instance** (fixed in #66): iOS 26's Health app has no Browse tab, so
+  the round-trip step was wrong, and the filled-in notes were over App Store
+  Connect's 4000-character limit.
+- **The store listing still described 1.3**, a CSV/JSON export app that could
+  request data from others by QR code, which 1.4 does not do. The subtitle,
+  description, promotional text and keywords now come from
+  [`docs/appstore/listing.md`](appstore/listing.md); the Support URL (which
+  returned 404) and the Privacy Policy URL point at `/support` and `/privacy`;
+  the screenshots are the four first-run screens (see `listing.md` §
+  Screenshots).
+
+Still to do: when it is approved, tear the review instance down and destroy its
+token (`review-backend.md` § 6), and add the 1.4 row to the Release record. The
+real-data screenshot set (dashboard, type detail, background activity) is still
+owed — § 3.
 
 ## 3. Screenshots — OSS-4
 
