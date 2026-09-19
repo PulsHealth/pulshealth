@@ -89,7 +89,7 @@ targets:
         # for the same version train. The store holds 1.3 (build 13); see
         # docs/appstore/README.md § Release record, and bump both here before
         # every archive.
-        CURRENT_PROJECT_VERSION: 14
+        CURRENT_PROJECT_VERSION: 15
         MARKETING_VERSION: 1.4
         GENERATE_INFOPLIST_FILE: false
         ENABLE_USER_SCRIPT_SANDBOXING: true

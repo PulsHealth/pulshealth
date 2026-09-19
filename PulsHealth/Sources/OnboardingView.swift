@@ -336,8 +336,10 @@ struct OnboardingView: View {
         switch step {
         case .welcome: "Get Started"
         case .server: "Continue"
-        case .health: model.authorizationRequested && !model.needsAuthorization
-            ? "Continue" : "Grant Health Access"
+        // App Review 5.1.1(iv): the button on a pre-permission screen has to be
+        // a neutral "Continue"/"Next", never "Grant …", and there is no way past
+        // the screen that avoids the permission sheet.
+        case .health: "Continue"
         case .types: "Continue"
         case .start: validatedServerURL == nil ? "Finish" : "Start Syncing"
         }
@@ -357,8 +359,9 @@ struct OnboardingView: View {
         }
     }
 
-    /// The escape hatch under the primary button: skipping a step, or moving on
-    /// past a server that did not answer.
+    /// The escape hatch under the primary button: moving on past a server that
+    /// did not answer. The Health step has none — App Review 5.1.1(iv) requires
+    /// that the permission request always follows the explanation.
     private var secondaryTitle: String? {
         switch step {
         case .server:
@@ -372,8 +375,6 @@ struct OnboardingView: View {
             if serverURLIssue != nil { return nil }
             if connectionTest?.isSuccess == true { return nil }
             return connectionTest == nil ? "Continue Without Testing" : "Continue Anyway"
-        case .health:
-            return model.authorizationRequested && !model.needsAuthorization ? nil : "Skip for Now"
         default:
             return nil
         }
@@ -421,8 +422,6 @@ struct OnboardingView: View {
             acceptedServerWarning = true
             commitServerFields()
             step = .health
-        case .health:
-            step = .types
         default:
             break
         }
