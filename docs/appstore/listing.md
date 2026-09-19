@@ -26,10 +26,15 @@ PulsHealth
 Limit 30.
 
 ```
-Apple Health to your server
+Your health data, your server
 ```
 
-`[27/30]`
+`[29/30]`
+
+> Do not put "Apple" in the name or subtitle. App Review rejected 1.4 (14)
+> under guideline 5.2.5 for "Apple Health to your server" here, because the
+> subtitle counts as the app's name. "Apple Health" in the description and
+> promotional text was not objected to.
 
 ## Promotional text
 

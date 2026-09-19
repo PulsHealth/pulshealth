@@ -50,7 +50,7 @@ HOW TO EXERCISE THE APP (about 5 minutes)
 2. "Get Started".
 3. On "Your Server", type the Server URL above into the URL field and the Token into the Bearer token field. ("Scan Pairing Code" reads a QR code the server prints; it needs a physical code to point at, so please type the values instead.) iOS may offer to save the token as a password; either answer is fine.
 4. Tap "Test Connection". It should report success and list the server's features. Then tap "Continue".
-5. On "Health Access", tap "Grant Health Access". iOS shows its own permission sheet. Please tap "Turn On All" and Allow. The app requests READ access only — it never writes to Apple Health.
+5. On "Health Access", tap "Continue". iOS shows its own permission sheet. Please tap "Turn On All" and Allow. The app requests READ access only — it never writes to Apple Health.
 6. On "Data Types", a starter selection of about 14 types is already made. Tap "Continue".
 7. On "Ready", tap "Start Syncing". The Dashboard appears and the initial upload begins.
 
