@@ -62,7 +62,7 @@ if one ever is not, the quickstart should clone the release tag instead.
 was rejected the same day under 5.2.5 (the subtitle "Apple Health to your
 server" counts as the app name; no "Apple" allowed there) and 5.1.1(iv) (the
 pre-permission screen's "Grant Health Access" button and "Skip for Now" link);
-#71 fixed both and build 15 went through. The review instance on grey is torn
+#71 fixed both and build 15 went through. The review instance is torn
 down, its volume, env file, bare repo and `review.pulshealth.com` record
 deleted, and the Release record has the row. Worked from
 `docs/appstore/README.md`'s checklist, plus what the checklist did not
