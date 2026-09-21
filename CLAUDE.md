@@ -110,6 +110,30 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   confirms the upload (`HealthSyncEngine` → `recordUploadedBatch`). Persisting earlier
   loses data on crash. Re-sending the same page is safe: every insert is
   `ON CONFLICT DO NOTHING` on sample UUID, so the pipeline is idempotent end-to-end.
+- **Export never shares sync state.** The on-device export
+  (`PulsHealthSync/Sources/PulsHealthSync/Export/`, `HealthExporter`) is a sync
+  sweep whose transport appends to files, and the engine advances anchors and
+  watermarks whenever its transport returns normally — they are keyed per type
+  with **no destination dimension**. Run an export through the app's real
+  engine, or give `ExportFileTransport` to it, and every exported sample is
+  recorded as delivered: the server never gets it, and nothing logs an error.
+  So `HealthExporter.run` builds a throwaway `HealthSyncEngine` per run over its
+  own `SyncStateStore`, `SyncEventLog` **and `WakeLog`** (the default wake log
+  opens the app's real `wake-log.json` and rewrites running wakes as
+  interrupted) with an `InMemoryTokenStore`, a configuration stripped of server
+  URL, token and identity (`ExportPlan.configuration`), and deletes the
+  directory on every exit path. It never calls `startObserving` or
+  `syncAllEnabled` (the priority aggregate window would write recent buckets
+  twice). The other half of the contract is honesty: the engine *logs* a type
+  it cannot read, so the export re-derives failures from the throwaway store's
+  completion markers (`ExportPlan.failures`) and reports unmappable samples
+  from `HealthSyncEngine.unmappableSampleCounts` — a throw always leaves no
+  files, a partial export returns `isComplete == false` with a manifest that
+  says so. CSV columns shared with the product API are pinned to
+  `docs/export.md` by `ExportColumnTests`; exported files are staged under the
+  temporary directory (`HealthExporter.removeAllExports()`), which is what the
+  privacy documents' "stores no health samples on the device" has to be
+  reconciled with when the app's export screen ships.
 - **Every row belongs to a user.** A `users` table (`db/migrations/000_users.sql`,
   seeded with the default user) is referenced by a `user_id` foreign key on every
   data table. The client sends its user in the **`X-User-ID` HTTP header** (a

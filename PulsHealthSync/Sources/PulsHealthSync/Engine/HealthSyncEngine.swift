@@ -50,6 +50,13 @@ public actor HealthSyncEngine {
     var backfillRuns: [String: BackfillRun] = [:]
     private var changeContinuations: [UUID: AsyncStream<Void>.Continuation] = [:]
     private let logger = Logger(subsystem: PulsLog.subsystem, category: "engine")
+    /// Samples HealthKit returned that `SampleMapper` could not convert, per
+    /// type, over this engine's lifetime. The event log already carries a
+    /// warning for each such page, but a log line is prose: a caller that has
+    /// to *report* the loss — the on-device export, whose result must never
+    /// read "0 samples" for a type that had thousands — needs the number, and
+    /// should not have to parse it back out of a message.
+    private(set) var unmappableSampleCounts: [String: Int] = [:]
 
     /// Observer deliveries gathered but not yet run. HealthKit does not hand out
     /// one callback per change — production telemetry recorded bursts of up to
@@ -404,6 +411,12 @@ public actor HealthSyncEngine {
         for c in changeContinuations.values { c.yield(()) }
     }
 
+    /// Both sweeps (`runSync` here, `MergedSync`) call this beside their
+    /// "Dropped N of M samples" warning.
+    func noteUnmappableSamples(_ count: Int, type identifier: String) {
+        unmappableSampleCounts[identifier, default: 0] += count
+    }
+
     // MARK: - Backfill
 
     /// Run a full sync: activity summaries, a bounded recent aggregate window,
@@ -662,6 +675,7 @@ public actor HealthSyncEngine {
                 }
 
                 if dropped > 0 {
+                    noteUnmappableSamples(dropped, type: identifier)
                     await eventLog.log(
                         .warn, type: identifier,
                         "Dropped \(dropped) of \(result.addedSamples.count) samples that could not be mapped — check this type's unitString in HealthTypeCatalog"

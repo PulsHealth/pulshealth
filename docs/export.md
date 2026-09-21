@@ -154,6 +154,105 @@ answered `200`, so a rejected request never truncates the previous export.
 A `403` is explained the way a `401` is: the server only exports its
 `PULS_USER_ID` unless it runs with `PULS_MULTI_USER=true`.
 
+## On-device export (no server)
+
+Everything above needs a server that the phone has synced to. The app can also
+write files **straight from HealthKit**, with no server involved at all:
+`HealthExporter` in the `PulsHealthSync` package
+([`PulsHealthSync/README.md`](../PulsHealthSync/README.md), "On-device export")
+runs the ordinary sync sweep — the same queries, the same canonical-unit
+conversion, the same aggregate math — against a throwaway engine whose
+transport appends to files instead of POSTing. The files are staged in the
+app's temporary directory for the share sheet and removed afterwards
+(`HealthExporter.removeAllExports()`).
+
+It offers the same two formats, and they are not symmetrical:
+
+**JSONL is the complete one, and it is replayable.** The file
+(`puls-export-<yyyyMMdd-HHmmss>.jsonl`) is a concatenation of
+[Puls Sync Protocol](protocol/README.md) batches exactly as they would have
+gone over the wire, uncompressed: each batch's header line, then its sample,
+deletion, route, series, aggregate and activity-summary lines. Nothing about it
+is export-specific — it is the format `docs/protocol/schema/` specifies and the
+fixture corpus tests — so every field of every kind is there, and a file can be
+fed to a server later: split it before each header line (the only lines whose
+top-level object has a `batchID`), gzip each piece if you like, and `POST` it to
+`/v1/batches` with the bearer token and `X-User-ID`. Ingest is idempotent, so
+replaying into a server that already holds some of it is safe. Three things to
+know:
+
+- The user is an HTTP header on the wire, not part of the body, so the JSONL
+  does not say whose data it is. The manifest (below) does.
+- There is no `{"profile":…}` line. The name, e-mail, date of birth and sex on
+  that line are the app's settings rather than HealthKit data, and an export
+  leaves them out of a file that is about to be shared.
+- Deletion lines are kept. HealthKit can return the tombstones it still holds
+  even to a first query, and a replay should apply them.
+
+[`tools/protocol-check`](../tools/protocol-check) validates one batch per file,
+so split an export the same way before checking it.
+
+**CSV is a flattened view**, one file per dataset that has rows
+(`puls-export-<yyyyMMdd-HHmmss>-<dataset>.csv`; a dataset with no rows gets no
+file). Where a dataset also exists on the server the file is the same file:
+same header row, same order, epoch-millisecond instants, `YYYY-MM-DD` local
+days, canonical units, a null as an empty cell, a list comma-joined inside its
+quoted cell, lowercase UUIDs, floats without an exponent — and the same
+spreadsheet-formula caveat, because cells are written verbatim here too.
+
+| `dataset` | On the server too? | Columns |
+|---|---|---|
+| `samples` | yes | `type`, `unit`, `uuid`, `start`, `end`, `value`, `label`, `source` |
+| `workouts` | yes | `uuid`, `activityType`, `start`, `end`, `durationS`, `distanceM`, `energyKcal`, `hasRoute`, `availableMetrics` |
+| `activity` | yes | `date`, `moveKcal`, `moveGoalKcal`, `exerciseMin`, `exerciseGoalMin`, `standHours`, `standGoalHours`, `moveMode`, `moveTimeMin`, `moveTimeGoalMin` |
+| `state_of_mind` | yes | `uuid`, `date`, `timestamp`, `kind`, `valence`, `valenceClassification`, `labels`, `associations` |
+| `aggregates` | no — device only | `type`, `func`, `intervalValue`, `intervalUnit`, `deviceFilter`, `bucketStart`, `bucketEnd`, `value`, `unit` |
+| `workout_routes` | no — device only | `workoutUUID`, `t`, `lat`, `lon`, `alt`, `hAcc`, `vAcc`, `speed`, `course` |
+| `workout_series` | no — device only | `workoutUUID`, `type`, `unit`, `t`, `value` |
+| `medication_doses` | no — device only | `uuid`, `start`, `end`, `medication`, `status`, `scheduledAt`, `doseQuantity`, `doseUnit`, `source` |
+
+The device-only files use the wire format's own keys, in wire order, one row
+per bucket, GPS fix, stream datapoint or dose. How the two sides differ:
+
+- **`samples` holds every selected quantity and category type in one file**,
+  where the server exports one type per request. `label` — the server's name
+  for a category value, joined from its `category_labels` table — is always
+  empty: the app has no such table, and the column is kept so the header
+  matches. A category sample's `value` is HealthKit's raw integer on both sides.
+- **`daily_metrics` and `sleep` do not exist on the device.** Both are views the
+  server computes over what it has stored (per-day totals deduplicated across
+  devices; nights assembled from sleep-stage samples). The device's counterpart
+  to `daily_metrics` is `aggregates`, the statistics HealthKit itself computes
+  for whatever aggregate series are configured; sleep stages are rows of
+  `samples`.
+- **Local days are the phone's.** `activity.date` and `state_of_mind.date` are
+  computed in the phone's time zone, which is what the server's
+  `PULS_TIME_ZONE` is required to match anyway.
+- **What CSV leaves out.** Metadata, device, source bundle and version, the
+  per-sample time-zone context, and a workout's statistics, events and
+  sub-activities have no column. ECG voltage traces, beat-to-beat heartbeat
+  series and deletion tombstones have no file at all; the result the package
+  returns counts them so the app can say so and suggest JSONL.
+
+Both formats come with `puls-export-<yyyyMMdd-HHmmss>-manifest.json`: the user
+ID, the device ID, the requested start (`null` = all time), the format, the
+protocol `schemaVersion` and the app version, the time zone local days were
+computed in, per-file and per-dataset row counts, and — the reason it exists —
+`"complete": false` with a `failures` list whenever a selected type could not
+be read to the end (access never granted for it, the phone locked part-way
+through) or a sample could not be converted to its canonical unit. A file that
+stops short looks exactly like the file of someone with less data; the
+manifest is what tells them apart.
+
+One caveat for replaying **aggregate** lines. Bucket boundaries are counted
+from the start of the series, so an export aligns each series to the grid the
+app's own sync uses, and a replay overwrites the server's buckets rather than
+adding a second, offset set. That alignment is exact for day, week and month
+buckets and for hour or minute intervals that divide a day evenly. It can be
+off for intervals that do not (5 hours, 7 minutes) and for a month series that
+starts on the 29th–31st; replay those with the aggregate lines filtered out and
+let the phone's next sync recompute them.
+
 ## See also
 
 - The endpoint reference on the running server: `GET /docs`, and the
