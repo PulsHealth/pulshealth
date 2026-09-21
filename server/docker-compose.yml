@@ -105,6 +105,11 @@ services:
       # PULS_ALLOW_SHARED_TOKEN=false, and only device tokens authenticate.
       PULS_TOKEN: ${PULS_TOKEN:-}
       PULS_ALLOW_SHARED_TOKEN: ${PULS_ALLOW_SHARED_TOKEN:-true}
+      # Not read by the server. `ingest devices issue` puts it in the pairing
+      # QR code it prints with a new token, when --url does not say otherwise:
+      # a container cannot see the proxy in front of it or the host's LAN
+      # address, so the URL the phone uses has to be handed in.
+      PULS_PUBLIC_URL: ${PULS_PUBLIC_URL:-}
       LISTEN_ADDR: ":8080"
       # Whether to believe X-Forwarded-For when identifying the client an
       # auth-failure budget belongs to. Only true when a proxy that

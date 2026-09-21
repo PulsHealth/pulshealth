@@ -110,18 +110,38 @@ closes the `X-User-ID` hole. `schemaVersion` did not move: a v1 receiver is
 unaffected by how a server chose to issue tokens, and the protocol spec now
 says a receiver MAY bind a token to a user.
 
+**Pairing with one is now a scan, not typing.** `scripts/bootstrap.sh
+--issue-device <label>` (`make issue-device NAME=…`) mints a token in the
+running stack and prints the same block the shared token gets — URL, token,
+user ID and the `puls://pair?…` QR code the app already scans — and `make
+devices ARGS='issue …'` prints the code too. The URL a container cannot work
+out for itself (the proxy in front of it, or the host's LAN address under
+`--lan`) is handed in by the script and the Makefile, from `--url` or
+`PULS_PUBLIC_URL` otherwise. The code is drawn by the ingest binary itself
+(`ingest qr`, payload on stdin), so nothing here needs `qrencode` on the
+host any more, and a server with the shared token off prints that command
+instead of ending its pairing block without a word.
+
+What is left on the server side, needing no app release:
+
+- `scripts/bootstrap.sh` issuing a device token for the pairing block **by
+  default** instead of generating and printing `PULS_TOKEN`. A fresh install
+  still starts on the shared token and the script's readiness probe
+  authenticates with it. The switch is: first run issues a device token,
+  `PULS_TOKEN` is generated only on request, and `make pairing` says plainly
+  that a device token cannot be re-printed (only its hash is stored) rather
+  than re-printing a shared one.
+
 What was deliberately left for a **client follow-up**, since each needs an
 app release:
 
 - Phone-side enrollment — an unauthenticated `POST /v1/devices/enroll` that
   creates a *pending* row the operator approves (`devices approve`), so the
-  pairing flow is "scan, then approve on the server" rather than "issue on the
-  server, then type". The plan's enroll → pending → approve shape; the
-  `status` column already admits it.
+  pairing flow is "scan, then approve on the server" and no token is ever on
+  a screen, rather than "issue on the server, then scan it". The plan's
+  enroll → pending → approve shape; the `status` column already admits it.
 - The app's connection test telling a 403 (token bound to a different user
   ID than the one configured on the phone) apart from a wrong token.
-- `scripts/bootstrap.sh` issuing a device token for the pairing block instead
-  of printing `PULS_TOKEN`, once the app can be paired that way.
 
 ## 5. Multi-user reads — SRV-11
 

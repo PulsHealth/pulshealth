@@ -90,8 +90,9 @@ the batch format can stand in for the reference stack — see
 ### Server
 
 You need a Linux (or macOS) box with Docker (and its Compose plugin),
-`openssl` and `curl`. `qrencode` is optional: with it the pairing QR code is
-drawn in the terminal (`brew install qrencode` / `apt install qrencode`).
+`openssl` and `curl`. Nothing else: the pairing QR code is drawn in the
+terminal by `qrencode` when you have it and by the ingest container itself
+when you do not.
 
 ```bash
 git clone https://github.com/PulsHealth/pulshealth.git
@@ -106,7 +107,10 @@ else — waits for ingest to answer, and prints a **pairing block**: the URL
 the phone should use, the bearer token, the user ID, and a QR code encoding
 all three. Leave `--time-zone` out and it uses the host's zone and says so;
 every daily view buckets by this calendar, so it must match the phone's.
-`make pairing` prints the block again whenever you need it.
+`make pairing` prints the block again whenever you need it, and
+`scripts/bootstrap.sh --issue-device "My iPhone"` prints the same block for a
+token of that phone's own instead of the shared one
+([per-device tokens](server/README.md#tokens)).
 
 Where the phone reaches the server is the one decision left to you. Until
 you make it, the pairing block's URL reads `(none yet)` and there is no QR
@@ -179,9 +183,10 @@ Open the web viewer at `http://localhost:3001` on the server, or Grafana at
 
 Several people on one server: give each phone its own user ID under
 **Settings → User** (the default is a fixed UUID so a reinstall keeps its
-identity) and issue each its own token with `make devices ARGS='issue --user
-<that user ID> --name "<label>"'` — a device token is bound to its user, so
-no phone can write as another. On the reading side `PULS_USER_ID` is the user
+identity) and issue each its own token with `scripts/bootstrap.sh
+--issue-device "<label>" --user <that user ID>`, which ends in a QR code that
+phone scans — a device token is bound to its user, so no phone can write as
+another. On the reading side `PULS_USER_ID` is the user
 shown by default; set `PULS_MULTI_USER=true` in `server/.env` and the product
 API answers for any user a request names (`?user=<uuid>`, listed by
 `GET /v1/users`), which the MCP server and the web viewer use to let you pick
