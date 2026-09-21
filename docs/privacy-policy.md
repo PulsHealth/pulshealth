@@ -13,7 +13,8 @@ the one address you type in, and that is the whole of it.
   PulsHealth account, no PulsHealth service, no telemetry endpoint, and no
   server operated by the developer that the app talks to.
 - **Your health data goes to one place: the server you configure.** The app
-  uploads only to the URL you enter (or scan from a pairing code) in the app.
+  uploads only to the URL you enter in the app — typed, or taken from your
+  server's pairing code (scanned, pasted, or opened as a link you confirm).
   It has no other destination compiled into it.
 - **No analytics, no advertising, no tracking, no third-party SDKs.** The app
   and its `PulsHealthSync` library have zero third-party dependencies. Nothing
@@ -100,7 +101,10 @@ The camera runs only while the scanning screen is open, no photo or video frame
 is recorded, stored, or transmitted, and nothing but the text of the scanned
 code leaves the scanner. Declining camera access is fully supported: the same
 screen offers to let you type the details instead, and the app works exactly the
-same way.
+same way. The same code also works without the camera: pasted with the system
+Paste button (the app reads the clipboard only on that tap), or opened as a
+`puls://` link, which the app asks you to confirm — naming the server — before
+it fills anything in.
 
 ## Health data and Apple's rules
 

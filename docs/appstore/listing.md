@@ -149,7 +149,7 @@ Answer every content question **None / No**. The result is **4+**.
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
 | Medical or treatment information | None | The app shows the user their own HealthKit data and its sync status. It offers no diagnosis, interpretation, dosage, recommendation, or treatment information of any kind. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
-| Unrestricted web access | No | There is no browser, no web view, and no link out. The single `openURL` call opens iOS Settings after camera access is declined. |
+| Unrestricted web access | No | There is no browser, no web view, and no link out. The only URL the app ever *opens* is iOS Settings (after camera access is declined, and from the Dashboard's "Open Health Settings"). It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the server and, if accepted, fills in the server fields. |
 | User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, server URL, token) is shared with any other user or with the developer. |
 | Gambling and contests | No | — |
 | In-app purchases | No | No StoreKit. |

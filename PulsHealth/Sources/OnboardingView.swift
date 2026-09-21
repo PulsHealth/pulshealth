@@ -7,7 +7,8 @@ import PulsHealthSync
 /// backfill:
 ///
 /// 1. what the app does and where the data goes,
-/// 2. the server — scanned from the pairing QR code or typed, then tested,
+/// 2. the server — from the pairing code (scanned, pasted, or opened as a
+///    `puls://` link) or typed, then tested,
 /// 3. Health access, requested for the preselected Common set,
 /// 4. which types to sync (the real Data Types screen, not a copy),
 /// 5. a summary and the button that applies everything.
@@ -38,13 +39,13 @@ struct OnboardingView: View {
     @State private var step: Step = .welcome
 
     // Server step. Held locally until the step is left, exactly like Settings:
-    // the draft only changes when the user moves on.
-    @State private var serverURLText = ""
-    @State private var tokenText = ""
+    // the draft only changes when the user moves on — and that includes the
+    // user ID a pairing code brought with it.
+    @State private var server = ServerFieldsDraft()
     @State private var connectionTest: ConnectionTestResult?
+    @State private var connectionTestRun = 0
     @State private var testing = false
     @State private var showScanner = false
-    @State private var scannedUserID: String?
     /// Set when the user chose to move past an untested or failing server.
     @State private var acceptedServerWarning = false
 
@@ -74,8 +75,31 @@ struct OnboardingView: View {
         .safeAreaInset(edge: .bottom) { footer }
         .interactiveDismissDisabled()
         .onAppear {
-            serverURLText = model.config.serverURL?.absoluteString ?? ""
-            tokenText = model.config.authToken ?? ""
+            server = ServerFieldsDraft(configuration: model.config)
+            // A link can be what launched the app, accepted before this view
+            // was listening.
+            collectConfirmedPairing()
+        }
+        .onChange(of: model.confirmedPairing) { collectConfirmedPairing() }
+        .onChange(of: server.urlText) {
+            // A whole `puls://pair?…` string pasted into the URL field is a
+            // pairing code, not a malformed URL. Anything else is an edit, and
+            // an edit means the result on screen is about other values — it
+            // must not keep Continue lit.
+            if let payload = server.pairingCodeInURLField {
+                applyPairing(payload)
+            } else {
+                connectionTest = nil
+            }
+        }
+        .onChange(of: server.tokenText) { connectionTest = nil }
+        // This flow covers RootView, so the prompt for an incoming `puls://`
+        // link has to come from here. It cannot present over the scanner sheet
+        // (closed below when a link arrives) or the iOS Health sheet, and it
+        // has no business interrupting the final Apply.
+        .pairingLinkPrompt(canPresent: !showScanner && !requestingHealthAccess && !finishing)
+        .onChange(of: model.pairingLinkPrompt) { _, prompt in
+            if prompt != nil { showScanner = false }
         }
     }
 
@@ -146,21 +170,25 @@ struct OnboardingView: View {
                 .buttonStyle(.borderedProminent)
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                // The button's row is clear, so the hairline under it would
+                // float between it and the paste row's card.
+                .listRowSeparator(.hidden)
+                PastePairingCodeRow(urlText: server.urlText) { applyPairing($0) }
             } footer: {
-                Text("`scripts/bootstrap.sh` prints a QR code with the URL, token and user ID already in it. `make pairing` prints it again later.")
+                Text("`scripts/bootstrap.sh` prints a QR code with the URL, token and user ID already in it, and the same code as a line of text starting with puls://pair. `make pairing` prints both again later.")
             }
 
             Section {
-                TextField("https://your-host:8443", text: $serverURLText)
+                TextField("https://your-host:8443", text: $server.urlText)
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                if let issue = serverURLIssue {
+                if let issue = server.urlIssue {
                     Label(issue, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
-                SecureField("Bearer token", text: $tokenText)
+                SecureField("Bearer token", text: $server.tokenText)
                 Button {
                     runConnectionTest()
                 } label: {
@@ -172,7 +200,7 @@ struct OnboardingView: View {
                         }
                     }
                 }
-                .disabled(testing || validatedServerURL == nil || enteredToken.isEmpty)
+                .disabled(testing || !server.isTestable)
                 if let result = connectionTest {
                     ConnectionTestResultRow(result: result)
                 }
@@ -182,9 +210,9 @@ struct OnboardingView: View {
                 Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x).")
             }
 
-            if let scannedUserID {
+            if let pairedUserID = server.pairedUserID {
                 Section("User ID") {
-                    Text(scannedUserID)
+                    Text(pairedUserID)
                         .font(.footnote.monospaced())
                         .foregroundStyle(.secondary)
                     Text("From the pairing code. Everything stored for you on the server is tagged with this ID; you can change it later under Settings → User.")
@@ -194,17 +222,7 @@ struct OnboardingView: View {
             }
         }
         .sheet(isPresented: $showScanner) {
-            PairingScannerView { payload in
-                serverURLText = payload.serverURL.absoluteString
-                tokenText = payload.token
-                model.config.userID = payload.userID
-                scannedUserID = payload.userID
-                connectionTest = nil
-                acceptedServerWarning = false
-                // The code was printed by the server that is presumably right
-                // here — confirm it now rather than making the user tap again.
-                runConnectionTest()
-            }
+            PairingScannerView { applyPairing($0) }
         }
     }
 
@@ -250,7 +268,7 @@ struct OnboardingView: View {
             Section("Summary") {
                 LabeledContent("Server") {
                     Text(serverSummary)
-                        .foregroundStyle(validatedServerURL == nil ? .orange : .secondary)
+                        .foregroundStyle(server.validatedURL == nil ? .orange : .secondary)
                         .multilineTextAlignment(.trailing)
                 }
                 LabeledContent("Data types", value: "\(model.config.enabledTypes.count) selected")
@@ -264,7 +282,7 @@ struct OnboardingView: View {
                 }
             }
             Section {
-                Text(validatedServerURL == nil
+                Text(server.validatedURL == nil
                     ? "No server is set, so nothing will be uploaded yet. Add one under Settings → Server whenever you are ready."
                     : "Tapping Start uploads everything from the date above. The first pass is the largest — keep the app open and the phone on power for it. Progress is saved after every batch, so it is safe to interrupt.")
                     .font(.footnote)
@@ -341,7 +359,7 @@ struct OnboardingView: View {
         // the screen that avoids the permission sheet.
         case .health: "Continue"
         case .types: "Continue"
-        case .start: validatedServerURL == nil ? "Finish" : "Start Syncing"
+        case .start: server.validatedURL == nil ? "Finish" : "Start Syncing"
         }
     }
 
@@ -365,14 +383,14 @@ struct OnboardingView: View {
     private var secondaryTitle: String? {
         switch step {
         case .server:
-            if serverURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                && enteredToken.isEmpty {
+            if server.urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && server.token.isEmpty {
                 return "I'll Set This Up Later"
             }
             // An unusable URL cannot be carried forward — `commitServerFields`
             // would store nothing and the typed text would vanish without a
             // word. Fix it, or clear the field to skip the step outright.
-            if serverURLIssue != nil { return nil }
+            if server.urlIssue != nil { return nil }
             if connectionTest?.isSuccess == true { return nil }
             return connectionTest == nil ? "Continue Without Testing" : "Continue Anyway"
         default:
@@ -432,48 +450,57 @@ struct OnboardingView: View {
         step = previous
     }
 
-    // MARK: - Server helpers (same rules as Settings)
-
-    private var serverURLValidation: Result<URL, ServerURLValidation.Failure>? {
-        let trimmed = serverURLText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : ServerURLValidation.validate(trimmed)
-    }
-
-    private var validatedServerURL: URL? {
-        if case .success(let url) = serverURLValidation { return url }
-        return nil
-    }
-
-    private var serverURLIssue: String? {
-        if case .failure(let failure) = serverURLValidation { return failure.errorDescription }
-        return nil
-    }
-
-    /// Same rules as Settings, so a `PULS_TOKEN=…` line pasted straight out of
-    /// the server's `.env` works here too.
-    private var enteredToken: String { ServerTokenField.normalize(tokenText) }
+    // MARK: - Server helpers (the rules are `ServerFieldsDraft`'s, shared with Settings)
 
     private var serverSummary: String {
-        guard let url = validatedServerURL else { return "Not set" }
+        guard let url = server.validatedURL else { return "Not set" }
         return url.host().map { $0 + (url.port.map { ":\($0)" } ?? "") } ?? url.absoluteString
+    }
+
+    /// The one place a pairing code lands in this flow, whatever brought it:
+    /// the scanner, the Paste button, a `puls://pair?…` string put in the URL
+    /// field, or a link the user accepted (`collectConfirmedPairing`). Still
+    /// only the step's local fields — the draft changes on Continue and the
+    /// engine on the last step.
+    private func applyPairing(_ payload: PairingPayload) {
+        server.fill(from: payload)
+        // The code was printed by the server that is presumably right here —
+        // confirm it now rather than making the user tap again.
+        runConnectionTest()
+    }
+
+    /// Takes a pairing link the user accepted (`AppModel.confirmPairingLink`)
+    /// and brings them to the step it belongs to, from wherever in the flow
+    /// they were. Not during the final Apply: the cover is about to come down,
+    /// and Settings → Server picks the payload up instead.
+    private func collectConfirmedPairing() {
+        guard !finishing, let payload = model.takeConfirmedPairing() else { return }
+        step = .server
+        applyPairing(payload)
     }
 
     /// Moves the entered values into the staged draft. Still nothing applied —
     /// the engine sees them only on the final step.
     private func commitServerFields() {
-        model.config.serverURL = validatedServerURL
-        model.config.authToken = enteredToken.isEmpty ? nil : enteredToken
+        server.commit(to: &model.config)
     }
 
     private func runConnectionTest() {
-        guard let url = validatedServerURL else { return }
-        let token = enteredToken
+        guard let url = server.validatedURL else { return }
+        let token = server.token
         guard !token.isEmpty else { return }
+        let userID = server.connectionTestUserID(fallback: model.config.userID)
         testing = true
         connectionTest = nil
         acceptedServerWarning = false
+        // Only the latest run may report: a pairing code can arrive while an
+        // earlier test is still out.
+        connectionTestRun += 1
+        let run = connectionTestRun
         Task {
-            connectionTest = await model.testConnection(url: url, token: token)
+            let result = await model.testConnection(url: url, token: token, userID: userID)
+            guard run == connectionTestRun else { return }
+            connectionTest = result
             testing = false
         }
     }

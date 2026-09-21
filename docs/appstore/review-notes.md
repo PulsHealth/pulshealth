@@ -74,6 +74,10 @@ CAMERA
 
 Used only to read the pairing QR code the server prints. No frame is stored or transmitted. Declining is handled: the same screen offers "Type It Instead" and the app is fully usable without the camera.
 
+URL SCHEME (puls://)
+
+The app registers one custom URL scheme, "puls", for pairing links of the form puls://pair?url=...&token=...&user=... — the same text the server's QR code encodes, so the iOS Camera app can offer "Open in PulsHealth" for it. Because any page or app can fire a custom-scheme URL, an incoming link never configures anything by itself: the app shows a confirmation naming the server's host (and says so if it would replace the current server or is plain http://), Cancel is the emphasized button, and accepting only fills in the server fields and tests the connection — the user still has to finish setup, or tap Save & Apply. A malformed link shows "This Link Can't Be Used" and changes nothing. The app opens no URLs of its own other than iOS Settings. "Paste Pairing Code" uses the system paste button, so the clipboard is read only on that tap.
+
 BACKGROUND MODES
 
 UIBackgroundModes "processing" plus HealthKit background delivery, so new samples upload without the user opening the app. Nothing else runs in the background. There are no accounts, so there is no demo account.

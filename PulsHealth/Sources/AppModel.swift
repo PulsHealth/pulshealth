@@ -88,6 +88,23 @@ final class AppModel {
     /// Whether the deferred apply asked to backfill newly enabled types.
     @ObservationIgnored private var pendingServerChangeWantsNewTypeSync = false
 
+    /// What an incoming `puls://` link is waiting to show: the confirmation for
+    /// a valid pairing link, or the reason an unusable one was dropped.
+    enum PairingLinkPrompt: Equatable {
+        case confirm(PairingPayload)
+        case rejected(String)
+    }
+    /// Set by `handleIncomingURL`, cleared by the prompt's buttons. A link
+    /// fills nothing until the user has answered this (`PairingLinkPromptModifier`).
+    private(set) var pairingLinkPrompt: PairingLinkPrompt?
+    /// A pairing link the user accepted, waiting for the screen that owns the
+    /// server fields — the first-run flow while it is up, Settings → Server
+    /// otherwise — to collect it with `takeConfirmedPairing()`. A hand-off
+    /// rather than a write into `config`: both screens keep the URL and token
+    /// as local text until the user moves on, and a link gets no shortcut past
+    /// that.
+    private(set) var confirmedPairing: PairingPayload?
+
     /// Types a permission request failed to determine this session. Re-requesting
     /// them just makes the sheet flash and auto-dismiss, so the proactive tab-exit
     /// prompt skips them until something else becomes pending. Session-only on
@@ -509,6 +526,100 @@ final class AppModel {
         pendingServerChangeWantsNewTypeSync = false
     }
 
+    // MARK: - Pairing links
+
+    /// Entry point for `onOpenURL`: a tapped `puls://pair?…` link, or the same
+    /// string read from the server's QR code by the iOS Camera app.
+    ///
+    /// **A link is untrusted input.** Any web page or app can fire one, so this
+    /// never touches the configuration, the draft or the fields. It parses the
+    /// link — `PairingPayload.parse` re-validates the URL and the UUID exactly
+    /// as it does for a scanned code — and raises a prompt naming the host. The
+    /// values go nowhere until the user accepts, and then only as far as a scan
+    /// would take them: into the server fields, tested, not applied.
+    func handleIncomingURL(_ url: URL) {
+        guard url.scheme?.lowercased() == PairingPayload.scheme else { return }
+        Task {
+            // A link can be what launches the app. Both things the prompt
+            // depends on are only known once `start()` has read the stored
+            // state: whether a server is already configured (the "replaces"
+            // warning), and whether the first-run flow is really up — `init`
+            // guesses that from two flags and `startBody` corrects it.
+            await start()
+            // First one wins. The prompt on screen must describe the payload
+            // that accepting it delivers; a second link swapping the payload
+            // underneath an alert that still names the first host would defeat
+            // the whole confirmation.
+            guard pairingLinkPrompt == nil else {
+                await engine.eventLog.log(.warn, "Pairing link ignored — another one is awaiting an answer")
+                return
+            }
+            // Never log the link itself: it carries the token. Host only.
+            switch PairingPayload.parse(url.absoluteString) {
+            case .success(let payload):
+                pairingLinkPrompt = .confirm(payload)
+                await engine.eventLog.log(
+                    .info,
+                    "Pairing link for \(pairingConfirmation(for: payload).serverLabel) opened — waiting for confirmation")
+            case .failure(let failure):
+                pairingLinkPrompt = .rejected(PairingConfirmation.rejectionMessage(for: failure))
+                await engine.eventLog.log(
+                    .warn, "Pairing link not used: \(failure.errorDescription ?? "unreadable")")
+            }
+        }
+    }
+
+    /// What the prompt says about `payload`, worked out when the prompt is
+    /// shown rather than when the link arrived: a link that lands during the
+    /// flow's final Apply is only presented once the cover is down, and by
+    /// then both halves of the answer have changed — a server is applied, and
+    /// accepting leads to Settings, not to the flow's server step.
+    func pairingConfirmation(for payload: PairingPayload) -> PairingConfirmation {
+        PairingConfirmation(
+            payload: payload,
+            // The *applied* server: where data goes today, not a half-typed draft.
+            currentServerURL: appliedConfig.serverURL,
+            currentUserID: appliedConfig.userID,
+            destination: showsOnboarding ? .onboarding : .settings)
+    }
+
+    /// The prompt's Continue. Takes the payload the prompt *displayed* and
+    /// refuses anything else, for the same reason as first-one-wins above.
+    ///
+    /// Synchronous, like `confirmServerChange`: an alert button's action and
+    /// the dismissal of its binding land in the same turn.
+    func confirmPairingLink(_ payload: PairingPayload) {
+        guard case .confirm(let pending) = pairingLinkPrompt, pending == payload else { return }
+        pairingLinkPrompt = nil
+        confirmedPairing = payload
+        let label = pairingConfirmation(for: payload).serverLabel
+        Task {
+            await engine.eventLog.log(
+                .info, "Pairing link for \(label) accepted — server details filled in, nothing applied")
+        }
+    }
+
+    /// Cancel on the confirmation, or OK on the "can't be used" notice.
+    func dismissPairingLink() {
+        guard let prompt = pairingLinkPrompt else { return }
+        pairingLinkPrompt = nil
+        if case .confirm(let payload) = prompt {
+            let label = pairingConfirmation(for: payload).serverLabel
+            Task { await engine.eventLog.log(.info, "Pairing link for \(label) declined") }
+        }
+    }
+
+    /// True while an accepted link is waiting for Settings → Server, i.e. the
+    /// first-run flow is not the one that should take it. RootView switches to
+    /// the Settings tab on this.
+    var pairingAwaitsSettings: Bool { confirmedPairing != nil && !showsOnboarding }
+
+    /// One-shot: the screen that fills its fields from the payload takes it.
+    func takeConfirmedPairing() -> PairingPayload? {
+        defer { confirmedPairing = nil }
+        return confirmedPairing
+    }
+
     // MARK: - Staged Data Types changes
 
     /// True while the Data Types draft differs from what's applied to the
@@ -807,10 +918,14 @@ final class AppModel {
     /// calls this with the entered, not-yet-applied values. Nothing is
     /// persisted; a successful answer only refreshes the in-memory
     /// capabilities so the feature gates reflect the server just tested.
-    func testConnection(url: URL, token: String) async -> ConnectionTestResult {
+    ///
+    /// `userID` is the one the entered values would sync as — the draft's,
+    /// unless a pairing code staged a different one alongside them
+    /// (`ServerFieldsDraft.connectionTestUserID`).
+    func testConnection(url: URL, token: String, userID: String? = nil) async -> ConnectionTestResult {
         let deviceID = await engine.store.deviceID
         let tester = ConnectionTester(
-            baseURL: url, authToken: token, userID: config.userID, deviceID: deviceID)
+            baseURL: url, authToken: token, userID: userID ?? config.userID, deviceID: deviceID)
         let result = await tester.run()
         if case .ok(let capabilities) = result {
             serverCapabilities = capabilities

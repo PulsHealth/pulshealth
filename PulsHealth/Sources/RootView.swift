@@ -4,6 +4,9 @@ import PulsHealthSync
 struct RootView: View {
     private enum Tab: Hashable { case dashboard, dataTypes, log, settings }
     @State private var selection: Tab = .dashboard
+    /// Owned here rather than by SettingsView so an accepted pairing link can
+    /// pop whatever Settings had pushed and land on its Server section.
+    @State private var settingsPath: [SettingsRoute] = []
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -19,9 +22,22 @@ struct RootView: View {
             NavigationStack { LogView() }
                 .tabItem { Label("Log", systemImage: "text.alignleft") }
                 .tag(Tab.log)
-            NavigationStack { SettingsView() }
+            NavigationStack(path: $settingsPath) { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
+        }
+        // An incoming `puls://` link asks before it fills anything. While the
+        // first-run flow covers this view the prompt is OnboardingView's; and
+        // it waits its turn behind the server-change prompt, which can be up
+        // from launch.
+        .pairingLinkPrompt(canPresent: !model.showsOnboarding && model.pendingServerChange == nil)
+        // Accepted: take the user to the fields the link filled in, the same
+        // place a scan from Settings would have left them. SettingsView
+        // collects the payload itself; nothing is applied from here.
+        .onChange(of: model.pairingAwaitsSettings) { _, waiting in
+            guard waiting else { return }
+            settingsPath = []
+            selection = .settings
         }
         // Save & Apply on Settings, the User page, or the Data Types bar can
         // all raise the server/user-change prompt; show it above every tab.

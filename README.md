@@ -171,9 +171,12 @@ Either way, in the app:
 
 1. Grant Health access when asked (the app is read-only; it never writes to
    HealthKit).
-2. **Settings → Server:** scan the pairing block's QR code, or enter the
-   server URL and token by hand (`make pairing` re-prints the block; the QR
-   code encodes the same values). Then tap **Test Connection**.
+2. **Settings → Server:** scan the pairing block's QR code, paste its
+   `puls://pair?…` line with **Paste Pairing Code**, or enter the server URL
+   and token by hand (`make pairing` re-prints the block; the QR code encodes
+   the same values). Pointing the iOS Camera app at the QR code works too: it
+   offers to open PulsHealth, which asks you to confirm the server's host
+   before it fills anything in. Then tap **Test Connection**.
 3. **Data Types:** pick what to sync (a "Common" preset covers the usual
    types) and tap Apply. Types with no history sync from your chosen start
    date; the dashboard shows per-type progress, rate, and ETA.

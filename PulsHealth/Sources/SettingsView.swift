@@ -1,10 +1,18 @@
 import SwiftUI
 import PulsHealthSync
 
+/// Screens pushed from Settings. Value-based so `RootView`, which owns the
+/// stack's path, can pop back to Settings → Server when a pairing link is
+/// accepted while one of them is on top.
+enum SettingsRoute: Hashable {
+    case user, benchmark
+}
+
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
-    @State private var serverURLText = ""
-    @State private var tokenText = ""
+    /// The server fields, held here until Save & Apply — including the user ID
+    /// a pairing code brought with it.
+    @State private var server = ServerFieldsDraft()
     @State private var loaded = false
     @State private var confirmResetAll = false
     @State private var confirmBackfill = false
@@ -14,34 +22,14 @@ struct SettingsView: View {
     /// Outcome of the last Test Connection for the values currently entered;
     /// cleared whenever either field changes.
     @State private var connectionTest: ConnectionTestResult?
+    @State private var connectionTestRun = 0
     @State private var showScanner = false
-
-    /// Validation of the entered URL; nil while the field is empty (an empty
-    /// URL is allowed — it un-configures the server).
-    private var serverURLValidation: Result<URL, ServerURLValidation.Failure>? {
-        let trimmed = serverURLText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : ServerURLValidation.validate(trimmed)
-    }
-
-    private var validatedServerURL: URL? {
-        if case .success(let url) = serverURLValidation { return url }
-        return nil
-    }
-
-    private var serverURLIssue: String? {
-        if case .failure(let failure) = serverURLValidation { return failure.errorDescription }
-        return nil
-    }
-
-    private var enteredToken: String { ServerTokenField.normalize(tokenText) }
 
     var body: some View {
         @Bindable var model = model
         Form {
             Section("User") {
-                NavigationLink {
-                    UserView()
-                } label: {
+                NavigationLink(value: SettingsRoute.user) {
                     LabeledContent(model.config.userName?.isEmpty == false
                         ? model.config.userName! : "User") {
                         Text(model.config.userEmail ?? "")
@@ -53,16 +41,16 @@ struct SettingsView: View {
             }
 
             Section {
-                TextField("https://your-host:8080", text: $serverURLText)
+                TextField("https://your-host:8080", text: $server.urlText)
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                if let issue = serverURLIssue {
+                if let issue = server.urlIssue {
                     Label(issue, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
-                SecureField("Bearer token", text: $tokenText)
+                SecureField("Bearer token", text: $server.tokenText)
                 Button {
                     runConnectionTest()
                 } label: {
@@ -74,19 +62,32 @@ struct SettingsView: View {
                         }
                     }
                 }
-                .disabled(testingConnection || validatedServerURL == nil || enteredToken.isEmpty)
+                .disabled(testingConnection || !server.isTestable)
                 if let result = connectionTest {
                     ConnectionTestResultRow(result: result)
+                }
+                if let pairedUserID = server.pairedUserID {
+                    // The third value of a pairing code has no field on this
+                    // screen (it lives under User → Advanced), so say that it
+                    // is staged too rather than changing it out of sight.
+                    Label {
+                        Text("Filled in from a pairing code, with user ID \(pairedUserID). Nothing changes until you tap Save & Apply.")
+                    } icon: {
+                        Image(systemName: "qrcode")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
                 Button {
                     showScanner = true
                 } label: {
                     Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
                 }
+                PastePairingCodeRow(urlText: server.urlText) { applyPairing($0) }
             } header: {
                 Text("Server")
             } footer: {
-                Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them. Scanning fills all three values from the QR code the server prints (`make pairing`); Save & Apply still has to be tapped.")
+                Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them. A pairing code — scanned, pasted, or opened as a puls:// link — fills in the URL, token and user ID the server prints (`make pairing`) and tests them; Save & Apply still has to be tapped.")
             }
 
             Section("Sync window") {
@@ -118,7 +119,7 @@ struct SettingsView: View {
                 Button("Save & Apply") {
                     Task { await apply() }
                 }
-                    .disabled(serverURLIssue != nil)
+                    .disabled(server.urlIssue != nil)
             }
 
             Section("Backfill") {
@@ -139,7 +140,7 @@ struct SettingsView: View {
             }
 
             Section {
-                NavigationLink("Run Throughput Benchmark") { BenchmarkView() }
+                NavigationLink("Run Throughput Benchmark", value: SettingsRoute.benchmark)
                 Button {
                     runAggregateValidation()
                 } label: {
@@ -179,23 +180,39 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
-        .onAppear {
-            guard !loaded else { return }
-            loaded = true
-            serverURLText = model.config.serverURL?.absoluteString ?? ""
-            tokenText = model.config.authToken ?? ""
-        }
-        .onChange(of: serverURLText) { connectionTest = nil }
-        .onChange(of: tokenText) { connectionTest = nil }
-        .sheet(isPresented: $showScanner) {
-            // A scanned code fills the fields (and the draft's user ID); it
-            // never applies anything on its own — Save & Apply still runs the
-            // server/user-change prompt if the target moved.
-            PairingScannerView { payload in
-                serverURLText = payload.serverURL.absoluteString
-                tokenText = payload.token
-                model.config.userID = payload.userID
+        .navigationDestination(for: SettingsRoute.self) { route in
+            switch route {
+            case .user: UserView()
+            case .benchmark: BenchmarkView()
             }
+        }
+        .onAppear {
+            if !loaded {
+                loaded = true
+                server = ServerFieldsDraft(configuration: model.config)
+            }
+            // This tab is built lazily: an accepted pairing link can be what
+            // brings it on screen for the first time, already waiting.
+            collectConfirmedPairing()
+        }
+        .onChange(of: model.pairingAwaitsSettings) { collectConfirmedPairing() }
+        .onChange(of: server.urlText) {
+            // A whole `puls://pair?…` string pasted into the URL field is a
+            // pairing code, not a malformed URL.
+            if let payload = server.pairingCodeInURLField {
+                applyPairing(payload)
+            } else {
+                connectionTest = nil
+            }
+        }
+        .onChange(of: server.tokenText) { connectionTest = nil }
+        // The confirmation for an incoming link is an alert on RootView, and
+        // it cannot come up over this sheet.
+        .onChange(of: model.pairingLinkPrompt) { _, prompt in
+            if prompt != nil { showScanner = false }
+        }
+        .sheet(isPresented: $showScanner) {
+            PairingScannerView { applyPairing($0) }
         }
         .alert("Reset all anchors?", isPresented: $confirmResetAll) {
             Button("Reset All", role: .destructive) {
@@ -236,15 +253,43 @@ struct SettingsView: View {
         }
     }
 
+    /// The one place a pairing code lands on this screen, whatever brought it:
+    /// the scanner, the Paste button, a `puls://pair?…` string put in the URL
+    /// field, or a link the user accepted (`collectConfirmedPairing`). It fills
+    /// the three values and tests them. It never applies anything — Save &
+    /// Apply does, and that still runs the server/user-change prompt if the
+    /// target moved.
+    private func applyPairing(_ payload: PairingPayload) {
+        server.fill(from: payload)
+        // The code was printed by the server it describes; find out now
+        // whether the phone can reach it rather than after Save & Apply.
+        runConnectionTest()
+    }
+
+    /// Takes a pairing link the user accepted (`AppModel.confirmPairingLink`).
+    /// Not while the first-run flow is up — then the payload is its.
+    private func collectConfirmedPairing() {
+        guard model.pairingAwaitsSettings, let payload = model.takeConfirmedPairing() else { return }
+        applyPairing(payload)
+    }
+
     /// Runs the connection test against the *entered* URL and token — not the
     /// saved ones — and persists nothing; only the result row changes.
     private func runConnectionTest() {
-        guard let url = validatedServerURL else { return }
-        let token = enteredToken
+        guard let url = server.validatedURL else { return }
+        let token = server.token
+        guard !token.isEmpty else { return }
+        let userID = server.connectionTestUserID(fallback: model.config.userID)
         testingConnection = true
         connectionTest = nil
+        // A pairing code can arrive while an earlier test is still out; only
+        // the latest run may report, or the row could describe old values.
+        connectionTestRun += 1
+        let run = connectionTestRun
         Task {
-            connectionTest = await model.testConnection(url: url, token: token)
+            let result = await model.testConnection(url: url, token: token, userID: userID)
+            guard run == connectionTestRun else { return }
+            connectionTest = result
             testingConnection = false
         }
     }
@@ -254,26 +299,14 @@ struct SettingsView: View {
     private func apply() async -> Bool {
         // Save & Apply is disabled while the URL is invalid; an empty field
         // clears the server.
-        model.config.serverURL = validatedServerURL
-        let token = enteredToken
-        model.config.authToken = token.isEmpty ? nil : token
+        server.commit(to: &model.config)
+        // The paired user ID is in the draft now, whichever way the
+        // server-change prompt goes; holding on to it would overwrite a later
+        // edit on the User page.
+        server.markCommitted()
         return await model.applyConfiguration()
     }
 
-}
-
-/// The bearer-token field's input rules, shared by Settings and the first-run
-/// flow so both accept the same things.
-enum ServerTokenField {
-    /// Accepts a pasted `PULS_TOKEN=…` line from the server's `.env` as well as
-    /// the bare token.
-    static func normalize(_ text: String) -> String {
-        var token = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if token.hasPrefix("PULS_TOKEN="), let value = token.split(separator: "=", maxSplits: 1).last {
-            token = String(value)
-        }
-        return token
-    }
 }
 
 /// Icon + one-liner for a `ConnectionTestResult`, plus the advertised feature

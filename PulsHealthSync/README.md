@@ -64,9 +64,16 @@ Sources/PulsHealthSync/
 │   │                                protocol, unreachable, server error).
 │   ├── ServerURLValidation.swift    URL rules mirroring ATS: https anywhere, http only
 │   │                                for local-network hosts.
-│   ├── PairingPayload.swift         Parses the puls://pair?url=&token=&user= QR payload
-│   │                                bootstrap.sh prints; re-validates the URL with
+│   ├── PairingPayload.swift         Parses the puls://pair?url=&token=&user= payload
+│   │                                bootstrap.sh prints — scanned, pasted or opened as
+│   │                                a link; re-validates the URL with
 │   │                                ServerURLValidation and the user as a UUID.
+│   ├── PairingConfirmation.swift    What the app must say before a pairing *link* may
+│   │                                fill anything: the host, whether it replaces a
+│   │                                configured server, whether it is plain http.
+│   ├── ServerFieldsDraft.swift      The server fields as typed (URL, token, paired user
+│   │                                ID): validation, token normalization, and the one
+│   │                                fill(from:) / commit(to:) path for a pairing code.
 │   └── DiagnosticTransports.swift   DryRunTransport (benchmark, discards output) and
 │                                    InstrumentedTransport (per-batch timing capture).
 ├── Models/
@@ -89,8 +96,29 @@ Sources/PulsHealthSync/
 ├── Serialization/
 │   ├── NDJSONEncoder.swift          Batch → gzip NDJSON (hand-framed gzip over
 │   │                                Compression's raw DEFLATE + CRC32).
-│   └── SampleMapper.swift           HKSample → wire DTO; canonical-unit conversion,
-│                                    metadata coercion, workout statistics.
+│   ├── SampleMapper.swift           HKSample → wire DTO; canonical-unit conversion,
+│   │                                metadata coercion, workout statistics.
+│   └── CSVField.swift               One CSV cell: quoting, exponent-free floats and
+│                                    whole epoch-ms, matching the product API's
+│                                    encoding/csv output. Shared by the wake-log and
+│                                    health exports; cells are written verbatim.
+├── Export/
+│   ├── HealthExporter.swift         Public entry point: builds a throwaway engine
+│   │                                (own state store, event log, wake log, in-memory
+│   │                                token store), runs the sweep's phases into files,
+│   │                                turns the engine's logged failures back into
+│   │                                reported ones, cleans up on throw/cancel;
+│   │                                removeAllExports(). Also ExportEventCollector.
+│   ├── ExportModels.swift           ExportRequest/Format/Dataset (CSV column lists)/
+│   │                                Progress/Issue/Result, HealthExportError.
+│   ├── ExportPlan.swift             Pure: the export configuration (no server, no
+│   │                                identity), aggregate start alignment to the real
+│   │                                sync's bucket grid, completion check.
+│   ├── ExportFileTransport.swift    Actor SyncTransport that appends batches to
+│   │                                files and tallies rows per dataset.
+│   ├── ExportWriters.swift          JSONL (wire-format batches, concatenated) and
+│   │                                CSV (one file per dataset) writers; ExportFile.
+│   └── ExportManifest.swift         The …-manifest.json sidecar.
 └── Metrics/
     ├── SyncEventLog.swift           Ring buffer (2,000) + persisted file + os.Logger
     │                                mirror + AsyncStream for live UI. Messages are
@@ -125,9 +153,13 @@ xcodebuild command it rewrites the file), serialization (NDJSON line structure, 
 hand-off, server-identity change detection and reset, scrubbed error text), and
 the protocol surface (`ProtocolTests.swift`: header version fields, request
 headers, protocol-rejection parsing, capabilities decoding, URL validation, and
-the connection test end to end against an in-process `URLProtocol`). HealthKit
-itself isn't mockable, so engine behavior is exercised in the app via the
-benchmark and diagnostics screens.
+the connection test end to end against an in-process `URLProtocol`), and the
+on-device export (`ExportTests.swift`: hand-built batches through the real file
+transport and both writers — CSV columns against `docs/export.md`, quoting,
+nulls, header-once, JSONL line validity and header counts, what CSV cannot
+represent, cancellation and cleanup — plus the export plan and its completion
+check). HealthKit itself isn't mockable, so engine behavior is exercised in the
+app via the benchmark and diagnostics screens.
 
 ## Secrets and state at rest
 
@@ -195,13 +227,30 @@ produced a batch.
   cause (TLS, DNS, timeout, refused, ATS), anything else as a server error.
   Nothing about the test is persisted.
 - **Pairing codes.** `PairingPayload.parse` reads the
-  `puls://pair?url=&token=&user=` string encoded in the QR code
-  `scripts/bootstrap.sh` prints. A scanned code is untrusted input: the URL is
+  `puls://pair?url=&token=&user=` string `scripts/bootstrap.sh` prints, as a QR
+  code and as text. A code is untrusted input however it arrives: the URL is
   re-validated with `ServerURLValidation` (so a code carrying plain `http://`
   to a non-local host is refused, not silently saved), the user must be a UUID,
   unknown query items are ignored, and anything that is not a `puls://pair` URL
-  is rejected as "not a pairing code". `apply(to:)` writes only the server URL,
-  token and user ID into a `SyncConfiguration` draft.
+  is rejected as "not a pairing code". Because a paste rarely holds exactly the
+  payload, the parser *finds* it: surrounding whitespace, `<…>`, quotes or
+  back-ticks, or the rest of the printed pairing block are tolerated, but the
+  payload must start the text or follow whitespace or an opening wrapper — a
+  `puls://` buried in another URL's query string is not picked out.
+  `apply(to:)` writes only the server URL, token and user ID into a
+  `SyncConfiguration` draft; `ServerFieldsDraft` is the on-screen equivalent,
+  staging all three (the user ID included) until `commit(to:)`.
+  The same string also works as a link, since the app registers the `puls` URL
+  scheme — that is how the iOS Camera app hands over a scanned QR code. A
+  custom URL scheme authenticates nobody: any web page or app can fire a
+  `puls://pair` link, and any installed app can claim the scheme, so a link's
+  token may be delivered to whichever app iOS picks. Scanning inside the app
+  never leaves the app; the link is a convenience. `PairingConfirmation` exists
+  because links are untrusted input: it is the prompt the app shows before a
+  link may fill anything — naming the host, saying when it would replace a
+  different configured server (same normalization as `ServerIdentity`) and when
+  the connection is unencrypted — and accepting it goes no further than a scan
+  does: fields filled and tested, nothing applied.
 
 ## How a sync runs
 
@@ -339,6 +388,89 @@ stale before anyone noticed. An observer wake is by definition a moment when
 HealthKit is readable. The refresh is rate-limited to hourly via
 `ActivitySummaryState.lastComputedAt`, because today's ring mutates all day and
 observer wakes are frequent.
+
+## On-device export
+
+`HealthExporter` writes HealthKit data to files with no server involved — the
+public API behind the app's export screen. File formats, columns and how they
+relate to the server's `/v1/export` are in [`docs/export.md`](../docs/export.md),
+"On-device export"; this is the package side.
+
+```swift
+let request = ExportRequest(
+    configuration: config,            // type selection, aggregates, user ID
+    startDate: nil,                   // nil = all time
+    format: .jsonl,                   // or .csv
+    deviceID: engine.store.deviceID)  // attribute a replay to this install
+let result = try await HealthExporter().run(request) { progress in
+    // arbitrary executor: phase, currentType, rowsWritten, bytesWritten
+}
+// result.files → share sheet; then HealthExporter.removeAllExports()
+```
+
+**An export is a sync sweep pointed at files.** The same anchored queries,
+`SampleMapper`, enrichment and aggregate math run; `ExportFileTransport` stands
+where `HTTPSyncTransport` would and appends each batch instead of POSTing it.
+JSONL is therefore the wire format itself (uncompressed batches, concatenated —
+replayable into `/v1/batches`), and CSV is a per-dataset flattening of the same
+batches whose shared datasets match the product API's export byte for byte.
+Output is streamed through a `FileHandle` one batch at a time, so memory is
+bounded by `batchSize` whatever the export's size; only workout rows wait in
+memory, because their `hasRoute`/`availableMetrics` columns describe route and
+stream batches that arrive two phases later.
+
+**It never shares sync state — the one rule that must not bend.** Anchors and
+watermarks are keyed per type with no destination dimension, and the engine
+advances them whenever its transport returns normally. Hand
+`ExportFileTransport` to the app's real engine and every exported sample is
+recorded as delivered: the server never receives it and nothing reports a
+problem. So each `run` builds its own `HealthSyncEngine` over a `SyncStateStore`,
+`SyncEventLog` **and `WakeLog`** in a throwaway directory with an
+`InMemoryTokenStore`, and deletes the directory on every exit path. (The wake
+log matters: the engine's default one opens the app's real `wake-log.json` and
+rewrites any wake still marked running as interrupted.) An empty store is also
+what makes the export whole — nil anchors mean "everything since the start
+date". That second engine has no side effects on the first: it never calls
+`startObserving` (no observer query, no background-delivery changes, which are
+per-app), no `BackgroundSyncScheduler` is built over it, and its configuration
+has no server URL, token or identity fields, so no HTTP transport or API client
+exists and no `{"profile":…}` line is written.
+
+It calls the sweep's phases itself — rings, raw types (`.manual`, so the
+per-type backfill path), the full aggregate pass, routes, streams — rather than
+`syncAllEnabled`, which would add the recent-aggregate priority window and
+write the newest month of every series twice. "All time" queries from 1900
+rather than `.distantPast` (whose local day is in 1 BC west of Greenwich), and
+each aggregate series starts at its type's first sample, snapped to the bucket
+grid the real sync uses so a replay overwrites the server's buckets instead of
+interleaving a second set.
+
+**Failures are reported, not logged.** The engine survives a type it cannot
+read by logging and moving on, which is right for a sync that retries on the
+next wake and wrong for an export, where it would be a short file presented as
+a whole one. After the sweep, `ExportPlan.failures` asks the throwaway store
+whether each unit reached its completion marker (`backfillComplete`, an
+aggregate's or enrichment phase's `lastFullRecomputeAt`, the rings'
+`computedThrough`) — a test every failure path fails the same way, including
+future ones — and takes only the wording from the event log, which
+`ExportEventCollector` follows live because the log is a 2,000-entry ring that
+a real export overflows. Samples `SampleMapper` could not convert come through
+`HealthSyncEngine.unmappableSampleCounts` rather than being parsed out of the
+warning. The result:
+
+- a locked device, no HealthKit, nothing selected, nothing readable, no data,
+  or a write error **throws** `HealthExportError`, and a throw (cancellation
+  included) always leaves no files;
+- a partial export **returns**, with `failures`, `unmappableSamples` and
+  `isComplete == false`, and the manifest says `"complete": false`;
+- a CSV export counts what it has no file for (ECG traces, heartbeat series,
+  deletions) in `notRepresented`.
+
+Exported files are `.completeUntilFirstUserAuthentication` — a long export must
+survive the phone locking mid-run — and deliberately not run through
+`ProtectedStateFile`: they exist to leave the app. By default they are staged
+under `HealthExporter.stagingRoot` in the temporary directory, which
+`removeAllExports()` clears, leftovers from a crash included.
 
 ## Testing
 
