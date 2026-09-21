@@ -63,7 +63,7 @@ export function SiteHeader({ stars }: { stars: number | null }) {
           <span className="font-semibold">PulsHealth</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
           {primary.map((item) => (
             <Link
               key={item.href}
@@ -81,7 +81,7 @@ export function SiteHeader({ stars }: { stars: number | null }) {
 
         <div className="ml-auto flex items-center gap-2">
           <SearchTrigger />
-          <Button asChild variant="outline" size="sm" className="hidden gap-1.5 md:inline-flex">
+          <Button asChild variant="outline" size="sm" className="hidden gap-1.5 lg:inline-flex">
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="PulsHealth on GitHub">
               <GitHubIcon className="h-4 w-4" />
               {starLabel ? (
@@ -98,7 +98,7 @@ export function SiteHeader({ stars }: { stars: number | null }) {
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="lg:hidden">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Open menu</span>
               </Button>
