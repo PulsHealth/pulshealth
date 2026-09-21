@@ -1,24 +1,23 @@
 # pulshealth.com — marketing site
 
 Next.js (App Router, static export) site for pulshealth.com: the product
-pages, the blog, the HealthKit knowledge-base viewer, and the project
-documentation rendered from the repository. It is a separate thing from
-[`web/`](../web/README.md), which is the self-hosted viewer that reads your
-own Postgres.
+pages, the blog, and the HealthKit knowledge-base viewer. It is a separate
+thing from [`web/`](../web/README.md), which is the self-hosted viewer that
+reads your own Postgres.
 
-It reads content from **three places in the repository**, by relative path
-from `site/`, so none of them can move:
+It reads content from the **repository around it**, by relative path, so
+`site/` and the things it reads must stay where they are:
 
 | Source | Read by | How |
 |---|---|---|
 | [`../knowledge-base/`](../knowledge-base/README.md) | `src/lib/api.ts` | `path.join(process.cwd(), "..", "knowledge-base")` — 177 YAML type files become `/knowledge-base/types/<slug>/` |
 | [`../blog/`](../blog/BLOG_SYSTEM.md) | `src/lib/blog.ts`, `package.json` | `../blog/articles/*.mdx` become `/blog/<slug>/`; `copy-blog-images` copies `../blog/images` into `public/blog/` before every dev run and build |
-| Five markdown files: [`../docs/protocol/README.md`](../docs/protocol/README.md), [`../server/README.md`](../server/README.md), [`../docs/ai.md`](../docs/ai.md), [`../docs/export.md`](../docs/export.md), [`../docs/database-guide.md`](../docs/database-guide.md) | `src/lib/docs.ts` | An explicit, ordered manifest (`DOCS`) — not a glob — becomes `/docs/` and `/docs/<slug>/`. Rendered as plain markdown (GFM, highlighted code, GitHub-style heading ids so the spec's own anchors work) with relative links rewritten: a link to another manifest file becomes its site route, anything else relative points at the file on GitHub at `main`. The markdown is never edited for the site; add a page by adding a manifest entry and bumping `manifest=5` in the `site` CI job |
+| Eleven Markdown documents: `server/README.md`, `docs/protocol/README.md`, `docs/database-guide.md`, `docs/export.md`, `docs/ai.md`, `server/mcp/README.md`, `web/README.md`, `PulsHealthSync/README.md`, `SECURITY.md`, `CHANGELOG.md`, `docs/roadmap.md` (and `docs/privacy-policy.md` for `/privacy`) | `src/lib/docs.ts` (the registry), `src/lib/markdown.tsx` (the renderer) | Each becomes `/docs/<slug>/`, rendered at build time from the file itself. Relative links inside a document resolve to the other rendered documents where there is one, otherwise to the file on GitHub |
 
-Moving `site/` (or any source) breaks the loaders without a build error —
-they log "not found" and simply emit fewer pages. The page count is the
-tell: a full build exports **198** static pages, 177 of them under
-`knowledge-base/types/` and 6 under `docs/`.
+Moving `site/` (or anything it reads) breaks the loaders without a build
+error — they log "not found" and simply emit fewer pages. The page count is
+the tell: a full build exports **211** static pages, 177 of them under
+`knowledge-base/types/` and 11 under `docs/`.
 
 ## Develop
 
@@ -31,7 +30,7 @@ bun run dev        # localhost:3000
 ## Build and lint
 
 ```bash
-bun run build      # static export to site/out/ (198 pages)
+bun run build      # static export to site/out/ (211 pages)
 bun run lint       # ESLint (2 known warnings, no errors)
 ```
 
@@ -50,7 +49,9 @@ from anywhere, it locates the repository itself.
 
 ## Configuration
 
-`.env.production` carries the two public build-time values (the form
-endpoint and the GA measurement ID) and is tracked, since a static export
-bakes them into the HTML anyway. `.env.example` documents them for a local
-`.env.local`.
+`.env.production` carries the one public build-time value, the endpoint the
+two forms post to, and is tracked, since a static export bakes it into the
+HTML anyway. `.env.example` documents it for a local `.env.local`. The site
+loads no analytics and sets no cookies; `docs/privacy-policy.md` says so in
+its website section, and `/privacy` renders that file, so keep the two true
+together.

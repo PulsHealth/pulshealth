@@ -94,6 +94,8 @@ export interface BlogPost {
   excerpt: string;
   content: string;
   featured_image?: string;
+  /** Whole minutes at ~220 words per minute, never below 1. */
+  readingTime: number;
 }
 
 // Unified search types

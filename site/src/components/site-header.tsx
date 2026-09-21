@@ -4,19 +4,12 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Menu, Smartphone, BookOpen, BookMarked, Bot, LifeBuoy, MessageCircle, FileText, Server, FileCode2, Bug, Info } from "lucide-react"
+import { BookOpen, Briefcase, FileText, Menu, PenLine, Server, Smartphone, Star } from "lucide-react"
 import { GitHubIcon } from "@/components/brand-icons"
 
 import { cn } from "@/lib/utils"
+import { GITHUB_URL, formatStars } from "@/lib/github"
 import { Button } from "@/components/ui/button"
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
 import {
   Sheet,
   SheetContent,
@@ -27,266 +20,135 @@ import {
 import { ModeToggle } from "@/components/mode-toggle"
 import { SearchTrigger } from "@/components/search-trigger"
 
-const GITHUB = "https://github.com/PulsHealth/pulshealth"
-
 type NavItem = {
-  title: string;
-  href: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  external?: boolean;
-  section?: string;
-  disabled?: boolean;
+  title: string
+  href: string
+  description: string
+  icon: typeof Smartphone
 }
 
-const project: NavItem[] = [
-  {
-    title: "iOS App",
-    href: "/app",
-    description: "Sync Apple Health to a server you run",
-    icon: Smartphone,
-  },
-  {
-    title: "Self-Hosted Server",
-    href: "/sync",
-    description: "Postgres, Grafana and a web viewer via Docker Compose",
-    icon: Server,
-  },
-  {
-    title: "Sync Protocol",
-    href: "/docs/protocol",
-    description: "The spec, JSON Schema and fixtures for your own backend",
-    icon: FileCode2,
-  },
-  {
-    title: "Use It With AI",
-    href: "/docs/ai",
-    description: "Read-only MCP server for Claude, Claude Code and Cursor",
-    icon: Bot,
-  },
-  {
-    title: "Source on GitHub",
-    href: GITHUB,
-    description: "App, server, protocol and dashboards — Apache-2.0",
-    icon: GitHubIcon,
-    external: true,
-  },
+/**
+ * Six items, all on-site. Docs are the way into the protocol, the AI setup
+ * and the server manual; GitHub is the star pill on the right. Consulting is
+ * the business behind the project and stays visible; About and Support live
+ * in the footer.
+ */
+const primary: NavItem[] = [
+  { title: "App", href: "/ios", description: "The free iOS app", icon: Smartphone },
+  { title: "Server", href: "/server", description: "The self-hosted stack", icon: Server },
+  { title: "Docs", href: "/docs", description: "Setup, protocol, database, AI", icon: FileText },
+  { title: "Knowledge Base", href: "/knowledge-base", description: "What each Apple Health type measures", icon: BookOpen },
+  { title: "Blog", href: "/blog", description: "Posts from the project", icon: PenLine },
+  { title: "Consulting", href: "/consulting", description: "Setup, hosting and custom work, from the maintainer", icon: Briefcase },
 ]
 
-const resources: NavItem[] = [
-  {
-    title: "Documentation",
-    href: "/docs",
-    description: "Protocol spec, self-hosting, AI and export guides",
-    icon: BookMarked,
-    section: "Support",
-  },
-  {
-    title: "Knowledge Base",
-    href: "/knowledge-base",
-    description: "Reference for Apple Health metrics",
-    icon: BookOpen,
-    section: "Support",
-  },
-  {
-    title: "Support",
-    href: "/support",
-    description: "Help center & contact",
-    icon: LifeBuoy,
-    section: "Support",
-  },
-  {
-    title: "Report an Issue",
-    href: `${GITHUB}/issues`,
-    description: "Bugs, questions and feature requests",
-    icon: Bug,
-    section: "Support",
-    external: true,
-  },
-  {
-    title: "About",
-    href: "/about",
-    description: "The project and its background",
-    icon: Info,
-    section: "Company",
-  },
-  {
-    title: "Blog",
-    href: "/blog",
-    description: "Updates & articles",
-    icon: FileText,
-    section: "Company",
-  },
-  {
-    title: "Contact",
-    href: "/support",
-    description: "Get in touch",
-    icon: MessageCircle,
-    section: "Company",
-  },
+const secondary: { title: string; href: string }[] = [
+  { title: "Support & FAQ", href: "/support" },
+  { title: "About", href: "/about" },
+  { title: "Privacy", href: "/privacy" },
 ]
 
-export function SiteHeader() {
+export function SiteHeader({ stars }: { stars: number | null }) {
   const pathname = usePathname()
   const [open, setOpen] = React.useState(false)
 
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+  const starLabel = formatStars(stars)
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto max-w-7xl flex h-14 items-center px-4">
-        {/* Logo */}
-        <Link href="/" className="mr-6 flex items-center space-x-1.5">
+      <div className="container mx-auto flex h-14 max-w-7xl items-center gap-2 px-4">
+        <Link href="/" className="mr-4 flex items-center space-x-1.5">
           <Image src="/logo.svg" alt="" width={28} height={28} priority />
           <span className="font-semibold">PulsHealth</span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList>
-            {/* Project Dropdown */}
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Project</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                  {project.map((item) => (
-                    <ListItem
-                      key={item.title}
-                      title={item.title}
-                      href={item.href}
-                      icon={item.icon}
-                      external={item.external}
-                    >
-                      {item.description}
-                    </ListItem>
-                  ))}
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
+          {primary.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                isActive(item.href) && "bg-accent/60 text-foreground",
+              )}
+              aria-current={isActive(item.href) ? "page" : undefined}
+            >
+              {item.title}
+            </Link>
+          ))}
+        </nav>
 
-            {/* Resources Dropdown */}
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <div className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
-                  <div>
-                    <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Support</p>
-                    <ul className="space-y-1">
-                      {resources.filter(r => r.section === "Support").map((item) => (
-                        <ListItem
-                          key={item.title}
-                          title={item.title}
-                          href={item.href}
-                          icon={item.icon}
-                          external={item.external}
-                          disabled={item.disabled}
-                        >
-                          {item.description}
-                        </ListItem>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Company</p>
-                    <ul className="space-y-1">
-                      {resources.filter(r => r.section === "Company").map((item) => (
-                        <ListItem
-                          key={item.title}
-                          title={item.title}
-                          href={item.href}
-                          icon={item.icon}
-                          external={item.external}
-                          disabled={item.disabled}
-                        >
-                          {item.description}
-                        </ListItem>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-
-            {/* Docs Link */}
-            <NavigationMenuItem>
-              <NavigationMenuLink asChild>
-                <Link
-                  href="/docs"
-                  className={cn(
-                    "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50",
-                    pathname.startsWith("/docs") && "bg-accent/50"
-                  )}
-                >
-                  Docs
-                </Link>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-
-            {/* Consulting Link */}
-            <NavigationMenuItem>
-              <NavigationMenuLink asChild>
-                <Link
-                  href="/consulting"
-                  className={cn(
-                    "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50",
-                    pathname === "/consulting" && "bg-accent/50"
-                  )}
-                >
-                  Consulting
-                </Link>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
-
-        {/* Right side actions */}
         <div className="ml-auto flex items-center gap-2">
           <SearchTrigger />
-          <Button asChild variant="ghost" size="icon" className="hidden md:inline-flex">
-            <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-              <GitHubIcon className="h-5 w-5" />
-              <span className="sr-only">PulsHealth on GitHub</span>
+          <Button asChild variant="outline" size="sm" className="hidden gap-1.5 lg:inline-flex">
+            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="PulsHealth on GitHub">
+              <GitHubIcon className="h-4 w-4" />
+              {starLabel ? (
+                <>
+                  <Star className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                  <span className="font-mono text-xs tabular-nums">{starLabel}</span>
+                </>
+              ) : (
+                <span className="text-xs">GitHub</span>
+              )}
             </a>
           </Button>
           <ModeToggle />
 
-          {/* Mobile Menu */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="lg:hidden">
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
+                <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:w-[400px]">
+            <SheetContent side="right" className="w-full overflow-y-auto sm:w-[400px]">
               <SheetHeader>
                 <SheetTitle className="text-left">Menu</SheetTitle>
               </SheetHeader>
-              <nav className="mt-8 flex flex-col gap-6">
-                {/* Project Section */}
+              <nav className="mt-6 flex flex-col gap-6" aria-label="Mobile">
+                <div className="space-y-1">
+                  {primary.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-4 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        isActive(item.href) && "bg-accent/60",
+                      )}
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <div className="font-medium">{item.title}</div>
+                        <div className="truncate text-xs text-muted-foreground">{item.description}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
                 <div>
-                  <p className="mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider px-3">Project</p>
+                  <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">More</p>
                   <div className="space-y-1">
-                    {project.map((item) => (
-                      <MobileNavItem key={item.title} item={item} onNavigate={() => setOpen(false)} />
+                    {secondary.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {item.title}
+                      </Link>
                     ))}
                   </div>
                 </div>
 
-                {/* Resources Section */}
-                <div>
-                  <p className="mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider px-3">Resources</p>
-                  <div className="space-y-1">
-                    {resources.filter(r => !r.disabled).map((item) => (
-                      <MobileNavItem key={item.title} item={item} onNavigate={() => setOpen(false)} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* CTA */}
-                <div className="pt-4 mt-auto border-t">
-                  <Button asChild className="w-full bg-brand hover:bg-brand-dark text-brand-foreground h-12 text-base">
-                    <a href={GITHUB} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
+                <div className="mt-auto border-t pt-4">
+                  <Button asChild variant="outline" className="h-12 w-full text-base">
+                    <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
                       <GitHubIcon className="mr-2 h-4 w-4" />
-                      View on GitHub
+                      {starLabel ? `Star on GitHub · ${starLabel}` : "View on GitHub"}
                     </a>
                   </Button>
                 </div>
@@ -298,115 +160,3 @@ export function SiteHeader() {
     </header>
   )
 }
-
-function MobileNavItem({ item, onNavigate }: { item: NavItem; onNavigate: () => void }) {
-  const className =
-    "flex items-center gap-4 rounded-lg px-3 py-3 text-sm hover:bg-accent transition-colors"
-  const body = (
-    <>
-      <item.icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-      <div className="min-w-0">
-        <div className="font-medium">{item.title}</div>
-        <div className="text-xs text-muted-foreground truncate">{item.description}</div>
-      </div>
-    </>
-  )
-
-  if (item.external) {
-    return (
-      <a
-        href={item.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={onNavigate}
-        className={className}
-      >
-        {body}
-      </a>
-    )
-  }
-
-  return (
-    <Link href={item.href} onClick={onNavigate} className={className}>
-      {body}
-    </Link>
-  )
-}
-
-interface ListItemProps extends React.ComponentPropsWithoutRef<"a"> {
-  title: string
-  icon?: React.ComponentType<{ className?: string }>
-  disabled?: boolean
-  external?: boolean
-}
-
-const ListItem = React.forwardRef<React.ElementRef<"a">, ListItemProps>(
-  ({ className, title, children, icon: Icon, disabled, external, href, ...props }, ref) => {
-    if (disabled) {
-      return (
-        <li>
-          <div
-            className={cn(
-              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none opacity-50 cursor-not-allowed",
-              className
-            )}
-          >
-            <div className="flex items-center gap-2">
-              {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-              <div className="text-sm font-medium leading-none">{title}</div>
-            </div>
-            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-              {children}
-            </p>
-          </div>
-        </li>
-      )
-    }
-
-    const itemClassName = cn(
-      "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-      className
-    )
-
-    const body = (
-      <>
-        <div className="flex items-center gap-2">
-          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-          <div className="text-sm font-medium leading-none">{title}</div>
-        </div>
-        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-          {children}
-        </p>
-      </>
-    )
-
-    return (
-      <li>
-        <NavigationMenuLink asChild>
-          {external ? (
-            <a
-              ref={ref}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={itemClassName}
-              {...props}
-            >
-              {body}
-            </a>
-          ) : (
-            <Link
-              ref={ref as React.Ref<HTMLAnchorElement>}
-              href={href || "#"}
-              className={itemClassName}
-              {...props}
-            >
-              {body}
-            </Link>
-          )}
-        </NavigationMenuLink>
-      </li>
-    )
-  }
-)
-ListItem.displayName = "ListItem"

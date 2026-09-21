@@ -1,157 +1,140 @@
-import fs from "fs";
-import path from "path";
-import { DocPage } from "./types";
+import type { RouteMap } from "@/lib/markdown";
 
-// The repository's project documentation, rendered at /docs/<slug>/. This is
-// the site's third content source next to knowledge-base/ (api.ts) and blog/
-// (blog.ts), and like those it reads the files by relative path from the
-// repository root, so site/ has to stay where it is.
-//
-// The manifest is explicit and ordered rather than a directory glob: the
-// export count is then deterministic and the CI count check (site job in
-// .github/workflows/ci.yml) can assert it against DOCS.length. Adding a page
-// means adding an entry here and bumping that number. The markdown files
-// themselves are the source of truth and are never edited for the site.
+/**
+ * The documents the site renders on-site under `/docs/<slug>/`, from their
+ * one source in the repository. Everything here is read by
+ * `src/lib/markdown.tsx` at build time; a document that is not in this list
+ * is still reachable, but as a link to GitHub, which is what
+ * `resolveRepoLink` falls back to when a relative link lands on a file that
+ * has no route here.
+ *
+ * This file must stay free of Node imports: `src/lib/pages.ts` pulls the
+ * registry into the client-side search index.
+ */
 
-export const GITHUB_REPO = "https://github.com/PulsHealth/pulshealth";
-
-const REPO_ROOT = path.join(process.cwd(), "..");
+export type DocGroup = "Getting started" | "Reference" | "Project";
 
 export interface DocEntry {
-  /** Route segment under /docs/. */
+  /** Route segment: `/docs/<slug>/`. */
   slug: string;
-  /** Path of the markdown file, relative to the repository root. */
-  source: string;
   title: string;
+  /** Repo-relative path of the Markdown source. */
+  repoPath: string;
+  /** One sentence, for the index card, the search entry and the meta description. */
   description: string;
+  group: DocGroup;
 }
 
-export const DOCS: readonly DocEntry[] = [
+export const DOC_GROUPS: DocGroup[] = ["Getting started", "Reference", "Project"];
+
+export const DOCS: DocEntry[] = [
+  {
+    slug: "server",
+    title: "Server setup and operations",
+    repoPath: "server/README.md",
+    description:
+      "The Docker Compose stack: bootstrap, configuration, exposing ingest, schema migrations, backups and restore, and upgrading the published images.",
+    group: "Getting started",
+  },
   {
     slug: "protocol",
-    source: "docs/protocol/README.md",
     title: "Puls Sync Protocol v1",
+    repoPath: "docs/protocol/README.md",
     description:
-      "The wire protocol the app speaks, written for anyone implementing a receiver: transport, the NDJSON batch, every line type, canonical units, idempotency and the retry contract.",
-  },
-  {
-    slug: "self-hosting",
-    source: "server/README.md",
-    title: "Self-hosting the reference server",
-    description:
-      "Running the Docker Compose stack: services and ports, configuration, schema migrations, tokens, exposing ingest, backups and the product API.",
-  },
-  {
-    slug: "ai",
-    source: "docs/ai.md",
-    title: "Use it with AI assistants",
-    description:
-      "Connecting Claude Desktop, Claude Code, Cursor or a ChatGPT Action to your own data through the read-only MCP server, and what each tool answers.",
-  },
-  {
-    slug: "export",
-    source: "docs/export.md",
-    title: "Bulk export",
-    description:
-      "Pulling a whole range of one dataset as streamed CSV or JSONL over GET /v1/export, with curl or the puls-export CLI.",
+      "The wire format the app speaks, written for anyone implementing a receiver: line types, JSON Schemas, canonical units, idempotency and the retry contract.",
+    group: "Reference",
   },
   {
     slug: "database",
-    source: "docs/database-guide.md",
-    title: "Data and schema guide",
+    title: "Database guide",
+    repoPath: "docs/database-guide.md",
     description:
-      "What the database stores and how to query it without misreading the health data: every table family, the derived views, and the device double-counting trap.",
+      "What the database stores, how the schema is shaped, and how to query it without misreading the health data, including iPhone plus Watch double counting.",
+    group: "Reference",
+  },
+  {
+    slug: "export",
+    title: "Bulk export",
+    repoPath: "docs/export.md",
+    description:
+      "The product API's streaming export endpoint, CSV for a spreadsheet or JSONL for a notebook, and the puls-export command-line client for it.",
+    group: "Reference",
+  },
+  {
+    slug: "ai",
+    title: "Use it with AI",
+    repoPath: "docs/ai.md",
+    description:
+      "Client-side setup for asking Claude Desktop, Claude Code, Cursor or ChatGPT about your data through the read-only MCP server and the OpenAPI route.",
+    group: "Reference",
+  },
+  {
+    slug: "mcp",
+    title: "MCP server",
+    repoPath: "server/mcp/README.md",
+    description:
+      "The Go MCP server that gives AI assistants read-only tools over the product API: the tools, the stdio and HTTP transports, and how to run it.",
+    group: "Reference",
+  },
+  {
+    slug: "web-viewer",
+    title: "Web viewer",
+    repoPath: "web/README.md",
+    description:
+      "The self-hosted Next.js viewer that reads your Postgres directly: quick start, connecting to real data, the optional login and the container image.",
+    group: "Reference",
+  },
+  {
+    slug: "swift-package",
+    title: "PulsHealthSync Swift package",
+    repoPath: "PulsHealthSync/README.md",
+    description:
+      "The dependency-free Swift package underneath the app: the sync engine, transport and NDJSON encoding, embeddable in another iOS app.",
+    group: "Reference",
+  },
+  {
+    slug: "security",
+    title: "Security policy",
+    repoPath: "SECURITY.md",
+    description:
+      "Supported versions, how to report a vulnerability privately, and the known limitations of a single shared bearer token.",
+    group: "Project",
+  },
+  {
+    slug: "changelog",
+    title: "Changelog",
+    repoPath: "CHANGELOG.md",
+    description:
+      "What changed in each release of the server stack, the four images that share one version selected by PULS_VERSION.",
+    group: "Project",
+  },
+  {
+    slug: "roadmap",
+    title: "Roadmap",
+    repoPath: "docs/roadmap.md",
+    description:
+      "What is still outstanding, in the order worth doing it, tied to the requirement IDs of the open-source plan.",
+    group: "Project",
   },
 ];
 
-export function getDocEntry(slug: string): DocEntry | undefined {
-  return DOCS.find((d) => d.slug === slug);
+export function docHref(slug: string): string {
+  return `/docs/${slug}/`;
 }
 
-export async function getAllDocs(): Promise<DocPage[]> {
-  const pages: DocPage[] = [];
+/** Repo-relative path → site route, for `resolveRepoLink`. */
+export const docRoutes: RouteMap = Object.fromEntries(DOCS.map((doc) => [doc.repoPath, docHref(doc.slug)]));
 
-  for (const entry of DOCS) {
-    const filePath = path.join(REPO_ROOT, entry.source);
-    try {
-      if (!fs.existsSync(filePath)) {
-        console.error(`Doc not found: ${filePath}`);
-        continue;
-      }
-      const content = fs.readFileSync(filePath, "utf8");
-      pages.push({ ...entry, content: stripLeadingTitle(content) });
-    } catch (error) {
-      console.error(`Error reading doc ${filePath}`, error);
-    }
-  }
-
-  return pages;
+export function getDoc(slug: string): DocEntry | undefined {
+  return DOCS.find((doc) => doc.slug === slug);
 }
 
-export async function getDocBySlug(slug: string): Promise<DocPage | undefined> {
-  const all = await getAllDocs();
-  return all.find((d) => d.slug === slug);
+export function getAllDocs(): DocEntry[] {
+  return DOCS;
 }
 
-// Every file starts with a level-one heading that the page renders as its
-// title, so drop it from the body rather than showing it twice.
-function stripLeadingTitle(markdown: string): string {
-  return markdown.replace(/^# [^\n]*\n+/, "");
-}
-
-/** The file on GitHub at main, for a "view source" link. */
-export function githubBlobUrl(repoPath: string): string {
-  return `${GITHUB_REPO}/blob/main/${repoPath}`;
-}
-
-export interface ResolvedLink {
-  href: string;
-  external: boolean;
-}
-
-/**
- * Rewrite a link as it appears in one of the manifest's markdown files so
- * that it works from the rendered page.
- *
- * - `#fragment` and absolute URLs are returned untouched.
- * - A relative link to another manifest file becomes that file's site route
- *   (fragment preserved): `export.md` from docs/ai.md → `/docs/export/`.
- * - Any other relative link resolves against the repository root and points
- *   at GitHub: `schema/` from docs/protocol/README.md →
- *   `https://github.com/PulsHealth/pulshealth/tree/main/docs/protocol/schema/`,
- *   `../../server/ingest/parse.go` → `.../blob/main/server/ingest/parse.go`.
- *   Directories (a trailing slash) use `tree/`, files use `blob/`.
- */
-export function resolveDocLink(href: string, fromSource: string): ResolvedLink {
-  if (href.startsWith("#")) {
-    return { href, external: false };
-  }
-  if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith("//")) {
-    return { href, external: true };
-  }
-
-  const hashIndex = href.indexOf("#");
-  const fragment = hashIndex >= 0 ? href.slice(hashIndex) : "";
-  const target = hashIndex >= 0 ? href.slice(0, hashIndex) : href;
-
-  if (target === "") {
-    return { href: fragment, external: false };
-  }
-
-  const isDirectory = target.endsWith("/");
-  const resolved = path.posix.normalize(
-    path.posix.join(path.posix.dirname(fromSource), target)
+export function getDocsByGroup(): Array<{ group: DocGroup; docs: DocEntry[] }> {
+  return DOC_GROUPS.map((group) => ({ group, docs: DOCS.filter((doc) => doc.group === group) })).filter(
+    ({ docs }) => docs.length > 0,
   );
-  const repoPath = resolved.replace(/\/+$/, "");
-
-  const entry = DOCS.find((d) => d.source === repoPath);
-  if (entry) {
-    return { href: `/docs/${entry.slug}/${fragment}`, external: false };
-  }
-
-  const kind = isDirectory ? "tree" : "blob";
-  return {
-    href: `${GITHUB_REPO}/${kind}/main/${repoPath}${isDirectory ? "/" : ""}${fragment}`,
-    external: true,
-  };
 }

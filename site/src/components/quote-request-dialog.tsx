@@ -7,12 +7,14 @@ interface QuoteRequestDialogProps {
   children: React.ReactNode;
 }
 
-const quoteRequestConfig: FormDialogConfig = {
-  title: "Get a Quote",
-  description: "Fill in your details and we'll get back to you with a custom quote.",
-  successTitle: "Thank you!",
-  successDescription: "We'll be in touch shortly to discuss your requirements.",
-  submitLabel: "Submit Request",
+const consultingConfig: FormDialogConfig = {
+  title: "Tell me what you're building",
+  description:
+    "What you have, what you want it to do, and what is in the way. I read every message myself and reply from support@pulshealth.com.",
+  successTitle: "Got it",
+  successDescription:
+    "I will reply within a few days. If the answer is in the docs, I will point you to it.",
+  submitLabel: "Send",
   submittingLabel: "Sending...",
   fields: [
     {
@@ -26,26 +28,29 @@ const quoteRequestConfig: FormDialogConfig = {
       id: "email",
       label: "Email",
       type: "email",
-      placeholder: "you@company.com",
+      placeholder: "you@example.com",
       required: true,
     },
     {
       id: "company",
-      label: "Company",
+      label: "Organisation",
       type: "text",
-      placeholder: "Your company (optional)",
+      placeholder: "If there is one (optional)",
       required: false,
     },
     {
       id: "message",
-      label: "Message",
+      label: "What are you trying to do?",
       type: "textarea",
-      placeholder: "Tell us about your project or requirements...",
-      required: false,
+      placeholder: "The setup you have, the outcome you want, and anything already tried.",
+      required: true,
     },
   ],
+  hiddenFields: {
+    source: "consulting",
+  },
 };
 
 export function QuoteRequestDialog({ children }: QuoteRequestDialogProps) {
-  return <FormDialog config={quoteRequestConfig}>{children}</FormDialog>;
+  return <FormDialog config={consultingConfig}>{children}</FormDialog>;
 }

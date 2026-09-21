@@ -1,143 +1,153 @@
-import "@/app/code-styles.css";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
-import { ArrowLeft } from "lucide-react";
-import { GitHubIcon } from "@/components/brand-icons";
-import { DocToc, renderDoc } from "@/components/doc-content";
-import { DOCS, getDocBySlug, githubBlobUrl } from "@/lib/docs";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
+
+import { DocsNav } from "@/components/docs-nav";
+import { docHref, docRoutes, getAllDocs, getDoc } from "@/lib/docs";
+import { RepoMarkdown, readRepoFile, slugify, stripLeadingH1 } from "@/lib/markdown";
+
+const GITHUB = "https://github.com/PulsHealth/pulshealth";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return DOCS.map((doc) => ({ slug: doc.slug }));
+export function generateStaticParams() {
+  return getAllDocs().map((doc) => ({ slug: doc.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const doc = await getDocBySlug(slug);
-
-  if (!doc) {
-    return { title: "Page Not Found" };
-  }
-
-  const url = `https://pulshealth.com/docs/${slug}/`;
+  const doc = getDoc(slug);
+  if (!doc) return { title: "Document not found" };
   return {
-    title: `${doc.title} | PulsHealth Docs`,
+    title: `${doc.title} - PulsHealth Docs`,
     description: doc.description,
-    alternates: {
-      canonical: url,
-    },
-    openGraph: {
-      type: "article",
-      title: doc.title,
-      description: doc.description,
-      url,
-      siteName: "PulsHealth",
-    },
+    alternates: { canonical: docHref(doc.slug) },
   };
+}
+
+interface TocEntry {
+  id: string;
+  text: string;
+}
+
+/**
+ * The H2 headings of a document, for "On this page". Ids match what the
+ * renderer assigns (`slugify` over the heading's text), so link syntax and
+ * inline code have to be reduced to their text the same way first. Lines
+ * inside a fenced block are skipped: a `## comment` in a shell example is
+ * not a section.
+ */
+function tableOfContents(markdown: string): TocEntry[] {
+  const entries: TocEntry[] = [];
+  let fenced = false;
+  for (const line of markdown.split("\n")) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      fenced = !fenced;
+      continue;
+    }
+    if (fenced) continue;
+    const match = line.match(/^##\s+(.+?)\s*#*\s*$/);
+    if (!match) continue;
+    const text = match[1].replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/[`*_]/g, "");
+    entries.push({ id: slugify(text), text });
+  }
+  return entries;
 }
 
 export default async function DocPage({ params }: PageProps) {
   const { slug } = await params;
-  const doc = await getDocBySlug(slug);
+  const doc = getDoc(slug);
+  if (!doc) notFound();
 
-  if (!doc) {
-    notFound();
-  }
+  const raw = readRepoFile(doc.repoPath);
+  if (!raw) notFound();
 
-  const { content, toc } = await renderDoc(doc);
-  const sourceUrl = githubBlobUrl(doc.source);
+  const { body } = stripLeadingH1(raw);
+  const toc = tableOfContents(body);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-muted/30">
-        <div className="container mx-auto max-w-7xl px-4 py-10">
-          <Link
-            href="/docs"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            All documentation
-          </Link>
-
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground leading-tight">
-            {doc.title}
-          </h1>
-
-          <p className="mt-4 max-w-3xl text-lg text-muted-foreground">{doc.description}</p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-brand hover:underline font-medium"
-            >
-              <GitHubIcon className="h-4 w-4" />
-              View source on GitHub
-            </a>
-            <span>
-              Rendered from <code className="text-xs">{doc.source}</code> at build time.
-            </span>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="container mx-auto max-w-7xl px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_16rem] gap-12">
-          <details className="lg:hidden rounded-lg border p-4">
-            <summary className="cursor-pointer text-sm font-medium">On this page</summary>
-            <div className="mt-4">
-              <DocToc toc={toc} />
-            </div>
-          </details>
-
-          <article className="min-w-0 prose prose-zinc max-w-none dark:prose-invert prose-headings:scroll-mt-20 prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg prose-code:text-[0.9em]">
-            {content}
-          </article>
-
+    <main className="min-h-screen bg-background pb-20">
+      <div className="container mx-auto max-w-7xl px-4 py-10 lg:py-14">
+        <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-12 xl:grid-cols-[13.5rem_minmax(0,1fr)_12rem]">
           <aside className="hidden lg:block">
-            <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
-              <DocToc toc={toc} />
-            </div>
-          </aside>
-        </div>
-      </main>
-
-      {/* Footer CTA */}
-      <div className="border-t bg-muted/30">
-        <div className="container mx-auto max-w-7xl px-4 py-12">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold">Found a gap?</h3>
-              <p className="text-muted-foreground text-sm">
-                This page is the repository file, rendered. Fix it there and the site follows.
-              </p>
-            </div>
-            <div className="flex gap-3">
+            <div className="custom-scrollbar sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-2">
               <Link
                 href="/docs"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+                className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                More Documentation
+                <ArrowLeft className="h-3.5 w-3.5" />
+                All documentation
               </Link>
-              <a
-                href={sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-brand text-white hover:bg-brand/90 h-10 px-4 py-2"
-              >
-                Edit on GitHub
-              </a>
+              <DocsNav current={doc.slug} />
             </div>
-          </div>
+          </aside>
+
+          <article className="min-w-0">
+            <details className="mb-8 rounded-lg border bg-muted/30 lg:hidden">
+              <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">All docs</summary>
+              <div className="border-t px-4 py-4">
+                <DocsNav current={doc.slug} />
+              </div>
+            </details>
+
+            <header className="mb-8">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand">{doc.group}</p>
+              <h1 className="text-4xl font-bold tracking-tight text-balance">{doc.title}</h1>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Source:{" "}
+                <a
+                  href={`${GITHUB}/blob/main/${doc.repoPath}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-0.5 font-mono text-foreground/80 hover:text-brand"
+                >
+                  {doc.repoPath}
+                  <ArrowUpRight className="h-3 w-3" />
+                </a>{" "}
+                on GitHub ·{" "}
+                <a
+                  href={`${GITHUB}/edit/main/${doc.repoPath}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-brand"
+                >
+                  edit this page
+                </a>
+              </p>
+            </header>
+
+            <div className="docs-prose prose prose-zinc dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-headings:scroll-mt-24">
+              <RepoMarkdown source={body} docRepoPath={doc.repoPath} routes={docRoutes} />
+            </div>
+          </article>
+
+          <aside className="hidden xl:block">
+            {toc.length > 0 && (
+              <nav
+                aria-label="On this page"
+                className="custom-scrollbar sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto border-l pl-4 text-sm"
+              >
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">On this page</p>
+                <ul className="space-y-1.5">
+                  {toc.map((entry) => (
+                    <li key={entry.id}>
+                      <a
+                        href={`#${entry.id}`}
+                        className="block leading-snug text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {entry.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
+          </aside>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

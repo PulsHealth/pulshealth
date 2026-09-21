@@ -62,7 +62,7 @@ make dev-up                                    # thereafter (compose.build.yml)
 
 # Marketing site (bun, not npm). Exports to site/out: the marketing pages plus
 # 177 knowledge-base type pages, one page per blog article and one page per
-# entry in the docs manifest (site/src/lib/docs.ts: five repository markdown
+# entry in the docs manifest (site/src/lib/docs.ts: eleven repository markdown
 # files under /docs/) — the three counts CI asserts. `make site-dev|site-build|site-lint` and
 # `scripts/deploy-site.sh` (S3 + CloudFront) wrap this from the repo root.
 cd site && bun install && bun run lint && bun run build
@@ -307,20 +307,21 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   that is why the `NavigationStack` carries `.id(step)`; removing it leaves a
   pushed category sitting on top of the next step.
 - **`site/`, `knowledge-base/` and `blog/` are siblings at the repository root,
-  and `site/` also reads five documentation files from the tree.**
+  and `site/` also reads eleven documentation files from the tree.**
   The site reads its content by relative path —
   `path.join(process.cwd(), "..", "knowledge-base")` in `site/src/lib/api.ts`,
   `../blog/articles` in `site/src/lib/blog.ts`, `cp -r ../blog/images/.` in
   `site/package.json`'s `copy-blog-images`, and the explicit manifest in
-  `site/src/lib/docs.ts` (`docs/protocol/README.md`, `server/README.md`,
-  `docs/ai.md`, `docs/export.md`, `docs/database-guide.md` → `/docs/<slug>/`,
+  `site/src/lib/docs.ts` (eleven files — the server, protocol, database,
+  export, AI, MCP, viewer and Swift-package READMEs and guides, plus
+  `SECURITY.md`, `CHANGELOG.md` and `docs/roadmap.md` → `/docs/<slug>/`,
   with relative links rewritten to the site route or to the file on GitHub;
   the markdown is never edited for the site). Move or rename any of these and
   the loaders log "not found", return nothing, and the build **still
   succeeds** — it just exports far fewer pages. The count is the only alarm, so
   the `site` CI job asserts it (177 type pages, one per tracked YAML file,
   one page per `blog/articles/*.mdx`, and one `/docs/` page per manifest
-  entry — the `manifest=5` constant in `ci.yml` moves with the manifest).
+  entry — the `manifest=11` constant in `ci.yml` moves with the manifest).
   Keep that check honest rather than loosening it.
 - **The app is shipped software, not a source drop.** It is published on the
   App Store as
@@ -334,8 +335,8 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) is fixed by
   the record rather than chosen, and an archive only updates the listing if it
   carries that identifier. `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` must
-  likewise stay ahead of what shipped (currently 1.4 / 14 against 1.3 / 13 on
-  the store).
+  likewise stay ahead of what shipped (1.4 / 15 is on the store, and
+  `project.yml` still says 1.4 / 15, so bump before the next archive).
 - **The published privacy claims are load-bearing.**
   `docs/privacy-policy.md`, `docs/appstore/` and the site's `/privacy` page
   state as fact that the app has

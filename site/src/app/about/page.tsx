@@ -1,145 +1,94 @@
 import Link from "next/link";
-import { Heart, Users, Shield, Target, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { PageHero } from "@/components/page-hero";
+
+const GITHUB = "https://github.com/PulsHealth/pulshealth";
 
 export const metadata = {
+  title: "About PulsHealth - Why It Exists and Who Maintains It",
+  description:
+    "PulsHealth is a one-maintainer open-source project: an iPhone app that copies Apple Health into a database you run, a reference server, and a public wire protocol. Why it exists, what it is not, and how to get involved.",
   alternates: {
-    canonical: '/about/',
+    canonical: "/about/",
   },
 };
-
-const values = [
-  {
-    title: "Privacy First",
-    description: "Health data is deeply personal. Every layer of PulsHealth — read-only access to Apple Health, one destination you choose, a database you own — is designed so users stay in control of their data.",
-    icon: Shield,
-  },
-  {
-    title: "Transparency",
-    description: "Open standards, clear documentation, and honest communication. No black boxes or hidden agendas.",
-    icon: Target,
-  },
-  {
-    title: "Empowerment",
-    description: "We believe everyone — from developers building health AI to individuals tracking their fitness — should have access to health data expertise. We make that knowledge accessible and programmable.",
-    icon: Heart,
-  },
-];
 
 export default function AboutPage() {
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Hero Section */}
-      <section className="w-full bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-zinc-900 pt-20 pb-32 border-b">
-        <div className="container mx-auto max-w-7xl px-4 flex flex-col items-center text-center space-y-8">
-          <Badge variant="outline" className="px-4 py-1 text-sm rounded-full border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-            About Us
-          </Badge>
+      <PageHero
+        eyebrow="About the project"
+        title="About PulsHealth"
+        lede="PulsHealth is a one-maintainer open-source project: an iPhone app that copies Apple Health into a database you run, and everything needed to make that useful."
+      >
+        <Button asChild size="lg">
+          <a href={GITHUB} target="_blank" rel="noopener noreferrer">
+            <GitHubIcon className="mr-2 h-4 w-4" />
+            Read the Source
+          </a>
+        </Button>
+        <Button asChild size="lg" variant="outline">
+          <Link href="/server">
+            Run the Server
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
+      </PageHero>
 
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 max-w-4xl">
-            Everything AI needs to{" "}
-            <span className="text-brand">understand</span> wearable health data
-          </h1>
-
-          <p className="text-lg md:text-xl text-zinc-500 max-w-2xl leading-relaxed">
-            PulsHealth makes wearable health data reliable, normalized, and privacy-safe for AI — for developers building health products and individuals who want to understand their own data.
+      <section className="container mx-auto max-w-7xl px-4 py-20">
+        <div className="prose prose-lg mx-auto max-w-3xl dark:prose-invert prose-a:text-brand prose-a:no-underline hover:prose-a:underline">
+          <h2>Why it exists</h2>
+          <p>
+            Apple Health keeps years of your data behind an API that only apps on your phone can
+            read. The built-in export is a zip file of XML. Most apps that get the data out keep a
+            copy, charge a subscription, or both. I wanted my own history in a database I could
+            query with SQL, chart in Grafana, and use with an AI assistant, without handing it to
+            anyone else.
           </p>
-        </div>
-      </section>
-
-      {/* Mission Section */}
-      <section className="container mx-auto max-w-7xl px-4 py-24">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold tracking-tight mb-6">Our Mission</h2>
-          <div className="prose prose-zinc dark:prose-invert max-w-none text-lg text-muted-foreground space-y-4">
-            <p>
-              Consumer wearables generate thousands of health data points daily — heart rate, sleep stages, blood oxygen, activity metrics. Yet this data remains siloed across device ecosystems, fragmented across sampling rates and units, and difficult to interpret without clinical context. AI agents have the potential to unlock actionable insights, but they face significant challenges around privacy, accuracy, and interoperability.
-            </p>
-            <p>
-              We are building the foundation that bridges this gap. Our Knowledge Base distills clinical expertise into structured, AI-ready references. PulsHealthSync handles the real-time collection, normalization, and sync pipeline. A read-only MCP server puts the result in reach of AI assistants without it ever leaving your own server. And our free iOS app copies Apple Health, read-only, to a server you run yourself: your full history first, then new data as it arrives.
-            </p>
-            <p>
-              Our goal: make wearable health data work — for the builders creating the next generation of health AI, and for the people whose data it is.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Team Section */}
-      <section className="bg-muted/30 border-y">
-        <div className="container mx-auto max-w-7xl px-4 py-24">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Our Team</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              We bring deep expertise from Apple Health, Google AI, and clinical practice.
-            </p>
-          </div>
-
-          <div className="max-w-3xl mx-auto">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-6">
-                  <div className="p-4 rounded-2xl bg-brand-muted text-brand">
-                    <Users className="h-8 w-8" />
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">
-                      Our team has spent years building health data systems at scale. We&apos;ve worked on the platforms that collect this data, the AI systems that analyze it, and the clinical workflows that depend on it. We understand both the technical challenges and the human stakes involved.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Values Section */}
-      <section className="container mx-auto max-w-7xl px-4 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">Our Values</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            The principles that guide everything we build.
+          <p>
+            The app does one thing. It reads Apple Health and posts every sample to the URL you
+            give it. There is no PulsHealth account and no PulsHealth server.
           </p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {values.map((value) => (
-            <div key={value.title} className="text-center">
-              <div className="mx-auto mb-4 p-4 rounded-2xl bg-background border w-fit">
-                <value.icon className="h-8 w-8 text-brand" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">{value.title}</h3>
-              <p className="text-muted-foreground">{value.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="cta-gradient text-white">
-        <div className="container mx-auto max-w-7xl px-4 py-24 text-center">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">
-            Want to build with us?
-          </h2>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            Whether you are building a health coaching agent, running a research study, or just want to understand your own health data — we are here to help.
+          <h2>Why the wire format is public</h2>
+          <p>
+            The reference server in the repository is one receiver, not the only one. The format
+            the app speaks, the Puls Sync Protocol, is written down with a JSON Schema for every
+            line type, a fixture corpus, a conformance checker and a complete receiver in one
+            Python file. If you would rather write your own backend, the spec is enough to do it.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/consulting">
-                Get in Touch
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="bg-transparent border-brand-foreground/30 hover:bg-brand-foreground/10">
-              <Link href="/app">
-                Download the App
-              </Link>
-            </Button>
-          </div>
+
+          <h2>Who maintains it</h2>
+          <p>
+            One person. I wrote the app, the sync library, the server stack, the protocol and this
+            site, and I run the stack on my own data. Bugs, questions and protocol gaps go through{" "}
+            <a href={`${GITHUB}/issues`} target="_blank" rel="noopener noreferrer">
+              GitHub issues
+            </a>
+            , where the answer helps the next person too. If you want it set up for you, or built
+            on, there is a <Link href="/consulting">consulting page</Link>.
+          </p>
+
+          <h2>What it is not</h2>
+          <ul>
+            <li>Not a company, and not a service. There is nothing to sign up for.</li>
+            <li>Not a hosted tier, and there are no plans for one. The point is that you host it.</li>
+            <li>
+              No telemetry. The app has zero third-party dependencies and sends nothing to the
+              developer. The <Link href="/privacy">privacy policy</Link> has the details.
+            </li>
+            <li>Not a medical device. It moves data; it does not interpret it.</li>
+          </ul>
+
+          <h2>How to help</h2>
+          <p>
+            Try it and report what breaks. Implement the protocol against your own backend and
+            tell me where the spec was unclear. Fix a knowledge-base page that is wrong. Star the
+            repository to follow along. It is Apache-2.0, so you can fork it if the project ever
+            stops.
+          </p>
         </div>
       </section>
     </main>

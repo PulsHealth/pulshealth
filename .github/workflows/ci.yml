@@ -146,7 +146,7 @@ jobs:
           blogs=$(find site/out/blog -mindepth 1 -maxdepth 1 -type d | wc -l)
           # The docs manifest (DOCS in site/src/lib/docs.ts) is explicit, not
           # a glob, so its length is a constant: bump it with the manifest.
-          manifest=5
+          manifest=11
           docs=$(find site/out/docs -mindepth 1 -maxdepth 1 -type d | wc -l)
           echo "knowledge-base types: $types sources, $built pages"
           echo "blog articles: $posts sources, $blogs pages"

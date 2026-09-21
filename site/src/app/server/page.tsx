@@ -1,16 +1,14 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Bot, Code2, Database, Globe, HardDriveDownload, LayoutDashboard, LineChart, Package, Plug, Server, ShieldCheck, Smartphone, Terminal } from "lucide-react";
+import { ArrowRight, Bot, Code2, Database, FileText, Globe, HardDriveDownload, LayoutDashboard, LineChart, Package, Plug, Server, ShieldCheck, Smartphone, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-const GITHUB = "https://github.com/PulsHealth/pulshealth";
+import { PageHero } from "@/components/page-hero";
 
 export const metadata = {
   title: "The Self-Hosted PulsHealth Stack",
   description: "The open-source reference backend for PulsHealth: PostgreSQL 17 with TimescaleDB, a Go ingest API, a read-only product API, Grafana, a web viewer and an MCP server, all via Docker Compose on a machine you own.",
   alternates: {
-    canonical: '/sync/',
+    canonical: '/server/',
   },
 };
 
@@ -32,7 +30,7 @@ const services = [
   },
   {
     title: "Grafana",
-    description: "Provisioned dashboards for the health data itself and for ingest health — batches per hour, rows per day, per-type totals, last-batch age — with alert rules already defined.",
+    description: "Provisioned dashboards for the health data and for ingest health (batches per hour, rows per day, per-type totals, last-batch age), with alert rules already defined.",
     icon: LineChart,
   },
   {
@@ -50,45 +48,29 @@ const services = [
 export default function SyncPage() {
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Hero Section */}
-      <section className="w-full bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-zinc-900 pt-20 pb-32 border-b">
-        <div className="container mx-auto max-w-7xl px-4 flex flex-col items-center text-center space-y-8">
-          <Badge variant="outline" className="px-4 py-1 text-sm rounded-full border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-            Docker Compose &middot; Apache-2.0
-          </Badge>
-
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 max-w-4xl">
-            Your server, your{" "}
-            <span className="text-brand">health database</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-zinc-500 max-w-2xl leading-relaxed">
-            The reference backend the PulsHealth app syncs to. It runs on a home machine, a NAS, a
-            Raspberry Pi, or a rented box — whichever you own. There is no hosted option and no
-            managed tier, and that is deliberate.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
-              <Link href="/docs/self-hosting">
-                <BookOpen className="mr-2 h-4 w-4" />
-                Server Documentation
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="/app">
-                <Smartphone className="mr-2 h-4 w-4" />
-                The iOS App
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow={<>Docker Compose &middot; Apache-2.0</>}
+        title={<>Your server, your <span className="text-brand">health database</span></>}
+        lede="The reference backend the PulsHealth app syncs to. It runs on a home machine, a NAS, or a rented box. There is no hosted option and no managed tier."
+      >
+        <Button asChild size="lg">
+          <Link href="/docs/server">
+            <FileText className="mr-2 h-4 w-4" />
+            Server Documentation
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="lg">
+          <Link href="/ios">
+            <Smartphone className="mr-2 h-4 w-4" />
+            The iOS App
+          </Link>
+        </Button>
+      </PageHero>
 
       {/* Quickstart */}
       <section className="container mx-auto max-w-7xl px-4 py-24">
         <div className="max-w-3xl mx-auto text-center mb-10">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">One command to bring it up</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-4">Setup</h2>
           <p className="text-lg text-muted-foreground">
             You need a Linux or macOS box with Docker and its Compose plugin. The bootstrap script
             generates every secret, starts the stack, waits for ingest to answer, and prints a
@@ -106,8 +88,12 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
         </div>
 
         <p className="mx-auto max-w-2xl text-center text-sm text-muted-foreground mt-4">
-          Pass the time zone your phone lives in — every daily view buckets by that calendar.
-          Re-running the script is safe; it never regenerates secrets.
+          Pass the time zone your phone lives in, since every daily view buckets by that
+          calendar. Re-running the script is safe; it never regenerates secrets.
+        </p>
+        <p className="mx-auto max-w-2xl text-center text-sm text-muted-foreground mt-3">
+          The script pulls the published images from GHCR. Add <code>--build</code> to compile
+          them from the checkout instead, for example to run an unreleased change.
         </p>
       </section>
 
@@ -117,7 +103,8 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight mb-4">What comes up</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Six services, all in the same repository as the app, all yours to inspect and change.
+              Six services plus a one-shot migrator, all in the same repository as the app, all
+              yours to inspect and change.
             </p>
           </div>
 
@@ -144,8 +131,8 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">How the phone reaches it</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            The one decision the script leaves to you. Everything except ingest binds to loopback by
-            default — the product API, the MCP server, Grafana, the viewer and Postgres included.
+            Everything binds to loopback by default, including ingest, the product API, the MCP
+            server, Grafana, the viewer and Postgres. How the phone reaches ingest is up to you.
           </p>
         </div>
 
@@ -158,7 +145,7 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
             <p className="text-muted-foreground">
               Bind ingest to the LAN and the pairing block carries a local address; the app accepts
               plain HTTP for local-network hosts. That is plaintext with the token as the only
-              protection — fine on a network you control, nowhere else.
+              protection, so use it only on a network you control.
             </p>
           </div>
           <div className="text-center">
@@ -196,19 +183,18 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
                 </div>
                 <CardTitle>PulsHealthSync, the Swift package</CardTitle>
                 <CardDescription className="text-base">
-                  The sync engine underneath the app, and a package in its own right: iOS 17+,
-                  Swift 6 strict concurrency, zero third-party dependencies. Anchored-query sync,
-                  on-device aggregates, activity rings, background scheduling, the HTTP transport
-                  and the NDJSON encoding — embeddable in another app if you want the pipeline
-                  without the UI.
+                  The sync engine underneath the app, usable on its own: iOS 17+, Swift 6 strict
+                  concurrency, zero third-party dependencies. Anchored-query sync, on-device
+                  aggregates, activity rings, background scheduling, the HTTP transport and the
+                  NDJSON encoding. Embed it in another app if you want the pipeline without the UI.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild variant="outline">
-                  <a href={`${GITHUB}/tree/main/PulsHealthSync`} target="_blank" rel="noopener noreferrer">
+                  <Link href="/docs/swift-package">
                     Read the Package Docs
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
@@ -246,21 +232,21 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
           <ShieldCheck className="h-8 w-8" />
         </div>
         <h2 className="text-3xl font-bold tracking-tight mb-4">
-          Self-hosting means self-securing
+          Security is your job too
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
           The database holds identifiable health data. Each phone can have its own bearer token,
           bound to one user, stored only as a hash and revocable on its own. The shared token a new
-          install starts with still works until you switch it off, and whoever holds that one can
-          upload and delete for any user on the server. TLS, exposure and retention are yours to
-          arrange. The project documents its own limitations rather than glossing over them.
+          install starts with still works until you switch it off, and anyone who has that one can
+          upload and delete for any user on the server. TLS, network exposure and retention are
+          yours to set up. The security policy lists the known limitations.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button asChild size="lg" className="bg-brand hover:bg-brand-dark text-brand-foreground">
-            <a href={`${GITHUB}/blob/main/SECURITY.md`} target="_blank" rel="noopener noreferrer">
-              Security Notes
+          <Button asChild size="lg">
+            <Link href="/docs/security">
+              Security Policy
               <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
+            </Link>
           </Button>
           <Button asChild size="lg" variant="outline">
             <Link href="/privacy">

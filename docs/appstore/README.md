@@ -100,8 +100,8 @@ and cannot be prepared in the repository.
       untracked.
 - [ ] Bump `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in
       `PulsHealth/project.yml` if this is not the first build. They are `1.4` /
-      `14` against the `1.3` / `13` on the store, so the next archive needs no
-      bump; the one after it does.
+      `15`, which is what is on the store, so the next archive needs a bump
+      (build 16, and a new marketing version if anything user-visible changed).
 - [ ] Archive for a real device with the maintainer's team and upload.
       `ITSAppUsesNonExemptEncryption` is already `false` in `Info.plist`, so
       there is no export-compliance questionnaire per build.
@@ -157,4 +157,5 @@ rather than from memory. Add a row per release.
 
 | Version | Released | Notes |
 |---|---|---|
-| 1.3 | 2026-01-24 | Current version on the store. |
+| 1.3 | 2026-01-24 | CSV/JSON export app with QR data requests; the listing described that until 1.4. |
+| 1.4 (15) | 2026-09-19 | Current version on the store. Self-hosted sync: first-run onboarding with QR pairing, Keychain token, per-server sync state, capabilities-gated UI, published type vocabulary. Build 14 was rejected 2026-09-19 under 5.2.5 (subtitle "Apple Health to your server"; "Apple" is not allowed in the name or subtitle) and 5.1.1(iv) ("Grant Health Access" button and "Skip for Now" on the pre-permission screen); build 15 fixed both (#71) and was approved the same day. Reviewed on an iPad Air 11-inch (M3). |

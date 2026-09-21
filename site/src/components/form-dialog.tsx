@@ -74,8 +74,15 @@ export function FormDialog({ children, config }: FormDialogProps) {
     setIsSubmitting(true);
     setError(null);
 
+    const endpoint = process.env.NEXT_PUBLIC_FORM_ENDPOINT;
+    if (!endpoint) {
+      setError("This form is not configured on this build. Email support@pulshealth.com instead.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      const response = await fetch(process.env.NEXT_PUBLIC_FORM_ENDPOINT!, {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -163,7 +170,7 @@ export function FormDialog({ children, config }: FormDialogProps) {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-brand hover:bg-brand-dark text-brand-foreground"
+                  className="w-full"
                 >
                   {isSubmitting ? (
                     <>
