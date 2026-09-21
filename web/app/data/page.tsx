@@ -4,6 +4,7 @@ import { ChevronRight, GroupIcon } from "@/components/Icons";
 import { BROWSABLE_CATALOG, GROUPS, GROUP_LABELS, typeHref, typesInGroup } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
 import { getStats } from "@/lib/queries";
+import { viewerUser } from "@/lib/viewer";
 import { formatCompact, formatFull, relativeTime } from "@/lib/format";
 
 // Always render live from the DB — no build-time demo snapshot, no stale cache.
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "All Data — PulsHealth" };
 
 export default async function DataPage() {
-  const stats = await getStats();
+  const stats = await getStats(await viewerUser());
   const totalRows = BROWSABLE_CATALOG.reduce((s, t) => s + (stats.get(t.identifier)?.rows ?? 0), 0);
   const withData = BROWSABLE_CATALOG.filter((t) => (stats.get(t.identifier)?.rows ?? 0) > 0).length;
 

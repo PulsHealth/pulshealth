@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -47,7 +48,8 @@ func (s *service) localNow() time.Time { return s.now().In(s.loc) }
 
 // serverInstructions reach the model with the initialize handshake, before
 // it has read any tool description.
-const serverInstructions = `Read-only access to one person's Apple Health data, synced by the PulsHealth app to a server they run. ` +
+const serverInstructions = `Read-only access to Apple Health data synced by the PulsHealth app to a server its owner runs — usually one person's, ` +
+	`sometimes a household's: list_users names everyone with data, and every data tool takes an optional user (omit it for the server's default person). ` +
 	`Start with list_available_types: it lists which HealthKit types have data, how current they are, today's date and the server's time zone. ` +
 	`Read the pulshealth://guide resource for units, the iPhone-plus-Watch double-counting rule and which tool answers which question. ` +
 	`Dates are YYYY-MM-DD in the server's time zone; daily values are already deduplicated across devices, so never sum raw samples yourself ` +
@@ -69,7 +71,7 @@ func (s *service) newServer(version string) *mcp.Server {
 }
 
 // readOnlyTool builds a Tool whose annotations say what every tool here is:
-// read-only, idempotent, closed-world (one person's data).
+// read-only, idempotent, closed-world (the data on one server).
 func readOnlyTool(name, title, description string) *mcp.Tool {
 	no := false
 	return &mcp.Tool{
@@ -87,6 +89,8 @@ func readOnlyTool(name, title, description string) *mcp.Tool {
 }
 
 func (s *service) addTools(server *mcp.Server) {
+	mcp.AddTool(server, readOnlyTool("list_users", "Users", descListUsers), s.listUsers)
+	mcp.AddTool(server, readOnlyTool("get_summary", "Recent summary", descGetSummary), s.getSummary)
 	mcp.AddTool(server, readOnlyTool("get_profile", "Profile", descGetProfile), s.getProfile)
 	mcp.AddTool(server, readOnlyTool("list_available_types", "Available data types", descListAvailableTypes), s.listAvailableTypes)
 	mcp.AddTool(server, readOnlyTool("get_latest_metrics", "Latest readings", descGetLatestMetrics), s.getLatestMetrics)
@@ -104,9 +108,30 @@ func (s *service) addTools(server *mcp.Server) {
 // timestamps and dates are expressed, and warn about the traps (cumulative
 // vs discrete, double counting, "%" as a fraction).
 
+const descListUsers = `Who has data on this server. Usually one person; when several phones sync to it, one row each: user_id, name and email ` +
+	`(as synced, either may be absent), created_at, last_sync (absent for a user who never synced), batches and uploaded_samples. ` +
+	`default_user_id is the person every other tool answers for when its user argument is omitted; pass another row's user_id as ` +
+	`user to read their data instead — but only if multi_user is true: when it is false the server's PULS_MULTI_USER gate is off and ` +
+	`naming anyone but the default is refused. pinned_user_id, when present, means this MCP instance serves that one person and no ` +
+	`other. Call this first when a question could be about someone other than the default person, or to learn who that is.`
+
 const descGetProfile = `Who this data belongs to: name, email, date of birth (YYYY-MM-DD) and biological sex as recorded in Apple Health, ` +
 	`plus age_years computed from the date of birth. Also returns time_zone (the server's IANA zone, which every date in this server uses), ` +
-	`today (the current date in that zone) and now. Returns an error if no profile has been synced yet.`
+	`today (the current date in that zone) and now. Returns an error if no profile has been synced yet. ` + descUserSuffix
+
+// descUserSuffix closes every per-user tool description: the same sentence
+// everywhere, so the model learns the rule once.
+const descUserSuffix = `user is optional: omit it for the server's default person, or pass a user_id from list_users to read another ` +
+	`person's data on a server several people share.`
+
+const descGetSummary = `The cheapest first call for "how have I been doing lately": one short markdown page (under sixty lines) ` +
+	`summarising the last range calendar days — 7d (the default), 14d, 30d or 90d, ending today in the server's time zone — ` +
+	`with a section for each kind of data that exists: activity (steps, active energy, exercise minutes and stand hours as daily ` +
+	`means and totals), heart (resting heart rate, HRV), sleep (time asleep per night), workouts (count, total time, distance, most ` +
+	`frequent activities), body (newest weight and body fat, whenever taken) and a coverage line (last sync, days with data). ` +
+	`Every figure is the deduplicated daily value — iPhone and Watch overlap already removed — never a sum of raw samples, and ` +
+	`units are in the text. Days without data are left out of the averages, not counted as zero. Use the other tools when a ` +
+	`question needs a particular day, workout or reading; this page has averages and totals only. ` + descUserSuffix
 
 const descListAvailableTypes = `Lists every HealthKit data type this person has data for, with its unit, row counts and the earliest and latest ` +
 	`timestamps — the natural first call: it tells you which identifiers exist, how far back the history goes and how current it is, ` +
@@ -116,14 +141,14 @@ const descListAvailableTypes = `Lists every HealthKit data type this person has 
 	`workout, activitySummary or another object kind. Units are HealthKit unit strings in which every value of that type is expressed ` +
 	`(count, count/min for beats or breaths per minute, m, m/s, kcal, min, kg, ms, degC, mmHg, mg/dL, ml/kg*min); a unit of "%" means ` +
 	`a FRACTION, so blood oxygen is 0.97, not 97. rows = raw_rows (individual samples) + aggregate_rows (on-device daily or hourly ` +
-	`buckets); a type with only aggregate rows has daily values but no latest reading. Timestamps are ISO 8601 in the server's zone.`
+	`buckets); a type with only aggregate rows has daily values but no latest reading. Timestamps are ISO 8601 in the server's zone. ` + descUserSuffix
 
 const descGetLatestMetrics = `The most recent raw sample of each requested quantity type, e.g. HKQuantityTypeIdentifierBodyMass, ` +
 	`HKQuantityTypeIdentifierRestingHeartRate, HKQuantityTypeIdentifierHeartRateVariabilitySDNN, HKQuantityTypeIdentifierOxygenSaturation, ` +
 	`HKQuantityTypeIdentifierVO2Max: the value in the type's canonical unit, the unit, and the sample's timestamp (ISO 8601, server zone). ` +
 	`Only quantity types with raw samples have a latest reading; anything else requested is listed under missing. ` +
 	`For a cumulative type such as steps or active energy the latest sample is one small increment, NOT today's total — use ` +
-	`get_daily_metrics for totals. as_of is the current server time, for judging how stale a reading is. 1 to 10 types per call.`
+	`get_daily_metrics for totals. as_of is the current server time, for judging how stale a reading is. 1 to 10 types per call. ` + descUserSuffix
 
 const descGetDailyMetrics = `One value per local calendar day for each requested type over an inclusive date range (start_date and ` +
 	`end_date as YYYY-MM-DD in the server's time zone; equal for a single day; at most 366 days and 10 types per call). ` +
@@ -133,14 +158,14 @@ const descGetDailyMetrics = `One value per local calendar day for each requested
 	`between iPhone and Apple Watch — and otherwise from a single-source rollup, so it never double counts the way a naive sum of raw ` +
 	`samples does. Values are in the type's canonical unit ("%" is a fraction). Days without data are omitted, not zero. ` +
 	`Only quantity types the phone aggregates daily appear here (list_available_types shows aggregate_rows > 0); for sleep use ` +
-	`get_sleep, which knows about nights and stages. Weekly or monthly figures: fetch the days and add or average them yourself.`
+	`get_sleep, which knows about nights and stages. Weekly or monthly figures: fetch the days and add or average them yourself. ` + descUserSuffix
 
 const descGetActivityRings = `Apple Watch Activity rings for each local calendar day in an inclusive date range (start_date and ` +
 	`end_date as YYYY-MM-DD in the server's time zone; equal for a single day; at most 366 days per call): move_kcal against ` +
 	`move_goal_kcal (active energy), exercise_min against exercise_goal_min, stand_hours against stand_goal_hours, and for people on ` +
 	`the Move Time mode (move_mode 2 rather than 1) move_time_min against move_time_goal_min. A ring is closed when the value reaches ` +
 	`its goal. Today's row is partial and keeps changing; days without a summary are omitted. These are the summaries the phone ` +
-	`computed, not a reconstruction from samples.`
+	`computed, not a reconstruction from samples. ` + descUserSuffix
 
 const descListWorkouts = `Workouts, newest first, optionally limited to those starting within an inclusive date range (start_date, ` +
 	`end_date as YYYY-MM-DD in the server's time zone; either may be omitted) and to one activity_type. activity_type is an exact ` +
@@ -149,7 +174,7 @@ const descListWorkouts = `Workouts, newest first, optionally limited to those st
 	`filter to learn which names this person uses. Each workout has uuid, activity_type, start and end (ISO 8601), duration_s (seconds, ` +
 	`active time excluding pauses), distance_m (metres), energy_kcal, has_route (GPS recorded) and available_metrics (the HealthKit ` +
 	`types recorded during it, e.g. heart rate, running power). limit defaults to 50 and is capped at 200; when next_offset is ` +
-	`present there are more, pass it as offset to page. Use get_workout with a uuid for statistics, events and multi-sport parts.`
+	`present there are more, pass it as offset to page. Use get_workout with a uuid for statistics, events and multi-sport parts. ` + descUserSuffix
 
 const descGetWorkout = `Detail for one workout by uuid (from list_workouts): the summary fields plus statistics per HealthKit type ` +
 	`recorded during it — min, avg and max in the canonical unit for discrete types such as HKQuantityTypeIdentifierHeartRate ` +
@@ -157,7 +182,7 @@ const descGetWorkout = `Detail for one workout by uuid (from list_workouts): the
 	`(kcal) or HKQuantityTypeIdentifierDistanceWalkingRunning (m) — then events (pauses, resumes, laps, segments, markers; at most 200 ` +
 	`returned, events_truncated says if more exist) and activities (the parts of a multi-sport workout, each with its own statistics). ` +
 	`Timestamps are ISO 8601 in the server's zone. For the second-by-second curves behind those statistics use get_workout_series; ` +
-	`the GPS route is not exposed through this server.`
+	`the GPS route is not exposed through this server. ` + descUserSuffix
 
 const descGetSleep = `Sleep for each night in an inclusive date range (start_date and end_date as YYYY-MM-DD in the server's time ` +
 	`zone; equal for a single night; at most 366 days per call). This is the tool for any sleep question. Each row is one sleep ` +
@@ -170,7 +195,7 @@ const descGetSleep = `Sleep for each night in an inclusive date range (start_dat
 	`NOT part of asleep_min; unspecified_min is sleep an iPhone or a third-party app recorded without stage detail. A person can wear ` +
 	`an Apple Watch and run a sleep app at once, so several sources record the same night: the values are never summed across them — ` +
 	`in_bed_min is the largest single source's total, and asleep_min with its stages come together from the one source that recorded ` +
-	`the most sleep. sources counts how many contributed. Nights with no data are simply absent; say so rather than reporting zero.`
+	`the most sleep. sources counts how many contributed. Nights with no data are simply absent; say so rather than reporting zero. ` + descUserSuffix
 
 const descGetSamples = `The individual HealthKit records of ONE type in a date range — the raw samples behind the daily numbers. ` +
 	`start_date and end_date are inclusive YYYY-MM-DD in the server's time zone, at most 31 days per call; type is one identifier ` +
@@ -181,7 +206,7 @@ const descGetSamples = `The individual HealthKit records of ONE type in a date r
 	`which returns the deduplicated daily truth. A quantity sample has value in the type's canonical unit (unit is on the response; ` +
 	`"%" is a fraction) and a category sample has an integer value with its HealthKit label, e.g. "Asleep Core". Each sample also ` +
 	`carries source (which device or app wrote it) and start/end as ISO 8601. Samples come back oldest first; limit defaults to 500 ` +
-	`and caps at 5000, and when next_offset is present there are more — pass it as offset to page.`
+	`and caps at 5000, and when next_offset is present there are more — pass it as offset to page. ` + descUserSuffix
 
 const descGetWorkoutSeries = `The second-by-second streams recorded during one workout, by uuid (from list_workouts): heart rate, ` +
 	`running or cycling power, speed, cadence and whatever else the watch recorded. Use it to describe how a workout unfolded — where ` +
@@ -190,7 +215,7 @@ const descGetWorkoutSeries = `The second-by-second streams recorded during one w
 	`streams; omit it for all of them. Each series has its canonical unit and points as [seconds_after_the_workout_start, value] ` +
 	`pairs, so [0, 98] means 98 at the very start and [600, 151] means 151 ten minutes in. Long streams are downsampled by averaging ` +
 	`into equal time buckets, keeping the true first and last reading: max_points defaults to 500 and caps at 5000, total_points says ` +
-	`how many were actually recorded and downsampled says whether averaging happened. Ask for fewer points when you only need the shape.`
+	`how many were actually recorded and downsampled says whether averaging happened. Ask for fewer points when you only need the shape. ` + descUserSuffix
 
 const descGetStateOfMind = `State of Mind entries — the moods and emotions logged by hand in the Health or Mindfulness app (iOS 18+) ` +
 	`— for an inclusive date range (start_date and end_date as YYYY-MM-DD in the server's time zone; at most 366 days per call). ` +
@@ -199,24 +224,41 @@ const descGetStateOfMind = `State of Mind entries — the moods and emotions log
 	`unpleasant, slightlyUnpleasant, neutral, slightlyPleasant, pleasant, veryPleasant), labels (the feelings picked, e.g. calm, ` +
 	`stressed, grateful) and associations (what they were about, e.g. work, family, health). Entries are ordered oldest first with ` +
 	`date and timestamp (ISO 8601). These are self-reported and sparse — most days have none, and absence means "not logged", never ` +
-	`"felt neutral". They are the person's own words about their feelings: report them plainly and do not diagnose.`
+	`"felt neutral". They are the person's own words about their feelings: report them plainly and do not diagnose. ` + descUserSuffix
 
 // Inputs. jsonschema tags become the property descriptions the model reads;
 // fields without omitempty are required.
+//
+// Every per-user input carries the same optional User field, spelled out
+// on each struct rather than embedded: the SDK's schema inference does not
+// flatten embedded structs, and the property must appear on every tool.
+
+// userInput is the whole input of the tools that need nothing else.
+type userInput struct {
+	User string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+}
+
+type summaryInput struct {
+	Range string `json:"range,omitempty" jsonschema:"How many calendar days, ending today, to summarise: 7d, 14d, 30d or 90d. Optional; default 7d"`
+	User  string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+}
 
 type typesInput struct {
 	Types []string `json:"types" jsonschema:"HealthKit type identifiers, e.g. HKQuantityTypeIdentifierStepCount; 1 to 10 per call. list_available_types shows which exist"`
+	User  string   `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
 }
 
 type dailyInput struct {
 	Types     []string `json:"types" jsonschema:"HealthKit type identifiers, e.g. HKQuantityTypeIdentifierStepCount; 1 to 10 per call. list_available_types shows which have daily values (aggregate_rows > 0)"`
 	StartDate string   `json:"start_date" jsonschema:"First day of the range, inclusive, as YYYY-MM-DD in the server's time zone"`
 	EndDate   string   `json:"end_date" jsonschema:"Last day of the range, inclusive, as YYYY-MM-DD; equal to start_date for a single day. At most 366 days per call"`
+	User      string   `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
 }
 
 type rangeInput struct {
 	StartDate string `json:"start_date" jsonschema:"First day of the range, inclusive, as YYYY-MM-DD in the server's time zone"`
 	EndDate   string `json:"end_date" jsonschema:"Last day of the range, inclusive, as YYYY-MM-DD; equal to start_date for a single day. At most 366 days per call"`
+	User      string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
 }
 
 type workoutsInput struct {
@@ -225,10 +267,12 @@ type workoutsInput struct {
 	ActivityType string `json:"activity_type,omitempty" jsonschema:"Exact snake_case activity name such as running, cycling, walking, hiking, swimming, strength_training, yoga. Optional; omit to list every activity"`
 	Limit        int    `json:"limit,omitempty" jsonschema:"Maximum number of workouts to return, 1 to 200; default 50"`
 	Offset       int    `json:"offset,omitempty" jsonschema:"Number of newest workouts to skip, for paging: pass the previous call's next_offset"`
+	User         string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
 }
 
 type workoutInput struct {
 	UUID string `json:"uuid" jsonschema:"The workout's uuid exactly as returned by list_workouts"`
+	User string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
 }
 
 type samplesInput struct {
@@ -237,16 +281,41 @@ type samplesInput struct {
 	EndDate   string `json:"end_date" jsonschema:"Last day of the range, inclusive, as YYYY-MM-DD; equal to start_date for a single day. At most 31 days per call"`
 	Limit     int    `json:"limit,omitempty" jsonschema:"Maximum number of samples to return, 1 to 5000; default 500"`
 	Offset    int    `json:"offset,omitempty" jsonschema:"Number of samples to skip, for paging: pass the previous call's next_offset"`
+	User      string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
 }
 
 type workoutSeriesInput struct {
 	UUID      string   `json:"uuid" jsonschema:"The workout's uuid exactly as returned by list_workouts"`
 	Types     []string `json:"types,omitempty" jsonschema:"HealthKit identifiers to fetch, from the workout's available_metrics. Optional; omit for every recorded stream"`
 	MaxPoints int      `json:"max_points,omitempty" jsonschema:"Maximum points per series after downsampling, 1 to 5000; default 500"`
+	User      string   `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
 }
 
 // Outputs. Every tool returns one compact JSON object as text; field names
 // carry the unit where one applies.
+
+// Outputs of per-user tools carry user_id when the call named a user or
+// the instance is pinned; absent, the data is the server's default
+// person's (list_users names them). get_profile is the exception: the API
+// always reports whose profile it is.
+
+type usersOutput struct {
+	DefaultUserID string      `json:"default_user_id"`
+	MultiUser     bool        `json:"multi_user"`
+	PinnedUserID  string      `json:"pinned_user_id,omitempty"`
+	Users         []userEntry `json:"users"`
+}
+
+type userEntry struct {
+	UserID          string  `json:"user_id"`
+	Name            *string `json:"name,omitempty"`
+	Email           *string `json:"email,omitempty"`
+	IsDefault       bool    `json:"is_default"`
+	CreatedAt       string  `json:"created_at"`
+	LastSync        *string `json:"last_sync,omitempty"`
+	Batches         int64   `json:"batches"`
+	UploadedSamples int64   `json:"uploaded_samples"`
+}
 
 type profileOutput struct {
 	UserID        string  `json:"user_id"`
@@ -261,6 +330,7 @@ type profileOutput struct {
 }
 
 type catalogOutput struct {
+	UserID   string         `json:"user_id,omitempty"`
 	TimeZone string         `json:"time_zone"`
 	Today    string         `json:"today"`
 	Types    []catalogEntry `json:"types"`
@@ -278,6 +348,7 @@ type catalogEntry struct {
 }
 
 type latestOutput struct {
+	UserID  string        `json:"user_id,omitempty"`
 	AsOf    string        `json:"as_of"`
 	Metrics []latestEntry `json:"metrics"`
 	Missing []string      `json:"missing,omitempty"`
@@ -291,6 +362,7 @@ type latestEntry struct {
 }
 
 type dailyOutput struct {
+	UserID    string       `json:"user_id,omitempty"`
 	TimeZone  string       `json:"time_zone"`
 	StartDate string       `json:"start_date"`
 	EndDate   string       `json:"end_date"`
@@ -310,6 +382,7 @@ type dailyPoint struct {
 }
 
 type ringsOutput struct {
+	UserID    string    `json:"user_id,omitempty"`
 	TimeZone  string    `json:"time_zone"`
 	StartDate string    `json:"start_date"`
 	EndDate   string    `json:"end_date"`
@@ -330,6 +403,7 @@ type ringDay struct {
 }
 
 type workoutsOutput struct {
+	UserID     string         `json:"user_id,omitempty"`
 	TimeZone   string         `json:"time_zone"`
 	Workouts   []workoutEntry `json:"workouts"`
 	NextOffset *int           `json:"next_offset,omitempty"`
@@ -348,6 +422,7 @@ type workoutEntry struct {
 }
 
 type workoutOutput struct {
+	UserID string `json:"user_id,omitempty"`
 	workoutEntry
 	Statistics      map[string]WorkoutStatDetail `json:"statistics,omitempty"`
 	Events          []map[string]any             `json:"events,omitempty"`
@@ -356,6 +431,7 @@ type workoutOutput struct {
 }
 
 type sleepOutput struct {
+	UserID    string       `json:"user_id,omitempty"`
 	TimeZone  string       `json:"time_zone"`
 	StartDate string       `json:"start_date"`
 	EndDate   string       `json:"end_date"`
@@ -382,6 +458,7 @@ type sleepStageBreak struct {
 }
 
 type samplesOutput struct {
+	UserID     string        `json:"user_id,omitempty"`
 	TimeZone   string        `json:"time_zone"`
 	Type       string        `json:"type"`
 	Kind       string        `json:"kind"`
@@ -402,6 +479,7 @@ type sampleEntry struct {
 }
 
 type workoutSeriesOutput struct {
+	UserID    string        `json:"user_id,omitempty"`
 	TimeZone  string        `json:"time_zone"`
 	UUID      string        `json:"uuid"`
 	Start     string        `json:"start"`
@@ -422,6 +500,7 @@ type seriesEntry struct {
 }
 
 type stateOfMindOutput struct {
+	UserID    string             `json:"user_id,omitempty"`
 	TimeZone  string             `json:"time_zone"`
 	StartDate string             `json:"start_date"`
 	EndDate   string             `json:"end_date"`
@@ -448,8 +527,57 @@ func jsonResult(v any) (*mcp.CallToolResult, any, error) {
 	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: string(b)}}}, nil, nil
 }
 
-func (s *service) getProfile(ctx context.Context, _ *mcp.CallToolRequest, _ any) (*mcp.CallToolResult, any, error) {
-	p, err := s.api.Profile(ctx)
+// scope resolves a tool call's optional user argument to the client that
+// will make the call and the user id its output should carry ("" for the
+// API's default). A pinned instance answers for its one person only: a
+// call naming anyone else is refused here, before the API is asked, so the
+// refusal says "pinned" rather than whatever the API would have said.
+func (s *service) scope(user string) (*APIClient, string, error) {
+	user = strings.ToLower(strings.TrimSpace(user))
+	if user == "" {
+		return s.api, s.api.User(), nil
+	}
+	if !isUUID(user) {
+		return nil, "", fmt.Errorf("user %q is not a user id; pass a user_id exactly as returned by list_users, or omit it for the default person", user)
+	}
+	if pinned := s.api.User(); pinned != "" && pinned != user {
+		return nil, "", fmt.Errorf("this MCP instance is pinned to user %s (PULS_USER_ID) and cannot read user %s; omit user, or use an instance that is not pinned", pinned, user)
+	}
+	return s.api.ForUser(user), user, nil
+}
+
+func (s *service) listUsers(ctx context.Context, _ *mcp.CallToolRequest, _ any) (*mcp.CallToolResult, any, error) {
+	resp, err := s.api.Users(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := usersOutput{
+		DefaultUserID: resp.Default,
+		MultiUser:     resp.MultiUser,
+		PinnedUserID:  s.api.User(),
+		Users:         make([]userEntry, 0, len(resp.Users)),
+	}
+	for _, u := range resp.Users {
+		out.Users = append(out.Users, userEntry{
+			UserID:          u.UserID,
+			Name:            u.Name,
+			Email:           u.Email,
+			IsDefault:       u.UserID == resp.Default,
+			CreatedAt:       formatInstant(u.CreatedAt, s.loc),
+			LastSync:        formatInstantPtr(u.LastSync, s.loc),
+			Batches:         u.Batches,
+			UploadedSamples: u.UploadedSamples,
+		})
+	}
+	return jsonResult(out)
+}
+
+func (s *service) getProfile(ctx context.Context, _ *mcp.CallToolRequest, in userInput) (*mcp.CallToolResult, any, error) {
+	api, _, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	p, err := api.Profile(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -474,14 +602,40 @@ func (s *service) getProfile(ctx context.Context, _ *mcp.CallToolRequest, _ any)
 	return jsonResult(out)
 }
 
+// summaryRanges is the product API's accepted set for GET /v1/summary.
+var summaryRanges = []string{"7d", "14d", "30d", "90d"}
+
+// getSummary returns the API's markdown page as the tool's text: the one
+// tool whose answer is prose rather than JSON, because the page is written
+// for reading and the model reads markdown as well as anyone.
+func (s *service) getSummary(ctx context.Context, _ *mcp.CallToolRequest, in summaryInput) (*mcp.CallToolResult, any, error) {
+	rng := strings.TrimSpace(in.Range)
+	if rng == "" {
+		rng = summaryRanges[0]
+	}
+	if !slices.Contains(summaryRanges, rng) {
+		return nil, nil, fmt.Errorf("range %q is not one of %s", in.Range, strings.Join(summaryRanges, ", "))
+	}
+	api, _, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	page, err := api.Summary(ctx, rng)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: page}}}, nil, nil
+}
+
 // catalog is shared by list_available_types and the pulshealth://types
-// resource.
-func (s *service) catalog(ctx context.Context) (catalogOutput, error) {
-	types, err := s.api.CatalogTypes(ctx)
+// resource (which reads the default or pinned person's).
+func (s *service) catalog(ctx context.Context, api *APIClient, userID string) (catalogOutput, error) {
+	types, err := api.CatalogTypes(ctx)
 	if err != nil {
 		return catalogOutput{}, err
 	}
 	out := catalogOutput{
+		UserID:   userID,
 		TimeZone: s.loc.String(),
 		Today:    s.localNow().Format(dateLayout),
 		Types:    make([]catalogEntry, 0, len(types)),
@@ -501,8 +655,12 @@ func (s *service) catalog(ctx context.Context) (catalogOutput, error) {
 	return out, nil
 }
 
-func (s *service) listAvailableTypes(ctx context.Context, _ *mcp.CallToolRequest, _ any) (*mcp.CallToolResult, any, error) {
-	out, err := s.catalog(ctx)
+func (s *service) listAvailableTypes(ctx context.Context, _ *mcp.CallToolRequest, in userInput) (*mcp.CallToolResult, any, error) {
+	api, userID, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	out, err := s.catalog(ctx, api, userID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -549,11 +707,15 @@ func (s *service) getLatestMetrics(ctx context.Context, _ *mcp.CallToolRequest, 
 	if err != nil {
 		return nil, nil, err
 	}
-	metrics, err := s.api.LatestMetrics(ctx, types)
+	api, userID, err := s.scope(in.User)
 	if err != nil {
 		return nil, nil, err
 	}
-	out := latestOutput{AsOf: s.localNow().Format(time.RFC3339), Metrics: make([]latestEntry, 0, len(metrics))}
+	metrics, err := api.LatestMetrics(ctx, types)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := latestOutput{UserID: userID, AsOf: s.localNow().Format(time.RFC3339), Metrics: make([]latestEntry, 0, len(metrics))}
 	returned := make(map[string]struct{}, len(metrics))
 	for _, m := range metrics {
 		returned[m.Identifier] = struct{}{}
@@ -577,11 +739,16 @@ func (s *service) getDailyMetrics(ctx context.Context, _ *mcp.CallToolRequest, i
 	if err != nil {
 		return nil, nil, err
 	}
-	metrics, err := s.api.DailyMetrics(ctx, types, win.StartMS, win.EndMS)
+	api, userID, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	metrics, err := api.DailyMetrics(ctx, types, win.StartMS, win.EndMS)
 	if err != nil {
 		return nil, nil, err
 	}
 	out := dailyOutput{
+		UserID:    userID,
 		TimeZone:  s.loc.String(),
 		StartDate: win.StartDate,
 		EndDate:   win.EndDate,
@@ -605,11 +772,16 @@ func (s *service) getActivityRings(ctx context.Context, _ *mcp.CallToolRequest, 
 	if err != nil {
 		return nil, nil, err
 	}
-	days, err := s.api.ActivitySummary(ctx, win.StartMS, win.EndMS)
+	api, userID, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	days, err := api.ActivitySummary(ctx, win.StartMS, win.EndMS)
 	if err != nil {
 		return nil, nil, err
 	}
 	out := ringsOutput{
+		UserID:    userID,
 		TimeZone:  s.loc.String(),
 		StartDate: win.StartDate,
 		EndDate:   win.EndDate,
@@ -688,11 +860,15 @@ func (s *service) listWorkouts(ctx context.Context, _ *mcp.CallToolRequest, in w
 		return nil, nil, fmt.Errorf("end_date %s is before start_date %s", end.Format(dateLayout), start.Format(dateLayout))
 	}
 
-	page, err := s.api.Workouts(ctx, f)
+	api, userID, err := s.scope(in.User)
 	if err != nil {
 		return nil, nil, err
 	}
-	out := workoutsOutput{TimeZone: s.loc.String(), Workouts: make([]workoutEntry, 0, len(page.Workouts))}
+	page, err := api.Workouts(ctx, f)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := workoutsOutput{UserID: userID, TimeZone: s.loc.String(), Workouts: make([]workoutEntry, 0, len(page.Workouts))}
 	for _, w := range page.Workouts {
 		out.Workouts = append(out.Workouts, s.workoutEntry(w))
 	}
@@ -708,11 +884,15 @@ func (s *service) getWorkout(ctx context.Context, _ *mcp.CallToolRequest, in wor
 	if !isUUID(uuid) {
 		return nil, nil, fmt.Errorf("uuid %q is not a workout uuid; pass one exactly as returned by list_workouts", in.UUID)
 	}
-	d, err := s.api.Workout(ctx, uuid)
+	api, userID, err := s.scope(in.User)
 	if err != nil {
 		return nil, nil, err
 	}
-	out := workoutOutput{workoutEntry: s.workoutEntry(d.WorkoutSummary)}
+	d, err := api.Workout(ctx, uuid)
+	if err != nil {
+		return nil, nil, err
+	}
+	out := workoutOutput{UserID: userID, workoutEntry: s.workoutEntry(d.WorkoutSummary)}
 	if len(d.StatisticsDetail) > 0 {
 		out.Statistics = make(map[string]WorkoutStatDetail, len(d.StatisticsDetail))
 		for identifier, st := range d.StatisticsDetail {
@@ -739,11 +919,16 @@ func (s *service) getSleep(ctx context.Context, _ *mcp.CallToolRequest, in range
 	if err != nil {
 		return nil, nil, err
 	}
-	nights, err := s.api.SleepDaily(ctx, win.StartMS, win.EndMS)
+	api, userID, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	nights, err := api.SleepDaily(ctx, win.StartMS, win.EndMS)
 	if err != nil {
 		return nil, nil, err
 	}
 	out := sleepOutput{
+		UserID:    userID,
 		TimeZone:  s.loc.String(),
 		StartDate: win.StartDate,
 		EndDate:   win.EndDate,
@@ -792,11 +977,16 @@ func (s *service) getSamples(ctx context.Context, _ *mcp.CallToolRequest, in sam
 		return nil, nil, errors.New("offset must be at least 0")
 	}
 
-	page, err := s.api.Samples(ctx, typ, win.StartMS, win.EndMS, limit, in.Offset)
+	api, userID, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	page, err := api.Samples(ctx, typ, win.StartMS, win.EndMS, limit, in.Offset)
 	if err != nil {
 		return nil, nil, err
 	}
 	out := samplesOutput{
+		UserID:    userID,
 		TimeZone:  s.loc.String(),
 		Type:      page.Type,
 		Kind:      page.Kind,
@@ -846,11 +1036,16 @@ func (s *service) getWorkoutSeries(ctx context.Context, _ *mcp.CallToolRequest, 
 		maxPoints = maxSeriesPoints
 	}
 
-	resp, err := s.api.WorkoutSeries(ctx, uuid, types, maxPoints)
+	api, userID, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	resp, err := api.WorkoutSeries(ctx, uuid, types, maxPoints)
 	if err != nil {
 		return nil, nil, err
 	}
 	out := workoutSeriesOutput{
+		UserID:    userID,
 		TimeZone:  s.loc.String(),
 		UUID:      resp.UUID,
 		Start:     formatInstant(resp.Start, s.loc),
@@ -885,11 +1080,16 @@ func (s *service) getStateOfMind(ctx context.Context, _ *mcp.CallToolRequest, in
 	if err != nil {
 		return nil, nil, err
 	}
-	entries, err := s.api.StateOfMind(ctx, win.StartMS, win.EndMS)
+	api, userID, err := s.scope(in.User)
+	if err != nil {
+		return nil, nil, err
+	}
+	entries, err := api.StateOfMind(ctx, win.StartMS, win.EndMS)
 	if err != nil {
 		return nil, nil, err
 	}
 	out := stateOfMindOutput{
+		UserID:    userID,
 		TimeZone:  s.loc.String(),
 		StartDate: win.StartDate,
 		EndDate:   win.EndDate,

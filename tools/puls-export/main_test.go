@@ -398,3 +398,83 @@ func TestExportURLKeepsABasePath(t *testing.T) {
 		t.Fatalf("url = %q, want %q", got, want)
 	}
 }
+
+// --user (or $PULS_USER_ID) goes out as ?user=; without either the request
+// carries no user at all, so the server's own default applies — including on
+// a server that predates the parameter.
+func TestRunSendsTheUserOnlyWhenAsked(t *testing.T) {
+	t.Parallel()
+
+	const user = "7b1e4c2a-9d3f-4e5a-8b6c-0f1d2e3a4b5c"
+	api := newExportRecorder(t, http.StatusOK, "date\n2026-01-01\n")
+	var stdout, stderr bytes.Buffer
+
+	err := run(context.Background(), []string{
+		"--url", api.server.URL, "--token", "secret",
+		"--dataset", "activity", "--start", "1", "--end", "2",
+	}, &stdout, &stderr, noEnv)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if _, present := api.query["user"]; present {
+		t.Fatalf("query carries user=%q without --user or PULS_USER_ID", api.query.Get("user"))
+	}
+
+	err = run(context.Background(), []string{
+		"--url", api.server.URL, "--token", "secret", "--user", user,
+		"--dataset", "activity", "--start", "1", "--end", "2",
+	}, &stdout, &stderr, noEnv)
+	if err != nil {
+		t.Fatalf("run with --user: %v", err)
+	}
+	if got := api.query.Get("user"); got != user {
+		t.Fatalf("user = %q, want %q", got, user)
+	}
+
+	// The environment stands in for the flag, and the flag wins over it.
+	env := map[string]string{"PULS_USER_ID": "5ea4d000-0000-4000-8000-000000000001"}
+	err = run(context.Background(), []string{
+		"--url", api.server.URL, "--token", "secret",
+		"--dataset", "activity", "--start", "1", "--end", "2",
+	}, &stdout, &stderr, func(k string) string { return env[k] })
+	if err != nil {
+		t.Fatalf("run with PULS_USER_ID: %v", err)
+	}
+	if got := api.query.Get("user"); got != env["PULS_USER_ID"] {
+		t.Fatalf("user = %q, want the environment's %q", got, env["PULS_USER_ID"])
+	}
+	err = run(context.Background(), []string{
+		"--url", api.server.URL, "--token", "secret", "--user", user,
+		"--dataset", "activity", "--start", "1", "--end", "2",
+	}, &stdout, &stderr, func(k string) string { return env[k] })
+	if err != nil {
+		t.Fatalf("run with both: %v", err)
+	}
+	if got := api.query.Get("user"); got != user {
+		t.Fatalf("user = %q, want the flag's %q over the environment", got, user)
+	}
+}
+
+// A 403 is the gate: the server only serves its own default user. Say so,
+// the way a 401 says the token is wrong, instead of leaving "Forbidden".
+func TestRunSaysMultiUserIsDisabledOnA403(t *testing.T) {
+	t.Parallel()
+
+	api := newExportRecorder(t, http.StatusForbidden, `{"error":"multi-user reads are disabled"}`)
+	var stdout, stderr bytes.Buffer
+	err := run(context.Background(), []string{
+		"--url", api.server.URL, "--token", "secret", "--user", "7b1e4c2a-9d3f-4e5a-8b6c-0f1d2e3a4b5c",
+		"--dataset", "sleep", "--start", "1", "--end", "2",
+	}, &stdout, &stderr, noEnv)
+	if err == nil {
+		t.Fatalf("err = nil, want the 403 explained")
+	}
+	for _, want := range []string{"403", "multi-user reads are disabled", "PULS_MULTI_USER", "/v1/users"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("err = %q, want it to mention %q", err, want)
+		}
+	}
+	if errors.Is(err, errUsage) {
+		t.Fatalf("a server refusal is not a usage error")
+	}
+}

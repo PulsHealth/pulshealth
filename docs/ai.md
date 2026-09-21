@@ -13,7 +13,9 @@ page is the client-side setup; the server's own README is
 
 | Ask about | Tool the assistant uses |
 |---|---|
+| Who has data on the server, if more than one person does | `list_users` |
 | Which data exists, how current it is, what day it is | `list_available_types` |
+| How the last week or month went, in one page | `get_summary` |
 | Who the data belongs to (name, age, sex) | `get_profile` |
 | Current weight, resting heart rate, HRV, VO2 max, blood oxygen, ... | `get_latest_metrics` |
 | Daily steps, energy, distance, exercise minutes, heart-rate averages, weight trend, ... | `get_daily_metrics` |
@@ -35,12 +37,41 @@ useless for totals. The assistant can also read `pulshealth://guide`, a short
 manual on the data model and its traps, and two ready-made prompts
 (`weekly_summary`, `compare_workouts`).
 
+When several phones sync to one server, every tool takes an optional `user`
+(a `user_id` from `list_users`); without it the assistant reads the API's
+default person. The API only honours another user when its `PULS_MULTI_USER`
+is on, and an MCP instance can be pinned to one person with `PULS_USER_ID`
+(`PULS_MCP_USER_ID` for the Compose service) so that a connector you hand
+to one household member can never be asked about another.
+
 **Not yet:** GPS routes, medication doses, ECGs and heartbeat series. They
 are in the database; no tool serves them.
 
 For a whole range as a *file* rather than an answer in a chat — a spreadsheet,
 a notebook, something to attach — use `GET /v1/export` or the `puls-export`
 CLI instead of a tool call: [`export.md`](export.md).
+
+## No MCP at all: paste a summary
+
+Any chat can read markdown. `GET /v1/summary` renders the last 7, 14, 30 or
+90 days as one page of under sixty lines — activity, heart, sleep, workouts,
+body and a coverage line, every figure with its unit and already
+deduplicated across iPhone and Watch — so a chat with no connector at all
+gets a usable picture from one `curl` and a paste:
+
+```bash
+curl -H "Authorization: Bearer $PULS_API_TOKEN" "$API/v1/summary?range=7d"
+```
+
+`range` is `7d` (the default), `14d`, `30d` or `90d`; `format=json` returns
+the same numbers as a `Summary` object. The page carries averages and totals
+only, and the header says which calendar days and which time zone it covers,
+so the model does not have to guess either. Add `user=<uuid>` on a shared
+server, under the same `PULS_MULTI_USER` rule as every other route. The MCP
+server exposes the same page as `get_summary`, and
+[`notebooks/healthkit_database_exploration.ipynb`](../notebooks/healthkit_database_exploration.ipynb)
+renders it straight from the database at the end of its analyses, with an
+optional cell that sends it to Claude.
 
 ## Two ways to connect
 
@@ -260,10 +291,11 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
   (`openssl rand -hex 32`), set `PULS_API_TOKEN` in `server/.env`,
   `docker compose up -d api mcp`, and update your other clients. Take the
   public endpoint down at the same time (`tailscale funnel --https=443 off`).
-- **A public endpoint is a public endpoint.** The product API has no rate
-  limiting of its own (ingest's is a different service on a different port)
-  and no IP allowlist; the token is all that stands between the internet and
-  the data. Keep the window short.
+- **A public endpoint is a public endpoint.** The product API throttles
+  failed token guesses per client IP (`server/README.md`, "Rate limiting")
+  and nothing else: no IP allowlist, no limit on requests that carry the
+  right token. The token is all that stands between the internet and the
+  data. Keep the window short.
 - **Actions time out (tens of seconds) and truncate large answers.** Ask for
   narrow ranges. `exportDataset` streams a CSV or JSONL *file*, which is
   exactly the wrong shape for a chat turn — use the JSON endpoints for
@@ -271,6 +303,11 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
 - **Dates are epoch milliseconds** and the API does not report its zone, so
   tell the GPT which zone the server runs in (`PULS_TIME_ZONE`) in its
   instructions, or it will guess.
+- **The Action can name a user.** Every `/v1/*` operation takes an optional
+  `user` query parameter and `listUsers` names everyone with data, so a GPT
+  built on a shared server can read another household member's records if
+  the API's `PULS_MULTI_USER` is on — one more reason to keep the GPT
+  private. Leave `PULS_MULTI_USER` off unless you mean it.
 - The MCP server remains the better route wherever the client supports it:
   it speaks calendar days, keeps the model honest about units and
   double counting, and never needs a public endpoint.
@@ -280,6 +317,9 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
 - **"What data do you have about me, and how current is it?"** — one
   `list_available_types` call; a good first question, it also tells the
   assistant today's date.
+- **"How have I been doing this month?"** — one `get_summary` call with
+  `range: 30d`; the same page `GET /v1/summary` serves, so it is also the
+  thing to paste into a chat that has no connector.
 - **"How did I sleep last week?"** — one `get_sleep` call for the seven
   days; each row is a night, dated by the morning you woke up, with time
   asleep, time in bed and the core / deep / REM split in minutes. The
@@ -330,8 +370,12 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
 - **HTTP mode only behind TLS.** The compose service binds to loopback;
   never publish port 8082 directly or over plain HTTP. See the security
   notes in `server/mcp/README.md`.
-- The assistant sees only what the product API serves for `PULS_USER_ID`;
-  nothing here can write to the database or to Apple Health.
+- With the API's `PULS_MULTI_USER` off (the default) the assistant sees only
+  what the product API serves for its `PULS_USER_ID`; naming anyone else is
+  a 403 the tool reports as such. With it on, every user with data is
+  readable through `user`, and pinning the MCP instance (`PULS_USER_ID`,
+  `PULS_MCP_USER_ID` in Compose) is how you narrow a given connector back to
+  one person. Nothing here can write to the database or to Apple Health.
 
 ## Troubleshooting
 

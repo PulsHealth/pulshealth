@@ -62,9 +62,10 @@ curl -s localhost:8081/healthz       # → {"db":true,"ok":true}
 
 That is the whole install: the `migrate` service creates the schema on an
 empty volume, records what it applied, and every app service waits for it
-to finish. The same command, after a `docker compose pull`, upgrades a
-running install later. To run the code in this checkout instead of the
-published images, add the developer overlay —
+to finish. The same command, after a `git pull` and a `docker compose
+pull`, upgrades a running install later (see "Deploying and upgrading").
+To run the code in this checkout instead of the published images, add the
+developer overlay —
 `docker compose -f docker-compose.yml -f compose.build.yml up -d --build`,
 or `make dev-up` at the repository root.
 
@@ -120,6 +121,10 @@ comments). Beyond the passwords and tokens, two settings deserve attention:
   every interface so a phone on the same Wi-Fi can sync to plain
   `http://<this host's LAN IP>:8080` with no proxy at all. See "Exposing the
   server" for the trade-off.
+- `PULS_ALLOW_SHARED_TOKEN` — whether ingest accepts the shared `PULS_TOKEN`
+  at all; default `true`. `false` (or an empty `PULS_TOKEN`) leaves only
+  per-device tokens, which is the setting that closes the `X-User-ID` hole —
+  see "Tokens".
 - `TRUST_PROXY_HEADERS` — whether **ingest and the product API** believe
   `X-Forwarded-*`. It decides which client a failed authentication is charged
   to on both, and additionally which host `GET /openapi.json` advertises in
@@ -178,24 +183,28 @@ manifest list) and every image carries the commit it was built from as the
 - On a git tag `vX.Y.Z`: the exact version (`1.2.3`), a floating `1.2`, and
   `latest`. `latest` and `1.2` move only for non-prerelease tags, so a
   `v1.3.0-rc1` publishes `1.3.0-rc1` and nothing else floats onto it.
-- On a manual run of the workflow (`workflow_dispatch`, e.g. from `main`
-  before the first tag): the tag given as input, or the short commit SHA.
-  Never `latest`.
+- On a manual run of the workflow (`workflow_dispatch`, e.g. to try a
+  branch's images without cutting a release): the tag given as input, or
+  the short commit SHA. Never `latest`.
 
 `PULS_VERSION` in `.env` selects the tag; unset, it is `latest`. Pinning a
-release (`PULS_VERSION=1.2.3`) makes upgrades deliberate: bump it, then
-`docker compose pull && docker compose up -d` (`make pull up`). The `migrate`
-service runs first and applies any schema files the new release brought, and
-the app containers start only after it exits 0. Migrations are forward-only,
-so going back to an older image after a release that migrated the schema is
-not supported — take a `make backup` before upgrading. The database image is
-versioned separately (`x-db-image` in `docker-compose.yml`; see "Upgrading
-the database image").
+release (`PULS_VERSION=1.2.3`) makes upgrades deliberate: bump it, bring the
+checkout to the same release (`git pull`, or `git checkout v1.2.3`), then
+`docker compose pull && docker compose up -d` (`make pull up`). The images
+carry the code, but the compose file and the schema files come from the
+checkout — `migrate` mounts `db/migrations/` from it — so an image newer
+than its checkout starts against a schema that lacks what it expects. The
+`migrate` service runs first and applies any schema files the new release
+brought, and the app containers start only after it exits 0. Migrations are
+forward-only, so going back to an older image after a release that migrated
+the schema is not supported — take a `make backup` before upgrading. The
+database image is versioned separately (`x-db-image` in `docker-compose.yml`;
+see "Upgrading the database image").
 
-To run what is in the checkout — a local change, a branch under review, or
-a fresh clone before any image has been published — add the developer
-overlay, which puts the `build:` blocks back and tags the results
-`pulshealth-<service>:dev` so they never masquerade as a published version:
+To run what is in the checkout — a local change, or a branch under
+review — add the developer overlay, which puts the `build:` blocks back and
+tags the results `pulshealth-<service>:dev` so they never masquerade as a
+published version:
 
 ```bash
 cd server && docker compose -f docker-compose.yml -f compose.build.yml up -d --build
@@ -231,7 +240,9 @@ underscore, a name), write plain DDL/DML — no `BEGIN`/`COMMIT`, the migrator
 wraps it; `IF NOT EXISTS` is still welcome — and `docker compose up -d`.
 Fresh installs and existing installs take the same path. Tables created this
 way are readable by `grafana` and writable by `ingest` at once through the
-default privileges `099_read_roles.sh` sets; `api_reader` has an exact grant
+default privileges `099_read_roles.sh` sets (which is why that script then
+revokes `grafana`'s SELECT on `device_tokens`, on every run — credential
+hashes are not dashboard material); `api_reader` has an exact grant
 list, so extend that script (and its assertion) when the product API needs a
 new table. Never edit a file that has been applied anywhere — put the change
 in a new file. Ordering between schema and code is automatic: `migrate`
@@ -254,7 +265,7 @@ git pull
 # add INGEST_DB_PASSWORD=<openssl rand -hex 32> to .env (see "The scoped ingest role")
 cd server
 docker compose run --rm migrate baseline
-docker compose up -d --build
+docker compose up -d                  # or `make dev-up` at the root, to run this checkout
 ```
 
 `baseline` records every `*.sql` file as applied, with its checksum,
@@ -382,23 +393,81 @@ repository can build has been multi-user from its first migration.
 
 Storing a second person's data therefore needs nothing: point another phone at
 the same ingest URL with its own user ID and `ensureUser` creates the row before
-the first insert — no reset, no volume drop. **Reading it back is the part that
-does not exist yet.** The product API and the web viewer are each configured
-with one `PULS_USER_ID` and answer for that user alone, so a second user's rows
-accumulate where nothing displays them; the exception is Grafana's PulsHealth
-dashboard, which has a `user` variable listing everyone in `users`. Serving two
-people properly means a second API/viewer pair (a second compose project with a
-different `PULS_USER_ID`) until the API learns to scope per request. Nothing
-binds the token to a user either — see "The token" below — so `X-User-ID` is
-selection, not authentication, and everyone with the token can write as anyone.
+the first insert — no reset, no volume drop. Reading it back is per request:
+the product API answers for `PULS_USER_ID` unless a request says
+`?user=<uuid>`, which is allowed once the server runs with
+`PULS_MULTI_USER=true` (off by default; another user is then a `403`), and
+`GET /v1/users` lists who exists — see "Product API" below. The MCP server
+takes the user as a tool argument and the web viewer chooses one per session,
+both over that same parameter; Grafana's PulsHealth dashboard has had a
+`user` variable over `users` all along. Whether the *ingest* token is bound to
+a user depends on which kind it is — see "Tokens" below: a per-device token
+is, so with it `X-User-ID` must be absent or match (403 otherwise); the shared
+`PULS_TOKEN` is not, so with it `X-User-ID` is selection, not authentication,
+and everyone holding it can write as anyone. The product API's single
+`PULS_API_TOKEN` is likewise not bound to anyone: with `PULS_MULTI_USER` on it
+reads every user, which is the reason the gate defaults to off.
 
-### The token
+### Tokens
 
-`PULS_TOKEN` is a single static bearer token shared by the server and the iOS
-app. Create it with `openssl rand -hex 32` (or let `scripts/bootstrap.sh`
-do it), put it in `.env`, and paste the same value into PulsHealth's server
-settings — the pairing block (`make pairing`) shows it next to the URL and
-user ID.
+Ingest accepts two kinds of bearer token, and a request may present either.
+
+**The shared token.** `PULS_TOKEN` is one static value known to the server
+and every phone. Create it with `openssl rand -hex 32` (or let
+`scripts/bootstrap.sh` do it), put it in `.env`, and paste the same value
+into PulsHealth's server settings — the pairing block (`make pairing`) shows
+it next to the URL and user ID. It is compared in memory, in constant time,
+before anything else, and it carries no user: `X-User-ID` picks the user.
+
+**Per-device tokens.** Each is issued from the CLI for one user, stored only
+as its SHA-256 (the plaintext is 32 random bytes hex-encoded — the same shape
+as the shared token, so the app's token field, the QR payload and every
+example here are unchanged), bound to that user, revocable on its own, and
+stamped with when it was last used. The `ingest` image is distroless, so the
+CLI is the same binary run with `devices` as its first argument; `make
+devices` wraps `docker compose run --rm --no-deps ingest devices …`:
+
+```bash
+make devices ARGS='issue --user 5ea4d000-0000-4000-8000-000000000001 --name "Sean iPhone"'
+#   prints the token ONCE — only its hash is stored, a lost token is revoked and reissued
+make devices ARGS='list'            # id, prefix, status, user, name, created, last seen
+make devices ARGS='list --all'      # revoked ones too
+make devices ARGS='rename 3 "Old phone"'
+make devices ARGS='revoke 3'        # refused from the next request on; nothing to restart
+```
+
+`issue` creates the `users` row if it does not exist, so a household member
+can be given a token before their phone has ever synced — which also means a
+mistyped `--user` UUID quietly creates a new user; check `list` after. A
+request authenticated with a device token acts as that token's user:
+`X-User-ID` may be absent or equal to it, and any other value is refused
+with 403 before the body is read. The app sets the header from its own user
+ID setting, so the ID entered on the phone must match the one the token was
+issued for.
+
+**Order and failure modes.** The shared token is checked first, in memory;
+only then is the presented value hashed and looked up in `device_tokens`
+(one indexed probe, which also advances `last_seen_at` at most once a minute
+per token). If that lookup fails because the database is unreachable the
+answer is **503 `authentication unavailable`**, not 401 — the app retries 5xx
+but treats 401 as terminal, so a 401 there would tell the user their token
+is wrong and stall syncing until they retyped it. Only wrong credentials (a
+missing bearer, an unknown value, a revoked token) draw from the failure
+budget below; a user mismatch, a database error and every success cost
+nothing. Every `batches` row records which device wrote it
+(`device_token_id`, NULL for the shared token), and the per-batch log line
+carries it as `token_id`.
+
+**Turning the shared token off.** It stays enabled by default so an existing
+install is unchanged. Once every phone has its own token, set
+`PULS_ALLOW_SHARED_TOKEN=false` in `.env` (or empty `PULS_TOKEN`) and
+`docker compose up -d ingest`: the shared value stops authenticating, and
+with it the `X-User-ID` hole closes — no credential can then write as a
+user it was not issued for. `docker compose logs ingest` prints the auth
+mode at startup and warns (never fails) when the shared token is off and
+no device token is active, since nothing could authenticate. `make pairing`
+and `scripts/bootstrap.sh` accept a 401 on their probe in that mode and
+point at `make devices` instead of printing a token.
 
 ### Rate limiting
 
@@ -462,6 +531,7 @@ set of secrets would strand both. Rotate one value at a time instead:
 | Secret | How |
 |---|---|
 | `PULS_TOKEN` | Edit `.env`, `docker compose up -d ingest`, paste the new token into the app (`make pairing` shows it). |
+| A device token | `make devices ARGS='revoke <id>'`, then `make devices ARGS='issue --user <uuid> --name <label>'` and enter the new value on that phone. Effective on the next request; nothing restarts, and no other phone is affected. |
 | `PULS_API_TOKEN`, `PULS_MCP_TOKEN` | Edit `.env`, `docker compose up -d api mcp`, update the API consumers and AI clients (`docs/ai.md`). |
 | `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` | Edit `.env`, `docker compose up -d`: `migrate` re-runs `099_read_roles.sh`, which sets the roles' passwords to the new values, and the containers restart with them. |
 | `POSTGRES_PASSWORD` | The superuser password lives in the database, not in `.env`: `docker compose exec db psql -U postgres -c "ALTER USER postgres PASSWORD '<new>'"` first, then edit `.env` and `docker compose up -d`. |
@@ -628,6 +698,28 @@ ingest keeps using `PULS_TOKEN` on port 8080. The service connects to Postgres
 as the read-only `api_reader` role. That role is limited to schema usage plus
 `SELECT` grants; it is not the ingest/write credential.
 
+**Whose data.** Every `/v1` request is answered for one user: `PULS_USER_ID`
+unless the query carries `user=<uuid>`. Naming anyone else is allowed only when
+the service runs with `PULS_MULTI_USER=true` (`.env`, default `false`);
+otherwise it is a `403 {"error":"multi-user reads are disabled"}` — never a
+quiet answer for the default user — and a value that is not a UUID is a
+`400`. Neither counts against the failed-authentication limit (a valid token
+mis-addressed a request; that is not a guess at the token). There is no
+existence check: an unknown id reads as a user with no data. `GET /v1/users`
+is the discovery surface — every user with the gate on, only the default with
+it off — each with name, e-mail, `createdAt`, `lastSync`, `batches` and
+`uploadedSamples` from the `batches` log, plus `default` and `multiUser` so a
+client can tell what the deployment will answer. Turning the gate on widens
+what the one static `PULS_API_TOKEN` reads from one person to everyone on the
+server; `/openapi.json` describes the parameter on every scoped operation, so
+a ChatGPT Action built from it gets the same reach.
+
+```bash
+curl -s -H "Authorization: Bearer $PULS_API_TOKEN" http://localhost:8081/v1/users
+curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
+  "http://localhost:8081/v1/metrics/latest?types=HKQuantityTypeIdentifierHeartRate&user=<uuid>"
+```
+
 `/v1/catalog/types` is cached briefly by the API service because it computes
 per-type row counts and time bounds. It includes aggregate-only types;
 `rawRows` and `aggregateRows` name the two storage grains and `rows` is their
@@ -659,6 +751,7 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
   http://localhost:8081/v1/catalog/types | python3 -m json.tool
 ```
 
+- `GET /v1/users`
 - `GET /v1/profile`
 - `GET /v1/catalog/types`
 - `GET /v1/metrics/latest?types=...`
@@ -670,8 +763,12 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
 - `GET /v1/sleep/daily?start=...&end=...`
 - `GET /v1/samples?type=...&start=...&end=...&limit=1000&offset=0`
 - `GET /v1/state-of-mind?start=...&end=...`
+- `GET /v1/summary?range=7d|14d|30d|90d&format=markdown|json`
 - `GET /v1/export?format=csv|jsonl&dataset=...&start=...&end=...`
 - `GET /healthz`
+
+Every `/v1` route but `/v1/users` also takes the optional `user` parameter
+above.
 
 `/v1/sleep/daily` returns one row per sleep session rather than one per
 calendar day: a session is attributed to the local day it **ends** on (the
@@ -696,6 +793,21 @@ each stream by bucket-averaging while keeping the true first and last point
 recorded. `/v1/state-of-mind` returns logged State of Mind entries, at most
 366 days per request.
 
+`/v1/summary` returns the last `range` calendar days (`7d` by default;
+`14d`, `30d`, `90d`; ending today in `PULS_TIME_ZONE`) as one **markdown
+page** of under sixty lines, for pasting into a chat that has no MCP
+connection ([`docs/ai.md`](../docs/ai.md)): a header naming the user, the
+days and the zone, then a section for each kind of data that exists —
+activity (steps, active energy, exercise minutes, stand hours as daily means
+and totals), heart (resting heart rate, HRV), sleep (time asleep per night),
+workouts (count, time, distance, most frequent activities), body (newest
+weight and body fat) — and a coverage line (last sync, days with data, and
+the deduplication reminder). It reads the same daily surfaces as the
+endpoints above — `metric_daily`, `activity_summaries`, the sleep nights,
+the workout summaries, the newest sample of two body types — and never a
+raw hypertable, so it is cheap. `format=json` returns the same numbers as
+a `Summary` object; `/openapi.json` describes both.
+
 `/v1/export` returns a whole range as a **file** — streamed CSV or JSONL,
 `Content-Disposition: attachment` — instead of a JSON document, for a
 spreadsheet or a notebook. `dataset` is one of `daily_metrics`, `samples`,
@@ -716,10 +828,13 @@ curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
   "http://localhost:8081/v1/export?format=csv&dataset=sleep&start=1767225600000&end=1798761600000"
 ```
 
-Two of these endpoints need `SELECT` on `sources` and `category_labels`, which
-`db/migrations/099_read_roles.sh` grants to `api_reader`. That script runs on
-every `docker compose up -d`, so an existing install picks the grants up on
-its next migrate run — no manual step.
+Three of these endpoints need tables beyond the sample ones: `/v1/samples`
+and `/v1/sleep/daily` read `sources` and `category_labels`, and `/v1/users`
+aggregates `batches` (no credential lives there — a batch's token is an
+integer id into `device_tokens`, which `api_reader` cannot read). All three
+are on the exact grant list in `db/migrations/099_read_roles.sh`, and that
+script runs on every `docker compose up -d`, so an existing install picks the
+grants up on its next migrate run — no manual step.
 
 Fixture-writing integration tests for this service require
 `PULS_API_WRITE_INTEGRATION_TESTS=1` and should not be run against live or
@@ -904,8 +1019,8 @@ make restore FILE=<name or path>     # put one back (destroys the current data)
 
 `docker compose --profile backup up -d` with no service named would also
 (re)start everything else, which on an install that builds from the checkout
-means Compose tries to pull `ghcr.io/pulshealth/*` and fails; add
-`-f compose.build.yml` there, or just name `backup` as above.
+means Compose swaps those containers for the published `ghcr.io/pulshealth/*`
+images; add `-f compose.build.yml` there, or just name `backup` as above.
 
 `backup` is a Compose service behind the **`backup` profile**, so a plain
 `docker compose up -d` never starts it and the stack is unchanged for anyone
@@ -993,7 +1108,7 @@ on a scratch install — not the one holding your data — so the first time you
 use `restore.sh` is not the day you need it.
 
 ```bash
-scripts/bootstrap.sh --build            # a stack with something in it
+scripts/bootstrap.sh                    # a stack with something in it
 # ...sync a batch from the app, or use the curl fixture in
 #    "Verify ingest with curl" — give it a value you will recognise
 
@@ -1005,8 +1120,12 @@ make backup-list
 make down
 docker volume rm pulshealth_db_data
 
-make restore FILE=puls-<timestamp>.dump ARGS="--yes --build"
+make restore FILE=puls-<timestamp>.dump ARGS=--yes
 ```
+
+(The run recorded below predates the published images and passed `--build`
+to both scripts, which drills the same thing against images built from the
+checkout.)
 
 Then check what came back: `docker compose ps` (six services up, `db`
 healthy), `docker compose logs migrate` (it should apply nothing — see below),

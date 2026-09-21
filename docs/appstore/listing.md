@@ -26,10 +26,15 @@ PulsHealth
 Limit 30.
 
 ```
-Apple Health to your server
+Your health data, your server
 ```
 
-`[27/30]`
+`[29/30]`
+
+> Do not put "Apple" in the name or subtitle. App Review rejected 1.4 (14)
+> under guideline 5.2.5 for "Apple Health to your server" here, because the
+> subtitle counts as the app's name. "Apple Health" in the description and
+> promotional text was not objected to.
 
 ## Promotional text
 
@@ -206,12 +211,23 @@ flags.
 | Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.4`, ahead of the `1.3` on the store — see [Release record](README.md#release-record) |
 | Build | `CURRENT_PROJECT_VERSION`, currently `14`, ahead of the shipped `13` |
 | Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
-| Devices | iPhone only (`TARGETED_DEVICE_FAMILY = 1`) |
+| Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
 "What's New in This Version" — one entry per submission. The first was:
 
 ```
 First release.
+```
+
+1.4 (submitted 2026-09-18):
+
+```
+• Guided first-run setup: scan the pairing code your server prints, or type the URL and token and test the connection before you continue.
+• Your server token is stored in the iOS Keychain.
+• Sync progress is kept per server, so switching servers never mixes up what was sent.
+• The log shows how much of each upload was new to your server.
+• On a new setup, recent daily summaries upload first, so your server has something to show while history backfills.
+• Fixes: no false "backfill complete" for types that produced no samples, and setup can no longer stall on the medications permission step.
 ```
 
 ## Screenshots
@@ -243,3 +259,13 @@ maintainer's team. The order below tells the story a browser needs:
 
 Do not paste marketing text over them, and do not use another person's health
 data.
+
+**What 1.4 was submitted with** (all dark mode, 1290 × 2796 in the 6.9" slot,
+in this order): 1 Welcome, 2 Your Server (with `https://health.example.net`
+typed in) and 4 Data Types from the iPhone 17 Pro Max simulator with the status
+bar at 9:41; 3 Dashboard, 5 a type's detail (Body Weight), 6 Background
+Activity and 7 the Sync Log from the maintainer's iPhone 13 Pro Max (1284 ×
+2778, resized by under 1%). None shows a hostname, token, user ID or health
+value — counts and dates only. The iPad slot has the Welcome screen at 13". This
+set replaced 1.3's, which advertised CSV/JSON export and QR data requests the
+app no longer has.

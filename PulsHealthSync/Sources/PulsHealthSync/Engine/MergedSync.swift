@@ -428,6 +428,9 @@ extension HealthSyncEngine {
             // page is not credited the same as the 7-sample page riding along
             // with it.
             let units = max(1, pack.reduce(0) { $0 + $1.count })
+            // The server counts the batch as a whole, so its accepted/duplicate
+            // counts belong to a type only when the pack held one page.
+            let receipt = pack.count == 1 ? result.receipt : nil
             for page in pack {
                 let share = result.bytesSent * page.count / units
                 let dates = page.samples.map(\.start)
@@ -442,7 +445,8 @@ extension HealthSyncEngine {
                     bytes: share,
                     sampleDateRange: dates.isEmpty ? nil : (dates.min()! ... dates.max()!),
                     duration: page.queryDuration + result.duration / Double(pack.count),
-                    latency: latency
+                    latency: latency,
+                    receipt: receipt
                 )
                 await reportWakeBatch(
                     type: page.identifier, samples: page.samples.count,
@@ -454,7 +458,7 @@ extension HealthSyncEngine {
                 : "\(pack.count) types"
             await eventLog.log(
                 .debug,
-                "Merged upload: \(batch.samples.count) samples, \(batch.deletions.count) deletions from \(types) — \(String(format: "%.2f", result.duration))s (\(result.bytesSent) B)"
+                "Merged upload: \(batch.samples.count) samples\(result.receipt?.sampleOutcome.map { " (\($0))" } ?? ""), \(batch.deletions.count) deletions from \(types) — \(String(format: "%.2f", result.duration))s (\(result.bytesSent) B)"
             )
             notifyChanged()
             return true

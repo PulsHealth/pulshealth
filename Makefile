@@ -8,7 +8,7 @@ COMPOSE       := docker compose --project-directory server -f server/docker-comp
 COMPOSE_BUILD := $(COMPOSE) -f server/compose.build.yml
 ARGS          ?=
 
-.PHONY: help bootstrap up down pull logs ps migrate baseline pairing dev-up \
+.PHONY: help bootstrap up down pull logs ps migrate baseline pairing devices dev-up \
         backup backup-list restore site-dev site-build site-lint deploy-site
 
 help: ## List targets
@@ -41,6 +41,10 @@ baseline: ## Adopt a database created before the migrate service existed (one-ti
 pairing: ## Re-print the pairing block (URL, token, user ID, QR) from server/.env
 	scripts/bootstrap.sh --print-pairing
 
+devices: ## Per-device tokens: ARGS='list [--all]' | 'issue --user <uuid> --name <label>' | 'revoke <id>' | 'rename <id> <label>'
+	@test -n "$(ARGS)" || { echo "usage: make devices ARGS='list|issue --user <uuid> --name <label>|revoke <id>|rename <id> <label>'"; exit 2; }
+	$(COMPOSE) run --rm --no-deps ingest devices $(ARGS)
+
 dev-up: ## Build the four app images from this checkout and start the stack
 	DEPLOY_COMMIT=$$(git rev-parse HEAD 2>/dev/null || echo unknown) $(COMPOSE_BUILD) up -d --build $(ARGS)
 
@@ -60,7 +64,7 @@ restore: ## Restore a dump, DESTROYING the current database (FILE=<path or name 
 site-dev: ## Marketing site dev server on :3000 (site/, needs bun)
 	cd site && bun install && bun run dev $(ARGS)
 
-site-build: ## Static export of the marketing site to site/out (190 pages)
+site-build: ## Static export of the marketing site to site/out (198 pages)
 	cd site && bun install && bun run build
 
 site-lint: ## ESLint the marketing site

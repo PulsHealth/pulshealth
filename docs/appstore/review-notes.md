@@ -17,6 +17,10 @@ first, because the notes are useless without it.
 | `<<<REVIEW_USER_ID>>>` | The user UUID, `5ea4d000-0000-4000-8000-000000000001` unless you changed it. |
 | `<<<REVIEW_EXPIRY>>>` | The date you intend to take the instance down. Keep it up until the app is approved. |
 
+The field's limit is 4000 characters and the filled-in block below is about
+3,940 (4,000 if line breaks count twice), so any addition needs a matching
+cut. Measure the filled copy before pasting.
+
 Do not paste a QR image into the notes — the reviewer cannot scan a picture on
 the same screen they are reading. The typed path below is the one they will
 use; the QR scanner is offered for completeness.
@@ -30,7 +34,7 @@ WHAT THIS APP IS
 
 PulsHealth copies the user's Apple Health data to a server that the USER runs. There is no PulsHealth service and no developer-operated backend. The app uploads only to the address the user enters. No health data — none — reaches the developer.
 
-Because of that, the app cannot be exercised without a server. We have stood one up for you. It is a throwaway instance that exists only for this review, contains no real person's data, and its credentials will be rotated afterwards.
+So the app cannot be exercised without a server, and we have stood one up for you: a throwaway instance that exists only for this review, holds no real person's data, and will be destroyed afterwards.
 
 REVIEW SERVER
 
@@ -44,21 +48,21 @@ HOW TO EXERCISE THE APP (about 5 minutes)
 
 1. Launch the app. A five-step first-run flow starts automatically.
 2. "Get Started".
-3. On "Your Server", type the Server URL above into the URL field and the Token into the Bearer token field. ("Scan Pairing Code" reads a QR code the server prints; it needs a physical code to point at, so please type the values instead.)
+3. On "Your Server", type the Server URL above into the URL field and the Token into the Bearer token field. ("Scan Pairing Code" reads a QR code the server prints; it needs a physical code to point at, so please type the values instead.) iOS may offer to save the token as a password; either answer is fine.
 4. Tap "Test Connection". It should report success and list the server's features. Then tap "Continue".
-5. On "Health Access", tap "Grant Health Access". iOS shows its own permission sheet. Please tap "Turn On All" and Allow. The app requests READ access only — it never writes to Apple Health.
+5. On "Health Access", tap "Continue". iOS shows its own permission sheet. Please tap "Turn On All" and Allow. The app requests READ access only — it never writes to Apple Health.
 6. On "Data Types", a starter selection of about 14 types is already made. Tap "Continue".
 7. On "Ready", tap "Start Syncing". The Dashboard appears and the initial upload begins.
 
 WHAT YOU SHOULD SEE
 
 - The Dashboard's "Samples exported" counter rises if the device has any Health data. A brand-new device may have none; that is expected, not a failure.
-- To prove the round trip on an empty device: in Apple Health add a manual entry (Browse > Body Measurements > Weight > Add Data), return to PulsHealth and pull down on the Dashboard. The count rises within seconds.
+- To prove the round trip on an empty device: in Apple Health, tap the search button (magnifying glass), search for Weight and open it, tap + (Add Data), enter a value and tap the checkmark. Return to PulsHealth and pull down on the Dashboard: "Samples exported" rises within seconds.
 - The Log tab shows every upload as it happens.
 
 WHY WE DECLARE NSAllowsLocalNetworking
 
-Self-hosted servers usually sit on the user's own network — a NAS, a home server, a Raspberry Pi — where a publicly trusted TLS certificate is impractical. The exception permits plain HTTP for local-network hosts ONLY. The app enforces the same rule itself, in ServerURLValidation: a URL is accepted only if it is https://, or http:// to localhost, a *.local name, an unqualified hostname, or a private IP range (10.x, 172.16-31.x, 192.168.x, 169.254.x). Plain http:// to any public host is refused, with an error, before it can be saved or tested. Everything else stays HTTPS-only; we do not set NSAllowsArbitraryLoads. The review server above is HTTPS, so this path is not involved in your test.
+Self-hosted servers often sit on the user's own network (a NAS, a Raspberry Pi) where a publicly trusted TLS certificate is impractical. The exception permits plain HTTP to local-network hosts ONLY, and the app enforces the same rule itself (ServerURLValidation): a URL is accepted only if it is https://, or http:// to localhost, a *.local name, an unqualified hostname, or a private IP range (10.x, 172.16-31.x, 192.168.x, 169.254.x). Plain http:// to a public host is refused before it can be saved or tested. We do not set NSAllowsArbitraryLoads. The review server is HTTPS, so this path is not involved in your test.
 
 HEALTHKIT (Guideline 5.1.3)
 
@@ -68,11 +72,11 @@ HEALTHKIT (Guideline 5.1.3)
 
 CAMERA
 
-Used for one thing: reading the pairing QR code the server prints, so the user need not type a URL, a token and a UUID. No frame is stored or transmitted. Declining camera access is handled: the same screen offers a "Type It Instead" path and the app is fully usable without it.
+Used only to read the pairing QR code the server prints. No frame is stored or transmitted. Declining is handled: the same screen offers "Type It Instead" and the app is fully usable without the camera.
 
 BACKGROUND MODES
 
-UIBackgroundModes "processing" plus HealthKit background delivery, so new samples upload without the user opening the app. Nothing else runs in the background. The app has no accounts, so there is no demo account to give you.
+UIBackgroundModes "processing" plus HealthKit background delivery, so new samples upload without the user opening the app. Nothing else runs in the background. There are no accounts, so there is no demo account.
 
 The app is open source (Apache-2.0): https://github.com/PulsHealth/pulshealth
 Privacy policy: https://pulshealth.com/privacy

@@ -12,8 +12,9 @@ import (
 // Auth-failure throttling (SRV-7).
 //
 // The ingest endpoint is the one service a self-hoster is told to publish, and
-// it is guarded by a single static bearer token. Without a limit, that token
-// can be guessed at line rate and nothing in the logs stands out. So each
+// it is guarded by bearer tokens alone (the shared PULS_TOKEN and per-device
+// tokens, auth.go). Without a limit, a token can be guessed at line rate and
+// nothing in the logs stands out. So each
 // client IP gets a token bucket that ONLY failed authentications draw from: a
 // successful request never costs a token, because a backfill is thousands of
 // legitimate calls in a row and throttling those would break the product.

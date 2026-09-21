@@ -156,6 +156,20 @@ env_set() {
   mv "$tmp" "$env_file"
 }
 
+# Whether the server accepts PULS_TOKEN at all: it does not when
+# PULS_ALLOW_SHARED_TOKEN is false or the value is empty, in which case only
+# per-device tokens (`make devices ARGS='issue …'`) authenticate.
+shared_token_enabled() {
+  local token allow
+  token=$(env_get PULS_TOKEN)
+  allow=$(env_get PULS_ALLOW_SHARED_TOKEN)
+  [[ -n $token ]] || return 1
+  case $allow in
+    0|false|FALSE|False|f|F|no|NO|No|n|N) return 1 ;;
+  esac
+  return 0
+}
+
 # ---------------------------------------------------------------------------
 # Time zone.
 
@@ -299,6 +313,13 @@ wait_for_ingest() {
   status=$(curl -s -o /dev/null -m 5 -w '%{http_code}' \
     -H "Authorization: Bearer $token" -H 'X-Puls-Protocol: 1' \
     "$base/v1/capabilities" || true)
+  if ! shared_token_enabled; then
+    # Nothing to present: a 401 here is the server refusing the shared
+    # token as configured, which is the healthy answer.
+    [[ $status == 401 || $status == 200 ]] || die "GET $base/v1/capabilities answered HTTP $status (expected 401 with the shared token disabled). Look at: docker compose -f server/docker-compose.yml logs ingest"
+    note "Ingest is up. The shared token is disabled — issue a device token with: make devices ARGS='issue --user <uuid> --name <label>'"
+    return 0
+  fi
   [[ $status == 200 ]] || die "GET $base/v1/capabilities answered HTTP $status with PULS_TOKEN from server/.env (expected 200). Is the running stack using this .env? Try: docker compose -f server/docker-compose.yml up -d ingest"
   version=$(curl -fsS -m 5 -H "Authorization: Bearer $token" -H 'X-Puls-Protocol: 1' \
     "$base/v1/capabilities" 2>/dev/null | sed -n 's/.*"version":"\([^"]*\)".*/\1/p' || true)
@@ -352,7 +373,11 @@ print_pairing() {
   echo "$hr"
   printf ' %-12s %s\n' "Server URL" "${pair_url:-(none yet)}"
   printf ' %-12s %s\n' '' "$reachable_note"
-  printf ' %-12s %s\n' "Token" "$token"
+  if shared_token_enabled; then
+    printf ' %-12s %s\n' "Token" "$token"
+  else
+    printf ' %-12s %s\n' "Token" "(shared token disabled — issue a device token with: make devices ARGS='issue --user <uuid> --name <label>')"
+  fi
   printf ' %-12s %s\n' "User ID" "$user_id"
   echo
   echo " In the app: Settings > Server, scan the QR code or enter the three values, then Test Connection."
@@ -360,6 +385,7 @@ print_pairing() {
   echo "$hr"
 
   [[ -n $pair_url ]] || return 0
+  shared_token_enabled || return 0
   payload="puls://pair?url=$(urlencode "$pair_url")&token=$(urlencode "$token")&user=$(urlencode "$user_id")"
   if [[ $opt_qr == 1 ]] && command -v qrencode >/dev/null 2>&1; then
     echo
@@ -414,8 +440,10 @@ done
 if [[ $opt_print_pairing == 1 ]]; then
   [[ -f $env_file ]] || die "server/.env does not exist yet; run scripts/bootstrap.sh first"
   token=$(env_get PULS_TOKEN)
-  [[ -n $token && $token != change-me ]] \
-    || die "PULS_TOKEN is still unset (or 'change-me') in server/.env; set it (openssl rand -hex 32) or delete .env and re-run scripts/bootstrap.sh"
+  if shared_token_enabled; then
+    [[ $token != change-me ]] \
+      || die "PULS_TOKEN is still 'change-me' in server/.env; set it (openssl rand -hex 32), empty it to use device tokens only, or delete .env and re-run scripts/bootstrap.sh"
+  fi
   print_pairing
   print_services
   exit 0
@@ -441,6 +469,11 @@ if [[ -f $env_file ]]; then
   note "POSTGRES_PASSWORD; new values would strand both). To rotate one, see server/README.md, \"Rotating secrets\"."
   missing=''
   for key in $secrets; do
+    # An empty or disabled PULS_TOKEN is a choice (device tokens only),
+    # not a placeholder.
+    if [[ $key == PULS_TOKEN ]] && ! shared_token_enabled; then
+      continue
+    fi
     value=$(env_get "$key")
     if [[ -z $value || $value == change-me ]]; then
       missing="$missing $key"

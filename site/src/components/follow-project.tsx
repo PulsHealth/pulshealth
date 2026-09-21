@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
-import { ArrowRight, Github, Mail, Rss } from "lucide-react";
+import { ArrowRight, Mail, Rss } from "lucide-react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { GITHUB_URL } from "@/lib/github";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,7 @@ export function FollowProject({ className }: { className?: string }) {
           <div className="flex flex-col items-center gap-3 sm:flex-row">
             <Button asChild variant="outline">
               <a href={`${GITHUB_URL}/releases`} target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-4 w-4" />
+                <GitHubIcon className="mr-2 h-4 w-4" />
                 Releases
               </a>
             </Button>

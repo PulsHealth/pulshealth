@@ -44,10 +44,11 @@ func (s *service) addResources(server *mcp.Server) {
 		Name:     "types",
 		Title:    "Available data types",
 		MIMEType: "application/json",
-		Description: "The live catalog: every HealthKit type this person has data for, with its unit, row counts and " +
-			"earliest/latest timestamps, plus today's date and the server's time zone (the same answer as list_available_types).",
+		Description: "The live catalog: every HealthKit type the server's default person has data for, with its unit, row counts and " +
+			"earliest/latest timestamps, plus today's date and the server's time zone (the same answer as list_available_types " +
+			"without a user; for another person call the tool).",
 	}, func(ctx context.Context, _ *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
-		out, err := s.catalog(ctx)
+		out, err := s.catalog(ctx, s.api, s.api.User())
 		if err != nil {
 			return nil, err
 		}

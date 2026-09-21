@@ -9,7 +9,6 @@ import {
   Database,
   FileCode2,
   FileSpreadsheet,
-  Github,
   LayoutDashboard,
   Lock,
   Minus,
@@ -20,6 +19,7 @@ import {
   Star,
   Terminal,
 } from "lucide-react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -228,12 +228,12 @@ export default async function HomePage() {
             <pre className="font-mono text-sm leading-relaxed text-muted-foreground">
               <code>{`git clone https://github.com/PulsHealth/pulshealth.git
 cd pulshealth
-scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
+scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
             </pre>
           </div>
           <p className="mt-3 text-center text-sm text-muted-foreground">
-            Pass the time zone your phone lives in. <code>--build</code> is needed until the
-            first release, because the container images are not published yet.
+            Pass the time zone your phone lives in. The script pulls the published images; add{" "}
+            <code>--build</code> to compile them from the checkout instead.
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild variant="outline">
@@ -323,7 +323,7 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 font-mono text-xs text-brand hover:underline"
               >
-                <Github className="h-3.5 w-3.5" />
+                <GitHubIcon className="h-3.5 w-3.5" />
                 check: {claim.check.label}
               </a>
             </div>

@@ -3,10 +3,11 @@
 // stable (no hydration flicker) yet each type looks distinct and plausible.
 
 import { CATALOG, typeByIdentifier } from "./catalog";
+import { DEFAULT_USER_ID } from "./config";
 import { isCumulative, RANGES } from "./metrics";
 import type {
   ActivityRingsData, Latest, Profile, RangeKey, RoutePoint, Series, SeriesPoint, TypeStat,
-  Workout, WorkoutActivitySegment, WorkoutDetail, WorkoutEvent, WorkoutSeries, WorkoutStat,
+  User, Workout, WorkoutActivitySegment, WorkoutDetail, WorkoutEvent, WorkoutSeries, WorkoutStat,
 } from "./types";
 
 const DAY = 86_400_000;
@@ -419,6 +420,11 @@ export function demoWorkoutSeries(uuid: string): WorkoutSeries[] {
     out.push(make("HKQuantityTypeIdentifierCyclingCadence", "count/min", (u) => Math.round(86 + 12 * Math.sin(u * Math.PI * 6 + ph) + (rnd() - 0.5) * 6)));
   }
   return out;
+}
+
+// The one demo user, under the seeded id so it matches the default viewer user.
+export function demoUsers(): User[] {
+  return [{ id: DEFAULT_USER_ID, name: "Demo", email: null }];
 }
 
 export function demoProfile(): Profile {

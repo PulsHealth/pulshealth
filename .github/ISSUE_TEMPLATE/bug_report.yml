@@ -70,8 +70,8 @@ body:
     id: server-version
     attributes:
       label: Server version
-      description: The commit the server stack was built from, or the image tag once images exist. Write "not applicable" for app-only bugs or "own receiver" if you run your own backend.
-      placeholder: "abc1234"
+      description: The image tag you run (`PULS_VERSION` in `server/.env`; with `latest`, the `version` that `GET /v1/capabilities` reports), or the commit if you build from source. Write "not applicable" for app-only bugs or "own receiver" if you run your own backend.
+      placeholder: "0.2.0, or abc1234"
   - type: textarea
     id: background-activity
     attributes:

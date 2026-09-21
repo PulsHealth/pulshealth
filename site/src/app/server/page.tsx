@@ -83,7 +83,7 @@ export default function SyncPage() {
           <pre className="text-sm font-mono leading-relaxed text-muted-foreground">
             <code>{`git clone https://github.com/PulsHealth/pulshealth.git
 cd pulshealth
-scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
+scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
           </pre>
         </div>
 
@@ -92,9 +92,8 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
           calendar. Re-running the script is safe; it never regenerates secrets.
         </p>
         <p className="mx-auto max-w-2xl text-center text-sm text-muted-foreground mt-3">
-          <strong className="text-foreground">Pre-release:</strong> the container images are not
-          published yet, so <code>--build</code> compiles them from the checkout. After the first
-          tagged release the flag is no longer needed and the script pulls the images instead.
+          The script pulls the published images from GHCR. Add <code>--build</code> to compile
+          them from the checkout instead, for example to run an unreleased change.
         </p>
       </section>
 
@@ -236,10 +235,11 @@ scripts/bootstrap.sh --build --time-zone Europe/Berlin`}</code>
           Security is your job too
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-          The database holds identifiable health data, and ingest currently accepts a single static
-          bearer token, so anyone who has it can upload and delete for any user on that server. TLS,
-          network exposure and retention are yours to set up. The security policy lists the known
-          limitations.
+          The database holds identifiable health data. Each phone can have its own bearer token,
+          bound to one user, stored only as a hash and revocable on its own. The shared token a new
+          install starts with still works until you switch it off, and anyone who has that one can
+          upload and delete for any user on the server. TLS, network exposure and retention are
+          yours to set up. The security policy lists the known limitations.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild size="lg">

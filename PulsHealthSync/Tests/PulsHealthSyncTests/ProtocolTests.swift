@@ -59,6 +59,96 @@ import Testing
     }
 }
 
+// MARK: - Ingest receipt (PROTO-8)
+
+/// The success body is optional and informational: the app reads the counts
+/// when they are there and is indifferent to anything else. A body it cannot
+/// read must look exactly like no body, and must never fail the upload.
+@Suite struct IngestReceiptTests {
+    @Test func referenceServerBodyDecodes() {
+        let body = Data(#"{"accepted":812,"deleted":0,"duplicates":188,"routePoints":0,"seriesPoints":0,"aggregateSamples":0,"activitySummaries":0}"#.utf8)
+        let receipt = IngestReceipt.decode(body)
+        #expect(receipt?.accepted == 812)
+        #expect(receipt?.duplicates == 188)
+        #expect(receipt?.deleted == 0)
+        #expect(receipt?.aggregateSamples == 0)
+        #expect(receipt?.sampleOutcome == "812 new, 188 duplicates")
+    }
+
+    @Test func partialAndUnknownFieldsAreTolerated() {
+        // A receiver that reports only some counts, plus fields the client
+        // has never heard of: every known one it sent is kept.
+        let body = Data(#"{"accepted":5,"retries":1,"server":"other","nested":{"x":[1,2]}}"#.utf8)
+        let receipt = IngestReceipt.decode(body)
+        #expect(receipt == IngestReceipt(accepted: 5))
+        #expect(receipt?.duplicates == nil)
+        #expect(receipt?.sampleOutcome == "5 new")
+        #expect(IngestReceipt.decode(Data(#"{"duplicates":3}"#.utf8))?.sampleOutcome == "3 duplicates")
+    }
+
+    @Test func absentOrUnreadableBodyIsNoReceipt() {
+        #expect(IngestReceipt.decode(Data()) == nil)
+        #expect(IngestReceipt.decode(Data("{}".utf8)) == nil, "no known count")
+        #expect(IngestReceipt.decode(Data(#"{"ok":true}"#.utf8)) == nil, "only unknown fields")
+        #expect(IngestReceipt.decode(Data("not json".utf8)) == nil)
+        #expect(IngestReceipt.decode(Data("<html><body>502</body></html>".utf8)) == nil)
+        #expect(IngestReceipt.decode(Data("[1,2,3]".utf8)) == nil, "not an object")
+        #expect(IngestReceipt.decode(Data(#"{"accepted":"lots"}"#.utf8)) == nil, "wrong type")
+        #expect(IngestReceipt.decode(Data([0xFF, 0xFE, 0x00])) == nil, "not UTF-8")
+    }
+
+    @Test func largeCountsFormatWithGrouping() {
+        let receipt = IngestReceipt(accepted: 1_000_000, duplicates: 12_345)
+        let outcome = receipt.sampleOutcome ?? ""
+        // Locale-dependent separator, but a six-digit count must be grouped.
+        #expect(outcome.hasSuffix(" duplicates"))
+        #expect(outcome.contains(" new, "))
+        #expect(outcome.count > "1000000 new, 12345 duplicates".count)
+    }
+
+    // MARK: End to end through HTTPSyncTransport
+
+    private func makeTransport(_ handler: @escaping MockURLProtocol.Handler) -> HTTPSyncTransport {
+        let host = "\(UUID().uuidString.lowercased()).test"
+        MockURLProtocol.register(host: host, handler)
+        return HTTPSyncTransport(
+            baseURL: URL(string: "https://\(host)")!, authToken: "secret", userID: "user-1",
+            maxRetries: 0, session: MockURLProtocol.session())
+    }
+
+    private var batch: SyncBatch {
+        SyncBatch(deviceID: "d", type: "t", reason: .incremental, samples: [], deletions: [])
+    }
+
+    @Test func uploadCarriesTheServerCounts() async throws {
+        let transport = makeTransport { _ in
+            .http(200, Data(#"{"accepted":812,"duplicates":188,"deleted":1}"#.utf8))
+        }
+        let result = try await transport.upload(batch)
+        #expect(result.bytesSent > 0)
+        #expect(result.receipt?.accepted == 812)
+        #expect(result.receipt?.duplicates == 188)
+        #expect(result.receipt?.deleted == 1)
+    }
+
+    @Test func emptyBodyStillAcks() async throws {
+        let transport = makeTransport { _ in .http(202, Data()) }
+        let result = try await transport.upload(batch)
+        #expect(result.bytesSent > 0)
+        #expect(result.receipt == nil)
+    }
+
+    @Test func unreadableBodyStillAcks() async throws {
+        // A proxy that answers 200 with a page of its own, or a receiver
+        // with a body of a different shape: the 2xx is the ack.
+        for body in ["<html>ok</html>", #"{"status":"stored"}"#, "\u{0}\u{1}garbage"] {
+            let transport = makeTransport { _ in .http(200, Data(body.utf8)) }
+            let result = try await transport.upload(batch)
+            #expect(result.receipt == nil, "body \(body)")
+        }
+    }
+}
+
 // MARK: - Capabilities
 
 @Suite struct ServerCapabilitiesTests {

@@ -98,7 +98,10 @@ type options struct {
 	types        string
 	sampleType   string
 	activityType string
-	output       string
+	// The user to export, sent as ?user=; empty leaves the choice to the
+	// server (its PULS_USER_ID).
+	user   string
+	output string
 }
 
 func run(ctx context.Context, args []string, stdout, stderr io.Writer, getenv func(string) string) error {
@@ -117,6 +120,9 @@ Datasets: daily_metrics, samples, workouts, sleep, activity, state_of_mind.
 daily_metrics needs --types, samples needs --type. The server is the authority
 on both lists and reports what it accepts.
 
+The export is the server's default user unless --user (or $PULS_USER_ID) names
+another, which the server allows only with PULS_MULTI_USER=true.
+
 Examples:
   puls-export --dataset sleep --start 2026-01-01 --end 2026-02-01 -o sleep.csv
   puls-export --dataset samples --type HKQuantityTypeIdentifierHeartRate \
@@ -134,6 +140,7 @@ Examples:
 		types        = fs.String("types", "", "daily_metrics: comma-separated HealthKit identifiers")
 		sampleType   = fs.String("type", "", "samples: one HealthKit identifier")
 		activityType = fs.String("activity-type", "", "workouts: keep one activity type")
+		user         = fs.String("user", "", "user ID (UUID) to export; the server needs PULS_MULTI_USER=true for anyone but its default (default $PULS_USER_ID, else the server's own)")
 		zoneName     = fs.String("time-zone", "", "IANA zone the YYYY-MM-DD bounds are read in (default $PULS_TIME_ZONE, else UTC)")
 		output       = fs.String("o", "", "write to this file instead of standard output")
 		showVersion  = fs.Bool("version", false, "print the version and exit")
@@ -163,6 +170,7 @@ Examples:
 		types:        strings.TrimSpace(*types),
 		sampleType:   strings.TrimSpace(*sampleType),
 		activityType: strings.TrimSpace(*activityType),
+		user:         firstNonEmpty(*user, getenv("PULS_USER_ID")),
 		output:       *output,
 	}
 	if opts.dataset == "" {
@@ -257,10 +265,13 @@ func exportURL(opts options) (string, error) {
 	}
 	// Each filter belongs to one dataset; sending it with another would be a
 	// 400 from a stricter server later, so only the relevant one goes out.
+	// user is absent unless asked for, so a server that predates it (or one
+	// with PULS_MULTI_USER off) keeps answering for its default user.
 	for name, value := range map[string]string{
 		"types":        opts.types,
 		"type":         opts.sampleType,
 		"activityType": opts.activityType,
+		"user":         opts.user,
 	} {
 		if value != "" {
 			query.Set(name, value)
@@ -296,8 +307,13 @@ func apiError(resp *http.Response) error {
 	if message != "" {
 		err = fmt.Errorf("%w: %s", err, message)
 	}
-	if resp.StatusCode == http.StatusUnauthorized {
+	switch resp.StatusCode {
+	case http.StatusUnauthorized:
 		err = fmt.Errorf("%w (the token does not match the API's PULS_API_TOKEN)", err)
+	case http.StatusForbidden:
+		// The only 403 the export endpoint sends: --user named someone other
+		// than the server's default while its gate is off.
+		err = fmt.Errorf("%w (the server only exports its PULS_USER_ID unless it runs with PULS_MULTI_USER=true; GET /v1/users lists what it serves)", err)
 	}
 	return err
 }

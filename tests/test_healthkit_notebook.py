@@ -1,3 +1,33 @@
+"""Executes notebooks/healthkit_database_exploration.ipynb end to end.
+
+The notebook analyzes one user's synced data — coverage, activity trends,
+resting heart rate and HRV, sleep, workouts, a few correlations — and ends
+by rendering the same markdown summary the product API serves at
+GET /v1/summary, with an optional cell that sends it to Claude. Every
+analysis cell must run on a sparse database (it prints a note and skips
+the chart when a type has nothing), and the optional cell must stay
+skipped here: it only runs when ANTHROPIC_API_KEY is set, so both tests
+blank that variable and the first asserts the cell printed its skip line
+rather than anything a model wrote.
+
+Runs in CI: the `db-integration` job in .github/workflows/ci.yml installs
+notebooks/requirements.txt and runs this file after the Go integration
+suites. The main test needs Docker and `psql` on the host — it starts its own
+throwaway TimescaleDB (the image pinned in server/docker-compose.yml) on a
+random loopback port, applies the schema with server/db/migrate.sh, seeds two
+weeks of daily aggregates, rings, sleep and workouts so every section takes
+its populated branch, writes a temporary `.env` at the repository root and
+executes every cell with nbclient. Locally:
+
+    pip install -r notebooks/requirements.txt
+    python -m pytest tests/test_healthkit_notebook.py -rs
+
+Without Docker that test skips. The second test runs the notebook against
+whatever a real `.env` at the repository root points at and skips when there
+is none (CI), so it is the one to run by hand after changing the notebook's
+connection code.
+"""
+
 import os
 import re
 import subprocess
@@ -69,6 +99,9 @@ def seed_healthkit_rows(database_url):
       ('HKQuantityTypeIdentifierBodyMass', 'quantity', 'kg'),
       ('HKQuantityTypeIdentifierHeartRate', 'quantity', 'count/min'),
       ('HKQuantityTypeIdentifierStepCount', 'quantity', 'count'),
+      ('HKQuantityTypeIdentifierActiveEnergyBurned', 'quantity', 'kcal'),
+      ('HKQuantityTypeIdentifierRestingHeartRate', 'quantity', 'count/min'),
+      ('HKQuantityTypeIdentifierHeartRateVariabilitySDNN', 'quantity', 'ms'),
       ('HKCategoryTypeIdentifierSleepAnalysis', 'category', NULL)
     ON CONFLICT (identifier) DO NOTHING;
 
@@ -103,6 +136,82 @@ def seed_healthkit_rows(database_url):
       ('00000000-0000-4000-8000-000000000201',
        (SELECT type_id FROM sample_types WHERE identifier = 'HKCategoryTypeIdentifierSleepAnalysis'),
        '2026-06-15 23:00:00-07', '2026-06-16 06:30:00-07', 3,
+       (SELECT source_id FROM sources WHERE name = 'Apple Watch' LIMIT 1),
+       '5ea4d000-0000-4000-8000-000000000001')
+    ON CONFLICT DO NOTHING;
+
+    -- Two weeks of the daily surfaces the notebook analyzes, on fixed dates
+    -- (the notebook's window ends on the last day with data, not today).
+    -- One canonical daily series per type is what metric_daily's tier 1
+    -- reads: sum for cumulative types, average for discrete ones.
+    INSERT INTO aggregate_series
+      (type_id, agg_func, interval_value, interval_unit, device_filter, unit)
+    SELECT st.type_id, f.agg_func, 1, 'day', 'all', st.unit
+    FROM sample_types st
+    JOIN (VALUES
+      ('HKQuantityTypeIdentifierStepCount', 'sum'),
+      ('HKQuantityTypeIdentifierActiveEnergyBurned', 'sum'),
+      ('HKQuantityTypeIdentifierRestingHeartRate', 'average'),
+      ('HKQuantityTypeIdentifierHeartRateVariabilitySDNN', 'average')
+    ) AS f(identifier, agg_func) ON f.identifier = st.identifier
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO aggregate_samples (series_id, bucket_start, bucket_end, value, user_id)
+    SELECT s.series_id, d, d + interval '1 day',
+      CASE st.identifier
+        WHEN 'HKQuantityTypeIdentifierStepCount' THEN 6000 + (extract(day FROM d)::int * 537) % 5000
+        WHEN 'HKQuantityTypeIdentifierActiveEnergyBurned' THEN 350 + (extract(day FROM d)::int * 41) % 300
+        WHEN 'HKQuantityTypeIdentifierRestingHeartRate' THEN 55 + (extract(day FROM d)::int * 7) % 9
+        WHEN 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN' THEN 35 + (extract(day FROM d)::int * 11) % 25
+      END,
+      '5ea4d000-0000-4000-8000-000000000001'
+    FROM aggregate_series s
+    JOIN sample_types st USING (type_id)
+    CROSS JOIN generate_series('2026-06-02 00:00:00+00'::timestamptz,
+                               '2026-06-15 00:00:00+00'::timestamptz,
+                               interval '1 day') AS d
+    WHERE s.interval_unit = 'day' AND s.device_filter = 'all'
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO activity_summaries
+      (date, user_id, move_kcal, move_goal_kcal, exercise_min, exercise_goal_min,
+       stand_hours, stand_goal_hours)
+    SELECT d::date, '5ea4d000-0000-4000-8000-000000000001',
+      350 + (extract(day FROM d)::int * 41) % 300, 500,
+      20 + (extract(day FROM d)::int * 13) % 40, 30,
+      8 + (extract(day FROM d)::int * 3) % 5, 12
+    FROM generate_series('2026-06-02'::date, '2026-06-15'::date, interval '1 day') AS d
+    ON CONFLICT DO NOTHING;
+
+    -- One core-sleep sample per night, ending on the wake-up morning.
+    INSERT INTO category_samples
+      (uuid, type_id, start_ts, end_ts, value, source_id, user_id)
+    SELECT gen_random_uuid(),
+      (SELECT type_id FROM sample_types WHERE identifier = 'HKCategoryTypeIdentifierSleepAnalysis'),
+      d + interval '23 hours' + ((extract(day FROM d)::int * 7) % 40) * interval '1 minute',
+      d + interval '1 day 6 hours 30 minutes' + ((extract(day FROM d)::int * 11) % 50) * interval '1 minute',
+      3,
+      (SELECT source_id FROM sources WHERE name = 'Apple Watch' LIMIT 1),
+      '5ea4d000-0000-4000-8000-000000000001'
+    FROM generate_series('2026-06-01 00:00:00+00'::timestamptz,
+                         '2026-06-14 00:00:00+00'::timestamptz,
+                         interval '1 day') AS d
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO workouts
+      (uuid, activity_type, start_ts, end_ts, duration_s, energy_kcal, distance_m,
+       source_id, user_id)
+    VALUES
+      ('00000000-0000-4000-8000-000000000401', 'running',
+       '2026-06-03 07:00:00+00', '2026-06-03 07:35:00+00', 2100, 320, 5200,
+       (SELECT source_id FROM sources WHERE name = 'Apple Watch' LIMIT 1),
+       '5ea4d000-0000-4000-8000-000000000001'),
+      ('00000000-0000-4000-8000-000000000402', 'cycling',
+       '2026-06-07 09:00:00+00', '2026-06-07 10:00:00+00', 3600, 450, 18000,
+       (SELECT source_id FROM sources WHERE name = 'Apple Watch' LIMIT 1),
+       '5ea4d000-0000-4000-8000-000000000001'),
+      ('00000000-0000-4000-8000-000000000403', 'running',
+       '2026-06-12 07:00:00+00', '2026-06-12 07:30:00+00', 1800, 280, 4500,
        (SELECT source_id FROM sources WHERE name = 'Apple Watch' LIMIT 1),
        '5ea4d000-0000-4000-8000-000000000001')
     ON CONFLICT DO NOTHING;
@@ -180,9 +289,12 @@ def test_healthkit_notebook_executes_against_seeded_database(tmp_path):
                 "DATABASE_URL": "",
                 "PULS_DB_PASSWORD": "",
                 "POSTGRES_PASSWORD": "",
-                "PULS_ANALYSIS_TZ": "America/Los_Angeles",
+                # Never a network call from the test: the last cell only
+                # talks to the API when this is set.
+                "ANTHROPIC_API_KEY": "",
+                # No PULS_ANALYSIS_TZ: the notebook must pick the zone up
+                # from the database's puls_time_zone() (UTC, from apply_schema).
                 "PULS_LOOKBACK_DAYS": "30",
-                "PULS_DB_SAMPLE_LIMIT": "25",
             },
         )
 
@@ -192,6 +304,17 @@ def test_healthkit_notebook_executes_against_seeded_database(tmp_path):
         code_cells = [cell for cell in notebook.cells if cell.cell_type == "code"]
         assert code_cells
         assert any(cell.get("outputs") for cell in code_cells)
+
+        # The seeded fortnight reached the summary: the rendered page carries
+        # the sections the product API's GET /v1/summary would.
+        summary_cell = next(c for c in code_cells if "build_summary_markdown()" in c.source)
+        summary_text = "".join(o.get("text", "") for o in summary_cell.outputs)
+        for heading in ("## Activity", "## Heart", "## Sleep", "## Workouts", "## Body", "## Coverage"):
+            assert heading in summary_text, f"summary is missing {heading!r}"
+
+        llm_cell = next(c for c in code_cells if "ANTHROPIC_API_KEY" in c.source)
+        llm_text = "".join(o.get("text", "") for o in llm_cell.outputs)
+        assert "ANTHROPIC_API_KEY is not set" in llm_text
     finally:
         if original_env is None:
             env_path.unlink(missing_ok=True)
@@ -224,9 +347,9 @@ def test_healthkit_notebook_executes_from_notebooks_directory_with_root_env():
         env.pop(key, None)
     env.update(
         {
+            "ANTHROPIC_API_KEY": "",
             "PULS_ANALYSIS_TZ": "America/Los_Angeles",
             "PULS_LOOKBACK_DAYS": "7",
-            "PULS_DB_SAMPLE_LIMIT": "10",
         }
     )
 

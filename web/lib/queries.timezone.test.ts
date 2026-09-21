@@ -13,7 +13,6 @@ let warnSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   vi.resetModules();
   process.env.DATABASE_URL = "postgres://test";
-  process.env.PULS_USER_ID = USER_ID;
   process.env.PULS_TIME_ZONE = "Europe/Berlin";
   queryMock.mockReset();
   warnSpy?.mockRestore();
@@ -41,7 +40,7 @@ describe("metric_daily zone guard", () => {
   it("uses metric_daily when the database's zone equals PULS_TIME_ZONE", async () => {
     mockDatabase(() => Promise.resolve([{ zone: "Europe/Berlin" }]));
     const { getSeries } = await import("./queries");
-    await getSeries(STEPS, "Y");
+    await getSeries(USER_ID, STEPS, "Y");
 
     expect(usedMetricDailySeries()).toBe(true);
     expect(usedRawBuckets()).toBe(false);
@@ -51,8 +50,8 @@ describe("metric_daily zone guard", () => {
   it("falls back to raw local buckets and warns once on a zone mismatch", async () => {
     mockDatabase(() => Promise.resolve([{ zone: "UTC" }]));
     const { getDailySparklines, getSeries } = await import("./queries");
-    await getSeries(STEPS, "Y");
-    await getDailySparklines([STEPS]);
+    await getSeries(USER_ID, STEPS, "Y");
+    await getDailySparklines(USER_ID, [STEPS]);
 
     expect(touchedMetricDaily()).toBe(false);
     expect(usedRawBuckets()).toBe(true);
@@ -64,8 +63,8 @@ describe("metric_daily zone guard", () => {
   it("falls back and warns once when puls_time_zone() does not exist", async () => {
     mockDatabase(() => Promise.reject(new Error("function puls_time_zone() does not exist")));
     const { getSeries } = await import("./queries");
-    await getSeries(STEPS, "Y");
-    await getSeries(STEPS, "M");
+    await getSeries(USER_ID, STEPS, "Y");
+    await getSeries(USER_ID, STEPS, "M");
 
     expect(touchedMetricDaily()).toBe(false);
     expect(usedRawBuckets()).toBe(true);
@@ -75,8 +74,8 @@ describe("metric_daily zone guard", () => {
   it("looks the database zone up once and reuses it", async () => {
     mockDatabase(() => Promise.resolve([{ zone: "Europe/Berlin" }]));
     const { getDailySparklines, getSeries } = await import("./queries");
-    await Promise.all([getSeries(STEPS, "Y"), getSeries(STEPS, "M")]);
-    await getDailySparklines([STEPS]);
+    await Promise.all([getSeries(USER_ID, STEPS, "Y"), getSeries(USER_ID, STEPS, "M")]);
+    await getDailySparklines(USER_ID, [STEPS]);
 
     expect(zoneLookups()).toBe(1);
     expect(usedMetricDailySeries()).toBe(true);

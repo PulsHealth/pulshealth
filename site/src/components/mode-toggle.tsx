@@ -22,8 +22,8 @@ const labels: Record<Mode, string> = {
  */
 export function ModeToggle() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
-  React.useEffect(() => setMounted(true), [])
+  // true after hydration, false in the server render, with no effect-driven state
+  const mounted = React.useSyncExternalStore(() => () => {}, () => true, () => false)
 
   const mode: Mode = mounted && order.includes(theme as Mode) ? (theme as Mode) : "system"
   const next = order[(order.indexOf(mode) + 1) % order.length]

@@ -22,10 +22,29 @@ var wantTools = []string{
 	"get_samples",
 	"get_sleep",
 	"get_state_of_mind",
+	"get_summary",
 	"get_workout",
 	"get_workout_series",
 	"list_available_types",
+	"list_users",
 	"list_workouts",
+}
+
+// schemaProperties returns the "properties" of a tool's input schema,
+// whatever concrete type the transport decoded it into.
+func schemaProperties(t *testing.T, schema any) map[string]any {
+	t.Helper()
+	b, err := json.Marshal(schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Properties map[string]any `json:"properties"`
+	}
+	if err := json.Unmarshal(b, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	return decoded.Properties
 }
 
 func toolNames(res *mcp.ListToolsResult) []string {
@@ -87,6 +106,18 @@ func TestServer_EndToEndInMemory(t *testing.T) {
 		}
 		if tool.InputSchema == nil {
 			t.Errorf("tool %s has no input schema", tool.Name)
+			continue
+		}
+		// Every per-user tool advertises the optional user property;
+		// list_users, which is about users rather than for one, does not.
+		props := schemaProperties(t, tool.InputSchema)
+		_, hasUser := props["user"]
+		if tool.Name == "list_users" {
+			if hasUser {
+				t.Errorf("list_users takes a user argument")
+			}
+		} else if !hasUser {
+			t.Errorf("tool %s has no user property in its input schema: %v", tool.Name, props)
 		}
 	}
 
@@ -300,7 +331,22 @@ func TestLoadConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.apiURL != "http://api:8081/" || cfg.loc.String() != "Europe/Berlin" || cfg.mcpToken != "m" {
+	if cfg.apiURL != "http://api:8081/" || cfg.loc.String() != "Europe/Berlin" || cfg.mcpToken != "m" || cfg.userID != "" {
 		t.Errorf("config = %+v", cfg)
+	}
+
+	// PULS_USER_ID pins the instance; it must be a UUID, and it is
+	// normalised to the lower-case form the API renders.
+	cfg, err = loadConfig(env(map[string]string{"PULS_API_TOKEN": "t", "PULS_USER_ID": " " + strings.ToUpper(otherUserID) + " "}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.userID != otherUserID {
+		t.Errorf("userID = %q, want %q", cfg.userID, otherUserID)
+	}
+	for _, bad := range []string{"alice", "5ea4d000", "5ea4d000-0000-4000-8000-00000000000g"} {
+		if _, err := loadConfig(env(map[string]string{"PULS_API_TOKEN": "t", "PULS_USER_ID": bad})); err == nil || !strings.Contains(err.Error(), "PULS_USER_ID") {
+			t.Errorf("PULS_USER_ID=%q: err = %v, want a PULS_USER_ID error", bad, err)
+		}
 	}
 }

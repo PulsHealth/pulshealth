@@ -27,10 +27,6 @@ free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 > - **Schema migrations are automatic** (the `migrate` service applies
 >   `server/db/migrations/` on every start), but an install created before
 >   it existed needs a one-time `make baseline` — see `server/README.md`.
-> - **The container images are not published yet.** Compose pulls
->   `ghcr.io/pulshealth/{ingest,api,mcp,web}`, but nothing is there until the
->   first `v*` release. Until then, build them from the checkout:
->   `scripts/bootstrap.sh --build` (then `make dev-up`).
 > - **Backups are opt-in and off by default.** The stack ships a `backup`
 >   service, but it only runs when you enable its profile
 >   (`docker compose --profile backup up -d backup`, or `make backup` for one
@@ -54,6 +50,17 @@ free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 | **Blog** | [`blog/`](blog/BLOG_SYSTEM.md) | The site's MDX posts and their images, also read by `site/` at build time. |
 | **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
 | **MCP server** | [`server/mcp/`](server/mcp/README.md) | Read-only MCP server over the product API for Claude Desktop, Claude Code, Cursor and remote connectors: daily metrics, rings, workouts, latest readings, with an embedded guide for the model. Setup in [`docs/ai.md`](docs/ai.md). |
+
+<p align="center">
+  <img src="docs/images/app/welcome.png" alt="First-run welcome screen: the app reads Apple Health and sends it to a server you run" width="200">
+  <img src="docs/images/app/dashboard.png" alt="Dashboard after a backfill: 1.3M samples exported, per-type sync status" width="200">
+  <img src="docs/images/app/type-detail.png" alt="A type's detail screen: backfill state, anchor, volume and timeline" width="200">
+  <img src="docs/images/app/background-activity.png" alt="Background Activity: wakes granted by iOS over the last day and week" width="200">
+</p>
+
+The iOS app: first run, the dashboard after a backfill, one type's sync
+detail, and the background-activity log. Screenshots of the web viewer and
+the Grafana dashboards are still to come.
 
 For the database data model, table guide, and query patterns (including how
 to avoid iPhone + Watch double counting), see
@@ -101,7 +108,10 @@ all three. Leave `--time-zone` out and it uses the host's zone and says so;
 every daily view buckets by this calendar, so it must match the phone's.
 `make pairing` prints the block again whenever you need it.
 
-Where the phone reaches the server is the one decision left to you:
+Where the phone reaches the server is the one decision left to you. Until
+you make it, the pairing block's URL reads `(none yet)` and there is no QR
+code: ingest listens on `127.0.0.1` only, where no phone can reach it.
+Re-run the script with one of these (it changes only that setting):
 
 - **Same Wi-Fi, nothing else to set up:** `scripts/bootstrap.sh --lan` binds
   ingest to every interface (`INGEST_BIND_ADDR=0.0.0.0`), and the pairing
@@ -117,16 +127,21 @@ Where the phone reaches the server is the one decision left to you:
 
 Everything else binds to loopback: the product API on `8081`, the MCP server
 on `8082`, Grafana on `3000`, the web viewer on `3001`, Postgres on `5432`.
+Those host ports are fixed in `server/docker-compose.yml` — only the bind
+addresses are settings — so they must be free: a Postgres already listening
+on 5432, or a dev server on 3000, stops `docker compose up`.
 Re-running `scripts/bootstrap.sh` is safe — it never regenerates secrets —
 and `make up`, `make down`, `make logs`, `make ps` wrap Compose (`make help`
-lists the rest). Upgrading is `make pull up`; `server/README.md` covers
-"Images and versions", configuration, schema migrations, the scoped
-database role for ingest, and Grafana.
+lists the rest). Upgrading is `git pull && make pull up`: the images come
+from the registry, but the compose file and the schema migrations they
+expect come from the checkout, so the two move together (`CHANGELOG.md`
+says what each release needs). `server/README.md` covers "Images and
+versions", configuration, schema migrations, the scoped database role for
+ingest, and Grafana.
 
-**Building from source instead** — after a change in `server/` or `web/`, or
-before the first images are published: `make dev-up` (or
-`scripts/bootstrap.sh --build`) builds the four app images from the checkout
-through the `server/compose.build.yml` overlay.
+**Building from source instead** — after a change in `server/` or `web/`:
+`make dev-up` (or `scripts/bootstrap.sh --build`) builds the four app images
+from the checkout through the `server/compose.build.yml` overlay.
 
 ### App
 
@@ -164,8 +179,15 @@ Open the web viewer at `http://localhost:3001` on the server, or Grafana at
 
 Several people on one server: give each phone its own user ID under
 **Settings → User** (the default is a fixed UUID so a reinstall keeps its
-identity), and set `PULS_USER_ID` on the server to choose which user the
-product API and web viewer show.
+identity) and issue each its own token with `make devices ARGS='issue --user
+<that user ID> --name "<label>"'` — a device token is bound to its user, so
+no phone can write as another. On the reading side `PULS_USER_ID` is the user
+shown by default; set `PULS_MULTI_USER=true` in `server/.env` and the product
+API answers for any user a request names (`?user=<uuid>`, listed by
+`GET /v1/users`), which the MCP server and the web viewer use to let you pick
+whose data you are looking at. Off, which is the default, every read is
+`PULS_USER_ID`'s and naming anyone else is refused — the API's one token
+reads everyone once the gate is on, so it is a deliberate switch.
 
 ## Use it with AI
 
@@ -412,9 +434,13 @@ No. The app requests read access only, and its usage strings say so.
 - **Your data goes only to your server.** There is no PulsHealth service, no
   analytics, no crash reporting. The app makes requests to the URL you
   configure and nowhere else.
-- **One bearer token, today.** The ingest server accepts a single static
-  `PULS_TOKEN`; whoever holds it can upload and delete data for any user ID.
-  Per-device tokens bound to a user are planned. On the phone the token is
+- **Bearer tokens.** The ingest server accepts a shared static `PULS_TOKEN`
+  — whoever holds it can upload and delete data for any user ID — and
+  per-device tokens (`make devices ARGS='issue --user <uuid> --name <label>'`)
+  that are hashed at rest, bound to one user, revocable one at a time and
+  show when they were last used. The shared token stays on by default; set
+  `PULS_ALLOW_SHARED_TOKEN=false` once every phone has its own and it stops
+  authenticating. On the phone the token is
   kept in the Keychain (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, so
   background wakes can still reach it and a backup cannot carry it to another
   device), never in the sync-state file. Guessing it is slow, at least: ingest
@@ -486,8 +512,9 @@ cd ../mcp      && go vet ./... && go test ./...
 # Web viewer
 cd web && npm ci && npm run lint && npm run typecheck && npm test && npm run build
 
-# Marketing site (bun; exports 211 static pages to site/out, 177 of them from
-# knowledge-base/ and 11 from docs it renders, all read as repository-root siblings)
+# Marketing site (bun; exports 211 static pages to site/out: 177 from
+# knowledge-base/, read as a repository-root sibling, and eleven under /docs/
+# rendered from the READMEs, docs/ guides, SECURITY.md and CHANGELOG.md)
 cd site && bun install && bun run lint && bun run build
 
 # The whole stack from this checkout (server/compose.build.yml overlay)

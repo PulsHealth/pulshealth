@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Github } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/page-hero";
 
@@ -24,7 +25,7 @@ export default function AboutPage() {
       >
         <Button asChild size="lg">
           <a href={GITHUB} target="_blank" rel="noopener noreferrer">
-            <Github className="mr-2 h-4 w-4" />
+            <GitHubIcon className="mr-2 h-4 w-4" />
             Read the Source
           </a>
         </Button>

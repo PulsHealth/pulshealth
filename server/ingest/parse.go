@@ -23,6 +23,9 @@ type BatchHeader struct {
 	// UserID is not sent in the body: the handler fills it from the X-User-ID
 	// request header (defaulting to the default user) before InsertBatch runs.
 	UserID string `json:"-"`
+	// DeviceTokenID is the device_tokens row the request authenticated with,
+	// filled by the handler from the auth principal; 0 for the shared token.
+	DeviceTokenID int64 `json:"-"`
 	// WakeID/Trigger are not sent in the body either: the handler fills them from
 	// the X-Wake-ID / X-Wake-Trigger headers (the iOS wake that produced this
 	// upload). Both optional — absent for older clients, curl, and work outside a

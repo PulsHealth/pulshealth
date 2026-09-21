@@ -9,6 +9,7 @@ import { formatActivity } from "@/lib/activity";
 import { GROUP_COLOR } from "@/lib/colors";
 import { isCumulative } from "@/lib/metrics";
 import { getActivityRings, getLatestMany, getSeries, getStats, getTodayTotals, getWorkouts } from "@/lib/queries";
+import { viewerUser } from "@/lib/viewer";
 import { formatCompact, formatDuration, formatFull, formatToday } from "@/lib/format";
 import { greetingAt } from "@/lib/time";
 
@@ -36,15 +37,16 @@ const RING_TYPES = [
 
 export default async function Dashboard() {
   const now = new Date();
+  const user = await viewerUser();
   const [latest, todays, stats, workouts, activity] = await Promise.all([
-    getLatestMany(KEY_METRICS.filter((id) => !isCumulative(id))),
-    getTodayTotals([...new Set([...RING_TYPES, ...KEY_METRICS.filter(isCumulative)])]),
-    getStats(),
-    getWorkouts(3),
-    getActivityRings(),
+    getLatestMany(user, KEY_METRICS.filter((id) => !isCumulative(id))),
+    getTodayTotals(user, [...new Set([...RING_TYPES, ...KEY_METRICS.filter(isCumulative)])]),
+    getStats(user),
+    getWorkouts(user, 3),
+    getActivityRings(user),
   ]);
 
-  const seriesList = await Promise.all(KEY_METRICS.map((id) => getSeries(id, "M")));
+  const seriesList = await Promise.all(KEY_METRICS.map((id) => getSeries(user, id, "M")));
   const seriesById = new Map(seriesList.map((s) => [s.identifier, s]));
 
   // Rings: prefer the real HKActivitySummary (Move / Exercise / Stand with the

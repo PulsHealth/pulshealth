@@ -61,8 +61,9 @@ scripts/bootstrap.sh --build                   # first run, from source
 make dev-up                                    # thereafter (compose.build.yml)
 
 # Marketing site (bun, not npm). Exports to site/out: the marketing pages plus
-# 177 knowledge-base type pages and one page per blog article — the two counts
-# CI asserts. `make site-dev|site-build|site-lint` and
+# 177 knowledge-base type pages, one page per blog article and one page per
+# entry in the docs manifest (site/src/lib/docs.ts: eleven repository markdown
+# files under /docs/) — the three counts CI asserts. `make site-dev|site-build|site-lint` and
 # `scripts/deploy-site.sh` (S3 + CloudFront) wrap this from the repo root.
 cd site && bun install && bun run lint && bun run build
 
@@ -76,6 +77,10 @@ cd ../../tools/puls-export && go vet ./... && go test ./...   # export CLI (own 
 # Python reference receiver. Both from the repository root:
 cd tools/protocol-check && go test ./... && go run . ../../docs/protocol/fixtures/*.ndjson
 python3 examples/receivers/python-sqlite/smoke_test.py
+
+# Exploration notebook, executed cell by cell against a throwaway TimescaleDB
+# the test starts itself (needs Docker and psql; CI's db-integration job runs it)
+pip install -r notebooks/requirements.txt && python -m pytest tests/test_healthkit_notebook.py -rs
 
 # Self-hosted viewer (npm, not bun — the mirror image of site/), from the root
 cd web && npm ci && npm run check:catalog && npm run lint && \
@@ -113,15 +118,27 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   default user, `ensureUser`s the row (FK target) before any insert, and tags
   every row with it. The `{"profile":…}` line carries the complete identity
   snapshot (name/email/dob/sex); null or omitted fields clear stored values.
-  DOB/sex feed HR zones. **Writes are already multi-user and reads are not:**
-  every schema this repository can build carries `user_id` from file 000, and
-  `ensureUser` creates whatever id arrives in the header, so a second phone's
-  rows land in a populated database without a wipe — but the product API and
-  the web viewer each serve exactly one `PULS_USER_ID`, so those rows are
-  stored and nothing shows them. Grafana's health dashboard is the one
-  exception: it has a `user` template variable over the `users` table. Nothing
-  binds the token to a user either, so `X-User-ID` remains unauthenticated
-  tenant selection (SRV-8). `user_id` joins
+  DOB/sex feed HR zones. **Writes are multi-user, and reads are scoped per
+  request:** every schema this repository can build carries `user_id` from
+  file 000, and `ensureUser` creates whatever id arrives in the header, so a
+  second phone's rows land in a populated database without a wipe. The
+  product API answers every `/v1` request for one user — the `user=<uuid>`
+  query parameter, else `PULS_USER_ID` — settled once by the `scopeUser`
+  middleware (`server/api/main.go`, after `auth`) and passed to every `Store`
+  read as an explicit argument; `GET /v1/users` lists who exists. Naming
+  anyone but the default is gated by `PULS_MULTI_USER` (default off): off, it
+  is **403 `multi-user reads are disabled`**, never a quiet answer for the
+  default user, and neither that nor a malformed value (400) charges the
+  auth-failure limiter. The MCP server takes the user as a tool argument and
+  the web viewer picks one per session (a cookie), both over that same
+  parameter; Grafana's health dashboard has its own `user` template variable
+  over the `users` table. The one static `PULS_API_TOKEN` is bound to nobody,
+  so turning the gate on widens what it reads to everyone on the server — the
+  reason it defaults to off. A per-device token (`device_tokens`, `server/ingest/auth.go`, issued with
+  `make devices`) is bound to a user: `X-User-ID` must be absent or equal to
+  it, anything else is 403. The shared `PULS_TOKEN` is not, so while it is
+  enabled (`PULS_ALLOW_SHARED_TOKEN`, default true) `X-User-ID` remains
+  unauthenticated tenant selection with it. `user_id` joins
   the conflict target where identity would otherwise collide across users
   (`activity_summaries` PK `(user_id, date)`; `aggregate_samples` PK
   `(series_id, bucket_start, user_id)`); UUID-keyed sample tables keep their UUID
@@ -289,16 +306,23 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   than a copy, so it can push detail screens the footer knows nothing about —
   that is why the `NavigationStack` carries `.id(step)`; removing it leaves a
   pushed category sitting on top of the next step.
-- **`site/`, `knowledge-base/` and `blog/` are siblings at the repository root.**
+- **`site/`, `knowledge-base/` and `blog/` are siblings at the repository root,
+  and `site/` also reads eleven documentation files from the tree.**
   The site reads its content by relative path —
   `path.join(process.cwd(), "..", "knowledge-base")` in `site/src/lib/api.ts`,
-  `../blog/articles` in `site/src/lib/blog.ts`, and `cp -r ../blog/images/.` in
-  `site/package.json`'s `copy-blog-images`. Move or rename any of the three and
-  the loaders log "dir not found", return nothing, and the build **still
+  `../blog/articles` in `site/src/lib/blog.ts`, `cp -r ../blog/images/.` in
+  `site/package.json`'s `copy-blog-images`, and the explicit manifest in
+  `site/src/lib/docs.ts` (eleven files — the server, protocol, database,
+  export, AI, MCP, viewer and Swift-package READMEs and guides, plus
+  `SECURITY.md`, `CHANGELOG.md` and `docs/roadmap.md` → `/docs/<slug>/`,
+  with relative links rewritten to the site route or to the file on GitHub;
+  the markdown is never edited for the site). Move or rename any of these and
+  the loaders log "not found", return nothing, and the build **still
   succeeds** — it just exports far fewer pages. The count is the only alarm, so
-  the `site` CI job asserts it (177 type pages, one per tracked YAML file, and
-  one page per `blog/articles/*.mdx`). Keep that check honest rather than
-  loosening it.
+  the `site` CI job asserts it (177 type pages, one per tracked YAML file,
+  one page per `blog/articles/*.mdx`, and one `/docs/` page per manifest
+  entry — the `manifest=11` constant in `ci.yml` moves with the manifest).
+  Keep that check honest rather than loosening it.
 - **The app is shipped software, not a source drop.** It is published on the
   App Store as
   [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) (free,
@@ -419,8 +443,11 @@ outside this repository — nothing here assumes a particular machine.
   looks like a release). Anything that changes a Dockerfile, a build context
   or a build arg has to change all three of: that overlay, the `images` job
   in `ci.yml`, and the build matrix in `release.yml`. `PULS_VERSION` in
-  `.env` picks the tag; upgrading is bump it, then `docker compose pull &&
-  docker compose up -d` (`make pull up`), with `migrate` running first.
+  `.env` picks the tag; upgrading is bump it, bring the checkout to the same
+  release (the compose file and `db/migrations/`, which `migrate` mounts, come
+  from it — an image ahead of its checkout meets a schema it does not know),
+  then `docker compose pull && docker compose up -d` (`make pull up`), with
+  `migrate` running first.
 - CI is `.github/workflows/ci.yml` (Go vet/tests, lint, shellcheck,
   `scripts/check-public-tree.sh`, `docker compose config` over **both**
   compose variants, and an `images` job that builds all four images for
@@ -494,6 +521,24 @@ outside this repository — nothing here assumes a particular machine.
   `X-Forwarded-Host` may choose the host `/openapi.json` advertises, which
   matters because that endpoint is unauthenticated and `docs/ai.md` tells
   people to hand the document to ChatGPT alongside the token.
+- **Ingest checks the shared token first, in memory, then hashes the bearer
+  and looks it up in `device_tokens`** (`server/ingest/auth.go`; the limiter
+  check still comes before both). A database error during that lookup is
+  **503 `authentication unavailable`, never 401**, and is not charged to the
+  failure limiter: the app retries 5xx but treats 401 as terminal, so a 401
+  there would tell the user their token is wrong and stall syncing until they
+  retyped it. Only wrong credentials — missing bearer, unknown hash, revoked
+  token — charge the limiter; a user mismatch (403) does not, because it is a
+  misconfigured phone holding a valid credential. Tokens are stored as a
+  plain SHA-256 (the preimage is 256 random bits; a salt would only cost the
+  UNIQUE lookup), and `grafana` has SELECT on every table by default
+  privilege, so `099_read_roles.sh` revokes it on `device_tokens` on every
+  run. `api_reader` is the opposite: an exact grant list with a `DO` block
+  that raises if the ACL set differs, so a table the product API newly reads
+  goes on BOTH the `GRANT` and the `expected_public` rows — `batches` joined
+  it for `/v1/users` (it holds no credential; a batch's token is an integer
+  id into `device_tokens`). `PULS_TOKEN` is optional now; do not make it
+  required again.
 - **`/healthz` is unauthenticated on both services, so it must not touch the
   pool per request** (`server/ingest/health.go`, `server/api/health.go` — again
   a copy). The database status is cached for two seconds and concurrent callers

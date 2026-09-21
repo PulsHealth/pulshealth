@@ -16,74 +16,108 @@ site's export-count assertion.
 
 ## 1. Cut the first release — OSS-8
 
-**This is the one thing that blocks a stranger following the README.**
-`server/docker-compose.yml` pulls `ghcr.io/pulshealth/<name>:${PULS_VERSION:-latest}`,
-`.github/workflows/release.yml` has never run, and there are no tags, so
-`latest` does not exist and the documented quickstart cannot pull. Only
-`scripts/bootstrap.sh --build` works today. The README says so honestly, which
-is the right stopgap and not a substitute.
+**Done.** `v0.1.0` was tagged on 2026-09-14 and `release.yml` published all
+four images for amd64 and arm64; the packages were made public on
+2026-09-18, and 0.2.0 follows (`CHANGELOG.md` has both entries). 0.x rather
+than 1.0.0 deliberately, so config and schema can still change without a
+major. The app's 1.4 (§2) and the protocol's 1 are two other numbers; the
+changelog's header says which is which.
 
-**0.1.0 is chosen and written up**: `CHANGELOG.md` carries the entry, dated
-2026-09-09 — move the date if the tag slips. 0.x rather than 1.0.0 deliberately,
-so config and schema can still change without a major. The app's 1.4 (§2) and
-the protocol's 1 are two other numbers; the changelog's header says which is
-which.
+**Gotcha for anyone publishing from a new organization or a fork:** a
+package `release.yml` creates starts private (its header comment says so),
+and making it public is a by-hand step per package in its settings on
+GitHub — but that step was not available until the PulsHealth
+organization's package-creation policy was changed to allow public
+packages. Change the organization's policy first, then flip each of the
+four.
 
-What is left:
+**The quickstart is verified from published images** (2026-09-18). A fresh
+`git clone --branch v0.1.0` from GitHub, with no ghcr.io login and no local
+`ghcr.io/pulshealth/*` images, then `scripts/bootstrap.sh --no-qr` with no
+`--build`: Compose pulled all four `latest` images anonymously (the same
+digests as `0.1.0`), `migrate` applied the 13 schema files and ran both
+scripts, and ingest answered `/healthz` and `/v1/capabilities` with the
+generated token. `smoke_test.py --url … --token …` posted the whole fixture
+corpus and passed every check — expected counts, replay idempotency, the
+documented rejections — and the product API read the rows back
+(`/v1/profile`, `/v1/samples`, `/v1/workouts`, `/v1/activity/summary`,
+`/v1/sleep/daily`), with the MCP server, the web viewer (Basic auth on) and
+Grafana (datasource OK) all healthy. Its limits, stated plainly: it ran in a
+scratch clone on the maintainer's Mac (Docker Desktop, arm64), not on a
+separate machine; the TimescaleDB and Grafana images were already cached
+there, so their cold pull was not exercised; and **no phone was paired** —
+the fixture corpus stood in for the app.
 
-- push `v0.1.0`, and let `release.yml` publish all four images for amd64 and
-  arm64;
-- flip each new package's visibility to public **once**, by hand, in the GitHub
-  package settings — `release.yml` creates them private (its header comment
-  says so, and nothing in CI can do it for you);
-- run `scripts/bootstrap.sh` on a scratch machine with no `--build`, and get to
-  a paired, syncing stack from published images alone. Until someone has
-  actually done that, the quickstart is unverified;
-- drop the "images are not published yet" bullet from `README.md`'s
-  pre-release block, which stops being true the moment the images exist.
+What it turned up is fixed in the README: an upgrade has to move the
+checkout as well as the images (the compose file and the migrations come
+from it), a default run's pairing block has no URL until `--lan` or `--url`,
+and the host ports are fixed. One thing is left as it is: the quickstart
+clones `main`, which between releases can carry migrations the `latest`
+images have not caught up with. Harmless while every migration is additive;
+if one ever is not, the quickstart should clone the release tag instead.
 
-## 2. Submit the app's 1.4 — R-STORE, maintainer only
+## 2. Submit the app's 1.4 — R-STORE
 
-`PulsHealth/project.yml` is at `MARKETING_VERSION 1.4` / `CURRENT_PROJECT_VERSION 14`;
-`docs/appstore/README.md` § Release record shows **1.3** on the store. So first-run
-onboarding with QR pairing, Keychain token storage, per-server sync state, the
-capabilities-gated UI and the published type vocabulary are all built and not in
-anyone's hands.
+**Submitted 2026-09-18: 1.4 (14), waiting for review.** Worked from
+`docs/appstore/README.md`'s checklist, plus what the checklist did not
+anticipate:
 
-The procedure already exists — work `docs/appstore/README.md`'s submission
-checklist top to bottom. The steps that need a person with the developer
-account are: confirming the team and `Local.xcconfig`, capturing the 6.9"
-screenshot set on a real device, standing the review backend up
-(`review-backend.md`) and filling the four placeholders in `review-notes.md`,
-archiving and uploading, submitting, and afterwards tearing the review instance
-down and rotating its token. Add the 1.4 row to the Release record when it goes
-live, and re-read the privacy policy against the build before submitting —
-`docs/appstore/README.md` § Keeping these documents true lists what a change
-would have invalidated.
+- **Upload validation failed twice, both fixed in #64.** The store record has
+  been universal since 1.3, but `project.yml` targeted iPhone only, and an
+  update may not drop a device family (QA1623); and the primary 1024px icon
+  carried an alpha channel.
+- **Walking `review-notes.md` on an erased iOS 26.5 simulator against the live
+  review instance** (fixed in #66): iOS 26's Health app has no Browse tab, so
+  the round-trip step was wrong, and the filled-in notes were over App Store
+  Connect's 4000-character limit.
+- **The store listing still described 1.3**, a CSV/JSON export app that could
+  request data from others by QR code, which 1.4 does not do. The subtitle,
+  description, promotional text and keywords now come from
+  [`docs/appstore/listing.md`](appstore/listing.md); the Support URL (which
+  returned 404) and the Privacy Policy URL point at `/support` and `/privacy`;
+  the screenshots are the four first-run screens (see `listing.md` §
+  Screenshots).
+
+Still to do: when it is approved, tear the review instance down and destroy its
+token (`review-backend.md` § 6), and add the 1.4 row to the Release record. The
+real-data screenshot set (dashboard, type detail, background activity) is still
+owed — § 3.
 
 ## 3. Screenshots — OSS-4
 
-There is not one screenshot in the repository. A stranger deciding whether to
-self-host a health-data stack gets no picture of the app, the web viewer or the
-Grafana dashboards. The 6.9" set from §2 covers the app; the viewer and the
-dashboards need their own, taken against demo data (`npm run dev` fills the
-viewer; never a real export). `README.md` § Components is where they belong.
+**The app half is done.** Four screens from the maintainer's phone (dashboard,
+a type's detail, background activity, the log) plus three first-run screens
+from the simulator make up the App Store set submitted with 1.4, and four of
+them are in `README.md` § Components (`docs/images/app/`). Still missing: the
+web viewer and the Grafana dashboards, taken against demo data (`npm run dev`
+fills the viewer; never a real export).
 
 ## 4. Per-device tokens — SRV-8
 
-The weakest part of a published ingest surface, and the one the README and the
-protocol spec both already admit: one static `PULS_TOKEN` (`server/ingest/main.go`),
-and `X-User-ID` is unauthenticated tenant selection, so anyone holding the token
-can write — or delete — as any user. Failed-auth rate limiting narrows guessing;
-it does nothing about a leaked token.
+**Server side shipped in 0.2.0.** The ingest server issues per-device
+tokens from the CLI (`make devices ARGS='issue|list|rename|revoke …'`,
+`server/ingest/devices_cli.go`), stores only their SHA-256
+(`014_device_tokens.sql`), binds each to a user so `X-User-ID` must be absent
+or equal (403 otherwise, `server/ingest/auth.go`), records last use, revokes
+one at a time, and stamps every batch with the device that wrote it. The
+shared `PULS_TOKEN` keeps working and is on by default;
+`PULS_ALLOW_SHARED_TOKEN=false` turns it off, which is the setting that
+closes the `X-User-ID` hole. `schemaVersion` did not move: a v1 receiver is
+unaffected by how a server chose to issue tokens, and the protocol spec now
+says a receiver MAY bind a token to a user.
 
-The shape the plan settled on: enroll → pending → approve from the CLI, hashed
-at rest, last-seen recorded, revocable, and **bound to a user id** so the header
-stops being a free choice. The shared token keeps working through the
-transition. This is a schema change (a new `NNN_` migration), an ingest change,
-and a protocol documentation change in the same pull request — it does not move
-`schemaVersion`, because a v1 receiver is unaffected by how the server chose to
-issue tokens.
+What was deliberately left for a **client follow-up**, since each needs an
+app release:
+
+- Phone-side enrollment — an unauthenticated `POST /v1/devices/enroll` that
+  creates a *pending* row the operator approves (`devices approve`), so the
+  pairing flow is "scan, then approve on the server" rather than "issue on the
+  server, then type". The plan's enroll → pending → approve shape; the
+  `status` column already admits it.
+- The app's connection test telling a 403 (token bound to a different user
+  ID than the one configured on the phone) apart from a wrong token.
+- `scripts/bootstrap.sh` issuing a device token for the pairing block instead
+  of printing `PULS_TOKEN`, once the app can be paired that way.
 
 ## 5. Multi-user reads — SRV-11
 
@@ -93,36 +127,35 @@ repository can build has `user_id` from migration 000, and `ensureUser` creates
 whatever id the header carries, so a second phone's rows land in a populated
 database with no wipe.
 
-What is missing is reading them back. `server/api` and `web` are each
-configured with a single `PULS_USER_ID` and answer for that user alone; only
-Grafana's health dashboard has a `user` variable. The work is to scope the API
-per request — most naturally by the token of §4, which is why that comes first —
-and to give the viewer a way to choose. Until then the honest workaround is a
-second API/viewer pair on a different `PULS_USER_ID`.
+What was missing was reading them back. **The API side is done** (2026-09):
+every `/v1` route takes `?user=<uuid>`, defaulting to `PULS_USER_ID`; naming
+anyone else is gated by `PULS_MULTI_USER` (default off, 403 otherwise — never a
+quiet answer for the default user); `GET /v1/users` lists who exists with
+their upload counts; `puls-export --user` and the OpenAPI document carry the
+parameter; `api_reader` reads `batches` for it. Built on that contract: the
+**web viewer** (merged alongside) lets you choose a user per session over the
+same parameter, and the **MCP server** (merged too) takes the user as a tool
+argument, lists users, and can be pinned to one person. Still open: nothing
+binds the product API token to a user — with the gate on, `PULS_API_TOKEN`
+reads everyone — so a per-user read token (the read-side twin of §4) is the
+next step if a household wants a token per person rather than one for the
+server.
 
-## 6. Surface the ingest response in the client — PROTO-8
+## 6. Put the documentation on the site — Phase 2 leftover
 
-The smallest item here. The server already answers with `{"accepted","duplicates"}`
-(`server/ingest/store.go`, specified in `docs/protocol/README.md`), and
-`HTTPSyncTransport.upload` throws the body away —
-`UploadResult` carries only `bytesSent` and `duration`
-(`PulsHealthSync/Sources/PulsHealthSync/Transport/SyncTransport.swift`). Decoding
-it would let the app's log say how much of a batch was new rather than only how
-much it sent, which is exactly what a user re-running a backfill wants to know.
-Optional field, tolerant decoding, no protocol bump.
+**Done** (2026-09), as a third content source in the existing static export
+rather than a second site: `site/src/lib/docs.ts` holds an explicit manifest
+of five repository files — the protocol spec, `server/README.md`, `docs/ai.md`,
+`docs/export.md` and `docs/database-guide.md` — rendered at
+`pulshealth.com/docs/<slug>/` from the markdown as it is on `main`, with the
+spec's own heading anchors preserved and relative links rewritten to the site
+route or to the file on GitHub. The `/sync` page, the header and the footer
+point at those pages now, and the `site` CI job asserts the docs count
+alongside the other two. What is not rendered (the JSON Schemas, the fixture
+corpus, `catalog.md`, the Swift package and MCP READMEs) stays on GitHub, one
+link away from the index.
 
-## 7. Put the documentation on the site — Phase 2 leftover
-
-**Done 2026-09-15.** `site/` renders eleven repository documents under
-`/docs/<slug>/` from the files themselves (`site/src/lib/docs.ts` is the
-registry, `site/src/lib/markdown.tsx` the renderer), as a third content source
-in the same static export; `/privacy` renders `docs/privacy-policy.md` the same
-way. Relative links between documents resolve on-site, everything else to
-GitHub. Left for later: the two `mermaid` fences in the database guide render
-as code, not diagrams, and the knowledge-base pages still lack per-page
-metadata (a separate piece of work).
-
-## 8. Alternative sinks and local export — APP-11, APP-12
+## 7. Alternative sinks and local export — APP-11, APP-12
 
 `HealthSyncEngine.buildTransport` hardcodes `HTTPSyncTransport` and a concrete
 `ServerAPIClient`, and `apiClient` is typed as that concrete class rather than a
@@ -138,20 +171,23 @@ health data (today's `ShareLink` exports the diagnostics bundle, not samples).
 Both are "later" for a reason: the HTTP path is what everyone uses. Do APP-11
 only when a second sink actually exists to justify it.
 
-## 9. AI extras — AI-6, AI-8
+## 8. AI extras
 
-- **AI-6, `GET /v1/summary?range=7d` returning compact markdown.** Cheap, and
-  useful for pasting into a chat that has no MCP connection.
-- **AI-8, reframe the exploration notebook.** `notebooks/healthkit_database_exploration.ipynb`
-  is still framed as a database tour; the plan wanted an "analyze your data"
-  version with an LLM section.
+Nothing outstanding. **AI-8 is done** (2026-09):
+`notebooks/healthkit_database_exploration.ipynb` analyzes one user's synced
+data — coverage, activity trends, resting heart rate and HRV, sleep,
+workouts, correlations — over the daily surfaces the product API serves,
+and ends by rendering the `GET /v1/summary` page from the frames with the
+three ways to hand it to an assistant (paste, `curl`, MCP) and an optional
+`anthropic` SDK cell that stays skipped unless `ANTHROPIC_API_KEY` is set.
+The schema tour it used to be lives in `docs/database-guide.md`.
 
-**AI-7 (a raw-SQL MCP tool) should be dropped rather than deferred.** It
-contradicts the standing invariant that `server/mcp` is a read-only client of
-the product API and never holds a database URL. Anyone who wants SQL has
-`psql` and `docs/database-guide.md`.
+**AI-7 (a raw-SQL MCP tool) is dropped**, not deferred: it contradicts the
+standing invariant that `server/mcp` is a read-only client of the product API
+and never holds a database URL. Anyone who wants SQL has `psql` and
+`docs/database-guide.md`.
 
-## 10. Standing maintenance
+## 9. Standing maintenance
 
 Not backlog — things that come due on someone else's schedule.
 
@@ -161,6 +197,6 @@ Not backlog — things that come due on someone else's schedule.
 | A new iOS runtime, again | Re-run the app-hosted `AggregateMatrixTests` — 372 type×function combos — since the legal set is HealthKit's, not ours. |
 | A major Xcode/iOS SDK update | Refresh `010_category_labels.sql` from `HKCategoryValues.h` and check the seed shape (`server/README.md`). |
 | Never yet done on real data | The backup restore drill. The one recorded in `server/README.md` ran against a throwaway stack; nothing else verifies that a dump restores. |
-| Dependabot re-proposes eslint 10 or TypeScript 7 for `web`/`site` | Check upstream first, then close as before. Both are blocked by `eslint-config-next`'s own dependencies, not by this repository: `typescript-eslint` refuses TS >= 7.0 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)), and `eslint-plugin-react` still calls `context.getFilename()`, which ESLint 10 removed. |
-| A red `advisories` workflow run | Bump the dependency in its own pull request. `advisories.yml` is a separate workflow precisely so it can go red without blocking a merge — or a release, which now calls `ci.yml` and would otherwise be gated on it. |
-| `tests/test_healthkit_notebook.py` | Referenced by no workflow, so it only runs by hand. Either wire it into CI or say in the file that it is manual. |
+| Dependabot re-proposes eslint 10 or TypeScript 7 for `web`/`site` | Check upstream first, then close against [#37](https://github.com/PulsHealth/pulshealth/issues/37), which records the state of both blockers. Both are `eslint-config-next`'s own dependencies, not this repository: `typescript-eslint` refuses TS >= 7.0 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)), and `eslint-plugin-react` still calls `context.getFilename()`, which ESLint 10 removed. Still true against `eslint-config-next` 16.3.5 (2026-09-14). |
+| Dependabot re-proposes `lucide-react` 1.x for `site` | Close against [#39](https://github.com/PulsHealth/pulshealth/issues/39). v1 removed the brand marks (`Github`, `Twitter`, `Facebook`, `Linkedin`) that the header, footer and share links draw, and they are not coming back; landing it means choosing replacement marks, which is a visual change, not a bump. Land the rest of the group by hand, as #38 and #45 did. |
+| A red `advisories` workflow run | Bump the dependency in its own pull request. `advisories.yml` is a separate workflow precisely so it can go red without blocking a merge — or a release, which now calls `ci.yml` and would otherwise be gated on it. It runs on the Monday schedule, on `workflow_dispatch`, and on pull requests that touch a lockfile — not on every push, because the finding describes the dependency tree rather than the commit, and re-reporting it per push mails a failure notice for news that has not changed. |

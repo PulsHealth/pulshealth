@@ -201,7 +201,7 @@ Over the API rather than Postgres because the token boundary and the
 shape, and it keeps the double-counting gotchas out of the model's hands. A
 raw-SQL tool over the `grafana` role is more powerful but hands an agent
 arbitrary SQL against a table holding name and DOB; offer it later as an
-explicit opt-in.
+explicit opt-in. (That later offer, AI-7, was dropped: see the AI table.)
 
 Go keeps the server side single-language and distroless, reuses the API's
 types, and produces one binary for `stdio` (Claude Desktop, Claude Code,
@@ -273,10 +273,10 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | SRV-5 | Published images on `ghcr.io/pulshealth/{ingest,api,web,mcp}` with semver tags; compose pulls by default, `compose.build.yml` override for developers. | M |
 | SRV-6 | Ingest connects as the scoped `ingest` role by default on fresh installs. | M |
 | SRV-7 | Auth-failure rate limiting on ingest and API (per-IP token bucket). | S |
-| SRV-8 | Per-device tokens: enroll → pending → approve via CLI; hashed at rest; last-seen; revoke; token bound to user (closes the `X-User-ID` hole). Shared `PULS_TOKEN` stays valid during migration. | S |
+| SRV-8 | Per-device tokens: enroll → pending → approve via CLI; hashed at rest; last-seen; revoke; token bound to user (closes the `X-User-ID` hole). Shared `PULS_TOKEN` stays valid during migration. | S — server side done 2026-09: CLI-issued (`make devices`), hashed, last-seen, revocable, bound to a user, shared token optional. Phone-side enroll/approve remains ([`roadmap.md`](roadmap.md) § 4). |
 | SRV-9 | Backups: opt-in `pg_dump` sidecar service with retention, and a documented restore drill. | S |
 | SRV-10 | Web viewer auth (basic auth or the API token) and a viewer-scoped DB role instead of `grafana`. | S |
-| SRV-11 | Second-user story without a volume wipe. | S — half true already: writes have always been multi-user (`ensureUser` creates any id the header carries), so no wipe is involved. What is missing is the **read** side — the API and web viewer each serve one `PULS_USER_ID`. |
+| SRV-11 | Second-user story without a volume wipe. | S — writes have always been multi-user (`ensureUser` creates any id the header carries), so no wipe is involved. Read side, API half done 2026-09: `?user=` on every `/v1` route behind `PULS_MULTI_USER`, `GET /v1/users`, `puls-export --user`. The web viewer's per-session switcher is in; the MCP server (tool argument) lands in a sibling change ([`roadmap.md`](roadmap.md) § 5). |
 | SRV-12 | Grafana contact point from `${GRAFANA_ALERT_EMAIL}`; alert thresholds documented as tunables. | S |
 | SRV-13 | Product API additions agents ask for first: `/v1/sleep/daily` (category daily), `/v1/samples` (bounded raw window), `/v1/workouts/{uuid}/series`, `/v1/state-of-mind`; pagination on daily metrics. | S |
 
@@ -289,9 +289,9 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | AI-3 | Export: `GET /v1/export?format=csv\|jsonl&types=&start=&end=` and a `puls export` CLI, for uploading to Claude Projects / ChatGPT / notebooks. Parquet later. | S |
 | AI-4 | `llms.txt` at the docs site and an `AGENTS.md` in the repo built from the database guide and the type catalog. | S |
 | AI-5 | ChatGPT Action / custom GPT recipe straight from `/openapi.json`. Near-free once the API is reachable. | S |
-| AI-6 | `GET /v1/summary?range=7d` returning compact markdown for paste-into-any-chat use. | C |
-| AI-7 | Opt-in raw SQL MCP tool over a read-only role, off by default. | C |
-| AI-8 | The existing exploration notebook reframed as "analyze your data" with an LLM section. | C |
+| AI-6 | `GET /v1/summary?range=7d` returning compact markdown for paste-into-any-chat use. | C — **done** 2026-09: `range` of 7d/14d/30d/90d, `format=markdown\|json`, `get_summary` on the MCP server; `docs/ai.md` has the curl-and-paste recipe. |
+| AI-7 | Opt-in raw SQL MCP tool over a read-only role, off by default. | C — **dropped**: it contradicts the invariant that `server/mcp` is a read-only client of the product API and never holds a database URL. Anyone who wants SQL has `psql` and `docs/database-guide.md`. |
+| AI-8 | The existing exploration notebook reframed as "analyze your data" with an LLM section. | C — **done** 2026-09: six analyses over `metric_daily`, the rings, sleep and workouts, then the `/v1/summary` page rendered from the frames and an optional, skipped-by-default Claude cell. |
 
 ### OSS hygiene (R-OSS)
 
@@ -304,7 +304,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | OSS-5 | Personal scrub complete (appendix checklist), verified by a CI grep gate for the known identifiers. | M |
 | OSS-6 | `CLAUDE.md` split: public invariants + gotchas; private ops elsewhere. Delete the old agent-planning docs directory. | M |
 | OSS-7 | CI: `ios-ci.yml` as-is; `validate` + `advisories` jobs moved to a generic `ci.yml`; release workflow builds and pushes images on tag. | M |
-| OSS-8 | `CHANGELOG.md` and tagged releases. | S |
+| OSS-8 | `CHANGELOG.md` and tagged releases. | S — **done** 2026-09: `v0.1.0` published 2026-09-14, images public 2026-09-18, quickstart verified from them ([`roadmap.md`](roadmap.md) § 1). |
 | OSS-9 | Map tile usage-policy note in the web README (OSM/CARTO free endpoints discourage redistribution). | S |
 
 ### App Store (R-STORE)
@@ -352,7 +352,11 @@ the app syncs to it, with version negotiation and safe token handling.
   SRV-6 scoped role default, SRV-7 rate limit, SRV-9 backups, SRV-10 web
   auth, SRV-12.
 - APP-9 QR pairing on the client side of SRV-4's printed QR.
-- Docs site on `pulshealth.com` (static, from `docs/`).
+- Docs site on `pulshealth.com` (static, from `docs/`) — **done** (2026-09),
+  as a third content source in the existing `site/` export rather than a
+  second site: `/docs/` renders the protocol spec, `server/README.md`,
+  `docs/ai.md`, `docs/export.md` and `docs/database-guide.md` from the
+  repository (`site/src/lib/docs.ts`).
 
 Exit: a Linux box with Docker goes from nothing to paired and syncing in
 under ten minutes without editing a file by hand.
@@ -385,8 +389,9 @@ channel) was skipped; the app went straight to the store.
 
 ### Later
 
-- SRV-8 per-device tokens, SRV-11 multi-user reads, APP-11 sink factory,
-  APP-12 file export, AI-6..8, PROTO-8.
+- SRV-8 per-device tokens (server side done; phone-side enrollment remains),
+  SRV-11 multi-user reads (API, web viewer and MCP done; no per-user read token yet), APP-11 sink factory,
+  APP-12 file export.
 
 These, plus the release and submission work the phases above did not cover,
 are tracked with current status and sequencing in [`roadmap.md`](roadmap.md).

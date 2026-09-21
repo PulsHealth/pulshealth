@@ -4,7 +4,8 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { BookOpen, Briefcase, FileText, Github, Menu, PenLine, Server, Smartphone, Star } from "lucide-react"
+import { BookOpen, Briefcase, FileText, Menu, PenLine, Server, Smartphone, Star } from "lucide-react"
+import { GitHubIcon } from "@/components/brand-icons"
 
 import { cn } from "@/lib/utils"
 import { GITHUB_URL, formatStars } from "@/lib/github"
@@ -82,7 +83,7 @@ export function SiteHeader({ stars }: { stars: number | null }) {
           <SearchTrigger />
           <Button asChild variant="outline" size="sm" className="hidden gap-1.5 md:inline-flex">
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="PulsHealth on GitHub">
-              <Github className="h-4 w-4" />
+              <GitHubIcon className="h-4 w-4" />
               {starLabel ? (
                 <>
                   <Star className="h-3.5 w-3.5 opacity-70" aria-hidden />
@@ -146,7 +147,7 @@ export function SiteHeader({ stars }: { stars: number | null }) {
                 <div className="mt-auto border-t pt-4">
                   <Button asChild variant="outline" className="h-12 w-full text-base">
                     <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
-                      <Github className="mr-2 h-4 w-4" />
+                      <GitHubIcon className="mr-2 h-4 w-4" />
                       {starLabel ? `Star on GitHub · ${starLabel}` : "View on GitHub"}
                     </a>
                   </Button>

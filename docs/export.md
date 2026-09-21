@@ -32,9 +32,18 @@ curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
 | `types` | `daily_metrics` only | comma-separated HealthKit identifiers |
 | `type` | `samples` only | exactly one HealthKit identifier |
 | `activityType` | `workouts` only | keep one activity type |
+| `user` | no | the user to export, a UUID; absent means the server's `PULS_USER_ID`. Anyone else needs the server to run with `PULS_MULTI_USER=true`, or the answer is a `403` |
 
 `limit` and `offset` do not apply: an export is bounded by its range, not by a
 page size, and `workouts` returns the whole range rather than one page.
+
+**Whose data.** Every export is one user's. Without `user` it is the server's
+default (`PULS_USER_ID`), as every other endpoint. `user=<uuid>` asks for
+someone else — `GET /v1/users` lists who exists — and the server allows that
+only with `PULS_MULTI_USER=true`; otherwise it answers `403
+{"error": "multi-user reads are disabled"}` rather than quietly exporting the
+default user's data under another name. A value that is not a UUID is a
+`400`. Neither refusal counts against the failed-authentication limit.
 
 **Range caps.** `samples` keeps the **31 days** `/v1/samples` enforces — a
 busy type runs to hundreds of thousands of rows a month. Every other dataset
@@ -134,6 +143,7 @@ with the endpoint.
 | `--start`, `--end` | — | `YYYY-MM-DD` or epoch milliseconds; the range is half-open |
 | `--types`, `--type`, `--activity-type` | — | the per-dataset filters above |
 | `--time-zone` | `$PULS_TIME_ZONE`, else UTC | the zone a `YYYY-MM-DD` bound is read in |
+| `--user` | `$PULS_USER_ID`, else none | the user to export; none leaves it to the server's default |
 | `-o` | standard output | write to this file |
 | `--version` | | print the version and exit |
 
@@ -141,6 +151,8 @@ with the endpoint.
 `0` on success, `2` for a mistake in the command line, `1` for a failed
 download; the output file named by `-o` is created only once the server has
 answered `200`, so a rejected request never truncates the previous export.
+A `403` is explained the way a `401` is: the server only exports its
+`PULS_USER_ID` unless it runs with `PULS_MULTI_USER=true`.
 
 ## See also
 

@@ -711,7 +711,8 @@ public actor HealthSyncEngine {
                     sampleDateRange: dates.isEmpty ? nil
                         : (dates.min()! ... dates.max()!),
                     duration: queryDuration + uploadResult.duration,
-                    latency: latency
+                    latency: latency,
+                    receipt: uploadResult.receipt
                 )
                 await reportWakeBatch(
                     type: identifier, samples: samples.count,
@@ -724,7 +725,7 @@ public actor HealthSyncEngine {
                 backfillRuns[identifier]?.samplesThisRun += samples.count
                 await eventLog.log(
                     .debug, type: identifier,
-                    "Page \(pages): \(samples.count) samples, \(deletions.count) deletions — query \(String(format: "%.2f", queryDuration))s, upload \(String(format: "%.2f", uploadResult.duration))s (\(uploadResult.bytesSent) B)"
+                    "Page \(pages): \(samples.count) samples\(uploadResult.receipt?.sampleOutcome.map { " (\($0))" } ?? ""), \(deletions.count) deletions — query \(String(format: "%.2f", queryDuration))s, upload \(String(format: "%.2f", uploadResult.duration))s (\(uploadResult.bytesSent) B)"
                 )
                 notifyChanged()
 

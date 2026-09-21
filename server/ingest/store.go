@@ -209,24 +209,27 @@ func (st *Store) insertBatchOnce(ctx context.Context, b *Batch, bodyBytes int64)
 	if err := ensureUser(ctx, tx, userID); err != nil {
 		return res, fmt.Errorf("ensure user: %w", err)
 	}
-	var wakeID, trigger any
+	var wakeID, trigger, deviceTokenID any
 	if b.Header.WakeID != "" {
 		wakeID = b.Header.WakeID
 	}
 	if b.Header.Trigger != "" {
 		trigger = b.Header.Trigger
 	}
+	if b.Header.DeviceTokenID != 0 {
+		deviceTokenID = b.Header.DeviceTokenID
+	}
 	tag, err := tx.Exec(ctx, `
 		INSERT INTO batches (batch_id, device_id, user_id, type_identifier, reason,
 		                     sample_count, deletion_count, aggregate_count,
 		                     activity_summary_count, bytes, exported_at,
-		                     wake_id, trigger, parse_ms, insert_ms)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NULL)
+		                     wake_id, trigger, parse_ms, insert_ms, device_token_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NULL, $15)
 		ON CONFLICT (batch_id) DO NOTHING`,
 		b.Header.BatchID, b.Header.DeviceID, userID, b.Header.Type, b.Header.Reason,
 		b.Header.SampleCount, b.Header.DeletionCount, b.Header.AggregateCount,
 		b.Header.ActivitySummaryCount, bodyBytes,
-		msToTime(b.Header.ExportedAt), wakeID, trigger, b.ParseMs)
+		msToTime(b.Header.ExportedAt), wakeID, trigger, b.ParseMs, deviceTokenID)
 	if err != nil {
 		return res, fmt.Errorf("reserve batch: %w", err)
 	}

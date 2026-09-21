@@ -135,19 +135,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # site/ reads knowledge-base/ and blog/ as repository-root siblings,
-          # by relative path (src/lib/api.ts, src/lib/blog.ts). Break that and
+          # site/ reads knowledge-base/, blog/ and the documentation manifest's
+          # five markdown files as repository-root siblings, by relative path
+          # (src/lib/api.ts, src/lib/blog.ts, src/lib/docs.ts). Break that and
           # the loaders log and return nothing: the build still SUCCEEDS, it
           # just exports far fewer pages. So assert the counts.
           types=$(git ls-files 'knowledge-base/*/**.yaml' | wc -l)
           built=$(find site/out/knowledge-base/types -name index.html | wc -l)
           posts=$(git ls-files 'blog/articles/*.mdx' | wc -l)
           blogs=$(find site/out/blog -mindepth 1 -maxdepth 1 -type d | wc -l)
+          # The docs manifest (DOCS in site/src/lib/docs.ts) is explicit, not
+          # a glob, so its length is a constant: bump it with the manifest.
+          manifest=11
+          docs=$(find site/out/docs -mindepth 1 -maxdepth 1 -type d | wc -l)
           echo "knowledge-base types: $types sources, $built pages"
           echo "blog articles: $posts sources, $blogs pages"
+          echo "documentation: $manifest manifest entries, $docs pages"
           test "$built" -eq "$types"
           test "$blogs" -eq "$posts"
+          test "$docs" -eq "$manifest"
           test -f site/out/index.html
+          test -f site/out/docs/index.html
           test -f site/out/sitemap.xml
 
   # The four app images build for linux/amd64 (no push) so a broken
@@ -407,6 +415,24 @@ jobs:
           # the grants under test are the ones production uses.
           PULS_API_WRITE_INTEGRATION_TESTS: "1"
         run: go test -race -count=1 -run Integration ./...
+
+      # The exploration notebook, executed end to end against a seeded schema.
+      # The test brings up its own throwaway TimescaleDB (the same pinned
+      # image, already pulled above) on a random loopback port, applies the
+      # schema with server/db/migrate.sh through the runner's psql, seeds a
+      # few HealthKit rows and runs every cell with nbclient — so it never
+      # touches the database the Go suites used. About half a minute.
+      - name: Set up Python for the notebook test
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: notebooks/requirements.txt
+
+      - name: Execute the exploration notebook against a seeded schema
+        run: |
+          python -m pip install --quiet -r notebooks/requirements.txt
+          python -m pytest tests/test_healthkit_notebook.py -rs
 
       - name: Remove the throwaway database
         if: always()

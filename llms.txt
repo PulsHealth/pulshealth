@@ -7,7 +7,7 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 ## Get it
 
 - The iOS app: https://apps.apple.com/us/app/pulshealth/id6757657354 — free, iPhone. It needs a backend of your own to sync to; `README.md` brings one up with one command.
-- The website: https://pulshealth.com — what the app does, the HealthKit knowledge base, and the blog. Its source is `site/` in this repository.
+- The website: https://pulshealth.com — what the app does, the HealthKit knowledge base, the blog, and the project documentation rendered from this repository at https://pulshealth.com/docs/. Its source is `site/` in this repository.
 
 ## Start here
 
@@ -18,20 +18,20 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 
 ## The protocol
 
-- [docs/protocol/README.md](docs/protocol/README.md): the Puls Sync Protocol v1 specification, written for receiver implementers.
+- [docs/protocol/README.md](docs/protocol/README.md): the Puls Sync Protocol v1 specification, written for receiver implementers. Rendered at https://pulshealth.com/docs/protocol/.
 - [docs/protocol/catalog.json](docs/protocol/catalog.json): the published type vocabulary — every HealthKit identifier with its kind, canonical unit and legal aggregate functions. Generated from the Swift catalog; never hand-edited.
 - [docs/protocol/catalog.md](docs/protocol/catalog.md): what the catalog's fields mean and how it is regenerated.
 - [examples/receivers/python-sqlite/README.md](examples/receivers/python-sqlite/README.md): a complete third-party receiver in standard-library Python.
 
 ## The data
 
-- [docs/database-guide.md](docs/database-guide.md): the authoritative guide to the schema — every table family, what each column means, which table answers which question, and the traps (device double counting above all).
-- [docs/export.md](docs/export.md): bulk export of a whole range as streamed CSV or JSONL, over `GET /v1/export` or the `puls-export` CLI.
-- [server/README.md](server/README.md): running the reference backend — Compose services, environment, schema migrations, the ingest wire format and the product API.
+- [docs/database-guide.md](docs/database-guide.md): the authoritative guide to the schema — every table family, what each column means, which table answers which question, and the traps (device double counting above all). Rendered at https://pulshealth.com/docs/database/.
+- [docs/export.md](docs/export.md): bulk export of a whole range as streamed CSV or JSONL, over `GET /v1/export` or the `puls-export` CLI. Rendered at https://pulshealth.com/docs/export/.
+- [server/README.md](server/README.md): running the reference backend — Compose services, environment, schema migrations, the ingest wire format and the product API. Rendered at https://pulshealth.com/docs/self-hosting/.
 
 ## AI assistants
 
-- [docs/ai.md](docs/ai.md): connecting Claude Desktop, Claude Code, Cursor or a ChatGPT Action to your own data, and what each tool answers.
+- [docs/ai.md](docs/ai.md): connecting Claude Desktop, Claude Code, Cursor or a ChatGPT Action to your own data, and what each tool answers. Rendered at https://pulshealth.com/docs/ai/.
 - [server/mcp/README.md](server/mcp/README.md): the MCP server itself — transports, configuration and its security model.
 
 ## Optional

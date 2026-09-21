@@ -13,7 +13,7 @@ This replaces an earlier post that described a hosted product and an AI agent. N
 - The app is free on the App Store and reads Apple Health read-only. It posts to one URL you choose and nowhere else.
 - The reference server is a Docker Compose stack: PostgreSQL 17 with TimescaleDB, a Go ingest API, a read-only product API, Grafana, a web viewer and an MCP server.
 - The wire format is specified, not just implemented, so a backend of your own is a supported path.
-- The server side is pre-release: the container images are not published yet, so the bootstrap script builds them from the checkout.
+- The server stack is at 0.2.0, with published container images for amd64 and arm64.
 </KeyTakeaways>
 
 ## What the app does
@@ -32,13 +32,9 @@ Everything binds to loopback by default, ingest included. Where the phone reache
 
 Once the data is in Postgres it is yours to use. Query it with SQL, open the provisioned Grafana dashboards or the web viewer, stream any dataset out as CSV or JSONL, or point Claude, Claude Code or Cursor at the read-only MCP server and ask questions.
 
-## What is pre-release
+## What is still young
 
-<Callout type="warning">
-The container images are not on GHCR yet. Until the first tagged release, `scripts/bootstrap.sh --build` compiles them from the checkout. The README says so, and so does the server page here.
-</Callout>
-
-Two other caveats. Ingest accepts a single static bearer token, so whoever holds it can upload and delete for any user on that server; per-device tokens are the next item on the roadmap. And backups ship with the stack but are an opt-in Compose profile, off until you turn them on.
+The stack is at 0.2.0. Two things to know before you rely on it. Ingest can issue a token per phone, bound to one user and revocable on its own, but a new install starts with a shared token that works for every user until you switch it off. And backups ship with the stack as an opt-in Compose profile, off until you turn them on.
 
 ## Why the protocol is public
 

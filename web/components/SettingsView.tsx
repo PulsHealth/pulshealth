@@ -1,14 +1,16 @@
 "use client";
 
 // Settings: the view-only metric/imperial toggle (persisted in localStorage) and
-// a read-only summary of the synced profile + the heart-rate zones it implies.
+// a read-only summary of the user being shown, the synced profile and the
+// heart-rate zones it implies.
 
 import { useUnits } from "./UnitsProvider";
+import { userLabel } from "./UserSwitcher";
 import type { UnitSystem } from "@/lib/units";
 import { hrZones, type HrZone } from "@/lib/zones";
-import type { Profile } from "@/lib/types";
+import type { Profile, User } from "@/lib/types";
 
-export function SettingsView({ profile }: { profile: Profile }) {
+export function SettingsView({ profile, user }: { profile: Profile; user: User }) {
   const { system, setSystem } = useUnits();
   const zones = hrZones(profile.maxHr, profile.restingHr);
 
@@ -53,7 +55,9 @@ export function SettingsView({ profile }: { profile: Profile }) {
       <section style={{ marginTop: 24 }}>
         <div className="eyebrow" style={{ marginBottom: 12 }}>Profile</div>
         <div className="panel" style={{ overflow: "hidden" }}>
-          <Row label="Age" value={profile.age != null ? `${profile.age}` : "Not synced"} first />
+          <Row label="User" value={userLabel(user)} first />
+          <Row label="User ID" value={user.id} mono />
+          <Row label="Age" value={profile.age != null ? `${profile.age}` : "Not synced"} />
           <Row label="Biological sex" value={profile.biologicalSex ? cap(profile.biologicalSex) : "Not synced"} />
           <Row label="Max heart rate" value={`${profile.maxHr} bpm${profile.age == null ? " (default)" : ""}`} />
           <Row label="Resting heart rate" value={profile.restingHr != null ? `${Math.round(profile.restingHr)} bpm` : "Not synced"} />
@@ -95,11 +99,11 @@ function cap(s: string): string {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
 
-function Row({ label, value, first }: { label: string; value: string; first?: boolean }) {
+function Row({ label, value, first, mono }: { label: string; value: string; first?: boolean; mono?: boolean }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "12px 18px", borderTop: first ? "none" : "1px solid var(--border)", fontSize: 13.5 }}>
       <span style={{ color: "var(--muted)" }}>{label}</span>
-      <span style={{ color: "var(--fg-soft)" }}>{value}</span>
+      <span className={mono ? "mono" : undefined} style={{ color: "var(--fg-soft)", fontSize: mono ? 12.5 : undefined, overflowWrap: "anywhere", textAlign: "right" }}>{value}</span>
     </div>
   );
 }

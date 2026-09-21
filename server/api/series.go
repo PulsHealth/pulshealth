@@ -66,10 +66,10 @@ type WorkoutSeriesResponse struct {
 // WorkoutSeries returns the workout's streams, optionally only those of the
 // given types, each downsampled to at most maxPoints. A nil response means
 // the workout does not exist for this user.
-func (st *Store) WorkoutSeries(ctx context.Context, uuid string, types []string, maxPoints int) (*WorkoutSeriesResponse, error) {
+func (st *Store) WorkoutSeries(ctx context.Context, userID, uuid string, types []string, maxPoints int) (*WorkoutSeriesResponse, error) {
 	var start, end time.Time
 	err := st.pool.QueryRow(ctx, `
-		SELECT start_ts, end_ts FROM workouts WHERE user_id = $1 AND uuid = $2`, st.userID, uuid).
+		SELECT start_ts, end_ts FROM workouts WHERE user_id = $1 AND uuid = $2`, userID, uuid).
 		Scan(&start, &end)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -94,7 +94,7 @@ func (st *Store) WorkoutSeries(ctx context.Context, uuid string, types []string,
 		WHERE p.workout_uuid = $1
 		  AND p.user_id = $2
 		  AND ($3::text[] IS NULL OR st.identifier = ANY($3::text[]))
-		ORDER BY st.identifier, p.ts`, uuid, st.userID, nullableTextArray(types))
+		ORDER BY st.identifier, p.ts`, uuid, userID, nullableTextArray(types))
 	if err != nil {
 		return nil, err
 	}

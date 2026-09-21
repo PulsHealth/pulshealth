@@ -32,6 +32,10 @@ const (
 	defaultLimit   = 50
 	maxLimit       = 200
 	catalogTTL     = 5 * time.Minute
+	// How many users' catalog answers are cached at once (see
+	// storeCatalogTypes). Far more than a household; small enough that a
+	// caller spraying ?user= values holds nothing worth mentioning.
+	catalogCacheMaxUsers = 32
 	// Accepted range for epoch-millisecond query parameters: 1970-01-01 to
 	// 9999-12-31T23:59:59.999Z, the widest span the `date` casts can carry.
 	minEpochMS int64 = 0
@@ -40,29 +44,48 @@ const (
 
 type apiStore interface {
 	Ping(context.Context) error
-	Profile(context.Context) (*Profile, error)
-	CatalogTypes(context.Context) ([]CatalogType, error)
-	LatestMetrics(context.Context, []string) ([]LatestMetric, error)
-	DailyMetrics(context.Context, []string, time.Time, time.Time) ([]DailyMetric, error)
-	ActivitySummary(context.Context, time.Time, time.Time) ([]ActivityDay, error)
-	Workouts(context.Context, WorkoutFilters) ([]WorkoutSummary, error)
-	Workout(context.Context, string) (*WorkoutDetail, error)
-	SleepDaily(context.Context, time.Time, time.Time) ([]SleepNight, error)
-	Samples(context.Context, SampleFilters) (*SamplesPage, error)
-	WorkoutSeries(context.Context, string, []string, int) (*WorkoutSeriesResponse, error)
-	StateOfMind(context.Context, time.Time, time.Time) ([]StateOfMindEntry, error)
+	// Who the database holds: the one read that is not about a single user.
+	Users(context.Context) ([]User, error)
+	// Every other read takes the user it is for as its second argument —
+	// explicit rather than baked into the store, so a handler cannot forget
+	// it and a fake can record which user it was asked about.
+	Profile(context.Context, string) (*Profile, error)
+	CatalogTypes(context.Context, string) ([]CatalogType, error)
+	LatestMetrics(context.Context, string, []string) ([]LatestMetric, error)
+	DailyMetrics(context.Context, string, []string, time.Time, time.Time) ([]DailyMetric, error)
+	ActivitySummary(context.Context, string, time.Time, time.Time) ([]ActivityDay, error)
+	Workouts(context.Context, string, WorkoutFilters) ([]WorkoutSummary, error)
+	Workout(context.Context, string, string) (*WorkoutDetail, error)
+	SleepDaily(context.Context, string, time.Time, time.Time) ([]SleepNight, error)
+	Samples(context.Context, string, SampleFilters) (*SamplesPage, error)
+	WorkoutSeries(context.Context, string, string, []string, int) (*WorkoutSeriesResponse, error)
+	StateOfMind(context.Context, string, time.Time, time.Time) ([]StateOfMindEntry, error)
+	// The last N calendar days as one small document (see summary.go).
+	Summary(context.Context, string, int) (*SummaryData, error)
 	// The export's paths: the type behind /v1/samples resolved on its own,
 	// so a bad identifier is a 400 before the download starts, and the two
 	// row-at-a-time scans a whole range is streamed through.
 	SampleType(context.Context, string) (SampleMeta, error)
-	StreamSamples(context.Context, SampleMeta, SampleFilters, func(Sample) error) error
-	StreamWorkouts(context.Context, WorkoutFilters, func(WorkoutSummary) error) error
+	StreamSamples(context.Context, string, SampleMeta, SampleFilters, func(Sample) error) error
+	StreamWorkouts(context.Context, string, WorkoutFilters, func(WorkoutSummary) error) error
 }
 
 type Server struct {
 	store apiStore
 	token string
 	log   *slog.Logger
+
+	// The user a request is answered for when it names none (PULS_USER_ID;
+	// empty means the seeded default), and whether ?user= may name anyone
+	// else (PULS_MULTI_USER, off by default). See scopeUser.
+	defaultUserID string
+	multiUser     bool
+
+	// The calendar zone (PULS_TIME_ZONE) instants are rendered in where a
+	// response is prose rather than JSON — the markdown summary. The store
+	// cuts its days in the same zone. Nil means UTC (a Server built as a
+	// struct literal, every test).
+	loc *time.Location
 
 	// Whether X-Forwarded-* may be believed: for the rate-limit key, and for
 	// the host the OpenAPI document advertises. Off unless a proxy that
@@ -78,9 +101,11 @@ type Server struct {
 	// request rate cannot drive pool acquisitions (see health.go).
 	health healthCache
 
-	catalogMu      sync.Mutex
-	catalogTypes   []CatalogType
-	catalogExpires time.Time
+	// /v1/catalog/types per user (see catalogCache): the query counts every
+	// row the user has, so it is cached briefly, and it is cached per user
+	// because the answer is per user.
+	catalogMu sync.Mutex
+	catalog   map[string]catalogEntry
 
 	// The bounded set of /v1/export slots (see maxConcurrentExports), made on
 	// first use so a Server built as a struct literal still has one.
@@ -107,15 +132,23 @@ func run(logger *slog.Logger) error {
 	if dbURL == "" {
 		return errors.New("DATABASE_URL must be set")
 	}
-	// The user every read is scoped to. The web viewer already honours
-	// PULS_USER_ID; the API hardcoded the seeded default, so changing the
-	// viewer's user silently left the API answering for user 1.
+	// The user a request is answered for when it names none. The web viewer
+	// honours the same PULS_USER_ID; the API used to bake it into the store,
+	// so nothing but a second deployment could read a second user.
 	userID := os.Getenv("PULS_USER_ID")
 	if userID == "" {
 		userID = defaultUserID
 	}
 	if !isUUID(userID) {
 		return errors.New("PULS_USER_ID must be a UUID")
+	}
+	// Whether ?user= may select anyone but that user. Off by default: the
+	// bearer token is one static secret that docs/ai.md tells people to hand
+	// to a ChatGPT Action, and turning this on widens what it reads from one
+	// person to everyone on the server.
+	multiUser, err := parseBoolEnv("PULS_MULTI_USER", false)
+	if err != nil {
+		return err
 	}
 	// The calendar zone for the daily endpoints. Same value the database's
 	// puls.time_zone setting holds (db/migrations/013_time_zone.sh), so the API's
@@ -145,14 +178,19 @@ func run(logger *slog.Logger) error {
 	trustProxyHeaders := os.Getenv("TRUST_PROXY_HEADERS") == "true"
 
 	srv := &Server{
-		store:             NewStore(pool, userID, loc),
+		store:             NewStore(pool, loc),
 		token:             token,
 		log:               logger,
+		defaultUserID:     userID,
+		multiUser:         multiUser,
+		loc:               loc,
 		trustProxyHeaders: trustProxyHeaders,
 	}
 	logger.Info("starting",
 		"addr", addr,
 		"time_zone", loc.String(),
+		"default_user", userID,
+		"multi_user", multiUser,
 		"trust_proxy_headers", trustProxyHeaders,
 	)
 	httpSrv := &http.Server{
@@ -244,6 +282,7 @@ func (s *Server) apiRoutes() []route {
 		{"GET /docs", "/docs", s.handleDocs, false},
 		{"GET /openapi.json", "/openapi.json", s.handleOpenAPI, false},
 		{"GET /healthz", "/healthz", s.handleHealthz, false},
+		{"GET /v1/users", "/v1/users", s.handleUsers, true},
 		{"GET /v1/profile", "/v1/profile", s.handleProfile, true},
 		{"GET /v1/catalog/types", "/v1/catalog/types", s.handleCatalogTypes, true},
 		{"GET /v1/metrics/latest", "/v1/metrics/latest", s.handleLatestMetrics, true},
@@ -255,6 +294,7 @@ func (s *Server) apiRoutes() []route {
 		{"GET /v1/sleep/daily", "/v1/sleep/daily", s.handleSleepDaily, true},
 		{"GET /v1/samples", "/v1/samples", s.handleSamples, true},
 		{"GET /v1/state-of-mind", "/v1/state-of-mind", s.handleStateOfMind, true},
+		{"GET /v1/summary", "/v1/summary", s.handleSummary, true},
 		{"GET /v1/export", "/v1/export", s.handleExport, true},
 	}
 }
@@ -280,7 +320,9 @@ func (s *Server) routes() http.Handler {
 			handler = withTimeout(handlerTimeout, handler)
 		}
 		if rt.auth {
-			handler = s.auth(handler)
+			// Token first, then the user the request is about: a caller that
+			// cannot authenticate never learns whether ?user= is valid.
+			handler = s.auth(s.scopeUser(handler))
 		}
 		mux.HandleFunc(rt.pattern, handler)
 	}
@@ -343,7 +385,7 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
-	profile, err := s.store.Profile(r.Context())
+	profile, err := s.store.Profile(r.Context(), s.requestUser(r))
 	if err != nil {
 		s.log.Error("profile query failed", "err", err.Error())
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "profile failed"})
@@ -357,19 +399,20 @@ func (s *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCatalogTypes(w http.ResponseWriter, r *http.Request) {
-	if types, ok := s.cachedCatalogTypes(); ok {
+	user := s.requestUser(r)
+	if types, ok := s.cachedCatalogTypes(user); ok {
 		writeJSON(w, http.StatusOK, map[string][]CatalogType{"types": types})
 		return
 	}
 
-	types, err := s.store.CatalogTypes(r.Context())
+	types, err := s.store.CatalogTypes(r.Context(), user)
 	if err != nil {
 		s.log.Error("catalog types query failed", "err", err.Error())
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "catalog types failed"})
 		return
 	}
 	types = cloneCatalogTypes(types)
-	s.storeCatalogTypes(types)
+	s.storeCatalogTypes(user, types)
 	writeJSON(w, http.StatusOK, map[string][]CatalogType{"types": types})
 }
 
@@ -379,7 +422,7 @@ func (s *Server) handleLatestMetrics(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	metrics, err := s.store.LatestMetrics(r.Context(), types)
+	metrics, err := s.store.LatestMetrics(r.Context(), s.requestUser(r), types)
 	if err != nil {
 		s.log.Error("latest metrics query failed", "err", err.Error())
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "latest metrics failed"})
@@ -394,7 +437,7 @@ func (s *Server) handleDailyMetrics(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	metrics, err := s.store.DailyMetrics(r.Context(), types, start, end)
+	metrics, err := s.store.DailyMetrics(r.Context(), s.requestUser(r), types, start, end)
 	if err != nil {
 		s.log.Error("daily metrics query failed", "err", err.Error())
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "daily metrics failed"})
@@ -409,7 +452,7 @@ func (s *Server) handleActivitySummary(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	days, err := s.store.ActivitySummary(r.Context(), start, end)
+	days, err := s.store.ActivitySummary(r.Context(), s.requestUser(r), start, end)
 	if err != nil {
 		s.log.Error("activity summary query failed", "err", err.Error())
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "activity summary failed"})
@@ -424,7 +467,7 @@ func (s *Server) handleWorkouts(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	workouts, err := s.store.Workouts(r.Context(), filters)
+	workouts, err := s.store.Workouts(r.Context(), s.requestUser(r), filters)
 	if err != nil {
 		s.log.Error("workouts query failed", "err", err.Error())
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "workouts failed"})
@@ -442,7 +485,7 @@ func (s *Server) handleWorkout(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid workout uuid"})
 		return
 	}
-	workout, err := s.store.Workout(r.Context(), uuid)
+	workout, err := s.store.Workout(r.Context(), s.requestUser(r), uuid)
 	if err != nil {
 		s.log.Error("workout query failed", "uuid", uuid, "err", err.Error())
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "workout failed"})
@@ -461,7 +504,7 @@ func (s *Server) handleSleepDaily(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	nights, err := s.store.SleepDaily(r.Context(), start, end)
+	nights, err := s.store.SleepDaily(r.Context(), s.requestUser(r), start, end)
 	if err != nil {
 		s.writeStoreError(w, err, "sleep")
 		return
@@ -475,7 +518,7 @@ func (s *Server) handleSamples(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	page, err := s.store.Samples(r.Context(), filters)
+	page, err := s.store.Samples(r.Context(), s.requestUser(r), filters)
 	if err != nil {
 		s.writeStoreError(w, err, "samples")
 		return
@@ -494,7 +537,7 @@ func (s *Server) handleWorkoutSeries(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	series, err := s.store.WorkoutSeries(r.Context(), uuid, types, maxPoints)
+	series, err := s.store.WorkoutSeries(r.Context(), s.requestUser(r), uuid, types, maxPoints)
 	if err != nil {
 		s.log.Error("workout series query failed", "uuid", uuid, "err", err.Error())
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "workout series failed"})
@@ -513,7 +556,7 @@ func (s *Server) handleStateOfMind(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	entries, err := s.store.StateOfMind(r.Context(), start, end)
+	entries, err := s.store.StateOfMind(r.Context(), s.requestUser(r), start, end)
 	if err != nil {
 		s.writeStoreError(w, err, "state of mind")
 		return
@@ -773,22 +816,62 @@ func isUUID(s string) bool {
 		isHexN(s[19:23], 4) && isHexN(s[24:36], 12)
 }
 
-func (s *Server) cachedCatalogTypes() ([]CatalogType, bool) {
+// catalogEntry is one user's cached /v1/catalog/types answer.
+type catalogEntry struct {
+	types   []CatalogType
+	expires time.Time
+}
+
+func (s *Server) cachedCatalogTypes(user string) ([]CatalogType, bool) {
 	s.catalogMu.Lock()
 	defer s.catalogMu.Unlock()
 
-	if time.Now().Before(s.catalogExpires) {
-		return cloneCatalogTypes(s.catalogTypes), true
+	if entry, ok := s.catalog[user]; ok && time.Now().Before(entry.expires) {
+		return cloneCatalogTypes(entry.types), true
 	}
 	return nil, false
 }
 
-func (s *Server) storeCatalogTypes(types []CatalogType) {
+// storeCatalogTypes caches one user's answer. The map is bounded at
+// catalogCacheMaxUsers because an authenticated caller can spray ?user=
+// values (with PULS_MULTI_USER on, any UUID is a valid selector); at the
+// bound, expired entries go first, then the one expiring soonest.
+func (s *Server) storeCatalogTypes(user string, types []CatalogType) {
 	s.catalogMu.Lock()
 	defer s.catalogMu.Unlock()
 
-	s.catalogTypes = cloneCatalogTypes(types)
-	s.catalogExpires = time.Now().Add(catalogTTL)
+	if s.catalog == nil {
+		s.catalog = make(map[string]catalogEntry, 1)
+	}
+	now := time.Now()
+	if _, ok := s.catalog[user]; !ok && len(s.catalog) >= catalogCacheMaxUsers {
+		for key, entry := range s.catalog {
+			if !now.Before(entry.expires) {
+				delete(s.catalog, key)
+			}
+		}
+		if len(s.catalog) >= catalogCacheMaxUsers {
+			var (
+				oldest   string
+				soonest  time.Time
+				firstKey = true
+			)
+			for key, entry := range s.catalog {
+				if firstKey || entry.expires.Before(soonest) {
+					oldest, soonest, firstKey = key, entry.expires, false
+				}
+			}
+			delete(s.catalog, oldest)
+		}
+	}
+	s.catalog[user] = catalogEntry{types: cloneCatalogTypes(types), expires: now.Add(catalogTTL)}
+}
+
+// catalogCacheSize is the number of users with a cached catalog (tests).
+func (s *Server) catalogCacheSize() int {
+	s.catalogMu.Lock()
+	defer s.catalogMu.Unlock()
+	return len(s.catalog)
 }
 
 func cloneCatalogTypes(types []CatalogType) []CatalogType {
@@ -798,4 +881,95 @@ func cloneCatalogTypes(types []CatalogType) []CatalogType {
 	out := make([]CatalogType, len(types))
 	copy(out, types)
 	return out
+}
+
+// Per-request user scoping.
+//
+// Every authenticated route answers for exactly one user. Which one is
+// settled here, once, before the handler runs: the ?user= query parameter
+// when the request carries one, else PULS_USER_ID — so a deployment that
+// never sets PULS_MULTI_USER behaves exactly as it always has. The parameter
+// is a selector, not a credential: the bearer token is the same for everyone,
+// which is why the gate exists. With it off, naming any other user is a 403
+// rather than a quiet answer for the default user — silently substituting one
+// person's data for another's is the one outcome worse than an error.
+//
+// Neither refusal charges the auth-failure limiter: the caller holds a valid
+// token and mis-addressed a request, which is a configuration mistake, not a
+// guess at the secret. There is no existence check either — an unknown id
+// reads as a user with no data — because /v1/users is the discovery surface
+// and a lookup per request would cost a round trip on every call.
+
+// requestUserKey is the request-context key scopeUser stashes the user under.
+type requestUserKey struct{}
+
+func withRequestUser(ctx context.Context, user string) context.Context {
+	return context.WithValue(ctx, requestUserKey{}, user)
+}
+
+// scopeUser settles the user a request is answered for (see the package
+// comment above) and hands it to next through the request context.
+func (s *Server) scopeUser(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := s.defaultUser()
+		if raw := strings.TrimSpace(r.URL.Query().Get("user")); raw != "" {
+			if !isUUID(raw) {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid user: must be a UUID"})
+				return
+			}
+			if !s.multiUser && !sameUser(raw, user) {
+				s.log.Warn("refused a request for another user", "path", r.URL.Path, "user", raw)
+				writeJSON(w, http.StatusForbidden, map[string]string{"error": "multi-user reads are disabled"})
+				return
+			}
+			user = strings.ToLower(raw)
+		}
+		next(w, r.WithContext(withRequestUser(r.Context(), user)))
+	}
+}
+
+// requestUser is the user the request is answered for: what scopeUser
+// settled, or — for a handler run without the middleware — the default.
+func (s *Server) requestUser(r *http.Request) string {
+	if user, ok := r.Context().Value(requestUserKey{}).(string); ok && user != "" {
+		return user
+	}
+	return s.defaultUser()
+}
+
+// defaultUser is PULS_USER_ID, or the seeded default for a Server built as
+// a struct literal (every test).
+func (s *Server) defaultUser() string {
+	if s.defaultUserID == "" {
+		return defaultUserID
+	}
+	return strings.ToLower(s.defaultUserID)
+}
+
+// location is the zone prose responses render instants in: PULS_TIME_ZONE,
+// or UTC for a Server built as a struct literal.
+func (s *Server) location() *time.Location {
+	if s.loc == nil {
+		return time.UTC
+	}
+	return s.loc
+}
+
+// sameUser compares two UUIDs the way Postgres does: case does not matter.
+func sameUser(a, b string) bool {
+	return strings.EqualFold(a, b)
+}
+
+// parseBoolEnv reads a boolean environment variable (any spelling
+// strconv.ParseBool accepts), returning def when it is unset or blank.
+func parseBoolEnv(name string, def bool) (bool, error) {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return def, nil
+	}
+	value, err := strconv.ParseBool(raw)
+	if err != nil {
+		return false, fmt.Errorf("%s must be true or false, got %q", name, raw)
+	}
+	return value, nil
 }

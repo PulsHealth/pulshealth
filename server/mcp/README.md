@@ -15,7 +15,9 @@ prompts) see [`docs/ai.md`](../../docs/ai.md).
 
 | Tool | Answers |
 |---|---|
-| `list_available_types` | Every HealthKit type with data: unit, row counts, earliest/latest, plus today's date and the time zone. The natural first call. |
+| `list_users` | Everyone with data on the server, which one is the API's default, whether `multi_user` reads are on, and which user this instance is pinned to (if any). |
+| `get_summary(range?)` | `GET /v1/summary` as markdown text: the last 7d (default), 14d, 30d or 90d in under sixty lines — activity, heart, sleep, workouts, body, coverage. The cheapest first call for a broad question. |
+| `list_available_types` | Every HealthKit type with data: unit, row counts, earliest/latest, plus today's date and the time zone. The natural first call for anything specific. |
 | `get_profile` | Name, email, date of birth, age, biological sex. |
 | `get_latest_metrics(types)` | Newest raw sample per quantity type. |
 | `get_daily_metrics(types, start_date, end_date)` | One deduplicated value per local day: sums for cumulative types, averages for discrete ones. |
@@ -32,9 +34,16 @@ for the model: data model, units, the iPhone + Watch double-counting rule,
 question→tool recipes) and `pulshealth://types` (the live catalog). Prompts:
 `weekly_summary` and `compare_workouts`.
 
-Every tool is annotated read-only and idempotent. Tool inputs and outputs
-use `YYYY-MM-DD` calendar days and ISO 8601 instants in the server's time
-zone; the server translates them to the product API's epoch-millisecond,
+Every tool but `list_users` takes an optional `user` — a `user_id` from
+`list_users` — and passes it to the product API as `user=`; omitted, the API
+answers for its own `PULS_USER_ID`. Naming anyone else needs the API's
+`PULS_MULTI_USER` on, or the 403 it answers with reaches the model as a tool
+error saying so. Per-user answers carry `user_id` whenever a user was named
+or the instance is pinned. Every tool is annotated read-only and idempotent.
+`get_summary` is the one tool whose answer is markdown text rather than
+JSON: the product API renders the page and the tool hands it over verbatim.
+Tool inputs and outputs use `YYYY-MM-DD` calendar days and ISO 8601 instants
+in the server's time zone; the server translates them to the product API's epoch-millisecond,
 half-open ranges (an inclusive `start_date`…`end_date` becomes
 `[start of start_date, start of the day after end_date)` in that zone, DST
 included). API errors surface as tool errors carrying the HTTP status.
@@ -68,6 +77,7 @@ mode, pointed at `http://api:8081` over the internal network.
 | `PULS_API_TOKEN` | The product API's bearer token (`PULS_API_TOKEN` in `server/.env`). Required. |
 | `PULS_MCP_TOKEN` | The bearer token MCP clients must present to `/mcp` in `--http` mode. Required in that mode; ignored in stdio mode. |
 | `PULS_TIME_ZONE` | IANA zone every date is expressed in. Must equal the stack's `PULS_TIME_ZONE` — the product API does not report its zone, so this is how the two agree. Default `UTC`. |
+| `PULS_USER_ID` | Optional. Pins this instance to one person: every API request names that user, and a tool call naming anyone else is refused without asking the API. Empty (the default) leaves the choice to each call, falling back to the API's own default user. Compose sets it from `PULS_MCP_USER_ID`. |
 
 ### HTTP endpoints (`--http`)
 
