@@ -606,6 +606,7 @@ public actor HealthSyncEngine {
         var pages = 0
         var totalSamples = 0
         var totalDeletions = 0
+        var droppedAnything = false
 
         do {
             var anchor = try decodeAnchor(initialState.anchorData)
@@ -675,6 +676,7 @@ public actor HealthSyncEngine {
                 }
 
                 if dropped > 0 {
+                    droppedAnything = true
                     noteUnmappableSamples(dropped, type: identifier)
                     await eventLog.log(
                         .warn, type: identifier,
@@ -750,8 +752,12 @@ public actor HealthSyncEngine {
                 }
             }
 
+            // A type that dropped anything is never marked complete (MergedSync
+            // holds the same line): "backfill complete" beside a type whose
+            // samples never left the phone is the silent failure the raw-count
+            // rule exists to prevent. The run itself is over either way.
             if isBackfill {
-                await store.markBackfillComplete(identifier)
+                if !droppedAnything { await store.markBackfillComplete(identifier) }
                 backfillRuns[identifier] = nil
             }
             let elapsed = (ContinuousClock.now - runStart).seconds
