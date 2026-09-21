@@ -7,7 +7,7 @@ plus two standalone CLIs and the public website:
 | Path | What | Docs |
 |---|---|---|
 | `PulsHealthSync/` | Swift package (iOS 17+, Swift 6 strict concurrency): sync engine, transport, NDJSON encoding | `PulsHealthSync/README.md` |
-| `PulsHealth/` | SwiftUI app wrapping the library (dashboard, type picker, settings, log, benchmark) | `PulsHealth/README.md` |
+| `PulsHealth/` | SwiftUI app wrapping the library (dashboard, type picker, settings, log, benchmark, server-less export to files) | `PulsHealth/README.md` |
 | `server/` | Docker Compose: Go ingest/product APIs + PostgreSQL 17/TimescaleDB + Grafana | `server/README.md` |
 | `server/mcp/` | Go MCP server (stdio + streamable HTTP) giving AI assistants read-only tools over the product API; talks only to the API, never Postgres | `server/mcp/README.md`, `docs/ai.md` |
 | `web/` | Next.js self-hosted viewer, published as the fourth GHCR image. Reads Postgres directly as the read-only `grafana` role; optional HTTP Basic auth. **Not** `site/`, which is the public marketing site | `web/README.md` |
@@ -130,10 +130,19 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   from `HealthSyncEngine.unmappableSampleCounts` — a throw always leaves no
   files, a partial export returns `isComplete == false` with a manifest that
   says so. CSV columns shared with the product API are pinned to
-  `docs/export.md` by `ExportColumnTests`; exported files are staged under the
-  temporary directory (`HealthExporter.removeAllExports()`), which is what the
-  privacy documents' "stores no health samples on the device" has to be
-  reconciled with when the app's export screen ships.
+  `docs/export.md` by `ExportColumnTests`. **The app side of the contract is
+  the staged files' lifetime, and the privacy documents promise it:** they
+  live under `HealthExporter.stagingRoot` in the temporary directory, and
+  `AppModel.init` clears it at every launch (before any export can run —
+  `removeAllExports()` must never run during one), `ExportModel` clears it
+  when another export starts, on Delete Export, and when the share sheet
+  reports `completed` — which is why `ExportView` presents a
+  `UIActivityViewController` and not a `ShareLink`, which has no completion
+  callback. The app exports `appliedConfig`, never the Data Types draft, and
+  requests Health access itself first (`requestHealthAccessForExport`: skips
+  undeterminable types, never presents the medication picker). Change any of
+  that and `docs/privacy-policy.md` § Exports, `SECURITY.md`, the site's
+  `/privacy` card and `docs/appstore/` change with it.
 - **Every row belongs to a user.** A `users` table (`db/migrations/000_users.sql`,
   seeded with the default user) is referenced by a `user_id` foreign key on every
   data table. The client sends its user in the **`X-User-ID` HTTP header** (a
@@ -366,7 +375,8 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   state as fact that the app has
   zero third-party dependencies, sends data only to the configured server,
   never writes HealthKit, keeps the token in the Keychain, and stores no health
-  samples on the device. A change to any of those — a dependency, a new
+  samples on the device — except an export the user asked for, staged in the
+  temporary directory until it is shared (see the export invariant above). A change to any of those — a dependency, a new
   outbound request, a new permission, a new on-disk store — has to update those
   documents in the same pull request, and the App Store listing's privacy
   answers with them. `docs/appstore/README.md` has the table.

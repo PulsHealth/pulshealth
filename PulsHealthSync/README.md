@@ -472,6 +472,15 @@ survive the phone locking mid-run — and deliberately not run through
 under `HealthExporter.stagingRoot` in the temporary directory, which
 `removeAllExports()` clears, leftovers from a crash included.
 
+`ExportPresentation.swift` is the screen's pure half, kept here so it can be
+tested (`ExportPresentationTests`): `ExportRange` (a range starts at a local
+midnight, because daily series are whole local days), `ExportSelectionSummary`,
+`ExportFailureCopy` (what each `HealthExportError` is called — "no data" and
+"access declined" are one answer from HealthKit, so that copy gives both
+readings), display names for datasets and phases, and
+`ExportResult.writtenRowCounts`, which leaves out the rows a CSV export counted
+but has no file for.
+
 ## Testing
 
 ```bash

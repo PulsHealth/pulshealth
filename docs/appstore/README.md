@@ -26,8 +26,9 @@ skipped: the app went straight to the store.
 
 ## The one-sentence version
 
-PulsHealth sends the user's health data to a server the *user* runs; the
-developer receives nothing, operates nothing, and has nothing to collect. Every
+PulsHealth sends the user's health data to a server the *user* runs — or, on
+request, writes it to files the user saves or sends themselves; the developer
+receives nothing, operates nothing, and has nothing to collect. Every
 document here is an application of that single fact, and every claim in them is
 checkable against the source in this repository.
 
@@ -139,6 +140,7 @@ changes, revisit them in the same pull request:
 | A new permission or usage string | `privacy-policy.md`, `review-notes.md`, `PrivacyInfo.xcprivacy` |
 | A URL scheme, or any other way another app or a web page can hand the app input (today: `puls://pair`, confirmed before it fills anything) | `privacy-policy.md` (how the server URL gets into the app), `review-notes.md` (URL SCHEME), `listing.md` (the "Unrestricted web access" row) |
 | What is stored on the device, or where | `privacy-policy.md` |
+| The on-device export: where files are staged, when the app deletes them (launch, new export, Delete Export, a completed share), what identity they carry, which share activities are offered | `privacy-policy.md` § Exports, `SECURITY.md`, the site's `/privacy` glance card, `review-notes.md` (WITHOUT A SERVER, HEALTHKIT), `listing.md` (description, App Privacy point 2) |
 | The first-run flow's steps | `review-notes.md` — the reviewer walkthrough is step-by-step |
 | `ServerURLValidation`'s rules | `review-notes.md` — the ATS justification quotes them |
 | Anything about HealthKit write access | everything; read-only is the load-bearing claim |

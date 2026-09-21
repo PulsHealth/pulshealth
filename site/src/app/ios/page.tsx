@@ -141,9 +141,10 @@ export default function AppPage() {
                 background-delivery entitlement requires one.
               </li>
               <li>
-                <strong className="text-foreground">You need a server first.</strong> The app has
+                <strong className="text-foreground">Syncing needs a server.</strong> The app has
                 nowhere to sync until a backend exists. The reference stack comes up with one
-                command; anything that speaks the documented protocol works just as well.
+                command; anything that speaks the documented protocol works just as well. Without
+                one, the app can still export your data to CSV or JSONL files on the phone.
               </li>
               <li>
                 <strong className="text-foreground">All of it is open source.</strong> The app,
@@ -406,7 +407,8 @@ X-User-ID: <your user id>
             Install it, then point it at your server
           </h2>
           <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            You need an iPhone on iOS 17 or later and a server you can reach. Apple Watch data
+            You need an iPhone on iOS 17 or later and, for syncing, a server you can reach;
+            exporting to files works without one. Apple Watch data
             arrives once iOS syncs it to the phone. If you would rather build it yourself, the
             repository has the Xcode instructions.
           </p>

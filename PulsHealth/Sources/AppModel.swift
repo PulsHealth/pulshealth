@@ -7,6 +7,9 @@ import PulsHealthSync
 final class AppModel {
     let engine: HealthSyncEngine
     let scheduler: BackgroundSyncScheduler
+    /// Settings → Export Data: the server-less way out. A model of its own so a
+    /// run outlives the screen that started it (`ExportModel`).
+    let export = ExportModel()
 
     private(set) var statuses: [TypeSyncStatus] = []
     /// Per-aggregate-config sync progress, keyed by config ID.
@@ -121,6 +124,15 @@ final class AppModel {
         let engine = HealthSyncEngine()
         self.engine = engine
         self.scheduler = BackgroundSyncScheduler(engine: engine)
+        // An export's files are health data sitting in the temporary directory
+        // until they are shared. The privacy policy says none survives a
+        // launch, and this line is what makes that true — for the export the
+        // user never got round to sharing, and for whatever a crash or a
+        // force-quit left half-written. Here rather than in `start()` because
+        // this runs once per process, before any export can, so it can never
+        // delete a run's directory out from under it; and it is a synchronous
+        // unlink, which works on a locked device too (a background launch).
+        HealthExporter.removeAllExports()
         // Reading the persisted configuration is async, and the window is built
         // before it lands. Decide from the two durable flags alone so a first
         // launch opens straight into onboarding: `authorizationRequested` marks
@@ -306,6 +318,77 @@ final class AppModel {
         await requestAccessForEnabledTypesIfNeeded()
     }
 
+    // MARK: - Export to files
+
+    /// What Export Data exports: the **applied** selection, never the draft.
+    ///
+    /// The Data Types tab edits `config` freely and nothing there counts until
+    /// Apply — which is also the moment Health access is requested for it. An
+    /// export of a half-edited draft would read types the user has not been
+    /// asked about (each one a failure in the result) and would disagree with
+    /// the Dashboard about what "the selection" is. The screen says when a
+    /// draft is pending instead (`hasPendingChanges`).
+    var exportSelection: ExportSelectionSummary {
+        ExportSelectionSummary(configuration: appliedConfig)
+    }
+
+    /// A backfill and an export are the same sweep over the same HealthKit
+    /// store, each several queries wide. Running both is allowed and neither
+    /// corrupts the other (the export's engine shares no state), but each
+    /// would crawl — so the screen waits for the backfill rather than start a
+    /// multi-minute run that looks hung. Incremental syncs are small and are
+    /// not waited for.
+    var exportBlockedByBackfill: Bool { backfillActive }
+
+    /// Medication Doses is selected but this install has never got the
+    /// per-object picker on screen, so the export will find no doses. Normally
+    /// false: Apply schedules that picker for any selection that includes the
+    /// type. Export only *says* so — it must not present the picker itself,
+    /// least of all on a path it awaits (see `scheduleMedicationAccessRequest`).
+    var exportLacksMedicationAccess: Bool {
+        guard #available(iOS 26.0, *) else { return false }
+        return appliedConfig.enabledTypes.contains(HealthTypeCatalog.medicationDoseIdentifier)
+            && !UserDefaults.standard.bool(forKey: Self.medicationAuthRequestedKey)
+    }
+
+    func startExport() {
+        guard !exportBlockedByBackfill, !exportSelection.isEmpty else { return }
+        export.start(configuration: appliedConfig, engine: engine) { [weak self] in
+            await self?.requestHealthAccessForExport()
+        }
+    }
+
+    /// The export's permission step. `HealthExporter` never prompts, and a type
+    /// whose access was never requested comes back as a failure, so anything in
+    /// the applied selection that iOS still reports as undetermined is asked
+    /// for first — one sheet, the same request Apply makes.
+    ///
+    /// Usually there is nothing to ask: a selection only becomes *applied*
+    /// through Apply, which requested it. What is left is a type added to the
+    /// selection by an older build, or a sheet that was interrupted. Two rules
+    /// carry over from Apply: types iOS refuses to put in the sheet are not
+    /// asked for again (it would only flash — they show up in the export's
+    /// failures, with the hint already on the Dashboard), and the medication
+    /// picker is not requested here at all.
+    ///
+    /// It does not touch `authorizationRequested`: that flag gates observer
+    /// registration and background scheduling, which are the sync's business.
+    private func requestHealthAccessForExport() async {
+        let selected = appliedConfig.observedTypeIdentifiers.sorted()
+        guard !selected.isEmpty, await engine.authorizationNeeded(for: selected) else { return }
+        let pending = await pendingTypes(among: selected)
+        guard !Set(pending).isSubset(of: undeterminableTypes) else { return }
+        do {
+            try await engine.requestAuthorization(for: selected)
+            undeterminableTypes.formUnion(await pendingTypes(among: selected))
+        } catch {
+            // Not fatal: the export runs and reports what it could not read.
+            await engine.eventLog.log(
+                .warn, "Health access request before export failed: \(error.localizedDescription)")
+        }
+        await refreshNeedsAuthorization()
+    }
+
     // MARK: - Actions
 
     /// Recomputes the dashboard's "access incomplete" warning. Scoped to the
@@ -322,8 +405,12 @@ final class AppModel {
     /// Observed types (raw-sync ∪ enabled aggregates) that iOS still reports as
     /// never-determined, one by one.
     private func pendingEnabledTypes() async -> [String] {
+        await pendingTypes(among: config.observedTypeIdentifiers.sorted())
+    }
+
+    private func pendingTypes(among identifiers: [String]) async -> [String] {
         var pending: [String] = []
-        for id in config.observedTypeIdentifiers.sorted() {
+        for id in identifiers {
             if await engine.authorizationNeeded(for: [id]) { pending.append(id) }
         }
         return pending

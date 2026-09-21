@@ -189,10 +189,31 @@ all — `ensureTransport` finds it nil and rebuilds an HTTP one from the persist
 URL and token. So a custom sink would work in the foreground and quietly stop
 overnight, which is worse than not offering one. APP-11 is persisting the sink choice with the
 configuration and putting the read side behind a protocol so reconciliation
-degrades instead of breaking; APP-12 is a share-sheet NDJSON/CSV export of the
-health data (today's `ShareLink` exports the diagnostics bundle, not samples).
+degrades instead of breaking.
 
-Both are "later" for a reason: the HTTP path is what everyone uses. Do APP-11
+**APP-12 is done** (2026-09): Settings → Export Data writes the applied
+selection to JSONL or CSV and hands the files to the share sheet, with no
+server configured or contacted (`HealthExporter`,
+[`docs/export.md`](export.md), "On-device export"). It did not need APP-11,
+and deliberately is not a *sink*: an export runs on a throwaway engine with
+its own state, because anchors have no destination dimension and a file
+transport on the real engine would mark every exported sample as delivered to
+the server.
+
+What is **not** built, and is the natural follow-up for someone using the app
+with no server: **scheduled or automatic export**. An export runs only when
+the user taps Export, in the foreground, with the phone unlocked — there is no
+App Intent, no Shortcuts action and no background export. An App Intent would
+be the way in (Shortcuts automations can then run it on a schedule), and it
+has to answer three things first: HealthKit is unreadable while the phone is
+locked, which is when automations tend to fire; an intent needs somewhere
+durable to put the files, which the share sheet currently decides and the
+privacy policy currently promises the app does not keep; and the staging
+directory's clear-at-launch rule must not delete an export an intent is
+writing. Nor is there an incremental export ("everything since the last
+one") — every export is a full read of its time range.
+
+APP-11 stays "later" for a reason: the HTTP path is what everyone uses. Do it
 only when a second sink actually exists to justify it.
 
 ## 8. AI extras

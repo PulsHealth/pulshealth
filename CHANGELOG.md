@@ -27,7 +27,81 @@ operator action, and when it does this file says so at the top of the entry.
 
 ## Unreleased
 
-Nothing since 0.2.0.
+No operator action. The one image that changes is `ingest`, which gains a
+subcommand and one Go dependency; there is no schema change and nothing new is
+required in `.env`.
+
+### Added
+
+- **Every pairing path ends in a QR code, and none needs `qrencode`.**
+  `ingest qr` renders a terminal QR code in pure Go from a payload on stdin
+  (never argv — the payload carries the token). `scripts/bootstrap.sh` falls
+  back to it through the running ingest container when the host has no
+  `qrencode`, and still never fails a bootstrap over a QR code.
+- `devices issue` prints the Server URL, the pairing QR code and the
+  `puls://pair?…` payload for the token it minted, where it used to print a
+  token and a user ID and nothing to scan. The URL comes from the new `--url`,
+  else from `PULS_PUBLIC_URL`, which Compose now passes to the ingest service;
+  a URL the app would refuse stops the command before a token is minted.
+  `--no-qr` prints the text alone.
+- `scripts/bootstrap.sh --issue-device <label> [--user <uuid>] [--url <URL>]`,
+  wrapped as `make issue-device NAME='My iPhone'`: one command that mints a
+  per-device token, derives the URL by the pairing block's own rules (`--lan`
+  included) and ends in a scannable code. `--print-url` prints just that URL.
+- One new Go module in `server/ingest`: `github.com/skip2/go-qrcode` (stdlib
+  only). The other three images and both CLIs are unchanged.
+
+### Changed
+
+- With the shared token disabled (`PULS_ALLOW_SHARED_TOKEN=false`, or an empty
+  `PULS_TOKEN`) the pairing block names the `--issue-device` command to run
+  instead of printing no code at all.
+- The host `qrencode` call gets its payload on stdin too, so the token no
+  longer appears in the process list while the code is drawn.
+
+### Fixed
+
+- `make devices ARGS='issue --name "My iPhone"'` no longer dies in `test` on
+  the quoted label.
+
+### iOS app and Swift package
+
+Not part of a stack release — the app ships through the App Store, and its
+record is [`docs/appstore/README.md`](docs/appstore/README.md) — but this is
+what is on `main` and not yet in a store build:
+
+- **The app no longer depends on a server.** Settings → Export Data (and an
+  "Export Data to Files" link on the Dashboard of an install with no server)
+  writes the applied selection to CSV or JSONL for the last 30 days, 90 days,
+  year or all time, shows progress with Cancel, and reports an export that
+  could not read everything as **incomplete**, naming the types. The files are
+  staged in the temporary directory and handed to the share sheet; the app
+  deletes its copy when the share completes, on Delete Export, when another
+  export starts and at every launch. The first-run flow says the server is
+  optional, and its last step and the Dashboard say what works without one.
+  `docs/privacy-policy.md` has a new Exports section, and `SECURITY.md`, the
+  site's `/privacy` page and `docs/appstore/` changed with it.
+- **Package: on-device export** (`HealthExporter`, `PulsHealthSync/README.md`,
+  `docs/export.md`). JSONL is the sync protocol's batches, uncompressed and
+  replayable into `/v1/batches`; CSV mirrors `/v1/export`'s columns where the
+  datasets overlap (pinned by `ExportColumnTests`) and adds device-only files
+  for aggregates, routes, workout streams and medication doses. Each run builds
+  a throwaway engine — its own state store, event log and wake log, an
+  in-memory token store, no server URL — so an export never advances a sync
+  anchor or watermark. A manifest records the user ID, device ID, range, counts
+  and `"complete": false` with the failures when a type could not be read.
+- **Pairing without the in-app scanner.** A `puls://pair?…` link — tapped, or
+  offered by the iOS Camera app when it reads the server's QR code — opens the
+  app, which asks before it uses it: the prompt names the host and says when
+  accepting would replace the current server or use plain `http://`. Paste
+  Pairing Code (the system paste button) and a pairing string put into the
+  Server URL field do the same job, through a parser that tolerates the
+  wrapping a chat client or a terminal adds. The paired user ID is staged with
+  the URL and token until Save & Apply, the connection test runs as that user,
+  a code scanned in Settings tests itself, and the first-run flow's test result
+  clears when a field is edited.
+- **Fix:** the per-type backfill no longer marks a type backfill-complete when
+  the mapper dropped any of its samples.
 
 ## [0.2.0] - 2026-09-18
 

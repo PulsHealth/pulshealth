@@ -4,7 +4,8 @@ import PulsHealthSync
 /// First-run flow. A fresh install has no server, no token and no data types,
 /// so every tab is empty and nothing points at the one screen (Settings) that
 /// would fix it. Five steps take the user from "what is this" to a running
-/// backfill:
+/// backfill — or, for someone with no server, to a selection with Health access
+/// that Settings → Export Data can write to files:
 ///
 /// 1. what the app does and where the data goes,
 /// 2. the server — from the pairing code (scanned, pasted, or opened as a
@@ -125,7 +126,7 @@ struct OnboardingView: View {
                     .padding(.top, 8)
                 Text("PulsHealth reads the health data on this iPhone and sends it to a server you run yourself.")
                     .font(.title3.weight(.semibold))
-                Text("It goes nowhere else. There is no PulsHealth account, no analytics, and no third-party service in the path — the developer never receives your data.")
+                Text("Nothing else receives it. There is no PulsHealth account, no analytics, and no third-party service in the path — the developer never receives your data.")
                     .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading, spacing: 14) {
@@ -136,8 +137,14 @@ struct OnboardingView: View {
                         "checklist", "You choose the data",
                         "Pick the types to sync — and change the selection whenever you like.")
                     bullet(
-                        "externaldrive.connected.to.line.below", "You need a server",
-                        "A machine running the PulsHealth server (Docker, one command). Without one there is nowhere to sync to.")
+                        "externaldrive.connected.to.line.below", "A server, for continuous sync",
+                        "A machine running the PulsHealth server (Docker, one command) receives new data as it arrives.")
+                    // The server is optional, and the flow has to say so before
+                    // the step that asks for one: someone without a server who
+                    // reads "you need a server" closes the app.
+                    bullet(
+                        "square.and.arrow.up.on.square", "Or no server at all",
+                        "Export the same data to CSV or JSONL files on this iPhone whenever you like, and add a server later if you want one.")
                 }
                 .padding(.top, 4)
             }
@@ -207,7 +214,14 @@ struct OnboardingView: View {
             } header: {
                 Text("Or enter it by hand")
             } footer: {
-                Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x).")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x).")
+                    // The way past this step for someone with no server is a
+                    // small button under Continue; say what it leads to.
+                    if serverFieldsAreEmpty {
+                        Text("No server? Tap “I'll Set This Up Later” below. You can still export your data to files under Settings → Export Data, and add a server any time.")
+                    }
+                }
             }
 
             if let pairedUserID = server.pairedUserID {
@@ -272,9 +286,14 @@ struct OnboardingView: View {
                         .multilineTextAlignment(.trailing)
                 }
                 LabeledContent("Data types", value: "\(model.config.enabledTypes.count) selected")
-                LabeledContent(
-                    "History from",
-                    value: model.config.startDate.formatted(date: .abbreviated, time: .omitted))
+                // The sync's start date. With no server nothing syncs, and
+                // Export Data takes its own time range — the row would only
+                // suggest a limit that does not exist.
+                if server.validatedURL != nil {
+                    LabeledContent(
+                        "History from",
+                        value: model.config.startDate.formatted(date: .abbreviated, time: .omitted))
+                }
                 LabeledContent("User ID") {
                     Text(model.config.userID)
                         .font(.caption.monospaced())
@@ -283,15 +302,18 @@ struct OnboardingView: View {
             }
             Section {
                 Text(server.validatedURL == nil
-                    ? "No server is set, so nothing will be uploaded yet. Add one under Settings → Server whenever you are ready."
+                    ? "No server is set, so nothing will be uploaded. You can still export this data to CSV or JSONL files under Settings → Export Data, and add a server under Settings → Server any time."
                     : "Tapping Start uploads everything from the date above. The first pass is the largest — keep the app open and the phone on power for it. Progress is saved after every batch, so it is safe to interrupt.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-            Section {
-                Text("From here on, PulsHealth catches up whenever you open it, and in the background when iOS allows. The Dashboard shows what has been sent.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            // Only true with somewhere to send to.
+            if server.validatedURL != nil {
+                Section {
+                    Text("From here on, PulsHealth catches up whenever you open it, and in the background when iOS allows. The Dashboard shows what has been sent.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -383,10 +405,7 @@ struct OnboardingView: View {
     private var secondaryTitle: String? {
         switch step {
         case .server:
-            if server.urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                && server.token.isEmpty {
-                return "I'll Set This Up Later"
-            }
+            if serverFieldsAreEmpty { return "I'll Set This Up Later" }
             // An unusable URL cannot be carried forward — `commitServerFields`
             // would store nothing and the typed text would vanish without a
             // word. Fix it, or clear the field to skip the step outright.
@@ -451,6 +470,12 @@ struct OnboardingView: View {
     }
 
     // MARK: - Server helpers (the rules are `ServerFieldsDraft`'s, shared with Settings)
+
+    /// Nothing typed, scanned or pasted: the state in which the server step can
+    /// be skipped outright.
+    private var serverFieldsAreEmpty: Bool {
+        server.urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && server.token.isEmpty
+    }
 
     private var serverSummary: String {
         guard let url = server.validatedURL else { return "Not set" }

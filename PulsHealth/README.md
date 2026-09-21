@@ -79,9 +79,25 @@ Sources/
 │                         authorization (incl. iOS 26 per-object medication auth).
 │                         Turns an incoming puls:// link into a prompt and, once
 │                         accepted, a one-shot hand-off (confirmedPairing) to the
-│                         screen that owns the server fields.
+│                         screen that owns the server fields. Clears the export
+│                         staging directory at launch, and runs the export's
+│                         Health-access step (applied selection, never the draft).
+├── ExportModel.swift     @MainActor @Observable, owned by AppModel: format and
+│                         range, the run in flight (progress, cancel, idle-timer
+│                         and background-task assertion), the finished export,
+│                         and the lifetime of its staged files. A run outlives
+│                         the screen that started it.
+├── ExportView.swift      Settings → Export Data (also linked from the Dashboard
+│                         when no server is set): CSV or JSONL, 30 days / 90 days
+│                         / a year / all time, what the applied selection covers,
+│                         then running → result (totals, per-dataset rows, an
+│                         "incomplete" section, what CSV left out) → a
+│                         UIActivityViewController share sheet, whose completion
+│                         is what deletes the staged copy.
 ├── RootView.swift        TabView (Dashboard / Data Types / Log / Settings) +
-│                         DashboardView: totals, ETA, per-type rows, Sync Now.
+│                         DashboardView: totals, ETA, per-type rows, Sync Now,
+│                         and — with no server applied — a "No server set up"
+│                         card linking to Export Data.
 │                         Presents OnboardingView over everything on a first run.
 ├── OnboardingView.swift  First run, five steps: what the app does and where the
 │                         data goes; the server (the pairing code — scanned,
@@ -91,6 +107,9 @@ Sources/
 │                         Health access; the data types (the real TypePickerView,
 │                         preselected with TypePresets.common); a summary whose
 │                         button applies everything and starts the backfill.
+│                         The server is optional: the welcome and server steps
+│                         say so, and with none set the last step's button is
+│                         Finish and its text points at Settings → Export Data.
 │                         Nothing reaches the engine before that last tap.
 │                         Settings → Diagnostics → "Show Onboarding Again"
 │                         replays it (with a Close button) for testing.
@@ -124,7 +143,7 @@ Sources/
 │                         ok / no capabilities / token rejected / unsupported
 │                         protocol / unreachable (TLS, DNS, timeout) / server
 │                         error — start date, concurrency/batch-size tuning,
-│                         backfill trigger, benchmark, reset-all, and
+│                         backfill trigger, Export Data, benchmark, reset-all, and
 │                         "Validate Aggregate Functions" (runs the legal-set
 │                         matrix against HealthKit on this device/runtime).
 ├── LogView.swift         Live filterable event stream (level + type filters);
@@ -176,6 +195,33 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   accepting it delivers; and only the host is logged, never the link or token.
   Accepting during the first run jumps to the flow's server step; afterwards it
   switches to Settings → Server, popping anything pushed there.
+- **Without a server.** The server step can be skipped ("I'll Set This Up
+  Later"); the flow still asks for Health access and a selection, and Finish
+  applies them. Nothing syncs — `AppModel.configured` is unchanged and still
+  needs a server — and the Dashboard says so with a "No server set up" card
+  whose link, like Settings → Export Data, opens the export screen.
+- **Export Data** writes the *applied* selection (not a Data Types draft — a
+  draft has not been through Apply, which is where Health access is requested;
+  the screen says when one is pending) to CSV or JSONL through the package's
+  `HealthExporter`, which runs on a throwaway engine and never touches the
+  app's sync state (root `CLAUDE.md`, "Export never shares sync state"). Before
+  a run the app requests Health access for any selected type iOS still reports
+  as undetermined — skipping types iOS refuses to list, and never presenting
+  the medication picker — then holds the screen awake and a background-task
+  assertion until it ends. A partial export (`isComplete == false`) is shown as
+  **Export incomplete** with the types that failed, and says so when the app
+  left the foreground during the run, since a locked phone is the usual cause.
+  Export is refused while a backfill runs, and Start Initial Backfill while an
+  export does: they are the same sweep over the same store.
+  **The staged files are short-lived by construction**, which the privacy
+  policy relies on: they live under `HealthExporter.stagingRoot` in the
+  temporary directory, and are deleted at every launch (`AppModel.init`), when
+  another export starts, on Delete Export, and when the share sheet's
+  completion handler reports `completed` — which is why the screen uses
+  `UIActivityViewController` rather than `ShareLink`, which has no callback.
+  A dismissed sheet deletes nothing. Copy is excluded from the sheet: it would
+  report success for a file that is then deleted, and it is the one activity
+  that would put health data on a shared clipboard.
 - The most reliable sync trigger iOS offers is app-open: every foregrounding runs a
   full incremental pass, and re-reads the server's `GET /v1/capabilities` (kept
   in memory only) to decide which server-dependent controls to show.

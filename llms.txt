@@ -26,7 +26,7 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 ## The data
 
 - [docs/database-guide.md](docs/database-guide.md): the authoritative guide to the schema — every table family, what each column means, which table answers which question, and the traps (device double counting above all). Rendered at https://pulshealth.com/docs/database/.
-- [docs/export.md](docs/export.md): bulk export of a whole range as streamed CSV or JSONL, over `GET /v1/export` or the `puls-export` CLI. Rendered at https://pulshealth.com/docs/export/.
+- [docs/export.md](docs/export.md): bulk export of a whole range as streamed CSV or JSONL, over `GET /v1/export` or the `puls-export` CLI — and, with no server at all, from the app itself (Settings → Export Data). Rendered at https://pulshealth.com/docs/export/.
 - [server/README.md](server/README.md): running the reference backend — Compose services, environment, schema migrations, the ingest wire format and the product API. Rendered at https://pulshealth.com/docs/self-hosting/.
 
 ## AI assistants

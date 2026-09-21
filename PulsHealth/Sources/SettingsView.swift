@@ -5,7 +5,7 @@ import PulsHealthSync
 /// stack's path, can pop back to Settings → Server when a pairing link is
 /// accepted while one of them is on top.
 enum SettingsRoute: Hashable {
-    case user, benchmark
+    case user, benchmark, export
 }
 
 struct SettingsView: View {
@@ -92,12 +92,14 @@ struct SettingsView: View {
 
             Section("Sync window") {
                 DatePicker(
-                    "Export data from",
+                    // "Sync", not "Export": Export Data is its own screen now,
+                    // with its own time range, and this date is not it.
+                    "Sync data from",
                     selection: $model.config.startDate,
                     in: ...Date(),
                     displayedComponents: .date
                 )
-                Text("The initial backfill exports everything from this date forward. Changing it later only affects types whose anchors are reset.")
+                Text("The initial backfill syncs everything from this date forward. Changing it later only affects types whose anchors are reset. Export Data has its own time range.")
                     .font(.caption).foregroundStyle(.secondary)
             }
 
@@ -124,7 +126,10 @@ struct SettingsView: View {
 
             Section("Backfill") {
                 Button("Start Initial Backfill") { confirmBackfill = true }
-                    .disabled(!model.configured || model.backfillActive)
+                    // Not under a running export: the two are the same sweep
+                    // over the same HealthKit store (AppModel.exportBlockedByBackfill
+                    // is this rule from the other side).
+                    .disabled(!model.configured || model.backfillActive || model.export.isRunning)
                 if model.backfillActive {
                     HStack {
                         ProgressView().controlSize(.small)
@@ -137,6 +142,32 @@ struct SettingsView: View {
                 }
                 Text("Keep the app in the foreground and the device plugged in for the fastest backfill. Progress is saved after every batch — it's safe to interrupt.")
                     .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                NavigationLink(value: SettingsRoute.export) {
+                    // An HStack, not LabeledContent: with an empty value that
+                    // leaves the row's accessibility label empty too.
+                    HStack {
+                        Text("Export Data")
+                        Spacer()
+                        // A run outlives the screen that started it, so the way
+                        // back to it says when there is one.
+                        switch model.export.state {
+                        case .idle:
+                            EmptyView()
+                        case .running:
+                            ProgressView()
+                        case .finished(let finished):
+                            Text(finished.filesRemoved ? "Shared" : "Ready to share")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                Text("Export")
+            } footer: {
+                Text("Write the selected health data to CSV or JSONL files on this iPhone and share them. Works without a server.")
             }
 
             Section {
@@ -184,6 +215,7 @@ struct SettingsView: View {
             switch route {
             case .user: UserView()
             case .benchmark: BenchmarkView()
+            case .export: ExportView()
             }
         }
         .onAppear {

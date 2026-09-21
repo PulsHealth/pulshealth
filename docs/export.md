@@ -166,6 +166,22 @@ transport appends to files instead of POSTing. The files are staged in the
 app's temporary directory for the share sheet and removed afterwards
 (`HealthExporter.removeAllExports()`).
 
+**In the app it is Settings → Export Data** — and, on an install with no
+server, the "Export Data to Files" link on the Dashboard. Pick CSV or JSONL and
+a time range (last 30 days, 90 days, a year, or all time); the export covers
+the selection applied on the Data Types tab, and the sync start date in
+Settings plays no part. When it finishes, **Share or Save to Files** opens the
+iOS share sheet with every file of the export, manifest included. The app
+deletes its staged copy once the share sheet reports the files were handed
+over, when you tap Delete Export, when you start another export, and at every
+launch, so save the files somewhere before moving on. Keep the app open and the
+phone unlocked while it runs: HealthKit cannot be read on a locked phone, and an
+export that runs into a lock finishes **incomplete** and says which types it
+could not read. As a guide to size, 340,000 samples came to 41 MB as CSV and
+212 MB as JSONL (the wire format carries each sample's time-zone context and
+source), written in 5–7 seconds on a simulator; a phone is slower, and years
+of Apple Watch heart rate run to millions of samples.
+
 It offers the same two formats, and they are not symmetrical:
 
 **JSONL is the complete one, and it is replayable.** The file

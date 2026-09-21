@@ -16,6 +16,13 @@ it is where the sync protocol is written.
 **[PulsHealth is on the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354)** —
 free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 
+**No server? Export to files.** The app does not need one to be useful:
+**Settings → Export Data** writes the selected data straight from HealthKit to
+CSV (for spreadsheets) or JSONL (the sync protocol itself — complete, and
+replayable into a server later), for the last 30 days up to all time, and hands
+the files to the share sheet. Nothing is uploaded. Formats and columns are in
+[`docs/export.md`](docs/export.md#on-device-export-no-server).
+
 > **The backend is pre-release.** The app ships from the store, but standing
 > up the server it syncs to still expects someone comfortable with Docker, and
 > this is honest about what is missing:
@@ -183,6 +190,10 @@ Either way, in the app:
 
 Open the web viewer at `http://localhost:3001` on the server, or Grafana at
 `http://localhost:3000`, and watch the data arrive.
+
+Skipping step 2 is fine: with no server the app syncs nothing, says so on the
+Dashboard, and **Settings → Export Data** still writes what you selected to
+files.
 
 Several people on one server: give each phone its own user ID under
 **Settings → User** (the default is a fixed UUID so a reinstall keeps its
@@ -442,6 +453,11 @@ No. The app requests read access only, and its usage strings say so.
 - **Your data goes only to your server.** There is no PulsHealth service, no
   analytics, no crash reporting. The app makes requests to the URL you
   configure and nowhere else.
+- **An export is a file you hand over yourself.** Export Data makes no network
+  request: it stages files in the app's temporary directory (never backed up),
+  gives them to the iOS share sheet, and deletes its copy once the share
+  completes, when another export starts, and at every launch. The files are
+  not encrypted and carry no token — see [`SECURITY.md`](SECURITY.md).
 - **Bearer tokens.** The ingest server accepts a shared static `PULS_TOKEN`
   — whoever holds it can upload and delete data for any user ID — and
   per-device tokens (`make devices ARGS='issue --user <uuid> --name <label>'`)
