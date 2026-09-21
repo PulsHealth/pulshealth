@@ -58,7 +58,13 @@ if one ever is not, the quickstart should clone the release tag instead.
 
 ## 2. Submit the app's 1.4 — R-STORE
 
-**Submitted 2026-09-18: 1.4 (14), waiting for review.** Worked from
+**Done. 1.4 (15) approved 2026-09-19 and released automatically.** Build 14
+was rejected the same day under 5.2.5 (the subtitle "Apple Health to your
+server" counts as the app name; no "Apple" allowed there) and 5.1.1(iv) (the
+pre-permission screen's "Grant Health Access" button and "Skip for Now" link);
+#71 fixed both and build 15 went through. The review instance on grey is torn
+down, its volume, env file, bare repo and `review.pulshealth.com` record
+deleted, and the Release record has the row. Worked from
 `docs/appstore/README.md`'s checklist, plus what the checklist did not
 anticipate:
 
@@ -78,10 +84,8 @@ anticipate:
   the screenshots are the four first-run screens (see `listing.md` §
   Screenshots).
 
-Still to do: when it is approved, tear the review instance down and destroy its
-token (`review-backend.md` § 6), and add the 1.4 row to the Release record. The
-real-data screenshot set (dashboard, type detail, background activity) is still
-owed — § 3.
+Still owed: the real-data screenshot set (dashboard, type detail, background
+activity) — § 3.
 
 ## 3. Screenshots — OSS-4
 

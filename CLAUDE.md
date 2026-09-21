@@ -335,8 +335,8 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) is fixed by
   the record rather than chosen, and an archive only updates the listing if it
   carries that identifier. `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` must
-  likewise stay ahead of what shipped (currently 1.4 / 14 against 1.3 / 13 on
-  the store).
+  likewise stay ahead of what shipped (1.4 / 15 is on the store, and
+  `project.yml` still says 1.4 / 15, so bump before the next archive).
 - **The published privacy claims are load-bearing.**
   `docs/privacy-policy.md`, `docs/appstore/` and the site's `/privacy` page
   state as fact that the app has
