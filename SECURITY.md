@@ -59,8 +59,12 @@ Everything in this repository is in scope, in particular:
 - **Product API** (`server/api`): token handling, data exposure beyond the
   read-only role it is meant to have.
 - **iOS app and `PulsHealthSync`**: handling of the server URL and bearer
-  token, health data written outside the app container, data sent anywhere
-  other than the configured server.
+  token, including a pairing link (`puls://pair`) changing the server without
+  the confirmation it is supposed to require; health data written anywhere
+  the user did not ask for — the one intended case is an on-device export,
+  staged in the app's temporary directory and handed to the share sheet, so an
+  export that lingers, lands somewhere else, or carries the token or profile
+  is in scope; data sent anywhere other than the configured server.
 - **Compose stack and schema** (`server/docker-compose.yml`, `server/db/migrations`):
   defaults that expose a service or credential more widely than documented.
 - **Web viewer** (`web/`): only as deployed the documented way — bound to
@@ -103,6 +107,17 @@ context for judging what is.
   Keychain write fails the app parks the token in that protected state file
   instead of dropping it — losing it would stall syncing until the user
   re-entered it — and removes it once the Keychain accepts it.
+- **An export is a plain file, and it is yours once shared.** The app can
+  write the selected health data to JSONL or CSV without a server
+  (`PulsHealthSync/Sources/PulsHealthSync/Export/`). The files are staged in
+  the app's temporary directory — never backed up — and deleted at the next
+  launch and once the share sheet is done with them; they carry no token, no
+  server URL and no name, e-mail or date of birth — of the app's own
+  identifiers only the user ID, the install's random device ID and the phone's
+  time zone — though the health data itself names the app or device that
+  recorded each sample, as HealthKit does. They are not encrypted
+  beyond iOS file protection, and after the share sheet hands them to Files,
+  AirDrop or another app, where they rest is outside the app's control.
 - **TLS is yours to provide.** Every service binds to loopback by default. The
   phone must reach the ingest port over HTTPS through a TLS-terminating
   reverse proxy or a VPN; the token is only a second layer.

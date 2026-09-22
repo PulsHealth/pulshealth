@@ -7,6 +7,9 @@ import PulsHealthSync
 final class AppModel {
     let engine: HealthSyncEngine
     let scheduler: BackgroundSyncScheduler
+    /// Settings → Export Data: the server-less way out. A model of its own so a
+    /// run outlives the screen that started it (`ExportModel`).
+    let export = ExportModel()
 
     private(set) var statuses: [TypeSyncStatus] = []
     /// Per-aggregate-config sync progress, keyed by config ID.
@@ -88,6 +91,23 @@ final class AppModel {
     /// Whether the deferred apply asked to backfill newly enabled types.
     @ObservationIgnored private var pendingServerChangeWantsNewTypeSync = false
 
+    /// What an incoming `puls://` link is waiting to show: the confirmation for
+    /// a valid pairing link, or the reason an unusable one was dropped.
+    enum PairingLinkPrompt: Equatable {
+        case confirm(PairingPayload)
+        case rejected(String)
+    }
+    /// Set by `handleIncomingURL`, cleared by the prompt's buttons. A link
+    /// fills nothing until the user has answered this (`PairingLinkPromptModifier`).
+    private(set) var pairingLinkPrompt: PairingLinkPrompt?
+    /// A pairing link the user accepted, waiting for the screen that owns the
+    /// server fields — the first-run flow while it is up, Settings → Server
+    /// otherwise — to collect it with `takeConfirmedPairing()`. A hand-off
+    /// rather than a write into `config`: both screens keep the URL and token
+    /// as local text until the user moves on, and a link gets no shortcut past
+    /// that.
+    private(set) var confirmedPairing: PairingPayload?
+
     /// Types a permission request failed to determine this session. Re-requesting
     /// them just makes the sheet flash and auto-dismiss, so the proactive tab-exit
     /// prompt skips them until something else becomes pending. Session-only on
@@ -104,6 +124,15 @@ final class AppModel {
         let engine = HealthSyncEngine()
         self.engine = engine
         self.scheduler = BackgroundSyncScheduler(engine: engine)
+        // An export's files are health data sitting in the temporary directory
+        // until they are shared. The privacy policy says none survives a
+        // launch, and this line is what makes that true — for the export the
+        // user never got round to sharing, and for whatever a crash or a
+        // force-quit left half-written. Here rather than in `start()` because
+        // this runs once per process, before any export can, so it can never
+        // delete a run's directory out from under it; and it is a synchronous
+        // unlink, which works on a locked device too (a background launch).
+        HealthExporter.removeAllExports()
         // Reading the persisted configuration is async, and the window is built
         // before it lands. Decide from the two durable flags alone so a first
         // launch opens straight into onboarding: `authorizationRequested` marks
@@ -289,6 +318,77 @@ final class AppModel {
         await requestAccessForEnabledTypesIfNeeded()
     }
 
+    // MARK: - Export to files
+
+    /// What Export Data exports: the **applied** selection, never the draft.
+    ///
+    /// The Data Types tab edits `config` freely and nothing there counts until
+    /// Apply — which is also the moment Health access is requested for it. An
+    /// export of a half-edited draft would read types the user has not been
+    /// asked about (each one a failure in the result) and would disagree with
+    /// the Dashboard about what "the selection" is. The screen says when a
+    /// draft is pending instead (`hasPendingChanges`).
+    var exportSelection: ExportSelectionSummary {
+        ExportSelectionSummary(configuration: appliedConfig)
+    }
+
+    /// A backfill and an export are the same sweep over the same HealthKit
+    /// store, each several queries wide. Running both is allowed and neither
+    /// corrupts the other (the export's engine shares no state), but each
+    /// would crawl — so the screen waits for the backfill rather than start a
+    /// multi-minute run that looks hung. Incremental syncs are small and are
+    /// not waited for.
+    var exportBlockedByBackfill: Bool { backfillActive }
+
+    /// Medication Doses is selected but this install has never got the
+    /// per-object picker on screen, so the export will find no doses. Normally
+    /// false: Apply schedules that picker for any selection that includes the
+    /// type. Export only *says* so — it must not present the picker itself,
+    /// least of all on a path it awaits (see `scheduleMedicationAccessRequest`).
+    var exportLacksMedicationAccess: Bool {
+        guard #available(iOS 26.0, *) else { return false }
+        return appliedConfig.enabledTypes.contains(HealthTypeCatalog.medicationDoseIdentifier)
+            && !UserDefaults.standard.bool(forKey: Self.medicationAuthRequestedKey)
+    }
+
+    func startExport() {
+        guard !exportBlockedByBackfill, !exportSelection.isEmpty else { return }
+        export.start(configuration: appliedConfig, engine: engine) { [weak self] in
+            await self?.requestHealthAccessForExport()
+        }
+    }
+
+    /// The export's permission step. `HealthExporter` never prompts, and a type
+    /// whose access was never requested comes back as a failure, so anything in
+    /// the applied selection that iOS still reports as undetermined is asked
+    /// for first — one sheet, the same request Apply makes.
+    ///
+    /// Usually there is nothing to ask: a selection only becomes *applied*
+    /// through Apply, which requested it. What is left is a type added to the
+    /// selection by an older build, or a sheet that was interrupted. Two rules
+    /// carry over from Apply: types iOS refuses to put in the sheet are not
+    /// asked for again (it would only flash — they show up in the export's
+    /// failures, with the hint already on the Dashboard), and the medication
+    /// picker is not requested here at all.
+    ///
+    /// It does not touch `authorizationRequested`: that flag gates observer
+    /// registration and background scheduling, which are the sync's business.
+    private func requestHealthAccessForExport() async {
+        let selected = appliedConfig.observedTypeIdentifiers.sorted()
+        guard !selected.isEmpty, await engine.authorizationNeeded(for: selected) else { return }
+        let pending = await pendingTypes(among: selected)
+        guard !Set(pending).isSubset(of: undeterminableTypes) else { return }
+        do {
+            try await engine.requestAuthorization(for: selected)
+            undeterminableTypes.formUnion(await pendingTypes(among: selected))
+        } catch {
+            // Not fatal: the export runs and reports what it could not read.
+            await engine.eventLog.log(
+                .warn, "Health access request before export failed: \(error.localizedDescription)")
+        }
+        await refreshNeedsAuthorization()
+    }
+
     // MARK: - Actions
 
     /// Recomputes the dashboard's "access incomplete" warning. Scoped to the
@@ -305,8 +405,12 @@ final class AppModel {
     /// Observed types (raw-sync ∪ enabled aggregates) that iOS still reports as
     /// never-determined, one by one.
     private func pendingEnabledTypes() async -> [String] {
+        await pendingTypes(among: config.observedTypeIdentifiers.sorted())
+    }
+
+    private func pendingTypes(among identifiers: [String]) async -> [String] {
         var pending: [String] = []
-        for id in config.observedTypeIdentifiers.sorted() {
+        for id in identifiers {
             if await engine.authorizationNeeded(for: [id]) { pending.append(id) }
         }
         return pending
@@ -507,6 +611,100 @@ final class AppModel {
     func cancelServerChange() {
         pendingServerChange = nil
         pendingServerChangeWantsNewTypeSync = false
+    }
+
+    // MARK: - Pairing links
+
+    /// Entry point for `onOpenURL`: a tapped `puls://pair?…` link, or the same
+    /// string read from the server's QR code by the iOS Camera app.
+    ///
+    /// **A link is untrusted input.** Any web page or app can fire one, so this
+    /// never touches the configuration, the draft or the fields. It parses the
+    /// link — `PairingPayload.parse` re-validates the URL and the UUID exactly
+    /// as it does for a scanned code — and raises a prompt naming the host. The
+    /// values go nowhere until the user accepts, and then only as far as a scan
+    /// would take them: into the server fields, tested, not applied.
+    func handleIncomingURL(_ url: URL) {
+        guard url.scheme?.lowercased() == PairingPayload.scheme else { return }
+        Task {
+            // A link can be what launches the app. Both things the prompt
+            // depends on are only known once `start()` has read the stored
+            // state: whether a server is already configured (the "replaces"
+            // warning), and whether the first-run flow is really up — `init`
+            // guesses that from two flags and `startBody` corrects it.
+            await start()
+            // First one wins. The prompt on screen must describe the payload
+            // that accepting it delivers; a second link swapping the payload
+            // underneath an alert that still names the first host would defeat
+            // the whole confirmation.
+            guard pairingLinkPrompt == nil else {
+                await engine.eventLog.log(.warn, "Pairing link ignored — another one is awaiting an answer")
+                return
+            }
+            // Never log the link itself: it carries the token. Host only.
+            switch PairingPayload.parse(url.absoluteString) {
+            case .success(let payload):
+                pairingLinkPrompt = .confirm(payload)
+                await engine.eventLog.log(
+                    .info,
+                    "Pairing link for \(pairingConfirmation(for: payload).serverLabel) opened — waiting for confirmation")
+            case .failure(let failure):
+                pairingLinkPrompt = .rejected(PairingConfirmation.rejectionMessage(for: failure))
+                await engine.eventLog.log(
+                    .warn, "Pairing link not used: \(failure.errorDescription ?? "unreadable")")
+            }
+        }
+    }
+
+    /// What the prompt says about `payload`, worked out when the prompt is
+    /// shown rather than when the link arrived: a link that lands during the
+    /// flow's final Apply is only presented once the cover is down, and by
+    /// then both halves of the answer have changed — a server is applied, and
+    /// accepting leads to Settings, not to the flow's server step.
+    func pairingConfirmation(for payload: PairingPayload) -> PairingConfirmation {
+        PairingConfirmation(
+            payload: payload,
+            // The *applied* server: where data goes today, not a half-typed draft.
+            currentServerURL: appliedConfig.serverURL,
+            currentUserID: appliedConfig.userID,
+            destination: showsOnboarding ? .onboarding : .settings)
+    }
+
+    /// The prompt's Continue. Takes the payload the prompt *displayed* and
+    /// refuses anything else, for the same reason as first-one-wins above.
+    ///
+    /// Synchronous, like `confirmServerChange`: an alert button's action and
+    /// the dismissal of its binding land in the same turn.
+    func confirmPairingLink(_ payload: PairingPayload) {
+        guard case .confirm(let pending) = pairingLinkPrompt, pending == payload else { return }
+        pairingLinkPrompt = nil
+        confirmedPairing = payload
+        let label = pairingConfirmation(for: payload).serverLabel
+        Task {
+            await engine.eventLog.log(
+                .info, "Pairing link for \(label) accepted — server details filled in, nothing applied")
+        }
+    }
+
+    /// Cancel on the confirmation, or OK on the "can't be used" notice.
+    func dismissPairingLink() {
+        guard let prompt = pairingLinkPrompt else { return }
+        pairingLinkPrompt = nil
+        if case .confirm(let payload) = prompt {
+            let label = pairingConfirmation(for: payload).serverLabel
+            Task { await engine.eventLog.log(.info, "Pairing link for \(label) declined") }
+        }
+    }
+
+    /// True while an accepted link is waiting for Settings → Server, i.e. the
+    /// first-run flow is not the one that should take it. RootView switches to
+    /// the Settings tab on this.
+    var pairingAwaitsSettings: Bool { confirmedPairing != nil && !showsOnboarding }
+
+    /// One-shot: the screen that fills its fields from the payload takes it.
+    func takeConfirmedPairing() -> PairingPayload? {
+        defer { confirmedPairing = nil }
+        return confirmedPairing
     }
 
     // MARK: - Staged Data Types changes
@@ -807,10 +1005,14 @@ final class AppModel {
     /// calls this with the entered, not-yet-applied values. Nothing is
     /// persisted; a successful answer only refreshes the in-memory
     /// capabilities so the feature gates reflect the server just tested.
-    func testConnection(url: URL, token: String) async -> ConnectionTestResult {
+    ///
+    /// `userID` is the one the entered values would sync as — the draft's,
+    /// unless a pairing code staged a different one alongside them
+    /// (`ServerFieldsDraft.connectionTestUserID`).
+    func testConnection(url: URL, token: String, userID: String? = nil) async -> ConnectionTestResult {
         let deviceID = await engine.store.deviceID
         let tester = ConnectionTester(
-            baseURL: url, authToken: token, userID: config.userID, deviceID: deviceID)
+            baseURL: url, authToken: token, userID: userID ?? config.userID, deviceID: deviceID)
         let result = await tester.run()
         if case .ok(let capabilities) = result {
             serverCapabilities = capabilities

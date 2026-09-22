@@ -40,10 +40,10 @@ export default function PrivacyPage() {
           <CardContent>
             <ul className="list-disc pl-6 space-y-2">
               <li>The developer receives no health data. There is no PulsHealth account, service or server.</li>
-              <li>Your health data goes to exactly one place: the server you run and configure.</li>
+              <li>Your health data leaves the phone only two ways, both yours: uploads to the server you run and configure, and files you export and share yourself.</li>
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>
               <li>No analytics, advertising, tracking or third-party SDKs in the app.</li>
-              <li>The server token normally lives in the iOS Keychain; the app stores no health samples.</li>
+              <li>The server token normally lives in the iOS Keychain. The app keeps no health samples; an export you ask for is staged in temporary storage until you share it, then deleted.</li>
               <li>This website loads no analytics and sets no cookies. Its two forms send only what you type.</li>
             </ul>
           </CardContent>

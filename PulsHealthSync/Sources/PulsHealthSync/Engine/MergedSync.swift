@@ -133,6 +133,7 @@ extension HealthSyncEngine {
                         // property — so one wrong unit makes every sample of that
                         // type unmappable. Silently, until now.
                         droppedAnything.insert(page.identifier)
+                        noteUnmappableSamples(page.dropped, type: page.identifier)
                         await eventLog.log(
                             .warn, type: page.identifier,
                             "Dropped \(page.dropped) of \(page.rawCount) samples that could not be mapped — check this type's unitString in HealthTypeCatalog"

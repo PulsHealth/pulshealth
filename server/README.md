@@ -36,8 +36,11 @@ server/
 
 The fast path is the bootstrap script at the repository root: it creates
 `.env` with every secret generated, starts the stack, waits for ingest and
-prints the pairing block for the app (URL, token, user ID, QR code). It is
-safe to re-run, and `--print-pairing` (`make pairing`) re-prints the block.
+prints the pairing block for the app (URL, token, user ID, QR code — drawn by
+`qrencode` when the host has it, by the ingest container's own `ingest qr`
+otherwise, so there is nothing to install). It is safe to re-run,
+`--print-pairing` (`make pairing`) re-prints the block, and `--issue-device
+<label>` prints one for a per-device token (see "Tokens").
 
 ```bash
 scripts/bootstrap.sh --time-zone Europe/Berlin    # the root README's "Quickstart" has the rest
@@ -134,8 +137,10 @@ comments). Beyond the passwords and tokens, two settings deserve attention:
   document names.
 - `PULS_VERSION` — which image tag the four app services run (`latest` when
   unset); `PULS_PUBLIC_URL` — the URL the pairing block should carry instead
-  of the LAN address (read by `scripts/bootstrap.sh` only). See "Images and
-  versions" and "Exposing the server".
+  of the LAN address. Pairing only: `scripts/bootstrap.sh` reads it, and
+  Compose hands it to the ingest container for `devices issue`'s QR code; the
+  running server never looks at it. See "Images and versions" and "Exposing
+  the server".
 
 ## Deploying and upgrading
 
@@ -423,18 +428,50 @@ before anything else, and it carries no user: `X-User-ID` picks the user.
 as its SHA-256 (the plaintext is 32 random bytes hex-encoded — the same shape
 as the shared token, so the app's token field, the QR payload and every
 example here are unchanged), bound to that user, revocable on its own, and
-stamped with when it was last used. The `ingest` image is distroless, so the
-CLI is the same binary run with `devices` as its first argument; `make
-devices` wraps `docker compose run --rm --no-deps ingest devices …`:
+stamped with when it was last used.
+
+Pairing a phone with one is a single command, which issues the token and
+prints the same block the shared token gets — URL, token, user ID and a QR
+code the app scans (**Settings → Server**):
 
 ```bash
-make devices ARGS='issue --user 5ea4d000-0000-4000-8000-000000000001 --name "Sean iPhone"'
-#   prints the token ONCE — only its hash is stored, a lost token is revoked and reissued
+scripts/bootstrap.sh --issue-device "My iPhone"                  # the default user
+scripts/bootstrap.sh --issue-device "Her iPhone" --user <uuid>   # someone else; a new UUID creates the user
+#   (or: make issue-device NAME='My iPhone' ARGS='--user <uuid>')
+#   The token is shown ONCE — only its hash is stored; a lost token is revoked and reissued.
+```
+
+The URL in the code is worked out the way the pairing block's is —
+`PULS_PUBLIC_URL`, else this host's LAN address under `--lan` — and when
+there is none yet the command says so and issues nothing. `--url <URL>`
+names one for that code alone, without touching `.env`. The stack has to be
+running: the token is minted by `ingest devices issue` inside the ingest
+container, which is also what draws the code, so no `qrencode` is needed.
+
+The rest of the lifecycle is the CLI underneath. The `ingest` image is
+distroless, so it is the same binary run with `devices` as its first
+argument; `make devices` wraps `docker compose run --rm --no-deps ingest
+devices …` and hands it the same URL, so `issue` prints a QR code here too:
+
+```bash
+make devices ARGS='issue --user 5ea4d000-0000-4000-8000-000000000001 --name "My iPhone"'
+#   [--url <URL>] overrides the URL in the code; [--no-qr] prints the payload as text only
 make devices ARGS='list'            # id, prefix, status, user, name, created, last seen
 make devices ARGS='list --all'      # revoked ones too
 make devices ARGS='rename 3 "Old phone"'
 make devices ARGS='revoke 3'        # refused from the next request on; nothing to restart
 ```
+
+Run without `make` (`docker compose run --rm --no-deps ingest devices issue
+…` from `server/`), `issue` takes the URL from `PULS_PUBLIC_URL` in `.env` or
+from `--url`; a container cannot see the proxy in front of it or the host's
+LAN address, so with neither it still prints the token and user ID, says how
+to supply the URL, and draws no code. A URL the app would refuse — plain
+`http://` beyond the local network — is rejected before any token is minted.
+`ingest qr` is the drawing half on its own: it reads a payload on stdin
+(never an argument — the payload holds the token, and arguments show in
+`ps`), needs no database, and is what `scripts/bootstrap.sh` falls back to on
+a host without `qrencode`.
 
 `issue` creates the `users` row if it does not exist, so a household member
 can be given a token before their phone has ever synced — which also means a
@@ -466,8 +503,9 @@ with it the `X-User-ID` hole closes — no credential can then write as a
 user it was not issued for. `docker compose logs ingest` prints the auth
 mode at startup and warns (never fails) when the shared token is off and
 no device token is active, since nothing could authenticate. `make pairing`
-and `scripts/bootstrap.sh` accept a 401 on their probe in that mode and
-point at `make devices` instead of printing a token.
+and `scripts/bootstrap.sh` accept a 401 on their probe in that mode and,
+having no token to show (only hashes are stored), print the
+`--issue-device` command that issues one with its QR code.
 
 ### Rate limiting
 
@@ -531,7 +569,7 @@ set of secrets would strand both. Rotate one value at a time instead:
 | Secret | How |
 |---|---|
 | `PULS_TOKEN` | Edit `.env`, `docker compose up -d ingest`, paste the new token into the app (`make pairing` shows it). |
-| A device token | `make devices ARGS='revoke <id>'`, then `make devices ARGS='issue --user <uuid> --name <label>'` and enter the new value on that phone. Effective on the next request; nothing restarts, and no other phone is affected. |
+| A device token | `make devices ARGS='revoke <id>'`, then `scripts/bootstrap.sh --issue-device <label> [--user <uuid>]` and scan the new code on that phone. Effective on the next request; nothing restarts, and no other phone is affected. |
 | `PULS_API_TOKEN`, `PULS_MCP_TOKEN` | Edit `.env`, `docker compose up -d api mcp`, update the API consumers and AI clients (`docs/ai.md`). |
 | `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` | Edit `.env`, `docker compose up -d`: `migrate` re-runs `099_read_roles.sh`, which sets the roles' passwords to the new values, and the containers restart with them. |
 | `POSTGRES_PASSWORD` | The superuser password lives in the database, not in `.env`: `docker compose exec db psql -U postgres -c "ALTER USER postgres PASSWORD '<new>'"` first, then edit `.env` and `docker compose up -d`. |
@@ -557,7 +595,7 @@ The phone has to reach ingest's port 8080. There are two supported ways, and
   token is a second layer behind TLS, not a substitute for it. Tell the
   bootstrap script the proxy's URL (`scripts/bootstrap.sh --url
   https://<host>`, stored as `PULS_PUBLIC_URL`) and the pairing block and QR
-  code carry it.
+  code carry it — as does the code of every device token issued afterwards.
 
 Any reverse proxy that terminates TLS works (Caddy, nginx, Traefik, a cloud
 tunnel). The easiest path is Tailscale: install it on the server and on your

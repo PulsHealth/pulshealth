@@ -16,6 +16,13 @@ it is where the sync protocol is written.
 **[PulsHealth is on the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354)** —
 free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 
+**No server? Export to files.** The app does not need one to be useful:
+**Settings → Export Data** writes the selected data straight from HealthKit to
+CSV (for spreadsheets) or JSONL (the sync protocol itself — complete, and
+replayable into a server later), for the last 30 days up to all time, and hands
+the files to the share sheet. Nothing is uploaded. Formats and columns are in
+[`docs/export.md`](docs/export.md#on-device-export-no-server).
+
 > **The backend is pre-release.** The app ships from the store, but standing
 > up the server it syncs to still expects someone comfortable with Docker, and
 > this is honest about what is missing:
@@ -90,8 +97,9 @@ the batch format can stand in for the reference stack — see
 ### Server
 
 You need a Linux (or macOS) box with Docker (and its Compose plugin),
-`openssl` and `curl`. `qrencode` is optional: with it the pairing QR code is
-drawn in the terminal (`brew install qrencode` / `apt install qrencode`).
+`openssl` and `curl`. Nothing else: the pairing QR code is drawn in the
+terminal by `qrencode` when you have it and by the ingest container itself
+when you do not.
 
 ```bash
 git clone https://github.com/PulsHealth/pulshealth.git
@@ -106,7 +114,10 @@ else — waits for ingest to answer, and prints a **pairing block**: the URL
 the phone should use, the bearer token, the user ID, and a QR code encoding
 all three. Leave `--time-zone` out and it uses the host's zone and says so;
 every daily view buckets by this calendar, so it must match the phone's.
-`make pairing` prints the block again whenever you need it.
+`make pairing` prints the block again whenever you need it, and
+`scripts/bootstrap.sh --issue-device "My iPhone"` prints the same block for a
+token of that phone's own instead of the shared one
+([per-device tokens](server/README.md#tokens)).
 
 Where the phone reaches the server is the one decision left to you. Until
 you make it, the pairing block's URL reads `(none yet)` and there is no QR
@@ -167,9 +178,12 @@ Either way, in the app:
 
 1. Grant Health access when asked (the app is read-only; it never writes to
    HealthKit).
-2. **Settings → Server:** scan the pairing block's QR code, or enter the
-   server URL and token by hand (`make pairing` re-prints the block; the QR
-   code encodes the same values). Then tap **Test Connection**.
+2. **Settings → Server:** scan the pairing block's QR code, paste its
+   `puls://pair?…` line with **Paste Pairing Code**, or enter the server URL
+   and token by hand (`make pairing` re-prints the block; the QR code encodes
+   the same values). Pointing the iOS Camera app at the QR code works too: it
+   offers to open PulsHealth, which asks you to confirm the server's host
+   before it fills anything in. Then tap **Test Connection**.
 3. **Data Types:** pick what to sync (a "Common" preset covers the usual
    types) and tap Apply. Types with no history sync from your chosen start
    date; the dashboard shows per-type progress, rate, and ETA.
@@ -177,11 +191,16 @@ Either way, in the app:
 Open the web viewer at `http://localhost:3001` on the server, or Grafana at
 `http://localhost:3000`, and watch the data arrive.
 
+Skipping step 2 is fine: with no server the app syncs nothing, says so on the
+Dashboard, and **Settings → Export Data** still writes what you selected to
+files.
+
 Several people on one server: give each phone its own user ID under
 **Settings → User** (the default is a fixed UUID so a reinstall keeps its
-identity) and issue each its own token with `make devices ARGS='issue --user
-<that user ID> --name "<label>"'` — a device token is bound to its user, so
-no phone can write as another. On the reading side `PULS_USER_ID` is the user
+identity) and issue each its own token with `scripts/bootstrap.sh
+--issue-device "<label>" --user <that user ID>`, which ends in a QR code that
+phone scans — a device token is bound to its user, so no phone can write as
+another. On the reading side `PULS_USER_ID` is the user
 shown by default; set `PULS_MULTI_USER=true` in `server/.env` and the product
 API answers for any user a request names (`?user=<uuid>`, listed by
 `GET /v1/users`), which the MCP server and the web viewer use to let you pick
@@ -434,6 +453,11 @@ No. The app requests read access only, and its usage strings say so.
 - **Your data goes only to your server.** There is no PulsHealth service, no
   analytics, no crash reporting. The app makes requests to the URL you
   configure and nowhere else.
+- **An export is a file you hand over yourself.** Export Data makes no network
+  request: it stages files in the app's temporary directory (never backed up),
+  gives them to the iOS share sheet, and deletes its copy once the share
+  completes, when another export starts, and at every launch. The files are
+  not encrypted and carry no token — see [`SECURITY.md`](SECURITY.md).
 - **Bearer tokens.** The ingest server accepts a shared static `PULS_TOKEN`
   — whoever holds it can upload and delete data for any user ID — and
   per-device tokens (`make devices ARGS='issue --user <uuid> --name <label>'`)

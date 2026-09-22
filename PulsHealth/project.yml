@@ -51,6 +51,18 @@ targets:
         # server prints instead of making the user type a URL, a token and a
         # UUID. Nothing else uses the camera and no frame is ever stored.
         NSCameraUsageDescription: Scan the pairing code shown by your PulsHealth server.
+        # `puls://pair?url=…&token=…&user=…` — the same string the pairing QR
+        # code encodes. Registering the scheme is what lets the iOS Camera app
+        # offer "Open in PulsHealth" for that code, and lets a pairing link be
+        # tapped. A custom scheme authenticates nobody: any page or app can
+        # fire one, so an incoming link only ever raises a confirmation naming
+        # the host (AppModel.handleIncomingURL) — it fills nothing by itself.
+        # The URL name derives from the bundle ID, so a fork needs no edit here.
+        CFBundleURLTypes:
+          - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER).pairing
+            CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - puls
         # The server may live on the LAN (a NAS, a Raspberry Pi) — reachable over
         # plain http only with this ATS exception, which is scoped to local
         # hosts (unqualified names, *.local, private IP ranges) and leaves
