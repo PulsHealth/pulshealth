@@ -119,9 +119,15 @@ struct OnboardingView: View {
     private var welcomeStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Image(systemName: "waveform.path.ecg")
-                    .font(.system(size: 52))
+                // The app's own mark (Assets.xcassets/Logo, the SVG the site
+                // uses, rendered as a template so it takes the tint), not a
+                // stand-in SF Symbol.
+                Image("Logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 72, height: 72)
                     .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 8)
                 Text("PulsHealth reads the health data on this iPhone and sends it to a server you run yourself.")
