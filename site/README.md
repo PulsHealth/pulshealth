@@ -16,8 +16,14 @@ It reads content from the **repository around it**, by relative path, so
 
 Moving `site/` (or anything it reads) breaks the loaders without a build
 error — they log "not found" and simply emit fewer pages. The page count is
-the tell: a full build exports **211** static pages, 177 of them under
+the tell: a full build exports **213** static pages, 177 of them under
 `knowledge-base/types/` and 11 under `docs/`.
+
+Two of those pages are not PulsHealth: `/fun100/` and `/fun100/privacy/` are
+the App Store support and privacy-policy URLs for Fun100, a separate app by
+the same developer. They are unlisted (not in the navigation, search or
+sitemap); the policy is `content/fun100/privacy-policy.md`, rendered the same
+way as `/privacy`.
 
 ## Develop
 
@@ -30,7 +36,7 @@ bun run dev        # localhost:3000
 ## Build and lint
 
 ```bash
-bun run build      # static export to site/out/ (211 pages)
+bun run build      # static export to site/out/ (213 pages)
 bun run lint       # ESLint (2 known warnings, no errors)
 ```
 
