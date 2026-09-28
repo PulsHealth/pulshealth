@@ -39,7 +39,9 @@ extension HealthSyncEngine {
         while !round.isEmpty {
             await runMergedSync(round, reason: nextReason)
             nextReason = .incremental
-            round = claimed.filter { pendingResync.remove($0) != nil }
+            // A cancelled run leaves the follow-ups marked for the next one
+            // rather than spending them on passes that would stop at once.
+            round = Task.isCancelled ? [] : claimed.filter { pendingResync.remove($0) != nil }
         }
     }
 
@@ -104,19 +106,27 @@ extension HealthSyncEngine {
             // samples each) that is tens of thousands of samples resident at
             // once — far too much for the memory a background wake gets. Here
             // the buffer only grows with real data and never holds much more
-            // than one batch plus one wave.
+            // than one batch plus the wave being processed and the wave being
+            // read.
             var buffer: [MergedPage] = []
             var buffered = 0
 
-            var queue = pending
-            let wave = max(1, config.maxConcurrentTypes)
-            while !queue.isEmpty, !Task.isCancelled {
-                let batchOfTypes = Array(queue.prefix(wave))
-                queue.removeFirst(batchOfTypes.count)
-                let pages = await fetchPages(batchOfTypes, cursors: cursors, config: config)
-                    .compactMap { $0 }
+            let width = max(1, config.maxConcurrentTypes)
+            var waves = stride(from: 0, to: pending.count, by: width).map {
+                Array(pending[$0..<min($0 + width, pending.count)])
+            }
+            var pages = await fetchPages(waves.removeFirst(), cursors: cursors, config: config)
+            while true {
+                // Read the next wave while this one is packed and uploaded. Its
+                // types are none of the buffered ones — within a round a type
+                // is read once, and a round's last flush lands before the next
+                // round reads anything — so no ack below can move a cursor it
+                // was read from.
+                let upcoming = Task.isCancelled || waves.isEmpty ? [] : waves.removeFirst()
+                let readFrom = cursors
+                async let nextPages = fetchPages(upcoming, cursors: readFrom, config: config)
 
-                for page in pages {
+                for page in pages.compactMap({ $0 }) {
                     if page.dropped > 0 {
                         // SampleMapper.map returns nil when the quantity is not
                         // compatible with the catalog's unitString — a whole-type
@@ -170,6 +180,8 @@ extension HealthSyncEngine {
                     drainedCleanly.formUnion(flushed.drained)
                     for (id, anchor) in flushed.cursors { cursors[id] = anchor }
                 }
+                pages = await nextPages
+                if upcoming.isEmpty { break }
             }
             let flushed = await flush(
                 buffer, budget: budget, keepPartial: false,
@@ -235,9 +247,9 @@ extension HealthSyncEngine {
             toSend.removeLast()
             result.leftover = last
         }
-        for pack in toSend {
-            guard await upload(pack, reason: reason, transport: transport, config: config)
-            else { continue }
+        let acked = await uploadPacks(
+            toSend, reason: reason, transport: transport, config: config)
+        for (pack, ok) in zip(toSend, acked) where ok {
             result.uploads += 1
             for page in pack {
                 result.samples += page.samples.count
@@ -251,6 +263,41 @@ extension HealthSyncEngine {
             }
         }
         return result
+    }
+
+    /// Upload `packs` up to `maxConcurrentTypes` at a time; the result says
+    /// which were acked, in order. One request at a time left the phone idle
+    /// for every round trip, which on a backlog is most of the run.
+    ///
+    /// Packs of one flush hold disjoint types — a type contributes one page per
+    /// round — so no type ever has two uploads in flight, and each pack still
+    /// advances only its own types' anchors, only on its own ack.
+    func uploadPacks(
+        _ packs: [[MergedPage]], reason: SyncReason,
+        transport: SyncTransport, config: SyncConfiguration
+    ) async -> [Bool] {
+        var acked = Array(repeating: false, count: packs.count)
+        await withTaskGroup(of: (Int, Bool).self) { group in
+            var next = 0
+            var inFlight = 0
+            func addNext(_ group: inout TaskGroup<(Int, Bool)>) {
+                guard next < packs.count else { return }
+                let index = next
+                let pack = packs[index]
+                next += 1
+                inFlight += 1
+                group.addTask {
+                    (index, await self.upload(pack, reason: reason, transport: transport, config: config))
+                }
+            }
+            for _ in 0..<max(1, config.maxConcurrentTypes) { addNext(&group) }
+            while inFlight > 0 {
+                if let (index, ok) = await group.next() { acked[index] = ok }
+                inFlight -= 1
+                addNext(&group)
+            }
+        }
+        return acked
     }
 
     // MARK: - Fetch
@@ -269,8 +316,9 @@ extension HealthSyncEngine {
                 guard let id = iterator.next() else { return }
                 inFlight += 1
                 let anchor = cursors[id] ?? nil
+                let start = config.startDate
                 group.addTask {
-                    await self.fetchPage(id, anchor: anchor, config: config)
+                    await self.fetchPage(id, anchor: anchor, start: start, config: config)
                 }
             }
             for _ in 0..<max(1, config.maxConcurrentTypes) { addNext(&group) }
@@ -283,56 +331,71 @@ extension HealthSyncEngine {
         return out
     }
 
-    private func fetchPage(
-        _ identifier: String, anchor: HKQueryAnchor?, config: SyncConfiguration
-    ) async -> MergedPage? {
+    /// One anchored page of `identifier` from `start` on, mapped and given the
+    /// phase-1 enrichment, ready to upload. Throws what HealthKit threw; both
+    /// sweeps read through here and handle the errors their own way.
+    func queryPage(
+        _ identifier: String, anchor: HKQueryAnchor?, start: Date, config: SyncConfiguration
+    ) async throws -> MergedPage {
         guard let descriptor = HealthTypeCatalog.descriptor(for: identifier),
-              let sampleType = descriptor.sampleType else { return nil }
+              let sampleType = descriptor.sampleType else {
+            throw SyncError.unknownType(identifier)
+        }
         let queryStart = ContinuousClock.now
-        do {
-            let predicate = HKSamplePredicate<HKSample>.sample(
-                type: sampleType,
-                predicate: HKQuery.predicateForSamples(
-                    withStart: config.startDate, end: nil, options: .strictStartDate
-                )
+        let predicate = HKSamplePredicate<HKSample>.sample(
+            type: sampleType,
+            predicate: HKQuery.predicateForSamples(
+                withStart: start, end: nil, options: .strictStartDate
             )
-            let queryDescriptor = HKAnchoredObjectQueryDescriptor(
-                predicates: [predicate], anchor: anchor, limit: config.batchSize
-            )
-            let result = try await queryDescriptor.result(for: healthStore)
-            let queryDuration = (ContinuousClock.now - queryStart).seconds
+        )
+        let queryDescriptor = HKAnchoredObjectQueryDescriptor(
+            predicates: [predicate], anchor: anchor, limit: config.batchSize
+        )
+        let result = try await queryDescriptor.result(for: healthStore)
+        let queryDuration = (ContinuousClock.now - queryStart).seconds
 
-            var samples = result.addedSamples.compactMap {
-                SampleMapper.map($0, descriptor: descriptor)
-            }
-            // Same phase-1 enrichment the per-type path runs: heartbeat/ECG
-            // decoration and the profile go now, the expensive per-workout
-            // route and stream fetches are left to their own later phases.
-            let enrichment = try await enrich(
-                &samples, from: result.addedSamples, descriptor: descriptor,
-                includeRoutes: config.includeWorkoutRoutes,
-                includeEnhanced: config.includeWorkoutEnhancedData,
-                userProfile: config.userProfilePayload,
-                deferEnrichment: true
-            )
-            let deletions = result.deletedObjects.map {
-                SyncDeletion(uuid: $0.uuid, type: identifier)
-            }
-            // Compare raw result counts, not mapped counts: mapping can drop
-            // samples, and a short raw page is what proves HealthKit is drained.
-            let drained = result.addedSamples.count + result.deletedObjects.count < config.batchSize
-            return MergedPage(
-                identifier: identifier,
-                samples: samples,
-                deletions: deletions,
-                newAnchor: result.newAnchor,
-                newAnchorData: try encodeAnchor(result.newAnchor),
-                enrichment: enrichment,
-                queryDuration: queryDuration,
-                drained: drained,
-                rawCount: result.addedSamples.count + result.deletedObjects.count,
-                dropped: result.addedSamples.count - samples.count
-            )
+        var samples = result.addedSamples.compactMap {
+            SampleMapper.map($0, descriptor: descriptor)
+        }
+        // The raw sweep defers the expensive per-workout route/series fetches to
+        // the dedicated route/stream phases (see WorkoutEnrichmentSync) so
+        // basic data isn't starved waiting on enrichment queries. The workout
+        // row (incl. enhanced stats/events/activities/effort) and the profile
+        // line still go now; routes/series arrive in later batches keyed on the
+        // workout UUID — fully idempotent server-side.
+        let enrichment = try await enrich(
+            &samples, from: result.addedSamples, descriptor: descriptor,
+            includeRoutes: config.includeWorkoutRoutes,
+            includeEnhanced: config.includeWorkoutEnhancedData,
+            userProfile: config.userProfilePayload,
+            deferEnrichment: true
+        )
+        let deletions = result.deletedObjects.map {
+            SyncDeletion(uuid: $0.uuid, type: identifier)
+        }
+        // Compare raw result counts, not mapped counts: mapping can drop
+        // samples, and a short raw page is what proves HealthKit is drained.
+        let rawCount = result.addedSamples.count + result.deletedObjects.count
+        return MergedPage(
+            identifier: identifier,
+            samples: samples,
+            deletions: deletions,
+            newAnchor: result.newAnchor,
+            newAnchorData: try encodeAnchor(result.newAnchor),
+            enrichment: enrichment,
+            queryDuration: queryDuration,
+            drained: rawCount < config.batchSize,
+            rawCount: rawCount,
+            dropped: result.addedSamples.count - samples.count
+        )
+    }
+
+    private func fetchPage(
+        _ identifier: String, anchor: HKQueryAnchor?, start: Date, config: SyncConfiguration
+    ) async -> MergedPage? {
+        guard HealthTypeCatalog.descriptor(for: identifier)?.sampleType != nil else { return nil }
+        do {
+            return try await queryPage(identifier, anchor: anchor, start: start, config: config)
         } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
             activities[identifier] = .failed
             backfillRuns[identifier] = nil

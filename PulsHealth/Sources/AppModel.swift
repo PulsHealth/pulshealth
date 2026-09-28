@@ -462,24 +462,26 @@ final class AppModel {
         Task {
             defer { isSyncingAll = false }
             let wake = await engine.beginWake(.manual, detail: "apply: backfill newly enabled types")
-            await WakeScope.$current.withValue(wake) {
-                await withTaskGroup(of: Void.self) { group in
-                    if !newTypes.isEmpty {
-                        group.addTask { await self.engine.syncTypes(newTypes, reason: .backfill) }
-                    }
-                    if !newAggregates.isEmpty {
-                        group.addTask {
-                            for id in newAggregates {
-                                await self.engine.syncAggregate(configID: id, reason: .backfill)
+            let finished = await BackgroundExecution.run("PulsHealth backfill") { [engine] in
+                await WakeScope.$current.withValue(wake) {
+                    await withTaskGroup(of: Void.self) { group in
+                        if !newTypes.isEmpty {
+                            group.addTask { await engine.syncTypes(newTypes, reason: .backfill) }
+                        }
+                        if !newAggregates.isEmpty {
+                            group.addTask {
+                                for id in newAggregates {
+                                    await engine.syncAggregate(configID: id, reason: .backfill)
+                                }
                             }
                         }
-                    }
-                    if newRings {
-                        group.addTask { await self.engine.syncActivitySummary(reason: .backfill) }
+                        if newRings {
+                            group.addTask { await engine.syncActivitySummary(reason: .backfill) }
+                        }
                     }
                 }
             }
-            await engine.finishWake(wake)
+            await engine.finishWake(wake, outcome: finished ? .completed : .expired)
         }
         return true
     }
@@ -621,10 +623,14 @@ final class AppModel {
         // pull-to-refresh) is user-driven.
         let wakeTrigger: WakeTrigger = trigger == "foreground" ? .foreground : .manual
         let wake = await engine.beginWake(wakeTrigger, detail: trigger)
-        await WakeScope.$current.withValue(wake) {
-            await engine.syncAllEnabled(reason: .incremental)
+        // Leaving the app mid-sync used to freeze it where it stood; this buys
+        // the run iOS's background grace period and ends it cleanly after.
+        let finished = await BackgroundExecution.run("PulsHealth sync") { [engine] in
+            await WakeScope.$current.withValue(wake) {
+                await engine.syncAllEnabled(reason: .incremental)
+            }
         }
-        await engine.finishWake(wake)
+        await engine.finishWake(wake, outcome: finished ? .completed : .expired)
     }
 
     func startBackfill() async {
@@ -638,10 +644,12 @@ final class AppModel {
         isSyncingAll = true
         defer { isSyncingAll = false }
         let wake = await engine.beginWake(.manual, detail: "foreground backfill")
-        await WakeScope.$current.withValue(wake) {
-            await engine.syncAllEnabled(reason: .backfill)
+        let finished = await BackgroundExecution.run("PulsHealth backfill") { [engine] in
+            await WakeScope.$current.withValue(wake) {
+                await engine.syncAllEnabled(reason: .backfill)
+            }
         }
-        await engine.finishWake(wake)
+        await engine.finishWake(wake, outcome: finished ? .completed : .expired)
     }
 
     func syncOne(_ identifier: String) async {
