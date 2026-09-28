@@ -34,6 +34,7 @@ extension HealthSyncEngine {
         guard !claimed.isEmpty else { return }
         defer { for id in claimed { activeSyncs.remove(id) } }
 
+        await sendRecentWindows(claimed, reason: reason)
         var round = claimed
         var nextReason = reason
         while !round.isEmpty {
@@ -45,9 +46,18 @@ extension HealthSyncEngine {
         }
     }
 
+    /// The recent-window pass (`RecentSampleWindow`) over types the caller
+    /// holds, ahead of their sweep. Only types still backfilling take part, so
+    /// on a settled install this costs nothing; an engine built with
+    /// `recentWindowFirst: false` skips it entirely.
+    func sendRecentWindows(_ claimed: [String], reason: SyncReason) async {
+        guard recentWindowFirst, !claimed.isEmpty, !Task.isCancelled else { return }
+        await runMergedSync(claimed, reason: reason, pass: .recent)
+    }
+
     // MARK: - One run
 
-    private func runMergedSync(_ ids: [String], reason: SyncReason) async {
+    private func runMergedSync(_ ids: [String], reason: SyncReason, pass: SweepPass = .main) async {
         await ensureTransport()
         guard let transport else {
             await eventLog.log(.error, "No transport configured — set server URL and token")
@@ -62,7 +72,11 @@ extension HealthSyncEngine {
         // advanced past a page the server has acked, so a failed upload leaves
         // the type exactly where the last durable anchor put it.
         var cursors: [String: HKQueryAnchor?] = [:]
+        // Where each type's query starts: the configured start date for the
+        // sweep, the stream's fixed window start for the recent pass.
+        var starts: [String: Date] = [:]
         var pending: [String] = []
+        let now = Date()
         for id in ids {
             guard let descriptor = HealthTypeCatalog.descriptor(for: id),
                   descriptor.sampleType != nil else {
@@ -70,8 +84,19 @@ extension HealthSyncEngine {
                 continue
             }
             let state = await store.state(for: id)
+            switch pass {
+            case .main:
+                starts[id] = config.startDate
+            case .recent:
+                guard !state.backfillComplete,
+                      let windowStart = state.recentWindowStart
+                        ?? RecentSampleWindow.start(syncingFrom: config.startDate, now: now)
+                else { continue }
+                starts[id] = windowStart
+            }
             do {
-                cursors[id] = try decodeAnchor(state.anchorData)
+                cursors[id] = try decodeAnchor(
+                    pass == .main ? state.anchorData : state.recentAnchorData)
             } catch {
                 await eventLog.log(.error, type: id, "Sync failed: \(error)")
                 continue
@@ -115,7 +140,8 @@ extension HealthSyncEngine {
             var waves = stride(from: 0, to: pending.count, by: width).map {
                 Array(pending[$0..<min($0 + width, pending.count)])
             }
-            var pages = await fetchPages(waves.removeFirst(), cursors: cursors, config: config)
+            var pages = await fetchPages(
+                waves.removeFirst(), cursors: cursors, starts: starts, config: config)
             while true {
                 // Read the next wave while this one is packed and uploaded. Its
                 // types are none of the buffered ones — within a round a type
@@ -124,7 +150,9 @@ extension HealthSyncEngine {
                 // was read from.
                 let upcoming = Task.isCancelled || waves.isEmpty ? [] : waves.removeFirst()
                 let readFrom = cursors
-                async let nextPages = fetchPages(upcoming, cursors: readFrom, config: config)
+                let readStarts = starts
+                async let nextPages = fetchPages(
+                    upcoming, cursors: readFrom, starts: readStarts, config: config)
 
                 for page in pages.compactMap({ $0 }) {
                     if page.dropped > 0 {
@@ -143,11 +171,9 @@ extension HealthSyncEngine {
                     // here, and clear any stale error — the query just succeeded,
                     // so an older authorization failure no longer holds.
                     if page.isRawEmpty {
-                        await store.update(page.identifier) {
-                            $0.anchorData = page.newAnchorData
-                            $0.lastSyncAt = Date()
-                            $0.lastError = nil
-                        }
+                        await persistCursor(
+                            of: page, pass: pass, windowStart: starts[page.identifier],
+                            clearingError: true)
                         drainedCleanly.insert(page.identifier)
                     } else if page.isEmpty {
                         // HealthKit returned a page, but nothing on it survived
@@ -155,10 +181,9 @@ extension HealthSyncEngine {
                         // so advance past it rather than re-querying the same
                         // unmappable samples forever — but let HealthKit's own
                         // short-page signal say whether more remain.
-                        await store.update(page.identifier) {
-                            $0.anchorData = page.newAnchorData
-                            $0.lastSyncAt = Date()
-                        }
+                        await persistCursor(
+                            of: page, pass: pass, windowStart: starts[page.identifier],
+                            clearingError: false)
                         if page.drained {
                             drainedCleanly.insert(page.identifier)
                         }
@@ -169,8 +194,8 @@ extension HealthSyncEngine {
                 }
                 if buffered >= budget {
                     let flushed = await flush(
-                        buffer, budget: budget, keepPartial: true,
-                        reason: reason, transport: transport, config: config)
+                        buffer, budget: budget, keepPartial: true, reason: reason,
+                        transport: transport, config: config, pass: pass, starts: starts)
                     buffer = flushed.leftover
                     buffered = buffer.reduce(0) { $0 + $1.count }
                     uploads += flushed.uploads
@@ -184,8 +209,8 @@ extension HealthSyncEngine {
                 if upcoming.isEmpty { break }
             }
             let flushed = await flush(
-                buffer, budget: budget, keepPartial: false,
-                reason: reason, transport: transport, config: config)
+                buffer, budget: budget, keepPartial: false, reason: reason,
+                transport: transport, config: config, pass: pass, starts: starts)
             uploads += flushed.uploads
             totalSamples += flushed.samples
             totalDeletions += flushed.deletions
@@ -198,7 +223,9 @@ extension HealthSyncEngine {
         }
 
         for id in ids where activities[id] != .failed {
-            if drainedCleanly.contains(id), !droppedAnything.contains(id),
+            // The recent pass reads a window, so its drain says nothing about
+            // the rest of the type's history.
+            if pass == .main, drainedCleanly.contains(id), !droppedAnything.contains(id),
                !(await store.state(for: id)).backfillComplete {
                 await store.markBackfillComplete(id)
                 backfillRuns[id] = nil
@@ -210,7 +237,7 @@ extension HealthSyncEngine {
             let rate = Double(totalSamples) / max(elapsed, 0.001)
             await eventLog.log(
                 .info,
-                "\(reason.rawValue) sync done: \(totalSamples) samples, \(totalDeletions) deletions across \(ids.count) type(s) in \(String(format: "%.1f", elapsed))s (\(Int(rate))/s, \(uploads) upload(s))"
+                "\(reason.rawValue)\(pass == .recent ? " recent-window" : "") sync done: \(totalSamples) samples, \(totalDeletions) deletions across \(ids.count) type(s) in \(String(format: "%.1f", elapsed))s (\(Int(rate))/s, \(uploads) upload(s))"
             )
         }
         notifyChanged()
@@ -235,8 +262,9 @@ extension HealthSyncEngine {
     /// under-budget pack so the next wave can top it up rather than sending a
     /// half-empty request; the last flush of a run takes it as-is.
     private func flush(
-        _ buffer: [MergedPage], budget: Int, keepPartial: Bool,
-        reason: SyncReason, transport: SyncTransport, config: SyncConfiguration
+        _ buffer: [MergedPage], budget: Int, keepPartial: Bool, reason: SyncReason,
+        transport: SyncTransport, config: SyncConfiguration,
+        pass: SweepPass, starts: [String: Date]
     ) async -> FlushResult {
         var result = FlushResult()
         guard !buffer.isEmpty else { return result }
@@ -248,7 +276,8 @@ extension HealthSyncEngine {
             result.leftover = last
         }
         let acked = await uploadPacks(
-            toSend, reason: reason, transport: transport, config: config)
+            toSend, reason: reason, transport: transport, config: config,
+            pass: pass, starts: starts)
         for (pack, ok) in zip(toSend, acked) where ok {
             result.uploads += 1
             for page in pack {
@@ -274,7 +303,8 @@ extension HealthSyncEngine {
     /// advances only its own types' anchors, only on its own ack.
     func uploadPacks(
         _ packs: [[MergedPage]], reason: SyncReason,
-        transport: SyncTransport, config: SyncConfiguration
+        transport: SyncTransport, config: SyncConfiguration,
+        pass: SweepPass = .main, starts: [String: Date] = [:]
     ) async -> [Bool] {
         var acked = Array(repeating: false, count: packs.count)
         await withTaskGroup(of: (Int, Bool).self) { group in
@@ -287,7 +317,9 @@ extension HealthSyncEngine {
                 next += 1
                 inFlight += 1
                 group.addTask {
-                    (index, await self.upload(pack, reason: reason, transport: transport, config: config))
+                    (index, await self.upload(
+                        pack, reason: reason, transport: transport, config: config,
+                        pass: pass, starts: starts))
                 }
             }
             for _ in 0..<max(1, config.maxConcurrentTypes) { addNext(&group) }
@@ -300,13 +332,32 @@ extension HealthSyncEngine {
         return acked
     }
 
+    /// Record `page`'s anchor on the stream `pass` advances, with no upload:
+    /// HealthKit returned nothing, or nothing that would map.
+    private func persistCursor(
+        of page: MergedPage, pass: SweepPass, windowStart: Date?, clearingError: Bool
+    ) async {
+        await store.update(page.identifier) {
+            switch pass {
+            case .main:
+                $0.anchorData = page.newAnchorData
+            case .recent:
+                $0.recentAnchorData = page.newAnchorData
+                $0.recentWindowStart = windowStart
+            }
+            $0.lastSyncAt = Date()
+            if clearingError { $0.lastError = nil }
+        }
+    }
+
     // MARK: - Fetch
 
     /// One page per type, at most `maxConcurrentTypes` queries in flight.
     /// A type that throws is logged, marked, and dropped from the run; it never
     /// takes the other types down with it.
     private func fetchPages(
-        _ ids: [String], cursors: [String: HKQueryAnchor?], config: SyncConfiguration
+        _ ids: [String], cursors: [String: HKQueryAnchor?], starts: [String: Date],
+        config: SyncConfiguration
     ) async -> [MergedPage?] {
         var out: [MergedPage?] = []
         await withTaskGroup(of: MergedPage?.self) { group in
@@ -316,7 +367,7 @@ extension HealthSyncEngine {
                 guard let id = iterator.next() else { return }
                 inFlight += 1
                 let anchor = cursors[id] ?? nil
-                let start = config.startDate
+                let start = starts[id] ?? config.startDate
                 group.addTask {
                     await self.fetchPage(id, anchor: anchor, start: start, config: config)
                 }
@@ -453,7 +504,8 @@ extension HealthSyncEngine {
     /// Returns false when the upload failed, in which case no anchor moved.
     private func upload(
         _ pack: [MergedPage], reason: SyncReason,
-        transport: SyncTransport, config: SyncConfiguration
+        transport: SyncTransport, config: SyncConfiguration,
+        pass: SweepPass, starts: [String: Date]
     ) async -> Bool {
         guard !pack.isEmpty else { return true }
 
@@ -487,24 +539,38 @@ extension HealthSyncEngine {
             for page in pack {
                 let share = result.bytesSent * page.count / units
                 let dates = page.samples.map(\.start)
-                let latency: TimeInterval? = (reason == .incremental)
-                    ? page.samples.map { Date().timeIntervalSince($0.end) }.min()
-                    : nil
-                await store.recordUploadedBatch(
-                    identifier: page.identifier,
-                    newAnchorData: page.newAnchorData,
-                    samples: page.samples.count,
-                    deletions: page.deletions.count,
-                    bytes: share,
-                    sampleDateRange: dates.isEmpty ? nil : (dates.min()! ... dates.max()!),
-                    duration: page.queryDuration + result.duration / Double(pack.count),
-                    latency: latency,
-                    receipt: receipt
-                )
+                let dateRange = dates.isEmpty ? nil : (dates.min()! ... dates.max()!)
+                let duration = page.queryDuration + result.duration / Double(pack.count)
+                switch pass {
+                case .main:
+                    let latency: TimeInterval? = (reason == .incremental)
+                        ? page.samples.map { Date().timeIntervalSince($0.end) }.min()
+                        : nil
+                    await store.recordUploadedBatch(
+                        identifier: page.identifier,
+                        newAnchorData: page.newAnchorData,
+                        samples: page.samples.count,
+                        deletions: page.deletions.count,
+                        bytes: share,
+                        sampleDateRange: dateRange,
+                        duration: duration,
+                        latency: latency,
+                        receipt: receipt
+                    )
+                    backfillRuns[page.identifier]?.samplesThisRun += page.samples.count
+                case .recent:
+                    await store.recordRecentWindowUpload(
+                        identifier: page.identifier,
+                        newAnchorData: page.newAnchorData,
+                        windowStart: starts[page.identifier] ?? config.startDate,
+                        bytes: share,
+                        sampleDateRange: dateRange,
+                        duration: duration
+                    )
+                }
                 await reportWakeBatch(
                     type: page.identifier, samples: page.samples.count,
                     deletions: page.deletions.count, bytes: share)
-                backfillRuns[page.identifier]?.samplesThisRun += page.samples.count
             }
             let types = pack.count == 1
                 ? pack[0].identifier

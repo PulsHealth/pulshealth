@@ -74,10 +74,19 @@ public actor HealthSyncEngine {
         var estimatedTotal: Int?
     }
 
-    public init(store: SyncStateStore? = nil, eventLog: SyncEventLog? = nil, wakeLog: WakeLog? = nil) {
+    /// Whether a type still backfilling sends its recent window ahead of the
+    /// sweep (`RecentSampleWindow`). Right for anything that feeds a server;
+    /// wrong for a destination where a sample sent twice is a duplicate row.
+    let recentWindowFirst: Bool
+
+    public init(
+        store: SyncStateStore? = nil, eventLog: SyncEventLog? = nil, wakeLog: WakeLog? = nil,
+        recentWindowFirst: Bool = true
+    ) {
         self.store = store ?? SyncStateStore()
         self.eventLog = eventLog ?? SyncEventLog()
         self.wakeLog = wakeLog ?? WakeLog()
+        self.recentWindowFirst = recentWindowFirst
     }
 
     // MARK: - Wake lifecycle
@@ -546,6 +555,8 @@ public actor HealthSyncEngine {
         let signpostState = PulsLog.signposter.beginInterval("syncAll", id: signpostID)
         defer { PulsLog.signposter.endInterval("syncAll", signpostState) }
 
+        await sendRecentWindows(claimed, reason: reason)
+
         let started = await withTaskGroup(of: Void.self, returning: Int.self) { group in
             var iterator = claimed.makeIterator()
             var inFlight = 0
@@ -575,6 +586,7 @@ public actor HealthSyncEngine {
     /// Sync one type: anchored-query pages until drained, uploading each page.
     public func sync(type identifier: String, reason: SyncReason = .incremental) async {
         guard claimTypes([identifier]) == [identifier] else { return }
+        await sendRecentWindows([identifier], reason: reason)
         await runClaimed(type: identifier, reason: reason)
     }
 
