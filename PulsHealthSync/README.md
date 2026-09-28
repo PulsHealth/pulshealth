@@ -25,6 +25,12 @@ Sources/PulsHealthSync/
 │   │                                every run), server upserts by date.
 │   ├── BackgroundSyncScheduler.swift BGProcessingTask catch-up (~4 h cadence) and the
 │   │                                iOS 26 BGContinuedProcessingTask backfill wrapper.
+│   ├── BackgroundExecution.swift    Background-task assertion around app-started and
+│   │                                observer work: iOS's grace period, then cancel
+│   │                                (never freeze) when it runs out.
+│   ├── RecentSampleWindow.swift     The last 30 days of a still-backfilling type, sent
+│   │                                ahead of its oldest-first sweep on an anchor of
+│   │                                its own.
 │   ├── SeriesEnricher.swift         Second-pass queries for series data: heartbeat
 │   │                                offsets, ECG voltages, workout GPS routes
 │   │                                (chunked 4,000 pts/line), iOS 18 effort scores.
@@ -207,7 +213,11 @@ produced a batch.
 
 1. `HealthSyncEngine.syncTypes(_:reason:)` fans out over enabled types with a
    `TaskGroup` (default 4 concurrent — HealthKit query throughput degrades
-   beyond that). Its **non-incremental** branch orders the sweep by
+   beyond that). Its **non-incremental** branch claims every type up front
+   (`claimTypes`) and releases each as its own run ends (`sweep`) — claiming a
+   type only when a slot reached it let the observer's merged pass take the
+   queued ones first, which sent a whole first sync down the slow path. It
+   orders the sweep by
    `HealthTypeCatalog.backfillOrder`: heaviest type first, then cheapest-first.
    Summed over the catalog heart rate alone is a little over half of
    `estimatedSamplesPerDay`, so ascending order would leave it to start last and
@@ -216,7 +226,9 @@ produced a batch.
    retiring the tail is both the shorter sweep and the more useful one.
    Incremental runs take the merged path below and are not reordered.
 2. Per type: `HKAnchoredObjectQuery` pages from the stored anchor (nil anchor +
-   start-date predicate = backfill), 1,000 samples/page.
+   start-date predicate = backfill), 1,000 samples/page, each page read while
+   the one before it uploads. Only the in-memory cursor runs ahead; an upload
+   that fails cancels the read and records nothing.
 3. `SampleMapper` converts to DTOs; `SeriesEnricher` fills in series payloads;
    `NDJSONEncoder` produces a gzip batch.
 4. `HTTPSyncTransport` uploads. **Only on success** does `recordUploadedBatch`
@@ -227,7 +239,22 @@ produced a batch.
 `syncAllEnabled` orders the whole sweep so the cheap, immediately useful things
 land before the long one: activity rings, then the recent aggregate window
 (below), then the raw types, then the full aggregate pass, then workout routes
-and streams. Every phase boundary is a safe place to be interrupted.
+and streams. Every phase boundary is a safe place to be interrupted. A backfill
+claims its raw types before the first phase, not when the third reaches them.
+
+**Recent data first.** A nil-anchor sweep returns history roughly oldest first,
+so a backfill delivers the newest samples last — after a reinstall the server's
+charts sat on the day the old install stopped for as long as the re-sync ran.
+Every sweep now begins with a recent-window pass over its types that have not
+finished backfilling (`RecentSampleWindow`): the last 30 days, read through a
+second anchor of the type's own (`TypeSyncState.recentAnchorData`) from a
+window start fixed when the stream begins, so the first run sends the month and
+later runs only what is new in it. Its acks move that anchor alone — never
+`anchorData`, never `backfillComplete`, not the sample count — and the sweep
+sends those samples again when it gets there; the server ignores the repeats.
+The stream is dropped when the backfill completes, and skipped for a sync range
+under 60 days. `HealthSyncEngine(recentWindowFirst: false)` turns it off where a
+repeated sample would be a duplicate row rather than a no-op.
 
 Incremental sync is the same loop, triggered by one multi-type `HKObserverQuery`
 with `.immediate` background delivery, plus a `BGProcessingTask` safety net and a
@@ -251,9 +278,13 @@ per type and pack pages into shared batches up to `maxMergedBatchSamples`.
 Anchor-after-ack is unchanged: the budget is clamped up to `batchSize` so **a
 page is never split across batches**, one page maps to exactly one ack, and a
 failed upload leaves every anchor in that pack untouched for an idempotent replay.
-Backfill deliberately keeps the per-type path — its pages are already full, and
-four independent type pipelines overlap query and upload better than a
-fetch-all-then-upload-all pass.
+Since 2026-09 the merged path also reads the next wave of types while the
+current one is packed and uploaded, and uploads up to `maxConcurrentTypes`
+packs at once. Both are safe for the same reason: within a round a type
+contributes one page, so the packs of a flush hold disjoint types and the wave
+being read holds none of the buffered ones. Backfill deliberately keeps the
+per-type path — its pages are already full, and four independent type
+pipelines overlap query and upload better than a fetch-all-then-upload-all pass.
 
 **Background wakes check the lock screen first.** HealthKit is unreadable while
 the device is locked, and iOS runs `BGProcessingTask` when the device is idle —
@@ -261,6 +292,19 @@ overnight, locked. 156 such wakes over two months produced 59 samples in total,
 154 of them completely empty, each having walked ~80 types and logged a warning
 per type. Background paths now test `ProtectedData.isAvailable` up front and
 record the wake as `skippedLocked` instead.
+
+**Work the app starts itself asks for background time.** An observer delivery,
+or leaving the app, buys a few seconds before iOS suspends the process, and a
+sweep caught mid-upload used to freeze there with its types still claimed — the
+next wake found them busy and did nothing. A reinstall's re-sync on 2026-09-26
+moved as much in 44 hours of such wakes as in its first ten foreground minutes.
+Observer wakes and the app's own runs now go through `BackgroundExecution.run`,
+which asks for the grace period iOS grants on request and **cancels** the work
+when it expires: every sweep stops at a page boundary with its acked anchors
+recorded and its claims released, and the wake is logged `expired`. An observer
+wake whose types another run holds waits for it (up to 25 s) instead of
+acknowledging HealthKit at once. `BGTaskScheduler` handlers keep their own
+expiration and never nest a request.
 
 ## How aggregates run
 

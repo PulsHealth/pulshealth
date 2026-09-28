@@ -118,8 +118,11 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   default user, `ensureUser`s the row (FK target) before any insert, and tags
   every row with it. The `{"profile":…}` line carries the complete identity
   snapshot (name/email/dob/sex); null or omitted fields clear stored values.
-  DOB/sex feed HR zones. **Writes are multi-user, and reads are scoped per
-  request:** every schema this repository can build carries `user_id` from
+  DOB/sex feed HR zones. So the app sends an empty profile only when it
+  replaces a non-empty one (`ProfilePayload.shouldUpload`, called from
+  `AppModel.applyConfiguration`) — a reinstall pairing with its old server used
+  to wipe the stored one on its first Apply. **Writes are multi-user, and
+  reads are scoped per request:** every schema this repository can build carries `user_id` from
   file 000, and `ensureUser` creates whatever id arrives in the header, so a
   second phone's rows land in a populated database without a wipe. The
   product API answers every `/v1` request for one user — the `user=<uuid>`
@@ -219,7 +222,8 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `fullRecomputeThrough` — past the whole unprocessed history and the full pass
   would compute nothing older than the window. Keep any future bounded pass on
   that recorder; it is the aggregate twin of reusing a raw type's anchor for a
-  date-bounded query.
+  date-bounded query — and the raw twin of this pass is the recent-window
+  stream below, which keeps an anchor of its own for the same reason.
   Day-grain buckets are computed in the phone's calendar; the server re-buckets
   raw samples for `metric_daily` in `PULS_TIME_ZONE` (exposed as
   `puls_time_zone()`) to line up with them, so that setting must match the phone.
@@ -269,7 +273,44 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   per-type path: its pages are already full, and four independent type
   pipelines overlap query and upload better. Keep
   `HealthSyncEngine.pack`'s no-split property intact —
-  `MergedSyncPackingTests` guards it.
+  `MergedSyncPackingTests` guards it. Both paths now overlap reading with
+  uploading, and neither breaks anchor-after-ack doing it: the merged path
+  reads the next wave while the current packs upload, up to
+  `maxConcurrentTypes` packs at once (a round reads each type once, so a
+  flush's packs hold disjoint types and the wave being read holds none of the
+  buffered ones — `ConcurrentUploadTests`); the per-type path reads one page
+  ahead, moving only the in-memory cursor, and a failed upload cancels that
+  read on its way out. **A backfill claims all its types up front**
+  (`claimTypes`, then `sweep`, which releases each as its own run ends;
+  `syncAllEnabled(.backfill)` claims before its first phase): claiming each
+  only when a pipeline slot reached it let the observer wake that Apply's
+  observer registration triggers take the queued types two seconds later, and
+  a whole first sync went down the merged path one upload at a time.
+- **Recent data first, on an anchor of its own.** A nil-anchor sweep returns
+  history roughly oldest first, so every sweep entry point first runs a
+  recent-window pass (`RecentSampleWindow`, `SweepPass.recent`) over its
+  types that have not finished backfilling: the last 30 days, through
+  `TypeSyncState.recentAnchorData` from a `recentWindowStart` fixed when the
+  stream begins. Its acks go through `recordRecentWindowUpload`, which moves
+  that anchor and nothing else — never `anchorData`, never
+  `backfillComplete`, not `totalSamplesExported` (the sweep sends the same
+  samples again when it gets there, and counts them then). The two anchors
+  never stand in for each other: the stream's is read under a date-bounded
+  predicate and would skip all older history as the type's own.
+  `markBackfillComplete` drops the stream. A destination where a repeated
+  sample is a duplicate row rather than a no-op builds its engine with
+  `recentWindowFirst: false` — the on-device export (PR #77) is one.
+- **Work the app starts itself holds a background-task assertion**
+  (`BackgroundExecution.run`): observer wakes, the foreground/Sync Now pass,
+  Apply's inline backfill and Start Initial Backfill's fallback. When iOS's
+  grace period ends the work is **cancelled, not frozen** — every sweep stops
+  at a page boundary with its acked anchors recorded and its claims released,
+  and the wake is logged `expired`. A frozen run kept its types claimed, so
+  the next wake found them busy and did nothing. An observer wake whose types
+  another run holds waits for it (`waitForRelease`, ≤25 s) rather than
+  acknowledging HealthKit at once. Never nest it inside a `BGTaskScheduler`
+  handler — those have their own expiration, and a nested request would cut a
+  processing task short at the ~30 s mark.
 - **The schema is applied by the `migrate` service, never by hand.**
   `server/db/migrate.sh` — a one-shot Compose service on the db image that
   runs before every app service on each `docker compose up -d` — applies
