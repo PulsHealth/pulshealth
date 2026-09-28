@@ -393,13 +393,18 @@ final class AppModel {
             pendingServerChangeWantsNewTypeSync = syncNewTypes
             return false
         }
+        let previousProfile = await engine.store.configuration.userProfilePayload
         await resetReidentifiedAggregates()
         await engine.configure(config, confirmServerIdentity: serverChangeConfirmed)
         appliedConfig = config
         // User identity is independent of workout availability. Send it as its
         // own tiny batch so Save & Apply updates the server immediately even when
-        // there are no new workouts to carry a profile line.
-        if config.serverURL != nil, config.authToken != nil {
+        // there are no new workouts to carry a profile line — unless there is
+        // nothing to say: an install that never had a profile (a reinstall
+        // pairing with its old server, above all) must not clear the one the
+        // server already holds (`ProfilePayload.shouldUpload`).
+        if config.serverURL != nil, config.authToken != nil,
+           ProfilePayload.shouldUpload(config.userProfilePayload, replacing: previousProfile) {
             do {
                 try await engine.syncProfile(reason: .manual)
             } catch {
