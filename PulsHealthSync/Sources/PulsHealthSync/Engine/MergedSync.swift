@@ -30,17 +30,7 @@ extension HealthSyncEngine {
     /// Overlap semantics match `sync(type:)`: a type already syncing is not
     /// started again, it is marked for a follow-up run instead.
     func syncTypesMerged(_ ids: [String], reason: SyncReason) async {
-        var claimed: [String] = []
-        for id in ids {
-            if activeSyncs.contains(id) {
-                // A run is in flight; remember to go again so we don't miss data
-                // the observer told us about mid-run.
-                pendingResync.insert(id)
-            } else {
-                activeSyncs.insert(id)
-                claimed.append(id)
-            }
-        }
+        let claimed = claimTypes(ids)
         guard !claimed.isEmpty else { return }
         defer { for id in claimed { activeSyncs.remove(id) } }
 

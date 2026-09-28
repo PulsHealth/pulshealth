@@ -437,6 +437,19 @@ public actor HealthSyncEngine {
                 "Device locked — HealthKit is unreadable; skipping \(reason.rawValue) sync of \(sampleIDs.count) types")
             return
         }
+        // A backfill claims its raw types now, before the two cheap phases
+        // below, not when phase 3 reaches them. The app registers its observer
+        // query moments before a first backfill starts, HealthKit answers the
+        // registration with a delivery, and two seconds later that wake's
+        // merged pass claimed every type nobody held yet — so the backfill's
+        // four per-type pipelines found them taken and the whole first sync
+        // ran one upload at a time. Seen on a reinstall on 2026-09-26: the
+        // backfill proper moved heart rate and a handful of small types, and
+        // every other type went the slow way.
+        let claimed = reason == .incremental
+            ? [] : claimTypes(HealthTypeCatalog.backfillOrder(sampleIDs))
+        var sweepStarted = false
+        defer { if !sweepStarted { for id in claimed { activeSyncs.remove(id) } } }
         // Phase 1: the rings. One row per day and no dependency on any other
         // phase, so this is seconds of work — but it used to run after the raw
         // sweep, which on a first backfill meant the dashboard had no activity
@@ -456,7 +469,12 @@ public actor HealthSyncEngine {
         if hasAggregates {
             await syncRecentAggregates(reason: reason)          // phase 2
         }
-        await syncTypes(sampleIDs, reason: reason)              // phase 3 (workouts: basic only)
+        if reason == .incremental {                             // phase 3 (workouts: basic only)
+            await syncTypes(sampleIDs, reason: reason)
+        } else {
+            sweepStarted = true
+            await sweep(claimed, reason: reason)
+        }
         if hasAggregates {
             await syncAllAggregates(reason: reason)             // phase 4
         }
@@ -492,20 +510,51 @@ public actor HealthSyncEngine {
             notifyChanged()
             return
         }
-        let ordered = HealthTypeCatalog.backfillOrder(ids)
+        await sweep(claimTypes(HealthTypeCatalog.backfillOrder(ids)), reason: reason)
+    }
+
+    /// Claim every type in `ids` that no run holds yet, keeping their order,
+    /// and mark the rest for a follow-up run by whoever holds them — so data an
+    /// observer reported mid-run is not missed.
+    ///
+    /// All of a sweep's types are claimed at once, up front. Claiming each one
+    /// only as a pipeline slot reached it left the queued ones free for any
+    /// merged pass that came along meanwhile — an observer wake, above all —
+    /// and the slot then found its type taken and skipped it.
+    func claimTypes(_ ids: [String]) -> [String] {
+        var claimed: [String] = []
+        for id in ids {
+            if activeSyncs.contains(id) {
+                pendingResync.insert(id)
+            } else {
+                activeSyncs.insert(id)
+                claimed.append(id)
+            }
+        }
+        return claimed
+    }
+
+    /// The per-type path over types the caller has already claimed,
+    /// `maxConcurrentTypes` at a time. Each type is released the moment its own
+    /// run ends rather than when the whole sweep does, so a type that is done
+    /// goes back to ordinary observer-driven syncing while the rest continue.
+    func sweep(_ claimed: [String], reason: SyncReason) async {
+        guard !claimed.isEmpty else { return }
         let config = await store.configuration
-        await eventLog.log(.info, "Starting \(reason.rawValue) sync of \(ids.count) types (\(config.maxConcurrentTypes) concurrent)")
+        await eventLog.log(.info, "Starting \(reason.rawValue) sync of \(claimed.count) types (\(config.maxConcurrentTypes) concurrent)")
         let signpostID = PulsLog.signposter.makeSignpostID()
         let signpostState = PulsLog.signposter.beginInterval("syncAll", id: signpostID)
         defer { PulsLog.signposter.endInterval("syncAll", signpostState) }
 
-        await withTaskGroup(of: Void.self) { group in
-            var iterator = ordered.makeIterator()
+        let started = await withTaskGroup(of: Void.self, returning: Int.self) { group in
+            var iterator = claimed.makeIterator()
             var inFlight = 0
+            var started = 0
             func addNext(_ group: inout TaskGroup<Void>) {
                 if let id = iterator.next() {
                     inFlight += 1
-                    group.addTask { await self.sync(type: id, reason: reason) }
+                    started += 1
+                    group.addTask { await self.runClaimed(type: id, reason: reason) }
                 }
             }
             for _ in 0..<max(1, config.maxConcurrentTypes) { addNext(&group) }
@@ -514,27 +563,30 @@ public actor HealthSyncEngine {
                 inFlight -= 1
                 addNext(&group)
             }
+            return started
         }
-        await eventLog.log(.info, "Completed \(reason.rawValue) sync of \(ids.count) types")
+        // A run releases its own type. One that never started still holds its
+        // claim, and would keep every later run of that type waiting forever.
+        for id in claimed.dropFirst(started) { activeSyncs.remove(id) }
+        await eventLog.log(.info, "Completed \(reason.rawValue) sync of \(claimed.count) types")
         notifyChanged()
     }
 
     /// Sync one type: anchored-query pages until drained, uploading each page.
     public func sync(type identifier: String, reason: SyncReason = .incremental) async {
-        guard !activeSyncs.contains(identifier) else {
-            // A run is in flight; remember to go again so we don't miss data the
-            // observer told us about mid-run.
-            pendingResync.insert(identifier)
-            return
-        }
-        activeSyncs.insert(identifier)
-        defer { activeSyncs.remove(identifier) }
+        guard claimTypes([identifier]) == [identifier] else { return }
+        await runClaimed(type: identifier, reason: reason)
+    }
 
+    /// One type's run, repeated while observers asked for more during it, then
+    /// the claim is released. The caller must hold the claim.
+    private func runClaimed(type identifier: String, reason: SyncReason) async {
+        defer { activeSyncs.remove(identifier) }
         var nextReason = reason
         repeat {
             await runSync(type: identifier, reason: nextReason)
             nextReason = .incremental
-        } while pendingResync.remove(identifier) != nil
+        } while !Task.isCancelled && pendingResync.remove(identifier) != nil
     }
 
     /// Upload the settings-backed user identity without waiting for a workout.

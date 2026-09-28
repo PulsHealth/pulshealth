@@ -259,7 +259,7 @@ final class AppModel {
     /// user in the flow.
     func finishOnboarding() async {
         UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
-        await applyConfiguration(syncNewTypes: true)
+        await applyConfiguration(syncNewTypes: true, wholeHistory: true)
         showsOnboarding = false
         onboardingIsRerun = false
     }
@@ -386,8 +386,14 @@ final class AppModel {
     /// because the draft points at a different server or user ID than the
     /// stored sync progress belongs to: the prompt is raised instead, and the
     /// apply resumes from `confirmServerChange` with the user's choice.
+    ///
+    /// `wholeHistory` marks an apply whose backfill is every enabled type from
+    /// the start date — the first run, or a start-fresh server change — as
+    /// opposed to a type or two added on the Data Types tab.
     @discardableResult
-    func applyConfiguration(syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false) async -> Bool {
+    func applyConfiguration(
+        syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false
+    ) async -> Bool {
         if !serverChangeConfirmed, let change = await engine.serverIdentityChange(applying: config) {
             pendingServerChange = change
             pendingServerChangeWantsNewTypeSync = syncNewTypes
@@ -437,6 +443,16 @@ final class AppModel {
             && activitySummaryState.computedThrough == nil
         guard !newTypes.isEmpty || !newAggregates.isEmpty || newRings else { return true }
 
+        // The whole history is the largest data movement an install makes, and
+        // it used to stop the moment the user left the app: iOS suspended it
+        // and every later wake crawled through the rest a few pages at a time.
+        // On iOS 26 run it as the continued-processing task Start Initial
+        // Backfill uses, which keeps going with system progress UI. That task
+        // runs `syncAllEnabled(.backfill)`: rings, aggregates and every type,
+        // which on a whole-history apply is exactly the new work above.
+        if wholeHistory, #available(iOS 26.0, *), scheduler.startContinuedBackfill() {
+            return true
+        }
         // This is usually the largest data movement of an install, so it runs
         // inside a wake like every other entry point (X-Wake-ID on its batches,
         // a Background Activity record) and under the same isSyncingAll gate as
@@ -504,7 +520,8 @@ final class AppModel {
                 .warn, "Sync target changed (\(change.summary)) — progress kept; only new data will reach it")
         }
         await applyConfiguration(
-            syncNewTypes: startFresh || wantsNewTypeSync, serverChangeConfirmed: true)
+            syncNewTypes: startFresh || wantsNewTypeSync, serverChangeConfirmed: true,
+            wholeHistory: startFresh)
     }
 
     /// Dismiss the prompt without applying. The draft keeps what was typed so
