@@ -21,10 +21,22 @@ public enum BackgroundExecution {
     /// Runs `work` under a background-task assertion. Returns false when the
     /// assertion expired and the work was cancelled — the caller's wake
     /// outcome, not an error.
+    ///
+    /// `onExpiration` runs in the expiration handler itself, before the
+    /// assertion is released: anything that must happen before iOS suspends
+    /// the app — acknowledging HealthKit, above all — goes there, because the
+    /// cancelled work may not unwind far enough to do it in time.
     @discardableResult
-    public static func run(_ name: String, _ work: @escaping @Sendable () async -> Void) async -> Bool {
+    public static func run(
+        _ name: String,
+        onExpiration: (@Sendable () -> Void)? = nil,
+        _ work: @escaping @Sendable () async -> Void
+    ) async -> Bool {
         let task = Task { await work() }
-        let assertion = await BackgroundAssertion.begin(name) { task.cancel() }
+        let assertion = await BackgroundAssertion.begin(name) {
+            onExpiration?()
+            task.cancel()
+        }
         await withTaskCancellationHandler {
             await task.value
         } onCancel: {

@@ -457,6 +457,7 @@ public actor HealthSyncEngine {
         // every other type went the slow way.
         let claimed = reason == .incremental
             ? [] : claimTypes(HealthTypeCatalog.backfillOrder(sampleIDs))
+        if reason != .incremental { backfillExpectedUntil = nil }
         var sweepStarted = false
         defer { if !sweepStarted { for id in claimed { activeSyncs.remove(id) } } }
         // Phase 1: the rings. One row per day and no dependency on any other
@@ -484,6 +485,9 @@ public actor HealthSyncEngine {
             sweepStarted = true
             await sweep(claimed, reason: reason)
         }
+        // Background time ran out: stop here rather than start phases that
+        // would only read HealthKit after the assertion is gone.
+        guard !Task.isCancelled else { return }
         if hasAggregates {
             await syncAllAggregates(reason: reason)             // phase 4
         }
@@ -519,7 +523,9 @@ public actor HealthSyncEngine {
             notifyChanged()
             return
         }
-        await sweep(claimTypes(HealthTypeCatalog.backfillOrder(ids)), reason: reason)
+        let claimed = claimTypes(HealthTypeCatalog.backfillOrder(ids))
+        backfillExpectedUntil = nil
+        await sweep(claimed, reason: reason)
     }
 
     /// Claim every type in `ids` that no run holds yet, keeping their order,
@@ -562,11 +568,15 @@ public actor HealthSyncEngine {
             var inFlight = 0
             var started = 0
             func addNext(_ group: inout TaskGroup<Void>) {
-                if let id = iterator.next() {
-                    inFlight += 1
-                    started += 1
-                    group.addTask { await self.runClaimed(type: id, reason: reason) }
-                }
+                // Once cancelled, start nothing more: a child started now would
+                // read a page of HealthKit before it noticed.
+                guard let id = iterator.next(),
+                      group.addTaskUnlessCancelled(operation: {
+                          await self.runClaimed(type: id, reason: reason)
+                      })
+                else { return }
+                inFlight += 1
+                started += 1
             }
             for _ in 0..<max(1, config.maxConcurrentTypes) { addNext(&group) }
             while inFlight > 0 {
@@ -576,8 +586,9 @@ public actor HealthSyncEngine {
             }
             return started
         }
-        // A run releases its own type. One that never started still holds its
-        // claim, and would keep every later run of that type waiting forever.
+        // A run releases its own type. One that never started — the sweep was
+        // cancelled first — still holds its claim, and would keep every later
+        // run of that type waiting forever.
         for id in claimed.dropFirst(started) { activeSyncs.remove(id) }
         await eventLog.log(.info, "Completed \(reason.rawValue) sync of \(claimed.count) types")
         notifyChanged()
@@ -669,6 +680,7 @@ public actor HealthSyncEngine {
         var totalDeletions = 0
 
         do {
+            try Task.checkCancellation()
             var next: MergedPage? = try await queryPage(
                 identifier, anchor: try decodeAnchor(initialState.anchorData),
                 start: config.startDate, config: config)
@@ -1184,19 +1196,41 @@ public actor HealthSyncEngine {
         pendingObserverTypes = []
         pendingObserverCompletions = []
         // HealthKit stops waking the app entirely after three unacknowledged
-        // deliveries, so every exit path has to release these.
-        defer { for completion in completions { completion.finish() } }
+        // deliveries, so every exit path has to release these — exactly once.
+        let acknowledged = BackgroundTaskCompletionGate()
+        let acknowledge: @Sendable () -> Void = {
+            _ = acknowledged.claim { for completion in completions { completion.finish() } }
+        }
+        defer { acknowledge() }
         guard !types.isEmpty else { return }
         let deliveries = completions.count
         // A delivery buys the app seconds at most; ask for the background time
         // iOS grants on request, and be cancelled — not frozen — when it ends.
-        await BackgroundExecution.run("PulsHealth observer wake") {
+        // On expiry HealthKit is acknowledged from the handler itself: the
+        // cancelled wake may not unwind to the `defer` before iOS suspends it.
+        await BackgroundExecution.run("PulsHealth observer wake", onExpiration: acknowledge) {
             await self.runObserverWake(types: types, deliveries: deliveries)
         }
     }
 
     /// How long an observer wake stays for types another run holds.
     static let observerWaitLimit: Duration = .seconds(25)
+
+    /// Set when the app has started a backfill that claims its types from a
+    /// task of its own — the iOS 26 continued-processing task — and cleared the
+    /// moment a backfill claims. Until then observer wakes leave types still
+    /// backfilling alone (`expectBackfill`).
+    private var backfillExpectedUntil: ContinuousClock.Instant?
+
+    /// Tell the engine a backfill is on its way. Registering the observer
+    /// query triggers a wake two seconds later, and a continued-processing
+    /// task can take longer than that to start and claim its types; that wake
+    /// used to take them first and run the whole history one upload at a time.
+    /// Bounded, so a backfill that never comes defers those types by a minute
+    /// at most.
+    public func expectBackfill(within limit: Duration = .seconds(60)) {
+        backfillExpectedUntil = .now + limit
+    }
 
     /// Suspend until none of `keys` is claimed, `limit` has passed, or the task
     /// is cancelled — whichever comes first.
@@ -1226,7 +1260,16 @@ public actor HealthSyncEngine {
         if deliveries > 1 { detail += " — coalesced from \(deliveries) deliveries" }
         let wake = await beginWake(.observer, detail: detail)
         let rawEnabled = await store.configuration.enabledTypes
-        let rawTypes = sorted.filter { rawEnabled.contains($0) }
+        var rawTypes = sorted.filter { rawEnabled.contains($0) }
+        if let until = backfillExpectedUntil, ContinuousClock.now < until {
+            // A backfill the app has started is about to claim these; leave the
+            // ones still backfilling to it rather than race it for them.
+            var settled: [String] = []
+            for id in rawTypes where await store.state(for: id).backfillComplete {
+                settled.append(id)
+            }
+            rawTypes = settled
+        }
         await WakeScope.$current.withValue(wake) {
             // One merged pass over the raw types, so a burst touching many types
             // produces a couple of full uploads rather than one tiny upload each.

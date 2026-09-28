@@ -243,6 +243,8 @@ final class AppModel {
     // MARK: - First run
 
     private static let onboardingCompletedKey = "onboardingCompleted"
+    /// An emptied profile whose clearing upload failed (`ProfilePayload.shouldUpload`).
+    private static let profileClearPendingKey = "profileClearPending"
 
     /// Marks the first run done and leaves the flow. Durable, so the flow is
     /// shown exactly once per install; Settings → Diagnostics can replay it.
@@ -409,17 +411,29 @@ final class AppModel {
         // nothing to say: an install that never had a profile (a reinstall
         // pairing with its old server, above all) must not clear the one the
         // server already holds (`ProfilePayload.shouldUpload`).
+        let profile = config.userProfilePayload
+        let clearPending = UserDefaults.standard.bool(forKey: Self.profileClearPendingKey)
         if config.serverURL != nil, config.authToken != nil,
-           ProfilePayload.shouldUpload(config.userProfilePayload, replacing: previousProfile) {
+           ProfilePayload.shouldUpload(profile, replacing: previousProfile, clearPending: clearPending) {
             do {
                 try await engine.syncProfile(reason: .manual)
+                UserDefaults.standard.set(false, forKey: Self.profileClearPendingKey)
             } catch {
+                // A clear that did not arrive is remembered for the next Apply;
+                // a filled profile needs no flag, it is always sent.
+                if profile.isEmpty {
+                    UserDefaults.standard.set(true, forKey: Self.profileClearPendingKey)
+                }
                 lastErrorMessage = error.localizedDescription
             }
         }
         // Apply/Save is the one place the app asks HealthKit for access. Request
         // it before reading so a newly enabled type doesn't fail its first sync.
         await requestAccessForEnabledTypesIfNeeded()
+        // A whole-history backfill may start in a task of its own (iOS 26,
+        // below), after the wake the observer registration triggers. Tell the
+        // engine it is coming so that wake does not take its types first.
+        if syncNewTypes, wholeHistory { await engine.expectBackfill() }
         await engine.startObserving()
         await refresh()
 

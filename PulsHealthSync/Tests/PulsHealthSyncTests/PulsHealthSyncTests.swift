@@ -488,6 +488,14 @@ import Testing
         #expect(ProfilePayload.shouldUpload(ProfilePayload(), replacing: filled))
         #expect(ProfilePayload.shouldUpload(ProfilePayload(), replacing: ProfilePayload(biologicalSex: "male")))
     }
+
+    /// The Apply after a clear that failed to upload finds an empty profile
+    /// already stored; the pending flag is what keeps the clear from being
+    /// dropped for good.
+    @Test func aClearThatNeverArrivedIsRetried() {
+        #expect(ProfilePayload.shouldUpload(ProfilePayload(), replacing: ProfilePayload(), clearPending: true))
+        #expect(!ProfilePayload.shouldUpload(ProfilePayload(), replacing: ProfilePayload(), clearPending: false))
+    }
 }
 
 @Suite struct StateStoreTests {
