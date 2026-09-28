@@ -285,7 +285,10 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `syncAllEnabled(.backfill)` claims before its first phase): claiming each
   only when a pipeline slot reached it let the observer wake that Apply's
   observer registration triggers take the queued types two seconds later, and
-  a whole first sync went down the merged path one upload at a time.
+  a whole first sync went down the merged path one upload at a time. The iOS 26
+  continued-processing task claims later than that, so a whole-history Apply
+  calls `expectBackfill()` before registering the observer: until a backfill
+  claims (a minute at most) observer wakes leave still-backfilling types alone.
 - **Recent data first, on an anchor of its own.** A nil-anchor sweep returns
   history roughly oldest first, so every sweep entry point first runs a
   recent-window pass (`RecentSampleWindow`, `SweepPass.recent`) over its
@@ -308,7 +311,12 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   and the wake is logged `expired`. A frozen run kept its types claimed, so
   the next wake found them busy and did nothing. An observer wake whose types
   another run holds waits for it (`waitForRelease`, ≤25 s) rather than
-  acknowledging HealthKit at once. Never nest it inside a `BGTaskScheduler`
+  acknowledging HealthKit at once — and acknowledges it from the expiration
+  handler (`onExpiration`) if the time runs out first, because the cancelled
+  wake may not unwind to its `defer` before iOS suspends it, and three
+  unacknowledged deliveries stop HealthKit waking the app. After expiry a
+  sweep starts no further type (`addTaskUnlessCancelled`) and
+  `syncAllEnabled` stops after phase 3. Never nest it inside a `BGTaskScheduler`
   handler — those have their own expiration, and a nested request would cut a
   processing task short at the ~30 s mark.
 - **The schema is applied by the `migrate` service, never by hand.**
