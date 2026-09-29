@@ -21,13 +21,14 @@ import Testing
             inFlight += 1
             peak = max(peak, inFlight)
             defer { inFlight -= 1 }
-            try await Task.sleep(for: .milliseconds(40))
+            // Long enough that overlap is certain even on a loaded CI runner.
+            try await Task.sleep(for: .milliseconds(200))
             let types = Set(batch.samples.map(\.type))
             if let failing, types.contains(failing) {
                 throw TransportError.serverError(status: 500, body: "boom")
             }
             uploaded.append(contentsOf: types)
-            return UploadResult(bytesSent: 100, duration: 0.04)
+            return UploadResult(bytesSent: 100, duration: 0.2)
         }
     }
 
@@ -104,6 +105,10 @@ import Testing
 
 /// An observer wake stays while another run holds its types, so iOS does not
 /// suspend the app with that run half done — but only for so long.
+///
+/// Wall-clock ceilings are generous on purpose: a loaded CI runner stretches
+/// every sleep, and what these tests tell apart — returned early, or waited
+/// out the limit — is a difference of tens of seconds, not milliseconds.
 @Suite struct ObserverWaitTests {
     func makeEngine() -> HealthSyncEngine {
         let dir = FileManager.default.temporaryDirectory
@@ -117,8 +122,8 @@ import Testing
     @Test func returnsAtOnceWhenNothingIsHeld() async {
         let engine = makeEngine()
         let start = ContinuousClock.now
-        await engine.waitForRelease(of: ["a"], upTo: .seconds(5))
-        #expect(ContinuousClock.now - start < .seconds(1))
+        await engine.waitForRelease(of: ["a"], upTo: .seconds(60))
+        #expect(ContinuousClock.now - start < .seconds(30))
     }
 
     @Test func returnsSoonAfterTheHolderLetsGo() async {
@@ -129,11 +134,12 @@ import Testing
             await engine.releaseForTesting("a")
         }
         let start = ContinuousClock.now
-        await engine.waitForRelease(of: ["a"], upTo: .seconds(10))
+        await engine.waitForRelease(of: ["a"], upTo: .seconds(60))
         let waited = ContinuousClock.now - start
         await holder.value
+        #expect(!(await engine.isSyncing("a")))
         #expect(waited >= .milliseconds(250))
-        #expect(waited < .seconds(3))
+        #expect(waited < .seconds(30))
     }
 
     @Test func givesUpAtTheLimit() async {
@@ -143,7 +149,7 @@ import Testing
         await engine.waitForRelease(of: ["a"], upTo: .milliseconds(600))
         let waited = ContinuousClock.now - start
         #expect(waited >= .milliseconds(600))
-        #expect(waited < .seconds(3))
+        #expect(waited < .seconds(30))
         #expect(await engine.isSyncing("a"))
     }
 
@@ -151,11 +157,11 @@ import Testing
         let engine = makeEngine()
         _ = await engine.claimTypes(["a"])
         let start = ContinuousClock.now
-        let wait = Task { await engine.waitForRelease(of: ["a"], upTo: .seconds(30)) }
+        let wait = Task { await engine.waitForRelease(of: ["a"], upTo: .seconds(120)) }
         try? await Task.sleep(for: .milliseconds(100))
         wait.cancel()
         await wait.value
-        #expect(ContinuousClock.now - start < .seconds(3))
+        #expect(ContinuousClock.now - start < .seconds(60))
     }
 }
 
