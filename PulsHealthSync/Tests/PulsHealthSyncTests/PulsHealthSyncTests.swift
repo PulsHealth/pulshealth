@@ -469,6 +469,35 @@ import Testing
     }
 }
 
+/// A profile line replaces the server's copy, so sending an empty one erases
+/// it. That must happen when the user empties the fields, and never merely
+/// because an install has none — the reinstall case.
+@Suite struct ProfileUploadPolicyTests {
+    let filled = ProfilePayload(name: "A", email: nil, dateOfBirth: Date(timeIntervalSince1970: 0), biologicalSex: "female")
+
+    @Test func aFreshInstallWithNoProfileSendsNothing() {
+        #expect(!ProfilePayload.shouldUpload(ProfilePayload(), replacing: ProfilePayload()))
+    }
+
+    @Test func aFilledProfileIsAlwaysSent() {
+        #expect(ProfilePayload.shouldUpload(filled, replacing: ProfilePayload()))
+        #expect(ProfilePayload.shouldUpload(filled, replacing: filled))
+    }
+
+    @Test func emptyingTheFieldsStillClearsTheServer() {
+        #expect(ProfilePayload.shouldUpload(ProfilePayload(), replacing: filled))
+        #expect(ProfilePayload.shouldUpload(ProfilePayload(), replacing: ProfilePayload(biologicalSex: "male")))
+    }
+
+    /// The Apply after a clear that failed to upload finds an empty profile
+    /// already stored; the pending flag is what keeps the clear from being
+    /// dropped for good.
+    @Test func aClearThatNeverArrivedIsRetried() {
+        #expect(ProfilePayload.shouldUpload(ProfilePayload(), replacing: ProfilePayload(), clearPending: true))
+        #expect(!ProfilePayload.shouldUpload(ProfilePayload(), replacing: ProfilePayload(), clearPending: false))
+    }
+}
+
 @Suite struct StateStoreTests {
     func makeStore() -> SyncStateStore {
         let dir = FileManager.default.temporaryDirectory
