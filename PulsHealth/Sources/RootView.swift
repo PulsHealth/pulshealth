@@ -4,6 +4,9 @@ import PulsHealthSync
 struct RootView: View {
     private enum Tab: Hashable { case dashboard, dataTypes, log, settings }
     @State private var selection: Tab = .dashboard
+    /// Owned here rather than by SettingsView so an accepted pairing link can
+    /// pop whatever Settings had pushed and land on its Server section.
+    @State private var settingsPath: [SettingsRoute] = []
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -19,9 +22,22 @@ struct RootView: View {
             NavigationStack { LogView() }
                 .tabItem { Label("Log", systemImage: "text.alignleft") }
                 .tag(Tab.log)
-            NavigationStack { SettingsView() }
+            NavigationStack(path: $settingsPath) { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
+        }
+        // An incoming `puls://` link asks before it fills anything. While the
+        // first-run flow covers this view the prompt is OnboardingView's; and
+        // it waits its turn behind the server-change prompt, which can be up
+        // from launch.
+        .pairingLinkPrompt(canPresent: !model.showsOnboarding && model.pendingServerChange == nil)
+        // Accepted: take the user to the fields the link filled in, the same
+        // place a scan from Settings would have left them. SettingsView
+        // collects the payload itself; nothing is applied from here.
+        .onChange(of: model.pairingAwaitsSettings) { _, waiting in
+            guard waiting else { return }
+            settingsPath = []
+            selection = .settings
         }
         // Save & Apply on Settings, the User page, or the Data Types bar can
         // all raise the server/user-change prompt; show it above every tab.
@@ -89,6 +105,12 @@ private struct PendingChangesBar: View {
     }
 }
 
+/// Screens the Dashboard pushes besides a type's detail (which is keyed by the
+/// type identifier, a plain `String`).
+enum DashboardRoute: Hashable {
+    case export
+}
+
 struct DashboardView: View {
     @Environment(AppModel.self) private var model
 
@@ -114,7 +136,7 @@ struct DashboardView: View {
                             .controlSize(.small)
                         } else {
                             Text("Welcome to PulsHealth").font(.headline)
-                            Text("Pick your data types on the Data Types tab and tap Apply — that's when Health access is requested. Then set your server in Settings and run the initial backfill.")
+                            Text("Pick your data types on the Data Types tab and tap Apply — that's when Health access is requested. Then set your server in Settings and run the initial backfill, or export files without one.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
                         if let hint = model.authorizationHint {
@@ -151,6 +173,25 @@ struct DashboardView: View {
                 }
             }
 
+            // No server is a supported way to use the app, not a fault: say
+            // what it means (nothing is syncing) and offer the thing that works
+            // without one. Keyed on the *applied* server — where data goes
+            // today — so a URL half-typed in Settings does not hide it.
+            // `configured`, and with it everything the sync does, is untouched.
+            if model.appliedConfig.serverURL == nil {
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("No server set up").font(.headline)
+                        Text("Nothing is syncing, because there is nowhere to sync to yet. You can still get your data out: export it to CSV or JSONL files and keep them wherever you like. Add a server under Settings whenever you want continuous sync.")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                    NavigationLink(value: DashboardRoute.export) {
+                        Label("Export Data to Files", systemImage: "square.and.arrow.up.on.square")
+                    }
+                }
+            }
+
             overviewSection
 
             Section("Types") {
@@ -169,6 +210,11 @@ struct DashboardView: View {
         .navigationDestination(for: String.self) { id in
             if let status = model.statuses.first(where: { $0.id == id }) {
                 TypeDetailView(status: status)
+            }
+        }
+        .navigationDestination(for: DashboardRoute.self) { route in
+            switch route {
+            case .export: ExportView()
             }
         }
         .toolbar {

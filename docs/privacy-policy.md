@@ -1,20 +1,26 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-09-15**
+**Last updated: 2026-09-21**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
-server **you** run. This policy describes what the app does with your data. It
-is short because the app does very little: it reads Apple Health, it uploads to
-the one address you type in, and that is the whole of it.
+server **you** run, or — if you have no server — writes it to files you then
+save or send yourself. This policy describes what the app does with your data.
+It is short because the app does very little: it reads Apple Health, it uploads
+to the one address you type in, it exports a file when you ask for one, and
+that is the whole of it.
 
 ## The short version
 
 - **The developer of PulsHealth receives no data from you.** None. There is no
   PulsHealth account, no PulsHealth service, no telemetry endpoint, and no
   server operated by the developer that the app talks to.
-- **Your health data goes to one place: the server you configure.** The app
-  uploads only to the URL you enter (or scan from a pairing code) in the app.
-  It has no other destination compiled into it.
+- **Your health data leaves the phone in two ways, and both are yours.** The
+  app uploads only to the server URL you enter in it — typed, or taken from
+  your server's pairing code (scanned, pasted, or opened as a link you
+  confirm) — and it has no other network destination compiled into it. And when
+  you ask for an export, it writes files and hands them to the iOS share sheet;
+  where they go from there is the choice you make in that sheet. An export
+  involves no network request by the app at all.
 - **No analytics, no advertising, no tracking, no third-party SDKs.** The app
   and its `PulsHealthSync` library have zero third-party dependencies. Nothing
   profiles you, and no identifier is shared with anyone.
@@ -45,12 +51,14 @@ anywhere else, and leaving them blank is fully supported.
 Each upload also carries a `deviceID` so your server can tell one phone from
 another. It is a random UUID the app generates for itself on first run — not
 the advertising identifier, not `identifierForVendor`, not tied to you or to
-the hardware — and it goes only to your server.
+the hardware — and it goes only to your server, and into the files of an export
+you make yourself.
 
 ## Where it goes
 
 To the server URL you configure, over HTTPS, authenticated with a bearer token
-you also configure. That is the only network destination.
+you also configure. That is the only network destination. (An export is not a
+network destination: see [Exports](#exports) below.)
 
 Plain `http://` is permitted **only** for hosts on your local network
 (`localhost`, `*.local`, and the private IP ranges `10.x`, `172.16–31.x`,
@@ -79,18 +87,53 @@ Transport Security (`NSAllowsLocalNetworking`).
   identity fields if you filled them in), the opaque HealthKit query anchors,
   per-type counters, and progress watermarks. It is written atomically with
   iOS file protection and is excluded from device backups. It holds **no health
-  samples** — those are streamed to your server and not kept in the app.
+  samples** — a sync streams those to your server and keeps none of them in the
+  app. The one time health samples rest in the app's storage is an export you
+  asked for, briefly, as described under [Exports](#exports).
 - **Logs and background-activity telemetry** — an in-app event log and a record
   of each background wake (when it ran, how long, how many samples moved). They
-  stay on the device unless *you* export them with the share sheet. They hold
-  counts and timings, not health values.
+  stay on the device unless *you* share them from the Background Activity
+  screen, which writes them to the app's temporary directory for the share
+  sheet. They hold counts and timings, not health values.
 - **App preferences** — four `UserDefaults` flags (whether Health access has
   been requested, whether medication access has been requested, whether the
   first-run flow has been completed, and the background-task schedule status).
   No personal data.
 
-Deleting the app deletes all of this from the phone. It does not delete
-anything already uploaded to your server; that is yours to manage.
+Deleting the app deletes all of this from the phone, a staged export included.
+It does not delete anything already uploaded to your server, or any exported
+file you saved or sent somewhere else — those are yours to manage.
+
+## Exports
+
+Settings → Export Data writes the data types you have selected, for the time
+range you pick, to files on the phone: CSV, or JSONL (the same format the app
+uploads). It works with no server configured and makes no network request. It
+runs only when you tap Export; nothing exports on a schedule or in the
+background.
+
+- **Where the files are.** In the app's temporary directory, which iOS never
+  includes in a device or iCloud backup. They carry iOS file protection
+  (unreadable until the first unlock after a restart) and no other encryption.
+- **How long they stay.** Until you have shared them: the app deletes its copy
+  when the share sheet reports that the files were handed over. It also deletes
+  it when you tap Delete Export, when you start another export, and every time
+  the app launches — so an export you never shared, or one interrupted by a
+  crash, does not outlive the next launch. A cancelled or failed export keeps
+  nothing.
+- **What is in them.** The health data you selected, as Apple Health holds it —
+  which includes the name of the app or device that recorded each sample (for
+  example the name you gave your Apple Watch). A manifest file beside the data
+  records your user ID, the app's random `deviceID`, the phone's time zone, the
+  app version, the time range and the row counts; a JSONL export repeats the
+  `deviceID` and app version at the head of each batch, as an upload does. The files do **not** contain the bearer token,
+  the server URL, or the name, email address, date of birth or sex from
+  Settings → User.
+- **Where they go.** Wherever you send them from the share sheet — Files,
+  AirDrop, another app. The app's Copy action is turned off for exports, so the
+  files are not placed on the clipboard. Once a file has left the app it is an
+  ordinary, unencrypted file: it is only as private as the place you put it,
+  the app can no longer delete it, and the developer never sees it.
 
 ## Camera
 
@@ -100,14 +143,18 @@ The camera runs only while the scanning screen is open, no photo or video frame
 is recorded, stored, or transmitted, and nothing but the text of the scanned
 code leaves the scanner. Declining camera access is fully supported: the same
 screen offers to let you type the details instead, and the app works exactly the
-same way.
+same way. The same code also works without the camera: pasted with the system
+Paste button (the app reads the clipboard only on that tap), or opened as a
+`puls://` link, which the app asks you to confirm — naming the server — before
+it fills anything in.
 
 ## Health data and Apple's rules
 
 PulsHealth does not use HealthKit data for advertising, marketing, or
 data-mining purposes, and does not disclose HealthKit data to any third party.
-It is not shared with, or sold to, anyone — there is nobody to share it with,
-because the only recipient is your own server.
+It is not shared with, or sold to, anyone — there is nobody to share it with:
+the only recipient of an upload is your own server, and an exported file goes
+only where you send it.
 
 ## Children
 

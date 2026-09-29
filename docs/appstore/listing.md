@@ -57,7 +57,9 @@ PulsHealth copies the health data on your iPhone to a server you run yourself.
 
 That is the whole idea. There is no PulsHealth account and no PulsHealth cloud. The app uploads to the one address you enter, and nowhere else. The developer never receives your data, because there is nothing for it to be sent to.
 
-You need a server. PulsHealth is the phone half of an open-source project; the other half is a backend you run — on a home machine, a NAS, a Raspberry Pi, or a rented box — with one Docker command. Without a server there is nothing to sync to, so please set that up first. Everything is at github.com/PulsHealth/pulshealth.
+Syncing needs a server. PulsHealth is the phone half of an open-source project; the other half is a backend you run — on a home machine, a NAS, a Raspberry Pi, or a rented box — with one Docker command. Everything is at github.com/PulsHealth/pulshealth.
+
+No server yet? The app is still useful: export the same data to CSV or JSONL files on your iPhone, on demand, and save or send them wherever you like. Add a server whenever you want continuous sync.
 
 WHAT IT DOES
 
@@ -65,13 +67,15 @@ WHAT IT DOES
 • Then it keeps up. New samples follow automatically — in the foreground whenever you open the app, and in the background when iOS allows it.
 • You pick the data. Around 80 HealthKit types grouped the way Apple Health groups them: activity, heart, body, respiratory, sleep, nutrition, vitals, workouts and more. Turn on a starter set in one tap, or choose type by type.
 • More than raw numbers. Workouts carry their GPS route and per-second sensor series; activity rings come across as daily summaries; and any quantity type can also be sent as on-device aggregates (hourly sums, daily averages) instead of, or alongside, raw samples.
+• Export to files. With or without a server, write your selected data to CSV (one file per kind of data, for spreadsheets) or JSONL (complete, and replayable into a server later) for the last 30 days, 90 days, year, or all time, then save to Files or share.
 • Set up by scanning. The server prints a pairing QR code with its URL, token and user ID in it. Scan it and you are connected — or type the three values in by hand if you prefer.
 • Nothing is hidden. A live event log, per-type counters and anchors, a background-activity screen showing every wake iOS granted, a throughput benchmark, and an export of all of it for offline analysis.
 
 PRIVACY
 
 • Read-only. PulsHealth reads from Apple Health and never writes, changes or deletes anything there.
-• One destination. The server URL you configure. HTTPS is required for anything that is not on your own local network.
+• One network destination: the server URL you configure. HTTPS is required for anything that is not on your own local network.
+• An export makes no network request. The files are staged in temporary storage, handed to the iOS share sheet, and deleted from the app once shared.
 • No analytics, no advertising, no tracking, no third-party SDKs — the app and its sync library have zero third-party dependencies.
 • Your bearer token lives in the iOS Keychain, bound to this device.
 • The camera is used for exactly one thing: reading the pairing QR code. No image is stored or sent, and declining camera access simply means typing the details instead.
@@ -84,10 +88,15 @@ PulsHealth is Apache-2.0 licensed. The app, the sync library, the wire protocol 
 
 REQUIREMENTS
 
-iPhone running iOS 17 or later, and a server you can reach. Apple Watch data arrives once iOS syncs it to the phone.
+iPhone running iOS 17 or later. Syncing needs a server you can reach; exporting to files does not. Apple Watch data arrives once iOS syncs it to the phone.
 ```
 
-`[2992/4000]`
+`[3534/4000]`
+
+> The description above is the **next submission's**: it adds on-device export
+> (the "No server yet?" paragraph, the "Export to files" bullet, the second
+> privacy bullet and the reworded requirements). 1.4 shipped with the text
+> before those edits, which told readers a server was required.
 
 ## Keywords
 
@@ -149,7 +158,7 @@ Answer every content question **None / No**. The result is **4+**.
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
 | Medical or treatment information | None | The app shows the user their own HealthKit data and its sync status. It offers no diagnosis, interpretation, dosage, recommendation, or treatment information of any kind. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
-| Unrestricted web access | No | There is no browser, no web view, and no link out. The single `openURL` call opens iOS Settings after camera access is declined. |
+| Unrestricted web access | No | There is no browser, no web view, and no link out. The only URL the app ever *opens* is iOS Settings (after camera access is declined, and from the Dashboard's "Open Health Settings"). It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the server and, if accepted, fills in the server fields. |
 | User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, server URL, token) is shared with any other user or with the developer. |
 | Gambling and contests | No | — |
 | In-app purchases | No | No StoreKit. |
@@ -171,7 +180,11 @@ the request*. PulsHealth transmits health data off the device, but:
 2. **The only destination is chosen and controlled by the user.** The server
    URL is typed in by the user or scanned from a QR code their own server
    printed. It is their infrastructure, not a third-party partner of the
-   developer's, and the developer has no access to it.
+   developer's, and the developer has no access to it. The same goes for an
+   on-device export (Settings → Export Data): the app makes no network request
+   for it at all — it writes files and hands them to the iOS share sheet, and
+   the user picks where they go. Neither the developer nor any partner can
+   reach them, so it is not collection either.
 3. **There is no analytics, advertising, attribution, or crash-reporting SDK,
    and no third-party dependency at all** — see `PulsHealthSync/Package.swift`,
    which declares none.
@@ -200,7 +213,7 @@ flags.
 | Price | Free. |
 | Availability | All territories. |
 | App Review contact | The maintainer fills this in — App Store Connect asks for a name, phone number and e-mail address, which are personal details and are deliberately not stored in this repository. |
-| Demo account | Not an account, but the reviewer *does* need a server. See [`review-notes.md`](review-notes.md) and [`review-backend.md`](review-backend.md). |
+| Demo account | Not an account, but the reviewer *does* need a server to see a sync. See [`review-notes.md`](review-notes.md) and [`review-backend.md`](review-backend.md). (Export Data works without one, and the notes say so.) |
 
 ## Version information
 
@@ -228,6 +241,15 @@ First release.
 • The log shows how much of each upload was new to your server.
 • On a new setup, recent daily summaries upload first, so your server has something to show while history backfills.
 • Fixes: no false "backfill complete" for types that produced no samples, and setup can no longer stall on the medications permission step.
+```
+
+Next version (not yet submitted; trim to taste):
+
+```
+• Export without a server: Settings → Export Data writes your selected health data to CSV or JSONL files — last 30 days, 90 days, a year, or all time — and hands them to the share sheet. Nothing is uploaded, and the app's copy is deleted once shared.
+• Pair faster: open the server's pairing link, scan its QR code with the Camera app, or paste the pairing code. The app always asks before it uses one.
+• The first-run flow and the Dashboard now say what works without a server.
+• Fix: a data type whose samples could not be converted is no longer marked as fully synced.
 ```
 
 ## Screenshots

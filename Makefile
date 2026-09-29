@@ -8,7 +8,7 @@ COMPOSE       := docker compose --project-directory server -f server/docker-comp
 COMPOSE_BUILD := $(COMPOSE) -f server/compose.build.yml
 ARGS          ?=
 
-.PHONY: help bootstrap up down pull logs ps migrate baseline pairing devices dev-up \
+.PHONY: help bootstrap up down pull logs ps migrate baseline pairing issue-device devices dev-up \
         backup backup-list restore site-dev site-build site-lint deploy-site
 
 help: ## List targets
@@ -41,9 +41,20 @@ baseline: ## Adopt a database created before the migrate service existed (one-ti
 pairing: ## Re-print the pairing block (URL, token, user ID, QR) from server/.env
 	scripts/bootstrap.sh --print-pairing
 
-devices: ## Per-device tokens: ARGS='list [--all]' | 'issue --user <uuid> --name <label>' | 'revoke <id>' | 'rename <id> <label>'
-	@test -n "$(ARGS)" || { echo "usage: make devices ARGS='list|issue --user <uuid> --name <label>|revoke <id>|rename <id> <label>'"; exit 2; }
-	$(COMPOSE) run --rm --no-deps ingest devices $(ARGS)
+issue-device: ## Issue a per-device token and print its pairing QR: NAME='My iPhone' (ARGS='--user <uuid>' for a non-default user)
+	@$(if $(strip $(NAME)),:,echo "usage: make issue-device NAME='<label, e.g. My iPhone>' [ARGS='--user <uuid>']"; exit 2)
+	scripts/bootstrap.sh --issue-device "$(NAME)" $(ARGS)
+
+# `issue` prints a QR code too, and the code needs the URL the phone will use,
+# which the container cannot work out — so it is handed in as PULS_PUBLIC_URL,
+# from the same rules the pairing block uses (the .env value, else the LAN
+# address under --lan; empty when there is none, and `issue` then says so).
+# An explicit --url in ARGS still wins. The emptiness check is make's, not the
+# shell's `test -n "$(ARGS)"`: a quoted label (--name "My iPhone") inside those
+# quotes splits into words and `test` fails on a perfectly good command.
+devices: ## Per-device tokens: ARGS='list [--all]' | 'issue --user <uuid> --name <label> [--url <url>] [--no-qr]' | 'revoke <id>' | 'rename <id> <label>'
+	@$(if $(strip $(ARGS)),:,echo "usage: make devices ARGS='list|issue --user <uuid> --name <label>|revoke <id>|rename <id> <label>'"; exit 2)
+	$(COMPOSE) run --rm --no-deps -e PULS_PUBLIC_URL="$$(scripts/bootstrap.sh --print-url 2>/dev/null || true)" ingest devices $(ARGS)
 
 dev-up: ## Build the four app images from this checkout and start the stack
 	DEPLOY_COMMIT=$$(git rev-parse HEAD 2>/dev/null || echo unknown) $(COMPOSE_BUILD) up -d --build $(ARGS)
