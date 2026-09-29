@@ -221,8 +221,8 @@ flags.
 |---|---|
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
 | Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
-| Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.4`, ahead of the `1.3` on the store — see [Release record](README.md#release-record) |
-| Build | `CURRENT_PROJECT_VERSION`, currently `14`, ahead of the shipped `13` |
+| Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.5`, ahead of the `1.4` on the store — see [Release record](README.md#release-record) |
+| Build | `CURRENT_PROJECT_VERSION`, currently `16`, ahead of the shipped `15` |
 | Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
@@ -243,12 +243,15 @@ First release.
 • Fixes: no false "backfill complete" for types that produced no samples, and setup can no longer stall on the medications permission step.
 ```
 
-Next version (not yet submitted; trim to taste):
+1.5 (not yet submitted; trim to taste):
 
 ```
 • Export without a server: Settings → Export Data writes your selected health data to CSV or JSONL files — last 30 days, 90 days, a year, or all time — and hands them to the share sheet. Nothing is uploaded, and the app's copy is deleted once shared.
 • Pair faster: open the server's pairing link, scan its QR code with the Camera app, or paste the pairing code. The app always asks before it uses one.
 • The first-run flow and the Dashboard now say what works without a server.
+• Recent data first: while history backfills, the last month reaches your server ahead of it and stays current however long the rest takes.
+• Syncing that keeps going: leaving the app no longer freezes a sync mid-upload, background syncs make steady progress, and the first sync after setup continues in the background on iOS 26.
+• Reinstalling no longer erases the name, date of birth and sex your server already holds.
 • Fix: a data type whose samples could not be converted is no longer marked as fully synced.
 ```
 
