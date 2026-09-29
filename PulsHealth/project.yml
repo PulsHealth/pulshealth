@@ -98,11 +98,11 @@ targets:
         CODE_SIGN_STYLE: Automatic
         # Must exceed what is on the store — App Store Connect rejects an
         # upload whose build number is not higher than the last one accepted
-        # for the same version train. The store holds 1.3 (build 13); see
+        # for the same version train. The store holds 1.4 (build 15); see
         # docs/appstore/README.md § Release record, and bump both here before
         # every archive.
-        CURRENT_PROJECT_VERSION: 15
-        MARKETING_VERSION: 1.4
+        CURRENT_PROJECT_VERSION: 16
+        MARKETING_VERSION: 1.5
         GENERATE_INFOPLIST_FILE: false
         ENABLE_USER_SCRIPT_SANDBOXING: true
   # Hosted in the app so tests run with the HealthKit entitlement — required to
