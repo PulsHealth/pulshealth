@@ -232,7 +232,15 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   bucket inside its settle delay uploads on the next trigger after it settles;
   recent buckets are recomputed each run, so late Watch data self-corrects.
 - Backfill on iOS 26 runs as a `BGContinuedProcessingTask` (system progress UI,
-  survives backgrounding); earlier iOS keeps it foreground-resumable.
+  survives backgrounding) — Start Initial Backfill, and since 2026-09 the first
+  run's final step and a start-fresh server change too; adding a type on the
+  Data Types tab backfills inline. Earlier iOS keeps it foreground-resumable.
+  Every sync the app starts itself holds a background-task assertion, so
+  leaving the app mid-sync gives it iOS's grace period and then stops it
+  cleanly (`BackgroundExecution`) instead of freezing it.
+- Save & Apply sends the profile (Settings → User) only when there is one, or
+  when the user has just emptied a filled one: the line replaces the server's
+  copy, and a reinstall pairing with its old server used to erase it.
 - Types the permission sheet can't determine (blood pressure on iOS 26.5,
   FB22735935) are remembered per session and skipped from auth requests, with a
   dashboard hint pointing at Settings → Privacy & Security → Health — see the

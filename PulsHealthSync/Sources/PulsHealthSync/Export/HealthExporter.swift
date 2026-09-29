@@ -32,7 +32,10 @@ import HealthKit
 /// running as interrupted. It calls the sweep's phases itself rather than
 /// `syncAllEnabled`, leaving out the recent-aggregate priority window: that
 /// pass exists to put something on a server's dashboard early, and here it
-/// would only write the newest month of every aggregate series twice.
+/// would only write the newest month of every aggregate series twice. The raw
+/// twin of that pass, the recent-window stream, is switched off on the engine
+/// itself (`recentWindowFirst: false`) for the same reason: `syncTypes` runs
+/// it ahead of every sweep, and in a file a sample sent twice is two rows.
 ///
 /// Stateless and `Sendable`; `run` may be called from any actor. One export at
 /// a time is the sensible limit — two would contend for the same HealthKit
@@ -115,7 +118,8 @@ public final class HealthExporter: Sendable {
         let engine = HealthSyncEngine(
             store: SyncStateStore(directory: stateDirectory, tokenStore: InMemoryTokenStore()),
             eventLog: SyncEventLog(directory: stateDirectory),
-            wakeLog: WakeLog(directory: stateDirectory))
+            wakeLog: WakeLog(directory: stateDirectory),
+            recentWindowFirst: false)
 
         // Checked here, once, and thrown: `syncAllEnabled` makes the same test
         // but answers a locked device by logging and returning, which for an

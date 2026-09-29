@@ -419,8 +419,11 @@ line **replaces** what is stored: a null or absent field clears that value,
 `{"profile":{}}` clears all four, and the only way to leave the profile
 unchanged is to send no profile line. `{"profile":null}` and a line without
 the wrapper are malformed (400). The app attaches a profile line to the next
-upload after the user edits these settings; date of birth and sex are what a
-receiver needs for heart-rate zones.
+upload after the user edits these settings, and sends none while it has no
+profile to report — an empty one goes out only when the user has just emptied
+a filled one, so a reinstall pairing with its old server does not erase what
+is stored there. Date of birth and sex are what a receiver needs for
+heart-rate zones.
 
 ## 5. Type vocabulary and canonical units
 

@@ -272,6 +272,8 @@ final class AppModel {
     // MARK: - First run
 
     private static let onboardingCompletedKey = "onboardingCompleted"
+    /// An emptied profile whose clearing upload failed (`ProfilePayload.shouldUpload`).
+    private static let profileClearPendingKey = "profileClearPending"
 
     /// Marks the first run done and leaves the flow. Durable, so the flow is
     /// shown exactly once per install; Settings → Diagnostics can replay it.
@@ -288,7 +290,7 @@ final class AppModel {
     /// user in the flow.
     func finishOnboarding() async {
         UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
-        await applyConfiguration(syncNewTypes: true)
+        await applyConfiguration(syncNewTypes: true, wholeHistory: true)
         showsOnboarding = false
         onboardingIsRerun = false
     }
@@ -490,29 +492,52 @@ final class AppModel {
     /// because the draft points at a different server or user ID than the
     /// stored sync progress belongs to: the prompt is raised instead, and the
     /// apply resumes from `confirmServerChange` with the user's choice.
+    ///
+    /// `wholeHistory` marks an apply whose backfill is every enabled type from
+    /// the start date — the first run, or a start-fresh server change — as
+    /// opposed to a type or two added on the Data Types tab.
     @discardableResult
-    func applyConfiguration(syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false) async -> Bool {
+    func applyConfiguration(
+        syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false
+    ) async -> Bool {
         if !serverChangeConfirmed, let change = await engine.serverIdentityChange(applying: config) {
             pendingServerChange = change
             pendingServerChangeWantsNewTypeSync = syncNewTypes
             return false
         }
+        let previousProfile = await engine.store.configuration.userProfilePayload
         await resetReidentifiedAggregates()
         await engine.configure(config, confirmServerIdentity: serverChangeConfirmed)
         appliedConfig = config
         // User identity is independent of workout availability. Send it as its
         // own tiny batch so Save & Apply updates the server immediately even when
-        // there are no new workouts to carry a profile line.
-        if config.serverURL != nil, config.authToken != nil {
+        // there are no new workouts to carry a profile line — unless there is
+        // nothing to say: an install that never had a profile (a reinstall
+        // pairing with its old server, above all) must not clear the one the
+        // server already holds (`ProfilePayload.shouldUpload`).
+        let profile = config.userProfilePayload
+        let clearPending = UserDefaults.standard.bool(forKey: Self.profileClearPendingKey)
+        if config.serverURL != nil, config.authToken != nil,
+           ProfilePayload.shouldUpload(profile, replacing: previousProfile, clearPending: clearPending) {
             do {
                 try await engine.syncProfile(reason: .manual)
+                UserDefaults.standard.set(false, forKey: Self.profileClearPendingKey)
             } catch {
+                // A clear that did not arrive is remembered for the next Apply;
+                // a filled profile needs no flag, it is always sent.
+                if profile.isEmpty {
+                    UserDefaults.standard.set(true, forKey: Self.profileClearPendingKey)
+                }
                 lastErrorMessage = error.localizedDescription
             }
         }
         // Apply/Save is the one place the app asks HealthKit for access. Request
         // it before reading so a newly enabled type doesn't fail its first sync.
         await requestAccessForEnabledTypesIfNeeded()
+        // A whole-history backfill may start in a task of its own (iOS 26,
+        // below), after the wake the observer registration triggers. Tell the
+        // engine it is coming so that wake does not take its types first.
+        if syncNewTypes, wholeHistory { await engine.expectBackfill() }
         await engine.startObserving()
         await refresh()
 
@@ -536,6 +561,16 @@ final class AppModel {
             && activitySummaryState.computedThrough == nil
         guard !newTypes.isEmpty || !newAggregates.isEmpty || newRings else { return true }
 
+        // The whole history is the largest data movement an install makes, and
+        // it used to stop the moment the user left the app: iOS suspended it
+        // and every later wake crawled through the rest a few pages at a time.
+        // On iOS 26 run it as the continued-processing task Start Initial
+        // Backfill uses, which keeps going with system progress UI. That task
+        // runs `syncAllEnabled(.backfill)`: rings, aggregates and every type,
+        // which on a whole-history apply is exactly the new work above.
+        if wholeHistory, #available(iOS 26.0, *), scheduler.startContinuedBackfill() {
+            return true
+        }
         // This is usually the largest data movement of an install, so it runs
         // inside a wake like every other entry point (X-Wake-ID on its batches,
         // a Background Activity record) and under the same isSyncingAll gate as
@@ -545,24 +580,26 @@ final class AppModel {
         Task {
             defer { isSyncingAll = false }
             let wake = await engine.beginWake(.manual, detail: "apply: backfill newly enabled types")
-            await WakeScope.$current.withValue(wake) {
-                await withTaskGroup(of: Void.self) { group in
-                    if !newTypes.isEmpty {
-                        group.addTask { await self.engine.syncTypes(newTypes, reason: .backfill) }
-                    }
-                    if !newAggregates.isEmpty {
-                        group.addTask {
-                            for id in newAggregates {
-                                await self.engine.syncAggregate(configID: id, reason: .backfill)
+            let finished = await BackgroundExecution.run("PulsHealth backfill") { [engine] in
+                await WakeScope.$current.withValue(wake) {
+                    await withTaskGroup(of: Void.self) { group in
+                        if !newTypes.isEmpty {
+                            group.addTask { await engine.syncTypes(newTypes, reason: .backfill) }
+                        }
+                        if !newAggregates.isEmpty {
+                            group.addTask {
+                                for id in newAggregates {
+                                    await engine.syncAggregate(configID: id, reason: .backfill)
+                                }
                             }
                         }
-                    }
-                    if newRings {
-                        group.addTask { await self.engine.syncActivitySummary(reason: .backfill) }
+                        if newRings {
+                            group.addTask { await engine.syncActivitySummary(reason: .backfill) }
+                        }
                     }
                 }
             }
-            await engine.finishWake(wake)
+            await engine.finishWake(wake, outcome: finished ? .completed : .expired)
         }
         return true
     }
@@ -603,7 +640,8 @@ final class AppModel {
                 .warn, "Sync target changed (\(change.summary)) — progress kept; only new data will reach it")
         }
         await applyConfiguration(
-            syncNewTypes: startFresh || wantsNewTypeSync, serverChangeConfirmed: true)
+            syncNewTypes: startFresh || wantsNewTypeSync, serverChangeConfirmed: true,
+            wholeHistory: startFresh)
     }
 
     /// Dismiss the prompt without applying. The draft keeps what was typed so
@@ -797,10 +835,14 @@ final class AppModel {
         // pull-to-refresh) is user-driven.
         let wakeTrigger: WakeTrigger = trigger == "foreground" ? .foreground : .manual
         let wake = await engine.beginWake(wakeTrigger, detail: trigger)
-        await WakeScope.$current.withValue(wake) {
-            await engine.syncAllEnabled(reason: .incremental)
+        // Leaving the app mid-sync used to freeze it where it stood; this buys
+        // the run iOS's background grace period and ends it cleanly after.
+        let finished = await BackgroundExecution.run("PulsHealth sync") { [engine] in
+            await WakeScope.$current.withValue(wake) {
+                await engine.syncAllEnabled(reason: .incremental)
+            }
         }
-        await engine.finishWake(wake)
+        await engine.finishWake(wake, outcome: finished ? .completed : .expired)
     }
 
     func startBackfill() async {
@@ -814,10 +856,12 @@ final class AppModel {
         isSyncingAll = true
         defer { isSyncingAll = false }
         let wake = await engine.beginWake(.manual, detail: "foreground backfill")
-        await WakeScope.$current.withValue(wake) {
-            await engine.syncAllEnabled(reason: .backfill)
+        let finished = await BackgroundExecution.run("PulsHealth backfill") { [engine] in
+            await WakeScope.$current.withValue(wake) {
+                await engine.syncAllEnabled(reason: .backfill)
+            }
         }
-        await engine.finishWake(wake)
+        await engine.finishWake(wake, outcome: finished ? .completed : .expired)
     }
 
     func syncOne(_ identifier: String) async {

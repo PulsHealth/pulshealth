@@ -31,6 +31,14 @@ public struct TypeSyncState: Codable, Sendable, Equatable {
     /// types and the counts cannot be attributed to this one.
     public var lastBatchAccepted: Int?
     public var lastBatchDuplicates: Int?
+    /// The recent-window stream of a type whose backfill has not finished
+    /// (`RecentSampleWindow`): an anchor of its own over samples starting at
+    /// `recentWindowStart`, so each run sends what is new there before the
+    /// oldest-first sweep continues. Separate from `anchorData` by design — a
+    /// date-bounded anchor reused for the full sweep would skip everything
+    /// older than the window. Both are cleared when the backfill completes.
+    public var recentAnchorData: Data?
+    public var recentWindowStart: Date?
 
     public init(identifier: String) {
         self.identifier = identifier
@@ -432,7 +440,9 @@ public actor SyncStateStore {
     /// True when any anchor or watermark has been earned — i.e. there is
     /// progress a server change could strand.
     public var hasSyncProgress: Bool {
-        typeStates.values.contains { $0.anchorData != nil || $0.totalSamplesExported > 0 }
+        typeStates.values.contains {
+            $0.anchorData != nil || $0.recentAnchorData != nil || $0.totalSamplesExported > 0
+        }
             || aggregateStates.values.contains { $0.computedThrough != nil }
             || activitySummaryState.computedThrough != nil
             || workoutRoutesState.computedThrough != nil
@@ -517,8 +527,42 @@ public actor SyncStateStore {
         }
     }
 
+    /// Record an acked page of a type's recent-window stream. The stream's own
+    /// anchor moves; `anchorData` and `backfillComplete` never do — the sweep
+    /// has not reached these samples, and will send them again when it does.
+    /// Traffic and date coverage are real, so those advance; the sample count
+    /// is left to the sweep, which would otherwise count these twice.
+    public func recordRecentWindowUpload(
+        identifier: String,
+        newAnchorData: Data?,
+        windowStart: Date,
+        bytes: Int,
+        sampleDateRange: ClosedRange<Date>?,
+        duration: TimeInterval
+    ) {
+        update(identifier) { s in
+            s.recentAnchorData = newAnchorData
+            s.recentWindowStart = windowStart
+            s.totalBytesUploaded += bytes
+            s.totalBatchesUploaded += 1
+            s.lastSyncAt = Date()
+            s.lastSyncDuration = duration
+            s.lastError = nil
+            if let range = sampleDateRange {
+                s.earliestExported = s.earliestExported.map { min($0, range.lowerBound) } ?? range.lowerBound
+                s.latestExported = s.latestExported.map { max($0, range.upperBound) } ?? range.upperBound
+            }
+        }
+    }
+
+    /// The backfill is done, so the recent-window stream has nothing left to
+    /// get ahead of: from here the type's own anchor carries everything new.
     public func markBackfillComplete(_ identifier: String) {
-        update(identifier) { s in s.backfillComplete = true }
+        update(identifier) { s in
+            s.backfillComplete = true
+            s.recentAnchorData = nil
+            s.recentWindowStart = nil
+        }
     }
 
     public func recordReconciliation(identifier: String, summary: String) {

@@ -232,7 +232,27 @@ standing invariant that `server/mcp` is a read-only client of the product API
 and never holds a database URL. Anyone who wants SQL has `psql` and
 `docs/database-guide.md`.
 
-## 9. Standing maintenance
+## 9. A reinstall that sends only what the server lacks
+
+A reinstall loses the phone's anchors, and they cannot be rebuilt (they are
+opaque), so it re-reads its whole sync window and re-sends it. The server
+ignores what it already has, so nothing is lost or doubled — but on the
+maintainer's reinstall on 2026-09-26 that was ~1.3M samples, 98% of them
+duplicates. Since 2026-09 the re-send is at least quick and newest-first (a
+backfill claims its types up front, both sweeps overlap reads with uploads,
+a recent-window pass goes first, and background wakes hold an assertion
+instead of freezing), which is why this is later rather than now.
+
+The shape of the fix exists: Reconcile with Server (`HealthSyncEngine.reconcile`)
+already compares a type month by month against `GET /v1/digest` and uploads
+only what the server lacks. A first sync could drain the anchored query
+locally without uploading, reconcile, then store that anchor and mark the
+backfill complete. What it needs first is an **upload-only** reconcile:
+today's also deletes server rows the phone does not have, which on a phone
+whose Health history is incomplete — a new phone restored without Health
+data — would delete the server's copy of the missing history.
+
+## 10. Standing maintenance
 
 Not backlog — things that come due on someone else's schedule.
 
