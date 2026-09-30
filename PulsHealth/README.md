@@ -97,10 +97,9 @@ Sources/
 │                         Formatting helpers (byteString, compactString,
 │                         shortDuration, relativeString).
 ├── ExploreView.swift     Home: the Health-access / reads-look-blocked cards
-│                         (the latter with "Open Health Settings"), the "Your
-│                         health data" card (how many types have data, Analyze
-│                         All), then every catalog type by category with
-│                         search — types with data first, a sparkline once
+│                         (the latter with "Open Health Settings"), then
+│                         every catalog type by category with search —
+│                         types with data first, a sparkline once
 │                         analyzed. Every row opens its Type page
 │                         (ExploreRoute.type), synced or not.
 ├── Explore/

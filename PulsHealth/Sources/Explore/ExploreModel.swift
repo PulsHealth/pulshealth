@@ -97,14 +97,6 @@ final class ExploreModel {
 
     // MARK: - Derived
 
-    var typesWithData: [String] {
-        quickFacts.values.filter { $0.latestStart != nil }.map(\.typeIdentifier).sorted()
-    }
-
-    var earliestSample: Date? {
-        quickFacts.values.compactMap(\.earliestStart).min()
-    }
-
     func isRunning(_ id: String) -> Bool { running[id] != nil }
 
     /// Whether the stored profile no longer describes what HealthKit holds.

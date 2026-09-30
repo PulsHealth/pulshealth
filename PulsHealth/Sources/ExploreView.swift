@@ -24,7 +24,6 @@ struct ExploreView: View {
         List {
             if searchText.isEmpty {
                 accessCards
-                headerCard
                 ForEach(HealthTypeDescriptor.Group.allCases, id: \.self) { group in
                     categorySection(group, types: HealthTypeCatalog.all.filter { $0.group == group })
                 }
@@ -105,28 +104,6 @@ struct ExploreView: View {
             Text(hint)
                 .font(.footnote)
                 .foregroundStyle(.orange)
-        }
-    }
-
-    /// How much of the catalog Health has anything for. Analysis is per
-    /// type, started by opening its page, so nothing runs from here.
-    private var headerCard: some View {
-        let explore = model.explore
-        let withData = explore.typesWithData.count
-        let total = HealthTypeCatalog.all.count
-        return CardSection(
-            "Your health data",
-            subtitle: explore.quickFactsLoaded
-                ? "\(withData) of \(total) types have data"
-                    + (explore.earliestSample.map { " · since \($0.formatted(.dateTime.month(.abbreviated).year()))" } ?? "")
-                : "Checking what Apple Health holds"
-        ) {
-            let analyzed = explore.profiles.count
-            Text(analyzed == 0
-                ? "Open a type to read it once and keep a summary: counts, dates, values and sources."
-                : "\(analyzed) analyzed · \(model.appliedConfig.enabledTypes.count) synced")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
         }
     }
 
