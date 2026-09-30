@@ -29,6 +29,9 @@ struct ExportManifest: Codable, Sendable, Equatable {
     var createdAt: Date
     /// Nil (an explicit JSON `null`) = all time.
     var startDate: Date?
+    /// Exclusive end of the range asked for. Nil (an explicit JSON `null`) =
+    /// now, i.e. `createdAt`.
+    var endDate: Date?
     /// The `X-User-ID` a replay should send.
     var userID: String
     var deviceID: String
@@ -38,6 +41,9 @@ struct ExportManifest: Codable, Sendable, Equatable {
     /// False when anything is listed in `failures` or `unmappableSamples`.
     var complete: Bool
     var types: [String]
+    /// The exported aggregate series, each as its `seriesIdentity`
+    /// (`type|func|intervalValue|intervalUnit|deviceFilter`), sorted.
+    var aggregates: [String]
     var files: [File]
     /// Rows per dataset, written or not.
     var rows: [String: Int]
@@ -60,11 +66,17 @@ struct ExportManifest: Codable, Sendable, Equatable {
         } else {
             try c.encodeNil(forKey: .startDate)
         }
+        if let endDate {
+            try c.encode(endDate, forKey: .endDate)
+        } else {
+            try c.encodeNil(forKey: .endDate)
+        }
         try c.encode(userID, forKey: .userID)
         try c.encode(deviceID, forKey: .deviceID)
         try c.encode(timeZone, forKey: .timeZone)
         try c.encode(complete, forKey: .complete)
         try c.encode(types, forKey: .types)
+        try c.encode(aggregates, forKey: .aggregates)
         try c.encode(files, forKey: .files)
         try c.encode(rows, forKey: .rows)
         try c.encode(batches, forKey: .batches)

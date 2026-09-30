@@ -94,12 +94,40 @@ import Testing
         disabled.enabled = false
         config.aggregates = [disabled]
         #expect(ExportSelectionSummary(configuration: config).isEmpty)
-        #expect(!ExportPlan.hasAnythingToExport(config))
+        #expect(!ExportPlan.hasAnythingToExport(ExportSelection(configuration: config)))
 
         // An aggregate-only selection is something to export.
         config.aggregates[0].enabled = true
         #expect(!ExportSelectionSummary(configuration: config).isEmpty)
-        #expect(ExportPlan.hasAnythingToExport(config))
+        #expect(ExportPlan.hasAnythingToExport(ExportSelection(configuration: config)))
+    }
+
+    /// A selection built for the export, not from the configuration: every
+    /// aggregate in it counts whatever its `enabled` flag says, and the two
+    /// initialisers agree on the applied selection.
+    @Test func aSelectionOfItsOwnCountsEverythingItNames() {
+        var config = SyncConfiguration()
+        config.enabledTypes = [HealthTypeCatalog.workoutIdentifier]
+        config.includeWorkoutRoutes = false
+        var off = AggregateConfig(typeIdentifier: "HKQuantityTypeIdentifierStepCount", function: .sum)
+        off.enabled = false
+        config.aggregates = [off]
+
+        let selection = ExportSelection(
+            types: [HealthTypeCatalog.workoutIdentifier, "HKQuantityTypeIdentifierHeartRate"],
+            aggregates: [off], includeWorkoutRoutes: true, includeWorkoutEnhancedData: true)
+        let summary = ExportSelectionSummary(selection: selection)
+        #expect(summary.typeCount == 2)
+        #expect(summary.aggregateCount == 1)
+        #expect(summary.includesWorkoutRoutes)
+        #expect(summary.includesWorkoutStreams)
+        #expect(!selection.isEmpty)
+
+        let applied = ExportSelection(configuration: config)
+        #expect(applied.aggregates.isEmpty)
+        #expect(ExportSelectionSummary(configuration: config) == ExportSelectionSummary(selection: applied))
+        #expect(ExportSelection(types: []).isEmpty)
+        #expect(!ExportSelection(types: [], aggregates: [off]).isEmpty)
     }
 
     // MARK: - Failure copy

@@ -103,7 +103,7 @@ public final class HealthExporter: Sendable {
         guard HKHealthStore.isHealthDataAvailable() else {
             throw HealthExportError.healthDataUnavailable
         }
-        guard ExportPlan.hasAnythingToExport(request.configuration) else {
+        guard ExportPlan.hasAnythingToExport(request.selection) else {
             throw HealthExportError.nothingSelected
         }
         progress?(ExportProgress(phase: .preparing))
@@ -115,11 +115,16 @@ public final class HealthExporter: Sendable {
             .appendingPathComponent(".state", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: stateDirectory) }
+        // `readEnd` is the export's end date: the one engine that may carry
+        // one (see `HealthSyncEngine.readEnd`), because a bounded sweep marks
+        // every backfill complete at the bound, which is right for a store
+        // that is about to be deleted and wrong for the app's.
         let engine = HealthSyncEngine(
             store: SyncStateStore(directory: stateDirectory, tokenStore: InMemoryTokenStore()),
             eventLog: SyncEventLog(directory: stateDirectory),
             wakeLog: WakeLog(directory: stateDirectory),
-            recentWindowFirst: false)
+            recentWindowFirst: false,
+            readEnd: request.endDate)
 
         // Checked here, once, and thrown: `syncAllEnabled` makes the same test
         // but answers a locked device by logging and returning, which for an
@@ -155,7 +160,9 @@ public final class HealthExporter: Sendable {
         let collector = await ExportEventCollector.start(on: engine.eventLog)
 
         do {
-            try await sweep(engine: engine, config: config, transport: transport, collector: collector)
+            try await sweep(
+                engine: engine, config: config, selection: request.selection,
+                transport: transport, collector: collector)
             await transport.setPhase(.finishing)
 
             let events = await collector.finish()
@@ -179,11 +186,13 @@ public final class HealthExporter: Sendable {
                 clientVersion: PulsProtocol.clientVersion,
                 createdAt: createdAt,
                 startDate: request.startDate,
+                endDate: request.endDate,
                 userID: config.userID,
                 deviceID: request.deviceID ?? engine.store.deviceID,
                 timeZone: TimeZone.current.identifier,
                 complete: failures.isEmpty && unmappable.isEmpty,
                 types: config.enabledTypes.sorted(),
+                aggregates: request.selection.aggregates.map(\.seriesIdentity).sorted(),
                 files: written.map { file in
                     ExportManifest.File(
                         name: file.url.lastPathComponent, dataset: file.dataset?.rawValue,
@@ -237,7 +246,7 @@ public final class HealthExporter: Sendable {
     /// transport error as one type's bad day. For an export, cancellation and
     /// a dead disk both end the run.
     private func sweep(
-        engine: HealthSyncEngine, config: SyncConfiguration,
+        engine: HealthSyncEngine, config: SyncConfiguration, selection: ExportSelection,
         transport: ExportFileTransport, collector: ExportEventCollector
     ) async throws {
         func begin(_ phase: ExportProgress.Phase) async throws {
@@ -267,11 +276,16 @@ public final class HealthExporter: Sendable {
             await engine.syncAllAggregates(reason: .manual)
         }
         if sampleTypes.contains(HealthTypeCatalog.workoutIdentifier) {
-            // Both self-gate on their configuration switch.
-            try await begin(.workoutRoutes)
-            await engine.syncWorkoutRoutes(reason: .manual)
-            try await begin(.workoutStreams)
-            await engine.syncWorkoutStreams(reason: .manual)
+            // Keyed on the selection (which `config` was built from, so the
+            // engine's own gate on its configuration switch agrees).
+            if selection.includeWorkoutRoutes {
+                try await begin(.workoutRoutes)
+                await engine.syncWorkoutRoutes(reason: .manual)
+            }
+            if selection.includeWorkoutEnhancedData {
+                try await begin(.workoutStreams)
+                await engine.syncWorkoutStreams(reason: .manual)
+            }
         }
         try Task.checkCancellation()
         if let reason = await transport.writeFailure {

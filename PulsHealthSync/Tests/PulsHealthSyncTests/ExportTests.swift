@@ -543,8 +543,54 @@ private final class ProgressBox: @unchecked Sendable {
         let since = Fixture.date(1_700_000_000_000)
         #expect(ExportPlan.configuration(for: request(config, start: since), floor: floor).startDate == since)
 
-        #expect(ExportPlan.hasAnythingToExport(config))
-        #expect(!ExportPlan.hasAnythingToExport(SyncConfiguration()))
+        #expect(ExportPlan.hasAnythingToExport(ExportSelection(configuration: config)))
+        #expect(!ExportPlan.hasAnythingToExport(ExportSelection(configuration: SyncConfiguration())))
+    }
+
+    /// The export's selection is the export's, not the app's: a type the
+    /// configuration does not sync and a series it does not compute are
+    /// exported when the selection names them, and its own are left out when
+    /// it does not. A bounded export has nothing to settle, an unbounded one
+    /// keeps its settle delays.
+    @Test func selectionOverridesTheAppliedConfiguration() throws {
+        var config = SyncConfiguration(
+            enabledTypes: [Fixture.heartRate],
+            aggregates: [AggregateConfig(typeIdentifier: Fixture.heartRate, function: .average)])
+        config.includeWorkoutRoutes = true
+        config.includeWorkoutEnhancedData = false
+        config.batchSize = 250
+
+        var chosen = AggregateConfig(
+            typeIdentifier: "HKQuantityTypeIdentifierStepCount", function: .sum, settleDelay: 900)
+        chosen.enabled = false // presence is the decision; the flag is ignored
+        let selection = ExportSelection(
+            types: [Fixture.sleep, HealthTypeCatalog.workoutIdentifier],
+            aggregates: [chosen],
+            includeWorkoutRoutes: false,
+            includeWorkoutEnhancedData: true)
+        let end = Fixture.date(1_750_000_000_000)
+
+        let bounded = ExportPlan.configuration(for: ExportRequest(
+            selection: selection, configuration: config, endDate: end, format: .csv))
+        #expect(bounded.enabledTypes == selection.types)
+        #expect(!bounded.enabledTypes.contains(Fixture.heartRate))
+        #expect(bounded.aggregates.map(\.id) == [chosen.id])
+        #expect(bounded.aggregates.map(\.enabled) == [true])
+        #expect(bounded.aggregates.map(\.settleDelay) == [0])
+        #expect(!bounded.includeWorkoutRoutes)
+        #expect(bounded.includeWorkoutEnhancedData)
+        #expect(bounded.batchSize == 250)
+        #expect(bounded.userID == config.userID)
+
+        let unbounded = ExportPlan.configuration(for: ExportRequest(
+            selection: selection, configuration: config, endDate: nil, format: .csv))
+        #expect(unbounded.aggregates.map(\.settleDelay) == [900])
+
+        // The back-compat initialiser is the applied selection.
+        let applied = ExportRequest(configuration: config, format: .jsonl)
+        #expect(applied.selection == ExportSelection(configuration: config))
+        #expect(applied.endDate == nil)
+        #expect(ExportPlan.configuration(for: applied).enabledTypes == [Fixture.heartRate])
     }
 
     /// An export that reaches further back than the sync's start date must
@@ -690,9 +736,10 @@ private final class ProgressBox: @unchecked Sendable {
         let url = dir.appendingPathComponent("t-manifest.json")
         let manifest = ExportManifest(
             format: .csv, schemaVersion: PulsProtocol.version, clientVersion: "1.5 (16)",
-            createdAt: Fixture.date(1_750_000_000_000), startDate: nil,
+            createdAt: Fixture.date(1_750_000_000_000), startDate: nil, endDate: nil,
             userID: PulsDefaultUser.id, deviceID: "real-device", timeZone: "America/Denver",
             complete: false, types: [Fixture.heartRate],
+            aggregates: ["HKQuantityTypeIdentifierHeartRate|average|1|day|all"],
             files: [.init(name: "t-samples.csv", dataset: "samples", rows: 2, bytes: 120)],
             rows: ["samples": 2, "ecg": 1], batches: 1, notRepresented: ["ecg": 1],
             unmappableSamples: [:],
@@ -705,6 +752,8 @@ private final class ProgressBox: @unchecked Sendable {
         #expect(object["userID"] as? String == PulsDefaultUser.id)
         #expect(object["createdAt"] as? Double == 1_750_000_000_000) // epoch ms
         #expect(object["startDate"] is NSNull)                       // explicit: all time
+        #expect(object["endDate"] is NSNull)                         // explicit: now
+        #expect((object["aggregates"] as? [String]) == ["HKQuantityTypeIdentifierHeartRate|average|1|day|all"])
         #expect(object["complete"] as? Bool == false)
         #expect(object["schemaVersion"] as? Int == PulsProtocol.version)
         #expect((object["notRepresented"] as? [String: Int]) == ["ecg": 1])

@@ -467,8 +467,10 @@ relate to the server's `/v1/export` are in [`docs/export.md`](../docs/export.md)
 
 ```swift
 let request = ExportRequest(
-    configuration: config,            // type selection, aggregates, user ID
+    selection: ExportSelection(configuration: config), // or one chosen for this export
+    configuration: config,            // batch size, concurrency, user ID, grid anchor
     startDate: nil,                   // nil = all time
+    endDate: nil,                     // nil = now; exclusive
     format: .jsonl,                   // or .csv
     deviceID: engine.store.deviceID)  // attribute a replay to this install
 let result = try await HealthExporter().run(request) { progress in

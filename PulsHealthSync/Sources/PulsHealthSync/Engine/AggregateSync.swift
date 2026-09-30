@@ -312,7 +312,12 @@ extension HealthSyncEngine {
             intervalUnit: agg.intervalUnit, calendar: calendar
         )
 
-        let now = Date()
+        // An export's engine reads up to `readEnd`: clamping "now" to it makes
+        // the window's settled boundary (`floorBoundary(now - settleDelay)`)
+        // the last bucket boundary at or before the bound, so a bucket that
+        // straddles it is not computed — it would be a partial value that
+        // looked like a whole one.
+        let now = min(Date(), readEnd ?? .distantFuture)
         var state = await store.aggregateState(for: configID)
         // A priority pass never opens, resumes or completes a full recompute:
         // its whole contract is to leave the watermarks where it found them.

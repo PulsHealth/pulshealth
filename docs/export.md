@@ -167,10 +167,17 @@ app's temporary directory for the share sheet and removed afterwards
 (`HealthExporter.removeAllExports()`).
 
 **In the app it is Settings → Export Data** — and, on an install with no
-server, the "Export Data to Files" link on the Dashboard. Pick CSV or JSONL and
-a time range (last 30 days, 90 days, a year, or all time); the export covers
-the selection applied on the Data Types tab, and the sync start date in
-Settings plays no part. When it finishes, **Share or Save to Files** opens the
+server, the "Export Data to Files" link on the Dashboard. Pick CSV or JSONL,
+a time range (last 30 days, 90 days, a year, all time, or a start and end date
+of your own) and what to include: the export screen starts from the selection
+applied on the Data Types tab — the same types, aggregate series and workout
+route/stream switches — and what you change there is this export's alone,
+never the sync's. The sync start date in Settings plays no part. An end date
+is exclusive: samples that start before it, activity-ring days before its
+local day, and routes and streams of workouts that started before it. An
+aggregate bucket that straddles the end date is left out rather than
+written as a partial value, so a daily series ends on the last whole day
+before it. When it finishes, **Share or Save to Files** opens the
 iOS share sheet with every file of the export, manifest included. The app
 deletes its staged copy once the share sheet reports the files were handed
 over, when you tap Delete Export, when you start another export, and at every
@@ -251,9 +258,11 @@ per bucket, GPS fix, stream datapoint or dose. How the two sides differ:
   returns counts them so the app can say so and suggest JSONL.
 
 Both formats come with `puls-export-<yyyyMMdd-HHmmss>-manifest.json`: the user
-ID, the device ID, the requested start (`null` = all time), the format, the
-protocol `schemaVersion` and the app version, the time zone local days were
-computed in, per-file and per-dataset row counts, and — the reason it exists —
+ID, the device ID, the requested range (`startDate`, `null` = all time;
+`endDate`, `null` = now), the format, the protocol `schemaVersion` and the app
+version, the time zone local days were computed in, the exported `types` and
+`aggregates` (each series as `type|func|intervalValue|intervalUnit|deviceFilter`),
+per-file and per-dataset row counts, and — the reason it exists —
 `"complete": false` with a `failures` list whenever a selected type could not
 be read to the end (access never granted for it, the phone locked part-way
 through) or a sample could not be converted to its canonical unit. A file that

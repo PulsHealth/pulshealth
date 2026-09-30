@@ -86,14 +86,29 @@ public actor HealthSyncEngine {
     /// wrong for a destination where a sample sent twice is a duplicate row.
     let recentWindowFirst: Bool
 
+    /// Exclusive upper bound on what this engine reads, or nil for none.
+    /// Raw sweeps read samples whose start is before it (`MergedSync.queryPage`,
+    /// which every anchored page — backfill, merged and the recent-window
+    /// stream — goes through); aggregate runs compute buckets that end at or
+    /// before it (`runAggregateSync` clamps its "now" to it, and the window's
+    /// floor drops the bucket that straddles it); the rings query ends at the
+    /// local day before it; and the route/stream phases follow only workouts
+    /// that started before it.
+    ///
+    /// **Set only by `HealthExporter`'s throwaway engine.** The app's engine
+    /// must never pass one: a bounded sweep drains at that date and marks
+    /// every backfill complete, so its sync would stop there for good.
+    let readEnd: Date?
+
     public init(
         store: SyncStateStore? = nil, eventLog: SyncEventLog? = nil, wakeLog: WakeLog? = nil,
-        recentWindowFirst: Bool = true
+        recentWindowFirst: Bool = true, readEnd: Date? = nil
     ) {
         self.store = store ?? SyncStateStore()
         self.eventLog = eventLog ?? SyncEventLog()
         self.wakeLog = wakeLog ?? WakeLog()
         self.recentWindowFirst = recentWindowFirst
+        self.readEnd = readEnd
     }
 
     // MARK: - Wake lifecycle

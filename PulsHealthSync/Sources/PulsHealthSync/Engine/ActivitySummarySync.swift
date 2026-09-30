@@ -72,7 +72,14 @@ extension HealthSyncEngine {
         let startDay = calendar.startOfDay(for: config.startDate)
         let state = await store.activitySummaryState
         let now = Date()
-        let today = calendar.startOfDay(for: now)
+        // The last day to read: today, or — for an export's engine, which
+        // reads up to `readEnd` — the local day before the bound, since the
+        // bound's own day is not over as of the bound.
+        var today = calendar.startOfDay(for: now)
+        if let readEnd,
+           let lastDay = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: readEnd)) {
+            today = min(today, lastDay)
+        }
 
         activities[typeID] = state.computedThrough == nil ? .backfilling : .syncing
         defer { activities[typeID] = nil }

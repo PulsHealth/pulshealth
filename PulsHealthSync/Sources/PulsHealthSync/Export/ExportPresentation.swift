@@ -117,22 +117,27 @@ public extension ExportProgress.Phase {
     }
 }
 
-/// What an export of a configuration would cover, for the screen's "what's
-/// included" rows. Counts what `ExportPlan` will actually run: disabled
-/// aggregate configs are not exported, and the route and stream switches only
-/// mean something when Workouts is selected.
+/// What an export of a selection would cover, for the screen's "what's
+/// included" rows. Counts what `ExportPlan` will actually run: every aggregate
+/// in the selection is exported, and the route and stream switches only mean
+/// something when Workouts is selected.
 public struct ExportSelectionSummary: Sendable, Equatable {
     public let typeCount: Int
     public let aggregateCount: Int
     public let includesWorkoutRoutes: Bool
     public let includesWorkoutStreams: Bool
 
+    public init(selection: ExportSelection) {
+        typeCount = selection.types.count
+        aggregateCount = selection.aggregates.count
+        let workouts = selection.types.contains(HealthTypeCatalog.workoutIdentifier)
+        includesWorkoutRoutes = workouts && selection.includeWorkoutRoutes
+        includesWorkoutStreams = workouts && selection.includeWorkoutEnhancedData
+    }
+
+    /// The applied selection: disabled aggregate configs are not counted.
     public init(configuration: SyncConfiguration) {
-        typeCount = configuration.enabledTypes.count
-        aggregateCount = configuration.aggregates.filter(\.enabled).count
-        let workouts = configuration.enabledTypes.contains(HealthTypeCatalog.workoutIdentifier)
-        includesWorkoutRoutes = workouts && configuration.includeWorkoutRoutes
-        includesWorkoutStreams = workouts && configuration.includeWorkoutEnhancedData
+        self.init(selection: ExportSelection(configuration: configuration))
     }
 
     /// Mirrors `ExportPlan.hasAnythingToExport`, which is what makes
@@ -190,8 +195,8 @@ public struct ExportFailureCopy: Sendable, Equatable {
         case .nothingSelected:
             self.init(
                 title: "Nothing Selected",
-                message: "No data types are selected. Choose some on the Data Types tab, "
-                    + "tap Apply, then come back.",
+                message: "No data types are selected. Choose some to include in this export, "
+                    + "or on the Data Types tab.",
                 suggestion: .dataTypes)
         case .noData:
             // HealthKit answers a declined read exactly like an empty one, so

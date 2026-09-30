@@ -363,10 +363,18 @@ extension HealthSyncEngine {
     /// anchored one) over `HKWorkoutType`; the enrichment phases re-cover a trailing
     /// window each run for self-heal.
     private func fetchWorkouts(endedAfter: Date) async throws -> [HKWorkout] {
+        var predicates = [
+            HKQuery.predicateForSamples(withStart: endedAfter, end: nil, options: .strictEndDate),
+        ]
+        if let readEnd {
+            // An export's engine: follow only the workouts its raw sweep
+            // exported, which are the ones that started before the bound.
+            predicates.append(
+                HKQuery.predicateForSamples(withStart: nil, end: readEnd, options: .strictStartDate))
+        }
         let predicate = HKSamplePredicate<HKSample>.sample(
             type: HKWorkoutType.workoutType(),
-            predicate: HKQuery.predicateForSamples(
-                withStart: endedAfter, end: nil, options: .strictEndDate)
+            predicate: NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         )
         let descriptor = HKSampleQueryDescriptor(
             predicates: [predicate],

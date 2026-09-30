@@ -396,8 +396,10 @@ extension HealthSyncEngine {
         let queryStart = ContinuousClock.now
         let predicate = HKSamplePredicate<HKSample>.sample(
             type: sampleType,
+            // `readEnd` is nil for the app's engine; an export's engine bounds
+            // every page here, the recent-window stream's included.
             predicate: HKQuery.predicateForSamples(
-                withStart: start, end: nil, options: .strictStartDate
+                withStart: start, end: readEnd, options: .strictStartDate
             )
         )
         let queryDescriptor = HKAnchoredObjectQueryDescriptor(
