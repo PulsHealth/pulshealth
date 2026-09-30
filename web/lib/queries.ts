@@ -260,43 +260,35 @@ export async function getSeries(
     // time_bucket($1, $from, $tz): otherwise the first day/week bucket held a
     // partial slice (10:37 → midnight), rendered as a low bar, and became the
     // range's "Minimum".
-    const resolvedWindow: ResolvedSeriesWindow =
-      window ??
-      (() => {
-        const end = new Date();
-        const start = new Date(
-          end.getTime() - (spec.spanMs ?? 5 * 365 * DAY_MS),
-        );
-        return {
-          range: range as Exclude<RangeKey, "CUSTOM">,
-          start,
-          end,
-          bucket: spec.bucket,
-          bucketMs: spec.bucketMs,
-        };
-      })();
-
-    const isCustom = resolvedWindow.range === "CUSTOM";
-    const bucket = resolvedWindow.bucket;
-    const bucketMs = resolvedWindow.bucketMs;
+    //
+    // A custom window instead names calendar dates in the viewer's zone:
+    // `from` is its first day and it ends before `endExclusive`. Presets send
+    // the same SQL and parameters as always; a custom window changes only how
+    // `from` is read (local midnight of a date) and appends its end bound as
+    // the last parameter, so no other placeholder moves.
+    const custom = window?.range === "CUSTOM" ? window : null;
+    const preset = window && window.range !== "CUSTOM" ? window : null;
+    const bucket = window?.bucket ?? spec.bucket;
+    const bucketMs = window?.bucketMs ?? spec.bucketMs;
+    const from = custom
+      ? custom.fromDate
+      : preset?.start ?? new Date(Date.now() - (spec.spanMs ?? 5 * 365 * DAY_MS));
     const timeZone = configuredTimeZone();
-
-    // Presets use exact instants. Custom ranges are calendar dates in the
-    // viewer's configured timezone and use an inclusive start / exclusive end.
-    const from = isCustom
-      ? resolvedWindow.fromDate
-      : resolvedWindow.start;
-
-    const endExclusive = isCustom
-      ? resolvedWindow.endExclusive
-      : resolvedWindow.end;
+    const at = (param: number, tz: number) =>
+      custom ? `($${param}::date::timestamp AT TIME ZONE $${tz}::text)` : `$${param}::timestamptz`;
+    const endBefore = (column: string, params: unknown[], tz: number) => {
+      if (!custom) return "";
+      params.push(custom.endExclusive);
+      return `AND ${column} < ($${params.length}::date::timestamp AT TIME ZONE $${tz}::text)`;
+    };
 
     if (type?.kind === "category") {
       const category = categoryAggregation(identifier);
-      const valueFilter = category.values ? "AND c.value = ANY($7::int[])" : "";
-      const params = category.values
-        ? [bucket, identifier, from, endExclusive, userId, timeZone, category.values]
-        : [bucket, identifier, from, endExclusive, userId, timeZone];
+      const valueFilter = category.values ? "AND c.value = ANY($6::int[])" : "";
+      const params: unknown[] = category.values
+        ? [bucket, identifier, from, userId, timeZone, category.values]
+        : [bucket, identifier, from, userId, timeZone];
+      const end = endBefore("c.start_ts", params, 5);
 
       if (category.mode === "duration") {
         const divisor = category.unit === "h" ? 3600 : 60;
@@ -315,21 +307,9 @@ export async function getSeries(
                FROM category_samples c
                JOIN sample_types st ON st.type_id = c.type_id
               WHERE st.identifier = $2
-                AND c.start_ts >= time_bucket(
-                  $1::interval,
-                  CASE
-                    WHEN $3::text ~ '^\\d{4}-\\d{2}-\\d{2}$'
-                      THEN ($3::date::timestamp AT TIME ZONE $6::text)
-                    ELSE $3::timestamptz
-                  END,
-                  $6::text
-                )${unshift}
-                AND c.start_ts < CASE
-                  WHEN $4::text ~ '^\\d{4}-\\d{2}-\\d{2}$'
-                    THEN ($4::date::timestamp AT TIME ZONE $6::text)
-                  ELSE $4::timestamptz
-                END
-                AND c.user_id = $5::uuid
+                AND c.start_ts >= time_bucket($1::interval, ${at(3, 5)}, $5::text)${unshift}
+                ${end ? `${end}${unshift}` : ""}
+                AND c.user_id = $4::uuid
                 ${valueFilter}
               GROUP BY 1, c.source_id
            )
@@ -351,21 +331,9 @@ export async function getSeries(
            FROM category_samples c
            JOIN sample_types st ON st.type_id = c.type_id
           WHERE st.identifier = $2
-            AND c.start_ts >= time_bucket(
-              $1::interval,
-              CASE
-                WHEN $3::text ~ '^\\d{4}-\\d{2}-\\d{2}$'
-                  THEN ($3::date::timestamp AT TIME ZONE $6::text)
-                ELSE $3::timestamptz
-              END,
-              $6::text
-            )
-            AND c.start_ts < CASE
-              WHEN $4::text ~ '^\\d{4}-\\d{2}-\\d{2}$'
-                THEN ($4::date::timestamp AT TIME ZONE $6::text)
-              ELSE $4::timestamptz
-            END
-            AND c.user_id = $5::uuid
+            AND c.start_ts >= time_bucket($1::interval, ${at(3, 5)}, $5::text)
+            ${end}
+            AND c.user_id = $4::uuid
             ${valueFilter}
           GROUP BY 1 ORDER BY 1`,
         params,
@@ -384,46 +352,21 @@ export async function getSeries(
     // to raw samples below.
     const mdTypes = await metricDailyTypes(userId);
     if (mdTypes.has(identifier) && bucketMs >= DAY_MS) {
+      const params: unknown[] = [bucket, identifier, from, userId, timeZone];
+      // metric_daily's days are already in this zone (metricDailyUsable), so
+      // a custom end date compares to them directly.
+      if (custom) params.push(custom.endExclusive);
       const rows = await query<{ t: string; value: number }>(
-        `SELECT
-           (extract(
-              epoch from time_bucket(
-                $1::interval,
-                day::timestamp AT TIME ZONE $5::text,
-                $5::text
-              )
-            ) * 1000)::bigint AS t,
-           ${agg === "sum" ? "sum(value)" : "avg(value)"}::float8 AS value
-         FROM metric_daily
-        WHERE identifier = $2
-          AND day >= (
-            time_bucket(
-              $1::interval,
-              CASE
-                WHEN $3::text ~ '^\\d{4}-\\d{2}-\\d{2}$'
-                  THEN ($3::date::timestamp AT TIME ZONE $5::text)
-                ELSE $3::timestamptz
-              END,
-              $5::text
-            ) AT TIME ZONE $5::text
-          )::date
-          AND (
-            NOT $6::boolean
-            OR day < $7::date
-          )
-          AND user_id = $4::uuid
-        GROUP BY 1 ORDER BY 1`,
-        [
-          bucket,
-          identifier,
-          from,
-          userId,
-          timeZone,
-          isCustom,
-          endExclusive,
-        ],
+        `SELECT (extract(epoch from time_bucket($1::interval, day::timestamp AT TIME ZONE $5::text, $5::text)) * 1000)::bigint AS t,
+                ${agg === "sum" ? "sum(value)" : "avg(value)"}::float8 AS value
+           FROM metric_daily
+          WHERE identifier = $2
+            AND day >= (time_bucket($1::interval, ${at(3, 5)}, $5::text) AT TIME ZONE $5::text)::date
+            ${custom ? "AND day < $6::date" : ""}
+            AND user_id = $4::uuid
+          GROUP BY 1 ORDER BY 1`,
+        params,
       );
-
       const points: SeriesPoint[] = rows.map((r) => ({
         t: Number(r.t),
         value: Number(r.value) || 0,
@@ -431,16 +374,8 @@ export async function getSeries(
         max: null,
         count: 0,
       }));
-
-      return {
-        identifier,
-        unit: type?.unit ?? null,
-        agg,
-        bucketMs,
-        points,
-      };
+      return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
     }
-
 
     // Raw cumulative samples often overlap across iPhone and Watch. Establish
     // truth at the requested intraday grain, or at local-day grain for longer
@@ -448,8 +383,11 @@ export async function getSeries(
     // values into the requested bucket, so a week can use a different winning
     // source on each day.
     const truthBucket = bucketMs < DAY_MS ? bucket : "1 day";
-    const rows = agg === "sum"
-      ? await query<SeriesRow>(
+    let rows: SeriesRow[];
+    if (agg === "sum") {
+      const params: unknown[] = [bucket, truthBucket, identifier, from, userId, timeZone];
+      const end = endBefore("q.start_ts", params, 6);
+      rows = await query<SeriesRow>(
         `WITH per_source AS (
            SELECT time_bucket($2::interval, q.start_ts, $6::text) AS truth_bucket,
                   q.source_id,
@@ -457,17 +395,9 @@ export async function getSeries(
              FROM quantity_samples q
              JOIN sample_types st ON st.type_id = q.type_id
             WHERE st.identifier = $3
-              AND q.start_ts >= time_bucket(
-                $1::interval,
-                CASE
-                  WHEN $4::text ~ '^\\d{4}-\\d{2}-\\d{2}$'
-                    THEN ($4::date::timestamp AT TIME ZONE $6::text)
-                  ELSE $4::timestamptz
-                END,
-                $6::text
-              )
+              AND q.start_ts >= time_bucket($1::interval, ${at(4, 6)}, $6::text)
+              ${end}
               AND q.user_id = $5::uuid
-	      ${isCustom ? `AND q.start_ts < (($7::date)::timestamp AT TIME ZONE $6::text)` : ""}
             GROUP BY 1, q.source_id
          ), truth AS (
            SELECT truth_bucket, max(value)::float8 AS value
@@ -483,11 +413,12 @@ export async function getSeries(
            FROM truth
           GROUP BY time_bucket($1::interval, truth_bucket, $6::text)
           ORDER BY time_bucket($1::interval, truth_bucket, $6::text)`,
-	isCustom
-	  ? [bucket, truthBucket, identifier, from, userId, timeZone, endExclusive]
-	    : [bucket, truthBucket, identifier, from, userId, timeZone],
-      )
-      : await query<SeriesRow>(
+        params,
+      );
+    } else {
+      const params: unknown[] = [bucket, identifier, from, userId, timeZone];
+      const end = endBefore("q.start_ts", params, 5);
+      rows = await query<SeriesRow>(
         `SELECT (extract(epoch from time_bucket($1::interval, q.start_ts, $5::text)) * 1000)::bigint AS t,
                 sum(q.value)::float8 AS sum,
                 avg(q.value)::float8 AS avg,
@@ -497,20 +428,13 @@ export async function getSeries(
            FROM quantity_samples q
            JOIN sample_types st ON st.type_id = q.type_id
           WHERE st.identifier = $2
-            AND q.start_ts >= time_bucket($1::interval, CASE
-                  WHEN $3::text ~ '^\\d{4}-\\d{2}-\\d{2}$'
-                    THEN ($3::date::timestamp AT TIME ZONE $5::text)
-                  ELSE $3::timestamptz
-                END,
-                $5::text)
+            AND q.start_ts >= time_bucket($1::interval, ${at(3, 5)}, $5::text)
+            ${end}
             AND q.user_id = $4::uuid
-	    ${isCustom ? `AND q.start_ts < (($6::date)::timestamp AT TIME ZONE $5::text)` : ""}
           GROUP BY 1 ORDER BY 1`,
-	  isCustom
-	    ? [bucket, identifier, from, userId, timeZone, endExclusive]
-	      : [bucket, identifier, from, userId, timeZone],
+        params,
       );
-
+    }
     const points: SeriesPoint[] = rows.map((r) => ({
       t: Number(r.t),
       value: Number(agg === "sum" ? r.sum : r.avg) || 0,
@@ -518,14 +442,7 @@ export async function getSeries(
       max: r.max == null ? null : Number(r.max),
       count: Number(r.n),
     }));
-
-    return {
-      identifier,
-      unit: type?.unit ?? null,
-      agg,
-      bucketMs,
-      points,
-    };
+    return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
   } catch (e) {
     console.error("[queries] getSeries failed:", e);
     return ALLOW_DEMO ? demoSeries(identifier, range) : empty;

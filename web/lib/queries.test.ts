@@ -169,13 +169,62 @@ describe("query semantics", () => {
     for (const { sql } of windows) {
       // Never a bare `start_ts >= $n`: that made the first day/week bucket a
       // partial slice from "now − span" to the next boundary.
-      expect(sql).not.toMatch(/start_ts >= \$\d\b/);
-      expect(sql).toContain("start_ts >= time_bucket(");
+      expect(sql, sql).not.toMatch(/start_ts >= \$\d\b/);
+      expect(sql, sql).toMatch(/start_ts >= time_bucket\(\$1::interval, \$\d::timestamptz, \$\d::text\)/);
     }
 
     expect(windows[0].params).toContain("1 day");
     expect(windows[1].params).toContain("1 week");
     expect(windows[2].params).toContain("1 day");
+  });
+
+  it("binds the time zone wherever a query expects one", async () => {
+    // Every `$n::text` a query hands to time_bucket or AT TIME ZONE must be
+    // the zone. PR #70 renumbered the category queries' parameters but not
+    // their SELECT lists, so charts bucketed by the user id and Postgres
+    // rejected it as a time zone ("time zone \"<uuid>\" not recognized").
+    const { getSeries } = await import("./queries");
+    const { resolveCustomWindow } = await import("./metrics");
+    const window = resolveCustomWindow("2026-09-01", "2026-09-30");
+    for (const id of [
+      "HKCategoryTypeIdentifierSleepAnalysis",
+      "HKCategoryTypeIdentifierMindfulSession",
+      "HKCategoryTypeIdentifierAppleStandHour",
+      "HKQuantityTypeIdentifierStepCount",
+      "HKQuantityTypeIdentifierHeartRate",
+    ]) {
+      await getSeries(USER_ID, id, "M");
+      await getSeries(USER_ID, id, "D");
+      await getSeries(USER_ID, id, "CUSTOM", window);
+    }
+    const charts = queryMock.mock.calls.filter(([sql]) => /time_bucket/.test(sql as string));
+    expect(charts.length).toBeGreaterThanOrEqual(15);
+    for (const [sql, params] of charts as [string, unknown[]][]) {
+      const zones = [
+        ...sql.matchAll(/time_bucket\([^;]*?, *\$(\d+)::text\)/g),
+        ...sql.matchAll(/AT TIME ZONE \$(\d+)::text/g),
+      ].map((m) => Number(m[1]));
+      expect(zones.length, sql).toBeGreaterThan(0);
+      for (const n of zones) expect(params[n - 1], `$${n} in ${sql}`).toBe("America/Los_Angeles");
+    }
+  });
+
+  it("bounds a custom window by calendar dates in the viewer's zone", async () => {
+    const { getSeries } = await import("./queries");
+    const { resolveCustomWindow } = await import("./metrics");
+    const window = resolveCustomWindow("2026-09-01", "2026-09-30");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "CUSTOM", window);
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", "CUSTOM", window);
+    const [steps, stepParams] = queryMock.mock.calls.find(([sql]) => /FROM quantity_samples/.test(sql)) ?? [];
+    expect(steps).toContain("time_bucket($1::interval, ($4::date::timestamp AT TIME ZONE $6::text), $6::text)");
+    expect(steps).toContain("AND q.start_ts < ($7::date::timestamp AT TIME ZONE $6::text)");
+    expect(stepParams).toEqual(["1 day", "1 day", "HKQuantityTypeIdentifierStepCount", "2026-09-01", USER_ID, "America/Los_Angeles", "2026-10-01"]);
+    // Sleep is attributed to the wake day, so its end bound moves back by
+    // the same 6 hours as its start: a night beginning on the last evening
+    // belongs to the day after the window.
+    const [sleep, sleepParams] = queryMock.mock.calls.find(([sql]) => /FROM category_samples/.test(sql)) ?? [];
+    expect(sleep).toContain("AND c.start_ts < ($7::date::timestamp AT TIME ZONE $5::text) - interval '6 hours'");
+    expect(sleepParams?.[6]).toBe("2026-10-01");
   });
 
   it("attributes sleep to the wake day and dedups duration sources", async () => {
@@ -189,7 +238,7 @@ describe("query semantics", () => {
     // 6 PM boundary: samples are shifted forward before day-bucketing, and the
     // window is widened by the same amount so the first night is whole.
     expect(sleep).toContain("c.start_ts + interval '6 hours'");
-    expect(sleep).toContain(") - interval '6 hours'");
+    expect(sleep).toContain("$5::text) - interval '6 hours'");
     expect(sleep).toContain("GROUP BY 1, c.source_id");
     expect(sleep).toContain("max(value)::float8 AS value");
     // Other durations are not shifted.
