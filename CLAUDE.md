@@ -218,6 +218,10 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `web/lib/catalog.ts` — it is the web-only overlay. OS gates on catalog
   entries are declarative (`minimumIOS`), not `#available`, so `definitions`
   is complete on every runtime while `all` stays the available subset.
+  The knowledge base is bundled the same way: `PulsHealth/Sources/Resources/
+  knowledge.json` is generated from `knowledge-base/**/*.yaml` by
+  `scripts/gen-knowledge-json.py` and CI's `scripts/check-knowledge-json.sh`
+  fails until the checked-in file matches — never edit the JSON by hand.
 - **Epoch-ms dates everywhere.** Wire format, state files, and query params use
   millisecondsSince1970 (`JSONEncoder.puls` / `JSONDecoder.puls`). Not ISO 8601.
 - **Wire format changes touch both sides.** `Models/SyncModels.swift` (incl.

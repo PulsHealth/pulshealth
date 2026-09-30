@@ -74,6 +74,15 @@ jobs:
           npm test
           npm run build
 
+      - name: Check the app's bundled knowledge base
+        # PulsHealth/Sources/Resources/knowledge.json is rendered from
+        # knowledge-base/**/*.yaml by scripts/gen-knowledge-json.py and
+        # checked in (the app has no YAML parser). Fails when the YAML or
+        # the generator changed without the JSON being regenerated.
+        run: |
+          python3 -m pip install --quiet pyyaml
+          scripts/check-knowledge-json.sh
+
       - name: Validate Compose, workflows and shell scripts
         env:
           # Validation-only placeholders: `docker compose config` refuses to
