@@ -46,7 +46,11 @@ struct TypePageView: View {
                     cadenceSection(cadence, profile: profile)
                 }
             }
-            if descriptor.kind == .quantity, !HealthTypeCatalog.allowedAggregateFunctions(for: identifier).isEmpty {
+            // Only after an analysis: that is what requests Health access for
+            // the type, and a preview of a type with no data has nothing to
+            // draw but an error.
+            if profile != nil, descriptor.kind == .quantity,
+               !HealthTypeCatalog.allowedAggregateFunctions(for: identifier).isEmpty {
                 AggregatePreviewSection(descriptor: descriptor)
             }
             if let knowledge {

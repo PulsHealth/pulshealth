@@ -301,6 +301,9 @@ final class ExploreModel {
                 return "Unlock your iPhone to read Health data, then try again."
             case .healthDataUnavailable:
                 return "Health data is not available on this device."
+            case .queryFailed(let text) where text.contains("Code=5") || text.contains("Code=4"):
+                // errorAuthorizationNotDetermined / errorAuthorizationDenied.
+                return "PulsHealth does not have Health access for this type yet. Analyze it to ask, or allow it under Settings → Privacy & Security → Health."
             default:
                 return error.localizedDescription
             }

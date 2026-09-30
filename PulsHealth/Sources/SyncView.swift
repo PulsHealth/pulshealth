@@ -17,6 +17,10 @@ enum SyncRoute: Hashable {
 /// With one it is the status of the sync, the synced types, and the way to
 /// the Server, Synced Data and Activity screens.
 struct SyncView: View {
+    /// The stack's path, owned by `RootView` (a pairing link pushes onto it
+    /// from outside); the setup card pushes the Server screen through it so
+    /// its buttons can be buttons rather than list rows.
+    @Binding var path: [SyncRoute]
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -66,12 +70,16 @@ struct SyncView: View {
             subtitle: "Nothing is syncing yet. Pair with a PulsHealth server and new data is sent as it arrives; until then, the Export tab writes files without one."
         ) {
             HStack(spacing: 10) {
-                NavigationLink(value: SyncRoute.server(scan: true)) {
+                Button {
+                    path.append(.server(scan: true))
+                } label: {
                     Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                NavigationLink(value: SyncRoute.server(scan: false)) {
+                Button {
+                    path.append(.server(scan: false))
+                } label: {
                     Text("Enter Server Details")
                         .frame(maxWidth: .infinity)
                 }

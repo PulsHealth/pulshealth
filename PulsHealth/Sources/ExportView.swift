@@ -85,13 +85,8 @@ struct ExportView: View {
                     Spacer()
                     Text(count == 0 ? "None" : "\(count) type\(count == 1 ? "" : "s")")
                         .foregroundStyle(.secondary)
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.tertiary)
                 }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
             if workouts {
                 Toggle("Workout routes", isOn: $export.draft.includeWorkoutRoutes)
                 Toggle("Enhanced workout data", isOn: $export.draft.includeWorkoutEnhancedData)

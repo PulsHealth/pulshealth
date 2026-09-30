@@ -70,8 +70,8 @@ struct ExploreView: View {
                 }
             } else {
                 CardSection(
-                    "Welcome to PulsHealth",
-                    subtitle: "Choose what to sync under Sync → Synced Data and tap Apply — that's when Health access is requested. Then add a server on the Sync tab, or export files from the Export tab without one."
+                    "Health access not requested yet",
+                    subtitle: "Tap a type to analyze it. The first analysis asks for Health access, and nothing is read until you allow it."
                 ) {
                     authorizationHint
                 }

@@ -31,6 +31,9 @@ struct CardSection<Content: View, Action: View>: View {
                             Text(subtitle)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                                // Wrap, never truncate: inside a list row an
+                                // HStack can otherwise hand the text one line.
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     Spacer(minLength: 0)
