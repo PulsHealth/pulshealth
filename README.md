@@ -16,11 +16,15 @@ it is where the sync protocol is written.
 **[PulsHealth is on the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354)** —
 free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 
-**No server? Export to files.** The app does not need one to be useful:
-**Settings → Export Data** writes the selected data straight from HealthKit to
-CSV (for spreadsheets) or JSONL (the sync protocol itself — complete, and
-replayable into a server later), for the last 30 days up to all time, and hands
-the files to the share sheet. Nothing is uploaded. Formats and columns are in
+**No server? Explore and export.** The app does not need one to be useful:
+the **Explore** tab shows what Apple Health holds for every type — how many
+samples, since when, from which apps and devices, the spread of values, a
+chart over time, and an article on what the type measures — and the
+**Export** tab writes the types and series you choose straight from HealthKit
+to CSV (for spreadsheets) or JSONL (the sync protocol itself — complete, and
+replayable into a server later), for the last 30 days up to all time or a date
+range of your own, and hands the files to the share sheet. Nothing is
+uploaded. Formats and columns are in
 [`docs/export.md`](docs/export.md#on-device-export-no-server).
 
 > **The backend is pre-release.** The app ships from the store, but standing
@@ -48,7 +52,7 @@ the files to the share sheet. Nothing is uploaded. Formats and columns are in
 
 | Component | Path | What it is |
 |---|---|---|
-| **iOS app** | [`PulsHealth/`](PulsHealth/README.md) | SwiftUI app over the package: type picker, backfill with live progress and ETA, per-type dashboard, event log, background-activity telemetry, settings, throughput benchmark. |
+| **iOS app** | [`PulsHealth/`](PulsHealth/README.md) | SwiftUI app over the package, in four tabs: **Explore** (every HealthKit type by category, each with a page of analysis charts, an aggregate preview and the knowledge-base article), **Export** (a builder: types, ad-hoc aggregate series, any date range, CSV or JSONL — no server needed), **Sync** (server pairing, backfill with live progress and ETA, per-type status, the event log and background-activity telemetry) and **Settings** (user, sync tuning, privacy & data, diagnostics incl. a throughput benchmark). |
 | **`PulsHealthSync`** | [`PulsHealthSync/`](PulsHealthSync/README.md) | Swift package (iOS 17+, Swift 6 strict concurrency, zero dependencies): anchored-query sync engine, on-device aggregates, activity rings, background scheduling, HTTP transport, NDJSON encoding. Embeddable in other apps. |
 | **Reference server** | [`server/`](server/README.md) | Docker Compose stack: TimescaleDB, Go ingest API, Go product API (OpenAPI 3.1), Grafana with provisioned dashboards and alert rules. |
 | **Web viewer** | [`web/`](web/README.md) | Next.js viewer (activity rings, trends, workouts, catalog) reading Postgres directly. |
@@ -58,16 +62,17 @@ the files to the share sheet. Nothing is uploaded. Formats and columns are in
 | **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
 | **MCP server** | [`server/mcp/`](server/mcp/README.md) | Read-only MCP server over the product API for Claude Desktop, Claude Code, Cursor and remote connectors: daily metrics, rings, workouts, latest readings, with an embedded guide for the model. Setup in [`docs/ai.md`](docs/ai.md). |
 
+<!-- screenshots to be retaken on device for 1.6 -->
 <p align="center">
-  <img src="docs/images/app/welcome.png" alt="First-run welcome screen: the app reads Apple Health and sends it to a server you run" width="200">
-  <img src="docs/images/app/dashboard.png" alt="Dashboard after a backfill: 1.3M samples exported, per-type sync status" width="200">
-  <img src="docs/images/app/type-detail.png" alt="A type's detail screen: backfill state, anchor, volume and timeline" width="200">
-  <img src="docs/images/app/background-activity.png" alt="Background Activity: wakes granted by iOS over the last day and week" width="200">
+  <img src="docs/images/app/welcome.png" alt="Explore tab: every Apple Health type by category, with sample counts and sparklines for the analyzed ones" width="200">
+  <img src="docs/images/app/dashboard.png" alt="A Type page: analysis charts, an aggregate preview and the knowledge-base article for one type" width="200">
+  <img src="docs/images/app/type-detail.png" alt="Export tab: the builder with data types, aggregate series, a date range and the CSV/JSONL choice" width="200">
+  <img src="docs/images/app/background-activity.png" alt="Sync tab: server status after a backfill, samples sent, and per-type rows" width="200">
 </p>
 
-The iOS app: first run, the dashboard after a backfill, one type's sync
-detail, and the background-activity log. Screenshots of the web viewer and
-the Grafana dashboards are still to come.
+The iOS app: Explore, a Type page, the Export builder, and the Sync tab. The
+image files still show the 1.5 screens and are retaken on a device for 1.6.
+Screenshots of the web viewer and the Grafana dashboards are still to come.
 
 For the database data model, table guide, and query patterns (including how
 to avoid iPhone + Watch double counting), see
@@ -176,24 +181,27 @@ generated project is too), select your device, and run.
 
 Either way, in the app:
 
-1. Grant Health access when asked (the app is read-only; it never writes to
-   HealthKit).
-2. **Settings → Server:** scan the pairing block's QR code, paste its
+1. Go through the first-run flow: grant Health access when asked (the app is
+   read-only; it never writes to HealthKit) and choose your data (a "Common"
+   starter set is preselected). It never asks for a server.
+2. **Sync tab → Scan Pairing Code** (or **Enter Server Details**; later,
+   **Sync → Server**): scan the pairing block's QR code, paste its
    `puls://pair?…` line with **Paste Pairing Code**, or enter the server URL
    and token by hand (`make pairing` re-prints the block; the QR code encodes
    the same values). Pointing the iOS Camera app at the QR code works too: it
    offers to open PulsHealth, which asks you to confirm the server's host
-   before it fills anything in. Then tap **Test Connection**.
-3. **Data Types:** pick what to sync (a "Common" preset covers the usual
-   types) and tap Apply. Types with no history sync from your chosen start
-   date; the dashboard shows per-type progress, rate, and ETA.
+   before it fills anything in. Then tap **Test Connection** and **Save &
+   Apply**.
+3. **Sync → Synced Data:** adjust what to sync and tap Apply. Types with no
+   history sync from your chosen start date; the Sync tab shows per-type
+   progress, rate, and ETA.
 
 Open the web viewer at `http://localhost:3001` on the server, or Grafana at
 `http://localhost:3000`, and watch the data arrive.
 
-Skipping step 2 is fine: with no server the app syncs nothing, says so on the
-Dashboard, and **Settings → Export Data** still writes what you selected to
-files.
+Skipping step 2 is fine: with no server the app syncs nothing, the Sync tab
+shows a setup card instead of a status, and the **Explore** and **Export**
+tabs work regardless — Export writes whatever you choose to files.
 
 Several people on one server: give each phone its own user ID under
 **Settings → User** (the default is a fixed UUID so a reinstall keeps its
@@ -367,7 +375,7 @@ not touch sync state). Planning numbers:
 
 Device-side HealthKit reads are the bottleneck (~3–10 K samples/s per type on
 recent iPhones, XPC-deserialization-bound); the server ingests 50–100 K
-rows/s, so it never queues. The dashboard shows live per-type rate and ETA.
+rows/s, so it never queues. The Sync tab shows live per-type rate and ETA.
 Backfills pause if iOS suspends the app and resume on next open — progress is
 never lost.
 
@@ -433,14 +441,16 @@ No. The app requests read access only, and its usage strings say so.
 
 ## Observability
 
-- **App → Dashboard:** per-type anchor presence, backfill state,
-  samples/deletions/batches/bytes exported, earliest/latest sample dates,
-  last sync time and duration, live rate and ETA, last error.
-- **App → Log:** filterable live event stream (persisted across launches and
-  mirrored to `os.Logger` — `log stream --predicate 'subsystem ==
-  "com.pulsHealth.healthsync"'` from a Mac). **Log → Background Activity** keeps one
-  durable record per wake (trigger, duration, outcome, work done, Low Power
-  Mode, thermal state) and exports them for analysis.
+- **App → Sync:** the server's status, samples and bytes sent, backfill
+  progress and ETA, and a row per type; a type's row opens its sync detail —
+  anchor presence, backfill state, samples/deletions/batches/bytes exported,
+  earliest/latest sample dates, last sync time and duration, live rate and
+  ETA, last error.
+- **App → Sync → Activity → Log:** filterable live event stream (persisted
+  across launches and mirrored to `os.Logger` — `log stream --predicate
+  'subsystem == "com.pulsHealth.healthsync"'` from a Mac). **Activity →
+  Background** keeps one durable record per wake (trigger, duration, outcome,
+  work done, Low Power Mode, thermal state) and exports them for analysis.
 - **Instruments:** signposts (`syncAll`, `syncType`) profile every phase.
 - **Server:** structured JSON logs per batch (counts, bytes, parse/insert
   timings); a PulsHealth dashboard for the health data and an Ops dashboard
@@ -453,8 +463,8 @@ No. The app requests read access only, and its usage strings say so.
 - **Your data goes only to your server.** There is no PulsHealth service, no
   analytics, no crash reporting. The app makes requests to the URL you
   configure and nowhere else.
-- **An export is a file you hand over yourself.** Export Data makes no network
-  request: it stages files in the app's temporary directory (never backed up),
+- **An export is a file you hand over yourself.** The Export tab makes no
+  network request: it stages files in the app's temporary directory (never backed up),
   gives them to the iOS share sheet, and deletes its copy once the share
   completes, when another export starts, and at every launch. The files are
   not encrypted and carry no token — see [`SECURITY.md`](SECURITY.md).

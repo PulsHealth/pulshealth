@@ -5,9 +5,9 @@ app has no backend of its own. This is how the maintainer puts a **short-lived,
 throwaway, publicly reachable** instance in front of a reviewer, and takes it
 down again.
 
-The app is no longer a dead end without one — Settings → Export Data writes
-the selected Health data to files with no server involved, and the review notes
-say so — but syncing is still what the app is for and what the listing
+The app is no longer a dead end without one — the Explore tab shows what is in
+Apple Health and the Export tab writes it to files with no server involved,
+and the review notes say so — but syncing is still what the app is for and what the listing
 describes, so a reviewer still needs somewhere to sync to. Keep standing this
 up; the export path is the fallback if the instance is unreachable during
 review, not a replacement for it.

@@ -242,7 +242,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | APP-5 | Sync state keyed by server identity (hash of URL + user ID). Changing server prompts: start fresh backfill vs keep anchors. | M |
 | APP-6 | `project.yml`: `DEVELOPMENT_TEAM` and bundle-ID prefix from an untracked `Local.xcconfig` or env; BG task identifiers derived from the bundle ID; forks can sideload with their own team. | M |
 | APP-7 | `PrivacyInfo.xcprivacy` with required-reason API declarations (UserDefaults, file timestamps). | M |
-| APP-8 | Onboarding flow: explain → HealthKit permission → connect backend (scan QR / paste) → test → pick types → backfill. | S |
+| APP-8 | Onboarding flow: explain → HealthKit permission → connect backend (scan QR / paste) → test → pick types → backfill. (Shipped that way in 1.4; 1.6 dropped the server steps from the flow — the Sync tab connects the backend.) | S |
 | APP-9 | QR pairing: parse `puls://pair?url=&token=&user=` payload. | S |
 | APP-10 | Capabilities-driven UI: hide reconciliation/stats when the backend does not advertise `digest`/`uuids`. | S |
 | APP-11 | Transport factory persisted with config so a non-HTTP sink survives cold background launches; read side behind a protocol so reconciliation degrades gracefully. | S |
@@ -391,7 +391,7 @@ channel) was skipped; the app went straight to the store.
 
 - SRV-8 per-device tokens (server side done; phone-side enrollment remains),
   SRV-11 multi-user reads (API, web viewer and MCP done; no per-user read token yet), APP-11 sink factory,
-  APP-12 file export (done: Settings → Export Data).
+  APP-12 file export (done: the Export tab).
 
 These, plus the release and submission work the phases above did not cover,
 are tracked with current status and sequencing in [`roadmap.md`](roadmap.md).

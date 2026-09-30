@@ -112,7 +112,7 @@ vendor's cloud, which is the feature, not a limitation.
 
 ### "Is the app usable without a server?"
 
-Yes, since the version that added Export Data, and since 1.6 the first-run
+Yes, since 1.5 added the on-device export, and since 1.6 the first-run
 flow does not ask for a server at all: the welcome screen lists Explore,
 Export and "Sync, if you want" (a self-hosted server, optional), the last step
 says nothing is uploaded and that a server can be connected later in the Sync

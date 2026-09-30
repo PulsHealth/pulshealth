@@ -120,8 +120,8 @@ file you saved or sent somewhere else — those are yours to manage.
 
 ## Exports
 
-Settings → Export Data writes the data types you have selected, for the time
-range you pick, to files on the phone: CSV, or JSONL (the same format the app
+The Export tab writes the data types and series you choose for it, for the
+time range you pick, to files on the phone: CSV, or JSONL (the same format the app
 uploads). It works with no server configured and makes no network request. It
 runs only when you tap Export; nothing exports on a schedule or in the
 background.

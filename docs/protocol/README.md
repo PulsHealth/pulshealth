@@ -710,8 +710,8 @@ user). The minimal Python receiver advertises
 
 ### 9.2 `GET /v1/stats`
 
-Per-type row counts and batch bookkeeping for the app's dashboard, so it can
-compare what it exported with what the receiver holds.
+Per-type row counts and batch bookkeeping for the app's per-type sync detail,
+so it can compare what it exported with what the receiver holds.
 
 ```json
 [{"type":"HKQuantityTypeIdentifierHeartRate","rows":1834021,"earliest":1580515200000,"latest":1718000005000,"lastBatchAt":1718000400000,"batches":2103}]

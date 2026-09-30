@@ -7,7 +7,7 @@ plus two standalone CLIs and the public website:
 | Path | What | Docs |
 |---|---|---|
 | `PulsHealthSync/` | Swift package (iOS 17+, Swift 6 strict concurrency): sync engine, transport, NDJSON encoding | `PulsHealthSync/README.md` |
-| `PulsHealth/` | SwiftUI app wrapping the library (dashboard, type picker, settings, log, benchmark, server-less export to files) | `PulsHealth/README.md` |
+| `PulsHealth/` | SwiftUI app wrapping the library: Explore (type pages with analysis, aggregate preview, knowledge-base article), Export builder (server-less files), Sync (server, synced types, activity log), Settings; benchmark | `PulsHealth/README.md` |
 | `server/` | Docker Compose: Go ingest/product APIs + PostgreSQL 17/TimescaleDB + Grafana | `server/README.md` |
 | `server/mcp/` | Go MCP server (stdio + streamable HTTP) giving AI assistants read-only tools over the product API; talks only to the API, never Postgres | `server/mcp/README.md`, `docs/ai.md` |
 | `web/` | Next.js self-hosted viewer, published as the fourth GHCR image. Reads Postgres directly as the read-only `grafana` role; optional HTTP Basic auth. **Not** `site/`, which is the public marketing site | `web/README.md` |
@@ -140,7 +140,8 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   when another export starts, on Delete Export, and when the share sheet
   reports `completed` — which is why `ExportView` presents a
   `UIActivityViewController` and not a `ShareLink`, which has no completion
-  callback. The app exports `appliedConfig`, never the Data Types draft, and
+  callback. The app exports the Export tab's own draft (`ExportDraft`, seeded
+  once from `appliedConfig`, never the Synced Data draft), and
   requests Health access itself first (`requestHealthAccessForExport`: skips
   undeterminable types, never presents the medication picker). Change any of
   that and `docs/privacy-policy.md` § Exports, `SECURITY.md`, the site's
@@ -385,10 +386,10 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `OnboardingView` covers `RootView` when `AppModel.showsOnboarding` is true:
   decided synchronously in `init` from the durable `onboardingCompleted` and
   `authorizationRequested` flags (so a fresh launch never flashes an
-  unconfigured dashboard), then corrected in `startBody` once the stored
+  unconfigured Explore tab), then corrected in `startBody` once the stored
   configuration is known — an install with a server, types, or a prior Apply is
   configured and must **never** be sent through it. Every step edits the same
-  staged `model.config` the Data Types tab edits; only the final step calls
+  staged `model.config` the Synced Data screen edits; only the final step calls
   `finishOnboarding()` → `applyConfiguration(syncNewTypes: true)`, the same
   path as Save & Apply. The type step embeds the real `TypePickerView` rather
   than a copy, so it can push detail screens the footer knows nothing about —
@@ -423,9 +424,9 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) is fixed by
   the record rather than chosen, and an archive only updates the listing if it
   carries that identifier. `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` must
-  likewise stay ahead of what shipped: 1.4 / 15 is on the store, and
-  `project.yml` says 1.5 / 16, which went to TestFlight on 2026-09-29 — bump
-  the build again before any further upload.
+  likewise stay ahead of what shipped: 1.4 / 15 is on the store, 1.5 / 16
+  went to TestFlight on 2026-09-29 and was never submitted, and `project.yml`
+  says 1.6 / 17, not yet uploaded — bump the build again after that upload.
 - **The published privacy claims are load-bearing.**
   `docs/privacy-policy.md`, `docs/appstore/` and the site's `/privacy` page
   state as fact that the app has
@@ -448,7 +449,7 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   ObjC exception). `AppModel` remembers such undeterminable types per session
   and shows a hint pointing at Settings → Privacy & Security → Health.
   **When an iOS release after 26.5 ships:** retest on the new sim runtime
-  (fresh sim, enable only the two BP types, leave the Data Types tab — the
+  (fresh sim, enable only the two BP types, leave the Synced Data screen — the
   sheet must list "Blood Pressure" and stay up). If fixed, soften the
   iOS-26.5-specific copy in `AppModel.noteUndeterminableTypes()` and trim this
   bullet to a historical note. Keep the skip-and-hint mechanism itself — it is
@@ -499,7 +500,7 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   handed to it separately (the API does not report its zone). In stdio mode
   stdout is the transport: never print to it; logs go to stderr.
 - Grafana datasource UID `puls-tsdb` is hardcoded in dashboard JSON — keep it stable.
-- Debounces are intentional: state persist 250 ms, event-log save 1 s. Data Types
+- Debounces are intentional: state persist 250 ms, event-log save 1 s. Synced Data
   edits are not debounced — they are staged in `AppModel.config` and reach the
   engine only when the user taps Apply (`applyChanges`).
 - **Public tree.** This repository is public: no personal identifiers, hostnames,

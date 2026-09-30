@@ -166,13 +166,13 @@ transport appends to files instead of POSTing. The files are staged in the
 app's temporary directory for the share sheet and removed afterwards
 (`HealthExporter.removeAllExports()`).
 
-**In the app it is Settings → Export Data** — and, on an install with no
-server, the "Export Data to Files" link on the Dashboard. Pick CSV or JSONL,
-a time range (last 30 days, 90 days, a year, all time, or a start and end date
-of your own) and what to include: the export screen starts from the selection
-applied on the Data Types tab — the same types, aggregate series and workout
-route/stream switches — and what you change there is this export's alone,
-never the sync's. The sync start date in Settings plays no part. An end date
+**In the app it is the Export tab**, a builder. Pick the data types, add any
+aggregate series (hourly, daily, weekly or monthly values for a quantity
+type), a time range (last 30 days, 90 days, a year, all time, or a start and
+end date of your own) and CSV or JSONL. The draft starts from the selection
+applied under Sync → Synced Data — the same types, aggregate series and
+workout route/stream switches — and what you change there is this export's
+alone, never the sync's. The sync start date in Settings plays no part. An end date
 is exclusive: samples that start before it, activity-ring days before its
 local day, and routes and streams of workouts that started before it. An
 aggregate bucket that straddles the end date is left out rather than

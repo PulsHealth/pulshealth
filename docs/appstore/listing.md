@@ -59,16 +59,17 @@ That is the whole idea. There is no PulsHealth account and no PulsHealth cloud. 
 
 Syncing needs a server. PulsHealth is the phone half of an open-source project; the other half is a backend you run — on a home machine, a NAS, a Raspberry Pi, or a rented box — with one Docker command. Everything is at github.com/PulsHealth/pulshealth.
 
-No server yet? The app is still useful: export the same data to CSV or JSONL files on your iPhone, on demand, and save or send them wherever you like. Add a server whenever you want continuous sync.
+No server yet? The app is still useful. Explore shows what is in Apple Health, type by type, and Export writes it to CSV or JSONL files on your iPhone, on demand, to save or send wherever you like. Add a server whenever you want continuous sync.
 
 WHAT IT DOES
 
 • Full history first. The initial backfill exports everything from the start date you choose, with live progress and an ETA, and saves its place after every batch so it is safe to interrupt.
 • Then it keeps up. New samples follow automatically — in the foreground whenever you open the app, and in the background when iOS allows it.
 • You pick the data. Around 80 HealthKit types grouped the way Apple Health groups them: activity, heart, body, respiratory, sleep, nutrition, vitals, workouts and more. Turn on a starter set in one tap, or choose type by type.
+• See what you have. Explore lists every type by category. Analyze one to see how many samples there are, since when, from which apps and devices, how the values are spread and how much arrives each day, plus a short article on what the type measures. Summaries only; no samples are kept.
 • More than raw numbers. Workouts carry their GPS route and per-second sensor series; activity rings come across as daily summaries; and any quantity type can also be sent as on-device aggregates (hourly sums, daily averages) instead of, or alongside, raw samples.
-• Export to files. With or without a server, write your selected data to CSV (one file per kind of data, for spreadsheets) or JSONL (complete, and replayable into a server later) for the last 30 days, 90 days, year, or all time, then save to Files or share.
-• Set up by scanning. The server prints a pairing QR code with its URL, token and user ID in it. Scan it and you are connected — or type the three values in by hand if you prefer.
+• Export to files. With or without a server, build each export on its own: the types and series you want, for the last 30 days, 90 days, a year, all time, or a date range you choose, to CSV (one file per kind of data, for spreadsheets) or JSONL (complete, and replayable into a server later), then save to Files or share.
+• Set up by scanning. When you want a server, the Sync tab takes the pairing QR code it prints, with its URL, token and user ID in it. Scan it and you are connected — or type the three values in by hand if you prefer.
 • Nothing is hidden. A live event log, per-type counters and anchors, a background-activity screen showing every wake iOS granted, a throughput benchmark, and an export of all of it for offline analysis.
 
 PRIVACY
@@ -91,12 +92,14 @@ REQUIREMENTS
 iPhone running iOS 17 or later. Syncing needs a server you can reach; exporting to files does not. Apple Watch data arrives once iOS syncs it to the phone.
 ```
 
-`[3534/4000]`
+`[3972/4000]`
 
-> The description above is the **next submission's**: it adds on-device export
-> (the "No server yet?" paragraph, the "Export to files" bullet, the second
-> privacy bullet and the reworded requirements). 1.4 shipped with the text
-> before those edits, which told readers a server was required.
+> The description above is the **next submission's** (1.6): it adds on-device
+> export (the "No server yet?" paragraph, the "Export to files" bullet, the
+> second privacy bullet and the reworded requirements — written for 1.5, which
+> was never submitted) and the Explore tab (the "See what you have" bullet,
+> and the reworded "No server yet?" and "Set up by scanning"). 1.4 shipped
+> with the text before those edits, which told readers a server was required.
 
 ## Keywords
 
@@ -157,8 +160,8 @@ Answer every content question **None / No**. The result is **4+**.
 | Mature or suggestive themes | None | — |
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
-| Medical or treatment information | None | The app shows the user their own HealthKit data and its sync status. It offers no diagnosis, interpretation, dosage, recommendation, or treatment information of any kind. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
-| Unrestricted web access | No | There is no browser, no web view, and no link out. The only URL the app ever *opens* is iOS Settings (after camera access is declined, and from the Dashboard's "Open Health Settings"). It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the server and, if accepted, fills in the server fields. |
+| Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. Since 1.6 a Type page also carries a short reference article from the project's knowledge base — what the type measures, how Apple Health records it, what typical values look like, with cited sources — which is general reference text, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
+| Unrestricted web access | No | There is no browser and no web view. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, the privacy policy and the documentation, all on pulshealth.com or github.com) and the sources a Type page's "About this type" article cites. It *opens* iOS Settings after camera access is declined, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the server and, if accepted, fills in the server fields. |
 | User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, server URL, token) is shared with any other user or with the developer. |
 | Gambling and contests | No | — |
 | In-app purchases | No | No StoreKit. |
@@ -181,7 +184,7 @@ the request*. PulsHealth transmits health data off the device, but:
    URL is typed in by the user or scanned from a QR code their own server
    printed. It is their infrastructure, not a third-party partner of the
    developer's, and the developer has no access to it. The same goes for an
-   on-device export (Settings → Export Data): the app makes no network request
+   on-device export (the Export tab): the app makes no network request
    for it at all — it writes files and hands them to the iOS share sheet, and
    the user picks where they go. Neither the developer nor any partner can
    reach them, so it is not collection either.
@@ -213,7 +216,7 @@ flags.
 | Price | Free. |
 | Availability | All territories. |
 | App Review contact | The maintainer fills this in — App Store Connect asks for a name, phone number and e-mail address, which are personal details and are deliberately not stored in this repository. |
-| Demo account | Not an account, but the reviewer *does* need a server to see a sync. See [`review-notes.md`](review-notes.md) and [`review-backend.md`](review-backend.md). (Export Data works without one, and the notes say so.) |
+| Demo account | Not an account, but the reviewer *does* need a server to see a sync. See [`review-notes.md`](review-notes.md) and [`review-backend.md`](review-backend.md). (Explore and Export work without one, and the notes say so.) |
 
 ## Version information
 
@@ -221,8 +224,8 @@ flags.
 |---|---|
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
 | Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
-| Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.5`, ahead of the `1.4` on the store — see [Release record](README.md#release-record) |
-| Build | `CURRENT_PROJECT_VERSION`, currently `16`, ahead of the shipped `15` |
+| Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.6`, ahead of the `1.4` on the store — see [Release record](README.md#release-record) |
+| Build | `CURRENT_PROJECT_VERSION`, currently `17`, ahead of the shipped `15` (16 went to TestFlight only) |
 | Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
@@ -243,7 +246,9 @@ First release.
 • Fixes: no false "backfill complete" for types that produced no samples, and setup can no longer stall on the medications permission step.
 ```
 
-1.5 (not yet submitted; trim to taste):
+1.5 (TestFlight only, never submitted — kept as the record of that build; its
+"Settings → Export Data" and "Dashboard" are 1.5's screens, and the 1.6 entry
+below says the same things in 1.6's terms):
 
 ```
 • Export without a server: Settings → Export Data writes your selected health data to CSV or JSONL files — last 30 days, 90 days, a year, or all time — and hands them to the share sheet. Nothing is uploaded, and the app's copy is deleted once shared.
@@ -255,35 +260,48 @@ First release.
 • Fix: a data type whose samples could not be converted is no longer marked as fully synced.
 ```
 
+1.6 (not yet submitted; trim to taste):
+
+```
+• A new look, in four tabs: Explore, Export, Sync and Settings.
+• Explore: every Apple Health type by category. Analyze one to see how many samples you have, since when, from which apps and devices, how the values are spread and how much arrives each day, with a short article on what the type measures.
+• Export: build each export on its own. Pick the types and any hourly or daily series, choose a preset range or your own start and end dates, and write CSV or JSONL files. No server needed.
+• Sync: one place for the server, the synced data, the status of each type and the activity log.
+• Setup no longer asks for a server. Choose your data, start exploring, and connect a server from the Sync tab whenever you like.
+• Analysis summaries are kept on your iPhone so a type opens instantly next time. Delete Analysis, under Settings, removes them all.
+• Everything from 1.5: export without a server, faster pairing, recent data first, and syncing that keeps going in the background.
+```
+
 ## Screenshots
 
 Required: 6.9" iPhone (1320 × 2868 or 1290 × 2796). Apple scales those down for
 the smaller sizes, so one set is enough.
 
 **Not included in this repository, and deliberately so.** The screens worth
-showing — the dashboard with its counters, a type's history, the background
-activity log — are only meaningful with a real Health database behind them, and
-the simulator has none: every number is zero and every row says "not synced".
-Shipping those would misrepresent the app.
+showing — Explore with data behind it, a Type page's charts, the Sync tab's
+counters, the background activity log — are only meaningful with a real
+Health database behind them, and the simulator has none: every count is zero
+and every type says "No data". Shipping those would misrepresent the app.
 
 Capture them on a real device with real data, from a build signed with the
 maintainer's team. The order below tells the story a browser needs:
 
-1. **First-run welcome** — states in two sentences that the app reads Apple
-   Health and sends it to a server you run. This one *is* honest from the
-   simulator if a device is unavailable.
-2. **Connect your server** — the pairing step, with Scan Pairing Code visible.
-   Also fine from the simulator.
-3. **Dashboard after a backfill** — real totals and per-type rows. Device only.
-4. **Data Types** — the category list with a realistic selection. Device only
-   for the counts to mean anything.
-5. **A type's detail screen** — anchor, throughput, timeline, server-side count.
-   Device only.
+1. **Welcome** — the first-run screen: explore, export, and sync if you want.
+   This one *is* honest from the simulator if a device is unavailable.
+2. **Explore with data** — the catalog by category, with counts and sparklines
+   for the analyzed types. Device only.
+3. **A Type page** — the analysis charts, the aggregate preview and the
+   article for one type (Heart Rate or Body Weight). Device only.
+4. **Export builder** — types, a series, a custom range, CSV or JSONL. Fine
+   from the simulator if the selection is realistic.
+5. **Sync status** — the status card after a backfill: real totals and
+   per-type rows. Device only.
 6. **Background Activity** — the wake log after a few days of real background
    delivery. Device only, and it needs the days.
 
 Do not paste marketing text over them, and do not use another person's health
-data.
+data. **The 1.4 set below is stale:** 1.6 replaced every screen in it except
+Welcome, so the whole set is retaken for 1.6.
 
 **What 1.4 was submitted with** (all dark mode, 1290 × 2796 in the 6.9" slot,
 in this order): 1 Welcome, 2 Your Server (with `https://health.example.net`

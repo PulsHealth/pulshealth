@@ -445,7 +445,7 @@ not an `HKSampleType`, so its catalog entry has `sampleType == nil` (kept out of
 `HKObjectType.activitySummaryType()` into the read-auth set separately. There is
 **no observer / no background delivery** for summaries, so they ride other wakes:
 `syncAllEnabled` (foreground/periodic/scheduled — the *first* phase, ahead of the
-raw sweep, since a first backfill otherwise left the dashboard with no ring data
+raw sweep, since a first backfill otherwise left the viewer with no ring data
 until every type had drained), and since 2026-08-14 also
 `refreshActivitySummaryIfStale()` at the tail of every observer wake.
 
