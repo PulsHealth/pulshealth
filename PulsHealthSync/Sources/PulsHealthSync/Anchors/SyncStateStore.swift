@@ -93,6 +93,9 @@ public struct AggregateSyncState: Codable, Sendable, Equatable {
     public var lastError: String?
     public var lastErrorAt: Date?
 
+    /// The state of a series this store has never held: nothing uploaded from
+    /// this install, never reset, so it may skip its leading empty buckets.
+    /// Resets use `afterReset(configID:)` instead.
     public init(configID: UUID) {
         self.configID = configID
         self.computedThrough = nil
@@ -106,6 +109,17 @@ public struct AggregateSyncState: Codable, Sendable, Equatable {
         self.totalBytesUploaded = 0
         self.lastError = nil
         self.lastErrorAt = nil
+    }
+
+    /// What a reset leaves behind: watermarks and counters cleared, so the
+    /// next scheduled pass recomputes the whole series — but with the leading-
+    /// empty skip off. The server may hold values for this series from before
+    /// the reset (the reason for most resets is that it holds wrong ones), and
+    /// only the recompute's explicit nulls clear those.
+    public static func afterReset(configID: UUID) -> AggregateSyncState {
+        var state = AggregateSyncState(configID: configID)
+        state.leadingEmptyBackfill = false
+        return state
     }
 }
 
@@ -593,7 +607,15 @@ public actor SyncStateStore {
 
     public func resetAll() {
         typeStates = [:]
-        aggregateStates = [:]
+        // Not `[:]`: a missing entry reads as a series this store has never
+        // held, which may skip its leading empty buckets. Every series this
+        // install has progress for or is configured with is a reset one —
+        // Reset All Anchors, or starting fresh on a server change.
+        let aggregateIDs = Set(aggregateStates.keys.compactMap(UUID.init(uuidString:)))
+            .union(configuration.aggregates.map(\.id))
+        aggregateStates = Dictionary(uniqueKeysWithValues: aggregateIDs.map {
+            ($0.uuidString, AggregateSyncState.afterReset(configID: $0))
+        })
         activitySummaryState = ActivitySummaryState()
         workoutRoutesState = WorkoutEnrichmentState()
         workoutStreamsState = WorkoutEnrichmentState()
@@ -602,6 +624,8 @@ public actor SyncStateStore {
 
     // MARK: - Aggregate state
 
+    /// A config with no entry is a series this store has never held (see
+    /// `AggregateSyncState.init(configID:)`); resets leave an entry behind.
     public func aggregateState(for configID: UUID) -> AggregateSyncState {
         aggregateStates[configID.uuidString] ?? AggregateSyncState(configID: configID)
     }
@@ -716,9 +740,11 @@ public actor SyncStateStore {
     }
 
     /// Drop the watermark so the next sync recomputes the whole series ("Recompute
-    /// All", or an identity edit that makes this a different server series).
+    /// All", or an identity or start-date edit that makes this a different
+    /// server series). The recompute sends every bucket, leading empty ones
+    /// included (`AggregateSyncState.afterReset`).
     public func resetAggregate(configID: UUID) {
-        aggregateStates[configID.uuidString] = AggregateSyncState(configID: configID)
+        aggregateStates[configID.uuidString] = .afterReset(configID: configID)
         persist()
     }
 

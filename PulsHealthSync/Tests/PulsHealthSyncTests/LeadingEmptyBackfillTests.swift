@@ -171,4 +171,72 @@ import Testing
         await store.recordAggregateUploadWithoutWatermark(configID: other, buckets: 30, bytes: 300)
         #expect(LeadingEmptyBuckets.applies(pass: .scheduled, state: await store.aggregateState(for: other)))
     }
+
+    // MARK: - Resets
+
+    /// Recompute All and an identity or start-date edit both reset through
+    /// `resetAggregate`. The recompute is meant to overwrite what the server
+    /// holds, so it must not skip — whether the series had uploaded before or
+    /// is reset before its first value.
+    @Test func aResetSeriesSendsEveryBucket() async {
+        let dir = makeDir()
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let used = UUID()
+        await store.recordAggregateUpload(
+            configID: used, newComputedThrough: Date(timeIntervalSince1970: 1_700_000_000),
+            buckets: 10, bytes: 100)
+        let untouched = UUID()
+        #expect(LeadingEmptyBuckets.applies(pass: .scheduled, state: await store.aggregateState(for: untouched)))
+
+        for id in [used, untouched] {
+            await store.resetAggregate(configID: id)
+            let state = await store.aggregateState(for: id)
+            #expect(state.computedThrough == nil)
+            #expect(state.totalBucketsUploaded == 0)
+            #expect(!LeadingEmptyBuckets.applies(pass: .scheduled, state: state))
+        }
+        // Survives a relaunch.
+        await store.persistNow()
+        let reloaded = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        #expect(!LeadingEmptyBuckets.applies(pass: .scheduled, state: await reloaded.aggregateState(for: used)))
+        #expect(!LeadingEmptyBuckets.applies(pass: .scheduled, state: await reloaded.aggregateState(for: untouched)))
+    }
+
+    /// Reset All Anchors and starting fresh on a server change both go through
+    /// `resetAll`. Every series with state, and every configured series, is a
+    /// reset one afterwards; a series added after the reset is new.
+    @Test func resetAllTurnsTheSkipOffForEverySeriesItKnows() async {
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
+        let configuredNeverRun = AggregateConfig(typeIdentifier: "HKQuantityTypeIdentifierStepCount", function: .sum)
+        let configuredUsed = AggregateConfig(typeIdentifier: "HKQuantityTypeIdentifierHeartRate", function: .average)
+        var config = SyncConfiguration()
+        config.aggregates = [configuredNeverRun, configuredUsed]
+        await store.setConfiguration(config)
+        let removedFromConfig = UUID()
+        for id in [configuredUsed.id, removedFromConfig] {
+            await store.recordAggregateUpload(
+                configID: id, newComputedThrough: Date(timeIntervalSince1970: 1_700_000_000),
+                buckets: 1, bytes: 1)
+        }
+
+        await store.resetAll()
+        #expect(!(await store.hasSyncProgress))
+        for id in [configuredNeverRun.id, configuredUsed.id, removedFromConfig] {
+            let state = await store.aggregateState(for: id)
+            #expect(state.computedThrough == nil)
+            #expect(!LeadingEmptyBuckets.applies(pass: .scheduled, state: state))
+        }
+        #expect(LeadingEmptyBuckets.applies(pass: .scheduled, state: await store.aggregateState(for: UUID())))
+    }
+
+    /// A watermark earned only by skipping counts as sync progress: the
+    /// server-change prompt asks before stranding it. That is conservative —
+    /// nothing reached the server — and harmless: starting fresh resets it.
+    @Test func aWatermarkEarnedOnlyBySkippingCountsAsSyncProgress() async {
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
+        #expect(await store.hasSyncProgress == false)
+        await store.recordAggregateSkippedEmptyChunk(
+            configID: UUID(), newComputedThrough: Date(timeIntervalSince1970: 1_700_000_000))
+        #expect(await store.hasSyncProgress == true)
+    }
 }
