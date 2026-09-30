@@ -31,6 +31,13 @@ public final class HealthExplorer: Sendable {
         /// Bounds on sample start (`strictStartDate`); nil = unbounded.
         public var rangeStart: Date?
         public var rangeEnd: Date?
+        /// Only the last this-many days: the scan starts at the start of the
+        /// day `lookbackDays` before the one it runs on, in `calendar` (or at
+        /// `rangeStart`, if that is later). The profile records the date it
+        /// resolved to as `rangeStart` and this number as `lookbackDays`, and
+        /// `TypeProfileStore.isStale` judges it by the number, since the date
+        /// moves every day. Pass a `maxAge` there with it.
+        public var lookbackDays: Int?
         /// Bins in the value histogram of a quantity type.
         public var histogramBins = 40
         /// Values (and gaps) kept for quantiles; above this the profile's
@@ -41,6 +48,15 @@ public final class HealthExplorer: Sendable {
         public var calendar: Calendar = .current
 
         public init() {}
+
+        /// Where a scan run at `now` starts: the later of `rangeStart` and
+        /// the lookback's day.
+        public func effectiveRangeStart(now: Date = Date()) -> Date? {
+            guard let lookbackDays else { return rangeStart }
+            let today = calendar.startOfDay(for: now)
+            let start = calendar.date(byAdding: .day, value: -lookbackDays, to: today) ?? today
+            return Swift.max(start, rangeStart ?? start)
+        }
     }
 
     // MARK: - Quick facts
@@ -95,6 +111,7 @@ public final class HealthExplorer: Sendable {
         try await checkAvailability()
         let descriptor = try descriptor(for: identifier)
         let started = ContinuousClock.now
+        let rangeStart = options.effectiveRangeStart()
         progress?(ProfileProgress(phase: .probing))
 
         var accumulator = ProfileAccumulator(
@@ -109,7 +126,7 @@ public final class HealthExplorer: Sendable {
             let days: [Date]
             do {
                 days = try await activitySummaryDays(
-                    from: options.rangeStart ?? ExportPlan.allTimeFloor,
+                    from: rangeStart ?? ExportPlan.allTimeFloor,
                     to: options.rangeEnd ?? Date(),
                     calendar: options.calendar)
             } catch {
@@ -123,8 +140,9 @@ public final class HealthExplorer: Sendable {
                 phase: .finishing, samplesScanned: days.count, pagesScanned: 1, scannedThrough: days.max()))
             var profile = accumulator.finish(
                 scanDuration: (ContinuousClock.now - started).seconds,
-                rangeStart: options.rangeStart, rangeEnd: options.rangeEnd,
+                rangeStart: rangeStart, rangeEnd: options.rangeEnd,
                 isComplete: true, failureReason: nil)
+            profile.lookbackDays = options.lookbackDays
             // A summary is computed by the system; "source" and "device"
             // would only ever say so.
             profile.sources = []
@@ -143,7 +161,7 @@ public final class HealthExplorer: Sendable {
         var outcome: SampleCursor.Outcome?
         do {
             outcome = try await SampleCursor().scan(
-                from: options.rangeStart, fetch: scanner.fetch(sampleType: sampleType)
+                from: rangeStart, fetch: scanner.fetch(sampleType: sampleType)
             ) { samples, through in
                 accumulator.add(contentsOf: samples)
                 pages += 1
@@ -162,12 +180,14 @@ public final class HealthExplorer: Sendable {
 
         progress?(ProfileProgress(
             phase: .finishing, samplesScanned: scanned, pagesScanned: pages))
-        return accumulator.finish(
+        var profile = accumulator.finish(
             scanDuration: (ContinuousClock.now - started).seconds,
-            rangeStart: options.rangeStart,
+            rangeStart: rangeStart,
             rangeEnd: options.rangeEnd,
             isComplete: failure == nil,
             failureReason: failure ?? outcome?.skipNote)
+        profile.lookbackDays = options.lookbackDays
+        return profile
     }
 
     // MARK: - Aggregate preview

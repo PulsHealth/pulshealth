@@ -569,7 +569,8 @@ let explorer = HealthExplorer()
 let facts = try await explorer.quickFacts(for: "HKQuantityTypeIdentifierHeartRate")
 
 // One ascending scan of the type, reduced as it goes.
-var options = HealthExplorer.ProfileOptions()   // rangeStart/End, histogramBins, reservoirCapacity, calendar
+var options = HealthExplorer.ProfileOptions()   // rangeStart/End, lookbackDays, histogramBins, reservoirCapacity, calendar
+options.lookbackDays = 365                      // only the past year; judged by the number, not the date it resolved to
 let profile = try await explorer.profile(for: facts.typeIdentifier, options: options) { progress in
     // phase (probing/scanning/finishing), samplesScanned, pagesScanned, scannedThrough
 }

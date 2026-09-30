@@ -28,7 +28,8 @@ public struct TypeProfile: Codable, Sendable, Equatable {
     /// than spanning min…max.
     /// 3: that middle stops at the 5th or 95th percentile when the tail past
     /// it outruns the middle 90% (`Histogram.core(p1:p5:p95:p99:)`).
-    public static let currentVersion = 3
+    /// 4: `lookbackDays`, for a scan of only the most recent days.
+    public static let currentVersion = 4
 
     public var version: Int
     public var typeIdentifier: String
@@ -41,8 +42,12 @@ public struct TypeProfile: Codable, Sendable, Equatable {
     /// The calendar zone the daily counts were bucketed in.
     public var timeZoneID: String
     /// The requested range (`HealthExplorer.ProfileOptions`), nil = unbounded.
+    /// With a lookback, `rangeStart` is the day it resolved to.
     public var rangeStart: Date?
     public var rangeEnd: Date?
+    /// `ProfileOptions.lookbackDays`: the scan covered only this many days
+    /// back from the day it ran. Nil for a fixed range or the whole history.
+    public var lookbackDays: Int?
     /// False when the scan stopped before the end of the range — the reason is
     /// in `failureReason`, and every number is a lower bound over the part
     /// that was read.
@@ -99,6 +104,7 @@ public struct TypeProfile: Codable, Sendable, Equatable {
         timeZoneID: String,
         rangeStart: Date? = nil,
         rangeEnd: Date? = nil,
+        lookbackDays: Int? = nil,
         isComplete: Bool = true,
         failureReason: String? = nil,
         sampleCount: Int = 0,
@@ -125,6 +131,7 @@ public struct TypeProfile: Codable, Sendable, Equatable {
         self.timeZoneID = timeZoneID
         self.rangeStart = rangeStart
         self.rangeEnd = rangeEnd
+        self.lookbackDays = lookbackDays
         self.isComplete = isComplete
         self.failureReason = failureReason
         self.sampleCount = sampleCount

@@ -16,13 +16,13 @@ import Testing
     private func profile(
         _ identifier: String = heartRate, version: Int = TypeProfile.currentVersion,
         unit: String? = "count/min", complete: Bool = true,
-        rangeStart: Date? = nil, rangeEnd: Date? = nil,
+        rangeStart: Date? = nil, rangeEnd: Date? = nil, lookbackDays: Int? = nil,
         earliest: Date? = nil, latest: Date? = nil, computedAt: Date? = nil
     ) -> TypeProfile {
         TypeProfile(
             version: version, typeIdentifier: identifier, kind: .quantity, unitString: unit,
             computedAt: computedAt ?? now, scanDuration: 2, timeZoneID: "UTC",
-            rangeStart: rangeStart, rangeEnd: rangeEnd, isComplete: complete,
+            rangeStart: rangeStart, rangeEnd: rangeEnd, lookbackDays: lookbackDays, isComplete: complete,
             sampleCount: 3, earliestStart: earliest ?? now.addingTimeInterval(-86_400),
             latestStart: latest ?? now.addingTimeInterval(-60),
             dailyCounts: [TypeProfile.DailyCount(day: now.addingTimeInterval(-86_400), count: 3)])
@@ -163,6 +163,51 @@ import Testing
         #expect(!TypeProfileStore.isStale(p, facts: facts(for: p), options: .init(), maxAge: nil, now: now))
         #expect(TypeProfileStore.isStale(p, facts: facts(for: p), options: .init(), maxAge: 86_400, now: now))
         #expect(!TypeProfileStore.isStale(p, facts: facts(for: p), options: .init(), maxAge: 3 * 86_400, now: now))
+    }
+
+    @Test func aLookbackProfileIsJudgedByItsDaysNotItsStartDate() {
+        // Scanned yesterday over the past year: its start was a day earlier
+        // than today's would be, which is not a reason to rescan.
+        let p = profile(
+            rangeStart: now.addingTimeInterval(-366 * 86_400), lookbackDays: 365,
+            earliest: now.addingTimeInterval(-365 * 86_400), computedAt: now.addingTimeInterval(-86_400))
+        var options = HealthExplorer.ProfileOptions()
+        options.lookbackDays = 365
+        var older = facts(for: p)
+        older.earliestStart = now.addingTimeInterval(-2_000 * 86_400)
+        #expect(!TypeProfileStore.isStale(p, facts: older, options: options, maxAge: 7 * 86_400, now: now))
+        // New data, or a window that has slid past maxAge, still is.
+        var newer = older
+        newer.latestStart = now
+        #expect(TypeProfileStore.isStale(p, facts: newer, options: options, now: now))
+        #expect(TypeProfileStore.isStale(p, facts: older, options: options, maxAge: 3_600, now: now))
+    }
+
+    @Test func aDifferentLookbackIsStale() {
+        let yearly = profile(rangeStart: now.addingTimeInterval(-365 * 86_400), lookbackDays: 365)
+        var options = HealthExplorer.ProfileOptions()
+        options.lookbackDays = 30
+        #expect(TypeProfileStore.isStale(yearly, facts: facts(for: yearly), options: options, now: now))
+        // A whole-history profile does not answer a question about the past year.
+        options.lookbackDays = 365
+        let whole = profile()
+        #expect(TypeProfileStore.isStale(whole, facts: facts(for: whole), options: options, now: now))
+        #expect(TypeProfileStore.isStale(yearly, facts: facts(for: yearly), options: .init(), now: now))
+    }
+
+    @Test func aLookbackStartsAtTheStartOfItsDay() {
+        var options = HealthExplorer.ProfileOptions()
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        options.calendar = utc
+        options.lookbackDays = 365
+        let afternoon = now.addingTimeInterval(15 * 3_600)  // 2026-01-01T15:00:00Z
+        #expect(options.effectiveRangeStart(now: afternoon) == now.addingTimeInterval(-365 * 86_400))
+        // A later fixed start wins.
+        options.rangeStart = now.addingTimeInterval(-30 * 86_400)
+        #expect(options.effectiveRangeStart(now: afternoon) == options.rangeStart)
+        options.lookbackDays = nil
+        #expect(options.effectiveRangeStart(now: afternoon) == options.rangeStart)
     }
 
     @Test func anIncompleteProfileIsStale() {

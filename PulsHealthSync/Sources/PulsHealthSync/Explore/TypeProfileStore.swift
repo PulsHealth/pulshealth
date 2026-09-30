@@ -86,7 +86,7 @@ public actor TypeProfileStore {
     /// oldest or newest sample HealthKit reports has moved — compared only
     /// on the side the profile's range left open, since a bounded profile
     /// never saw the samples outside its range; the caller wants a
-    /// different range; it is older than `maxAge`; or the scan did not
+    /// different range or lookback; it is older than `maxAge`; or the scan did not
     /// finish (a partial profile is worth showing, not worth keeping).
     public nonisolated static func isStale(
         _ profile: TypeProfile,
@@ -100,10 +100,13 @@ public actor TypeProfileStore {
         if profile.unitString != HealthTypeCatalog.descriptor(for: profile.typeIdentifier)?.unitString {
             return true
         }
-        guard profile.rangeStart == options.rangeStart, profile.rangeEnd == options.rangeEnd else {
+        guard profile.lookbackDays == options.lookbackDays, profile.rangeEnd == options.rangeEnd else {
             return true
         }
-        if options.rangeStart == nil, profile.earliestStart != facts.earliestStart { return true }
+        // A lookback's start is the day the scan ran, so it moves; `maxAge`
+        // is what retires such a profile as the window slides.
+        if options.lookbackDays == nil, profile.rangeStart != options.rangeStart { return true }
+        if profile.rangeStart == nil, profile.earliestStart != facts.earliestStart { return true }
         if options.rangeEnd == nil, profile.latestStart != facts.latestStart { return true }
         if let maxAge, now.timeIntervalSince(profile.computedAt) > maxAge { return true }
         return false
