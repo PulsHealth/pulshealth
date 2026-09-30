@@ -100,6 +100,21 @@ import Testing
         #expect(abs(values.median - 50) < 5)
     }
 
+    @Test func quantityHistogramStopsAtThe95thPastALongTail() {
+        // 96 Watch-sized readings under 8, and four imported whole rides.
+        var acc = accumulator(.quantity, unit: "m")
+        for i in 0..<96 { acc.add(sample(Double(i), value: Double(i % 8) + 0.5, hasQuantity: true)) }
+        for (i, ride) in [5_000.0, 12_000, 20_000, 30_000].enumerated() {
+            acc.add(sample(Double(100 + i), value: ride, hasQuantity: true))
+        }
+        let values = finish(acc).values!
+        #expect(values.max == 30_000)
+        #expect(values.histogram.lowerBound == 0)
+        #expect(values.histogram.upperBound == 8)
+        #expect(values.histogram.aboveCount == 4)
+        #expect(values.histogram.counts.reduce(0, +) == 96)
+    }
+
     // MARK: - Category
 
     @Test func categoryLabelsCountAndSumDurations() {

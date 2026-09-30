@@ -154,6 +154,24 @@ import Testing
         #expect(h.counts.reduce(0, +) == 4)
     }
 
+    @Test func histogramCoreStopsAtThe95thPastALongTail() {
+        // Cycling distance: second-long Watch samples of a few metres, and
+        // whole rides imported as single samples of tens of kilometres.
+        #expect(TypeProfile.Histogram.core(p1: 0, p5: 0.12, p95: 8.46, p99: 720) == 0...8.46)
+        // And the mirror image on the low side.
+        #expect(TypeProfile.Histogram.core(p1: -500, p5: 90, p95: 100, p99: 101) == 90...101)
+    }
+
+    @Test func histogramCoreKeepsTheOuterPercentilesOfAnOrdinarySpread() {
+        // Heart rate, and the Watch's step samples with their tail of walks.
+        #expect(TypeProfile.Histogram.core(p1: 50, p5: 55, p95: 120, p99: 150) == 50...150)
+        #expect(TypeProfile.Histogram.core(p1: 1, p5: 3, p95: 410, p99: 1_000) == 1...1_000)
+    }
+
+    @Test func histogramCoreLeavesAOneValueMiddleAlone() {
+        #expect(TypeProfile.Histogram.core(p1: 1, p5: 1, p95: 1, p99: 40) == 1...40)
+    }
+
     @Test func roundWidthsAreRound() {
         #expect(TypeProfile.Histogram.roundWidth(0.37, integral: false) == 0.5)
         #expect(TypeProfile.Histogram.roundWidth(2.2, integral: false) == 2.5)

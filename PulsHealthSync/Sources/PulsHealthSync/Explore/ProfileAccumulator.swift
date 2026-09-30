@@ -240,19 +240,22 @@ struct ProfileAccumulator: Sendable {
             ? Double(welford.count) / Double(valueReservoir.values.count)
             : 1
         let p1 = quantiles[0] ?? min
-        let p99 = Swift.max(quantiles[4] ?? max, p1)
+        let p5 = quantiles[1] ?? min
+        let p95 = quantiles[3] ?? max
+        let p99 = quantiles[4] ?? max
         return TypeProfile.ValueDistribution(
             count: welford.count,
             min: min,
             max: max,
             mean: welford.mean,
             stddev: stddev,
-            p5: quantiles[1] ?? min,
+            p5: p5,
             median: quantiles[2] ?? min,
-            p95: quantiles[3] ?? max,
+            p95: p95,
             isEstimated: valueReservoir.isEstimated,
             histogram: TypeProfile.Histogram.robustBins(
-                count: histogramBins, min: min, max: max, core: p1...p99,
+                count: histogramBins, min: min, max: max,
+                core: TypeProfile.Histogram.core(p1: p1, p5: p5, p95: p95, p99: p99),
                 values: valueReservoir.values, scale: scale))
     }
 }

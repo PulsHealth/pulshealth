@@ -188,8 +188,31 @@ extension TypeProfile.Histogram {
     /// one 5,000-step sample over a median of 25 does not.
     static let tailAllowance = 0.25
 
+    /// How far past the 5th or 95th percentile the 1st or 99th may reach, as
+    /// a multiple of the middle 90%, before that side of the core stops at
+    /// the 5th or 95th instead.
+    static let tailReach = 2.0
+
+    /// The core `robustBins` draws: the 1st to 99th percentile, narrowed on
+    /// either side to the 5th or 95th when the percentiles between them
+    /// cover more than `tailReach` times the middle 90%. The narrowing is for
+    /// types that mix two kinds of sample on one scale. Cycling distance from
+    /// the Watch is a few metres per second-long sample, while a ride
+    /// imported as a single sample is tens of kilometres. That put the 99th
+    /// percentile at 720 m over a 95th of 8.5 m, and every bar in the first
+    /// bin. A middle 90% of one value is left alone: narrowing it would bin
+    /// nothing.
+    static func core(p1: Double, p5: Double, p95: Double, p99: Double) -> ClosedRange<Double> {
+        let middle = p95 - p5
+        guard middle > 0 else { return p1...Swift.max(p99, p1) }
+        let low = p5 - p1 > middle * tailReach ? p5 : p1
+        let high = p99 - p95 > middle * tailReach ? p95 : p99
+        return low...Swift.max(high, low)
+    }
+
     /// Bins for reading, not for bookkeeping: over `core` (the 1st to 99th
-    /// percentile) rather than min…max, on a round width (1, 2, 2.5 or 5 ×
+    /// percentile, or narrower — see `core(p1:p5:p95:p99:)`) rather than
+    /// min…max, on a round width (1, 2, 2.5 or 5 ×
     /// 10ⁿ, whole numbers for whole-number data) that lands near `count`
     /// bins, with the values outside counted in the tails. A tail within
     /// `tailAllowance` of the core is drawn to its true edge instead.

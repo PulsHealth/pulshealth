@@ -26,7 +26,9 @@ public struct TypeProfile: Codable, Sendable, Equatable {
     /// 2: the value histogram covers the middle of the data on round bin
     /// widths, with the tails counted in `belowCount`/`aboveCount`, rather
     /// than spanning min…max.
-    public static let currentVersion = 2
+    /// 3: that middle stops at the 5th or 95th percentile when the tail past
+    /// it outruns the middle 90% (`Histogram.core(p1:p5:p95:p99:)`).
+    public static let currentVersion = 3
 
     public var version: Int
     public var typeIdentifier: String
