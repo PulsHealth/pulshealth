@@ -6,7 +6,7 @@ import PulsHealthSync
 /// `TypeProfile`s, and the analyses in flight to find out.
 ///
 /// Owned by `AppModel` so an analysis outlives the screen that started it —
-/// a whole-history heart rate scan takes minutes. It goes through
+/// a year of Watch heart rate is hundreds of thousands of samples. It goes through
 /// `HealthExplorer`, which has no engine and no sync state, so nothing here
 /// can move an anchor (CLAUDE.md, "Export never shares sync state" — the
 /// explorer exists for the same reason). The app's real engine is used for
@@ -122,17 +122,27 @@ final class ExploreModel {
             profile, facts: facts, options: Self.profileOptions, maxAge: Self.maxProfileAge)
     }
 
-    /// 0…1 for a running scan, from where the scan is between the type's
-    /// oldest and newest sample; nil until the facts say where those are.
+    /// 0…1 for a running scan, from where the scan is between where it
+    /// started (the type's oldest sample, or a year ago) and the newest
+    /// sample; nil until the facts say where those are.
     func fraction(for id: String) -> Double? {
         guard let progress = running[id], let through = progress.scannedThrough,
-              let facts = quickFacts[id], let first = facts.earliestStart, let last = facts.latestStart,
-              last > first
+              let facts = quickFacts[id], let oldest = facts.earliestStart, let last = facts.latestStart
         else { return nil }
+        let first = max(oldest, Self.profileOptions.effectiveRangeStart() ?? oldest)
+        guard last > first else { return nil }
         return min(max(through.timeIntervalSince(first) / last.timeIntervalSince(first), 0), 1)
     }
 
-    static var profileOptions: HealthExplorer.ProfileOptions { .init() }
+    /// Analyses cover the past year: the page describes what a type looks
+    /// like now, and a year keeps even heart rate's scan short.
+    nonisolated static let lookbackDays = 365
+
+    static var profileOptions: HealthExplorer.ProfileOptions {
+        var options = HealthExplorer.ProfileOptions()
+        options.lookbackDays = lookbackDays
+        return options
+    }
 
     // MARK: - Analysis
 

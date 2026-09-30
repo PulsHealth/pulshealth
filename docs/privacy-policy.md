@@ -92,7 +92,8 @@ Transport Security (`NSAllowsLocalNetworking`).
   asked for, briefly, as described under [Exports](#exports); the analysis
   summaries below are derived numbers, not samples.
 - **Analysis summaries** — when you analyze a data type on the Explore tab,
-  the app reads that type from Apple Health and keeps a *summary* of it, one
+  the app reads the past year of that type from Apple Health and keeps a
+  *summary* of it, one
   small file per type (`profiles/<type>.json` in the app's private container),
   so the next visit does not repeat a read that can take minutes: how many
   samples there are, the first and last dates, how many fall on each day, the

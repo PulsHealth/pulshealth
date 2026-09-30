@@ -36,6 +36,7 @@ enum ExploreFixtures {
             typeIdentifier: identifier, kind: kind, unitString: unit,
             computedAt: now.addingTimeInterval(-3_600), scanDuration: 4.2,
             timeZoneID: TimeZone.current.identifier,
+            rangeStart: daysAgo(ExploreModel.lookbackDays), lookbackDays: ExploreModel.lookbackDays,
             sampleCount: sampleCount, earliestStart: daysAgo(days), latestStart: now.addingTimeInterval(-1_800),
             latestEnd: now.addingTimeInterval(-600), spanSeconds: Double(days) * 86_400,
             dailyCounts: daily,
@@ -60,7 +61,7 @@ enum ExploreFixtures {
     }
 
     static var sleep: TypeProfile {
-        let days = 420
+        let days = ExploreModel.lookbackDays
         let daily = dailyCounts(days: days) { offset in offset % 9 == 4 ? 0 : 14 + (offset * 7) % 11 }
         let total = daily.reduce(0) { $0 + $1.count }
         var profile = base(
@@ -81,7 +82,7 @@ enum ExploreFixtures {
     }
 
     static var heartRate: TypeProfile {
-        let days = 900
+        let days = ExploreModel.lookbackDays
         let daily = dailyCounts(days: days) { offset in offset % 13 == 6 ? 0 : 160 + (offset * 37) % 140 }
         let total = daily.reduce(0) { $0 + $1.count }
         var profile = base(
@@ -109,7 +110,7 @@ enum ExploreFixtures {
     }
 
     static var steps: TypeProfile {
-        let days = 1_200
+        let days = ExploreModel.lookbackDays
         let daily = dailyCounts(days: days) { offset in 90 + (offset * 53) % 70 }
         let total = daily.reduce(0) { $0 + $1.count }
         var profile = base(
@@ -136,7 +137,7 @@ enum ExploreFixtures {
     }
 
     static var cyclingDistance: TypeProfile {
-        let days = 700
+        let days = ExploreModel.lookbackDays
         // Second-by-second Watch samples on ride days since the spring, and
         // before that the odd ride imported from another app as one sample.
         let daily = dailyCounts(days: days) { offset in
@@ -168,7 +169,7 @@ enum ExploreFixtures {
     }
 
     static var workouts: TypeProfile {
-        let days = 600
+        let days = ExploreModel.lookbackDays
         let daily = dailyCounts(days: days) { offset in offset % 3 == 0 ? 1 : 0 }
         let total = daily.reduce(0) { $0 + $1.count }
         var profile = base("HKWorkoutTypeIdentifier", kind: .workout, sampleCount: total, days: days, daily: daily)

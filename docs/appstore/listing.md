@@ -66,7 +66,7 @@ WHAT IT DOES
 • Full history first. The initial backfill exports everything from the start date you choose, with live progress and an ETA, and saves its place after every batch so it is safe to interrupt.
 • Then it keeps up. New samples follow automatically — in the foreground whenever you open the app, and in the background when iOS allows it.
 • You pick the data. Around 80 HealthKit types grouped the way Apple Health groups them: activity, heart, body, respiratory, sleep, nutrition, vitals, workouts and more. Turn on a starter set in one tap, or choose type by type.
-• See what you have. Explore lists every type by category. Analyze one to see how many samples there are, since when, from which apps and devices, how the values are spread and how much arrives each day, plus a short article on what the type measures. Summaries only; no samples are kept.
+• See what you have. Explore lists every type by category. Analyze one to see its past year: how many samples, from which apps and devices, how the values are spread and how much arrives each day, plus a short article on what the type measures. Summaries only; no samples are kept.
 • More than raw numbers. Workouts carry their GPS route and per-second sensor series; activity rings come across as daily summaries; and any quantity type can also be sent as on-device aggregates (hourly sums, daily averages) instead of, or alongside, raw samples.
 • Export to files. With or without a server, build each export on its own: the types and series you want, for the last 30 days, 90 days, a year, all time, or a date range you choose, to CSV (one file per kind of data, for spreadsheets) or JSONL (complete, and replayable into a server later), then save to Files or share.
 • Set up by scanning. When you want a server, the Sync tab takes the pairing QR code it prints, with its URL, token and user ID in it. Scan it and you are connected — or type the three values in by hand if you prefer.
@@ -92,7 +92,7 @@ REQUIREMENTS
 iPhone running iOS 17 or later. Syncing needs a server you can reach; exporting to files does not. Apple Watch data arrives once iOS syncs it to the phone.
 ```
 
-`[3972/4000]`
+`[3965/4000]`
 
 > The description above is the **next submission's** (1.6): it adds on-device
 > export (the "No server yet?" paragraph, the "Export to files" bullet, the
@@ -264,7 +264,7 @@ below says the same things in 1.6's terms):
 
 ```
 • A new look, in four tabs: Explore, Export, Sync and Settings.
-• Explore: every Apple Health type by category. Analyze one to see how many samples you have, since when, from which apps and devices, how the values are spread and how much arrives each day, with a short article on what the type measures.
+• Explore: every Apple Health type by category. Analyze one to see its past year: how many samples you have, from which apps and devices, how the values are spread and how much arrives each day, with a short article on what the type measures.
 • Export: build each export on its own. Pick the types and any hourly or daily series, choose a preset range or your own start and end dates, and write CSV or JSONL files, zipped into one if you like. No server needed.
 • Sync: one place for the server, the synced data, the status of each type and the activity log.
 • Setup no longer asks for a server. Choose your data, start exploring, and connect a server from the Sync tab whenever you like.

@@ -111,9 +111,9 @@ Sources/
 │   ├── ExploreModel.swift  @MainActor @Observable, owned by AppModel: the
 │   │                       per-type quick facts and TypeProfiles, read through
 │   │                       the library's HealthExplorer (no engine, no sync
-│   │                       state), the analyses in flight (one per type, started
-│   │                       the first time its page is opened; kept until
-│   │                       Refresh), and
+│   │                       state), the analyses in flight (one per type, over
+│   │                       the past year, started the first time its page is
+│   │                       opened; kept until Refresh), and
 │   │                       deleteAll — what Settings → Privacy & Data → Delete
 │   │                       Analysis calls. Profiles persist in TypeProfileStore.
 │   ├── TypePageView.swift  The Type page: the analysis (started on open),

@@ -255,27 +255,28 @@ private let durationFormatterDays: DateComponentsFormatter = {
 
 // MARK: - Samples over time
 
+/// The spans the Samples over time card offers. A profile covers the past
+/// year (`ExploreModel.profileOptions`), so a year is the most it can show.
 enum TimeWindow: String, CaseIterable, Identifiable {
     case month = "30 d"
     case year = "1 y"
-    case all = "All"
 
     var id: String { rawValue }
 
-    var seconds: TimeInterval? {
+    var seconds: TimeInterval {
         switch self {
         case .month: 30 * 86_400
         case .year: 365 * 86_400
-        case .all: nil
         }
     }
 }
 
-/// Samples over time as columns, scrollable inside a window. The bars widen
-/// with the span, to weeks for the 1 y window and, for All, to weeks past
-/// 200 days and months past two years: a bar per day over a year is a row
-/// of hairlines. The axis is marked for the span on screen (`AxisStyle`),
-/// with no more labels than fit side by side.
+/// Samples over time as columns: a bar a day for 30 days, scrolling back
+/// through the year, or a bar a week for the whole year (a bar a day over
+/// a year is a row of hairlines). The axis is marked for the window with no more labels than
+/// fit side by side: every seven days back from the newest, "Sep 23" beside
+/// the mark, for 30 days; each month's letter under its middle for the
+/// year, with January labelled by its year instead.
 struct DailyCountsChart: View {
     let dailyCounts: [TypeProfile.DailyCount]
     let window: TimeWindow
@@ -284,53 +285,8 @@ struct DailyCountsChart: View {
     @State private var scrollPosition = Date()
     @Binding var readout: String?
 
-    private enum Grain {
-        case day, week, month
-
-        var component: Calendar.Component {
-            switch self {
-            case .day: .day
-            case .week: .weekOfYear
-            case .month: .month
-            }
-        }
-    }
-
-    /// How the date axis is marked: a mark every seven days back from the
-    /// newest, "Sep 23" beside it; each month's letter (or abbreviation)
-    /// centred in it; quarters; or years. January is labelled with its year
-    /// in place of its month, so a scrolled axis still says which year it is.
-    private enum AxisStyle {
-        case weeks
-        case months(narrow: Bool)
-        case quarters
-        case years(step: Int)
-    }
-
-    /// Days from the first sample's day to the last.
-    private var dataSpanDays: Double {
-        guard let first = dailyCounts.first?.day, let last = dailyCounts.last?.day else { return 0 }
-        return last.timeIntervalSince(first) / 86_400
-    }
-
-    private var grain: Grain {
-        switch window {
-        case .month: return .day
-        case .year: return .week
-        case .all:
-            if dataSpanDays > 730 { return .month }
-            if dataSpanDays > 200 { return .week }
-            return .day
-        }
-    }
-
-    private var axisStyle: AxisStyle {
-        let days = window.seconds.map { $0 / 86_400 } ?? dataSpanDays
-        if days <= 60 { return .weeks }
-        if days <= 400 { return .months(narrow: days > 200) }
-        if days <= 800 { return .quarters }
-        return .years(step: max(1, Int((days / 365.25 / 6).rounded(.up))))
-    }
+    /// The bar width: a day, or a week for the year.
+    private var grain: Calendar.Component { window == .year ? .weekOfYear : .day }
 
     private var buckets: [TypeProfile.DailyCount] {
         let grain = grain
@@ -338,35 +294,29 @@ struct DailyCountsChart: View {
         let calendar = Calendar.current
         var sums: [Date: Int] = [:]
         for entry in dailyCounts {
-            let key = calendar.dateInterval(of: grain.component, for: entry.day)?.start ?? entry.day
+            let key = calendar.dateInterval(of: grain, for: entry.day)?.start ?? entry.day
             sums[key, default: 0] += entry.count
         }
         return sums.keys.sorted().map { TypeProfile.DailyCount(day: $0, count: sums[$0] ?? 0) }
     }
 
-    /// What the chart spans. A window ends at the close of the newest day
-    /// (30 d) or month (1 y), so it opens on the newest data with its
-    /// trailing edge on a boundary, and is at least a window long, so a
-    /// short history sits at the right of an empty window instead of being
-    /// stretched across it. All fits the data.
+    /// What the chart spans: through the close of the newest day (30 d) or
+    /// month (1 y), so it opens on the newest data with its trailing edge on
+    /// a boundary, and at least a window long, so a short history sits at the
+    /// right of an empty window instead of being stretched across it.
     private func domain(of buckets: [TypeProfile.DailyCount]) -> ClosedRange<Date>? {
         guard let first = buckets.first?.day, let last = dailyCounts.last?.day else { return nil }
-        let calendar = Calendar.current
-        guard let seconds = window.seconds else {
-            let end = calendar.dateInterval(of: grain.component, for: buckets.last?.day ?? last)?.end ?? last
-            return first...max(end, first)
-        }
-        let end = calendar.dateInterval(of: window == .year ? .month : .day, for: last)?.end ?? last
-        return min(first, end.addingTimeInterval(-seconds))...end
+        let end = Calendar.current.dateInterval(of: window == .year ? .month : .day, for: last)?.end ?? last
+        return min(first, end.addingTimeInterval(-window.seconds))...end
     }
 
-    /// The marked dates across `range`, for `style`.
-    private func ticks(_ style: AxisStyle, over range: ClosedRange<Date>) -> [Date] {
+    /// The grid lines across `range`: every seven days back from its end
+    /// (so the newest mark has a week of room for its label rather than
+    /// hanging it off the edge), or every month start.
+    private func ticks(over range: ClosedRange<Date>) -> [Date] {
         let calendar = Calendar.current
         var result: [Date] = []
-        if case .weeks = style {
-            // Back from the trailing edge, so the newest mark has a week of
-            // room for its label rather than hanging it off the edge.
+        if window == .month {
             var date = calendar.date(byAdding: .day, value: -7, to: range.upperBound)
             while let current = date, current >= range.lowerBound {
                 result.append(current)
@@ -376,14 +326,7 @@ struct DailyCountsChart: View {
         }
         var date = calendar.dateInterval(of: .month, for: range.lowerBound)?.start
         while let current = date, current < range.upperBound {
-            let month = calendar.component(.month, from: current)
-            let marked: Bool
-            switch style {
-            case .weeks, .months: marked = true
-            case .quarters: marked = month % 3 == 1
-            case .years(let step): marked = month == 1 && calendar.component(.year, from: current) % step == 0
-            }
-            if marked, current >= range.lowerBound { result.append(current) }
+            if current >= range.lowerBound { result.append(current) }
             date = calendar.date(byAdding: .month, value: 1, to: current)
         }
         return result
@@ -395,53 +338,35 @@ struct DailyCountsChart: View {
         return month.start.addingTimeInterval(month.duration / 2)
     }
 
-    private func tickLabel(_ date: Date, style: AxisStyle) -> String {
-        let isJanuary = Calendar.current.component(.month, from: date) == 1
-        switch style {
-        case .weeks:
-            return date.formatted(.dateTime.month(.abbreviated).day())
-        case .months(let narrow):
-            return isJanuary
-                ? date.formatted(.dateTime.year()) : date.formatted(.dateTime.month(narrow ? .narrow : .abbreviated))
-        case .quarters:
-            return isJanuary ? date.formatted(.dateTime.year()) : date.formatted(.dateTime.month(.abbreviated))
-        case .years:
-            return date.formatted(.dateTime.year())
-        }
+    private func tickLabel(_ date: Date) -> String {
+        if window == .month { return date.formatted(.dateTime.month(.abbreviated).day()) }
+        return Calendar.current.component(.month, from: date) == 1
+            ? date.formatted(.dateTime.year()) : date.formatted(.dateTime.month(.narrow))
     }
 
     private var selected: TypeProfile.DailyCount? {
         guard let selection else { return nil }
         let calendar = Calendar.current
-        return buckets.first { calendar.isDate($0.day, equalTo: selection, toGranularity: grain.component) }
+        return buckets.first { calendar.isDate($0.day, equalTo: selection, toGranularity: grain) }
     }
 
     private var computedReadout: String? {
         guard let selected else { return nil }
-        let date: String
-        switch grain {
-        case .day: date = selected.day.formatted(date: .abbreviated, time: .omitted)
-        case .week: date = "Week of " + selected.day.formatted(date: .abbreviated, time: .omitted)
-        case .month: date = selected.day.formatted(.dateTime.month(.wide).year())
-        }
-        return "\(date) · \(selected.count.formatted()) samples"
+        let date = selected.day.formatted(date: .abbreviated, time: .omitted)
+        return "\(window == .year ? "Week of " + date : date) · \(selected.count.formatted()) samples"
     }
 
     var body: some View {
         let buckets = buckets
-        let grain = grain
         let domain = domain(of: buckets)
-        let style = axisStyle
-        let ticks = domain.map { ticks(style, over: $0) } ?? []
-        // A month's label sits under the middle of its month; the others
-        // start at their mark, which keeps the newest clear of the trailing
-        // edge. (Not `AxisValueLabel(centered:)`: it centres between a mark
-        // and the next, and the newest month has no next.)
-        let centered: Bool = if case .months = style { true } else { false }
-        let labels = centered ? ticks.map(Self.midMonth) : ticks
+        let ticks = domain.map { ticks(over: $0) } ?? []
+        // A month's label sits under the middle of its month; a week's starts
+        // at its mark. (Not `AxisValueLabel(centered:)`: it centres between a
+        // mark and the next, and the newest month has no next.)
+        let labels = window == .year ? ticks.map(Self.midMonth) : ticks
         Chart(buckets, id: \.day) { entry in
             BarMark(
-                x: .value("Date", entry.day, unit: grain.component),
+                x: .value("Date", entry.day, unit: grain),
                 y: .value("Samples", entry.count))
             .foregroundStyle(
                 selected == nil || selected?.day == entry.day ? color : color.opacity(0.4))
@@ -461,14 +386,15 @@ struct DailyCountsChart: View {
             AxisMarks(values: labels) { value in
                 // Greedy drops a label that would run into its neighbour,
                 // which the largest text sizes can still make happen.
-                AxisValueLabel(anchor: centered ? .top : .topLeading, collisionResolution: .greedy) {
+                AxisValueLabel(anchor: window == .year ? .top : .topLeading, collisionResolution: .greedy) {
                     if let date = value.as(Date.self) {
-                        Text(tickLabel(date, style: style))
+                        Text(tickLabel(date))
                     }
                 }
             }
         }
-        .chartYAxisLabel("Samples")
+        // No "Samples" axis title: a scrolling chart does not keep it in
+        // view, and the card's title says it.
         .frame(height: 200)
         .modifier(WindowScroll(window: window, domain: domain, position: $scrollPosition))
         .accessibilityLabel(accessibilityText)
@@ -476,10 +402,10 @@ struct DailyCountsChart: View {
         .onChange(of: window) { showNewest() }
     }
 
-    /// Land on the newest data, not on the epoch.
+    /// Land on the newest data, not on the oldest.
     private func showNewest() {
-        if let seconds = window.seconds, let end = domain(of: buckets)?.upperBound {
-            scrollPosition = end.addingTimeInterval(-seconds)
+        if let end = domain(of: buckets)?.upperBound {
+            scrollPosition = end.addingTimeInterval(-window.seconds)
         }
     }
 
@@ -488,21 +414,23 @@ struct DailyCountsChart: View {
         return "Samples over time: \(total.formatted()) samples across \(dailyCounts.count.formatted()) days"
     }
 
-    /// Horizontal scrolling only while a window is set; All shows everything.
-    /// No `chartScrollTargetBehavior`: snapping to month starts opened the
-    /// 1 y window a month short of the newest data.
+    /// The 30 d window scrolls back through the year; the year is the whole
+    /// analysis and fits. No `chartScrollTargetBehavior`: snapping to month
+    /// starts opened a window a month short of the newest data.
     private struct WindowScroll: ViewModifier {
         let window: TimeWindow
         let domain: ClosedRange<Date>?
         @Binding var position: Date
 
         func body(content: Content) -> some View {
-            if let seconds = window.seconds, let domain {
+            if let domain, window == .month {
                 content
                     .chartXScale(domain: domain)
                     .chartScrollableAxes(.horizontal)
-                    .chartXVisibleDomain(length: seconds)
+                    .chartXVisibleDomain(length: window.seconds)
                     .chartScrollPosition(x: $position)
+            } else if let domain {
+                content.chartXScale(domain: domain)
             } else {
                 content
             }

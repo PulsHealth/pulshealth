@@ -88,8 +88,10 @@ struct TypePageView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                if let first = profile?.earliestStart ?? facts?.earliestStart,
-                   let last = profile?.latestStart ?? facts?.latestStart
+                // The type's own first sample: the facts', or a profile's
+                // only when it covered the whole history.
+                if let first = facts?.earliestStart ?? (profile?.rangeStart == nil ? profile?.earliestStart : nil),
+                   let last = facts?.latestStart ?? profile?.latestStart
                 {
                     Text(spanLine(first: first, last: last))
                         .font(.footnote.monospacedDigit())
@@ -172,6 +174,11 @@ struct TypePageView: View {
                     Text("Analyzed \(profile.computedAt.formatted(date: .abbreviated, time: .shortened))")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    if let scope = profileScope(profile), let start = profile.rangeStart {
+                        Text("Covers the \(scope), from \(start.formatted(date: .abbreviated, time: .omitted))")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                     if stale {
                         StatusDot(text: "Health has new data since", color: .orange)
                     }
@@ -339,6 +346,13 @@ func kindLabel(_ kind: SampleKind) -> String {
     case .medicationDose: "Medication doses"
     case .activitySummary: "Activity rings"
     }
+}
+
+/// The part of the history a profile covers, as the pages say it: "past
+/// year", "past 90 days"; nil for a whole history.
+func profileScope(_ profile: TypeProfile) -> String? {
+    guard let days = profile.lookbackDays else { return nil }
+    return days == 365 ? "past year" : "past \(days) days"
 }
 
 /// A gap between samples: seconds for the short ones, days for the long.

@@ -346,6 +346,7 @@ private struct ExploreTypeRow: View {
         if showsCategory { parts.append(descriptor.group.rawValue) }
         if let profile {
             parts.append("\(profile.sampleCount.compactString) samples")
+            if let scope = profileScope(profile) { parts.append(scope) }
             if let last = profile.latestStart { parts.append("last \(last.relativeString)") }
         } else if let facts, let first = facts.earliestStart {
             parts.append("Data since \(first.formatted(.dateTime.year()))")
