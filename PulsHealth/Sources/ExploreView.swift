@@ -192,8 +192,6 @@ private struct ExploreTypeRow: View {
             Spacer()
             if isRunning {
                 ProgressView().controlSize(.small)
-            } else if let profile, !profile.dailyCounts.isEmpty {
-                SparklineView(counts: last30Days(profile), color: descriptor.group.color)
             }
             if let status, status.state.lastError != nil {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
@@ -220,17 +218,5 @@ private struct ExploreTypeRow: View {
             parts.append(kindLabel(descriptor.kind))
         }
         return parts.joined(separator: " · ")
-    }
-
-    /// One count per calendar day for the 30 days ending on the profile's
-    /// last day with data; zero where the profile has no entry.
-    private func last30Days(_ profile: TypeProfile) -> [Int] {
-        let calendar = Calendar.current
-        guard let last = profile.dailyCounts.last?.day else { return [] }
-        let byDay = Dictionary(profile.dailyCounts.map { ($0.day, $0.count) }, uniquingKeysWith: +)
-        return (0..<30).reversed().map { offset in
-            let day = calendar.date(byAdding: .day, value: -offset, to: last) ?? last
-            return byDay[calendar.startOfDay(for: day)] ?? 0
-        }
     }
 }

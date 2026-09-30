@@ -93,13 +93,13 @@ Sources/
 ├── Design/               The design system: TypeIcon (Health-style tile),
 │                         CardSection, ChartCard (a chart with its controls
 │                         and readout line), StatTile + StatusPill,
-│                         ProgressBanner, EmptyState, SparklineView, and the
+│                         ProgressBanner, EmptyState, and the
 │                         Formatting helpers (byteString, compactString,
 │                         shortDuration, relativeString).
 ├── ExploreView.swift     Home: the Health-access / reads-look-blocked cards
 │                         (the latter with "Open Health Settings"), then
 │                         every catalog type by category with search —
-│                         types with data first, a sparkline once
+│                         types with data first, the sample count once
 │                         analyzed. Every row opens its Type page
 │                         (ExploreRoute.type), synced or not.
 ├── Explore/

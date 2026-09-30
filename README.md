@@ -64,7 +64,7 @@ uploaded. Formats and columns are in
 
 <!-- screenshots to be retaken on device for 1.6 -->
 <p align="center">
-  <img src="docs/images/app/welcome.png" alt="Explore tab: every Apple Health type by category, with sample counts and sparklines for the analyzed ones" width="200">
+  <img src="docs/images/app/welcome.png" alt="Explore tab: every Apple Health type by category, with sample counts for the analyzed ones" width="200">
   <img src="docs/images/app/dashboard.png" alt="A Type page: analysis charts and an aggregate preview for one type" width="200">
   <img src="docs/images/app/type-detail.png" alt="Export tab: the builder with data types, aggregate series, a date range and the CSV/JSONL choice" width="200">
   <img src="docs/images/app/background-activity.png" alt="Sync tab: server status after a backfill, samples sent, and per-type rows" width="200">
