@@ -247,11 +247,16 @@ extension HealthSyncEngine {
     /// the full pass runs oldest-first from the start date, so on a multi-year
     /// series the newest buckets are the last thing it produces.
     ///
-    /// Self-limiting: a config whose `computedThrough` is set has already had
-    /// buckets acked, so the window is already covered and this skips it. That
-    /// also means an interrupted first backfill keeps re-covering the recent
-    /// window on each run until the full pass makes its first acked progress,
-    /// which is the behaviour we want while there is nothing else to show.
+    /// Self-limiting: a config whose `computedThrough` is set has had a
+    /// scheduled pass make progress from its start, so this skips it. That
+    /// progress is usually acked buckets, but for a new series it can also be
+    /// a leading stretch with no values that was passed over without sending
+    /// anything (`LeadingEmptyBuckets`) — no bucket on the server, yet no
+    /// value in that stretch to show either, and the pass carries on from
+    /// there to the recent buckets. An interrupted first backfill keeps
+    /// re-covering the recent window on each run until the full pass records
+    /// its first progress, which is the behaviour we want while there is
+    /// nothing else to show.
     public func syncRecentAggregates(reason: SyncReason = .backfill) async {
         var pending: [AggregateConfig] = []
         for agg in await store.configuration.aggregates where agg.enabled {

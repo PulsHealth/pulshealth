@@ -177,7 +177,9 @@ is exclusive: samples that start before it, activity-ring days before its
 local day, and routes and streams of workouts that started before it. An
 aggregate bucket that straddles the end date is left out rather than
 written as a partial value, so a daily series ends on the last whole day
-before it. When it finishes, **Share or Save to Files** opens the
+before it. At the other end, a series starts at its first bucket with a
+value: the empty buckets before it are not written, while empty buckets
+after it are, as empty values. When it finishes, **Share or Save to Files** opens the
 iOS share sheet with every file of the export, manifest included — or, with
 **Zip into one file** on, with one `puls-export-<yyyyMMdd-HHmmss>.zip` holding
 a folder of that name with the same files inside, unchanged. The zip is built
@@ -280,7 +282,9 @@ adding a second, offset set. That alignment is exact for day, week and month
 buckets and for hour or minute intervals that divide a day evenly. It can be
 off for intervals that do not (5 hours, 7 minutes) and for a month series that
 starts on the 29th–31st; replay those with the aggregate lines filtered out and
-let the phone's next sync recompute them.
+let the phone's next sync recompute them. Because an exported series starts
+at its first value, a replay does not clear a server value that sits before
+it; the phone's Recompute All does.
 
 ## See also
 

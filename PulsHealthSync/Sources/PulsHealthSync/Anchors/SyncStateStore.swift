@@ -61,10 +61,15 @@ public struct TypeSyncState: Codable, Sendable, Equatable {
 /// Everything we persist about one aggregate config's sync progress. Aggregates
 /// have no `HKQueryAnchor`: progress is a `computedThrough` watermark (a bucket
 /// boundary) advanced only after the server acked the upload, mirroring
-/// anchor-after-ack for raw samples.
+/// anchor-after-ack for raw samples — or, for a new series' leading empty
+/// stretch, after a window with nothing to send (`leadingEmptyBackfill`).
 public struct AggregateSyncState: Codable, Sendable, Equatable {
     public var configID: UUID
-    /// Buckets ending at or before this are uploaded & acked. Nil = never computed.
+    /// Buckets ending at or before this have been computed and are on the
+    /// server: uploaded and acked, or — only while `leadingEmptyBackfill` is
+    /// true — empty buckets before the series' first value that were left out
+    /// on purpose (`recordAggregateSkippedEmptyChunk`). So a non-nil watermark
+    /// does not by itself mean any bucket reached the server. Nil = never computed.
     public var computedThrough: Date?
     public var lastComputedAt: Date?
     /// Last time the whole range (from start date) was recomputed; drives the
@@ -665,9 +670,11 @@ public actor SyncStateStore {
         }
     }
 
-    /// Advance the aggregate watermark after intentionally skipping a chunk
-    /// containing only empty buckets during the leading portion of an initial
-    /// backfill. Nothing was uploaded, so upload counters remain unchanged.
+    /// Advance the aggregate watermark past a window a new series left out
+    /// whole: every bucket in it was empty and the series has no value yet
+    /// (`LeadingEmptyBuckets`). Moves the same two cursors an ack does, and
+    /// nothing else — nothing was uploaded, so no upload counter moves, and
+    /// the skip stays on until the first real ack.
     public func recordAggregateSkippedEmptyChunk(
         configID: UUID,
         newComputedThrough: Date

@@ -257,6 +257,16 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   per-config `computedThrough` watermark advances only after upload ack (mirrors
   anchor-after-ack), and every run recomputes a trailing lookback window so late
   Watch data self-heals; a ~monthly full pass repairs older edits/deletes.
+  **One exception to the nulls: a new series' leading empty stretch.** While
+  `AggregateSyncState.leadingEmptyBackfill` is true, a scheduled pass leaves out
+  the empty buckets before the first value (`LeadingEmptyBuckets`) and a window
+  with nothing else passes the watermark via `recordAggregateSkippedEmptyChunk`
+  — so a watermark no longer always means acked buckets. The flag is true only
+  in a state the store created for a series it never held, false after the
+  first ack and after **every** reset (`resetAggregate`, `resetAll` write
+  `AggregateSyncState.afterReset`, never an absent entry), and nil — no skip —
+  in state from 1.4. Keep it that way: a reset is how the server's stale
+  values get cleared, and the skipped stretch is where they would survive.
   **The one pass that uploads without advancing a watermark is the priority
   window** (`syncRecentAggregates`, `AggregatePass.priority`): on a first
   backfill it covers ~30 recent days ahead of the raw sweep so the viewer has

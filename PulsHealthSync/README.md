@@ -399,6 +399,17 @@ watermark instead (advanced only after the server acks, like anchors):
    boundaries are `Calendar`-computed, so day/month buckets survive DST).
 3. Every bucket in a chunk uploads as an `{"aggregate": …}` NDJSON line — empty
    buckets carry an explicit `null` so the server upsert clears stale values.
+   The exception is a series this install has never uploaded and never reset
+   (`AggregateSyncState.leadingEmptyBackfill`): its empty buckets before the
+   first value are left out (`LeadingEmptyBuckets`), since the server holds
+   nothing there to clear, and a chunk with nothing else moves the watermark
+   without an upload (`recordAggregateSkippedEmptyChunk`). A start date years
+   before the first sample no longer means years of all-null uploads. After
+   the first value every empty bucket goes out as `null` again, and every
+   reset (Recompute All, an identity or start-date edit, Reset All Anchors,
+   starting fresh on a server change) turns the skip off, so a recompute
+   overwrites the whole series. The on-device export's throwaway store is
+   always new, so an exported series starts at its first bucket with a value.
 
 Triggers are shared with raw sync: the observer covers the *union* of raw-enabled
 and aggregate types (aggregate-only types never get a raw sync), and
