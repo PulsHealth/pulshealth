@@ -108,58 +108,34 @@ describe("query semantics", () => {
   it("propagates the dynamically selected bucket for custom ranges", async () => {
     const { getSeries } = await import("./queries");
     const { resolveCustomWindow } = await import("./metrics");
+    const bucketOf = () =>
+      queryMock.mock.calls.find(([sql]) => /FROM quantity_samples/.test(sql))?.[1]?.[0];
 
-    queryMock.mockImplementation((text: string) => {
-      if (text.includes("puls_time_zone()")) {
-        return Promise.resolve([{ zone: "America/Los_Angeles" }]);
-      }
-      if (text.includes("FROM aggregate_series")) {
-        return Promise.resolve([{
-          series_id: 7,
-          agg_func: "average",
-          interval_value: 1,
-          interval_unit: "day",
-        }]);
-      }
-      if (text.includes("FROM aggregate_samples")) {
-        return Promise.resolve([{
-          t: "1760000000000",
-          value: 60,
-          n: 1,
-        }]);
-      }
-      return Promise.resolve([]);
-    });
-
-    const thirtyDayWindow = resolveCustomWindow("2026-01-01", "2026-01-30");
-    const thirtyDaySeries = await getSeries(
-      USER_ID,
-      "HKQuantityTypeIdentifierHeartRate",
-      "CUSTOM",
-      thirtyDayWindow,
+    const thirtyDay = await getSeries(
+      USER_ID, "HKQuantityTypeIdentifierHeartRate", "CUSTOM",
+      resolveCustomWindow("2026-01-01", "2026-01-30"),
     );
-
-    const aggregateThirtyDay = queryMock.mock.calls.find(([sql]) =>
-      sql.includes("FROM aggregate_samples"),
-    );
-    expect(aggregateThirtyDay?.[1]?.[0]).toBe("1 day");
-    expect(thirtyDaySeries.bucketMs).toBe(86_400_000);
+    expect(bucketOf()).toBe("1 day");
+    expect(thirtyDay.bucketMs).toBe(86_400_000);
 
     queryMock.mockClear();
-
-    const fiveYearWindow = resolveCustomWindow("2021-01-01", "2025-12-30");
-    const fiveYearSeries = await getSeries(
-      USER_ID,
-      "HKQuantityTypeIdentifierHeartRate",
-      "CUSTOM",
-      fiveYearWindow,
+    const fiveYear = await getSeries(
+      USER_ID, "HKQuantityTypeIdentifierHeartRate", "CUSTOM",
+      resolveCustomWindow("2021-01-01", "2025-12-30"),
     );
+    expect(bucketOf()).toBe("1 month");
+    expect(fiveYear.bucketMs).toBe(30 * 86_400_000);
+  });
 
-    const aggregateFiveYear = queryMock.mock.calls.find(([sql]) =>
-      sql.includes("FROM aggregate_samples"),
-    );
-    expect(aggregateFiveYear?.[1]?.[0]).toBe("1 month");
-    expect(fiveYearSeries.bucketMs).toBe(30 * 86_400_000);
+  it("reads charts from metric_daily or raw samples, never aggregate_samples directly", async () => {
+    // metric_daily already prefers the phone's daily aggregate day by day and
+    // falls back to raw rollups; reading aggregate_samples directly lost today
+    // and charted null buckets as zero.
+    const { getSeries } = await import("./queries");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "M");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", "D");
+    const sql = queryMock.mock.calls.map(([text]) => text as string);
+    expect(sql.some((text) => /aggregate_(series|samples)/.test(text))).toBe(false);
   });
 
   it("rejects invalid custom calendar dates", async () => {

@@ -249,7 +249,6 @@ export async function getSeries(
   const spec = RANGES[range];
   const type = typeByIdentifier(identifier);
   const agg = defaultAgg(identifier);
-  const aggregateFunc = agg === "avg" ? "average" : "sum";
   const empty: Series = { identifier, unit: type?.unit ?? null, agg, bucketMs: spec.bucketMs, points: [] };
 
   const src = await source();
@@ -377,99 +376,12 @@ export async function getSeries(
       return { identifier, unit: category.unit, agg: "sum", bucketMs, points };
     }
 
-    // Prefer pre-aggregated data whenever an appropriate aggregate exists.
-    //
-    // Day charts use hourly aggregates when available.
-    // Week/Month/6M/Year charts use daily aggregates when available and
-    // re-bucket those rows to the requested chart interval.
-    //
-    // This keeps large charts away from quantity_samples, which can contain
-    // millions of raw HealthKit samples.
-    const aggregateInterval = bucketMs < DAY_MS ? "hour" : "day";
-
-    const aggregateSeries = await query<{
-      series_id: number;
-      agg_func: string;
-      interval_value: number;
-      interval_unit: string;
-    }>(
-      `SELECT s.series_id,
-              s.agg_func,
-              s.interval_value,
-              s.interval_unit
-         FROM aggregate_series s
-         JOIN sample_types st ON st.type_id = s.type_id
-        WHERE st.identifier = $1
-          AND s.agg_func = $2
-          AND s.interval_value = 1
-          AND s.interval_unit = $3
-          AND s.device_filter = 'all'
-        ORDER BY s.series_id
-        LIMIT 1`,
-      [identifier, aggregateFunc, aggregateInterval],
-    );
-
-    if (aggregateSeries.length) {
-      const seriesId = aggregateSeries[0].series_id;
-
-      const rows = await query<{ t: string; value: number; n: number }>(
-        `SELECT
-           (extract(
-              epoch from time_bucket(
-                $1::interval,
-                a.bucket_start,
-                $5::text
-              )
-            ) * 1000)::bigint AS t,
-           ${agg === "sum"
-             ? "sum(a.value)"
-             : "avg(a.value)"}::float8 AS value,
-           count(*)::int AS n
-         FROM aggregate_samples a
-        WHERE a.series_id = $2
-          AND a.user_id = $3::uuid
-          AND a.bucket_start >= time_bucket(
-                $1::interval,
-                CASE
-                  WHEN $4::text ~ '^\\d{4}-\\d{2}-\\d{2}$'
-                    THEN ($4::date::timestamp AT TIME ZONE $5::text)
-                  ELSE $4::timestamptz
-                END,
-                $5::text
-              )
-          ${
-            isCustom
-              ? `AND a.bucket_start < (($6::date)::timestamp AT TIME ZONE $5::text)`
-              : ""
-          }
-        GROUP BY 1
-        ORDER BY 1`,
-        isCustom
-          ? [bucket, seriesId, userId, from, timeZone, endExclusive]
-          : [bucket, seriesId, userId, from, timeZone],
-      );
-
-      if (rows.length) {
-        const points: SeriesPoint[] = rows.map((r) => ({
-          t: Number(r.t),
-          value: Number(r.value) || 0,
-          min: null,
-          max: null,
-          count: Number(r.n),
-        }));
-
-        return {
-          identifier,
-          unit: type?.unit ?? null,
-          agg,
-          bucketMs,
-          points,
-        };
-      }
-    }
-
-    // Best-guess-of-truth view for covered types at day-or-coarser buckets.
-    // metric_daily remains the fallback when no suitable aggregate exists.
+    // Best-guess-of-truth view for covered types (steps/energy/distance/…) at
+    // day-or-coarser buckets: per day, the phone's canonical daily aggregate
+    // where one was uploaded, else the raw rollup — so a day the phone has not
+    // aggregated yet (today, or anything past its watermark) still shows.
+    // metric_daily is daily-grain, so the intraday (Day) view falls through
+    // to raw samples below.
     const mdTypes = await metricDailyTypes(userId);
     if (mdTypes.has(identifier) && bucketMs >= DAY_MS) {
       const rows = await query<{ t: string; value: number }>(
