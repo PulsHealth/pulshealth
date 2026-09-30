@@ -89,6 +89,12 @@ public struct ExportRequest: Sendable {
     /// attributed to this install. Nil = a random ID minted for this export
     /// (the throwaway state store's).
     public var deviceID: String?
+    /// Pack the data files and the manifest into one `.zip`
+    /// (`puls-export-<yyyyMMdd-HHmmss>.zip`, holding a folder of that name)
+    /// and return only that: one attachment instead of up to nine, and a
+    /// fraction of the size. The loose files are deleted once it is written.
+    /// See `ExportResult.archive`.
+    public var zipped: Bool
 
     public init(
         selection: ExportSelection,
@@ -96,6 +102,7 @@ public struct ExportRequest: Sendable {
         startDate: Date? = nil,
         endDate: Date? = nil,
         format: ExportFormat,
+        zipped: Bool = false,
         outputDirectory: URL? = nil,
         deviceID: String? = nil
     ) {
@@ -104,6 +111,7 @@ public struct ExportRequest: Sendable {
         self.startDate = startDate
         self.endDate = endDate
         self.format = format
+        self.zipped = zipped
         self.outputDirectory = outputDirectory
         self.deviceID = deviceID
     }
@@ -203,6 +211,8 @@ public struct ExportProgress: Sendable, Equatable {
         case workoutRoutes
         case workoutStreams
         case finishing
+        /// Packing the finished files into a `.zip` (`ExportRequest.zipped`).
+        case archiving
     }
 
     public var phase: Phase
@@ -249,11 +259,16 @@ public struct ExportResult: Sendable {
     /// The directory holding `files`.
     public var directory: URL
     /// Everything to hand to a share sheet, in a stable order: the data files
-    /// (for CSV, in `ExportDataset.allCases` order) and then the manifest.
+    /// (for CSV, in `ExportDataset.allCases` order) and then the manifest. For
+    /// a zipped export, only the archive, which holds them.
     public var files: [URL]
+    /// Set when the request asked for a `.zip` (`ExportRequest.zipped`): the
+    /// archive, what is in it, and how large that was before compression.
+    public var archive: ExportArchive? = nil
     /// `…-manifest.json`: user ID, range, format, protocol and app version,
     /// counts, and every failure below. Also the last element of `files`.
-    public var manifestURL: URL
+    /// Nil for a zipped export, whose manifest is the archive's last entry.
+    public var manifestURL: URL?
     /// Rows exported per dataset (route and series datasets count points).
     /// Datasets with no rows are absent.
     public var rowCounts: [ExportDataset: Int]
@@ -271,7 +286,7 @@ public struct ExportResult: Sendable {
     /// trace exported without its voltages, a workout whose route query
     /// failed. Capped; the last entry says how many were left out.
     public var warnings: [ExportIssue]
-    /// Size of everything in `files`.
+    /// Size of everything in `files`: for a zipped export, the archive's.
     public var totalBytes: Int64
     public var duration: TimeInterval
 

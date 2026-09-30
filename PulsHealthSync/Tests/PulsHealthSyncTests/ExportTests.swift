@@ -1,3 +1,4 @@
+import Compression
 import Foundation
 import Testing
 @testable import PulsHealthSync
@@ -760,18 +761,127 @@ private final class ProgressBox: @unchecked Sendable {
         #expect(try JSONDecoder.puls.decode(ExportManifest.self, from: data) == manifest)
     }
 
-    @Test func removeAllExportsClearsTheStagingRoot() throws {
-        let staged = HealthExporter.stagingRoot.appendingPathComponent("leftover", isDirectory: true)
-        try FileManager.default.createDirectory(at: staged, withIntermediateDirectories: true)
-        try Data("x".utf8).write(to: staged.appendingPathComponent("puls-export-old.jsonl"))
-        #expect(HealthExporter.removeAllExports())
-        #expect(!FileManager.default.fileExists(atPath: HealthExporter.stagingRoot.path))
-        // Idempotent: nothing staged is not a failure.
-        #expect(HealthExporter.removeAllExports())
-    }
-
     @Test func fileNamesCarryALocalSortableTimestamp() throws {
         let utc = try #require(TimeZone(identifier: "UTC"))
         #expect(HealthExporter.timestamp(Fixture.date(1_750_000_000_000), timeZone: utc) == "20250615-150640")
+    }
+}
+
+// MARK: - Zipping
+
+/// Serialized, and the only suite that touches the temporary directory's
+/// `CoordinatedZipFile…` scratch: `removeAllExports()` sweeps it, and run
+/// beside a zip in flight it would pull the archive out from under the
+/// coordinator.
+@Suite(.serialized) struct ExportZipTests {
+    @Test func aFolderBecomesOneDeflatedArchiveUnderItsName() async throws {
+        let dir = try Fixture.tempDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let folder = dir.appendingPathComponent("puls-export-20260930-120000", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let csv = Data(("type,unit,uuid,start,end,value,label,source\n" + (0..<5_000).map {
+            "\(Fixture.heartRate),count/min,\(UUID().uuidString.lowercased()),\(1_767_225_600_000 + $0 * 60_000),"
+                + "\(1_767_225_600_000 + $0 * 60_000),\(60 + $0 % 40),,Apple Watch\n"
+        }.joined()).utf8)
+        let manifest = Data(#"{"complete":true}"#.utf8)
+        try csv.write(to: folder.appendingPathComponent("puls-export-20260930-120000-samples.csv"))
+        try manifest.write(to: folder.appendingPathComponent("puls-export-20260930-120000-manifest.json"))
+
+        let destination = dir.appendingPathComponent("puls-export-20260930-120000.zip")
+        let zipped = try await ExportZipper.zip(folder: folder, to: destination)
+
+        let archive = try Data(contentsOf: destination)
+        #expect(zipped.bytes == Int64(archive.count))
+        #expect(zipped.bytes < Int64(csv.count) / 2)
+        let entries = try ZipReader.entries(archive)
+        #expect(Set(entries.map(\.name)) == [
+            "puls-export-20260930-120000/puls-export-20260930-120000-samples.csv",
+            "puls-export-20260930-120000/puls-export-20260930-120000-manifest.json",
+        ])
+        let byName = Dictionary(uniqueKeysWithValues: entries.map { ($0.name, $0) })
+        let samples = try #require(byName["puls-export-20260930-120000/puls-export-20260930-120000-samples.csv"])
+        #expect(samples.method == 8) // deflate
+        #expect(samples.contents == csv)
+        #expect(byName["puls-export-20260930-120000/puls-export-20260930-120000-manifest.json"]?.contents == manifest)
+
+        // The sweep in `removeAllExports()` finds a crashed zip by this name,
+        // under the temporary directory. If iOS renames it, this is the alarm.
+        #expect(zipped.scratchDirectory.lastPathComponent.hasPrefix(ExportZipper.scratchPrefix))
+        #expect(zipped.scratchDirectory.deletingLastPathComponent().resolvingSymlinksInPath().path
+            == FileManager.default.temporaryDirectory.resolvingSymlinksInPath().path)
+        #expect(!FileManager.default.fileExists(atPath: zipped.scratchDirectory.path))
+    }
+
+    @Test func removeAllExportsClearsTheStagingRootAndAnInterruptedZip() throws {
+        let fm = FileManager.default
+        let staged = HealthExporter.stagingRoot.appendingPathComponent("leftover", isDirectory: true)
+        try fm.createDirectory(at: staged, withIntermediateDirectories: true)
+        try Data("x".utf8).write(to: staged.appendingPathComponent("puls-export-old.jsonl"))
+        let scratch = fm.temporaryDirectory
+            .appendingPathComponent("\(ExportZipper.scratchPrefix)test\(UUID().uuidString.prefix(6))")
+        try fm.createDirectory(at: scratch, withIntermediateDirectories: true)
+        try Data("PK".utf8).write(to: scratch.appendingPathComponent("puls-export-old.zip"))
+        let bystander = try Fixture.tempDirectory()
+        defer { try? fm.removeItem(at: bystander) }
+
+        #expect(HealthExporter.removeAllExports())
+        #expect(!fm.fileExists(atPath: HealthExporter.stagingRoot.path))
+        #expect(!fm.fileExists(atPath: scratch.path))
+        #expect(fm.fileExists(atPath: bystander.path))
+        // Idempotent: nothing staged is not a failure.
+        #expect(HealthExporter.removeAllExports())
+    }
+}
+
+/// Just enough of a zip reader to check what the coordinator wrote: the
+/// central directory's entries, each inflated back to its bytes.
+private enum ZipReader {
+    struct Entry {
+        var name: String
+        var method: UInt16
+        var contents: Data
+    }
+
+    struct Malformed: Error {}
+
+    static func entries(_ data: Data) throws -> [Entry] {
+        let bytes = [UInt8](data)
+        func u16(_ at: Int) -> Int { Int(bytes[at]) | Int(bytes[at + 1]) << 8 }
+        func u32(_ at: Int) -> Int { u16(at) | u16(at + 2) << 16 }
+
+        // End of central directory: the last "PK\u{5}\u{6}".
+        guard let eocd = stride(from: bytes.count - 22, through: 0, by: -1)
+            .first(where: { u32($0) == 0x0605_4b50 }) else { throw Malformed() }
+        var at = u32(eocd + 16)
+        var entries: [Entry] = []
+        for _ in 0..<u16(eocd + 10) {
+            guard u32(at) == 0x0201_4b50 else { throw Malformed() }
+            let method = UInt16(u16(at + 10))
+            let compressed = u32(at + 20), size = u32(at + 24)
+            let nameLength = u16(at + 28), extra = u16(at + 30), comment = u16(at + 32)
+            let local = u32(at + 42)
+            let name = String(decoding: bytes[(at + 46)..<(at + 46 + nameLength)], as: UTF8.self)
+            at += 46 + nameLength + extra + comment
+
+            guard u32(local) == 0x0403_4b50 else { throw Malformed() }
+            let start = local + 30 + u16(local + 26) + u16(local + 28)
+            let payload = Array(bytes[start..<(start + compressed)])
+            entries.append(Entry(name: name, method: method, contents: try inflate(payload, method: method, size: size)))
+        }
+        return entries
+    }
+
+    private static func inflate(_ payload: [UInt8], method: UInt16, size: Int) throws -> Data {
+        switch method {
+        case 0:
+            return Data(payload)
+        case 8:
+            var out = [UInt8](repeating: 0, count: max(size, 1))
+            let count = compression_decode_buffer(&out, out.count, payload, payload.count, nil, COMPRESSION_ZLIB)
+            guard count == size else { throw Malformed() }
+            return Data(out.prefix(count))
+        default:
+            throw Malformed()
+        }
     }
 }

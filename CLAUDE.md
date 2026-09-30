@@ -136,7 +136,11 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   the staged files' lifetime, and the privacy documents promise it:** they
   live under `HealthExporter.stagingRoot` in the temporary directory, and
   `AppModel.init` clears it at every launch (before any export can run —
-  `removeAllExports()` must never run during one), `ExportModel` clears it
+  `removeAllExports()` must never run during one) — along with the
+  `CoordinatedZipFile…` scratch directories `NSFileCoordinator` builds a
+  zipped export in (`ExportZipper`), which sit outside the staging root and
+  would otherwise keep a crash's half-built zip; `ExportZipTests` fails if iOS
+  renames them. `ExportModel` clears it
   when another export starts, on Delete Export, and when the share sheet
   reports `completed` — which is why `ExportView` presents a
   `UIActivityViewController` and not a `ShareLink`, which has no completion

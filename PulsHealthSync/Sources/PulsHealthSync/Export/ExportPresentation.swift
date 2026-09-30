@@ -99,6 +99,7 @@ public extension ExportProgress.Phase {
         case .workoutRoutes: "Reading workout routes…"
         case .workoutStreams: "Reading workout streams…"
         case .finishing: "Finishing…"
+        case .archiving: "Zipping…"
         }
     }
 }

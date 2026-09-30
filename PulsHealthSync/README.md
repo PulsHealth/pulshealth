@@ -124,7 +124,10 @@ Sources/PulsHealthSync/
 │   │                                files and tallies rows per dataset.
 │   ├── ExportWriters.swift          JSONL (wire-format batches, concatenated) and
 │   │                                CSV (one file per dataset) writers; ExportFile.
-│   └── ExportManifest.swift         The …-manifest.json sidecar.
+│   ├── ExportManifest.swift         The …-manifest.json sidecar.
+│   └── ExportArchive.swift          ExportArchive and ExportZipper: an optional
+│                                    .zip of the finished files via NSFileCoordinator,
+│                                    and the sweep of its scratch directories.
 ├── Explore/
 │   ├── HealthExplorer.swift         Public read-only façade over its own HKHealthStore:
 │   │                                quickFacts (oldest/newest sample, writers),
@@ -472,6 +475,7 @@ let request = ExportRequest(
     startDate: nil,                   // nil = all time
     endDate: nil,                     // nil = now; exclusive
     format: .jsonl,                   // or .csv
+    zipped: false,                    // true = one .zip in result.files
     deviceID: engine.store.deviceID)  // attribute a replay to this install
 let result = try await HealthExporter().run(request) { progress in
     // arbitrary executor: phase, currentType, rowsWritten, bytesWritten
