@@ -164,6 +164,53 @@ enum AggregatePass: Sendable {
     case priority
 }
 
+/// Which rows of one computed window a pass uploads. Pure, so the rule is
+/// testable without HealthKit.
+///
+/// A new series may leave out the empty buckets before its first value: the
+/// server has never held a bucket for it, so an explicit `null` there clears
+/// nothing, and a start date years before the first sample would otherwise
+/// mean thousands of all-null uploads. Once a value has been uploaded, every
+/// later empty bucket goes out as `null` again, which is what lets a
+/// recompute clear a value the phone no longer has.
+enum LeadingEmptyBuckets {
+    enum Plan: Equatable {
+        /// Upload these rows; `skipped` leading empty rows before them were left out.
+        case upload([AggregateSampleRow], skipped: Int)
+        /// Every row is empty and the series has no value yet: upload nothing,
+        /// and let the watermark pass over the window.
+        case skipWindow(skipped: Int)
+    }
+
+    /// Whether `pass` may leave leading empty buckets out for a series in `state`.
+    /// Only the scheduled pass: the priority pass moves no watermark, so it
+    /// has nothing to record a skipped window against.
+    static func applies(pass: AggregatePass, state: AggregateSyncState) -> Bool {
+        pass == .scheduled && state.leadingEmptyBackfill
+    }
+
+    static func plan(_ rows: [AggregateSampleRow], skippingLeadingEmpty: Bool) -> Plan {
+        guard skippingLeadingEmpty else { return .upload(rows, skipped: 0) }
+        guard let first = rows.firstIndex(where: { $0.value != nil }) else {
+            return .skipWindow(skipped: rows.count)
+        }
+        return .upload(Array(rows[first...]), skipped: first)
+    }
+}
+
+/// What a run of one aggregate config actually sent, for its log line.
+struct AggregateUploadTally: Sendable, Equatable {
+    var uploaded = 0
+    var skipped = 0
+    var batches = 0
+
+    static func += (lhs: inout AggregateUploadTally, rhs: AggregateUploadTally) {
+        lhs.uploaded += rhs.uploaded
+        lhs.skipped += rhs.skipped
+        lhs.batches += rhs.batches
+    }
+}
+
 /// Migration helper for state written before durable full-pass markers existed.
 /// In that schema, `lastFullRecomputeAt == nil` plus a non-nil high-water mark
 /// can only mean the initial full pass was interrupted after making progress.
@@ -375,12 +422,12 @@ extension HealthSyncEngine {
         }
 
         let runStart = ContinuousClock.now
-        var totalBuckets = 0
+        var sent = AggregateUploadTally()
 
         do {
             for chunk in chunks {
                 try Task.checkCancellation()
-                totalBuckets += try await computeAndUploadAggregateChunk(
+                sent += try await computeAndUploadAggregateChunk(
                     config: agg, configID: configID,
                     unit: descriptor.unit, reason: reason, transport: transport,
                     calendar: calendar, anchor: anchor, chunk: chunk, pass: pass
@@ -393,7 +440,7 @@ extension HealthSyncEngine {
             let elapsed = (ContinuousClock.now - runStart).seconds
             await eventLog.log(
                 .info, type: typeID,
-                "Aggregate \(agg.summaryLabel): \(totalBuckets) buckets in \(chunks.count) batch(es), \(String(format: "%.1f", elapsed))s\(fullPass ? " (full recompute)" : "")\(pass == .priority ? " (recent window)" : "")"
+                "Aggregate \(agg.summaryLabel): \(sent.uploaded) buckets in \(sent.batches) batch(es)\(sent.skipped > 0 ? ", \(sent.skipped) empty buckets before the first value not sent" : ""), \(String(format: "%.1f", elapsed))s\(fullPass ? " (full recompute)" : "")\(pass == .priority ? " (recent window)" : "")"
             )
         } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
             await store.recordAggregateError(configID: configID, error: SyncError.authorizationNotDetermined)
@@ -417,6 +464,8 @@ extension HealthSyncEngine {
     /// over smaller bucket-aligned windows; each successful subwindow is
     /// uploaded and acked here, so the watermark advances subwindow by
     /// subwindow and an interrupted recovery resumes from the last ack.
+    /// Returns what was sent, which is not what was computed when a new
+    /// series' leading empty buckets are left out.
     private func computeAndUploadAggregateChunk(
         config: AggregateConfig,
         configID: UUID,
@@ -427,8 +476,9 @@ extension HealthSyncEngine {
         anchor: Date,
         chunk: DateInterval,
         pass: AggregatePass
-    ) async throws -> Int {
-        try await AggregateQuery.bucketsRecovering(
+    ) async throws -> AggregateUploadTally {
+        let sent = OSAllocatedUnfairLock(initialState: AggregateUploadTally())
+        _ = try await AggregateQuery.bucketsRecovering(
             for: config, unit: unit, canonicalAnchor: anchor, calendar: calendar,
             chunk: chunk, healthStore: healthStore,
             onRecoveryStart: { _ in
@@ -438,22 +488,23 @@ extension HealthSyncEngine {
                 )
             },
             onChunk: { rows, window in
-                // PR #70: the leading-empty skip decides per delivered window.
-                // The flag is read inside the helper, so each subwindow of a
-                // recovery split sees the value the previous one left behind
-                // (the original re-read it before each right half).
-                _ = try await self.prepareAndUploadAggregateRows(
+                // Decided per delivered window, from the state as the previous
+                // window left it: a recovery split's first half can be the one
+                // that uploads the series' first value.
+                let tally = try await self.prepareAndUploadAggregateRows(
                     rows, config: config, configID: configID, reason: reason,
                     transport: transport, chunk: window, pass: pass
                 )
+                sent.withLock { $0 += tally }
             }
         )
+        return sent.withLock { $0 }
     }
 
-    /// Apply sparse storage only to the leading portion of an initial
-    /// scheduled backfill. Once the first real value is materialized, NULL
-    /// buckets remain meaningful and are uploaded normally so recomputations
-    /// and deletions can clear previously stored values.
+    /// Upload one computed window, leaving out a new series' leading empty
+    /// buckets (`LeadingEmptyBuckets`). A window with nothing to send still
+    /// moves the watermark past it, through its own recorder: nothing was
+    /// acked, so no upload counter moves.
     private func prepareAndUploadAggregateRows(
         _ rows: [AggregateSampleRow],
         config: AggregateConfig,
@@ -462,37 +513,21 @@ extension HealthSyncEngine {
         transport: any SyncTransport,
         chunk: DateInterval,
         pass: AggregatePass
-    ) async throws -> Int {
-        let leadingEmptyBackfill = pass == .scheduled
-            ? await store.aggregateState(for: configID).leadingEmptyBackfill
-            : false
-        guard pass == .scheduled, leadingEmptyBackfill else {
+    ) async throws -> AggregateUploadTally {
+        let skipping = LeadingEmptyBuckets.applies(
+            pass: pass, state: await store.aggregateState(for: configID))
+        switch LeadingEmptyBuckets.plan(rows, skippingLeadingEmpty: skipping) {
+        case .skipWindow(let skipped):
+            await store.recordAggregateSkippedEmptyChunk(
+                configID: configID, newComputedThrough: chunk.end)
+            return AggregateUploadTally(skipped: skipped)
+        case .upload(let upload, let skipped):
             try await uploadAggregateRows(
-                rows, config: config, configID: configID, reason: reason,
+                upload, config: config, configID: configID, reason: reason,
                 transport: transport, chunk: chunk, pass: pass
             )
-            return rows.count
+            return AggregateUploadTally(uploaded: upload.count, skipped: skipped, batches: 1)
         }
-
-        guard let firstValueIndex = rows.firstIndex(where: { $0.value != nil }) else {
-            await store.recordAggregateSkippedEmptyChunk(
-                configID: configID,
-                newComputedThrough: chunk.end
-            )
-            return 0
-        }
-
-        let materializedRows = Array(rows[firstValueIndex...])
-        try await uploadAggregateRows(
-            materializedRows,
-            config: config,
-            configID: configID,
-            reason: reason,
-            transport: transport,
-            chunk: chunk,
-            pass: pass
-        )
-        return materializedRows.count
     }
 
     private func uploadAggregateRows(
