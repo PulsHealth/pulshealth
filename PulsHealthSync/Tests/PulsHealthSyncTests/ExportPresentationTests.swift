@@ -199,12 +199,8 @@ import Testing
 
     @Test func everyDatasetPhaseAndFormatHasWords() {
         for dataset in ExportDataset.allCases { #expect(!dataset.displayName.isEmpty) }
-        for format in ExportFormat.allCases {
-            #expect(!format.title.isEmpty)
-            #expect(!format.detail.isEmpty)
-        }
-        // The one promise the CSV line makes that the package can check.
-        #expect(ExportFormat.csv.detail.contains("ECG"))
+        for format in ExportFormat.allCases { #expect(!format.title.isEmpty) }
+        // CSV has no shape for these; the result screen lists them as left out.
         #expect(!ExportDataset.ecg.isWrittenToCSV)
         #expect(!ExportDataset.heartbeatSeries.isWrittenToCSV)
     }

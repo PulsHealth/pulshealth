@@ -72,10 +72,7 @@ struct ExportView: View {
         @Bindable var export = model.export
         let count = export.draft.types.count
         let workouts = export.draft.types.contains(HealthTypeCatalog.workoutIdentifier)
-        return CardSection(
-            "Data",
-            subtitle: "Written straight from Apple Health to files on this iPhone. No server is involved."
-        ) {
+        return Section("Data") {
             NavigationLink {
                 ExportTypePickerView()
             } label: {
@@ -88,11 +85,19 @@ struct ExportView: View {
                 }
             }
             if workouts {
-                Toggle("Workout routes", isOn: $export.draft.includeWorkoutRoutes)
-                Toggle("Enhanced workout data", isOn: $export.draft.includeWorkoutEnhancedData)
-                Text("Routes add the GPS path of each workout. Enhanced data adds the heart rate, power, cadence and speed curves, laps and splits.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Toggle(isOn: $export.draft.includeWorkoutRoutes) {
+                    HStack(spacing: 12) {
+                        TypeIcon(symbol: "map.fill", color: .green, size: .small)
+                        Text("Workout routes")
+                    }
+                }
+                Toggle(isOn: $export.draft.includeWorkoutEnhancedData) {
+                    HStack(spacing: 12) {
+                        TypeIcon(symbol: "waveform.path.ecg", color: .pink, size: .small)
+                        Text("Enhanced workout data")
+                        EnhancedWorkoutInfoButton()
+                    }
+                }
             }
         }
     }
@@ -120,16 +125,14 @@ struct ExportView: View {
             Text("Aggregate series")
         } footer: {
             if model.export.draft.aggregates.isEmpty {
-                Text("Optional. A series is one value per hour, day, week or month for a quantity type, such as daily steps. Far smaller than the raw samples.")
-            } else {
-                Text("Swipe a series to remove it. Tap one to change it.")
+                Text("Optional. One value per day, week or month, like daily steps.")
             }
         }
     }
 
     private var rangeSection: some View {
         @Bindable var export = model.export
-        return CardSection("Range") {
+        return Section {
             Picker("Range", selection: rangeChoice) {
                 ForEach(RangeChoice.allCases) { choice in
                     Text(choice.title).tag(choice)
@@ -148,14 +151,12 @@ struct ExportView: View {
                     selection: lastDayBinding,
                     in: export.draft.customStart...,
                     displayedComponents: .date)
-                let days = export.draft.customDayCount()
-                Text("\(days) day\(days == 1 ? "" : "s"), both dates included.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
+            }
+        } header: {
+            Text("Range")
+        } footer: {
+            if !export.draft.customRange {
                 Text(rangeFootnote(export.draft.range))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -163,12 +164,12 @@ struct ExportView: View {
     private func rangeFootnote(_ range: ExportRange) -> String {
         if let note = range.sizeNote { return note }
         guard let start = range.startDate() else { return range.title }
-        return "From \(start.formatted(date: .abbreviated, time: .omitted)) to now. The sync start date in Settings does not apply here."
+        return "\(start.formatted(date: .abbreviated, time: .omitted)) to today."
     }
 
     private var formatSection: some View {
         @Bindable var export = model.export
-        return CardSection("Format") {
+        return Section("Format") {
             Picker("Format", selection: $export.draft.format) {
                 ForEach([ExportFormat.csv, .jsonl], id: \.self) { format in
                     Text(format.title).tag(format)
@@ -176,9 +177,6 @@ struct ExportView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            Text(export.draft.format.detail)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -201,8 +199,6 @@ struct ExportView: View {
                     Text("Nothing is selected. Choose data types or add a series above.")
                 } else if model.exportBlockedByBackfill {
                     Text("A backfill is running. It reads the same Health data, and the two would slow each other to a crawl. Export once it has finished.")
-                } else {
-                    Text("iOS may ask for Health access first if any selected type has not been asked about yet.")
                 }
                 if model.exportLacksMedicationAccess {
                     Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Synced Data. Until that has been answered this export contains no doses.")
@@ -484,6 +480,54 @@ struct ExportView: View {
     /// Rows shown before "and N more". A selection of eighty types that all
     /// fail the same way (a locked phone) should not push Share off the screen.
     private static let issueLimit = 8
+}
+
+/// The ⓘ beside the Enhanced workout data toggle: what the switch adds, in a
+/// popover, so the row itself stays one line.
+private struct EnhancedWorkoutInfoButton: View {
+    @State private var showing = false
+
+    var body: some View {
+        Button {
+            showing = true
+        } label: {
+            Image(systemName: "info.circle")
+                .foregroundStyle(Color.accentColor)
+        }
+        // Borderless, or the list row takes the tap and the popover never opens.
+        .buttonStyle(.borderless)
+        .accessibilityLabel("About enhanced workout data")
+        .popover(isPresented: $showing) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Enhanced workout data").font(.headline)
+                Text("Adds what was recorded during each workout, not just its totals:")
+                VStack(alignment: .leading, spacing: 8) {
+                    item("waveform.path.ecg", "Heart rate, power, cadence and speed over time")
+                    item("flag.checkered", "Laps and segments")
+                    item("chart.bar", "Minimum, average and maximum of each")
+                    item("figure.run", "Each leg of a multisport workout")
+                }
+                Text("Makes the export larger.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(20)
+            .frame(width: 320)
+            .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    /// One bullet: the symbols differ in width, so each gets the same column.
+    private func item(_ symbol: String, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: symbol)
+                .foregroundStyle(.secondary)
+                .frame(width: 22)
+            Text(text)
+        }
+        .font(.subheadline)
+    }
 }
 
 /// One failure or warning: the type's name, then the reason.

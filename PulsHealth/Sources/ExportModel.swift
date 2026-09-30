@@ -379,13 +379,6 @@ struct ExportDraft: Equatable {
         if customStart > dayStart { customStart = dayStart }
     }
 
-    /// Whole days in a custom range, first and last day included.
-    func customDayCount(calendar: Calendar = .current) -> Int {
-        let start = calendar.startOfDay(for: customStart)
-        let last = lastCustomDay(calendar: calendar)
-        return (calendar.dateComponents([.day], from: start, to: last).day ?? 0) + 1
-    }
-
     /// The range in words, for the log and the finished summary: a preset's
     /// title, or "Mar 1 – Jun 30, 2026".
     func rangeLabel(calendar: Calendar = .current) -> String {

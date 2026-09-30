@@ -46,16 +46,14 @@ public enum ExportRange: String, Sendable, CaseIterable, Identifiable {
 
     /// Shown under the picker. Only all time needs one.
     ///
-    /// The ratio is measured, the totals are arithmetic: 340,000 samples came
+    /// "Hundreds of megabytes" is arithmetic over measured rows: 340,000 samples came
     /// to 41 MB as CSV and 212 MB as JSONL (about 120 and 620 bytes a row — the
     /// wire format carries each sample's time-zone context and source), and a
     /// Watch records a few thousand heart-rate samples a day.
     public var sizeNote: String? {
         switch self {
         case .allTime:
-            "Years of Apple Watch data can come to hundreds of megabytes as CSV, and about five "
-                + "times that as JSONL. Make sure the iPhone has the space, and expect it to take "
-                + "several minutes."
+            "Can be hundreds of megabytes and take several minutes."
         default:
             nil
         }
@@ -67,18 +65,6 @@ public extension ExportFormat {
         switch self {
         case .csv: "CSV"
         case .jsonl: "JSONL"
-        }
-    }
-
-    /// One line on what the format is for.
-    var detail: String {
-        switch self {
-        case .csv:
-            "For spreadsheets. One file per kind of data, opens in Numbers or Excel. "
-                + "Leaves out metadata, ECG traces and heartbeat series."
-        case .jsonl:
-            "Everything, in the Puls sync format. Complete, and can be replayed into "
-                + "a PulsHealth server later."
         }
     }
 }
