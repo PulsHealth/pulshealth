@@ -359,7 +359,7 @@ struct DailyCountsChart: View {
     var body: some View {
         let buckets = buckets
         let domain = domain(of: buckets)
-        let ticks = domain.map { ticks(over: $0) } ?? []
+        let ticks = domain.map { self.ticks(over: $0) } ?? []
         // A month's label sits under the middle of its month; a week's starts
         // at its mark. (Not `AxisValueLabel(centered:)`: it centres between a
         // mark and the next, and the newest month has no next.)
