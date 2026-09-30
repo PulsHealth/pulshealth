@@ -186,7 +186,7 @@ enum LeadingEmptyBuckets {
     /// Only the scheduled pass: the priority pass moves no watermark, so it
     /// has nothing to record a skipped window against.
     static func applies(pass: AggregatePass, state: AggregateSyncState) -> Bool {
-        pass == .scheduled && state.leadingEmptyBackfill
+        pass == .scheduled && state.leadingEmptyBackfill == true
     }
 
     static func plan(_ rows: [AggregateSampleRow], skippingLeadingEmpty: Bool) -> Plan {

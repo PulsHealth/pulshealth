@@ -76,6 +76,68 @@ import Testing
 
     // MARK: - The state
 
+    /// A 1.4 install's aggregate state has no `leadingEmptyBackfill` key. It
+    /// must decode (a throw quarantines sync-state.json and resets every
+    /// anchor), and it must not skip: 1.4 state cannot say whether the series
+    /// is new or was just reset, and a reset needs its nulls.
+    @Test func stateWrittenBeforeTheFlagDecodesAndDoesNotSkip() throws {
+        let id = UUID()
+        let computed = #"{"configID":"\#(id.uuidString)","computedThrough":1700000000000,"lastFullRecomputeAt":1700000000000,"totalBucketsUploaded":2,"totalBatchesUploaded":1,"totalBytesUploaded":64}"#
+        let neverComputed = #"{"configID":"\#(id.uuidString)","totalBucketsUploaded":30,"totalBatchesUploaded":1,"totalBytesUploaded":900}"#
+        for json in [computed, neverComputed] {
+            let state = try JSONDecoder.puls.decode(AggregateSyncState.self, from: Data(json.utf8))
+            #expect(state.configID == id)
+            #expect(state.leadingEmptyBackfill == nil)
+            #expect(!LeadingEmptyBuckets.applies(pass: .scheduled, state: state))
+        }
+        let a = try JSONDecoder.puls.decode(AggregateSyncState.self, from: Data(computed.utf8))
+        #expect(a.computedThrough == Date(timeIntervalSince1970: 1_700_000_000))
+        #expect(a.lastFullRecomputeAt == Date(timeIntervalSince1970: 1_700_000_000))
+    }
+
+    /// The flag round-trips, dates stay epoch ms, and a nil flag is omitted
+    /// rather than written as null — what 1.4 (synthesized decoder, unknown
+    /// keys ignored) reads back after a downgrade either way.
+    @Test func theFlagRoundTrips() throws {
+        var state = AggregateSyncState(configID: UUID())
+        state.computedThrough = Date(timeIntervalSince1970: 1_700_000_000)
+        for flag in [true, false, nil] as [Bool?] {
+            state.leadingEmptyBackfill = flag
+            let data = try JSONEncoder.puls.encode(state)
+            let json = String(decoding: data, as: UTF8.self)
+            #expect(json.contains(#""computedThrough":1700000000000"#))
+            #expect(json.contains("leadingEmptyBackfill") == (flag != nil))
+            #expect(try JSONDecoder.puls.decode(AggregateSyncState.self, from: data) == state)
+        }
+    }
+
+    /// The whole state file of a 1.4 install loads through `SyncStateStore`
+    /// without being quarantined, anchors and watermarks intact.
+    @Test func a14StateFileLoadsIntact() async throws {
+        let dir = makeDir()
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let id = UUID()
+        let file = #"""
+        {"configuration":{"enabledTypes":["HKQuantityTypeIdentifierStepCount"],"startDate":0,"maxConcurrentTypes":4,"batchSize":1000},
+         "typeStates":{"HKQuantityTypeIdentifierStepCount":{"identifier":"HKQuantityTypeIdentifierStepCount","backfillComplete":true,"totalSamplesExported":42,"totalDeletionsExported":0,"totalBytesUploaded":0,"totalBatchesUploaded":1}},
+         "deviceID":"device-14",
+         "aggregateStates":{"\#(id.uuidString)":{"configID":"\#(id.uuidString)","computedThrough":1700000000000,"lastComputedAt":1700000100000,"lastFullRecomputeAt":1690000000000,"totalBucketsUploaded":2,"totalBatchesUploaded":1,"totalBytesUploaded":64}},
+         "activitySummaryState":{"totalDaysUploaded":0,"totalBatchesUploaded":0,"totalBytesUploaded":0}}
+        """#.replacingOccurrences(of: "\n", with: "")
+        try Data(file.utf8).write(to: dir.appendingPathComponent("sync-state.json"))
+
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        #expect(await store.deviceID == "device-14")
+        #expect(await store.state(for: "HKQuantityTypeIdentifierStepCount").totalSamplesExported == 42)
+        let state = await store.aggregateState(for: id)
+        #expect(state.computedThrough == Date(timeIntervalSince1970: 1_700_000_000))
+        #expect(state.totalBucketsUploaded == 2)
+        #expect(state.leadingEmptyBackfill == nil)
+        let quarantined = try FileManager.default.contentsOfDirectory(atPath: dir.path)
+            .filter { $0.contains("corrupt") }
+        #expect(quarantined.isEmpty)
+    }
+
     /// A skipped all-empty window moves both cursors like an ack would and
     /// counts nothing; the first real ack ends the leading phase for good.
     @Test func skippedWindowsAdvanceWatermarksAndTheFirstAckEndsTheLeadingPhase() async {
