@@ -234,9 +234,13 @@ struct TypePageView: View {
         switch descriptor.kind {
         case .quantity:
             if let values = profile.values, values.count > 0 {
+                // A cumulative type's typical range is a day's total (0 to
+                // 50,000 steps); against per-sample values it is only a grey
+                // wash over the whole plot.
+                let cumulative = HealthTypeCatalog.allowedAggregateFunctions(for: identifier).contains(.sum)
                 ValueDistributionSection(
                     values: values, unit: profile.unitString, color: color,
-                    typicalRange: knowledge?.typicalRange)
+                    typicalRange: cumulative ? nil : knowledge?.typicalRange)
             }
         case .category:
             EmptyView()  // the values card sits above the stat tiles
@@ -379,8 +383,34 @@ private struct ValueDistributionSection: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                if let axisNote {
+                    Text(axisNote)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 statsRow
             }
+        }
+    }
+
+    /// What the histogram leaves off its axis, when anything: the tails
+    /// past the 1st and 99th percentiles that would otherwise squash every
+    /// bar into a corner. The stats row under it still has the true extremes.
+    private var axisNote: String? {
+        let histogram = values.histogram
+        let below = histogram.belowCount
+        let above = histogram.aboveCount
+        guard below + above > 0 else { return nil }
+        let share = Double(below + above) / Double(max(values.count, 1))
+        let percent = share < 0.005 ? "under 1%" : share.formatted(.percent.precision(.fractionLength(0)))
+        let unitText = unit.map { " \($0)" } ?? ""
+        let lower = formatValue(histogram.lowerBound)
+        let upper = formatValue(histogram.upperBound)
+        switch (below > 0, above > 0) {
+        case (false, _): return "The axis stops at \(upper)\(unitText); \(percent) of samples are above it."
+        case (_, false): return "The axis starts at \(lower)\(unitText); \(percent) of samples are below it."
+        default: return "The axis covers \(lower)–\(upper)\(unitText); \(percent) of samples fall outside it."
         }
     }
 

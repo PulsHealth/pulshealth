@@ -122,9 +122,10 @@ Sources/
 │   │                       preview (quantity types, after an analysis); and,
 │   │                       for a synced type, the sync details
 │   │                       (TypeSyncDetailsSections).
-│   ├── ExploreCharts.swift The page's Swift Charts: the histogram with the
-│   │                       article's typical range behind it, daily counts,
-│   │                       sources.
+│   ├── ExploreCharts.swift The page's Swift Charts: the histogram (over the
+│   │                       middle of the data, with the article's typical
+│   │                       range behind it for discrete types), daily
+│   │                       counts, sources.
 │   └── TypeKnowledge.swift The slice of a knowledge-base article the page
 │                           uses (one-line description, unit, typical range,
 │                           category value names), decoded from the

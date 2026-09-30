@@ -23,7 +23,10 @@ public struct TypeProfile: Codable, Sendable, Equatable {
     /// Bumped whenever the shape or meaning of a stored profile changes; the
     /// store drops (and deletes) any file whose version differs rather than
     /// showing numbers computed under old rules.
-    public static let currentVersion = 1
+    /// 2: the value histogram covers the middle of the data on round bin
+    /// widths, with the tails counted in `belowCount`/`aboveCount`, rather
+    /// than spanning min…max.
+    public static let currentVersion = 2
 
     public var version: Int
     public var typeIdentifier: String
@@ -174,22 +177,34 @@ public struct TypeProfile: Codable, Sendable, Equatable {
         }
     }
 
-    /// Fixed-width bins over `[lowerBound, upperBound]`; the upper bound is
-    /// inclusive in the last bin. `counts` are scaled back to sample counts
-    /// when built from a reservoir (`isEstimated`).
+    /// Fixed-width bins over `[lowerBound, upperBound)`. A profile's
+    /// histogram covers the middle of the data rather than min…max — one
+    /// stray reading would otherwise squash every bar into the first bin —
+    /// and the values it leaves out are counted in `belowCount` and
+    /// `aboveCount`. `counts` and both tails are scaled back to sample
+    /// counts when built from a reservoir (`isEstimated`).
     public struct Histogram: Codable, Sendable, Equatable {
         public var lowerBound: Double
         public var upperBound: Double
         public var binCount: Int
         public var counts: [Int]
         public var isEstimated: Bool
+        /// Values below `lowerBound`, left off the axis.
+        public var belowCount: Int
+        /// Values at or above `upperBound`, left off the axis.
+        public var aboveCount: Int
 
-        public init(lowerBound: Double, upperBound: Double, binCount: Int, counts: [Int], isEstimated: Bool) {
+        public init(
+            lowerBound: Double, upperBound: Double, binCount: Int, counts: [Int], isEstimated: Bool,
+            belowCount: Int = 0, aboveCount: Int = 0
+        ) {
             self.lowerBound = lowerBound
             self.upperBound = upperBound
             self.binCount = binCount
             self.counts = counts
             self.isEstimated = isEstimated
+            self.belowCount = belowCount
+            self.aboveCount = aboveCount
         }
     }
 

@@ -110,6 +110,59 @@ import Testing
         #expect(h.counts == [3])
     }
 
+    @Test func robustHistogramLeavesAStrayReadingOffTheAxis() {
+        // A thousand readings from 0 to 99, and one at 10,000.
+        let values = (0..<1_000).map { Double($0 % 100) } + [10_000]
+        let h = TypeProfile.Histogram.robustBins(count: 20, min: 0, max: 10_000, core: 1...98, values: values)
+        #expect(h.lowerBound == 0)
+        #expect(h.upperBound == 100)
+        #expect(h.binCount == 20)
+        #expect(h.aboveCount == 1)
+        #expect(h.belowCount == 0)
+        #expect(h.counts.reduce(0, +) + h.belowCount + h.aboveCount == values.count)
+    }
+
+    @Test func robustHistogramDrawsATailThatBarelyStretchesTheAxis() {
+        let values = (0...100).map(Double.init)
+        let h = TypeProfile.Histogram.robustBins(count: 10, min: 0, max: 100, core: 1...99, values: values)
+        #expect(h.lowerBound == 0)
+        #expect(h.upperBound == 110)
+        #expect(h.belowCount == 0)
+        #expect(h.aboveCount == 0)
+        #expect(h.counts.reduce(0, +) == values.count)
+    }
+
+    @Test func robustHistogramBinsWholeNumbersOnWholeSteps() {
+        let values: [Double] = [1, 1, 2, 2, 2, 3, 3, 4, 5, 6]
+        let h = TypeProfile.Histogram.robustBins(count: 40, min: 1, max: 6, core: 1...6, values: values)
+        #expect(h.binCount == 6)
+        #expect(h.counts == [2, 3, 2, 1, 1, 1])
+    }
+
+    @Test func robustHistogramScalesItsTails() {
+        let h = TypeProfile.Histogram.robustBins(
+            count: 2, min: 0, max: 1_000, core: 0...1, values: [0.2, 0.8, 1_000], scale: 10)
+        #expect(h.isEstimated)
+        #expect(h.aboveCount == 10)
+        #expect(h.counts.reduce(0, +) == 20)
+    }
+
+    @Test func robustHistogramFallsBackToMinMaxWhenTheCoreIsOneValue() {
+        let h = TypeProfile.Histogram.robustBins(count: 4, min: 1, max: 3, core: 1...1, values: [1, 1, 1, 3])
+        #expect(h.lowerBound == 1)
+        #expect(h.upperBound == 3)
+        #expect(h.counts.reduce(0, +) == 4)
+    }
+
+    @Test func roundWidthsAreRound() {
+        #expect(TypeProfile.Histogram.roundWidth(0.37, integral: false) == 0.5)
+        #expect(TypeProfile.Histogram.roundWidth(2.2, integral: false) == 2.5)
+        #expect(TypeProfile.Histogram.roundWidth(2.2, integral: true) == 5)
+        #expect(TypeProfile.Histogram.roundWidth(24.75, integral: true) == 25)
+        #expect(TypeProfile.Histogram.roundWidth(0.3, integral: true) == 1)
+        #expect(TypeProfile.Histogram.roundWidth(130, integral: false) == 200)
+    }
+
     // MARK: - Gaps
 
     @Test func gapsAreExactAndDisorderIsSkipped() {

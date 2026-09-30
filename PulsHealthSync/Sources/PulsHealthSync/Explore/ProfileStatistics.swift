@@ -181,6 +181,72 @@ extension TypeProfile.Histogram {
             lowerBound: lower, upperBound: upper, binCount: count,
             counts: counts.map(scaled), isEstimated: isEstimated)
     }
+
+    /// A tail is left off the axis only when drawing it would take more than
+    /// this share of the core's width: a heart rate that tops out a little
+    /// past its 99th percentile keeps its true maximum on the axis, while
+    /// one 5,000-step sample over a median of 25 does not.
+    static let tailAllowance = 0.25
+
+    /// Bins for reading, not for bookkeeping: over `core` (the 1st to 99th
+    /// percentile) rather than min…max, on a round width (1, 2, 2.5 or 5 ×
+    /// 10ⁿ, whole numbers for whole-number data) that lands near `count`
+    /// bins, with the values outside counted in the tails. A tail within
+    /// `tailAllowance` of the core is drawn to its true edge instead.
+    ///
+    /// `min` and `max` are the stream's exact extremes; `values` is the
+    /// reservoir and `scale` brings it back to the stream, as in `fixedBins`.
+    static func robustBins(
+        count: Int, min: Double, max: Double, core: ClosedRange<Double>,
+        values: [Double], scale: Double = 1
+    ) -> TypeProfile.Histogram {
+        let width = core.upperBound - core.lowerBound
+        guard width > 0, count > 0 else {
+            // Most of the data is one value: bin the whole range as before.
+            return fixedBins(count: count, lower: min, upper: max, values: values, scale: scale)
+        }
+        let allowance = width * tailAllowance
+        let low = core.lowerBound - min <= allowance ? min : core.lowerBound
+        let high = max - core.upperBound <= allowance ? max : core.upperBound
+
+        let integral = values.allSatisfy { $0 == $0.rounded() }
+        let step = roundWidth((high - low) / Double(count), integral: integral)
+        let lower = (low / step).rounded(.down) * step
+        // The bin that holds `high` is drawn whole, so a whole-number maximum
+        // gets a bin of its own rather than sharing the one below it.
+        let upper = ((high / step).rounded(.down) + 1) * step
+        let bins = Swift.max(1, Int(((upper - lower) / step).rounded()))
+
+        let isEstimated = scale != 1
+        func scaled(_ n: Int) -> Int { isEstimated ? Int((Double(n) * scale).rounded()) : n }
+        var counts = [Int](repeating: 0, count: bins)
+        var below = 0
+        var above = 0
+        for value in values where value.isFinite {
+            if value < lower {
+                below += 1
+            } else if value >= upper {
+                above += 1
+            } else {
+                counts[Swift.min(Int(((value - lower) / step).rounded(.down)), bins - 1)] += 1
+            }
+        }
+        return TypeProfile.Histogram(
+            lowerBound: lower, upperBound: upper, binCount: bins,
+            counts: counts.map(scaled), isEstimated: isEstimated,
+            belowCount: scaled(below), aboveCount: scaled(above))
+    }
+
+    /// The smallest of 1, 2, 2.5, 5 × 10ⁿ at or above `raw`; for whole-number
+    /// data at least 1 and never 2.5, so no bin straddles half a step.
+    static func roundWidth(_ raw: Double, integral: Bool) -> Double {
+        guard raw > 0, raw.isFinite else { return 1 }
+        let magnitude = pow(10, log10(raw).rounded(.down))
+        let steps: [Double] = integral && magnitude <= 1 ? [1, 2, 5, 10] : [1, 2, 2.5, 5, 10]
+        let fraction = raw / magnitude
+        let width = (steps.first { fraction <= $0 * (1 + 1e-9) } ?? 10) * magnitude
+        return integral ? Swift.max(1, width) : width
+    }
 }
 
 // MARK: - Gaps between consecutive samples

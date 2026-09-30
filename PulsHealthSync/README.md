@@ -572,6 +572,7 @@ let profile = try await explorer.profile(for: facts.typeIdentifier, options: opt
 profile.sampleCount        // raw HealthKit count — the count "drained" decisions use
 profile.unmappableCount    // quantities not convertible to the catalog unit
 profile.values?.median     // exact min/max/mean/stddev; quantiles + histogram estimated past the reservoir
+profile.values?.histogram  // round-width bins over the 1st–99th percentile; belowCount/aboveCount are the tails left off
 profile.cadence, profile.dailyCounts, profile.coverage, profile.sources, profile.devices
 
 // What a configured aggregate series would produce — same query, same bucket

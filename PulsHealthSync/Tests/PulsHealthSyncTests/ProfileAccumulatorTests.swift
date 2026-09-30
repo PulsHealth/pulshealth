@@ -57,7 +57,9 @@ import Testing
         #expect(values.mean == 70)
         #expect(values.median == 70)
         #expect(!values.isEstimated)
-        #expect(values.histogram.counts == [1, 0, 1, 1])
+        // Round bins of 5 from 60, the last one holding 80 on its own.
+        #expect(values.histogram.lowerBound == 60)
+        #expect(values.histogram.counts == [1, 0, 1, 0, 1])
         #expect(values.histogram.counts.reduce(0, +) == 3)
         #expect(profile.labelCounts.isEmpty)
         #expect(profile.workouts == nil)

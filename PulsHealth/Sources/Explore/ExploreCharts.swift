@@ -16,7 +16,10 @@ func formatValue(_ value: Double) -> String {
 // MARK: - Value distribution
 
 /// Fixed-width bins as columns; the knowledge base's typical range as a
-/// grey band behind them, when the article has one that overlaps.
+/// grey band behind them, when the article has one that overlaps. The bins
+/// cover the middle of the data (`TypeProfile.Histogram.belowCount` and
+/// `aboveCount` are what they leave out), so the axis is the histogram's
+/// bounds, never min…max.
 struct HistogramChart: View {
     let histogram: TypeProfile.Histogram
     let unit: String?
@@ -79,7 +82,12 @@ struct HistogramChart: View {
                 RuleMark(x: .value("Median", median))
                     .foregroundStyle(.secondary)
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                    .annotation(position: .top, alignment: .center, spacing: 2) {
+                    // Kept inside the plot: a median in the first bin would
+                    // otherwise hang its label off the chart's leading edge.
+                    .annotation(
+                        position: .top, alignment: .center, spacing: 2,
+                        overflowResolution: .init(x: .fit(to: .chart), y: .disabled)
+                    ) {
                         Text("median")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
@@ -114,9 +122,11 @@ struct HistogramChart: View {
 
     private var accessibilityText: String {
         guard let peak = bins.max(by: { $0.count < $1.count }) else { return "Empty histogram" }
+        let outside = histogram.belowCount + histogram.aboveCount
         return "Value histogram, \(bins.count) bins from \(formatValue(histogram.lowerBound)) to "
             + "\(formatValue(histogram.upperBound)) \(unit ?? ""); most samples between "
             + "\(formatValue(peak.lower)) and \(formatValue(peak.upper))"
+            + (outside > 0 ? "; \(outside.formatted()) samples outside the axis" : "")
     }
 }
 

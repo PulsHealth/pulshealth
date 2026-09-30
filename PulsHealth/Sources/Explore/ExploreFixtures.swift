@@ -12,7 +12,7 @@ enum ExploreFixtures {
     static var isEnabled: Bool { UserDefaults.standard.bool(forKey: "PulsFixtureProfiles") }
 
     static var profiles: [TypeProfile] {
-        [sleep, heartRate, workouts]
+        [sleep, heartRate, steps, workouts]
     }
 
     private static let calendar = Calendar.current
@@ -105,6 +105,33 @@ enum ExploreFixtures {
         profile.cadence = TypeProfile.Cadence(
             gapCount: total - 1, medianGapSeconds: 4 * 60, p90GapSeconds: 11 * 60,
             minGapSeconds: 0, maxGapSeconds: 2.5 * 86_400, zeroGapCount: 2_310, isEstimated: true)
+        return profile
+    }
+
+    static var steps: TypeProfile {
+        let days = 1_200
+        let daily = dailyCounts(days: days) { offset in 90 + (offset * 53) % 70 }
+        let total = daily.reduce(0) { $0 + $1.count }
+        var profile = base(
+            "HKQuantityTypeIdentifierStepCount", kind: .quantity, unit: "count", sampleCount: total,
+            days: days, daily: daily)
+        // Watch step samples: most a few dozen steps, a long tail of walks,
+        // and the 1% of imports in the thousands that the axis leaves off.
+        let binCount = 40
+        let width = 25.0
+        let above = total / 100
+        let counts = (0..<binCount).map { index in
+            Int(Double(total - above) * 0.268 * exp(-Double(index) / 3.2))
+        }
+        profile.values = TypeProfile.ValueDistribution(
+            count: total, min: 1, max: 5_025, mean: 88, stddev: 190, p5: 3, median: 25, p95: 410,
+            isEstimated: true,
+            histogram: TypeProfile.Histogram(
+                lowerBound: 0, upperBound: Double(binCount) * width, binCount: binCount, counts: counts,
+                isEstimated: true, aboveCount: above))
+        profile.cadence = TypeProfile.Cadence(
+            gapCount: total - 1, medianGapSeconds: 83, p90GapSeconds: 14 * 60,
+            minGapSeconds: 0, maxGapSeconds: 3 * 86_400, zeroGapCount: 4_120, isEstimated: true)
         return profile
     }
 
