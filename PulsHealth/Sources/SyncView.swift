@@ -95,18 +95,7 @@ struct SyncView: View {
             }
         } content: {
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(connection.color)
-                        .frame(width: 8, height: 8)
-                        .accessibilityHidden(true)
-                    Text("Connection")
-                        .font(.subheadline)
-                    Spacer()
-                    Text(connection.label)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+                StatusDot(text: connection.label, color: connection.color)
                 if let detail = connection.detail {
                     Text(detail)
                         .font(.caption)
@@ -114,7 +103,9 @@ struct SyncView: View {
                         .lineLimit(3)
                 }
             }
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            // Top-aligned, so a tile with a footnote does not push its
+            // neighbour's label down to its middle.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .top), count: 2), spacing: 12) {
                 StatTile(label: "Samples sent", value: model.totalSamples.compactString)
                 StatTile(label: "Uploaded", value: model.totalBytes.byteString, footnote: "gzip")
             }
@@ -146,17 +137,17 @@ struct SyncView: View {
             .max { $0.at < $1.at }
         let test = model.lastConnectionTest.flatMap { $0.url == model.appliedConfig.serverURL ? $0 : nil }
         if let failed, test.map({ !$0.result.isSuccess || $0.at < failed.at }) ?? true {
-            return (.red, "Error", failed.message)
+            return (.red, "Sync error", failed.message)
         }
         if let test {
             return test.result.isSuccess
                 ? (.green, "Connected", nil)
-                : (.orange, "Failed", test.result.message)
+                : (.orange, "Connection test failed", test.result.message)
         }
         if model.statuses.contains(where: { $0.state.lastSyncAt != nil }) {
             return (.green, "Connected", nil)
         }
-        return (.gray, "Not tested", nil)
+        return (.gray, "Connection not tested", nil)
     }
 
     private var syncNowSection: some View {
