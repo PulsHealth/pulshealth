@@ -13,13 +13,14 @@ enum SyncRoute: Hashable {
 }
 
 /// The Sync tab: where the data goes and how that is going. With no server
-/// applied it is a setup card — a supported way to use the app, not a fault.
-/// With one it is the status of the sync, the synced types, and the way to
+/// applied it is a setup card with one Set Up button — a supported way to
+/// use the app, not a fault; the first tap on Sync is where the server is
+/// asked for, never the first-run flow. With one it is the status of the sync, the synced types, and the way to
 /// the Server, Synced Data and Activity screens.
 struct SyncView: View {
     /// The stack's path, owned by `RootView` (a pairing link pushes onto it
     /// from outside); the setup card pushes the Server screen through it so
-    /// its buttons can be buttons rather than list rows.
+    /// Set Up can be a button rather than a list row.
     @Binding var path: [SyncRoute]
     @Environment(AppModel.self) private var model
 
@@ -69,22 +70,16 @@ struct SyncView: View {
             "Keep a copy on your own server",
             subtitle: "Nothing is syncing yet. Pair with a PulsHealth server and new data is sent as it arrives; until then, the Export tab writes files without one."
         ) {
-            HStack(spacing: 10) {
-                Button {
-                    path.append(.server(scan: true))
-                } label: {
-                    Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                Button {
-                    path.append(.server(scan: false))
-                } label: {
-                    Text("Enter Server Details")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
+            // One way in. The Server screen it opens starts with Scan
+            // Pairing Code and Paste, then the fields for typing it by hand.
+            Button {
+                path.append(.server(scan: false))
+            } label: {
+                Label("Set Up", systemImage: "externaldrive.connected.to.line.below")
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
             .padding(.top, 2)
         }
     }

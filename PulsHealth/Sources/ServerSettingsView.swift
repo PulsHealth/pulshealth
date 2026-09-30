@@ -8,8 +8,8 @@ import PulsHealthSync
 struct ServerSettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    /// The setup card's "Scan Pairing Code" lands here with the scanner
-    /// already up, so it is one tap rather than two.
+    /// A caller that wants the scanner already up on arrival (a pairing
+    /// route can); the Sync tab's Set Up opens the form itself.
     let scanOnArrival: Bool
 
     @State private var server = ServerFieldsDraft()

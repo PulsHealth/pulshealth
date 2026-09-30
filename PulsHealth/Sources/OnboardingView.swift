@@ -222,8 +222,8 @@ struct OnboardingView: View {
             }
             if step == .start {
                 // Text, not a button: the flow cannot pick a tab in RootView,
-                // and the Sync tab's setup card is one tap away anyway.
-                Text("Connect a server later in the Sync tab.")
+                // and the Sync tab's Set Up button is one tap away anyway.
+                Text("Want a live copy on your own server? Open the Sync tab and tap Set Up.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

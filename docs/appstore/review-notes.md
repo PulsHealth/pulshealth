@@ -55,7 +55,7 @@ HOW TO EXERCISE THE APP (about 5 minutes)
 3. On "Health Access", tap "Continue". iOS shows its permission sheet: "Turn On All", then Allow. The app requests READ access only.
 4. On "Choose Data", a starter selection is already made. Tap "Continue".
 5. On "Ready", tap "Start Exploring". The Explore tab appears.
-6. Open the Sync tab and tap "Enter Server Details". Type the Server URL and Token above into the two fields. ("Scan Pairing Code" needs a physical QR code, so please type.) iOS may offer to save the token; either answer is fine.
+6. Open the Sync tab and tap "Set Up". On the Server screen, type the Server URL and Token above into the two fields under "Or enter it by hand". ("Scan Pairing Code" needs a physical QR code, so please type.) iOS may offer to save the token; either answer is fine.
 7. Tap "Test Connection". It should report success. Then "Save & Apply". The Sync tab shows the server and the upload begins.
 
 WHAT YOU SHOULD SEE
@@ -117,8 +117,8 @@ flow does not ask for a server at all: the welcome screen lists Explore,
 Export and "Sync, if you want" (a self-hosted server, optional), the last step
 says nothing is uploaded and that a server can be connected later in the Sync
 tab, and the Sync tab of an install with no server carries a setup card
-("Keep a copy on your own server", with Scan Pairing Code and Enter Server
-Details) instead of looking broken. The App Store description says the same.
+("Keep a copy on your own server", with a Set Up button that opens the Server
+screen) instead of looking broken. The App Store description says the same.
 
 What such an install does *not* do is anything in the background: exports run
 only when the user taps Export, in the foreground.

@@ -149,8 +149,8 @@ Sources/
 │                         cancel, idle-timer and background-task assertion),
 │                         the finished export, and the lifetime of its staged
 │                         files. A run outlives the screen that started it.
-├── SyncView.swift        The Sync tab. No server applied: a setup card (Scan
-│                         Pairing Code / Enter Server Details). Otherwise the
+├── SyncView.swift        The Sync tab. No server applied: a setup card with one
+│                         Set Up button (opens the Server screen). Otherwise the
 │                         status card (host, last sync, backfill progress + ETA,
 │                         failing count), Sync Now, the synced types (TypeRow →
 │                         TypeDetailView), pull-to-refresh and the error alert;
@@ -273,8 +273,8 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 - **Without a server.** The first-run flow never asks for one: it asks for
   Health access and a selection, and Start Exploring applies them. Nothing
   syncs — `AppModel.configured` reads the applied configuration and still
-  needs a server — and the Sync tab shows a setup card (Scan Pairing Code /
-  Enter Server Details) instead of a status; the Explore and Export tabs work
+  needs a server — and the Sync tab shows a setup card with a Set Up button
+  (the Server screen) instead of a status; the Explore and Export tabs work
   regardless.
 - **The Export tab** writes a selection of its own — `ExportDraft`: types,
   aggregate series, workout switches, a preset or custom range, the format —
