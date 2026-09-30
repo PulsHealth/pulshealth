@@ -3,7 +3,7 @@ import Observation
 import PulsHealthSync
 import UIKit
 
-/// State of the Export Data screen (`ExportView`): the two choices, the run in
+/// State of the Export tab (`ExportView`): the two choices, the run in
 /// flight, and the finished export waiting to be shared.
 ///
 /// Owned by `AppModel` rather than by the view, for two reasons. A run takes
@@ -145,7 +145,7 @@ final class ExportModel {
         }
 
         await authorize()
-        // The Log tab is the app's account of what it did; an export belongs
+        // The activity log is the app's account of what it did; an export belongs
         // in it. Counts and outcomes only, like every other line there.
         await engine.eventLog.log(.info, "Export to \(format.title) (\(range.title)) started")
 

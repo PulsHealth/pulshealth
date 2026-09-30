@@ -2,10 +2,10 @@ import SwiftUI
 import PulsHealthSync
 
 /// First-run flow. A fresh install has no server, no token and no data types,
-/// so every tab is empty and nothing points at the one screen (Settings) that
-/// would fix it. Five steps take the user from "what is this" to a running
-/// backfill — or, for someone with no server, to a selection with Health access
-/// that Settings → Export Data can write to files:
+/// so every tab is empty and nothing points at the screens (Sync → Server and
+/// Synced Data) that would fix it. Five steps take the user from "what is
+/// this" to a running backfill — or, for someone with no server, to a
+/// selection with Health access that the Export tab can write to files:
 ///
 /// 1. what the app does and where the data goes,
 /// 2. the server — from the pairing code (scanned, pasted, or opened as a
@@ -15,7 +15,7 @@ import PulsHealthSync
 /// 5. a summary and the button that applies everything.
 ///
 /// Nothing reaches the engine until step 5 — `model.config` is the same staged
-/// draft the Data Types tab edits, and `finishOnboarding()` is the same
+/// draft the Synced Data screen edits, and `finishOnboarding()` is the same
 /// Save & Apply path. Backing out at any point leaves the install exactly as it
 /// was, and the flow reappears on the next launch until it is finished.
 struct OnboardingView: View {
@@ -31,7 +31,7 @@ struct OnboardingView: View {
             case .welcome: "Welcome"
             case .server: "Your Server"
             case .health: "Health Access"
-            case .types: "Data Types"
+            case .types: "Synced Data"
             case .start: "Ready"
             }
         }
@@ -66,7 +66,7 @@ struct OnboardingView: View {
                     }
                 }
         }
-        // A pushed detail belongs to the step that pushed it. The Data Types
+        // A pushed detail belongs to the step that pushed it. The Synced Data
         // step is the real picker, so it can be two levels deep (category →
         // per-type config) when the footer's Back/Continue fires — and the
         // footer sits outside the stack, so without this the pushed screen
@@ -225,7 +225,7 @@ struct OnboardingView: View {
                     // The way past this step for someone with no server is a
                     // small button under Continue; say what it leads to.
                     if serverFieldsAreEmpty {
-                        Text("No server? Tap “I'll Set This Up Later” below. You can still export your data to files under Settings → Export Data, and add a server any time.")
+                        Text("No server? Tap “I'll Set This Up Later” below. You can still export your data to files from the Export tab, and add a server on the Sync tab any time.")
                     }
                 }
             }
@@ -308,7 +308,7 @@ struct OnboardingView: View {
             }
             Section {
                 Text(server.validatedURL == nil
-                    ? "No server is set, so nothing will be uploaded. You can still export this data to CSV or JSONL files under Settings → Export Data, and add a server under Settings → Server any time."
+                    ? "No server is set, so nothing will be uploaded. You can still export this data to CSV or JSONL files from the Export tab, and add a server on the Sync tab any time."
                     : "Tapping Start uploads everything from the date above. The first pass is the largest — keep the app open and the phone on power for it. Progress is saved after every batch, so it is safe to interrupt.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -316,7 +316,7 @@ struct OnboardingView: View {
             // Only true with somewhere to send to.
             if server.validatedURL != nil {
                 Section {
-                    Text("From here on, PulsHealth catches up whenever you open it, and in the background when iOS allows. The Dashboard shows what has been sent.")
+                    Text("From here on, PulsHealth catches up whenever you open it, and in the background when iOS allows. The Sync tab shows what has been sent.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -427,7 +427,7 @@ struct OnboardingView: View {
         guard step == .server, acceptedServerWarning, connectionTest?.isSuccess != true else {
             return nil
         }
-        return "This server has not answered a test. Uploads will fail until it does — fix the URL or token in Settings → Server."
+        return "This server has not answered a test. Uploads will fail until it does — fix the URL or token under Sync → Server."
     }
 
     private func primaryAction() {
@@ -475,7 +475,7 @@ struct OnboardingView: View {
         step = previous
     }
 
-    // MARK: - Server helpers (the rules are `ServerFieldsDraft`'s, shared with Settings)
+    // MARK: - Server helpers (the rules are `ServerFieldsDraft`'s, shared with the Server screen)
 
     /// Nothing typed, scanned or pasted: the state in which the server step can
     /// be skipped outright.
@@ -503,7 +503,7 @@ struct OnboardingView: View {
     /// Takes a pairing link the user accepted (`AppModel.confirmPairingLink`)
     /// and brings them to the step it belongs to, from wherever in the flow
     /// they were. Not during the final Apply: the cover is about to come down,
-    /// and Settings → Server picks the payload up instead.
+    /// and Sync → Server picks the payload up instead.
     private func collectConfirmedPairing() {
         guard !finishing, let payload = model.takeConfirmedPairing() else { return }
         step = .server

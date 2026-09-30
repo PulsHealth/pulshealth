@@ -7,8 +7,8 @@ import PulsHealthSync
 final class AppModel {
     let engine: HealthSyncEngine
     let scheduler: BackgroundSyncScheduler
-    /// Settings → Export Data: the server-less way out. A model of its own so a
-    /// run outlives the screen that started it (`ExportModel`).
+    /// The Export tab: the server-less way out. A model of its own so a run
+    /// outlives the screen that started it (`ExportModel`).
     let export = ExportModel()
 
     private(set) var statuses: [TypeSyncStatus] = []
@@ -36,10 +36,10 @@ final class AppModel {
     /// and unknown hides the feature-gated UI: reconciliation needs `digest`
     /// + `uuids`, the per-type server rows need `stats`.
     private(set) var serverCapabilities: ServerCapabilities?
-    /// The live editing draft bound by the Data Types and Settings screens.
+    /// The live editing draft bound by the Synced Data, Server and Settings screens.
     var config = SyncConfiguration()
-    /// Snapshot of what's actually been pushed to the engine. The Data Types
-    /// tab edits `config` freely; changes only reach the engine (and start
+    /// Snapshot of what's actually been pushed to the engine. The Synced Data
+    /// screen edits `config` freely; changes only reach the engine (and start
     /// backfilling) when `applyChanges()` advances this to match.
     private(set) var appliedConfig = SyncConfiguration()
     var authorizationRequested = false
@@ -101,7 +101,7 @@ final class AppModel {
     /// fills nothing until the user has answered this (`PairingLinkPromptModifier`).
     private(set) var pairingLinkPrompt: PairingLinkPrompt?
     /// A pairing link the user accepted, waiting for the screen that owns the
-    /// server fields — the first-run flow while it is up, Settings → Server
+    /// server fields — the first-run flow while it is up, Sync → Server
     /// otherwise — to collect it with `takeConfirmedPairing()`. A hand-off
     /// rather than a write into `config`: both screens keep the URL and token
     /// as local text until the user moves on, and a link gets no shortcut past
@@ -192,7 +192,7 @@ final class AppModel {
             }
         }
 
-        // Observe engine changes -> refresh dashboard.
+        // Observe engine changes -> refresh the status tabs.
         let changeTask = Task { [weak self] in
             guard let self else { return }
             for await _ in await engine.changes() {
@@ -322,13 +322,13 @@ final class AppModel {
 
     // MARK: - Export to files
 
-    /// What Export Data exports: the **applied** selection, never the draft.
+    /// What the Export tab exports: the **applied** selection, never the draft.
     ///
-    /// The Data Types tab edits `config` freely and nothing there counts until
-    /// Apply — which is also the moment Health access is requested for it. An
-    /// export of a half-edited draft would read types the user has not been
-    /// asked about (each one a failure in the result) and would disagree with
-    /// the Dashboard about what "the selection" is. The screen says when a
+    /// The Synced Data screen edits `config` freely and nothing there counts
+    /// until Apply — which is also the moment Health access is requested for
+    /// it. An export of a half-edited draft would read types the user has not
+    /// been asked about (each one a failure in the result) and would disagree
+    /// with the Sync tab about what "the selection" is. The screen says when a
     /// draft is pending instead (`hasPendingChanges`).
     var exportSelection: ExportSelectionSummary {
         ExportSelectionSummary(configuration: appliedConfig)
@@ -370,7 +370,7 @@ final class AppModel {
     /// selection by an older build, or a sheet that was interrupted. Two rules
     /// carry over from Apply: types iOS refuses to put in the sheet are not
     /// asked for again (it would only flash — they show up in the export's
-    /// failures, with the hint already on the Dashboard), and the medication
+    /// failures, with the hint already on the Explore tab), and the medication
     /// picker is not requested here at all.
     ///
     /// It does not touch `authorizationRequested`: that flag gates observer
@@ -393,7 +393,7 @@ final class AppModel {
 
     // MARK: - Actions
 
-    /// Recomputes the dashboard's "access incomplete" warning. Scoped to the
+    /// Recomputes the Explore tab's "access incomplete" warning. Scoped to the
     /// types the user actually enabled (raw-sync ∪ aggregates): unselected
     /// catalog types staying undetermined is normal and must never raise a
     /// warning — only enabled types whose syncs would fail matter.
@@ -441,7 +441,7 @@ final class AppModel {
     /// The app's single HealthKit permission prompt. Called from Apply/Save when
     /// a configuration is pushed to the engine: any enabled type (raw-sync or
     /// aggregate-only) whose read access iOS still reports as undetermined is
-    /// requested now, in one sheet, before we start reading. The Dashboard only
+    /// requested now, in one sheet, before we start reading. The Explore tab only
     /// *warns* about missing access — it never prompts. Idempotent: once a type
     /// is determined it isn't asked again, so re-applying never re-prompts.
     func requestAccessForEnabledTypesIfNeeded() async {
@@ -466,7 +466,7 @@ final class AppModel {
             // keeps HealthKit grants but not UserDefaults; or the user granted
             // access from Settings → Health before the first Apply). Without
             // the flag, every later launch skipped the observer registration
-            // and the BGProcessing schedule, and the Dashboard kept showing the
+            // and the BGProcessing schedule, and the Explore tab kept showing the
             // welcome banner — background sync silently stopped after a
             // reinstall until the user tapped Apply again in each session.
             if !enabled.isEmpty { markAuthorizationRequested() }
@@ -495,7 +495,7 @@ final class AppModel {
     ///
     /// `wholeHistory` marks an apply whose backfill is every enabled type from
     /// the start date — the first run, or a start-fresh server change — as
-    /// opposed to a type or two added on the Data Types tab.
+    /// opposed to a type or two added on the Synced Data screen.
     @discardableResult
     func applyConfiguration(
         syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false
@@ -734,10 +734,10 @@ final class AppModel {
         }
     }
 
-    /// True while an accepted link is waiting for Settings → Server, i.e. the
+    /// True while an accepted link is waiting for Sync → Server, i.e. the
     /// first-run flow is not the one that should take it. RootView switches to
-    /// the Settings tab on this.
-    var pairingAwaitsSettings: Bool { confirmedPairing != nil && !showsOnboarding }
+    /// the Sync tab and pushes the Server screen on this.
+    var pairingAwaitsSyncTab: Bool { confirmedPairing != nil && !showsOnboarding }
 
     /// One-shot: the screen that fills its fields from the payload takes it.
     func takeConfirmedPairing() -> PairingPayload? {
@@ -745,12 +745,12 @@ final class AppModel {
         return confirmedPairing
     }
 
-    // MARK: - Staged Data Types changes
+    // MARK: - Staged Synced Data changes
 
-    /// True while the Data Types draft differs from what's applied to the
-    /// engine. Scoped to the fields that tab edits (raw types, aggregates,
+    /// True while the Synced Data draft differs from what's applied to the
+    /// engine. Scoped to the fields that screen edits (raw types, aggregates,
     /// workout routes) so Settings-only edits don't trip the Apply bar. Drives
-    /// the pending-changes bar on the Data Types tab.
+    /// the pending-changes bar on the Sync tab.
     var hasPendingChanges: Bool {
         config.enabledTypes != appliedConfig.enabledTypes
             || config.aggregates != appliedConfig.aggregates
@@ -780,7 +780,7 @@ final class AppModel {
         return parts.isEmpty ? "configuration" : parts.joined(separator: " · ")
     }
 
-    /// Commits the staged Data Types draft: pushes it to the engine and starts
+    /// Commits the staged Synced Data draft: pushes it to the engine and starts
     /// backfilling newly enabled types/aggregates. Mirrors Settings' Save & Apply.
     func applyChanges() async {
         await applyConfiguration(syncNewTypes: true)
@@ -954,7 +954,7 @@ final class AppModel {
                 self.authorizationHint = """
                 iOS didn't show the medication picker, so medication doses stay \
                 unauthorized. Try Save & Apply again, or turn Medication Doses off \
-                in Data Types.
+                under Synced Data.
                 """
             }
         }
@@ -969,7 +969,7 @@ final class AppModel {
 
     /// Clears both the engine's persisted ring buffer and the on-screen list —
     /// the list is a separate array fed by the event stream, so clearing only
-    /// the actor left the Log tab unchanged until the next launch.
+    /// the actor left the activity log unchanged until the next launch.
     func clearEvents() async {
         await engine.eventLog.clear()
         events = []
@@ -1100,7 +1100,7 @@ final class AppModel {
         Task { await engine.syncAggregate(configID: id, reason: .manual) }
     }
 
-    // MARK: - Derived dashboard aggregates
+    // MARK: - Derived totals for the Explore and Sync tabs
 
     var totalSamples: Int { statuses.reduce(0) { $0 + $1.state.totalSamplesExported } }
     var totalBytes: Int { statuses.reduce(0) { $0 + $1.state.totalBytesUploaded } }
@@ -1110,36 +1110,11 @@ final class AppModel {
         let remaining = statuses.compactMap(\.estimatedSecondsRemaining)
         return remaining.isEmpty ? nil : remaining.max()
     }
-    var configured: Bool { config.serverURL != nil && !config.observedTypeIdentifiers.isEmpty }
-}
-
-// MARK: - Formatting helpers shared by views
-
-extension Int {
-    var byteString: String {
-        ByteCountFormatter.string(fromByteCount: Int64(self), countStyle: .file)
-    }
-
-    var compactString: String {
-        if self >= 1_000_000 { return String(format: "%.1fM", Double(self) / 1_000_000) }
-        if self >= 10_000 { return String(format: "%.0fK", Double(self) / 1_000) }
-        return formatted()
-    }
-}
-
-extension TimeInterval {
-    var shortDuration: String {
-        if self < 1 { return String(format: "%.0f ms", self * 1000) }
-        if self < 90 { return String(format: "%.1f s", self) }
-        if self < 5_400 { return String(format: "%.0f min", self / 60) }
-        return String(format: "%.1f h", self / 3600)
-    }
-}
-
-extension Date {
-    var relativeString: String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: self, relativeTo: Date())
+    /// Whether there is anything to sync and somewhere to sync it — on the
+    /// *applied* configuration, which is what the engine runs on. The draft
+    /// used to decide this, so a URL typed but not yet saved lit Sync Now
+    /// against a server the engine had never been given.
+    var configured: Bool {
+        appliedConfig.serverURL != nil && !appliedConfig.observedTypeIdentifiers.isEmpty
     }
 }

@@ -1,8 +1,8 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Settings → Export Data: write the selected health data to CSV or JSONL files
-/// on the phone and hand them to the share sheet. No server is involved, which
+/// The Export tab: write the selected health data to CSV or JSONL files on
+/// the phone and hand them to the share sheet. No server is involved, which
 /// is the point — this is the app's whole use for someone who does not run one.
 ///
 /// The view is a rendering of `ExportModel` and owns almost nothing: the run,
@@ -24,8 +24,7 @@ struct ExportView: View {
                 finishedSections(finished)
             }
         }
-        .navigationTitle("Export Data")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Export")
         .alert("Delete this export?", isPresented: $confirmDelete) {
             Button("Delete", role: .destructive) { model.export.discard() }
             Button("Cancel", role: .cancel) {}
@@ -87,7 +86,7 @@ struct ExportView: View {
         Section {
             if selection.isEmpty {
                 Label {
-                    Text("No data types are selected. Choose some on the Data Types tab and tap Apply, then come back.")
+                    Text("No data types are selected. Choose some under Sync → Synced Data and tap Apply, then come back.")
                 } icon: {
                     Image(systemName: "square.grid.2x2")
                 }
@@ -102,7 +101,7 @@ struct ExportView: View {
                     LabeledContent("Workout routes", value: "Included")
                 }
                 if selection.includesWorkoutStreams {
-                    // "Enhanced Data" is what the Data Types tab calls the switch.
+                    // "Enhanced Data" is what the Synced Data screen calls the switch.
                     LabeledContent("Enhanced workout data", value: "Included")
                 }
             }
@@ -111,16 +110,16 @@ struct ExportView: View {
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
                 if !selection.isEmpty {
-                    Text("The selection applied on the Data Types tab. The sync start date in Settings does not apply here — the time range above does.")
+                    Text("The selection applied under Sync → Synced Data. The sync start date in Settings does not apply here — the time range above does.")
                 }
                 // The draft is deliberately not what gets exported (see
                 // AppModel.exportSelection); say so while one is pending.
                 if model.hasPendingChanges {
-                    Text("Unapplied changes on the Data Types tab are not included. Tap Apply there first.")
+                    Text("Unapplied changes under Sync → Synced Data are not included. Tap Apply there first.")
                         .foregroundStyle(.orange)
                 }
                 if model.exportLacksMedicationAccess {
-                    Text("Medication Doses needs its own permission, which iOS asks for after Apply on the Data Types tab. Until that has been answered this export contains no doses.")
+                    Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Synced Data. Until that has been answered this export contains no doses.")
                         .foregroundStyle(.orange)
                 }
             }
