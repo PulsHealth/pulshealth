@@ -770,6 +770,21 @@ final class AppModel {
             || config.includeWorkoutEnhancedData != appliedConfig.includeWorkoutEnhancedData
     }
 
+    /// The Settings twin of `hasPendingChanges`: true while a field Settings
+    /// or its User page edits differs from what's applied. Settings shows its
+    /// Save & Apply only then — including for User edits left unsaved when
+    /// that page was popped.
+    var hasPendingSettingsChanges: Bool {
+        config.startDate != appliedConfig.startDate
+            || config.maxConcurrentTypes != appliedConfig.maxConcurrentTypes
+            || config.batchSize != appliedConfig.batchSize
+            || config.userID != appliedConfig.userID
+            || config.userName != appliedConfig.userName
+            || config.userEmail != appliedConfig.userEmail
+            || config.userDateOfBirth != appliedConfig.userDateOfBirth
+            || config.userBiologicalSex != appliedConfig.userBiologicalSex
+    }
+
     /// Short description of what's staged, e.g. "2 data types · 1 aggregate".
     var pendingChangesSummary: String {
         var parts: [String] = []

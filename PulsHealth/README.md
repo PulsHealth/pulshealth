@@ -189,15 +189,20 @@ Sources/
 │                         only when the server's capabilities advertise
 │                         `stats` / `digest` + `uuids`, plus reset. The Type
 │                         page embeds the same sections under "Sync details".
-├── SettingsView.swift    User, sync window, concurrency/batch-size tuning,
-│                         Save & Apply, backfill trigger, Privacy & Data (reset
-│                         all anchors, delete a staged export, Delete Analysis
-│                         — every stored type summary), Diagnostics (benchmark,
-│                         "Validate Aggregate Functions", replay onboarding)
-│                         and About (version, and three Links — the GitHub
-│                         repository, the privacy policy, the documentation —
-│                         that open in Safari). Also UserView and the
-│                         server-change prompt. The server is not here.
+├── SettingsView.swift    User row, Sync (start date, backfill trigger, reset
+│                         all anchors — shown only once a server is applied),
+│                         Performance (concurrency, batch size), Save & Apply
+│                         (only while those or the User page have unapplied
+│                         edits), Privacy & Data (Health Access, which opens
+│                         the app's page in iOS Settings; delete a staged
+│                         export; Delete Analysis — every stored type
+│                         summary), Diagnostics (benchmark, "Validate
+│                         Aggregate Functions", replay onboarding) and About
+│                         (version, and four Links — the documentation, the
+│                         privacy policy, the GitHub repository and its issue
+│                         tracker — that open in Safari). No footers. Also
+│                         UserView and the server-change prompt. The server
+│                         is not here.
 ├── OnboardingView.swift  First run, four steps, no server: Welcome (what the
 │                         app does — explore, export, and sync if you want);
 │                         Health Access (iOS's sheet for the preselected

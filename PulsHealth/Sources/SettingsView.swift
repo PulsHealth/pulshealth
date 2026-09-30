@@ -6,9 +6,10 @@ enum SettingsRoute: Hashable {
     case user, benchmark
 }
 
-/// The Settings tab: who the data is stored as, how the sync is tuned and
-/// started, the destructive actions under Privacy & Data, diagnostics, and
-/// About. The server is not here — it is the Sync tab's (`ServerSettingsView`).
+/// The Settings tab: who the data is stored as, the sync window and backfill
+/// (only once a server is applied), how many types run at once, Health access
+/// and the on-device data under Privacy & Data, diagnostics, and About. The
+/// server is not here — it is the Sync tab's (`ServerSettingsView`).
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var confirmResetAll = false
@@ -16,81 +17,90 @@ struct SettingsView: View {
     @State private var confirmDeleteExport = false
     @State private var confirmDeleteAnalysis = false
     @State private var validatingAggregates = false
-    @State private var aggregateValidationResult: String?
+    /// Failures in the last Validate Aggregate Functions run; nil before one.
+    @State private var aggregateValidationFailures: Int?
 
     var body: some View {
         @Bindable var model = model
+        let analyzed = model.explore.profiles.count
         Form {
             Section {
                 NavigationLink(value: SettingsRoute.user) {
-                    LabeledContent(model.config.userName?.isEmpty == false
-                        ? model.config.userName! : "User") {
-                        Text(model.config.userEmail ?? "")
-                            .foregroundStyle(.secondary)
-                    }
+                    UserRow(name: model.config.userName, email: model.config.userEmail)
                 }
-            } header: {
-                Text("User")
-            } footer: {
-                Text("Synced data is stored under this user on the server.")
             }
 
-            Section {
-                DatePicker(
-                    // "Sync", not "Export": the Export tab has its own time
-                    // range, and this date is not it.
-                    "Sync data from",
-                    selection: $model.config.startDate,
-                    in: ...Date(),
-                    displayedComponents: .date
-                )
-                Stepper(
-                    "Concurrent types: \(model.config.maxConcurrentTypes)",
-                    value: $model.config.maxConcurrentTypes, in: 1...8
-                )
+            // Keyed on the *applied* server, like the Sync tab's setup card:
+            // without one there is nothing for a start date, a backfill or
+            // an anchor to act on.
+            if model.appliedConfig.serverURL != nil {
+                Section("Sync") {
+                    DatePicker(
+                        // "Sync", not "Export": the Export tab has its own time
+                        // range, and this date is not it.
+                        "Sync data from",
+                        selection: $model.config.startDate,
+                        in: ...Date(),
+                        displayedComponents: .date
+                    )
+                    Button {
+                        confirmBackfill = true
+                    } label: {
+                        HStack {
+                            Text("Start Initial Backfill")
+                            // Progress and ETA are the Sync tab's status card;
+                            // this only says why the button is disabled.
+                            if model.backfillActive {
+                                Spacer()
+                                ProgressView()
+                            }
+                        }
+                    }
+                    // Not under a running export: the two are the same sweep
+                    // over the same HealthKit store (AppModel.exportBlockedByBackfill
+                    // is this rule from the other side).
+                    .disabled(!model.configured || model.backfillActive || model.export.isRunning)
+                    Button("Reset All Anchors", role: .destructive) { confirmResetAll = true }
+                        .disabled(model.anySyncActive)
+                }
+            }
+
+            // Not sync-only: the on-device export and the benchmark run the
+            // same sweep with these values.
+            Section("Performance") {
+                Stepper(value: $model.config.maxConcurrentTypes, in: 1...8) {
+                    LabeledContent("Concurrent types", value: "\(model.config.maxConcurrentTypes)")
+                }
                 Picker("Batch size", selection: $model.config.batchSize) {
                     ForEach([250, 500, 1_000, 2_000, 5_000], id: \.self) {
                         Text($0.formatted()).tag($0)
                     }
                 }
-                Button("Start Initial Backfill") { confirmBackfill = true }
-                    // Not under a running export: the two are the same sweep
-                    // over the same HealthKit store (AppModel.exportBlockedByBackfill
-                    // is this rule from the other side).
-                    .disabled(!model.configured || model.backfillActive || model.export.isRunning)
-                if model.backfillActive {
-                    HStack {
-                        ProgressView().controlSize(.small)
-                        Text("Sync in progress…").foregroundStyle(.secondary)
-                        if let eta = model.backfillRemaining {
-                            Spacer()
-                            Text("ETA \(eta.shortDuration)")
-                        }
+            }
+
+            // Only while there is something to apply: the draft holds edits
+            // from this screen and the User page until this or another
+            // Save & Apply commits them.
+            if model.hasPendingSettingsChanges {
+                Section {
+                    Button {
+                        Task { await model.applyConfiguration() }
+                    } label: {
+                        Text("Save & Apply")
+                            .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
+                    .listRowSeparator(.hidden)
                 }
-            } header: {
-                Text("Sync")
-            } footer: {
-                Text("The start date applies to sync only; the Export tab has its own range.")
             }
 
-            Section {
-                Button {
-                    Task { await model.applyConfiguration() }
-                } label: {
-                    Text("Save & Apply")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
-                .listRowSeparator(.hidden)
-            }
-
-            Section {
-                Button("Reset All Anchors", role: .destructive) { confirmResetAll = true }
-                    .disabled(model.anySyncActive)
+            Section("Privacy & Data") {
+                // iOS has no link into the Health permission list itself; the
+                // app's own Settings page carries a Health row that opens it.
+                Link("Health Access", destination: URL(string: UIApplication.openSettingsURLString)!)
                 // The staged export is health data at rest on the device,
                 // and this is the way to remove it without going back to the
                 // Export tab. Only while there is one: a run in flight owns
@@ -102,59 +112,42 @@ struct SettingsView: View {
                 // (`TypeProfileStore`): derived numbers, never samples, but
                 // health-derived data at rest, so the privacy policy promises
                 // this one-tap way to remove all of them.
-                let analyzed = model.explore.profiles.count
-                Button(role: .destructive) { confirmDeleteAnalysis = true } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Delete Analysis")
-                        Text(analyzed == 0 ? "Nothing analyzed yet" : "\(analyzed) type\(analyzed == 1 ? "" : "s") analyzed")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .disabled(analyzed == 0 || !model.explore.running.isEmpty)
-            } header: {
-                Text("Privacy & Data")
-            } footer: {
-                Text("Resetting anchors re-sends everything from the start date; the server deduplicates.")
+                Button("Delete Analysis", role: .destructive) { confirmDeleteAnalysis = true }
+                    .disabled(analyzed == 0 || !model.explore.running.isEmpty)
             }
 
-            Section {
+            Section("Diagnostics") {
                 NavigationLink("Run Throughput Benchmark", value: SettingsRoute.benchmark)
                 Button {
                     runAggregateValidation()
                 } label: {
-                    if validatingAggregates {
-                        HStack {
-                            Text("Validating Aggregate Functions…")
-                            Spacer()
-                            ProgressView()
-                        }
-                    } else {
+                    HStack {
                         Text("Validate Aggregate Functions")
+                        Spacer()
+                        if validatingAggregates {
+                            ProgressView()
+                        } else if let failures = aggregateValidationFailures {
+                            // Each failure is logged under Sync → Activity.
+                            if failures == 0 {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                    .accessibilityLabel("All passed")
+                            } else {
+                                Text("\(failures) failed").foregroundStyle(.red)
+                            }
+                        }
                     }
                 }
                 .disabled(validatingAggregates)
-                if let result = aggregateValidationResult {
-                    Text(result)
-                        .font(.caption)
-                        .foregroundStyle(result.hasPrefix("All") ? Color.secondary : .red)
-                }
                 Button("Show Onboarding Again") { model.restartOnboarding() }
-            } header: {
-                Text("Diagnostics")
-            } footer: {
-                Text("Validation runs every type and aggregate-function combination against HealthKit; failures are listed under Sync → Activity.")
             }
 
-            Section {
+            Section("About") {
                 LabeledContent("Version", value: Self.versionString)
-                Link("Open Source on GitHub", destination: URL(string: "https://github.com/PulsHealth/pulshealth")!)
-                Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy")!)
                 Link("Documentation", destination: URL(string: "https://pulshealth.com/docs/")!)
-            } header: {
-                Text("About")
-            } footer: {
-                Text("No analytics. No third-party code.")
+                Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy")!)
+                Link("Open Source on GitHub", destination: URL(string: "https://github.com/PulsHealth/pulshealth")!)
+                Link("Report an Issue", destination: URL(string: "https://github.com/PulsHealth/pulshealth/issues/new/choose")!)
             }
         }
         .navigationTitle("Settings")
@@ -170,13 +163,13 @@ struct SettingsView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Re-exports everything from the start date for all enabled types.")
+            Text("Re-sends everything from the start date for every synced type. The server skips what it already has.")
         }
         .alert("Delete all analysis?", isPresented: $confirmDeleteAnalysis) {
             Button("Delete", role: .destructive) { Task { await model.deleteAnalysis() } }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Removes the stored summaries for every analyzed type. Nothing in Apple Health changes; the Explore tab can analyze them again.")
+            Text("Removes the stored summaries for \(analyzed) type\(analyzed == 1 ? "" : "s"). Nothing in Apple Health changes.")
         }
         .alert("Delete this export?", isPresented: $confirmDeleteExport) {
             Button("Delete", role: .destructive) { model.export.discard() }
@@ -196,7 +189,7 @@ struct SettingsView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Exports \(model.config.enabledTypes.count) data types from \(model.config.startDate.formatted(date: .abbreviated, time: .omitted)) onward.")
+            Text("Syncs \(model.config.enabledTypes.count) data types from \(model.config.startDate.formatted(date: .abbreviated, time: .omitted)) onward.")
         }
     }
 
@@ -210,17 +203,61 @@ struct SettingsView: View {
 
     private func runAggregateValidation() {
         validatingAggregates = true
-        aggregateValidationResult = nil
+        aggregateValidationFailures = nil
         Task {
             let failures = await model.engine.validateAggregateFunctionMatrix()
             for failure in failures {
                 await model.engine.eventLog.log(.error, failure)
             }
-            aggregateValidationResult = failures.isEmpty
-                ? "All type × function combinations passed."
-                : "\(failures.count) failure\(failures.count == 1 ? "" : "s") — details under Sync → Activity."
+            aggregateValidationFailures = failures.count
             validatingAggregates = false
         }
+    }
+}
+
+/// The row that opens the User page, in the style of iOS Settings' own
+/// account row: initials on an accent circle (a person glyph until there is a
+/// name), the name, and the e-mail under it when there is one.
+private struct UserRow: View {
+    let name: String?
+    let email: String?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(Color.accentColor.gradient)
+                if let initials {
+                    Text(initials)
+                        .font(.headline)
+                } else {
+                    Image(systemName: "person.fill")
+                        .font(.title3)
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(width: 44, height: 44)
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name.flatMap { $0.isEmpty ? nil : $0 } ?? "User")
+                    .font(.headline)
+                if let email, !email.isEmpty {
+                    Text(email)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var initials: String? {
+        guard let name, !name.isEmpty,
+              let components = PersonNameComponentsFormatter().personNameComponents(from: name)
+        else { return nil }
+        let formatter = PersonNameComponentsFormatter()
+        formatter.style = .abbreviated
+        let initials = formatter.string(from: components)
+        return initials.isEmpty ? nil : initials
     }
 }
 
@@ -348,7 +385,7 @@ struct UserView: View {
                 .autocorrectionDisabled()
             }
 
-            Section("Characteristics") {
+            Section {
                 if let dob = model.config.userDateOfBirth {
                     DatePicker("Date of birth", selection: Binding(
                         get: { model.config.userDateOfBirth ?? dob },
@@ -373,8 +410,10 @@ struct UserView: View {
                     Text("Male").tag(String?.some("male"))
                     Text("Other").tag(String?.some("other"))
                 }
-                Text("Optional. Date of birth and sex feed derived metrics like heart-rate zones; leave them unset and those metrics are simply not computed.")
-                    .font(.caption).foregroundStyle(.secondary)
+            } header: {
+                Text("Characteristics")
+            } footer: {
+                Text("Optional. Used for heart-rate zones.")
             }
 
             Section {
@@ -390,7 +429,7 @@ struct UserView: View {
                         }
                     }
                 if !userIDValid {
-                    Text("Not a valid UUID (8-4-4-4-12 hex digits). The previous ID stays in effect until this is fixed.")
+                    Text("Not a valid UUID.")
                         .font(.caption).foregroundStyle(.red)
                 }
                 Button("Generate New ID") {
@@ -399,7 +438,7 @@ struct UserView: View {
             } header: {
                 Text("Advanced")
             } footer: {
-                Text("Every row stored for you on the server is tagged with this ID, and it survives reinstalls. If several people share one server, each should sync under a distinct ID. Changing it makes the server treat you as a different person, so saving asks whether to re-sync all history under the new ID or keep going with only new data.")
+                Text("Each person sharing a server needs their own ID.")
             }
 
             Section {
