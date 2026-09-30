@@ -1,7 +1,9 @@
 // Shared shapes returned by the data layer. Real (Postgres) and demo sources
 // both produce exactly these, so the UI never knows which backend it's on.
 
-export type RangeKey = "D" | "W" | "M" | "6M" | "Y";
+export type RangeKey =
+  | "7D" | "30D" | "90D" | "6M" | "Y" | "2Y" | "5Y" | "ALL" | "CUSTOM"
+  | "D" | "W" | "M";
 
 export interface TypeStat {
   identifier: string;
