@@ -20,8 +20,10 @@ not — since 1.6 the flow asks for no server; the Sync tab does.)
 | `<<<REVIEW_EXPIRY>>>` | The date you intend to take the instance down. Keep it up until the app is approved. |
 
 The field's limit is 4000 characters and the filled-in block below is about
-3,930 (the placeholder version measures 3,870; a real URL, token and UUID add
-about 60), so any addition needs a matching cut. Measure the filled copy before pasting — the block has overrun before
+3,920 (the placeholder version measures 3,853; a real URL, 64-character token
+and UUID add about 65) — about 3,975 if each of its 57 line breaks counts as
+two, which is the reading to budget for. So any addition needs a matching cut.
+Measure the filled copy before pasting — the block has overrun before
 (the `puls://` section took it to about 4,800 until the export section forced
 a recount).
 
@@ -66,7 +68,7 @@ WHAT YOU SHOULD SEE
 
 WITHOUT A SERVER
 
-The Export tab writes the selected Health data to CSV or JSONL files on the device; "Share or Save to Files" opens the iOS share sheet. No network request is made. From a fresh install: finish the four steps above and open Export. The files sit in the app's temporary directory and are deleted once shared, and at every launch.
+The Export tab writes the selected Health data to CSV or JSONL files on the device; "Share or Save to Files" opens the iOS share sheet. No network request is made. From a fresh install: finish the four steps above and open Export. The files are deleted once shared, and at every launch.
 
 WHY WE DECLARE NSAllowsLocalNetworking
 
