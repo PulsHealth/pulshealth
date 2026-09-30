@@ -68,11 +68,6 @@ struct SettingsView: View {
                         }
                     }
                 }
-                DisclosureGroup("Why isn't the latest data here yet?") {
-                    Text("Data written on this iPhone arrives in seconds. iOS throttles steps and energy to roughly hourly in the background. Apple Watch data must first sync to the phone, which iOS schedules itself, typically minutes and sometimes hours. Opening the app forces a catch-up.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
             } header: {
                 Text("Sync")
             } footer: {
