@@ -36,6 +36,8 @@ struct StatTile: View {
 }
 
 /// A short status word in a tinted capsule: "Backfilling", "3 failing".
+/// One line, always — a capsule wrapped onto two lines crowds its text into
+/// the corners. Anything longer than a word or two is a `StatusDot`.
 struct StatusPill: View {
     let text: String
     let color: Color
@@ -44,8 +46,28 @@ struct StatusPill: View {
         Text(text)
             .font(.caption.weight(.semibold))
             .foregroundStyle(color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
             .background(color.opacity(0.15), in: Capsule())
+    }
+}
+
+/// A coloured dot and the state in words, leading-aligned in the card's
+/// reading order: "Connected", "Health has new data since".
+struct StatusDot: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.subheadline)
+        }
     }
 }

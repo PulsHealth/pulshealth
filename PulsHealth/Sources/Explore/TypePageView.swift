@@ -168,12 +168,12 @@ struct TypePageView: View {
                         .controlSize(.small)
                 }
             ) {
-                HStack(spacing: 8) {
-                    StatusPill(
-                        text: "as of \(profile.computedAt.formatted(date: .abbreviated, time: .shortened))",
-                        color: stale ? .orange : .secondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Analyzed \(profile.computedAt.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                     if stale {
-                        Text("Health has new data since").font(.caption).foregroundStyle(.secondary)
+                        StatusDot(text: "Health has new data since", color: .orange)
                     }
                 }
                 if let error = explore.errors[identifier] {
