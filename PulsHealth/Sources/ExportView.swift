@@ -2,8 +2,8 @@ import SwiftUI
 import PulsHealthSync
 
 /// The Export tab: build an export (data types, aggregate series, a range, a
-/// format), write it straight from Apple Health to files on the phone and hand
-/// them to the share sheet. No server is involved, which is the point: this is
+/// format, zipped or not), write it straight from Apple Health to files on the
+/// phone and hand them to the share sheet. No server is involved, which is the point: this is
 /// the app's whole use for someone who does not run one.
 ///
 /// The view is a rendering of `ExportModel` and owns almost nothing: the draft,
@@ -169,7 +169,7 @@ struct ExportView: View {
 
     private var formatSection: some View {
         @Bindable var export = model.export
-        return Section("Format") {
+        return Section {
             Picker("Format", selection: $export.draft.format) {
                 ForEach([ExportFormat.csv, .jsonl], id: \.self) { format in
                     Text(format.title).tag(format)
@@ -177,6 +177,13 @@ struct ExportView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+            Toggle("Zip into one file", isOn: $export.draft.zipped)
+        } header: {
+            Text("Format")
+        } footer: {
+            Text(export.draft.format == .csv
+                ? "CSV writes one file per kind of data, plus a manifest. Zipped, they travel as one smaller file."
+                : "JSONL writes one file, plus a manifest. Zipped, they travel as one much smaller file.")
         }
     }
 
@@ -342,9 +349,16 @@ struct ExportView: View {
         } content: {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 StatTile(label: "Rows", value: result.writtenRows.formatted())
-                StatTile(label: "Size", value: Int(result.totalBytes).byteString)
+                StatTile(
+                    label: "Size", value: Int(result.totalBytes).byteString,
+                    footnote: result.archive.map { "\(Int($0.contentBytes).byteString) unzipped" })
                 StatTile(label: "Took", value: result.duration.shortDuration)
-                StatTile(label: "Files", value: "\(result.files.count)", unit: result.format.title)
+                // For a zip, the files inside it: the archive is one file of
+                // the format, not a new format.
+                StatTile(
+                    label: "Files", value: "\(result.archive?.entries.count ?? result.files.count)",
+                    unit: result.format.title,
+                    footnote: result.archive == nil ? nil : "in one ZIP")
             }
             VStack(alignment: .leading, spacing: 6) {
                 detailRow("Range", finished.rangeLabel)

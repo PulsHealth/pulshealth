@@ -134,11 +134,11 @@ Sources/
 ├── ExportView.swift      The Export tab as a builder: data types (a picker of
 │                         its own), aggregate series (Add Series), a range (30
 │                         days / 90 days / a year / all time, or a start and
-│                         end date), CSV or JSONL, then running → result
-│                         (totals, per-dataset rows, an "incomplete" section,
-│                         what CSV left out) → a UIActivityViewController
-│                         share sheet, whose completion is what deletes the
-│                         staged copy.
+│                         end date), CSV or JSONL, zipped or not, then
+│                         running → result (totals, per-dataset rows, an
+│                         "incomplete" section, what CSV left out) → a
+│                         UIActivityViewController share sheet, whose
+│                         completion is what deletes the staged copy.
 ├── Export/
 │   ├── ExportTypePickerView.swift  Export → Data types: the Synced Data
 │   │                       browser's shape (categories, per-category lists,
@@ -149,9 +149,9 @@ Sources/
 │                           chips, then the full editor) and the draft's
 │                           series rows.
 ├── ExportModel.swift     @MainActor @Observable, owned by AppModel: the draft
-│                         (types, series, workout switches, range, format —
-│                         seeded once from the applied sync selection, then
-│                         the export's own), the run in flight (progress,
+│                         (types, series, workout switches, range, format,
+│                         zip — seeded once from the applied sync selection,
+│                         then the export's own), the run in flight (progress,
 │                         cancel, idle-timer and background-task assertion),
 │                         the finished export, and the lifetime of its staged
 │                         files. A run outlives the screen that started it.
@@ -283,7 +283,8 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   (the Server screen) instead of a status; the Explore and Export tabs work
   regardless.
 - **The Export tab** writes a selection of its own — `ExportDraft`: types,
-  aggregate series, workout switches, a preset or custom range, the format —
+  aggregate series, workout switches, a preset or custom range, the format
+  and whether to zip it —
   seeded once from the applied sync selection and edited on the tab, never
   written back to it (a series added here is the export's alone). It goes to
   CSV or JSONL through the package's `HealthExporter`, which runs on a

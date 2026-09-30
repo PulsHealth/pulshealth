@@ -184,6 +184,7 @@ final class ExportModel {
         engine: HealthSyncEngine, authorize: @MainActor () async -> Void
     ) async {
         let format = draft.format
+        let zipped = draft.zipped
         let selection = draft.selection()
         let dates = draft.dates()
         let rangeLabel = draft.rangeLabel()
@@ -213,7 +214,8 @@ final class ExportModel {
         await authorize()
         // The activity log is the app's account of what it did; an export belongs
         // in it. Counts and outcomes only, like every other line there.
-        await engine.eventLog.log(.info, "Export to \(format.title) (\(rangeLabel), \(coverage)) started")
+        await engine.eventLog.log(
+            .info, "Export to \(zipped ? "zipped " : "")\(format.title) (\(rangeLabel), \(coverage)) started")
 
         // Progress arrives on the exporter's executor, once per written batch
         // — hundreds of times over a large export, in bursts. Newest-only
@@ -237,6 +239,7 @@ final class ExportModel {
                 startDate: dates.start,
                 endDate: dates.end,
                 format: format,
+                zipped: zipped,
                 deviceID: await engine.store.deviceID)
             outcome = .success(try await HealthExporter().run(request) { continuation.yield($0) })
         } catch {
@@ -338,6 +341,8 @@ struct ExportDraft: Equatable {
     /// (`lastCustomDay`), which is the local day before this instant.
     var customEnd: Date
     var format: ExportFormat = .csv
+    /// Hand over one `.zip` instead of the loose files (`ExportRequest.zipped`).
+    var zipped = false
 
     init(now: Date = Date(), calendar: Calendar = .current) {
         let today = calendar.startOfDay(for: now)

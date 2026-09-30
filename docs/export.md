@@ -169,8 +169,8 @@ app's temporary directory for the share sheet and removed afterwards
 **In the app it is the Export tab**, a builder. Pick the data types, add any
 aggregate series (hourly, daily, weekly or monthly values for a quantity
 type), a time range (last 30 days, 90 days, a year, all time, or a start and
-end date of your own) and CSV or JSONL. The draft starts from the selection
-applied under Sync → Synced Data — the same types, aggregate series and
+end date of your own), CSV or JSONL, and whether to zip it. The draft starts
+from the selection applied under Sync → Synced Data — the same types, aggregate series and
 workout route/stream switches — and what you change there is this export's
 alone, never the sync's. The sync start date in Settings plays no part. An end date
 is exclusive: samples that start before it, activity-ring days before its
@@ -178,7 +178,11 @@ local day, and routes and streams of workouts that started before it. An
 aggregate bucket that straddles the end date is left out rather than
 written as a partial value, so a daily series ends on the last whole day
 before it. When it finishes, **Share or Save to Files** opens the
-iOS share sheet with every file of the export, manifest included. The app
+iOS share sheet with every file of the export, manifest included — or, with
+**Zip into one file** on, with one `puls-export-<yyyyMMdd-HHmmss>.zip` holding
+a folder of that name with the same files inside, unchanged. The zip is built
+with iOS's own archiver (`NSFileCoordinator`) once the files are written, so
+the manifest's byte counts are the files' uncompressed sizes. The app
 deletes its staged copy once the share sheet reports the files were handed
 over, when you tap Delete Export, when you start another export, and at every
 launch, so save the files somewhere before moving on. Keep the app open and the

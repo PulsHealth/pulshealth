@@ -265,7 +265,7 @@ below says the same things in 1.6's terms):
 ```
 • A new look, in four tabs: Explore, Export, Sync and Settings.
 • Explore: every Apple Health type by category. Analyze one to see how many samples you have, since when, from which apps and devices, how the values are spread and how much arrives each day, with a short article on what the type measures.
-• Export: build each export on its own. Pick the types and any hourly or daily series, choose a preset range or your own start and end dates, and write CSV or JSONL files. No server needed.
+• Export: build each export on its own. Pick the types and any hourly or daily series, choose a preset range or your own start and end dates, and write CSV or JSONL files, zipped into one if you like. No server needed.
 • Sync: one place for the server, the synced data, the status of each type and the activity log.
 • Setup no longer asks for a server. Choose your data, start exploring, and connect a server from the Sync tab whenever you like.
 • Analysis summaries are kept on your iPhone so a type opens instantly next time. Delete Analysis, under Settings, removes them all.
