@@ -43,7 +43,8 @@ the two counts match — add a file and the site gains a page.
 
 ## The App's Bundled Copy
 
-The iOS app ships the whole corpus as one JSON resource,
+The iOS app ships a slice of the corpus (each type’s one-line description,
+unit, typical range and category value names) as one JSON resource,
 `PulsHealth/Sources/Resources/knowledge.json`, rendered from these YAML
 files by `scripts/gen-knowledge-json.py` (python3 + PyYAML, the same
 dependency `validate.py` needs) and checked in, so the app decodes it with

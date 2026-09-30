@@ -77,6 +77,10 @@ final class ExploreModel {
             let ok = await refreshQuickFacts(for: HealthTypeCatalog.all.map(\.identifier))
             quickFactsLoaded = quickFactsLoaded || ok
             factsTask = nil
+            // Then analyze everything that has data and no fresh profile —
+            // the Explore tab is meant to have the numbers, not to ask for
+            // them. Cached profiles make this a no-op on most launches.
+            if ok { analyzeAll() }
         }
     }
 

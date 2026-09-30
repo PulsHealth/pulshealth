@@ -2,7 +2,7 @@ import PulsHealthSync
 import SwiftUI
 
 /// The per-type screen the Explore tab opens: what HealthKit holds for one
-/// catalog type (its `TypeProfile`), the knowledge-base article about it,
+/// catalog type (its `TypeProfile`), the knowledge base's one-line description and typical range,
 /// and the ways out — an aggregate preview, the sync detail.
 ///
 /// Everything numeric comes from `ExploreModel`; nothing here reads
@@ -12,7 +12,6 @@ struct TypePageView: View {
     let identifier: String
     @Environment(AppModel.self) private var model
     @Environment(\.horizontalSizeClass) private var sizeClass
-    @State private var showsWhatIsKept = false
 
     private var descriptor: HealthTypeDescriptor? { HealthTypeCatalog.descriptor(for: identifier) }
     private var knowledge: TypeKnowledge? { TypeKnowledge.article(for: identifier) }
@@ -53,18 +52,18 @@ struct TypePageView: View {
                !HealthTypeCatalog.allowedAggregateFunctions(for: identifier).isEmpty {
                 AggregatePreviewSection(descriptor: descriptor)
             }
-            if let knowledge {
-                AboutSection(knowledge: knowledge)
-            }
             actions
         }
         .navigationTitle(descriptor.displayName)
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showsWhatIsKept) { WhatIsKeptSheet() }
         .task {
             // The facts decide whether the profile is current; cheap enough
-            // to refresh on every visit.
+            // to refresh on every visit. Then the analysis starts by itself:
+            // opening a type is asking what is in it. `analyze` skips a fresh
+            // profile, requests Health access when the type has none yet, and
+            // is a no-op while a run for this type is already in flight.
             await explore.refreshQuickFacts(for: [identifier])
+            explore.analyze(identifier)
         }
     }
 
@@ -134,26 +133,21 @@ struct TypePageView: View {
                     onCancel: { explore.cancel(identifier) })
             }
         } else if profile == nil {
+            // The analysis starts on its own when the page opens, so this is
+            // only what stopped it: no data, a declined read, or a failure.
+            let noData = facts != nil && facts?.latestStart == nil
             CardSection(
-                "Analyze this type",
-                subtitle: "Reads every \(descriptor.displayName) sample once and keeps a summary on this iPhone: counts, dates, a histogram and which apps wrote them. Never the samples."
+                noData ? "No data" : "Not analyzed",
+                subtitle: noData
+                    ? "Apple Health holds no \(descriptor.displayName) data, or read access was declined. iOS does not tell apps which."
+                    : nil
             ) {
                 if let error = explore.errors[identifier] {
                     Text(error).font(.footnote).foregroundStyle(.orange)
                 }
-                if facts?.latestStart == nil, facts != nil {
-                    Text("Apple Health holds no data for this type, or read access was declined. iOS does not tell apps which.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                HStack {
-                    Button("Analyze") { explore.analyze(identifier, force: true) }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                    Button("What is kept?") { showsWhatIsKept = true }
-                        .buttonStyle(.borderless)
-                        .controlSize(.small)
-                }
+                Button("Analyze") { explore.analyze(identifier, force: true) }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
             }
         } else if let profile {
             let stale = explore.isStale(identifier)
@@ -182,9 +176,6 @@ struct TypePageView: View {
                 if let note = profile.failureReason, profile.isComplete {
                     Text(note).font(.caption).foregroundStyle(.secondary)
                 }
-                Button("What is kept?") { showsWhatIsKept = true }
-                    .buttonStyle(.borderless)
-                    .controlSize(.small)
             }
         }
     }
@@ -653,159 +644,5 @@ private struct AggregatePreviewSection: View {
             }
             isComputing = false
         }
-    }
-}
-
-private struct AboutSection: View {
-    let knowledge: TypeKnowledge
-    @State private var expanded = false
-
-    var body: some View {
-        CardSection("About this type") {
-            if let description = knowledge.description, !description.isEmpty {
-                let long = description.count > 600
-                if long {
-                    DisclosureGroup(isExpanded: $expanded) {
-                        MarkdownText(description)
-                    } label: {
-                        Text(expanded ? "Less" : "Read the full article").font(.subheadline)
-                    }
-                } else {
-                    MarkdownText(description)
-                }
-            }
-            if let unitDescription = knowledge.unitDescription {
-                labelled("Unit", unitDescription)
-            }
-            if let range = knowledge.typicalRange {
-                let bounds = [range.min, range.max].compactMap { $0.map(formatValue) }.joined(separator: " to ")
-                labelled(
-                    "Typical range",
-                    [bounds.isEmpty ? nil : bounds + (range.unit.map { " \($0)" } ?? ""), range.notes]
-                        .compactMap { $0 }.joined(separator: ". "))
-            }
-            let clinical = knowledge.clinicalRangeRows
-            if !clinical.isEmpty {
-                Text("Clinical ranges").font(.subheadline.weight(.semibold))
-                ForEach(Array(clinical.enumerated()), id: \.offset) { _, row in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(row.population).font(.footnote.weight(.medium))
-                        ForEach(row.entries, id: \.0) { entry in
-                            HStack(alignment: .top) {
-                                Text(entry.0).foregroundStyle(.secondary)
-                                Spacer()
-                                Text(entry.1).multilineTextAlignment(.trailing)
-                            }
-                            .font(.caption)
-                        }
-                    }
-                }
-            }
-            if let devices = knowledge.devices, !devices.isEmpty {
-                labelled(
-                    "Devices",
-                    devices.compactMap { device in
-                        device.name.map { name in [name, device.capability].compactMap { $0 }.joined(separator: ": ") }
-                    }.joined(separator: "\n"))
-            }
-            if let source = knowledge.primarySource {
-                labelled("Primary source", source)
-            }
-            if let keys = knowledge.metadataKeys, !keys.isEmpty {
-                labelled(
-                    "Metadata keys",
-                    keys.compactMap { key in
-                        key.key.map { "\($0)" + (key.description.map { ": \($0)" } ?? "") }
-                    }.joined(separator: "\n"))
-            }
-            if let related = knowledge.relatedTypes, !related.isEmpty {
-                Text("Related types").font(.subheadline.weight(.semibold))
-                ForEach(Array(related.enumerated()), id: \.offset) { _, item in
-                    if let id = item.identifier {
-                        if let descriptor = HealthTypeCatalog.descriptor(for: id) {
-                            NavigationLink(value: ExploreRoute.type(id)) {
-                                relatedRow(descriptor.displayName, item.relationship)
-                            }
-                        } else {
-                            relatedRow(id, item.relationship)
-                        }
-                    }
-                }
-            }
-            if let references = knowledge.references, !references.isEmpty {
-                Text("References").font(.subheadline.weight(.semibold))
-                ForEach(Array(references.enumerated()), id: \.offset) { _, reference in
-                    if let text = reference.url, let url = URL(string: text) {
-                        Link(reference.title ?? text, destination: url).font(.footnote)
-                    }
-                }
-            }
-            Text("For understanding your data. Not medical advice.")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-    }
-
-    private func labelled(_ label: String, _ text: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.subheadline.weight(.semibold))
-            Text(text).font(.footnote).foregroundStyle(.secondary)
-        }
-    }
-
-    private func relatedRow(_ name: String, _ relationship: String?) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(name).font(.footnote)
-            if let relationship {
-                Text(relationship).font(.caption2).foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-/// The article body: markdown with headings shown as bold lines, since
-/// `Text`'s inline markdown ignores block syntax.
-private struct MarkdownText: View {
-    let text: String
-
-    init(_ text: String) { self.text = text }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(Array(text.components(separatedBy: "\n\n").enumerated()), id: \.offset) { _, block in
-                let trimmed = block.trimmingCharacters(in: .whitespacesAndNewlines)
-                if trimmed.hasPrefix("#") {
-                    Text(trimmed.drop { $0 == "#" }.trimmingCharacters(in: .whitespaces))
-                        .font(.subheadline.weight(.semibold))
-                } else if let attributed = try? AttributedString(
-                    markdown: trimmed, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))
-                {
-                    Text(attributed).font(.footnote)
-                } else {
-                    Text(trimmed).font(.footnote)
-                }
-            }
-        }
-    }
-}
-
-/// What an analysis stores, quoted from the privacy policy's terms.
-private struct WhatIsKeptSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    Text("An analysis reads a type's samples once and keeps a summary on this iPhone: how many samples there are, the first and last dates, a histogram of values, how often samples arrive, and how many came from each app and device.")
-                    Text("It never keeps a sample: no values, no timestamps of individual readings, no metadata. The summary lives with the app's own state, unreadable until the phone is first unlocked and excluded from backups. Settings → Delete Analysis removes every one.")
-                }
-                .font(.subheadline)
-            }
-            .navigationTitle("What is kept")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { Button("Done") { dismiss() } }
-        }
-        .presentationDetents([.medium])
     }
 }

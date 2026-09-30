@@ -107,20 +107,23 @@ Sources/
 │   ├── ExploreModel.swift  @MainActor @Observable, owned by AppModel: the
 │   │                       per-type quick facts and TypeProfiles, read through
 │   │                       the library's HealthExplorer (no engine, no sync
-│   │                       state), the analyses in flight, Analyze All, and
+│   │                       state), the analyses in flight (started by itself
+│   │                       once the quick facts are in, and on opening a
+│   │                       type), and
 │   │                       deleteAll — what Settings → Privacy & Data → Delete
 │   │                       Analysis calls. Profiles persist in TypeProfileStore.
-│   ├── TypePageView.swift  The Type page: the analysis card, stat tiles, the
-│   │                       value distribution, samples over time, sources and
-│   │                       devices, cadence; an aggregate preview (quantity
-│   │                       types, after an analysis); the knowledge-base
-│   │                       article ("About this type", with its cited
-│   │                       sources as links); and, for a synced type, the sync
-│   │                       details (TypeSyncDetailsSections).
+│   ├── TypePageView.swift  The Type page: the analysis (started on open),
+│   │                       stat tiles, the value distribution, samples over
+│   │                       time, sources and devices, cadence; an aggregate
+│   │                       preview (quantity types, after an analysis); and,
+│   │                       for a synced type, the sync details
+│   │                       (TypeSyncDetailsSections).
 │   ├── ExploreCharts.swift The page's Swift Charts: the histogram with the
 │   │                       article's typical range behind it, daily counts,
 │   │                       sources.
-│   └── TypeKnowledge.swift One knowledge-base article, decoded from the
+│   └── TypeKnowledge.swift The slice of a knowledge-base article the page
+│                           uses (one-line description, unit, typical range,
+│                           category value names), decoded from the
 │                           bundled knowledge.json (rendered from
 │                           knowledge-base/ by scripts/gen-knowledge-json.py).
 ├── ExportView.swift      The Export tab as a builder: data types (a picker of

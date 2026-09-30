@@ -71,7 +71,7 @@ struct ExploreView: View {
             } else {
                 CardSection(
                     "Health access not requested yet",
-                    subtitle: "Tap a type to analyze it. The first analysis asks for Health access, and nothing is read until you allow it."
+                    subtitle: "Opening a type asks for Health access to it, and nothing is read until you allow it."
                 ) {
                     authorizationHint
                 }
@@ -121,15 +121,12 @@ struct ExploreView: View {
                     + (explore.earliestSample.map { " · since \($0.formatted(.dateTime.month(.abbreviated).year()))" } ?? "")
                 : "Checking what Apple Health holds",
             action: {
+                // Analysis runs by itself once the quick facts are in; the
+                // only control is stopping it.
                 if explore.isAnalyzingAll {
                     Button("Cancel", role: .destructive) { explore.cancelAll() }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
-                } else {
-                    Button("Analyze All") { explore.analyzeAll() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(!explore.quickFactsLoaded || withData == 0)
                 }
             }
         ) {
@@ -144,7 +141,7 @@ struct ExploreView: View {
             } else {
                 let analyzed = explore.profiles.count
                 Text(analyzed == 0
-                    ? "Analyze a type to see its counts, dates, values and sources. Summaries only, never samples."
+                    ? "Each type with data is read once and summarized: counts, dates, values and sources."
                     : "\(analyzed) analyzed · \(model.appliedConfig.enabledTypes.count) synced")
                     .font(.footnote)
                     .foregroundStyle(.secondary)

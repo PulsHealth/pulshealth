@@ -7,7 +7,7 @@ plus two standalone CLIs and the public website:
 | Path | What | Docs |
 |---|---|---|
 | `PulsHealthSync/` | Swift package (iOS 17+, Swift 6 strict concurrency): sync engine, transport, NDJSON encoding | `PulsHealthSync/README.md` |
-| `PulsHealth/` | SwiftUI app wrapping the library: Explore (type pages with analysis, aggregate preview, knowledge-base article), Export builder (server-less files), Sync (server, synced types, activity log), Settings; benchmark | `PulsHealth/README.md` |
+| `PulsHealth/` | SwiftUI app wrapping the library: Explore (type pages with analysis charts and an aggregate preview), Export builder (server-less files), Sync (server, synced types, activity log), Settings; benchmark | `PulsHealth/README.md` |
 | `server/` | Docker Compose: Go ingest/product APIs + PostgreSQL 17/TimescaleDB + Grafana | `server/README.md` |
 | `server/mcp/` | Go MCP server (stdio + streamable HTTP) giving AI assistants read-only tools over the product API; talks only to the API, never Postgres | `server/mcp/README.md`, `docs/ai.md` |
 | `web/` | Next.js self-hosted viewer, published as the fourth GHCR image. Reads Postgres directly as the read-only `grafana` role; optional HTTP Basic auth. **Not** `site/`, which is the public marketing site | `web/README.md` |

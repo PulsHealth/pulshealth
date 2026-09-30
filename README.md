@@ -52,7 +52,7 @@ uploaded. Formats and columns are in
 
 | Component | Path | What it is |
 |---|---|---|
-| **iOS app** | [`PulsHealth/`](PulsHealth/README.md) | SwiftUI app over the package, in four tabs: **Explore** (every HealthKit type by category, each with a page of analysis charts, an aggregate preview and the knowledge-base article), **Export** (a builder: types, ad-hoc aggregate series, any date range, CSV or JSONL — no server needed), **Sync** (server pairing, backfill with live progress and ETA, per-type status, the event log and background-activity telemetry) and **Settings** (user, sync tuning, privacy & data, diagnostics incl. a throughput benchmark). |
+| **iOS app** | [`PulsHealth/`](PulsHealth/README.md) | SwiftUI app over the package, in four tabs: **Explore** (every HealthKit type by category, each with a page of analysis charts, an aggregate preview and the knowledge base's typical range drawn under the histogram), **Export** (a builder: types, ad-hoc aggregate series, any date range, CSV or JSONL — no server needed), **Sync** (server pairing, backfill with live progress and ETA, per-type status, the event log and background-activity telemetry) and **Settings** (user, sync tuning, privacy & data, diagnostics incl. a throughput benchmark). |
 | **`PulsHealthSync`** | [`PulsHealthSync/`](PulsHealthSync/README.md) | Swift package (iOS 17+, Swift 6 strict concurrency, zero dependencies): anchored-query sync engine, on-device aggregates, activity rings, background scheduling, HTTP transport, NDJSON encoding. Embeddable in other apps. |
 | **Reference server** | [`server/`](server/README.md) | Docker Compose stack: TimescaleDB, Go ingest API, Go product API (OpenAPI 3.1), Grafana with provisioned dashboards and alert rules. |
 | **Web viewer** | [`web/`](web/README.md) | Next.js viewer (activity rings, trends, workouts, catalog) reading Postgres directly. |
@@ -65,7 +65,7 @@ uploaded. Formats and columns are in
 <!-- screenshots to be retaken on device for 1.6 -->
 <p align="center">
   <img src="docs/images/app/welcome.png" alt="Explore tab: every Apple Health type by category, with sample counts and sparklines for the analyzed ones" width="200">
-  <img src="docs/images/app/dashboard.png" alt="A Type page: analysis charts, an aggregate preview and the knowledge-base article for one type" width="200">
+  <img src="docs/images/app/dashboard.png" alt="A Type page: analysis charts and an aggregate preview for one type" width="200">
   <img src="docs/images/app/type-detail.png" alt="Export tab: the builder with data types, aggregate series, a date range and the CSV/JSONL choice" width="200">
   <img src="docs/images/app/background-activity.png" alt="Sync tab: server status after a backfill, samples sent, and per-type rows" width="200">
 </p>
