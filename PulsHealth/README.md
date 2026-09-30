@@ -103,7 +103,8 @@ Sources/
 │                         analyzed. Categories collapse from their header;
 │                         the toolbar menu expands/collapses all, hides
 │                         types without data and sorts (Data First / Name /
-│                         Most Recent), kept in UserDefaults. Every row
+│                         Most Recent), kept in UserDefaults; pull to
+│                         refresh re-reads every type's facts. Every row
 │                         opens its Type page
 │                         (ExploreRoute.type), synced or not.
 ├── Explore/

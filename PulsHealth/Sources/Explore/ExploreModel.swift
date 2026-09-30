@@ -80,6 +80,13 @@ final class ExploreModel {
         }
     }
 
+    /// Explore's pull to refresh: every type's facts again, returning once
+    /// they are in (or once a read already in flight finishes).
+    func reloadQuickFacts() async {
+        refreshQuickFactsIfNeeded(force: true)
+        await factsTask?.value
+    }
+
     /// Returns false when the device was locked and nothing could be read.
     @discardableResult
     func refreshQuickFacts(for identifiers: [String]) async -> Bool {

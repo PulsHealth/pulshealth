@@ -53,6 +53,9 @@ struct ExploreView: View {
             await model.explore.load()
             model.explore.refreshQuickFactsIfNeeded()
         }
+        // The facts are read once per session; pulling re-reads them, so the
+        // data-first order, Most Recent and the hidden types catch up.
+        .refreshable { await model.explore.reloadQuickFacts() }
     }
 
     // MARK: - Cards
