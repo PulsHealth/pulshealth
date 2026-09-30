@@ -117,7 +117,7 @@ untrusted network, and never directly on the internet.
 |---|---|
 | `/` | **Today** — activity rings from today's local `HKActivitySummary`; falls back to today's quantity totals when today's summary is missing, plus headline metrics, recent workouts, and categories |
 | `/category/[group]` | All metrics in an Apple-Health group (Activity, Heart, Sleep, …) as live cards |
-| `/type/[id]` | **Metric detail** — interactive trend chart with D/W/M/6M/Y ranges, min–max band for instantaneous metrics, bar series for cumulative ones, range stats |
+| `/type/[id]` | **Metric detail** — interactive trend chart with Day/7D/30D/90D/6M/Y/2Y/5Y/All ranges (`?range=`; the old `W`/`M` links open 7D/30D; All Time starts at the first sample and sizes its buckets to the span), min–max band for instantaneous metrics, bar series for cumulative ones, range stats |
 | `/data` | **Catalog** — quantity, category, and workout types with supported viewer routes, grouped with per-user sample counts and last-seen |
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 

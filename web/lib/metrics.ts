@@ -45,9 +45,9 @@ export function defaultAgg(identifier: string): "sum" | "avg" {
 export interface RangeSpec {
   key: RangeKey;
   label: string;
-  /** how far back from now, in ms; null means "all available" */
+  /** how far back from now, in ms; null for ALL, which starts at the earliest sample */
   spanMs: number | null;
-  /** Postgres time_bucket interval literal */
+  /** Postgres time_bucket interval literal (ALL's is resolved per series; see resolvePresetWindow) */
   bucket: string;
   bucketMs: number;
 }
@@ -57,85 +57,79 @@ const DAY = 86_400_000;
 const WEEK = 7 * DAY;
 const MONTH = 30 * DAY;
 
+/** A bucket that keeps a chart of `durationMs` to roughly 30–90 points. */
 export function bucketForDuration(durationMs: number): {
   bucket: string;
   bucketMs: number;
 } {
-  if (durationMs <= 90 * DAY) {
-    return { bucket: "1 day", bucketMs: DAY };
-  }
-  if (durationMs <= 365 * DAY) {
-    return { bucket: "1 week", bucketMs: WEEK };
-  }
-  if (durationMs <= 730 * DAY) {
-    return { bucket: "2 weeks", bucketMs: 14 * DAY };
-  }
-  if (durationMs <= 1825 * DAY) {
-    return { bucket: "1 month", bucketMs: MONTH };
-  }
+  if (durationMs <= 90 * DAY) return { bucket: "1 day", bucketMs: DAY };
+  if (durationMs <= 365 * DAY) return { bucket: "1 week", bucketMs: WEEK };
+  if (durationMs <= 730 * DAY) return { bucket: "2 weeks", bucketMs: 14 * DAY };
+  if (durationMs <= 1825 * DAY) return { bucket: "1 month", bucketMs: MONTH };
   return { bucket: "3 months", bucketMs: 90 * DAY };
 }
 
-
 export const RANGES: Record<RangeKey, RangeSpec> = {
-  // New UI presets.
-  "7D":  { key: "7D",  label: "7 Days",   spanMs: 7 * DAY,   bucket: "1 day",    bucketMs: DAY },
-  "30D": { key: "30D", label: "30 Days",  spanMs: 30 * DAY,  bucket: "1 day",    bucketMs: DAY },
-  "90D": { key: "90D", label: "90 Days",  spanMs: 90 * DAY,  bucket: "1 day",    bucketMs: DAY },
-  "6M":  { key: "6M",  label: "6 Months", spanMs: 182 * DAY, bucket: "1 week",   bucketMs: WEEK },
-  "Y":   { key: "Y",   label: "1 Year",   spanMs: 365 * DAY, bucket: "1 week",   bucketMs: WEEK },
-  "2Y":  { key: "2Y",  label: "2 Years",  spanMs: 730 * DAY, bucket: "2 weeks",  bucketMs: 14 * DAY },
-  "5Y":  { key: "5Y",  label: "5 Years",  spanMs: 1825 * DAY, bucket: "1 month", bucketMs: MONTH },
-  "ALL": { key: "ALL", label: "All Time", spanMs: null,      bucket: "3 months", bucketMs: 90 * DAY },
-  "CUSTOM": { key: "CUSTOM", label: "Custom", spanMs: null,   bucket: "1 day",    bucketMs: DAY },
-
-  // Backward-compatible keys used by the existing dashboard/demo code.
   D: { key: "D", label: "Day", spanMs: DAY, bucket: "1 hour", bucketMs: HOUR },
-  W: { key: "W", label: "Week", spanMs: 7 * DAY, bucket: "1 day", bucketMs: DAY },
-  M: { key: "M", label: "Month", spanMs: 30 * DAY, bucket: "1 day", bucketMs: DAY },
+  "7D": { key: "7D", label: "7 Days", spanMs: 7 * DAY, bucket: "1 day", bucketMs: DAY },
+  "30D": { key: "30D", label: "30 Days", spanMs: 30 * DAY, bucket: "1 day", bucketMs: DAY },
+  "90D": { key: "90D", label: "90 Days", spanMs: 90 * DAY, bucket: "1 day", bucketMs: DAY },
+  "6M": { key: "6M", label: "6 Months", spanMs: 182 * DAY, bucket: "1 week", bucketMs: WEEK },
+  Y: { key: "Y", label: "1 Year", spanMs: 365 * DAY, bucket: "1 week", bucketMs: WEEK },
+  "2Y": { key: "2Y", label: "2 Years", spanMs: 730 * DAY, bucket: "2 weeks", bucketMs: 14 * DAY },
+  "5Y": { key: "5Y", label: "5 Years", spanMs: 1825 * DAY, bucket: "1 month", bucketMs: MONTH },
+  ALL: { key: "ALL", label: "All Time", spanMs: null, bucket: "3 months", bucketMs: 90 * DAY },
 };
 
-export const RANGE_ORDER: RangeKey[] = [
-  "7D",
-  "30D",
-  "90D",
-  "6M",
-  "Y",
-  "2Y",
-  "5Y",
-  "ALL",
-  "CUSTOM",
-];
+export const RANGE_ORDER: RangeKey[] = ["D", "7D", "30D", "90D", "6M", "Y", "2Y", "5Y", "ALL"];
+
+// Links from before PR #70 used W (week) and M (month); they are the same
+// windows as 7D and 30D.
+const RANGE_ALIASES: Record<string, RangeKey> = { W: "7D", M: "30D" };
 
 export function parseRange(v: string | null | undefined): RangeKey {
   if (v && (RANGE_ORDER as string[]).includes(v)) return v as RangeKey;
-
-  // Preserve sensible behavior for old bookmarked URLs.
-  if (v === "D" || v === "W") return "7D";
-  if (v === "M") return "30D";
-
-  return "7D";
+  return (v && RANGE_ALIASES[v]) || "7D";
 }
 
-
+/** Where a preset's chart starts, and its bucket. */
 export interface SeriesWindow {
-  range: Exclude<RangeKey, "CUSTOM">;
   start: Date;
-  end: Date;
   bucket: string;
   bucketMs: number;
 }
 
+/**
+ * The window a preset covers at `now`. ALL starts at the series' earliest
+ * sample and picks its bucket from that span, so a year of data is not four
+ * quarterly bars; with no sample at all there is no window (null).
+ */
+export function resolvePresetWindow(
+  range: RangeKey,
+  now: Date,
+  earliestMs?: number | null,
+): SeriesWindow | null {
+  const spec = RANGES[range];
+  if (spec.spanMs != null) {
+    return { start: new Date(now.getTime() - spec.spanMs), bucket: spec.bucket, bucketMs: spec.bucketMs };
+  }
+  if (earliestMs == null) return null;
+  return { start: new Date(earliestMs), ...bucketForDuration(now.getTime() - earliestMs) };
+}
+
+/**
+ * A chart window between two calendar dates in the viewer's zone: `fromDate`
+ * inclusive, `toDate` inclusive (so the query ends before `endExclusive`).
+ * getSeries accepts one in place of a preset. No page offers it yet: the
+ * range selector and `?range=` only name presets.
+ */
 export interface CustomSeriesWindow {
-  range: "CUSTOM";
   fromDate: string;
   toDate: string;
   endExclusive: string;
   bucket: string;
   bucketMs: number;
 }
-
-export type ResolvedSeriesWindow = SeriesWindow | CustomSeriesWindow;
 
 export function resolveCustomWindow(
   fromDate: string,
@@ -171,33 +165,10 @@ export function resolveCustomWindow(
   const { bucket, bucketMs } = bucketForDuration(durationMs);
 
   return {
-    range: "CUSTOM",
     fromDate,
     toDate,
     endExclusive: new Date(to.getTime() + DAY).toISOString().slice(0, 10),
     bucket,
     bucketMs,
-  };
-}
-
-export function resolvePresetWindow(
-  range: Exclude<RangeKey, "CUSTOM">,
-  now = new Date(),
-  earliestMs?: number | null,
-): SeriesWindow {
-  const spec = RANGES[range];
-
-  const end = now;
-  const start =
-    range === "ALL" && earliestMs != null
-      ? new Date(earliestMs)
-      : new Date(end.getTime() - (spec.spanMs ?? 5 * 365 * DAY));
-
-  return {
-    range,
-    start,
-    end,
-    bucket: spec.bucket,
-    bucketMs: spec.bucketMs,
   };
 }

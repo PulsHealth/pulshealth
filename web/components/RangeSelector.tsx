@@ -19,7 +19,7 @@ export function RangeSelector({ value }: { value: RangeKey }) {
     <div className="segmented" role="group" aria-label="Time range">
       {RANGE_ORDER.map((k) => (
         <button key={k} type="button" aria-pressed={value === k} aria-label={RANGES[k].label} data-active={value === k} onClick={() => select(k)}>
-          {k === "6M" ? "6M" : RANGES[k].key}
+          {RANGES[k].key}
         </button>
       ))}
     </div>

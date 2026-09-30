@@ -112,16 +112,14 @@ describe("query semantics", () => {
       queryMock.mock.calls.find(([sql]) => /FROM quantity_samples/.test(sql))?.[1]?.[0];
 
     const thirtyDay = await getSeries(
-      USER_ID, "HKQuantityTypeIdentifierHeartRate", "CUSTOM",
-      resolveCustomWindow("2026-01-01", "2026-01-30"),
+      USER_ID, "HKQuantityTypeIdentifierHeartRate", resolveCustomWindow("2026-01-01", "2026-01-30"),
     );
     expect(bucketOf()).toBe("1 day");
     expect(thirtyDay.bucketMs).toBe(86_400_000);
 
     queryMock.mockClear();
     const fiveYear = await getSeries(
-      USER_ID, "HKQuantityTypeIdentifierHeartRate", "CUSTOM",
-      resolveCustomWindow("2021-01-01", "2025-12-30"),
+      USER_ID, "HKQuantityTypeIdentifierHeartRate", resolveCustomWindow("2021-01-01", "2025-12-30"),
     );
     expect(bucketOf()).toBe("1 month");
     expect(fiveYear.bucketMs).toBe(30 * 86_400_000);
@@ -132,7 +130,7 @@ describe("query semantics", () => {
     // falls back to raw rollups; reading aggregate_samples directly lost today
     // and charted null buckets as zero.
     const { getSeries } = await import("./queries");
-    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "M");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "30D");
     await getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", "D");
     const sql = queryMock.mock.calls.map(([text]) => text as string);
     expect(sql.some((text) => /aggregate_(series|samples)/.test(text))).toBe(false);
@@ -156,9 +154,9 @@ describe("query semantics", () => {
 
   it("aligns chart windows to the bucket grain in the viewer's zone", async () => {
     const { getSeries } = await import("./queries");
-    await getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", "W");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", "7D");
     await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "Y");
-    await getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "M");
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "30D");
 
     const windows = queryMock.mock.calls
       .map(([sql, params]) => ({ sql: sql as string, params }))
@@ -178,6 +176,31 @@ describe("query semantics", () => {
     expect(windows[2].params).toContain("1 day");
   });
 
+  it("starts All Time at the type's earliest sample", async () => {
+    const { getSeries } = await import("./queries");
+    const user = "33333333-3333-4333-8333-333333333333"; // own stats cache entry
+    const earliest = Date.now() - 200 * 86_400_000;
+    queryMock.mockImplementation((text: string) => {
+      if (text.includes("SELECT st.identifier,")) {
+        return Promise.resolve([{
+          identifier: "HKQuantityTypeIdentifierHeartRate", rows: "10", earliest: String(earliest), latest: String(Date.now()),
+        }]);
+      }
+      return Promise.resolve([]);
+    });
+    const series = await getSeries(user, "HKQuantityTypeIdentifierHeartRate", "ALL");
+    const [, params] = queryMock.mock.calls.find(([sql]) => /time_bucket[\s\S]*FROM quantity_samples/.test(sql)) ?? [];
+    expect(params?.[0]).toBe("1 week");
+    expect(params?.[2]).toEqual(new Date(earliest));
+    expect(series.bucketMs).toBe(7 * 86_400_000);
+
+    // A type with no samples has no All Time window, and no chart query runs.
+    queryMock.mockClear();
+    const none = await getSeries(user, "HKQuantityTypeIdentifierBodyMass", "ALL");
+    expect(none.points).toEqual([]);
+    expect(queryMock.mock.calls.some(([sql]) => /time_bucket/.test(sql))).toBe(false);
+  });
+
   it("binds the time zone wherever a query expects one", async () => {
     // Every `$n::text` a query hands to time_bucket or AT TIME ZONE must be
     // the zone. PR #70 renumbered the category queries' parameters but not
@@ -193,9 +216,9 @@ describe("query semantics", () => {
       "HKQuantityTypeIdentifierStepCount",
       "HKQuantityTypeIdentifierHeartRate",
     ]) {
-      await getSeries(USER_ID, id, "M");
+      await getSeries(USER_ID, id, "30D");
       await getSeries(USER_ID, id, "D");
-      await getSeries(USER_ID, id, "CUSTOM", window);
+      await getSeries(USER_ID, id, window);
     }
     const charts = queryMock.mock.calls.filter(([sql]) => /time_bucket/.test(sql as string));
     expect(charts.length).toBeGreaterThanOrEqual(15);
@@ -213,8 +236,8 @@ describe("query semantics", () => {
     const { getSeries } = await import("./queries");
     const { resolveCustomWindow } = await import("./metrics");
     const window = resolveCustomWindow("2026-09-01", "2026-09-30");
-    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "CUSTOM", window);
-    await getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", "CUSTOM", window);
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", window);
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", window);
     const [steps, stepParams] = queryMock.mock.calls.find(([sql]) => /FROM quantity_samples/.test(sql)) ?? [];
     expect(steps).toContain("time_bucket($1::interval, ($4::date::timestamp AT TIME ZONE $6::text), $6::text)");
     expect(steps).toContain("AND q.start_ts < ($7::date::timestamp AT TIME ZONE $6::text)");
@@ -229,8 +252,8 @@ describe("query semantics", () => {
 
   it("attributes sleep to the wake day and dedups duration sources", async () => {
     const { getSeries } = await import("./queries");
-    await getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", "M");
-    await getSeries(USER_ID, "HKCategoryTypeIdentifierMindfulSession", "M");
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", "30D");
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierMindfulSession", "30D");
 
     const [sleep, mindful] = queryMock.mock.calls
       .map(([sql]) => sql as string)
@@ -249,7 +272,7 @@ describe("query semantics", () => {
   it("scopes all health-data SQL and uses local Today boundaries", async () => {
     const queries = await import("./queries");
     await queries.getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "D");
-    await queries.getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "M");
+    await queries.getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "30D");
     await queries.getLatestMany(USER_ID, ["HKQuantityTypeIdentifierHeartRate"]);
     await queries.getTodayTotals(USER_ID, ["HKQuantityTypeIdentifierStepCount"]);
     await queries.getActivityRings(USER_ID);

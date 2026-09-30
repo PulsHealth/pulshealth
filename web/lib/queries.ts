@@ -15,8 +15,8 @@ import { cache } from "react";
 import { query } from "./db";
 import { typeByIdentifier } from "./catalog";
 import { configuredTimeZone } from "./config";
-import { defaultAgg, RANGES } from "./metrics";
-import type { ResolvedSeriesWindow } from "./metrics";
+import { defaultAgg, RANGES, resolvePresetWindow } from "./metrics";
+import type { CustomSeriesWindow } from "./metrics";
 import {
   demoActivityRings,
   demoLatest,
@@ -240,19 +240,28 @@ export function categoryAggregation(identifier: string): CategoryAggregation {
   return { mode: "count", unit: "count" };
 }
 
+/**
+ * One chart series: a preset range (what the selector and `?range=` offer),
+ * or a custom window between two calendar dates (`resolveCustomWindow`; no
+ * page passes one yet).
+ */
 export async function getSeries(
   userId: string,
   identifier: string,
-  range: RangeKey,
-  window?: ResolvedSeriesWindow,
+  range: RangeKey | CustomSeriesWindow,
 ): Promise<Series> {
-  const spec = RANGES[range];
+  const preset = typeof range === "string" ? range : null;
+  const custom = typeof range === "string" ? null : range;
   const type = typeByIdentifier(identifier);
   const agg = defaultAgg(identifier);
-  const empty: Series = { identifier, unit: type?.unit ?? null, agg, bucketMs: spec.bucketMs, points: [] };
+  const empty: Series = {
+    identifier, unit: type?.unit ?? null, agg,
+    bucketMs: custom?.bucketMs ?? RANGES[preset ?? "7D"].bucketMs, points: [],
+  };
+  const demo = () => (preset ? demoSeries(identifier, preset) : empty);
 
   const src = await source();
-  if (src !== "live") return notLive(src, () => demoSeries(identifier, range), empty);
+  if (src !== "live") return notLive(src, demo, empty);
 
   try {
     // `from` is an instant (now − span). Every query below aligns it down to
@@ -266,13 +275,20 @@ export async function getSeries(
     // the same SQL and parameters as always; a custom window changes only how
     // `from` is read (local midnight of a date) and appends its end bound as
     // the last parameter, so no other placeholder moves.
-    const custom = window?.range === "CUSTOM" ? window : null;
-    const preset = window && window.range !== "CUSTOM" ? window : null;
-    const bucket = window?.bucket ?? spec.bucket;
-    const bucketMs = window?.bucketMs ?? spec.bucketMs;
-    const from = custom
-      ? custom.fromDate
-      : preset?.start ?? new Date(Date.now() - (spec.spanMs ?? 5 * 365 * DAY_MS));
+    //
+    // All Time starts at the type's earliest sample, from the per-user stats
+    // the type page loads anyway (cached, and shared while in flight), so it
+    // costs no query of its own there.
+    let window: { from: Date | string; bucket: string; bucketMs: number };
+    if (custom) {
+      window = { from: custom.fromDate, bucket: custom.bucket, bucketMs: custom.bucketMs };
+    } else {
+      const earliest = preset === "ALL" ? (await getStats(userId)).get(identifier)?.earliest ?? null : null;
+      const resolved = resolvePresetWindow(preset ?? "7D", new Date(), earliest);
+      if (!resolved) return empty; // All Time with no samples at all
+      window = { from: resolved.start, bucket: resolved.bucket, bucketMs: resolved.bucketMs };
+    }
+    const { from, bucket, bucketMs } = window;
     const timeZone = configuredTimeZone();
     const at = (param: number, tz: number) =>
       custom ? `($${param}::date::timestamp AT TIME ZONE $${tz}::text)` : `$${param}::timestamptz`;
@@ -445,7 +461,7 @@ export async function getSeries(
     return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
   } catch (e) {
     console.error("[queries] getSeries failed:", e);
-    return ALLOW_DEMO ? demoSeries(identifier, range) : empty;
+    return ALLOW_DEMO ? demo() : empty;
   }
 }
 
@@ -679,7 +695,7 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
   if (src !== "live") {
     if (src === "demo") {
       for (const id of identifiers) {
-        out.set(id, demoSeries(id, "M").points.slice(-days).map((p) => p.value));
+        out.set(id, demoSeries(id, "30D").points.slice(-days).map((p) => p.value));
       }
     }
     return out;
@@ -768,7 +784,7 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
     console.error("[queries] getDailySparklines failed:", e);
     if (ALLOW_DEMO) {
       for (const id of identifiers) {
-        out.set(id, demoSeries(id, "M").points.slice(-days).map((p) => p.value));
+        out.set(id, demoSeries(id, "30D").points.slice(-days).map((p) => p.value));
       }
     }
     return out;

@@ -91,8 +91,15 @@ export function formatToday(date = new Date()): string {
   return dateFormatter({ weekday: "long", month: "long", day: "numeric" }).format(date);
 }
 
+export function formatMonth(ms: number): string {
+  return dateFormatter({ month: "short", year: "numeric" }).format(new Date(ms));
+}
+
 export function tickLabel(ms: number, bucketMs: number): string {
-  // Sub-day buckets show the clock; daily+ show the date.
+  // Sub-day buckets show the clock; daily and weekly ones the date. Buckets
+  // of two weeks or more (2Y, 5Y, All Time) span years, where "Jan 1" alone
+  // repeats, so they show the month and year.
   if (bucketMs < 86_400_000) return formatTime(ms);
+  if (bucketMs >= 14 * 86_400_000) return formatMonth(ms);
   return formatDay(ms);
 }
