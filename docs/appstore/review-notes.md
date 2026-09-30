@@ -9,7 +9,8 @@ needs to answer follow-up questions without inventing anything.
 Fill in the four placeholders below with the values from the throwaway review
 backend. Standing that up is [`review-backend.md`](review-backend.md); do it
 first: the notes walk the reviewer through a sync, and that needs it. (The
-export path in the notes' WITHOUT A SERVER section does not.)
+first-run flow and the export path in the notes' WITHOUT A SERVER section do
+not — since 1.6 the flow asks for no server; the Sync tab does.)
 
 | Placeholder | What it is |
 |---|---|
@@ -19,8 +20,10 @@ export path in the notes' WITHOUT A SERVER section does not.)
 | `<<<REVIEW_EXPIRY>>>` | The date you intend to take the instance down. Keep it up until the app is approved. |
 
 The field's limit is 4000 characters and the filled-in block below is about
-3,930 (3,990 if line breaks count twice), so any addition needs a matching
-cut. Measure the filled copy before pasting — the block has overrun before
+3,920 (the placeholder version measures 3,853; a real URL, 64-character token
+and UUID add about 65) — about 3,975 if each of its 57 line breaks counts as
+two, which is the reading to budget for. So any addition needs a matching cut.
+Measure the filled copy before pasting — the block has overrun before
 (the `puls://` section took it to about 4,800 until the export section forced
 a recount).
 
@@ -49,23 +52,23 @@ Up until at least <<<REVIEW_EXPIRY>>>. If it is unreachable, please contact us b
 
 HOW TO EXERCISE THE APP (about 5 minutes)
 
-1. Launch the app. A five-step first-run flow starts.
+1. Launch the app. A four-step first-run flow starts.
 2. "Get Started".
-3. On "Your Server", type the Server URL and Token above into the two fields. ("Scan Pairing Code" needs a physical QR code, so please type.) iOS may offer to save the token; either answer is fine.
-4. Tap "Test Connection". It should report success. Then "Continue".
-5. On "Health Access", tap "Continue". iOS shows its permission sheet: "Turn On All", then Allow. The app requests READ access only.
-6. On "Data Types", a starter selection is already made. Tap "Continue".
-7. On "Ready", tap "Start Syncing". The Dashboard appears and the upload begins.
+3. On "Health Access", tap "Continue". iOS shows its permission sheet: "Turn On All", then Allow. The app requests READ access only.
+4. On "Choose Data", a starter selection is already made. Tap "Continue".
+5. On "Ready", tap "Start Exploring". The Explore tab appears.
+6. Open the Sync tab and tap "Set Up". On the Server screen, type the Server URL and Token above into the two fields under "Or enter it by hand". ("Scan Pairing Code" needs a physical QR code, so please type.) iOS may offer to save the token; either answer is fine.
+7. Tap "Test Connection". It should report success. Then "Save & Apply". The Sync tab shows the server and the upload begins.
 
 WHAT YOU SHOULD SEE
 
-- The Dashboard's "Samples exported" counter rises if the device has Health data. A new device may have none; that is expected.
-- On an empty device: in Apple Health, search for Weight, open it, tap + (Add Data), enter a value and save. Back in PulsHealth, pull down on the Dashboard: the counter rises within seconds.
-- The Log tab shows every upload.
+- The Sync tab's "Samples sent" counter rises if the device has Health data. A new device may have none; that is expected.
+- On an empty device: in Apple Health, search for Weight, open it, tap + (Add Data), enter a value and save. Back in PulsHealth, pull down on the Sync tab: the counter rises within seconds.
+- Sync > Activity shows every upload.
 
 WITHOUT A SERVER
 
-Settings > Export Data (also on the Dashboard when no server is set) writes the selected Health data to CSV or JSONL files on the device; "Share or Save to Files" opens the iOS share sheet. No network request is made. From a fresh install: on "Your Server" tap "I'll Set This Up Later", continue, tap "Finish". The files sit in the app's temporary directory and are deleted once shared, and at every launch.
+The Export tab writes the selected Health data to CSV or JSONL files on the device; "Share or Save to Files" opens the iOS share sheet. No network request is made. From a fresh install: finish the four steps above and open Export. The files are deleted once shared, and at every launch.
 
 WHY WE DECLARE NSAllowsLocalNetworking
 
@@ -83,7 +86,7 @@ Used only to read the pairing QR code. No frame is stored or sent. Declining is 
 
 URL SCHEME (puls://)
 
-One custom scheme, for pairing links (puls://pair?...) — the text the server's QR code encodes, so the iOS Camera app can open it. Any page or app can fire such a URL, so a link configures nothing by itself: the app shows a confirmation naming the server's host, and accepting only fills in the server fields — the user still has to finish setup or tap Save & Apply. "Paste Pairing Code" uses the system paste button.
+One custom scheme, for pairing links (puls://pair?...) — the text the server's QR code encodes, so the iOS Camera app can open it. Any page or app can fire such a URL, so a link configures nothing by itself: the app shows a confirmation naming the server's host, and accepting only fills in the fields on Sync > Server — the user still has to tap Save & Apply. "Paste Pairing Code" uses the system paste button.
 
 BACKGROUND MODES
 
@@ -99,9 +102,10 @@ Privacy policy: https://pulshealth.com/privacy
 
 ### "Why does the app need an external server at all?"
 
-It does not, for a one-off: Settings → Export Data writes the selected Health
+It does not, for a one-off: the Export tab writes the selected Health
 data to CSV or JSONL files on the device and hands them to the share sheet,
-with no server and no network request. The server is for the thing a file
+with no server and no network request, and the Explore tab shows what Apple
+Health holds without either. The server is for the thing a file
 cannot do — *continuous* sync into a database the user controls, so they can
 query it with SQL, chart it in Grafana, or feed it to their own tools as new
 data arrives. This is the same shape as other HealthKit exporters on the store;
@@ -110,14 +114,13 @@ vendor's cloud, which is the feature, not a limitation.
 
 ### "Is the app usable without a server?"
 
-Yes, since the version that added Export Data. The first-run flow says so
-before it asks for a server: the welcome screen lists "A server, for continuous
-sync" and then "Or no server at all — export the same data to CSV or JSONL
-files on this iPhone whenever you like". The server step's way past ("I'll Set
-This Up Later") says where it leads, the last step says nothing will be
-uploaded and points at Settings → Export Data, and the Dashboard of an install
-with no server carries a "No server set up" card with an "Export Data to Files"
-link instead of looking broken. The App Store description says the same.
+Yes, since 1.5 added the on-device export, and since 1.6 the first-run
+flow does not ask for a server at all: the welcome screen lists Explore,
+Export and "Sync, if you want" (a self-hosted server, optional), the last step
+says nothing is uploaded and that a server can be connected later in the Sync
+tab, and the Sync tab of an install with no server carries a setup card
+("Keep a copy on your own server", with a Set Up button that opens the Server
+screen) instead of looking broken. The App Store description says the same.
 
 What such an install does *not* do is anything in the background: exports run
 only when the user taps Export, in the foreground.
@@ -151,8 +154,8 @@ The app does not interpret any of them; it copies them.
 ### If review asks for a video
 
 Record the seven steps above on a device with a little Health data in it. Show
-the Test Connection success row and the Dashboard counter moving, then
-Settings → Export Data through to the share sheet. Do not use a
+the Test Connection success row and the Sync tab's counter moving, then the
+Export tab through to the share sheet. Do not use a
 real person's health history.
 
 ### After approval

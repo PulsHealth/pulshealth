@@ -30,7 +30,7 @@ public struct PairingConfirmation: Sendable, Equatable {
     public enum Destination: Sendable, Equatable {
         /// The first-run flow's server step. Nothing is applied until its last step.
         case onboarding
-        /// Settings → Server. Nothing is applied until Save & Apply.
+        /// Sync → Server. Nothing is applied until Save & Apply.
         case settings
     }
 
@@ -105,7 +105,7 @@ public struct PairingConfirmation: Sendable, Equatable {
                     + "Nothing is sent until you finish setup.")
         case .settings:
             paragraphs.append(
-                "The details are filled in under Settings → Server and the connection is tested. "
+                "The details are filled in under Sync → Server and the connection is tested. "
                     + "Nothing changes until you tap Save & Apply.")
         }
         return paragraphs.joined(separator: "\n\n")

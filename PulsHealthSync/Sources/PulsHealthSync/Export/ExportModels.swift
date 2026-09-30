@@ -11,21 +11,72 @@ public enum ExportFormat: String, Sendable, Codable, CaseIterable {
     case csv
 }
 
-/// What to export. Build one from the app's `SyncConfiguration`; nothing about
-/// the app's real sync state is read or changed (see `HealthExporter`).
+/// What one export covers, chosen for that export. Independent of the applied
+/// sync configuration: the export screen starts from the applied selection
+/// (`init(configuration:)`) and the user edits it from there, and nothing they
+/// change here reaches the configuration the app syncs with.
+public struct ExportSelection: Sendable, Equatable {
+    /// HealthKit type identifiers (`HealthTypeCatalog`), the activity-summary
+    /// identifier included.
+    public var types: Set<String>
+    /// Aggregate series to export. Presence means export: a config's `enabled`
+    /// flag is ignored here (the plan turns every one of them on).
+    public var aggregates: [AggregateConfig]
+    /// Only meaningful when `types` contains workouts.
+    public var includeWorkoutRoutes: Bool
+    public var includeWorkoutEnhancedData: Bool
+
+    public init(
+        types: Set<String>,
+        aggregates: [AggregateConfig] = [],
+        includeWorkoutRoutes: Bool = false,
+        includeWorkoutEnhancedData: Bool = false
+    ) {
+        self.types = types
+        self.aggregates = aggregates
+        self.includeWorkoutRoutes = includeWorkoutRoutes
+        self.includeWorkoutEnhancedData = includeWorkoutEnhancedData
+    }
+
+    /// The applied selection: `enabledTypes`, the enabled aggregate configs and
+    /// the two workout switches. The export screen's preset.
+    public init(configuration: SyncConfiguration) {
+        self.init(
+            types: configuration.enabledTypes,
+            aggregates: configuration.aggregates.filter(\.enabled),
+            includeWorkoutRoutes: configuration.includeWorkoutRoutes,
+            includeWorkoutEnhancedData: configuration.includeWorkoutEnhancedData)
+    }
+
+    /// True when there is nothing to read: what makes `HealthExporter.run`
+    /// throw `.nothingSelected`.
+    public var isEmpty: Bool { types.isEmpty && aggregates.isEmpty }
+}
+
+/// What to export. Nothing about the app's real sync state is read or changed
+/// (see `HealthExporter`).
 public struct ExportRequest: Sendable {
-    /// Supplies the type selection (`enabledTypes`), the aggregate configs, the
-    /// workout route/enhanced-data switches, batch size, concurrency and the
-    /// user ID. Its server URL, token, start date and the identity fields
-    /// (name, e-mail, date of birth, sex) are ignored: an export has no server,
-    /// takes its range from `startDate` below, and never writes a profile line
-    /// — a file that is about to be handed to a share sheet should not carry
-    /// an e-mail address nobody asked it to.
+    /// What the export covers. See `ExportSelection`.
+    public var selection: ExportSelection
+    /// Supplies only what the selection does not: batch size, concurrency,
+    /// the enrichment cap, the user ID, and the start date **as the anchor of
+    /// the aggregate bucket grid** (`ExportPlan.alignedAggregateStart`). Its
+    /// enabled types, aggregates and workout switches are replaced by
+    /// `selection`; its server URL, token and the identity fields (name,
+    /// e-mail, date of birth, sex) are ignored: an export has no server, takes
+    /// its range from `startDate`/`endDate` below, and never writes a profile
+    /// line — a file that is about to be handed to a share sheet should not
+    /// carry an e-mail address nobody asked it to.
     public var configuration: SyncConfiguration
     /// Earliest sample start to export. Nil = all time — queried from
     /// 1 January 1900 rather than `.distantPast`, whose local calendar day is
     /// in 1 BC west of Greenwich (`ExportPlan.allTimeFloor`).
     public var startDate: Date?
+    /// Exclusive end of the export. Nil = now. Samples that start before it,
+    /// aggregate buckets that end at or before it (a bucket straddling it is
+    /// left out), activity days before its local day, and routes and streams
+    /// of workouts that started before it. See `HealthSyncEngine.readEnd`.
+    public var endDate: Date?
     public var format: ExportFormat
     /// Where the files go. Nil = a fresh subdirectory of
     /// `HealthExporter.stagingRoot` (inside the temporary directory), which is
@@ -38,7 +89,35 @@ public struct ExportRequest: Sendable {
     /// attributed to this install. Nil = a random ID minted for this export
     /// (the throwaway state store's).
     public var deviceID: String?
+    /// Pack the data files and the manifest into one `.zip`
+    /// (`puls-export-<yyyyMMdd-HHmmss>.zip`, holding a folder of that name)
+    /// and return only that: one attachment instead of up to nine, and a
+    /// fraction of the size. The loose files are deleted once it is written.
+    /// See `ExportResult.archive`.
+    public var zipped: Bool
 
+    public init(
+        selection: ExportSelection,
+        configuration: SyncConfiguration,
+        startDate: Date? = nil,
+        endDate: Date? = nil,
+        format: ExportFormat,
+        zipped: Bool = false,
+        outputDirectory: URL? = nil,
+        deviceID: String? = nil
+    ) {
+        self.selection = selection
+        self.configuration = configuration
+        self.startDate = startDate
+        self.endDate = endDate
+        self.format = format
+        self.zipped = zipped
+        self.outputDirectory = outputDirectory
+        self.deviceID = deviceID
+    }
+
+    /// The applied selection, to now: `selection` is
+    /// `ExportSelection(configuration:)`.
     public init(
         configuration: SyncConfiguration,
         startDate: Date? = nil,
@@ -46,11 +125,10 @@ public struct ExportRequest: Sendable {
         outputDirectory: URL? = nil,
         deviceID: String? = nil
     ) {
-        self.configuration = configuration
-        self.startDate = startDate
-        self.format = format
-        self.outputDirectory = outputDirectory
-        self.deviceID = deviceID
+        self.init(
+            selection: ExportSelection(configuration: configuration),
+            configuration: configuration, startDate: startDate, endDate: nil,
+            format: format, outputDirectory: outputDirectory, deviceID: deviceID)
     }
 }
 
@@ -133,6 +211,8 @@ public struct ExportProgress: Sendable, Equatable {
         case workoutRoutes
         case workoutStreams
         case finishing
+        /// Packing the finished files into a `.zip` (`ExportRequest.zipped`).
+        case archiving
     }
 
     public var phase: Phase
@@ -179,11 +259,16 @@ public struct ExportResult: Sendable {
     /// The directory holding `files`.
     public var directory: URL
     /// Everything to hand to a share sheet, in a stable order: the data files
-    /// (for CSV, in `ExportDataset.allCases` order) and then the manifest.
+    /// (for CSV, in `ExportDataset.allCases` order) and then the manifest. For
+    /// a zipped export, only the archive, which holds them.
     public var files: [URL]
+    /// Set when the request asked for a `.zip` (`ExportRequest.zipped`): the
+    /// archive, what is in it, and how large that was before compression.
+    public var archive: ExportArchive? = nil
     /// `…-manifest.json`: user ID, range, format, protocol and app version,
     /// counts, and every failure below. Also the last element of `files`.
-    public var manifestURL: URL
+    /// Nil for a zipped export, whose manifest is the archive's last entry.
+    public var manifestURL: URL?
     /// Rows exported per dataset (route and series datasets count points).
     /// Datasets with no rows are absent.
     public var rowCounts: [ExportDataset: Int]
@@ -201,7 +286,7 @@ public struct ExportResult: Sendable {
     /// trace exported without its voltages, a workout whose route query
     /// failed. Capped; the last entry says how many were left out.
     public var warnings: [ExportIssue]
-    /// Size of everything in `files`.
+    /// Size of everything in `files`: for a zipped export, the archive's.
     public var totalBytes: Int64
     public var duration: TimeInterval
 
@@ -218,7 +303,7 @@ public enum HealthExportError: Error, LocalizedError, Sendable, Equatable {
     /// The device is locked, so every HealthKit query would fail with
     /// `errorDatabaseInaccessible`. Nothing was written.
     case deviceLocked
-    /// The configuration enables no types and no aggregate series.
+    /// The selection has no types and no aggregate series.
     case nothingSelected
     /// Every read succeeded and returned nothing. HealthKit answers a *denied*
     /// read exactly like an empty one, by design, so this is also what a

@@ -14,7 +14,7 @@ extension HealthTypeDescriptor.Group {
         case .sleep: .mint
         case .nutrition: .green
         case .vitals: .pink
-        case .workouts: .green
+        case .workouts: .teal
         case .other: .indigo
         }
     }

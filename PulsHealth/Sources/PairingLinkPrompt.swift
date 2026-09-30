@@ -62,7 +62,7 @@ extension View {
 
 /// "Paste Pairing Code": the route for a server whose QR code is not in front
 /// of the camera — a terminal on the same device, a payload sent over a
-/// message. Shared by Settings → Server and the first-run flow's server step.
+/// message. Used by the Sync tab’s Server screen.
 ///
 /// It is the system `PasteButton` rather than a button that reads
 /// `UIPasteboard`: the tap itself is the permission, so iOS shows no

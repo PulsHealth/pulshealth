@@ -84,17 +84,21 @@ anticipate:
   the screenshots are the four first-run screens (see `listing.md` §
   Screenshots).
 
-Still owed: the real-data screenshot set (dashboard, type detail, background
-activity) — § 3.
+Still owed: a real-data screenshot set for the 1.6 shell (Explore, a Type
+page, Export, Sync, background activity) — § 3.
 
 ## 3. Screenshots — OSS-4
 
-**The app half is done.** Four screens from the maintainer's phone (dashboard,
-a type's detail, background activity, the log) plus three first-run screens
-from the simulator make up the App Store set submitted with 1.4, and four of
-them are in `README.md` § Components (`docs/images/app/`). Still missing: the
-web viewer and the Grafana dashboards, taken against demo data (`npm run dev`
-fills the viewer; never a real export).
+**The app half was done for 1.4, and 1.6 undid it.** Four screens from the
+maintainer's phone (the then dashboard, a type's detail, background activity,
+the log) plus three first-run screens from the simulator made up the App
+Store set submitted with 1.4, and four of them are in `README.md` §
+Components (`docs/images/app/`). The 1.6 UI revamp (Explore, the Export
+builder, Sync, Settings; a first run with no server step) replaced every one
+of those screens but Welcome, so the store set and the README's four images
+are retaken on a device for 1.6 — the order is in `listing.md` § Screenshots.
+Still missing as before: the web viewer and the Grafana dashboards, taken
+against demo data (`npm run dev` fills the viewer; never a real export).
 
 ## 4. Per-device tokens — SRV-8
 
@@ -191,9 +195,9 @@ overnight, which is worse than not offering one. APP-11 is persisting the sink c
 configuration and putting the read side behind a protocol so reconciliation
 degrades instead of breaking.
 
-**APP-12 is done** (2026-09): Settings → Export Data writes the applied
-selection to JSONL or CSV and hands the files to the share sheet, with no
-server configured or contacted (`HealthExporter`,
+**APP-12 is done** (2026-09): the Export tab writes a selection of its own
+(types, aggregate series, a preset or custom range) to JSONL or CSV and hands
+the files to the share sheet, with no server configured or contacted (`HealthExporter`,
 [`docs/export.md`](export.md), "On-device export"). It did not need APP-11,
 and deliberately is not a *sink*: an export runs on a throwaway engine with
 its own state, because anchors have no destination dimension and a file

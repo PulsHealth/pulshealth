@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Per-type configuration screen reached from the Data Types lists: raw-sample
+/// Per-type configuration screen reached from the Synced Data lists: raw-sample
 /// toggle plus the list of configured aggregate series for quantity types.
 struct TypeConfigView: View {
     @Environment(AppModel.self) private var model
@@ -153,7 +153,7 @@ private struct AggregateConfigRow: View {
 
 /// Editor for one aggregate config. Edits mutate the staged `model.config`
 /// draft directly (the app's usual style) but don't reach the engine until the
-/// Data Types tab's Apply bar (or this screen's explicit Sync Now / Recompute
+/// Sync tab's Apply bar (or this screen's explicit Sync Now / Recompute
 /// All) commits them. On apply, `AppModel` resets the watermark of any series
 /// whose `seriesIdentity`/`startDate` changed so it recomputes from scratch.
 struct AggregateEditorView: View {

@@ -41,6 +41,20 @@ One page per file is exported by `site/` to
 `https://pulshealth.com/knowledge-base/types/<identifier>/`, and CI asserts
 the two counts match — add a file and the site gains a page.
 
+## The App's Bundled Copy
+
+The iOS app ships a slice of the corpus (each type’s one-line description,
+unit, typical range and category value names) as one JSON resource,
+`PulsHealth/Sources/Resources/knowledge.json`, rendered from these YAML
+files by `scripts/gen-knowledge-json.py` (python3 + PyYAML, the same
+dependency `validate.py` needs) and checked in, so the app decodes it with
+Foundation alone and needs no YAML parser. Never edit the JSON by hand:
+change the YAML, rerun the generator and commit both.
+`scripts/check-knowledge-json.sh` regenerates and diffs, and CI runs it on
+every push, so a stale or hand-edited JSON fails the build. The generator's
+header documents which fields are kept and how the few YAML shapes that
+vary between files are normalised.
+
 ## Using This Knowledge Base
 
 ### For Health Consultants

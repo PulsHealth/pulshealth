@@ -68,6 +68,10 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
 
 ## Source map
 
+Four tabs, each its own `NavigationStack`: **Explore** (the catalog, with the
+Health-access cards), **Export** (files, no server needed), **Sync** (server,
+status, synced types, activity) and **Settings**.
+
 ```
 Sources/
 ├── PulsHealthApp.swift   @main. Registers BG tasks before launch finishes; scenePhase
@@ -82,77 +86,152 @@ Sources/
 │                         screen that owns the server fields. Clears the export
 │                         staging directory at launch, and runs the export's
 │                         Health-access step (applied selection, never the draft).
-├── ExportModel.swift     @MainActor @Observable, owned by AppModel: format and
-│                         range, the run in flight (progress, cancel, idle-timer
-│                         and background-task assertion), the finished export,
-│                         and the lifetime of its staged files. A run outlives
-│                         the screen that started it.
-├── ExportView.swift      Settings → Export Data (also linked from the Dashboard
-│                         when no server is set): CSV or JSONL, 30 days / 90 days
-│                         / a year / all time, what the applied selection covers,
-│                         then running → result (totals, per-dataset rows, an
+├── RootView.swift        TabView (Explore / Export / Sync / Settings). Owns the
+│                         Sync tab's path so an accepted pairing link lands on
+│                         Sync → Server; hosts the pairing and server-change
+│                         prompts and presents OnboardingView on a first run.
+├── Design/               The design system: TypeIcon (Health-style tile),
+│                         CardSection, ChartCard (a chart with its controls
+│                         and readout line), StatTile + StatusPill,
+│                         ProgressBanner, EmptyState, and the
+│                         Formatting helpers (byteString, compactString,
+│                         shortDuration, relativeString).
+├── ExploreView.swift     Home: the Health-access / reads-look-blocked cards
+│                         (the latter with "Open Health Settings"), then
+│                         every catalog type by category with search —
+│                         types with data first, the sample count once
+│                         analyzed. Categories collapse from their header;
+│                         the toolbar menu expands/collapses all, hides
+│                         types without data and sorts (Data First / Name /
+│                         Most Recent), kept in UserDefaults; pull to
+│                         refresh re-reads every type's facts. Every row
+│                         opens its Type page
+│                         (ExploreRoute.type), synced or not.
+├── Explore/
+│   ├── ExploreModel.swift  @MainActor @Observable, owned by AppModel: the
+│   │                       per-type quick facts and TypeProfiles, read through
+│   │                       the library's HealthExplorer (no engine, no sync
+│   │                       state), the analyses in flight (one per type, over
+│   │                       the past year, started the first time its page is
+│   │                       opened; kept until Refresh), and
+│   │                       deleteAll — what Settings → Privacy & Data → Delete
+│   │                       Analysis calls. Profiles persist in TypeProfileStore.
+│   ├── TypePageView.swift  The Type page: the analysis (started on open),
+│   │                       stat tiles, the value distribution, samples over
+│   │                       time, sources and devices, cadence; an aggregate
+│   │                       preview (quantity types, after an analysis); and,
+│   │                       for a synced type, the sync details
+│   │                       (TypeSyncDetailsSections).
+│   ├── ExploreCharts.swift The page's Swift Charts: the histogram (over the
+│   │                       middle of the data, with the article's typical
+│   │                       range behind it for discrete types), daily
+│   │                       counts, sources.
+│   └── TypeKnowledge.swift The slice of a knowledge-base article the page
+│                           uses (one-line description, unit, typical range,
+│                           category value names), decoded from the
+│                           bundled knowledge.json (rendered from
+│                           knowledge-base/ by scripts/gen-knowledge-json.py).
+├── ExportView.swift      The Export tab as a builder: data types (a picker of
+│                         its own), aggregate series (Add Series), a range (30
+│                         days / 90 days / a year / all time, or a start and
+│                         end date), CSV or JSONL, zipped or not, then
+│                         running → result (totals, per-dataset rows, an
 │                         "incomplete" section, what CSV left out) → a
-│                         UIActivityViewController share sheet, whose completion
-│                         is what deletes the staged copy.
-├── RootView.swift        TabView (Dashboard / Data Types / Log / Settings) +
-│                         DashboardView: totals, ETA, per-type rows, Sync Now,
-│                         and — with no server applied — a "No server set up"
-│                         card linking to Export Data.
-│                         Presents OnboardingView over everything on a first run.
-├── OnboardingView.swift  First run, five steps: what the app does and where the
-│                         data goes; the server (the pairing code — scanned,
-│                         pasted, or opened as a link — or typed, then Test
-│                         Connection — Continue needs a passing test,
-│                         or an explicit "Continue Anyway" with a warning);
-│                         Health access; the data types (the real TypePickerView,
-│                         preselected with TypePresets.common); a summary whose
-│                         button applies everything and starts the backfill.
-│                         The server is optional: the welcome and server steps
-│                         say so, and with none set the last step's button is
-│                         Finish and its text points at Settings → Export Data.
-│                         Nothing reaches the engine before that last tap.
-│                         Settings → Diagnostics → "Show Onboarding Again"
-│                         replays it (with a Close button) for testing.
-├── PairingScannerView.swift  AVFoundation QR sheet feeding PairingPayload.parse.
-│                         Used by onboarding and Settings → Server. Handles
-│                         not-yet-asked, denied, and no-camera, each with a
-│                         "Type It Instead" way out; no frame is ever stored.
-├── PairingLinkPrompt.swift  The "Pair with <host>?" alert an incoming puls://
-│                         link has to get through (attached to RootView and to
-│                         OnboardingView, which covers it), and the "Paste
-│                         Pairing Code" row built on the system PasteButton.
-├── TypePickerView.swift  ~80 types grouped by category; Common/All/None presets.
-│                         Quantity rows link into TypeConfigView; other kinds keep
-│                         plain toggles.
+│                         UIActivityViewController share sheet, whose
+│                         completion is what deletes the staged copy.
+├── Export/
+│   ├── ExportTypePickerView.swift  Export → Data types: the Synced Data
+│   │                       browser's shape (categories, per-category lists,
+│   │                       search) with checkmarks rather than toggles, over
+│   │                       the export's own draft — nothing chosen here
+│   │                       touches the sync selection.
+│   └── ExportAggregatesView.swift  The Add Series sheet (quick series as
+│                           chips, then the full editor) and the draft's
+│                           series rows.
+├── ExportModel.swift     @MainActor @Observable, owned by AppModel: the draft
+│                         (types, series, workout switches, range, format,
+│                         zip — seeded once from the applied sync selection,
+│                         then the export's own), the run in flight (progress,
+│                         cancel, idle-timer and background-task assertion),
+│                         the finished export, and the lifetime of its staged
+│                         files. A run outlives the screen that started it.
+├── SyncView.swift        The Sync tab. No server applied: a setup card with one
+│                         Set Up button (opens the Server screen). Otherwise the
+│                         status card (host, last sync, backfill progress + ETA,
+│                         failing count), Sync Now, the synced types (TypeRow →
+│                         TypeDetailView), pull-to-refresh and the error alert;
+│                         then rows to Synced Data, Server and Activity. The
+│                         PendingChangesBar sits on this tab.
+├── ServerSettingsView.swift  Sync → Server: URL + token (validated: https, or
+│                         http for local-network hosts only; held in a
+│                         ServerFieldsDraft until Save & Apply, with Scan / Paste
+│                         Pairing Code filling all three values) with Test
+│                         Connection — runs against the entered, unsaved values
+│                         and reports ok / no capabilities / token rejected /
+│                         unsupported protocol / unreachable / server error.
+│                         Collects an accepted puls:// link's payload.
+├── ActivityView.swift    Sync → Activity: segmented Log / Background over
+│                         LogView and BackgroundActivityView.
+├── LogView.swift         Live filterable event stream (level + type filters).
+├── BackgroundActivityView.swift  Field-study screen: per-wake telemetry from the
+│                         library's WakeLog — wakes/24h & /7d, median background
+│                         gap, expired/interrupted count, per-trigger rollups, a
+│                         recent-wakes list, and a ShareLink that exports wakes
+│                         (CSV+JSON) + the event log (JSON) for offline analysis.
+├── TypePickerView.swift  Sync → Synced Data (and the first-run flow's type
+│                         step): ~80 types grouped by category; Common/All/None
+│                         presets. Quantity rows link into TypeConfigView; other
+│                         kinds keep plain toggles. Also PendingChangesBar.
 ├── TypeConfigView.swift  Per-quantity-type config: raw-sync toggle + aggregate
 │                         series list, plus AggregateEditorView (function picker
 │                         restricted to allowedAggregateFunctions, interval,
 │                         device filter, start date, settle delay, status,
 │                         Sync Now / Recompute All / Delete). Identity edits
 │                         reset the watermark (different server series).
-├── TypeDetailView.swift  Per-type debug screen: anchor/activity/rate/ETA, volume
-│                         counters, timeline, server-side counts (GET /v1/stats)
-│                         and the reconcile action — both shown only when the
-│                         server's capabilities advertise `stats` / `digest` +
-│                         `uuids` — plus reset.
-├── SettingsView.swift    Server URL + token (validated: https, or http for
-│                         local-network hosts only; held in a ServerFieldsDraft
-│                         until Save & Apply, with Scan / Paste Pairing Code
-│                         filling all three values) with Test Connection —
-│                         runs against the entered, unsaved values and reports
-│                         ok / no capabilities / token rejected / unsupported
-│                         protocol / unreachable (TLS, DNS, timeout) / server
-│                         error — start date, concurrency/batch-size tuning,
-│                         backfill trigger, Export Data, benchmark, reset-all, and
-│                         "Validate Aggregate Functions" (runs the legal-set
-│                         matrix against HealthKit on this device/runtime).
-├── LogView.swift         Live filterable event stream (level + type filters);
-│                         links to BackgroundActivityView (toolbar).
-├── BackgroundActivityView.swift  Field-study screen: per-wake telemetry from the
-│                         library's WakeLog — wakes/24h & /7d, median background
-│                         gap, expired/interrupted count, per-trigger rollups, a
-│                         recent-wakes list, and a ShareLink that exports wakes
-│                         (CSV+JSON) + the event log (JSON) for offline analysis.
+├── TypeDetailView.swift  Sync → type: a header (icon, name, activity) over
+│                         TypeSyncDetailsSections — anchor/activity/rate/ETA,
+│                         volume counters, timeline, server-side counts
+│                         (GET /v1/stats) and the reconcile action, both shown
+│                         only when the server's capabilities advertise
+│                         `stats` / `digest` + `uuids`, plus reset. The Type
+│                         page embeds the same sections under "Sync details".
+├── SettingsView.swift    User row, Sync (start date, backfill trigger, reset
+│                         all anchors — shown only once a server is applied),
+│                         Performance (concurrency, batch size), Save & Apply
+│                         (only while those or the User page have unapplied
+│                         edits), Privacy & Data (Health Access, which opens
+│                         the app's page in iOS Settings; delete a staged
+│                         export; Delete Analysis — every stored type
+│                         summary), Diagnostics (benchmark, "Validate
+│                         Aggregate Functions", replay onboarding) and About
+│                         (version, and four Links — the documentation, the
+│                         privacy policy, the GitHub repository and its issue
+│                         tracker — that open in Safari). No footers. Also
+│                         UserView and the server-change prompt. The server
+│                         is not here.
+├── OnboardingView.swift  First run, four steps, no server: Welcome (what the
+│                         app does — explore, export, and sync if you want);
+│                         Health Access (iOS's sheet for the preselected
+│                         TypePresets.common); Choose Data (the real
+│                         TypePickerView); Ready, a summary whose "Start
+│                         Exploring" applies everything. Nothing reaches the
+│                         engine before that last tap, and nothing is
+│                         uploaded: the last step says a server can be
+│                         connected later in the Sync tab. A puls:// link
+│                         accepted during the flow waits until it ends, then
+│                         Sync → Server opens with the fields filled.
+│                         Settings → Diagnostics → "Show Onboarding Again"
+│                         replays it (with a Close button) for testing.
+├── PairingScannerView.swift  AVFoundation QR sheet feeding PairingPayload.parse.
+│                         Used by Sync → Server (the setup card's Scan Pairing
+│                         Code opens it on arrival). Handles
+│                         not-yet-asked, denied, and no-camera, each with a
+│                         "Type It Instead" way out; no frame is ever stored.
+├── PairingLinkPrompt.swift  The "Pair with <host>?" alert an incoming puls://
+│                         link has to get through (attached to RootView and to
+│                         OnboardingView, which covers it), and the "Paste
+│                         Pairing Code" row built on the system PasteButton.
+├── TypeStyle.swift       Category colours and per-type SF Symbols.
 └── BenchmarkView.swift   Throughput test: reads real HealthKit data through a
                           discarding transport with temporary state — touches no
                           real sync state.
@@ -181,8 +260,8 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   reads the QR code. Each screen has one function that takes a `PairingPayload`
   (`applyPairing`), whatever the source: it fills the URL, token and user ID
   into the screen's `ServerFieldsDraft` and runs Test Connection. It applies
-  nothing — onboarding still ends with its last step, Settings with Save &
-  Apply (and the server-change prompt, if the target moved).
+  nothing — the Server screen still ends with Save & Apply (and the
+  server-change prompt, if the target moved).
   **A link is untrusted input**, because any web page or app can fire one. So
   `AppModel.handleIncomingURL` only ever raises a prompt: "Pair with
   \<host\>?", which says when accepting would replace a different configured
@@ -193,22 +272,29 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   comes from the right host view (the first-run flow or the tabs); the first
   pending link wins, so the prompt on screen always describes the payload that
   accepting it delivers; and only the host is logged, never the link or token.
-  Accepting during the first run jumps to the flow's server step; afterwards it
-  switches to Settings → Server, popping anything pushed there.
-- **Without a server.** The server step can be skipped ("I'll Set This Up
-  Later"); the flow still asks for Health access and a selection, and Finish
-  applies them. Nothing syncs — `AppModel.configured` is unchanged and still
-  needs a server — and the Dashboard says so with a "No server set up" card
-  whose link, like Settings → Export Data, opens the export screen.
-- **Export Data** writes the *applied* selection (not a Data Types draft — a
-  draft has not been through Apply, which is where Health access is requested;
-  the screen says when one is pending) to CSV or JSONL through the package's
-  `HealthExporter`, which runs on a throwaway engine and never touches the
-  app's sync state (root `CLAUDE.md`, "Export never shares sync state"). Before
-  a run the app requests Health access for any selected type iOS still reports
-  as undetermined — skipping types iOS refuses to list, and never presenting
-  the medication picker — then holds the screen awake and a background-task
-  assertion until it ends. A partial export (`isComplete == false`) is shown as
+  Accepting during the first run (the flow has no server step) parks the
+  payload in `confirmedPairing` and the Ready step says a link is waiting;
+  when the flow ends, and at any other time, it switches to the Sync tab and
+  pushes Sync → Server, popping anything pushed there.
+- **Without a server.** The first-run flow never asks for one: it asks for
+  Health access and a selection, and Start Exploring applies them. Nothing
+  syncs — `AppModel.configured` reads the applied configuration and still
+  needs a server — and the Sync tab shows a setup card with a Set Up button
+  (the Server screen) instead of a status; the Explore and Export tabs work
+  regardless.
+- **The Export tab** writes a selection of its own — `ExportDraft`: types,
+  aggregate series, workout switches, a preset or custom range, the format
+  and whether to zip it —
+  seeded once from the applied sync selection and edited on the tab, never
+  written back to it (a series added here is the export's alone). It goes to
+  CSV or JSONL through the package's `HealthExporter`, which runs on a
+  throwaway engine and never touches the app's sync state (root `CLAUDE.md`,
+  "Export never shares sync state"). Before a run the app requests Health
+  access for any type in the draft iOS still reports as undetermined — the
+  draft can hold types no Apply has asked about — skipping types iOS refuses
+  to list, and never presenting the medication picker (the screen says when
+  Medication Doses is in the draft but that picker has not been answered) —
+  then holds the screen awake and a background-task assertion until it ends. A partial export (`isComplete == false`) is shown as
   **Export incomplete** with the types that failed, and says so when the app
   left the foreground during the run, since a locked phone is the usual cause.
   Export is refused while a backfill runs, and Start Initial Backfill while an
@@ -232,9 +318,9 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   bucket inside its settle delay uploads on the next trigger after it settles;
   recent buckets are recomputed each run, so late Watch data self-corrects.
 - Backfill on iOS 26 runs as a `BGContinuedProcessingTask` (system progress UI,
-  survives backgrounding) — Start Initial Backfill, and since 2026-09 the first
-  run's final step and a start-fresh server change too; adding a type on the
-  Data Types tab backfills inline. Earlier iOS keeps it foreground-resumable.
+  survives backgrounding) — Start Initial Backfill, and since 2026-09 a
+  whole-history Apply (the first Save & Apply after pairing, and a start-fresh
+  server change) too; adding a type under Synced Data backfills inline. Earlier iOS keeps it foreground-resumable.
   Every sync the app starts itself holds a background-task assertion, so
   leaving the app mid-sync gives it iOS's grace period and then stops it
   cleanly (`BackgroundExecution`) instead of freezing it.
@@ -243,7 +329,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   copy, and a reinstall pairing with its old server used to erase it.
 - Types the permission sheet can't determine (blood pressure on iOS 26.5,
   FB22735935) are remembered per session and skipped from auth requests, with a
-  dashboard hint pointing at Settings → Privacy & Security → Health — see the
+  hint on the Explore tab pointing at Settings → Privacy & Security → Health — see the
   CLAUDE.md gotcha for the retest plan.
 - Live logs from a Mac: `log stream --predicate 'subsystem == "com.pulsHealth.healthsync"'`.
 - **Background-time field study.** Every entry point that gives the engine
@@ -256,5 +342,5 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   launch means the app was killed mid-wake). It holds ~10k wakes (months), so a
   1–2 week run never loses early data. Each wake's id + trigger ride the upload as
   `X-Wake-ID`/`X-Wake-Trigger` headers, so the server's `batches` rows join back to
-  the device records. Pull it all off-device from **Log → Background Activity →
-  Export** (wakes CSV+JSON, events JSON via the share sheet).
+  the device records. Pull it all off-device from **Sync → Activity →
+  Background → Export** (wakes CSV+JSON, events JSON via the share sheet).

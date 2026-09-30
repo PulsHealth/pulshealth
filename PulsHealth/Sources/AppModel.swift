@@ -7,9 +7,12 @@ import PulsHealthSync
 final class AppModel {
     let engine: HealthSyncEngine
     let scheduler: BackgroundSyncScheduler
-    /// Settings → Export Data: the server-less way out. A model of its own so a
-    /// run outlives the screen that started it (`ExportModel`).
+    /// The Export tab: the server-less way out. A model of its own so a run
+    /// outlives the screen that started it (`ExportModel`).
     let export = ExportModel()
+    /// The Explore tab: what HealthKit holds per type, and the analyses
+    /// in flight to find out (`ExploreModel`). Read-only over HealthKit.
+    let explore: ExploreModel
 
     private(set) var statuses: [TypeSyncStatus] = []
     /// Per-aggregate-config sync progress, keyed by config ID.
@@ -36,10 +39,14 @@ final class AppModel {
     /// and unknown hides the feature-gated UI: reconciliation needs `digest`
     /// + `uuids`, the per-type server rows need `stats`.
     private(set) var serverCapabilities: ServerCapabilities?
-    /// The live editing draft bound by the Data Types and Settings screens.
+    /// The last Test Connection this session and the URL it ran against, so
+    /// the Sync tab can say what is known about the applied server without
+    /// testing again. Not persisted: a fresh launch knows nothing.
+    private(set) var lastConnectionTest: ConnectionTestRecord?
+    /// The live editing draft bound by the Synced Data, Server and Settings screens.
     var config = SyncConfiguration()
-    /// Snapshot of what's actually been pushed to the engine. The Data Types
-    /// tab edits `config` freely; changes only reach the engine (and start
+    /// Snapshot of what's actually been pushed to the engine. The Synced Data
+    /// screen edits `config` freely; changes only reach the engine (and start
     /// backfilling) when `applyChanges()` advances this to match.
     private(set) var appliedConfig = SyncConfiguration()
     var authorizationRequested = false
@@ -100,12 +107,11 @@ final class AppModel {
     /// Set by `handleIncomingURL`, cleared by the prompt's buttons. A link
     /// fills nothing until the user has answered this (`PairingLinkPromptModifier`).
     private(set) var pairingLinkPrompt: PairingLinkPrompt?
-    /// A pairing link the user accepted, waiting for the screen that owns the
-    /// server fields — the first-run flow while it is up, Settings → Server
-    /// otherwise — to collect it with `takeConfirmedPairing()`. A hand-off
-    /// rather than a write into `config`: both screens keep the URL and token
-    /// as local text until the user moves on, and a link gets no shortcut past
-    /// that.
+    /// A pairing link the user accepted, waiting for Sync → Server to collect
+    /// it with `takeConfirmedPairing()` — after the first-run flow, if that is
+    /// up (`pairingAwaitsSyncTab`). A hand-off rather than a write into
+    /// `config`: the screen keeps the URL and token as local text until Save &
+    /// Apply, and a link gets no shortcut past that.
     private(set) var confirmedPairing: PairingPayload?
 
     /// Types a permission request failed to determine this session. Re-requesting
@@ -124,6 +130,7 @@ final class AppModel {
         let engine = HealthSyncEngine()
         self.engine = engine
         self.scheduler = BackgroundSyncScheduler(engine: engine)
+        self.explore = ExploreModel(engine: engine)
         // An export's files are health data sitting in the temporary directory
         // until they are shared. The privacy policy says none survives a
         // launch, and this line is what makes that true — for the export the
@@ -161,6 +168,9 @@ final class AppModel {
 
         config = await engine.store.configuration
         appliedConfig = config
+        // The Export tab's draft starts from the applied selection, if the
+        // user has not already started editing it.
+        export.seedFromApplied(config)
         authorizationRequested = UserDefaults.standard.bool(forKey: "authorizationRequested")
         // Don't trust the one-shot flag alone: types added to the catalog after
         // the first grant (or an interrupted permission sheet) stay notDetermined
@@ -192,7 +202,7 @@ final class AppModel {
             }
         }
 
-        // Observe engine changes -> refresh dashboard.
+        // Observe engine changes -> refresh the status tabs.
         let changeTask = Task { [weak self] in
             guard let self else { return }
             for await _ in await engine.changes() {
@@ -322,16 +332,12 @@ final class AppModel {
 
     // MARK: - Export to files
 
-    /// What Export Data exports: the **applied** selection, never the draft.
-    ///
-    /// The Data Types tab edits `config` freely and nothing there counts until
-    /// Apply — which is also the moment Health access is requested for it. An
-    /// export of a half-edited draft would read types the user has not been
-    /// asked about (each one a failure in the result) and would disagree with
-    /// the Dashboard about what "the selection" is. The screen says when a
-    /// draft is pending instead (`hasPendingChanges`).
+    /// What the Export tab exports: its own draft (`ExportModel.draft`),
+    /// seeded from the applied selection and edited on the tab. It is not the
+    /// Synced Data draft: what is chosen there counts only after Apply, and
+    /// what is chosen here never reaches the sync at all.
     var exportSelection: ExportSelectionSummary {
-        ExportSelectionSummary(configuration: appliedConfig)
+        ExportSelectionSummary(selection: export.draft.selection())
     }
 
     /// A backfill and an export are the same sweep over the same HealthKit
@@ -342,14 +348,14 @@ final class AppModel {
     /// not waited for.
     var exportBlockedByBackfill: Bool { backfillActive }
 
-    /// Medication Doses is selected but this install has never got the
-    /// per-object picker on screen, so the export will find no doses. Normally
-    /// false: Apply schedules that picker for any selection that includes the
+    /// Medication Doses is in the export draft but this install has never got
+    /// the per-object picker on screen, so the export will find no doses.
+    /// Apply schedules that picker for any synced selection that includes the
     /// type. Export only *says* so — it must not present the picker itself,
     /// least of all on a path it awaits (see `scheduleMedicationAccessRequest`).
     var exportLacksMedicationAccess: Bool {
         guard #available(iOS 26.0, *) else { return false }
-        return appliedConfig.enabledTypes.contains(HealthTypeCatalog.medicationDoseIdentifier)
+        return export.draft.types.contains(HealthTypeCatalog.medicationDoseIdentifier)
             && !UserDefaults.standard.bool(forKey: Self.medicationAuthRequestedKey)
     }
 
@@ -362,21 +368,24 @@ final class AppModel {
 
     /// The export's permission step. `HealthExporter` never prompts, and a type
     /// whose access was never requested comes back as a failure, so anything in
-    /// the applied selection that iOS still reports as undetermined is asked
-    /// for first — one sheet, the same request Apply makes.
+    /// the export draft (its types and its series' types) that iOS still
+    /// reports as undetermined is asked for first — one sheet, the same request
+    /// Apply makes.
     ///
-    /// Usually there is nothing to ask: a selection only becomes *applied*
-    /// through Apply, which requested it. What is left is a type added to the
-    /// selection by an older build, or a sheet that was interrupted. Two rules
-    /// carry over from Apply: types iOS refuses to put in the sheet are not
-    /// asked for again (it would only flash — they show up in the export's
-    /// failures, with the hint already on the Dashboard), and the medication
-    /// picker is not requested here at all.
+    /// The draft is built on the tab, so unlike the applied selection it can
+    /// hold types no Apply has asked about; this is where they are asked for.
+    /// Two rules carry over from Apply: types iOS refuses to put in the sheet
+    /// are not asked for again (it would only flash — they show up in the
+    /// export's failures, with the hint already on the Explore tab), and the
+    /// medication picker is not requested here at all.
     ///
     /// It does not touch `authorizationRequested`: that flag gates observer
     /// registration and background scheduling, which are the sync's business.
     private func requestHealthAccessForExport() async {
-        let selected = appliedConfig.observedTypeIdentifiers.sorted()
+        let selection = export.draft.selection()
+        let selected = selection.types
+            .union(selection.aggregates.map(\.typeIdentifier))
+            .sorted()
         guard !selected.isEmpty, await engine.authorizationNeeded(for: selected) else { return }
         let pending = await pendingTypes(among: selected)
         guard !Set(pending).isSubset(of: undeterminableTypes) else { return }
@@ -393,7 +402,7 @@ final class AppModel {
 
     // MARK: - Actions
 
-    /// Recomputes the dashboard's "access incomplete" warning. Scoped to the
+    /// Recomputes the Explore tab's "access incomplete" warning. Scoped to the
     /// types the user actually enabled (raw-sync ∪ aggregates): unselected
     /// catalog types staying undetermined is normal and must never raise a
     /// warning — only enabled types whose syncs would fail matter.
@@ -441,7 +450,7 @@ final class AppModel {
     /// The app's single HealthKit permission prompt. Called from Apply/Save when
     /// a configuration is pushed to the engine: any enabled type (raw-sync or
     /// aggregate-only) whose read access iOS still reports as undetermined is
-    /// requested now, in one sheet, before we start reading. The Dashboard only
+    /// requested now, in one sheet, before we start reading. The Explore tab only
     /// *warns* about missing access — it never prompts. Idempotent: once a type
     /// is determined it isn't asked again, so re-applying never re-prompts.
     func requestAccessForEnabledTypesIfNeeded() async {
@@ -466,7 +475,7 @@ final class AppModel {
             // keeps HealthKit grants but not UserDefaults; or the user granted
             // access from Settings → Health before the first Apply). Without
             // the flag, every later launch skipped the observer registration
-            // and the BGProcessing schedule, and the Dashboard kept showing the
+            // and the BGProcessing schedule, and the Explore tab kept showing the
             // welcome banner — background sync silently stopped after a
             // reinstall until the user tapped Apply again in each session.
             if !enabled.isEmpty { markAuthorizationRequested() }
@@ -495,7 +504,7 @@ final class AppModel {
     ///
     /// `wholeHistory` marks an apply whose backfill is every enabled type from
     /// the start date — the first run, or a start-fresh server change — as
-    /// opposed to a type or two added on the Data Types tab.
+    /// opposed to a type or two added on the Synced Data screen.
     @discardableResult
     func applyConfiguration(
         syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false
@@ -705,7 +714,10 @@ final class AppModel {
             // The *applied* server: where data goes today, not a half-typed draft.
             currentServerURL: appliedConfig.serverURL,
             currentUserID: appliedConfig.userID,
-            destination: showsOnboarding ? .onboarding : .settings)
+            // Always Sync → Server: the first-run flow has no server step any
+            // more, so a link accepted during it waits for the flow to end and
+            // lands there (`pairingAwaitsSyncTab`).
+            destination: .settings)
     }
 
     /// The prompt's Continue. Takes the payload the prompt *displayed* and
@@ -734,10 +746,10 @@ final class AppModel {
         }
     }
 
-    /// True while an accepted link is waiting for Settings → Server, i.e. the
+    /// True while an accepted link is waiting for Sync → Server, i.e. the
     /// first-run flow is not the one that should take it. RootView switches to
-    /// the Settings tab on this.
-    var pairingAwaitsSettings: Bool { confirmedPairing != nil && !showsOnboarding }
+    /// the Sync tab and pushes the Server screen on this.
+    var pairingAwaitsSyncTab: Bool { confirmedPairing != nil && !showsOnboarding }
 
     /// One-shot: the screen that fills its fields from the payload takes it.
     func takeConfirmedPairing() -> PairingPayload? {
@@ -745,17 +757,32 @@ final class AppModel {
         return confirmedPairing
     }
 
-    // MARK: - Staged Data Types changes
+    // MARK: - Staged Synced Data changes
 
-    /// True while the Data Types draft differs from what's applied to the
-    /// engine. Scoped to the fields that tab edits (raw types, aggregates,
+    /// True while the Synced Data draft differs from what's applied to the
+    /// engine. Scoped to the fields that screen edits (raw types, aggregates,
     /// workout routes) so Settings-only edits don't trip the Apply bar. Drives
-    /// the pending-changes bar on the Data Types tab.
+    /// the pending-changes bar on the Sync tab.
     var hasPendingChanges: Bool {
         config.enabledTypes != appliedConfig.enabledTypes
             || config.aggregates != appliedConfig.aggregates
             || config.includeWorkoutRoutes != appliedConfig.includeWorkoutRoutes
             || config.includeWorkoutEnhancedData != appliedConfig.includeWorkoutEnhancedData
+    }
+
+    /// The Settings twin of `hasPendingChanges`: true while a field Settings
+    /// or its User page edits differs from what's applied. Settings shows its
+    /// Save & Apply only then — including for User edits left unsaved when
+    /// that page was popped.
+    var hasPendingSettingsChanges: Bool {
+        config.startDate != appliedConfig.startDate
+            || config.maxConcurrentTypes != appliedConfig.maxConcurrentTypes
+            || config.batchSize != appliedConfig.batchSize
+            || config.userID != appliedConfig.userID
+            || config.userName != appliedConfig.userName
+            || config.userEmail != appliedConfig.userEmail
+            || config.userDateOfBirth != appliedConfig.userDateOfBirth
+            || config.userBiologicalSex != appliedConfig.userBiologicalSex
     }
 
     /// Short description of what's staged, e.g. "2 data types · 1 aggregate".
@@ -780,7 +807,7 @@ final class AppModel {
         return parts.isEmpty ? "configuration" : parts.joined(separator: " · ")
     }
 
-    /// Commits the staged Data Types draft: pushes it to the engine and starts
+    /// Commits the staged Synced Data draft: pushes it to the engine and starts
     /// backfilling newly enabled types/aggregates. Mirrors Settings' Save & Apply.
     func applyChanges() async {
         await applyConfiguration(syncNewTypes: true)
@@ -954,7 +981,7 @@ final class AppModel {
                 self.authorizationHint = """
                 iOS didn't show the medication picker, so medication doses stay \
                 unauthorized. Try Save & Apply again, or turn Medication Doses off \
-                in Data Types.
+                under Synced Data.
                 """
             }
         }
@@ -969,7 +996,7 @@ final class AppModel {
 
     /// Clears both the engine's persisted ring buffer and the on-screen list —
     /// the list is a separate array fed by the event stream, so clearing only
-    /// the actor left the Log tab unchanged until the next launch.
+    /// the actor left the activity log unchanged until the next launch.
     func clearEvents() async {
         await engine.eventLog.clear()
         events = []
@@ -1061,6 +1088,7 @@ final class AppModel {
         if case .ok(let capabilities) = result {
             serverCapabilities = capabilities
         }
+        lastConnectionTest = ConnectionTestRecord(url: url, result: result, at: Date())
         return result
     }
 
@@ -1100,7 +1128,14 @@ final class AppModel {
         Task { await engine.syncAggregate(configID: id, reason: .manual) }
     }
 
-    // MARK: - Derived dashboard aggregates
+    /// Settings → Delete Analysis: every stored type profile. Summaries,
+    /// never samples, but still about health data, so there is one switch.
+    func deleteAnalysis() async {
+        await explore.deleteAll()
+        await engine.eventLog.log(.info, "Stored type analyses deleted")
+    }
+
+    // MARK: - Derived totals for the Explore and Sync tabs
 
     var totalSamples: Int { statuses.reduce(0) { $0 + $1.state.totalSamplesExported } }
     var totalBytes: Int { statuses.reduce(0) { $0 + $1.state.totalBytesUploaded } }
@@ -1110,36 +1145,11 @@ final class AppModel {
         let remaining = statuses.compactMap(\.estimatedSecondsRemaining)
         return remaining.isEmpty ? nil : remaining.max()
     }
-    var configured: Bool { config.serverURL != nil && !config.observedTypeIdentifiers.isEmpty }
-}
-
-// MARK: - Formatting helpers shared by views
-
-extension Int {
-    var byteString: String {
-        ByteCountFormatter.string(fromByteCount: Int64(self), countStyle: .file)
-    }
-
-    var compactString: String {
-        if self >= 1_000_000 { return String(format: "%.1fM", Double(self) / 1_000_000) }
-        if self >= 10_000 { return String(format: "%.0fK", Double(self) / 1_000) }
-        return formatted()
-    }
-}
-
-extension TimeInterval {
-    var shortDuration: String {
-        if self < 1 { return String(format: "%.0f ms", self * 1000) }
-        if self < 90 { return String(format: "%.1f s", self) }
-        if self < 5_400 { return String(format: "%.0f min", self / 60) }
-        return String(format: "%.1f h", self / 3600)
-    }
-}
-
-extension Date {
-    var relativeString: String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: self, relativeTo: Date())
+    /// Whether there is anything to sync and somewhere to sync it — on the
+    /// *applied* configuration, which is what the engine runs on. The draft
+    /// used to decide this, so a URL typed but not yet saved lit Sync Now
+    /// against a server the engine had never been given.
+    var configured: Bool {
+        appliedConfig.serverURL != nil && !appliedConfig.observedTypeIdentifiers.isEmpty
     }
 }

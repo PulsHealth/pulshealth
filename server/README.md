@@ -432,7 +432,7 @@ stamped with when it was last used.
 
 Pairing a phone with one is a single command, which issues the token and
 prints the same block the shared token gets — URL, token, user ID and a QR
-code the app scans (**Settings → Server**):
+code the app scans (**Sync → Server**, or the Sync tab's Scan Pairing Code):
 
 ```bash
 scripts/bootstrap.sh --issue-device "My iPhone"                  # the default user
@@ -932,7 +932,7 @@ Every upload writes one `batches` row stamped with `received_at` (server time),
 `wake_id`/`trigger` (the iOS wake that produced it), `bytes`, `parse_ms`,
 `insert_ms`, and the per-kind counts. That's enough to reconstruct how often the
 device got execution time and what each wake did — pair it with the device-side
-wake export (app → Log tab → Background Activity → Export) for the full picture
+wake export (app → Sync → Activity → Background → Export) for the full picture
 (durations, gaps, expirations, Low Power Mode).
 
 ```bash

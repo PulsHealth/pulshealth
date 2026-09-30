@@ -79,11 +79,16 @@ and cannot be prepared in the repository.
 
 - [ ] **maintainer only** — Capture the 6.9" iPhone set on a real device with
       real Health data, in the order `listing.md` gives.
-- [ ] Do not ship simulator screenshots of the dashboard, type detail, or
-      background-activity screens: with no Health data behind them every number
-      is zero and every row says "not synced", which misrepresents the app. The
-      first-run welcome and server screens are the exception — they look the
-      same either way.
+- [ ] **1.6 replaced every screen but Welcome** (Explore, a Type page, the
+      Export builder, Sync, Background — see `listing.md` § Screenshots), so
+      the whole set is retaken before submission; the 1.4 set on the record
+      and the four images in the root `README.md` (`docs/images/app/`) show
+      screens that no longer exist.
+- [ ] Do not ship simulator screenshots of the Explore, Type page, Sync or
+      background-activity screens: with no Health data behind them every count
+      is zero and every type says "No data", which misrepresents the app. The
+      first-run welcome screen is the exception — it looks the same either
+      way.
 
 ### Review backend
 
@@ -100,9 +105,10 @@ and cannot be prepared in the repository.
 - [ ] `cd PulsHealth && xcodegen` — the Xcode project is generated and
       untracked.
 - [ ] Bump `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in
-      `PulsHealth/project.yml` if this is not the first build. They are `1.5` /
-      `16`, uploaded to TestFlight on 2026-09-29 and not yet submitted, so any
-      further upload needs build 17.
+      `PulsHealth/project.yml` if this is not the first build. They are `1.6` /
+      `17`, not yet uploaded; `1.5` / `16` went to TestFlight on 2026-09-29
+      and was never submitted, so 17 is the next build App Store Connect
+      accepts and any upload after it needs 18.
 - [ ] Archive for a real device with the maintainer's team and upload.
       `ITSAppUsesNonExemptEncryption` is already `false` in `Info.plist`, so
       there is no export-compliance questionnaire per build.
@@ -139,7 +145,7 @@ changes, revisit them in the same pull request:
 | A new dependency of any kind | `privacy-policy.md`, `listing.md` — "zero third-party dependencies" stops being true |
 | A new permission or usage string | `privacy-policy.md`, `review-notes.md`, `PrivacyInfo.xcprivacy` |
 | A URL scheme, or any other way another app or a web page can hand the app input (today: `puls://pair`, confirmed before it fills anything) | `privacy-policy.md` (how the server URL gets into the app), `review-notes.md` (URL SCHEME), `listing.md` (the "Unrestricted web access" row) |
-| What is stored on the device, or where | `privacy-policy.md` |
+| What is stored on the device, or where (today: sync state, logs, four preferences, a staged export, and per-type analysis summaries) | `privacy-policy.md` § What stays on the device, `SECURITY.md`, the site's `/privacy` glance card |
 | The on-device export: where files are staged, when the app deletes them (launch, new export, Delete Export, a completed share), what identity they carry, which share activities are offered | `privacy-policy.md` § Exports, `SECURITY.md`, the site's `/privacy` glance card, `review-notes.md` (WITHOUT A SERVER, HEALTHKIT), `listing.md` (description, App Privacy point 2) |
 | The first-run flow's steps | `review-notes.md` — the reviewer walkthrough is step-by-step |
 | `ServerURLValidation`'s rules | `review-notes.md` — the ATS justification quotes them |
@@ -161,5 +167,6 @@ rather than from memory. Add a row per release.
 | Version | Released | Notes |
 |---|---|---|
 | 1.3 | 2026-01-24 | CSV/JSON export app with QR data requests; the listing described that until 1.4. |
+| 1.6 (17) | — | Not yet uploaded. UI revamp: Explore, Export builder, Sync, Settings; analysis summaries stored on device (privacy policy updated 2026-09-30). Supersedes 1.5 (16), which was never submitted. Screenshots must be retaken. |
 | 1.5 (16) | — | Uploaded to TestFlight 2026-09-29 for device testing; not submitted. Server-less export (#77), pairing from a link, the Camera app or the clipboard (#77), and the reinstall/first-sync fixes (#82). Needs a device pass before submission: the iOS 26 continued-processing first run, leaving the app mid-backfill, export on a real device. |
 | 1.4 (15) | 2026-09-19 | Current version on the store. Self-hosted sync: first-run onboarding with QR pairing, Keychain token, per-server sync state, capabilities-gated UI, published type vocabulary. Build 14 was rejected 2026-09-19 under 5.2.5 (subtitle "Apple Health to your server"; "Apple" is not allowed in the name or subtitle) and 5.1.1(iv) ("Grant Health Access" button and "Skip for Now" on the pre-permission screen); build 15 fixed both (#71) and was approved the same day. Reviewed on an iPad Air 11-inch (M3). |

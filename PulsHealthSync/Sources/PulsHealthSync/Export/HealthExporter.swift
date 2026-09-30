@@ -1,7 +1,8 @@
 import Foundation
 import HealthKit
 
-/// Server-less, on-demand export of HealthKit data to JSONL or CSV files.
+/// Server-less, on-demand export of HealthKit data to JSONL or CSV files,
+/// optionally zipped into one.
 ///
 /// An export is an ordinary sync sweep pointed at files: the same anchored
 /// queries, the same `SampleMapper` and canonical units, the same enrichment
@@ -53,18 +54,20 @@ public final class HealthExporter: Sendable {
     }
 
     /// Delete every staged export and any throwaway engine state, including
-    /// what a crash or force-quit mid-export left behind. Call it at launch
-    /// and once the share sheet is done with an export's files; do not call it
-    /// while an export is running. Returns false if something could not be
-    /// removed. Exports written to a caller-supplied `outputDirectory` are not
-    /// touched.
+    /// what a crash or force-quit mid-export left behind — a half-built zip in
+    /// `NSFileCoordinator`'s scratch directory among it (`ExportZipper`). Call
+    /// it at launch and once the share sheet is done with an export's files;
+    /// do not call it while an export is running. Returns false if something
+    /// could not be removed. Exports written to a caller-supplied
+    /// `outputDirectory` are not touched.
     @discardableResult
     public static func removeAllExports() -> Bool {
+        let scratchRemoved = ExportZipper.removeScratch()
         let root = stagingRoot
-        guard FileManager.default.fileExists(atPath: root.path) else { return true }
+        guard FileManager.default.fileExists(atPath: root.path) else { return scratchRemoved }
         do {
             try FileManager.default.removeItem(at: root)
-            return true
+            return scratchRemoved
         } catch {
             return false
         }
@@ -103,7 +106,7 @@ public final class HealthExporter: Sendable {
         guard HKHealthStore.isHealthDataAvailable() else {
             throw HealthExportError.healthDataUnavailable
         }
-        guard ExportPlan.hasAnythingToExport(request.configuration) else {
+        guard ExportPlan.hasAnythingToExport(request.selection) else {
             throw HealthExportError.nothingSelected
         }
         progress?(ExportProgress(phase: .preparing))
@@ -115,11 +118,16 @@ public final class HealthExporter: Sendable {
             .appendingPathComponent(".state", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: stateDirectory) }
+        // `readEnd` is the export's end date: the one engine that may carry
+        // one (see `HealthSyncEngine.readEnd`), because a bounded sweep marks
+        // every backfill complete at the bound, which is right for a store
+        // that is about to be deleted and wrong for the app's.
         let engine = HealthSyncEngine(
             store: SyncStateStore(directory: stateDirectory, tokenStore: InMemoryTokenStore()),
             eventLog: SyncEventLog(directory: stateDirectory),
             wakeLog: WakeLog(directory: stateDirectory),
-            recentWindowFirst: false)
+            recentWindowFirst: false,
+            readEnd: request.endDate)
 
         // Checked here, once, and thrown: `syncAllEnabled` makes the same test
         // but answers a locked device by logging and returning, which for an
@@ -139,9 +147,14 @@ public final class HealthExporter: Sendable {
         let directory = request.outputDirectory ?? Self.stagingRoot.appendingPathComponent(
             "\(baseName)-\(UUID().uuidString.prefix(8).lowercased())", isDirectory: true)
         let createdDirectory = !FileManager.default.fileExists(atPath: directory.path)
+        // A zipped export writes its files into a folder named after it, which
+        // is what the archive then holds and what unzipping gives back.
+        let contentDirectory = request.zipped
+            ? directory.appendingPathComponent(baseName, isDirectory: true) : directory
+        let zipURL = directory.appendingPathComponent("\(baseName).zip")
         do {
             try FileManager.default.createDirectory(
-                at: directory, withIntermediateDirectories: true,
+                at: contentDirectory, withIntermediateDirectories: true,
                 attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
         } catch {
             throw HealthExportError.writeFailed(
@@ -149,13 +162,15 @@ public final class HealthExporter: Sendable {
         }
 
         let transport = ExportFileTransport(
-            format: request.format, directory: directory, baseName: baseName,
+            format: request.format, directory: contentDirectory, baseName: baseName,
             deviceID: request.deviceID, progress: progress)
         await engine.setTransport(transport)
         let collector = await ExportEventCollector.start(on: engine.eventLog)
 
         do {
-            try await sweep(engine: engine, config: config, transport: transport, collector: collector)
+            try await sweep(
+                engine: engine, config: config, selection: request.selection,
+                transport: transport, collector: collector)
             await transport.setPhase(.finishing)
 
             let events = await collector.finish()
@@ -172,18 +187,20 @@ public final class HealthExporter: Sendable {
             }
 
             let rowCounts = tally.rows
-            let manifestURL = directory.appendingPathComponent("\(baseName)-manifest.json")
+            let manifestURL = contentDirectory.appendingPathComponent("\(baseName)-manifest.json")
             let manifest = ExportManifest(
                 format: request.format,
                 schemaVersion: PulsProtocol.version,
                 clientVersion: PulsProtocol.clientVersion,
                 createdAt: createdAt,
                 startDate: request.startDate,
+                endDate: request.endDate,
                 userID: config.userID,
                 deviceID: request.deviceID ?? engine.store.deviceID,
                 timeZone: TimeZone.current.identifier,
                 complete: failures.isEmpty && unmappable.isEmpty,
                 types: config.enabledTypes.sorted(),
+                aggregates: request.selection.aggregates.map(\.seriesIdentity).sorted(),
                 files: written.map { file in
                     ExportManifest.File(
                         name: file.url.lastPathComponent, dataset: file.dataset?.rawValue,
@@ -202,17 +219,38 @@ public final class HealthExporter: Sendable {
                     ErrorScrubber.describe(error, limit: ErrorScrubber.displayLimit))
             }
 
+            var files = written.map(\.url) + [manifestURL]
+            var totalBytes = written.reduce(manifestBytes) { $0 + $1.bytes }
+            var archive: ExportArchive?
+            if request.zipped {
+                await transport.setPhase(.archiving)
+                let zipped: ExportZipper.Zipped
+                do {
+                    zipped = try await ExportZipper.zip(folder: contentDirectory, to: zipURL)
+                } catch {
+                    throw HealthExportError.writeFailed(
+                        ErrorScrubber.describe(error, limit: ErrorScrubber.displayLimit))
+                }
+                try? FileManager.default.removeItem(at: contentDirectory)
+                try Task.checkCancellation()
+                archive = ExportArchive(
+                    url: zipURL, entries: files.map(\.lastPathComponent), contentBytes: totalBytes)
+                files = [zipURL]
+                totalBytes = zipped.bytes
+            }
+
             return ExportResult(
                 format: request.format,
                 directory: directory,
-                files: written.map(\.url) + [manifestURL],
-                manifestURL: manifestURL,
+                files: files,
+                archive: archive,
+                manifestURL: request.zipped ? nil : manifestURL,
                 rowCounts: rowCounts,
                 notRepresented: tally.notRepresented(in: request.format),
                 unmappableSamples: unmappable,
                 failures: failures,
                 warnings: ExportPlan.warnings(from: events, excluding: failures),
-                totalBytes: written.reduce(manifestBytes) { $0 + $1.bytes },
+                totalBytes: totalBytes,
                 duration: (ContinuousClock.now - started).seconds)
         } catch {
             // One rule for every way out: a throw leaves no files. A partial
@@ -220,7 +258,13 @@ public final class HealthExporter: Sendable {
             // this type must never leave lying around.
             collector.cancel()
             await transport.abort()
-            if createdDirectory { try? FileManager.default.removeItem(at: directory) }
+            if createdDirectory {
+                try? FileManager.default.removeItem(at: directory)
+            } else if request.zipped {
+                // The caller's directory: only what this run put in it.
+                try? FileManager.default.removeItem(at: contentDirectory)
+                try? FileManager.default.removeItem(at: zipURL)
+            }
             throw error
         }
     }
@@ -237,7 +281,7 @@ public final class HealthExporter: Sendable {
     /// transport error as one type's bad day. For an export, cancellation and
     /// a dead disk both end the run.
     private func sweep(
-        engine: HealthSyncEngine, config: SyncConfiguration,
+        engine: HealthSyncEngine, config: SyncConfiguration, selection: ExportSelection,
         transport: ExportFileTransport, collector: ExportEventCollector
     ) async throws {
         func begin(_ phase: ExportProgress.Phase) async throws {
@@ -267,11 +311,16 @@ public final class HealthExporter: Sendable {
             await engine.syncAllAggregates(reason: .manual)
         }
         if sampleTypes.contains(HealthTypeCatalog.workoutIdentifier) {
-            // Both self-gate on their configuration switch.
-            try await begin(.workoutRoutes)
-            await engine.syncWorkoutRoutes(reason: .manual)
-            try await begin(.workoutStreams)
-            await engine.syncWorkoutStreams(reason: .manual)
+            // Keyed on the selection (which `config` was built from, so the
+            // engine's own gate on its configuration switch agrees).
+            if selection.includeWorkoutRoutes {
+                try await begin(.workoutRoutes)
+                await engine.syncWorkoutRoutes(reason: .manual)
+            }
+            if selection.includeWorkoutEnhancedData {
+                try await begin(.workoutStreams)
+                await engine.syncWorkoutStreams(reason: .manual)
+            }
         }
         try Task.checkCancellation()
         if let reason = await transport.writeFailure {

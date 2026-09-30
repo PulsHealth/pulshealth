@@ -16,9 +16,10 @@ enum ExportPlan {
     /// an ordinary Gregorian date everywhere.
     static let allTimeFloor = Date(timeIntervalSince1970: -2_208_988_800)
 
-    /// True when the configuration selects anything an export could read.
-    static func hasAnythingToExport(_ config: SyncConfiguration) -> Bool {
-        !config.enabledTypes.isEmpty || config.aggregates.contains(where: \.enabled)
+    /// True when the selection names anything an export could read. The
+    /// applied configuration's version is `ExportSelection(configuration:)`.
+    static func hasAnythingToExport(_ selection: ExportSelection) -> Bool {
+        !selection.isEmpty
     }
 
     /// The configuration the throwaway engine runs. Everything that ties the
@@ -31,9 +32,14 @@ enum ExportPlan {
     ///   settings, not HealthKit data, and on a replay it would overwrite the
     ///   server's `users` row with whatever the phone held on export day.
     ///
-    /// Disabled aggregate configs are dropped so the completion check below
-    /// has nothing to wonder about; enabled ones get their start from
-    /// `alignedAggregateStart` once HealthKit has said where their data begins.
+    /// The selection replaces the configuration's own: `enabledTypes` and the
+    /// two workout switches are the request's, and its aggregate list is the
+    /// request's with every config enabled — presence in the selection is the
+    /// decision, so the completion check below has nothing to wonder about.
+    /// Each series gets its start from `alignedAggregateStart` once HealthKit
+    /// has said where its data begins. A bounded export (`endDate` set) zeroes
+    /// every `settleDelay`: the bound is in the past, and there is nothing
+    /// for late Watch data to settle into that the export should wait for.
     static func configuration(
         for request: ExportRequest, floor: Date = allTimeFloor
     ) -> SyncConfiguration {
@@ -45,7 +51,15 @@ enum ExportPlan {
         config.userDateOfBirth = nil
         config.userBiologicalSex = nil
         config.startDate = request.startDate ?? floor
-        config.aggregates = config.aggregates.filter(\.enabled)
+        config.enabledTypes = request.selection.types
+        config.includeWorkoutRoutes = request.selection.includeWorkoutRoutes
+        config.includeWorkoutEnhancedData = request.selection.includeWorkoutEnhancedData
+        config.aggregates = request.selection.aggregates.map { aggregate in
+            var aggregate = aggregate
+            aggregate.enabled = true
+            if request.endDate != nil { aggregate.settleDelay = 0 }
+            return aggregate
+        }
         return config
     }
 

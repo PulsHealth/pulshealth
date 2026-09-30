@@ -46,16 +46,14 @@ public enum ExportRange: String, Sendable, CaseIterable, Identifiable {
 
     /// Shown under the picker. Only all time needs one.
     ///
-    /// The ratio is measured, the totals are arithmetic: 340,000 samples came
+    /// "Hundreds of megabytes" is arithmetic over measured rows: 340,000 samples came
     /// to 41 MB as CSV and 212 MB as JSONL (about 120 and 620 bytes a row — the
     /// wire format carries each sample's time-zone context and source), and a
     /// Watch records a few thousand heart-rate samples a day.
     public var sizeNote: String? {
         switch self {
         case .allTime:
-            "Years of Apple Watch data can come to hundreds of megabytes as CSV, and about five "
-                + "times that as JSONL. Make sure the iPhone has the space, and expect it to take "
-                + "several minutes."
+            "Can be hundreds of megabytes and take several minutes."
         default:
             nil
         }
@@ -67,18 +65,6 @@ public extension ExportFormat {
         switch self {
         case .csv: "CSV"
         case .jsonl: "JSONL"
-        }
-    }
-
-    /// One line on what the format is for.
-    var detail: String {
-        switch self {
-        case .csv:
-            "For spreadsheets. One file per kind of data, opens in Numbers or Excel. "
-                + "Leaves out metadata, ECG traces and heartbeat series."
-        case .jsonl:
-            "Everything, in the Puls sync format. Complete, and can be replayed into "
-                + "a PulsHealth server later."
         }
     }
 }
@@ -113,26 +99,32 @@ public extension ExportProgress.Phase {
         case .workoutRoutes: "Reading workout routes…"
         case .workoutStreams: "Reading workout streams…"
         case .finishing: "Finishing…"
+        case .archiving: "Zipping…"
         }
     }
 }
 
-/// What an export of a configuration would cover, for the screen's "what's
-/// included" rows. Counts what `ExportPlan` will actually run: disabled
-/// aggregate configs are not exported, and the route and stream switches only
-/// mean something when Workouts is selected.
+/// What an export of a selection would cover, for the screen's "what's
+/// included" rows. Counts what `ExportPlan` will actually run: every aggregate
+/// in the selection is exported, and the route and stream switches only mean
+/// something when Workouts is selected.
 public struct ExportSelectionSummary: Sendable, Equatable {
     public let typeCount: Int
     public let aggregateCount: Int
     public let includesWorkoutRoutes: Bool
     public let includesWorkoutStreams: Bool
 
+    public init(selection: ExportSelection) {
+        typeCount = selection.types.count
+        aggregateCount = selection.aggregates.count
+        let workouts = selection.types.contains(HealthTypeCatalog.workoutIdentifier)
+        includesWorkoutRoutes = workouts && selection.includeWorkoutRoutes
+        includesWorkoutStreams = workouts && selection.includeWorkoutEnhancedData
+    }
+
+    /// The applied selection: disabled aggregate configs are not counted.
     public init(configuration: SyncConfiguration) {
-        typeCount = configuration.enabledTypes.count
-        aggregateCount = configuration.aggregates.filter(\.enabled).count
-        let workouts = configuration.enabledTypes.contains(HealthTypeCatalog.workoutIdentifier)
-        includesWorkoutRoutes = workouts && configuration.includeWorkoutRoutes
-        includesWorkoutStreams = workouts && configuration.includeWorkoutEnhancedData
+        self.init(selection: ExportSelection(configuration: configuration))
     }
 
     /// Mirrors `ExportPlan.hasAnythingToExport`, which is what makes
@@ -190,8 +182,8 @@ public struct ExportFailureCopy: Sendable, Equatable {
         case .nothingSelected:
             self.init(
                 title: "Nothing Selected",
-                message: "No data types are selected. Choose some on the Data Types tab, "
-                    + "tap Apply, then come back.",
+                message: "No data types are selected. Choose some to include in this export, "
+                    + "or on the Data Types tab.",
                 suggestion: .dataTypes)
         case .noData:
             // HealthKit answers a declined read exactly like an empty one, so

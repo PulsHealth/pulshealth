@@ -40,11 +40,12 @@ the internet needs HTTPS in front of it. On a phone on the same Wi-Fi:
 
 1. Find the machine's LAN address (`ipconfig getifaddr en0` on macOS,
    `hostname -I` on Linux).
-2. In PulsHealth, **Settings → Server**: URL `http://192.168.1.23:8080`
-   (your address), token the `PULS_TOKEN` value. Tap **Test connection**; it
-   calls `/v1/capabilities` and should report a receiver speaking protocol 1.
-3. **Data Types**: pick what to sync, tap Apply. Batches start arriving
-   within seconds; the receiver logs one line per request.
+2. In PulsHealth, **Sync → Enter Server Details** (later, **Sync → Server**):
+   URL `http://192.168.1.23:8080` (your address), token the `PULS_TOKEN`
+   value. Tap **Test Connection**; it calls `/v1/capabilities` and should
+   report a receiver speaking protocol 1. Then **Save & Apply**.
+3. **Sync → Synced Data**: pick what to sync, tap Apply. Batches start
+   arriving within seconds; the receiver logs one line per request.
 
 Because the receiver advertises only `batches` and `profile`, the app hides
 its server-count and reconciliation screens (they need `stats`, `digest`,
