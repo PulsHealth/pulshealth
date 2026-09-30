@@ -19,7 +19,7 @@ struct BackgroundActivityView: View {
         }
         // Title and the Log/Background switch are ActivityView's.
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .topBarTrailing) {
                 if exportURLs.isEmpty {
                     ProgressView()
                 } else {

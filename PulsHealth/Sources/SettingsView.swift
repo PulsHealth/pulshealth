@@ -6,9 +6,9 @@ enum SettingsRoute: Hashable {
     case user, benchmark
 }
 
-/// The Settings tab: who the data is stored as, how the sync is tuned, the
-/// backfill, diagnostics, and the two destructive actions under Privacy &
-/// Data. The server is not here — it is the Sync tab's (`ServerSettingsView`).
+/// The Settings tab: who the data is stored as, how the sync is tuned and
+/// started, the destructive actions under Privacy & Data, diagnostics, and
+/// About. The server is not here — it is the Sync tab's (`ServerSettingsView`).
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var confirmResetAll = false
@@ -20,7 +20,7 @@ struct SettingsView: View {
     var body: some View {
         @Bindable var model = model
         Form {
-            Section("User") {
+            Section {
                 NavigationLink(value: SettingsRoute.user) {
                     LabeledContent(model.config.userName?.isEmpty == false
                         ? model.config.userName! : "User") {
@@ -28,11 +28,13 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Text("All synced data is stored under this user. Change it before the initial backfill.")
-                    .font(.caption).foregroundStyle(.secondary)
+            } header: {
+                Text("User")
+            } footer: {
+                Text("Synced data is stored under this user on the server.")
             }
 
-            Section("Sync window") {
+            Section {
                 DatePicker(
                     // "Sync", not "Export": the Export tab has its own time
                     // range, and this date is not it.
@@ -41,11 +43,6 @@ struct SettingsView: View {
                     in: ...Date(),
                     displayedComponents: .date
                 )
-                Text("The initial backfill syncs everything from this date forward. Changing it later only affects types whose anchors are reset. The Export tab has its own time range.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-
-            Section("Performance") {
                 Stepper(
                     "Concurrent types: \(model.config.maxConcurrentTypes)",
                     value: $model.config.maxConcurrentTypes, in: 1...8
@@ -55,19 +52,6 @@ struct SettingsView: View {
                         Text($0.formatted()).tag($0)
                     }
                 }
-                Text("Defaults (4 types, 1,000/batch) are the field-tested sweet spot. Use the benchmark in Diagnostics to tune for your network.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-
-            Section {
-                Button("Save & Apply") {
-                    Task { await model.applyConfiguration() }
-                }
-            } footer: {
-                Text("Applies the sync window and performance settings above.")
-            }
-
-            Section("Backfill") {
                 Button("Start Initial Backfill") { confirmBackfill = true }
                     // Not under a running export: the two are the same sweep
                     // over the same HealthKit store (AppModel.exportBlockedByBackfill
@@ -83,8 +67,57 @@ struct SettingsView: View {
                         }
                     }
                 }
-                Text("Keep the app in the foreground and the device plugged in for the fastest backfill. Progress is saved after every batch — it's safe to interrupt.")
-                    .font(.caption).foregroundStyle(.secondary)
+                DisclosureGroup("Why isn't the latest data here yet?") {
+                    Text("Data written on this iPhone arrives in seconds. iOS throttles steps and energy to roughly hourly in the background. Apple Watch data must first sync to the phone, which iOS schedules itself, typically minutes and sometimes hours. Opening the app forces a catch-up.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Sync")
+            } footer: {
+                Text("The start date applies to sync only; the Export tab has its own range.")
+            }
+
+            Section {
+                Button {
+                    Task { await model.applyConfiguration() }
+                } label: {
+                    Text("Save & Apply")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
+                .listRowSeparator(.hidden)
+            }
+
+            Section {
+                Button("Reset All Anchors", role: .destructive) { confirmResetAll = true }
+                    .disabled(model.anySyncActive)
+                // The staged export is health data at rest on the device,
+                // and this is the way to remove it without going back to the
+                // Export tab. Only while there is one: a run in flight owns
+                // its files until it ends (`ExportModel.discard`).
+                if case .finished(let finished) = model.export.state, !finished.filesRemoved {
+                    Button("Delete Export", role: .destructive) { confirmDeleteExport = true }
+                }
+                // TODO(phase 3): wire to the profile store (Explore's analysis)
+                // and enable once something has been analyzed.
+                Button(role: .destructive) {
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Delete Analysis")
+                        Text("Nothing analyzed yet")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(true)
+            } header: {
+                Text("Privacy & Data")
+            } footer: {
+                Text("Resetting anchors re-sends everything from the start date; the server deduplicates.")
             }
 
             Section {
@@ -112,35 +145,18 @@ struct SettingsView: View {
             } header: {
                 Text("Diagnostics")
             } footer: {
-                Text("Validation runs every type × aggregate-function combo against HealthKit. A crash here means the allowed-function table needs fixing; listed failures (also under Sync → Activity) are softer errors like missing authorization.")
-            }
-
-            Section {
-                Button("Reset All Anchors", role: .destructive) { confirmResetAll = true }
-                    .disabled(model.anySyncActive)
-                // The staged export is health data at rest on the device,
-                // and this is the way to remove it without going back to the
-                // Export tab. Only while there is one: a run in flight owns
-                // its files until it ends (`ExportModel.discard`).
-                if case .finished(let finished) = model.export.state, !finished.filesRemoved {
-                    Button("Delete Export", role: .destructive) { confirmDeleteExport = true }
-                }
-            } header: {
-                Text("Privacy & Data")
-            } footer: {
-                Text("Resetting anchors re-sends everything from the sync start date; the server deduplicates. An export waiting to be shared is deleted at the next launch anyway.")
+                Text("Validation runs every type and aggregate-function combination against HealthKit; failures are listed under Sync → Activity.")
             }
 
             Section {
                 LabeledContent("Version", value: Self.versionString)
-                Link("Open source", destination: URL(string: "https://github.com/PulsHealth/pulshealth")!)
-                Link("Privacy policy", destination: URL(string: "https://pulshealth.com/privacy")!)
-                Text("No analytics. No third-party code.")
-                    .font(.caption).foregroundStyle(.secondary)
+                Link("Open Source on GitHub", destination: URL(string: "https://github.com/PulsHealth/pulshealth")!)
+                Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy")!)
+                Link("Documentation", destination: URL(string: "https://pulshealth.com/docs/")!)
             } header: {
                 Text("About")
             } footer: {
-                Text("Real-time expectations: data written directly on this iPhone arrives in seconds. Steps/energy are throttled by iOS to roughly hourly. Apple Watch data must first sync to the phone, which iOS schedules opportunistically — typically minutes, sometimes hours. Opening this app forces a catch-up.")
+                Text("No analytics. No third-party code.")
             }
         }
         .navigationTitle("Settings")

@@ -1,55 +1,46 @@
 import SwiftUI
 import PulsHealthSync
 
-/// First-run flow. A fresh install has no server, no token and no data types,
-/// so every tab is empty and nothing points at the screens (Sync → Server and
-/// Synced Data) that would fix it. Five steps take the user from "what is
-/// this" to a running backfill — or, for someone with no server, to a
-/// selection with Health access that the Export tab can write to files:
+/// First-run flow. A fresh install has no data types and no Health access, so
+/// the Explore and Export tabs have nothing to show. Four steps take the user
+/// from "what is this" to a selection with Health access — enough to explore
+/// and export. A server is not asked for: it is optional, and the Sync tab
+/// offers it whenever the user wants one.
 ///
-/// 1. what the app does and where the data goes,
-/// 2. the server — from the pairing code (scanned, pasted, or opened as a
-///    `puls://` link) or typed, then tested,
-/// 3. Health access, requested for the preselected Common set,
-/// 4. which types to sync (the real Data Types screen, not a copy),
-/// 5. a summary and the button that applies everything.
+/// 1. what the app does (explore, export, and optionally sync),
+/// 2. Health access, requested for the preselected Common set,
+/// 3. which types (the real Synced Data screen, titled Choose Data here),
+/// 4. a summary and the button that applies everything.
 ///
-/// Nothing reaches the engine until step 5 — `model.config` is the same staged
+/// Nothing reaches the engine until step 4 — `model.config` is the same staged
 /// draft the Synced Data screen edits, and `finishOnboarding()` is the same
 /// Save & Apply path. Backing out at any point leaves the install exactly as it
 /// was, and the flow reappears on the next launch until it is finished.
+///
+/// A `puls://` pairing link can still arrive while this flow is up. It is
+/// confirmed here (the prompt cannot come from the covered RootView), and the
+/// accepted payload then waits in `AppModel.confirmedPairing` until the flow
+/// ends: `pairingAwaitsSyncTab` turns true, RootView opens Sync → Server, and
+/// that screen fills its fields from it.
 struct OnboardingView: View {
     @Environment(AppModel.self) private var model
 
     enum Step: Int, CaseIterable, Comparable {
-        case welcome, server, health, types, start
+        case welcome, health, types, start
 
         static func < (a: Step, b: Step) -> Bool { a.rawValue < b.rawValue }
 
         var title: String {
             switch self {
             case .welcome: "Welcome"
-            case .server: "Your Server"
             case .health: "Health Access"
-            case .types: "Synced Data"
+            case .types: "Choose Data"
             case .start: "Ready"
             }
         }
     }
 
     @State private var step: Step = .welcome
-
-    // Server step. Held locally until the step is left, exactly like Settings:
-    // the draft only changes when the user moves on — and that includes the
-    // user ID a pairing code brought with it.
-    @State private var server = ServerFieldsDraft()
-    @State private var connectionTest: ConnectionTestResult?
-    @State private var connectionTestRun = 0
-    @State private var testing = false
-    @State private var showScanner = false
-    /// Set when the user chose to move past an untested or failing server.
-    @State private var acceptedServerWarning = false
-
     @State private var requestingHealthAccess = false
     @State private var finishing = false
 
@@ -66,7 +57,7 @@ struct OnboardingView: View {
                     }
                 }
         }
-        // A pushed detail belongs to the step that pushed it. The Synced Data
+        // A pushed detail belongs to the step that pushed it. The Choose Data
         // step is the real picker, so it can be two levels deep (category →
         // per-type config) when the footer's Back/Continue fires — and the
         // footer sits outside the stack, so without this the pushed screen
@@ -75,33 +66,10 @@ struct OnboardingView: View {
         .id(step)
         .safeAreaInset(edge: .bottom) { footer }
         .interactiveDismissDisabled()
-        .onAppear {
-            server = ServerFieldsDraft(configuration: model.config)
-            // A link can be what launched the app, accepted before this view
-            // was listening.
-            collectConfirmedPairing()
-        }
-        .onChange(of: model.confirmedPairing) { collectConfirmedPairing() }
-        .onChange(of: server.urlText) {
-            // A whole `puls://pair?…` string pasted into the URL field is a
-            // pairing code, not a malformed URL. Anything else is an edit, and
-            // an edit means the result on screen is about other values — it
-            // must not keep Continue lit.
-            if let payload = server.pairingCodeInURLField {
-                applyPairing(payload)
-            } else {
-                connectionTest = nil
-            }
-        }
-        .onChange(of: server.tokenText) { connectionTest = nil }
         // This flow covers RootView, so the prompt for an incoming `puls://`
-        // link has to come from here. It cannot present over the scanner sheet
-        // (closed below when a link arrives) or the iOS Health sheet, and it
-        // has no business interrupting the final Apply.
-        .pairingLinkPrompt(canPresent: !showScanner && !requestingHealthAccess && !finishing)
-        .onChange(of: model.pairingLinkPrompt) { _, prompt in
-            if prompt != nil { showScanner = false }
-        }
+        // link has to come from here. Not over the iOS Health sheet, and not
+        // during the final Apply.
+        .pairingLinkPrompt(canPresent: !requestingHealthAccess && !finishing)
     }
 
     // MARK: - Steps
@@ -109,9 +77,8 @@ struct OnboardingView: View {
     @ViewBuilder private var stepContent: some View {
         switch step {
         case .welcome: welcomeStep
-        case .server: serverStep
         case .health: healthStep
-        case .types: TypePickerView()
+        case .types: TypePickerView(title: Step.types.title)
         case .start: startStep
         }
     }
@@ -130,29 +97,25 @@ struct OnboardingView: View {
                     .accessibilityHidden(true)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 8)
-                Text("PulsHealth reads the health data on this iPhone and sends it to a server you run yourself.")
+                Text("Your Apple Health data, explored, exported, and, if you like, synced to a server you run.")
                     .font(.title3.weight(.semibold))
-                Text("Nothing else receives it. There is no PulsHealth account, no analytics, and no third-party service in the path — the developer never receives your data.")
-                    .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading, spacing: 14) {
                     bullet(
-                        "heart.text.square", "Read-only",
-                        "PulsHealth only reads from Apple Health. It never writes or changes anything there.")
+                        "heart.text.square", "Explore",
+                        "See what is in Apple Health, how much, and where it came from.")
                     bullet(
-                        "checklist", "You choose the data",
-                        "Pick the types to sync — and change the selection whenever you like.")
+                        "square.and.arrow.up", "Export",
+                        "CSV or JSONL files, any range, any types. No account needed.")
                     bullet(
-                        "externaldrive.connected.to.line.below", "A server, for continuous sync",
-                        "A machine running the PulsHealth server (Docker, one command) receives new data as it arrives.")
-                    // The server is optional, and the flow has to say so before
-                    // the step that asks for one: someone without a server who
-                    // reads "you need a server" closes the app.
-                    bullet(
-                        "square.and.arrow.up.on.square", "Or no server at all",
-                        "Export the same data to CSV or JSONL files on this iPhone whenever you like, and add a server later if you want one.")
+                        "arrow.triangle.2.circlepath", "Sync, if you want",
+                        "A self-hosted PulsHealth server keeps a live copy. Optional, and you can add one any time.")
                 }
                 .padding(.top, 4)
+
+                Text("PulsHealth only reads from Apple Health and never writes to it. Nothing leaves your phone unless you share an export or connect a server of your own.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             .padding()
         }
@@ -171,81 +134,6 @@ struct OnboardingView: View {
         }
     }
 
-    private var serverStep: some View {
-        Form {
-            Section {
-                Button {
-                    showScanner = true
-                } label: {
-                    Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-                // The button's row is clear, so the hairline under it would
-                // float between it and the paste row's card.
-                .listRowSeparator(.hidden)
-                PastePairingCodeRow(urlText: server.urlText) { applyPairing($0) }
-            } footer: {
-                Text("`scripts/bootstrap.sh` prints a QR code with the URL, token and user ID already in it, and the same code as a line of text starting with puls://pair. `make pairing` prints both again later.")
-            }
-
-            Section {
-                TextField("https://your-host:8443", text: $server.urlText)
-                    .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                if let issue = server.urlIssue {
-                    Label(issue, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-                SecureField("Bearer token", text: $server.tokenText)
-                Button {
-                    runConnectionTest()
-                } label: {
-                    HStack {
-                        Text(testing ? "Testing Connection…" : "Test Connection")
-                        if testing {
-                            Spacer()
-                            ProgressView()
-                        }
-                    }
-                }
-                .disabled(testing || !server.isTestable)
-                if let result = connectionTest {
-                    ConnectionTestResultRow(result: result)
-                }
-            } header: {
-                Text("Or enter it by hand")
-            } footer: {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x).")
-                    // The way past this step for someone with no server is a
-                    // small button under Continue; say what it leads to.
-                    if serverFieldsAreEmpty {
-                        Text("No server? Tap “I'll Set This Up Later” below. You can still export your data to files from the Export tab, and add a server on the Sync tab any time.")
-                    }
-                }
-            }
-
-            if let pairedUserID = server.pairedUserID {
-                Section("User ID") {
-                    Text(pairedUserID)
-                        .font(.footnote.monospaced())
-                        .foregroundStyle(.secondary)
-                    Text("From the pairing code. Everything stored for you on the server is tagged with this ID; you can change it later under Settings → User.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .sheet(isPresented: $showScanner) {
-            PairingScannerView { applyPairing($0) }
-        }
-    }
-
     private var healthStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -254,11 +142,11 @@ struct OnboardingView: View {
                     .foregroundStyle(.pink)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 8)
-                Text("Next, iOS will ask which health data PulsHealth may read.")
+                Text("Next, iOS asks which health data PulsHealth may read.")
                     .font(.title3.weight(.semibold))
-                Text("The sheet comes from iOS, not from this app, and it lists every type you are about to sync. PulsHealth asks for read access only — it can never write to or delete anything in Apple Health. You can change any of it later in Settings → Privacy & Security → Health.")
+                Text("The sheet comes from iOS and lists the starter selection. PulsHealth asks for read access only; it can never write to or delete anything in Apple Health. You can change any of it later in Settings → Privacy & Security → Health.")
                     .foregroundStyle(.secondary)
-                Text("A starter selection is already made for you; anything you add on the next step is requested when you finish.")
+                Text("Anything you add on the next step is requested when you finish.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 if let hint = model.authorizationHint {
@@ -286,20 +174,7 @@ struct OnboardingView: View {
     private var startStep: some View {
         Form {
             Section("Summary") {
-                LabeledContent("Server") {
-                    Text(serverSummary)
-                        .foregroundStyle(server.validatedURL == nil ? .orange : .secondary)
-                        .multilineTextAlignment(.trailing)
-                }
                 LabeledContent("Data types", value: "\(model.config.enabledTypes.count) selected")
-                // The sync's start date. With no server nothing syncs, and
-                // Export Data takes its own time range — the row would only
-                // suggest a limit that does not exist.
-                if server.validatedURL != nil {
-                    LabeledContent(
-                        "History from",
-                        value: model.config.startDate.formatted(date: .abbreviated, time: .omitted))
-                }
                 LabeledContent("User ID") {
                     Text(model.config.userID)
                         .font(.caption.monospaced())
@@ -307,16 +182,14 @@ struct OnboardingView: View {
                 }
             }
             Section {
-                Text(server.validatedURL == nil
-                    ? "No server is set, so nothing will be uploaded. You can still export this data to CSV or JSONL files from the Export tab, and add a server on the Sync tab any time."
-                    : "Tapping Start uploads everything from the date above. The first pass is the largest — keep the app open and the phone on power for it. Progress is saved after every batch, so it is safe to interrupt.")
+                Text("Explore shows what Apple Health holds for these types, and Export writes them to files. Nothing is uploaded anywhere.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-            }
-            // Only true with somewhere to send to.
-            if server.validatedURL != nil {
-                Section {
-                    Text("From here on, PulsHealth catches up whenever you open it, and in the background when iOS allows. The Sync tab shows what has been sent.")
+                if model.confirmedPairing != nil {
+                    // Accepted during the flow; Sync → Server opens with it
+                    // filled in once the flow is done (RootView, on
+                    // `pairingAwaitsSyncTab`).
+                    Label("A pairing link is waiting. The Sync tab opens with the server filled in when you finish.", systemImage: "qrcode")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -329,13 +202,6 @@ struct OnboardingView: View {
     private var footer: some View {
         VStack(spacing: 10) {
             progressDots
-            if let warning = footerWarning {
-                Text(warning)
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
             HStack(spacing: 12) {
                 if step != .welcome {
                     Button("Back") { back() }
@@ -354,10 +220,12 @@ struct OnboardingView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(primaryDisabled)
             }
-            if let secondary = secondaryTitle {
-                Button(secondary) { secondaryAction() }
+            if step == .start {
+                // Text, not a button: the flow cannot pick a tab in RootView,
+                // and the Sync tab's setup card is one tap away anyway.
+                Text("Connect a server later in the Sync tab.")
                     .font(.footnote)
-                    .disabled(finishing || requestingHealthAccess)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal)
@@ -381,23 +249,18 @@ struct OnboardingView: View {
     private var primaryTitle: String {
         switch step {
         case .welcome: "Get Started"
-        case .server: "Continue"
         // App Review 5.1.1(iv): the button on a pre-permission screen has to be
         // a neutral "Continue"/"Next", never "Grant …", and there is no way past
         // the screen that avoids the permission sheet.
         case .health: "Continue"
         case .types: "Continue"
-        case .start: server.validatedURL == nil ? "Finish" : "Start Syncing"
+        case .start: "Start Exploring"
         }
     }
 
     private var primaryDisabled: Bool {
         if finishing || requestingHealthAccess { return true }
         switch step {
-        case .server:
-            // The result has to be on screen before Continue lights up; the
-            // secondary button below is the way past a failing or untested one.
-            return connectionTest?.isSuccess != true
         case .types:
             return model.config.observedTypeIdentifiers.isEmpty
         default:
@@ -405,37 +268,9 @@ struct OnboardingView: View {
         }
     }
 
-    /// The escape hatch under the primary button: moving on past a server that
-    /// did not answer. The Health step has none — App Review 5.1.1(iv) requires
-    /// that the permission request always follows the explanation.
-    private var secondaryTitle: String? {
-        switch step {
-        case .server:
-            if serverFieldsAreEmpty { return "I'll Set This Up Later" }
-            // An unusable URL cannot be carried forward — `commitServerFields`
-            // would store nothing and the typed text would vanish without a
-            // word. Fix it, or clear the field to skip the step outright.
-            if server.urlIssue != nil { return nil }
-            if connectionTest?.isSuccess == true { return nil }
-            return connectionTest == nil ? "Continue Without Testing" : "Continue Anyway"
-        default:
-            return nil
-        }
-    }
-
-    private var footerWarning: String? {
-        guard step == .server, acceptedServerWarning, connectionTest?.isSuccess != true else {
-            return nil
-        }
-        return "This server has not answered a test. Uploads will fail until it does — fix the URL or token under Sync → Server."
-    }
-
     private func primaryAction() {
         switch step {
         case .welcome:
-            step = .server
-        case .server:
-            commitServerFields()
             step = .health
         case .health:
             if model.authorizationRequested && !model.needsAuthorization {
@@ -459,80 +294,8 @@ struct OnboardingView: View {
         }
     }
 
-    private func secondaryAction() {
-        switch step {
-        case .server:
-            acceptedServerWarning = true
-            commitServerFields()
-            step = .health
-        default:
-            break
-        }
-    }
-
     private func back() {
         guard let previous = Step(rawValue: step.rawValue - 1) else { return }
         step = previous
-    }
-
-    // MARK: - Server helpers (the rules are `ServerFieldsDraft`'s, shared with the Server screen)
-
-    /// Nothing typed, scanned or pasted: the state in which the server step can
-    /// be skipped outright.
-    private var serverFieldsAreEmpty: Bool {
-        server.urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && server.token.isEmpty
-    }
-
-    private var serverSummary: String {
-        guard let url = server.validatedURL else { return "Not set" }
-        return url.host().map { $0 + (url.port.map { ":\($0)" } ?? "") } ?? url.absoluteString
-    }
-
-    /// The one place a pairing code lands in this flow, whatever brought it:
-    /// the scanner, the Paste button, a `puls://pair?…` string put in the URL
-    /// field, or a link the user accepted (`collectConfirmedPairing`). Still
-    /// only the step's local fields — the draft changes on Continue and the
-    /// engine on the last step.
-    private func applyPairing(_ payload: PairingPayload) {
-        server.fill(from: payload)
-        // The code was printed by the server that is presumably right here —
-        // confirm it now rather than making the user tap again.
-        runConnectionTest()
-    }
-
-    /// Takes a pairing link the user accepted (`AppModel.confirmPairingLink`)
-    /// and brings them to the step it belongs to, from wherever in the flow
-    /// they were. Not during the final Apply: the cover is about to come down,
-    /// and Sync → Server picks the payload up instead.
-    private func collectConfirmedPairing() {
-        guard !finishing, let payload = model.takeConfirmedPairing() else { return }
-        step = .server
-        applyPairing(payload)
-    }
-
-    /// Moves the entered values into the staged draft. Still nothing applied —
-    /// the engine sees them only on the final step.
-    private func commitServerFields() {
-        server.commit(to: &model.config)
-    }
-
-    private func runConnectionTest() {
-        guard let url = server.validatedURL else { return }
-        let token = server.token
-        guard !token.isEmpty else { return }
-        let userID = server.connectionTestUserID(fallback: model.config.userID)
-        testing = true
-        connectionTest = nil
-        acceptedServerWarning = false
-        // Only the latest run may report: a pairing code can arrive while an
-        // earlier test is still out.
-        connectionTestRun += 1
-        let run = connectionTestRun
-        Task {
-            let result = await model.testConnection(url: url, token: token, userID: userID)
-            guard run == connectionTestRun else { return }
-            connectionTest = result
-            testing = false
-        }
     }
 }

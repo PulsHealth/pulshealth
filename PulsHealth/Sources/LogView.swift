@@ -40,7 +40,7 @@ struct LogView: View {
         // Title and the Log/Background switch are ActivityView's; this
         // contributes only the filter menu.
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Picker("Minimum level", selection: $minLevel) {
                         Text("Debug").tag(SyncEvent.Level.debug)

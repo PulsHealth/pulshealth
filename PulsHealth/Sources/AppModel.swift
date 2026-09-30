@@ -36,6 +36,10 @@ final class AppModel {
     /// and unknown hides the feature-gated UI: reconciliation needs `digest`
     /// + `uuids`, the per-type server rows need `stats`.
     private(set) var serverCapabilities: ServerCapabilities?
+    /// The last Test Connection this session and the URL it ran against, so
+    /// the Sync tab can say what is known about the applied server without
+    /// testing again. Not persisted: a fresh launch knows nothing.
+    private(set) var lastConnectionTest: ConnectionTestRecord?
     /// The live editing draft bound by the Synced Data, Server and Settings screens.
     var config = SyncConfiguration()
     /// Snapshot of what's actually been pushed to the engine. The Synced Data
@@ -100,12 +104,11 @@ final class AppModel {
     /// Set by `handleIncomingURL`, cleared by the prompt's buttons. A link
     /// fills nothing until the user has answered this (`PairingLinkPromptModifier`).
     private(set) var pairingLinkPrompt: PairingLinkPrompt?
-    /// A pairing link the user accepted, waiting for the screen that owns the
-    /// server fields — the first-run flow while it is up, Sync → Server
-    /// otherwise — to collect it with `takeConfirmedPairing()`. A hand-off
-    /// rather than a write into `config`: both screens keep the URL and token
-    /// as local text until the user moves on, and a link gets no shortcut past
-    /// that.
+    /// A pairing link the user accepted, waiting for Sync → Server to collect
+    /// it with `takeConfirmedPairing()` — after the first-run flow, if that is
+    /// up (`pairingAwaitsSyncTab`). A hand-off rather than a write into
+    /// `config`: the screen keeps the URL and token as local text until Save &
+    /// Apply, and a link gets no shortcut past that.
     private(set) var confirmedPairing: PairingPayload?
 
     /// Types a permission request failed to determine this session. Re-requesting
@@ -705,7 +708,10 @@ final class AppModel {
             // The *applied* server: where data goes today, not a half-typed draft.
             currentServerURL: appliedConfig.serverURL,
             currentUserID: appliedConfig.userID,
-            destination: showsOnboarding ? .onboarding : .settings)
+            // Always Sync → Server: the first-run flow has no server step any
+            // more, so a link accepted during it waits for the flow to end and
+            // lands there (`pairingAwaitsSyncTab`).
+            destination: .settings)
     }
 
     /// The prompt's Continue. Takes the payload the prompt *displayed* and
@@ -1061,6 +1067,7 @@ final class AppModel {
         if case .ok(let capabilities) = result {
             serverCapabilities = capabilities
         }
+        lastConnectionTest = ConnectionTestRecord(url: url, result: result, at: Date())
         return result
     }
 

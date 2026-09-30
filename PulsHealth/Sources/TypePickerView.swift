@@ -28,6 +28,9 @@ enum TypePresets {
 /// drills into per-category toggle pages, plus search across every type.
 struct TypePickerView: View {
     @Environment(AppModel.self) private var model
+    /// "Synced Data" from the Sync tab; the first-run flow, where nothing is
+    /// synced yet, shows the same screen as "Choose Data".
+    var title = "Synced Data"
     @State private var searchText = ""
 
     var body: some View {
@@ -38,7 +41,7 @@ struct TypePickerView: View {
                 searchResultsSection
             }
         }
-        .navigationTitle("Synced Data")
+        .navigationTitle(title)
         .searchable(text: $searchText, prompt: "Search data types")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

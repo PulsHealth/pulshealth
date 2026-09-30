@@ -24,6 +24,17 @@ struct ServerSettingsView: View {
     var body: some View {
         Form {
             Section {
+                Button {
+                    showScanner = true
+                } label: {
+                    Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
+                }
+                PastePairingCodeRow(urlText: server.urlText) { applyPairing($0) }
+            } footer: {
+                Text("A pairing code, scanned, pasted, or opened as a puls:// link, fills in the URL, token and user ID the server prints (`make pairing`) and tests them.")
+            }
+
+            Section {
                 TextField("https://your-host:8443", text: $server.urlText)
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
@@ -46,9 +57,6 @@ struct ServerSettingsView: View {
                     }
                 }
                 .disabled(testingConnection || !server.isTestable)
-                if let result = connectionTest {
-                    ConnectionTestResultRow(result: result)
-                }
                 if let pairedUserID = server.pairedUserID {
                     // The third value of a pairing code has no field on this
                     // screen (it lives under Settings → User → Advanced), so
@@ -63,27 +71,29 @@ struct ServerSettingsView: View {
                     .foregroundStyle(.secondary)
                 }
             } header: {
-                Text("Server")
+                Text("Or enter it by hand")
             } footer: {
                 Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them.")
             }
 
+            // The outcome of the last test sits right above the button that
+            // commits the values it was run against.
             Section {
+                if let result = connectionTest {
+                    ConnectionTestResultRow(result: result)
+                }
                 Button {
-                    showScanner = true
-                } label: {
-                    Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
-                }
-                PastePairingCodeRow(urlText: server.urlText) { applyPairing($0) }
-            } footer: {
-                Text("A pairing code — scanned, pasted, or opened as a puls:// link — fills in the URL, token and user ID the server prints (`make pairing`) and tests them; Save & Apply still has to be tapped.")
-            }
-
-            Section {
-                Button("Save & Apply") {
                     Task { await apply() }
+                } label: {
+                    Text("Save & Apply")
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(server.urlIssue != nil)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                .listRowSeparator(.hidden)
             } footer: {
                 Text("An empty URL removes the server; syncing stops and the Export tab keeps working.")
             }
@@ -135,7 +145,8 @@ struct ServerSettingsView: View {
     }
 
     /// Takes a pairing link the user accepted (`AppModel.confirmPairingLink`).
-    /// Not while the first-run flow is up — then the payload is its.
+    /// Not while the first-run flow is up: it has no server step, so the
+    /// payload waits until the flow ends and RootView opens this screen.
     private func collectConfirmedPairing() {
         guard model.pairingAwaitsSyncTab, let payload = model.takeConfirmedPairing() else { return }
         applyPairing(payload)
