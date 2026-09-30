@@ -797,7 +797,7 @@ private struct AggregatePreviewSection: View {
         error = nil
         let days = window.days
         let explorer = model.explore.explorer
-        let anchor = Calendar.current.startOfDay(for: model.appliedConfig.startDate ?? Date())
+        let anchor = Calendar.current.startOfDay(for: model.appliedConfig.startDate)
         task = Task {
             // Debounce: a picker tapped twice computes once.
             try? await Task.sleep(for: .milliseconds(250))
