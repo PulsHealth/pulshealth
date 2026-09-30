@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var confirmResetAll = false
     @State private var confirmBackfill = false
     @State private var confirmDeleteExport = false
+    @State private var confirmDeleteAnalysis = false
     @State private var validatingAggregates = false
     @State private var aggregateValidationResult: String?
 
@@ -102,18 +103,20 @@ struct SettingsView: View {
                 if case .finished(let finished) = model.export.state, !finished.filesRemoved {
                     Button("Delete Export", role: .destructive) { confirmDeleteExport = true }
                 }
-                // TODO(phase 3): wire to the profile store (Explore's analysis)
-                // and enable once something has been analyzed.
-                Button(role: .destructive) {
-                } label: {
+                // The per-type summaries the Explore tab keeps
+                // (`TypeProfileStore`): derived numbers, never samples, but
+                // health-derived data at rest, so the privacy policy promises
+                // this one-tap way to remove all of them.
+                let analyzed = model.explore.profiles.count
+                Button(role: .destructive) { confirmDeleteAnalysis = true } label: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Delete Analysis")
-                        Text("Nothing analyzed yet")
+                        Text(analyzed == 0 ? "Nothing analyzed yet" : "\(analyzed) type\(analyzed == 1 ? "" : "s") analyzed")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
-                .disabled(true)
+                .disabled(analyzed == 0 || !model.explore.running.isEmpty)
             } header: {
                 Text("Privacy & Data")
             } footer: {
@@ -173,6 +176,12 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Re-exports everything from the start date for all enabled types.")
+        }
+        .alert("Delete all analysis?", isPresented: $confirmDeleteAnalysis) {
+            Button("Delete", role: .destructive) { Task { await model.deleteAnalysis() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Removes the stored summaries for every analyzed type. Nothing in Apple Health changes; the Explore tab can analyze them again.")
         }
         .alert("Delete this export?", isPresented: $confirmDeleteExport) {
             Button("Delete", role: .destructive) { model.export.discard() }

@@ -10,6 +10,9 @@ final class AppModel {
     /// The Export tab: the server-less way out. A model of its own so a run
     /// outlives the screen that started it (`ExportModel`).
     let export = ExportModel()
+    /// The Explore tab: what HealthKit holds per type, and the analyses
+    /// in flight to find out (`ExploreModel`). Read-only over HealthKit.
+    let explore: ExploreModel
 
     private(set) var statuses: [TypeSyncStatus] = []
     /// Per-aggregate-config sync progress, keyed by config ID.
@@ -127,6 +130,7 @@ final class AppModel {
         let engine = HealthSyncEngine()
         self.engine = engine
         self.scheduler = BackgroundSyncScheduler(engine: engine)
+        self.explore = ExploreModel(engine: engine)
         // An export's files are health data sitting in the temporary directory
         // until they are shared. The privacy policy says none survives a
         // launch, and this line is what makes that true — for the export the
@@ -164,6 +168,9 @@ final class AppModel {
 
         config = await engine.store.configuration
         appliedConfig = config
+        // The Export tab's draft starts from the applied selection, if the
+        // user has not already started editing it.
+        export.seedFromApplied(config)
         authorizationRequested = UserDefaults.standard.bool(forKey: "authorizationRequested")
         // Don't trust the one-shot flag alone: types added to the catalog after
         // the first grant (or an interrupted permission sheet) stay notDetermined
@@ -325,16 +332,12 @@ final class AppModel {
 
     // MARK: - Export to files
 
-    /// What the Export tab exports: the **applied** selection, never the draft.
-    ///
-    /// The Synced Data screen edits `config` freely and nothing there counts
-    /// until Apply — which is also the moment Health access is requested for
-    /// it. An export of a half-edited draft would read types the user has not
-    /// been asked about (each one a failure in the result) and would disagree
-    /// with the Sync tab about what "the selection" is. The screen says when a
-    /// draft is pending instead (`hasPendingChanges`).
+    /// What the Export tab exports: its own draft (`ExportModel.draft`),
+    /// seeded from the applied selection and edited on the tab. It is not the
+    /// Synced Data draft: what is chosen there counts only after Apply, and
+    /// what is chosen here never reaches the sync at all.
     var exportSelection: ExportSelectionSummary {
-        ExportSelectionSummary(configuration: appliedConfig)
+        ExportSelectionSummary(selection: export.draft.selection())
     }
 
     /// A backfill and an export are the same sweep over the same HealthKit
@@ -345,14 +348,14 @@ final class AppModel {
     /// not waited for.
     var exportBlockedByBackfill: Bool { backfillActive }
 
-    /// Medication Doses is selected but this install has never got the
-    /// per-object picker on screen, so the export will find no doses. Normally
-    /// false: Apply schedules that picker for any selection that includes the
+    /// Medication Doses is in the export draft but this install has never got
+    /// the per-object picker on screen, so the export will find no doses.
+    /// Apply schedules that picker for any synced selection that includes the
     /// type. Export only *says* so — it must not present the picker itself,
     /// least of all on a path it awaits (see `scheduleMedicationAccessRequest`).
     var exportLacksMedicationAccess: Bool {
         guard #available(iOS 26.0, *) else { return false }
-        return appliedConfig.enabledTypes.contains(HealthTypeCatalog.medicationDoseIdentifier)
+        return export.draft.types.contains(HealthTypeCatalog.medicationDoseIdentifier)
             && !UserDefaults.standard.bool(forKey: Self.medicationAuthRequestedKey)
     }
 
@@ -365,21 +368,24 @@ final class AppModel {
 
     /// The export's permission step. `HealthExporter` never prompts, and a type
     /// whose access was never requested comes back as a failure, so anything in
-    /// the applied selection that iOS still reports as undetermined is asked
-    /// for first — one sheet, the same request Apply makes.
+    /// the export draft (its types and its series' types) that iOS still
+    /// reports as undetermined is asked for first — one sheet, the same request
+    /// Apply makes.
     ///
-    /// Usually there is nothing to ask: a selection only becomes *applied*
-    /// through Apply, which requested it. What is left is a type added to the
-    /// selection by an older build, or a sheet that was interrupted. Two rules
-    /// carry over from Apply: types iOS refuses to put in the sheet are not
-    /// asked for again (it would only flash — they show up in the export's
-    /// failures, with the hint already on the Explore tab), and the medication
-    /// picker is not requested here at all.
+    /// The draft is built on the tab, so unlike the applied selection it can
+    /// hold types no Apply has asked about; this is where they are asked for.
+    /// Two rules carry over from Apply: types iOS refuses to put in the sheet
+    /// are not asked for again (it would only flash — they show up in the
+    /// export's failures, with the hint already on the Explore tab), and the
+    /// medication picker is not requested here at all.
     ///
     /// It does not touch `authorizationRequested`: that flag gates observer
     /// registration and background scheduling, which are the sync's business.
     private func requestHealthAccessForExport() async {
-        let selected = appliedConfig.observedTypeIdentifiers.sorted()
+        let selection = export.draft.selection()
+        let selected = selection.types
+            .union(selection.aggregates.map(\.typeIdentifier))
+            .sorted()
         guard !selected.isEmpty, await engine.authorizationNeeded(for: selected) else { return }
         let pending = await pendingTypes(among: selected)
         guard !Set(pending).isSubset(of: undeterminableTypes) else { return }
@@ -1105,6 +1111,13 @@ final class AppModel {
 
     func syncAggregate(id: UUID) {
         Task { await engine.syncAggregate(configID: id, reason: .manual) }
+    }
+
+    /// Settings → Delete Analysis: every stored type profile. Summaries,
+    /// never samples, but still about health data, so there is one switch.
+    func deleteAnalysis() async {
+        await explore.deleteAll()
+        await engine.eventLog.log(.info, "Stored type analyses deleted")
     }
 
     // MARK: - Derived totals for the Explore and Sync tabs

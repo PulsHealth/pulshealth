@@ -1,17 +1,18 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Screens the Explore tab pushes. `type` is a seam: today it opens the
-/// per-type sync detail, and the type page that replaces it takes the same
-/// route, so nothing that pushes one has to change.
+/// Screens the Explore tab pushes. `type` opens the per-type page
+/// (`TypePageView`), which links on to the sync detail when the type is
+/// synced.
 enum ExploreRoute: Hashable {
     case type(String)
 }
 
-/// The home tab: the catalog by category, the way Apple Health's Browse screen
-/// lays it out, with a card of what this install is doing at the top. A type
-/// that is synced opens its detail; one that is not is listed but leads
-/// nowhere yet — turning it on is the Sync tab's job.
+/// The home tab: the catalog by category, the way Apple Health's Browse
+/// screen lays it out, with what HealthKit holds for each type from
+/// `ExploreModel` — the cheap facts for every row, the profile for the ones
+/// that have been analyzed. Every type opens its page, whether it is synced
+/// or not; turning sync on is the Sync tab's job.
 ///
 /// The two Health-access cards live here, not on Sync, because they are about
 /// what the app may read at all, server or no server.
@@ -36,10 +37,12 @@ struct ExploreView: View {
         .navigationDestination(for: ExploreRoute.self) { route in
             switch route {
             case .type(let id):
-                if let status = model.statuses.first(where: { $0.id == id }) {
-                    TypeDetailView(status: status)
-                }
+                TypePageView(identifier: id)
             }
+        }
+        .task {
+            await model.explore.load()
+            model.explore.refreshQuickFactsIfNeeded()
         }
     }
 
@@ -105,15 +108,46 @@ struct ExploreView: View {
         }
     }
 
+    /// How much of the catalog Health has anything for, and one button to
+    /// analyze all of it.
     private var headerCard: some View {
-        let enabled = model.appliedConfig.enabledTypes.count
-        let lastSync = model.statuses.compactMap(\.state.lastSyncAt).max()
-        return CardSection("Your health data") {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                StatTile(label: "Types synced", value: "\(enabled)", unit: "of \(HealthTypeCatalog.all.count)")
-                StatTile(label: "Samples", value: model.totalSamples.compactString)
-                StatTile(label: "Last sync", value: lastSync?.relativeString ?? "—")
-                StatTile(label: "Uploaded", value: model.totalBytes.byteString)
+        let explore = model.explore
+        let withData = explore.typesWithData.count
+        let total = HealthTypeCatalog.all.count
+        return CardSection(
+            "Your health data",
+            subtitle: explore.quickFactsLoaded
+                ? "\(withData) of \(total) types have data"
+                    + (explore.earliestSample.map { " · since \($0.formatted(.dateTime.month(.abbreviated).year()))" } ?? "")
+                : "Checking what Apple Health holds",
+            action: {
+                if explore.isAnalyzingAll {
+                    Button("Cancel", role: .destructive) { explore.cancelAll() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                } else {
+                    Button("Analyze All") { explore.analyzeAll() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .disabled(!explore.quickFactsLoaded || withData == 0)
+                }
+            }
+        ) {
+            if explore.isAnalyzingAll {
+                ProgressBanner(
+                    title: "Analyzing \(min(explore.analyzeAllDone + 1, explore.analyzeAllTotal)) of \(explore.analyzeAllTotal)",
+                    subtitle: explore.running.keys.sorted()
+                        .compactMap { HealthTypeCatalog.descriptor(for: $0)?.displayName }
+                        .joined(separator: ", "),
+                    fraction: explore.analyzeAllTotal > 0
+                        ? Double(explore.analyzeAllDone) / Double(explore.analyzeAllTotal) : nil)
+            } else {
+                let analyzed = explore.profiles.count
+                Text(analyzed == 0
+                    ? "Analyze a type to see its counts, dates, values and sources. Summaries only, never samples."
+                    : "\(analyzed) analyzed · \(model.appliedConfig.enabledTypes.count) synced")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -125,7 +159,7 @@ struct ExploreView: View {
     ) -> some View {
         if !types.isEmpty {
             Section {
-                ForEach(types) { descriptor in
+                ForEach(ordered(types)) { descriptor in
                     typeRow(descriptor, showsCategory: false)
                 }
             } header: {
@@ -135,6 +169,14 @@ struct ExploreView: View {
                 }
             }
         }
+    }
+
+    /// Types with data first, in catalog order; the rest after them.
+    private func ordered(_ types: [HealthTypeDescriptor]) -> [HealthTypeDescriptor] {
+        let facts = model.explore.quickFacts
+        guard model.explore.quickFactsLoaded else { return types }
+        return types.filter { facts[$0.identifier]?.latestStart != nil }
+            + types.filter { facts[$0.identifier]?.latestStart == nil }
     }
 
     private var searchResults: some View {
@@ -154,23 +196,33 @@ struct ExploreView: View {
         }
     }
 
-    /// Synced types open their detail; the rest are listed as they are, so
-    /// the catalog reads the same whether three types are on or eighty.
-    @ViewBuilder private func typeRow(_ descriptor: HealthTypeDescriptor, showsCategory: Bool) -> some View {
-        if let status = model.statuses.first(where: { $0.id == descriptor.identifier }) {
-            NavigationLink(value: ExploreRoute.type(status.id)) {
-                ExploreTypeRow(descriptor: descriptor, status: status, showsCategory: showsCategory)
-            }
-        } else {
-            ExploreTypeRow(descriptor: descriptor, status: nil, showsCategory: showsCategory)
+    private func typeRow(_ descriptor: HealthTypeDescriptor, showsCategory: Bool) -> some View {
+        let explore = model.explore
+        return NavigationLink(value: ExploreRoute.type(descriptor.identifier)) {
+            ExploreTypeRow(
+                descriptor: descriptor,
+                profile: explore.profiles[descriptor.identifier],
+                facts: explore.quickFacts[descriptor.identifier],
+                factsLoaded: explore.quickFactsLoaded,
+                isRunning: explore.isRunning(descriptor.identifier),
+                status: model.statuses.first { $0.id == descriptor.identifier },
+                showsCategory: showsCategory)
         }
     }
 }
 
 private struct ExploreTypeRow: View {
     let descriptor: HealthTypeDescriptor
+    let profile: TypeProfile?
+    let facts: TypeQuickFacts?
+    let factsLoaded: Bool
+    let isRunning: Bool
     let status: TypeSyncStatus?
     let showsCategory: Bool
+
+    private var hasData: Bool { facts?.latestStart != nil || profile != nil }
+    /// Greyed once the facts are in and say there is nothing.
+    private var muted: Bool { factsLoaded && facts != nil && !hasData }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -180,24 +232,50 @@ private struct ExploreTypeRow: View {
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
             Spacer()
+            if isRunning {
+                ProgressView().controlSize(.small)
+            } else if let profile, !profile.dailyCounts.isEmpty {
+                SparklineView(counts: last30Days(profile), color: descriptor.group.color)
+            }
             if let status, status.state.lastError != nil {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
             }
         }
         .padding(.vertical, 2)
+        .opacity(muted ? 0.55 : 1)
     }
 
     private var detail: String {
         var parts: [String] = []
         if showsCategory { parts.append(descriptor.group.rawValue) }
-        if let status {
-            parts.append("\(status.state.totalSamplesExported.compactString) samples")
-            if let last = status.state.lastSyncAt { parts.append("synced \(last.relativeString)") }
+        if let profile {
+            parts.append("\(profile.sampleCount.compactString) samples")
+            if let last = profile.latestStart { parts.append("last \(last.relativeString)") }
+        } else if let facts, let first = facts.earliestStart {
+            parts.append("Data since \(first.formatted(.dateTime.year()))")
+            parts.append("tap to analyze")
+        } else if facts != nil {
+            parts.append("No data")
+        } else if let status {
+            parts.append("\(status.state.totalSamplesExported.compactString) synced")
         } else {
-            parts.append("Not synced")
+            parts.append(kindLabel(descriptor.kind))
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// One count per calendar day for the 30 days ending on the profile's
+    /// last day with data; zero where the profile has no entry.
+    private func last30Days(_ profile: TypeProfile) -> [Int] {
+        let calendar = Calendar.current
+        guard let last = profile.dailyCounts.last?.day else { return [] }
+        let byDay = Dictionary(profile.dailyCounts.map { ($0.day, $0.count) }, uniquingKeysWith: +)
+        return (0..<30).reversed().map { offset in
+            let day = calendar.date(byAdding: .day, value: -offset, to: last) ?? last
+            return byDay[calendar.startOfDay(for: day)] ?? 0
+        }
     }
 }

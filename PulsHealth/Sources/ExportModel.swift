@@ -3,7 +3,7 @@ import Observation
 import PulsHealthSync
 import UIKit
 
-/// State of the Export tab (`ExportView`): the two choices, the run in
+/// State of the Export tab (`ExportView`): the draft being built, the run in
 /// flight, and the finished export waiting to be shared.
 ///
 /// Owned by `AppModel` rather than by the view, for two reasons. A run takes
@@ -33,7 +33,10 @@ final class ExportModel {
     /// A finished export. `result.files` exist on disk until `filesRemoved`.
     struct Finished {
         let result: ExportResult
-        let range: ExportRange
+        /// The draft the run was started from, as it was then.
+        let draft: ExportDraft
+        /// The range actually used: a preset's title, or the custom dates.
+        let rangeLabel: String
         /// The app left the foreground at some point during the run. iOS locks
         /// HealthKit with the device, so this is the usual reason behind a list
         /// of failed types, and the screen says so instead of leaving a column
@@ -56,19 +59,76 @@ final class ExportModel {
         case failed(ExportFailureCopy)
     }
 
-    var format: ExportFormat = .csv
-    var range: ExportRange = .default
+    /// What the next export covers. Lives for the session: leaving the tab
+    /// keeps it, a launch starts over.
+    var draft = ExportDraft()
+    /// The draft as it was created, to tell an untouched one from an edited
+    /// one (`seedFromApplied`).
+    @ObservationIgnored private let pristineDraft: ExportDraft
     private(set) var state: State = .idle
     private(set) var notice: Notice?
 
     @ObservationIgnored private var task: Task<Void, Never>?
+
+    init() {
+        let initial = ExportDraft()
+        draft = initial
+        pristineDraft = initial
+    }
+
+    // MARK: - The draft
+
+    /// The applied sync selection becomes the draft's starting point, once,
+    /// when `AppModel` has loaded it, and only if nothing has been changed yet:
+    /// an edit made before the configuration landed is not thrown away, and
+    /// an empty applied selection (no sync set up) leaves the common set.
+    func seedFromApplied(_ configuration: SyncConfiguration) {
+        guard draft == pristineDraft else { return }
+        let applied = ExportSelection(configuration: configuration)
+        guard !applied.types.isEmpty || !applied.aggregates.isEmpty else { return }
+        draft.types = applied.types
+        draft.aggregates = applied.aggregates
+        draft.includeWorkoutRoutes = applied.includeWorkoutRoutes
+        draft.includeWorkoutEnhancedData = applied.includeWorkoutEnhancedData
+    }
+
+    /// Add a series to the draft. A series already there (same
+    /// `seriesIdentity`, whatever its id) is left alone: an export has no use
+    /// for the same buckets twice.
+    func addAggregate(_ config: AggregateConfig) {
+        guard !draft.aggregates.contains(where: { $0.seriesIdentity == config.seriesIdentity }) else { return }
+        draft.aggregates.append(config)
+    }
+
+    /// Replace the series with `config.id`, or add it. The edited series may
+    /// now match another one; that one goes.
+    func updateAggregate(_ config: AggregateConfig) {
+        draft.aggregates.removeAll { $0.id != config.id && $0.seriesIdentity == config.seriesIdentity }
+        if let index = draft.aggregates.firstIndex(where: { $0.id == config.id }) {
+            draft.aggregates[index] = config
+        } else {
+            draft.aggregates.append(config)
+        }
+    }
+
+    func removeAggregate(id: UUID) {
+        draft.aggregates.removeAll { $0.id == id }
+    }
+
+    /// Add a type to the draft ("Export This Type" on a type's page).
+    func include(type id: String) {
+        draft.types.insert(id)
+    }
 
     var isRunning: Bool {
         if case .running = state { return true }
         return false
     }
 
-    /// Start an export of `configuration` with the current format and range.
+    /// Start an export of the draft. `configuration` is the applied one, and
+    /// supplies only what `ExportRequest` takes from it: batch size,
+    /// concurrency, the user ID and the aggregate grid anchor. What is
+    /// exported is the draft's.
     ///
     /// - Parameters:
     ///   - engine: the app's real engine — read for its device ID only.
@@ -87,11 +147,10 @@ final class ExportModel {
         HealthExporter.removeAllExports()
         notice = nil
         state = .running(ExportProgress(phase: .preparing))
-        let format = format
-        let range = range
+        let draft = draft
         task = Task { [weak self] in
             await self?.run(
-                configuration: configuration, format: format, range: range,
+                configuration: configuration, draft: draft,
                 engine: engine, authorize: authorize)
         }
     }
@@ -121,9 +180,16 @@ final class ExportModel {
     // MARK: - The run
 
     private func run(
-        configuration: SyncConfiguration, format: ExportFormat, range: ExportRange,
+        configuration: SyncConfiguration, draft: ExportDraft,
         engine: HealthSyncEngine, authorize: @MainActor () async -> Void
     ) async {
+        let format = draft.format
+        let selection = draft.selection()
+        let dates = draft.dates()
+        let rangeLabel = draft.rangeLabel()
+        let coverage = "\(selection.types.count) type\(selection.types.count == 1 ? "" : "s")"
+            + (selection.aggregates.isEmpty
+                ? "" : ", \(selection.aggregates.count) series")
         // A device that locks mid-run turns every remaining type into a
         // failure, so for the length of the run: no auto-lock, and a
         // background-task assertion so a glance at another app does not
@@ -147,7 +213,7 @@ final class ExportModel {
         await authorize()
         // The activity log is the app's account of what it did; an export belongs
         // in it. Counts and outcomes only, like every other line there.
-        await engine.eventLog.log(.info, "Export to \(format.title) (\(range.title)) started")
+        await engine.eventLog.log(.info, "Export to \(format.title) (\(rangeLabel), \(coverage)) started")
 
         // Progress arrives on the exporter's executor, once per written batch
         // — hundreds of times over a large export, in bursts. Newest-only
@@ -166,8 +232,10 @@ final class ExportModel {
         do {
             try Task.checkCancellation()
             let request = ExportRequest(
+                selection: selection,
                 configuration: configuration,
-                startDate: range.startDate(),
+                startDate: dates.start,
+                endDate: dates.end,
                 format: format,
                 deviceID: await engine.store.deviceID)
             outcome = .success(try await HealthExporter().run(request) { continuation.yield($0) })
@@ -182,12 +250,13 @@ final class ExportModel {
         switch outcome {
         case .success(let result):
             state = .finished(Finished(
-                result: result, range: range, wasBackgrounded: backgrounded.didEnterBackground))
+                result: result, draft: draft, rangeLabel: rangeLabel,
+                wasBackgrounded: backgrounded.didEnterBackground))
             let missing = result.failures.count + result.unmappableSamples.count
             await engine.eventLog.log(
                 result.isComplete ? .info : .warn,
-                "Export finished: \(result.writtenRows.formatted()) rows, \(Int(result.totalBytes).byteString), "
-                    + "\(result.duration.shortDuration)"
+                "Export finished (\(rangeLabel), \(coverage)): \(result.writtenRows.formatted()) rows, "
+                    + "\(Int(result.totalBytes).byteString), \(result.duration.shortDuration)"
                     + (result.isComplete ? "" : " — incomplete, \(missing) type\(missing == 1 ? "" : "s") not fully read"))
         case .failure(let error):
             // A throw always means no files (`HealthExporter.run`).
@@ -244,5 +313,86 @@ private final class BackgroundWatch {
     func stop() {
         if let observer { NotificationCenter.default.removeObserver(observer) }
         observer = nil
+    }
+}
+
+/// What the Export tab is about to export, built on the tab and handed to
+/// `ExportRequest` as a whole when Export is tapped. Its own thing: it starts
+/// from the applied sync selection (`ExportModel.seedFromApplied`) and nothing
+/// changed here reaches the configuration the app syncs with.
+struct ExportDraft: Equatable {
+    /// HealthKit type identifiers (`HealthTypeCatalog`). The common set until
+    /// the applied selection is known.
+    var types: Set<String> = TypePresets.common
+    /// Ad hoc series, independent of the sync config's.
+    var aggregates: [AggregateConfig] = []
+    var includeWorkoutRoutes = false
+    var includeWorkoutEnhancedData = false
+    /// The preset in force while `customRange` is false.
+    var range: ExportRange = .default
+    /// True: the range is `customStart..<customEnd` instead of `range`.
+    var customRange = false
+    /// Earliest sample start, taken as the start of its local day.
+    var customStart: Date
+    /// Exclusive end. The screen shows and edits the last *inclusive* day
+    /// (`lastCustomDay`), which is the local day before this instant.
+    var customEnd: Date
+    var format: ExportFormat = .csv
+
+    init(now: Date = Date(), calendar: Calendar = .current) {
+        let today = calendar.startOfDay(for: now)
+        customStart = calendar.date(byAdding: .year, value: -1, to: today) ?? today
+        customEnd = now
+    }
+
+    func selection() -> ExportSelection {
+        ExportSelection(
+            types: types,
+            aggregates: aggregates,
+            includeWorkoutRoutes: includeWorkoutRoutes,
+            includeWorkoutEnhancedData: includeWorkoutEnhancedData)
+    }
+
+    /// What goes into `ExportRequest.startDate` / `.endDate`. A preset has no
+    /// end (nil = now). A custom range starts at the start of its first day
+    /// and ends at its exclusive end, unless that end falls in today or later:
+    /// a range that reaches today means "to now" (nil), whatever instant of
+    /// today the draft happens to hold.
+    func dates(now: Date = Date(), calendar: Calendar = .current) -> (start: Date?, end: Date?) {
+        guard customRange else { return (range.startDate(now: now, calendar: calendar), nil) }
+        let start = calendar.startOfDay(for: customStart)
+        let end = customEnd > calendar.startOfDay(for: now) ? nil : customEnd
+        return (start, end)
+    }
+
+    /// The last day a custom range includes, as the start of that local day.
+    func lastCustomDay(calendar: Calendar = .current) -> Date {
+        let before = customEnd.addingTimeInterval(-1)
+        return calendar.startOfDay(for: max(before, customStart))
+    }
+
+    /// Set the custom range's end from its last inclusive day: the exclusive
+    /// end is the start of the day after.
+    mutating func setLastCustomDay(_ day: Date, calendar: Calendar = .current) {
+        let dayStart = calendar.startOfDay(for: day)
+        customEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        if customStart > dayStart { customStart = dayStart }
+    }
+
+    /// Whole days in a custom range, first and last day included.
+    func customDayCount(calendar: Calendar = .current) -> Int {
+        let start = calendar.startOfDay(for: customStart)
+        let last = lastCustomDay(calendar: calendar)
+        return (calendar.dateComponents([.day], from: start, to: last).day ?? 0) + 1
+    }
+
+    /// The range in words, for the log and the finished summary: a preset's
+    /// title, or "Mar 1 – Jun 30, 2026".
+    func rangeLabel(calendar: Calendar = .current) -> String {
+        guard customRange else { return range.title }
+        let start = calendar.startOfDay(for: customStart)
+        let last = lastCustomDay(calendar: calendar)
+        if start == last { return start.formatted(date: .abbreviated, time: .omitted) }
+        return (start..<last).formatted(date: .abbreviated, time: .omitted)
     }
 }
