@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-09-21**
+**Last updated: 2026-09-30**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 server **you** run, or — if you have no server — writes it to files you then
@@ -89,7 +89,21 @@ Transport Security (`NSAllowsLocalNetworking`).
   iOS file protection and is excluded from device backups. It holds **no health
   samples** — a sync streams those to your server and keeps none of them in the
   app. The one time health samples rest in the app's storage is an export you
-  asked for, briefly, as described under [Exports](#exports).
+  asked for, briefly, as described under [Exports](#exports); the analysis
+  summaries below are derived numbers, not samples.
+- **Analysis summaries** — when you analyze a data type on the Explore tab,
+  the app reads that type from Apple Health and keeps a *summary* of it, one
+  small file per type (`profiles/<type>.json` in the app's private container),
+  so the next visit does not repeat a read that can take minutes: how many
+  samples there are, the first and last dates, how many fall on each day, the
+  spread of values (minimum, maximum, average, a few percentiles and a
+  histogram of at most a few dozen bins), the typical time between samples,
+  and how many came from each source app or device, by name. It never holds
+  an individual sample, a timestamp paired with a value, a sample identifier
+  or any metadata. These files carry the same protection as the sync state
+  (unreadable until the first unlock after a restart, excluded from backups),
+  are rewritten when the type's data changes, and Settings → Privacy & Data →
+  Delete Analysis removes all of them at once.
 - **Logs and background-activity telemetry** — an in-app event log and a record
   of each background wake (when it ran, how long, how many samples moved). They
   stay on the device unless *you* share them from the Background Activity

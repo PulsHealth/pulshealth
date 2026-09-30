@@ -107,6 +107,13 @@ context for judging what is.
   Keychain write fails the app parks the token in that protected state file
   instead of dropping it — losing it would stall syncing until the user
   re-entered it — and removes it once the Keychain accepts it.
+- **Analysis summaries are derived numbers, never samples.** Analyzing a
+  type on the Explore tab stores one small file per type (counts, dates,
+  per-day counts, a value histogram and percentiles, and per-source and
+  per-device counts by name) under the same file protection and backup
+  exclusion as the sync state. A summary file that carried an individual
+  sample, a value paired with its timestamp, a sample identifier or any
+  metadata would be a bug in scope here.
 - **An export is a plain file, and it is yours once shared.** The app can
   write the selected health data to JSONL or CSV without a server
   (`PulsHealthSync/Sources/PulsHealthSync/Export/`). The files are staged in

@@ -15,10 +15,10 @@ Sources/PulsHealthSync/
 │   │                                authorizationNeeded(for:)), parallel backfill,
 │   │                                observer-driven incremental sync, reconciliation.
 │   │                                Owns per-type anchors and activity state.
-│   ├── AggregateSync.swift          On-device aggregate series (HKStatisticsCollection-
-│   │                                Query): per-config watermark + trailing-lookback
-│   │                                recompute, calendar bucket math (AggregateBucketing),
-│   │                                chunked uploads, debug matrix validation.
+│   ├── AggregateSync.swift          On-device aggregate series: per-config watermark +
+│   │                                trailing-lookback recompute, calendar bucket math
+│   │                                (AggregateBucketing), chunked uploads, debug matrix
+│   │                                validation. The query itself is Explore/AggregateQuery.
 │   ├── ActivitySummarySync.swift    Daily activity rings (HKActivitySummaryQuery):
 │   │                                Move/Exercise/Stand + goals, singleton day
 │   │                                watermark + trailing lookback (today re-queried
@@ -125,6 +125,31 @@ Sources/PulsHealthSync/
 │   ├── ExportWriters.swift          JSONL (wire-format batches, concatenated) and
 │   │                                CSV (one file per dataset) writers; ExportFile.
 │   └── ExportManifest.swift         The …-manifest.json sidecar.
+├── Explore/
+│   ├── HealthExplorer.swift         Public read-only façade over its own HKHealthStore:
+│   │                                quickFacts (oldest/newest sample, writers),
+│   │                                profile (one sorted scan → TypeProfile),
+│   │                                aggregatePreview (buckets, uploaded nowhere).
+│   │                                Touches no sync state — see "Exploring what
+│   │                                HealthKit holds".
+│   ├── TypeProfile.swift            TypeProfile (Codable summary of a type: counts,
+│   │                                span, value distribution, labels, cadence, daily
+│   │                                counts, sources, devices — never a sample),
+│   │                                TypeQuickFacts, ProfileProgress, HealthExploreError.
+│   ├── TypeProfileStore.swift       Actor caching profiles as JSON under Application
+│   │                                Support/PulsHealthSync/profiles/ (ProtectedState-
+│   │                                File); isStale decides from quick facts.
+│   ├── AggregateQuery.swift         The HKStatisticsCollectionQuery both the engine
+│   │                                and the preview run, with the missing-data-source
+│   │                                split retry; callers supply what to do per chunk.
+│   ├── SampleScanner.swift          SampleCursor: anchor-free ascending paging with
+│   │                                boundary de-duplication (pure, fetch injected);
+│   │                                SampleScanner: the HealthKit fetch + per-kind
+│   │                                reduction to ScannedSample.
+│   ├── ProfileAccumulator.swift     Pure reducer ScannedSample → TypeProfile.
+│   └── ProfileStatistics.swift      Bounded-memory accumulators: Welford, reservoir
+│                                    quantiles (Algorithm L, seeded), histogram, gaps,
+│                                    daily counts, per-key breakdowns.
 └── Metrics/
     ├── SyncEventLog.swift           Ring buffer (2,000) + persisted file + os.Logger
     │                                mirror + AsyncStream for live UI. Messages are
@@ -524,6 +549,81 @@ midnight, because daily series are whole local days), `ExportSelectionSummary`,
 readings), display names for datasets and phases, and
 `ExportResult.writtenRowCounts`, which leaves out the rows a CSV export counted
 but has no file for.
+
+## Exploring what HealthKit holds
+
+`HealthExplorer` answers "what is in here?" for one catalog type before anyone
+decides to sync or export it — the read-only layer behind a type-browser
+screen. It owns a plain `HKHealthStore` and returns numbers, never samples.
+
+```swift
+let explorer = HealthExplorer()
+
+// Three small queries: oldest sample, newest sample, the writers.
+let facts = try await explorer.quickFacts(for: "HKQuantityTypeIdentifierHeartRate")
+
+// One ascending scan of the type, reduced as it goes.
+var options = HealthExplorer.ProfileOptions()   // rangeStart/End, histogramBins, reservoirCapacity, calendar
+let profile = try await explorer.profile(for: facts.typeIdentifier, options: options) { progress in
+    // phase (probing/scanning/finishing), samplesScanned, pagesScanned, scannedThrough
+}
+profile.sampleCount        // raw HealthKit count — the count "drained" decisions use
+profile.unmappableCount    // quantities not convertible to the catalog unit
+profile.values?.median     // exact min/max/mean/stddev; quantiles + histogram estimated past the reservoir
+profile.cadence, profile.dailyCounts, profile.coverage, profile.sources, profile.devices
+
+// What a configured aggregate series would produce — same query, same bucket
+// math, same recovery as the sync — computed for the caller and uploaded nowhere.
+let buckets = try await explorer.aggregatePreview(
+    AggregateConfig(typeIdentifier: facts.typeIdentifier, function: .average, intervalUnit: .day),
+    from: start, to: Date())
+
+// Cache: one JSON file per type under Application Support/PulsHealthSync/profiles/.
+let store = TypeProfileStore()
+if let cached = await store.profile(for: facts.typeIdentifier),
+   !TypeProfileStore.isStale(cached, facts: facts, options: options, maxAge: 7 * 86_400) {
+    // still current
+}
+try await store.save(profile)
+```
+
+**This layer never touches sync state.** It has no engine, no
+`SyncStateStore`, no event or wake log and no transport, and that is the
+point rather than a limitation: the engine advances a type's anchor whenever
+its transport returns normally, and anchors and watermarks are keyed per type
+with no destination dimension — the reason the on-device export builds a
+throwaway engine over its own state. Exploring does not need an engine at
+all. `profile` pages with a date-sorted `HKSampleQueryDescriptor`
+(`SampleCursor`: ascending by start, 5,000 per page, the UUIDs at the last
+instant carried into the next page and dropped; a page made of one instant is
+widened up to 4× and, past that, stepped over and noted in `failureReason`),
+and `aggregatePreview` runs `AggregateQuery` — the same
+`HKStatisticsCollectionQuery` and missing-data-source split retry the engine
+uses — with a closure that appends rows where the engine's uploads and acks.
+Neither has a cursor to persist. What the explorer shares with the engine is
+pure code only: the catalog, `AggregateBucketing` and `AggregateQuery`.
+
+`TypeProfile` is a summary, not data: no UUIDs, no metadata, no per-sample
+values. Its memory and its file are bounded whatever the count — two
+fixed-capacity reservoirs (8,192 values by default; `isEstimated` flags the
+quantiles, histogram and cadence percentiles once a type exceeds it), one
+entry per local day with samples, and one per distinct source, device and
+label. That is what lets `TypeProfileStore` keep it on disk without changing
+the privacy documents' "no health samples stored on the device" claim; it is
+still about health data, so it is written through `ProtectedStateFile`
+(unreadable until first unlock, excluded from backup) with epoch-millisecond
+dates like every other state file. `TypeProfile.currentVersion` is bumped
+when the shape or meaning changes, and the store deletes any file from
+another version rather than showing numbers computed under old rules.
+
+Failure rules mirror the export's: a locked device (`deviceLocked`), no
+HealthKit, an unknown identifier or an illegal aggregate function
+(`aggregatePreview` re-validates against
+`HealthTypeCatalog.allowedAggregateFunctions`, because HealthKit crashes on an
+illegal option × aggregation-style combination rather than throwing) and a
+failure before the first page all **throw** `HealthExploreError`; a failure
+after some pages **returns** the profile with `isComplete == false` and the
+scrubbed reason. Cancellation always throws and keeps nothing.
 
 ## Testing
 

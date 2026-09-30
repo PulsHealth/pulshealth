@@ -106,13 +106,13 @@ import Testing
             userInfo: [
                 NSLocalizedDescriptionKey: "Unable to invalidate interval: no data source available."
             ])
-        #expect(HealthSyncEngine.isHealthKitMissingDataSourceError(error))
+        #expect(AggregateQuery.isHealthKitMissingDataSourceError(error))
 
         let unrelated = NSError(
             domain: "com.apple.healthkit",
             code: 3,
             userInfo: [NSLocalizedDescriptionKey: "Invalid argument"])
-        #expect(!HealthSyncEngine.isHealthKitMissingDataSourceError(unrelated))
+        #expect(!AggregateQuery.isHealthKitMissingDataSourceError(unrelated))
     }
 
     @Test func legacyInitialFullPassProgressMigratesButScheduledPassDoesNot() {

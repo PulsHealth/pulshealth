@@ -43,7 +43,7 @@ export default function PrivacyPage() {
               <li>Your health data leaves the phone only two ways, both yours: uploads to the server you run and configure, and files you export and share yourself.</li>
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>
               <li>No analytics, advertising, tracking or third-party SDKs in the app.</li>
-              <li>The server token normally lives in the iOS Keychain. The app keeps no health samples; an export you ask for is staged in temporary storage until you share it, then deleted.</li>
+              <li>The server token normally lives in the iOS Keychain. The app keeps no health samples: an export you ask for is staged in temporary storage until you share it, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
               <li>This website loads no analytics and sets no cookies. Its two forms send only what you type.</li>
             </ul>
           </CardContent>
