@@ -108,8 +108,8 @@ struct ExploreView: View {
         }
     }
 
-    /// How much of the catalog Health has anything for, and one button to
-    /// analyze all of it.
+    /// How much of the catalog Health has anything for. Analysis is per
+    /// type, started by opening its page, so nothing runs from here.
     private var headerCard: some View {
         let explore = model.explore
         let withData = explore.typesWithData.count
@@ -119,33 +119,14 @@ struct ExploreView: View {
             subtitle: explore.quickFactsLoaded
                 ? "\(withData) of \(total) types have data"
                     + (explore.earliestSample.map { " · since \($0.formatted(.dateTime.month(.abbreviated).year()))" } ?? "")
-                : "Checking what Apple Health holds",
-            action: {
-                // Analysis runs by itself once the quick facts are in; the
-                // only control is stopping it.
-                if explore.isAnalyzingAll {
-                    Button("Cancel", role: .destructive) { explore.cancelAll() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                }
-            }
+                : "Checking what Apple Health holds"
         ) {
-            if explore.isAnalyzingAll {
-                ProgressBanner(
-                    title: "Analyzing \(min(explore.analyzeAllDone + 1, explore.analyzeAllTotal)) of \(explore.analyzeAllTotal)",
-                    subtitle: explore.running.keys.sorted()
-                        .compactMap { HealthTypeCatalog.descriptor(for: $0)?.displayName }
-                        .joined(separator: ", "),
-                    fraction: explore.analyzeAllTotal > 0
-                        ? Double(explore.analyzeAllDone) / Double(explore.analyzeAllTotal) : nil)
-            } else {
-                let analyzed = explore.profiles.count
-                Text(analyzed == 0
-                    ? "Each type with data is read once and summarized: counts, dates, values and sources."
-                    : "\(analyzed) analyzed · \(model.appliedConfig.enabledTypes.count) synced")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
+            let analyzed = explore.profiles.count
+            Text(analyzed == 0
+                ? "Open a type to read it once and keep a summary: counts, dates, values and sources."
+                : "\(analyzed) analyzed · \(model.appliedConfig.enabledTypes.count) synced")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 

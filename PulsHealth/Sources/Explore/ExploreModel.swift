@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 import PulsHealthSync
-import UIKit
 
 /// State of the Explore tab: what HealthKit holds per type, as the library's
 /// `TypeProfile`s, and the analyses in flight to find out.
@@ -30,9 +29,6 @@ final class ExploreModel {
     private(set) var running: [String: ProfileProgress] = [:]
     /// The last failure per type, cleared when the type is analyzed again.
     private(set) var errors: [String: String] = [:]
-    private(set) var isAnalyzingAll = false
-    private(set) var analyzeAllTotal = 0
-    private(set) var analyzeAllDone = 0
     private(set) var quickFactsLoaded = false
     private(set) var loaded = false
 
@@ -41,10 +37,7 @@ final class ExploreModel {
     static let maxProfileAge: TimeInterval = 7 * 86_400
 
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
-    @ObservationIgnored private var analyzeAllTask: Task<Void, Never>?
     @ObservationIgnored private var factsTask: Task<Void, Never>?
-    @ObservationIgnored private var queue: ArraySlice<String> = []
-    @ObservationIgnored private var allCancelled = false
     /// Types a permission request failed to determine this session
     /// (iOS 26.5 omits blood pressure from the sheet, FB22735935): asking
     /// again only makes the sheet flash. Session-only, like `AppModel`'s.
@@ -77,10 +70,6 @@ final class ExploreModel {
             let ok = await refreshQuickFacts(for: HealthTypeCatalog.all.map(\.identifier))
             quickFactsLoaded = quickFactsLoaded || ok
             factsTask = nil
-            // Then analyze everything that has data and no fresh profile —
-            // the Explore tab is meant to have the numbers, not to ask for
-            // them. Cached profiles make this a no-op on most launches.
-            if ok { analyzeAll() }
         }
     }
 
@@ -156,68 +145,12 @@ final class ExploreModel {
         tasks[id]?.cancel()
     }
 
-    /// Every type with data, two at a time — the scans are HealthKit-bound,
-    /// and more in parallel only makes each one slower. One cancel stops the
-    /// lot (`cancelAll`).
-    func analyzeAll() {
-        guard analyzeAllTask == nil else { return }
-        let ids = typesWithData.filter { tasks[$0] == nil && (isStale($0) || profiles[$0] == nil) }
-        guard !ids.isEmpty else { return }
-        analyzeAllTotal = ids.count
-        analyzeAllDone = 0
-        isAnalyzingAll = true
-        // A device that locks mid-run fails every remaining scan, so no
-        // auto-lock for the length of the run. Restored on every way out.
-        UIApplication.shared.isIdleTimerDisabled = true
-        analyzeAllTask = Task { [weak self] in
-            await self?.runAll(ids)
-        }
-    }
-
-    func cancelAll() {
-        allCancelled = true
-        queue = []
-        for task in tasks.values { task.cancel() }
-    }
-
     /// Settings → Delete Analysis: every stored profile, and nothing else.
     func deleteAll() async {
-        cancelAll()
+        for task in tasks.values { task.cancel() }
         await store.removeAll()
         profiles = [:]
         errors = [:]
-    }
-
-    private func runAll(_ ids: [String]) async {
-        defer {
-            isAnalyzingAll = false
-            analyzeAllTask = nil
-            UIApplication.shared.isIdleTimerDisabled = false
-        }
-        await engine.eventLog.log(.info, "Analysis of \(ids.count) types started")
-        // Two workers pulling from one queue: unstructured tasks rather than
-        // a task group, because a group's children do not inherit the main
-        // actor cleanly here, and `cancelAll` stops the workers by flag.
-        queue = ids[...]
-        allCancelled = false
-        let workers = (0..<2).map { _ in Task { [weak self] in await self?.work() } }
-        for worker in workers { await worker.value }
-        await engine.eventLog.log(
-            .info, allCancelled
-                ? "Analysis cancelled after \(analyzeAllDone) of \(ids.count) types"
-                : "Analysis of \(ids.count) types finished")
-    }
-
-    private func work() async {
-        while !allCancelled, let id = queue.popFirst() {
-            await analyzeAndWait(id)
-            analyzeAllDone += 1
-        }
-    }
-
-    private func analyzeAndWait(_ id: String) async {
-        analyze(id)
-        await tasks[id]?.value
     }
 
     private func runAnalysis(_ id: String, force: Bool) async {

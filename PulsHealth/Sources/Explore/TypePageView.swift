@@ -58,12 +58,12 @@ struct TypePageView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             // The facts decide whether the profile is current; cheap enough
-            // to refresh on every visit. Then the analysis starts by itself:
-            // opening a type is asking what is in it. `analyze` skips a fresh
-            // profile, requests Health access when the type has none yet, and
-            // is a no-op while a run for this type is already in flight.
+            // to refresh on every visit. Opening a type that has never been
+            // analyzed starts its one analysis (which requests Health access
+            // for the type when it has none); a stored profile is kept, and
+            // stale ones are refreshed only by the Refresh button.
             await explore.refreshQuickFacts(for: [identifier])
-            explore.analyze(identifier)
+            if explore.profiles[identifier] == nil { explore.analyze(identifier) }
         }
     }
 
