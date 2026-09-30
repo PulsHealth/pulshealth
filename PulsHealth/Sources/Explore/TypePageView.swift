@@ -32,6 +32,12 @@ struct TypePageView: View {
         return List {
             header(descriptor, profile: profile, facts: facts)
             analysisCard(descriptor, profile: profile, facts: facts)
+            if descriptor.kind == .category {
+                // Static reference from the knowledge base, so it is worth
+                // showing before (or without) an analysis; the counts join
+                // it once there is a profile.
+                CategoryValuesSection(profile: profile, knowledge: knowledge, color: color)
+            }
             if let profile {
                 statTiles(profile)
                 distributionSection(descriptor, profile: profile, color: color)
@@ -232,44 +238,38 @@ struct TypePageView: View {
                     values: values, unit: profile.unitString, color: color,
                     typicalRange: knowledge?.typicalRange)
             }
+        case .category:
+            EmptyView()  // the values card sits above the stat tiles
         case .workout:
             if !profile.labelCounts.isEmpty {
-                let rows = profile.labelCounts.map {
-                    LabelBarsChart.Row(
-                        label: $0.label, count: $0.count,
-                        detail: $0.totalDurationSeconds.map { Self.durationFormatter.string(from: $0) ?? "" })
+                let rows = profile.labelCounts.sorted { $0.count > $1.count }.map { activity in
+                    ShareBars.Row(
+                        label: TypeKnowledge.humanize(activity.label), measure: Double(activity.count),
+                        measureText: "\(activity.count.formatted()) · "
+                            + durationString(activity.totalDurationSeconds ?? 0))
                 }
                 let total = profile.workouts?.totalDurationSeconds
                 ChartCard(
                     "Workouts by activity",
-                    subtitle: total.map { "\(Self.durationFormatter.string(from: $0) ?? "") in total" },
-                    readout: rows.count > 1 ? "\(rows.count) activities" : nil, placeholder: ""
+                    subtitle: total.map { "\(durationString($0)) in total, most frequent first" },
+                    readout: "\(rows.count) \(rows.count == 1 ? "activity" : "activities")", placeholder: ""
                 ) {
-                    LabelBarsChart(rows: rows, color: color)
+                    ShareBars(rows: rows, color: color)
                 }
             }
         default:
             if !profile.labelCounts.isEmpty {
-                let rows = profile.labelCounts.map { label in
-                    LabelBarsChart.Row(
-                        label: label.rawValue.flatMap { knowledge?.categoryLabel(for: $0) } ?? label.label,
-                        count: label.count,
-                        detail: label.totalDurationSeconds.map { Self.durationFormatter.string(from: $0) ?? "" })
+                let rows = profile.labelCounts.sorted { $0.count > $1.count }.map { label in
+                    ShareBars.Row(
+                        label: TypeKnowledge.humanize(label.label), measure: Double(label.count),
+                        measureText: label.count.formatted())
                 }
                 ChartCard("Values", readout: "\(rows.count) distinct values", placeholder: "") {
-                    LabelBarsChart(rows: rows, color: color)
+                    ShareBars(rows: rows, color: color)
                 }
             }
         }
     }
-
-    private static let durationFormatter: DateComponentsFormatter = {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.day, .hour, .minute]
-        formatter.maximumUnitCount = 2
-        formatter.unitsStyle = .abbreviated
-        return formatter
-    }()
 
     // MARK: - Cadence
 
@@ -367,11 +367,14 @@ private struct ValueDistributionSection: View {
             readout: readout
         ) {
             VStack(alignment: .leading, spacing: 8) {
-                HistogramChart(histogram: values.histogram, unit: unit, color: color, typicalRange: band, readout: $readout)
-                if band != nil {
+                HistogramChart(
+                    histogram: values.histogram, unit: unit, color: color, typicalRange: band,
+                    median: values.median, readout: $readout)
+                if let band {
                     HStack(spacing: 6) {
                         RoundedRectangle(cornerRadius: 2).fill(.gray.opacity(0.25)).frame(width: 14, height: 10)
-                        Text("Typical range (knowledge base)")
+                        Text("Typical range \(formatValue(band.lowerBound))–\(formatValue(band.upperBound))"
+                            + (unit.map { " \($0)" } ?? ""))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -423,26 +426,149 @@ private struct SamplesOverTimeSection: View {
     }
 }
 
+/// Every value HealthKit defines for a category type — from the knowledge
+/// base, in enum order, with its description — and how much of the data
+/// each holds. A value with no samples stays in the list as an empty bar,
+/// so the page says what the type *can* record, not only what it did.
+/// Values seen in the data that the article does not know are appended
+/// by raw value.
+private struct CategoryValuesSection: View {
+    let profile: TypeProfile?
+    let knowledge: TypeKnowledge?
+    let color: Color
+    @State private var measure: Measure = .count
+
+    enum Measure: String, CaseIterable, Identifiable {
+        case count = "Samples"
+        case time = "Time"
+
+        var id: String { rawValue }
+    }
+
+    private struct Entry: Identifiable {
+        let id: String
+        let name: String
+        let rawValue: Int?
+        let description: String?
+        let count: Int
+        let duration: TimeInterval
+    }
+
+    private var entries: [Entry] {
+        let counts = profile?.labelCounts ?? []
+        var seen = Set<Int>()
+        var result: [Entry] = []
+        for value in knowledge?.categoryValues ?? [] {
+            let match = value.value.flatMap { raw in counts.first { $0.rawValue == raw } }
+            if let raw = value.value { seen.insert(raw) }
+            result.append(
+                Entry(
+                    id: value.value.map { "kb-\($0)" } ?? "kb-\(value.name ?? UUID().uuidString)",
+                    name: value.displayName, rawValue: value.value, description: value.description,
+                    count: match?.count ?? 0, duration: match?.totalDurationSeconds ?? 0))
+        }
+        for label in counts where label.rawValue.map({ !seen.contains($0) }) ?? true {
+            result.append(
+                Entry(
+                    id: "data-\(label.label)",
+                    name: label.rawValue.map { "Value \($0)" } ?? TypeKnowledge.humanize(label.label),
+                    rawValue: label.rawValue, description: "Not described by the knowledge base.",
+                    count: label.count, duration: label.totalDurationSeconds ?? 0))
+        }
+        return result
+    }
+
+    /// Time is only worth a toggle when the samples have length: sleep
+    /// stages and stand hours do, a logged symptom is an instant.
+    private var totalDuration: TimeInterval { entries.reduce(0) { $0 + $1.duration } }
+    private var hasDuration: Bool { totalDuration >= 60 }
+
+    private var rows: [ShareBars.Row] {
+        entries.map { entry in
+            let text: String
+            switch measure {
+            case .count: text = entry.count.formatted()
+            case .time: text = entry.count == 0 ? "0" : durationString(entry.duration)
+            }
+            var detail = entry.description
+            if measure == .count, hasDuration, entry.count > 0 {
+                detail = [durationString(entry.duration) + " in total", entry.description]
+                    .compactMap { $0 }.joined(separator: " · ")
+            }
+            return ShareBars.Row(
+                id: entry.id, label: entry.name,
+                measure: measure == .count ? Double(entry.count) : entry.duration,
+                measureText: text, detail: detail,
+                tag: entry.rawValue.map { "= \($0)" })
+        }
+    }
+
+    private var readout: String? {
+        guard profile != nil else { return nil }
+        let present = entries.filter { $0.count > 0 }.count
+        let known = knowledge?.categoryValues?.count ?? 0
+        if known == 0 { return "\(present) distinct values" }
+        return "\(present) of \(entries.count) values in your data"
+    }
+
+    var body: some View {
+        let hasDuration = hasDuration
+        if entries.isEmpty {
+            EmptyView()
+        } else {
+        ChartCard(
+            "Values",
+            subtitle: knowledge?.categoryValues == nil
+                ? nil
+                : profile == nil
+                    ? "Every value HealthKit defines for this type, in HealthKit's order."
+                    : "Every value HealthKit defines for this type, in HealthKit's order. Bars are relative to the largest.",
+            readout: readout, placeholder: ""
+        ) {
+            if hasDuration {
+                Picker("Measure", selection: $measure) {
+                    ForEach(Measure.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            }
+        } chart: {
+            ShareBars(rows: rows, color: color)
+            if hasDuration, measure == .time {
+                Text("\(durationString(totalDuration)) across every value. Overlapping samples — a Watch and an app both recording — are counted twice.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .onAppear { if hasDuration { measure = .time } }
+        }
+    }
+}
+
 private struct SourcesSection: View {
     let profile: TypeProfile
     let color: Color
     @State private var showsDevices = false
 
-    private var rows: [LabelBarsChart.Row] {
+    private var rows: [ShareBars.Row] {
         if showsDevices {
-            return profile.devices.map {
-                LabelBarsChart.Row(
-                    label: $0.name ?? $0.model ?? "No device", count: $0.count,
-                    detail: range($0.earliestStart, $0.latestStart))
+            return profile.devices.sorted { $0.count > $1.count }.enumerated().map { index, device in
+                ShareBars.Row(
+                    id: "device-\(index)", label: device.name ?? device.model ?? "No device",
+                    measure: Double(device.count), measureText: device.count.formatted(),
+                    detail: range(device.earliestStart, device.latestStart),
+                    tag: device.name != nil ? device.model : nil)
             }
         }
-        return profile.sources.map {
-            LabelBarsChart.Row(label: $0.name, count: $0.count, detail: range($0.earliestStart, $0.latestStart))
+        return profile.sources.sorted { $0.count > $1.count }.enumerated().map { index, source in
+            ShareBars.Row(
+                id: "source-\(index)", label: source.name,
+                measure: Double(source.count), measureText: source.count.formatted(),
+                detail: range(source.earliestStart, source.latestStart))
         }
     }
 
     private func range(_ from: Date, _ to: Date) -> String {
-        "from \(from.formatted(date: .abbreviated, time: .omitted)) to \(to.formatted(date: .abbreviated, time: .omitted))"
+        "\(from.formatted(date: .abbreviated, time: .omitted)) – \(to.formatted(date: .abbreviated, time: .omitted))"
     }
 
     var body: some View {
@@ -458,7 +584,7 @@ private struct SourcesSection: View {
                 .pickerStyle(.segmented)
             }
         } chart: {
-            LabelBarsChart(rows: rows, color: color)
+            ShareBars(rows: rows, color: color)
         }
         .onAppear { showsDevices = profile.sources.isEmpty }
     }

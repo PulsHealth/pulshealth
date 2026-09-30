@@ -38,11 +38,49 @@ struct TypeKnowledge: Decodable, Sendable {
     }
 
     /// The label the knowledge base gives a category type's raw value, when
-    /// the article lists its values.
+    /// the article lists its values: the enum name spelled out.
     func categoryLabel(for rawValue: Int) -> String? {
-        categoryValues?.first { $0.value == rawValue }?.name
+        categoryValues?.first { $0.value == rawValue }?.displayName
     }
 
+    /// The enum name as words: `asleepCore` → "Asleep core", `asleepREM` →
+    /// "Asleep REM", `notPresent` → "Not present". The names are the
+    /// `HKCategoryValue…` cases minus their prefix, so this is the only
+    /// transformation they need.
+    static func humanize(_ name: String) -> String {
+        var words: [String] = []
+        var current = ""
+        let characters = Array(name)
+        for (index, character) in characters.enumerated() {
+            if character.isUppercase, !current.isEmpty {
+                let previous = characters[index - 1]
+                let next = index + 1 < characters.count ? characters[index + 1] : nil
+                // A boundary before a capital that follows a lowercase letter
+                // ("asleep|Core"), or that starts a word after an acronym
+                // ("REM|Sleep") — never inside the acronym itself.
+                if previous.isLowercase || previous.isNumber || (next?.isLowercase ?? false) {
+                    words.append(current)
+                    current = ""
+                }
+            }
+            current.append(character)
+        }
+        if !current.isEmpty { words.append(current) }
+        let joined = words.joined(separator: " ")
+        guard let first = joined.first else { return name }
+        return first.uppercased() + joined.dropFirst()
+    }
+}
+
+extension TypeKnowledge.CategoryValue {
+    /// `name` as words, or the raw value when the article has no name.
+    var displayName: String {
+        if let name, !name.isEmpty { return TypeKnowledge.humanize(name) }
+        return value.map { "Value \($0)" } ?? "Unnamed value"
+    }
+}
+
+extension TypeKnowledge {
     // MARK: - Lookup
 
     /// The article for a catalog identifier, or nil when the knowledge base

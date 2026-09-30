@@ -22,6 +22,8 @@ struct HistogramChart: View {
     let unit: String?
     let color: Color
     var typicalRange: ClosedRange<Double>?
+    /// Drawn as a dashed rule so the eye has a reference on the value axis.
+    var median: Double?
     @State private var selection: Double?
     /// Spelled-out selection for the card's readout line.
     @Binding var readout: String?
@@ -66,16 +68,47 @@ struct HistogramChart: View {
                     .foregroundStyle(.gray.opacity(0.15))
             }
             ForEach(bins) { bin in
-                BarMark(
+                // A rectangle from zero, not a BarMark with xStart/xEnd —
+                // that one is an interval bar floating at y.
+                RectangleMark(
                     xStart: .value("From", bin.lower), xEnd: .value("To", bin.upper),
-                    y: .value("Samples", bin.count))
+                    yStart: .value("Samples", 0), yEnd: .value("Samples", bin.count))
                 .foregroundStyle(selectedBin == nil || selectedBin?.id == bin.id ? color : color.opacity(0.4))
+            }
+            if let median {
+                RuleMark(x: .value("Median", median))
+                    .foregroundStyle(.secondary)
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .annotation(position: .top, alignment: .center, spacing: 2) {
+                        Text("median")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
             }
         }
         .chartXSelection(value: $selection)
         .onChange(of: selection) { readout = computedReadout }
+        .chartXScale(domain: histogram.lowerBound...max(histogram.upperBound, histogram.lowerBound.nextUp))
+        .chartXAxis {
+            AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                AxisGridLine()
+                AxisTick()
+                AxisValueLabel {
+                    if let number = value.as(Double.self) {
+                        Text(formatValue(number))
+                    }
+                }
+            }
+        }
+        .chartYAxis {
+            AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                AxisGridLine()
+                AxisValueLabel(format: IntegerFormatStyle<Int>.number.notation(.compactName))
+            }
+        }
         .chartXAxisLabel(unit ?? "", alignment: .trailing)
         .chartYAxisLabel("Samples")
+        .frame(height: 200)
         .accessibilityLabel(accessibilityText)
     }
 
@@ -87,51 +120,128 @@ struct HistogramChart: View {
     }
 }
 
-// MARK: - Label counts
+// MARK: - Label shares
 
-/// Horizontal bars, one per label, the count beside each. Height grows with
-/// the number of rows so nothing is squeezed.
-struct LabelBarsChart: View {
+/// One bar per label, drawn as list rows rather than a plotted axis: the
+/// label and its number on one line, a proportional bar under them, and any
+/// detail (a description, a date range) under that. Every row gets the
+/// full width for its text, so nothing truncates at any Dynamic Type size,
+/// and a row with nothing in it is drawn as an empty track rather than
+/// dropped — a category type shows every value HealthKit defines.
+struct ShareBars: View {
     struct Row: Identifiable {
-        var id: String { label }
+        let id: String
         let label: String
-        let count: Int
-        /// Text under the label: a date range, a duration.
+        /// The bar's length, relative to the largest row.
+        let measure: Double
+        /// The number beside the label: a count, a duration, both.
+        let measureText: String
+        /// Small print under the bar: a description, a date range.
         var detail: String?
+        /// A short tag after the label: the raw value, a "deprecated" note.
+        var tag: String?
+
+        init(
+            id: String? = nil, label: String, measure: Double, measureText: String,
+            detail: String? = nil, tag: String? = nil
+        ) {
+            self.id = id ?? label
+            self.label = label
+            self.measure = measure
+            self.measureText = measureText
+            self.detail = detail
+            self.tag = tag
+        }
     }
 
     let rows: [Row]
     let color: Color
+    /// The bar is a share of this; the largest row by default, so the widest
+    /// bar spans the card. Pass the total for bars that read as fractions of
+    /// the whole.
+    var scale: Double?
+
+    private var denominator: Double {
+        max(scale ?? rows.map(\.measure).max() ?? 1, .leastNonzeroMagnitude)
+    }
 
     var body: some View {
-        Chart(rows) { row in
-            BarMark(x: .value("Count", row.count), y: .value("Label", row.label))
-                .foregroundStyle(color)
-                .annotation(position: .trailing, alignment: .leading, spacing: 4) {
-                    Text(row.count.formatted())
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-        }
-        .chartXAxis(.hidden)
-        .chartYAxis {
-            AxisMarks(preset: .extended) { value in
-                AxisValueLabel {
-                    if let label = value.as(String.self) {
-                        VStack(alignment: .trailing, spacing: 0) {
-                            Text(label).lineLimit(1)
-                            if let detail = rows.first(where: { $0.label == label })?.detail {
-                                Text(detail).font(.caption2).foregroundStyle(.tertiary)
-                            }
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(rows) { row in
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(row.label)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(row.measure > 0 ? .primary : .secondary)
+                        if let tag = row.tag {
+                            Text(tag)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
                         }
+                        Spacer(minLength: 8)
+                        Text(row.measureText)
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    Bar(fraction: row.measure / denominator, color: color)
+                    if let detail = row.detail {
+                        Text(detail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(row.label): \(row.measureText)")
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private struct Bar: View {
+        let fraction: Double
+        let color: Color
+
+        var body: some View {
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(color.opacity(0.12))
+                    if fraction > 0 {
+                        // At least a dot, so a tiny share is not invisible.
+                        Capsule()
+                            .fill(color)
+                            .frame(width: max(8, geometry.size.width * min(fraction, 1)))
                     }
                 }
             }
+            .frame(height: 8)
         }
-        .frame(height: max(180, CGFloat(rows.count) * 34))
-        .accessibilityLabel(rows.map { "\($0.label): \($0.count.formatted())" }.joined(separator: ", "))
     }
 }
+
+/// A duration the way the type pages say it: "7 h 20 min", "3 d 4 h", "45 s".
+func durationString(_ seconds: TimeInterval) -> String {
+    if seconds < 60 { return String(format: "%.0f s", seconds) }
+    let formatter = seconds >= 86_400 ? durationFormatterDays : durationFormatterHours
+    return formatter.string(from: seconds) ?? ""
+}
+
+private let durationFormatterHours: DateComponentsFormatter = {
+    let formatter = DateComponentsFormatter()
+    formatter.allowedUnits = [.hour, .minute]
+    formatter.maximumUnitCount = 2
+    formatter.unitsStyle = .abbreviated
+    return formatter
+}()
+
+private let durationFormatterDays: DateComponentsFormatter = {
+    let formatter = DateComponentsFormatter()
+    formatter.allowedUnits = [.day, .hour]
+    formatter.maximumUnitCount = 2
+    formatter.unitsStyle = .abbreviated
+    return formatter
+}()
 
 // MARK: - Samples over time
 
@@ -227,7 +337,33 @@ struct DailyCountsChart: View {
         }
         .chartXSelection(value: $selection)
         .onChange(of: selection) { readout = computedReadout }
+        .chartYAxis {
+            AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                AxisGridLine()
+                AxisValueLabel(format: IntegerFormatStyle<Int>.number.notation(.compactName))
+            }
+        }
+        .chartXAxis {
+            switch grain {
+            case .day:
+                AxisMarks(values: .stride(by: .day, count: window == .month ? 7 : 30)) { _ in
+                    AxisGridLine()
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                }
+            case .week:
+                AxisMarks(values: .stride(by: .month)) { _ in
+                    AxisGridLine()
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).year(.twoDigits))
+                }
+            case .month:
+                AxisMarks(values: .stride(by: .year)) { _ in
+                    AxisGridLine()
+                    AxisValueLabel(format: .dateTime.year())
+                }
+            }
+        }
         .chartYAxisLabel("Samples")
+        .frame(height: 200)
         .modifier(WindowScroll(window: window, position: $scrollPosition))
         .accessibilityLabel(accessibilityText)
         .onAppear {
@@ -304,21 +440,49 @@ struct AggregatePreviewChart: View {
                         .foregroundStyle(
                             selected == nil || selected?.start == bucket.start ? color : color.opacity(0.4))
                     } else {
+                        AreaMark(x: .value("Time", bucket.start), y: .value(function.displayName, value))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [color.opacity(0.25), color.opacity(0.02)],
+                                    startPoint: .top, endPoint: .bottom))
+                            .interpolationMethod(.monotone)
                         LineMark(x: .value("Time", bucket.start), y: .value(function.displayName, value))
                             .foregroundStyle(color)
                             .lineStyle(StrokeStyle(lineWidth: 2))
+                            .interpolationMethod(.monotone)
                     }
                 }
             }
-            if let selected, let value = selected.value, !isColumn {
-                PointMark(x: .value("Time", selected.start), y: .value(function.displayName, value))
-                    .foregroundStyle(color)
-                    .symbolSize(64)
+            if let selected, let value = selected.value {
+                if isColumn {
+                    RuleMark(x: .value("Time", selected.start))
+                        .foregroundStyle(.secondary.opacity(0.4))
+                } else {
+                    RuleMark(x: .value("Time", selected.start))
+                        .foregroundStyle(.secondary.opacity(0.4))
+                    PointMark(x: .value("Time", selected.start), y: .value(function.displayName, value))
+                        .foregroundStyle(color)
+                        .symbolSize(64)
+                }
             }
         }
         .chartXSelection(value: $selection)
         .onChange(of: selection) { readout = computedReadout }
+        // A level (average, min, max) reads better on a scale that fits it;
+        // an amount per bucket (sum, duration) must start at zero.
+        .chartYScale(domain: .automatic(includesZero: isColumn))
+        .chartYAxis {
+            AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                AxisGridLine()
+                AxisValueLabel {
+                    if let number = value.as(Double.self) {
+                        Text(formatValue(number))
+                    }
+                }
+            }
+        }
         .chartYAxisLabel(unit ?? "")
+        .frame(height: 200)
         .accessibilityLabel(accessibilityText)
     }
 

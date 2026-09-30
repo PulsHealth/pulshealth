@@ -54,6 +54,13 @@ final class ExploreModel {
     func load() async {
         guard !loaded else { return }
         loaded = true
+        #if DEBUG
+        if ExploreFixtures.isEnabled {
+            for profile in ExploreFixtures.profiles { profiles[profile.typeIdentifier] = profile }
+            TypeKnowledge.preload()
+            return
+        }
+        #endif
         for profile in await store.allProfiles() {
             profiles[profile.typeIdentifier] = profile
         }

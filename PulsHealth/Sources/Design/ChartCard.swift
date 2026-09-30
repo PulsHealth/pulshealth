@@ -34,8 +34,10 @@ struct ChartCard<Controls: View, Chart: View>: View {
     var body: some View {
         CardSection(title, subtitle: subtitle) {
             controls()
-            chart()
-                .frame(minHeight: 180)
+            // One container, so a chart slot holding a plot and a note is
+            // sized once rather than each child getting the minimum.
+            VStack(alignment: .leading, spacing: 8) { chart() }
+                .frame(maxWidth: .infinity, alignment: .leading)
             Text(readout ?? placeholder)
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(readout == nil ? .tertiary : .secondary)
