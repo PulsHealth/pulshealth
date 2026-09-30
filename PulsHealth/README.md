@@ -100,7 +100,11 @@ Sources/
 │                         (the latter with "Open Health Settings"), then
 │                         every catalog type by category with search —
 │                         types with data first, the sample count once
-│                         analyzed. Every row opens its Type page
+│                         analyzed. Categories collapse from their header;
+│                         the toolbar menu expands/collapses all, hides
+│                         types without data and sorts (Data First / Name /
+│                         Most Recent), kept in UserDefaults. Every row
+│                         opens its Type page
 │                         (ExploreRoute.type), synced or not.
 ├── Explore/
 │   ├── ExploreModel.swift  @MainActor @Observable, owned by AppModel: the

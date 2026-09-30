@@ -16,23 +16,33 @@ enum ExploreRoute: Hashable {
 ///
 /// The two Health-access cards live here, not on Sync, because they are about
 /// what the app may read at all, server or no server.
+///
+/// Each category collapses from its header, and the toolbar menu expands or
+/// collapses them all, hides types HealthKit holds nothing for, and picks the
+/// order inside a category. All three are view preferences in UserDefaults —
+/// category names and a sort, never health data.
 struct ExploreView: View {
     @Environment(AppModel.self) private var model
     @State private var searchText = ""
+    /// Collapsed categories, by raw name, comma-joined.
+    @AppStorage("explore.collapsedGroups") private var collapsedGroups = ""
+    @AppStorage("explore.hidesEmptyTypes") private var hidesEmptyTypes = false
+    @AppStorage("explore.sort") private var sort = ExploreSort.dataFirst
 
     var body: some View {
         List {
             if searchText.isEmpty {
                 accessCards
-                ForEach(HealthTypeDescriptor.Group.allCases, id: \.self) { group in
-                    categorySection(group, types: HealthTypeCatalog.all.filter { $0.group == group })
-                }
+                catalog
             } else {
                 searchResults
             }
         }
         .navigationTitle("Explore")
         .searchable(text: $searchText, prompt: "Search data types")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { optionsMenu }
+        }
         .navigationDestination(for: ExploreRoute.self) { route in
             switch route {
             case .type(let id):
@@ -109,29 +119,140 @@ struct ExploreView: View {
 
     // MARK: - Catalog
 
-    @ViewBuilder private func categorySection(
-        _ group: HealthTypeDescriptor.Group, types: [HealthTypeDescriptor]
-    ) -> some View {
-        if !types.isEmpty {
-            Section {
-                ForEach(ordered(types)) { descriptor in
-                    typeRow(descriptor, showsCategory: false)
-                }
-            } header: {
-                HStack(spacing: 8) {
-                    TypeIcon(group, size: .small)
-                    Text(group.rawValue)
+    private static let groups = HealthTypeDescriptor.Group.allCases
+
+    @ViewBuilder private var catalog: some View {
+        if Self.groups.allSatisfy({ visibleTypes(in: $0).isEmpty }) {
+            // Only reachable with Hide Types Without Data on.
+            ContentUnavailableView {
+                Label("No Health Data", systemImage: "heart.text.square")
+            } description: {
+                Text("Apple Health has nothing for any type PulsHealth can read, or access hasn't been allowed.")
+            } actions: {
+                Button("Show All Types") { hidesEmptyTypes = false }
+            }
+        } else {
+            ForEach(Self.groups, id: \.self) { group in
+                categorySection(group, types: visibleTypes(in: group))
+            }
+            let hidden = hiddenCount
+            if hidden > 0 {
+                Section {
+                    Button("Show \(hidden) Types Without Data") {
+                        withAnimation { hidesEmptyTypes = false }
+                    }
                 }
             }
         }
     }
 
-    /// Types with data first, in catalog order; the rest after them.
-    private func ordered(_ types: [HealthTypeDescriptor]) -> [HealthTypeDescriptor] {
-        let facts = model.explore.quickFacts
-        guard model.explore.quickFactsLoaded else { return types }
-        return types.filter { facts[$0.identifier]?.latestStart != nil }
-            + types.filter { facts[$0.identifier]?.latestStart == nil }
+    @ViewBuilder private func categorySection(
+        _ group: HealthTypeDescriptor.Group, types: [HealthTypeDescriptor]
+    ) -> some View {
+        if !types.isEmpty {
+            let expanded = !collapsed.contains(group.rawValue)
+            Section {
+                if expanded {
+                    ForEach(types) { descriptor in
+                        typeRow(descriptor, showsCategory: false)
+                    }
+                }
+            } header: {
+                Button { toggle(group) } label: {
+                    HStack(spacing: 8) {
+                        TypeIcon(group, size: .small)
+                        Text(group.rawValue)
+                        Spacer()
+                        Text("\(types.count)").monospacedDigit()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .rotationEffect(.degrees(expanded ? 90 : 0))
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+                .accessibilityHint(expanded ? "Hides this category's types" : "Shows this category's types")
+            }
+        }
+    }
+
+    private var optionsMenu: some View {
+        let all = Set(Self.groups.map(\.rawValue))
+        return Menu {
+            Section {
+                Button("Expand All", systemImage: "rectangle.expand.vertical") {
+                    withAnimation { setCollapsed([]) }
+                }
+                .disabled(collapsed.isEmpty)
+                Button("Collapse All", systemImage: "rectangle.compress.vertical") {
+                    withAnimation { setCollapsed(all) }
+                }
+                .disabled(collapsed.isSuperset(of: all))
+            }
+            Section {
+                Toggle("Hide Types Without Data", systemImage: "eye.slash", isOn: $hidesEmptyTypes.animation())
+                Picker("Sort By", systemImage: "arrow.up.arrow.down", selection: $sort.animation()) {
+                    ForEach(ExploreSort.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.menu)
+            }
+        } label: {
+            Label("View Options", systemImage: "ellipsis.circle")
+        }
+    }
+
+    private var collapsed: Set<String> {
+        Set(collapsedGroups.split(separator: ",").map(String.init))
+    }
+
+    private func setCollapsed(_ groups: Set<String>) {
+        collapsedGroups = groups.sorted().joined(separator: ",")
+    }
+
+    private func toggle(_ group: HealthTypeDescriptor.Group) {
+        var groups = collapsed
+        if groups.remove(group.rawValue) == nil { groups.insert(group.rawValue) }
+        withAnimation { setCollapsed(groups) }
+    }
+
+    /// A category's rows: filtered when asked, then in the chosen order.
+    private func visibleTypes(in group: HealthTypeDescriptor.Group) -> [HealthTypeDescriptor] {
+        let types = HealthTypeCatalog.all.filter { $0.group == group }
+        return sorted(hidesEmptyTypes ? types.filter { !isKnownEmpty($0) } : types)
+    }
+
+    private var hiddenCount: Int {
+        hidesEmptyTypes ? HealthTypeCatalog.all.filter(isKnownEmpty).count : 0
+    }
+
+    /// The row's own "muted" test: the facts are in and say there is
+    /// nothing. A type whose facts could not be read is never hidden.
+    private func isKnownEmpty(_ descriptor: HealthTypeDescriptor) -> Bool {
+        let explore = model.explore
+        guard explore.quickFactsLoaded, let facts = explore.quickFacts[descriptor.identifier] else { return false }
+        return facts.latestStart == nil && explore.profiles[descriptor.identifier] == nil
+    }
+
+    private func latestSample(_ descriptor: HealthTypeDescriptor) -> Date? {
+        model.explore.quickFacts[descriptor.identifier]?.latestStart
+            ?? model.explore.profiles[descriptor.identifier]?.latestStart
+    }
+
+    private func sorted(_ types: [HealthTypeDescriptor]) -> [HealthTypeDescriptor] {
+        switch sort {
+        case .dataFirst:
+            // Types with data first, in catalog order; the rest after them.
+            guard model.explore.quickFactsLoaded else { return types }
+            return types.filter { latestSample($0) != nil } + types.filter { latestSample($0) == nil }
+        case .name:
+            return types.sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+        case .recent:
+            let dated = types.compactMap { d in latestSample(d).map { (d, $0) } }
+                .sorted { $0.1 > $1.1 }
+                .map(\.0)
+            return dated + types.filter { latestSample($0) == nil }
+        }
     }
 
     private var searchResults: some View {
@@ -144,7 +265,8 @@ struct ExploreView: View {
             if matches.isEmpty {
                 ContentUnavailableView.search(text: searchText)
             } else {
-                ForEach(matches) { descriptor in
+                // Search always covers every type; only the order applies.
+                ForEach(sorted(matches)) { descriptor in
                     typeRow(descriptor, showsCategory: true)
                 }
             }
@@ -162,6 +284,21 @@ struct ExploreView: View {
                 isRunning: explore.isRunning(descriptor.identifier),
                 status: model.statuses.first { $0.id == descriptor.identifier },
                 showsCategory: showsCategory)
+        }
+    }
+}
+
+/// The order of the types inside each Explore category and in search results.
+enum ExploreSort: String, CaseIterable, Identifiable {
+    case dataFirst, name, recent
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .dataFirst: "Data First"
+        case .name: "Name"
+        case .recent: "Most Recent"
         }
     }
 }
