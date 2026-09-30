@@ -12,7 +12,7 @@ enum ExploreFixtures {
     static var isEnabled: Bool { UserDefaults.standard.bool(forKey: "PulsFixtureProfiles") }
 
     static var profiles: [TypeProfile] {
-        [sleep, heartRate, steps, workouts]
+        [sleep, heartRate, steps, cyclingDistance, workouts]
     }
 
     private static let calendar = Calendar.current
@@ -132,6 +132,38 @@ enum ExploreFixtures {
         profile.cadence = TypeProfile.Cadence(
             gapCount: total - 1, medianGapSeconds: 83, p90GapSeconds: 14 * 60,
             minGapSeconds: 0, maxGapSeconds: 3 * 86_400, zeroGapCount: 4_120, isEstimated: true)
+        return profile
+    }
+
+    static var cyclingDistance: TypeProfile {
+        let days = 700
+        // Second-by-second Watch samples on ride days since the spring, and
+        // before that the odd ride imported from another app as one sample.
+        let daily = dailyCounts(days: days) { offset in
+            if offset < 150 { return offset % 3 == 0 ? 2_400 + (offset * 37) % 1_500 : 0 }
+            return offset % 11 == 0 ? 1 : 0
+        }
+        let total = daily.reduce(0) { $0 + $1.count }
+        var profile = base(
+            "HKQuantityTypeIdentifierDistanceCycling", kind: .quantity, unit: "m", sampleCount: total,
+            days: days, daily: daily)
+        // Drawn past a long tail: 0 to 8.5 m on quarter-metre bins, with the
+        // whole rides (5%, up to 33 km) left off the axis.
+        let binCount = 34
+        let above = total / 20
+        let counts = (0..<binCount).map { index in
+            let center = (Double(index) + 0.5) * 0.25
+            return Int(Double(total - above) * 0.25 * exp(-pow(center - 5.5, 2) / 4.5) / 3.76)
+        }
+        profile.values = TypeProfile.ValueDistribution(
+            count: total, min: 0, max: 33_458, mean: 42.8, stddev: 910, p5: 0.12, median: 5.69, p95: 8.46,
+            isEstimated: true,
+            histogram: TypeProfile.Histogram(
+                lowerBound: 0, upperBound: 8.5, binCount: binCount, counts: counts, isEstimated: true,
+                aboveCount: above))
+        profile.cadence = TypeProfile.Cadence(
+            gapCount: total - 1, medianGapSeconds: 0.9999, p90GapSeconds: 1.2,
+            minGapSeconds: 0, maxGapSeconds: 40 * 86_400, zeroGapCount: 0, isEstimated: true)
         return profile
     }
 

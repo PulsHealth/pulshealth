@@ -346,7 +346,9 @@ func gapString(_ seconds: TimeInterval) -> String {
     if seconds >= 2 * 86_400 { return String(format: "%.0f d", seconds / 86_400) }
     if seconds >= 5_400 { return String(format: "%.1f h", seconds / 3_600) }
     if seconds >= 90 { return String(format: "%.0f min", seconds / 60) }
-    if seconds >= 1 { return String(format: "%.0f s", seconds) }
+    // Decided on the rounded milliseconds: a Watch's 0.9999 s gap is "1 s",
+    // not "1000 ms".
+    if (seconds * 1_000).rounded() >= 1_000 { return String(format: "%.0f s", seconds) }
     return String(format: "%.0f ms", seconds * 1_000)
 }
 
@@ -395,8 +397,9 @@ private struct ValueDistributionSection: View {
     }
 
     /// What the histogram leaves off its axis, when anything: the tails
-    /// past the 1st and 99th percentiles that would otherwise squash every
-    /// bar into a corner. The stats row under it still has the true extremes.
+    /// past the 1st and 99th percentiles (the 5th and 95th, past a long
+    /// tail) that would otherwise squash every bar into a corner. The stats
+    /// row under it still has the true extremes.
     private var axisNote: String? {
         let histogram = values.histogram
         let below = histogram.belowCount
