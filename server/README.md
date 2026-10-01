@@ -432,7 +432,7 @@ stamped with when it was last used.
 
 Pairing a phone with one is a single command, which issues the token and
 prints the same block the shared token gets — URL, token, user ID and a QR
-code the app scans (**Sync → Server**, or the Sync tab's Scan Pairing Code):
+code the app scans (**Sync → Set Up**, later **Sync → Database**: Scan Pairing Code):
 
 ```bash
 scripts/bootstrap.sh --issue-device "My iPhone"                  # the default user
