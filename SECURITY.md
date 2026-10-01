@@ -11,9 +11,10 @@ The **iOS app** ships from the App Store; the current version there is the
 supported one, and a fix reaches users in the next store release. Report
 against it even if you cannot build the source.
 
-The **server stack, the Swift package and the protocol tooling** have no
-tagged releases yet: `main` is the only supported line, and fixes land there.
-Once tagged releases exist, this section will name the supported ones.
+The **server stack** is released as versioned images (`CHANGELOG.md`). While
+it is on 0.x, the latest release and `main` are supported: fixes land on
+`main` and ship in the next release. The **Swift package and the protocol
+tooling** are not released separately; `main` is their supported line.
 
 ## Reporting a vulnerability
 
@@ -27,7 +28,7 @@ or discussion for a security problem, and do not email individual maintainers.
 A useful report includes:
 
 - which component is affected (iOS app, `PulsHealthSync` package, ingest
-  server, product API, web viewer, Compose stack, database schema);
+  server, product API, MCP server, web viewer, Compose stack, database schema);
 - the commit or version you tested;
 - steps or a proof of concept that reproduces the problem;
 - what an attacker gains (data read, data written or deleted, denial of
@@ -41,10 +42,9 @@ This is a volunteer-maintained project.
 - You should get an acknowledgement within **7 days**.
 - You should get an initial assessment (accepted, needs more information, or
   not a vulnerability) within **14 days**.
-- Accepted reports are fixed on `main` and published as a GitHub Security
-  Advisory that credits you, unless you ask not to be named. Until a release
-  process exists, "fixed" means the commit is on `main` and the advisory says
-  which commit to update to.
+- Accepted reports are fixed on `main`, shipped in the next server release or
+  app update, and published as a GitHub Security Advisory that credits you,
+  unless you ask not to be named. The advisory says which release fixes it.
 - Please allow up to **90 days** before disclosing publicly. If a fix is
   taking longer, the maintainer will say so rather than go quiet.
 
@@ -56,8 +56,8 @@ Everything in this repository is in scope, in particular:
   network. Authentication bypass, parsing crashes, decompression or memory
   exhaustion, SQL injection, and anything that lets one bearer token read or
   modify data outside its intended reach.
-- **Product API** (`server/api`): token handling, data exposure beyond the
-  read-only role it is meant to have.
+- **Product API** (`server/api`) and **MCP server** (`server/mcp`): token
+  handling, data exposure beyond the read-only role they are meant to have.
 - **iOS app and `PulsHealthSync`**: handling of the server URL and bearer
   token, including a pairing link (`puls://pair`) changing the server without
   the confirmation it is supposed to require; health data written anywhere
@@ -83,9 +83,9 @@ Out of scope:
 
 ## Things to know about the current design
 
-These are documented properties of the current design, tracked in
-`docs/open-source-plan.md`. They are not vulnerabilities to report; they are
-context for judging what is.
+These are documented properties of the current design; what is still open is
+in `docs/roadmap.md`. They are not vulnerabilities to report; they are context
+for judging what is.
 
 - **Self-hosted.** No PulsHealth service ever receives your data. Where your
   server runs, how it is exposed, and who can reach it are your decisions.

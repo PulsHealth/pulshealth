@@ -1,9 +1,10 @@
 # PulsHealthSync
 
 Swift package (iOS 17+, Swift 6 strict concurrency, no external dependencies) that
-syncs HealthKit data to an HTTP ingest server. The PulsHealth app is a thin UI over
-this library; everything sync-related lives here. See the root `README.md` for the
-overall architecture and wire format, and `CLAUDE.md` for invariants.
+syncs HealthKit data to an HTTP ingest server, exports it to files, and profiles
+what HealthKit holds. The PulsHealth app is a thin UI over it. The wire format is
+the [Puls Sync Protocol](../docs/protocol/README.md); the invariants are in
+[`CLAUDE.md`](../CLAUDE.md).
 
 ## Source map
 
@@ -28,12 +29,21 @@ Sources/PulsHealthSync/
 │   ├── BackgroundExecution.swift    Background-task assertion around app-started and
 │   │                                observer work: iOS's grace period, then cancel
 │   │                                (never freeze) when it runs out.
+│   ├── MergedSync.swift             Incremental sync's merged path: one anchored page
+│   │                                per type, packed into shared batches without ever
+│   │                                splitting a page.
+│   ├── ProtectedData.swift          Whether HealthKit is readable (device unlocked);
+│   │                                background paths ask before querying.
 │   ├── RecentSampleWindow.swift     The last 30 days of a still-backfilling type, sent
 │   │                                ahead of its oldest-first sweep on an anchor of
 │   │                                its own.
 │   ├── SeriesEnricher.swift         Second-pass queries for series data: heartbeat
 │   │                                offsets, ECG voltages, workout GPS routes
 │   │                                (chunked 4,000 pts/line), iOS 18 effort scores.
+│   ├── WorkoutEnrichmentSync.swift  The sweep's last two phases, GPS routes then
+│   │                                intra-workout streams: batches capped by a point
+│   │                                budget, a singleton watermark advanced per fully
+│   │                                acked workout.
 │   ├── ReadableHistory.swift        iOS 27 limited history access, pure: the
 │   │                                widened/narrowed decision, the aggregate,
 │   │                                ring and reconciliation clamps, the one
@@ -49,9 +59,10 @@ Sources/PulsHealthSync/
 │   ├── SyncStateStore.swift         Actor persisting config + per-type state (anchor
 │   │                                blob, counters, timestamps, errors) as atomic JSON
 │   │                                in Application Support; 250 ms debounced writes.
-│   │                                Never writes the bearer token; records the
-│   │                                ServerIdentity its progress belongs to and
-│   │                                reports when a configuration would move it.
+│   │                                Writes the bearer token only while the Keychain
+│   │                                refuses it; records the ServerIdentity its
+│   │                                progress belongs to and reports when a
+│   │                                configuration would move it.
 │   ├── TokenStore.swift             TokenStore protocol; KeychainTokenStore (generic
 │   │                                password, AfterFirstUnlockThisDeviceOnly, service
 │   │                                = bundle ID + ".sync-token") and InMemoryTokenStore.
@@ -134,9 +145,14 @@ Sources/PulsHealthSync/
 │   ├── ExportWriters.swift          JSONL (wire-format batches, concatenated) and
 │   │                                CSV (one file per dataset) writers; ExportFile.
 │   ├── ExportManifest.swift         The …-manifest.json sidecar.
-│   └── ExportArchive.swift          ExportArchive and ExportZipper: an optional
-│                                    .zip of the finished files via NSFileCoordinator,
-│                                    and the sweep of its scratch directories.
+│   ├── ExportArchive.swift          ExportArchive and ExportZipper: an optional
+│   │                                .zip of the finished files via NSFileCoordinator,
+│   │                                and the sweep of its scratch directories.
+│   └── ExportPresentation.swift     The export screen's pure half: ranges, selection
+│                                    summary, failure copy, display names.
+├── Resources/
+│   └── PrivacyInfo.xcprivacy        The package's privacy manifest: UserDefaults
+│                                    (CA92.1), for background-task schedule status.
 ├── Explore/
 │   ├── HealthExplorer.swift         Public read-only façade over its own HKHealthStore:
 │   │                                quickFacts (oldest/newest sample, writers),
@@ -187,38 +203,49 @@ nested sync task (so uploaded batches are attributed via `WakeLog.record`) and t
 device↔server join key. `finish` is idempotent so a background task's expiration
 handler and its work task can't clobber each other's outcome.
 
-Tests (`Tests/PulsHealthSyncTests/`, Swift Testing): catalog integrity (unique
-identifiers, unit parsing, declarative OS gates) and the published vocabulary
-(`CatalogVocabularyTests` renders `docs/protocol/catalog.json` from the catalog
-and compares it byte for byte; with `TEST_RUNNER_PULS_WRITE_CATALOG=1` on the
-xcodebuild command it rewrites the file), serialization (NDJSON line structure, gzip framing
-+ CRC, metadata round-trip), the state store (token migration and Keychain
-hand-off, server-identity change detection and reset, scrubbed error text), and
-the protocol surface (`ProtocolTests.swift`: header version fields, request
-headers, protocol-rejection parsing, capabilities decoding, URL validation, and
-the connection test end to end against an in-process `URLProtocol`), and the
-on-device export (`ExportTests.swift`: hand-built batches through the real file
-transport and both writers — CSV columns against `docs/export.md`, quoting,
-nulls, header-once, JSONL line validity and header counts, what CSV cannot
-represent, cancellation and cleanup — plus the export plan and its completion
-check), and iOS 27's limited history access (`ReadableHistoryTests.swift`: the
-widen/narrow/same decision, bucket and day clamps across DST, the
-reconciliation start, the Don't Allow classification, a real 1.5
-`sync-state.json` decoding, the re-sweep's state reset, the export's and the
-profile cache's handling). HealthKit itself isn't mockable, so engine behavior
-is exercised in the app via the benchmark and diagnostics screens.
+Tests (`Tests/PulsHealthSyncTests/`, Swift Testing) cover everything that runs
+without HealthKit:
+
+- the catalog (unique identifiers, unit parsing, declarative OS gates, legal
+  aggregate functions) and the published vocabulary: `CatalogVocabularyTests`
+  renders `docs/protocol/catalog.json` and compares it byte for byte, or
+  rewrites it with `TEST_RUNNER_PULS_WRITE_CATALOG=1` on the xcodebuild
+  command;
+- serialization (NDJSON line structure, gzip framing and CRC, metadata
+  round-trip) and the protocol surface (`ProtocolTests`: version fields,
+  request headers, rejection parsing, capabilities, URL validation, the
+  connection test against an in-process `URLProtocol`);
+- state and pairing: the token store and Keychain hand-off, server-identity
+  changes, scrubbed error text, the recent-window anchor, pairing payloads,
+  the link confirmation and the fields draft;
+- the engine's seams: merged-sync packing, concurrent uploads, sweep claims,
+  enrichment chunking, the wake log;
+- the on-device export (`ExportTests`: the real file transport and both
+  writers, CSV columns against `docs/export.md`, JSONL validity and header
+  counts, what CSV cannot represent, cancellation and cleanup, the plan and its
+  completion check) and its presentation;
+- iOS 27 limited history (`ReadableHistoryTests`: the widen/narrow/same
+  decision, bucket and day clamps across DST, the reconciliation start, Don't
+  Allow, a 1.5 `sync-state.json` decoding, the re-sweep's reset);
+- the explore layer: statistics, the profile reducer, the sample cursor and
+  the profile cache.
+
+Queries against real HealthKit run in the app: the benchmark, the diagnostics
+screens, and the app-hosted aggregate matrix (`PulsHealth/HostedTests`).
 
 ## Secrets and state at rest
 
 The bearer token is the one secret the package holds. It lives in the Keychain
-(`KeychainTokenStore`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` so
-background wakes after a reboot can still build a transport, and never restored
-onto another device) and is held in memory on `SyncConfiguration.authToken`;
-`SyncConfiguration.encode(to:)` refuses to write it and `SyncStateStore` fills it
-back in on load. A state file from a build that kept the token inline is migrated
-on first load: the token moves to the Keychain and the file is rewritten without
-it. Pass an `InMemoryTokenStore` to `SyncStateStore(directory:tokenStore:)` for
-tests and throwaway engines.
+(`KeychainTokenStore`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, so
+background wakes after a reboot can still build a transport and a backup never
+restores it onto another device) and in memory on `SyncConfiguration.authToken`.
+`SyncConfiguration.encode(to:)` never writes it, and `SyncStateStore` fills it
+back in on load. The one exception: when a Keychain write fails, the store parks
+the token in `sync-state.json` (`PersistedState.fallbackAuthToken`), retries on
+the next launch, and removes it once the Keychain accepts it — dropping it would
+stall every sync until the user retyped it. A state file from a build that kept
+the token inline is migrated the same way. Pass an `InMemoryTokenStore` to
+`SyncStateStore(directory:tokenStore:)` for tests and throwaway engines.
 
 `sync-state.json`, `event-log.json`, `wake-log.json` and any quarantined copy are
 written with `FileProtectionType.completeUntilFirstUserAuthentication` and
@@ -242,31 +269,22 @@ including a server's rejection body and the `unsupportedProtocol` message.
 
 ## Wire protocol version
 
-The wire format is versioned so a receiver can refuse what it does not
-understand instead of mis-storing it, and so a server can tell which app build
-produced a batch.
+The [protocol spec](../docs/protocol/README.md) owns the format; this is what
+the package does with it.
 
-- **Batch header.** The first NDJSON line of every batch carries
-  `"schemaVersion": 1` (an integer, `PulsProtocol.version`) and
+- **Versions.** The first NDJSON line of every batch carries
+  `"schemaVersion": 1` (`PulsProtocol.version`) and
   `"clientVersion": "<marketing version> (<build>)"` (`"unknown"` when the
-  host bundle has no version), ahead of the existing `batchID` / `deviceID` /
-  `type` / `reason` / `exportedAt` / per-line-type counts.
-- **Request header.** Every request — batch uploads and the read endpoints
-  alike — carries `X-Puls-Protocol: 1`.
-- **Rejection.** A server that does not accept the version answers HTTP 400
-  with `{"error":"unsupported protocol version","supportedVersions":[…]}`.
-  Both transports parse that body into `TransportError.unsupportedProtocol`
-  (never retried) so the app can say "this server does not support this app
-  version" rather than surfacing a bare 400. Any other 400 stays a
-  `serverError` with its body.
-- **Capabilities.** `GET /v1/capabilities` (bearer auth) answers
-  `{"protocolVersions":[1],"features":[…],"server":"…","version":"…"}`. The
-  reference server advertises `batches`, `stats`, `digest`, `uuids`,
-  `aggregates`, `activitySummaries`, `routes`, `series`, `profile`. The
-  endpoint is optional: a third-party receiver may answer 404/405, and every
-  field but `protocolVersions` may be omitted. The app hides reconciliation
-  unless `digest` and `uuids` are both advertised, and server statistics
-  unless `stats` is; unknown capabilities hide both.
+  host bundle has none), and every request carries `X-Puls-Protocol: 1`.
+- **Rejection.** A 400 with
+  `{"error":"unsupported protocol version","supportedVersions":[…]}` becomes
+  `TransportError.unsupportedProtocol` (never retried), so the app can say the
+  server does not support this app version rather than show a bare 400. Any
+  other 400 stays a `serverError` with its body.
+- **Capabilities.** `GET /v1/capabilities` is optional: a receiver may answer
+  404/405, and every field but `protocolVersions` may be omitted. The app
+  hides reconciliation unless `digest` and `uuids` are both advertised, and
+  server statistics unless `stats` is; unknown capabilities hide both.
 - **Connection test.** `ConnectionTester` calls capabilities first; if the
   endpoint is missing it POSTs a header-only batch (`type` `"probe"`, `reason`
   `"manual"`, every count 0) with no retries — any 2xx is success. 401/403 is
@@ -276,45 +294,43 @@ produced a batch.
 - **Pairing codes.** `PairingPayload.parse` reads the
   `puls://pair?url=&token=&user=` string `scripts/bootstrap.sh` prints, as a QR
   code and as text. A code is untrusted input however it arrives: the URL is
-  re-validated with `ServerURLValidation` (so a code carrying plain `http://`
-  to a non-local host is refused, not silently saved), the user must be a UUID,
-  unknown query items are ignored, and anything that is not a `puls://pair` URL
-  is rejected as "not a pairing code". Because a paste rarely holds exactly the
-  payload, the parser *finds* it: surrounding whitespace, `<…>`, quotes or
-  back-ticks, or the rest of the printed pairing block are tolerated, but the
-  payload must start the text or follow whitespace or an opening wrapper — a
-  `puls://` buried in another URL's query string is not picked out.
-  `apply(to:)` writes only the server URL, token and user ID into a
-  `SyncConfiguration` draft; `ServerFieldsDraft` is the on-screen equivalent,
-  staging all three (the user ID included) until `commit(to:)`.
-  The same string also works as a link, since the app registers the `puls` URL
-  scheme — that is how the iOS Camera app hands over a scanned QR code. A
-  custom URL scheme authenticates nobody: any web page or app can fire a
-  `puls://pair` link, and any installed app can claim the scheme, so a link's
-  token may be delivered to whichever app iOS picks. Scanning inside the app
-  never leaves the app; the link is a convenience. `PairingConfirmation` exists
-  because links are untrusted input: it is the prompt the app shows before a
-  link may fill anything — naming the host, saying when it would replace a
-  different configured server (same normalization as `ServerIdentity`) and when
-  the connection is unencrypted — and accepting it goes no further than a scan
-  does: fields filled and tested, nothing applied.
+  re-validated with `ServerURLValidation` (plain `http://` to a non-local host
+  is refused), the user must be a UUID, unknown query items are ignored, and
+  anything that is not a `puls://pair` URL is "not a pairing code". Because a
+  paste rarely holds exactly the payload, the parser *finds* it: surrounding
+  whitespace, `<…>`, quotes or back-ticks, or the rest of the printed pairing
+  block are tolerated, but the payload must start the text or follow
+  whitespace or an opening wrapper — a `puls://` buried in another URL's query
+  string is not picked out. `apply(to:)` writes only the server URL, token and
+  user ID into a `SyncConfiguration` draft; `ServerFieldsDraft` is the
+  on-screen equivalent, staging all three until `commit(to:)`.
+- **Pairing links.** The same string works as a link, since the app registers
+  the `puls` URL scheme; that is how the iOS Camera app hands over a scanned
+  code. A custom URL scheme authenticates nobody: any web page or app can fire
+  a `puls://pair` link, and any installed app can claim the scheme, so a
+  link's token may reach whichever app iOS picks. Scanning inside the app
+  never leaves the app; the link is a convenience. `PairingConfirmation` is the
+  prompt the app shows before a link may fill anything — the host, whether it
+  would replace a different configured server (same normalization as
+  `ServerIdentity`), whether the connection is unencrypted — and accepting it
+  goes no further than a scan: fields filled and tested, nothing applied.
 
 ## How a sync runs
 
 1. `HealthSyncEngine.syncTypes(_:reason:)` fans out over enabled types with a
    `TaskGroup` (default 4 concurrent — HealthKit query throughput degrades
    beyond that). Its **non-incremental** branch claims every type up front
-   (`claimTypes`) and releases each as its own run ends (`sweep`) — claiming a
-   type only when a slot reached it let the observer's merged pass take the
-   queued ones first, which sent a whole first sync down the slow path. It
-   orders the sweep by
-   `HealthTypeCatalog.backfillOrder`: heaviest type first, then cheapest-first.
-   Summed over the catalog heart rate alone is a little over half of
-   `estimatedSamplesPerDay`, so ascending order would leave it to start last and
-   then run by itself, and descending would park all four slots on heavy types
-   and land nothing visible early. One slot on the pole from t=0 plus three
-   retiring the tail is both the shorter sweep and the more useful one.
-   Incremental runs take the merged path below and are not reordered.
+   (`claimTypes`) and releases each as its own run ends (`sweep`); claimed
+   later, the observer's merged pass would take the queued types first and
+   send a whole first sync down the slow path. A whole-history Apply handed to
+   the iOS 26 continued-processing task calls `expectBackfill()` first, so
+   observer wakes leave still-backfilling types alone until it claims them (a
+   minute at most). The sweep follows `HealthTypeCatalog.backfillOrder`: the
+   heaviest type first, then cheapest-first. Heart rate alone is a little over
+   half of the catalog's `estimatedSamplesPerDay`, so one slot on it from the
+   start plus three retiring the tail is both the shortest sweep and the one
+   that shows results earliest. Incremental runs take the merged path below
+   and are not reordered.
 2. Per type: `HKAnchoredObjectQuery` pages from the stored anchor (nil anchor +
    start-date predicate = backfill), 1,000 samples/page, each page read while
    the one before it uploads. Only the in-memory cursor runs ahead; an upload
@@ -326,75 +342,68 @@ produced a batch.
    pipeline crash-safe (server dedupes re-sent pages by UUID).
 5. Deletions arrive as anchored-query tombstones and ride along in the same batch.
 
-`syncAllEnabled` orders the whole sweep so the cheap, immediately useful things
-land before the long one: activity rings, then the recent aggregate window
-(below), then the raw types, then the full aggregate pass, then workout routes
-and streams. Every phase boundary is a safe place to be interrupted. A backfill
-claims its raw types before the first phase, not when the third reaches them.
+`syncAllEnabled` runs its phases so the cheap, immediately useful data lands
+first: activity rings, the recent aggregate window (below), the raw types, the
+full aggregate pass, then workout routes and streams (`WorkoutEnrichmentSync`).
+Every phase boundary is a safe place to be interrupted. A backfill claims its
+raw types before the first phase.
 
 **Recent data first.** A nil-anchor sweep returns history roughly oldest first,
-so a backfill delivers the newest samples last — after a reinstall the server's
-charts sat on the day the old install stopped for as long as the re-sync ran.
-Every sweep now begins with a recent-window pass over its types that have not
-finished backfilling (`RecentSampleWindow`): the last 30 days, read through a
+so a backfill would deliver the newest samples last. Every sweep therefore
+begins with a recent-window pass over its types that have not finished
+backfilling (`RecentSampleWindow`): the last 30 days, read through a
 second anchor of the type's own (`TypeSyncState.recentAnchorData`) from a
 window start fixed when the stream begins, so the first run sends the month and
 later runs only what is new in it. Its acks move that anchor alone — never
 `anchorData`, never `backfillComplete`, not the sample count — and the sweep
 sends those samples again when it gets there; the server ignores the repeats.
-The stream is dropped when the backfill completes, and skipped for a sync range
+The stream is dropped when the backfill completes and skipped for a sync range
 under 60 days. `HealthSyncEngine(recentWindowFirst: false)` turns it off where a
 repeated sample would be a duplicate row rather than a no-op.
 
 Incremental sync is the same loop, triggered by one multi-type `HKObserverQuery`
 with `.immediate` background delivery, plus a `BGProcessingTask` safety net and a
-full pass on every foreground open — with two differences, both added 2026-08-14
-after two months of wake telemetry (`Engine/MergedSync.swift`):
+full pass on every foreground open. Two things differ (`Engine/MergedSync.swift`):
 
-**Observer callbacks are coalesced.** HealthKit does not deliver one callback per
-change: bursts of up to 93 callbacks inside five seconds were recorded, and 77%
-of all observer wakes arrived in clusters of five or more. Each used to become
-its own wake, with its own queries and its own upload. Callbacks now accumulate
-for `observerCoalesceWindow` (default 2s, measured from the burst's *first*
-callback so a continuous stream cannot starve the flush) and run as one wake over
-the deduped union of types. Every collected completion handler is released
-afterwards — HealthKit stops waking the app after three unacknowledged deliveries.
+**Observer callbacks are coalesced.** HealthKit delivers callbacks in bursts —
+dozens within a few seconds — rather than one per change. They accumulate for
+`observerCoalesceWindow` (default 2 s, measured from the burst's *first*
+callback so a continuous stream cannot starve the flush) and run as one wake
+over the deduped union of types. Every collected completion handler is
+released afterwards: HealthKit stops waking the app after three unacknowledged
+deliveries.
 
-**Incremental uploads merge across types.** Uploading was 94% of sync wall time
-against 6% for the HealthKit queries, because the median page carried 7 samples
-in 1.2 KB and still cost ~1.5s of round trip; 83% of pages carried under 50
-samples yet consumed 79% of all upload time. Incremental runs now fetch one page
-per type and pack pages into shared batches up to `maxMergedBatchSamples`.
-Anchor-after-ack is unchanged: the budget is clamped up to `batchSize` so **a
-page is never split across batches**, one page maps to exactly one ack, and a
-failed upload leaves every anchor in that pack untouched for an idempotent replay.
-Since 2026-09 the merged path also reads the next wave of types while the
-current one is packed and uploaded, and uploads up to `maxConcurrentTypes`
-packs at once. Both are safe for the same reason: within a round a type
-contributes one page, so the packs of a flush hold disjoint types and the wave
-being read holds none of the buffered ones. Backfill deliberately keeps the
-per-type path — its pages are already full, and four independent type
-pipelines overlap query and upload better than a fetch-all-then-upload-all pass.
+**Incremental uploads merge across types.** Upload cost is per request, not
+per sample, and incremental pages are small (a median of a few samples), so
+incremental runs fetch one page per type and pack pages into shared batches up
+to `maxMergedBatchSamples`. Anchor-after-ack is unchanged: the budget is
+clamped up to `batchSize`, so **a page is never split across batches**, one
+page maps to exactly one ack, and a failed upload leaves every anchor in its
+pack untouched for an idempotent replay. The merged path also reads the next
+wave of types while the current packs upload, up to `maxConcurrentTypes` packs
+at once. Both are safe for the same reason: within a round a type contributes
+one page, so a flush's packs hold disjoint types and the wave being read holds
+none of the buffered ones. Backfill keeps the per-type path: its pages are
+already full, and four independent type pipelines overlap query and upload
+better.
 
-**Background wakes check the lock screen first.** HealthKit is unreadable while
-the device is locked, and iOS runs `BGProcessingTask` when the device is idle —
-overnight, locked. 156 such wakes over two months produced 59 samples in total,
-154 of them completely empty, each having walked ~80 types and logged a warning
-per type. Background paths now test `ProtectedData.isAvailable` up front and
-record the wake as `skippedLocked` instead.
+**Background wakes check the lock first.** HealthKit is unreadable while the
+device is locked, and iOS runs `BGProcessingTask` when the device is idle —
+overnight, locked. Background paths test `ProtectedData.isAvailable` up front
+and record the wake as `skippedLocked` rather than run ~80 queries that would
+all fail.
 
 **Work the app starts itself asks for background time.** An observer delivery,
-or leaving the app, buys a few seconds before iOS suspends the process, and a
-sweep caught mid-upload used to freeze there with its types still claimed — the
-next wake found them busy and did nothing. A reinstall's re-sync on 2026-09-26
-moved as much in 44 hours of such wakes as in its first ten foreground minutes.
-Observer wakes and the app's own runs now go through `BackgroundExecution.run`,
-which asks for the grace period iOS grants on request and **cancels** the work
+or leaving the app, buys a few seconds before iOS suspends the process.
+Observer wakes and the app's own runs go through `BackgroundExecution.run`,
+which takes the grace period iOS grants on request and **cancels** the work
 when it expires: every sweep stops at a page boundary with its acked anchors
-recorded and its claims released, and the wake is logged `expired`. An observer
-wake whose types another run holds waits for it (up to 25 s) instead of
-acknowledging HealthKit at once. `BGTaskScheduler` handlers keep their own
-expiration and never nest a request.
+recorded and its claims released, and the wake is logged `expired`. A sweep
+frozen mid-upload would keep its types claimed, and the next wake would find
+them busy and do nothing. An observer wake whose types another run holds waits
+for it (up to 25 s) instead of acknowledging HealthKit at once, and
+acknowledges from the expiration handler if time runs out first.
+`BGTaskScheduler` handlers keep their own expiration and never nest a request.
 
 ## How aggregates run
 
@@ -412,7 +421,7 @@ watermark instead (advanced only after the server acks, like anchors):
    boundaries are `Calendar`-computed, so day/month buckets survive DST).
 3. Every bucket in a chunk uploads as an `{"aggregate": …}` NDJSON line — empty
    buckets carry an explicit `null` so the server upsert clears stale values.
-   Which is why no bucket that starts before iOS 27's earliest readable date is
+   That is why no bucket starting before iOS 27's earliest readable date is
    computed at all (see "Limited history access" below): an unreadable bucket
    looks exactly like an empty one.
 
@@ -420,24 +429,22 @@ Triggers are shared with raw sync: the observer covers the *union* of raw-enable
 and aggregate types (aggregate-only types never get a raw sync), and
 `syncAllEnabled` runs the full aggregate pass after the raw pass.
 
-Ahead of the raw pass it runs one more thing: `syncRecentAggregates`, a bounded
-recent window (`AggregateSchedule.priorityWindow` — 30 days, or three buckets for
-intervals coarser than that) over every enabled config whose `computedThrough` is
-still nil. The full pass walks a series oldest-first from the start date, so on
-years of history the newest buckets are the last thing it produces; and the
-server's `metric_daily` joins `aggregate_series`, a table only an aggregate line
-writes, so before any aggregate lands the viewer's daily charts are empty no
-matter how much raw data has arrived. A few dozen buckets per config fixes both.
+Ahead of the raw pass it runs `syncRecentAggregates`, a bounded recent window
+(`AggregateSchedule.priorityWindow` — 30 days, or three buckets for intervals
+coarser than that) over every enabled config whose `computedThrough` is still
+nil. The full pass walks a series oldest-first, so the newest buckets come
+last; and the server's `metric_daily` joins `aggregate_series`, which only an
+aggregate line writes, so until one lands the viewer's daily charts are empty
+however much raw data has arrived. A few dozen buckets per config fixes both.
 
-The pass moves **no watermark** — it records through
-`recordAggregateUploadWithoutWatermark`. Its chunks end near *now*, so feeding
-them to `recordAggregateUpload` would push `computedThrough`, and mid-full-pass
-`fullRecomputeThrough`, past the entire unprocessed history and the full pass
-would then compute nothing older than the window. It is the aggregate twin of
-reusing a raw type's `HKQueryAnchor` for a date-bounded query. Because it moves
-nothing, it is safe to run, repeat or skip: it self-gates on `computedThrough ==
-nil`, so it stops once the full pass makes its first acked progress, and an
-interrupted first backfill keeps the recent window fresh until then.
+The pass moves **no watermark**: it records through
+`recordAggregateUploadWithoutWatermark`. Its chunks end near *now*, so
+recording them as progress would push `computedThrough` (and, mid-full-pass,
+`fullRecomputeThrough`) past the whole unprocessed history, and the full pass
+would compute nothing older than the window — the aggregate twin of reusing a
+raw type's `HKQueryAnchor` for a date-bounded query. Because it moves nothing
+it is safe to run, repeat or skip; it self-gates on `computedThrough == nil`,
+so it stops once the full pass makes its first acked progress.
 
 Function legality is the sharp edge: HealthKit raises an uncatchable
 NSInvalidArgumentException at query *execution* for illegal option×type combos.
@@ -459,12 +466,11 @@ empty. It reports the date through `HKHealthStore.earliestAuthorizedSampleDate(f
 identifier → date, limited types only; empty before iOS 27, when built with
 the iOS 26 SDK, and for undecided types).
 
-Measured on the iOS 27.0 simulator: every type a sheet granted gets the same
-date, the activity-summary type included; a sample is hidden only when it
-*ends* before the date; a day bucket straddling it came back with part of its
-value; narrowing access made an anchored query from an older anchor report no
-deletions; and an anchor taken under the limit returned none of the older
-samples after the limit was lifted.
+On the iOS 27.0 simulator: every type one sheet grants gets the same date, the
+activity-summary type included; a sample is hidden only when it *ends* before
+the date; a bucket straddling the date returns part of its value; narrowing
+access reports no deletions to an older anchor; and an anchor taken under the
+limit never returns the older samples once the limit is lifted.
 
 Two consequences, both handled here:
 
@@ -490,25 +496,24 @@ Two consequences, both handled here:
   from the start date. The same date (within a day) resets nothing, and a
   narrowing only records the new date.
 - **A widening must be proved.** A type set to *None* in Settings drops out
-  of `earliestAuthorizedSampleDate(for:)` exactly like one set to Full Access
-  — measured on the iOS 27.0 simulator, where every query for it then came
-  back empty without an error — and acting on that once reset an aggregate
-  series with nothing to clamp it, so every bucket went up as a null. A
-  reported widening therefore counts only once HealthKit returns a sample (for
-  the rings, a day) that ends before the recorded date
-  (`ReadableHistory.resolve`); otherwise the recorded date stands and the
-  clamps stay. A type with no older data fails that test too, which costs
-  nothing: there is nothing older to re-read.
+  of `earliestAuthorizedSampleDate(for:)` exactly like one set to Full Access,
+  and every query for it comes back empty without an error. Treated as a
+  widening, that would reset an aggregate series with nothing to clamp it and
+  send every bucket as a null. So a reported widening counts only once
+  HealthKit returns a sample (for the rings, a day) that ends before the
+  recorded date (`ReadableHistory.resolve`); otherwise the recorded date stands
+  and the clamps stay. A type with no older data fails that test too, which
+  costs nothing: there is nothing older to re-read.
 - **Unknown fails closed.** Every HealthKit call here gives up after ten
-  seconds (they have been seen to stall far longer after a reinstall). An
-  aggregate or ring pass that cannot learn its limit records
-  `readableHistoryUnknown` and sends nothing (a locked device just skips);
-  reconciliation throws; an export reports that it may start later than
-  asked.
+  seconds, since these calls can stall far longer. An aggregate or ring pass
+  that cannot learn its limit records `readableHistoryUnknown` and sends
+  nothing (a locked device just skips); reconciliation throws; an export
+  reports that it may start later than asked.
 
 The API exists only in the iOS 27 SDK, and CI also builds with Xcode 26.5, so
 its one call sits behind `#if compiler(>=6.4)` (Xcode 27.0 ships Swift 6.4;
-Xcode 26.5 ships 6.3.2) as well as `#available(iOS 27.0, *)`.
+Xcode 26.5 ships 6.3.2) as well as `#available(iOS 27.0, *)`. Built with the
+older SDK, there is never a limit.
 
 Don't Allow on the history page throws `errorAuthorizationDenied` and leaves
 the types undetermined, where Don't Allow on the first page returns normally;
@@ -532,19 +537,16 @@ not an `HKSampleType`, so its catalog entry has `sampleType == nil` (kept out of
 `bulkReadAuthorizationSampleTypes` and the observer) and the engine unions
 `HKObjectType.activitySummaryType()` into the read-auth set separately. There is
 **no observer / no background delivery** for summaries, so they ride other wakes:
-`syncAllEnabled` (foreground/periodic/scheduled — the *first* phase, ahead of the
-raw sweep, since a first backfill otherwise left the viewer with no ring data
-until every type had drained), and since 2026-08-14 also
+`syncAllEnabled` (foreground/periodic/scheduled — the *first* phase, so a first
+backfill shows rings before every type has drained) and
 `refreshActivitySummaryIfStale()` at the tail of every observer wake.
 
-That second path is load-bearing, not a nicety. The scheduled path runs from the
+That second path is load-bearing. The scheduled path runs from the
 `BGProcessingTask`, which iOS starts while the device is idle and therefore
-locked — so *every* ring refresh from 2026-08-11 onward failed with
-`errorDatabaseInaccessible`, and the newest ring row on the server was three days
-stale before anyone noticed. An observer wake is by definition a moment when
-HealthKit is readable. The refresh is rate-limited to hourly via
-`ActivitySummaryState.lastComputedAt`, because today's ring mutates all day and
-observer wakes are frequent.
+locked, when every ring query fails with `errorDatabaseInaccessible`; an
+observer wake is by definition a moment when HealthKit is readable. The
+refresh is rate-limited to hourly via `ActivitySummaryState.lastComputedAt`,
+because today's ring mutates all day and observer wakes are frequent.
 
 ## On-device export
 
@@ -599,7 +601,9 @@ exists and no `{"profile":…}` line is written.
 It calls the sweep's phases itself — rings, raw types (`.manual`, so the
 per-type backfill path), the full aggregate pass, routes, streams — rather than
 `syncAllEnabled`, which would add the recent-aggregate priority window and
-write the newest month of every series twice. "All time" queries from 1900
+write the newest month of every series twice; and it builds the engine with
+`recentWindowFirst: false`, because the raw recent-window pass would do the
+same to the newest month of samples. "All time" queries from 1900
 rather than `.distantPast` (whose local day is in 1 BC west of Greenwich), and
 each aggregate series starts at its type's first sample, snapped to the bucket
 grid the real sync uses so a replay overwrites the server's buckets instead of
@@ -636,8 +640,8 @@ survive the phone locking mid-run — and deliberately not run through
 under `HealthExporter.stagingRoot` in the temporary directory, which
 `removeAllExports()` clears, leftovers from a crash included.
 
-`ExportPresentation.swift` is the screen's pure half, kept here so it can be
-tested (`ExportPresentationTests`): `ExportRange` (a range starts at a local
+`ExportPresentation.swift` is the screen's pure half, kept in the package so
+it can be tested (`ExportPresentationTests`): `ExportRange` (a range starts at a local
 midnight, because daily series are whole local days), `ExportSelectionSummary`,
 `ExportFailureCopy` (what each `HealthExportError` is called — "no data" and
 "access declined" are one answer from HealthKit, so that copy gives both
