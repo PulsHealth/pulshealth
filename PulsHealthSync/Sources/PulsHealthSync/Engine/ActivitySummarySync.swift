@@ -83,11 +83,18 @@ extension HealthSyncEngine {
             since: ReadableHistory.effectiveLimit(lookup.since, readingFrom: startDay),
             isFresh: lookup.isFresh)
         if ReadableHistory.isSupported, !readable.isFresh, readable.since == nil {
-            await eventLog.log(
-                .warn, type: typeID,
-                await ProtectedData.isAvailable
-                    ? "Activity rings: could not tell how much Health history is readable — skipped, will retry"
-                    : "Activity rings: Health database locked — will retry on next wake")
+            // As for aggregates: locked skips quietly, anything else is
+            // recorded so the rings do not just go quiet.
+            if await ProtectedData.isAvailable {
+                await store.recordActivitySummaryError(
+                    error: SyncError.readableHistoryUnknown(
+                        HealthTypeCatalog.descriptor(for: typeID)?.displayName ?? typeID))
+                await eventLog.log(
+                    .warn, type: typeID,
+                    "Activity rings: could not tell how much Health history is readable — skipped, will retry")
+            } else {
+                await eventLog.log(.warn, type: typeID, "Activity rings: Health database locked — will retry on next wake")
+            }
             return
         }
         if readable.isFresh {

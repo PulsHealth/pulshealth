@@ -1431,8 +1431,9 @@ public enum SyncError: Error, LocalizedError {
     case unknownType(String)
     case reconciliationUnsupported(String)
     /// iOS 27: HealthKit could not say how much of the type's history the
-    /// app may read, and reconciliation, which deletes what the device lacks,
-    /// will not guess.
+    /// app may read, and a pass that overwrites or deletes server data to
+    /// match what it reads — an aggregate series, the rings, reconciliation
+    /// — will not guess.
     case readableHistoryUnknown(String)
 
     public var errorDescription: String? {
@@ -1445,8 +1446,8 @@ public enum SyncError: Error, LocalizedError {
             return "Unknown type identifier: \(identifier)"
         case .reconciliationUnsupported(let identifier):
             return "Reconciliation only covers quantity, category, and workout types (\(identifier))"
-        case .readableHistoryUnknown(let identifier):
-            return "Could not tell how much Health history is readable for \(identifier), so nothing was reconciled. Unlock the iPhone and try again."
+        case .readableHistoryUnknown(let name):
+            return "Could not tell how much \(name) history iOS lets PulsHealth read, so nothing that could overwrite or delete server data was sent for it."
         }
     }
 }

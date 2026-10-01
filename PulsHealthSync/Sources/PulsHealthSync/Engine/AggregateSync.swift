@@ -336,11 +336,19 @@ extension HealthSyncEngine {
         if ReadableHistory.isSupported, !readable.isFresh, readable.since == nil {
             // Nothing to stand in for the answer: computing unclamped could
             // null out history, so wait for a run where HealthKit can say.
-            await eventLog.log(
-                .warn, type: typeID,
-                await ProtectedData.isAvailable
-                    ? "Aggregate \(agg.summaryLabel): could not tell how much Health history is readable — skipped, will retry"
-                    : "Aggregate \(agg.summaryLabel): Health database locked — will retry on next wake")
+            // Locked is the expected case and no fault (CLAUDE.md, "A locked
+            // device…"); anything else is recorded against the series, so
+            // it shows rather than the series just going quiet.
+            if await ProtectedData.isAvailable {
+                await store.recordAggregateError(
+                    configID: configID, error: SyncError.readableHistoryUnknown(descriptor.displayName))
+                await eventLog.log(
+                    .warn, type: typeID,
+                    "Aggregate \(agg.summaryLabel): could not tell how much Health history is readable — skipped, will retry")
+            } else {
+                await eventLog.log(
+                    .warn, type: typeID, "Aggregate \(agg.summaryLabel): Health database locked — will retry on next wake")
+            }
             return
         }
         if readable.isFresh {
