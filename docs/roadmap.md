@@ -34,8 +34,6 @@ which records the decisions behind them.
 - **Explore's search field:** on iOS 27 a `.navigationBarDrawer` search field
   cannot both show on arrival and scroll away. A fix that makes it the list's
   first row exists on a branch, not yet on main.
-- **PR #70** (outside contributor: aggregate backfill and date-range
-  queries): rebase on main and merge.
 
 ## 2. Screenshots — OSS-4
 
