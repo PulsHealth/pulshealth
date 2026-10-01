@@ -156,7 +156,6 @@ struct OnboardingView: View {
                         "arrow.triangle.2.circlepath", "Sync",
                         "Keep a live copy in your own database.")
                 }
-                footnote("PulsHealth only reads from Apple Health. Nothing leaves this device unless you export it or connect your own database.")
             }
         }
     }
@@ -167,11 +166,6 @@ struct OnboardingView: View {
                 pageIcon("heart.text.square", color: .pink)
                 pageTitle("Which Health data would you like to use?")
                 bodyText("iOS asks which data PulsHealth may read. Pick what you like. You can always add more later in the app.")
-                if ReadableHistory.isSupported {
-                    // iOS 27's second page. Informs only: either answer is a
-                    // working setup, and the button stays a plain Continue.
-                    footnote("If iOS asks how much history to share, All Recorded Data lets PulsHealth use your full history.")
-                }
                 if let hint = model.authorizationHint {
                     Label(hint, systemImage: "exclamationmark.triangle.fill")
                         .font(.footnote)
@@ -209,7 +203,6 @@ struct OnboardingView: View {
                         "chart.bar.xaxis", "Aggregates",
                         "Hourly or daily summaries, like steps per day.")
                 }
-                footnote("No account and no database needed.")
             }
         }
     }
@@ -224,7 +217,6 @@ struct OnboardingView: View {
                 Link(destination: URL(string: "https://pulshealth.com/docs/server/")!) {
                     Label("Learn more", systemImage: "arrow.up.right.square")
                 }
-                footnote("Set it up any time from the Sync tab.")
                 if model.confirmedPairing != nil {
                     // Accepted during the flow; Sync → Database opens with it
                     // filled in once the flow is done (RootView, on
@@ -284,14 +276,6 @@ struct OnboardingView: View {
 
     private func bodyText(_ text: String) -> some View {
         Text(text)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func footnote(_ text: String) -> some View {
-        Text(text)
-            .font(.footnote)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)

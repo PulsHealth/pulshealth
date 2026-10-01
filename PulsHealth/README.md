@@ -219,8 +219,7 @@ Sources/
 │                         no database asked for. "Unlock your Health Data"
 │                         (Explore, Export, Sync); "Which Health data would
 │                         you like to use?" (iOS's sheet for the preselected
-│                         TypePresets.common, behind one Continue button;
-│                         on iOS 27 one line about the history page);
+│                         TypePresets.common, behind one Continue button);
 │                         one-time exports; "Sync to your own database"
 │                         (Learn more → pulshealth.com/docs/server/ in
 │                         Safari) with Start Exploring, which applies the
