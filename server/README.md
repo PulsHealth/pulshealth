@@ -11,13 +11,13 @@ one-shot schema migrator via Docker Compose:
 | `ingest` | `ghcr.io/pulshealth/ingest:${PULS_VERSION:-latest}` (Go, distroless; source in `ingest/`) | `${INGEST_BIND_ADDR:-127.0.0.1}:8080` | HTTP ingest API — expose it through a TLS-terminating proxy of your choice, or on your own LAN with `INGEST_BIND_ADDR=0.0.0.0` (see "Exposing the server"); connects as the scoped DML-only `ingest` role (see "The scoped `ingest` role") |
 | `api` | `ghcr.io/pulshealth/api:${PULS_VERSION:-latest}` (Go, distroless; `api/`) | 127.0.0.1:8081 | Product read API for downstream apps |
 | `mcp` | `ghcr.io/pulshealth/mcp:${PULS_VERSION:-latest}` (Go, distroless; `mcp/`) | 127.0.0.1:8082 | Read-only MCP server for AI assistants over the product API (`docs/ai.md`) |
-| `grafana` | `grafana/grafana:13.0.2` (pinned — 13.x provisioning is version-sensitive) | 127.0.0.1:3000 | Dashboards (reach them through the same kind of TLS proxy, e.g. Tailscale Serve on `:8443`) |
+| `grafana` | `grafana/grafana:13.0.2` (pinned — 13.x provisioning is version-sensitive) | 127.0.0.1:3000 | Dashboards (reach them through a TLS proxy, e.g. Tailscale Serve on `:8443`) |
 | `web` | `ghcr.io/pulshealth/web:${PULS_VERSION:-latest}` (Next.js standalone; `../web/`) | `${WEB_BIND_ADDR:-127.0.0.1}:3001` | Web health viewer — reads the DB directly as the read-only `grafana` role |
 
-The four app images are pulled from `ghcr.io/pulshealth` by default (see
-"Images and versions"); the `compose.build.yml` overlay builds them from the
-checkout instead. The `web` one builds from the sibling `../web/` directory,
-so build from a checkout that contains both `server/` and `web/`.
+The four app images are pulled from `ghcr.io/pulshealth`; the
+`compose.build.yml` overlay builds them from the checkout instead (see
+"Images and versions"). `web` builds from the sibling `../web/`, so that
+needs a checkout with both `server/` and `web/`.
 
 ```
 server/
@@ -36,11 +36,11 @@ server/
 
 The fast path is the bootstrap script at the repository root: it creates
 `.env` with every secret generated, starts the stack, waits for ingest and
-prints the pairing block for the app (URL, token, user ID, QR code — drawn by
-`qrencode` when the host has it, by the ingest container's own `ingest qr`
-otherwise, so there is nothing to install). It is safe to re-run,
-`--print-pairing` (`make pairing`) re-prints the block, and `--issue-device
-<label>` prints one for a per-device token (see "Tokens").
+prints the pairing block for the app (URL, token, user ID and a QR code,
+drawn by `qrencode` if the host has it and by the ingest container
+otherwise). It is safe to re-run; `--print-pairing` (`make pairing`)
+re-prints the block, and `--issue-device <label>` prints one for a
+per-device token (see "Tokens").
 
 ```bash
 scripts/bootstrap.sh --time-zone Europe/Berlin    # the root README's "Quickstart" has the rest
@@ -63,111 +63,92 @@ curl -s localhost:8080/healthz       # → {"db":true,"ok":true}
 curl -s localhost:8081/healthz       # → {"db":true,"ok":true}
 ```
 
-That is the whole install: the `migrate` service creates the schema on an
-empty volume, records what it applied, and every app service waits for it
-to finish. The same command, after a `git pull` and a `docker compose
-pull`, upgrades a running install later (see "Deploying and upgrading").
-To run the code in this checkout instead of the published images, add the
-developer overlay —
-`docker compose -f docker-compose.yml -f compose.build.yml up -d --build`,
-or `make dev-up` at the repository root.
+The `migrate` service creates the schema on an empty volume and every app
+service waits for it. The same command upgrades a running install later
+(see "Deploying and upgrading"); `make dev-up` runs the checkout's code
+instead of the published images (see "Images and versions").
 
 ### Configuration
 
-Everything is read from `.env` (`.env.example` lists every variable with
-comments). Beyond the passwords and tokens, two settings deserve attention:
+Everything is read from `.env`; `.env.example` lists every variable with
+comments. Beyond the passwords and tokens:
 
 - **`PULS_TIME_ZONE`** — the IANA zone your phone lives in (e.g.
-  `Europe/Berlin`); defaults to `UTC`. Every daily view buckets by this
-  calendar: the `metric_daily` view, Grafana's daily panels, the product API's
-  local-day ranges, and the web viewer. It has to match the phone because the
-  daily aggregates HealthKit computes on-device are already in the phone's
-  local calendar — a mismatch splits days between two rows. The `migrate`
-  service stores it on the database on every start:
-  `db/migrations/013_time_zone.sh` validates it against `pg_timezone_names`
-  (the stack refuses to start on an unknown name) and writes it with
-  `ALTER DATABASE … SET puls.time_zone`, which the `puls_time_zone()` SQL
-  function reads. Compose hands the same value to the `api` and `web`
-  containers (the API refuses to start on an invalid name). To change the
-  zone later:
+  `Europe/Berlin`); default `UTC`. Every daily view buckets by it: the
+  `metric_daily` view, Grafana's daily panels, the product API's local-day
+  ranges and the web viewer. It must match the phone, because the daily
+  aggregates HealthKit computes on-device are already in the phone's
+  calendar — a mismatch splits days between two rows. On every start
+  `migrate` runs `db/migrations/013_time_zone.sh`, which validates the name
+  against `pg_timezone_names` (an unknown name stops the stack) and stores
+  it with `ALTER DATABASE … SET puls.time_zone`, read by the
+  `puls_time_zone()` SQL function. Compose also hands it to `api`, `mcp` and
+  `web`; the API refuses to start on an invalid name. To change it, edit
+  `.env` and:
 
   ```bash
-  # 1. set the new PULS_TIME_ZONE in .env
-  # 2. migrate re-stores it, and Compose recreates api/web because their
-  #    environment changed; the data volume is untouched:
-  docker compose up -d
+  docker compose up -d     # migrate re-stores it; api/mcp/web are recreated
   docker compose exec db psql -U postgres -d postgres -tAc "SELECT puls_time_zone()"
   ```
 
-  The setting applies to new connections only (ingest and Grafana pick it up
-  as their pools reconnect; `docker compose restart ingest grafana` forces
-  it). Stored rows are never rewritten; the daily views simply re-bucket on
-  read, and Grafana's hidden `tz` variable re-queries it on dashboard load.
-- **`GRAFANA_ALERT_EMAIL`** — the recipient of every Grafana alert
-  (`grafana/provisioning/alerting/contact-points.yml` templates it). Compose
+  The database setting applies to new connections only: ingest and Grafana
+  pick it up as their pools reconnect (`docker compose restart ingest
+  grafana` forces it). Stored rows are never rewritten; the daily views
+  re-bucket on read.
+- **`GRAFANA_ALERT_EMAIL`** — the recipient of every Grafana alert. Compose
   defaults it to `alerts@example.com` so the contact point always has an
-  address; set it to your own. Mail only leaves once SMTP is configured — see
-  "Alerting".
-- `WEB_AUTH_PASSWORD` — the web viewer's login. Set it and every page asks
-  for it over HTTP Basic (any username; `/api/healthz` stays open so health
-  checks keep working); empty, the viewer has no login at all and says so in
-  `docker compose logs web`. `scripts/bootstrap.sh` generates one on a fresh
-  install and prints it with the pairing block. See `web/README.md`,
+  address; set your own. Mail is sent only once SMTP is configured (see
+  "Alerting").
+- `WEB_AUTH_PASSWORD` — the web viewer's HTTP Basic password (any username;
+  `/api/healthz` stays open for health checks). Empty, the viewer has no
+  login and says so in `docker compose logs web`. `scripts/bootstrap.sh`
+  generates one on a fresh install and prints it. See `web/README.md`,
   "Access control".
-- `WEB_BIND_ADDR` — where the viewer's port is published; defaults to
-  loopback. Basic auth is a password prompt, not TLS, so this still matters:
-  to reach the viewer from other machines bind it to a private interface (a
-  VPN/tailnet address), never `0.0.0.0`.
-- `INGEST_BIND_ADDR` — where ingest's port 8080 is published; defaults to
-  loopback, which is right whenever a TLS proxy sits in front of it.
-  `0.0.0.0` — what `scripts/bootstrap.sh --lan` writes — publishes it on
-  every interface so a phone on the same Wi-Fi can sync to plain
-  `http://<this host's LAN IP>:8080` with no proxy at all. See "Exposing the
-  server" for the trade-off.
-- `PULS_ALLOW_SHARED_TOKEN` — whether ingest accepts the shared `PULS_TOKEN`
-  at all; default `true`. `false` (or an empty `PULS_TOKEN`) leaves only
-  per-device tokens, which is the setting that closes the `X-User-ID` hole —
-  see "Tokens".
-- `TRUST_PROXY_HEADERS` — whether **ingest and the product API** believe
-  `X-Forwarded-*`. It decides which client a failed authentication is charged
-  to on both, and additionally which host `GET /openapi.json` advertises in
-  `servers[0].url`. Default `false`. Turn it on only behind a proxy that owns
-  those headers — see "Rate limiting". Untrusted, the API answers from its own
-  `Host`, so an unauthenticated caller cannot choose the host the OpenAPI
-  document names.
-- `PULS_VERSION` — which image tag the four app services run (`latest` when
-  unset); `PULS_PUBLIC_URL` — the URL the pairing block should carry instead
-  of the LAN address. Pairing only: `scripts/bootstrap.sh` reads it, and
-  Compose hands it to the ingest container for `devices issue`'s QR code; the
-  running server never looks at it. See "Images and versions" and "Exposing
-  the server".
+- `WEB_BIND_ADDR` — where the viewer's port is published; default loopback.
+  Basic auth is not TLS: to reach the viewer from other machines, bind it to
+  a private interface (a VPN/tailnet address), never `0.0.0.0`.
+- `INGEST_BIND_ADDR` — where ingest's port 8080 is published; default
+  loopback, for a TLS proxy in front. `0.0.0.0` (what `scripts/bootstrap.sh
+  --lan` writes) lets a phone on the same Wi-Fi sync to plain
+  `http://<LAN IP>:8080`. See "Exposing the server".
+- `PULS_ALLOW_SHARED_TOKEN` — whether ingest accepts the shared `PULS_TOKEN`;
+  default `true`. `false` (or an empty `PULS_TOKEN`) leaves only per-device
+  tokens. See "Tokens".
+- `TRUST_PROXY_HEADERS` — whether ingest and the product API believe
+  `X-Forwarded-*`: which client a failed authentication is charged to, and
+  which host `GET /openapi.json` advertises in `servers[0].url`. Default
+  `false`, which answers from the request's own `Host`. Turn it on only
+  behind a proxy that owns those headers (see "Rate limiting").
+- `PULS_USER_ID`, `PULS_MULTI_USER` — whose data the product API and viewer
+  answer for, and whether a request may name someone else (see "Product
+  API").
+- `PULS_VERSION` — the image tag the four app services run (default
+  `latest`; see "Images and versions").
+- `PULS_PUBLIC_URL` — the URL the pairing block and device-token QR codes
+  carry instead of the LAN address. Pairing only; the running server never
+  reads it (see "Exposing the server").
 
 ## Deploying and upgrading
 
 The reference stack is plain Docker Compose; there is no deploy tooling in the
-repo. A running install upgrades by moving to newer images:
+repo. **Take a backup first** (`make backup` — see "Backup & restore"), then:
 
 ```bash
 git pull                                         # newer compose file and migrations
 cd server
-# optional: pin the release in .env, e.g. PULS_VERSION=1.3.0 (default: latest)
+# optional: pin the release in .env, e.g. PULS_VERSION=0.2.0 (default: latest)
 docker compose pull && docker compose up -d      # or, at the repository root: make pull up
 docker compose logs migrate                      # what the schema step did
 curl -s localhost:8080/healthz && curl -s localhost:8081/healthz
 ```
 
-`docker compose up -d` always runs the `migrate` service before it
-(re)starts `ingest`, `api`, `mcp`, `web` and `grafana`, so a revision that
-adds a schema file applies it before the code that depends on it comes up.
-If a migration fails, the app services are not started and `docker compose
-up` reports `dependency failed to start`; the containers from the previous
-revision are left running as they were. Fix the cause and `docker compose
-up -d` again. **Take a backup before upgrading** — `make backup`, or a
-`pg_dump` by hand: the backup service is opt-in (see "Backup & restore"), so
-until you turn it on the live volume is the only copy. Re-applying the schema
-from scratch means dropping the volume
-(`docker compose down -v && docker compose up -d`), which **destroys all data
-irrecoverably**.
+`migrate` runs before `ingest`, `api`, `mcp`, `web` and `grafana` start, so
+new schema files are applied before the code that needs them. If a migration
+fails, the app services are not started (`dependency failed to start`) and
+the previous containers keep running; fix the cause and `docker compose up
+-d` again. Re-applying the schema from scratch means dropping the volume
+(`docker compose down -v && docker compose up -d`), which **destroys all
+data**.
 
 ### Images and versions
 
@@ -181,34 +162,28 @@ The four app services run images published from this repository:
 | `web` | `ghcr.io/pulshealth/web` | — |
 
 `.github/workflows/release.yml` builds all four for `linux/amd64` and
-`linux/arm64` (natively, one runner per architecture, merged into a single
-manifest list) and every image carries the commit it was built from as the
+`linux/arm64` (one native runner per architecture, merged into one manifest
+list); each image carries its commit as the
 `org.opencontainers.image.revision` label. The tags:
 
 - On a git tag `vX.Y.Z`: the exact version (`1.2.3`), a floating `1.2`, and
-  `latest`. `latest` and `1.2` move only for non-prerelease tags, so a
-  `v1.3.0-rc1` publishes `1.3.0-rc1` and nothing else floats onto it.
-- On a manual run of the workflow (`workflow_dispatch`, e.g. to try a
-  branch's images without cutting a release): the tag given as input, or
-  the short commit SHA. Never `latest`.
+  `latest`. `latest` and `1.2` move only for non-prerelease tags, so
+  `v1.3.0-rc1` publishes `1.3.0-rc1` alone.
+- On a manual run (`workflow_dispatch`, e.g. to try a branch's images): the
+  tag given as input, or the short commit SHA. Never `latest`.
 
-`PULS_VERSION` in `.env` selects the tag; unset, it is `latest`. Pinning a
-release (`PULS_VERSION=1.2.3`) makes upgrades deliberate: bump it, bring the
-checkout to the same release (`git pull`, or `git checkout v1.2.3`), then
-`docker compose pull && docker compose up -d` (`make pull up`). The images
-carry the code, but the compose file and the schema files come from the
-checkout — `migrate` mounts `db/migrations/` from it — so an image newer
-than its checkout starts against a schema that lacks what it expects. The
-`migrate` service runs first and applies any schema files the new release
-brought, and the app containers start only after it exits 0. Migrations are
-forward-only, so going back to an older image after a release that migrated
-the schema is not supported — take a `make backup` before upgrading. The
-database image is versioned separately (`x-db-image` in `docker-compose.yml`;
-see "Upgrading the database image").
+`PULS_VERSION` in `.env` selects the tag (default `latest`). To upgrade a
+pinned install, bump it, bring the checkout to the same release (`git
+checkout v<version>`), then `make pull up`. The checkout matters because the
+compose file and `db/migrations/` (which `migrate` mounts) come from it: an
+image newer than its checkout meets a schema that lacks what it expects.
+Migrations are forward-only, so going back to an older image after a release
+that migrated the schema is not supported. The database image is versioned
+separately (see "Upgrading the database image").
 
 To run what is in the checkout — a local change, or a branch under
 review — add the developer overlay, which puts the `build:` blocks back and
-tags the results `pulshealth-<service>:dev` so they never masquerade as a
+tags the results `pulshealth-<service>:dev` so they never pass for a
 published version:
 
 ```bash
@@ -218,20 +193,19 @@ make dev-up                                      # sets DEPLOY_COMMIT from git
 scripts/bootstrap.sh --build                     # the bootstrap flow, building instead of pulling
 ```
 
-A plain `docker compose up -d` afterwards switches the containers back to
-the `ghcr.io/pulshealth` images (pulling them if needed). Every pull request
-builds the four images for `linux/amd64` in CI (`images` job in `ci.yml`),
-so a broken Dockerfile fails there rather than at release time.
+A plain `docker compose up -d` afterwards switches back to the
+`ghcr.io/pulshealth` images. CI's `images` job builds all four for
+`linux/amd64` on every pull request, so a broken Dockerfile fails there.
 
 ### Schema migrations
 
-`db/migrate.sh`, run by the `migrate` Compose service (the same pinned
-`timescale/timescaledb-ha` image as `db`, so `psql` and `bash` are there and
-nothing is built), applies the files in `db/migrations/` in lexical
-order and records each one in a `schema_migrations` table (`filename`,
-`applied_at`, `checksum`). It runs on every `docker compose up -d` and by
-hand with `docker compose run --rm migrate`. It logs one line per file —
-`applied`, `skipped`, `rerun` or `ran` — and a summary line.
+`db/migrate.sh`, run by the `migrate` Compose service (on the same pinned
+image as `db`, so nothing is built), applies the files in `db/migrations/`
+in lexical order and records each in a `schema_migrations` table
+(`filename`, `applied_at`, `checksum`). It runs on every `docker compose up
+-d`, or by hand with `docker compose run --rm migrate` (`make migrate`), and
+logs one line per file — `applied`, `skipped`, `rerun` or `ran` — plus a
+summary.
 
 | File | Behaviour |
 |---|---|
@@ -241,60 +215,47 @@ hand with `docker compose run --rm migrate`. It logs one line per file —
 | `NNN_name.sh` | Run on every invocation, never recorded: `013_time_zone.sh` (stores `PULS_TIME_ZONE`) and `099_read_roles.sh` (creates the `grafana`, `api_reader` and `ingest` roles and rotates their passwords to the `.env` values, so rotating a database password is "edit `.env`, `docker compose up -d`"). They read `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` and `PULS_TIME_ZONE`, which Compose passes to the service. |
 
 **Adding a migration.** Create the next `NNN_name.sql` (three digits, an
-underscore, a name), write plain DDL/DML — no `BEGIN`/`COMMIT`, the migrator
+underscore, a name) with plain DDL/DML — no `BEGIN`/`COMMIT`, the migrator
 wraps it; `IF NOT EXISTS` is still welcome — and `docker compose up -d`.
-Fresh installs and existing installs take the same path. Tables created this
-way are readable by `grafana` and writable by `ingest` at once through the
-default privileges `099_read_roles.sh` sets (which is why that script then
-revokes `grafana`'s SELECT on `device_tokens`, on every run — credential
-hashes are not dashboard material); `api_reader` has an exact grant
-list, so extend that script (and its assertion) when the product API needs a
-new table. Never edit a file that has been applied anywhere — put the change
-in a new file. Ordering between schema and code is automatic: `migrate`
-applies every pending file before `ingest` starts, which is why files such
-as `003_aggregates.sql`, `005_activity_summaries.sql`,
-`006_workout_enhanced.sql`, `007_wake_telemetry.sql` and
-`011_temporal_contexts.sql` — all referenced unconditionally by
-`InsertBatch` — are in place before the build that writes them comes up.
+Fresh and existing installs take the same path. New tables are readable by
+`grafana` and writable by `ingest` at once through the default privileges
+`099_read_roles.sh` sets (the script then revokes `grafana`'s SELECT on
+`device_tokens` on every run — credential hashes are not dashboard
+material). `api_reader` has an exact grant list instead: extend that script
+and its assertion when the product API reads a new table. Because `migrate`
+applies every pending file before `ingest` starts, a table `InsertBatch`
+writes unconditionally is always there before the code that writes it.
 
 **Existing databases (created before the migrate service): baseline once.**
-A database that has the schema but no `schema_migrations` table makes the
-migrator stop with exit 1 rather than guess which files it contains, so
-`docker compose up -d` will not start the app services until you tell it.
-If every file in `db/migrations/` has already been applied to it — true for
-any database created by the old first-start init and kept current by hand —
-record that:
+A database that has the schema but no `schema_migrations` table stops the
+migrator with exit 1 rather than have it guess which files it contains, and
+the app services do not start. If every file in `db/migrations/` has
+already been applied to it, record that:
 
 ```bash
 git pull
 # add INGEST_DB_PASSWORD=<openssl rand -hex 32> to .env (see "The scoped ingest role")
 cd server
-docker compose run --rm migrate baseline
-docker compose up -d                  # or `make dev-up` at the root, to run this checkout
+docker compose run --rm migrate baseline     # or `make baseline` at the root
+docker compose up -d
 ```
 
 `baseline` records every `*.sql` file as applied, with its checksum,
 **without running any of them**, runs the `*.sh` files (so the `ingest` role
 exists before ingest starts), and prints what it recorded. Re-runnable files
-are recorded without a checksum, so the `docker compose up -d` that follows
-applies `009_metric_daily.sql` and `010_category_labels.sql` once. Both are
-`CREATE OR REPLACE`/upsert, so that is safe whatever state their objects were
-in — a database created before `puls_time_zone()` existed gets the current
-`metric_daily` this way with no manual step; if you prefer, apply such a file
-by hand before or after the baseline instead. If a one-shot file has *not*
-been applied to your database, apply it by hand first, then baseline:
+are recorded without a checksum, so the next `docker compose up -d` applies
+`009_metric_daily.sql` and `010_category_labels.sql` once — safe, since both
+are `CREATE OR REPLACE`/upsert. If a one-shot file has *not* been applied to
+your database, apply it by hand first, then baseline:
 
 ```bash
 docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
   < db/migrations/NNN_name.sql
 ```
 
-The first `docker compose up -d` after this change also recreates the `db`
-container (its definition lost the init-script mount and the role passwords,
-and its image is now pinned rather than the floating `pg17` tag); the data
-volume is untouched, but a database created from the older floating tag now
-runs under a newer TimescaleDB binary — read "Upgrading the database image"
-below before or right after adopting it.
+A database created from the old floating `pg17` tag now runs under the
+pinned, possibly newer TimescaleDB binary (the data volume is untouched):
+read "Upgrading the database image" before or right after adopting it.
 
 ### Upgrading the database image
 
