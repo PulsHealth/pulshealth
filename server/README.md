@@ -852,42 +852,38 @@ does not arrive, alerts will not either.
 ## Backup & restore
 
 **The stack has a backup service, and it is off until you turn it on.** Until
-you do, the live Postgres volume is the only copy of your data: a dead disk, a
-bad migration or a `docker compose down -v` loses everything, irrecoverably.
-Turning it on is one command.
+then the live Postgres volume is the only copy of your data: a dead disk, a
+bad migration or a `docker compose down -v` loses everything.
 
 ```bash
 # One dump, right now — do this before any schema change or upgrade.
 make backup
 
 # Dumps on a schedule (default: every 24h, keeping 14 days). Naming the
-# service starts only it (and db): the running app containers are left alone.
+# service starts only it (and db); the app containers are left alone.
 cd server && docker compose --profile backup up -d backup
 
 make backup-list                     # what is in the store
 make restore FILE=<name or path>     # put one back (destroys the current data)
 ```
 
-`docker compose --profile backup up -d` with no service named would also
-(re)start everything else, which on an install that builds from the checkout
-means Compose swaps those containers for the published `ghcr.io/pulshealth/*`
-images; add `-f compose.build.yml` there, or just name `backup` as above.
+Name `backup` as above: `docker compose --profile backup up -d` alone also
+(re)starts everything else, which on an install built from the checkout
+swaps those containers for the published images (unless you add `-f
+compose.build.yml`).
 
-`backup` is a Compose service behind the **`backup` profile**, so a plain
-`docker compose up -d` never starts it and the stack is unchanged for anyone
-who does not ask. It runs `backup/backup.sh` in the same pinned TimescaleDB
-image as `db` and `migrate`, so `pg_dump` always matches the server version.
+`backup` sits behind the **`backup` profile**, so a plain `docker compose up
+-d` never starts it. It runs `backup/backup.sh` on the same pinned image as
+`db`, so `pg_dump` always matches the server version. Each run writes
+`puls-<UTC timestamp>.dump` (`pg_dump --format=custom`, compressed), checks
+it with `pg_restore --list`, and only then renames it into place, so a
+truncated dump is never mistaken for a backup. It then deletes dumps older
+than `PULS_BACKUP_KEEP_DAYS` but **never the newest one**, however old — a
+schedule that stopped weeks ago must not also delete your last copy.
 
-Each run writes `puls-<UTC timestamp>.dump` with `pg_dump --format=custom`
-(compressed), checks the archive is readable with `pg_restore --list`, and only
-then renames it into place — a truncated dump is never mistaken for a backup.
-Then it deletes dumps older than `PULS_BACKUP_KEEP_DAYS`, **never the newest
-one**, however old: "the schedule stopped six weeks ago" must not also mean
-"and then it deleted your last copy".
-
-`pg_dump` prints a warning about circular foreign keys on `continuous_agg`
-every run. That is TimescaleDB's own catalog and the hint applies to
-`--data-only` dumps; these are full dumps, and they restore.
+`pg_dump` warns about circular foreign keys on `continuous_agg` on every run.
+That is TimescaleDB's own catalog, and the hint applies to `--data-only`
+dumps; these are full dumps, and they restore.
 
 ### Settings
 
@@ -897,66 +893,60 @@ every run. That is TimescaleDB's own catalog and the hint applies to
 | `PULS_BACKUP_KEEP_DAYS` | `14` | Delete dumps older than this. `0` keeps everything. |
 | `PULS_BACKUP_DIR` | (the `backups` volume) | Where dumps go. Set it to a path and they land there instead. |
 
-**Point `PULS_BACKUP_DIR` at something that is not this disk.** Left unset,
-dumps go to the `backups` Docker volume — which lives on the same disk as the
-database, so it protects you from a bad migration or a dropped table and not
-from a dead drive. An external disk, a NAS mount, or a directory something else
-replicates is the version worth having. Note also that `docker compose down -v`
-removes the `backups` volume along with `db_data`: with dumps on a host path,
-that command cannot take them with it.
+**Point `PULS_BACKUP_DIR` at something that is not this disk.** The default
+`backups` volume lives on the same disk as the database: it protects you
+from a bad migration or a dropped table, not from a dead drive, and `docker
+compose down -v` removes it along with `db_data`. An external disk, a NAS
+mount, or a directory something else replicates survives both. Dumps written
+there are owned by the directory's owner, mode `600`.
 
-The schedule is a sleep loop in the container, not cron: the image ships no
-cron daemon, so cron would mean installing packages at container start for one
-timer. The trade-off is that the schedule is relative to when the container
-started, not to the wall clock — restarting the stack shifts the dump time. If
-you want 03:00 exactly, leave the profile off and call `make backup` from the
-host's own cron or systemd timer.
+The schedule is a sleep loop, not cron (the image has no cron daemon), so it
+is relative to when the container started — restarting the stack shifts the
+dump time. For a fixed time, leave the profile off and run `make backup`
+from the host's cron or systemd timer.
 
-Nothing verifies your backups except the drill below. Run it once, on purpose,
-before you need it.
+Nothing verifies your backups except the drill below. Run it once, before
+you need it.
 
 ### Restoring
 
 `server/backup/restore.sh` (`make restore FILE=…`) **replaces the contents of
-the database** — everything synced since the dump was taken is gone, and there
-is no undo. `FILE` is either a path on the host or, for a dump already in the
-backup store, just its name as `make backup-list` shows it (a throwaway
-container streams it out; nothing is staged in a temporary file). Extra flags
-go through `ARGS`, e.g. `make restore FILE=… ARGS="--yes --build"`:
+the database** — it does not merge, everything synced since the dump is
+gone, and there is no undo. `FILE` is a path on the host or the name of a
+dump in the backup store as `make backup-list` shows it (streamed out by a
+throwaway container, never staged in a temporary file). Flags go through
+`ARGS`, e.g. `make restore FILE=… ARGS="--yes --build"`:
 
 | Flag | What |
 |---|---|
 | `--yes` | Skip the "type restore to continue" prompt. For scripted drills. |
-| `--build` | Bring the stack back up from this checkout (`compose.build.yml`) rather than the published images. `PULS_BOOTSTRAP_BUILD=1` sets it too, so an install that runs from source needs no second flag. |
-| `--no-start` | Leave the app services stopped when the restore finishes, instead of bringing the stack back up. `docker compose up -d` when you are ready. |
+| `--build` | Bring the stack back up from this checkout (`compose.build.yml`) rather than the published images. `PULS_BOOTSTRAP_BUILD=1` sets it too. |
+| `--no-start` | Leave the app services stopped afterwards; `docker compose up -d` when you are ready. |
 
-It does, in order: start `db` and verify the archive is readable *before*
-anything is destroyed; stop `ingest`, `api`, `mcp`, `web` and `grafana`; drop
-and recreate the `public` schema while TimescaleDB is still live so its event
-triggers dismantle hypertable chunks and continuous aggregates properly;
-reinstall the extension (it lives in `public`, so the drop takes it too);
-`timescaledb_pre_restore()`; `pg_restore --no-owner --no-privileges`
-**single-threaded**; `timescaledb_post_restore()`; `ANALYZE`; and finally
-`docker compose up -d`, where `migrate` recreates the `grafana`, `api_reader`
-and `ingest` roles from `.env` and puts their grants back.
+In order, it: starts `db` and verifies the archive is readable; stops
+`ingest`, `api`, `mcp`, `web` and `grafana`; drops and recreates the
+`public` schema while TimescaleDB is still live, so its event triggers
+dismantle hypertable chunks and continuous aggregates properly; reinstalls
+the extension (it lives in `public`, so the drop takes it too); runs
+`timescaledb_pre_restore()`, a **single-threaded** `pg_restore --no-owner
+--no-privileges`, `timescaledb_post_restore()` and `ANALYZE`; and finally
+`docker compose up -d`, where `migrate` recreates the `grafana`,
+`api_reader` and `ingest` roles from `.env` with their grants. The first
+check is the important one: a truncated file, a plain-SQL dump, the wrong
+file or a name not in the store is refused **before** anything is dropped.
 
-The check in the first step is the important one: a truncated file, a
-plain-SQL dump, the wrong file entirely, or a name that is not in the store at
-all is refused **before** anything is dropped, and the live database is left as
-it was.
-
-Three TimescaleDB rules the script exists to enforce, if you ever restore by
-hand: `timescaledb_pre_restore()`/`timescaledb_post_restore()` around the
-restore, **never** `pg_restore -j` (parallel restore reorders work in ways
-restoring mode does not tolerate), and drop the old schema *before*
-`pre_restore`, not after, or the extension catalog ends up describing tables
-that no longer exist.
+Three TimescaleDB rules the script enforces, if you ever restore by hand:
+`timescaledb_pre_restore()`/`timescaledb_post_restore()` around the restore;
+**never** `pg_restore -j` (parallel restore reorders work in ways restoring
+mode does not tolerate); and drop the old schema *before* `pre_restore`, not
+after, or the extension catalog ends up describing tables that no longer
+exist.
 
 ### The restore drill
 
-A backup you have never restored is a hypothesis. Run this once, on purpose,
-on a scratch install — not the one holding your data — so the first time you
-use `restore.sh` is not the day you need it.
+A backup you have never restored is a hypothesis. Run this once on a scratch
+install — not the one holding your data — so the first time you use
+`restore.sh` is not the day you need it.
 
 ```bash
 scripts/bootstrap.sh                    # a stack with something in it
@@ -974,59 +964,34 @@ docker volume rm pulshealth_db_data
 make restore FILE=puls-<timestamp>.dump ARGS=--yes
 ```
 
-(The run recorded below predates the published images and passed `--build`
-to both scripts, which drills the same thing against images built from the
-checkout.)
+Add `--build` to both scripts to drill against images built from the
+checkout. A good restore looks like this (as recorded on a throwaway stack,
+not anyone's real data):
 
-Then check what came back: `docker compose ps` (six services up, `db`
-healthy), `docker compose logs migrate` (it should apply nothing — see below),
-and the rows you recognise, through `GET /v1/stats`, the viewer, or `psql`.
+- `docker compose ps`: six services up, `db` healthy.
+- `docker compose logs migrate`: **`0 applied, 0 rerun, <every .sql file>
+  skipped, 2 script(s) ran`** — the schema came from the dump, and only the
+  role and time-zone scripts re-ran. They are what puts the `grafana`,
+  `api_reader` and `ingest` roles and their grants back, since the restore
+  itself skips owners and privileges; `puls_time_zone()` returns the zone
+  from `.env`.
+- Every row count identical either side of the wipe, down to the values
+  you recognise — through `GET /v1/stats`, the viewer or `psql` — with the
+  hypertables, the `quantity_rollups` continuous aggregate and the
+  `metric_daily` view querying, and the `timescaledb` extension at the same
+  version.
+- The pipeline live again: ingest accepts a new sample, and re-posting the
+  seeded batch answers `"duplicates":2`.
 
-**What the run on 2026-09-08 reported** — a throwaway stack on Docker Desktop,
-seeded through the curl fixture with two heart-rate samples, three step-count
-samples, one aggregate bucket, one activity summary, one deletion and a
-profile line, then dumped, `db_data` deleted, and restored into the empty
-volume:
-
-- Every count identical either side of the wipe: `quantity_samples` 5,
-  `aggregate_samples` 1, `activity_summaries` 1, `deleted_samples` 1,
-  `users` 1, `batches` 2, `sources` 2, `sample_types` 2, `category_labels`
-  256, `schema_migrations` 13 — and the values themselves, down to the
-  profile's name, email and date of birth.
-- The three hypertables (`quantity_samples`, `workout_route_points`,
-  `workout_series_points`), the `quantity_rollups` continuous aggregate and
-  the `metric_daily` view all rebuilt and querying; `timescaledb` 2.29.2 and
-  `timescaledb_toolkit` 1.26.0 back at the same versions.
-- `migrate` reporting **`0 applied, 0 rerun, 13 skipped, 2 script(s) ran`**:
-  the schema came from the dump, and only the role and time-zone scripts
-  re-ran. The `grafana`, `api_reader` and `ingest` roles were back with their
-  grants (`ingest`: SELECT/INSERT/UPDATE/DELETE, `grafana`: SELECT), and
-  `puls_time_zone()` still returned the zone from `.env` — the restore itself
-  skips owners and privileges, so this step is what puts them back.
-- All six services healthy afterwards, and the pipeline live again: ingest
-  accepted a *new* sample, re-posting the seeded batch answered
-  `"duplicates":2`, `GET /v1/profile` served the restored identity, and the
-  viewer rendered the restored data behind its Basic-auth prompt.
-
-A second pass restored a dump from a **host path** with `--no-start`, after
-inserting a `users` row that the dump did not contain: the row was gone
-afterwards and the app services stayed down until `docker compose up -d` —
-i.e. the restore replaces the database rather than merging into it.
-
-Also confirmed, because they are the parts you only find out about later:
-pruning deletes dumps older than `PULS_BACKUP_KEEP_DAYS` but **keeps the
-newest even when it is older than the window**; `PULS_BACKUP_KEEP_DAYS=0`
-deletes nothing; dumps written to a `PULS_BACKUP_DIR` host directory arrive
-owned by that directory's owner, mode `600`; `docker compose stop backup`
-returns immediately rather than waiting out the kill timeout; and a garbage
-file, or a name that is not in the store, is refused with the database
-untouched.
+Restoring with `--no-start` leaves the app services down until `docker
+compose up -d`. `docker compose stop backup` returns immediately rather than
+waiting out the kill timeout.
 
 ## Development
 
-Run the stack from the checkout with the build overlay (`make dev-up` at
-the repository root, or `docker compose -f docker-compose.yml -f
-compose.build.yml up -d --build` here); see "Images and versions".
+Run the stack from the checkout with `make dev-up` (see "Images and
+versions"). `ingest`, `api` and `mcp` are separate Go modules, so tests run
+from each module's directory — for ingest:
 
 ```bash
 cd ingest
@@ -1042,3 +1007,10 @@ ADMIN_DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgr
 # ...or everything as the superuser:
 DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" go test -run Integration ./...
 ```
+
+The product API's fixture-writing integration tests also need
+`PULS_API_WRITE_INTEGRATION_TESTS=1`; never run them against a live or
+shared database. They read through `DATABASE_URL` and write fixtures through
+`ADMIN_DATABASE_URL` (falling back to `DATABASE_URL`), so pointing the first
+at `api_reader` and the second at the superuser tests the role's grants as
+well as the queries.
