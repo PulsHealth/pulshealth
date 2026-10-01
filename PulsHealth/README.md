@@ -83,12 +83,14 @@ Sources/
 │                         authorization (incl. iOS 26 per-object medication auth).
 │                         Turns an incoming puls:// link into a prompt and, once
 │                         accepted, a one-shot hand-off (confirmedPairing) to the
-│                         screen that owns the server fields. Clears the export
+│                         Database screen. Decides whether the first run's
+│                         Health page still has a sheet to show
+│                         (onboardingHealthAccessPending). Clears the export
 │                         staging directory at launch, and runs the export's
 │                         Health-access step (applied selection, never the draft).
 ├── RootView.swift        TabView (Explore / Export / Sync / Settings). Owns the
 │                         Sync tab's path so an accepted pairing link lands on
-│                         Sync → Server; hosts the pairing and server-change
+│                         Sync → Database; hosts the pairing and server-change
 │                         prompts and presents OnboardingView on a first run.
 ├── Design/               The design system: TypeIcon (Health-style tile),
 │                         CardSection, ChartCard (a chart with its controls
@@ -155,18 +157,20 @@ Sources/
 │                         cancel, idle-timer and background-task assertion),
 │                         the finished export, and the lifetime of its staged
 │                         files. A run outlives the screen that started it.
-├── SyncView.swift        The Sync tab. No server applied: a setup card with one
-│                         Set Up button (opens the Server screen). Otherwise the
-│                         status card (host, last sync, backfill progress + ETA,
+├── SyncView.swift        The Sync tab. No database applied: a setup card ("Keep
+│                         a copy in your own database") with one Set Up button
+│                         (opens the Database screen). Otherwise the status
+│                         card (host, last sync, backfill progress + ETA,
 │                         failing count), the iOS 27 "Limited Health history"
 │                         card while any applied type is readable only from a
 │                         recent date, Sync Now, the synced types (TypeRow →
 │                         TypeDetailView), pull-to-refresh and the error alert;
-│                         then rows to Synced Data, Server and Activity. The
+│                         then rows to Synced Data, Database and Activity. The
 │                         PendingChangesBar sits on this tab.
-├── ServerSettingsView.swift  Sync → Server: URL + token (validated: https, or
-│                         http for local-network hosts only; held in a
-│                         ServerFieldsDraft until Save & Apply, with Scan / Paste
+├── ServerSettingsView.swift  Sync → Database: the Database URL and Token
+│                         fields (validated: https, or http for local-network
+│                         hosts only; held in a ServerFieldsDraft until Save &
+│                         Apply, with Scan / Paste
 │                         Pairing Code filling all three values) with Test
 │                         Connection — runs against the entered, unsaved values
 │                         and reports ok / no capabilities / token rejected /
@@ -180,8 +184,8 @@ Sources/
 │                         gap, expired/interrupted count, per-trigger rollups, a
 │                         recent-wakes list, and a ShareLink that exports wakes
 │                         (CSV+JSON) + the event log (JSON) for offline analysis.
-├── TypePickerView.swift  Sync → Synced Data (and the first-run flow's type
-│                         step): ~80 types grouped by category; Common/All/None
+├── TypePickerView.swift  Sync → Synced Data: ~80 types grouped by category;
+│                         Common/All/None
 │                         presets. Quantity rows link into TypeConfigView; other
 │                         kinds keep plain toggles. Also PendingChangesBar.
 ├── TypeConfigView.swift  Per-quantity-type config: raw-sync toggle + aggregate
@@ -209,25 +213,27 @@ Sources/
 │                         (version, and four Links — the documentation, the
 │                         privacy policy, the GitHub repository and its issue
 │                         tracker — that open in Safari). No footers. Also
-│                         UserView and the server-change prompt. The server
-│                         is not here.
-├── OnboardingView.swift  First run, four steps, no server: Welcome (what the
-│                         app does — explore, export, and sync if you want);
-│                         Health Access (iOS's sheet for the preselected
-│                         TypePresets.common); Choose Data (the real
-│                         TypePickerView); Ready, a summary whose "Start
-│                         Exploring" applies everything. On iOS 27 the Health
-│                         step also says iOS will ask how much history to
-│                         share and what each answer means here. Nothing
-│                         reaches the engine before that last tap, and nothing is
-│                         uploaded: the last step says a server can be
-│                         connected later in the Sync tab. A puls:// link
-│                         accepted during the flow waits until it ends, then
-│                         Sync → Server opens with the fields filled.
-│                         Settings → Diagnostics → "Show Onboarding Again"
-│                         replays it (with a Close button) for testing.
+│                         UserView and the server-change prompt. The
+│                         database is not here; it is the Sync tab's.
+├── OnboardingView.swift  First run: four pages swiped in a paging ScrollView,
+│                         no database asked for. "Unlock your Health Data"
+│                         (Explore, Export, Sync); "Which Health data would
+│                         you like to use?" (iOS's sheet for the preselected
+│                         TypePresets.common, behind one Continue button;
+│                         on iOS 27 one line about the history page);
+│                         one-time exports; "Sync to your own database"
+│                         (Learn more → pulshealth.com/docs/server/ in
+│                         Safari) with Start Exploring, which applies the
+│                         selection. Page 2 cannot be skipped: until iOS has
+│                         been asked, pages 3 and 4 are not in the pager, and
+│                         Continue or a swipe past the end presents the sheet
+│                         (root CLAUDE.md). A puls:// link accepted during the
+│                         flow waits until it ends, then Sync → Database
+│                         opens with the fields filled. Settings →
+│                         Diagnostics → "Show Onboarding Again" replays it
+│                         (with a Close button) for testing.
 ├── PairingScannerView.swift  AVFoundation QR sheet feeding PairingPayload.parse.
-│                         Used by Sync → Server (the setup card's Scan Pairing
+│                         Used by Sync → Database (the setup card's Scan Pairing
 │                         Code opens it on arrival). Handles
 │                         not-yet-asked, denied, and no-camera, each with a
 │                         "Type It Instead" way out; no frame is ever stored.
@@ -250,21 +256,21 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 ## Behavior notes
 
 - A fresh install opens straight into the first-run flow; an install that
-  already has a server, enabled types, or a previous Apply never sees it (the
+  already has a database, enabled types, or a previous Apply never sees it (the
   decision is `AppModel.showsOnboarding` — see the invariant in the root
   `CLAUDE.md`). What the app promises the user on that first screen is stated
   formally in [`docs/privacy-policy.md`](../docs/privacy-policy.md), and the
   App Store material that repeats it is in
   [`docs/appstore/`](../docs/appstore/README.md).
-- **Pairing.** The server's pairing code (`puls://pair?url=&token=&user=`)
+- **Pairing.** A database's pairing code (`puls://pair?url=&token=&user=`)
   reaches the app four ways: **Scan Pairing Code** (in-app camera), **Paste
   Pairing Code** (the system `PasteButton`, so iOS shows no paste banner and the
-  clipboard is only read on that tap), the whole string put into the Server URL
-  field, or a `puls://` link — tapped, or offered by the iOS Camera app when it
+  clipboard is only read on that tap), the whole string put into the Database
+  URL field, or a `puls://` link — tapped, or offered by the iOS Camera app when it
   reads the QR code. Each screen has one function that takes a `PairingPayload`
   (`applyPairing`), whatever the source: it fills the URL, token and user ID
   into the screen's `ServerFieldsDraft` and runs Test Connection. It applies
-  nothing — the Server screen still ends with Save & Apply (and the
+  nothing — the Database screen still ends with Save & Apply (and the
   server-change prompt, if the target moved).
   **A link is untrusted input**, because any web page or app can fire one. So
   `AppModel.handleIncomingURL` only ever raises a prompt: "Pair with
@@ -276,15 +282,15 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   comes from the right host view (the first-run flow or the tabs); the first
   pending link wins, so the prompt on screen always describes the payload that
   accepting it delivers; and only the host is logged, never the link or token.
-  Accepting during the first run (the flow has no server step) parks the
-  payload in `confirmedPairing` and the Ready step says a link is waiting;
-  when the flow ends, and at any other time, it switches to the Sync tab and
-  pushes Sync → Server, popping anything pushed there.
-- **Without a server.** The first-run flow never asks for one: it asks for
-  Health access and a selection, and Start Exploring applies them. Nothing
+  Accepting during the first run (the flow has no database step) parks the
+  payload in `confirmedPairing` and the flow's last page says a link is
+  waiting; when the flow ends, and at any other time, it switches to the Sync
+  tab and pushes Sync → Database, popping anything pushed there.
+- **Without a database.** The first-run flow never asks for one: it asks for
+  Health access for the starter set, and Start Exploring applies it. Nothing
   syncs — `AppModel.configured` reads the applied configuration and still
-  needs a server — and the Sync tab shows a setup card with a Set Up button
-  (the Server screen) instead of a status; the Explore and Export tabs work
+  needs a database URL — and the Sync tab shows a setup card with a Set Up
+  button (the Database screen) instead of a status; the Explore and Export tabs work
   regardless.
 - **The Export tab** writes a selection of its own — `ExportDraft`: types,
   aggregate series, workout switches, a preset or custom range, the format
