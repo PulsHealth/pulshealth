@@ -466,12 +466,11 @@ empty. It reports the date through `HKHealthStore.earliestAuthorizedSampleDate(f
 identifier → date, limited types only; empty before iOS 27, when built with
 the iOS 26 SDK, and for undecided types).
 
-Measured on the iOS 27.0 simulator: every type a sheet granted gets the same
-date, the activity-summary type included; a sample is hidden only when it
-*ends* before the date; a day bucket straddling it came back with part of its
-value; narrowing access made an anchored query from an older anchor report no
-deletions; and an anchor taken under the limit returned none of the older
-samples after the limit was lifted.
+On the iOS 27.0 simulator: every type one sheet grants gets the same date, the
+activity-summary type included; a sample is hidden only when it *ends* before
+the date; a bucket straddling the date returns part of its value; narrowing
+access reports no deletions to an older anchor; and an anchor taken under the
+limit never returns the older samples once the limit is lifted.
 
 Two consequences, both handled here:
 
@@ -497,25 +496,24 @@ Two consequences, both handled here:
   from the start date. The same date (within a day) resets nothing, and a
   narrowing only records the new date.
 - **A widening must be proved.** A type set to *None* in Settings drops out
-  of `earliestAuthorizedSampleDate(for:)` exactly like one set to Full Access
-  — measured on the iOS 27.0 simulator, where every query for it then came
-  back empty without an error — and acting on that once reset an aggregate
-  series with nothing to clamp it, so every bucket went up as a null. A
-  reported widening therefore counts only once HealthKit returns a sample (for
-  the rings, a day) that ends before the recorded date
-  (`ReadableHistory.resolve`); otherwise the recorded date stands and the
-  clamps stay. A type with no older data fails that test too, which costs
-  nothing: there is nothing older to re-read.
+  of `earliestAuthorizedSampleDate(for:)` exactly like one set to Full Access,
+  and every query for it comes back empty without an error. Treated as a
+  widening, that would reset an aggregate series with nothing to clamp it and
+  send every bucket as a null. So a reported widening counts only once
+  HealthKit returns a sample (for the rings, a day) that ends before the
+  recorded date (`ReadableHistory.resolve`); otherwise the recorded date stands
+  and the clamps stay. A type with no older data fails that test too, which
+  costs nothing: there is nothing older to re-read.
 - **Unknown fails closed.** Every HealthKit call here gives up after ten
-  seconds (they have been seen to stall far longer after a reinstall). An
-  aggregate or ring pass that cannot learn its limit records
-  `readableHistoryUnknown` and sends nothing (a locked device just skips);
-  reconciliation throws; an export reports that it may start later than
-  asked.
+  seconds, since these calls can stall far longer. An aggregate or ring pass
+  that cannot learn its limit records `readableHistoryUnknown` and sends
+  nothing (a locked device just skips); reconciliation throws; an export
+  reports that it may start later than asked.
 
 The API exists only in the iOS 27 SDK, and CI also builds with Xcode 26.5, so
 its one call sits behind `#if compiler(>=6.4)` (Xcode 27.0 ships Swift 6.4;
-Xcode 26.5 ships 6.3.2) as well as `#available(iOS 27.0, *)`.
+Xcode 26.5 ships 6.3.2) as well as `#available(iOS 27.0, *)`. Built with the
+older SDK, there is never a limit.
 
 Don't Allow on the history page throws `errorAuthorizationDenied` and leaves
 the types undetermined, where Don't Allow on the first page returns normally;
@@ -539,19 +537,16 @@ not an `HKSampleType`, so its catalog entry has `sampleType == nil` (kept out of
 `bulkReadAuthorizationSampleTypes` and the observer) and the engine unions
 `HKObjectType.activitySummaryType()` into the read-auth set separately. There is
 **no observer / no background delivery** for summaries, so they ride other wakes:
-`syncAllEnabled` (foreground/periodic/scheduled — the *first* phase, ahead of the
-raw sweep, since a first backfill otherwise left the viewer with no ring data
-until every type had drained), and since 2026-08-14 also
+`syncAllEnabled` (foreground/periodic/scheduled — the *first* phase, so a first
+backfill shows rings before every type has drained) and
 `refreshActivitySummaryIfStale()` at the tail of every observer wake.
 
-That second path is load-bearing, not a nicety. The scheduled path runs from the
+That second path is load-bearing. The scheduled path runs from the
 `BGProcessingTask`, which iOS starts while the device is idle and therefore
-locked — so *every* ring refresh from 2026-08-11 onward failed with
-`errorDatabaseInaccessible`, and the newest ring row on the server was three days
-stale before anyone noticed. An observer wake is by definition a moment when
-HealthKit is readable. The refresh is rate-limited to hourly via
-`ActivitySummaryState.lastComputedAt`, because today's ring mutates all day and
-observer wakes are frequent.
+locked, when every ring query fails with `errorDatabaseInaccessible`; an
+observer wake is by definition a moment when HealthKit is readable. The
+refresh is rate-limited to hourly via `ActivitySummaryState.lastComputedAt`,
+because today's ring mutates all day and observer wakes are frequent.
 
 ## On-device export
 
@@ -606,7 +601,9 @@ exists and no `{"profile":…}` line is written.
 It calls the sweep's phases itself — rings, raw types (`.manual`, so the
 per-type backfill path), the full aggregate pass, routes, streams — rather than
 `syncAllEnabled`, which would add the recent-aggregate priority window and
-write the newest month of every series twice. "All time" queries from 1900
+write the newest month of every series twice; and it builds the engine with
+`recentWindowFirst: false`, because the raw recent-window pass would do the
+same to the newest month of samples. "All time" queries from 1900
 rather than `.distantPast` (whose local day is in 1 BC west of Greenwich), and
 each aggregate series starts at its type's first sample, snapped to the bucket
 grid the real sync uses so a replay overwrites the server's buckets instead of
@@ -643,8 +640,8 @@ survive the phone locking mid-run — and deliberately not run through
 under `HealthExporter.stagingRoot` in the temporary directory, which
 `removeAllExports()` clears, leftovers from a crash included.
 
-`ExportPresentation.swift` is the screen's pure half, kept here so it can be
-tested (`ExportPresentationTests`): `ExportRange` (a range starts at a local
+`ExportPresentation.swift` is the screen's pure half, kept in the package so
+it can be tested (`ExportPresentationTests`): `ExportRange` (a range starts at a local
 midnight, because daily series are whole local days), `ExportSelectionSummary`,
 `ExportFailureCopy` (what each `HealthExportError` is called — "no data" and
 "access declined" are one answer from HealthKit, so that copy gives both
