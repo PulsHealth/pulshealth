@@ -7,8 +7,8 @@ one-shot schema migrator via Docker Compose:
 | Service | Image | Port | Purpose |
 |---|---|---|---|
 | `db` | `timescale/timescaledb-ha:pg17.11-ts2.29.2` (pinned — see "Upgrading the database image") | 127.0.0.1:5432 | PostgreSQL 17 + TimescaleDB |
-| `migrate` | same pinned image as `db` (one-shot) | — | Applies `db/migrations/` before the app services start, on every `docker compose up -d` (see "Schema migrations") |
-| `ingest` | `ghcr.io/pulshealth/ingest:${PULS_VERSION:-latest}` (Go, distroless; source in `ingest/`) | `${INGEST_BIND_ADDR:-127.0.0.1}:8080` | HTTP ingest API — expose it through a TLS-terminating proxy of your choice, or on your own LAN with `INGEST_BIND_ADDR=0.0.0.0` (see "Exposing the server"); connects as the scoped DML-only `ingest` role (see "The scoped `ingest` role") |
+| `migrate` | same pinned image as `db` (one-shot) | — | Applies `db/migrations/` before the app services start (see "Schema migrations") |
+| `ingest` | `ghcr.io/pulshealth/ingest:${PULS_VERSION:-latest}` (Go, distroless; `ingest/`) | `${INGEST_BIND_ADDR:-127.0.0.1}:8080` | HTTP ingest API the phone syncs to (see "Exposing the server"); connects as the DML-only `ingest` role |
 | `api` | `ghcr.io/pulshealth/api:${PULS_VERSION:-latest}` (Go, distroless; `api/`) | 127.0.0.1:8081 | Product read API for downstream apps |
 | `mcp` | `ghcr.io/pulshealth/mcp:${PULS_VERSION:-latest}` (Go, distroless; `mcp/`) | 127.0.0.1:8082 | Read-only MCP server for AI assistants over the product API (`docs/ai.md`) |
 | `grafana` | `grafana/grafana:13.0.2` (pinned — 13.x provisioning is version-sensitive) | 127.0.0.1:3000 | Dashboards (reach them through a TLS proxy, e.g. Tailscale Serve on `:8443`) |
@@ -210,10 +210,10 @@ summary.
 
 | File | Behaviour |
 |---|---|
-| `NNN_name.sql` | One-shot. Applied once, inside a single transaction together with its `schema_migrations` row (`psql --single-transaction`, `ON_ERROR_STOP`), so a failed file leaves nothing behind and is retried on the next run. Applied files are immutable: the migrator refuses to continue when a recorded file's checksum no longer matches (edit a new file, never an applied one) or when a recorded file is missing (never rename or delete one). |
-| `-- puls:rerun` on the first line | Re-runnable: applied whenever its checksum differs from the recorded one, and the record is updated. For files that are `CREATE OR REPLACE` or upserts by design — `009_metric_daily.sql` (the view and `puls_time_zone()`) and `010_category_labels.sql` (the label seed, refreshed after SDK updates). Edit those in place. |
-| `-- puls:no-transaction` on the first line | Applied statement by statement instead of under one transaction, for a file with a statement that cannot run in a transaction block (`008_quantity_rollups.sql`: `refresh_continuous_aggregate`). Such a file must be idempotent, since a mid-file failure is retried from the top. |
-| `NNN_name.sh` | Run on every invocation, never recorded: `013_time_zone.sh` (stores `PULS_TIME_ZONE`) and `099_read_roles.sh` (creates the `grafana`, `api_reader` and `ingest` roles and rotates their passwords to the `.env` values, so rotating a database password is "edit `.env`, `docker compose up -d`"). They read `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` and `PULS_TIME_ZONE`, which Compose passes to the service. |
+| `NNN_name.sql` | One-shot: applied once, in one transaction with its `schema_migrations` row (`psql --single-transaction`, `ON_ERROR_STOP`), so a failed file leaves nothing behind and is retried next run. Applied files are immutable: the migrator stops if a recorded file's checksum changed (put the change in a new file) or a recorded file is missing (never rename or delete one). |
+| `-- puls:rerun` on the first line | Re-applied whenever its checksum changes. For `CREATE OR REPLACE`/upsert files edited in place: `009_metric_daily.sql` (the view and `puls_time_zone()`) and `010_category_labels.sql` (the label seed). |
+| `-- puls:no-transaction` on the first line | Applied statement by statement, for a statement that cannot run in a transaction block (`008_quantity_rollups.sql`: `refresh_continuous_aggregate`). Must be idempotent: a mid-file failure is retried from the top. |
+| `NNN_name.sh` | Run on every invocation, never recorded: `013_time_zone.sh` (stores `PULS_TIME_ZONE`) and `099_read_roles.sh` (creates the `grafana`, `api_reader` and `ingest` roles and sets their passwords from `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD` and `INGEST_DB_PASSWORD`). |
 
 **Adding a migration.** Create the next `NNN_name.sql` (three digits, an
 underscore, a name) with plain DDL/DML — no `BEGIN`/`COMMIT`, the migrator
@@ -382,13 +382,14 @@ scripts/bootstrap.sh --issue-device "Her iPhone" --user <uuid>   # someone else;
 
 The URL in the code is the pairing block's — `PULS_PUBLIC_URL`, else this
 host's LAN address under `--lan`; with neither, the command says so and
-issues nothing. `--url <URL>` sets one for that code alone, without touching
-`.env`. The stack must be running: `ingest devices issue`, inside the ingest
-container, mints the token and draws the code, so no `qrencode` is needed.
+issues nothing. `--url <URL>` sets one for that code alone. A URL the app
+would refuse (plain `http://` beyond the local network) is rejected before
+any token is minted. The stack must be running: `ingest devices issue`,
+inside the ingest container, mints the token and draws the code.
 
 The rest of the lifecycle is that CLI — the distroless `ingest` binary with
-`devices` as its first argument. `make devices` wraps `docker compose run
---rm --no-deps ingest devices …` and hands it the same URL:
+`devices` as its first argument, which `make devices` wraps (`docker compose
+run --rm --no-deps ingest devices …`, handed the same URL):
 
 ```bash
 make devices ARGS='issue --user 5ea4d000-0000-4000-8000-000000000001 --name "My iPhone"'
@@ -399,23 +400,20 @@ make devices ARGS='rename 3 "Old phone"'
 make devices ARGS='revoke 3'        # refused from the next request on; nothing to restart
 ```
 
-Run without `make` (`docker compose run --rm --no-deps ingest devices issue
-…` from `server/`), `issue` takes the URL from `PULS_PUBLIC_URL` or `--url`
-only — a container cannot see the proxy in front of it or the host's LAN
-address — and with neither prints the token and user ID without a code. A
-URL the app would refuse (plain `http://` beyond the local network) is
-rejected before any token is minted. `ingest qr` draws a code on its own: it
-reads the payload on stdin (never an argument, which would show the token in
-`ps`), needs no database, and is what `scripts/bootstrap.sh` uses on a host
-without `qrencode`.
+Run directly with `docker compose run`, `issue` knows only `PULS_PUBLIC_URL`
+or `--url` (a container cannot see the proxy in front of it or the host's
+LAN address); with neither it prints the token and user ID without a code.
+`ingest qr` draws a code on its own from a payload on stdin (never an
+argument, which would show the token in `ps`); `scripts/bootstrap.sh` uses
+it on a host without `qrencode`.
 
 `issue` creates the `users` row if it does not exist, so a household member
 can have a token before their phone has synced — and a mistyped `--user`
 quietly creates a new user; check `list` after. A request with a device
 token acts as that token's user: `X-User-ID` must be absent or equal to it,
-or the request is refused with 403 before the body is read. The app sends its
-own user ID (Settings → User, or the one a pairing code sets), so it must
-match the token's.
+or the request is refused with 403 before the body is read. The app sends
+the user ID set on it (by the pairing code, or under Settings → User), so
+that must match the token's.
 
 **Order and failure modes.** The shared token is checked first, in memory;
 only then is the presented value hashed and looked up in `device_tokens`
@@ -454,35 +452,32 @@ Retry-After: 7
 
 and the server logs the address, the path and the wait. The product API also
 logs every failed authentication (`auth failed`, with address and path, never
-the token). Two properties matter:
+the token).
 
 - **A correct token is never throttled.** Only failures draw from the bucket,
   so a backfill — thousands of authenticated uploads in a row — never
   touches it.
 - **An exhausted address is refused *before* the token is compared.**
   Otherwise the limit would only change the status code an attacker sees,
-  not their guessing rate. The cost is that a client sharing an address with
-  an attacker waits too; buckets refill in a minute, and a client that never
-  fails never has one.
-
-Memory is bounded: only failures create an entry, entries refilled and idle
-for ten minutes are forgotten, and a cap of 10,000 addresses drops the least
-recently seen first, so rotating IPv6 source addresses cannot grow the table.
+  not their guessing rate. A client sharing an address with an attacker
+  waits too; buckets refill in a minute.
+- **Memory is bounded.** Only failures create an entry, entries refilled and
+  idle for ten minutes are forgotten, and a cap of 10,000 addresses drops
+  the least recently seen first, so rotating IPv6 addresses cannot grow it.
 
 The limit is keyed on the TCP peer address. Behind a proxy every request
-appears to come from the proxy, and one attacker exhausts the bucket for
-everyone; set **`TRUST_PROXY_HEADERS=true`** and the first entry of
-`X-Forwarded-For` is used instead. Only do that when the proxy is the *only*
-route to the port and overwrites the header (reverse proxies and Tailscale
-Serve/Funnel do): otherwise the sender sets it, and one attacker can look
-like unlimited clients. Leave it `false` for `INGEST_BIND_ADDR=0.0.0.0` on a
-LAN. Docker's userland proxy can also rewrite the source address to the
-bridge gateway on some hosts — every throttled client logged as the same
-`172.x.x.1` — and the fix is the same: a proxy that sets `X-Forwarded-For`,
-and `TRUST_PROXY_HEADERS` on.
+comes from the proxy, and one attacker exhausts the bucket for everyone;
+**`TRUST_PROXY_HEADERS=true`** keys it on the first `X-Forwarded-For` entry
+instead. Only set it when the proxy is the *only* route to the port and
+overwrites the header (reverse proxies and Tailscale Serve/Funnel do);
+otherwise the sender sets it, and one attacker looks like unlimited clients.
+Leave it `false` for `INGEST_BIND_ADDR=0.0.0.0` on a LAN. If every throttled
+client is logged as the same `172.x.x.1`, Docker's userland proxy is
+rewriting the source address; the fix is the same — a proxy that sets
+`X-Forwarded-For`, and `TRUST_PROXY_HEADERS` on.
 
-The limit is not a substitute for a good token: `openssl rand -hex 32` is
-256 bits.
+The limit is no substitute for a good token: `openssl rand -hex 32` is 256
+bits.
 
 ### Rotating secrets
 
@@ -492,10 +487,10 @@ set of secrets would strand both. Rotate one value at a time instead:
 
 | Secret | How |
 |---|---|
-| `PULS_TOKEN` | Edit `.env`, `docker compose up -d ingest`, paste the new token into the app (`make pairing` shows it). |
+| `PULS_TOKEN` | Edit `.env`, `docker compose up -d ingest`, then re-pair each phone from `make pairing`. |
 | A device token | `make devices ARGS='revoke <id>'`, then `scripts/bootstrap.sh --issue-device <label> [--user <uuid>]` and scan the new code on that phone. Effective on the next request; nothing restarts, and no other phone is affected. |
 | `PULS_API_TOKEN`, `PULS_MCP_TOKEN` | Edit `.env`, `docker compose up -d api mcp`, update the API consumers and AI clients (`docs/ai.md`). |
-| `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` | Edit `.env`, `docker compose up -d`: `migrate` re-runs `099_read_roles.sh`, which sets the roles' passwords to the new values, and the containers restart with them. |
+| `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` | Edit `.env`, `docker compose up -d`: `migrate` re-runs `099_read_roles.sh`, which sets the new passwords, and the containers restart with them. |
 | `POSTGRES_PASSWORD` | The superuser password lives in the database, not in `.env`: `docker compose exec db psql -U postgres -c "ALTER USER postgres PASSWORD '<new>'"` first, then edit `.env` and `docker compose up -d`. |
 | `GRAFANA_PASSWORD` | Read at Grafana's first start only; change it in Grafana's own UI (or `docker compose exec grafana grafana cli admin reset-admin-password <new>`), then update `.env` to match. |
 
