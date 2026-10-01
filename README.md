@@ -63,17 +63,17 @@ uploaded. Formats and columns are in
 | **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
 | **MCP server** | [`server/mcp/`](server/mcp/README.md) | Read-only MCP server over the product API for Claude Desktop, Claude Code, Cursor and remote connectors: daily metrics, rings, workouts, latest readings, with an embedded guide for the model. Setup in [`docs/ai.md`](docs/ai.md). |
 
-<!-- screenshots to be retaken on device for 1.6 -->
 <p align="center">
-  <img src="docs/images/app/welcome.png" alt="Explore tab: every Apple Health type by category, with sample counts for the analyzed ones" width="200">
-  <img src="docs/images/app/dashboard.png" alt="A Type page: analysis charts and an aggregate preview for one type" width="200">
-  <img src="docs/images/app/type-detail.png" alt="Export tab: the builder with data types, aggregate series, a date range and the CSV/JSONL choice" width="200">
-  <img src="docs/images/app/background-activity.png" alt="Sync tab: server status after a backfill, samples sent, and per-type rows" width="200">
+  <img src="docs/images/app/unlock.png" alt="First run: Unlock your Health Data, with Explore, Export and Sync" width="200">
+  <img src="docs/images/app/explore.png" alt="Explore tab: Apple Health types by category, each with its sample count over the past year" width="200">
+  <img src="docs/images/app/type-page.png" alt="Heart Rate's Type page: description, analysis, sample counts, sources and the start of the value histogram" width="200">
+  <img src="docs/images/app/export.png" alt="Export tab: the builder with data types, aggregate series, a date range, CSV or JSONL and a zip option" width="200">
 </p>
 
-The iOS app: Explore, a Type page, the Export builder, and the Sync tab. The
-image files still show the 1.5 screens and are retaken on a device for 1.6.
-Screenshots of the web viewer and the Grafana dashboards are still to come.
+The iOS app 1.6: the first run, Explore, a Type page and the Export builder —
+the App Store set, taken in the simulator with the app's built-in demo data
+(nobody's real health data). Screenshots of the web viewer and the Grafana
+dashboards are still to come.
 
 For the database data model, table guide, and query patterns (including how
 to avoid iPhone + Watch double counting), see

@@ -286,23 +286,28 @@ below says the same things in 1.6's terms):
 Required: 6.9" iPhone (1320 × 2868 or 1290 × 2796). Apple scales those down for
 the smaller sizes, so one set is enough.
 
-**Not included in this repository, and deliberately so.** The screens worth
-showing — Explore with data behind it, a Type page's charts, the Sync tab's
-counters, the background activity log — are only meaningful with a real
-Health database behind them, and the simulator has none: every count is zero
-and every type says "No data". Shipping those would misrepresent the app.
-
-Capture them on a real device with real data, from a build signed with the
-maintainer's team. The order below tells the story a browser needs:
+**The store files are not kept in this repository** (the README carries four
+of them at 600 px). The screens worth showing — Explore with data behind it,
+a Type page's charts — are only meaningful with Health data behind them. An
+empty simulator has none: every count is zero and every type says "No
+data", and shipping that would misrepresent the app. Two honest ways to get
+data behind them: a real device with real data, from a build signed with the
+maintainer's team; or the simulator with the app's built-in demo fixtures
+(`-PulsFixtureProfiles 1`, `ExploreFixtures.swift`: synthetic profiles for
+Sleep, Heart Rate, Steps, Cycling Distance and Workouts — nobody's real health
+data), which is how 1.6's set was made. The order below tells the story a
+browser needs:
 
 1. **Unlock your Health Data** — the first onboarding page: Explore, Export
    and Sync. This one *is* honest from the simulator if a device is
    unavailable.
 2. **Explore with data** — the catalog by category, each row with its sample
-   count over the past year and when its last sample arrived. Device only.
+   count over the past year and when its last sample arrived. Real data, or
+   the demo fixtures.
 3. **A Type page** — the one-line description, the analysis charts (the
    histogram with its typical range, samples over time) and the aggregate
-   preview for one type (Heart Rate or Body Weight). Device only.
+   preview for one type (Heart Rate or Body Weight). Real data, or the demo
+   fixtures (Heart Rate).
 4. **Export builder** — types, a series, a custom range, CSV or JSONL. Fine
    from the simulator if the selection is realistic.
 5. **Sync status** — the status card after a backfill: real totals and
@@ -311,8 +316,18 @@ maintainer's team. The order below tells the story a browser needs:
    delivery. Device only, and it needs the days.
 
 Do not paste marketing text over them, and do not use another person's health
-data. **The 1.4 set below is stale:** 1.6 replaced every screen in it,
-Welcome included, so the whole set is retaken for 1.6.
+data.
+
+**What 1.6 was submitted with** (2026-09-30; all dark mode, 1320 × 2868 in the
+6.9" slot, iPhone 17 Pro Max simulator on iOS 26.5, status bar at 9:41, demo
+fixtures; in this order): 1 Unlock your Health Data (first-run page 1), 2
+Explore (types with data, Vitals collapsed), 3 Heart Rate's Type page, 4 the
+same page scrolled to the value histogram and samples over time, 5 the Export
+builder (14 types, Year, CSV), 6 Sync to your own database (first-run page 4).
+The iPad 13" slot (2064 × 2752) has Unlock your Health Data and Explore. No
+hostname, token, user ID or personal data is visible. Shots 5 and 6 of the
+listing order above (Sync status after a backfill, Background Activity) need
+a real device and days of wakes; they can join the set in a later version.
 
 **What 1.4 was submitted with** (all dark mode, 1290 × 2796 in the 6.9" slot,
 in this order): 1 Welcome, 2 Your Server (with `https://health.example.net`

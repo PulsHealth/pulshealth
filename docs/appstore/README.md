@@ -77,18 +77,15 @@ and cannot be prepared in the repository.
 
 ### Screenshots
 
-- [ ] **maintainer only** — Capture the 6.9" iPhone set on a real device with
-      real Health data, in the order `listing.md` gives.
-- [ ] **1.6 replaced every screen but Welcome** (Explore, a Type page, the
-      Export builder, Sync, Background — see `listing.md` § Screenshots), so
-      the whole set is retaken before submission; the 1.4 set on the record
-      and the four images in the root `README.md` (`docs/images/app/`) show
-      screens that no longer exist.
+- [x] Capture the 6.9" iPhone set (and the 13" iPad slot) in the order
+      `listing.md` gives. For 1.6 this was done in the simulator with the
+      app's demo fixtures; a real device with real data is the alternative.
+- [x] The four images in the root `README.md` (`docs/images/app/`) are the
+      1.6 set, scaled to 600 px wide.
 - [ ] Do not ship simulator screenshots of the Explore, Type page, Sync or
-      background-activity screens: with no Health data behind them every count
-      is zero and every type says "No data", which misrepresents the app. The
-      first-run welcome screen is the exception — it looks the same either
-      way.
+      background-activity screens **without the demo fixtures**: with no
+      Health data behind them every count is zero and every type says "No
+      data", which misrepresents the app.
 
 ### Review backend
 
@@ -167,7 +164,7 @@ rather than from memory. Add a row per release.
 | Version | Released | Notes |
 |---|---|---|
 | 1.3 | 2026-01-24 | CSV/JSON export app with QR data requests; the listing described that until 1.4. |
-| 1.6 (19) | — | Not yet uploaded. The first run redesigned: four swiped pages (Unlock your Health Data; Which Health data would you like to use?, which cannot be skipped; Export; Sync to your own database), no Choose Data or summary; the app says "database" for the sync destination (the listing, privacy policy and site did in #90); onboarding bug fixes. |
+| 1.6 (19) | — | Uploaded 2026-09-30 from e388eda; **submitted for review 2026-09-30**, release automatic on approval. Screenshots: the simulator set with the app's demo data (`listing.md` § Screenshots). The first run redesigned: four swiped pages (Unlock your Health Data; Which Health data would you like to use?, which cannot be skipped; Export; Sync to your own database), no Choose Data or summary; the app says "database" for the sync destination (the listing, privacy policy and site did in #90); onboarding bug fixes. |
 | 1.6 (18) | — | Uploaded to TestFlight 2026-09-30 (from 154bda8); not submitted. Fixes from the review of #86 (a type set to None in Settings must not read as widened access). |
 | 1.6 (17) | — | Uploaded to TestFlight 2026-09-30 (Xcode 27.0, iOS 27.0 SDK) for the device passes; not submitted. UI revamp: Explore, Export builder, Sync, Settings; analysis summaries stored on device (privacy policy updated 2026-09-30). iOS 27 limited history access: no overwrite or deletion of server history the app cannot read, a re-sweep when access widens, Don't Allow on the history page handled as an answer, and the review notes' step 3 names that page. Supersedes 1.5 (16), which was never submitted. Screenshots must be retaken. |
 | 1.5 (16) | — | Uploaded to TestFlight 2026-09-29 for device testing; not submitted. Server-less export (#77), pairing from a link, the Camera app or the clipboard (#77), and the reinstall/first-sync fixes (#82). Needs a device pass before submission: the iOS 26 continued-processing first run, leaving the app mid-backfill, export on a real device. |

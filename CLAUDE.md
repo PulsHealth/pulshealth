@@ -502,8 +502,9 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   carries that identifier. `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` must
   likewise stay ahead of what shipped: 1.4 / 15 is on the store, 1.5 / 16
   went to TestFlight on 2026-09-29 and was never submitted, 1.6 / 17 and
-  1.6 / 18 went to TestFlight on 2026-09-30, and `project.yml` says 1.6 / 19,
-  not yet uploaded — bump the build again after that upload.
+  1.6 / 18 went to TestFlight on 2026-09-30, and 1.6 / 19 (`project.yml`'s
+  current numbers) was uploaded and **submitted for review on 2026-09-30** —
+  any later upload needs build 20.
 - **The published privacy claims are load-bearing.**
   `docs/privacy-policy.md`, `docs/appstore/` and the site's `/privacy` page
   state as fact that the app has

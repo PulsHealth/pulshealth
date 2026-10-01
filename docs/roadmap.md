@@ -95,8 +95,9 @@ the log) plus three first-run screens from the simulator made up the App
 Store set submitted with 1.4, and four of them are in `README.md` §
 Components (`docs/images/app/`). The 1.6 UI revamp (Explore, the Export
 builder, Sync, Settings; a first run with no server step) replaced every one
-of those screens but Welcome, so the store set and the README's four images
-are retaken on a device for 1.6 — the order is in `listing.md` § Screenshots.
+of those screens, so for 1.6 the store set and the README's four images were
+retaken in the simulator with the app's demo data (2026-09-30; `listing.md` §
+Screenshots). A real-device set with real data can replace them later.
 Still missing as before: the web viewer and the Grafana dashboards, taken
 against demo data (`npm run dev` fills the viewer; never a real export).
 
