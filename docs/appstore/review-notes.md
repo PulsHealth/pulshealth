@@ -7,29 +7,22 @@ needs to answer follow-up questions without inventing anything.
 ## Before you submit
 
 Fill in the four placeholders below with the values from the throwaway review
-backend. Standing that up is [`review-backend.md`](review-backend.md); do it
-first: the notes walk the reviewer through a sync, and that needs it. (The
-first-run flow and the export path in the notes' WITHOUT A DATABASE section do
-not — since 1.6 the flow asks for no database; the Sync tab does.) The app
-calls the sync destination "your database", and so do the notes; the
-placeholder names below predate that and are only names.
+backend ([`review-backend.md`](review-backend.md)). Stand that up first: the
+notes walk the reviewer through a sync. (The first run and the export path in
+WITHOUT A DATABASE need no database.) The placeholder names say "server"; the
+app and the notes say "database" — same thing.
 
 | Placeholder | What it is |
 |---|---|
 | `<<<REVIEW_SERVER_URL>>>` | The HTTPS URL of the review instance, e.g. `https://review.example.net`. Must be HTTPS and reachable from anywhere. |
-| `<<<REVIEW_TOKEN>>>` | Its `PULS_TOKEN`. Rotate it after review. |
+| `<<<REVIEW_TOKEN>>>` | Its `PULS_TOKEN`. Never reuse it after review: it ends up in Apple's notes. |
 | `<<<REVIEW_USER_ID>>>` | The user UUID, `5ea4d000-0000-4000-8000-000000000001` unless you changed it. |
 | `<<<REVIEW_EXPIRY>>>` | The date you intend to take the instance down. Keep it up until the app is approved. |
 
-The field's limit is 4000 characters and the filled-in block below is 3,862
-(the placeholder version measures 3,797; a 29-character URL, a 64-character
-token, the 36-character UUID and "October 31, 2026" add 65) — 3,917 if each of
-its 55 line breaks counts as two, which is the reading to budget for. So any
-addition needs a matching cut. Measure the filled copy before pasting — the
-block has overrun before (the `puls://` section took it to about 4,800 until
-the export section forced a recount, iOS 27's history page was paid for by
-shorter server and pairing sentences, and 1.6's swiped first run by a shorter
-step 2 and local-network paragraph).
+The field's limit is 4,000 characters. The block below is 3,797 with the
+placeholders and about 3,860 filled in — about 3,920 if each of its 55 line
+breaks counts as two, which is the reading to budget for. Any addition needs a
+matching cut; measure the filled copy before pasting.
 
 Do not paste a QR image into the notes — the reviewer cannot scan a picture on
 the same screen they are reading. The typed path below is the one they will
@@ -179,7 +172,4 @@ real person's health history.
 
 ### After approval
 
-1. Take the review instance down (`docker compose down -v` in its directory).
-2. Rotate `PULS_TOKEN` even so, in case the notes are cached anywhere.
-3. Update `<<<REVIEW_EXPIRY>>>` here for the next submission rather than
-   leaving a stale date.
+Take the review instance down ([`review-backend.md`](review-backend.md) § 6).
