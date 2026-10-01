@@ -130,6 +130,31 @@ public enum ReadableHistory {
         return recorded
     }
 
+    /// What `HealthSyncEngine.refreshReadableHistory` does for one raw type.
+    enum RefreshAction: Sendable, Equatable {
+        case none
+        /// Write the new date down; nothing to redo.
+        case record
+        /// Reset the type's anchors and reopen its backfill.
+        case resweep
+        /// Another run holds the type. Leave it — writing a widened date now
+        /// would let that run ack a page read under the old limit after the
+        /// record says there is none — and retry at the next refresh.
+        case deferUntilReleased
+    }
+
+    /// The decision behind `RefreshAction`, from a confirmed change (see
+    /// `resolve`), whether the type has progress, and whether a run holds it.
+    static func refreshAction(change: Change, hasProgress: Bool, isActive: Bool) -> RefreshAction {
+        switch change {
+        case .unchanged: return .none
+        case .narrowed: return .record
+        case .widened:
+            if isActive { return .deferUntilReleased }
+            return hasProgress ? .resweep : .record
+        }
+    }
+
     /// A limit that bites: `since` when it is later than where a pass starts
     /// reading anyway, else nil. A limit at or before the start cuts nothing
     /// off, so there is nothing to clamp, record, or later re-read.

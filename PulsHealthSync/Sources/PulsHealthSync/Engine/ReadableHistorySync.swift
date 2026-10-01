@@ -103,8 +103,10 @@ extension HealthSyncEngine {
     /// new date. Aggregates, the rings and the workout phases keep their own
     /// record and act on it when they next run.
     ///
-    /// A type another run holds is left for the next refresh, which is then
-    /// not rate-limited. At most every `readableHistoryInterval` unless
+    /// A widened type another run holds is left alone — not even its new
+    /// date is written, or that run could ack a page read under the old
+    /// limit after the record says there is none — for the next refresh,
+    /// which is then not rate-limited. At most every `readableHistoryInterval` unless
     /// `force`; call it before claiming types. Does nothing before iOS 27.
     @discardableResult
     public func refreshReadableHistory(force: Bool = false) async -> [String: Date] {
@@ -124,24 +126,25 @@ extension HealthSyncEngine {
             let since = await confirmedLimit(
                 for: identifier, recorded: state.readableSince,
                 reported: ReadableHistory.effectiveLimit(current[identifier], readingFrom: config.startDate))
-            switch ReadableHistory.change(from: state.readableSince, to: since) {
-            case .unchanged:
+            let change = ReadableHistory.change(from: state.readableSince, to: since)
+            switch ReadableHistory.refreshAction(
+                change: change, hasProgress: ReadableHistory.hasRawProgress(state),
+                isActive: activeSyncs.contains(identifier)) {
+            case .none:
                 continue
-            case .narrowed:
+            case .deferUntilReleased:
+                deferred = true
+            case .record:
                 await store.recordReadableSince(identifier, since)
-                await eventLog.log(
-                    .info, type: identifier,
-                    "Health access is limited to data from \(Self.day(since)) on"
-                        + (ReadableHistory.hasRawProgress(state)
-                            ? " — what was already synced stays on the server"
-                            : " — older history is not read until access is widened"))
-            case .widened where !ReadableHistory.hasRawProgress(state):
-                await store.recordReadableSince(identifier, since)
-            case .widened:
-                guard !activeSyncs.contains(identifier) else {
-                    deferred = true
-                    continue
+                if change == .narrowed {
+                    await eventLog.log(
+                        .info, type: identifier,
+                        "Health access is limited to data from \(Self.day(since)) on"
+                            + (ReadableHistory.hasRawProgress(state)
+                                ? " — what was already synced stays on the server"
+                                : " — older history is not read until access is widened"))
                 }
+            case .resweep:
                 // Held for the reset, like `resetType`: a run that started
                 // now would persist its old anchor over it.
                 activeSyncs.insert(identifier)

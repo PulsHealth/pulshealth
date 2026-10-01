@@ -68,6 +68,28 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
         #expect(ReadableHistory.resolve(recorded: nil, reported: nil, olderHistoryFound: false) == nil)
     }
 
+    // MARK: - What a refresh does
+
+    @Test func aRefreshActsOnAConfirmedChange() {
+        #expect(ReadableHistory.refreshAction(change: .unchanged, hasProgress: true, isActive: false) == .none)
+        #expect(ReadableHistory.refreshAction(change: .narrowed, hasProgress: true, isActive: false) == .record)
+        #expect(ReadableHistory.refreshAction(change: .widened, hasProgress: true, isActive: false) == .resweep)
+        #expect(ReadableHistory.refreshAction(change: .widened, hasProgress: false, isActive: false) == .record)
+    }
+
+    /// A run holding the type could ack a page read under the old limit
+    /// after a widened date was written, progress or not: nothing is
+    /// written until it lets go.
+    @Test func aWideningWaitsForTheRunHoldingTheType() {
+        #expect(ReadableHistory.refreshAction(change: .widened, hasProgress: true, isActive: true)
+            == .deferUntilReleased)
+        #expect(ReadableHistory.refreshAction(change: .widened, hasProgress: false, isActive: true)
+            == .deferUntilReleased)
+        // A narrowing is safe to note under a run: it only adds a clamp.
+        #expect(ReadableHistory.refreshAction(change: .narrowed, hasProgress: true, isActive: true) == .record)
+        #expect(ReadableHistory.refreshAction(change: .unchanged, hasProgress: true, isActive: true) == .none)
+    }
+
     @Test func aLimitGoingAwayWidens() {
         #expect(ReadableHistory.change(from: limit, to: nil) == .widened)
     }
