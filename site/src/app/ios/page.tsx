@@ -1,5 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Activity, ArrowRight, BarChart3, Bot, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Heart, History, Lock, Moon, QrCode, RefreshCw, Scale, Terminal, Utensils, Wind } from "lucide-react";
+import { Activity, ArrowRight, BarChart3, Bot, Compass, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Heart, History, Lock, Moon, QrCode, RefreshCw, Scale, Share2, Terminal, Utensils, Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,31 @@ export const metadata = {
     canonical: '/ios/',
   },
 };
+
+const phoneFeatures = [
+  {
+    title: "Explore What You Have",
+    description: "Every Apple Health type, by category. Open one to see its past year: how many samples, from which apps and devices, how the values spread against the type's typical range, and how much arrives each day. Summaries stay on the phone so a type opens instantly next time; Delete Analysis removes them.",
+    icon: Compass,
+  },
+  {
+    title: "Export on Demand",
+    description: "Pick the types and any hourly or daily series, a preset range or your own start and end dates, and write CSV or JSONL files, zipped into one if you like. They go to the share sheet, nothing is uploaded, and the app deletes its copy once they are shared.",
+    icon: Share2,
+  },
+  {
+    title: "Sync When You Are Ready",
+    description: "Setup is four short pages, and none of them asks for a database. Connect one from the Sync tab whenever you like. On iOS 27, share only the past 30 days and PulsHealth says so, leaves older data in your database untouched, and catches up once you allow the rest.",
+    icon: RefreshCw,
+  },
+];
+
+const screenshots = [
+  { src: "/screenshots/app-unlock.webp", alt: "First run: Unlock your Health Data, with Explore, Export and Sync", caption: "First run" },
+  { src: "/screenshots/app-explore.webp", alt: "Explore tab: Apple Health types by category, each with its sample count over the past year", caption: "Explore" },
+  { src: "/screenshots/app-type-page.webp", alt: "Heart Rate's Type page: description, analysis over the past year, sample counts, sources and the value distribution", caption: "A Type page" },
+  { src: "/screenshots/app-export.webp", alt: "Export tab: data types, aggregate series, a date range, CSV or JSONL and a zip option", caption: "Export" },
+];
 
 const syncFeatures = [
   {
@@ -36,7 +62,7 @@ const syncFeatures = [
   },
   {
     title: "Pair by Scanning",
-    description: "The PulsHealth stack prints a pairing block with the URL, bearer token and user ID, plus a QR code that encodes all three. Scan it from the Sync tab, or type the values in by hand.",
+    description: "The PulsHealth stack prints a pairing block with the URL, bearer token and user ID, plus a QR code that encodes all three. Scan it from the Sync tab or with the Camera app, paste the pairing code, or type the values in. The app always asks before it uses one.",
     icon: QrCode,
   },
   {
@@ -136,7 +162,7 @@ export default function AppPage() {
             <ul className="space-y-4 text-muted-foreground">
               <li>
                 <strong className="text-foreground">It is on the App Store.</strong> Free, for
-                iPhone. You can also build it yourself with Xcode 26 and XcodeGen. Running your own
+                iPhone and iPad. You can also build it yourself with Xcode 26.5 or later and XcodeGen. Running your own
                 build on a real iPhone needs a paid Apple Developer team, because the HealthKit
                 background-delivery entitlement requires one.
               </li>
@@ -169,6 +195,47 @@ export default function AppPage() {
             </div>
           </CardContent>
         </Card>
+      </section>
+
+      {/* On the phone */}
+      <section id="app" className="container mx-auto max-w-7xl px-4 pb-24">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold tracking-tight mb-4">On the Phone</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Four tabs: Explore, Export, Sync and Settings. Exploring and exporting need no
+            database, no account and no network.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto mb-12">
+          {screenshots.map((shot) => (
+            <figure key={shot.src} className="overflow-hidden rounded-2xl border bg-[#0b0b0c] shadow-lg shadow-black/10">
+              <Image src={shot.src} alt={shot.alt} width={600} height={1304} className="w-full" />
+              <figcaption className="border-t border-white/10 px-3 py-2 text-center text-xs text-white/60">
+                {shot.caption}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {phoneFeatures.map((feature) => (
+            <Card key={feature.title} className="h-full">
+              <CardHeader>
+                <div className="p-3 rounded-xl bg-brand-muted text-brand w-fit mb-4">
+                  <feature.icon className="h-6 w-6" />
+                </div>
+                <CardTitle>{feature.title}</CardTitle>
+                <CardDescription className="text-base">
+                  {feature.description}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Screenshots from the iOS simulator with the app&apos;s built-in demo data, nobody&apos;s real health data.
+        </p>
       </section>
 
       {/* Sync Features Section */}
