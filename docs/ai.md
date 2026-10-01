@@ -9,6 +9,14 @@ read-only and talks only to the product API, never to the database. This
 page is the client-side setup; the server's own README is
 [`server/mcp/README.md`](../server/mcp/README.md).
 
+For an assistant reading about the project rather than your data, the
+repository's [`llms.txt`](../llms.txt) indexes the documentation, and
+pulshealth.com serves it at <https://pulshealth.com/llms.txt>: the same file,
+rendered at build time with its links pointed at the pages the site renders
+under `/docs/` (the file on GitHub where there is none), so an assistant can
+follow them from either copy. [`AGENTS.md`](../AGENTS.md) is the companion
+for an assistant contributing to the code.
+
 ## What is available today
 
 | Ask about | Tool the assistant uses |

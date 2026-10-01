@@ -161,7 +161,7 @@ and so are the ones decided against (its "Not planned").
 | AI-1 | `server/mcp`: a read-only MCP server over the product API, as a `stdio` binary and a streamable-HTTP Compose service. | M | Done |
 | AI-2 | Setup docs for Claude Desktop, Claude Code, Cursor and ChatGPT, with the "how did I sleep this week" demo. | M | Done (`docs/ai.md`) |
 | AI-3 | Export: `GET /v1/export` (CSV/JSONL) and a CLI. | S | Done (`tools/puls-export`) |
-| AI-4 | `llms.txt` on the docs site and an `AGENTS.md` in the repository. | S | Both in the repository; pulshealth.com does not serve `llms.txt` — roadmap § 3 |
+| AI-4 | `llms.txt` on the docs site and an `AGENTS.md` in the repository. | S | Done: both in the repository, and `site/` renders `llms.txt` at https://pulshealth.com/llms.txt with its links pointed at the rendered documents |
 | AI-5 | ChatGPT custom GPT Action from `/openapi.json`. | S | Done (`docs/ai.md`) |
 | AI-6 | `GET /v1/summary` as compact markdown to paste into any chat. | C | Done, plus `get_summary` on the MCP server |
 | AI-7 | Opt-in raw-SQL MCP tool over a read-only role. | C | Dropped: `server/mcp` is a read-only client of the product API and never holds a database URL. SQL users have `psql` and `docs/database-guide.md` |
