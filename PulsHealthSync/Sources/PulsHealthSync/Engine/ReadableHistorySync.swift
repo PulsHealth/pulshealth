@@ -54,18 +54,44 @@ extension HealthSyncEngine {
 
     /// The limit a pass over `identifier` must stay within: HealthKit's
     /// answer now, or — when it cannot give one — `recorded`, the date the
-    /// pass last ran under, so a pass that was clamped stays clamped.
+    /// pass last ran under, so a pass that was clamped stays clamped. A
+    /// widening HealthKit reports stands only once it has returned a sample
+    /// older than `recorded` (`confirmedLimit`).
     func readableLimit(for identifier: String, recorded: Date?) async -> ReadableLimit {
         guard let dates = await currentReadableHistory(for: [identifier]) else {
             return ReadableLimit(since: recorded, isFresh: false)
         }
-        return ReadableLimit(since: dates[identifier], isFresh: true)
+        return ReadableLimit(
+            since: await confirmedLimit(for: identifier, recorded: recorded, reported: dates[identifier]),
+            isFresh: true)
+    }
+
+    /// `reported`, unless it is a widening HealthKit cannot back with a
+    /// sample older than `recorded` — then `recorded`
+    /// (`ReadableHistory.resolve`). Access switched to None looks exactly
+    /// like a lifted limit in `earliestAuthorizedSampleDate(for:)`, and
+    /// acting on it would reset a series with nothing left to clamp it.
+    func confirmedLimit(for identifier: String, recorded: Date?, reported: Date?) async -> Date? {
+        guard let recorded, ReadableHistory.change(from: recorded, to: reported) == .widened else {
+            return reported
+        }
+        let older = await ReadableHistory.hasHistory(
+            of: identifier, endingBefore: recorded, in: healthStore)
+        let resolved = ReadableHistory.resolve(recorded: recorded, reported: reported, olderHistoryFound: older)
+        if !older {
+            await eventLog.log(
+                .debug, type: identifier,
+                "Health access reports a wider limit (\(Self.day(reported))), but nothing older than \(Self.day(recorded)) can be read — access may be set to None; still reading only from \(Self.day(recorded))")
+        }
+        return resolved
     }
 
     /// Re-read every enabled type's earliest readable date, note what moved,
     /// and re-sweep raw types whose access has widened. Returns the dates.
     ///
-    /// A widening — the date moved earlier, or the limit went away — means
+    /// A widening — the date moved earlier, or the limit went away, and
+    /// HealthKit returns a sample older than the recorded date to prove it
+    /// (`confirmedLimit`; access set to None reports no limit too) — means
     /// history the sync could not read is readable now. A raw type's anchor
     /// is past everything it has read and would never return those samples
     /// (an anchor taken under a limit returns nothing older after the limit
@@ -95,7 +121,9 @@ extension HealthSyncEngine {
         for identifier in config.enabledTypes.sorted()
         where HealthTypeCatalog.descriptor(for: identifier)?.sampleType != nil {
             let state = await store.state(for: identifier)
-            let since = ReadableHistory.effectiveLimit(current[identifier], readingFrom: config.startDate)
+            let since = await confirmedLimit(
+                for: identifier, recorded: state.readableSince,
+                reported: ReadableHistory.effectiveLimit(current[identifier], readingFrom: config.startDate))
             switch ReadableHistory.change(from: state.readableSince, to: since) {
             case .unchanged:
                 continue
@@ -131,7 +159,7 @@ extension HealthSyncEngine {
     }
 
     /// "Sep 1, 2026", or "all of it" for no limit — for log lines.
-    private static func day(_ date: Date?) -> String {
+    static func day(_ date: Date?) -> String {
         date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "all of it"
     }
 }

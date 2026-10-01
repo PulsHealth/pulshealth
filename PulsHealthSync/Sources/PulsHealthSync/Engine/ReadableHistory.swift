@@ -85,7 +85,22 @@ public enum ReadableHistory {
     }
 
     /// The change from the date a pass recorded to the one HealthKit reports
-    /// now. Nil means unlimited on both sides.
+    /// now. Nil means unlimited on both sides — as far as the dates go.
+    ///
+    /// A `.widened` here is only a claim. HealthKit leaves a type out of
+    /// its answer unless it is limited *with a date*, so a type the user
+    /// switched to **None** in Settings is absent exactly like one switched
+    /// to Full Access. Measured on the iOS 27.0 simulator (24A434): Steps
+    /// switched from Limited to None under Settings → Privacy & Security →
+    /// Health → (app) dropped out of `earliestAuthorizedSampleDate(for:)`,
+    /// and a sample query, a daily statistics query and an anchored query
+    /// for it all came back empty without an error (the anchored one, from
+    /// an anchor taken under the limit, with no deletions either). Acting on
+    /// that "widening" would reset an aggregate series and recompute it from
+    /// its start date with nothing to clamp it, every bucket a null. So a
+    /// pass confirms a widening with `resolve(recorded:reported:olderHistoryFound:)`
+    /// before it acts: switched back to Full Access, the same probe found
+    /// the older samples at once.
     public static func change(from recorded: Date?, to current: Date?) -> Change {
         switch (recorded, current) {
         case (nil, nil):
@@ -99,6 +114,20 @@ public enum ReadableHistory {
             if current > recorded.addingTimeInterval(tolerance) { return .narrowed }
             return .unchanged
         }
+    }
+
+    /// The date a pass should run under: HealthKit's report, except that a
+    /// widening only counts once HealthKit has returned a sample older than
+    /// the recorded date (`hasHistory(of:endingBefore:in:)`). Without one the
+    /// report may as well be access set to None, and the recorded date
+    /// stands — the pass keeps clamping to it and resets nothing.
+    ///
+    /// A type with genuinely no older data fails the probe too. Nothing is
+    /// lost then: there is no older history to re-read, and the clamp still
+    /// keeps nulls off the empty range.
+    static func resolve(recorded: Date?, reported: Date?, olderHistoryFound: Bool) -> Date? {
+        guard change(from: recorded, to: reported) == .widened, !olderHistoryFound else { return reported }
+        return recorded
     }
 
     /// A limit that bites: `since` when it is later than where a pass starts
@@ -237,6 +266,44 @@ public enum ReadableHistory {
             }
         } onCancel: {
             once.resume(with: .failure(CancellationError()))
+        }
+    }
+
+    /// Whether HealthKit returns anything of `identifier` that ends before
+    /// `date` — the evidence that a widening is real (`resolve`). One
+    /// sample, or for the rings one day's summary before `date`'s day. No
+    /// answer — an error, a timeout, a type with no older data — is no: a
+    /// widening is never inferred from silence.
+    static func hasHistory(
+        of identifier: String, endingBefore date: Date, in healthStore: HKHealthStore,
+        calendar: Calendar = .current
+    ) async -> Bool {
+        do {
+            return try await withTimeout {
+                if HealthTypeCatalog.isActivitySummary(identifier) {
+                    let units: Set<Calendar.Component> = [.era, .year, .month, .day]
+                    guard let lastDay = calendar.date(
+                        byAdding: .day, value: -1, to: calendar.startOfDay(for: date))
+                    else { return false }
+                    var start = calendar.dateComponents(units, from: ExportPlan.allTimeFloor)
+                    start.calendar = calendar
+                    var end = calendar.dateComponents(units, from: lastDay)
+                    end.calendar = calendar
+                    let predicate = HKQuery.predicate(forActivitySummariesBetweenStart: start, end: end)
+                    return !(try await HKActivitySummaryQueryDescriptor(predicate: predicate)
+                        .result(for: healthStore)).isEmpty
+                }
+                guard let type = HealthTypeCatalog.descriptor(for: identifier)?.sampleType else { return false }
+                let older = HKSampleQueryDescriptor(
+                    predicates: [.sample(
+                        type: type,
+                        predicate: HKQuery.predicateForSamples(withStart: nil, end: date, options: .strictEndDate))],
+                    sortDescriptors: [],
+                    limit: 1)
+                return !(try await older.result(for: healthStore)).isEmpty
+            }
+        } catch {
+            return false
         }
     }
 

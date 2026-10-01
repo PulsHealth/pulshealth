@@ -36,6 +36,38 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
         #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(59 * 60)) == .unchanged)
     }
 
+    // MARK: - Confirming a widening
+
+    /// Settings → Health → (app) → (type) → None drops the type out of
+    /// `earliestAuthorizedSampleDate(for:)` exactly like Full Access does.
+    /// No older sample, no widening: the recorded date stands.
+    @Test func noLimitReportedButNothingOlderReadableIsUnchanged() {
+        let resolved = ReadableHistory.resolve(recorded: limit, reported: nil, olderHistoryFound: false)
+        #expect(resolved == limit)
+        #expect(ReadableHistory.change(from: limit, to: resolved) == .unchanged)
+    }
+
+    @Test func noLimitReportedAndAnOlderSampleReadIsAWidening() {
+        let resolved = ReadableHistory.resolve(recorded: limit, reported: nil, olderHistoryFound: true)
+        #expect(resolved == nil)
+        #expect(ReadableHistory.change(from: limit, to: resolved) == .widened)
+    }
+
+    @Test func anEarlierDateNeedsAnOlderSampleToo() {
+        let earlier = limit.addingTimeInterval(-10 * day)
+        #expect(ReadableHistory.resolve(recorded: limit, reported: earlier, olderHistoryFound: false) == limit)
+        #expect(ReadableHistory.resolve(recorded: limit, reported: earlier, olderHistoryFound: true) == earlier)
+    }
+
+    @Test func onlyWideningsAreQuestioned() {
+        let later = limit.addingTimeInterval(10 * day)
+        // A narrowing or the same date passes through whatever the probe says.
+        #expect(ReadableHistory.resolve(recorded: limit, reported: later, olderHistoryFound: false) == later)
+        #expect(ReadableHistory.resolve(recorded: nil, reported: limit, olderHistoryFound: false) == limit)
+        #expect(ReadableHistory.resolve(recorded: limit, reported: limit, olderHistoryFound: false) == limit)
+        #expect(ReadableHistory.resolve(recorded: nil, reported: nil, olderHistoryFound: false) == nil)
+    }
+
     @Test func aLimitGoingAwayWidens() {
         #expect(ReadableHistory.change(from: limit, to: nil) == .widened)
     }
