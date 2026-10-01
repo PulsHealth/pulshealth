@@ -102,7 +102,7 @@ targets:
         # 1.5 (16) went to TestFlight on 2026-09-29; see
         # docs/appstore/README.md § Release record, and bump both here before
         # every archive.
-        CURRENT_PROJECT_VERSION: 18
+        CURRENT_PROJECT_VERSION: 19
         MARKETING_VERSION: 1.6
         # The tint every control takes (Assets.xcassets/AccentColor): the blue
         # of the logo's pulse line, a shade lighter in dark mode.

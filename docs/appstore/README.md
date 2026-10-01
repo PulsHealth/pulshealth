@@ -106,9 +106,9 @@ and cannot be prepared in the repository.
       untracked.
 - [ ] Bump `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in
       `PulsHealth/project.yml` if this is not the first build. They are `1.6` /
-      `18`, not yet uploaded; `1.6` / `17` went to TestFlight on 2026-09-30
-      (and `1.5` / `16` on 2026-09-29, never submitted), so 18 is the next
-      build App Store Connect accepts and any upload after it needs 19.
+      `19`, not yet uploaded; `1.6` / `17` and `18` went to TestFlight on
+      2026-09-30 (and `1.5` / `16` on 2026-09-29, never submitted), so 19 is
+      the next build App Store Connect accepts and any upload after it needs 20.
 - [ ] Archive for a real device with the maintainer's team and upload.
       `ITSAppUsesNonExemptEncryption` is already `false` in `Info.plist`, so
       there is no export-compliance questionnaire per build.
@@ -167,7 +167,8 @@ rather than from memory. Add a row per release.
 | Version | Released | Notes |
 |---|---|---|
 | 1.3 | 2026-01-24 | CSV/JSON export app with QR data requests; the listing described that until 1.4. |
-| 1.6 (18) | — | Not yet uploaded. Fixes from the review of #86 (a type set to None in Settings must not read as widened access). |
+| 1.6 (19) | — | Not yet uploaded. The first run redesigned: four swiped pages (Unlock your Health Data; Which Health data would you like to use?, which cannot be skipped; Export; Sync to your own database), no Choose Data or summary; the app says "database" for the sync destination (the listing, privacy policy and site did in #90); onboarding bug fixes. |
+| 1.6 (18) | — | Uploaded to TestFlight 2026-09-30 (from 154bda8); not submitted. Fixes from the review of #86 (a type set to None in Settings must not read as widened access). |
 | 1.6 (17) | — | Uploaded to TestFlight 2026-09-30 (Xcode 27.0, iOS 27.0 SDK) for the device passes; not submitted. UI revamp: Explore, Export builder, Sync, Settings; analysis summaries stored on device (privacy policy updated 2026-09-30). iOS 27 limited history access: no overwrite or deletion of server history the app cannot read, a re-sweep when access widens, Don't Allow on the history page handled as an answer, and the review notes' step 3 names that page. Supersedes 1.5 (16), which was never submitted. Screenshots must be retaken. |
 | 1.5 (16) | — | Uploaded to TestFlight 2026-09-29 for device testing; not submitted. Server-less export (#77), pairing from a link, the Camera app or the clipboard (#77), and the reinstall/first-sync fixes (#82). Needs a device pass before submission: the iOS 26 continued-processing first run, leaving the app mid-backfill, export on a real device. |
 | 1.4 (15) | 2026-09-19 | Current version on the store. Self-hosted sync: first-run onboarding with QR pairing, Keychain token, per-server sync state, capabilities-gated UI, published type vocabulary. Build 14 was rejected 2026-09-19 under 5.2.5 (subtitle "Apple Health to your server"; "Apple" is not allowed in the name or subtitle) and 5.1.1(iv) ("Grant Health Access" button and "Skip for Now" on the pre-permission screen); build 15 fixed both (#71) and was approved the same day. Reviewed on an iPad Air 11-inch (M3). |

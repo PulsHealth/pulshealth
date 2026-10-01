@@ -233,7 +233,7 @@ flags.
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
 | Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
 | Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.6`, ahead of the `1.4` on the store — see [Release record](README.md#release-record) |
-| Build | `CURRENT_PROJECT_VERSION`, currently `18`, ahead of the shipped `15` (16 and 17 went to TestFlight only) |
+| Build | `CURRENT_PROJECT_VERSION`, currently `19`, ahead of the shipped `15` (16, 17 and 18 went to TestFlight only) |
 | Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
