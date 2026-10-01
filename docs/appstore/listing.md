@@ -50,7 +50,9 @@ Sync Apple Health to a server you run yourself: full history first, then live up
 ## Description
 
 Limit 4000. Opens by saying where the data goes, because that is the one thing
-a reader has to understand before installing.
+a reader has to understand before installing. The count under the block is
+characters; budget for App Store Connect counting each of its 36 line breaks
+as two (3,958 today), as the review notes do.
 
 ```
 PulsHealth copies the health data on your iPhone to a server you run yourself.
@@ -63,10 +65,10 @@ No server yet? The app is still useful. Explore shows what is in Apple Health, t
 
 WHAT IT DOES
 
-• Full history first. The initial backfill exports everything from the start date you choose, with live progress and an ETA, and saves its place after every batch so it is safe to interrupt.
+• Full history first. The initial backfill exports everything from the start date you choose, and saves its place after every batch so it is safe to interrupt.
 • Then it keeps up. New samples follow automatically — in the foreground whenever you open the app, and in the background when iOS allows it.
 • You pick the data. Around 80 HealthKit types grouped the way Apple Health groups them: activity, heart, body, respiratory, sleep, nutrition, vitals, workouts and more. Turn on a starter set in one tap, or choose type by type.
-• See what you have. Explore lists every type by category. Analyze one to see its past year: how many samples, from which apps and devices, how the values are spread and how much arrives each day, plus a short article on what the type measures. Summaries only; no samples are kept.
+• See what you have. Explore lists every type by category. Open one to see its past year: how many samples, from which apps and devices, how the values are spread and how much arrives each day, plus a line on what the type measures. Summaries only; no samples are kept.
 • More than raw numbers. Workouts carry their GPS route and per-second sensor series; activity rings come across as daily summaries; and any quantity type can also be sent as on-device aggregates (hourly sums, daily averages) instead of, or alongside, raw samples.
 • Export to files. With or without a server, build each export on its own: the types and series you want, for the last 30 days, 90 days, a year, all time, or a date range you choose, to CSV (one file per kind of data, for spreadsheets) or JSONL (complete, and replayable into a server later), then save to Files or share.
 • Set up by scanning. When you want a server, the Sync tab takes the pairing QR code it prints, with its URL, token and user ID in it. Scan it and you are connected — or type the three values in by hand if you prefer.
@@ -92,7 +94,7 @@ REQUIREMENTS
 iPhone running iOS 17 or later. Syncing needs a server you can reach; exporting to files does not. Apple Watch data arrives once iOS syncs it to the phone.
 ```
 
-`[3965/4000]`
+`[3922/4000]`
 
 > The description above is the **next submission's** (1.6): it adds on-device
 > export (the "No server yet?" paragraph, the "Export to files" bullet, the
@@ -289,10 +291,11 @@ maintainer's team. The order below tells the story a browser needs:
 
 1. **Welcome** — the first-run screen: explore, export, and sync if you want.
    This one *is* honest from the simulator if a device is unavailable.
-2. **Explore with data** — the catalog by category, with counts and sparklines
-   for the analyzed types. Device only.
-3. **A Type page** — the analysis charts, the aggregate preview and the
-   article for one type (Heart Rate or Body Weight). Device only.
+2. **Explore with data** — the catalog by category, each row with its sample
+   count over the past year and when its last sample arrived. Device only.
+3. **A Type page** — the one-line description, the analysis charts (the
+   histogram with its typical range, samples over time) and the aggregate
+   preview for one type (Heart Rate or Body Weight). Device only.
 4. **Export builder** — types, a series, a custom range, CSV or JSONL. Fine
    from the simulator if the selection is realistic.
 5. **Sync status** — the status card after a backfill: real totals and

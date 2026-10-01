@@ -18,8 +18,9 @@ free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
 
 **No server? Explore and export.** The app does not need one to be useful:
 the **Explore** tab shows what Apple Health holds for every type — how many
-samples, since when, from which apps and devices, the spread of values, a
-chart over time, and an article on what the type measures — and the
+samples, since when, from which apps and devices, the spread of values
+against the type's typical range, a chart over time, and a line on what the
+type measures — and the
 **Export** tab writes the types and series you choose straight from HealthKit
 to CSV (for spreadsheets) or JSONL (the sync protocol itself — complete, and
 replayable into a server later), for the last 30 days up to all time or a date
