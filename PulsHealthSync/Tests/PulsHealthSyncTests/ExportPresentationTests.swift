@@ -147,7 +147,8 @@ import Testing
     @Test func nothingSelectedPointsAtDataTypes() throws {
         let copy = try #require(ExportFailureCopy(error: HealthExportError.nothingSelected))
         #expect(copy.suggestion == .dataTypes)
-        #expect(copy.message.contains("Data Types"))
+        #expect(copy.message.contains("Data Types on the Export tab"))
+        #expect(!copy.message.contains("Data Types tab"))
     }
 
     @Test func aLockedDeviceSaysToUnlock() throws {

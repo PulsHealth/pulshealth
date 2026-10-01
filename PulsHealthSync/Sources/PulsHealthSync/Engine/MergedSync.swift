@@ -454,7 +454,7 @@ extension HealthSyncEngine {
             activities[identifier] = .failed
             backfillRuns[identifier] = nil
             await store.recordError(identifier: identifier, error: SyncError.authorizationNotDetermined)
-            await eventLog.log(.error, type: identifier, "Health access not determined — grant access from the Dashboard")
+            await eventLog.log(.error, type: identifier, "Health access not determined — tap Grant Health Access on the Explore tab")
             return nil
         } catch let error as HKError where error.code == .errorDatabaseInaccessible {
             // Device locked: the Health DB relocks ~10 min after lock. Expected

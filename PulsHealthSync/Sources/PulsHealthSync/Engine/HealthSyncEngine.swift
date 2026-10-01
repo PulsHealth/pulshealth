@@ -878,7 +878,7 @@ public actor HealthSyncEngine {
             activities[identifier] = .failed
             backfillRuns[identifier] = nil
             await store.recordError(identifier: identifier, error: SyncError.authorizationNotDetermined)
-            await eventLog.log(.error, type: identifier, "Health access not determined — grant access from the Dashboard")
+            await eventLog.log(.error, type: identifier, "Health access not determined — tap Grant Health Access on the Explore tab")
         } catch let error as HKError where error.code == .errorDatabaseInaccessible {
             // Device locked: the Health DB is Protected-Unless-Open and relocks
             // ~10 min after lock. Expected during background runs — not a failure;
@@ -1487,7 +1487,7 @@ public enum SyncError: Error, LocalizedError {
         case .healthDataUnavailable:
             return "HealthKit is not available on this device"
         case .authorizationNotDetermined:
-            return "Health access not granted — tap Grant Health Access on the Dashboard"
+            return "Health access not granted — tap Grant Health Access on the Explore tab"
         case .unknownType(let identifier):
             return "Unknown type identifier: \(identifier)"
         case .reconciliationUnsupported(let identifier):
