@@ -261,24 +261,18 @@ read "Upgrading the database image" before or right after adopting it.
 
 `docker-compose.yml` pins PostgreSQL + TimescaleDB to one exact tag
 (`x-db-image`, shared by `db` and `migrate` so they cannot drift; currently
-`timescale/timescaledb-ha:pg17.11-ts2.29.2`). The floating `pg17` tag moves
-TimescaleDB minor versions underneath running installs — 2.27 → 2.29 changed
-its internal catalog and broke the role script until it was rewritten
-against the public `timescaledb_information` views — so bumping the tag is a
-deliberate step. What was verified for this pin, on a volume created by the
-2.27.1 image with compressed chunks, a continuous aggregate and the three
-roles:
+`timescale/timescaledb-ha:pg17.11-ts2.29.2`). A floating tag would move
+TimescaleDB minor versions underneath a running install, and those change
+its internal catalog, so bumping the tag is a deliberate step:
 
 - **The image does not upgrade the extension by itself.** It ships every
-  versioned `timescaledb-*.so` back to 2.17 and its only initdb hook is a
-  `CREATE EXTENSION` that runs on a brand-new volume, so the old database
-  starts under the new image and keeps working on its old extension
-  (`extversion` stays `2.27.1`, queries and `migrate` run). `migrate` prints
-  a NOTE whenever the installed extension differs from the one the image
-  ships.
-- **Upgrade the extension yourself, deliberately** — in a fresh session
-  (`psql -X`, first statement) with no app service connected, after a
-  `make backup`; extension updates are one-way:
+  versioned `timescaledb-*.so` back to 2.17 and only runs `CREATE EXTENSION`
+  on a brand-new volume, so an existing database keeps working on its old
+  extension version. `migrate` prints a NOTE whenever the installed
+  extension differs from the one the image ships.
+- **Upgrade the extension yourself, deliberately** — after a `make backup`
+  (extension updates are one-way), with no app service connected, as the
+  first statement of a fresh session (`psql -X`):
 
   ```bash
   docker compose stop ingest api web grafana
@@ -286,11 +280,9 @@ roles:
   docker compose up -d
   ```
 
-  Verified 2.27.1 → 2.29.2: the update drops the old `_compressed_hypertable_N`
-  parents, keeps the existing compressed chunks (and their grants) under
-  their old `compress_hyper_N_M_chunk` names next to new `<chunk>_compressed`
-  ones, and `migrate` — `099_read_roles.sh` included — runs clean before and
-  after it.
+  From 2.27 to 2.29 the update keeps existing compressed chunks, and their
+  grants, under their old `compress_hyper_N_M_chunk` names alongside new
+  `<chunk>_compressed` ones; `migrate` runs clean either side of it.
 - Bump the tag in `docker-compose.yml` only: CI's `db-migrate` job and
   `tests/test_healthkit_notebook.py` read the image from there.
 
@@ -298,23 +290,22 @@ roles:
 
 Ingest is the only internet-facing service, so it does not hold the
 superuser password: Compose connects it as the `ingest` role
-(`INGEST_DB_USER` defaults to `ingest`; `INGEST_DB_PASSWORD` is required),
-which `099_read_roles.sh` creates on every migrate run holding exactly what
+(`INGEST_DB_USER`, default `ingest`; `INGEST_DB_PASSWORD` is required),
+which `099_read_roles.sh` creates on every migrate run with exactly what
 `ingest/store.go` needs: `CONNECT`, `USAGE` on `public`,
 `SELECT/INSERT/UPDATE/DELETE` on every table and view in `public`,
-`USAGE/SELECT` on its sequences, and default privileges so tables and
-sequences added by future migrations are covered too. It has no `CREATE` on
-the schema, no `TRUNCATE`, and none of `SUPERUSER`, `CREATEROLE`,
-`CREATEDB`, `REPLICATION` or `BYPASSRLS`, so an ingest bug or a leaked
-`PULS_TOKEN` cannot drop tables, alter roles, or `COPY TO PROGRAM`.
-TimescaleDB propagates the grants to hypertable chunks (existing ones on
-grant, new ones as they are created), and the `SET LOCAL
+`USAGE/SELECT` on its sequences, and default privileges covering future
+tables and sequences. It has no `CREATE` on the schema, no `TRUNCATE`, and
+none of `SUPERUSER`, `CREATEROLE`, `CREATEDB`, `REPLICATION` or
+`BYPASSRLS`, so an ingest bug or a leaked token cannot drop tables, alter
+roles, or `COPY TO PROGRAM`. Before it commits, the script checks the exact
+role attributes and ACL set, that the grants reach hypertable chunks, and
+that the role may issue the `SET LOCAL
 timescaledb.max_tuples_decompressed_per_dml_transaction` that `InsertBatch`
-issues is a user-settable GUC; the script proves both, plus the exact role
-attributes and ACL set, before it commits.
+uses.
 
 To run ingest as the superuser instead (not recommended), set
-`INGEST_DB_USER=postgres` and `INGEST_DB_PASSWORD` to the same value as
+`INGEST_DB_USER=postgres` and `INGEST_DB_PASSWORD` to the value of
 `POSTGRES_PASSWORD` in `.env`, then `docker compose up -d ingest`. Either
 way, verify who is connected:
 
@@ -338,13 +329,12 @@ LEFT JOIN category_labels cl
  AND cl.value = c.value;
 ```
 
-The ground truth for this seed data is the HealthKit SDK bundled with Xcode:
-`HKTypeIdentifiers.h` maps each `HKCategoryTypeIdentifier*` to its category
-value enum, and `HKCategoryValues.h` defines the integer values and enum names.
-Refresh `010_category_labels.sql` after major Xcode/iOS SDK updates, or when
-adding support for newly exposed HealthKit category types. It carries the
-`-- puls:rerun` marker and its insert is an upsert, so after editing it
-`docker compose up -d` re-applies it; then verify the expected seed shape:
+The seed comes from the HealthKit SDK bundled with Xcode: `HKTypeIdentifiers.h`
+maps each `HKCategoryTypeIdentifier*` to its value enum, and
+`HKCategoryValues.h` defines the integers and enum names. Refresh it after
+major SDK updates or when adding a category type; it is a `-- puls:rerun`
+upsert, so `docker compose up -d` re-applies the edited file. Then check the
+seed's shape:
 
 ```bash
 docker compose exec db psql -U postgres -d postgres -tA \
@@ -352,48 +342,35 @@ docker compose exec db psql -U postgres -d postgres -tA \
 # iPhoneOS 26.5 SDK seed: 257|70
 ```
 
-`000_users.sql` adds the `users` table (which the per-row `user_id` foreign keys
-and the profile line's user upsert reference) and seeds the default user. It is
-file 000 because every data table in 001+ references it, so every schema this
-repository can build has been multi-user from its first migration.
-
-Storing a second person's data therefore needs nothing: point another phone at
-the same ingest URL with its own user ID and `ensureUser` creates the row before
-the first insert — no reset, no volume drop. Reading it back is per request:
-the product API answers for `PULS_USER_ID` unless a request says
-`?user=<uuid>`, which is allowed once the server runs with
-`PULS_MULTI_USER=true` (off by default; another user is then a `403`), and
-`GET /v1/users` lists who exists — see "Product API" below. The MCP server
-takes the user as a tool argument and the web viewer chooses one per session,
-both over that same parameter; Grafana's PulsHealth dashboard has had a
-`user` variable over `users` all along. Whether the *ingest* token is bound to
-a user depends on which kind it is — see "Tokens" below: a per-device token
-is, so with it `X-User-ID` must be absent or match (403 otherwise); the shared
-`PULS_TOKEN` is not, so with it `X-User-ID` is selection, not authentication,
-and everyone holding it can write as anyone. The product API's single
-`PULS_API_TOKEN` is likewise not bound to anyone: with `PULS_MULTI_USER` on it
-reads every user, which is the reason the gate defaults to off.
+`000_users.sql` adds the `users` table, which every data table's `user_id`
+foreign key and the profile line reference, and seeds the default user.
+Storing a second person's data therefore needs nothing: point another phone
+at the same ingest URL with its own user ID and `ensureUser` creates the row
+before the first insert. Reading it back is per request — the product API's
+`?user=<uuid>`, gated by `PULS_MULTI_USER` (see "Product API"), which the
+MCP server and the web viewer use too; Grafana's dashboard has a `user`
+variable. Whether an ingest token is bound to a user depends on its kind
+(see "Tokens").
 
 ### Tokens
 
 Ingest accepts two kinds of bearer token, and a request may present either.
 
 **The shared token.** `PULS_TOKEN` is one static value known to the server
-and every phone. Create it with `openssl rand -hex 32` (or let
-`scripts/bootstrap.sh` do it), put it in `.env`, and paste the same value
-into PulsHealth's server settings — the pairing block (`make pairing`) shows
-it next to the URL and user ID. It is compared in memory, in constant time,
-before anything else, and it carries no user: `X-User-ID` picks the user.
+and every phone, generated by `scripts/bootstrap.sh` (or `openssl rand -hex
+32`) and shown in the pairing block (`make pairing`) next to the URL and
+user ID. It is compared in memory, in constant time, and carries no user:
+`X-User-ID` picks the user, so anyone holding it can write as anyone.
 
 **Per-device tokens.** Each is issued from the CLI for one user, stored only
-as its SHA-256 (the plaintext is 32 random bytes hex-encoded — the same shape
-as the shared token, so the app's token field, the QR payload and every
-example here are unchanged), bound to that user, revocable on its own, and
+as its SHA-256 (the plaintext has the same shape as the shared token: 32
+random bytes, hex-encoded), bound to that user, revocable on its own, and
 stamped with when it was last used.
 
-Pairing a phone with one is a single command, which issues the token and
-prints the same block the shared token gets — URL, token, user ID and a QR
-code the app scans (**Sync → Set Up**, later **Sync → Database**: Scan Pairing Code):
+Pairing a phone with one is a single command. It prints the same block the
+shared token gets — URL, token, user ID and a QR code, which the app scans
+with Scan Pairing Code on its Database screen (**Sync → Set Up** before a
+database is configured, **Sync → Database** after):
 
 ```bash
 scripts/bootstrap.sh --issue-device "My iPhone"                  # the default user
@@ -402,17 +379,15 @@ scripts/bootstrap.sh --issue-device "Her iPhone" --user <uuid>   # someone else;
 #   The token is shown ONCE — only its hash is stored; a lost token is revoked and reissued.
 ```
 
-The URL in the code is worked out the way the pairing block's is —
-`PULS_PUBLIC_URL`, else this host's LAN address under `--lan` — and when
-there is none yet the command says so and issues nothing. `--url <URL>`
-names one for that code alone, without touching `.env`. The stack has to be
-running: the token is minted by `ingest devices issue` inside the ingest
-container, which is also what draws the code, so no `qrencode` is needed.
+The URL in the code is the pairing block's — `PULS_PUBLIC_URL`, else this
+host's LAN address under `--lan`; with neither, the command says so and
+issues nothing. `--url <URL>` sets one for that code alone, without touching
+`.env`. The stack must be running: `ingest devices issue`, inside the ingest
+container, mints the token and draws the code, so no `qrencode` is needed.
 
-The rest of the lifecycle is the CLI underneath. The `ingest` image is
-distroless, so it is the same binary run with `devices` as its first
-argument; `make devices` wraps `docker compose run --rm --no-deps ingest
-devices …` and hands it the same URL, so `issue` prints a QR code here too:
+The rest of the lifecycle is that CLI — the distroless `ingest` binary with
+`devices` as its first argument. `make devices` wraps `docker compose run
+--rm --no-deps ingest devices …` and hands it the same URL:
 
 ```bash
 make devices ARGS='issue --user 5ea4d000-0000-4000-8000-000000000001 --name "My iPhone"'
@@ -424,57 +399,50 @@ make devices ARGS='revoke 3'        # refused from the next request on; nothing 
 ```
 
 Run without `make` (`docker compose run --rm --no-deps ingest devices issue
-…` from `server/`), `issue` takes the URL from `PULS_PUBLIC_URL` in `.env` or
-from `--url`; a container cannot see the proxy in front of it or the host's
-LAN address, so with neither it still prints the token and user ID, says how
-to supply the URL, and draws no code. A URL the app would refuse — plain
-`http://` beyond the local network — is rejected before any token is minted.
-`ingest qr` is the drawing half on its own: it reads a payload on stdin
-(never an argument — the payload holds the token, and arguments show in
-`ps`), needs no database, and is what `scripts/bootstrap.sh` falls back to on
-a host without `qrencode`.
+…` from `server/`), `issue` takes the URL from `PULS_PUBLIC_URL` or `--url`
+only — a container cannot see the proxy in front of it or the host's LAN
+address — and with neither prints the token and user ID without a code. A
+URL the app would refuse (plain `http://` beyond the local network) is
+rejected before any token is minted. `ingest qr` draws a code on its own: it
+reads the payload on stdin (never an argument, which would show the token in
+`ps`), needs no database, and is what `scripts/bootstrap.sh` uses on a host
+without `qrencode`.
 
 `issue` creates the `users` row if it does not exist, so a household member
-can be given a token before their phone has ever synced — which also means a
-mistyped `--user` UUID quietly creates a new user; check `list` after. A
-request authenticated with a device token acts as that token's user:
-`X-User-ID` may be absent or equal to it, and any other value is refused
-with 403 before the body is read. The app sets the header from its own user
-ID setting, so the ID entered on the phone must match the one the token was
-issued for.
+can have a token before their phone has synced — and a mistyped `--user`
+quietly creates a new user; check `list` after. A request with a device
+token acts as that token's user: `X-User-ID` must be absent or equal to it,
+or the request is refused with 403 before the body is read. The app sends its
+own user ID (Settings → User, or the one a pairing code sets), so it must
+match the token's.
 
 **Order and failure modes.** The shared token is checked first, in memory;
 only then is the presented value hashed and looked up in `device_tokens`
 (one indexed probe, which also advances `last_seen_at` at most once a minute
-per token). If that lookup fails because the database is unreachable the
-answer is **503 `authentication unavailable`**, not 401 — the app retries 5xx
-but treats 401 as terminal, so a 401 there would tell the user their token
-is wrong and stall syncing until they retyped it. Only wrong credentials (a
-missing bearer, an unknown value, a revoked token) draw from the failure
-budget below; a user mismatch, a database error and every success cost
-nothing. Every `batches` row records which device wrote it
-(`device_token_id`, NULL for the shared token), and the per-batch log line
-carries it as `token_id`.
+per token). If the database cannot answer, the response is **503
+`authentication unavailable`**, not 401: the app retries 5xx but treats 401
+as terminal, so a 401 would stall syncing until the user retyped a token
+that was never wrong. Only wrong credentials (a missing bearer, an unknown
+value, a revoked token) draw from the failure budget (see "Rate limiting");
+a user mismatch, a database error and every success cost nothing. Every
+`batches` row records the device that wrote it (`device_token_id`, NULL for
+the shared token), and the per-batch log line carries it as `token_id`.
 
-**Turning the shared token off.** It stays enabled by default so an existing
-install is unchanged. Once every phone has its own token, set
-`PULS_ALLOW_SHARED_TOKEN=false` in `.env` (or empty `PULS_TOKEN`) and
-`docker compose up -d ingest`: the shared value stops authenticating, and
-with it the `X-User-ID` hole closes — no credential can then write as a
-user it was not issued for. `docker compose logs ingest` prints the auth
-mode at startup and warns (never fails) when the shared token is off and
-no device token is active, since nothing could authenticate. `make pairing`
-and `scripts/bootstrap.sh` accept a 401 on their probe in that mode and,
-having no token to show (only hashes are stored), print the
-`--issue-device` command that issues one with its QR code.
+**Turning the shared token off.** It is enabled by default. Once every phone
+has its own token, set `PULS_ALLOW_SHARED_TOKEN=false` in `.env` (or empty
+`PULS_TOKEN`) and `docker compose up -d ingest`: from then on no credential
+can write as a user it was not issued for. `docker compose logs ingest`
+prints the auth mode at startup and warns (never fails) when the shared
+token is off and no device token is active. In that mode `make pairing` and
+`scripts/bootstrap.sh` have no token to show (only hashes are stored), so
+they print the `--issue-device` command instead.
 
 ### Rate limiting
 
-One static token on a published port is guessable, so **ingest and the product
-API** both throttle **failed authentications** per client IP. Each address gets
-a token bucket holding **10 failures**, refilling at **10 per minute**. While
-the bucket has tokens a wrong token answers `401` as before; once it is empty
-every attempt from that address answers
+**Ingest and the product API** both throttle **failed authentications** per
+client IP: each address gets a token bucket of **10 failures**, refilling at
+**10 per minute**. While the bucket has tokens a wrong token answers `401`;
+once it is empty every attempt from that address answers
 
 ```
 HTTP/1.1 429 Too Many Requests
@@ -484,42 +452,36 @@ Retry-After: 7
 ```
 
 and the server logs the address, the path and the wait. The product API also
-logs every failed authentication (`auth failed`, with the address and path, and
-never the token) — a token brute-force against `/v1/profile` used to leave no
-trace at all. Two properties matter:
+logs every failed authentication (`auth failed`, with address and path, never
+the token). Two properties matter:
 
-- **A correct token is never throttled.** Only failures draw from the bucket, so
-  a backfill — thousands of authenticated uploads in a row — never touches it,
-  and neither does a device that has simply been syncing for months.
-- **An exhausted address is refused *before* the token is compared.** Charging a
-  failure but still answering `401`/`200` would leave the guessing rate
-  untouched and only change the status code; refusing first is what makes this
-  a brute-force limit. The cost is that a client sharing an address with an
-  attacker waits too — buckets are small and refill in a minute, and a client
-  that never fails never has a bucket at all.
+- **A correct token is never throttled.** Only failures draw from the bucket,
+  so a backfill — thousands of authenticated uploads in a row — never
+  touches it.
+- **An exhausted address is refused *before* the token is compared.**
+  Otherwise the limit would only change the status code an attacker sees,
+  not their guessing rate. The cost is that a client sharing an address with
+  an attacker waits too; buckets refill in a minute, and a client that never
+  fails never has one.
 
-Memory is bounded: only failures create an entry, entries that have refilled
-and gone idle for ten minutes are forgotten, and a hard cap of 10,000 tracked
-addresses drops the least recently seen first, so an attacker rotating IPv6
-source addresses cannot grow the table.
+Memory is bounded: only failures create an entry, entries refilled and idle
+for ten minutes are forgotten, and a cap of 10,000 addresses drops the least
+recently seen first, so rotating IPv6 source addresses cannot grow the table.
 
-The limit is keyed on the TCP peer address. If a proxy terminates TLS in front
-of ingest, every request appears to come from the proxy and one attacker
-exhausts the shared bucket for everyone. Set **`TRUST_PROXY_HEADERS=true`** in
-`.env` in that case and ingest keys on the first entry of `X-Forwarded-For`
-instead. Only do that when the proxy is the *only* route to port 8080 and it
-overwrites the header (reverse proxies, Tailscale Serve/Funnel do): the header
-is otherwise set by whoever sends the request, and believing it lets a single
-attacker look like an unlimited number of clients. Leave it at the default
-`false` for `INGEST_BIND_ADDR=0.0.0.0` on a LAN.
+The limit is keyed on the TCP peer address. Behind a proxy every request
+appears to come from the proxy, and one attacker exhausts the bucket for
+everyone; set **`TRUST_PROXY_HEADERS=true`** and the first entry of
+`X-Forwarded-For` is used instead. Only do that when the proxy is the *only*
+route to the port and overwrites the header (reverse proxies and Tailscale
+Serve/Funnel do): otherwise the sender sets it, and one attacker can look
+like unlimited clients. Leave it `false` for `INGEST_BIND_ADDR=0.0.0.0` on a
+LAN. Docker's userland proxy can also rewrite the source address to the
+bridge gateway on some hosts — every throttled client logged as the same
+`172.x.x.1` — and the fix is the same: a proxy that sets `X-Forwarded-For`,
+and `TRUST_PROXY_HEADERS` on.
 
-Docker's userland proxy can also rewrite the source address to the bridge
-gateway on some hosts. If `docker compose logs ingest` shows every throttled
-client as the same `172.x.x.1`, that is what happened: have the TLS proxy in
-front set `X-Forwarded-For` and turn `TRUST_PROXY_HEADERS` on.
-
-The rate limit is not a substitute for a good token. `openssl rand -hex 32` is
-256 bits; ten guesses a minute will not find it either way.
+The limit is not a substitute for a good token: `openssl rand -hex 32` is
+256 bits.
 
 ### Rotating secrets
 
