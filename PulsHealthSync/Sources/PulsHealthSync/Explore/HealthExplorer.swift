@@ -59,13 +59,26 @@ public final class HealthExplorer: Sendable {
         }
     }
 
+    // MARK: - Readable history
+
+    /// iOS 27 limited history access: the earliest date HealthKit lets the
+    /// app read `identifier` from, or nil when it may read all of it —
+    /// always nil before iOS 27 or when built with the iOS 26 SDK. Also nil
+    /// when HealthKit cannot say, which is why the profile and preview
+    /// record what they ran under rather than trust a later answer.
+    public func readableSince(for identifier: String) async -> Date? {
+        (try? await ReadableHistory.query([identifier], in: healthStore))?[identifier]
+    }
+
     // MARK: - Quick facts
 
     /// The oldest and newest sample and the set of writers: three small
-    /// queries, cheap enough for a list of every type.
+    /// queries, cheap enough for a list of every type — and, on iOS 27, how
+    /// far back HealthKit lets the app read (`TypeQuickFacts.readableSince`).
     public func quickFacts(for identifier: String) async throws -> TypeQuickFacts {
         try await checkAvailability()
         let descriptor = try descriptor(for: identifier)
+        let limit = await readableSince(for: identifier)
 
         if descriptor.kind == .activitySummary {
             // Rings have no source and no HKSample; one summary query over
@@ -74,7 +87,7 @@ public final class HealthExplorer: Sendable {
                 from: ExportPlan.allTimeFloor, to: Date(), calendar: .current)
             return TypeQuickFacts(
                 typeIdentifier: identifier, earliestStart: days.min(), latestStart: days.max(),
-                sourceNames: [])
+                sourceNames: [], readableSince: limit)
         }
         guard let sampleType = descriptor.sampleType else {
             throw HealthExploreError.unsupportedKind(identifier)
@@ -88,7 +101,8 @@ public final class HealthExplorer: Sendable {
                 typeIdentifier: identifier,
                 earliestStart: earliest,
                 latestStart: latest,
-                sourceNames: sources.map(\.name).sorted())
+                sourceNames: sources.map(\.name).sorted(),
+                readableSince: limit)
         } catch {
             throw Self.wrap(error)
         }
@@ -97,6 +111,12 @@ public final class HealthExplorer: Sendable {
     // MARK: - Profile
 
     /// One ascending scan of the type, reduced to a `TypeProfile`.
+    ///
+    /// Under iOS 27's limited history access the scan starts at the type's
+    /// earliest readable date when that is later than the requested start,
+    /// and the profile says so (`TypeProfile.readableSince`): HealthKit
+    /// would return nothing before it anyway, and a profile that claimed
+    /// the requested range would describe a month as if it were a year.
     ///
     /// A failure before the first page throws; a failure after some pages
     /// returns what was read with `isComplete == false` and the scrubbed
@@ -111,7 +131,10 @@ public final class HealthExplorer: Sendable {
         try await checkAvailability()
         let descriptor = try descriptor(for: identifier)
         let started = ContinuousClock.now
-        let rangeStart = options.effectiveRangeStart()
+        let requestedStart = options.effectiveRangeStart()
+        let scanLimit = ReadableHistory.effectiveLimit(
+            await readableSince(for: identifier), readingFrom: requestedStart ?? ExportPlan.allTimeFloor)
+        let rangeStart = scanLimit ?? requestedStart
         progress?(ProfileProgress(phase: .probing))
 
         var accumulator = ProfileAccumulator(
@@ -140,9 +163,10 @@ public final class HealthExplorer: Sendable {
                 phase: .finishing, samplesScanned: days.count, pagesScanned: 1, scannedThrough: days.max()))
             var profile = accumulator.finish(
                 scanDuration: (ContinuousClock.now - started).seconds,
-                rangeStart: rangeStart, rangeEnd: options.rangeEnd,
+                rangeStart: requestedStart, rangeEnd: options.rangeEnd,
                 isComplete: true, failureReason: nil)
             profile.lookbackDays = options.lookbackDays
+            profile.readableSince = scanLimit
             // A summary is computed by the system; "source" and "device"
             // would only ever say so.
             profile.sources = []
@@ -182,11 +206,12 @@ public final class HealthExplorer: Sendable {
             phase: .finishing, samplesScanned: scanned, pagesScanned: pages))
         var profile = accumulator.finish(
             scanDuration: (ContinuousClock.now - started).seconds,
-            rangeStart: rangeStart,
+            rangeStart: requestedStart,
             rangeEnd: options.rangeEnd,
             isComplete: failure == nil,
             failureReason: failure ?? outcome?.skipNote)
         profile.lookbackDays = options.lookbackDays
+        profile.readableSince = scanLimit
         return profile
     }
 
@@ -218,7 +243,10 @@ public final class HealthExplorer: Sendable {
     /// date (or `from`) in `calendar`, which is what the engine uses, so the
     /// preview's buckets line up with the ones already on the server.
     /// Bounds are widened to whole buckets: the bucket containing `to` is
-    /// included in full.
+    /// included in full. Under iOS 27's limited history access the series
+    /// starts at the first whole bucket the app may read, as the sync's does
+    /// (`ReadableHistory.clampAggregateWindow`): earlier buckets would come
+    /// back empty and read as "no data", which is not what they are.
     public func aggregatePreview(
         _ config: AggregateConfig,
         from: Date,
@@ -247,7 +275,11 @@ public final class HealthExplorer: Sendable {
         let bucketing = AggregateBucketing(
             anchor: anchor, intervalValue: config.intervalValue,
             intervalUnit: config.intervalUnit, calendar: calendar)
-        let chunks = bucketing.chunks(from: from, to: Self.ceilBoundary(to, bucketing: bucketing))
+        let window = ReadableHistory.clampAggregateWindow(
+            (from, Self.ceilBoundary(to, bucketing: bucketing)),
+            readableSince: await readableSince(for: config.typeIdentifier), bucketing: bucketing)
+        guard let window else { return [] }
+        let chunks = bucketing.chunks(from: window.from, to: window.to)
         let sink = OSAllocatedUnfairLock(initialState: [AggregateBucket]())
 
         for (index, chunk) in chunks.enumerated() {

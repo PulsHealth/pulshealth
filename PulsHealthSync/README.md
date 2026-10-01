@@ -34,8 +34,17 @@ Sources/PulsHealthSync/
 │   ├── SeriesEnricher.swift         Second-pass queries for series data: heartbeat
 │   │                                offsets, ECG voltages, workout GPS routes
 │   │                                (chunked 4,000 pts/line), iOS 18 effort scores.
+│   ├── ReadableHistory.swift        iOS 27 limited history access, pure: the
+│   │                                widened/narrowed decision, the aggregate,
+│   │                                ring and reconciliation clamps, the one
+│   │                                compile-guarded HealthKit call, the
+│   │                                Don't Allow classification, the notice text.
+│   ├── ReadableHistorySync.swift    The engine side: earliestAuthorizedDates(),
+│   │                                each pass's limit, and refreshReadableHistory
+│   │                                (records the dates, re-sweeps widened types).
 │   └── Reconciliation.swift         Per-UTC-month UUID XOR digests vs GET /v1/digest;
-│                                    re-uploads missing samples, deletes server orphans.
+│                                    re-uploads missing samples, deletes server orphans
+│                                    — never before the earliest readable date.
 ├── Anchors/
 │   ├── SyncStateStore.swift         Actor persisting config + per-type state (anchor
 │   │                                blob, counters, timestamps, errors) as atomic JSON
@@ -192,8 +201,12 @@ on-device export (`ExportTests.swift`: hand-built batches through the real file
 transport and both writers — CSV columns against `docs/export.md`, quoting,
 nulls, header-once, JSONL line validity and header counts, what CSV cannot
 represent, cancellation and cleanup — plus the export plan and its completion
-check). HealthKit itself isn't mockable, so engine behavior is exercised in the
-app via the benchmark and diagnostics screens.
+check), and iOS 27's limited history access (`ReadableHistoryTests.swift`: the
+widen/narrow/same decision, bucket and day clamps across DST, the
+reconciliation start, the Don't Allow classification, a real 1.5
+`sync-state.json` decoding, the re-sweep's state reset, the export's and the
+profile cache's handling). HealthKit itself isn't mockable, so engine behavior
+is exercised in the app via the benchmark and diagnostics screens.
 
 ## Secrets and state at rest
 
@@ -399,6 +412,9 @@ watermark instead (advanced only after the server acks, like anchors):
    boundaries are `Calendar`-computed, so day/month buckets survive DST).
 3. Every bucket in a chunk uploads as an `{"aggregate": …}` NDJSON line — empty
    buckets carry an explicit `null` so the server upsert clears stale values.
+   Which is why no bucket that starts before iOS 27's earliest readable date is
+   computed at all (see "Limited history access" below): an unreadable bucket
+   looks exactly like an empty one.
 
 Triggers are shared with raw sync: the observer covers the *union* of raw-enabled
 and aggregate types (aggregate-only types never get a raw sync), and
@@ -429,6 +445,58 @@ NSInvalidArgumentException at query *execution* for illegal option×type combos.
 duration; any discrete style → average/min/max/mostRecent/duration) is enforced
 in the UI and re-checked in the engine, and verified against all 372 combos by
 the app-hosted `AggregateMatrixTests`.
+
+## Limited history access (iOS 27)
+
+From iOS 27 the Health permission sheet has a second page, "How much data
+would you like to share?" — *Past 30 Days and Future Data* or *All Recorded
+Data and Future Data* — and Settings → Privacy & Security → Health → (app) →
+(type) offers *Limited Access* or *Full Access* per type afterwards. Limited,
+HealthKit reads a type only from an earliest date (30 days before the choice,
+fixed from then on) and answers every query about older history as if it were
+empty. It reports the date through `HKHealthStore.earliestAuthorizedSampleDate(for:)`;
+`HealthSyncEngine.earliestAuthorizedDates()` is the package's view of it (type
+identifier → date, limited types only; empty before iOS 27, when built with
+the iOS 26 SDK, and for undecided types).
+
+Measured on the iOS 27.0 simulator: every type a sheet granted gets the same
+date, the activity-summary type included; a sample is hidden only when it
+*ends* before the date; a day bucket straddling it came back with part of its
+value; narrowing access made an anchored query from an older anchor report no
+deletions; and an anchor taken under the limit returned none of the older
+samples after the limit was lifted.
+
+Two consequences, both handled here:
+
+- **Empty must not reach the server.** The passes that overwrite or delete to
+  match what they read are clamped (`ReadableHistory`): aggregate passes —
+  scheduled, full, priority and lookback alike — compute only buckets that
+  start at or after the date, so no `null` lands on unreadable history and no
+  partial value on the bucket that straddles it; the rings start at the first
+  whole readable day; reconciliation compares from the date and throws
+  `readableHistoryUnknown` rather than guess when HealthKit cannot say. The raw
+  sweep adds what HealthKit returns and deletes only HealthKit's own
+  tombstones, and the route and stream phases only follow workouts HealthKit
+  returns and never overwrite, so neither needs a clamp.
+- **Widening must re-read.** Each pass records the date it ran under
+  (`readableSince` on the type, aggregate, rings and enrichment states;
+  optional, so older state files decode). `refreshReadableHistory` — before
+  claims in every sweep entry point and observer wake, at most every 15
+  minutes, forced by the app on foreground — resets the anchors of a raw type
+  whose date moved earlier or went away and reopens its backfill; the server
+  ignores what it already has. Aggregate series, the rings and the enrichment
+  phases notice on their next run and start over from the start date. The same
+  date (within an hour) resets nothing, and a narrowing only records the new
+  date.
+
+The API exists only in the iOS 27 SDK, and CI also builds with Xcode 26.5, so
+its one call sits behind `#if compiler(>=6.4)` (Xcode 27.0 ships Swift 6.4;
+Xcode 26.5 ships 6.3.2) as well as `#available(iOS 27.0, *)`.
+
+Don't Allow on the history page throws `errorAuthorizationDenied` and leaves
+the types undetermined, where Don't Allow on the first page returns normally;
+`requestAuthorization` returns `HealthAccessRequestOutcome.declined` for it
+instead of throwing.
 
 ## How activity rings run
 
@@ -538,6 +606,10 @@ warning. The result:
   included) always leaves no files;
 - a partial export **returns**, with `failures`, `unmappableSamples` and
   `isComplete == false`, and the manifest says `"complete": false`;
+- an export some of whose types iOS 27 lets the app read only from a date
+  after the export's start **returns** too, with those types and dates in
+  `limitedHistory` (and the manifest's) and `isComplete == false` — nothing
+  failed, but the files are not all of the range asked for;
 - a CSV export counts what it has no file for (ECG traces, heartbeat series,
   deletions) in `notRepresented`.
 
@@ -609,7 +681,13 @@ and `aggregatePreview` runs `AggregateQuery` — the same
 `HKStatisticsCollectionQuery` and missing-data-source split retry the engine
 uses — with a closure that appends rows where the engine's uploads and acks.
 Neither has a cursor to persist. What the explorer shares with the engine is
-pure code only: the catalog, `AggregateBucketing` and `AggregateQuery`.
+pure code only: the catalog, `AggregateBucketing`, `AggregateQuery` and
+`ReadableHistory`. Under iOS 27's limited history access a profile scan starts
+at the type's earliest readable date when that is later than the requested
+start, and says so (`TypeProfile.readableSince`, version 5); quick facts carry
+the date, `TypeProfileStore.isStale` treats a profile scanned under another
+one as stale, and the aggregate preview starts at the first whole readable
+bucket.
 
 `TypeProfile` is a summary, not data: no UUIDs, no metadata, no per-sample
 values. Its memory and its file are bounded whatever the count — two

@@ -269,6 +269,7 @@ below says the same things in 1.6's terms):
 • Sync: one place for the server, the synced data, the status of each type and the activity log.
 • Setup no longer asks for a server. Choose your data, start exploring, and connect a server from the Sync tab whenever you like.
 • Analysis summaries are kept on your iPhone so a type opens instantly next time. Delete Analysis, under Settings, removes them all.
+• iOS 27: share only the past 30 days of Health history and PulsHealth says so, leaves your server's older data untouched, and syncs the rest by itself once you allow all of it.
 • Everything from 1.5: export without a server, faster pairing, recent data first, and syncing that keeps going in the background.
 ```
 

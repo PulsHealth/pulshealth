@@ -38,7 +38,8 @@ struct ExportManifest: Codable, Sendable, Equatable {
     /// The zone local days were computed in (`activity.date`,
     /// `state_of_mind.date`, day-grain aggregate buckets).
     var timeZone: String
-    /// False when anything is listed in `failures` or `unmappableSamples`.
+    /// False when anything is listed in `failures`, `unmappableSamples` or
+    /// `limitedHistory`.
     var complete: Bool
     var types: [String]
     /// The exported aggregate series, each as its `seriesIdentity`
@@ -51,6 +52,10 @@ struct ExportManifest: Codable, Sendable, Equatable {
     var batches: Int
     var notRepresented: [String: Int]
     var unmappableSamples: [String: Int]
+    /// iOS 27 limited history access: types HealthKit let this export read
+    /// only from the given date, which is later than `startDate`. Whatever
+    /// they hold before it is in no file — and the files cannot show that.
+    var limitedHistory: [String: Date] = [:]
     var failures: [ExportIssue]
 
     func encode(to encoder: Encoder) throws {
@@ -82,6 +87,7 @@ struct ExportManifest: Codable, Sendable, Equatable {
         try c.encode(batches, forKey: .batches)
         try c.encode(notRepresented, forKey: .notRepresented)
         try c.encode(unmappableSamples, forKey: .unmappableSamples)
+        try c.encode(limitedHistory, forKey: .limitedHistory)
         try c.encode(failures, forKey: .failures)
     }
 

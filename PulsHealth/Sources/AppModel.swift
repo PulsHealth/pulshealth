@@ -58,6 +58,11 @@ final class AppModel {
     /// "succeeds" but the types never appear in the sheet and stay undetermined.
     /// Cleared when a later request actually determines them.
     var authorizationHint: String?
+    /// iOS 27 limited history access: the applied types HealthKit lets the
+    /// app read only from a date on, by identifier, as of the last look
+    /// (`refreshReadableHistory`). Empty when nothing is limited, and always
+    /// before iOS 27. Drives the Sync tab's notice.
+    private(set) var readableHistory: [String: Date] = [:]
 
     /// Every enabled type has completed at least one sync and not one of them
     /// returned a single sample.
@@ -120,6 +125,16 @@ final class AppModel {
     /// purpose: after an iOS update fixes the bug, a fresh launch retries once.
     @ObservationIgnored private var undeterminableTypes: Set<String> = []
 
+    /// Types the user answered Don't Allow for on iOS 27's history page ("How
+    /// much data would you like to share?"). iOS leaves them undetermined, so
+    /// nothing stops the app asking again — but the user just said no, and
+    /// declining on the first page is never asked about again. So for the
+    /// rest of the session they are treated the same way: not requested
+    /// again, and not counted as access still to ask for. A later launch's
+    /// Apply may ask again; Settings → Privacy & Security → Health is the
+    /// other way back.
+    @ObservationIgnored private var declinedTypes: Set<String> = []
+
     /// True while a medication access request is scheduled or in flight, so a
     /// second Apply doesn't stack another one on top of it.
     @ObservationIgnored private var requestingMedicationAccess = false
@@ -176,6 +191,7 @@ final class AppModel {
         // the first grant (or an interrupted permission sheet) stay notDetermined
         // and make their syncs fail until access is requested again.
         await refreshNeedsAuthorization()
+        await refreshReadableHistory()
         // Heal installs where the flag was never written because access was
         // already determined when Apply ran (older builds only set it after an
         // actual prompt): a configured setup with nothing left to ask for is
@@ -388,10 +404,15 @@ final class AppModel {
             .sorted()
         guard !selected.isEmpty, await engine.authorizationNeeded(for: selected) else { return }
         let pending = await pendingTypes(among: selected)
-        guard !Set(pending).isSubset(of: undeterminableTypes) else { return }
+        guard !Set(pending).isSubset(of: undeterminableTypes.union(declinedTypes)) else { return }
         do {
-            try await engine.requestAuthorization(for: selected)
-            undeterminableTypes.formUnion(await pendingTypes(among: selected))
+            switch try await engine.requestAuthorization(for: selected.filter { !declinedTypes.contains($0) }) {
+            case .answered:
+                undeterminableTypes.formUnion(await pendingTypes(among: selected))
+            case .declined:
+                // The export runs anyway and reports these as unread.
+                declinedTypes.formUnion(pending)
+            }
         } catch {
             // Not fatal: the export runs and reports what it could not read.
             await engine.eventLog.log(
@@ -407,16 +428,30 @@ final class AppModel {
     /// catalog types staying undetermined is normal and must never raise a
     /// warning — only enabled types whose syncs would fail matter.
     private func refreshNeedsAuthorization() async {
-        let enabled = config.observedTypeIdentifiers.sorted()
+        // A type declined on iOS 27's history page is as answered as one
+        // declined on the first page, which iOS reports as determined.
+        let enabled = config.observedTypeIdentifiers.subtracting(declinedTypes).sorted()
         needsAuthorization = enabled.isEmpty
             ? false
             : await engine.authorizationNeeded(for: enabled)
     }
 
+    /// Re-read how much history iOS 27 lets the app read for each applied
+    /// type, and let the engine act on what moved (a widened type is
+    /// re-swept — `HealthSyncEngine.refreshReadableHistory`). Forced, unlike
+    /// the engine's own rate-limited calls: this runs when the app comes to
+    /// the foreground, which is when someone may just have changed access
+    /// in Settings, and after a permission sheet.
+    func refreshReadableHistory() async {
+        let observed = appliedConfig.observedTypeIdentifiers
+        readableHistory = await engine.refreshReadableHistory(force: true)
+            .filter { observed.contains($0.key) }
+    }
+
     /// Observed types (raw-sync ∪ enabled aggregates) that iOS still reports as
     /// never-determined, one by one.
     private func pendingEnabledTypes() async -> [String] {
-        await pendingTypes(among: config.observedTypeIdentifiers.sorted())
+        await pendingTypes(among: config.observedTypeIdentifiers.subtracting(declinedTypes).sorted())
     }
 
     private func pendingTypes(among identifiers: [String]) async -> [String] {
@@ -470,9 +505,19 @@ final class AppModel {
             let pending = await pendingEnabledTypes()
             if !Set(pending).isSubset(of: undeterminableTypes) {
                 do {
-                    try await engine.requestAuthorization(for: enabled)
-                    markAuthorizationRequested()
-                    await noteUndeterminableTypes()
+                    let asking = enabled.filter { !declinedTypes.contains($0) }
+                    switch try await engine.requestAuthorization(for: asking) {
+                    case .answered:
+                        markAuthorizationRequested()
+                        await noteUndeterminableTypes()
+                    case .declined:
+                        // Don't Allow on iOS 27's history page: the user's
+                        // answer, not a failure — no banner, and asked, so
+                        // the observer and background schedule run as they
+                        // do after a Don't Allow on the first page.
+                        markAuthorizationRequested()
+                        declinedTypes.formUnion(pending)
+                    }
                 } catch {
                     lastErrorMessage = error.localizedDescription
                 }
@@ -551,6 +596,10 @@ final class AppModel {
         // Apply/Save is the one place the app asks HealthKit for access. Request
         // it before reading so a newly enabled type doesn't fail its first sync.
         await requestAccessForEnabledTypesIfNeeded()
+        // The sheet may just have limited what can be read (iOS 27). The
+        // engine records it before the backfill below reads anything, which
+        // is what lets a later widening be noticed.
+        await refreshReadableHistory()
         // A whole-history backfill may start in a task of its own (iOS 26,
         // below), after the wake the observer registration triggers. Tell the
         // engine it is coming so that wake does not take its types first.
@@ -861,6 +910,9 @@ final class AppModel {
             // Off the sync's critical path: capabilities only gate UI.
             Task { await refreshServerCapabilities() }
         }
+        // Server or not: Explore and Export read under the same limits, and
+        // a widened type has to be re-swept before this sync claims it.
+        await refreshReadableHistory()
         // observedTypeIdentifiers: an aggregate-only setup (no raw types) still syncs.
         guard !isSyncingAll, config.serverURL != nil,
               !config.observedTypeIdentifiers.isEmpty else { return }

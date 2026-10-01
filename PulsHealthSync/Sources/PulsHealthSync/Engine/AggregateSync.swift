@@ -319,6 +319,51 @@ extension HealthSyncEngine {
         // looked like a whole one.
         let now = min(Date(), readEnd ?? .distantFuture)
         var state = await store.aggregateState(for: configID)
+
+        // iOS 27 limited history access. HealthKit answers a statistics query
+        // over history it will not let the app read with empty buckets, and
+        // an empty bucket is uploaded as an explicit null — which on the
+        // server overwrites the real value. So no bucket before the type's
+        // earliest readable date, or straddling it, is computed (the window
+        // is clamped below); the date is recorded with the series, because
+        // the watermark is a high-water mark that will sit past the buckets
+        // left out; and when access has widened since, the series starts
+        // over from the start date and computes them.
+        let lookup = await readableLimit(for: typeID, recorded: state.readableSince)
+        let readable = ReadableLimit(
+            since: ReadableHistory.effectiveLimit(lookup.since, readingFrom: anchor),
+            isFresh: lookup.isFresh)
+        if ReadableHistory.isSupported, !readable.isFresh, readable.since == nil {
+            // Nothing to stand in for the answer: computing unclamped could
+            // null out history, so wait for a run where HealthKit can say.
+            await eventLog.log(
+                .warn, type: typeID,
+                await ProtectedData.isAvailable
+                    ? "Aggregate \(agg.summaryLabel): could not tell how much Health history is readable — skipped, will retry"
+                    : "Aggregate \(agg.summaryLabel): Health database locked — will retry on next wake")
+            return
+        }
+        if readable.isFresh {
+            switch ReadableHistory.change(from: state.readableSince, to: readable.since) {
+            case .widened:
+                await store.resetAggregate(configID: configID)
+                await eventLog.log(
+                    .info, type: typeID,
+                    "Aggregate \(agg.summaryLabel): Health access widened — recomputing the whole series from its start date")
+                state = await store.aggregateState(for: configID)
+                if let since = readable.since {
+                    await store.updateAggregate(configID) { $0.readableSince = since }
+                    state = await store.aggregateState(for: configID)
+                }
+            case .narrowed:
+                let since = readable.since
+                await store.updateAggregate(configID) { $0.readableSince = since }
+                state = await store.aggregateState(for: configID)
+            case .unchanged:
+                break
+            }
+        }
+
         // A priority pass never opens, resumes or completes a full recompute:
         // its whole contract is to leave the watermarks where it found them.
         let fullPass: Bool
@@ -359,7 +404,12 @@ extension HealthSyncEngine {
                 intervalSeconds: agg.approximateIntervalSeconds
             )
         }
-        guard let window = resolvedWindow else {
+        // Nil also when the limit leaves nothing readable in the window: a
+        // full pass is then as complete as HealthKit allows.
+        let clampedWindow = resolvedWindow.flatMap {
+            ReadableHistory.clampAggregateWindow($0, readableSince: readable.since, bucketing: bucketing)
+        }
+        guard let window = clampedWindow else {
             // The last acked chunk may already have reached this run's settled
             // boundary before interruption, leaving only completion to persist.
             if fullPass {
@@ -367,6 +417,7 @@ extension HealthSyncEngine {
             }
             return // nothing settled yet
         }
+        let clamped = window.from != resolvedWindow?.from
 
         let chunks = bucketing.chunks(from: window.from, to: window.to)
         guard !chunks.isEmpty else {
@@ -393,7 +444,7 @@ extension HealthSyncEngine {
             let elapsed = (ContinuousClock.now - runStart).seconds
             await eventLog.log(
                 .info, type: typeID,
-                "Aggregate \(agg.summaryLabel): \(totalBuckets) buckets in \(chunks.count) batch(es), \(String(format: "%.1f", elapsed))s\(fullPass ? " (full recompute)" : "")\(pass == .priority ? " (recent window)" : "")"
+                "Aggregate \(agg.summaryLabel): \(totalBuckets) buckets in \(chunks.count) batch(es), \(String(format: "%.1f", elapsed))s\(fullPass ? " (full recompute)" : "")\(pass == .priority ? " (recent window)" : "")\(clamped ? " (from \(window.from.formatted(date: .abbreviated, time: .omitted)) — Health access is limited to recent history)" : "")"
             )
         } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
             await store.recordAggregateError(configID: configID, error: SyncError.authorizationNotDetermined)

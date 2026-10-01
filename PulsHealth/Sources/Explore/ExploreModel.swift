@@ -40,7 +40,9 @@ final class ExploreModel {
     @ObservationIgnored private var factsTask: Task<Void, Never>?
     /// Types a permission request failed to determine this session
     /// (iOS 26.5 omits blood pressure from the sheet, FB22735935): asking
-    /// again only makes the sheet flash. Session-only, like `AppModel`'s.
+    /// again only makes the sheet flash — or that the user declined on iOS
+    /// 27's history page, where asking again would only ask again what they
+    /// just answered. Session-only, like `AppModel`'s.
     @ObservationIgnored private var undeterminableTypes: Set<String> = []
 
     init(engine: HealthSyncEngine, store: TypeProfileStore = TypeProfileStore()) {
@@ -120,6 +122,17 @@ final class ExploreModel {
         guard let profile = profiles[id], let facts = quickFacts[id] else { return false }
         return TypeProfileStore.isStale(
             profile, facts: facts, options: Self.profileOptions, maxAge: Self.maxProfileAge)
+    }
+
+    /// Whether the stored profile was scanned under another iOS 27 history
+    /// limit than the one HealthKit reports now — the reason it is stale,
+    /// when it is, rather than new data.
+    func readableHistoryChanged(_ id: String) -> Bool {
+        guard let profile = profiles[id], let facts = quickFacts[id] else { return false }
+        let start = Self.profileOptions.effectiveRangeStart() ?? .distantPast
+        return ReadableHistory.change(
+            from: profile.readableSince,
+            to: ReadableHistory.effectiveLimit(facts.readableSince, readingFrom: start)) != .unchanged
     }
 
     /// 0…1 for a running scan, from where the scan is between where it
@@ -236,6 +249,10 @@ final class ExploreModel {
               await engine.authorizationNeeded(for: [id])
         else { return }
         do {
+            // Declined (iOS 27's history page) or not, a type still
+            // undetermined afterwards is not asked about again this session.
+            // Declining is an answer, not a failure: the scan reports what
+            // it could not read, as for a first-page Don't Allow.
             try await engine.requestAuthorization(for: [id])
             if await engine.authorizationNeeded(for: [id]) {
                 undeterminableTypes.insert(id)

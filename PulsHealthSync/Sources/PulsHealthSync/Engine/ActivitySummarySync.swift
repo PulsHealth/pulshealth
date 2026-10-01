@@ -70,8 +70,42 @@ extension HealthSyncEngine {
         let calendar = Calendar.current
         let config = await store.configuration
         let startDay = calendar.startOfDay(for: config.startDate)
-        let state = await store.activitySummaryState
+        var state = await store.activitySummaryState
         let now = Date()
+
+        // iOS 27 limited history access, as for aggregates (`ReadableHistory`):
+        // the rings upsert by day, so a day HealthKit will not let the app
+        // read must not be uploaded as if it had no activity. The window
+        // starts at the first whole readable day; the date is kept with the
+        // rings, and a widened grant recomputes every day from the start date.
+        let lookup = await readableLimit(for: typeID, recorded: state.readableSince)
+        let readable = ReadableLimit(
+            since: ReadableHistory.effectiveLimit(lookup.since, readingFrom: startDay),
+            isFresh: lookup.isFresh)
+        if ReadableHistory.isSupported, !readable.isFresh, readable.since == nil {
+            await eventLog.log(
+                .warn, type: typeID,
+                await ProtectedData.isAvailable
+                    ? "Activity rings: could not tell how much Health history is readable — skipped, will retry"
+                    : "Activity rings: Health database locked — will retry on next wake")
+            return
+        }
+        if readable.isFresh {
+            switch ReadableHistory.change(from: state.readableSince, to: readable.since) {
+            case .widened:
+                await store.resetActivitySummary()
+                await eventLog.log(
+                    .info, type: typeID,
+                    "Activity rings: Health access widened — recomputing every day from the start date")
+                fallthrough
+            case .narrowed:
+                let since = readable.since
+                await store.updateActivitySummary { $0.readableSince = since }
+                state = await store.activitySummaryState
+            case .unchanged:
+                break
+            }
+        }
         // The last day to read: today, or — for an export's engine, which
         // reads up to `readEnd` — the local day before the bound, since the
         // bound's own day is not over as of the bound.
@@ -94,12 +128,22 @@ extension HealthSyncEngine {
         // a trailing lookback re-covers recent days that late Watch data may have
         // changed. A full pass goes back to the start date.
         let lookback = AggregateSchedule.lookback(intervalSeconds: 86_400)
-        let from: Date
+        var from: Date
         if !fullPass, let computedThrough = state.computedThrough {
             from = max(startDay, calendar.startOfDay(
                 for: computedThrough.addingTimeInterval(-lookback)))
         } else {
             from = startDay
+        }
+        if let since = readable.since {
+            from = max(from, ReadableHistory.firstWholeDay(atOrAfter: since, calendar: calendar))
+            guard from <= today else {
+                // Not a readable day left in the window. Nothing to send, and
+                // nothing to do again until tomorrow — record it as done, as
+                // for an empty window below.
+                await store.recordActivitySummaryUpload(newComputedThrough: today, days: 0, bytes: 0)
+                return
+            }
         }
         guard from <= today else { return }
 

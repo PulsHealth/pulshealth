@@ -20,12 +20,13 @@ not — since 1.6 the flow asks for no server; the Sync tab does.)
 | `<<<REVIEW_EXPIRY>>>` | The date you intend to take the instance down. Keep it up until the app is approved. |
 
 The field's limit is 4000 characters and the filled-in block below is about
-3,920 (the placeholder version measures 3,853; a real URL, 64-character token
-and UUID add about 65) — about 3,975 if each of its 57 line breaks counts as
-two, which is the reading to budget for. So any addition needs a matching cut.
-Measure the filled copy before pasting — the block has overrun before
-(the `puls://` section took it to about 4,800 until the export section forced
-a recount).
+3,903 (the placeholder version measures 3,838; a 29-character URL, a
+64-character token, the 36-character UUID and "October 31, 2026" add 65) —
+3,960 if each of its 57 line breaks counts as two, which is the reading to
+budget for. So any addition needs a matching cut. Measure the filled copy
+before pasting — the block has overrun before (the `puls://` section took it to
+about 4,800 until the export section forced a recount, and iOS 27's history
+page in step 3 was paid for by shorter server and pairing sentences).
 
 Do not paste a QR image into the notes — the reviewer cannot scan a picture on
 the same screen they are reading. The typed path below is the one they will
@@ -40,7 +41,7 @@ WHAT THIS APP IS
 
 PulsHealth copies the user's Apple Health data to a server that the USER runs. There is no developer-operated backend. The app uploads only to the address the user enters. No health data reaches the developer.
 
-Syncing needs a server, so we have stood one up: a throwaway instance that exists only for this review and holds no real person's data. The app also works with no server at all (WITHOUT A SERVER, below).
+Syncing needs a server, so we stood up a throwaway one for this review. It holds no real person's data. The app also works with no server at all (WITHOUT A SERVER, below).
 
 REVIEW SERVER
 
@@ -54,10 +55,10 @@ HOW TO EXERCISE THE APP (about 5 minutes)
 
 1. Launch the app. A four-step first-run flow starts.
 2. "Get Started".
-3. On "Health Access", tap "Continue". iOS shows its permission sheet: "Turn On All", then Allow. The app requests READ access only.
+3. On "Health Access", tap "Continue". iOS shows its permission sheet: turn all on, then Allow. iOS 27 then asks how much data to share: choose "All Recorded Data and Future Data", then Allow. The app requests READ access only.
 4. On "Choose Data", a starter selection is already made. Tap "Continue".
 5. On "Ready", tap "Start Exploring". The Explore tab appears.
-6. Open the Sync tab and tap "Set Up". On the Server screen, type the Server URL and Token above into the two fields under "Or enter it by hand". ("Scan Pairing Code" needs a physical QR code, so please type.) iOS may offer to save the token; either answer is fine.
+6. Open the Sync tab and tap "Set Up". On the Server screen, type the Server URL and Token above into the two fields under "Or enter it by hand". (Scanning needs a physical QR code.) iOS may offer to save the token; either answer is fine.
 7. Tap "Test Connection". It should report success. Then "Save & Apply". The Sync tab shows the server and the upload begins.
 
 WHAT YOU SHOULD SEE
@@ -86,7 +87,7 @@ Used only to read the pairing QR code. No frame is stored or sent. Declining is 
 
 URL SCHEME (puls://)
 
-One custom scheme, for pairing links (puls://pair?...) — the text the server's QR code encodes, so the iOS Camera app can open it. Any page or app can fire such a URL, so a link configures nothing by itself: the app shows a confirmation naming the server's host, and accepting only fills in the fields on Sync > Server — the user still has to tap Save & Apply. "Paste Pairing Code" uses the system paste button.
+One custom scheme, for pairing links (puls://pair?...) — the text the server's QR code encodes, so the iOS Camera app can open it. Any page or app can fire such a URL, so a link configures nothing by itself: the app shows a confirmation naming the server's host, and accepting only fills in the fields on Sync > Server — the user still has to tap Save & Apply.
 
 BACKGROUND MODES
 
@@ -135,6 +136,21 @@ device ID, the time zone and row counts — no token, no server URL, and none of
 the name/e-mail/date-of-birth fields from Settings → User. The share sheet's
 Copy action is excluded. `docs/privacy-policy.md` § Exports is the public
 statement of all this.
+
+### "The permission sheet asked how much data to share"
+
+That is iOS 27's second page. *Past 30 Days and Future Data* works too: the app
+then reads, syncs and exports only from 30 days back, says so on the Sync tab,
+an analysis and an export result, never treats the older history as deleted
+or empty on the server, and reads the rest by itself if access is widened
+later under Settings → Privacy & Security → Health → PulsHealth. *Don't Allow*
+on that page is taken as the user's answer: no error, nothing read. The notes
+ask for All Recorded Data only so the reviewer sees a whole history arrive.
+
+### "Does the app read the clipboard?"
+
+Only when the user taps Paste Pairing Code, which is the system paste button
+(`PasteButton`): iOS shows no paste prompt, and nothing is read otherwise.
 
 ### "Prove the local-network exception is narrow"
 

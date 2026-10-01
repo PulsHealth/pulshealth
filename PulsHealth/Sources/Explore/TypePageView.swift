@@ -174,13 +174,27 @@ struct TypePageView: View {
                     Text("Analyzed \(profile.computedAt.formatted(date: .abbreviated, time: .shortened))")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    if let scope = profileScope(profile), let start = profile.rangeStart {
+                    if let since = profile.readableSince {
+                        // iOS 27 limited history access: the scan started
+                        // here, not at the lookback, and every number below
+                        // covers only this part.
+                        Text("Covers only from \(since.formatted(date: .abbreviated, time: .omitted)), the earliest \(descriptor.displayName) data iOS lets PulsHealth read")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text("Health access is limited to recent history. Full Access under Settings → Privacy & Security → Health → PulsHealth includes the rest.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if let scope = profileScope(profile), let start = profile.rangeStart {
                         Text("Covers the \(scope), from \(start.formatted(date: .abbreviated, time: .omitted))")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     if stale {
-                        StatusDot(text: "Health has new data since", color: .orange)
+                        StatusDot(
+                            text: explore.readableHistoryChanged(identifier)
+                                ? "Health access has changed since"
+                                : "Health has new data since",
+                            color: .orange)
                     }
                 }
                 if let error = explore.errors[identifier] {
@@ -674,6 +688,11 @@ private struct AggregatePreviewSection: View {
         HealthTypeCatalog.allowedAggregateFunctions(for: descriptor.identifier)
     }
 
+    /// Where the selected window begins, as `schedule` computes it.
+    private var windowStart: Date {
+        Calendar.current.date(byAdding: .day, value: -window.days, to: Date()) ?? Date()
+    }
+
     private var config: AggregateConfig? {
         guard let function else { return nil }
         return AggregateConfig(
@@ -705,6 +724,15 @@ private struct AggregatePreviewSection: View {
                 .overlay(alignment: .topTrailing) {
                     if isComputing { ProgressView().controlSize(.small).padding(6) }
                 }
+            }
+            if let since = model.explore.quickFacts[descriptor.identifier]?.readableSince,
+               since > windowStart {
+                // The explorer starts the series at the first whole bucket
+                // it may read; say why the chart starts late rather than
+                // let it look like missing data.
+                Text("Nothing before \(since.formatted(date: .abbreviated, time: .omitted)): iOS lets PulsHealth read \(descriptor.displayName) only from then on.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             syncButtons
         }

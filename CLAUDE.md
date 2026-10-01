@@ -307,6 +307,42 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   Background Activity screen does not report a successful sync that moved
   nothing. Never report the BG task itself as failed for this — that costs
   future scheduling opportunities for something the app did not do wrong.
+- **Limited history access (iOS 27).** The permission sheet's second page
+  ("How much data would you like to share?") and Settings → Privacy &
+  Security → Health → (app) → (type) can limit a type to *Past 30 Days*:
+  HealthKit then reads it only from an earliest date (30 days before the
+  choice, fixed), reports that date through
+  `HKHealthStore.earliestAuthorizedSampleDate(for:)`, and makes everything
+  older look **empty** in every query — never an error. Empty is destructive
+  here, so `ReadableHistory` clamps every pass the server overwrites or
+  deletes to match: aggregates compute only buckets that *start* at or after
+  the date (no null over unreadable history, no partial value for the bucket
+  that straddles it — every pass: scheduled, full, priority, lookback);
+  the rings start at the first whole readable day; reconciliation compares
+  from the date and throws `readableHistoryUnknown` rather than guess. The
+  raw sweep needs no clamp (it adds what HealthKit returns and deletes only
+  its tombstones; narrowing access produced no deletions on the simulator),
+  and routes/streams only follow readable workouts and never overwrite.
+  Each pass records the date it ran under (`readableSince` on
+  `TypeSyncState`, `AggregateSyncState`, `ActivitySummaryState`,
+  `WorkoutEnrichmentState` — optional, so 1.5 state files decode; never
+  make one required). **Re-sweep on widening:** an anchor taken under a
+  limit never returns the older samples once the limit is lifted, so
+  `refreshReadableHistory` (before claims, in `syncAllEnabled`, `syncTypes`,
+  `sync(type:)` and observer wakes, at most every 15 min; forced by the app
+  on every foreground, at launch and after Apply's sheet) resets a widened
+  raw type's anchors and reopens its backfill, and each aggregate series,
+  the rings and the enrichment phases reset themselves on their next run.
+  Same date (±1 h) resets nothing; a narrowing only records. The API is iOS
+  27 SDK only and CI still builds with Xcode 26.5, so it is used **only** in
+  `ReadableHistory.swift`, behind `#if compiler(>=6.4)` (Xcode 27.0 = Swift
+  6.4; 26.5 = 6.3.2, 26.6 = 6.3.3) *and* `#available(iOS 27.0, *)`; built
+  with the old SDK there is never a limit. Don't Allow on the history page
+  throws `errorAuthorizationDenied` and leaves the types undetermined:
+  `requestAuthorization` returns `.declined`, and the app treats it as an
+  answer (no banner, access marked requested, not re-asked this session).
+  An export under a limit lists the types in `limitedHistory` and is
+  incomplete; an analysis records `TypeProfile.readableSince`.
 - **Incremental sync merges types into one batch; backfill does not.**
   `syncTypes(_:reason:)` routes `.incremental` through `MergedSync`, which
   fetches one anchored page per type and packs pages into shared uploads
@@ -385,7 +421,10 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   class). Views call them via `@MainActor` `AppModel`.
 - **iOS version gates.** State of Mind / effort scores / sleep apnea are
   `#available(iOS 18, *)`; medication doses and `BGContinuedProcessingTask` are
-  `#available(iOS 26, *)`. Keep new type support gated the same way.
+  `#available(iOS 26, *)`. Keep new type support gated the same way. An API
+  that exists only in a newer SDK than CI's oldest Xcode also needs a compile
+  guard — `#if compiler(>=6.4)` for the iOS 27 SDK (see limited history
+  above); `#available` alone does not compile against the older SDK.
 - **First run only, and it applies nothing until the last step.**
   `OnboardingView` covers `RootView` when `AppModel.showsOnboarding` is true:
   decided synchronously in `init` from the durable `onboardingCompleted` and

@@ -30,6 +30,7 @@ struct SyncView: View {
                 setupCard
             } else {
                 statusCard
+                limitedHistoryNotice
                 syncNowSection
                 typesSection
             }
@@ -148,6 +149,47 @@ struct SyncView: View {
             return (.green, "Connected", nil)
         }
         return (.gray, "Connection not tested", nil)
+    }
+
+    /// iOS 27 limited history access: some types can be read, and so
+    /// synced, only from a recent date on. Calm, not a fault — it is the
+    /// user's choice — but the server's charts would otherwise just look
+    /// short, so it says which types, since when, and the way to widen it.
+    /// Nothing else is needed after that: the next sync notices the wider
+    /// access and reads the rest of the history (`ReadableHistory`).
+    @ViewBuilder private var limitedHistoryNotice: some View {
+        if let summary = LimitedHistorySummary(model.readableHistory) {
+            CardSection(
+                "Limited Health history",
+                subtitle: "iOS lets PulsHealth read \(summary.typesText) only from \(since(summary)), so older data has not been synced."
+            ) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+            } content: {
+                Text("To sync all of it, open Settings → Privacy & Security → Health → PulsHealth and give each type Full Access. PulsHealth then syncs the earlier history by itself.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Open Health Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+    }
+
+    /// "Sep 1, 2026", or the span when types were limited on different days.
+    private func since(_ summary: LimitedHistorySummary) -> String {
+        if summary.isOneDay() {
+            return summary.earliest.formatted(date: .abbreviated, time: .omitted)
+        }
+        return "between " + (summary.earliest..<summary.latest)
+            .formatted(.interval.day().month(.abbreviated).year())
     }
 
     private var syncNowSection: some View {

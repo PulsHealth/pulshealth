@@ -146,6 +146,14 @@ struct OnboardingView: View {
                     .font(.title3.weight(.semibold))
                 Text("The sheet comes from iOS and lists the starter selection. PulsHealth asks for read access only; it can never write to or delete anything in Apple Health. You can change any of it later in Settings → Privacy & Security → Health.")
                     .foregroundStyle(.secondary)
+                if ReadableHistory.isSupported {
+                    // iOS 27's second page. Informs, and the button below
+                    // stays a plain Continue (App Review 5.1.1(iv)): either
+                    // answer is a working setup, and the app says what each
+                    // one means for it. Earlier iOS has no such page.
+                    Text("iOS then asks how much history to share. All Recorded Data and Future Data lets PulsHealth sync and export your full history; Past 30 Days and Future Data limits both to the last month and what comes after.")
+                        .foregroundStyle(.secondary)
+                }
                 Text("Anything you add on the next step is requested when you finish.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)

@@ -100,6 +100,13 @@ public actor HealthSyncEngine {
     /// every backfill complete, so its sync would stop there for good.
     let readEnd: Date?
 
+    /// iOS 27 limited history access: what `refreshReadableHistory` last
+    /// found (type identifier → earliest readable date, limited types only)
+    /// and when, so the automatic paths can ask at most every
+    /// `readableHistoryInterval`.
+    var readableHistory: [String: Date] = [:]
+    var readableHistoryCheckedAt: ContinuousClock.Instant?
+
     public init(
         store: SyncStateStore? = nil, eventLog: SyncEventLog? = nil, wakeLog: WakeLog? = nil,
         recentWindowFirst: Bool = true, readEnd: Date? = nil
@@ -239,7 +246,11 @@ public actor HealthSyncEngine {
         return read
     }
 
-    public func requestAuthorization() async throws {
+    /// Ask for read access to the whole catalog. `.declined` is the user's
+    /// Don't Allow on iOS 27's history page, not an error — see
+    /// `HealthAccessRequestOutcome`.
+    @discardableResult
+    public func requestAuthorization() async throws -> HealthAccessRequestOutcome {
         guard HKHealthStore.isHealthDataAvailable() else {
             throw SyncError.healthDataUnavailable
         }
@@ -247,8 +258,28 @@ public actor HealthSyncEngine {
         let types = readAuthorizationTypes(
             for: HealthTypeCatalog.all.map(\.identifier),
             includeRoutes: config.includeWorkoutRoutes)
-        try await healthStore.requestAuthorization(toShare: [], read: types)
-        await eventLog.log(.info, "HealthKit read authorization requested for \(types.count) types")
+        return try await presentAuthorization(read: types, describing: "\(types.count) types")
+    }
+
+    /// The one call to HealthKit's permission sheet. Its second page on
+    /// iOS 27 ("How much data would you like to share?") throws
+    /// `errorAuthorizationDenied` for Don't Allow, where the first page's
+    /// Don't Allow returns normally — both are the user's answer, so both
+    /// return, and only a real failure throws.
+    private func presentAuthorization(
+        read types: Set<HKObjectType>, describing what: String
+    ) async throws -> HealthAccessRequestOutcome {
+        do {
+            try await healthStore.requestAuthorization(toShare: [], read: types)
+        } catch {
+            guard let outcome = HealthAccessRequestOutcome.classify(error) else { throw error }
+            await eventLog.log(
+                .info,
+                "Health access for \(what): Don't Allow on the history page — nothing granted; these types stay unread until access is allowed")
+            return outcome
+        }
+        await eventLog.log(.info, "HealthKit read authorization requested for \(what)")
+        return .answered
     }
 
     /// Medications use HealthKit's per-object authorization: the user picks which
@@ -264,16 +295,18 @@ public actor HealthSyncEngine {
 
     /// Request read authorization for the given catalog types only (plus workout
     /// routes when workouts are included). Used to prompt for just-enabled types
-    /// without dragging the whole catalog into the sheet.
-    public func requestAuthorization(for identifiers: [String]) async throws {
+    /// without dragging the whole catalog into the sheet. `.declined` is the
+    /// user's Don't Allow on iOS 27's history page, which leaves the types
+    /// undetermined; it is an answer, not an error.
+    @discardableResult
+    public func requestAuthorization(for identifiers: [String]) async throws -> HealthAccessRequestOutcome {
         guard HKHealthStore.isHealthDataAvailable() else {
             throw SyncError.healthDataUnavailable
         }
         let includeRoutes = await store.configuration.includeWorkoutRoutes
         let types = readAuthorizationTypes(for: identifiers, includeRoutes: includeRoutes)
-        guard !types.isEmpty else { return }
-        try await healthStore.requestAuthorization(toShare: [], read: types)
-        await eventLog.log(.info, "HealthKit read authorization requested for \(types.count) enabled types")
+        guard !types.isEmpty else { return .answered }
+        return try await presentAuthorization(read: types, describing: "\(types.count) enabled types")
     }
 
     /// True when iOS would still show the permission sheet for some catalog type —
@@ -391,6 +424,7 @@ public actor HealthSyncEngine {
                 state.lastSyncAt = s.lastComputedAt
                 state.lastError = s.lastError
                 state.lastErrorAt = s.lastErrorAt
+                state.readableSince = s.readableSince
                 out.append(TypeSyncStatus(
                     descriptor: descriptor, state: state,
                     activity: activities[id] ?? (s.lastError != nil ? .failed : .idle)))
@@ -474,6 +508,10 @@ public actor HealthSyncEngine {
                 "Device locked — HealthKit is unreadable; skipping \(reason.rawValue) sync of \(sampleIDs.count) types")
             return
         }
+        // Before anything is claimed: a type whose Health access widened is
+        // re-swept, which resets its anchor, and a type this run holds could
+        // not be. Rate-limited — the app asks on every foreground itself.
+        await refreshReadableHistory()
         // A backfill claims its raw types now, before the two cheap phases
         // below, not when phase 3 reaches them. The app registers its observer
         // query moments before a first backfill starts, HealthKit answers the
@@ -551,6 +589,7 @@ public actor HealthSyncEngine {
             notifyChanged()
             return
         }
+        await refreshReadableHistory()
         let claimed = claimTypes(HealthTypeCatalog.backfillOrder(ids))
         backfillExpectedUntil = nil
         await sweep(claimed, reason: reason)
@@ -624,6 +663,7 @@ public actor HealthSyncEngine {
 
     /// Sync one type: anchored-query pages until drained, uploading each page.
     public func sync(type identifier: String, reason: SyncReason = .incremental) async {
+        await refreshReadableHistory()
         guard claimTypes([identifier]) == [identifier] else { return }
         await sendRecentWindows([identifier], reason: reason)
         await runClaimed(type: identifier, reason: reason)
@@ -1019,14 +1059,33 @@ public actor HealthSyncEngine {
         let now = Date()
         var report = ReconciliationReport(type: identifier)
         var repairedWorkoutSamples = false
-        await eventLog.log(.info, type: identifier, "Reconciliation started")
+
+        // Every server UUID the device does not return is deleted below, and
+        // under iOS 27's limited history access HealthKit returns nothing
+        // older than the type's earliest readable date. So the comparison
+        // starts there, never before — a month the device cannot read would
+        // otherwise come back as every one of its server rows "orphaned".
+        // When HealthKit cannot say, the date the sync last ran under stands
+        // in; with neither, nothing is compared.
+        let readable = await readableLimit(
+            for: identifier, recorded: await store.state(for: identifier).readableSince)
+        if ReadableHistory.isSupported, !readable.isFresh, readable.since == nil {
+            throw SyncError.readableHistoryUnknown(descriptor.displayName)
+        }
+        let from = ReadableHistory.reconcileStart(syncStart: config.startDate, readableSince: readable.since)
+        if from > config.startDate { report.readableSince = from }
+        await eventLog.log(
+            .info, type: identifier,
+            "Reconciliation started" + (from > config.startDate
+                ? " — from \(from.formatted(date: .abbreviated, time: .omitted)), the earliest Health data iOS lets PulsHealth read"
+                : ""))
 
         let serverWindows = try await apiClient.digests(
-            type: identifier, from: config.startDate, to: now)
+            type: identifier, from: from, to: now)
         let serverByWindow = Dictionary(
             serverWindows.map { ($0.window, $0) }, uniquingKeysWith: { a, _ in a })
 
-        for window in ReconcileDigest.monthWindows(from: config.startDate, to: now) {
+        for window in ReconcileDigest.monthWindows(from: from, to: now) {
             try Task.checkCancellation()
             let predicate = HKSamplePredicate<HKSample>.sample(
                 type: sampleType,
@@ -1294,6 +1353,11 @@ public actor HealthSyncEngine {
         var detail = "\(sorted.count) type(s): \(sorted.joined(separator: ", "))"
         if deliveries > 1 { detail += " — coalesced from \(deliveries) deliveries" }
         let wake = await beginWake(.observer, detail: detail)
+        // Ahead of the merged pass's claims, as in `syncAllEnabled`. An
+        // observer wake can be the first sync of a newly enabled type, and
+        // the date it reads under has to be on record for a later widening
+        // to be noticed.
+        await refreshReadableHistory()
         let rawEnabled = await store.configuration.enabledTypes
         var rawTypes = sorted.filter { rawEnabled.contains($0) }
         if let until = backfillExpectedUntil, ContinuousClock.now < until {
@@ -1366,6 +1430,10 @@ public enum SyncError: Error, LocalizedError {
     case authorizationNotDetermined
     case unknownType(String)
     case reconciliationUnsupported(String)
+    /// iOS 27: HealthKit could not say how much of the type's history the
+    /// app may read, and reconciliation, which deletes what the device lacks,
+    /// will not guess.
+    case readableHistoryUnknown(String)
 
     public var errorDescription: String? {
         switch self {
@@ -1377,6 +1445,8 @@ public enum SyncError: Error, LocalizedError {
             return "Unknown type identifier: \(identifier)"
         case .reconciliationUnsupported(let identifier):
             return "Reconciliation only covers quantity, category, and workout types (\(identifier))"
+        case .readableHistoryUnknown(let identifier):
+            return "Could not tell how much Health history is readable for \(identifier), so nothing was reconciled. Unlock the iPhone and try again."
         }
     }
 }

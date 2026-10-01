@@ -141,7 +141,9 @@ background.
   which includes the name of the app or device that recorded each sample (for
   example the name you gave your Apple Watch). A manifest file beside the data
   records your user ID, the app's random `deviceID`, the phone's time zone, the
-  app version, the time range and the row counts; a JSONL export repeats the
+  app version, the time range and the row counts — and, when Health access is
+  limited to recent history (iOS 27), the date each limited type could be read
+  from; a JSONL export repeats the
   `deviceID` and app version at the head of each batch, as an upload does. The files do **not** contain the bearer token,
   the server URL, or the name, email address, date of birth or sex from
   Settings → User.
