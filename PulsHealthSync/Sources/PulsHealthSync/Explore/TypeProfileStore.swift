@@ -86,8 +86,11 @@ public actor TypeProfileStore {
     /// oldest or newest sample HealthKit reports has moved — compared only
     /// on the side the profile's range left open, since a bounded profile
     /// never saw the samples outside its range; the caller wants a
-    /// different range or lookback; it is older than `maxAge`; or the scan did not
-    /// finish (a partial profile is worth showing, not worth keeping).
+    /// different range or lookback; it is older than `maxAge`; the scan did not
+    /// finish (a partial profile is worth showing, not worth keeping); or
+    /// iOS 27's limited history access cuts the range at another date than
+    /// the one the scan ran under (`facts.readableSince`) — a widened grant
+    /// above all, which makes history readable that the profile never saw.
     public nonisolated static func isStale(
         _ profile: TypeProfile,
         facts: TypeQuickFacts,
@@ -109,6 +112,9 @@ public actor TypeProfileStore {
         if profile.rangeStart == nil, profile.earliestStart != facts.earliestStart { return true }
         if options.rangeEnd == nil, profile.latestStart != facts.latestStart { return true }
         if let maxAge, now.timeIntervalSince(profile.computedAt) > maxAge { return true }
+        let limit = ReadableHistory.effectiveLimit(
+            facts.readableSince, readingFrom: options.effectiveRangeStart(now: now) ?? ExportPlan.allTimeFloor)
+        if ReadableHistory.change(from: profile.readableSince, to: limit) != .unchanged { return true }
         return false
     }
 

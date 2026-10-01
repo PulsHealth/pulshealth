@@ -397,3 +397,54 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
         #expect(await store.hasSyncProgress == false)
     }
 }
+
+@Suite struct ReadableHistoryProfileTests {
+    private let now = Date(timeIntervalSince1970: 1_790_812_800) // 2026-10-01
+    private let limit = Date(timeIntervalSince1970: 1_788_223_011.807)
+
+    private var options: HealthExplorer.ProfileOptions {
+        var options = HealthExplorer.ProfileOptions()
+        options.lookbackDays = 365
+        options.calendar = pacific
+        return options
+    }
+
+    private func profile(readableSince: Date?) -> TypeProfile {
+        var profile = TypeProfile(
+            typeIdentifier: "HKQuantityTypeIdentifierStepCount", kind: .quantity, unitString: "count",
+            computedAt: now, timeZoneID: "America/Los_Angeles",
+            rangeStart: options.effectiveRangeStart(now: now), lookbackDays: 365,
+            sampleCount: 6, earliestStart: limit, latestStart: now.addingTimeInterval(-day))
+        profile.readableSince = readableSince
+        return profile
+    }
+
+    private func facts(readableSince: Date?) -> TypeQuickFacts {
+        TypeQuickFacts(
+            typeIdentifier: "HKQuantityTypeIdentifierStepCount", earliestStart: limit,
+            latestStart: now.addingTimeInterval(-day), sourceNames: ["Seeder"], readableSince: readableSince)
+    }
+
+    @Test func aProfileScannedUnderTheSameLimitIsFresh() {
+        #expect(!TypeProfileStore.isStale(
+            profile(readableSince: limit), facts: facts(readableSince: limit), options: options, now: now))
+        #expect(!TypeProfileStore.isStale(
+            profile(readableSince: nil), facts: facts(readableSince: nil), options: options, now: now))
+    }
+
+    @Test func aWidenedGrantMakesTheProfileStale() {
+        #expect(TypeProfileStore.isStale(
+            profile(readableSince: limit), facts: facts(readableSince: nil), options: options, now: now))
+    }
+
+    @Test func aNewLimitMakesAnUnlimitedProfileStale() {
+        #expect(TypeProfileStore.isStale(
+            profile(readableSince: nil), facts: facts(readableSince: limit), options: options, now: now))
+    }
+
+    @Test func aLimitOlderThanTheLookbackDoesNotMatter() {
+        let old = now.addingTimeInterval(-400 * day)
+        #expect(!TypeProfileStore.isStale(
+            profile(readableSince: nil), facts: facts(readableSince: old), options: options, now: now))
+    }
+}

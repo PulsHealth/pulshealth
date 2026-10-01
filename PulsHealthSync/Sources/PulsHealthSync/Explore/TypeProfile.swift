@@ -29,7 +29,10 @@ public struct TypeProfile: Codable, Sendable, Equatable {
     /// 3: that middle stops at the 5th or 95th percentile when the tail past
     /// it outruns the middle 90% (`Histogram.core(p1:p5:p95:p99:)`).
     /// 4: `lookbackDays`, for a scan of only the most recent days.
-    public static let currentVersion = 4
+    /// 5: `readableSince`. Before it, a profile scanned under iOS 27's
+    /// limited history access looked like one of a person with a month of
+    /// data, and said it covered the year.
+    public static let currentVersion = 5
 
     public var version: Int
     public var typeIdentifier: String
@@ -48,6 +51,11 @@ public struct TypeProfile: Codable, Sendable, Equatable {
     /// `ProfileOptions.lookbackDays`: the scan covered only this many days
     /// back from the day it ran. Nil for a fixed range or the whole history.
     public var lookbackDays: Int?
+    /// iOS 27 limited history access: the earliest date HealthKit let the
+    /// app read the type from, when that fell inside the requested range —
+    /// the scan started there, not at `rangeStart`, and every number covers
+    /// only that part. Nil when the whole range was readable.
+    public var readableSince: Date?
     /// False when the scan stopped before the end of the range — the reason is
     /// in `failureReason`, and every number is a lower bound over the part
     /// that was read.
@@ -105,6 +113,7 @@ public struct TypeProfile: Codable, Sendable, Equatable {
         rangeStart: Date? = nil,
         rangeEnd: Date? = nil,
         lookbackDays: Int? = nil,
+        readableSince: Date? = nil,
         isComplete: Bool = true,
         failureReason: String? = nil,
         sampleCount: Int = 0,
@@ -132,6 +141,7 @@ public struct TypeProfile: Codable, Sendable, Equatable {
         self.rangeStart = rangeStart
         self.rangeEnd = rangeEnd
         self.lookbackDays = lookbackDays
+        self.readableSince = readableSince
         self.isComplete = isComplete
         self.failureReason = failureReason
         self.sampleCount = sampleCount
@@ -351,12 +361,21 @@ public struct TypeQuickFacts: Sendable, Equatable {
     /// sorted; empty when HealthKit holds nothing (or read access was denied,
     /// which HealthKit makes indistinguishable by design).
     public var sourceNames: [String]
+    /// iOS 27 limited history access: the earliest date HealthKit lets the
+    /// app read the type from, nil when unlimited (and always before
+    /// iOS 27). `earliestStart` is then the oldest *readable* sample — older
+    /// ones exist or not, and HealthKit does not say.
+    public var readableSince: Date?
 
-    public init(typeIdentifier: String, earliestStart: Date?, latestStart: Date?, sourceNames: [String]) {
+    public init(
+        typeIdentifier: String, earliestStart: Date?, latestStart: Date?, sourceNames: [String],
+        readableSince: Date? = nil
+    ) {
         self.typeIdentifier = typeIdentifier
         self.earliestStart = earliestStart
         self.latestStart = latestStart
         self.sourceNames = sourceNames
+        self.readableSince = readableSince
     }
 }
 
