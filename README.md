@@ -434,8 +434,9 @@ counts both. Use the `metric_daily` view (or the app's on-device aggregate
 series, which HealthKit already de-duplicates) instead of summing
 `quantity_samples`. `docs/database-guide.md` explains the query patterns.
 
-**Can I sync to something other than the reference stack?**
-Yes — see [Bring your own backend](#bring-your-own-backend).
+**Can I sync to a database I already have?**
+Yes — anything that speaks the sync protocol is a valid destination; see
+[Bring your own backend](#bring-your-own-backend).
 
 **Does it write anything into Apple Health?**
 No. The app requests read access only, and its usage strings say so.
