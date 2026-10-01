@@ -116,7 +116,7 @@ export default async function TypePage({
         </div>
 
         <div style={{ marginTop: 22 }}>
-          <TrendChart series={series} color={color} />
+          <TrendChart key={range} series={series} color={color} name={type.name} />
         </div>
       </section>
 
