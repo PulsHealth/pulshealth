@@ -116,7 +116,7 @@ untrusted network, and never directly on the internet.
 |---|---|
 | `/` | **Today** — activity rings from today's local `HKActivitySummary`; falls back to today's quantity totals when today's summary is missing, plus headline metrics, recent workouts, and categories |
 | `/category/[group]` | All metrics in an Apple-Health group (Activity, Heart, Sleep, …) as live cards |
-| `/type/[id]` | **Metric detail** — interactive trend chart with D/W/M/6M/Y ranges, min–max band for instantaneous metrics, bar series for cumulative ones, range stats |
+| `/type/[id]` | **Metric detail** — interactive trend chart with D/W/M/6M/Y ranges, min–max band for instantaneous metrics, bar series for cumulative ones, range stats; hover, tap or arrow keys read a bucket, wheel/pinch zoom and drag pan (see "The trend chart" below) |
 | `/data` | **Catalog** — quantity, category, and workout types with supported viewer routes, grouped with per-user sample counts and last-seen |
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
@@ -169,6 +169,29 @@ regenerate the JSON there, run `npm run gen:catalog` here and commit both
 generated files; never edit them by hand. `npm run check:catalog` (run in CI)
 fails when the generated file is stale, and `lib/catalog.test.ts` pins the
 merged catalog to the JSON.
+
+## The trend chart
+
+`components/TrendChart.tsx` is hand-drawn SVG driven by pointer events — no
+chart library, in keeping with the viewer's dependency budget. On a metric page:
+
+| Input | Effect |
+|---|---|
+| Hover (mouse, pen) | Crosshair and tooltip for the nearest bucket: its timestamp (hour, day, or the week it covers), value and unit, plus the min–max range when the bucket has one |
+| Click / tap | Pins that bucket; the tooltip stays until another is picked, or Escape. Tapping again unpins |
+| Wheel, trackpad pinch, two-finger pinch | Zooms the time window about the pointer, never narrower than five buckets or wider than the data |
+| Horizontal drag, horizontal wheel | Pans the window while zoomed, stopping at the data's edges |
+| **Reset** (shown while zoomed) | Back to the full D/W/M/6M/Y range |
+| Arrow keys, Home/End, PageUp/PageDown, `+`/`-`, Escape, `0` | Keyboard equivalents once the chart has focus (Tab reaches it): move the selection, zoom about it, clear the selection, then the zoom |
+
+Changing the range (D/W/M/6M/Y) always starts from the full new range with
+nothing pinned — the zoom never changes which range button is selected. The
+row above the chart is an `aria-live` readout of the active bucket (or the
+visible window while zoomed), so the value is never hover-only. The SVG uses
+`touch-action: pan-y`: one finger scrolls the page as usual, and only a
+horizontal drag on a zoomed chart pans. The y axis follows the visible window.
+The time arithmetic (clamp, zoom, pan, nearest bucket, wheel normalisation) is
+`lib/chartDomain.ts`, pure and covered by `lib/chartDomain.test.ts`.
 
 ## Map tiles
 

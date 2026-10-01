@@ -239,7 +239,11 @@ export function TrendChart({
   function onPointerDown(e: React.PointerEvent<SVGSVGElement>) {
     const { domain: d } = latest.current;
     if (!d) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // A synthetic event has no active pointer to capture; the gesture still works.
+    }
     pointers.current.set(e.pointerId, e.clientX);
     if (pointers.current.size >= 2) {
       gesture.current = { kind: "pinch", pointerId: e.pointerId, startClientX: e.clientX, startDomain: d, moved: true, lastDist: pinchDistance() };
@@ -408,11 +412,13 @@ export function TrendChart({
             <>
               <span>{formatBucket(active.t, bucketMs)}</span>
               <span style={{ color: "var(--fg)", fontWeight: 600, marginLeft: 10 }}>
-                {formatValue(active.value)} {unit}
+                {formatValue(active.value)}
+                {unit && ` ${unit}`}
               </span>
               {showRange(active) && (
                 <span style={{ marginLeft: 10 }}>
-                  {formatValue(active.min)}–{formatValue(active.max)} {unit}
+                  {formatValue(active.min)}–{formatValue(active.max)}
+                  {unit && ` ${unit}`}
                 </span>
               )}
               {pinned === activeIdx && <span style={{ marginLeft: 8, color: "var(--faint)" }}>pinned</span>}
@@ -545,11 +551,13 @@ export function TrendChart({
           >
             <div style={{ color: "var(--muted)", fontSize: 11, marginBottom: 2 }}>{formatBucket(active.t, bucketMs)}</div>
             <div style={{ fontWeight: 600 }}>
-              {formatValue(active.value)} <span style={{ color: "var(--muted)", fontWeight: 400 }}>{unit}</span>
+              {formatValue(active.value)}
+              {unit && <span style={{ color: "var(--muted)", fontWeight: 400 }}> {unit}</span>}
             </div>
             {showRange(active) && (
               <div style={{ color: "var(--muted)", fontSize: 11, marginTop: 2 }}>
-                {formatValue(active.min)}–{formatValue(active.max)} {unit}
+                {formatValue(active.min)}–{formatValue(active.max)}
+                {unit && ` ${unit}`}
               </div>
             )}
           </div>
