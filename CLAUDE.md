@@ -164,18 +164,16 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   fallback included, changes `docs/privacy-policy.md`, `SECURITY.md` and the
   site's `/privacy` page with it.
 - **One type vocabulary.** `HealthTypeCatalog.swift` is the only hand-written
-  list of types. `docs/protocol/catalog.json` is rendered from it by
-  `CatalogVocabularyTests` (write mode `TEST_RUNNER_PULS_WRITE_CATALOG=1`;
-  otherwise it compares byte for byte and fails), and
-  `web/lib/catalog.generated.ts` from the JSON by `web/scripts/gen-catalog.mjs`
-  (`npm run gen:catalog`; `npm run check:catalog` in CI). Never edit either
-  generated file, and never restate a type in `web/lib/catalog.ts`, the web-only
-  overlay. OS gates on catalog entries are declarative (`minimumIOS`), not
-  `#available`, so `definitions` is complete on every runtime while `all` stays
-  the available subset. Likewise `PulsHealth/Sources/Resources/knowledge.json`
-  is generated from `knowledge-base/**/*.yaml` by `scripts/gen-knowledge-json.py`,
-  and CI's `scripts/check-knowledge-json.sh` fails until the checked-in file
-  matches — never edit it by hand.
+  list of types. `CatalogVocabularyTests` renders `docs/protocol/catalog.json`
+  from it (and otherwise fails on any byte of drift), and
+  `web/scripts/gen-catalog.mjs` renders `web/lib/catalog.generated.ts` from the
+  JSON (`check:catalog` in CI). Never edit either generated file, and never
+  restate a type in `web/lib/catalog.ts`, the web-only overlay. Catalog OS
+  gates are declarative (`minimumIOS`), not `#available`, so `definitions` is
+  complete on every runtime and `all` is the available subset. Likewise
+  `PulsHealth/Sources/Resources/knowledge.json` is generated from
+  `knowledge-base/**/*.yaml` by `scripts/gen-knowledge-json.py` (checked by
+  `scripts/check-knowledge-json.sh` in CI) — never edit it by hand.
 - **Epoch-ms dates everywhere.** Wire format, state files, and query params use
   millisecondsSince1970 (`JSONEncoder.puls` / `JSONDecoder.puls`). Not ISO 8601.
 - **Wire format changes touch both sides.** `Models/SyncModels.swift` (incl.
@@ -194,8 +192,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   including new sample kinds and new line types; new optional fields, type
   identifiers and read endpoints are additive and keep the number. Deploy
   server-first: an old server 400s batches carrying new line types (the client
-  doesn't retry 4xx and its anchors/watermarks stay put, so nothing is lost, but
-  syncing stalls until the server updates).
+  doesn't retry 4xx, so nothing is lost, but syncing stalls until it updates).
 - **Aggregates overwrite; raw samples never do.** Aggregate buckets
   (`Engine/AggregateSync.swift`) have no UUIDs: identity is (type, func,
   interval, deviceFilter, bucketStart, user_id), and the server **upserts**
@@ -352,26 +349,25 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   in `confirmedPairing` until then (`pairingAwaitsSyncTab`), when RootView
   opens Sync → Database with it.
 - **`site/` reads its content by relative path:** `knowledge-base/`
-  (`site/src/lib/api.ts`), `blog/articles` (`site/src/lib/blog.ts`),
-  `blog/images` (`copy-blog-images` in `site/package.json`) and the eleven
-  repository markdown files in the manifest in `site/src/lib/docs.ts`
-  (rendered at `/docs/<slug>/` with relative links rewritten; never edit the
-  markdown for the site). Move or rename any of them and the loaders log "not
-  found" and the build **still succeeds** with fewer pages, so the `site` CI job
-  asserts the counts: 177 type pages (one per tracked YAML file), one per
-  `blog/articles/*.mdx`, one `/docs/` page per manifest entry (`manifest=11` in
-  `ci.yml` moves with the manifest). Keep that check honest; don't loosen it.
+  (`site/src/lib/api.ts`), `blog/` (`site/src/lib/blog.ts`, `copy-blog-images`
+  in `site/package.json`) and the eleven repository markdown files in the
+  `site/src/lib/docs.ts` manifest (rendered at `/docs/<slug>/`; never edit the
+  markdown for the site). Move or rename any of them and the build **still
+  succeeds** with fewer pages, so the `site` CI job asserts the counts: one
+  type page per tracked YAML file (177), one per `blog/articles/*.mdx`, one per
+  manifest entry (`manifest=11` in `ci.yml` moves with the manifest). Keep that
+  check honest; don't loosen it.
 - **The app is shipped software, not a source drop.** It is on the App Store as
   [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354), so the
-  privacy policy, listing copy and entitlements describe a binary people are
-  running. `docs/appstore/` is a **record** of what shipped as well as material
-  for the next submission; its README's § Release record is the version log and
-  where a submission starts. The store record's bundle ID
-  `com.pulsHealth.PulsHealth` is immutable, so `PulsHealth/project.yml`'s
-  `bundleIdPrefix` (`com.pulsHealth`) is fixed, and only an archive carrying it
-  updates the listing. `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` must stay
-  ahead of every upload: 1.6 (19) is on the store (released 2026-10-01), so the
-  next upload needs build 20 and a version above 1.6.
+  privacy policy, listing copy and entitlements describe a binary people run.
+  `docs/appstore/` is a **record** of what shipped and the material for the
+  next submission, which starts from its README's § Release record. The store
+  record's bundle ID `com.pulsHealth.PulsHealth` is immutable, so
+  `project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) is fixed: only an archive
+  carrying it updates the listing. `MARKETING_VERSION` /
+  `CURRENT_PROJECT_VERSION` stay ahead of every upload: 1.6 (19) is on the
+  store (released 2026-10-01), so the next upload needs build 20 and a version
+  above 1.6.
 - **The published privacy claims are load-bearing.** `docs/privacy-policy.md`,
   `docs/appstore/` and the site's `/privacy` page state as fact that the app
   has zero third-party dependencies, sends data only to the configured server,
@@ -455,48 +451,39 @@ The reference stack (`server/docker-compose.yml`) runs on any Docker host;
 The maintainer's own production operations live outside this repository —
 nothing here assumes a particular machine.
 
-- **The four app services run published images, not local builds.**
-  `server/docker-compose.yml` uses `ghcr.io/pulshealth/<name>:${PULS_VERSION:-latest}`
-  with no `build:` block; the developer overlay `server/compose.build.yml` puts
-  the builds back (tagged `pulshealth-<service>:dev`, so a local build never
-  looks like a release). A Dockerfile, build-context or build-arg change
-  touches all three of that overlay, the `images` job in `ci.yml` and the build
-  matrix in `release.yml`. The checkout must be on the release `PULS_VERSION`
-  names, because the compose file and `db/migrations/` (which `migrate` mounts)
-  come from it.
-- CI is `.github/workflows/ci.yml` (Go vet/tests, lint, shellcheck,
-  `scripts/check-public-tree.sh`, `docker compose config` over **both** compose
-  variants, and an `images` job that builds all four images for `linux/amd64`
-  without pushing) plus `ios-ci.yml` for the Swift side. `release.yml`
-  publishes to `ghcr.io/pulshealth` on `v*` tags and on `workflow_dispatch`
-  (which never moves `latest`), each platform on its own native runner, merged
-  into one manifest list. There is no deploy workflow in this repo.
-- **Backups are opt-in and off by default** (the `backup` Compose profile;
-  `make backup` for one dump, `make restore FILE=…`). Until they are on, the
-  Postgres volume is the only copy, and only a `PULS_BACKUP_DIR` off that disk
-  survives losing it; only the restore drill in `server/README.md` verifies a
-  backup. TimescaleDB restore rules, which `server/backup/restore.sh` enforces
-  and a hand-restore must follow: `timescaledb_pre_restore()`/
-  `timescaledb_post_restore()` around it, never `pg_restore -j`, and drop the
-  old `public` schema *before* `pre_restore` (the drop takes the extension with
-  it — reinstall it first).
-- Ingest connects as the scoped DML-only `ingest` role (`INGEST_DB_USER`,
-  default `ingest`; `INGEST_DB_PASSWORD` required, kept equal to the role's
-  password by `099_read_roles.sh`), never with the superuser password;
-  `INGEST_DB_USER=postgres` is the documented, discouraged way back.
-- Ingest publishes port 8080 on `${INGEST_BIND_ADDR:-127.0.0.1}`, assuming a TLS
-  proxy in front. Only `scripts/bootstrap.sh --lan` writes `0.0.0.0`, on
-  request: a phone on the same Wi-Fi then uses `http://<LAN IP>:8080`, which the
-  app's ATS exception allows only for local-network hosts
-  (`ServerURLValidation.isLocalNetworkHost`). Keep the two rules in step, and
-  keep the loopback default.
-- The product API host mapping stays on `127.0.0.1`. The `web` viewer's login is
-  **optional and off unless `WEB_AUTH_PASSWORD` is set** (`web/proxy.ts` over
-  `web/lib/auth.ts`: HTTP Basic, any username, `/api/healthz` exempt,
-  constant-time compare, nothing about an attempt logged). It is a password
-  prompt, not TLS, so `web` still binds to `WEB_BIND_ADDR` (default
-  `127.0.0.1`) behind a private network or an HTTPS proxy, and reads Postgres
-  over the internal network as the read-only `grafana` role.
+- **The four app services run published images, not local builds**
+  (`ghcr.io/pulshealth/<name>:${PULS_VERSION:-latest}`, no `build:` block);
+  the overlay `server/compose.build.yml` builds them instead, tagged
+  `pulshealth-<service>:dev` so a local build never looks like a release. A
+  Dockerfile, build-context or build-arg change touches that overlay, the
+  `images` job in `ci.yml` and the build matrix in `release.yml`. The checkout
+  must be on the release `PULS_VERSION` names: the compose file and
+  `db/migrations/` (which `migrate` mounts) come from it.
+- CI: `ci.yml` (Go vet/tests, lint, shellcheck, `check-public-tree.sh`,
+  `docker compose config` over **both** compose variants, the `images` build
+  for `linux/amd64`) and `ios-ci.yml`. `release.yml` publishes multi-arch
+  images to `ghcr.io/pulshealth` on `v*` tags and `workflow_dispatch` (which
+  never moves `latest`). There is no deploy workflow.
+- **Backups are opt-in** (the `backup` Compose profile; `make backup`,
+  `make restore FILE=…`): until they are on, the Postgres volume is the only
+  copy, and only the restore drill in `server/README.md` verifies a backup.
+  TimescaleDB restore rules (`server/backup/restore.sh` enforces them; a
+  hand-restore must too): `timescaledb_pre_restore()`/`timescaledb_post_restore()`
+  around it, never `pg_restore -j`, and drop the old `public` schema *before*
+  `pre_restore`, reinstalling the extension the drop takes with it.
+- Ingest connects as the scoped DML-only `ingest` role (`INGEST_DB_PASSWORD`
+  required; `099_read_roles.sh` keeps the role's password equal to it), never
+  as the superuser; `INGEST_DB_USER=postgres` is the discouraged way back.
+- Ingest publishes 8080 on `${INGEST_BIND_ADDR:-127.0.0.1}`, assuming a TLS
+  proxy. Only `scripts/bootstrap.sh --lan` writes `0.0.0.0`, on request, for a
+  phone on the same Wi-Fi over plain `http://`, which the app's ATS exception
+  allows only for local-network hosts (`ServerURLValidation.isLocalNetworkHost`).
+  Keep the two rules in step, and keep the loopback default.
+- The product API binds `127.0.0.1`. The `web` login is **optional, off unless
+  `WEB_AUTH_PASSWORD` is set** (`web/proxy.ts` over `web/lib/auth.ts`: HTTP
+  Basic, any username, `/api/healthz` exempt, constant-time, nothing logged);
+  it is not TLS, so `web` still binds `WEB_BIND_ADDR` (default `127.0.0.1`) and
+  reads Postgres as the read-only `grafana` role.
 - **Ingest and the product API throttle failed authentications, never
   successful ones** (`server/ingest/ratelimit.go`, `server/api/ratelimit.go` —
   copies across two modules; keep them in step). The refusal comes *before*
@@ -504,8 +491,7 @@ nothing here assumes a particular machine.
   guessing rate; successes never draw, because a backfill is thousands of
   requests. `TRUST_PROXY_HEADERS=true` keys on `X-Forwarded-For` and, on the
   API, lets `X-Forwarded-Host` pick the host the unauthenticated
-  `/openapi.json` advertises. Limits and proxy advice: `server/README.md`,
-  "Rate limiting".
+  `/openapi.json` advertises. Limits: `server/README.md`, "Rate limiting".
 - **Ingest auth** (`server/ingest/auth.go`): the limiter, the shared token in
   memory, then the bearer's unsalted SHA-256 (the preimage is 256 random bits)
   in `device_tokens`. A database error there is **503 `authentication
@@ -519,6 +505,5 @@ nothing here assumes a particular machine.
   required again.
 - **`/healthz` is unauthenticated on both services, so it must not touch the
   pool per request** (`server/ingest/health.go`, `server/api/health.go` — again
-  copies). The database status is cached for two seconds and concurrent callers
-  collapse onto one probe; otherwise a loop of GETs from anyone who can reach
-  the port holds every pooled connection and stalls the service.
+  copies): the database status is cached for two seconds and concurrent
+  callers share one probe, or a loop of GETs holds every pooled connection.
