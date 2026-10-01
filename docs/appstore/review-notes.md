@@ -20,9 +20,9 @@ not — since 1.6 the flow asks for no server; the Sync tab does.)
 | `<<<REVIEW_EXPIRY>>>` | The date you intend to take the instance down. Keep it up until the app is approved. |
 
 The field's limit is 4000 characters and the filled-in block below is about
-3,903 (the placeholder version measures 3,838; a 29-character URL, a
+3,900 (the placeholder version measures 3,835; a 29-character URL, a
 64-character token, the 36-character UUID and "October 31, 2026" add 65) —
-3,960 if each of its 57 line breaks counts as two, which is the reading to
+3,957 if each of its 57 line breaks counts as two, which is the reading to
 budget for. So any addition needs a matching cut. Measure the filled copy
 before pasting — the block has overrun before (the `puls://` section took it to
 about 4,800 until the export section forced a recount, and iOS 27's history
@@ -55,7 +55,7 @@ HOW TO EXERCISE THE APP (about 5 minutes)
 
 1. Launch the app. A four-step first-run flow starts.
 2. "Get Started".
-3. On "Health Access", tap "Continue". iOS shows its permission sheet: turn all on, then Allow. iOS 27 then asks how much data to share: choose "All Recorded Data and Future Data", then Allow. The app requests READ access only.
+3. On "Health Access", tap "Continue". iOS shows its permission sheet: tap "Turn On All", then "Allow" (iOS 27: "Select All", "Continue", then "All Recorded Data and Future Data", "Allow"). The app requests READ access only.
 4. On "Choose Data", a starter selection is already made. Tap "Continue".
 5. On "Ready", tap "Start Exploring". The Explore tab appears.
 6. Open the Sync tab and tap "Set Up". On the Server screen, type the Server URL and Token above into the two fields under "Or enter it by hand". (Scanning needs a physical QR code.) iOS may offer to save the token; either answer is fine.
