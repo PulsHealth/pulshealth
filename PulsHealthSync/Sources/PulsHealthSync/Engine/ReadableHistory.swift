@@ -202,11 +202,51 @@ public enum ReadableHistory {
         return types
     }
 
+    /// How long a HealthKit call here may take before its answer counts as
+    /// unknown. HealthKit calls have been seen to stall for 30–60 s after a
+    /// reinstall on the simulator, and one never to return on a fresh one;
+    /// and these run before every sync claims its types. Unknown fails
+    /// closed: the recorded date stands, and nothing widens.
+    static let timeout: Duration = .seconds(10)
+
+    /// Thrown by `withTimeout` when the operation outran it.
+    struct TimedOut: Error, CustomStringConvertible {
+        var description: String { "HealthKit did not answer within \(ReadableHistory.timeout)" }
+    }
+
+    /// `operation`'s result, or `TimedOut` once `limit` has passed —
+    /// whether or not the operation honours cancellation. It is cancelled
+    /// then, and whatever it returns later is dropped. (A task group would
+    /// not do: it waits for every child before it returns, so a HealthKit
+    /// call that never comes back would hold it forever.)
+    static func withTimeout<T: Sendable>(
+        _ limit: Duration = timeout, _ operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        let once = ResumeOnce<T>()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                once.set(continuation)
+                let work = Task {
+                    do { once.resume(with: .success(try await operation())) } catch { once.resume(with: .failure(error)) }
+                }
+                let timer = Task {
+                    try? await Task.sleep(for: limit)
+                    if once.resume(with: .failure(TimedOut())) { work.cancel() }
+                }
+                once.onResume { timer.cancel() }
+            }
+        } onCancel: {
+            once.resume(with: .failure(CancellationError()))
+        }
+    }
+
     /// One HealthKit round trip: the earliest readable date of each of
     /// `identifiers` that iOS 27 limits, by identifier. Empty when none is
     /// limited — and always empty when built with the iOS 26 SDK or run
-    /// before iOS 27. Throws what HealthKit throws; callers decide what an
-    /// unknown answer means for them.
+    /// before iOS 27. Throws what HealthKit throws, and `TimedOut` after
+    /// `timeout`; callers decide what an unknown answer means for them.
+    /// Never asks about an empty set: that breaks the connection to
+    /// `healthd` (Cocoa error 4099).
     static func query(
         _ identifiers: some Collection<String>, in healthStore: HKHealthStore
     ) async throws -> [String: Date] {
@@ -214,7 +254,10 @@ public enum ReadableHistory {
         if #available(iOS 27.0, *) {
             let types = objectTypes(for: identifiers)
             guard !types.isEmpty else { return [:] }
-            let dates = try await healthStore.earliestAuthorizedSampleDate(for: Set(types.keys))
+            let asking = Set(types.keys)
+            let dates = try await withTimeout {
+                try await healthStore.earliestAuthorizedSampleDate(for: asking)
+            }
             let asked = Set(identifiers)
             var byIdentifier: [String: Date] = [:]
             for (type, date) in dates {
@@ -292,5 +335,62 @@ public struct LimitedHistorySummary: Sendable, Equatable {
     /// Whether every date falls on the same local day, so one date says it.
     public func isOneDay(in calendar: Calendar = .current) -> Bool {
         calendar.isDate(earliest, inSameDayAs: latest)
+    }
+}
+
+/// A continuation resumed exactly once, by whichever of `withTimeout`'s
+/// racers gets there first. A lock, because the racers are unstructured
+/// tasks and the cancellation handler runs on whatever thread cancels.
+private final class ResumeOnce<T: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<T, Error>?
+    private var pending: Result<T, Error>?
+    private var resumed = false
+    private var hooks: [@Sendable () -> Void] = []
+
+    /// Installs the continuation; a result that arrived first (cancellation
+    /// before the continuation existed) is delivered at once.
+    func set(_ continuation: CheckedContinuation<T, Error>) {
+        lock.lock()
+        if let pending {
+            self.pending = nil
+            lock.unlock()
+            continuation.resume(with: pending)
+            return
+        }
+        self.continuation = continuation
+        lock.unlock()
+    }
+
+    /// Runs `hook` when the continuation is resumed (now, if it was).
+    func onResume(_ hook: @escaping @Sendable () -> Void) {
+        lock.lock()
+        if resumed {
+            lock.unlock()
+            hook()
+            return
+        }
+        hooks.append(hook)
+        lock.unlock()
+    }
+
+    /// True for the call that resumed it; false for every later one.
+    @discardableResult
+    func resume(with result: Result<T, Error>) -> Bool {
+        lock.lock()
+        guard !resumed else {
+            lock.unlock()
+            return false
+        }
+        resumed = true
+        let continuation = self.continuation
+        self.continuation = nil
+        if continuation == nil { pending = result }
+        let hooks = self.hooks
+        self.hooks = []
+        lock.unlock()
+        continuation?.resume(with: result)
+        for hook in hooks { hook() }
+        return true
     }
 }

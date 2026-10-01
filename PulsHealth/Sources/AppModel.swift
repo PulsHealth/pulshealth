@@ -191,7 +191,12 @@ final class AppModel {
         // the first grant (or an interrupted permission sheet) stay notDetermined
         // and make their syncs fail until access is requested again.
         await refreshNeedsAuthorization()
-        await refreshReadableHistory()
+        // Not awaited: it is one HealthKit round trip, which has been seen to
+        // stall for up to its ten-second timeout, and the observer
+        // registration at the end of this method must not wait behind it on
+        // a background launch. Nothing here needs the answer; the
+        // foreground sync asks again before it claims anything.
+        Task { await refreshReadableHistory() }
         // Heal installs where the flag was never written because access was
         // already determined when Apply ran (older builds only set it after an
         // actual prompt): a configured setup with nothing left to ask for is

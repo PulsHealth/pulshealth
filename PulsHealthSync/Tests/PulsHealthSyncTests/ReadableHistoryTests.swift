@@ -541,3 +541,47 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
         #expect(two?.latest == limit.addingTimeInterval(5 * day))
     }
 }
+
+@Suite struct ReadableHistoryTimeoutTests {
+    @Test func anAnswerInTimeComesBack() async throws {
+        let value = try await ReadableHistory.withTimeout(.seconds(5)) { 42 }
+        #expect(value == 42)
+    }
+
+    @Test func anErrorInTimeIsRethrown() async {
+        await #expect(throws: URLError.self) {
+            try await ReadableHistory.withTimeout(.seconds(5)) { () async throws -> Int in throw URLError(.timedOut) }
+        }
+    }
+
+    /// The case that matters: a HealthKit call that does not honour
+    /// cancellation, and returns late or never. The caller is let go at the
+    /// limit all the same.
+    @Test func aCallThatIgnoresCancellationIsCutOffAtTheLimit() async {
+        let started = ContinuousClock.now
+        await #expect(throws: ReadableHistory.TimedOut.self) {
+            try await ReadableHistory.withTimeout(.milliseconds(200)) { () async -> Int in
+                await withCheckedContinuation { (continuation: CheckedContinuation<Int, Never>) in
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 3) { continuation.resume(returning: 1) }
+                }
+            }
+        }
+        #expect(ContinuousClock.now - started < .seconds(2))
+    }
+
+    @Test func cancellingTheCallerEndsTheWait() async {
+        let task = Task {
+            try await ReadableHistory.withTimeout(.seconds(30)) { () async -> Int in
+                await withCheckedContinuation { (continuation: CheckedContinuation<Int, Never>) in
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 3) { continuation.resume(returning: 1) }
+                }
+            }
+        }
+        try? await Task.sleep(for: .milliseconds(100))
+        let started = ContinuousClock.now
+        task.cancel()
+        let result = await task.result
+        #expect(ContinuousClock.now - started < .seconds(2))
+        #expect(throws: CancellationError.self) { try result.get() }
+    }
+}
