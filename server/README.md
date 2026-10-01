@@ -74,17 +74,15 @@ Everything is read from `.env`; `.env.example` lists every variable with
 comments. Beyond the passwords and tokens:
 
 - **`PULS_TIME_ZONE`** — the IANA zone your phone lives in (e.g.
-  `Europe/Berlin`); default `UTC`. Every daily view buckets by it: the
-  `metric_daily` view, Grafana's daily panels, the product API's local-day
-  ranges and the web viewer. It must match the phone, because the daily
-  aggregates HealthKit computes on-device are already in the phone's
-  calendar — a mismatch splits days between two rows. On every start
-  `migrate` runs `db/migrations/013_time_zone.sh`, which validates the name
-  against `pg_timezone_names` (an unknown name stops the stack) and stores
-  it with `ALTER DATABASE … SET puls.time_zone`, read by the
-  `puls_time_zone()` SQL function. Compose also hands it to `api`, `mcp` and
-  `web`; the API refuses to start on an invalid name. To change it, edit
-  `.env` and:
+  `Europe/Berlin`); default `UTC`. Every daily view buckets by it
+  (`metric_daily`, Grafana's daily panels, the product API, the web viewer),
+  and it must match the phone: the daily aggregates HealthKit computes are
+  already in the phone's calendar, and a mismatch splits days between two
+  rows. On every start `db/migrations/013_time_zone.sh` validates it against
+  `pg_timezone_names` (an unknown name stops the stack) and stores it with
+  `ALTER DATABASE … SET puls.time_zone`, read by `puls_time_zone()`. Compose
+  also hands it to `api` (which refuses an invalid name), `mcp` and `web`. To
+  change it, edit `.env` and:
 
   ```bash
   docker compose up -d     # migrate re-stores it; api/mcp/web are recreated
@@ -174,13 +172,13 @@ list); each image carries its commit as the
   tag given as input, or the short commit SHA. Never `latest`.
 
 `PULS_VERSION` in `.env` selects the tag (default `latest`). To upgrade a
-pinned install, bump it, bring the checkout to the same release (`git
-checkout v<version>`), then `make pull up`. The checkout matters because the
-compose file and `db/migrations/` (which `migrate` mounts) come from it: an
-image newer than its checkout meets a schema that lacks what it expects.
-Migrations are forward-only, so going back to an older image after a release
-that migrated the schema is not supported. The database image is versioned
-separately (see "Upgrading the database image").
+pinned install, bump it, check out the same release (`git checkout
+v<version>`) and `make pull up`. The checkout matters: the compose file and
+`db/migrations/` (which `migrate` mounts) come from it, and an image newer
+than its checkout meets a schema that lacks what it expects. Migrations are
+forward-only — going back to an older image after a release that migrated
+the schema is not supported. The database image is versioned separately
+(see "Upgrading the database image").
 
 To run what is in the checkout — a local change, or a branch under
 review — add the developer overlay, which puts the `build:` blocks back and
@@ -330,12 +328,11 @@ LEFT JOIN category_labels cl
  AND cl.value = c.value;
 ```
 
-The seed comes from the HealthKit SDK bundled with Xcode: `HKTypeIdentifiers.h`
-maps each `HKCategoryTypeIdentifier*` to its value enum, and
-`HKCategoryValues.h` defines the integers and enum names. Refresh it after
-major SDK updates or when adding a category type; it is a `-- puls:rerun`
-upsert, so `docker compose up -d` re-applies the edited file. Then check the
-seed's shape:
+The seed comes from Xcode's HealthKit headers (`HKTypeIdentifiers.h` maps
+each category type to its value enum, `HKCategoryValues.h` defines the
+values). Refresh it after major SDK updates or when adding a category type;
+`docker compose up -d` re-applies the edited `-- puls:rerun` file. Then
+check the seed's shape:
 
 ```bash
 docker compose exec db psql -U postgres -d postgres -tA \
@@ -599,15 +596,13 @@ ingest token — and the service connects to Postgres as the read-only
 unless the query carries `user=<uuid>`. Naming anyone else needs
 `PULS_MULTI_USER=true` (default `false`); otherwise it is a `403
 {"error":"multi-user reads are disabled"}`, never a quiet answer for the
-default user. A value that is not a UUID is a `400`. Neither counts against
-the failed-authentication limit — the token was valid. An unknown id reads
-as a user with no data. `GET /v1/users` lists every user with the gate on
-(only the default with it off), each with name, e-mail, `createdAt`,
-`lastSync`, `batches` and `uploadedSamples`, plus `default` and `multiUser`
-so a client can tell what the deployment will answer. **Turning the gate on
-widens what the one `PULS_API_TOKEN` reads from one person to everyone on
-the server** — and to any ChatGPT Action built from `/openapi.json`, which
-describes the parameter.
+default user. A non-UUID value is a `400`. Neither counts against the
+failed-authentication limit, and an unknown id reads as a user with no
+data. `GET /v1/users` lists every user (only the default with the gate off)
+with name, e-mail, `createdAt`, `lastSync`, `batches` and
+`uploadedSamples`, plus `default` and `multiUser` flags. **Turning the gate
+on widens what the one `PULS_API_TOKEN` reads from one person to everyone
+on the server** — and to any ChatGPT Action built from `/openapi.json`.
 
 ```bash
 curl -s -H "Authorization: Bearer $PULS_API_TOKEN" http://localhost:8081/v1/users
@@ -772,15 +767,13 @@ Open `http://localhost:3000` on the host, or through your TLS proxy (e.g.
 (read-only `grafana` role) and two cross-linked dashboards are provisioned
 automatically:
 
-- **PulsHealth** (`puls-health`, 15 min refresh) — health data: heart rate
-  with workout annotations, daily steps, on-device aggregate series
-  (*Aggregate series* variable), a metric explorer over `quantity_rollups`
-  (*Metric*/*Bucket*), sleep stages and minutes per night, resting HR and
-  HRV 7-day trends, workouts, a GPS route map (*Route*), state of mind and
-  medication doses. Daily panels bucket by the hidden `tz` variable, which
-  reads `puls_time_zone()` on load, so they agree with `metric_daily` and
-  the API. Everything is filtered by the *User* variable, which defaults to
-  the seeded user.
+- **PulsHealth** (`puls-health`, 15 min refresh) — heart rate with workout
+  annotations, daily steps, on-device aggregate series, a metric explorer
+  over `quantity_rollups`, sleep, resting HR and HRV trends, workouts, a GPS
+  route map, state of mind and medication doses. Daily panels bucket by the
+  hidden `tz` variable, read from `puls_time_zone()`, so they agree with
+  `metric_daily` and the API. Everything is filtered by the *User* variable
+  (default: the seeded user).
 - **PulsHealth Ops** (`puls-ops`, 1 min refresh) — ingest health: last-batch
   age (yellow > 2 h, red > 6 h), batches per hour, ingest latency,
   samples/aggregates/deletions per day, and per-type row counts (quantity
@@ -884,10 +877,8 @@ there are owned by the directory's owner, mode `600`.
 The schedule is a sleep loop, not cron (the image has no cron daemon), so it
 is relative to when the container started — restarting the stack shifts the
 dump time. For a fixed time, leave the profile off and run `make backup`
-from the host's cron or systemd timer.
-
-Nothing verifies your backups except the drill below. Run it once, before
-you need it.
+from the host's cron or systemd timer. `docker compose stop backup` returns
+at once rather than waiting out the kill timeout.
 
 ### Restoring
 
@@ -925,7 +916,7 @@ exist.
 
 ### The restore drill
 
-A backup you have never restored is a hypothesis. Run this once on a scratch
+Nothing verifies a backup but restoring it. Run this once on a scratch
 install — not the one holding your data — so the first time you use
 `restore.sh` is not the day you need it.
 
@@ -946,27 +937,19 @@ make restore FILE=puls-<timestamp>.dump ARGS=--yes
 ```
 
 Add `--build` to both scripts to drill against images built from the
-checkout. A good restore looks like this (as recorded on a throwaway stack,
-not anyone's real data):
+checkout. A good restore, as recorded on a throwaway stack, looks like this:
 
 - `docker compose ps`: six services up, `db` healthy.
 - `docker compose logs migrate`: **`0 applied, 0 rerun, <every .sql file>
-  skipped, 2 script(s) ran`** — the schema came from the dump, and only the
-  role and time-zone scripts re-ran. They are what puts the `grafana`,
-  `api_reader` and `ingest` roles and their grants back, since the restore
-  itself skips owners and privileges; `puls_time_zone()` returns the zone
-  from `.env`.
-- Every row count identical either side of the wipe, down to the values
-  you recognise — through `GET /v1/stats`, the viewer or `psql` — with the
-  hypertables, the `quantity_rollups` continuous aggregate and the
-  `metric_daily` view querying, and the `timescaledb` extension at the same
-  version.
-- The pipeline live again: ingest accepts a new sample, and re-posting the
-  seeded batch answers `"duplicates":2`.
-
-Restoring with `--no-start` leaves the app services down until `docker
-compose up -d`. `docker compose stop backup` returns immediately rather than
-waiting out the kill timeout.
+  skipped, 2 script(s) ran`** — the schema came from the dump, and the role
+  and time-zone scripts put back the roles, their grants and
+  `puls_time_zone()`, which the restore itself skips.
+- Every row count identical either side of the wipe, down to the values you
+  recognise (`GET /v1/stats`, the viewer or `psql`); the hypertables, the
+  `quantity_rollups` continuous aggregate and `metric_daily` querying; the
+  `timescaledb` extension at the same version.
+- Ingest accepts a new sample, and re-posting the seeded batch answers
+  `"duplicates":2`.
 
 ## Development
 
