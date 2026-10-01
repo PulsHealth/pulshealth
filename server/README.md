@@ -166,9 +166,10 @@ The four app services run images published from this repository:
 list); each image carries its commit as the
 `org.opencontainers.image.revision` label. The tags:
 
-- On a git tag `vX.Y.Z`: the exact version (`1.2.3`), a floating `1.2`, and
-  `latest`. `latest` and `1.2` move only for non-prerelease tags, so
-  `v1.3.0-rc1` publishes `1.3.0-rc1` alone.
+- On a git tag `vX.Y.Z`: the exact version (`X.Y.Z`), a floating `X.Y`,
+  and `latest` (`v0.2.0` → `0.2.0`, `0.2`, `latest`). `latest`
+  and `X.Y` move only for non-prerelease tags, so `vX.Y.Z-rc1` publishes
+  `X.Y.Z-rc1` alone.
 - On a manual run (`workflow_dispatch`, e.g. to try a branch's images): the
   tag given as input, or the short commit SHA. Never `latest`.
 
@@ -750,12 +751,12 @@ curl -s -H "Authorization: Bearer $PULS_TOKEN" http://localhost:8080/v1/stats | 
 
 ### Analysing background wakes
 
-Every upload writes one `batches` row stamped with `received_at` (server time),
+Every upload writes one `batches` row with `received_at` (server time),
 `wake_id`/`trigger` (the iOS wake that produced it), `bytes`, `parse_ms`,
-`insert_ms`, and the per-kind counts. That's enough to reconstruct how often the
-device got execution time and what each wake did — pair it with the device-side
-wake export (app → Sync → Activity → Background → Export) for the full picture
-(durations, gaps, expirations, Low Power Mode).
+`insert_ms` and the per-kind counts — enough to see how often the phone got
+execution time and what each wake did. The app's own wake export (Sync →
+Activity → Background → Export) adds durations, gaps, expirations and Low
+Power Mode.
 
 ```bash
 # Uploads per hour over the last 14 days, by trigger.
@@ -784,46 +785,37 @@ docker compose exec db psql -U postgres -d postgres -c "
 
 ## Grafana
 
-Open `http://localhost:3000` on the host (or through your TLS proxy, e.g.
-`https://<machine>.<tailnet>.ts.net:8443` with Tailscale Serve), log in as
-`$GRAFANA_USER` (defaults to `admin`) /
-`$GRAFANA_PASSWORD`. The
-TimescaleDB datasource (read-only `grafana` DB role) and two dashboards are
-provisioned automatically:
+Open `http://localhost:3000` on the host, or through your TLS proxy (e.g.
+`https://<machine>.<tailnet>.ts.net:8443`), and log in as `$GRAFANA_USER`
+(default `admin`) / `$GRAFANA_PASSWORD`. The TimescaleDB datasource
+(read-only `grafana` role) and two cross-linked dashboards are provisioned
+automatically:
 
-- **PulsHealth** (`puls-health`, 15 min refresh) — health data only: heart
-  rate (with workout annotations), daily steps, on-device aggregate series
-  (`aggregate_samples`, pick series via the *Aggregate series* variable), a
-  templated metric explorer over `quantity_rollups` (*Metric*/*Bucket*
-  variables), sleep stage timeline + minutes-per-night, resting HR and HRV
-  7-day trends, workouts table, GPS route geomap (*Route* variable lists
-  workouts that have route points), state of mind, medication doses. Daily
-  bucketing uses the hidden `tz` query variable, which reads
-  `puls_time_zone()` — the database's `PULS_TIME_ZONE` setting — on dashboard
-  load, so the panels agree with `metric_daily` and the API.
-  Every health query, annotation, and data-backed selector is filtered by the
-  *User* variable, a query over `users` that resolves to the first (seeded)
-  user on load.
+- **PulsHealth** (`puls-health`, 15 min refresh) — health data: heart rate
+  with workout annotations, daily steps, on-device aggregate series
+  (*Aggregate series* variable), a metric explorer over `quantity_rollups`
+  (*Metric*/*Bucket*), sleep stages and minutes per night, resting HR and
+  HRV 7-day trends, workouts, a GPS route map (*Route*), state of mind and
+  medication doses. Daily panels bucket by the hidden `tz` variable, which
+  reads `puls_time_zone()` on load, so they agree with `metric_daily` and
+  the API. Everything is filtered by the *User* variable, which defaults to
+  the seeded user.
 - **PulsHealth Ops** (`puls-ops`, 1 min refresh) — ingest health: last-batch
-  age stat (yellow > 2 h, red > 6 h), batches/hour, ingest latency,
+  age (yellow > 2 h, red > 6 h), batches per hour, ingest latency,
   samples/aggregates/deletions per day, and per-type row counts (quantity
-  counts come from the `quantity_rollups` rollup, not full hypertable scans).
-
-The two dashboards cross-link via dashboard-tag links in the top nav.
+  counts from the `quantity_rollups` rollup, not hypertable scans).
 
 ### Alerting
 
-Dashboards only help when someone is looking at them. On 2026-08-13 ingest
-returned 500 on every batch for 28 hours while "Last Batch Age" sat red on a
-screen nobody had open. Four rules in
-`grafana/provisioning/alerting/rules.yml` now push instead:
+A red dashboard nobody has open alerts no one, so four rules in
+`grafana/provisioning/alerting/rules.yml` push instead:
 
 | Rule | Fires when | Detects in | Why that threshold |
 |---|---|---|---|
-| Ingest is rejecting batches | > 10 rejections in 30 min | ~10 min | The outage produced ~85/hour; the benign `context canceled` class runs 1–2 per *month*. Nothing lives between those numbers. |
-| A batch is stuck on a rejected page | the same 4xx message in ≥ 3 distinct hours of the last 6 | ~3 h | A page the server deterministically rejects (unknown line type after a client-first update, oversized line, out-of-range value) is re-sent about once an hour and never reaches the rate rule above; the client does not retry 4xx, so that type is stalled until server or client is fixed. |
-| Ingest stalled | no batch for > 14 h | 14.5 h | Measured against 60 days of `batches`: only 2 normal gaps exceeded 14 h, versus 7 at 12 h and 22 at 10 h. |
-| Lookup sequence near exhaustion | any smallint identity sequence > 95% | ~5 min | Would have prevented the outage entirely. Not 80%, because `sources_source_id_seq` legitimately sits at ~90% with unreclaimable gaps and a permanently-red rule gets muted. |
+| Ingest is rejecting batches | > 10 rejections in 30 min | ~10 min | A real outage rejects ~85 an hour; the benign `context canceled` class runs 1–2 per *month*. Nothing lives between those numbers. |
+| A batch is stuck on a rejected page | the same 4xx message in ≥ 3 distinct hours of the last 6 | ~3 h | A page the server always rejects (a new line type before the server update, an oversized line, an out-of-range value) is re-sent about hourly and never reaches the rate rule; the client does not retry 4xx, so that type stalls until server or client is fixed. |
+| Ingest stalled | no batch for > 14 h | 14.5 h | Over 60 days of `batches`, only 2 normal gaps exceeded 14 h, versus 7 at 12 h and 22 at 10 h. |
+| Lookup sequence near exhaustion | any smallint identity sequence > 95% | ~5 min | At the ceiling every insert fails and ingest stops. Not 80%: `sources_source_id_seq` legitimately sits near 90% with unreclaimable gaps, and a permanently red rule gets muted. |
 
 To re-derive the staleness threshold after usage patterns change:
 
@@ -837,26 +829,25 @@ WHERE gap IS NOT NULL GROUP BY thr ORDER BY thr;
 ```
 
 The sequence rule needs `SELECT` on the sequences — without it
-`pg_sequences.last_value` reads NULL for the `grafana` role and the rule
-evaluates to 0 forever. `099_read_roles.sh` grants it on every
-`docker compose up -d`.
+`pg_sequences.last_value` reads NULL for `grafana` and the rule never fires.
+`099_read_roles.sh` grants it on every `docker compose up -d`.
 
-**Email delivery needs one manual step.** Rules always evaluate and always
-turn the UI red, but `GF_SMTP_ENABLED` defaults to `false` so a deploy can
-never fail on a missing credential. To turn mail on, put a Gmail **App
-Password** (not the account password — needs 2-Step Verification, from
+**Email delivery needs one manual step.** Rules always evaluate and turn the
+UI red, but SMTP is off by default so a deploy never fails on a missing
+credential. To turn mail on, put a Gmail **App Password** (not the account
+password; it needs 2-Step Verification —
 <https://myaccount.google.com/apppasswords>) in `GRAFANA_SMTP_PASSWORD`, set
-`GRAFANA_SMTP_USER`, flip `GRAFANA_SMTP_ENABLED=true`, then:
+`GRAFANA_SMTP_USER` and `GRAFANA_SMTP_ENABLED=true` (another provider:
+`GRAFANA_SMTP_HOST`, default `smtp.gmail.com:587`), then:
 
 ```bash
 docker compose up -d grafana
 ```
 
-Verify end to end in the UI: **Alerting → Contact points → puls-email → Test**.
-If that email does not arrive, the alerts will not arrive either. The
-recipient is `GRAFANA_ALERT_EMAIL` from `.env` (see "Configuration"); Compose
-defaults it to `alerts@example.com` so a missing variable cannot expand to an
-empty recipient — check the contact point shows your address.
+Test it end to end in the UI — **Alerting → Contact points → puls-email →
+Test** — and check the contact point shows your `GRAFANA_ALERT_EMAIL` rather
+than the `alerts@example.com` default (see "Configuration"). If the test mail
+does not arrive, alerts will not either.
 
 ## Backup & restore
 
