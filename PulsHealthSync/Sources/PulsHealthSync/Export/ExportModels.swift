@@ -280,6 +280,12 @@ public struct ExportResult: Sendable {
     /// canonical unit, per type identifier. Non-empty means a catalog bug
     /// (a wrong `unitString`), and that those samples are in no file.
     public var unmappableSamples: [String: Int]
+    /// iOS 27 limited history access: types HealthKit let this export read
+    /// only from the given date, later than the start of the range asked
+    /// for. The files hold nothing of theirs before it, so the export is not
+    /// complete; widening access (Settings → Privacy & Security → Health)
+    /// and exporting again is how to get the rest.
+    public var limitedHistory: [String: Date] = [:]
     /// Types, aggregate series or workout phases that did not finish.
     public var failures: [ExportIssue]
     /// Things that went wrong without losing a whole type: an unreadable ECG
@@ -293,8 +299,13 @@ public struct ExportResult: Sendable {
     public var totalRows: Int { rowCounts.values.reduce(0, +) }
 
     /// True when every selected type, series and phase was read to the end
-    /// and every sample HealthKit returned was written.
-    public var isComplete: Bool { failures.isEmpty && unmappableSamples.isEmpty }
+    /// and every sample HealthKit returned was written — over the whole range
+    /// asked for, which limited history access (`limitedHistory`) rules out:
+    /// a file that starts a month ago looks exactly like the file of someone
+    /// whose data starts a month ago.
+    public var isComplete: Bool {
+        failures.isEmpty && unmappableSamples.isEmpty && limitedHistory.isEmpty
+    }
 }
 
 public enum HealthExportError: Error, LocalizedError, Sendable, Equatable {

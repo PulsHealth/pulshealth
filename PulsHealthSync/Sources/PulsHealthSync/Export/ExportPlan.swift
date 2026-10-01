@@ -107,6 +107,14 @@ enum ExportPlan {
         return bucketing.start(ofBucket: bucketing.index(of: desired))
     }
 
+    /// The types whose earliest readable date (iOS 27 limited history
+    /// access, `HealthSyncEngine.earliestAuthorizedDates`) falls after the
+    /// export's start: the ones the files cover only in part. A date at or
+    /// before the start cuts nothing off and is left out.
+    static func limitedHistory(_ readable: [String: Date], exportStart: Date) -> [String: Date] {
+        readable.filter { ReadableHistory.effectiveLimit($0.value, readingFrom: exportStart) != nil }
+    }
+
     // MARK: - Completion
 
     /// The throwaway store's view of the finished sweep.

@@ -269,9 +269,16 @@ version, the time zone local days were computed in, the exported `types` and
 per-file and per-dataset row counts, and — the reason it exists —
 `"complete": false` with a `failures` list whenever a selected type could not
 be read to the end (access never granted for it, the phone locked part-way
-through) or a sample could not be converted to its canonical unit. A file that
-stops short looks exactly like the file of someone with less data; the
-manifest is what tells them apart.
+through) or a sample could not be converted to its canonical unit. iOS 27 adds
+a third reason: with Health access limited to recent history (the permission
+sheet's "Past 30 Days and Future Data", or Limited Access under Settings →
+Privacy & Security → Health), HealthKit lets the app read a type only from an
+earliest date on, and `limitedHistory` maps each type whose date falls after
+the export's start to that date (epoch milliseconds). The files hold nothing
+of those types before it, so the export is not complete either; choosing Full
+Access and exporting again is how to get the rest. A file that stops short
+looks exactly like the file of someone with less data; the manifest is what
+tells them apart.
 
 One caveat for replaying **aggregate** lines. Bucket boundaries are counted
 from the start of the series, so an export aligns each series to the grid the

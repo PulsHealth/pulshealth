@@ -141,6 +141,12 @@ public final class HealthExporter: Sendable {
             config.aggregates, request: request, exportStart: config.startDate, engine: engine)
         config.aggregates = aligned.configs
         await engine.configure(config)
+        // iOS 27 limited history access. The sweep reads only what HealthKit
+        // allows (and the engine's clamps keep aggregates and rings off the
+        // rest), so the files are honest about what they hold; this is what
+        // makes the result honest about what they do not.
+        let limitedHistory = ExportPlan.limitedHistory(
+            await engine.earliestAuthorizedDates(), exportStart: config.startDate)
 
         let createdAt = Date()
         let baseName = "puls-export-\(Self.timestamp(createdAt))"
@@ -198,7 +204,7 @@ public final class HealthExporter: Sendable {
                 userID: config.userID,
                 deviceID: request.deviceID ?? engine.store.deviceID,
                 timeZone: TimeZone.current.identifier,
-                complete: failures.isEmpty && unmappable.isEmpty,
+                complete: failures.isEmpty && unmappable.isEmpty && limitedHistory.isEmpty,
                 types: config.enabledTypes.sorted(),
                 aggregates: request.selection.aggregates.map(\.seriesIdentity).sorted(),
                 files: written.map { file in
@@ -210,6 +216,7 @@ public final class HealthExporter: Sendable {
                 batches: tally.batches,
                 notRepresented: Self.named(tally.notRepresented(in: request.format)),
                 unmappableSamples: unmappable,
+                limitedHistory: limitedHistory,
                 failures: failures)
             let manifestBytes: Int64
             do {
@@ -248,6 +255,7 @@ public final class HealthExporter: Sendable {
                 rowCounts: rowCounts,
                 notRepresented: tally.notRepresented(in: request.format),
                 unmappableSamples: unmappable,
+                limitedHistory: limitedHistory,
                 failures: failures,
                 warnings: ExportPlan.warnings(from: events, excluding: failures),
                 totalBytes: totalBytes,

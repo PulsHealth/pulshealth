@@ -398,6 +398,55 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
     }
 }
 
+@Suite struct ReadableHistoryExportTests {
+    let start = Date(timeIntervalSince1970: 1_759_276_800) // 2025-10-01
+    let limit = Date(timeIntervalSince1970: 1_788_223_011)
+
+    @Test func onlyLimitsAfterTheExportStartMakeItPartial() {
+        let readable = [
+            "HKQuantityTypeIdentifierStepCount": limit,
+            "HKQuantityTypeIdentifierHeartRate": start.addingTimeInterval(-day),
+        ]
+        #expect(ExportPlan.limitedHistory(readable, exportStart: start)
+            == ["HKQuantityTypeIdentifierStepCount": limit])
+        // "Past 30 days" exports from after the limit: complete.
+        #expect(ExportPlan.limitedHistory(readable, exportStart: limit.addingTimeInterval(day)).isEmpty)
+        #expect(ExportPlan.limitedHistory([:], exportStart: start).isEmpty)
+    }
+
+    @Test func aLimitedExportIsNotComplete() {
+        var result = ExportResult(
+            format: .csv, directory: URL(fileURLWithPath: "/tmp/x"), files: [],
+            rowCounts: [.samples: 6], notRepresented: [:],
+            unmappableSamples: [:], failures: [], warnings: [], totalBytes: 1, duration: 1)
+        #expect(result.isComplete)
+        result.limitedHistory = ["HKQuantityTypeIdentifierStepCount": limit]
+        #expect(!result.isComplete)
+    }
+
+    @Test func theManifestSaysWhichTypesStartLateAndWhen() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("puls-tests-\(UUID())", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let manifest = ExportManifest(
+            format: .jsonl, schemaVersion: PulsProtocol.version, clientVersion: "1.6 (17)",
+            createdAt: limit, startDate: nil, endDate: nil, userID: PulsDefaultUser.id,
+            deviceID: "d", timeZone: "America/Los_Angeles", complete: false,
+            types: ["HKQuantityTypeIdentifierStepCount"], aggregates: [], files: [], rows: [:],
+            batches: 1, notRepresented: [:], unmappableSamples: [:],
+            limitedHistory: ["HKQuantityTypeIdentifierStepCount": limit], failures: [])
+        let url = dir.appendingPathComponent("m.json")
+        _ = try manifest.write(to: url)
+        let data = try Data(contentsOf: url)
+        let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect((object["limitedHistory"] as? [String: Double])?["HKQuantityTypeIdentifierStepCount"]
+            == 1_788_223_011_000)
+        #expect(object["complete"] as? Bool == false)
+        #expect(try JSONDecoder.puls.decode(ExportManifest.self, from: data) == manifest)
+    }
+}
+
 @Suite struct ReadableHistoryProfileTests {
     private let now = Date(timeIntervalSince1970: 1_790_812_800) // 2026-10-01
     private let limit = Date(timeIntervalSince1970: 1_788_223_011.807)
