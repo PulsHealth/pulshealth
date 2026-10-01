@@ -115,6 +115,18 @@ enum ExportPlan {
         readable.filter { ReadableHistory.effectiveLimit($0.value, readingFrom: exportStart) != nil }
     }
 
+    /// The issue for an export whose limits HealthKit could not report
+    /// (`HealthSyncEngine.currentReadableHistory` answered nil: it failed or
+    /// timed out). Nothing failed to read, but nothing says the files reach
+    /// back as far as the range asked for either, so the export is not
+    /// complete — the honest answer when a limit cannot be ruled out. Nil
+    /// when the dates are known, an empty answer included.
+    static func readableHistoryIssue(_ readable: [String: Date]?) -> ExportIssue? {
+        guard readable == nil else { return nil }
+        return ExportIssue(
+            message: "iOS could not say how much Health history PulsHealth may read, so these files may start later than the range asked for. Export again to check.")
+    }
+
     // MARK: - Completion
 
     /// The throwaway store's view of the finished sweep.

@@ -650,3 +650,24 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
         #expect(throws: CancellationError.self) { try result.get() }
     }
 }
+
+@Suite struct ReadableHistoryUnknownExportTests {
+    /// HealthKit could not say (failed or timed out): the export cannot
+    /// claim to cover the range asked for, so it is not complete.
+    @Test func anUnknownLimitMakesTheExportIncomplete() {
+        let issue = ExportPlan.readableHistoryIssue(nil)
+        #expect(issue != nil)
+        #expect(issue?.type == nil)
+        var result = ExportResult(
+            format: .csv, directory: URL(fileURLWithPath: "/tmp/x"), files: [],
+            rowCounts: [.samples: 6], notRepresented: [:],
+            unmappableSamples: [:], failures: [], warnings: [], totalBytes: 1, duration: 1)
+        result.failures = [issue!]
+        #expect(!result.isComplete)
+    }
+
+    @Test func aKnownAnswerIsNoIssue() {
+        #expect(ExportPlan.readableHistoryIssue([:]) == nil)
+        #expect(ExportPlan.readableHistoryIssue(["HKQuantityTypeIdentifierStepCount": Date()]) == nil)
+    }
+}
