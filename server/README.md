@@ -503,151 +503,93 @@ set of secrets would strand both. Rotate one value at a time instead:
 The phone has to reach ingest's port 8080. There are two supported ways, and
 `scripts/bootstrap.sh` builds the pairing block for either:
 
-- **On your own LAN, in plain HTTP.** Set `INGEST_BIND_ADDR=0.0.0.0` in
-  `.env` (`scripts/bootstrap.sh --lan`) and `docker compose up -d`; the phone
-  uses `http://<this host's LAN IP>:8080`. The app accepts plain `http://`
-  only for local-network hosts (`localhost`, `*.local`, `10.x`,
-  `172.16–31.x`, `192.168.x`), so this works on the same Wi-Fi and nowhere
-  else. The trade-off is that the traffic is readable by anything on that
-  network and the bearer token is the only thing between it and your health
-  data: use it on a network you control, never a shared one, and keep the
-  default loopback bind everywhere else.
-- **From anywhere, over HTTPS.** Keep ingest on loopback (the default) and
-  put a TLS-terminating proxy in front of it. **Never open port 8080 to the
-  internet and never serve it over plaintext beyond your LAN**: the bearer
-  token is a second layer behind TLS, not a substitute for it. Tell the
-  bootstrap script the proxy's URL (`scripts/bootstrap.sh --url
-  https://<host>`, stored as `PULS_PUBLIC_URL`) and the pairing block and QR
-  code carry it — as does the code of every device token issued afterwards.
+- **On your own LAN, in plain HTTP.** `scripts/bootstrap.sh --lan` (or
+  `INGEST_BIND_ADDR=0.0.0.0` and `docker compose up -d`); the phone uses
+  `http://<LAN IP>:8080`. The app accepts plain `http://` only for
+  local-network hosts (`localhost`, `*.local`, `10.x`, `172.16–31.x`,
+  `192.168.x`), so this works on the same Wi-Fi and nowhere else. Anything
+  on that network can read the traffic, and the bearer token is all that
+  stands between it and your health data: use it only on a network you
+  control.
+- **From anywhere, over HTTPS.** Keep ingest on loopback (the default)
+  behind a TLS-terminating proxy. **Never open port 8080 to the internet or
+  serve it in plaintext beyond your LAN**: the token is a second layer
+  behind TLS, not a substitute for it. `scripts/bootstrap.sh --url
+  https://<host>` stores the proxy's URL as `PULS_PUBLIC_URL`, and the
+  pairing block and every device token's QR code carry it.
 
 Any reverse proxy that terminates TLS works (Caddy, nginx, Traefik, a cloud
-tunnel). The easiest path is Tailscale: install it on the server and on your
-iPhone, then publish the ingest API inside your tailnet:
+tunnel). The easiest is Tailscale, on the server and the iPhone:
 
 ```bash
-tailscale serve --bg --https=443 http://localhost:8080
+tailscale serve --bg --https=443  http://localhost:8080   # ingest — the app's URL
+tailscale serve --bg --https=8443 http://localhost:3000   # Grafana
+tailscale serve --bg --https=8444 http://localhost:8081   # product API
+tailscale serve --bg --https=8445 http://localhost:8082   # MCP server
 ```
 
-Point the app at `https://<machine-name>.<tailnet>.ts.net`. Tailscale
-provisions the certificate and the phone reaches the server from anywhere it
-has connectivity. `tailscale funnel` publishes the same listener to the
-public internet for a phone that cannot join the tailnet; the token is then
-the only gate, so rotate it if it ever leaks.
-
-Grafana is bound to loopback too. Serve it the same way on another port —
-`tailscale serve --bg --https=8443 http://localhost:3000` — or through your
-proxy behind its own authentication; this is the only way to reach it from
-other machines.
-
-Keep the product API bound to `127.0.0.1:8081` and publish it on a separate
-HTTPS port the same way:
-
-```bash
-tailscale serve --bg --https=8444 http://localhost:8081
-```
+Point the app at `https://<machine-name>.<tailnet>.ts.net`. `tailscale
+funnel` publishes the same listener to the public internet for a phone that
+cannot join the tailnet; the token is then the only gate, so rotate it if it
+leaks. Grafana, the product API and the MCP server stay on loopback and are
+reached only this way (or through your own proxy with its own
+authentication).
 
 ## API
 
-The wire format is versioned — the Puls Sync Protocol, currently **1**. A
-client declares the version twice: as `"schemaVersion": 1` (integer) in the
-batch header and as the `X-Puls-Protocol: 1` request header on every call.
-Both are optional: a request carrying neither comes from a client that
-predates versioning and is read with version-1 semantics. This server speaks
-`[1]`. A batch whose `schemaVersion` or `X-Puls-Protocol` names any other
-version, or whose two declarations disagree, is refused before decompression,
-parsing, or any database work with HTTP 400 and the fixed body
+Ingest speaks the Puls Sync Protocol, version **1**. The specification —
+every line type and field, the header, responses and the retry contract — is
+[`docs/protocol/README.md`](../docs/protocol/README.md); this section is the
+summary an operator needs.
 
-```json
-{"error":"unsupported protocol version","supportedVersions":[1]}
-```
+A client may declare the version as `"schemaVersion": 1` in the batch header
+and as the `X-Puls-Protocol: 1` request header; a request with neither is
+read as version 1. Any other version, or two declarations that disagree, is
+refused before decompression or any database work with HTTP 400
+`{"error":"unsupported protocol version","supportedVersions":[1]}` and
+recorded in `ingest_rejections` (stage `protocol`). The app never retries a
+4xx, so it shows this as a protocol mismatch instead of stalling silently.
 
-and is recorded in `ingest_rejections` (stage `protocol`). The app never
-retries a 4xx, so this is the response it turns into a "server speaks a
-different protocol version" message instead of stalling silently. Servers
-older than this one ignore both declarations (unknown header fields and
-request headers are tolerated), so a versioned client can still talk to them.
+Every endpoint but `/healthz` needs `Authorization: Bearer <token>` (see
+"Tokens") and takes an optional `X-User-ID` UUID — the user rows are written
+as or read for, defaulting to the seeded default user.
 
-- `POST /v1/batches` — gzipped NDJSON batch. Line order: header, then samples,
-  then deletions, then workout-route lines (`routeCount`), then workout-series
-  lines (`seriesCount`), then aggregate lines (`aggregateCount`), then
-  activity-summary lines (`activitySummaryCount`), then an optional profile line
-  (`profileCount` 0 or 1). All counts past `deletionCount` are optional and
-  default to 0 for old clients. The header also carries `schemaVersion` (the
-  protocol version, above) and `clientVersion` (free text such as
-  `"0.1.0 (1)"`, logged on the per-batch line, never stored); both are
-  optional. A header-only batch — every count 0 — is valid and returns
-  all-zero counts: the app sends one with `reason` `manual` as its connection
-  probe against receivers that have no `/v1/capabilities`.
-  `Authorization: Bearer $PULS_TOKEN`. The `X-User-ID` header (a UUID) attributes
-  every row in the batch to that user (a `users` row); absent, it defaults to the
-  seeded default user. Two optional wake-correlation headers are also recorded on
-  the `batches` row: `X-Wake-ID` (a UUID identifying the iOS background/foreground
-  wake that produced the upload — see the Background Activity export in the app)
-  and `X-Wake-Trigger` (`observer | backgroundProcessing | backgroundContinued |
-  foreground | manual`). Both are absent for old clients, curl, and work outside a
-  wake; a malformed `X-Wake-ID` is the only one rejected (400). Returns
+- `POST /v1/batches` — a gzipped NDJSON batch: a header line, then samples,
+  deletions, workout-route lines, workout-series lines, aggregate lines,
+  activity-summary lines and an optional profile line, each counted in the
+  header. Sample `kind` is `quantity`, `category`, `workout`,
+  `heartbeatSeries`, `ecg`, `stateOfMind` or `medicationDose`, each in its
+  own table. Samples are keyed on UUID and never overwritten, so a retry is
+  idempotent. Aggregate buckets and daily activity summaries are recomputed
+  on the phone and **upserted**, and an explicit `null` value overwrites a
+  stored one. The profile line replaces the user's whole profile (null or
+  omitted fields clear stored values; no profile line leaves it unchanged).
+  A header-only batch (every count 0) is valid; the app sends one as its
+  connection probe to receivers without `/v1/capabilities`. Optional
+  `X-Wake-ID` (a UUID; malformed is a 400) and `X-Wake-Trigger` headers are
+  recorded on the `batches` row (see "Analysing background wakes"). Returns
   `{"accepted":N,"deleted":M,"duplicates":K,"routePoints":P,"seriesPoints":S,"aggregateSamples":A,"activitySummaries":U}`.
-  Idempotent on retry.
-  Sample `kind` may be `quantity`, `category`, `workout`, `heartbeatSeries`
-  (`heartbeats: [[secs, gap], …]`), `ecg` (`ecg: {classification, voltagesUV, …}`),
-  `stateOfMind`, or `medicationDose`; each lands in its own table.
-  A `workout` payload also carries `statisticsDetail` (per-type
-  `{min,avg,max,sum}`), `events` (`[{type,start,end?,metadata?}]`), and
-  `activities` (multi-sport sub-activities). Workout-series lines stream the
-  intra-workout curves:
-  `{"series":{"workoutUUID","type","unit","points":[{"t","value"}, …]}}` (split
-  into ≤4,000-point chunks). The profile line carries the batch user's identity
-  and characteristics:
-  `{"profile":{"name","email","dateOfBirth","biologicalSex"}}` (epoch-ms DOB),
-  replacing that user's complete profile snapshot. Null or omitted fields clear
-  the stored values; omit the entire profile line to leave it unchanged. DOB/sex
-  feed HR-zone math.
-  Aggregate lines carry on-device `HKStatisticsCollectionQuery` buckets:
-  `{"aggregate":{"type","func","intervalValue","intervalUnit","deviceFilter","bucketStart","bucketEnd","value","unit"}}`
-  with `func` ∈ `sum|average|min|max|mostRecent|duration`, `intervalUnit` ∈
-  `minute|hour|day|week|month`, `deviceFilter` ∈ `all|watch|iphone`,
-  `intervalValue` ≥ 1 and `bucketEnd` > `bucketStart` (epoch ms). Unlike
-  samples, buckets are recomputed and re-sent: the server **upserts** them
-  (`aggregate_series` / `aggregate_samples`), and an explicit `"value":null`
-  overwrites a previously stored value with NULL ("bucket is empty").
-  Activity-summary lines carry one daily `HKActivitySummary` (the activity
-  rings): `{"activitySummary":{"date","moveKcal","moveGoalKcal","exerciseMin",`
-  `"exerciseGoalMin","standHours","standGoalHours","moveMode","moveTimeMin",`
-  `"moveTimeGoalMin"}}` (`date` epoch ms at the start of the local day,
-  `moveMode` ∈ `0` activeEnergy / `1` appleMoveTime, value/goal fields
-  nullable). Like aggregates these are recomputed and re-sent (today's rings
-  change all day), so the server **upserts** keyed on `date` (`activity_summaries`)
-  and explicit nulls overwrite. Limits: compressed body ≤ 256 MB, decompressed
-  NDJSON ≤ 128 MB, each declared count ≤ 100,000, combined declared lines
-  ≤ 200,000, route and series points ≤ 100,000 each per batch, and a single
-  NDJSON line ≤ 4 MB (the largest real lines — ECG voltages and 4,000-point
-  route chunks — run ~400 KB).
-- `GET /v1/stats` — per-type row counts/bounds + batch bookkeeping (auth required).
-- `GET /v1/digest?type=&from=&to=` — per-UTC-month `{window, rows, digest}` where
-  digest is the XOR of all sample UUID bytes; the app uses it to detect drift
-  (auth required).
-- `GET /v1/uuids?type=&from=&to=` — sample UUIDs for one window, range capped at
-  35 days (auth required).
-- `GET /v1/routes` — route-backed workout summaries for external route consumers
-  (e.g. route-visualisation tools); accepts optional
-  `start`, `end`, `activityType`, `minDistanceM`, `maxDistanceM`, `limit`, and
-  `offset` query parameters (auth required).
-- `GET /v1/routes/{uuid}` — one route-backed workout plus ordered GPS points
-  (auth required).
-- `GET /v1/routes/{uuid}/metrics` — intra-workout metric streams for the route
-  (auth required).
-- `GET /v1/capabilities` — what this receiver speaks (auth required, so the
-  app's "Test connection" step validates URL and token together here, before
-  the first upload; a wrong token is a 401):
-  `{"protocolVersions":[1],"features":["batches","stats","digest","uuids","aggregates","activitySummaries","routes","series","profile"],"server":"puls-ingest","version":"<git commit or dev>"}`.
-  `version` is the image's `BUILD_COMMIT` build arg (compose passes
-  `DEPLOY_COMMIT`); a plain `go run` reports `dev`. A receiver without this
-  endpoint is probed with an empty batch instead (see `POST /v1/batches`).
-- `GET /healthz` — liveness + DB ping (no auth).
-
-Every authenticated ingest read accepts the same optional `X-User-ID` UUID as
-uploads and returns only that user's rows. Omitting it selects the seeded
-default user for backward compatibility.
+  Limits: compressed body ≤ 256 MB, decompressed NDJSON ≤ 128 MB, each
+  declared count ≤ 100,000, all declared lines ≤ 200,000, route and series
+  points ≤ 100,000 each per batch, one NDJSON line ≤ 4 MB (real lines peak
+  around 400 KB).
+- `GET /v1/stats` — per-type row counts and bounds, plus batch bookkeeping.
+- `GET /v1/digest?type=&from=&to=` — per-UTC-month `{window, rows, digest}`,
+  the digest being the XOR of all sample UUID bytes; the app uses it to
+  detect drift.
+- `GET /v1/uuids?type=&from=&to=` — sample UUIDs for one window (at most 35
+  days).
+- `GET /v1/routes` — route-backed workout summaries for external route
+  consumers; optional `start`, `end`, `activityType`, `minDistanceM`,
+  `maxDistanceM`, `limit` and `offset`.
+- `GET /v1/routes/{uuid}` — one route-backed workout with its ordered GPS
+  points; `GET /v1/routes/{uuid}/metrics` — its intra-workout metric
+  streams.
+- `GET /v1/capabilities` — what this receiver speaks. The app's Test
+  Connection calls it, so URL and token are checked together before the
+  first upload. `version` is the image's `BUILD_COMMIT` build arg (Compose
+  passes `DEPLOY_COMMIT`; a plain `go run` reports `dev`).
+- `GET /healthz` — liveness and DB ping (no auth).
 
 ## Product API
 
