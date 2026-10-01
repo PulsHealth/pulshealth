@@ -158,7 +158,9 @@ Sources/
 ├── SyncView.swift        The Sync tab. No server applied: a setup card with one
 │                         Set Up button (opens the Server screen). Otherwise the
 │                         status card (host, last sync, backfill progress + ETA,
-│                         failing count), Sync Now, the synced types (TypeRow →
+│                         failing count), the iOS 27 "Limited Health history"
+│                         card while any applied type is readable only from a
+│                         recent date, Sync Now, the synced types (TypeRow →
 │                         TypeDetailView), pull-to-refresh and the error alert;
 │                         then rows to Synced Data, Server and Activity. The
 │                         PendingChangesBar sits on this tab.
@@ -214,8 +216,10 @@ Sources/
 │                         Health Access (iOS's sheet for the preselected
 │                         TypePresets.common); Choose Data (the real
 │                         TypePickerView); Ready, a summary whose "Start
-│                         Exploring" applies everything. Nothing reaches the
-│                         engine before that last tap, and nothing is
+│                         Exploring" applies everything. On iOS 27 the Health
+│                         step also says iOS will ask how much history to
+│                         share and what each answer means here. Nothing
+│                         reaches the engine before that last tap, and nothing is
 │                         uploaded: the last step says a server can be
 │                         connected later in the Sync tab. A puls:// link
 │                         accepted during the flow waits until it ends, then
@@ -331,6 +335,22 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   FB22735935) are remembered per session and skipped from auth requests, with a
   hint on the Explore tab pointing at Settings → Privacy & Security → Health — see the
   CLAUDE.md gotcha for the retest plan.
+- **Limited history (iOS 27).** The permission sheet's second page asks how
+  much history to share, and Settings → Privacy & Security → Health →
+  PulsHealth → (type) can change it per type later. With *Past 30 Days* a type
+  is readable only from a date, and the package keeps every overwriting pass
+  inside it and re-reads a type's history when access widens (root
+  `CLAUDE.md`, "Limited history access"). The app's part: it re-reads the dates
+  at launch, on every foreground (where a change made in Settings shows up) and
+  after Apply's sheet (`AppModel.refreshReadableHistory`); the Sync tab shows a
+  "Limited Health history" card naming the types, the date and the Settings
+  path, with the existing Open Health Settings button; the Type page says an
+  analysis covers only from that date, and the aggregate preview why its
+  series starts late; an export lists the limited types under "Not exported"
+  and is incomplete. **Don't Allow on that second page** throws, where the
+  first page's does not; it is treated as the user's answer — no error,
+  access marked as requested, and those types are not asked about again this
+  session (`AppModel.declinedTypes`).
 - Live logs from a Mac: `log stream --predicate 'subsystem == "com.pulsHealth.healthsync"'`.
 - **Background-time field study.** Every entry point that gives the engine
   execution time (HKObserver delivery, the catch-up `BGProcessingTask`, the iOS 26
