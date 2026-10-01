@@ -287,6 +287,7 @@ struct ConnectionTestResultRow: View {
         case .ok: "checkmark.circle.fill"
         case .okNoCapabilities: "checkmark.circle"
         case .tokenRejected: "lock.slash"
+        case .userMismatch: "person.crop.circle.badge.exclamationmark"
         case .unsupportedProtocol: "exclamationmark.triangle.fill"
         case .unreachable: "wifi.exclamationmark"
         case .serverError: "exclamationmark.octagon.fill"
@@ -297,7 +298,7 @@ struct ConnectionTestResultRow: View {
         switch result {
         case .ok, .okNoCapabilities: .green
         case .unsupportedProtocol: .orange
-        case .tokenRejected, .unreachable, .serverError: .red
+        case .tokenRejected, .userMismatch, .unreachable, .serverError: .red
         }
     }
 }

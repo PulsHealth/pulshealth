@@ -87,8 +87,8 @@ Sources/PulsHealthSync/
 │   │                                /v1/digest, /v1/uuids.
 │   ├── ConnectionTest.swift         ConnectionTester: capabilities → probe fallback,
 │   │                                classified into ConnectionTestResult (ok, no
-│   │                                capabilities, token rejected, unsupported
-│   │                                protocol, unreachable, server error).
+│   │                                capabilities, token rejected, user mismatch,
+│   │                                unsupported protocol, unreachable, server error).
 │   ├── ServerURLValidation.swift    URL rules mirroring ATS: https anywhere, http only
 │   │                                for local-network hosts.
 │   ├── PairingPayload.swift         Parses the puls://pair?url=&token=&user= payload
@@ -288,10 +288,12 @@ the package does with it.
   server statistics unless `stats` is; unknown capabilities hide both.
 - **Connection test.** `ConnectionTester` calls capabilities first; if the
   endpoint is missing it POSTs a header-only batch (`type` `"probe"`, `reason`
-  `"manual"`, every count 0) with no retries — any 2xx is success. 401/403 is
-  reported as a rejected token, a network failure as unreachable with the
-  cause (TLS, DNS, timeout, refused, ATS), anything else as a server error.
-  Nothing about the test is persisted.
+  `"manual"`, every count 0) with no retries — any 2xx is success. 401 is
+  reported as a rejected token; 403 as a user mismatch (the ingest's answer
+  to a device token presented with another user's `X-User-ID`: the token is
+  fine, the user ID is not), naming the ID the app sent; a network failure
+  as unreachable with the cause (TLS, DNS, timeout, refused, ATS), anything
+  else as a server error. Nothing about the test is persisted.
 - **Pairing codes.** `PairingPayload.parse` reads the
   `puls://pair?url=&token=&user=` string `scripts/bootstrap.sh` prints, as a QR
   code and as text. A code is untrusted input however it arrives: the URL is

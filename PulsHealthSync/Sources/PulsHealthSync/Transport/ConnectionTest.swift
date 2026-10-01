@@ -7,8 +7,13 @@ public enum ConnectionTestResult: Sendable, Equatable {
     /// No capabilities endpoint (404/405 or an unparseable body), but the
     /// header-only probe batch was accepted. Feature-gated UI stays hidden.
     case okNoCapabilities
-    /// HTTP 401/403: the server is reachable but rejects the bearer token.
+    /// HTTP 401: the server is reachable but rejects the bearer token.
     case tokenRejected
+    /// HTTP 403: the token is valid but bound to a different user than the
+    /// `X-User-ID` this app sent (a per-device ingest token; the shared
+    /// token is bound to nobody). Retyping the token does not help; the user
+    /// ID has to be the one the token was issued for.
+    case userMismatch(userID: String)
     /// The server does not speak `PulsProtocol.version`.
     case unsupportedProtocol(supportedVersions: [Int])
     /// DNS, TLS, timeout, refused connection, ATS block, no network.
@@ -33,6 +38,9 @@ public enum ConnectionTestResult: Sendable, Equatable {
             return "Connected. This database does not advertise capabilities, so reconciliation and database statistics are unavailable."
         case .tokenRejected:
             return "The database rejected the token."
+        case .userMismatch(let userID):
+            return "The token is bound to a different user ID than this app's (\(userID)). "
+                + "Use the user ID the token was issued for — the pairing code carries it, or set it under Settings → User."
         case .unsupportedProtocol(let versions):
             let list = versions.isEmpty ? "none" : versions.map(String.init).joined(separator: ", ")
             return "This database does not support this app version (it speaks protocol \(list); this app speaks \(PulsProtocol.version))."
@@ -86,7 +94,7 @@ public struct ConnectionTester: Sendable {
             }
             return .ok(capabilities)
         } catch {
-            if let result = Self.result(for: error, missingEndpointIsFatal: false) {
+            if let result = Self.result(for: error, userID: userID, missingEndpointIsFatal: false) {
                 return result
             }
             // 404/405 or a body that is not capabilities JSON: fall through to the probe.
@@ -100,7 +108,7 @@ public struct ConnectionTester: Sendable {
             _ = try await transport.probe(deviceID: deviceID)
             return .okNoCapabilities
         } catch {
-            return Self.result(for: error, missingEndpointIsFatal: true)
+            return Self.result(for: error, userID: userID, missingEndpointIsFatal: true)
                 ?? .unreachable(error.localizedDescription)
         }
     }
@@ -108,14 +116,21 @@ public struct ConnectionTester: Sendable {
     /// Maps a transport failure to a result. Returns nil for "no such
     /// endpoint" (404/405, or a 2xx whose body is not the expected JSON) when
     /// the caller can fall back to the probe.
-    static func result(for error: Error, missingEndpointIsFatal: Bool) -> ConnectionTestResult? {
+    ///
+    /// 401 and 403 are told apart: the ingest answers 401 to a token it does
+    /// not know and 403 (`X-User-ID does not match the token's user`) to a
+    /// known device token presented with another user's ID, before reading
+    /// the body — so the two are fixed in different places.
+    static func result(for error: Error, userID: String, missingEndpointIsFatal: Bool) -> ConnectionTestResult? {
         switch error {
         case TransportError.unsupportedProtocol(let versions):
             return .unsupportedProtocol(supportedVersions: versions)
         case TransportError.serverError(let status, _):
             switch status {
-            case 401, 403:
+            case 401:
                 return .tokenRejected
+            case 403:
+                return .userMismatch(userID: userID)
             case 404, 405:
                 return missingEndpointIsFatal ? .serverError(status: status) : nil
             default:
