@@ -91,26 +91,35 @@ struct OnboardingView: View {
     /// TabView's pager keeps every drag to itself, so a swipe past its last
     /// page could not be noticed, and on page 2 that swipe is what asks.
     private var pager: some View {
-        ScrollView(.horizontal) {
-            // Not lazy: with a LazyHStack, iOS 27 stopped the first swipe
-            // back after the move to page 3 about half a page short.
-            HStack(spacing: 0) {
-                ForEach(pages, id: \.self) { each in
-                    pageView(each)
-                        .containerRelativeFrame(.horizontal)
-                        .id(each)
+        ScrollViewReader { reader in
+            ScrollView(.horizontal) {
+                // Not lazy: with a LazyHStack, iOS 27 stopped the first swipe
+                // back after the move to page 3 about half a page short.
+                HStack(spacing: 0) {
+                    ForEach(pages, id: \.self) { each in
+                        pageView(each)
+                            .containerRelativeFrame(.horizontal)
+                            .id(each)
+                    }
                 }
+                .scrollTargetLayout()
             }
-            .scrollTargetLayout()
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $page)
+            .scrollIndicators(.hidden)
+            // No swiping while iOS's sheet is on its way or the final apply runs.
+            .scrollDisabled(requestingHealthAccess || finishing)
+            // Page 2 is the last page until iOS has been asked, so a swipe
+            // forward there only stretches past the end. That pull asks.
+            .onPullPastEnd(enabled: !healthSettled && page == .health) { continueFromHealth() }
+            // Rotating an iPad, or resizing its window, changes the page
+            // width, and the scroll view kept its old offset: on page 3 that
+            // left half of page 2 on screen. Put the current page back.
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { _ in
+                guard let current = page else { return }
+                Task { @MainActor in reader.scrollTo(current, anchor: .leading) }
+            }
         }
-        .scrollTargetBehavior(.paging)
-        .scrollPosition(id: $page)
-        .scrollIndicators(.hidden)
-        // No swiping while iOS's sheet is on its way or the final apply runs.
-        .scrollDisabled(requestingHealthAccess || finishing)
-        // Page 2 is the last page until iOS has been asked, so a swipe
-        // forward there only stretches past the end. That pull asks.
-        .onPullPastEnd(enabled: !healthSettled && page == .health) { continueFromHealth() }
     }
 
     @ViewBuilder private func pageView(_ page: Page) -> some View {
