@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, ArrowRight, BarChart3, Bot, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Heart, History, Lock, Moon, QrCode, RefreshCw, Scale, Server, Terminal, Utensils, Wind } from "lucide-react";
+import { Activity, ArrowRight, BarChart3, Bot, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Heart, History, Lock, Moon, QrCode, RefreshCw, Scale, Terminal, Utensils, Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,8 @@ import { getCatalog, getCatalogByGroup } from "@/lib/catalog";
 const GITHUB = "https://github.com/PulsHealth/pulshealth";
 
 export const metadata = {
-  title: "PulsHealth for iOS - Apple Health, Synced to Your Own Server",
-  description: "A free, open-source iOS app that reads Apple Health read-only and streams every sample to a backend you run yourself. Full historical backfill, then continuous near-real-time sync. On the App Store, Apache-2.0.",
+  title: "PulsHealth for iOS - Apple Health, Synced to Your Own Database",
+  description: "A free, open-source iOS app that reads Apple Health read-only. Explore and export it on the phone, or stream every sample to a database you run yourself: full historical backfill, then continuous near-real-time sync. On the App Store, Apache-2.0.",
   alternates: {
     canonical: '/ios/',
   },
@@ -36,7 +36,7 @@ const syncFeatures = [
   },
   {
     title: "Pair by Scanning",
-    description: "Your server prints a pairing block with the URL, bearer token and user ID, plus a QR code that encodes all three. Scan it, or type the values in by hand.",
+    description: "The PulsHealth stack prints a pairing block with the URL, bearer token and user ID, plus a QR code that encodes all three. Scan it from the Sync tab, or type the values in by hand.",
     icon: QrCode,
   },
   {
@@ -99,7 +99,7 @@ const appJsonLd = {
   codeRepository: GITHUB,
   isAccessibleForFree: true,
   description:
-    "Syncs Apple Health, read-only, to a server you run. Full historical backfill, then continuous background sync. No account, no PulsHealth service.",
+    "Explores, exports and syncs Apple Health, read-only, to a database you run. Full historical backfill, then continuous background sync. No account, no PulsHealth service.",
 };
 
 export default function AppPage() {
@@ -109,13 +109,13 @@ export default function AppPage() {
       <PageHero
         eyebrow={<>Free on the App Store &middot; Open source</>}
         title={<>Apple Health, <span className="text-brand">in your own database</span></>}
-        lede="PulsHealth for iOS reads Apple Health and sends every sample to a server you run. It never writes back to Apple Health. It syncs the full history first, then keeps up in the background. There is no PulsHealth account and no PulsHealth cloud."
+        lede="PulsHealth for iOS lets you explore and export your Apple Health data, and sync every sample to a database you run. It never writes back to Apple Health. It syncs the full history first, then keeps up in the background. There is no PulsHealth account and no PulsHealth cloud."
       >
         <AppStoreBadge />
         <Button asChild size="lg" variant="outline">
           <Link href="/server">
-            <Server className="mr-2 h-4 w-4" />
-            Set Up the Server
+            <Database className="mr-2 h-4 w-4" />
+            Set Up Your Database
           </Link>
         </Button>
         <Button asChild variant="outline" size="lg">
@@ -141,22 +141,23 @@ export default function AppPage() {
                 background-delivery entitlement requires one.
               </li>
               <li>
-                <strong className="text-foreground">Syncing needs a server.</strong> The app has
-                nowhere to sync until a backend exists. The reference stack comes up with one
-                command; anything that speaks the documented protocol works just as well. Without
-                one, the app can still export your data to CSV or JSONL files on the phone.
+                <strong className="text-foreground">Syncing needs a database of your own.</strong>{" "}
+                Exploring and exporting work without one: the app shows what Apple Health holds and
+                writes it to CSV or JSONL files on the phone. To sync, run the open-source
+                PulsHealth stack, which comes up with one command, or put a receiver for the
+                documented protocol in front of a database you already have.
               </li>
               <li>
                 <strong className="text-foreground">All of it is open source.</strong> The app,
-                the sync library, the server stack, the protocol and the dashboards are in one
+                the sync library, the self-hosted stack, the protocol and the dashboards are in one
                 Apache-2.0 repository.
               </li>
             </ul>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Button asChild variant="outline">
                 <Link href="/server">
-                  <Server className="mr-2 h-4 w-4" />
-                  Set Up the Server
+                  <Database className="mr-2 h-4 w-4" />
+                  Set Up Your Database
                 </Link>
               </Button>
               <Button asChild variant="outline">
@@ -175,9 +176,9 @@ export default function AppPage() {
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">How the Sync Works</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Each HealthKit type has its own cursor, saved only after your server confirms the
-            batch. A failed upload re-sends the same page and the server deduplicates by sample
-            UUID, so nothing is lost or duplicated.
+            Each HealthKit type has its own cursor, saved only after your database confirms the
+            batch. A failed upload re-sends the same page, and the database keeps one row per
+            sample UUID, so nothing is lost or duplicated.
           </p>
         </div>
 
@@ -404,11 +405,11 @@ X-User-ID: <your user id>
       <section className="cta-gradient text-white">
         <div className="container mx-auto max-w-7xl px-4 py-24 text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">
-            Install it, then point it at your server
+            Install it, then point it at your database
           </h2>
           <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            You need an iPhone on iOS 17 or later and, for syncing, a server you can reach;
-            exporting to files works without one. Apple Watch data
+            You need an iPhone on iOS 17 or later and, for syncing, a database you can reach;
+            exploring and exporting work without one. Apple Watch data
             arrives once iOS syncs it to the phone. If you would rather build it yourself, the
             repository has the Xcode instructions.
           </p>
@@ -421,8 +422,8 @@ X-User-ID: <your user id>
               className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white dark:bg-transparent dark:border-white/40 dark:hover:bg-white/10"
             >
               <Link href="/server">
-                <Server className="mr-2 h-4 w-4" />
-                Set Up the Server
+                <Database className="mr-2 h-4 w-4" />
+                Set Up Your Database
               </Link>
             </Button>
           </div>

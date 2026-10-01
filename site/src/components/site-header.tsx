@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { BookOpen, Briefcase, FileText, Menu, PenLine, Server, Smartphone, Star } from "lucide-react"
+import { BookOpen, Briefcase, Database, FileText, Menu, PenLine, Smartphone, Star } from "lucide-react"
 import { GitHubIcon } from "@/components/brand-icons"
 
 import { cn } from "@/lib/utils"
@@ -35,7 +35,7 @@ type NavItem = {
  */
 const primary: NavItem[] = [
   { title: "App", href: "/ios", description: "The free iOS app", icon: Smartphone },
-  { title: "Server", href: "/server", description: "The self-hosted stack", icon: Server },
+  { title: "Database", href: "/server", description: "The self-hosted stack", icon: Database },
   { title: "Docs", href: "/docs", description: "Setup, protocol, database, AI", icon: FileText },
   { title: "Knowledge Base", href: "/knowledge-base", description: "What each Apple Health type measures", icon: BookOpen },
   { title: "Blog", href: "/blog", description: "Posts from the project", icon: PenLine },
