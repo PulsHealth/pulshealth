@@ -4,7 +4,7 @@ Reviewed 2026-10-01, after the app's 1.6 reached the App Store, and pruned the
 same day to what is worth doing. This is what is still outstanding, roughly in
 the order worth doing it; what was considered and dropped is under **Not
 planned** at the end, with the reason, so it is not proposed again without
-something new. Requirement IDs (OSS-4, SRV-13, …) tie items to
+something new. Requirement IDs (OSS-4, APP-11, …) tie items to
 [`open-source-plan.md`](open-source-plan.md), which records the decisions
 behind them.
 
@@ -30,13 +30,7 @@ behind them.
   bound to a different user ID than the phone's — as a rejected token, the
   same as a wrong one. It should say which.
 
-## 2. Smaller leftovers
-
-- SRV-13: `/v1/metrics/daily` is not paginated; a request is bounded only by
-  its `start`, `end` and `types`. `server/api/docs.go` says a page size bounds
-  it, which is not yet true.
-
-## 3. Standing maintenance
+## 2. Standing maintenance
 
 Not backlog — things that come due on someone else's schedule.
 

@@ -129,4 +129,9 @@ takes one dependency beyond the standard library, the official
 
 When the product API's shapes change (`server/api/docs.go`), update
 `api.go`, the tool descriptions in `tools.go`, and `guide.md` in the same
-change.
+change. Where the API pages, the client either passes the page through
+(`list_workouts`, `get_samples` expose `limit`/`offset`) or follows it to
+the end itself: `get_daily_metrics` walks `/v1/metrics/daily`'s
+`nextOffset` (`APIClient.DailyMetrics`, page size `dailyPageSize`) and
+returns the whole range as one answer, merging a metric split across two
+pages.
