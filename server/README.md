@@ -616,9 +616,7 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
 ```
 
 Timestamps are epoch milliseconds, ranges are `[start, end)`, and a valid
-query with no matching rows returns an empty array. `/v1/catalog/types` is
-cached briefly (it counts rows per type); it includes aggregate-only types,
-with `rawRows` and `aggregateRows` per storage grain and `rows` their sum.
+query with no matching rows returns an empty array.
 
 **Daily metrics need an aggregate, not just raw rows.** `metric_daily` — and
 so `/v1/metrics/daily`, Grafana's daily panels and the web viewer's daily
@@ -632,60 +630,48 @@ backfill.
 The service describes itself at `GET /` (a JSON index), `GET /docs` (a
 browser-readable reference) and `GET /openapi.json` (OpenAPI 3.1). Other
 services should store the base URL as `PULS_API_BASE_URL` and the token as
-`PULS_API_TOKEN`. The endpoints:
+`PULS_API_TOKEN`. Every `/v1` route but `/v1/users` takes the optional
+`user` parameter above:
 
-- `GET /v1/users`
-- `GET /v1/profile`
-- `GET /v1/catalog/types`
+- `GET /v1/users`, `GET /v1/profile`
+- `GET /v1/catalog/types` — every type with data, aggregate-only ones
+  included: `rawRows`, `aggregateRows` and `rows` (their sum). Cached
+  briefly, since it counts rows.
 - `GET /v1/metrics/latest?types=...`
 - `GET /v1/metrics/daily?types=...&start=...&end=...`
 - `GET /v1/activity/summary?start=...&end=...`
-- `GET /v1/workouts?start=...&end=...&limit=50&offset=0`
-- `GET /v1/workouts/{uuid}`
-- `GET /v1/workouts/{uuid}/series?types=...&maxPoints=500`
-- `GET /v1/sleep/daily?start=...&end=...`
-- `GET /v1/samples?type=...&start=...&end=...&limit=1000&offset=0`
-- `GET /v1/state-of-mind?start=...&end=...`
-- `GET /v1/summary?range=7d|14d|30d|90d&format=markdown|json`
-- `GET /v1/export?format=csv|jsonl&dataset=...&start=...&end=...`
-- `GET /healthz`
-
-Every `/v1` route but `/v1/users` takes the optional `user` parameter above.
-
-- **`/v1/sleep/daily`** returns one row per sleep session, attributed to the
-  local day it **ends** on (the wake-up day, as Apple Health does it);
-  samples more than three hours apart start a new session, so a nap is its
-  own row. Durations are minutes. Overlapping sources are never summed:
-  `inBedMinutes` is the highest single-source total, and `asleepMinutes` and
-  the `stages` breakdown come from the source that recorded the most sleep —
-  the rule the web viewer uses too. Stages are decoded through
-  `category_labels`, never bare integers.
-- **`/v1/samples`** serves the raw records of one quantity or category type,
-  by start time, at most 31 days per request (`limit` defaults to 1000, caps
-  at 5000; page with `nextOffset`). They are **not** deduplicated across
+- `GET /v1/workouts?start=...&end=...&limit=50&offset=0`, `GET /v1/workouts/{uuid}`
+- `GET /v1/workouts/{uuid}/series?types=...&maxPoints=500` — each stream
+  downsampled by bucket-averaging, keeping the true first and last point
+  (`maxPoints` caps at 5000); `totalPoints` is the recorded count.
+- `GET /v1/sleep/daily?start=...&end=...` — one row per sleep session,
+  attributed to the local day it **ends** on (the wake-up day, as Apple
+  Health does it); samples more than three hours apart start a new session,
+  so a nap is its own row. Durations are minutes. Overlapping sources are
+  never summed: `inBedMinutes` is the highest single-source total, and
+  `asleepMinutes` and the `stages` breakdown come from the source that
+  recorded the most sleep (the web viewer's rule too). Stages are decoded
+  through `category_labels`.
+- `GET /v1/samples?type=...&start=...&end=...&limit=1000&offset=0` — the raw
+  records of one quantity or category type, at most 31 days per request
+  (`limit` caps at 5000; page with `nextOffset`). **Not** deduplicated across
   devices — `/v1/metrics/daily` is. An unknown identifier, a non-sample kind
   or a longer range is a `400`.
-- **`/v1/workouts/{uuid}/series`** downsamples each stream of
-  `workout_series_points` by bucket-averaging, keeping the true first and
-  last point (`maxPoints` defaults to 500, caps at 5000); `totalPoints` is
-  the recorded count. **`/v1/state-of-mind`** allows at most 366 days per
-  request.
-- **`/v1/summary`** renders the last `range` calendar days (`7d` default;
-  `14d`, `30d`, `90d`; ending today in `PULS_TIME_ZONE`) as one **markdown
-  page** of under sixty lines, for pasting into a chat without an MCP
-  connection ([`docs/ai.md`](../docs/ai.md)): activity, heart, sleep,
-  workouts and body sections for whatever data exists, and a coverage line.
-  It reads only the daily surfaces above, never a raw hypertable, so it is
-  cheap. `format=json` returns the same numbers as a `Summary` object.
-- **`/v1/export`** streams a whole range as a CSV or JSONL **file**
-  (`Content-Disposition: attachment`). `dataset` is `daily_metrics`,
-  `samples`, `workouts`, `sleep`, `activity` or `state_of_mind`, each with
-  its source endpoint's filters; ranges are capped at 31 days for `samples`
-  and 366 for the rest. Rows go out as they are read, nothing is buffered,
-  and since each download holds a database connection for its whole length,
-  at most two run at once — a third gets a `503` with `Retry-After`.
-  `tools/puls-export` is a CLI for it; columns and failure modes are in
-  [`docs/export.md`](../docs/export.md).
+- `GET /v1/state-of-mind?start=...&end=...` — at most 366 days per request.
+- `GET /v1/summary?range=7d|14d|30d|90d&format=markdown|json` — the last
+  `range` days (default `7d`, ending today in `PULS_TIME_ZONE`) as one
+  **markdown page** of under sixty lines for pasting into a chat without an
+  MCP connection ([`docs/ai.md`](../docs/ai.md)), or the same numbers as
+  JSON. It reads only daily surfaces, never a raw hypertable, so it is cheap.
+- `GET /v1/export?format=csv|jsonl&dataset=...&start=...&end=...` — a whole
+  range streamed as a **file**. `dataset` is `daily_metrics`, `samples`,
+  `workouts`, `sleep`, `activity` or `state_of_mind`, each with its source
+  endpoint's filters; at most 31 days for `samples`, 366 for the rest.
+  Nothing is buffered, but each download holds a database connection
+  throughout, so at most two run at once and a third gets a `503` with
+  `Retry-After`. `tools/puls-export` is a CLI for it; columns and failure
+  modes are in [`docs/export.md`](../docs/export.md).
+- `GET /healthz` — liveness and DB ping (no auth).
 
 ```bash
 curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
