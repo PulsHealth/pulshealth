@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     siteName: "PulsHealth",
-    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'PulsHealth: Apple Health, on a server you run.' }],
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'PulsHealth: Apple Health, in a database you run.' }],
   },
   twitter: {
     card: 'summary_large_image',
