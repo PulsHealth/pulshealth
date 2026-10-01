@@ -341,8 +341,9 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   is readable only from a date, and the package keeps every overwriting pass
   inside it and re-reads a type's history when access widens (root
   `CLAUDE.md`, "Limited history access"). The app's part: it re-reads the dates
-  at launch, on every foreground (where a change made in Settings shows up) and
-  after Apply's sheet (`AppModel.refreshReadableHistory`); the Sync tab shows a
+  at launch (without holding up the launch), on every foreground (where a
+  change made in Settings shows up) and after every permission sheet — Apply's,
+  an analysis's, an export's (`AppModel.refreshReadableHistory`); the Sync tab shows a
   "Limited Health history" card naming the types, the date and the Settings
   path, with the existing Open Health Settings button; the Type page says an
   analysis covers only from that date, and the aggregate preview why its

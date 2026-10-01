@@ -144,9 +144,13 @@ public final class HealthExporter: Sendable {
         // iOS 27 limited history access. The sweep reads only what HealthKit
         // allows (and the engine's clamps keep aggregates and rings off the
         // rest), so the files are honest about what they hold; this is what
-        // makes the result honest about what they do not.
-        let limitedHistory = ExportPlan.limitedHistory(
-            await engine.earliestAuthorizedDates(), exportStart: config.startDate)
+        // makes the result honest about what they do not. Asked of HealthKit
+        // directly: `earliestAuthorizedDates()` answers a failed lookup with
+        // the throwaway engine's empty cache, which reads as "nothing is
+        // limited" and would let an export of a limited type call itself
+        // complete. Unknown is reported instead (`readableHistoryIssue`).
+        let readable = await engine.currentReadableHistory(for: config.observedTypeIdentifiers)
+        let limitedHistory = ExportPlan.limitedHistory(readable ?? [:], exportStart: config.startDate)
 
         let createdAt = Date()
         let baseName = "puls-export-\(Self.timestamp(createdAt))"
@@ -181,7 +185,7 @@ public final class HealthExporter: Sendable {
 
             let events = await collector.finish()
             let outcome = await Self.outcome(of: engine, config: config)
-            let failures = aligned.issues
+            var failures = aligned.issues
                 + ExportPlan.failures(config: config, outcome: outcome, events: events)
             let unmappable = await engine.unmappableSampleCounts
             let tally = await transport.tally
@@ -191,6 +195,9 @@ public final class HealthExporter: Sendable {
             guard tally.rows.values.contains(where: { $0 > 0 }) else {
                 throw failures.isEmpty ? HealthExportError.noData : HealthExportError.failed(failures)
             }
+            // Only once there are files to qualify: with none, "no data" or
+            // the read failures above are the answer.
+            if let unknown = ExportPlan.readableHistoryIssue(readable) { failures.append(unknown) }
 
             let rowCounts = tally.rows
             let manifestURL = contentDirectory.appendingPathComponent("\(baseName)-manifest.json")

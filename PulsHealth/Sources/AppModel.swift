@@ -146,6 +146,9 @@ final class AppModel {
         self.engine = engine
         self.scheduler = BackgroundSyncScheduler(engine: engine)
         self.explore = ExploreModel(engine: engine)
+        // An analysis can show the permission sheet too; what it answered
+        // for history (iOS 27) is recorded the same way as after Apply's.
+        explore.onHealthAccessRequested = { [weak self] in await self?.refreshReadableHistory() }
         // An export's files are health data sitting in the temporary directory
         // until they are shared. The privacy policy says none survives a
         // launch, and this line is what makes that true — for the export the
@@ -191,7 +194,12 @@ final class AppModel {
         // the first grant (or an interrupted permission sheet) stay notDetermined
         // and make their syncs fail until access is requested again.
         await refreshNeedsAuthorization()
-        await refreshReadableHistory()
+        // Not awaited: it is one HealthKit round trip, which has been seen to
+        // stall for up to its ten-second timeout, and the observer
+        // registration at the end of this method must not wait behind it on
+        // a background launch. Nothing here needs the answer; the
+        // foreground sync asks again before it claims anything.
+        Task { await refreshReadableHistory() }
         // Heal installs where the flag was never written because access was
         // already determined when Apply ran (older builds only set it after an
         // actual prompt): a configured setup with nothing left to ask for is
@@ -419,6 +427,10 @@ final class AppModel {
                 .warn, "Health access request before export failed: \(error.localizedDescription)")
         }
         await refreshNeedsAuthorization()
+        // As after Apply's sheet: it may just have limited history (iOS 27)
+        // for types the sync also reads, and the engine records it before
+        // the next sync reads under it.
+        await refreshReadableHistory()
     }
 
     // MARK: - Actions

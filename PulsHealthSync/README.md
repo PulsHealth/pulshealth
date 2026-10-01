@@ -481,13 +481,30 @@ Two consequences, both handled here:
 - **Widening must re-read.** Each pass records the date it ran under
   (`readableSince` on the type, aggregate, rings and enrichment states;
   optional, so older state files decode). `refreshReadableHistory` — before
-  claims in every sweep entry point and observer wake, at most every 15
-  minutes, forced by the app on foreground — resets the anchors of a raw type
-  whose date moved earlier or went away and reopens its backfill; the server
-  ignores what it already has. Aggregate series, the rings and the enrichment
-  phases notice on their next run and start over from the start date. The same
-  date (within an hour) resets nothing, and a narrowing only records the new
-  date.
+  claims in `syncAllEnabled`, the backfill branch of `syncTypes`,
+  `sync(type:)` and every observer wake, at most every 15 minutes, forced by
+  the app on foreground and after each permission sheet — resets the anchors
+  of a raw type whose date moved earlier or went away and reopens its
+  backfill; the server ignores what it already has. Aggregate series, the
+  rings and the enrichment phases notice on their next run and start over
+  from the start date. The same date (within a day) resets nothing, and a
+  narrowing only records the new date.
+- **A widening must be proved.** A type set to *None* in Settings drops out
+  of `earliestAuthorizedSampleDate(for:)` exactly like one set to Full Access
+  — measured on the iOS 27.0 simulator, where every query for it then came
+  back empty without an error — and acting on that once reset an aggregate
+  series with nothing to clamp it, so every bucket went up as a null. A
+  reported widening therefore counts only once HealthKit returns a sample (for
+  the rings, a day) that ends before the recorded date
+  (`ReadableHistory.resolve`); otherwise the recorded date stands and the
+  clamps stay. A type with no older data fails that test too, which costs
+  nothing: there is nothing older to re-read.
+- **Unknown fails closed.** Every HealthKit call here gives up after ten
+  seconds (they have been seen to stall far longer after a reinstall). An
+  aggregate or ring pass that cannot learn its limit records
+  `readableHistoryUnknown` and sends nothing (a locked device just skips);
+  reconciliation throws; an export reports that it may start later than
+  asked.
 
 The API exists only in the iOS 27 SDK, and CI also builds with Xcode 26.5, so
 its one call sits behind `#if compiler(>=6.4)` (Xcode 27.0 ships Swift 6.4;

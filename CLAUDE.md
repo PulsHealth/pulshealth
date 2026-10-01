@@ -328,12 +328,31 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   `WorkoutEnrichmentState` — optional, so 1.5 state files decode; never
   make one required). **Re-sweep on widening:** an anchor taken under a
   limit never returns the older samples once the limit is lifted, so
-  `refreshReadableHistory` (before claims, in `syncAllEnabled`, `syncTypes`,
-  `sync(type:)` and observer wakes, at most every 15 min; forced by the app
-  on every foreground, at launch and after Apply's sheet) resets a widened
+  `refreshReadableHistory` (before claims, in `syncAllEnabled`, the
+  backfill branch of `syncTypes` — its incremental branch's only caller has
+  just refreshed — `sync(type:)` and observer wakes, at most every 15 min;
+  forced by the app on every foreground, at launch and after every
+  permission sheet: Apply's, an analysis's, an export's) resets a widened
   raw type's anchors and reopens its backfill, and each aggregate series,
   the rings and the enrichment phases reset themselves on their next run.
-  Same date (±1 h) resets nothing; a narrowing only records. The API is iOS
+  **A widening must be confirmed:** a type set to **None** is absent from
+  `earliestAuthorizedSampleDate(for:)` exactly like one set to Full Access
+  (measured on the iOS 27.0 simulator: Steps set to None dropped out of the
+  answer while sample, statistics and anchored queries for it all came back
+  empty, without an error, and an anchor from under the limit reported no
+  deletions), and treating that as a widening reset an aggregate series
+  with nothing to clamp it — every bucket a null. So a reported widening
+  counts only once HealthKit returns one sample (for the rings, one day)
+  ending before the recorded date (`ReadableHistory.resolve`,
+  `hasHistory`); otherwise the recorded date stands and the clamps stay. A
+  widened type a run holds is not touched, not even recorded, until it is
+  released. Same date (±1 day: a DST step is exactly an hour, and limiting
+  again always moves the date later) resets nothing; a narrowing only
+  records. Every HealthKit call here times out after 10 s and counts as
+  unknown, which fails closed: an aggregate or ring pass records
+  `readableHistoryUnknown` and sends nothing (a locked device just skips),
+  and an export says it may be incomplete. Never pass the API an empty
+  set — that breaks the `healthd` connection (Cocoa 4099). The API is iOS
   27 SDK only and CI still builds with Xcode 26.5, so it is used **only** in
   `ReadableHistory.swift`, behind `#if compiler(>=6.4)` (Xcode 27.0 = Swift
   6.4; 26.5 = 6.3.2, 26.6 = 6.3.3) *and* `#available(iOS 27.0, *)`; built

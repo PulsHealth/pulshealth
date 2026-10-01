@@ -69,8 +69,11 @@ public enum ReadableHistory {
     /// How far a reported date may move before it counts as a new grant.
     /// HealthKit's date is fixed when the user answers the sheet, but a
     /// re-sweep is a whole backfill, so a jittering value must never be able
-    /// to start one; a real change of answer moves it by days or removes it.
-    static let tolerance: TimeInterval = 3_600
+    /// to start one. A day, not an hour: a DST step moves a local-midnight
+    /// date by exactly an hour, and a real change of answer moves it by
+    /// more than a day — limiting again always lands 30 days before *now*,
+    /// later than the old date — or removes it.
+    static let tolerance: TimeInterval = 86_400
 
     /// How a type's earliest readable date moved between two looks.
     public enum Change: Sendable, Equatable {
@@ -85,7 +88,22 @@ public enum ReadableHistory {
     }
 
     /// The change from the date a pass recorded to the one HealthKit reports
-    /// now. Nil means unlimited on both sides.
+    /// now. Nil means unlimited on both sides — as far as the dates go.
+    ///
+    /// A `.widened` here is only a claim. HealthKit leaves a type out of
+    /// its answer unless it is limited *with a date*, so a type the user
+    /// switched to **None** in Settings is absent exactly like one switched
+    /// to Full Access. Measured on the iOS 27.0 simulator (24A434): Steps
+    /// switched from Limited to None under Settings → Privacy & Security →
+    /// Health → (app) dropped out of `earliestAuthorizedSampleDate(for:)`,
+    /// and a sample query, a daily statistics query and an anchored query
+    /// for it all came back empty without an error (the anchored one, from
+    /// an anchor taken under the limit, with no deletions either). Acting on
+    /// that "widening" would reset an aggregate series and recompute it from
+    /// its start date with nothing to clamp it, every bucket a null. So a
+    /// pass confirms a widening with `resolve(recorded:reported:olderHistoryFound:)`
+    /// before it acts: switched back to Full Access, the same probe found
+    /// the older samples at once.
     public static func change(from recorded: Date?, to current: Date?) -> Change {
         switch (recorded, current) {
         case (nil, nil):
@@ -98,6 +116,45 @@ public enum ReadableHistory {
             if current < recorded.addingTimeInterval(-tolerance) { return .widened }
             if current > recorded.addingTimeInterval(tolerance) { return .narrowed }
             return .unchanged
+        }
+    }
+
+    /// The date a pass should run under: HealthKit's report, except that a
+    /// widening only counts once HealthKit has returned a sample older than
+    /// the recorded date (`hasHistory(of:endingBefore:in:)`). Without one the
+    /// report may as well be access set to None, and the recorded date
+    /// stands — the pass keeps clamping to it and resets nothing.
+    ///
+    /// A type with genuinely no older data fails the probe too. Nothing is
+    /// lost then: there is no older history to re-read, and the clamp still
+    /// keeps nulls off the empty range.
+    static func resolve(recorded: Date?, reported: Date?, olderHistoryFound: Bool) -> Date? {
+        guard change(from: recorded, to: reported) == .widened, !olderHistoryFound else { return reported }
+        return recorded
+    }
+
+    /// What `HealthSyncEngine.refreshReadableHistory` does for one raw type.
+    enum RefreshAction: Sendable, Equatable {
+        case none
+        /// Write the new date down; nothing to redo.
+        case record
+        /// Reset the type's anchors and reopen its backfill.
+        case resweep
+        /// Another run holds the type. Leave it — writing a widened date now
+        /// would let that run ack a page read under the old limit after the
+        /// record says there is none — and retry at the next refresh.
+        case deferUntilReleased
+    }
+
+    /// The decision behind `RefreshAction`, from a confirmed change (see
+    /// `resolve`), whether the type has progress, and whether a run holds it.
+    static func refreshAction(change: Change, hasProgress: Bool, isActive: Bool) -> RefreshAction {
+        switch change {
+        case .unchanged: return .none
+        case .narrowed: return .record
+        case .widened:
+            if isActive { return .deferUntilReleased }
+            return hasProgress ? .resweep : .record
         }
     }
 
@@ -202,11 +259,89 @@ public enum ReadableHistory {
         return types
     }
 
+    /// How long a HealthKit call here may take before its answer counts as
+    /// unknown. HealthKit calls have been seen to stall for 30–60 s after a
+    /// reinstall on the simulator, and one never to return on a fresh one;
+    /// and these run before every sync claims its types. Unknown fails
+    /// closed: the recorded date stands, and nothing widens.
+    static let timeout: Duration = .seconds(10)
+
+    /// Thrown by `withTimeout` when the operation outran it.
+    struct TimedOut: Error, CustomStringConvertible {
+        var description: String { "HealthKit did not answer within \(ReadableHistory.timeout)" }
+    }
+
+    /// `operation`'s result, or `TimedOut` once `limit` has passed —
+    /// whether or not the operation honours cancellation. It is cancelled
+    /// then, and whatever it returns later is dropped. (A task group would
+    /// not do: it waits for every child before it returns, so a HealthKit
+    /// call that never comes back would hold it forever.)
+    static func withTimeout<T: Sendable>(
+        _ limit: Duration = timeout, _ operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        let once = ResumeOnce<T>()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                once.set(continuation)
+                let work = Task {
+                    do { once.resume(with: .success(try await operation())) } catch { once.resume(with: .failure(error)) }
+                }
+                let timer = Task {
+                    try? await Task.sleep(for: limit)
+                    if once.resume(with: .failure(TimedOut())) { work.cancel() }
+                }
+                once.onResume { timer.cancel() }
+            }
+        } onCancel: {
+            once.resume(with: .failure(CancellationError()))
+        }
+    }
+
+    /// Whether HealthKit returns anything of `identifier` that ends before
+    /// `date` — the evidence that a widening is real (`resolve`). One
+    /// sample, or for the rings one day's summary before `date`'s day. No
+    /// answer — an error, a timeout, a type with no older data — is no: a
+    /// widening is never inferred from silence.
+    static func hasHistory(
+        of identifier: String, endingBefore date: Date, in healthStore: HKHealthStore,
+        calendar: Calendar = .current
+    ) async -> Bool {
+        do {
+            return try await withTimeout {
+                if HealthTypeCatalog.isActivitySummary(identifier) {
+                    let units: Set<Calendar.Component> = [.era, .year, .month, .day]
+                    guard let lastDay = calendar.date(
+                        byAdding: .day, value: -1, to: calendar.startOfDay(for: date))
+                    else { return false }
+                    var start = calendar.dateComponents(units, from: ExportPlan.allTimeFloor)
+                    start.calendar = calendar
+                    var end = calendar.dateComponents(units, from: lastDay)
+                    end.calendar = calendar
+                    let predicate = HKQuery.predicate(forActivitySummariesBetweenStart: start, end: end)
+                    return !(try await HKActivitySummaryQueryDescriptor(predicate: predicate)
+                        .result(for: healthStore)).isEmpty
+                }
+                guard let type = HealthTypeCatalog.descriptor(for: identifier)?.sampleType else { return false }
+                let older = HKSampleQueryDescriptor(
+                    predicates: [.sample(
+                        type: type,
+                        predicate: HKQuery.predicateForSamples(withStart: nil, end: date, options: .strictEndDate))],
+                    sortDescriptors: [],
+                    limit: 1)
+                return !(try await older.result(for: healthStore)).isEmpty
+            }
+        } catch {
+            return false
+        }
+    }
+
     /// One HealthKit round trip: the earliest readable date of each of
     /// `identifiers` that iOS 27 limits, by identifier. Empty when none is
     /// limited — and always empty when built with the iOS 26 SDK or run
-    /// before iOS 27. Throws what HealthKit throws; callers decide what an
-    /// unknown answer means for them.
+    /// before iOS 27. Throws what HealthKit throws, and `TimedOut` after
+    /// `timeout`; callers decide what an unknown answer means for them.
+    /// Never asks about an empty set: that breaks the connection to
+    /// `healthd` (Cocoa error 4099).
     static func query(
         _ identifiers: some Collection<String>, in healthStore: HKHealthStore
     ) async throws -> [String: Date] {
@@ -214,7 +349,10 @@ public enum ReadableHistory {
         if #available(iOS 27.0, *) {
             let types = objectTypes(for: identifiers)
             guard !types.isEmpty else { return [:] }
-            let dates = try await healthStore.earliestAuthorizedSampleDate(for: Set(types.keys))
+            let asking = Set(types.keys)
+            let dates = try await withTimeout {
+                try await healthStore.earliestAuthorizedSampleDate(for: asking)
+            }
             let asked = Set(identifiers)
             var byIdentifier: [String: Date] = [:]
             for (type, date) in dates {
@@ -292,5 +430,62 @@ public struct LimitedHistorySummary: Sendable, Equatable {
     /// Whether every date falls on the same local day, so one date says it.
     public func isOneDay(in calendar: Calendar = .current) -> Bool {
         calendar.isDate(earliest, inSameDayAs: latest)
+    }
+}
+
+/// A continuation resumed exactly once, by whichever of `withTimeout`'s
+/// racers gets there first. A lock, because the racers are unstructured
+/// tasks and the cancellation handler runs on whatever thread cancels.
+private final class ResumeOnce<T: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<T, Error>?
+    private var pending: Result<T, Error>?
+    private var resumed = false
+    private var hooks: [@Sendable () -> Void] = []
+
+    /// Installs the continuation; a result that arrived first (cancellation
+    /// before the continuation existed) is delivered at once.
+    func set(_ continuation: CheckedContinuation<T, Error>) {
+        lock.lock()
+        if let pending {
+            self.pending = nil
+            lock.unlock()
+            continuation.resume(with: pending)
+            return
+        }
+        self.continuation = continuation
+        lock.unlock()
+    }
+
+    /// Runs `hook` when the continuation is resumed (now, if it was).
+    func onResume(_ hook: @escaping @Sendable () -> Void) {
+        lock.lock()
+        if resumed {
+            lock.unlock()
+            hook()
+            return
+        }
+        hooks.append(hook)
+        lock.unlock()
+    }
+
+    /// True for the call that resumed it; false for every later one.
+    @discardableResult
+    func resume(with result: Result<T, Error>) -> Bool {
+        lock.lock()
+        guard !resumed else {
+            lock.unlock()
+            return false
+        }
+        resumed = true
+        let continuation = self.continuation
+        self.continuation = nil
+        if continuation == nil { pending = result }
+        let hooks = self.hooks
+        self.hooks = []
+        lock.unlock()
+        continuation?.resume(with: result)
+        for hook in hooks { hook() }
+        return true
     }
 }

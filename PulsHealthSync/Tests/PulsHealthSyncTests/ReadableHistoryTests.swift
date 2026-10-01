@@ -31,9 +31,74 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
 
     @Test func theSameDateIsUnchangedSoNothingLoops() {
         #expect(ReadableHistory.change(from: limit, to: limit) == .unchanged)
-        // Jitter either way is not a new grant.
+        // Jitter either way is not a new grant — nor is a DST step, which
+        // moves a local-midnight date by exactly an hour.
         #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-59 * 60)) == .unchanged)
         #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(59 * 60)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-3_600)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(3_600)) == .unchanged)
+    }
+
+    @Test func theToleranceIsADay() {
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-23 * 3_600)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(23 * 3_600)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-day)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-25 * 3_600)) == .widened)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(25 * 3_600)) == .narrowed)
+    }
+
+    // MARK: - Confirming a widening
+
+    /// Settings → Health → (app) → (type) → None drops the type out of
+    /// `earliestAuthorizedSampleDate(for:)` exactly like Full Access does.
+    /// No older sample, no widening: the recorded date stands.
+    @Test func noLimitReportedButNothingOlderReadableIsUnchanged() {
+        let resolved = ReadableHistory.resolve(recorded: limit, reported: nil, olderHistoryFound: false)
+        #expect(resolved == limit)
+        #expect(ReadableHistory.change(from: limit, to: resolved) == .unchanged)
+    }
+
+    @Test func noLimitReportedAndAnOlderSampleReadIsAWidening() {
+        let resolved = ReadableHistory.resolve(recorded: limit, reported: nil, olderHistoryFound: true)
+        #expect(resolved == nil)
+        #expect(ReadableHistory.change(from: limit, to: resolved) == .widened)
+    }
+
+    @Test func anEarlierDateNeedsAnOlderSampleToo() {
+        let earlier = limit.addingTimeInterval(-10 * day)
+        #expect(ReadableHistory.resolve(recorded: limit, reported: earlier, olderHistoryFound: false) == limit)
+        #expect(ReadableHistory.resolve(recorded: limit, reported: earlier, olderHistoryFound: true) == earlier)
+    }
+
+    @Test func onlyWideningsAreQuestioned() {
+        let later = limit.addingTimeInterval(10 * day)
+        // A narrowing or the same date passes through whatever the probe says.
+        #expect(ReadableHistory.resolve(recorded: limit, reported: later, olderHistoryFound: false) == later)
+        #expect(ReadableHistory.resolve(recorded: nil, reported: limit, olderHistoryFound: false) == limit)
+        #expect(ReadableHistory.resolve(recorded: limit, reported: limit, olderHistoryFound: false) == limit)
+        #expect(ReadableHistory.resolve(recorded: nil, reported: nil, olderHistoryFound: false) == nil)
+    }
+
+    // MARK: - What a refresh does
+
+    @Test func aRefreshActsOnAConfirmedChange() {
+        #expect(ReadableHistory.refreshAction(change: .unchanged, hasProgress: true, isActive: false) == .none)
+        #expect(ReadableHistory.refreshAction(change: .narrowed, hasProgress: true, isActive: false) == .record)
+        #expect(ReadableHistory.refreshAction(change: .widened, hasProgress: true, isActive: false) == .resweep)
+        #expect(ReadableHistory.refreshAction(change: .widened, hasProgress: false, isActive: false) == .record)
+    }
+
+    /// A run holding the type could ack a page read under the old limit
+    /// after a widened date was written, progress or not: nothing is
+    /// written until it lets go.
+    @Test func aWideningWaitsForTheRunHoldingTheType() {
+        #expect(ReadableHistory.refreshAction(change: .widened, hasProgress: true, isActive: true)
+            == .deferUntilReleased)
+        #expect(ReadableHistory.refreshAction(change: .widened, hasProgress: false, isActive: true)
+            == .deferUntilReleased)
+        // A narrowing is safe to note under a run: it only adds a clamp.
+        #expect(ReadableHistory.refreshAction(change: .narrowed, hasProgress: true, isActive: true) == .record)
+        #expect(ReadableHistory.refreshAction(change: .unchanged, hasProgress: true, isActive: true) == .none)
     }
 
     @Test func aLimitGoingAwayWidens() {
@@ -539,5 +604,70 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
         ])
         #expect(two?.isOneDay(in: pacific) == false)
         #expect(two?.latest == limit.addingTimeInterval(5 * day))
+    }
+}
+
+@Suite struct ReadableHistoryTimeoutTests {
+    @Test func anAnswerInTimeComesBack() async throws {
+        let value = try await ReadableHistory.withTimeout(.seconds(5)) { 42 }
+        #expect(value == 42)
+    }
+
+    @Test func anErrorInTimeIsRethrown() async {
+        await #expect(throws: URLError.self) {
+            try await ReadableHistory.withTimeout(.seconds(5)) { () async throws -> Int in throw URLError(.timedOut) }
+        }
+    }
+
+    /// The case that matters: a HealthKit call that does not honour
+    /// cancellation, and returns late or never. The caller is let go at the
+    /// limit all the same.
+    @Test func aCallThatIgnoresCancellationIsCutOffAtTheLimit() async {
+        let started = ContinuousClock.now
+        await #expect(throws: ReadableHistory.TimedOut.self) {
+            try await ReadableHistory.withTimeout(.milliseconds(200)) { () async -> Int in
+                await withCheckedContinuation { (continuation: CheckedContinuation<Int, Never>) in
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 3) { continuation.resume(returning: 1) }
+                }
+            }
+        }
+        #expect(ContinuousClock.now - started < .seconds(2))
+    }
+
+    @Test func cancellingTheCallerEndsTheWait() async {
+        let task = Task {
+            try await ReadableHistory.withTimeout(.seconds(30)) { () async -> Int in
+                await withCheckedContinuation { (continuation: CheckedContinuation<Int, Never>) in
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 3) { continuation.resume(returning: 1) }
+                }
+            }
+        }
+        try? await Task.sleep(for: .milliseconds(100))
+        let started = ContinuousClock.now
+        task.cancel()
+        let result = await task.result
+        #expect(ContinuousClock.now - started < .seconds(2))
+        #expect(throws: CancellationError.self) { try result.get() }
+    }
+}
+
+@Suite struct ReadableHistoryUnknownExportTests {
+    /// HealthKit could not say (failed or timed out): the export cannot
+    /// claim to cover the range asked for, so it is not complete.
+    @Test func anUnknownLimitMakesTheExportIncomplete() {
+        let issue = ExportPlan.readableHistoryIssue(nil)
+        #expect(issue != nil)
+        #expect(issue?.type == nil)
+        var result = ExportResult(
+            format: .csv, directory: URL(fileURLWithPath: "/tmp/x"), files: [],
+            rowCounts: [.samples: 6], notRepresented: [:],
+            unmappableSamples: [:], failures: [], warnings: [], totalBytes: 1, duration: 1)
+        result.failures = [issue!]
+        #expect(!result.isComplete)
+    }
+
+    @Test func aKnownAnswerIsNoIssue() {
+        #expect(ExportPlan.readableHistoryIssue([:]) == nil)
+        #expect(ExportPlan.readableHistoryIssue(["HKQuantityTypeIdentifierStepCount": Date()]) == nil)
     }
 }
