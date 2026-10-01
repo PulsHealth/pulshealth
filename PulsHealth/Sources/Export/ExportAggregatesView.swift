@@ -370,7 +370,9 @@ private struct ExportSeriesTypeList: View {
         }
         .navigationTitle("Data Type")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Search quantity types")
+        .searchable(
+            text: $searchText, placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search quantity types")
     }
 
     private func row(_ descriptor: HealthTypeDescriptor) -> some View {

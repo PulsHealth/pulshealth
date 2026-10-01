@@ -42,7 +42,9 @@ struct TypePickerView: View {
             }
         }
         .navigationTitle(title)
-        .searchable(text: $searchText, prompt: "Search data types")
+        .searchable(
+            text: $searchText, placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search data types")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {

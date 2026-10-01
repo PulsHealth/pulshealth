@@ -108,7 +108,11 @@ import Testing
 ///
 /// Wall-clock ceilings are generous on purpose: a loaded CI runner stretches
 /// every sleep, and what these tests tell apart — returned early, or waited
-/// out the limit — is a difference of tens of seconds, not milliseconds.
+/// out the limit — is a difference of minutes, not milliseconds. The ceilings
+/// sit at half of a five-minute limit because the iOS 27.0 simulator on CI
+/// stalls the whole test process for 35–45 s just after it boots: every test
+/// that starts in that window, sleeping or not, takes that long, and a 30 s
+/// ceiling under a 60 s limit failed on it.
 @Suite struct ObserverWaitTests {
     func makeEngine() -> HealthSyncEngine {
         let dir = FileManager.default.temporaryDirectory
@@ -122,8 +126,8 @@ import Testing
     @Test func returnsAtOnceWhenNothingIsHeld() async {
         let engine = makeEngine()
         let start = ContinuousClock.now
-        await engine.waitForRelease(of: ["a"], upTo: .seconds(60))
-        #expect(ContinuousClock.now - start < .seconds(30))
+        await engine.waitForRelease(of: ["a"], upTo: .seconds(300))
+        #expect(ContinuousClock.now - start < .seconds(150))
     }
 
     @Test func returnsSoonAfterTheHolderLetsGo() async {
@@ -134,12 +138,12 @@ import Testing
             await engine.releaseForTesting("a")
         }
         let start = ContinuousClock.now
-        await engine.waitForRelease(of: ["a"], upTo: .seconds(60))
+        await engine.waitForRelease(of: ["a"], upTo: .seconds(300))
         let waited = ContinuousClock.now - start
         await holder.value
         #expect(!(await engine.isSyncing("a")))
         #expect(waited >= .milliseconds(250))
-        #expect(waited < .seconds(30))
+        #expect(waited < .seconds(150))
     }
 
     @Test func givesUpAtTheLimit() async {
@@ -149,7 +153,7 @@ import Testing
         await engine.waitForRelease(of: ["a"], upTo: .milliseconds(600))
         let waited = ContinuousClock.now - start
         #expect(waited >= .milliseconds(600))
-        #expect(waited < .seconds(30))
+        #expect(waited < .seconds(150))
         #expect(await engine.isSyncing("a"))
     }
 
@@ -157,11 +161,11 @@ import Testing
         let engine = makeEngine()
         _ = await engine.claimTypes(["a"])
         let start = ContinuousClock.now
-        let wait = Task { await engine.waitForRelease(of: ["a"], upTo: .seconds(120)) }
+        let wait = Task { await engine.waitForRelease(of: ["a"], upTo: .seconds(300)) }
         try? await Task.sleep(for: .milliseconds(100))
         wait.cancel()
         await wait.value
-        #expect(ContinuousClock.now - start < .seconds(60))
+        #expect(ContinuousClock.now - start < .seconds(150))
     }
 }
 
