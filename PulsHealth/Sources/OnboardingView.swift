@@ -92,7 +92,9 @@ struct OnboardingView: View {
     /// page could not be noticed, and on page 2 that swipe is what asks.
     private var pager: some View {
         ScrollView(.horizontal) {
-            LazyHStack(spacing: 0) {
+            // Not lazy: with a LazyHStack, iOS 27 stopped the first swipe
+            // back after the move to page 3 about half a page short.
+            HStack(spacing: 0) {
                 ForEach(pages, id: \.self) { each in
                     pageView(each)
                         .containerRelativeFrame(.horizontal)
