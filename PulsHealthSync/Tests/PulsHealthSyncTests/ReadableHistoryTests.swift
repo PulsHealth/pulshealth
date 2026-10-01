@@ -31,9 +31,20 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
 
     @Test func theSameDateIsUnchangedSoNothingLoops() {
         #expect(ReadableHistory.change(from: limit, to: limit) == .unchanged)
-        // Jitter either way is not a new grant.
+        // Jitter either way is not a new grant — nor is a DST step, which
+        // moves a local-midnight date by exactly an hour.
         #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-59 * 60)) == .unchanged)
         #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(59 * 60)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-3_600)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(3_600)) == .unchanged)
+    }
+
+    @Test func theToleranceIsADay() {
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-23 * 3_600)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(23 * 3_600)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-day)) == .unchanged)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(-25 * 3_600)) == .widened)
+        #expect(ReadableHistory.change(from: limit, to: limit.addingTimeInterval(25 * 3_600)) == .narrowed)
     }
 
     // MARK: - Confirming a widening

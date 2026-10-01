@@ -69,8 +69,11 @@ public enum ReadableHistory {
     /// How far a reported date may move before it counts as a new grant.
     /// HealthKit's date is fixed when the user answers the sheet, but a
     /// re-sweep is a whole backfill, so a jittering value must never be able
-    /// to start one; a real change of answer moves it by days or removes it.
-    static let tolerance: TimeInterval = 3_600
+    /// to start one. A day, not an hour: a DST step moves a local-midnight
+    /// date by exactly an hour, and a real change of answer moves it by
+    /// more than a day — limiting again always lands 30 days before *now*,
+    /// later than the old date — or removes it.
+    static let tolerance: TimeInterval = 86_400
 
     /// How a type's earliest readable date moved between two looks.
     public enum Change: Sendable, Equatable {
