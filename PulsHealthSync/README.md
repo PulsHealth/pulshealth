@@ -1,9 +1,10 @@
 # PulsHealthSync
 
 Swift package (iOS 17+, Swift 6 strict concurrency, no external dependencies) that
-syncs HealthKit data to an HTTP ingest server. The PulsHealth app is a thin UI over
-this library; everything sync-related lives here. See the root `README.md` for the
-overall architecture and wire format, and `CLAUDE.md` for invariants.
+syncs HealthKit data to an HTTP ingest server, exports it to files, and profiles
+what HealthKit holds. The PulsHealth app is a thin UI over it. The wire format is
+the [Puls Sync Protocol](../docs/protocol/README.md); the invariants are in
+[`CLAUDE.md`](../CLAUDE.md).
 
 ## Source map
 
@@ -28,12 +29,21 @@ Sources/PulsHealthSync/
 │   ├── BackgroundExecution.swift    Background-task assertion around app-started and
 │   │                                observer work: iOS's grace period, then cancel
 │   │                                (never freeze) when it runs out.
+│   ├── MergedSync.swift             Incremental sync's merged path: one anchored page
+│   │                                per type, packed into shared batches without ever
+│   │                                splitting a page.
+│   ├── ProtectedData.swift          Whether HealthKit is readable (device unlocked);
+│   │                                background paths ask before querying.
 │   ├── RecentSampleWindow.swift     The last 30 days of a still-backfilling type, sent
 │   │                                ahead of its oldest-first sweep on an anchor of
 │   │                                its own.
 │   ├── SeriesEnricher.swift         Second-pass queries for series data: heartbeat
 │   │                                offsets, ECG voltages, workout GPS routes
 │   │                                (chunked 4,000 pts/line), iOS 18 effort scores.
+│   ├── WorkoutEnrichmentSync.swift  The sweep's last two phases, GPS routes then
+│   │                                intra-workout streams: batches capped by a point
+│   │                                budget, a singleton watermark advanced per fully
+│   │                                acked workout.
 │   ├── ReadableHistory.swift        iOS 27 limited history access, pure: the
 │   │                                widened/narrowed decision, the aggregate,
 │   │                                ring and reconciliation clamps, the one
@@ -49,9 +59,10 @@ Sources/PulsHealthSync/
 │   ├── SyncStateStore.swift         Actor persisting config + per-type state (anchor
 │   │                                blob, counters, timestamps, errors) as atomic JSON
 │   │                                in Application Support; 250 ms debounced writes.
-│   │                                Never writes the bearer token; records the
-│   │                                ServerIdentity its progress belongs to and
-│   │                                reports when a configuration would move it.
+│   │                                Writes the bearer token only while the Keychain
+│   │                                refuses it; records the ServerIdentity its
+│   │                                progress belongs to and reports when a
+│   │                                configuration would move it.
 │   ├── TokenStore.swift             TokenStore protocol; KeychainTokenStore (generic
 │   │                                password, AfterFirstUnlockThisDeviceOnly, service
 │   │                                = bundle ID + ".sync-token") and InMemoryTokenStore.
@@ -134,9 +145,14 @@ Sources/PulsHealthSync/
 │   ├── ExportWriters.swift          JSONL (wire-format batches, concatenated) and
 │   │                                CSV (one file per dataset) writers; ExportFile.
 │   ├── ExportManifest.swift         The …-manifest.json sidecar.
-│   └── ExportArchive.swift          ExportArchive and ExportZipper: an optional
-│                                    .zip of the finished files via NSFileCoordinator,
-│                                    and the sweep of its scratch directories.
+│   ├── ExportArchive.swift          ExportArchive and ExportZipper: an optional
+│   │                                .zip of the finished files via NSFileCoordinator,
+│   │                                and the sweep of its scratch directories.
+│   └── ExportPresentation.swift     The export screen's pure half: ranges, selection
+│                                    summary, failure copy, display names.
+├── Resources/
+│   └── PrivacyInfo.xcprivacy        The package's privacy manifest: UserDefaults
+│                                    (CA92.1), for background-task schedule status.
 ├── Explore/
 │   ├── HealthExplorer.swift         Public read-only façade over its own HKHealthStore:
 │   │                                quickFacts (oldest/newest sample, writers),
@@ -187,38 +203,49 @@ nested sync task (so uploaded batches are attributed via `WakeLog.record`) and t
 device↔server join key. `finish` is idempotent so a background task's expiration
 handler and its work task can't clobber each other's outcome.
 
-Tests (`Tests/PulsHealthSyncTests/`, Swift Testing): catalog integrity (unique
-identifiers, unit parsing, declarative OS gates) and the published vocabulary
-(`CatalogVocabularyTests` renders `docs/protocol/catalog.json` from the catalog
-and compares it byte for byte; with `TEST_RUNNER_PULS_WRITE_CATALOG=1` on the
-xcodebuild command it rewrites the file), serialization (NDJSON line structure, gzip framing
-+ CRC, metadata round-trip), the state store (token migration and Keychain
-hand-off, server-identity change detection and reset, scrubbed error text), and
-the protocol surface (`ProtocolTests.swift`: header version fields, request
-headers, protocol-rejection parsing, capabilities decoding, URL validation, and
-the connection test end to end against an in-process `URLProtocol`), and the
-on-device export (`ExportTests.swift`: hand-built batches through the real file
-transport and both writers — CSV columns against `docs/export.md`, quoting,
-nulls, header-once, JSONL line validity and header counts, what CSV cannot
-represent, cancellation and cleanup — plus the export plan and its completion
-check), and iOS 27's limited history access (`ReadableHistoryTests.swift`: the
-widen/narrow/same decision, bucket and day clamps across DST, the
-reconciliation start, the Don't Allow classification, a real 1.5
-`sync-state.json` decoding, the re-sweep's state reset, the export's and the
-profile cache's handling). HealthKit itself isn't mockable, so engine behavior
-is exercised in the app via the benchmark and diagnostics screens.
+Tests (`Tests/PulsHealthSyncTests/`, Swift Testing) cover everything that runs
+without HealthKit:
+
+- the catalog (unique identifiers, unit parsing, declarative OS gates, legal
+  aggregate functions) and the published vocabulary: `CatalogVocabularyTests`
+  renders `docs/protocol/catalog.json` and compares it byte for byte, or
+  rewrites it with `TEST_RUNNER_PULS_WRITE_CATALOG=1` on the xcodebuild
+  command;
+- serialization (NDJSON line structure, gzip framing and CRC, metadata
+  round-trip) and the protocol surface (`ProtocolTests`: version fields,
+  request headers, rejection parsing, capabilities, URL validation, the
+  connection test against an in-process `URLProtocol`);
+- state and pairing: the token store and Keychain hand-off, server-identity
+  changes, scrubbed error text, the recent-window anchor, pairing payloads,
+  the link confirmation and the fields draft;
+- the engine's seams: merged-sync packing, concurrent uploads, sweep claims,
+  enrichment chunking, the wake log;
+- the on-device export (`ExportTests`: the real file transport and both
+  writers, CSV columns against `docs/export.md`, JSONL validity and header
+  counts, what CSV cannot represent, cancellation and cleanup, the plan and its
+  completion check) and its presentation;
+- iOS 27 limited history (`ReadableHistoryTests`: the widen/narrow/same
+  decision, bucket and day clamps across DST, the reconciliation start, Don't
+  Allow, a 1.5 `sync-state.json` decoding, the re-sweep's reset);
+- the explore layer: statistics, the profile reducer, the sample cursor and
+  the profile cache.
+
+Queries against real HealthKit run in the app: the benchmark, the diagnostics
+screens, and the app-hosted aggregate matrix (`PulsHealth/HostedTests`).
 
 ## Secrets and state at rest
 
 The bearer token is the one secret the package holds. It lives in the Keychain
-(`KeychainTokenStore`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` so
-background wakes after a reboot can still build a transport, and never restored
-onto another device) and is held in memory on `SyncConfiguration.authToken`;
-`SyncConfiguration.encode(to:)` refuses to write it and `SyncStateStore` fills it
-back in on load. A state file from a build that kept the token inline is migrated
-on first load: the token moves to the Keychain and the file is rewritten without
-it. Pass an `InMemoryTokenStore` to `SyncStateStore(directory:tokenStore:)` for
-tests and throwaway engines.
+(`KeychainTokenStore`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, so
+background wakes after a reboot can still build a transport and a backup never
+restores it onto another device) and in memory on `SyncConfiguration.authToken`.
+`SyncConfiguration.encode(to:)` never writes it, and `SyncStateStore` fills it
+back in on load. The one exception: when a Keychain write fails, the store parks
+the token in `sync-state.json` (`PersistedState.fallbackAuthToken`), retries on
+the next launch, and removes it once the Keychain accepts it — dropping it would
+stall every sync until the user retyped it. A state file from a build that kept
+the token inline is migrated the same way. Pass an `InMemoryTokenStore` to
+`SyncStateStore(directory:tokenStore:)` for tests and throwaway engines.
 
 `sync-state.json`, `event-log.json`, `wake-log.json` and any quarantined copy are
 written with `FileProtectionType.completeUntilFirstUserAuthentication` and
@@ -242,31 +269,22 @@ including a server's rejection body and the `unsupportedProtocol` message.
 
 ## Wire protocol version
 
-The wire format is versioned so a receiver can refuse what it does not
-understand instead of mis-storing it, and so a server can tell which app build
-produced a batch.
+The [protocol spec](../docs/protocol/README.md) owns the format; this is what
+the package does with it.
 
-- **Batch header.** The first NDJSON line of every batch carries
-  `"schemaVersion": 1` (an integer, `PulsProtocol.version`) and
+- **Versions.** The first NDJSON line of every batch carries
+  `"schemaVersion": 1` (`PulsProtocol.version`) and
   `"clientVersion": "<marketing version> (<build>)"` (`"unknown"` when the
-  host bundle has no version), ahead of the existing `batchID` / `deviceID` /
-  `type` / `reason` / `exportedAt` / per-line-type counts.
-- **Request header.** Every request — batch uploads and the read endpoints
-  alike — carries `X-Puls-Protocol: 1`.
-- **Rejection.** A server that does not accept the version answers HTTP 400
-  with `{"error":"unsupported protocol version","supportedVersions":[…]}`.
-  Both transports parse that body into `TransportError.unsupportedProtocol`
-  (never retried) so the app can say "this server does not support this app
-  version" rather than surfacing a bare 400. Any other 400 stays a
-  `serverError` with its body.
-- **Capabilities.** `GET /v1/capabilities` (bearer auth) answers
-  `{"protocolVersions":[1],"features":[…],"server":"…","version":"…"}`. The
-  reference server advertises `batches`, `stats`, `digest`, `uuids`,
-  `aggregates`, `activitySummaries`, `routes`, `series`, `profile`. The
-  endpoint is optional: a third-party receiver may answer 404/405, and every
-  field but `protocolVersions` may be omitted. The app hides reconciliation
-  unless `digest` and `uuids` are both advertised, and server statistics
-  unless `stats` is; unknown capabilities hide both.
+  host bundle has none), and every request carries `X-Puls-Protocol: 1`.
+- **Rejection.** A 400 with
+  `{"error":"unsupported protocol version","supportedVersions":[…]}` becomes
+  `TransportError.unsupportedProtocol` (never retried), so the app can say the
+  server does not support this app version rather than show a bare 400. Any
+  other 400 stays a `serverError` with its body.
+- **Capabilities.** `GET /v1/capabilities` is optional: a receiver may answer
+  404/405, and every field but `protocolVersions` may be omitted. The app
+  hides reconciliation unless `digest` and `uuids` are both advertised, and
+  server statistics unless `stats` is; unknown capabilities hide both.
 - **Connection test.** `ConnectionTester` calls capabilities first; if the
   endpoint is missing it POSTs a header-only batch (`type` `"probe"`, `reason`
   `"manual"`, every count 0) with no retries — any 2xx is success. 401/403 is
@@ -276,28 +294,26 @@ produced a batch.
 - **Pairing codes.** `PairingPayload.parse` reads the
   `puls://pair?url=&token=&user=` string `scripts/bootstrap.sh` prints, as a QR
   code and as text. A code is untrusted input however it arrives: the URL is
-  re-validated with `ServerURLValidation` (so a code carrying plain `http://`
-  to a non-local host is refused, not silently saved), the user must be a UUID,
-  unknown query items are ignored, and anything that is not a `puls://pair` URL
-  is rejected as "not a pairing code". Because a paste rarely holds exactly the
-  payload, the parser *finds* it: surrounding whitespace, `<…>`, quotes or
-  back-ticks, or the rest of the printed pairing block are tolerated, but the
-  payload must start the text or follow whitespace or an opening wrapper — a
-  `puls://` buried in another URL's query string is not picked out.
-  `apply(to:)` writes only the server URL, token and user ID into a
-  `SyncConfiguration` draft; `ServerFieldsDraft` is the on-screen equivalent,
-  staging all three (the user ID included) until `commit(to:)`.
-  The same string also works as a link, since the app registers the `puls` URL
-  scheme — that is how the iOS Camera app hands over a scanned QR code. A
-  custom URL scheme authenticates nobody: any web page or app can fire a
-  `puls://pair` link, and any installed app can claim the scheme, so a link's
-  token may be delivered to whichever app iOS picks. Scanning inside the app
-  never leaves the app; the link is a convenience. `PairingConfirmation` exists
-  because links are untrusted input: it is the prompt the app shows before a
-  link may fill anything — naming the host, saying when it would replace a
-  different configured server (same normalization as `ServerIdentity`) and when
-  the connection is unencrypted — and accepting it goes no further than a scan
-  does: fields filled and tested, nothing applied.
+  re-validated with `ServerURLValidation` (plain `http://` to a non-local host
+  is refused), the user must be a UUID, unknown query items are ignored, and
+  anything that is not a `puls://pair` URL is "not a pairing code". Because a
+  paste rarely holds exactly the payload, the parser *finds* it: surrounding
+  whitespace, `<…>`, quotes or back-ticks, or the rest of the printed pairing
+  block are tolerated, but the payload must start the text or follow
+  whitespace or an opening wrapper — a `puls://` buried in another URL's query
+  string is not picked out. `apply(to:)` writes only the server URL, token and
+  user ID into a `SyncConfiguration` draft; `ServerFieldsDraft` is the
+  on-screen equivalent, staging all three until `commit(to:)`.
+- **Pairing links.** The same string works as a link, since the app registers
+  the `puls` URL scheme; that is how the iOS Camera app hands over a scanned
+  code. A custom URL scheme authenticates nobody: any web page or app can fire
+  a `puls://pair` link, and any installed app can claim the scheme, so a
+  link's token may reach whichever app iOS picks. Scanning inside the app
+  never leaves the app; the link is a convenience. `PairingConfirmation` is the
+  prompt the app shows before a link may fill anything — the host, whether it
+  would replace a different configured server (same normalization as
+  `ServerIdentity`), whether the connection is unencrypted — and accepting it
+  goes no further than a scan: fields filled and tested, nothing applied.
 
 ## How a sync runs
 
