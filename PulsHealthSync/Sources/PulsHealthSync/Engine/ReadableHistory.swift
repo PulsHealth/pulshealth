@@ -157,6 +157,21 @@ public enum ReadableHistory {
         return max(syncStart, limit)
     }
 
+    // MARK: - Re-sweep
+
+    /// Whether a raw type has progress a widened grant should redo: an
+    /// anchor (either stream), a finished backfill, or samples sent.
+    static func hasRawProgress(_ state: TypeSyncState) -> Bool {
+        state.anchorData != nil || state.recentAnchorData != nil
+            || state.backfillComplete || state.totalSamplesExported > 0
+    }
+
+    /// The re-sweep decision for one raw type: its access widened since the
+    /// date it was last synced under, and it has synced something under it.
+    static func needsResweep(_ state: TypeSyncState, readableSince current: Date?) -> Bool {
+        change(from: state.readableSince, to: current) == .widened && hasRawProgress(state)
+    }
+
     // MARK: - HealthKit
 
     /// The HealthKit object types to ask about for `identifiers`, mapped back

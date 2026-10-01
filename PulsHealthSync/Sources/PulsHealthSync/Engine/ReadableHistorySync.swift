@@ -2,8 +2,9 @@ import Foundation
 import HealthKit
 
 // iOS 27 limited history access, engine side: asking HealthKit for each
-// type's earliest readable date. The rules themselves, and why each pass is
-// clamped, are in `ReadableHistory`.
+// type's earliest readable date, and re-sweeping a raw type whose access has
+// widened. The rules themselves, and why each pass is clamped, are in
+// `ReadableHistory`.
 
 /// What HealthKit says one type's earliest readable date is, for a pass
 /// about to read it.
@@ -17,6 +18,12 @@ struct ReadableLimit: Sendable, Equatable {
 }
 
 extension HealthSyncEngine {
+    /// How often the automatic paths — `syncAllEnabled`, observer wakes,
+    /// the per-type entry points — re-read the earliest readable dates. One
+    /// HealthKit round trip each; the app forces one on every foreground,
+    /// which is when someone may just have changed access in Settings.
+    static let readableHistoryInterval: Duration = .seconds(15 * 60)
+
     /// For the enabled types — raw sync, aggregate series and the rings —
     /// the earliest date iOS 27's limited Health access lets this app read
     /// each one from, by catalog identifier. Only limited types are listed:
@@ -53,5 +60,75 @@ extension HealthSyncEngine {
             return ReadableLimit(since: recorded, isFresh: false)
         }
         return ReadableLimit(since: dates[identifier], isFresh: true)
+    }
+
+    /// Re-read every enabled type's earliest readable date, note what moved,
+    /// and re-sweep raw types whose access has widened. Returns the dates.
+    ///
+    /// A widening — the date moved earlier, or the limit went away — means
+    /// history the sync could not read is readable now. A raw type's anchor
+    /// is past everything it has read and would never return those samples
+    /// (an anchor taken under a limit returns nothing older after the limit
+    /// is lifted — measured on the iOS 27.0 simulator), so a type with
+    /// progress has its anchors reset and its backfill reopened
+    /// (`SyncStateStore.restartBackfillForWidenedAccess`) and the next sweep
+    /// reads the whole history again; the server keeps what it already has.
+    /// The same date again resets nothing, and a narrowing only records the
+    /// new date. Aggregates, the rings and the workout phases keep their own
+    /// record and act on it when they next run.
+    ///
+    /// A type another run holds is left for the next refresh, which is then
+    /// not rate-limited. At most every `readableHistoryInterval` unless
+    /// `force`; call it before claiming types. Does nothing before iOS 27.
+    @discardableResult
+    public func refreshReadableHistory(force: Bool = false) async -> [String: Date] {
+        guard ReadableHistory.isSupported else { return [:] }
+        if !force, let checkedAt = readableHistoryCheckedAt,
+           ContinuousClock.now - checkedAt < Self.readableHistoryInterval {
+            return readableHistory
+        }
+        let config = await store.configuration
+        guard let current = await currentReadableHistory(for: config.observedTypeIdentifiers) else {
+            return readableHistory
+        }
+        var deferred = false
+        for identifier in config.enabledTypes.sorted()
+        where HealthTypeCatalog.descriptor(for: identifier)?.sampleType != nil {
+            let state = await store.state(for: identifier)
+            let since = ReadableHistory.effectiveLimit(current[identifier], readingFrom: config.startDate)
+            switch ReadableHistory.change(from: state.readableSince, to: since) {
+            case .unchanged:
+                continue
+            case .narrowed:
+                await store.recordReadableSince(identifier, since)
+                await eventLog.log(
+                    .info, type: identifier,
+                    "Health access is limited to data from \(Self.day(since)) on — what was already synced stays")
+            case .widened where !ReadableHistory.hasRawProgress(state):
+                await store.recordReadableSince(identifier, since)
+            case .widened:
+                guard !activeSyncs.contains(identifier) else {
+                    deferred = true
+                    continue
+                }
+                // Held for the reset, like `resetType`: a run that started
+                // now would persist its old anchor over it.
+                activeSyncs.insert(identifier)
+                await store.restartBackfillForWidenedAccess(identifier, readableSince: since)
+                activeSyncs.remove(identifier)
+                await eventLog.log(
+                    .info, type: identifier,
+                    "Health access widened (data from \(Self.day(state.readableSince)) → \(Self.day(since))) — re-reading this type's whole history; the server keeps what it already has")
+            }
+        }
+        readableHistory = current
+        readableHistoryCheckedAt = deferred ? nil : .now
+        notifyChanged()
+        return current
+    }
+
+    /// "Sep 1, 2026", or "all of it" for no limit — for log lines.
+    private static func day(_ date: Date?) -> String {
+        date.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "all of it"
     }
 }

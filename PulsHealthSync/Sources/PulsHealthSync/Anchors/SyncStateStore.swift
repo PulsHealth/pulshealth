@@ -593,9 +593,34 @@ public actor SyncStateStore {
     }
 
     /// Note the earliest date HealthKit now lets the app read a type from
-    /// (iOS 27 limited history access), nil for unlimited.
+    /// (iOS 27 limited history access), nil for unlimited. Only for a change
+    /// that needs no re-sweep — see `restartBackfillForWidenedAccess`.
     public func recordReadableSince(_ identifier: String, _ date: Date?) {
         update(identifier) { $0.readableSince = date }
+    }
+
+    /// Access to a type widened while its sync had been reading under a
+    /// limit: start its history over. Both anchors and the recent-window
+    /// stream go and the backfill is no longer complete, so the next sweep
+    /// reads everything from the start date — including what was readable
+    /// before, which the server ignores (`ON CONFLICT DO NOTHING` on UUID).
+    /// The sample count restarts with it, since that sweep counts every
+    /// sample again; traffic and dates are history and stay.
+    ///
+    /// The caller must hold the type's claim, for the reason
+    /// `HealthSyncEngine.resetType` gives.
+    public func restartBackfillForWidenedAccess(_ identifier: String, readableSince: Date?) {
+        update(identifier) { s in
+            s.anchorData = nil
+            s.recentAnchorData = nil
+            s.recentWindowStart = nil
+            s.backfillComplete = false
+            s.totalSamplesExported = 0
+            s.lastSyncAt = nil
+            // In the same write as the reset: a crash that loses one loses
+            // both, and the next refresh sees the widening again.
+            s.readableSince = readableSince
+        }
     }
 
     public func recordReconciliation(identifier: String, summary: String) {

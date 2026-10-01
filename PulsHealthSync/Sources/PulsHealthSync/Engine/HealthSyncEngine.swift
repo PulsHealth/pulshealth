@@ -100,10 +100,12 @@ public actor HealthSyncEngine {
     /// every backfill complete, so its sync would stop there for good.
     let readEnd: Date?
 
-    /// iOS 27 limited history access: the earliest readable dates HealthKit
-    /// last reported (type identifier → date, limited types only), for when
-    /// it cannot be asked.
+    /// iOS 27 limited history access: what `refreshReadableHistory` last
+    /// found (type identifier → earliest readable date, limited types only)
+    /// and when, so the automatic paths can ask at most every
+    /// `readableHistoryInterval`.
     var readableHistory: [String: Date] = [:]
+    var readableHistoryCheckedAt: ContinuousClock.Instant?
 
     public init(
         store: SyncStateStore? = nil, eventLog: SyncEventLog? = nil, wakeLog: WakeLog? = nil,
@@ -480,6 +482,10 @@ public actor HealthSyncEngine {
                 "Device locked — HealthKit is unreadable; skipping \(reason.rawValue) sync of \(sampleIDs.count) types")
             return
         }
+        // Before anything is claimed: a type whose Health access widened is
+        // re-swept, which resets its anchor, and a type this run holds could
+        // not be. Rate-limited — the app asks on every foreground itself.
+        await refreshReadableHistory()
         // A backfill claims its raw types now, before the two cheap phases
         // below, not when phase 3 reaches them. The app registers its observer
         // query moments before a first backfill starts, HealthKit answers the
@@ -557,6 +563,7 @@ public actor HealthSyncEngine {
             notifyChanged()
             return
         }
+        await refreshReadableHistory()
         let claimed = claimTypes(HealthTypeCatalog.backfillOrder(ids))
         backfillExpectedUntil = nil
         await sweep(claimed, reason: reason)
@@ -630,6 +637,7 @@ public actor HealthSyncEngine {
 
     /// Sync one type: anchored-query pages until drained, uploading each page.
     public func sync(type identifier: String, reason: SyncReason = .incremental) async {
+        await refreshReadableHistory()
         guard claimTypes([identifier]) == [identifier] else { return }
         await sendRecentWindows([identifier], reason: reason)
         await runClaimed(type: identifier, reason: reason)
@@ -1319,6 +1327,11 @@ public actor HealthSyncEngine {
         var detail = "\(sorted.count) type(s): \(sorted.joined(separator: ", "))"
         if deliveries > 1 { detail += " — coalesced from \(deliveries) deliveries" }
         let wake = await beginWake(.observer, detail: detail)
+        // Ahead of the merged pass's claims, as in `syncAllEnabled`. An
+        // observer wake can be the first sync of a newly enabled type, and
+        // the date it reads under has to be on record for a later widening
+        // to be noticed.
+        await refreshReadableHistory()
         let rawEnabled = await store.configuration.enabledTypes
         var rawTypes = sorted.filter { rawEnabled.contains($0) }
         if let until = backfillExpectedUntil, ContinuousClock.now < until {

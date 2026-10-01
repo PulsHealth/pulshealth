@@ -4,7 +4,8 @@ import Testing
 @testable import PulsHealthSync
 
 // iOS 27 limited history access (`ReadableHistory`): the decisions that keep
-// unreadable history from reaching the server as empty. HealthKit is not mockable, so everything here is the pure half —
+// unreadable history from reaching the server as empty, and the re-sweep
+// rule. HealthKit is not mockable, so everything here is the pure half —
 // the engine calls these with what HealthKit reported.
 
 private let day: TimeInterval = 86_400
@@ -54,6 +55,44 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
         #expect(ReadableHistory.effectiveLimit(limit, readingFrom: limit) == nil)
         #expect(ReadableHistory.effectiveLimit(limit, readingFrom: limit.addingTimeInterval(-1)) == limit)
         #expect(ReadableHistory.effectiveLimit(nil, readingFrom: start) == nil)
+    }
+
+    // MARK: - Re-sweep
+
+    private func state(
+        anchor: Data? = nil, recent: Data? = nil, complete: Bool = false, samples: Int = 0,
+        readableSince: Date?
+    ) -> TypeSyncState {
+        var s = TypeSyncState(identifier: "HKQuantityTypeIdentifierStepCount")
+        s.anchorData = anchor
+        s.recentAnchorData = recent
+        s.backfillComplete = complete
+        s.totalSamplesExported = samples
+        s.readableSince = readableSince
+        return s
+    }
+
+    @Test func aWidenedTypeWithProgressIsReSwept() {
+        let synced = state(anchor: Data([1]), complete: true, samples: 6, readableSince: limit)
+        #expect(ReadableHistory.needsResweep(synced, readableSince: nil))
+        #expect(ReadableHistory.needsResweep(synced, readableSince: limit.addingTimeInterval(-30 * day)))
+        // Mid-backfill counts: an anchor, or only the recent-window stream.
+        #expect(ReadableHistory.needsResweep(state(anchor: Data([1]), readableSince: limit), readableSince: nil))
+        #expect(ReadableHistory.needsResweep(state(recent: Data([1]), readableSince: limit), readableSince: nil))
+    }
+
+    @Test func aWidenedTypeThatNeverSyncedHasNothingToRedo() {
+        #expect(!ReadableHistory.needsResweep(state(readableSince: limit), readableSince: nil))
+    }
+
+    @Test func theSameOrANarrowerDateNeverReSweeps() {
+        let synced = state(anchor: Data([1]), complete: true, samples: 6, readableSince: limit)
+        #expect(!ReadableHistory.needsResweep(synced, readableSince: limit))
+        #expect(!ReadableHistory.needsResweep(synced, readableSince: limit.addingTimeInterval(day)))
+        // Synced unlimited, now limited: what was sent stays sent.
+        let unlimited = state(anchor: Data([1]), complete: true, samples: 6, readableSince: nil)
+        #expect(!ReadableHistory.needsResweep(unlimited, readableSince: limit))
+        #expect(!ReadableHistory.needsResweep(unlimited, readableSince: nil))
     }
 }
 
@@ -278,6 +317,37 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
         #expect(await reopened.activitySummaryState.readableSince == since)
         #expect(await reopened.workoutRoutesState.readableSince == since)
         #expect(await reopened.workoutStreamsState.readableSince == nil)
+    }
+
+    @Test func aReSweepReopensTheWholeHistoryAndKeepsTheTraffic() async throws {
+        let dir = try tempDirectory()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let id = "HKQuantityTypeIdentifierStepCount"
+        let limit = Date(timeIntervalSince1970: 1_788_223_011.807)
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        await store.recordUploadedBatch(
+            identifier: id, newAnchorData: Data([7]), samples: 6, deletions: 1, bytes: 900,
+            sampleDateRange: limit...limit.addingTimeInterval(29 * day), duration: 1, latency: nil)
+        await store.recordRecentWindowUpload(
+            identifier: id, newAnchorData: Data([8]), windowStart: limit, bytes: 100,
+            sampleDateRange: nil, duration: 1)
+        await store.markBackfillComplete(id)
+        await store.recordReadableSince(id, limit)
+
+        await store.restartBackfillForWidenedAccess(id, readableSince: nil)
+
+        let s = await store.state(for: id)
+        #expect(s.anchorData == nil)
+        #expect(s.recentAnchorData == nil)
+        #expect(s.recentWindowStart == nil)
+        #expect(!s.backfillComplete)
+        #expect(s.totalSamplesExported == 0) // the sweep counts them all again
+        #expect(s.lastSyncAt == nil)
+        #expect(s.readableSince == nil)
+        #expect(s.totalBytesUploaded == 1_000)
+        #expect(s.totalBatchesUploaded == 2)
+        #expect(s.totalDeletionsExported == 1)
+        #expect(s.earliestExported == limit)
     }
 
     @Test func resetsKeepWhatIOSLetsTheAppRead() async throws {
