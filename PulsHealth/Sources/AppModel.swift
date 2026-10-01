@@ -146,6 +146,9 @@ final class AppModel {
         self.engine = engine
         self.scheduler = BackgroundSyncScheduler(engine: engine)
         self.explore = ExploreModel(engine: engine)
+        // An analysis can show the permission sheet too; what it answered
+        // for history (iOS 27) is recorded the same way as after Apply's.
+        explore.onHealthAccessRequested = { [weak self] in await self?.refreshReadableHistory() }
         // An export's files are health data sitting in the temporary directory
         // until they are shared. The privacy policy says none survives a
         // launch, and this line is what makes that true — for the export the
@@ -424,6 +427,10 @@ final class AppModel {
                 .warn, "Health access request before export failed: \(error.localizedDescription)")
         }
         await refreshNeedsAuthorization()
+        // As after Apply's sheet: it may just have limited history (iOS 27)
+        // for types the sync also reads, and the engine records it before
+        // the next sync reads under it.
+        await refreshReadableHistory()
     }
 
     // MARK: - Actions

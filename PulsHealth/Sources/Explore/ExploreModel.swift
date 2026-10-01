@@ -45,6 +45,11 @@ final class ExploreModel {
     /// just answered. Session-only, like `AppModel`'s.
     @ObservationIgnored private var undeterminableTypes: Set<String> = []
 
+    /// Called after an analysis presented the Health permission sheet —
+    /// `AppModel` re-reads the history limits there (iOS 27), as it does
+    /// after Apply's sheet.
+    @ObservationIgnored var onHealthAccessRequested: (@MainActor () async -> Void)?
+
     init(engine: HealthSyncEngine, store: TypeProfileStore = TypeProfileStore()) {
         self.engine = engine
         self.store = store
@@ -257,6 +262,7 @@ final class ExploreModel {
             if await engine.authorizationNeeded(for: [id]) {
                 undeterminableTypes.insert(id)
             }
+            await onHealthAccessRequested?()
         } catch {
             // Not fatal: the scan runs and reports what it could not read.
             await engine.eventLog.log(
