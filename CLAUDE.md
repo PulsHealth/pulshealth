@@ -212,14 +212,15 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   server **upserts** on `(user_id, date)` (null columns overwrite); progress is
   a *singleton* `computedThrough` day watermark
   (`SyncStateStore.activitySummaryState`) advanced only after ack, today
-  re-queried every run. `validKind` rejects it as a sample kind. Its type is an
-  `HKObjectType` (catalog `sampleType == nil`, added to read auth separately)
+  re-queried every run. `validKind` rejects it as a sample kind.
+  `HKActivitySummaryType` is an `HKObjectType` (catalog `sampleType == nil`;
+  the engine adds `HKObjectType.activitySummaryType()` to read auth itself)
   with **no observer or background delivery**, so it rides `syncAllEnabled` and
   `refreshActivitySummaryIfStale()` at the tail of every observer wake (at most
-  hourly) — keep the latter: the scheduled path runs from the
-  `BGProcessingTask` while the device is locked. Store the local `date`
-  straight through, never UTC-shifted (the PK is a plain `date`), or a day
-  splits across two rows.
+  hourly, `ActivitySummaryState.lastComputedAt`) — keep the latter: the
+  scheduled path runs from the `BGProcessingTask` while the device is locked.
+  Store the local `date` straight through, never UTC-shifted (the PK is a
+  plain `date`), or a day splits across two rows.
 - **`PULS_TIME_ZONE` must match the phone's zone.** Aggregate day buckets and
   ring dates are the phone's calendar days; the server's day boundary for
   `metric_daily` and every server-side daily query is `PULS_TIME_ZONE` (stored
@@ -258,7 +259,8 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   4099). The API is iOS 27 SDK only and CI also builds with Xcode 26.5, so it
   is called **only** in `ReadableHistory.swift`, behind `#if compiler(>=6.4)`
   (Xcode 27) *and* `#available(iOS 27.0, *)`. Don't Allow on the history page
-  throws; `requestAuthorization` returns `.declined`, an answer, not an error.
+  throws `errorAuthorizationDenied`; `requestAuthorization` returns
+  `.declined`, an answer, not an error.
   Details: `PulsHealthSync/README.md`, "Limited history access (iOS 27)".
 - **Incremental sync merges types into one batch; backfill does not.**
   `syncTypes(_:reason:)` routes `.incremental` through `MergedSync`, packing
@@ -268,16 +270,16 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   its pack's anchors untouched — keep `HealthSyncEngine.pack`'s no-split
   property (`MergedSyncPackingTests`). Backfill keeps the per-type path (full
   pages; four type pipelines overlap better). Reading ahead keeps
-  anchor-after-ack: concurrent merged packs hold disjoint types
-  (`ConcurrentUploadTests`), and the per-type path reads one page ahead in
-  memory only, cancelled by a failed upload. **A backfill claims all its types
-  up front** (`claimTypes`, then `sweep` releases each; `syncAllEnabled(.backfill)`
-  before its first phase), or the observer wake Apply's registration triggers
-  takes them down the merged path one upload at a time; a whole-history Apply
-  also calls `expectBackfill()` before registering the observer, because the
-  iOS 26 continued-processing task claims later still (observer wakes then
-  leave those types alone for up to a minute). Details:
-  `PulsHealthSync/README.md`, "How a sync runs".
+  anchor-after-ack: the up to `maxConcurrentTypes` merged packs in flight hold
+  disjoint types (`ConcurrentUploadTests`), and the per-type path reads one
+  page ahead in memory only, cancelled by a failed upload. **A backfill claims
+  all its types up front** (`claimTypes`, then `sweep` releases each;
+  `syncAllEnabled(.backfill)` before its first phase), or the observer wake
+  Apply's registration triggers takes them down the merged path one upload at
+  a time; a whole-history Apply also calls `expectBackfill()` before
+  registering the observer, because the iOS 26 continued-processing task
+  claims later still (observer wakes then leave those types alone for up to a
+  minute). Details: `PulsHealthSync/README.md`, "How a sync runs".
 - **Recent data first, on an anchor of its own.** A nil-anchor sweep returns
   history roughly oldest first, so every sweep entry point first runs a
   recent-window pass (`RecentSampleWindow`, `SweepPass.recent`) over types
@@ -392,9 +394,10 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
 - Statistics queries crash on illegal option×type combos: HealthKit raises an
   uncatchable NSInvalidArgumentException when the query *executes*, not when it
   is built. Only ever offer or construct functions from
-  `HealthTypeCatalog.allowedAggregateFunctions(for:)`, verified against all 372
-  type×function combos by `PulsHealth/HostedTests/AggregateMatrixTests` (ObjC
-  exception catcher + legacy `execute()`); re-run it on each new iOS runtime.
+  `HealthTypeCatalog.allowedAggregateFunctions(for:)` (derived from
+  `aggregationStyle`), verified against all 372 type×function combos by
+  `PulsHealth/HostedTests/AggregateMatrixTests` (ObjC exception catcher +
+  legacy `execute()`); re-run it on each new iOS runtime.
   Settings → Validate Aggregate Functions checks the legal set on-device.
 - Never add `workoutEffortScore`/`estimatedWorkoutEffortScore` to the catalog or
   any read-authorization request: iOS refuses to show them in the permission
