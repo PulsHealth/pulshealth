@@ -59,7 +59,7 @@ export const faq: FaqItem[] = [
   },
   {
     q: "Blood pressure never shows up in the permission sheet.",
-    a: "On iOS 26.5 the Health permission sheet silently omits blood pressure systolic and diastolic, so they can never be granted from within the app (Apple Feedback FB22735935). Grant them yourself in Settings, Privacy & Security, Health, PulsHealth. The app shows a hint when it detects the situation and backfills the full history once access exists.",
+    a: "On iOS 26 the Health permission sheet silently omits blood pressure systolic and diastolic, so they can never be granted from within the app (Apple Feedback FB22735935; iOS 27 fixes it). Grant them yourself in Settings, Privacy & Security, Health, PulsHealth. The app shows a hint when it detects the situation and backfills the full history once access exists.",
   },
   {
     q: "Daily step totals in the database are higher than the Health app shows.",

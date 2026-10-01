@@ -145,7 +145,7 @@ jobs:
         run: |
           set -euo pipefail
           # site/ reads knowledge-base/, blog/ and the documentation manifest's
-          # five markdown files as repository-root siblings, by relative path
+          # markdown files as repository-root siblings, by relative path
           # (src/lib/api.ts, src/lib/blog.ts, src/lib/docs.ts). Break that and
           # the loaders log and return nothing: the build still SUCCEEDS, it
           # just exports far fewer pages. So assert the counts.

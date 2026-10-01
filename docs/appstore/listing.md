@@ -31,10 +31,9 @@ Health data, your own database
 
 `[30/30]`
 
-> Do not put "Apple" in the name or subtitle. App Review rejected 1.4 (14)
-> under guideline 5.2.5 for "Apple Health to your server" here, because the
-> subtitle counts as the app's name. "Apple Health" in the description and
-> promotional text was not objected to.
+> Never put "Apple" in the name or subtitle: App Review treats the subtitle as
+> part of the name (guideline 5.2.5). "Apple Health" in the description and
+> promotional text is fine.
 
 ## Promotional text
 
@@ -96,16 +95,6 @@ iPhone running iOS 17 or later. Syncing needs a database you can reach; explorin
 
 `[3961/4000]`
 
-> The description above is the **next submission's** (1.6): it adds on-device
-> export (the "No database yet?" paragraph, the "Export to files" bullet, the
-> second privacy bullet and the reworded requirements — written for 1.5, which
-> was never submitted) and the Explore tab (the "See what you have" bullet,
-> and the reworded "No database yet?" and "Set up by scanning"). It also calls
-> the sync destination the user's database rather than a server, as the 1.6
-> app does, and names both kinds: the open-source PulsHealth stack, or one the
-> user already runs. 1.4 shipped with the text before those edits, which told
-> readers a server was required.
-
 ## Keywords
 
 Limit 100 characters, comma-separated, no spaces after commas (a space costs a
@@ -130,18 +119,11 @@ healthkit,sync,export,self-hosted,backup,postgres,grafana,quantified,csv,privacy
 | Marketing URL | `https://pulshealth.com` |
 | Privacy Policy URL | `https://pulshealth.com/privacy` |
 
-All three are pages of the marketing site (`site/src/app/support`, `/privacy`,
-`/terms`), which is what the plan meant by hosting the docs on the project's
-own domain. **Check the App Store Connect record actually points there** — a
-submission made before the site existed would carry the repository URLs
-instead:
-
-- The repository page `https://github.com/PulsHealth/pulshealth/blob/main/docs/privacy-policy.md`
-  also works, and Apple accepts it. It is the fallback if the site is down.
-- [`docs/privacy-policy.md`](../privacy-policy.md) stays the source of truth
-  for the text. Change it and the site page changes with it — and the
-  "Privacy policy:" line in the description above has to match whichever URL
-  is on the record.
+All three are pages of the marketing site (`site/`). The privacy page renders
+[`docs/privacy-policy.md`](../privacy-policy.md), which stays the source of
+truth for the text; its GitHub page is the fallback URL if the site is ever
+down. The "Privacy policy:" line in the description has to match whichever URL
+is on the record.
 
 ## Category
 
@@ -168,7 +150,7 @@ Answer every content question **None / No**. The result is **4+**.
 | Mature or suggestive themes | None | — |
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
-| Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. Since 1.6 a Type page also shows one line on what the type measures and, behind the value histogram, the typical range from the project's knowledge base — general reference, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
+| Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. A Type page also shows one line on what the type measures and, behind the value histogram, the typical range from the project's knowledge base — general reference, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
 | Unrestricted web access | No | There is no browser and no web view. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), and the last first-run page’s "Learn more" (pulshealth.com/docs/server/). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. |
 | User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, database URL, token) is shared with any other user or with the developer. |
 | Gambling and contests | No | — |
@@ -232,54 +214,13 @@ flags.
 |---|---|
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
 | Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
-| Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.6`, ahead of the `1.4` on the store — see [Release record](README.md#release-record) |
-| Build | `CURRENT_PROJECT_VERSION`, currently `19`, ahead of the shipped `15` (16, 17 and 18 went to TestFlight only) |
-| Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
+| Version / build | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in `PulsHealth/project.yml`. The store holds 1.6 (19); bump both before the next archive — see the [Release record](README.md#release-record) |
+| Minimum iOS | 17.0 in `project.yml` |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
-"What's New in This Version" — one entry per submission. The first was:
-
-```
-First release.
-```
-
-1.4 (submitted 2026-09-18):
-
-```
-• Guided first-run setup: scan the pairing code your server prints, or type the URL and token and test the connection before you continue.
-• Your server token is stored in the iOS Keychain.
-• Sync progress is kept per server, so switching servers never mixes up what was sent.
-• The log shows how much of each upload was new to your server.
-• On a new setup, recent daily summaries upload first, so your server has something to show while history backfills.
-• Fixes: no false "backfill complete" for types that produced no samples, and setup can no longer stall on the medications permission step.
-```
-
-1.5 (TestFlight only, never submitted — kept as the record of that build; its
-"Settings → Export Data" and "Dashboard" are 1.5's screens, and the 1.6 entry
-below says the same things in 1.6's terms):
-
-```
-• Export without a server: Settings → Export Data writes your selected health data to CSV or JSONL files — last 30 days, 90 days, a year, or all time — and hands them to the share sheet. Nothing is uploaded, and the app's copy is deleted once shared.
-• Pair faster: open the server's pairing link, scan its QR code with the Camera app, or paste the pairing code. The app always asks before it uses one.
-• The first-run flow and the Dashboard now say what works without a server.
-• Recent data first: while history backfills, the last month reaches your server ahead of it and stays current however long the rest takes.
-• Syncing that keeps going: leaving the app no longer freezes a sync mid-upload, background syncs make steady progress, and the first sync after setup continues in the background on iOS 26.
-• Reinstalling no longer erases the name, date of birth and sex your server already holds.
-• Fix: a data type whose samples could not be converted is no longer marked as fully synced.
-```
-
-1.6 (final text):
-
-```
-• A new look, in four tabs: Explore, Export, Sync and Settings.
-• Explore: every Apple Health type by category. Open one to see its past year: how many samples you have, from which apps and devices, how the values are spread and how much arrives each day.
-• Export: build each export on its own. Pick the types and any hourly or daily series, choose a preset range or your own start and end dates, and write CSV or JSONL files, zipped into one if you like. No database needed.
-• Sync: one place for your database, the synced data, the status of each type and the activity log.
-• Setup is four short pages. Choose your data, start exploring, and connect your own database from the Sync tab whenever you like.
-• Analysis summaries are kept on your iPhone so a type opens instantly next time. Delete Analysis, under Settings, removes them all.
-• iOS 27: share only the past 30 days of Health history and PulsHealth says so, leaves your database's older data untouched, and syncs the rest by itself once you allow all of it.
-• Everything from 1.5: export without a database, faster pairing, recent data first, and syncing that keeps going in the background.
-```
+"What's New in This Version": draft the next submission's text here, written
+for someone who has the current version, and delete it once that version is
+live — App Store Connect keeps the history.
 
 ## Screenshots
 
@@ -318,23 +259,11 @@ browser needs:
 Do not paste marketing text over them, and do not use another person's health
 data.
 
-**What 1.6 was submitted with** (2026-09-30; all dark mode, 1320 × 2868 in the
-6.9" slot, iPhone 17 Pro Max simulator on iOS 26.5, status bar at 9:41, demo
-fixtures; in this order): 1 Unlock your Health Data (first-run page 1), 2
-Explore (types with data, Vitals collapsed), 3 Heart Rate's Type page, 4 the
-same page scrolled to the value histogram and samples over time, 5 the Export
-builder (14 types, Year, CSV), 6 Sync to your own database (first-run page 4).
-The iPad 13" slot (2064 × 2752) has Unlock your Health Data and Explore. No
-hostname, token, user ID or personal data is visible. Shots 5 and 6 of the
-listing order above (Sync status after a backfill, Background Activity) need
-a real device and days of wakes; they can join the set in a later version.
-
-**What 1.4 was submitted with** (all dark mode, 1290 × 2796 in the 6.9" slot,
-in this order): 1 Welcome, 2 Your Server (with `https://health.example.net`
-typed in) and 4 Data Types from the iPhone 17 Pro Max simulator with the status
-bar at 9:41; 3 Dashboard, 5 a type's detail (Body Weight), 6 Background
-Activity and 7 the Sync Log from the maintainer's iPhone 13 Pro Max (1284 ×
-2778, resized by under 1%). None shows a hostname, token, user ID or health
-value — counts and dates only. The iPad slot has the Welcome screen at 13". This
-set replaced 1.3's, which advertised CSV/JSON export and QR data requests the
-app no longer has.
+**The current store set** (1.6, all dark mode, demo fixtures): 6.9" slot
+(1320 × 2868, iPhone 17 Pro Max simulator on iOS 26.5, status bar at 9:41) —
+1 Unlock your Health Data (first-run page 1), 2 Explore, 3 Heart Rate's Type
+page, 4 the same page scrolled to the value histogram and samples over time,
+5 the Export builder, 6 Sync to your own database (first-run page 4). iPad 13"
+slot (2064 × 2752): Unlock your Health Data and Explore. Shots 5 and 6 of the
+order above (Sync status after a backfill, Background Activity) need a real
+device and days of wakes; they can join the set in a later version.

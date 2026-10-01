@@ -13,7 +13,7 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 
 - [README.md](README.md): what the project is, the component table, and the one-command quickstart for the server and the app.
 - [AGENTS.md](AGENTS.md): orientation for an automated contributor — components, where the authoritative facts live, the invariants, and how to run each test suite.
-- [CLAUDE.md](CLAUDE.md): the deep guide — invariants in full, with the reasoning, and the accumulated gotchas (HealthKit crashes, iOS permission bugs, TimescaleDB compression traps).
+- [CLAUDE.md](CLAUDE.md): the deep guide — the invariants in full, with the reasoning, and the gotchas (HealthKit crashes, iOS permission bugs, TimescaleDB compression traps).
 - [CONTRIBUTING.md](CONTRIBUTING.md): sign-off (DCO, no CLA), code style, and what a pull request must carry.
 
 ## The protocol
@@ -26,8 +26,8 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 ## The data
 
 - [docs/database-guide.md](docs/database-guide.md): the authoritative guide to the schema — every table family, what each column means, which table answers which question, and the traps (device double counting above all). Rendered at https://pulshealth.com/docs/database/.
-- [docs/export.md](docs/export.md): bulk export of a whole range as streamed CSV or JSONL, over `GET /v1/export` or the `puls-export` CLI — and, with no server at all, from the app itself (Settings → Export Data). Rendered at https://pulshealth.com/docs/export/.
-- [server/README.md](server/README.md): running the reference backend — Compose services, environment, schema migrations, the ingest wire format and the product API. Rendered at https://pulshealth.com/docs/self-hosting/.
+- [docs/export.md](docs/export.md): bulk export of a whole range as streamed CSV or JSONL, over `GET /v1/export` or the `puls-export` CLI — and, with no server at all, from the app's Export tab. Rendered at https://pulshealth.com/docs/export/.
+- [server/README.md](server/README.md): running the reference backend — Compose services, environment, schema migrations, the ingest wire format and the product API. Rendered at https://pulshealth.com/docs/server/.
 
 ## AI assistants
 

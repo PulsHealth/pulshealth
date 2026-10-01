@@ -1,10 +1,11 @@
 # PulsHealth (iOS app)
 
 SwiftUI front end for the `PulsHealthSync` library — all sync logic lives in the
-package; this app is configuration, visibility, and lifecycle wiring. See the root
-`README.md` for architecture and `CLAUDE.md` for build invariants.
+package; this app is configuration, visibility, and lifecycle wiring. See
+[`PulsHealthSync/README.md`](../PulsHealthSync/README.md) for the engine and
+`CLAUDE.md` for the invariants.
 
-Shipping as
+Published as
 [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) on the App
 Store (free). The listing material and the record of what shipped are in
 [`docs/appstore/`](../docs/appstore/README.md).
@@ -25,10 +26,9 @@ xcodegen && xcodebuild build -scheme PulsHealth \
 
 Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
 
-- Bundle ID `com.pulsHealth.PulsHealth`, iOS 17.0 target, Swift 6. That is the
-  identifier on the App Store record, and a bundle identifier is immutable once
-  a record exists — so `bundleIdPrefix` is fixed by the listing, not a
-  preference, and only an archive carrying it can update the app.
+- Bundle ID `com.pulsHealth.PulsHealth`, iOS 17.0 target, Swift 6. It is the
+  App Store record's identifier, which cannot change, so `bundleIdPrefix` is
+  fixed and only an archive carrying it can update the app.
 - Entitlements: `healthkit` + `healthkit.background-delivery` (device builds need a
   paid developer team).
 - Signing is per-developer and untracked. `DEVELOPMENT_TEAM` lives in
@@ -39,16 +39,12 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
   template works as-is. Forks distributing their own build must also change
   `bundleIdPrefix` in `project.yml` and must not ship under the PulsHealth name
   (see `TRADEMARK.md` at the repo root).
-- `UIBackgroundModes: processing`; the permitted BG task IDs are derived from
-  the bundle ID — `$(PRODUCT_BUNDLE_IDENTIFIER).healthsync.catchup` and the
-  `$(PRODUCT_BUNDLE_IDENTIFIER).backfill.*` wildcard (Xcode expands build
-  settings in Info.plist values, so the built app carries
-  `com.pulsHealth.PulsHealth.healthsync.catchup` and
-  `com.pulsHealth.PulsHealth.backfill.*`,
-  the latter permitting the concrete `….backfill.run` continued-processing
-  task on iOS 26). `BackgroundSyncScheduler` derives the same strings from
-  `Bundle.main.bundleIdentifier`, so a fork with its own bundle ID changes
-  nothing here.
+- `UIBackgroundModes: processing`; the permitted BG task IDs are
+  `$(PRODUCT_BUNDLE_IDENTIFIER).healthsync.catchup` and the
+  `$(PRODUCT_BUNDLE_IDENTIFIER).backfill.*` wildcard, which covers the iOS 26
+  continued-processing task `….backfill.run`. `BackgroundSyncScheduler`
+  derives the same strings from `Bundle.main.bundleIdentifier`, so a fork with
+  its own bundle ID changes nothing here.
 - App Transport Security: `NSAllowsLocalNetworking` only — plain `http://` is
   reachable for local-network hosts (unqualified names, `*.local`, private IP
   ranges), everything else stays HTTPS-only — with the matching
@@ -271,26 +267,25 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   into the screen's `ServerFieldsDraft` and runs Test Connection. It applies
   nothing — the Database screen still ends with Save & Apply (and the
   server-change prompt, if the target moved).
-  **A link is untrusted input**, because any web page or app can fire one. So
+  **A link is untrusted input**, because any web page or app can fire one, so
   `AppModel.handleIncomingURL` only ever raises a prompt: "Pair with
   \<host\>?", which says when accepting would replace a different configured
-  server and when the link's URL is unencrypted `http://`; Cancel is the
-  emphasized button. A link that does not parse gets "This Link Can’t Be Used"
-  and changes nothing. The handler waits for `start()` first, so on a cold
-  launch the "replaces" decision reads the stored configuration and the prompt
-  comes from the right host view (the first-run flow or the tabs); the first
-  pending link wins, so the prompt on screen always describes the payload that
-  accepting it delivers; and only the host is logged, never the link or token.
-  Accepting during the first run (the flow has no database step) parks the
-  payload in `confirmedPairing` and the flow's last page says a link is
-  waiting; when the flow ends, and at any other time, it switches to the Sync
-  tab and pushes Sync → Database, popping anything pushed there.
+  server and when the URL is unencrypted `http://`; Cancel is the emphasized
+  button. A link that does not parse gets "This Link Can’t Be Used" and
+  changes nothing. The handler waits for `start()`, so on a cold launch the
+  "replaces" decision reads the stored configuration and the prompt comes from
+  the right host view (the first-run flow or the tabs). The first pending link
+  wins, so the prompt on screen always describes the payload accepting it
+  delivers. Only the host is logged, never the link or token. Accepting during
+  the first run parks the payload in `confirmedPairing` and the flow's last
+  page says a link is waiting; when the flow ends, and at any other time, the
+  app switches to the Sync tab and pushes Sync → Database, popping anything
+  pushed there.
 - **Without a database.** The first-run flow never asks for one: it asks for
   Health access for the starter set, and Start Exploring applies it. Nothing
-  syncs — `AppModel.configured` reads the applied configuration and still
-  needs a database URL — and the Sync tab shows a setup card with a Set Up
-  button (the Database screen) instead of a status; the Explore and Export tabs work
-  regardless.
+  syncs (`AppModel.configured` needs a database URL in the applied
+  configuration), the Sync tab shows a setup card with a Set Up button instead
+  of a status, and the Explore and Export tabs work regardless.
 - **The Export tab** writes a selection of its own — `ExportDraft`: types,
   aggregate series, workout switches, a preset or custom range, the format
   and whether to zip it —
@@ -303,7 +298,8 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   draft can hold types no Apply has asked about — skipping types iOS refuses
   to list, and never presenting the medication picker (the screen says when
   Medication Doses is in the draft but that picker has not been answered) —
-  then holds the screen awake and a background-task assertion until it ends. A partial export (`isComplete == false`) is shown as
+  then holds the screen awake and a background-task assertion until it ends.
+  A partial export (`isComplete == false`) is shown as
   **Export incomplete** with the types that failed, and says so when the app
   left the foreground during the run, since a locked phone is the usual cause.
   Export is refused while a backfill runs, and Start Initial Backfill while an
@@ -327,19 +323,21 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   bucket inside its settle delay uploads on the next trigger after it settles;
   recent buckets are recomputed each run, so late Watch data self-corrects.
 - Backfill on iOS 26 runs as a `BGContinuedProcessingTask` (system progress UI,
-  survives backgrounding) — Start Initial Backfill, and since 2026-09 a
-  whole-history Apply (the first Save & Apply after pairing, and a start-fresh
-  server change) too; adding a type under Synced Data backfills inline. Earlier iOS keeps it foreground-resumable.
-  Every sync the app starts itself holds a background-task assertion, so
-  leaving the app mid-sync gives it iOS's grace period and then stops it
-  cleanly (`BackgroundExecution`) instead of freezing it.
+  survives backgrounding): Start Initial Backfill, and a whole-history Apply
+  (the first Save & Apply after pairing, and a start-fresh server change).
+  Adding a type under Synced Data backfills inline; earlier iOS keeps backfill
+  foreground-resumable. Every sync the app starts itself holds a
+  background-task assertion, so leaving the app mid-sync gives it iOS's grace
+  period and then stops it cleanly (`BackgroundExecution`) instead of freezing
+  it.
 - Save & Apply sends the profile (Settings → User) only when there is one, or
   when the user has just emptied a filled one: the line replaces the server's
-  copy, and a reinstall pairing with its old server used to erase it.
-- Types the permission sheet can't determine (blood pressure on iOS 26.5,
-  FB22735935) are remembered per session and skipped from auth requests, with a
-  hint on the Explore tab pointing at Settings → Privacy & Security → Health — see the
-  CLAUDE.md gotcha for the retest plan.
+  copy, so an empty one sent by, say, a reinstall pairing with its old server
+  would erase it.
+- Types the permission sheet can't determine (blood pressure on iOS 26,
+  FB22735935; fixed in iOS 27) are remembered per session and skipped from
+  auth requests, with a hint on the Explore tab pointing at Settings → Privacy
+  & Security → Health. The hint names the iOS 26 bug only below iOS 27.
 - **Limited history (iOS 27).** The permission sheet's second page asks how
   much history to share, and Settings → Privacy & Security → Health →
   PulsHealth → (type) can change it per type later. With *Past 30 Days* a type
@@ -358,15 +356,15 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   access marked as requested, and those types are not asked about again this
   session (`AppModel.declinedTypes`).
 - Live logs from a Mac: `log stream --predicate 'subsystem == "com.pulsHealth.healthsync"'`.
-- **Background-time field study.** Every entry point that gives the engine
-  execution time (HKObserver delivery, the catch-up `BGProcessingTask`, the iOS 26
-  continued-processing backfill, foregrounding, and manual sync) opens a *wake*:
-  the library's `WakeLog` (separate from the fast-rolling event ring buffer) keeps
-  one durable record per wake — trigger, start/end, duration, inter-wake gap, work
-  done (batches/samples/deletions/bytes/types), Low Power Mode, thermal state, and
-  outcome (`completed`/`expired`/`interrupted` — a record still "running" on next
-  launch means the app was killed mid-wake). It holds ~10k wakes (months), so a
-  1–2 week run never loses early data. Each wake's id + trigger ride the upload as
-  `X-Wake-ID`/`X-Wake-Trigger` headers, so the server's `batches` rows join back to
-  the device records. Pull it all off-device from **Sync → Activity →
-  Background → Export** (wakes CSV+JSON, events JSON via the share sheet).
+- **Wake telemetry.** Every entry point that gives the engine execution time
+  (observer delivery, the catch-up `BGProcessingTask`, the iOS 26
+  continued-processing backfill, foregrounding, manual sync) opens a *wake*.
+  The library's `WakeLog` (separate from the fast-rolling event log) keeps one
+  durable record per wake — trigger, start/end, duration, inter-wake gap, work
+  done, Low Power Mode, thermal state, and outcome
+  (`completed`/`expired`/`failed`/`skippedLocked`/`interrupted`; a record still
+  "running" at the next launch means the app was killed mid-wake) — about 10k
+  wakes, months of them. Each wake's id and trigger ride the upload as
+  `X-Wake-ID`/`X-Wake-Trigger` headers, so the server's `batches` rows join
+  back to the device records. **Sync → Activity → Background → Export** shares
+  the wakes (CSV and JSON) and the event log (JSON).
