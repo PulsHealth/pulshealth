@@ -1044,6 +1044,16 @@ public actor HealthSyncEngine {
     /// re-upload samples the server is missing, send deletions for orphans the
     /// device no longer has (HealthKit purges deletion tombstones, so observer
     /// syncs alone can miss deletes).
+    ///
+    /// Except from a month HealthKit returned nothing for while the server
+    /// has rows. Read access that is off — None in Settings, or never
+    /// granted — looks exactly like that: every query answers empty, with no
+    /// error, and `authorizationStatus(for:)` speaks only for writes. So
+    /// such a month keeps its server rows (`ReconcileDigest.orphanVerdict`),
+    /// unless iOS 27 has just listed the type as readable from a date
+    /// (`ReadableLimit.isConfirmed`), the one proof of access there is; and
+    /// a run that found nothing anywhere throws `reconciliationUnreadable`
+    /// rather than record itself as in sync.
     public func reconcile(type identifier: String) async throws -> ReconciliationReport {
         guard let descriptor = HealthTypeCatalog.descriptor(for: identifier),
               let sampleType = descriptor.sampleType else {
@@ -1084,6 +1094,8 @@ public actor HealthSyncEngine {
             type: identifier, from: from, to: now)
         let serverByWindow = Dictionary(
             serverWindows.map { ($0.window, $0) }, uniquingKeysWith: { a, _ in a })
+        var localTotal = 0
+        var serverTotal: Int64 = 0
 
         for window in ReconcileDigest.monthWindows(from: from, to: now) {
             try Task.checkCancellation()
@@ -1099,11 +1111,29 @@ public actor HealthSyncEngine {
             let localByUUID = Dictionary(
                 local.map { ($0.uuid, $0) }, uniquingKeysWith: { a, _ in a })
             let server = serverByWindow[window.monthStart]
+            let serverRows = server?.rows ?? 0
             report.windowsChecked += 1
+            localTotal += localByUUID.count
+            serverTotal += serverRows
 
-            if localByUUID.isEmpty && (server?.rows ?? 0) == 0 { continue }
+            if localByUUID.isEmpty && serverRows == 0 { continue }
             if let server, server.rows == Int64(localByUUID.count),
                server.digest == ReconcileDigest.hexDigest(of: localByUUID.keys) {
+                continue
+            }
+            // Nothing on the device, rows on the server: a type the app may
+            // not read answers exactly so, and deleting would wipe its server
+            // copy. The month is left as it is — there is nothing to
+            // re-upload either — unless iOS 27 vouches for read access.
+            if ReconcileDigest.orphanVerdict(
+                localCount: localByUUID.count, serverRows: serverRows,
+                readAccessConfirmed: readable.isConfirmed) == .withhold {
+                report.windowsUnverified += 1
+                report.orphanDeletionsWithheld += Int(serverRows)
+                await eventLog.log(
+                    .warn, type: identifier,
+                    "Not reconciled \(Self.windowLabel(window.monthStart)): Health returned no samples where the database has \(serverRows); kept them, since a type whose Health access is off reads the same way"
+                )
                 continue
             }
             report.windowsMismatched += 1
@@ -1154,6 +1184,17 @@ public actor HealthSyncEngine {
                 .warn, type: identifier,
                 "Reconciled \(Self.windowLabel(window.monthStart)): +\(samples.count) samples, -\(deletions.count) orphans"
             )
+        }
+
+        // Nothing readable anywhere while the server has rows: most likely
+        // the type's Health access is off. Nothing was sent (no samples to
+        // re-upload, every deletion withheld), so say so rather than record
+        // the run — "in sync" would be the opposite of the truth.
+        if ReconcileDigest.looksUnreadable(
+            localTotal: localTotal, serverTotal: serverTotal, readAccessConfirmed: readable.isConfirmed) {
+            let error = SyncError.reconciliationUnreadable(descriptor.displayName, serverRows: serverTotal)
+            await eventLog.log(.error, type: identifier, "Reconciliation stopped: \(error.localizedDescription)")
+            throw error
         }
 
         // A repaired workout may be older than both enrichment phases' normal
@@ -1435,6 +1476,11 @@ public enum SyncError: Error, LocalizedError {
     /// match what it reads — an aggregate series, the rings, reconciliation
     /// — will not guess.
     case readableHistoryUnknown(String)
+    /// Reconciliation found nothing of the type on the device in any month
+    /// the server has rows for, and nothing confirmed that the app may read
+    /// it. Read access that is off answers every query with exactly that,
+    /// so nothing was deleted.
+    case reconciliationUnreadable(String, serverRows: Int64)
 
     public var errorDescription: String? {
         switch self {
@@ -1448,6 +1494,8 @@ public enum SyncError: Error, LocalizedError {
             return "Reconciliation only covers quantity, category, and workout types (\(identifier))"
         case .readableHistoryUnknown(let name):
             return "Could not tell how much \(name) history iOS lets PulsHealth read, so nothing that could overwrite or delete server data was sent for it."
+        case .reconciliationUnreadable(let name, let serverRows):
+            return "Health returned no \(name) samples, but the database has \(serverRows). A type whose Health access is off reads the same as one with no data, so nothing was deleted. Check Settings → Privacy & Security → Health → PulsHealth."
         }
     }
 }

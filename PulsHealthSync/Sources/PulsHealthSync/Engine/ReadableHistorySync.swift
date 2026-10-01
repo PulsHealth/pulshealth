@@ -15,6 +15,14 @@ struct ReadableLimit: Sendable, Equatable {
     /// and `since` is what the pass last ran under instead. A widening is
     /// never inferred from a stale answer.
     var isFresh: Bool
+    /// True when HealthKit listed the type with a date just now: iOS 27
+    /// names only types the app may read (a type set to None drops out of
+    /// the answer exactly like one with full access), so this is the one
+    /// positive proof of read access there is. Reconciliation deletes
+    /// orphans from a month the device returned nothing for only with it
+    /// (`ReconcileDigest.orphanVerdict`). Never set from a stale answer, and
+    /// never before iOS 27.
+    var isConfirmed: Bool = false
 }
 
 extension HealthSyncEngine {
@@ -63,7 +71,8 @@ extension HealthSyncEngine {
         }
         return ReadableLimit(
             since: await confirmedLimit(for: identifier, recorded: recorded, reported: dates[identifier]),
-            isFresh: true)
+            isFresh: true,
+            isConfirmed: dates[identifier] != nil)
     }
 
     /// `reported`, unless it is a widening HealthKit cannot back with a

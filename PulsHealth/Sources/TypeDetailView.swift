@@ -222,7 +222,7 @@ struct TypeSyncDetailsSections: View {
             Text("Actions")
         } footer: {
             if supportsReconciliation {
-                Text("Reconciliation compares per-month sample digests with your database, re-uploads anything missing, and removes orphans left by purged deletion tombstones.")
+                Text("Reconciliation compares per-month sample digests with your database, re-uploads anything missing, and removes orphans left by purged deletion tombstones. A month Health returns nothing for is left alone: a type whose Health access is off reads the same as one with no data.")
             }
         }
     }
