@@ -174,7 +174,7 @@ and so are the ones decided against (its "Not planned").
 | OSS-1 | `LICENSE` (Apache-2.0), `NOTICE`, `TRADEMARK.md`. | M | Done |
 | OSS-2 | `SECURITY.md` with a private disclosure path. | M | Done |
 | OSS-3 | `CONTRIBUTING.md` with DCO sign-off, `CODE_OF_CONDUCT.md`, issue and PR templates. | M | Done |
-| OSS-4 | A root README for a stranger: what it is, quickstart, screenshots, protocol, AI demo, FAQ. | M | Done except screenshots of the web viewer and Grafana — roadmap § 2 |
+| OSS-4 | A root README for a stranger: what it is, quickstart, screenshots, protocol, AI demo, FAQ. | M | Done. |
 | OSS-5 | No personal identifiers in the tree, enforced by a CI gate. | M | Done (`scripts/check-public-tree.sh`) |
 | OSS-6 | `CLAUDE.md` split: public invariants and gotchas; private operations elsewhere. | M | Done |
 | OSS-7 | Generic CI (`ci.yml`, `ios-ci.yml`, `advisories.yml`) and a release workflow that pushes images on tag. | M | Done |

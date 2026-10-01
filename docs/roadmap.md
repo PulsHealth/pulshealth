@@ -37,24 +37,14 @@ behind them.
   bound to a different user ID than the phone's — as a rejected token, the
   same as a wrong one. It should say which.
 
-## 2. Screenshots — OSS-4
-
-The app's 1.6 App Store set and the four images in `README.md` come from the
-simulator with the app's demo fixtures (`docs/appstore/listing.md` §
-Screenshots), and that is how they stay: no screenshot carries anyone's real
-health data. Still open: README screenshots of the web viewer and the Grafana
-dashboards, taken against demo data (`npm run dev` fills the viewer; never a
-real export). The site's home page already has two viewer shots from demo
-data (`site/public/screenshots/`) the README can reuse.
-
-## 3. Smaller leftovers
+## 2. Smaller leftovers
 
 - SRV-13: `/v1/metrics/daily` is not paginated; a request is bounded only by
   its `start`, `end` and `types`. `server/api/docs.go` says a page size bounds
   it, which is not yet true.
 - AI-4: `llms.txt` is in the repository but pulshealth.com does not serve it.
 
-## 4. Standing maintenance
+## 3. Standing maintenance
 
 Not backlog — things that come due on someone else's schedule.
 
