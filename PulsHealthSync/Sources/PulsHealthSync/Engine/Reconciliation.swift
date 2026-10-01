@@ -7,15 +7,21 @@ public struct ReconciliationReport: Sendable, Equatable {
     public var windowsMismatched: Int = 0
     public var samplesReuploaded: Int = 0
     public var orphanDeletionsSent: Int = 0
+    /// Set when iOS 27's limited history access kept the comparison from
+    /// reaching the sync's start date: where it began instead. Nothing older
+    /// was checked, and nothing older was deleted.
+    public var readableSince: Date?
 
     public init(type: String) {
         self.type = type
     }
 
     public var summary: String {
-        windowsMismatched == 0
+        let counts = windowsMismatched == 0
             ? "\(windowsChecked) windows in sync"
             : "\(windowsMismatched)/\(windowsChecked) windows repaired: +\(samplesReuploaded) samples, -\(orphanDeletionsSent) orphans"
+        guard let readableSince else { return counts }
+        return counts + " (from \(readableSince.formatted(date: .abbreviated, time: .omitted)); Health access is limited to recent history)"
     }
 }
 

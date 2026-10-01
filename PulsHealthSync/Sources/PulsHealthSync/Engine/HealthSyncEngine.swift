@@ -100,6 +100,11 @@ public actor HealthSyncEngine {
     /// every backfill complete, so its sync would stop there for good.
     let readEnd: Date?
 
+    /// iOS 27 limited history access: the earliest readable dates HealthKit
+    /// last reported (type identifier → date, limited types only), for when
+    /// it cannot be asked.
+    var readableHistory: [String: Date] = [:]
+
     public init(
         store: SyncStateStore? = nil, eventLog: SyncEventLog? = nil, wakeLog: WakeLog? = nil,
         recentWindowFirst: Bool = true, readEnd: Date? = nil
@@ -391,6 +396,7 @@ public actor HealthSyncEngine {
                 state.lastSyncAt = s.lastComputedAt
                 state.lastError = s.lastError
                 state.lastErrorAt = s.lastErrorAt
+                state.readableSince = s.readableSince
                 out.append(TypeSyncStatus(
                     descriptor: descriptor, state: state,
                     activity: activities[id] ?? (s.lastError != nil ? .failed : .idle)))
@@ -1019,14 +1025,33 @@ public actor HealthSyncEngine {
         let now = Date()
         var report = ReconciliationReport(type: identifier)
         var repairedWorkoutSamples = false
-        await eventLog.log(.info, type: identifier, "Reconciliation started")
+
+        // Every server UUID the device does not return is deleted below, and
+        // under iOS 27's limited history access HealthKit returns nothing
+        // older than the type's earliest readable date. So the comparison
+        // starts there, never before — a month the device cannot read would
+        // otherwise come back as every one of its server rows "orphaned".
+        // When HealthKit cannot say, the date the sync last ran under stands
+        // in; with neither, nothing is compared.
+        let readable = await readableLimit(
+            for: identifier, recorded: await store.state(for: identifier).readableSince)
+        if ReadableHistory.isSupported, !readable.isFresh, readable.since == nil {
+            throw SyncError.readableHistoryUnknown(descriptor.displayName)
+        }
+        let from = ReadableHistory.reconcileStart(syncStart: config.startDate, readableSince: readable.since)
+        if from > config.startDate { report.readableSince = from }
+        await eventLog.log(
+            .info, type: identifier,
+            "Reconciliation started" + (from > config.startDate
+                ? " — from \(from.formatted(date: .abbreviated, time: .omitted)), the earliest Health data iOS lets PulsHealth read"
+                : ""))
 
         let serverWindows = try await apiClient.digests(
-            type: identifier, from: config.startDate, to: now)
+            type: identifier, from: from, to: now)
         let serverByWindow = Dictionary(
             serverWindows.map { ($0.window, $0) }, uniquingKeysWith: { a, _ in a })
 
-        for window in ReconcileDigest.monthWindows(from: config.startDate, to: now) {
+        for window in ReconcileDigest.monthWindows(from: from, to: now) {
             try Task.checkCancellation()
             let predicate = HKSamplePredicate<HKSample>.sample(
                 type: sampleType,
@@ -1366,6 +1391,10 @@ public enum SyncError: Error, LocalizedError {
     case authorizationNotDetermined
     case unknownType(String)
     case reconciliationUnsupported(String)
+    /// iOS 27: HealthKit could not say how much of the type's history the
+    /// app may read, and reconciliation, which deletes what the device lacks,
+    /// will not guess.
+    case readableHistoryUnknown(String)
 
     public var errorDescription: String? {
         switch self {
@@ -1377,6 +1406,8 @@ public enum SyncError: Error, LocalizedError {
             return "Unknown type identifier: \(identifier)"
         case .reconciliationUnsupported(let identifier):
             return "Reconciliation only covers quantity, category, and workout types (\(identifier))"
+        case .readableHistoryUnknown(let identifier):
+            return "Could not tell how much Health history is readable for \(identifier), so nothing was reconciled. Unlock the iPhone and try again."
         }
     }
 }
