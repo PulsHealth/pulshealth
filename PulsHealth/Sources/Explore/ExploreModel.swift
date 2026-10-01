@@ -124,6 +124,17 @@ final class ExploreModel {
             profile, facts: facts, options: Self.profileOptions, maxAge: Self.maxProfileAge)
     }
 
+    /// Whether the stored profile was scanned under another iOS 27 history
+    /// limit than the one HealthKit reports now — the reason it is stale,
+    /// when it is, rather than new data.
+    func readableHistoryChanged(_ id: String) -> Bool {
+        guard let profile = profiles[id], let facts = quickFacts[id] else { return false }
+        let start = Self.profileOptions.effectiveRangeStart() ?? .distantPast
+        return ReadableHistory.change(
+            from: profile.readableSince,
+            to: ReadableHistory.effectiveLimit(facts.readableSince, readingFrom: start)) != .unchanged
+    }
+
     /// 0…1 for a running scan, from where the scan is between where it
     /// started (the type's oldest sample, or a year ago) and the newest
     /// sample; nil until the facts say where those are.

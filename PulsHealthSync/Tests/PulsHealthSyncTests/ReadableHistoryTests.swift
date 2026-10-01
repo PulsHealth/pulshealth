@@ -497,3 +497,41 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
             profile(readableSince: nil), facts: facts(readableSince: old), options: options, now: now))
     }
 }
+
+@Suite struct LimitedHistorySummaryTests {
+    let limit = local(2026, 8, 31, 17, 36, 51)
+
+    @Test func nothingLimitedSaysNothing() {
+        #expect(LimitedHistorySummary([:]) == nil)
+    }
+
+    @Test func namesStayASentence() {
+        let one = LimitedHistorySummary(["HKQuantityTypeIdentifierStepCount": limit])
+        #expect(one?.typesText == "Steps")
+        let two = LimitedHistorySummary([
+            "HKQuantityTypeIdentifierStepCount": limit, "HKQuantityTypeIdentifierHeartRate": limit,
+        ])
+        #expect(two?.typesText == "Heart Rate and Steps")
+        let many = LimitedHistorySummary([
+            "HKQuantityTypeIdentifierStepCount": limit, "HKQuantityTypeIdentifierHeartRate": limit,
+            "HKQuantityTypeIdentifierBodyMass": limit, HealthTypeCatalog.workoutIdentifier: limit,
+        ])
+        #expect(many?.typesText == "Body Weight, Heart Rate and 2 more types")
+    }
+
+    @Test func oneGrantIsOneDate() {
+        let same = LimitedHistorySummary([
+            "HKQuantityTypeIdentifierStepCount": limit,
+            "HKQuantityTypeIdentifierHeartRate": limit.addingTimeInterval(60),
+        ])
+        #expect(same?.isOneDay(in: pacific) == true)
+        #expect(same?.earliest == limit)
+        // Steps limited later from Settings: two dates.
+        let two = LimitedHistorySummary([
+            "HKQuantityTypeIdentifierStepCount": limit.addingTimeInterval(5 * day),
+            "HKQuantityTypeIdentifierHeartRate": limit,
+        ])
+        #expect(two?.isOneDay(in: pacific) == false)
+        #expect(two?.latest == limit.addingTimeInterval(5 * day))
+    }
+}

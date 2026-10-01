@@ -58,6 +58,11 @@ final class AppModel {
     /// "succeeds" but the types never appear in the sheet and stay undetermined.
     /// Cleared when a later request actually determines them.
     var authorizationHint: String?
+    /// iOS 27 limited history access: the applied types HealthKit lets the
+    /// app read only from a date on, by identifier, as of the last look
+    /// (`refreshReadableHistory`). Empty when nothing is limited, and always
+    /// before iOS 27. Drives the Sync tab's notice.
+    private(set) var readableHistory: [String: Date] = [:]
 
     /// Every enabled type has completed at least one sync and not one of them
     /// returned a single sample.
@@ -186,6 +191,7 @@ final class AppModel {
         // the first grant (or an interrupted permission sheet) stay notDetermined
         // and make their syncs fail until access is requested again.
         await refreshNeedsAuthorization()
+        await refreshReadableHistory()
         // Heal installs where the flag was never written because access was
         // already determined when Apply ran (older builds only set it after an
         // actual prompt): a configured setup with nothing left to ask for is
@@ -430,6 +436,18 @@ final class AppModel {
             : await engine.authorizationNeeded(for: enabled)
     }
 
+    /// Re-read how much history iOS 27 lets the app read for each applied
+    /// type, and let the engine act on what moved (a widened type is
+    /// re-swept — `HealthSyncEngine.refreshReadableHistory`). Forced, unlike
+    /// the engine's own rate-limited calls: this runs when the app comes to
+    /// the foreground, which is when someone may just have changed access
+    /// in Settings, and after a permission sheet.
+    func refreshReadableHistory() async {
+        let observed = appliedConfig.observedTypeIdentifiers
+        readableHistory = await engine.refreshReadableHistory(force: true)
+            .filter { observed.contains($0.key) }
+    }
+
     /// Observed types (raw-sync ∪ enabled aggregates) that iOS still reports as
     /// never-determined, one by one.
     private func pendingEnabledTypes() async -> [String] {
@@ -578,6 +596,10 @@ final class AppModel {
         // Apply/Save is the one place the app asks HealthKit for access. Request
         // it before reading so a newly enabled type doesn't fail its first sync.
         await requestAccessForEnabledTypesIfNeeded()
+        // The sheet may just have limited what can be read (iOS 27). The
+        // engine records it before the backfill below reads anything, which
+        // is what lets a later widening be noticed.
+        await refreshReadableHistory()
         // A whole-history backfill may start in a task of its own (iOS 26,
         // below), after the wake the observer registration triggers. Tell the
         // engine it is coming so that wake does not take its types first.
@@ -888,6 +910,9 @@ final class AppModel {
             // Off the sync's critical path: capabilities only gate UI.
             Task { await refreshServerCapabilities() }
         }
+        // Server or not: Explore and Export read under the same limits, and
+        // a widened type has to be re-swept before this sync claims it.
+        await refreshReadableHistory()
         // observedTypeIdentifiers: an aggregate-only setup (no raw types) still syncs.
         guard !isSyncingAll, config.serverURL != nil,
               !config.observedTypeIdentifiers.isEmpty else { return }

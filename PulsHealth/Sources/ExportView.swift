@@ -390,6 +390,18 @@ struct ExportView: View {
 
         if !result.isComplete {
             Section {
+                // iOS 27 limited history access: read in full, but only from
+                // a recent date. One row for all of them — a permission
+                // sheet limits every type it lists to the same date.
+                if let limited = LimitedHistorySummary(result.limitedHistory) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(limited.typesText): only from \(limited.latest.formatted(date: .abbreviated, time: .omitted))")
+                            .font(.subheadline)
+                        Text("Health access is limited to recent history, so iOS let PulsHealth read nothing older. Give each type Full Access under Settings → Privacy & Security → Health → PulsHealth, then export again.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 ForEach(Array(result.failures.prefix(Self.issueLimit).enumerated()), id: \.offset) { _, issue in
                     IssueRow(issue: issue)
                 }
@@ -405,7 +417,10 @@ struct ExportView: View {
             } header: {
                 Text("Not exported")
             } footer: {
-                if finished.wasBackgrounded {
+                if result.failures.isEmpty && result.unmappableSamples.isEmpty {
+                    // Only the limited history above: nothing failed.
+                    EmptyView()
+                } else if finished.wasBackgrounded {
                     Text("PulsHealth left the foreground during this export. If the iPhone locked, Health data became unreadable from that moment, which is the usual cause of the failures above. Keep the app open and export again.")
                 } else {
                     Text("A type iOS never showed in the Health permission sheet fails here too. Check Settings → Privacy & Security → Health → PulsHealth, then export again.")

@@ -104,7 +104,7 @@ public enum ReadableHistory {
     /// A limit that bites: `since` when it is later than where a pass starts
     /// reading anyway, else nil. A limit at or before the start cuts nothing
     /// off, so there is nothing to clamp, record, or later re-read.
-    static func effectiveLimit(_ since: Date?, readingFrom start: Date) -> Date? {
+    public static func effectiveLimit(_ since: Date?, readingFrom start: Date) -> Date? {
         guard let since, since > start else { return nil }
         return since
     }
@@ -253,5 +253,42 @@ public enum HealthAccessRequestOutcome: Sendable, Equatable {
               nsError.code == HKError.Code.errorAuthorizationDenied.rawValue
         else { return nil }
         return .declined
+    }
+}
+
+/// What the app says about types iOS 27 lets it read only from a date on:
+/// which ones, and since when. The pure half of the Sync tab's notice, kept
+/// here so its choices are tested.
+public struct LimitedHistorySummary: Sendable, Equatable {
+    /// Display names, alphabetical.
+    public var typeNames: [String]
+    /// The earliest and the latest of the types' dates. Usually one date:
+    /// every type a permission sheet granted gets the same one.
+    public var earliest: Date
+    public var latest: Date
+
+    /// Nil when nothing is limited.
+    public init?(_ limits: [String: Date]) {
+        guard let earliest = limits.values.min(), let latest = limits.values.max() else { return nil }
+        self.typeNames = limits.keys
+            .map { HealthTypeCatalog.descriptor(for: $0)?.displayName ?? $0 }
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        self.earliest = earliest
+        self.latest = latest
+    }
+
+    /// "Steps", "Heart Rate and Steps", "Heart Rate, Steps and 4 more types":
+    /// at most two names, so the sentence stays a sentence.
+    public var typesText: String {
+        switch typeNames.count {
+        case 1: return typeNames[0]
+        case 2: return "\(typeNames[0]) and \(typeNames[1])"
+        default: return "\(typeNames[0]), \(typeNames[1]) and \(typeNames.count - 2) more types"
+        }
+    }
+
+    /// Whether every date falls on the same local day, so one date says it.
+    public func isOneDay(in calendar: Calendar = .current) -> Bool {
+        calendar.isDate(earliest, inSameDayAs: latest)
     }
 }
