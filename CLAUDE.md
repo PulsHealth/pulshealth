@@ -38,25 +38,21 @@ cd PulsHealthSync && TEST_RUNNER_PULS_WRITE_CATALOG=1 xcodebuild test \
 cd web && npm run gen:catalog
 
 # App: run `xcodegen` (brew install xcodegen) before the first build and after
-# adding/removing/renaming files. PulsHealth.xcodeproj is gitignored because it
-# carries DEVELOPMENT_TEAM from Config/Local.xcconfig, which xcodegen seeds
-# from Local.xcconfig.example.
+# adding/removing/renaming files. PulsHealth.xcodeproj is gitignored: it
+# carries DEVELOPMENT_TEAM from Config/Local.xcconfig, which xcodegen seeds.
 cd PulsHealth && xcodegen && xcodebuild build -scheme PulsHealth \
   -destination 'platform=iOS Simulator,name=iPhone 17'
-# App-hosted XCTest (needs the HealthKit entitlement): the 372-combo
-# aggregate function×type matrix
+# App-hosted XCTest (HealthKit entitlement): the 372-combo aggregate matrix
 cd PulsHealth && xcodebuild test -scheme PulsHealth \
   -destination 'platform=iOS Simulator,name=iPhone 17'
 
-# The whole stack, built from this checkout (docker-compose.yml alone pulls
-# the published images). bootstrap.sh writes server/.env with generated
-# secrets and prints the pairing block; `make up/down/logs/ps/migrate/
-# baseline/pairing` wrap Compose from the root.
+# The whole stack from this checkout (docker-compose.yml alone pulls the
+# published images). bootstrap.sh writes server/.env and prints the pairing
+# block; `make up/down/logs/ps/migrate/baseline/pairing` wrap Compose.
 scripts/bootstrap.sh --build                   # first run
 make dev-up                                    # thereafter (compose.build.yml)
 
-# Marketing site (bun, not npm; also `make site-dev|site-build|site-lint`
-# and `make deploy-site`)
+# Marketing site (bun, not npm; also make site-dev|site-build|deploy-site)
 cd site && bun install && bun run lint && bun run build
 
 # Self-hosted viewer (npm, not bun)
@@ -69,19 +65,18 @@ cd ../api && go vet ./... && go test ./...
 cd ../mcp && go vet ./... && go test ./...   # against an httptest fake of the API
 cd ../../tools/puls-export && go vet ./... && go test ./...
 
-# Protocol corpus against the JSON Schemas, then posted at the Python
-# reference receiver (each from the repository root)
+# Protocol corpus vs the JSON Schemas, then vs the Python reference receiver
+# (each from the repository root)
 cd tools/protocol-check && go test ./... && go run . ../../docs/protocol/fixtures/*.ndjson
 python3 examples/receivers/python-sqlite/smoke_test.py
 
-# Exploration notebook, against a throwaway TimescaleDB it starts itself
-# (needs Docker and psql)
+# Notebook, against a throwaway TimescaleDB it starts (needs Docker and psql)
 pip install -r notebooks/requirements.txt && python -m pytest tests/test_healthkit_notebook.py -rs
 
-# Integration tests: skipped without DATABASE_URL; CI's db-integration job
-# runs them as the scoped roles. server/api also needs
-# PULS_API_WRITE_INTEGRATION_TESTS=1. As a scoped role, point DATABASE_URL
-# at it and ADMIN_DATABASE_URL at postgres.
+# Integration tests: skipped without DATABASE_URL (CI's db-integration job
+# runs them as the scoped roles). server/api also needs
+# PULS_API_WRITE_INTEGRATION_TESTS=1; as a scoped role, set DATABASE_URL to it
+# and ADMIN_DATABASE_URL to postgres.
 cd server && docker compose up -d migrate      # db + schema, nothing else
 cd ingest && DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" \
   go test -run Integration ./...
@@ -108,23 +103,22 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   `syncAllEnabled` (the priority window would write recent buckets twice), and
   deletes its directory on every exit path. Failures come from the throwaway
   store's completion markers (`ExportPlan.failures`) and
-  `HealthSyncEngine.unmappableSampleCounts`, because the engine only logs
-  them: a throw leaves no files, a partial export returns `isComplete ==
-  false`. `ExportColumnTests` pins the CSV columns shared with the product API
-  to `docs/export.md`. **App side, which the privacy documents promise:**
-  staged files live under `HealthExporter.stagingRoot` in the temporary
-  directory. `AppModel.init` clears it at launch, before any export can run
-  (`removeAllExports()` must never run during one), with `ExportZipper`'s
-  `CoordinatedZipFile…` scratch directories outside it (`ExportZipTests` fails
-  if iOS renames them); `ExportModel` clears it when another export starts, on
-  Delete Export, and when the share sheet reports `completed` — hence
-  `UIActivityViewController`, not `ShareLink`, which has no completion
-  callback. The Export tab exports its own `ExportDraft` (seeded once from
-  `appliedConfig`, never the Synced Data draft) and requests Health access
-  itself (`requestHealthAccessForExport`: skips undeterminable types, never
-  presents the medication picker). Change any of that and
-  `docs/privacy-policy.md` § Exports, `SECURITY.md`, the site's `/privacy` card
-  and `docs/appstore/` change with it.
+  `HealthSyncEngine.unmappableSampleCounts`, since the engine only logs them:
+  a throw leaves no files, a partial export returns `isComplete == false`.
+  `ExportColumnTests` pins shared CSV columns to `docs/export.md`. **App side,
+  which the privacy documents promise:** staged files live under
+  `HealthExporter.stagingRoot` (temporary directory). `AppModel.init` clears it
+  at launch, before any export can run (`removeAllExports()` must never run
+  during one), with `ExportZipper`'s `CoordinatedZipFile…` scratch directories
+  (`ExportZipTests` fails if iOS renames them); `ExportModel` clears it when
+  another export starts, on Delete Export, and on the share sheet's
+  `completed` — hence `UIActivityViewController`, not `ShareLink` (no
+  completion callback). The tab exports its own `ExportDraft` (seeded once
+  from `appliedConfig`) and requests Health access itself
+  (`requestHealthAccessForExport`: skips undeterminable types, never the
+  medication picker). Change any of that and `docs/privacy-policy.md`
+  § Exports, `SECURITY.md`, the site's `/privacy` card and `docs/appstore/`
+  change with it.
 - **Every row belongs to a user.** `users` (`db/migrations/000_users.sql`,
   seeded with the default user) is the FK target of `user_id` on every data
   table. The client sends its user in the **`X-User-ID` header**
@@ -135,21 +129,19 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   (`activity_summaries` `(user_id, date)`, `aggregate_samples` `(series_id,
   bucket_start, user_id)`); UUID-keyed sample tables keep their UUID PK. The
   `{"profile":…}` line is the complete identity snapshot (null or omitted
-  fields clear stored values; DOB/sex feed HR zones), so the app sends an empty
-  profile only to replace a non-empty one (`ProfilePayload.shouldUpload`, from
-  `AppModel.applyConfiguration`) — otherwise a reinstall pairing with its old
-  server wipes it. The product API settles one user per request in the
-  `scopeUser` middleware (`server/api/main.go`, after `auth`) and passes it to
-  every `Store` read as an explicit argument. Naming a non-default user needs
-  `PULS_MULTI_USER` (default off, because the static `PULS_API_TOKEN` is bound
-  to nobody): off, it is **403 `multi-user reads are disabled`**, never a quiet
-  answer for the default user, and neither that nor a malformed id (400)
-  charges the auth-failure limiter. On ingest a per-device token
-  (`device_tokens`, `server/ingest/auth.go`) is bound to a user — `X-User-ID`
-  must be absent or equal to it, else 403; the shared `PULS_TOKEN` (while
-  `PULS_ALLOW_SHARED_TOKEN`, default true) is not, so with it `X-User-ID` is
-  unauthenticated tenant selection. Details: `server/README.md`, "Product API"
-  and "Tokens".
+  fields clear stored values), so the app sends an empty profile only to
+  replace a non-empty one (`ProfilePayload.shouldUpload`) — otherwise a
+  reinstall pairing with its old server wipes it. The product API settles one
+  user per request (`user=<uuid>`, else `PULS_USER_ID`) in `scopeUser`
+  (`server/api/main.go`, after `auth`) and passes it to every `Store` read
+  explicitly. Another user needs `PULS_MULTI_USER` (default off: the static
+  `PULS_API_TOKEN` is bound to nobody); off, it is **403 `multi-user reads are
+  disabled`**, never a quiet default-user answer, and neither that nor a
+  malformed id (400) charges the auth limiter. A per-device ingest token
+  (`device_tokens`) is bound to its user — `X-User-ID` absent or equal, else
+  403; the shared `PULS_TOKEN` (while `PULS_ALLOW_SHARED_TOKEN`, default true)
+  is not, so with it `X-User-ID` is unauthenticated tenant selection. Details:
+  `server/README.md`, "Product API" and "Tokens".
 - **Canonical units.** Every quantity type has one `unitString` in
   `HealthTypeCatalog`; `SampleMapper` converts before encoding. Never send raw
   device units. **A wrong one is silent:** `SampleMapper.map` returns nil for a
@@ -210,34 +202,32 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   (`aggregate_samples` `ON CONFLICT DO UPDATE`); empty buckets go out as
   explicit `"value":null` so recomputes clear stale values. The per-config
   `computedThrough` watermark advances only after ack; every run recomputes a
-  trailing lookback (late Watch data) and a ~monthly full pass repairs older
-  edits/deletes. **The priority window** (`syncRecentAggregates`,
+  trailing lookback (late Watch data), and a ~monthly full pass repairs older
+  edits. **The priority window** (`syncRecentAggregates`,
   `AggregatePass.priority`: ~30 recent days ahead of a first backfill's raw
   sweep) **uploads without advancing a watermark**
   (`recordAggregateUploadWithoutWatermark`): its chunks end near *now*, so
-  recording them would push `computedThrough` (and, mid-full-pass,
-  `fullRecomputeThrough`) past all unprocessed history, and the full pass would
-  compute nothing older than the window. Keep any future bounded pass on that
-  recorder — the raw recent-window pass keeps an anchor of its own for the same
-  reason. Day buckets use the phone's calendar, so `PULS_TIME_ZONE` must match
-  the phone (next rule).
+  recording them would push `computedThrough` (and `fullRecomputeThrough`) past
+  all unprocessed history. Keep any future bounded pass on that recorder.
 - **Activity rings upsert by date; they are not samples.** `HKActivitySummary`
-  (`Engine/ActivitySummarySync.swift`) has no UUID, one row per local calendar
-  day, and today mutates all day. It rides its own `{"activitySummary":…}`
-  line; the server **upserts** on `(user_id, date)` (null value/goal columns
-  overwrite); progress is a *singleton* `computedThrough` day watermark
-  (`SyncStateStore.activitySummaryState`) advanced only after ack. `validKind`
-  rejects it as a sample kind. Its type is an `HKObjectType` (catalog
-  `sampleType == nil`, added to read auth separately) with **no observer or
-  background delivery**, so it rides `syncAllEnabled` and
+  (`Engine/ActivitySummarySync.swift`) has no UUID, one row per local day, and
+  today mutates all day. It rides its own `{"activitySummary":…}` line; the
+  server **upserts** on `(user_id, date)` (null columns overwrite); progress is
+  a *singleton* `computedThrough` day watermark
+  (`SyncStateStore.activitySummaryState`) advanced only after ack, today
+  re-queried every run. `validKind` rejects it as a sample kind. Its type is an
+  `HKObjectType` (catalog `sampleType == nil`, added to read auth separately)
+  with **no observer or background delivery**, so it rides `syncAllEnabled` and
   `refreshActivitySummaryIfStale()` at the tail of every observer wake (at most
-  hourly, `ActivitySummaryState.lastComputedAt`). Keep that second path: the
-  scheduled one runs from the `BGProcessingTask` while the device is locked.
-  Store the local `date` straight through — never UTC-shift it (the PK is a
-  plain `date`), or a day splits across two rows. The server's day boundary for
+  hourly) — keep the latter: the scheduled path runs from the
+  `BGProcessingTask` while the device is locked. Store the local `date`
+  straight through, never UTC-shifted (the PK is a plain `date`), or a day
+  splits across two rows.
+- **`PULS_TIME_ZONE` must match the phone's zone.** Aggregate day buckets and
+  ring dates are the phone's calendar days; the server's day boundary for
   `metric_daily` and every server-side daily query is `PULS_TIME_ZONE` (stored
   by `db/migrations/013_time_zone.sh`, exposed as `puls_time_zone()`, default
-  UTC) and must match the phone's zone.
+  UTC).
 - **A locked device means HealthKit is unreadable.** Every query fails with
   `errorDatabaseInaccessible`, and iOS runs `BGProcessingTask` when the device
   is idle — overnight, locked. Check `ProtectedData.isAvailable` (or
@@ -255,71 +245,68 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   route/stream phases never overwrite and need no clamp. Each pass records
   `readableSince` in its state — optional, so 1.5 state files decode; never
   make it required. **Widening re-sweeps**, because an anchor taken under a
-  limit never returns the older samples: `refreshReadableHistory` (engine entry
-  points and observer wakes, at most every 15 min; forced by the app at launch,
-  on every foreground and after every permission sheet) resets a widened raw
-  type's anchors and reopens its backfill; aggregate series, rings and
-  enrichment reset on their next run. **A widening must be confirmed:** a type
-  set to **None** drops out of `earliestAuthorizedSampleDate(for:)` exactly like
-  Full Access, and treating that as widening resets an aggregate series to all
-  nulls, so it counts only once HealthKit returns a sample (rings: a day)
-  ending before the recorded date (`ReadableHistory.resolve`, `hasHistory`). A
-  widened type a run holds is not touched, not even recorded, until released;
-  ±1 day (DST) is the same date; a narrowing only records. Every call here
-  times out after 10 s and fails closed (an aggregate or ring pass records
-  `readableHistoryUnknown` and sends nothing; an export says it may be
-  incomplete). Never pass the API an empty set — it breaks the `healthd`
-  connection (Cocoa 4099). The API is iOS 27 SDK only and CI also builds with
-  Xcode 26.5, so it is called **only** in `ReadableHistory.swift`, behind
-  `#if compiler(>=6.4)` (Xcode 27) *and* `#available(iOS 27.0, *)`. Don't
-  Allow on the history page throws `errorAuthorizationDenied`;
-  `requestAuthorization` returns `.declined`, and the app treats it as an
-  answer. Details: `PulsHealthSync/README.md`, "Limited history access (iOS 27)".
+  limit never returns the older samples: `refreshReadableHistory` (at most
+  every 15 min; forced by the app at launch, on foreground and after every
+  permission sheet) resets a widened raw type's anchors and reopens its
+  backfill; aggregate series, rings and enrichment reset on their next run.
+  **A widening must be confirmed:** a type set to **None** also drops out of
+  `earliestAuthorizedSampleDate(for:)`, exactly like Full Access, and treating
+  that as widening resets an aggregate series to all nulls — so it counts only
+  once HealthKit returns a sample (rings: a day) ending before the recorded
+  date (`ReadableHistory.resolve`, `hasHistory`). A type a run holds is not
+  touched, not even recorded, until released; ±1 day (DST) is the same date; a
+  narrowing only records. Calls here time out after 10 s and fail closed (an
+  aggregate or ring pass records `readableHistoryUnknown` and sends nothing).
+  Never pass the API an empty set: it breaks the `healthd` connection (Cocoa
+  4099). The API is iOS 27 SDK only and CI also builds with Xcode 26.5, so it
+  is called **only** in `ReadableHistory.swift`, behind `#if compiler(>=6.4)`
+  (Xcode 27) *and* `#available(iOS 27.0, *)`. Don't Allow on the history page
+  throws; `requestAuthorization` returns `.declined`, an answer, not an error.
+  Details: `PulsHealthSync/README.md`, "Limited history access (iOS 27)".
 - **Incremental sync merges types into one batch; backfill does not.**
-  `syncTypes(_:reason:)` routes `.incremental` through `MergedSync`: one
-  anchored page per type, packed into shared uploads (`maxMergedBatchSamples`,
-  default 1,000). Anchor-after-ack holds because **a page is never split across
-  batches** — the budget is clamped up to `batchSize`, so one page is one ack
-  and a failed upload leaves every anchor in its pack untouched; keep
-  `HealthSyncEngine.pack`'s no-split property (`MergedSyncPackingTests`).
-  Backfill keeps the per-type path: its pages are full, and four type pipelines
-  overlap better. Reading ahead keeps anchor-after-ack: the merged path reads
-  the next wave while up to `maxConcurrentTypes` packs of disjoint types upload
-  (`ConcurrentUploadTests`); the per-type path reads one page ahead in memory,
-  and a failed upload cancels that read. **A backfill claims all its types up
-  front** (`claimTypes`, then `sweep` releases each as it ends;
-  `syncAllEnabled(.backfill)` claims before its first phase), or the observer
-  wake that Apply's observer registration triggers takes them down the merged
-  path one upload at a time. The iOS 26 continued-processing task claims later
-  still, so a whole-history Apply calls `expectBackfill()` before registering
-  the observer: observer wakes then leave still-backfilling types alone until a
-  backfill claims them (a minute at most).
+  `syncTypes(_:reason:)` routes `.incremental` through `MergedSync`, packing
+  one anchored page per type into shared uploads (`maxMergedBatchSamples`,
+  default 1,000). **A page is never split across batches** (the budget is
+  clamped up to `batchSize`), so one page is one ack and a failed upload leaves
+  its pack's anchors untouched — keep `HealthSyncEngine.pack`'s no-split
+  property (`MergedSyncPackingTests`). Backfill keeps the per-type path (full
+  pages; four type pipelines overlap better). Reading ahead keeps
+  anchor-after-ack: concurrent merged packs hold disjoint types
+  (`ConcurrentUploadTests`), and the per-type path reads one page ahead in
+  memory only, cancelled by a failed upload. **A backfill claims all its types
+  up front** (`claimTypes`, then `sweep` releases each; `syncAllEnabled(.backfill)`
+  before its first phase), or the observer wake Apply's registration triggers
+  takes them down the merged path one upload at a time; a whole-history Apply
+  also calls `expectBackfill()` before registering the observer, because the
+  iOS 26 continued-processing task claims later still (observer wakes then
+  leave those types alone for up to a minute). Details:
+  `PulsHealthSync/README.md`, "How a sync runs".
 - **Recent data first, on an anchor of its own.** A nil-anchor sweep returns
   history roughly oldest first, so every sweep entry point first runs a
-  recent-window pass (`RecentSampleWindow`, `SweepPass.recent`) over its types
+  recent-window pass (`RecentSampleWindow`, `SweepPass.recent`) over types
   still backfilling: the last 30 days, through `TypeSyncState.recentAnchorData`
-  from a `recentWindowStart` fixed when the stream begins. Its acks go through
-  `recordRecentWindowUpload`, which moves that anchor and nothing else — never
+  from a fixed `recentWindowStart`. Its acks go through
+  `recordRecentWindowUpload`, which moves that anchor only — never
   `anchorData`, `backfillComplete` or `totalSamplesExported` (the sweep sends
-  and counts the same samples later). The two anchors never stand in for each
+  and counts those samples later). The two anchors never stand in for each
   other: the stream's is read under a date-bounded predicate and would skip all
   older history. `markBackfillComplete` drops the stream. A destination where a
-  repeated sample is a duplicate row rather than a no-op builds its engine with
-  `recentWindowFirst: false`.
+  repeated sample is a duplicate row, not a no-op, uses `recentWindowFirst:
+  false`.
 - **Work the app starts itself holds a background-task assertion**
   (`BackgroundExecution.run`): observer wakes, the foreground/Sync Now pass,
   Apply's inline backfill and Start Initial Backfill's fallback. When iOS's
-  grace period ends the work is **cancelled, not frozen** — every sweep stops at
-  a page boundary with its acked anchors recorded and its claims released, and
-  the wake is logged `expired` (a frozen run keeps its types claimed, and the
-  next wake does nothing). An observer wake whose types another run holds waits
-  for it (`waitForRelease`, ≤25 s) rather than acknowledging HealthKit at once,
-  and acknowledges from `onExpiration` if time runs out: the cancelled wake may
-  be suspended before its `defer` runs, and three unacknowledged deliveries stop
-  HealthKit waking the app. After expiry a sweep starts no further type
-  (`addTaskUnlessCancelled`) and `syncAllEnabled` stops after phase 3. Never
-  nest it inside a `BGTaskScheduler` handler: those have their own expiration,
-  and a nested request would cut a processing task short at ~30 s.
+  grace period ends the work is **cancelled, not frozen** (a frozen run keeps
+  its types claimed): every sweep stops at a page boundary with acked anchors
+  recorded and claims released, and the wake is logged `expired`. An observer
+  wake whose types another run holds waits (`waitForRelease`, ≤25 s) rather
+  than acknowledging HealthKit at once, and acknowledges from `onExpiration`
+  if time runs out — the cancelled wake may be suspended before its `defer`,
+  and three unacknowledged deliveries stop HealthKit waking the app. After
+  expiry a sweep starts no further type (`addTaskUnlessCancelled`) and
+  `syncAllEnabled` stops after phase 3. Never nest it inside a
+  `BGTaskScheduler` handler: those have their own expiration, and a nested
+  request would cut a processing task short at ~30 s.
 - **The schema is applied by the `migrate` service, never by hand.**
   `server/db/migrate.sh`, a one-shot Compose service that runs before every app
   service on each `docker compose up -d`, applies `db/migrations/` in lexical
@@ -347,25 +334,23 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
 - **First run only, it applies nothing until the last page, and its Health
   page cannot be skipped.** `OnboardingView` covers `RootView` while
   `AppModel.showsOnboarding` is true — decided synchronously in `init` from the
-  durable `onboardingCompleted` and `authorizationRequested` flags (so a fresh
-  launch never flashes an unconfigured tab), then corrected in `startBody` from
-  the stored configuration: an install with a database, types or a prior Apply
-  must **never** be sent through it. Four pages in a paging horizontal
-  `ScrollView` (a paged `TabView` swallows the drag past its last page). The
-  draft holds the starter set (`TypePresets.common`, via
-  `preselectCommonTypesIfUnset`), and only Start Exploring applies it
-  (`finishOnboarding()` → `applyConfiguration(syncNewTypes: true)`, the Save &
-  Apply path). **Page 2 is the pre-permission screen App Review judges under
-  guideline 5.1.1(iv)**: one neutral Continue, no skip. Until
-  `onboardingHealthAccessPending()` reports nothing left to ask (it awaits
-  `start()`, since an empty draft would read as settled), the pager holds only
-  pages 1 and 2; Continue or a swipe past page 2 (`onPullPastEnd`, iOS 18+)
-  presents the sheet, and any answer — Don't Allow on either sheet page
-  included — moves on to page 3. Never add a page, link or gesture that reaches
-  page 3 around that. The medication picker is scheduled after the cover is
-  down, never awaited (see Gotchas), and a pairing link accepted during the
-  flow waits in `confirmedPairing` until then (`pairingAwaitsSyncTab`), when
-  RootView opens Sync → Database with it.
+  durable `onboardingCompleted` and `authorizationRequested` flags (no flash of
+  an unconfigured tab), corrected in `startBody` from the stored configuration:
+  an install with a database, types or a prior Apply must **never** see it.
+  Four pages in a paging horizontal `ScrollView` (a paged `TabView` swallows
+  the drag past its last page). The draft holds `TypePresets.common`
+  (`preselectCommonTypesIfUnset`); only Start Exploring applies it
+  (`finishOnboarding()` → `applyConfiguration(syncNewTypes: true)`). **Page 2
+  is the pre-permission screen App Review judges under guideline 5.1.1(iv)**:
+  one neutral Continue, no skip. Until `onboardingHealthAccessPending()`
+  reports nothing left to ask (it awaits `start()`, since an empty draft reads
+  as settled) the pager holds only pages 1–2; Continue or a swipe past page 2
+  (`onPullPastEnd`, iOS 18+) presents the sheet, and any answer, Don't Allow
+  included, moves on. Never add a page, link or gesture that reaches page 3
+  around that. The medication picker is scheduled after the cover is down,
+  never awaited (see Gotchas); a pairing link accepted during the flow waits
+  in `confirmedPairing` until then (`pairingAwaitsSyncTab`), when RootView
+  opens Sync → Database with it.
 - **`site/` reads its content by relative path:** `knowledge-base/`
   (`site/src/lib/api.ts`), `blog/articles` (`site/src/lib/blog.ts`),
   `blog/images` (`copy-blog-images` in `site/package.json`) and the eleven
@@ -402,35 +387,31 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
 - `HKQueryAnchor` blobs are opaque NSKeyedArchiver data — never inspect or
   synthesize them; reset state instead (`Settings → Reset All Anchors`).
 - A type the permission sheet will not list stays `.shouldRequest` forever, and
-  requested alone it flash-dismisses the sheet. iOS 26 does this to blood
-  pressure systolic/diastolic (FB22735935, fixed in iOS 27.0), with no in-app
-  fix (the BP correlation type is disallowed in auth requests — ObjC
-  exception). So `AppModel` remembers undeterminable types per session
-  (`undeterminableTypes`), skips them in later requests, and points at
-  Settings → Privacy & Security → Health, naming the iOS 26 bug only below iOS
-  27. Keep it: it is version-agnostic and self-heals (retried each launch).
-- Statistics queries crash on illegal option×type combos: HealthKit raises
-  NSInvalidArgumentException when the query *executes* (uncatchable from Swift;
-  construction succeeds, so there is no early warning). Only ever offer or
-  construct functions from `HealthTypeCatalog.allowedAggregateFunctions(for:)` —
-  derived from `aggregationStyle` and verified against all 372 type×function
-  combos by `PulsHealth/HostedTests/AggregateMatrixTests` (ObjC exception
-  catcher + legacy `execute()`, which raises synchronously). Re-run that test on
-  each new iOS runtime; Settings → Validate Aggregate Functions does the
-  legal-set half on-device.
+  requested alone it flash-dismisses the sheet — iOS 26 does this to blood
+  pressure (FB22735935, fixed in iOS 27.0; the BP correlation type cannot be
+  requested instead). So `AppModel` remembers undeterminable types per session
+  (`undeterminableTypes`), skips them in later requests and points at Settings
+  → Privacy & Security → Health, naming the iOS 26 bug only below iOS 27. Keep
+  it: it is version-agnostic and self-heals (retried each launch).
+- Statistics queries crash on illegal option×type combos: HealthKit raises an
+  uncatchable NSInvalidArgumentException when the query *executes*, not when it
+  is built. Only ever offer or construct functions from
+  `HealthTypeCatalog.allowedAggregateFunctions(for:)`, verified against all 372
+  type×function combos by `PulsHealth/HostedTests/AggregateMatrixTests` (ObjC
+  exception catcher + legacy `execute()`); re-run it on each new iOS runtime.
+  Settings → Validate Aggregate Functions checks the legal set on-device.
 - Never add `workoutEffortScore`/`estimatedWorkoutEffortScore` to the catalog or
   any read-authorization request: iOS refuses to show them in the permission
   sheet (FB15315876), leaving the request stuck at `.shouldRequest` and making
   the sheet flash-dismiss, which blocks grants for every other pending type.
   Effort scores ship attached to workout payloads via `SeriesEnricher` instead.
 - The iOS 26 medication picker (`requestPerObjectReadAuthorization`) presents
-  itself over whatever HealthKit view controller is on screen. Asked while the
-  bulk permission sheet is still tearing down, it never appears ("…whose view
-  is not in the window hierarchy") and the call **never returns**, so awaiting
-  it deadlocks Apply. `AppModel.scheduleMedicationAccessRequest()` starts it
-  without awaiting, after the onboarding cover is down and the bulk sheet has
-  settled, with a watchdog that logs when it never appears. Keep per-object
-  requests off Apply's awaited path.
+  over whatever HealthKit view controller is on screen; asked while the bulk
+  sheet is still tearing down, it never appears and the call **never
+  returns**. So `AppModel.scheduleMedicationAccessRequest()` starts it without
+  awaiting, after the onboarding cover is down and the bulk sheet has settled,
+  with a watchdog that logs when it never appears. Keep per-object requests off
+  Apply's awaited path.
 - iOS silently throttles "immediate" background delivery to ~hourly for
   steps/energy/distance, and Watch→iPhone sync can't be forced. Latency complaints
   are usually iOS behavior, not bugs — see the latency table in the root README.
@@ -460,13 +441,12 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   gitignored for exactly this reason). CI runs `scripts/check-public-tree.sh`,
   which fails on the known identifiers — keep examples generic (`<host>`,
   `<user>`, `YOUR_PASSWORD`).
-- The `web` viewer's data pages are `export const dynamic = "force-dynamic"` so
-  they always render live from Postgres. Don't reintroduce `revalidate`/ISR on
-  them — it bakes a DB-less demo render at build time and serves it stale after
-  deploys. **Demo data is dev-only:** `web/lib/queries.ts` gates it on
-  `ALLOW_DEMO = NODE_ENV !== "production"`, and the container sets
-  `NODE_ENV=production`, so an unset or unreachable DB shows the `"error"`
-  source ("Database unavailable") with empty queries, never demo data.
+- The `web` viewer's data pages are `export const dynamic = "force-dynamic"`.
+  Don't reintroduce `revalidate`/ISR on them — it bakes a DB-less demo render
+  at build time and serves it stale after deploys. **Demo data is dev-only:**
+  `web/lib/queries.ts` gates it on `ALLOW_DEMO = NODE_ENV !== "production"`
+  (the container sets `production`), so an unset or unreachable DB shows the
+  `"error"` source ("Database unavailable"), never demo data.
 
 ## Deployment
 
@@ -519,24 +499,20 @@ nothing here assumes a particular machine.
   over the internal network as the read-only `grafana` role.
 - **Ingest and the product API throttle failed authentications, never
   successful ones** (`server/ingest/ratelimit.go`, `server/api/ratelimit.go` —
-  copies, because they are separate modules; keep them in step): a per-IP
-  bucket of 10 failures refilling at 10/minute, then `429` + `Retry-After`. The
-  refusal comes *before* the token comparison, or it would change only the
-  status code an attacker sees, not their guessing rate; successes never draw,
-  because a backfill is thousands of authenticated requests.
-  `TRUST_PROXY_HEADERS=true` keys on `X-Forwarded-For` behind a proxy that owns
-  it and, on the API, lets `X-Forwarded-Host` choose the host the
-  unauthenticated `/openapi.json` advertises. See `server/README.md`, "Rate
-  limiting".
-- **Ingest auth order** (`server/ingest/auth.go`): the limiter, the shared token
-  in memory, then the bearer's SHA-256 looked up in `device_tokens` (no salt:
-  the preimage is 256 random bits). A database error in that lookup is **503
-  `authentication unavailable`, never 401**, and not charged to the limiter:
-  the app retries 5xx but treats 401 as terminal, so a 401 would stall syncing
-  until the user retyped a correct token. Only wrong credentials (missing
-  bearer, unknown hash, revoked token) charge the limiter; a user mismatch
-  (403) is a misconfigured phone with a valid credential. `grafana` has SELECT
-  on every table by default privilege, so `099_read_roles.sh` revokes it on
+  copies across two modules; keep them in step). The refusal comes *before*
+  the token comparison, or it would change only the status code, not the
+  guessing rate; successes never draw, because a backfill is thousands of
+  requests. `TRUST_PROXY_HEADERS=true` keys on `X-Forwarded-For` and, on the
+  API, lets `X-Forwarded-Host` pick the host the unauthenticated
+  `/openapi.json` advertises. Limits and proxy advice: `server/README.md`,
+  "Rate limiting".
+- **Ingest auth** (`server/ingest/auth.go`): the limiter, the shared token in
+  memory, then the bearer's unsalted SHA-256 (the preimage is 256 random bits)
+  in `device_tokens`. A database error there is **503 `authentication
+  unavailable`, never 401**, and not charged: the app treats 401 as terminal,
+  so it would stall until the user retyped a correct token. Only wrong
+  credentials charge the limiter; a user mismatch (403) does not.
+  `099_read_roles.sh` revokes `grafana`'s default-privilege SELECT on
   `device_tokens` every run; `api_reader` is an exact grant list asserted by a
   `DO` block, so a table the product API newly reads goes on BOTH the `GRANT`
   and the `expected_public` rows. `PULS_TOKEN` is optional; do not make it
