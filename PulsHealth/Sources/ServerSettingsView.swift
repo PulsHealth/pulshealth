@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Sync → Server: the URL and token, held in a `ServerFieldsDraft` until Save
+/// Sync → Database: the URL and token, held in a `ServerFieldsDraft` until Save
 /// & Apply — including the user ID a pairing code brought with them — with
 /// Test Connection against the entered values and the three ways a pairing
 /// code arrives (scanned, pasted, or accepted as a `puls://` link).
@@ -31,20 +31,26 @@ struct ServerSettingsView: View {
                 }
                 PastePairingCodeRow(urlText: server.urlText) { applyPairing($0) }
             } footer: {
-                Text("A pairing code, scanned, pasted, or opened as a puls:// link, fills in the URL, token and user ID the server prints (`make pairing`) and tests them.")
+                Text("A pairing code, scanned, pasted, or opened as a puls:// link, fills in the URL, token and user ID your database's setup prints (`make pairing`) and tests them.")
             }
 
             Section {
-                TextField("https://your-host:8443", text: $server.urlText)
-                    .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
+                // Verbatim prompts: as a string literal the URL became a
+                // localized key, and Text styled it as a tappable link.
+                LabeledContent("Database URL") {
+                    TextField("Database URL", text: $server.urlText, prompt: Text(verbatim: "https://your-host:8443"))
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
                 if let issue = server.urlIssue {
                     Label(issue, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
-                SecureField("Bearer token", text: $server.tokenText)
+                LabeledContent("Token") {
+                    SecureField("Token", text: $server.tokenText, prompt: Text(verbatim: "Bearer token"))
+                }
                 Button {
                     runConnectionTest()
                 } label: {
@@ -73,7 +79,7 @@ struct ServerSettingsView: View {
             } header: {
                 Text("Or enter it by hand")
             } footer: {
-                Text("Use https://. Plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them.")
+                Text("Database URL is the address your database's pairing code shows. Use https://; plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them.")
             }
 
             // The outcome of the last test sits right above the button that
@@ -95,10 +101,10 @@ struct ServerSettingsView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                 .listRowSeparator(.hidden)
             } footer: {
-                Text("An empty URL removes the server; syncing stops and the Export tab keeps working.")
+                Text("An empty URL disconnects the database; syncing stops and the Export tab keeps working.")
             }
         }
-        .navigationTitle("Server")
+        .navigationTitle("Database")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if !loaded {
@@ -145,7 +151,7 @@ struct ServerSettingsView: View {
     }
 
     /// Takes a pairing link the user accepted (`AppModel.confirmPairingLink`).
-    /// Not while the first-run flow is up: it has no server step, so the
+    /// Not while the first-run flow is up: it has no database step, so the
     /// payload waits until the flow ends and RootView opens this screen.
     private func collectConfirmedPairing() {
         guard model.pairingAwaitsSyncTab, let payload = model.takeConfirmedPairing() else { return }

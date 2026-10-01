@@ -112,7 +112,7 @@ final class AppModel {
     /// Set by `handleIncomingURL`, cleared by the prompt's buttons. A link
     /// fills nothing until the user has answered this (`PairingLinkPromptModifier`).
     private(set) var pairingLinkPrompt: PairingLinkPrompt?
-    /// A pairing link the user accepted, waiting for Sync → Server to collect
+    /// A pairing link the user accepted, waiting for Sync → Database to collect
     /// it with `takeConfirmedPairing()` — after the first-run flow, if that is
     /// up (`pairingAwaitsSyncTab`). A hand-off rather than a write into
     /// `config`: the screen keeps the URL and token as local text until Save &
@@ -317,9 +317,10 @@ final class AppModel {
         onboardingIsRerun = false
     }
 
-    /// The flow's last step: push everything it assembled (server, user, types)
-    /// to the engine, which requests Health access for the selection and starts
-    /// backfilling the newly enabled types — the same path Save & Apply takes.
+    /// The flow's Start Exploring: push the draft (the starter set, and on a
+    /// replay whatever else is staged) to the engine, which requests Health
+    /// access for anything still undetermined and starts backfilling the newly
+    /// enabled types — the same path Save & Apply takes.
     /// The first-run flag is written first so a failure here cannot trap the
     /// user in the flow.
     func finishOnboarding() async {
@@ -337,21 +338,38 @@ final class AppModel {
         showsOnboarding = true
     }
 
-    /// Seeds the draft with the Common preset so the flow's Health-access step
-    /// has a sensible set to ask for and its type step opens on a real
-    /// selection. Only ever fills an empty draft: a replay must not overwrite
-    /// what the user already chose.
+    /// Seeds the draft with the Common preset — the starter set the flow's
+    /// Health page asks iOS about, and what Explore and Export start from.
+    /// Only ever fills an empty draft: a replay must not overwrite what the
+    /// user already chose.
     private func preselectCommonTypesIfUnset() {
         guard config.enabledTypes.isEmpty, config.aggregates.isEmpty else { return }
         config.enabledTypes = TypePresets.common
     }
 
     /// Requests Health access for the current draft without applying anything
-    /// else — the flow's dedicated permission step, run before the server and
-    /// type selection reach the engine. Types added after this step are
-    /// requested by `applyConfiguration` on the final step.
+    /// else — the flow's Health page, run before the selection reaches the
+    /// engine on its last page.
     func requestOnboardingHealthAccess() async {
         await requestAccessForEnabledTypesIfNeeded()
+    }
+
+    /// Whether the flow's Health page still has a sheet to show: some type in
+    /// the draft iOS has never asked about, other than the ones it leaves off
+    /// the sheet (`undeterminableTypes`) or the user declined on iOS 27's
+    /// history page this session — the same rule `requestAccessForEnabledTypesIfNeeded`
+    /// asks by. False lets the page be swiped past; true holds the flow on
+    /// it until iOS has been asked.
+    ///
+    /// Waits for `start()`: before it the draft is empty — a first run's
+    /// starter set is preselected there — and an empty draft would read as
+    /// nothing to ask.
+    func onboardingHealthAccessPending() async -> Bool {
+        await start()
+        let enabled = config.observedTypeIdentifiers.subtracting(declinedTypes).sorted()
+        guard !enabled.isEmpty, await engine.authorizationNeeded(for: enabled) else { return false }
+        let pending = await pendingTypes(among: enabled)
+        return !Set(pending).isSubset(of: undeterminableTypes)
     }
 
     // MARK: - Export to files
@@ -776,15 +794,15 @@ final class AppModel {
     /// shown rather than when the link arrived: a link that lands during the
     /// flow's final Apply is only presented once the cover is down, and by
     /// then both halves of the answer have changed — a server is applied, and
-    /// accepting leads to Settings, not to the flow's server step.
+    /// accepting leads to Sync → Database, not into the flow.
     func pairingConfirmation(for payload: PairingPayload) -> PairingConfirmation {
         PairingConfirmation(
             payload: payload,
             // The *applied* server: where data goes today, not a half-typed draft.
             currentServerURL: appliedConfig.serverURL,
             currentUserID: appliedConfig.userID,
-            // Always Sync → Server: the first-run flow has no server step any
-            // more, so a link accepted during it waits for the flow to end and
+            // Always Sync → Database: the first-run flow has no database step
+            // any more, so a link accepted during it waits for the flow to end and
             // lands there (`pairingAwaitsSyncTab`).
             destination: .settings)
     }
@@ -815,9 +833,9 @@ final class AppModel {
         }
     }
 
-    /// True while an accepted link is waiting for Sync → Server, i.e. the
+    /// True while an accepted link is waiting for Sync → Database, i.e. the
     /// first-run flow is not the one that should take it. RootView switches to
-    /// the Sync tab and pushes the Server screen on this.
+    /// the Sync tab and pushes the Database screen on this.
     var pairingAwaitsSyncTab: Bool { confirmedPairing != nil && !showsOnboarding }
 
     /// One-shot: the screen that fills its fields from the payload takes it.

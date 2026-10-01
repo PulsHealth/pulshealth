@@ -299,7 +299,7 @@ public final class BackgroundSyncScheduler: Sendable {
         let request = BGContinuedProcessingTaskRequest(
             identifier: backfillTaskIdentifier,
             title: "Syncing health history",
-            subtitle: "Uploading to your server"
+            subtitle: "Uploading to your database"
         )
         // .fail (not .queue): the user just tapped the button, so if the system
         // can't run it now we want to fall back to an in-app sync immediately.

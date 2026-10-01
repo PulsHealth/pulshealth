@@ -169,7 +169,7 @@ Answer every content question **None / No**. The result is **4+**.
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
 | Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. Since 1.6 a Type page also shows one line on what the type measures and, behind the value histogram, the typical range from the project's knowledge base — general reference, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
-| Unrestricted web access | No | There is no browser and no web view. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. |
+| Unrestricted web access | No | There is no browser and no web view. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), and the last first-run page’s "Learn more" (pulshealth.com/docs/server/). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. |
 | User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, database URL, token) is shared with any other user or with the developer. |
 | Gambling and contests | No | — |
 | In-app purchases | No | No StoreKit. |
@@ -233,7 +233,7 @@ flags.
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
 | Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
 | Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.6`, ahead of the `1.4` on the store — see [Release record](README.md#release-record) |
-| Build | `CURRENT_PROJECT_VERSION`, currently `18`, ahead of the shipped `15` (16 and 17 went to TestFlight only) |
+| Build | `CURRENT_PROJECT_VERSION`, currently `19`, ahead of the shipped `15` (16, 17 and 18 went to TestFlight only) |
 | Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 

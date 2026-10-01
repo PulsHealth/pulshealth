@@ -36,7 +36,7 @@ import Testing
             currentServerURL: URL(string: "https://old.example.test:8443"), currentUserID: user,
             destination: .settings)
         #expect(confirmation.effect == .replacesServer(current: "old.example.test:8443"))
-        #expect(confirmation.message.contains("It would replace the server you sync to now, old.example.test:8443."))
+        #expect(confirmation.message.contains("It would replace the database you sync to now, old.example.test:8443."))
         #expect(confirmation.message.contains("Nothing changes until you tap Save & Apply."))
     }
 
@@ -98,7 +98,7 @@ import Testing
         #expect(message.hasPrefix("It is not a PulsHealth pairing link."))
         #expect(message.contains("Nothing was changed."))
         // The scanner's advice makes no sense for a link.
-        #expect(!message.contains("Scan the QR code printed by"))
+        #expect(!message.contains("Scan the one your database"))
     }
 
     @Test func aBrokenPairingLinkSaysWhatIsWrongWithIt() {
@@ -106,6 +106,10 @@ import Testing
             for: .invalidServerURL(.insecureRemoteHost("puls.example.test")))
         #expect(message.contains("local-network"))
         #expect(message.contains("Nothing was changed."))
-        #expect(PairingConfirmation.rejectionMessage(for: .missingField("token")).contains("missing its token"))
+        let incomplete = PairingConfirmation.rejectionMessage(for: .missingField("token"))
+        #expect(incomplete.hasPrefix("This isn’t a complete PulsHealth pairing code."))
+        #expect(incomplete.contains("on Sync → Database"))
+        // Whoever opens the link may never have seen the server's scripts.
+        #expect(!incomplete.contains("scripts/"))
     }
 }

@@ -288,6 +288,7 @@ struct ExploreView: View {
                 factsLoaded: explore.quickFactsLoaded,
                 isRunning: explore.isRunning(descriptor.identifier),
                 status: model.statuses.first { $0.id == descriptor.identifier },
+                hasServer: model.appliedConfig.serverURL != nil,
                 showsCategory: showsCategory)
         }
     }
@@ -315,6 +316,10 @@ private struct ExploreTypeRow: View {
     let factsLoaded: Bool
     let isRunning: Bool
     let status: TypeSyncStatus?
+    /// A synced count means nothing without a server: an enabled type has a
+    /// status either way, and on a server-less install it only ever said
+    /// "0 synced".
+    let hasServer: Bool
     let showsCategory: Bool
 
     private var hasData: Bool { facts?.latestStart != nil || profile != nil }
@@ -355,7 +360,7 @@ private struct ExploreTypeRow: View {
             parts.append("tap to analyze")
         } else if facts != nil {
             parts.append("No data")
-        } else if let status {
+        } else if let status, hasServer {
             parts.append("\(status.state.totalSamplesExported.compactString) synced")
         } else {
             parts.append(kindLabel(descriptor.kind))

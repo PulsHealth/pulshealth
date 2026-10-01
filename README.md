@@ -182,17 +182,17 @@ generated project is too), select your device, and run.
 
 Either way, in the app:
 
-1. Go through the first-run flow: grant Health access when asked (the app is
-   read-only; it never writes to HealthKit) and choose your data (a "Common"
-   starter set is preselected). It never asks for a server.
-2. **Sync tab → Scan Pairing Code** (or **Enter Server Details**; later,
-   **Sync → Server**): scan the pairing block's QR code, paste its
-   `puls://pair?…` line with **Paste Pairing Code**, or enter the server URL
-   and token by hand (`make pairing` re-prints the block; the QR code encodes
-   the same values). Pointing the iOS Camera app at the QR code works too: it
-   offers to open PulsHealth, which asks you to confirm the server's host
-   before it fills anything in. Then tap **Test Connection** and **Save &
-   Apply**.
+1. Swipe through the first-run flow and grant Health access when asked (the
+   app is read-only; it never writes to HealthKit). It asks about a "Common"
+   starter set; add more types later under **Sync → Synced Data**. It never
+   asks for a database.
+2. **Sync tab → Set Up** (later, **Sync → Database**): scan the pairing
+   block's QR code with **Scan Pairing Code**, paste its `puls://pair?…` line
+   with **Paste Pairing Code**, or type the **Database URL** and **Token** by
+   hand (`make pairing` re-prints the block; the QR code encodes the same
+   values). Pointing the iOS Camera app at the QR code works too: it offers to
+   open PulsHealth, which asks you to confirm the host before it fills
+   anything in. Then tap **Test Connection** and **Save & Apply**.
 3. **Sync → Synced Data:** adjust what to sync and tap Apply. Types with no
    history sync from your chosen start date; the Sync tab shows per-type
    progress, rate, and ETA.

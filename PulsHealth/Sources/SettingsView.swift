@@ -9,7 +9,7 @@ enum SettingsRoute: Hashable {
 /// The Settings tab: who the data is stored as, the sync window and backfill
 /// (only once a server is applied), how many types run at once, Health access
 /// and the on-device data under Privacy & Data, diagnostics, and About. The
-/// server is not here — it is the Sync tab's (`ServerSettingsView`).
+/// database is not here — it is the Sync tab's (`ServerSettingsView`).
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var confirmResetAll = false
@@ -163,7 +163,7 @@ struct SettingsView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Re-sends everything from the start date for every synced type. The server skips what it already has.")
+            Text("Re-sends everything from the start date for every synced type. Your database skips what it already has.")
         }
         .alert("Delete all analysis?", isPresented: $confirmDeleteAnalysis) {
             Button("Delete", role: .destructive) { Task { await model.deleteAnalysis() } }
@@ -263,7 +263,7 @@ private struct UserRow: View {
 
 /// Icon + one-liner for a `ConnectionTestResult`, plus the advertised feature
 /// list on success so it is visible why (say) reconciliation is offered or not.
-/// Shared by the Server screen and the onboarding flow's server step.
+/// Shown by `ServerSettingsView`, under Test Connection.
 struct ConnectionTestResultRow: View {
     let result: ConnectionTestResult
 
@@ -302,7 +302,7 @@ struct ConnectionTestResultRow: View {
     }
 }
 
-/// The fresh-vs-keep prompt raised when Save & Apply (from the Server screen,
+/// The fresh-vs-keep prompt raised when Save & Apply (from the Database screen,
 /// Settings, the User page or the Synced Data bar) would point the sync at a different server or
 /// user ID than the stored anchors and watermarks were earned against.
 /// Attached at the root so it appears whichever tab the apply came from.
@@ -312,7 +312,7 @@ struct ServerChangePrompt: ViewModifier {
     func body(content: Content) -> some View {
         content.alert(
             model.pendingServerChange?.serverChanged == false
-                ? "Sync as a different user?" : "Sync to a different server?",
+                ? "Sync as a different user?" : "Sync to a different database?",
             isPresented: Binding(
                 get: { model.pendingServerChange != nil },
                 // An alert only closes through its buttons, and each of them
@@ -332,11 +332,11 @@ struct ServerChangePrompt: ViewModifier {
     static func message(for change: ServerIdentityChange?) -> String {
         guard let change else { return "" }
         let what = change.serverChanged && change.userChanged
-            ? "The server and user ID changed"
-            : change.serverChanged ? "The server changed" : "The user ID changed"
+            ? "The database and user ID changed"
+            : change.serverChanged ? "The database changed" : "The user ID changed"
         let target = change.userChanged && !change.serverChanged
-            ? "the server treats a new user ID as a different person, so nothing synced so far counts for it"
-            : "your sync progress belongs to the previous server"
+            ? "your database treats a new user ID as a different person, so nothing synced so far counts for it"
+            : "your sync progress belongs to the previous database"
         return """
         \(what) (\(change.summary)) — \(target).
 
@@ -438,7 +438,7 @@ struct UserView: View {
             } header: {
                 Text("Advanced")
             } footer: {
-                Text("Each person sharing a server needs their own ID.")
+                Text("Each person sharing a database needs their own ID.")
             }
 
             Section {

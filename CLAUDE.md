@@ -7,7 +7,7 @@ plus two standalone CLIs and the public website:
 | Path | What | Docs |
 |---|---|---|
 | `PulsHealthSync/` | Swift package (iOS 17+, Swift 6 strict concurrency): sync engine, transport, NDJSON encoding | `PulsHealthSync/README.md` |
-| `PulsHealth/` | SwiftUI app wrapping the library: Explore (type pages with analysis charts and an aggregate preview), Export builder (server-less files), Sync (server, synced types, activity log), Settings; benchmark | `PulsHealth/README.md` |
+| `PulsHealth/` | SwiftUI app wrapping the library: Explore (type pages with analysis charts and an aggregate preview), Export builder (server-less files), Sync (the Database screen, synced types, activity log), Settings; benchmark | `PulsHealth/README.md` |
 | `server/` | Docker Compose: Go ingest/product APIs + PostgreSQL 17/TimescaleDB + Grafana | `server/README.md` |
 | `server/mcp/` | Go MCP server (stdio + streamable HTTP) giving AI assistants read-only tools over the product API; talks only to the API, never Postgres | `server/mcp/README.md`, `docs/ai.md` |
 | `web/` | Next.js self-hosted viewer, published as the fourth GHCR image. Reads Postgres directly as the read-only `grafana` role; optional HTTP Basic auth. **Not** `site/`, which is the public marketing site | `web/README.md` |
@@ -444,19 +444,33 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   that exists only in a newer SDK than CI's oldest Xcode also needs a compile
   guard — `#if compiler(>=6.4)` for the iOS 27 SDK (see limited history
   above); `#available` alone does not compile against the older SDK.
-- **First run only, and it applies nothing until the last step.**
-  `OnboardingView` covers `RootView` when `AppModel.showsOnboarding` is true:
-  decided synchronously in `init` from the durable `onboardingCompleted` and
-  `authorizationRequested` flags (so a fresh launch never flashes an
-  unconfigured Explore tab), then corrected in `startBody` once the stored
-  configuration is known — an install with a server, types, or a prior Apply is
-  configured and must **never** be sent through it. Every step edits the same
-  staged `model.config` the Synced Data screen edits; only the final step calls
-  `finishOnboarding()` → `applyConfiguration(syncNewTypes: true)`, the same
-  path as Save & Apply. The type step embeds the real `TypePickerView` rather
-  than a copy, so it can push detail screens the footer knows nothing about —
-  that is why the `NavigationStack` carries `.id(step)`; removing it leaves a
-  pushed category sitting on top of the next step.
+- **First run only, it applies nothing until the last page, and its Health
+  page cannot be skipped.** `OnboardingView` covers `RootView` when
+  `AppModel.showsOnboarding` is true: decided synchronously in `init` from the
+  durable `onboardingCompleted` and `authorizationRequested` flags (so a fresh
+  launch never flashes an unconfigured Explore tab), then corrected in
+  `startBody` once the stored configuration is known — an install with a
+  database, types, or a prior Apply is configured and must **never** be sent
+  through it. It is four pages swiped in a paging horizontal `ScrollView`
+  (what the app does; Health access; exports; syncing to your own database,
+  with Start Exploring). There is no type picker: the draft holds the starter
+  set (`TypePresets.common`, seeded by `preselectCommonTypesIfUnset`), and only
+  Start Exploring calls `finishOnboarding()` → `applyConfiguration(syncNewTypes:
+  true)`, the same path as Save & Apply. **Page 2 is the pre-permission screen
+  App Review judges under 5.1.1(iv)** — 1.4 was rejected for a Skip — so its
+  one button is a neutral Continue and nothing gets past it without iOS's
+  sheet: until `onboardingHealthAccessPending()` reports nothing left to ask
+  (it awaits `start()`, because an empty draft would read as settled), the
+  pager holds only pages 1 and 2. Continue and a swipe past the end of page 2
+  (`onPullPastEnd`, iOS 18's scroll geometry; on iOS 17 it only bounces) both
+  present the sheet, and the flow moves to page 3 once it is answered, Don't
+  Allow and iOS 27's history-page Don't Allow included. Never add a page,
+  link or gesture that reaches page 3 around that. It is a `ScrollView`, not a
+  paged `TabView`, because the TabView's pager swallowed the drag, so a swipe
+  past its last page could not be seen. The medication picker is scheduled
+  after the cover is down, never awaited (see Gotchas), and a pairing link
+  accepted during the flow waits in `confirmedPairing` until the cover is down
+  (`pairingAwaitsSyncTab`), when RootView opens Sync → Database with it.
 - **`site/`, `knowledge-base/` and `blog/` are siblings at the repository root,
   and `site/` also reads eleven documentation files from the tree.**
   The site reads its content by relative path —
@@ -487,9 +501,9 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
   the record rather than chosen, and an archive only updates the listing if it
   carries that identifier. `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` must
   likewise stay ahead of what shipped: 1.4 / 15 is on the store, 1.5 / 16
-  went to TestFlight on 2026-09-29 and was never submitted, 1.6 / 17 went to
-  TestFlight on 2026-09-30, and `project.yml` says 1.6 / 18, not yet
-  uploaded — bump the build again after that upload.
+  went to TestFlight on 2026-09-29 and was never submitted, 1.6 / 17 and
+  1.6 / 18 went to TestFlight on 2026-09-30, and `project.yml` says 1.6 / 19,
+  not yet uploaded — bump the build again after that upload.
 - **The published privacy claims are load-bearing.**
   `docs/privacy-policy.md`, `docs/appstore/` and the site's `/privacy` page
   state as fact that the app has

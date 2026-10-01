@@ -2,10 +2,10 @@ import SwiftUI
 import PulsHealthSync
 
 /// Screens the Sync tab pushes. Value-based so `RootView`, which owns the
-/// stack's path, can pop back to the Server screen when a pairing link is
+/// stack's path, can pop back to the Database screen when a pairing link is
 /// accepted while another of them is on top.
 enum SyncRoute: Hashable {
-    /// The server form; `scan` opens the pairing scanner on arrival.
+    /// The Database screen; `scan` opens the pairing scanner on arrival.
     case server(scan: Bool)
     case syncedData
     case activity
@@ -16,10 +16,10 @@ enum SyncRoute: Hashable {
 /// applied it is a setup card with one Set Up button — a supported way to
 /// use the app, not a fault; the first tap on Sync is where the server is
 /// asked for, never the first-run flow. With one it is the status of the sync, the synced types, and the way to
-/// the Server, Synced Data and Activity screens.
+/// the Database, Synced Data and Activity screens.
 struct SyncView: View {
     /// The stack's path, owned by `RootView` (a pairing link pushes onto it
-    /// from outside); the setup card pushes the Server screen through it so
+    /// from outside); the setup card pushes the Database screen through it so
     /// Set Up can be a button rather than a list row.
     @Binding var path: [SyncRoute]
     @Environment(AppModel.self) private var model
@@ -65,13 +65,13 @@ struct SyncView: View {
     // MARK: - No server
 
     // Keyed on the *applied* server — where data goes today — so a URL
-    // half-typed on the Server screen does not hide it.
+    // half-typed on the Database screen does not hide it.
     private var setupCard: some View {
         CardSection(
-            "Keep a copy on your own server",
-            subtitle: "Nothing is syncing yet. Pair with a PulsHealth server and new data is sent as it arrives; until then, the Export tab writes files without one."
+            "Keep a copy in your own database",
+            subtitle: "Nothing is syncing yet. Connect your own database and new data is sent as it arrives; until then, the Export tab writes files without one."
         ) {
-            // One way in. The Server screen it opens starts with Scan
+            // One way in. The Database screen it opens starts with Scan
             // Pairing Code and Paste, then the fields for typing it by hand.
             Button {
                 path.append(.server(scan: false))
@@ -120,7 +120,7 @@ struct SyncView: View {
     }
 
     private var host: String {
-        guard let url = model.appliedConfig.serverURL else { return "Server" }
+        guard let url = model.appliedConfig.serverURL else { return "Database" }
         return url.host().map { $0 + (url.port.map { ":\($0)" } ?? "") } ?? url.absoluteString
     }
 
@@ -255,7 +255,7 @@ struct SyncView: View {
             }
             if model.appliedConfig.serverURL != nil {
                 NavigationLink(value: SyncRoute.server(scan: false)) {
-                    Label("Server", systemImage: "externaldrive.connected.to.line.below")
+                    Label("Database", systemImage: "externaldrive.connected.to.line.below")
                 }
             }
             NavigationLink(value: SyncRoute.activity) {
