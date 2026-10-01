@@ -652,10 +652,10 @@ behave this way and a receiver MAY depend on it.
   know what arrival order to expect — but the two consequences below are
   normative.
 - **A type's first line MAY be an aggregate or activity-summary line rather
-  than a sample line.** Aggregate-only types (aggregates enabled for a type
-  whose raw samples are not) have always been able to do this; since the
-  recent-aggregate phase it is the ordinary case on a first backfill for every
-  type that has an aggregate configured. A receiver MUST therefore be able to
+  than a sample line.** That is true of aggregate-only types (aggregates
+  enabled for a type whose raw samples are not) and, because the recent window
+  of aggregates runs before the raw samples, of every type with an aggregate
+  configured on a first backfill. A receiver MUST therefore be able to
   register a type from an aggregate line, and MUST NOT assume the canonical
   unit from §5 has been established by an earlier sample line — a `duration`
   aggregate carries `s` whatever the type's own unit is, so a receiver that
