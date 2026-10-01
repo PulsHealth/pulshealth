@@ -19,7 +19,7 @@ struct RootView: View {
     }
     @State private var selection: Tab = Tab.initial
     /// Owned here rather than by SyncView so an accepted pairing link can pop
-    /// whatever the Sync tab had pushed and land on its Server screen.
+    /// whatever the Sync tab had pushed and land on its Database screen.
     @State private var syncPath: [SyncRoute] = []
     /// Debug builds accept `-PulsInitialType <identifier>` alongside
     /// `-PulsInitialTab explore`, so a scripted run can screenshot a Type page.
@@ -57,7 +57,7 @@ struct RootView: View {
         // from launch.
         .pairingLinkPrompt(canPresent: !model.showsOnboarding && model.pendingServerChange == nil)
         // Accepted: take the user to the fields the link filled in, the same
-        // place a scan from the Server screen would have left them.
+        // place a scan from the Database screen would have left them.
         // ServerSettingsView collects the payload itself; nothing is applied
         // from here.
         .onChange(of: model.pairingAwaitsSyncTab) { _, waiting in
@@ -65,7 +65,7 @@ struct RootView: View {
             syncPath = [.server(scan: false)]
             selection = .sync
         }
-        // Save & Apply on Settings, the User page, the Server screen or the
+        // Save & Apply on Settings, the User page, the Database screen or the
         // Synced Data bar can all raise the server/user-change prompt; show it
         // above every tab.
         .serverChangePrompt()

@@ -24,7 +24,7 @@ import PulsHealthSync
 /// A `puls://` pairing link can still arrive while this flow is up. It is
 /// confirmed here (the prompt cannot come from the covered RootView), and the
 /// accepted payload then waits in `AppModel.confirmedPairing` until the flow
-/// ends: `pairingAwaitsSyncTab` turns true, RootView opens Sync → Server,
+/// ends: `pairingAwaitsSyncTab` turns true, RootView opens Sync → Database,
 /// and that screen fills its fields from it.
 struct OnboardingView: View {
     @Environment(AppModel.self) private var model
@@ -215,7 +215,7 @@ struct OnboardingView: View {
                 }
                 footnote("Set it up any time from the Sync tab.")
                 if model.confirmedPairing != nil {
-                    // Accepted during the flow; Sync → Server opens with it
+                    // Accepted during the flow; Sync → Database opens with it
                     // filled in once the flow is done (RootView, on
                     // `pairingAwaitsSyncTab`).
                     Label("A pairing link is waiting. The Sync tab opens with it filled in when you finish.", systemImage: "qrcode")

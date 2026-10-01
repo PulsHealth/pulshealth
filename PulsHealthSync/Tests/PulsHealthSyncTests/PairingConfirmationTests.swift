@@ -36,7 +36,7 @@ import Testing
             currentServerURL: URL(string: "https://old.example.test:8443"), currentUserID: user,
             destination: .settings)
         #expect(confirmation.effect == .replacesServer(current: "old.example.test:8443"))
-        #expect(confirmation.message.contains("It would replace the server you sync to now, old.example.test:8443."))
+        #expect(confirmation.message.contains("It would replace the database you sync to now, old.example.test:8443."))
         #expect(confirmation.message.contains("Nothing changes until you tap Save & Apply."))
     }
 
@@ -108,7 +108,7 @@ import Testing
         #expect(message.contains("Nothing was changed."))
         let incomplete = PairingConfirmation.rejectionMessage(for: .missingField("token"))
         #expect(incomplete.hasPrefix("This isn’t a complete PulsHealth pairing code."))
-        #expect(incomplete.contains("on Sync → Server"))
+        #expect(incomplete.contains("on Sync → Database"))
         // Whoever opens the link may never have seen the server's scripts.
         #expect(!incomplete.contains("scripts/"))
     }

@@ -30,7 +30,7 @@ public struct PairingConfirmation: Sendable, Equatable {
     public enum Destination: Sendable, Equatable {
         /// The first-run flow's server step. Nothing is applied until its last step.
         case onboarding
-        /// Sync → Server. Nothing is applied until Save & Apply.
+        /// Sync → Database. Nothing is applied until Save & Apply.
         case settings
     }
 
@@ -80,18 +80,18 @@ public struct PairingConfirmation: Sendable, Equatable {
 
     public var message: String {
         var paragraphs = [
-            "A link asked PulsHealth to send your health data to this server. "
-                + "Continue only if the link came from your own server."
+            "A link asked PulsHealth to send your health data to this database. "
+                + "Continue only if the link came from your own database."
         ]
         switch effect {
         case .firstServer:
             break
         case .sameServer:
             paragraphs.append(
-                "This is the server you already sync to. Pairing again replaces the saved token"
+                "This is the database you already sync to. Pairing again replaces the saved token"
                     + (userChanges ? " and changes your user ID." : "."))
         case .replacesServer(let current):
-            paragraphs.append("It would replace the server you sync to now, \(current).")
+            paragraphs.append("It would replace the database you sync to now, \(current).")
         }
         if isUnencrypted {
             paragraphs.append(
@@ -105,7 +105,7 @@ public struct PairingConfirmation: Sendable, Equatable {
                     + "Nothing is sent until you finish setup.")
         case .settings:
             paragraphs.append(
-                "The details are filled in under Sync → Server and the connection is tested. "
+                "The details are filled in under Sync → Database and the connection is tested. "
                     + "Nothing changes until you tap Save & Apply.")
         }
         return paragraphs.joined(separator: "\n\n")
@@ -128,6 +128,6 @@ public struct PairingConfirmation: Sendable, Equatable {
             reason = failure.errorDescription ?? "It could not be read."
         }
         return reason + "\n\nNothing was changed. You can still scan the pairing code "
-            + "or enter the server details by hand on Sync → Server."
+            + "or enter the database details by hand on Sync → Database."
     }
 }

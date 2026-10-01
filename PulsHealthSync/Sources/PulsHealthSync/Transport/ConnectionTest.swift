@@ -30,16 +30,16 @@ public enum ConnectionTestResult: Sendable, Equatable {
             let name = capabilities.displayName
             return name.isEmpty ? "Connected." : "Connected to \(name)."
         case .okNoCapabilities:
-            return "Connected. This server does not advertise capabilities, so reconciliation and server statistics are unavailable."
+            return "Connected. This database does not advertise capabilities, so reconciliation and database statistics are unavailable."
         case .tokenRejected:
-            return "The server rejected the token."
+            return "The database rejected the token."
         case .unsupportedProtocol(let versions):
             let list = versions.isEmpty ? "none" : versions.map(String.init).joined(separator: ", ")
-            return "This server does not support this app version (it speaks protocol \(list); this app speaks \(PulsProtocol.version))."
+            return "This database does not support this app version (it speaks protocol \(list); this app speaks \(PulsProtocol.version))."
         case .unreachable(let detail):
-            return "Could not reach the server: \(detail)"
+            return "Could not reach the database: \(detail)"
         case .serverError(let status):
-            return "The server returned HTTP \(status)."
+            return "The database returned HTTP \(status)."
         }
     }
 }
@@ -124,7 +124,7 @@ public struct ConnectionTester: Sendable {
         case TransportError.network(let underlying):
             return .unreachable(describe(underlying))
         case TransportError.notConfigured:
-            return .unreachable("Server URL or token missing.")
+            return .unreachable("Database URL or token missing.")
         case is DecodingError:
             return missingEndpointIsFatal ? .unreachable("Unexpected response body.") : nil
         case is CancellationError:
@@ -138,7 +138,7 @@ public struct ConnectionTester: Sendable {
     /// refused connections, an ATS block, no network.
     static func describe(_ error: Error) -> String {
         guard let urlError = error as? URLError else { return error.localizedDescription }
-        let host = urlError.failingURL?.host ?? "the server"
+        let host = urlError.failingURL?.host ?? "the database"
         switch urlError.code {
         case .appTransportSecurityRequiresSecureConnection:
             return "App Transport Security blocks plain http:// to \(host). Use https://, or a local-network host."
@@ -151,7 +151,7 @@ public struct ConnectionTester: Sendable {
         case .timedOut:
             return "Timed out waiting for \(host)."
         case .cannotConnectToHost:
-            return "\(host) refused the connection (is the server running on that port?)."
+            return "\(host) refused the connection (is your database running on that port?)."
         case .notConnectedToInternet, .networkConnectionLost, .internationalRoamingOff, .dataNotAllowed:
             return "No network connection."
         case .badServerResponse:

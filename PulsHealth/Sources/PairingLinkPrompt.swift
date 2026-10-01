@@ -60,9 +60,9 @@ extension View {
     }
 }
 
-/// "Paste Pairing Code": the route for a server whose QR code is not in front
-/// of the camera — a terminal on the same device, a payload sent over a
-/// message. Used by the Sync tab’s Server screen.
+/// "Paste Pairing Code": the route for a database whose QR code is not in
+/// front of the camera — a terminal on the same device, a payload sent over a
+/// message. Used by the Sync tab’s Database screen.
 ///
 /// It is the system `PasteButton` rather than a button that reads
 /// `UIPasteboard`: the tap itself is the permission, so iOS shows no
@@ -115,6 +115,6 @@ struct PastePairingCodeRow: View {
         }
         // The token never appears here: no failure description carries one.
         problem = shapedFailure?.errorDescription
-            ?? "That is not a pairing code. Copy the line starting with puls://pair from the server's pairing block (make pairing), then paste again."
+            ?? "That is not a pairing code. Copy the line starting with puls://pair from your database's pairing block (make pairing), then paste again."
     }
 }

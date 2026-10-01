@@ -122,10 +122,10 @@ struct TypeSyncDetailsSections: View {
             // Only a server that reports its counts fills these in, and
             // only for a batch that carried this type alone.
             if let accepted = state.lastBatchAccepted {
-                LabeledContent("Last batch new on server", value: accepted.formatted())
+                LabeledContent("Last batch new in database", value: accepted.formatted())
             }
             if let duplicates = state.lastBatchDuplicates {
-                LabeledContent("Last batch already on server", value: duplicates.formatted())
+                LabeledContent("Last batch already in database", value: duplicates.formatted())
             }
             if let latency = state.lastObservedLatency {
                 LabeledContent("Sample to upload latency", value: latency.shortDuration)
@@ -135,10 +135,10 @@ struct TypeSyncDetailsSections: View {
         // Server-side rows come from GET /v1/stats, which only a server
         // advertising `stats` offers; a past reconciliation stays visible.
         if model.serverSupportsStats || state.lastReconcileAt != nil {
-            Section("Server") {
+            Section("Database") {
                 if model.serverSupportsStats {
                     if let stats = model.serverStats[status.id] {
-                        LabeledContent("Rows on server") {
+                        LabeledContent("Rows in database") {
                             Text(Int(stats.rows).formatted()).monospacedDigit()
                         }
                         LabeledContent("Batches received", value: Int(stats.batches).formatted())
@@ -190,7 +190,7 @@ struct TypeSyncDetailsSections: View {
                             ProgressView()
                         }
                     } else {
-                        Text("Reconcile with Server")
+                        Text("Reconcile with Database")
                     }
                 }
                 .disabled(model.reconciling.contains(status.id))
@@ -210,8 +210,8 @@ struct TypeSyncDetailsSections: View {
             // builder would attach one dialog per section.
             .confirmationDialog(
                 isActivitySummary
-                    ? "Recompute all \(status.descriptor.displayName) data from the start date? Existing days are safely updated on the server."
-                    : "Re-export all \(status.descriptor.displayName) data from the start date? The server deduplicates by UUID, so this is safe but slow.",
+                    ? "Recompute all \(status.descriptor.displayName) data from the start date? Existing days are safely updated in your database."
+                    : "Re-export all \(status.descriptor.displayName) data from the start date? Your database skips samples it already has, so this is safe but slow.",
                 isPresented: $confirmReset, titleVisibility: .visible
             ) {
                 Button(isActivitySummary ? "Reset Progress" : "Reset Anchor", role: .destructive) {
@@ -222,7 +222,7 @@ struct TypeSyncDetailsSections: View {
             Text("Actions")
         } footer: {
             if supportsReconciliation {
-                Text("Reconciliation compares per-month sample digests with the server, re-uploads anything missing, and removes orphans left by purged deletion tombstones.")
+                Text("Reconciliation compares per-month sample digests with your database, re-uploads anything missing, and removes orphans left by purged deletion tombstones.")
             }
         }
     }

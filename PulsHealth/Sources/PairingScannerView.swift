@@ -104,7 +104,7 @@ struct PairingScannerView: View {
         ContentUnavailableView {
             Label("Camera Access Is Off", systemImage: "video.slash")
         } description: {
-            Text("Turn the camera on for PulsHealth in Settings → Privacy & Security → Camera, or enter the server URL, token and user ID by hand.")
+            Text("Turn the camera on for PulsHealth in Settings → Privacy & Security → Camera, or enter the database URL, token and user ID by hand.")
         } actions: {
             Button {
                 if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }

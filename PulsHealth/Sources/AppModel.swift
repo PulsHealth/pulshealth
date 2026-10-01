@@ -112,7 +112,7 @@ final class AppModel {
     /// Set by `handleIncomingURL`, cleared by the prompt's buttons. A link
     /// fills nothing until the user has answered this (`PairingLinkPromptModifier`).
     private(set) var pairingLinkPrompt: PairingLinkPrompt?
-    /// A pairing link the user accepted, waiting for Sync → Server to collect
+    /// A pairing link the user accepted, waiting for Sync → Database to collect
     /// it with `takeConfirmedPairing()` — after the first-run flow, if that is
     /// up (`pairingAwaitsSyncTab`). A hand-off rather than a write into
     /// `config`: the screen keeps the URL and token as local text until Save &
@@ -794,15 +794,15 @@ final class AppModel {
     /// shown rather than when the link arrived: a link that lands during the
     /// flow's final Apply is only presented once the cover is down, and by
     /// then both halves of the answer have changed — a server is applied, and
-    /// accepting leads to Settings, not to the flow's server step.
+    /// accepting leads to Sync → Database, not into the flow.
     func pairingConfirmation(for payload: PairingPayload) -> PairingConfirmation {
         PairingConfirmation(
             payload: payload,
             // The *applied* server: where data goes today, not a half-typed draft.
             currentServerURL: appliedConfig.serverURL,
             currentUserID: appliedConfig.userID,
-            // Always Sync → Server: the first-run flow has no server step any
-            // more, so a link accepted during it waits for the flow to end and
+            // Always Sync → Database: the first-run flow has no database step
+            // any more, so a link accepted during it waits for the flow to end and
             // lands there (`pairingAwaitsSyncTab`).
             destination: .settings)
     }
@@ -833,9 +833,9 @@ final class AppModel {
         }
     }
 
-    /// True while an accepted link is waiting for Sync → Server, i.e. the
+    /// True while an accepted link is waiting for Sync → Database, i.e. the
     /// first-run flow is not the one that should take it. RootView switches to
-    /// the Sync tab and pushes the Server screen on this.
+    /// the Sync tab and pushes the Database screen on this.
     var pairingAwaitsSyncTab: Bool { confirmedPairing != nil && !showsOnboarding }
 
     /// One-shot: the screen that fills its fields from the payload takes it.

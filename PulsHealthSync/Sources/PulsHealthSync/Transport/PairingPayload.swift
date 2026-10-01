@@ -54,9 +54,9 @@ public struct PairingPayload: Sendable, Equatable {
                 // Shown to whoever holds the phone, who need not be the one
                 // who ran the server's scripts, so no script names; which
                 // field is missing stays in the case for tests and code.
-                return "This isn’t a complete PulsHealth pairing code. Print a new one from your server."
+                return "This isn’t a complete PulsHealth pairing code. Print a new one from your database."
             case .invalidServerURL(let failure):
-                return "The pairing code's server URL is unusable. \(failure.errorDescription ?? "")"
+                return "The pairing code's database URL is unusable. \(failure.errorDescription ?? "")"
                     .trimmingCharacters(in: .whitespaces)
             case .invalidUserID:
                 return "The pairing code's user ID is not a UUID."

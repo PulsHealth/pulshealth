@@ -45,12 +45,12 @@ targets:
         CFBundleDisplayName: PulsHealth
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        NSHealthShareUsageDescription: PulsHealth reads your health data to sync it to your personal self-hosted database.
+        NSHealthShareUsageDescription: PulsHealth reads your health data to show it to you, export it to files you choose, and, if you set one up, sync it to your own database.
         NSHealthUpdateUsageDescription: PulsHealth does not write health data.
-        # Onboarding (and Settings → Server) can read the pairing QR code the
-        # server prints instead of making the user type a URL, a token and a
-        # UUID. Nothing else uses the camera and no frame is ever stored.
-        NSCameraUsageDescription: Scan the pairing code shown by your PulsHealth server.
+        # Sync → Database can read the pairing QR code a database's setup
+        # prints instead of making the user type a URL, a token and a UUID.
+        # Nothing else uses the camera and no frame is ever stored.
+        NSCameraUsageDescription: PulsHealth uses the camera only to scan the pairing code for your database.
         # `puls://pair?url=…&token=…&user=…` — the same string the pairing QR
         # code encodes. Registering the scheme is what lets the iOS Camera app
         # offer "Open in PulsHealth" for that code, and lets a pairing link be
@@ -63,14 +63,14 @@ targets:
             CFBundleTypeRole: Editor
             CFBundleURLSchemes:
               - puls
-        # The server may live on the LAN (a NAS, a Raspberry Pi) — reachable over
+        # The database may live on the LAN (a NAS, a Raspberry Pi) — reachable over
         # plain http only with this ATS exception, which is scoped to local
         # hosts (unqualified names, *.local, private IP ranges) and leaves
         # every other connection HTTPS-only. Talking to such a host also
         # triggers the local-network permission prompt, hence the description.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
-        NSLocalNetworkUsageDescription: PulsHealth connects to the health server you configure, which may be on your local network.
+        NSLocalNetworkUsageDescription: PulsHealth connects to the database you set up, which may be on your local network.
         # Background task identifiers derive from the bundle ID (Xcode expands
         # build settings in Info.plist values), matching what
         # BackgroundSyncScheduler registers, so a fork with its own bundle ID
