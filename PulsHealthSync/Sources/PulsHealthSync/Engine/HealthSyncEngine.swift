@@ -246,7 +246,11 @@ public actor HealthSyncEngine {
         return read
     }
 
-    public func requestAuthorization() async throws {
+    /// Ask for read access to the whole catalog. `.declined` is the user's
+    /// Don't Allow on iOS 27's history page, not an error — see
+    /// `HealthAccessRequestOutcome`.
+    @discardableResult
+    public func requestAuthorization() async throws -> HealthAccessRequestOutcome {
         guard HKHealthStore.isHealthDataAvailable() else {
             throw SyncError.healthDataUnavailable
         }
@@ -254,8 +258,28 @@ public actor HealthSyncEngine {
         let types = readAuthorizationTypes(
             for: HealthTypeCatalog.all.map(\.identifier),
             includeRoutes: config.includeWorkoutRoutes)
-        try await healthStore.requestAuthorization(toShare: [], read: types)
-        await eventLog.log(.info, "HealthKit read authorization requested for \(types.count) types")
+        return try await presentAuthorization(read: types, describing: "\(types.count) types")
+    }
+
+    /// The one call to HealthKit's permission sheet. Its second page on
+    /// iOS 27 ("How much data would you like to share?") throws
+    /// `errorAuthorizationDenied` for Don't Allow, where the first page's
+    /// Don't Allow returns normally — both are the user's answer, so both
+    /// return, and only a real failure throws.
+    private func presentAuthorization(
+        read types: Set<HKObjectType>, describing what: String
+    ) async throws -> HealthAccessRequestOutcome {
+        do {
+            try await healthStore.requestAuthorization(toShare: [], read: types)
+        } catch {
+            guard let outcome = HealthAccessRequestOutcome.classify(error) else { throw error }
+            await eventLog.log(
+                .info,
+                "Health access for \(what): Don't Allow on the history page — nothing granted; these types stay unread until access is allowed")
+            return outcome
+        }
+        await eventLog.log(.info, "HealthKit read authorization requested for \(what)")
+        return .answered
     }
 
     /// Medications use HealthKit's per-object authorization: the user picks which
@@ -271,16 +295,18 @@ public actor HealthSyncEngine {
 
     /// Request read authorization for the given catalog types only (plus workout
     /// routes when workouts are included). Used to prompt for just-enabled types
-    /// without dragging the whole catalog into the sheet.
-    public func requestAuthorization(for identifiers: [String]) async throws {
+    /// without dragging the whole catalog into the sheet. `.declined` is the
+    /// user's Don't Allow on iOS 27's history page, which leaves the types
+    /// undetermined; it is an answer, not an error.
+    @discardableResult
+    public func requestAuthorization(for identifiers: [String]) async throws -> HealthAccessRequestOutcome {
         guard HKHealthStore.isHealthDataAvailable() else {
             throw SyncError.healthDataUnavailable
         }
         let includeRoutes = await store.configuration.includeWorkoutRoutes
         let types = readAuthorizationTypes(for: identifiers, includeRoutes: includeRoutes)
-        guard !types.isEmpty else { return }
-        try await healthStore.requestAuthorization(toShare: [], read: types)
-        await eventLog.log(.info, "HealthKit read authorization requested for \(types.count) enabled types")
+        guard !types.isEmpty else { return .answered }
+        return try await presentAuthorization(read: types, describing: "\(types.count) enabled types")
     }
 
     /// True when iOS would still show the permission sheet for some catalog type —

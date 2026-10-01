@@ -228,3 +228,30 @@ public enum ReadableHistory {
         return [:]
     }
 }
+
+/// What a Health permission request came back with.
+public enum HealthAccessRequestOutcome: Sendable, Equatable {
+    /// iOS showed its sheet and the user answered it, or there was nothing
+    /// to ask. As ever, HealthKit does not say what was allowed.
+    case answered
+    /// The user chose Don't Allow on iOS 27's second page, "How much data
+    /// would you like to share?". `requestAuthorization` throws
+    /// `errorAuthorizationDenied` for it and the types stay undetermined. It
+    /// is the user's answer, not a failure: nothing is shown as an error, and
+    /// the types are read like any others the user has not allowed.
+    case declined
+
+    /// `.declined` for the error page two's Don't Allow throws; nil for any
+    /// other error, which is a real failure. (Don't Allow on the first page
+    /// returns normally, as it always has.)
+    public static func classify(_ error: Error) -> HealthAccessRequestOutcome? {
+        if let error = error as? HKError {
+            return error.code == .errorAuthorizationDenied ? .declined : nil
+        }
+        let nsError = error as NSError
+        guard nsError.domain == HKErrorDomain,
+              nsError.code == HKError.Code.errorAuthorizationDenied.rawValue
+        else { return nil }
+        return .declined
+    }
+}

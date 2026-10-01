@@ -225,6 +225,27 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
     }
 }
 
+@Suite struct HealthAccessOutcomeTests {
+    /// What iOS 27 threw on the simulator for Don't Allow on the history
+    /// page: com.apple.healthkit code 4, "The user denied authorization."
+    @Test func dontAllowOnTheHistoryPageIsAnAnswer() {
+        #expect(HealthAccessRequestOutcome.classify(HKError(.errorAuthorizationDenied)) == .declined)
+        let bridged = NSError(
+            domain: HKErrorDomain, code: 4,
+            userInfo: [NSLocalizedDescriptionKey: "The user denied authorization."])
+        #expect(HealthAccessRequestOutcome.classify(bridged) == .declined)
+    }
+
+    @Test func everythingElseIsStillAFailure() {
+        #expect(HealthAccessRequestOutcome.classify(HKError(.errorAuthorizationNotDetermined)) == nil)
+        #expect(HealthAccessRequestOutcome.classify(HKError(.errorHealthDataUnavailable)) == nil)
+        #expect(HealthAccessRequestOutcome.classify(HKError(.errorInvalidArgument)) == nil)
+        #expect(HealthAccessRequestOutcome.classify(NSError(domain: NSCocoaErrorDomain, code: 4)) == nil)
+        #expect(HealthAccessRequestOutcome.classify(URLError(.timedOut)) == nil)
+        #expect(HealthAccessRequestOutcome.classify(SyncError.healthDataUnavailable) == nil)
+    }
+}
+
 @Suite struct ReadableHistoryStateTests {
     private func tempDirectory() throws -> URL {
         let dir = FileManager.default.temporaryDirectory
