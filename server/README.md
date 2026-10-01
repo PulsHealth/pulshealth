@@ -593,29 +593,25 @@ as or read for, defaulting to the seeded default user.
 
 ## Product API
 
-The product read API is a separate Go service bound to loopback on port 8081.
-Expose it through an authenticated HTTPS proxy such as Tailscale Serve; do not
-publish the bearer-token endpoint directly on the LAN. It does not share the
-phone ingest token: clients send `Authorization: Bearer $PULS_API_TOKEN`, while
-ingest keeps using `PULS_TOKEN` on port 8080. The service connects to Postgres
-as the read-only `api_reader` role. That role is limited to schema usage plus
-`SELECT` grants; it is not the ingest/write credential.
+The product read API is a separate Go service on loopback port 8081; expose
+it only through an authenticated HTTPS proxy (see "Exposing the server").
+Clients send `Authorization: Bearer $PULS_API_TOKEN` — not the phone's
+ingest token — and the service connects to Postgres as the read-only
+`api_reader` role (schema usage plus `SELECT` grants).
 
 **Whose data.** Every `/v1` request is answered for one user: `PULS_USER_ID`
-unless the query carries `user=<uuid>`. Naming anyone else is allowed only when
-the service runs with `PULS_MULTI_USER=true` (`.env`, default `false`);
-otherwise it is a `403 {"error":"multi-user reads are disabled"}` — never a
-quiet answer for the default user — and a value that is not a UUID is a
-`400`. Neither counts against the failed-authentication limit (a valid token
-mis-addressed a request; that is not a guess at the token). There is no
-existence check: an unknown id reads as a user with no data. `GET /v1/users`
-is the discovery surface — every user with the gate on, only the default with
-it off — each with name, e-mail, `createdAt`, `lastSync`, `batches` and
-`uploadedSamples` from the `batches` log, plus `default` and `multiUser` so a
-client can tell what the deployment will answer. Turning the gate on widens
-what the one static `PULS_API_TOKEN` reads from one person to everyone on the
-server; `/openapi.json` describes the parameter on every scoped operation, so
-a ChatGPT Action built from it gets the same reach.
+unless the query carries `user=<uuid>`. Naming anyone else needs
+`PULS_MULTI_USER=true` (default `false`); otherwise it is a `403
+{"error":"multi-user reads are disabled"}`, never a quiet answer for the
+default user. A value that is not a UUID is a `400`. Neither counts against
+the failed-authentication limit — the token was valid. An unknown id reads
+as a user with no data. `GET /v1/users` lists every user with the gate on
+(only the default with it off), each with name, e-mail, `createdAt`,
+`lastSync`, `batches` and `uploadedSamples`, plus `default` and `multiUser`
+so a client can tell what the deployment will answer. **Turning the gate on
+widens what the one `PULS_API_TOKEN` reads from one person to everyone on
+the server** — and to any ChatGPT Action built from `/openapi.json`, which
+describes the parameter.
 
 ```bash
 curl -s -H "Authorization: Bearer $PULS_API_TOKEN" http://localhost:8081/v1/users
@@ -623,36 +619,24 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
   "http://localhost:8081/v1/metrics/latest?types=HKQuantityTypeIdentifierHeartRate&user=<uuid>"
 ```
 
-`/v1/catalog/types` is cached briefly by the API service because it computes
-per-type row counts and time bounds. It includes aggregate-only types;
-`rawRows` and `aggregateRows` name the two storage grains and `rows` is their
-sum. Timestamps are epoch milliseconds, time ranges use `[start, end)`, and
-valid queries with no matching rows return empty arrays rather than errors.
+Timestamps are epoch milliseconds, ranges are `[start, end)`, and a valid
+query with no matching rows returns an empty array. `/v1/catalog/types` is
+cached briefly (it counts rows per type); it includes aggregate-only types,
+with `rawRows` and `aggregateRows` per storage grain and `rows` their sum.
 
 **Daily metrics need an aggregate, not just raw rows.** `metric_daily` — and
 so `/v1/metrics/daily`, Grafana's daily panels and the web viewer's daily
-charts — derives a type's cumulative/discrete semantics from `aggregate_series`
-(`db/migrations/009_metric_daily.sql`), a table only an aggregate line writes.
-A type with millions of raw samples and no aggregate configured has latest
-readings and intraday values but no daily row. This is why the phone uploads a
-bounded recent window of aggregates *before* its raw sweep on a first
-backfill (`syncRecentAggregates`): without it a fresh install shows nothing
-daily until the whole history has landed.
+charts — takes a type's cumulative/discrete semantics from
+`aggregate_series` (`db/migrations/009_metric_daily.sql`), which only
+aggregate lines write. A type with raw samples and no aggregate configured
+has latest readings and intraday values but no daily row. That is why the
+phone uploads a recent window of aggregates before its raw sweep on a first
+backfill.
 
-The service publishes its own discovery surface:
-
-- `GET /` — JSON index with docs and OpenAPI links.
-- `GET /docs` — browser-readable endpoint reference.
-- `GET /openapi.json` — OpenAPI 3.1 document for tools and downstream services.
-- `GET /healthz` — liveness and DB ping.
-
-Other services should store the base URL as `PULS_API_BASE_URL` and the bearer
-token as `PULS_API_TOKEN`.
-
-```bash
-curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
-  http://localhost:8081/v1/catalog/types | python3 -m json.tool
-```
+The service describes itself at `GET /` (a JSON index), `GET /docs` (a
+browser-readable reference) and `GET /openapi.json` (OpenAPI 3.1). Other
+services should store the base URL as `PULS_API_BASE_URL` and the token as
+`PULS_API_TOKEN`. The endpoints:
 
 - `GET /v1/users`
 - `GET /v1/profile`
@@ -670,81 +654,54 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
 - `GET /v1/export?format=csv|jsonl&dataset=...&start=...&end=...`
 - `GET /healthz`
 
-Every `/v1` route but `/v1/users` also takes the optional `user` parameter
-above.
+Every `/v1` route but `/v1/users` takes the optional `user` parameter above.
 
-`/v1/sleep/daily` returns one row per sleep session rather than one per
-calendar day: a session is attributed to the local day it **ends** on (the
-wake-up day, as Apple Health does it) and samples more than three hours apart
-start a new session, so a nap is its own row. Durations are minutes.
-Overlapping sources are never summed — an iPhone, a Watch and a third-party
-app can all record the same night, so `inBedMinutes` is the highest
-single-source total and `asleepMinutes` with the whole `stages` breakdown come
-together from the source that recorded the most sleep, the same
-highest-single-source rule the web viewer's sleep series uses. Sleep values
-are decoded through `category_labels`, so a stage is never a bare integer.
-
-`/v1/samples` serves the raw records of exactly one quantity or category type,
-ordered by start time, at most 31 days per request (`limit` defaults to 1000
-and caps at 5000; page with `nextOffset`). These are **not** deduplicated
-across devices — that is what `/v1/metrics/daily` is for. An unknown
-identifier, a non-sample kind, or a longer range is a `400`.
-
-`/v1/workouts/{uuid}/series` reads `workout_series_points` and downsamples
-each stream by bucket-averaging while keeping the true first and last point
-(`maxPoints` defaults to 500, caps at 5000); `totalPoints` says how many were
-recorded. `/v1/state-of-mind` returns logged State of Mind entries, at most
-366 days per request.
-
-`/v1/summary` returns the last `range` calendar days (`7d` by default;
-`14d`, `30d`, `90d`; ending today in `PULS_TIME_ZONE`) as one **markdown
-page** of under sixty lines, for pasting into a chat that has no MCP
-connection ([`docs/ai.md`](../docs/ai.md)): a header naming the user, the
-days and the zone, then a section for each kind of data that exists —
-activity (steps, active energy, exercise minutes, stand hours as daily means
-and totals), heart (resting heart rate, HRV), sleep (time asleep per night),
-workouts (count, time, distance, most frequent activities), body (newest
-weight and body fat) — and a coverage line (last sync, days with data, and
-the deduplication reminder). It reads the same daily surfaces as the
-endpoints above — `metric_daily`, `activity_summaries`, the sleep nights,
-the workout summaries, the newest sample of two body types — and never a
-raw hypertable, so it is cheap. `format=json` returns the same numbers as
-a `Summary` object; `/openapi.json` describes both.
-
-`/v1/export` returns a whole range as a **file** — streamed CSV or JSONL,
-`Content-Disposition: attachment` — instead of a JSON document, for a
-spreadsheet or a notebook. `dataset` is one of `daily_metrics`, `samples`,
-`workouts`, `sleep`, `activity`, `state_of_mind`, each taking the same filters
-as the endpoint it comes from. Ranges are capped at 31 days for `samples`, as
-on `/v1/samples`, and 366 days for the rest — the cap `/v1/sleep/daily` and
-`/v1/state-of-mind` already apply, and deliberately stricter than
-`/v1/metrics/daily`, `/v1/activity/summary` and `/v1/workouts`, which are
-bounded by a page size instead. The rows go out as they are read, so the
-response is chunked and nothing is buffered to the size of the export; because
-each download holds a database connection for its whole length, at most two
-run at once and a third gets a `503` with `Retry-After`. `tools/puls-export`
-is a small CLI for it. Columns, formats and the failure modes are in
-[`docs/export.md`](../docs/export.md).
+- **`/v1/sleep/daily`** returns one row per sleep session, attributed to the
+  local day it **ends** on (the wake-up day, as Apple Health does it);
+  samples more than three hours apart start a new session, so a nap is its
+  own row. Durations are minutes. Overlapping sources are never summed:
+  `inBedMinutes` is the highest single-source total, and `asleepMinutes` and
+  the `stages` breakdown come from the source that recorded the most sleep —
+  the rule the web viewer uses too. Stages are decoded through
+  `category_labels`, never bare integers.
+- **`/v1/samples`** serves the raw records of one quantity or category type,
+  by start time, at most 31 days per request (`limit` defaults to 1000, caps
+  at 5000; page with `nextOffset`). They are **not** deduplicated across
+  devices — `/v1/metrics/daily` is. An unknown identifier, a non-sample kind
+  or a longer range is a `400`.
+- **`/v1/workouts/{uuid}/series`** downsamples each stream of
+  `workout_series_points` by bucket-averaging, keeping the true first and
+  last point (`maxPoints` defaults to 500, caps at 5000); `totalPoints` is
+  the recorded count. **`/v1/state-of-mind`** allows at most 366 days per
+  request.
+- **`/v1/summary`** renders the last `range` calendar days (`7d` default;
+  `14d`, `30d`, `90d`; ending today in `PULS_TIME_ZONE`) as one **markdown
+  page** of under sixty lines, for pasting into a chat without an MCP
+  connection ([`docs/ai.md`](../docs/ai.md)): activity, heart, sleep,
+  workouts and body sections for whatever data exists, and a coverage line.
+  It reads only the daily surfaces above, never a raw hypertable, so it is
+  cheap. `format=json` returns the same numbers as a `Summary` object.
+- **`/v1/export`** streams a whole range as a CSV or JSONL **file**
+  (`Content-Disposition: attachment`). `dataset` is `daily_metrics`,
+  `samples`, `workouts`, `sleep`, `activity` or `state_of_mind`, each with
+  its source endpoint's filters; ranges are capped at 31 days for `samples`
+  and 366 for the rest. Rows go out as they are read, nothing is buffered,
+  and since each download holds a database connection for its whole length,
+  at most two run at once — a third gets a `503` with `Retry-After`.
+  `tools/puls-export` is a CLI for it; columns and failure modes are in
+  [`docs/export.md`](../docs/export.md).
 
 ```bash
 curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
   "http://localhost:8081/v1/export?format=csv&dataset=sleep&start=1767225600000&end=1798761600000"
 ```
 
-Three of these endpoints need tables beyond the sample ones: `/v1/samples`
-and `/v1/sleep/daily` read `sources` and `category_labels`, and `/v1/users`
-aggregates `batches` (no credential lives there — a batch's token is an
-integer id into `device_tokens`, which `api_reader` cannot read). All three
-are on the exact grant list in `db/migrations/099_read_roles.sh`, and that
-script runs on every `docker compose up -d`, so an existing install picks the
-grants up on its next migrate run — no manual step.
-
-Fixture-writing integration tests for this service require
-`PULS_API_WRITE_INTEGRATION_TESTS=1` and should not be run against live or
-shared databases. They read through `DATABASE_URL` and write fixtures through
-`ADMIN_DATABASE_URL` (falling back to `DATABASE_URL`), so pointing
-`DATABASE_URL` at `api_reader` and `ADMIN_DATABASE_URL` at the superuser
-exercises the role's grants as well as the queries.
+Besides the sample tables, `/v1/samples` and `/v1/sleep/daily` read
+`sources` and `category_labels`, and `/v1/users` reads `batches` (which holds
+no credential — a batch's token is an integer id into `device_tokens`, which
+`api_reader` cannot read). All are on the exact grant list in
+`db/migrations/099_read_roles.sh`, re-applied on every `docker compose up
+-d`.
 
 ### Verify ingest with curl
 
