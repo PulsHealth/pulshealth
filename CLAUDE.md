@@ -446,20 +446,17 @@ entitlements). Set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`
 
 - `HKQueryAnchor` blobs are opaque NSKeyedArchiver data — never inspect or
   synthesize them; reset state instead (`Settings → Reset All Anchors`).
-- iOS 26.5 (verified on 23F77 sim): the permission sheet silently omits blood
-  pressure systolic/diastolic — alone they flash-dismiss the sheet, mixed-in they
-  just don't appear, and they stay `.shouldRequest` forever (FB22735935). No
-  in-app fix exists (the BP correlation type is disallowed in auth requests —
-  ObjC exception). `AppModel` remembers such undeterminable types per session
-  and shows a hint pointing at Settings → Privacy & Security → Health.
-  **When an iOS release after 26.5 ships:** retest on the new sim runtime
-  (fresh sim, enable only the two BP types, leave the Synced Data screen — the
-  sheet must list "Blood Pressure" and stay up). If fixed, soften the
-  iOS-26.5-specific copy in `AppModel.noteUndeterminableTypes()` and trim this
-  bullet to a historical note. Keep the skip-and-hint mechanism itself — it is
-  version-agnostic and self-heals (session-only memory, retries each launch).
-  No data/anchor work needed: once BP is granted by any means, normal backfill
-  covers all history.
+- Historical, iOS 26 only: the permission sheet silently omits blood pressure
+  systolic/diastolic — alone they flash-dismiss it, mixed in they just don't
+  appear, and they stay `.shouldRequest` forever (FB22735935; reproduced on the
+  26.5 23F77 sim). **Fixed in iOS 27.0** (24A434 sim, 2026-09-30: the sheet
+  lists "Blood Pressure" and stays up, alone or mixed). No in-app fix exists for
+  26.x (the BP correlation type is disallowed in auth requests — ObjC
+  exception), so keep the skip-and-hint mechanism: `AppModel` remembers
+  undeterminable types per session and points at Settings → Privacy & Security
+  → Health, naming the iOS 26 bug only below iOS 27. It is version-agnostic and
+  self-heals (session-only memory, retries each launch), and once BP is granted
+  by any means normal backfill covers all history.
 - Statistics queries crash on illegal option×type combos: HealthKit raises
   NSInvalidArgumentException when the query *executes* (uncatchable from Swift;
   construction succeeds, so there is no early warning). Only ever offer/construct

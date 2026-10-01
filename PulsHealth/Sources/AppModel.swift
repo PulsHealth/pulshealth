@@ -440,10 +440,18 @@ final class AppModel {
         let names = stillPending
             .map { HealthTypeCatalog.descriptor(for: $0)?.displayName ?? $0 }
             .joined(separator: ", ")
+        // Blood pressure is the known case: iOS 26 leaves it off the sheet
+        // (FB22735935); iOS 27.0 lists it again. The hint stays for any type
+        // a sheet leaves out, so it only names the bug where it applies.
+        let cause: String
+        if #available(iOS 27, *) {
+            cause = ""
+        } else {
+            cause = " (a known iOS 26 bug that iOS 27 fixes)"
+        }
         authorizationHint = """
-        iOS didn't include some types in the permission sheet (a known iOS 26.5 \
-        bug): \(names). Enable them manually in Settings → Privacy & Security → \
-        Health → PulsHealth.
+        iOS didn't include some types in the permission sheet\(cause): \(names). \
+        Enable them manually in Settings → Privacy & Security → Health → PulsHealth.
         """
     }
 
