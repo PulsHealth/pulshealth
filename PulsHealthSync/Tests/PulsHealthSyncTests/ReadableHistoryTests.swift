@@ -622,23 +622,29 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
     /// The case that matters: a HealthKit call that does not honour
     /// cancellation, and returns late or never. The caller is let go at the
     /// limit all the same.
+    ///
+    /// The stuck call takes two minutes and the ceiling is one: what these
+    /// tests tell apart — let go at the limit, or kept until the call
+    /// returns — must stay minutes apart, because a loaded CI runner
+    /// stretches every wait (a 3 s call against a 2 s ceiling failed at
+    /// 2.05 s on both runners).
     @Test func aCallThatIgnoresCancellationIsCutOffAtTheLimit() async {
         let started = ContinuousClock.now
         await #expect(throws: ReadableHistory.TimedOut.self) {
             try await ReadableHistory.withTimeout(.milliseconds(200)) { () async -> Int in
                 await withCheckedContinuation { (continuation: CheckedContinuation<Int, Never>) in
-                    DispatchQueue.global().asyncAfter(deadline: .now() + 3) { continuation.resume(returning: 1) }
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { continuation.resume(returning: 1) }
                 }
             }
         }
-        #expect(ContinuousClock.now - started < .seconds(2))
+        #expect(ContinuousClock.now - started < .seconds(60))
     }
 
     @Test func cancellingTheCallerEndsTheWait() async {
         let task = Task {
             try await ReadableHistory.withTimeout(.seconds(30)) { () async -> Int in
                 await withCheckedContinuation { (continuation: CheckedContinuation<Int, Never>) in
-                    DispatchQueue.global().asyncAfter(deadline: .now() + 3) { continuation.resume(returning: 1) }
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { continuation.resume(returning: 1) }
                 }
             }
         }
@@ -646,7 +652,7 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
         let started = ContinuousClock.now
         task.cancel()
         let result = await task.result
-        #expect(ContinuousClock.now - started < .seconds(2))
+        #expect(ContinuousClock.now - started < .seconds(60))
         #expect(throws: CancellationError.self) { try result.get() }
     }
 }
