@@ -17,18 +17,9 @@ behind them.
   over several days; the iOS 26 continued-processing first run; leaving the
   app mid-backfill; an export on a device; and on iOS 27, limiting a type's
   history, widening it again, and the re-sweep that follows.
-- **Wording from before 1.6.** Three event-log and error messages in
-  `HealthSyncEngine.swift` and `MergedSync.swift` send the user to a Dashboard
-  the app no longer has, and the export failure card for an empty selection
-  (`ExportFailureCopy`) points at a Data Types tab it no longer has.
-- **Type page:** the aggregate preview's spinner overlaps the chart's unit
-  label, and "Could not compute" renders larger on iOS 27.
 - **Explore's search field:** on iOS 27 a `.navigationBarDrawer` search field
   cannot both show on arrival and scroll away. A fix that makes it the list's
   first row exists on a branch, not yet on main.
-- **The connection test** (`ConnectionTest`) reports a 403 — a device token
-  bound to a different user ID than the phone's — as a rejected token, the
-  same as a wrong one. It should say which.
 
 ## 2. Smaller leftovers
 
