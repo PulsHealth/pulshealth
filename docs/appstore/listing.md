@@ -227,7 +227,7 @@ flags.
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
 | Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
 | Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.6`, ahead of the `1.4` on the store — see [Release record](README.md#release-record) |
-| Build | `CURRENT_PROJECT_VERSION`, currently `17`, ahead of the shipped `15` (16 went to TestFlight only) |
+| Build | `CURRENT_PROJECT_VERSION`, currently `18`, ahead of the shipped `15` (16 and 17 went to TestFlight only) |
 | Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
@@ -262,11 +262,11 @@ below says the same things in 1.6's terms):
 • Fix: a data type whose samples could not be converted is no longer marked as fully synced.
 ```
 
-1.6 (not yet submitted; trim to taste):
+1.6 (final text):
 
 ```
 • A new look, in four tabs: Explore, Export, Sync and Settings.
-• Explore: every Apple Health type by category. Analyze one to see its past year: how many samples you have, from which apps and devices, how the values are spread and how much arrives each day, with a short article on what the type measures.
+• Explore: every Apple Health type by category. Open one to see its past year: how many samples you have, from which apps and devices, how the values are spread and how much arrives each day.
 • Export: build each export on its own. Pick the types and any hourly or daily series, choose a preset range or your own start and end dates, and write CSV or JSONL files, zipped into one if you like. No server needed.
 • Sync: one place for the server, the synced data, the status of each type and the activity log.
 • Setup no longer asks for a server. Choose your data, start exploring, and connect a server from the Sync tab whenever you like.
