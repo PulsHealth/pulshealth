@@ -54,7 +54,8 @@ Sources/PulsHealthSync/
 │   │                                (records the dates, re-sweeps widened types).
 │   └── Reconciliation.swift         Per-UTC-month UUID XOR digests vs GET /v1/digest;
 │                                    re-uploads missing samples, deletes server orphans
-│                                    — never before the earliest readable date.
+│                                    — never before the earliest readable date, and
+│                                    never from a month HealthKit returned nothing for.
 ├── Anchors/
 │   ├── SyncStateStore.swift         Actor persisting config + per-type state (anchor
 │   │                                blob, counters, timestamps, errors) as atomic JSON
@@ -480,7 +481,9 @@ Two consequences, both handled here:
   start at or after the date, so no `null` lands on unreadable history and no
   partial value on the bucket that straddles it; the rings start at the first
   whole readable day; reconciliation compares from the date and throws
-  `readableHistoryUnknown` rather than guess when HealthKit cannot say. The raw
+  `readableHistoryUnknown` rather than guess when HealthKit cannot say (and
+  a type HealthKit lists with a date is the one case reconciliation knows it
+  may read — see "How reconciliation runs"). The raw
   sweep adds what HealthKit returns and deletes only HealthKit's own
   tombstones, and the route and stream phases only follow workouts HealthKit
   returns and never overwrite, so neither needs a clamp.
@@ -552,6 +555,39 @@ locked, when every ring query fails with `errorDatabaseInaccessible`; an
 observer wake is by definition a moment when HealthKit is readable. The
 refresh is rate-limited to hourly via `ActivitySummaryState.lastComputedAt`,
 because today's ring mutates all day and observer wakes are frequent.
+
+## How reconciliation runs
+
+HealthKit purges deletion tombstones after a while, so an observer or
+scheduled sync can miss a delete. *Reconcile with Database* on a type's sync
+detail (`HealthSyncEngine.reconcile(type:)`, quantity, category and workout
+kinds only) repairs that by hand: it asks the server for one UUID XOR digest
+per UTC month (`GET /v1/digest`), queries HealthKit for the same months by
+start date, and for every month whose digest or count differs fetches the
+server's UUIDs (`GET /v1/uuids`), re-uploads what the server lacks and sends
+a deletion for every server row the device did not return. The comparison
+starts at the sync's start date, or at the type's earliest readable date when
+iOS 27 limits it (above).
+
+**A month the device returned nothing for is left alone.** A type whose Health
+read access is off — switched to *None* in Settings, or never granted — answers
+every query with an empty result and no error, and
+`HKHealthStore.authorizationStatus(for:)` reports only *sharing* (write)
+status; nothing tells such a type from a month the user cleared in Health. So
+where HealthKit returned no samples and the server has rows,
+`ReconcileDigest.orphanVerdict` is `.withhold`: no deletion goes out (there is
+nothing to re-upload either), the month is counted in the report's
+`windowsUnverified` with its rows in `orphanDeletionsWithheld`, and the
+summary says so. The one proof of read access is iOS 27 listing the type in
+`earliestAuthorizedSampleDate(for:)` just now — a type set to None drops out
+of that answer — so with `ReadableLimit.isConfirmed` an empty month from the
+confirmed date on is the truth and its orphans are deleted. A run that read
+nothing in any month while the server has rows throws
+`SyncError.reconciliationUnreadable` (the app shows it as the last error)
+rather than record itself as in sync; a month with real samples still has its
+missing ones deleted, as before. The cost is that a type the user emptied in
+Health keeps its server rows until something of it is readable again; the
+alternative was a type switched off in Settings wiping its server copy.
 
 ## On-device export
 

@@ -421,7 +421,14 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   (SQLSTATE 53400 → 500s, sync stalls). `InsertBatch` lifts the limit via
   `SET LOCAL` as a safety net; `TestIntegration_DeletionsOnCompressedChunk`
   guards the deletion path.
-- Reconciliation (digest/UUID repair) covers only quantity/category/workout kinds.
+- Reconciliation (digest/UUID repair) covers only quantity/category/workout
+  kinds, and **never deletes from a month HealthKit returned nothing for**
+  (`ReconcileDigest.orphanVerdict`): read denial is undetectable —
+  `authorizationStatus(for:)` speaks only for writes, and a denied type
+  answers every query empty without an error — so an empty month is treated
+  as unreadable, not as cleared, unless iOS 27 has just listed the type with
+  an earliest readable date (`ReadableLimit.isConfirmed`). A run that reads
+  nothing anywhere throws `reconciliationUnreadable`.
 - The ingest container is distroless: no shell, debug via `docker compose logs ingest`.
 - `server/mcp` is a read-only client of the product API (`server/api/docs.go`
   is its contract) and must stay one: no database URL, no writes, every tool
