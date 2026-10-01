@@ -277,12 +277,14 @@ public struct LimitedHistorySummary: Sendable, Equatable {
         self.latest = latest
     }
 
-    /// "Steps", "Heart Rate and Steps", "Heart Rate, Steps and 4 more types":
-    /// at most two names, so the sentence stays a sentence.
+    /// "Steps", "Heart Rate and Steps", "Body Weight, Heart Rate and Steps",
+    /// "Body Weight, Heart Rate and 4 more types": every name up to three,
+    /// then two and a count, so the sentence stays a sentence.
     public var typesText: String {
         switch typeNames.count {
         case 1: return typeNames[0]
         case 2: return "\(typeNames[0]) and \(typeNames[1])"
+        case 3: return "\(typeNames[0]), \(typeNames[1]) and \(typeNames[2])"
         default: return "\(typeNames[0]), \(typeNames[1]) and \(typeNames.count - 2) more types"
         }
     }

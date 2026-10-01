@@ -103,7 +103,10 @@ extension HealthSyncEngine {
                 await store.recordReadableSince(identifier, since)
                 await eventLog.log(
                     .info, type: identifier,
-                    "Health access is limited to data from \(Self.day(since)) on — what was already synced stays")
+                    "Health access is limited to data from \(Self.day(since)) on"
+                        + (ReadableHistory.hasRawProgress(state)
+                            ? " — what was already synced stays on the server"
+                            : " — older history is not read until access is widened"))
             case .widened where !ReadableHistory.hasRawProgress(state):
                 await store.recordReadableSince(identifier, since)
             case .widened:

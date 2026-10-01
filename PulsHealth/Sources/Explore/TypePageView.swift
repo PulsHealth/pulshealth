@@ -730,7 +730,7 @@ private struct AggregatePreviewSection: View {
                 // The explorer starts the series at the first whole bucket
                 // it may read; say why the chart starts late rather than
                 // let it look like missing data.
-                Text("Starts \(since.formatted(date: .abbreviated, time: .omitted)): iOS lets PulsHealth read \(descriptor.displayName) only from then on.")
+                Text("Nothing before \(since.formatted(date: .abbreviated, time: .omitted)): iOS lets PulsHealth read \(descriptor.displayName) only from then on.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

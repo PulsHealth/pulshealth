@@ -512,6 +512,12 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
             "HKQuantityTypeIdentifierStepCount": limit, "HKQuantityTypeIdentifierHeartRate": limit,
         ])
         #expect(two?.typesText == "Heart Rate and Steps")
+        // Three are named in full: "and 1 more types" is not a sentence.
+        let three = LimitedHistorySummary([
+            "HKQuantityTypeIdentifierBodyMass": limit, "HKQuantityTypeIdentifierHeartRate": limit,
+            HealthTypeCatalog.workoutIdentifier: limit,
+        ])
+        #expect(three?.typesText == "Body Weight, Heart Rate and Workouts")
         let many = LimitedHistorySummary([
             "HKQuantityTypeIdentifierStepCount": limit, "HKQuantityTypeIdentifierHeartRate": limit,
             "HKQuantityTypeIdentifierBodyMass": limit, HealthTypeCatalog.workoutIdentifier: limit,
