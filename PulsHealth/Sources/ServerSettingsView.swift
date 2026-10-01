@@ -35,8 +35,10 @@ struct ServerSettingsView: View {
             }
 
             Section {
+                // Verbatim prompts: as a string literal the URL became a
+                // localized key, and Text styled it as a tappable link.
                 LabeledContent("Database URL") {
-                    TextField("https://your-host:8443", text: $server.urlText)
+                    TextField("Database URL", text: $server.urlText, prompt: Text(verbatim: "https://your-host:8443"))
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -47,7 +49,7 @@ struct ServerSettingsView: View {
                         .foregroundStyle(.red)
                 }
                 LabeledContent("Token") {
-                    SecureField("Bearer token", text: $server.tokenText)
+                    SecureField("Token", text: $server.tokenText, prompt: Text(verbatim: "Bearer token"))
                 }
                 Button {
                     runConnectionTest()
