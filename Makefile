@@ -75,7 +75,7 @@ restore: ## Restore a dump, DESTROYING the current database (FILE=<path or name 
 site-dev: ## Marketing site dev server on :3000 (site/, needs bun)
 	cd site && bun install && bun run dev $(ARGS)
 
-site-build: ## Static export of the marketing site to site/out (198 pages)
+site-build: ## Static export of the marketing site to site/out
 	cd site && bun install && bun run build
 
 site-lint: ## ESLint the marketing site

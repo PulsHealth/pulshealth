@@ -13,7 +13,7 @@ an OpenAPI document, Grafana dashboards, a web viewer, and an MCP server so
 Claude, Cursor and other AI assistants can answer questions from your data.
 
 **[PulsHealth is on the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354)** —
-free, iPhone. The backend is yours to run; see [Quickstart](#quickstart).
+free, iPhone and iPad. The backend is yours to run; see [Quickstart](#quickstart).
 
 **No server? Explore and export.** The **Explore** tab shows what Apple Health
 holds for every type: how many samples, since when, from which apps and
