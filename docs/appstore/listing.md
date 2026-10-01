@@ -50,7 +50,9 @@ Sync Apple Health to a server you run yourself: full history first, then live up
 ## Description
 
 Limit 4000. Opens by saying where the data goes, because that is the one thing
-a reader has to understand before installing.
+a reader has to understand before installing. The count under the block is
+characters; budget for App Store Connect counting each of its 36 line breaks
+as two (3,958 today), as the review notes do.
 
 ```
 PulsHealth copies the health data on your iPhone to a server you run yourself.
@@ -63,10 +65,10 @@ No server yet? The app is still useful. Explore shows what is in Apple Health, t
 
 WHAT IT DOES
 
-• Full history first. The initial backfill exports everything from the start date you choose, with live progress and an ETA, and saves its place after every batch so it is safe to interrupt.
+• Full history first. The initial backfill exports everything from the start date you choose, and saves its place after every batch so it is safe to interrupt.
 • Then it keeps up. New samples follow automatically — in the foreground whenever you open the app, and in the background when iOS allows it.
 • You pick the data. Around 80 HealthKit types grouped the way Apple Health groups them: activity, heart, body, respiratory, sleep, nutrition, vitals, workouts and more. Turn on a starter set in one tap, or choose type by type.
-• See what you have. Explore lists every type by category. Analyze one to see its past year: how many samples, from which apps and devices, how the values are spread and how much arrives each day, plus a short article on what the type measures. Summaries only; no samples are kept.
+• See what you have. Explore lists every type by category. Open one to see its past year: how many samples, from which apps and devices, how the values are spread and how much arrives each day, plus a line on what the type measures. Summaries only; no samples are kept.
 • More than raw numbers. Workouts carry their GPS route and per-second sensor series; activity rings come across as daily summaries; and any quantity type can also be sent as on-device aggregates (hourly sums, daily averages) instead of, or alongside, raw samples.
 • Export to files. With or without a server, build each export on its own: the types and series you want, for the last 30 days, 90 days, a year, all time, or a date range you choose, to CSV (one file per kind of data, for spreadsheets) or JSONL (complete, and replayable into a server later), then save to Files or share.
 • Set up by scanning. When you want a server, the Sync tab takes the pairing QR code it prints, with its URL, token and user ID in it. Scan it and you are connected — or type the three values in by hand if you prefer.
@@ -92,7 +94,7 @@ REQUIREMENTS
 iPhone running iOS 17 or later. Syncing needs a server you can reach; exporting to files does not. Apple Watch data arrives once iOS syncs it to the phone.
 ```
 
-`[3965/4000]`
+`[3922/4000]`
 
 > The description above is the **next submission's** (1.6): it adds on-device
 > export (the "No server yet?" paragraph, the "Export to files" bullet, the
@@ -225,7 +227,7 @@ flags.
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
 | Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
 | Version | `MARKETING_VERSION` in `PulsHealth/project.yml`, currently `1.6`, ahead of the `1.4` on the store — see [Release record](README.md#release-record) |
-| Build | `CURRENT_PROJECT_VERSION`, currently `17`, ahead of the shipped `15` (16 went to TestFlight only) |
+| Build | `CURRENT_PROJECT_VERSION`, currently `18`, ahead of the shipped `15` (16 and 17 went to TestFlight only) |
 | Minimum iOS | 17.0 in `project.yml`; check it against what the store listing states |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
@@ -260,11 +262,11 @@ below says the same things in 1.6's terms):
 • Fix: a data type whose samples could not be converted is no longer marked as fully synced.
 ```
 
-1.6 (not yet submitted; trim to taste):
+1.6 (final text):
 
 ```
 • A new look, in four tabs: Explore, Export, Sync and Settings.
-• Explore: every Apple Health type by category. Analyze one to see its past year: how many samples you have, from which apps and devices, how the values are spread and how much arrives each day, with a short article on what the type measures.
+• Explore: every Apple Health type by category. Open one to see its past year: how many samples you have, from which apps and devices, how the values are spread and how much arrives each day.
 • Export: build each export on its own. Pick the types and any hourly or daily series, choose a preset range or your own start and end dates, and write CSV or JSONL files, zipped into one if you like. No server needed.
 • Sync: one place for the server, the synced data, the status of each type and the activity log.
 • Setup no longer asks for a server. Choose your data, start exploring, and connect a server from the Sync tab whenever you like.
@@ -289,10 +291,11 @@ maintainer's team. The order below tells the story a browser needs:
 
 1. **Welcome** — the first-run screen: explore, export, and sync if you want.
    This one *is* honest from the simulator if a device is unavailable.
-2. **Explore with data** — the catalog by category, with counts and sparklines
-   for the analyzed types. Device only.
-3. **A Type page** — the analysis charts, the aggregate preview and the
-   article for one type (Heart Rate or Body Weight). Device only.
+2. **Explore with data** — the catalog by category, each row with its sample
+   count over the past year and when its last sample arrived. Device only.
+3. **A Type page** — the one-line description, the analysis charts (the
+   histogram with its typical range, samples over time) and the aggregate
+   preview for one type (Heart Rate or Body Weight). Device only.
 4. **Export builder** — types, a series, a custom range, CSV or JSONL. Fine
    from the simulator if the selection is realistic.
 5. **Sync status** — the status card after a backfill: real totals and
