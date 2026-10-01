@@ -510,6 +510,11 @@ Two consequences, both handled here:
   nothing (a locked device just skips); reconciliation throws; an export
   reports that it may start later than asked.
 
+One case goes unnoticed: a 1.4 or 1.5 install whose backfill ran under a
+30-day limit that was widened again before 1.6's first refresh. Its state
+carries no `readableSince`, so nothing says a re-sweep is due, and the older
+history stays off the server. Settings → Reset All Anchors re-reads it.
+
 The API exists only in the iOS 27 SDK, and CI also builds with Xcode 26.5, so
 its one call sits behind `#if compiler(>=6.4)` (Xcode 27.0 ships Swift 6.4;
 Xcode 26.5 ships 6.3.2) as well as `#available(iOS 27.0, *)`. Built with the

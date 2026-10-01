@@ -102,7 +102,8 @@ and gotchas, which are the best contributor documentation in the tree.
 ## 3. Requirements
 
 MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
-"Done" means it is in the tree; open items are in [`roadmap.md`](roadmap.md).
+"Done" means it is in the tree; open items are in [`roadmap.md`](roadmap.md),
+and so are the ones decided against (its "Not planned").
 
 ### App (R-APP)
 
@@ -118,7 +119,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | APP-8 | Onboarding: explain, Health permission, then on to syncing. | S | Done; since 1.6 the first run leaves connecting a database to the Sync tab |
 | APP-9 | Pairing from a `puls://pair?url=&token=&user=` payload. | S | Done: QR code, link, Camera app, clipboard |
 | APP-10 | Capabilities-driven UI: hide reconciliation and stats when the backend does not advertise them. | S | Done |
-| APP-11 | A non-HTTP sink persisted with the configuration so it survives cold background launches; read side behind a protocol so reconciliation degrades gracefully. | S | Open — roadmap § 5 |
+| APP-11 | A non-HTTP sink persisted with the configuration so it survives cold background launches; read side behind a protocol so reconciliation degrades gracefully. | S | Not planned until a second sink exists — roadmap, Not planned |
 | APP-12 | Local file export (NDJSON/CSV via the share sheet). | C | Done: the Export tab (`HealthExporter`, `docs/export.md`) |
 | APP-13 | The event log never holds sample UUIDs; server error bodies are truncated and scrubbed before they are kept. | S | Done (`ErrorScrubber`) |
 
@@ -146,12 +147,12 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | SRV-5 | Published images on `ghcr.io/pulshealth/{ingest,api,mcp,web}`; `compose.build.yml` for developers. | M | Done |
 | SRV-6 | Ingest connects as the scoped `ingest` role by default. | M | Done |
 | SRV-7 | Auth-failure rate limiting on ingest and the API. | S | Done |
-| SRV-8 | Per-device tokens: enroll → pending → approve; hashed at rest; last-seen; revocable; bound to a user. | S | Server side done (`make devices`); phone-side enrollment open — roadmap § 3 |
+| SRV-8 | Per-device tokens: enroll → pending → approve; hashed at rest; last-seen; revocable; bound to a user. | S | Done server side (`make devices`); phone-side enrollment not planned — roadmap, Not planned |
 | SRV-9 | Opt-in backups with retention, and a documented restore drill. | S | Done (the `backup` profile) |
-| SRV-10 | Web viewer auth, and a viewer-scoped database role instead of `grafana`. | S | Auth done (`WEB_AUTH_PASSWORD`); the role is open — roadmap § 7 |
-| SRV-11 | A second user without a volume wipe. | S | Writes, and reads through the API, viewer and MCP server, done; a per-user read token is open — roadmap § 4 |
+| SRV-10 | Web viewer auth, and a viewer-scoped database role instead of `grafana`. | S | Auth done (`WEB_AUTH_PASSWORD`); the viewer keeps the read-only `grafana` role — roadmap, Not planned |
+| SRV-11 | A second user without a volume wipe. | S | Writes, and reads through the API, viewer and MCP server, done; a per-user read token is not planned — roadmap, Not planned |
 | SRV-12 | Grafana contact point from `GRAFANA_ALERT_EMAIL`; alert thresholds documented as tunables. | S | Done |
-| SRV-13 | The API additions agents ask for first — sleep, raw samples, workout series, State of Mind — and pagination on daily metrics. | S | Endpoints done; daily metrics are not paginated — roadmap § 7 |
+| SRV-13 | The API additions agents ask for first — sleep, raw samples, workout series, State of Mind — and pagination on daily metrics. | S | Endpoints done; daily metrics are not paginated — roadmap § 3 |
 
 ### AI layer (R-AI)
 
@@ -160,7 +161,7 @@ MoSCoW: **M**ust before public launch, **S**hould for v1.0, **C**ould later.
 | AI-1 | `server/mcp`: a read-only MCP server over the product API, as a `stdio` binary and a streamable-HTTP Compose service. | M | Done |
 | AI-2 | Setup docs for Claude Desktop, Claude Code, Cursor and ChatGPT, with the "how did I sleep this week" demo. | M | Done (`docs/ai.md`) |
 | AI-3 | Export: `GET /v1/export` (CSV/JSONL) and a CLI. | S | Done (`tools/puls-export`) |
-| AI-4 | `llms.txt` on the docs site and an `AGENTS.md` in the repository. | S | Both in the repository; pulshealth.com does not serve `llms.txt` — roadmap § 7 |
+| AI-4 | `llms.txt` on the docs site and an `AGENTS.md` in the repository. | S | Both in the repository; pulshealth.com does not serve `llms.txt` — roadmap § 3 |
 | AI-5 | ChatGPT custom GPT Action from `/openapi.json`. | S | Done (`docs/ai.md`) |
 | AI-6 | `GET /v1/summary` as compact markdown to paste into any chat. | C | Done, plus `get_summary` on the MCP server |
 | AI-7 | Opt-in raw-SQL MCP tool over a read-only role. | C | Dropped: `server/mcp` is a read-only client of the product API and never holds a database URL. SQL users have `psql` and `docs/database-guide.md` |
