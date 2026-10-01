@@ -23,14 +23,11 @@ enum TypePresets {
     ]
 }
 
-/// Sync → Synced Data (and the first-run flow's type step), structured like
-/// Apple Health's Browse screen: a category list with colored icons that
-/// drills into per-category toggle pages, plus search across every type.
+/// Sync → Synced Data, structured like Apple Health's Browse screen: a
+/// category list with colored icons that drills into per-category toggle
+/// pages, plus search across every type.
 struct TypePickerView: View {
     @Environment(AppModel.self) private var model
-    /// "Synced Data" from the Sync tab; the first-run flow, where nothing is
-    /// synced yet, shows the same screen as "Choose Data".
-    var title = "Synced Data"
     @State private var searchText = ""
 
     var body: some View {
@@ -41,7 +38,7 @@ struct TypePickerView: View {
                 searchResultsSection
             }
         }
-        .navigationTitle(title)
+        .navigationTitle("Synced Data")
         .searchable(
             text: $searchText, placement: .navigationBarDrawer(displayMode: .always),
             prompt: "Search data types")

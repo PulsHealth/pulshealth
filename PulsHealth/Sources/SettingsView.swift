@@ -263,7 +263,7 @@ private struct UserRow: View {
 
 /// Icon + one-liner for a `ConnectionTestResult`, plus the advertised feature
 /// list on success so it is visible why (say) reconciliation is offered or not.
-/// Shared by the Server screen and the onboarding flow's server step.
+/// Shown by `ServerSettingsView`, under Test Connection.
 struct ConnectionTestResultRow: View {
     let result: ConnectionTestResult
 

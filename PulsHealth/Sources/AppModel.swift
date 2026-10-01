@@ -317,9 +317,10 @@ final class AppModel {
         onboardingIsRerun = false
     }
 
-    /// The flow's last step: push everything it assembled (server, user, types)
-    /// to the engine, which requests Health access for the selection and starts
-    /// backfilling the newly enabled types — the same path Save & Apply takes.
+    /// The flow's Start Exploring: push the draft (the starter set, and on a
+    /// replay whatever else is staged) to the engine, which requests Health
+    /// access for anything still undetermined and starts backfilling the newly
+    /// enabled types — the same path Save & Apply takes.
     /// The first-run flag is written first so a failure here cannot trap the
     /// user in the flow.
     func finishOnboarding() async {
@@ -337,21 +338,38 @@ final class AppModel {
         showsOnboarding = true
     }
 
-    /// Seeds the draft with the Common preset so the flow's Health-access step
-    /// has a sensible set to ask for and its type step opens on a real
-    /// selection. Only ever fills an empty draft: a replay must not overwrite
-    /// what the user already chose.
+    /// Seeds the draft with the Common preset — the starter set the flow's
+    /// Health page asks iOS about, and what Explore and Export start from.
+    /// Only ever fills an empty draft: a replay must not overwrite what the
+    /// user already chose.
     private func preselectCommonTypesIfUnset() {
         guard config.enabledTypes.isEmpty, config.aggregates.isEmpty else { return }
         config.enabledTypes = TypePresets.common
     }
 
     /// Requests Health access for the current draft without applying anything
-    /// else — the flow's dedicated permission step, run before the server and
-    /// type selection reach the engine. Types added after this step are
-    /// requested by `applyConfiguration` on the final step.
+    /// else — the flow's Health page, run before the selection reaches the
+    /// engine on its last page.
     func requestOnboardingHealthAccess() async {
         await requestAccessForEnabledTypesIfNeeded()
+    }
+
+    /// Whether the flow's Health page still has a sheet to show: some type in
+    /// the draft iOS has never asked about, other than the ones it leaves off
+    /// the sheet (`undeterminableTypes`) or the user declined on iOS 27's
+    /// history page this session — the same rule `requestAccessForEnabledTypesIfNeeded`
+    /// asks by. False lets the page be swiped past; true holds the flow on
+    /// it until iOS has been asked.
+    ///
+    /// Waits for `start()`: before it the draft is empty — a first run's
+    /// starter set is preselected there — and an empty draft would read as
+    /// nothing to ask.
+    func onboardingHealthAccessPending() async -> Bool {
+        await start()
+        let enabled = config.observedTypeIdentifiers.subtracting(declinedTypes).sorted()
+        guard !enabled.isEmpty, await engine.authorizationNeeded(for: enabled) else { return false }
+        let pending = await pendingTypes(among: enabled)
+        return !Set(pending).isSubset(of: undeterminableTypes)
     }
 
     // MARK: - Export to files
