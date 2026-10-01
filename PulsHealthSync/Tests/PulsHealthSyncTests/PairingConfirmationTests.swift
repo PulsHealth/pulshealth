@@ -106,6 +106,10 @@ import Testing
             for: .invalidServerURL(.insecureRemoteHost("puls.example.test")))
         #expect(message.contains("local-network"))
         #expect(message.contains("Nothing was changed."))
-        #expect(PairingConfirmation.rejectionMessage(for: .missingField("token")).contains("missing its token"))
+        let incomplete = PairingConfirmation.rejectionMessage(for: .missingField("token"))
+        #expect(incomplete.hasPrefix("This isn’t a complete PulsHealth pairing code."))
+        #expect(incomplete.contains("on Sync → Server"))
+        // Whoever opens the link may never have seen the server's scripts.
+        #expect(!incomplete.contains("scripts/"))
     }
 }

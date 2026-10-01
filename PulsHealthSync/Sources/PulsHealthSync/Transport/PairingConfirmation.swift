@@ -116,7 +116,7 @@ public struct PairingConfirmation: Sendable, Equatable {
     /// Title for a `puls://` link that did not parse. Deliberately unalarming:
     /// the usual cause is a truncated or stale link, not an attack, and either
     /// way nothing happened.
-    public static let rejectionTitle = "This Link Can't Be Used"
+    public static let rejectionTitle = "This Link Can’t Be Used"
 
     public static func rejectionMessage(for failure: PairingPayload.Failure) -> String {
         let reason: String
@@ -128,6 +128,6 @@ public struct PairingConfirmation: Sendable, Equatable {
             reason = failure.errorDescription ?? "It could not be read."
         }
         return reason + "\n\nNothing was changed. You can still scan the pairing code "
-            + "or enter the server details by hand."
+            + "or enter the server details by hand on Sync → Server."
     }
 }

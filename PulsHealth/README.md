@@ -270,7 +270,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   `AppModel.handleIncomingURL` only ever raises a prompt: "Pair with
   \<host\>?", which says when accepting would replace a different configured
   server and when the link's URL is unencrypted `http://`; Cancel is the
-  emphasized button. A link that does not parse gets "This Link Can't Be Used"
+  emphasized button. A link that does not parse gets "This Link Can’t Be Used"
   and changes nothing. The handler waits for `start()` first, so on a cold
   launch the "replaces" decision reads the stored configuration and the prompt
   comes from the right host view (the first-run flow or the tabs); the first

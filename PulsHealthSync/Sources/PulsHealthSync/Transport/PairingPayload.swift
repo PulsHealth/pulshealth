@@ -50,8 +50,11 @@ public struct PairingPayload: Sendable, Equatable {
             switch self {
             case .notAPairingCode:
                 return "That is not a PulsHealth pairing code. Scan the QR code printed by scripts/bootstrap.sh."
-            case .missingField(let field):
-                return "The pairing code is missing its \(field). Re-run scripts/bootstrap.sh --print-pairing to get a fresh one."
+            case .missingField:
+                // Shown to whoever holds the phone, who need not be the one
+                // who ran the server's scripts, so no script names; which
+                // field is missing stays in the case for tests and code.
+                return "This isn’t a complete PulsHealth pairing code. Print a new one from your server."
             case .invalidServerURL(let failure):
                 return "The pairing code's server URL is unusable. \(failure.errorDescription ?? "")"
                     .trimmingCharacters(in: .whitespaces)
