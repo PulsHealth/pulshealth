@@ -49,7 +49,7 @@ public struct PairingPayload: Sendable, Equatable {
         public var errorDescription: String? {
             switch self {
             case .notAPairingCode:
-                return "That is not a PulsHealth pairing code. Scan the QR code printed by scripts/bootstrap.sh."
+                return "That is not a PulsHealth pairing code. Scan the one your database’s setup prints."
             case .missingField:
                 // Shown to whoever holds the phone, who need not be the one
                 // who ran the server's scripts, so no script names; which

@@ -98,7 +98,7 @@ import Testing
         #expect(message.hasPrefix("It is not a PulsHealth pairing link."))
         #expect(message.contains("Nothing was changed."))
         // The scanner's advice makes no sense for a link.
-        #expect(!message.contains("Scan the QR code printed by"))
+        #expect(!message.contains("Scan the one your database"))
     }
 
     @Test func aBrokenPairingLinkSaysWhatIsWrongWithIt() {

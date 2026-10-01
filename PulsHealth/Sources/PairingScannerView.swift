@@ -66,7 +66,7 @@ struct PairingScannerView: View {
                         .padding()
                         .background(.red.opacity(0.85), in: .rect(cornerRadius: 12))
                 } else {
-                    Text("Point the camera at the QR code printed by scripts/bootstrap.sh.")
+                    Text("Point the camera at the pairing code your database’s setup prints.")
                         .font(.footnote)
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
