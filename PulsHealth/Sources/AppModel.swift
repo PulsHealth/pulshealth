@@ -120,6 +120,16 @@ final class AppModel {
     /// purpose: after an iOS update fixes the bug, a fresh launch retries once.
     @ObservationIgnored private var undeterminableTypes: Set<String> = []
 
+    /// Types the user answered Don't Allow for on iOS 27's history page ("How
+    /// much data would you like to share?"). iOS leaves them undetermined, so
+    /// nothing stops the app asking again — but the user just said no, and
+    /// declining on the first page is never asked about again. So for the
+    /// rest of the session they are treated the same way: not requested
+    /// again, and not counted as access still to ask for. A later launch's
+    /// Apply may ask again; Settings → Privacy & Security → Health is the
+    /// other way back.
+    @ObservationIgnored private var declinedTypes: Set<String> = []
+
     /// True while a medication access request is scheduled or in flight, so a
     /// second Apply doesn't stack another one on top of it.
     @ObservationIgnored private var requestingMedicationAccess = false
@@ -388,10 +398,15 @@ final class AppModel {
             .sorted()
         guard !selected.isEmpty, await engine.authorizationNeeded(for: selected) else { return }
         let pending = await pendingTypes(among: selected)
-        guard !Set(pending).isSubset(of: undeterminableTypes) else { return }
+        guard !Set(pending).isSubset(of: undeterminableTypes.union(declinedTypes)) else { return }
         do {
-            try await engine.requestAuthorization(for: selected)
-            undeterminableTypes.formUnion(await pendingTypes(among: selected))
+            switch try await engine.requestAuthorization(for: selected.filter { !declinedTypes.contains($0) }) {
+            case .answered:
+                undeterminableTypes.formUnion(await pendingTypes(among: selected))
+            case .declined:
+                // The export runs anyway and reports these as unread.
+                declinedTypes.formUnion(pending)
+            }
         } catch {
             // Not fatal: the export runs and reports what it could not read.
             await engine.eventLog.log(
@@ -407,7 +422,9 @@ final class AppModel {
     /// catalog types staying undetermined is normal and must never raise a
     /// warning — only enabled types whose syncs would fail matter.
     private func refreshNeedsAuthorization() async {
-        let enabled = config.observedTypeIdentifiers.sorted()
+        // A type declined on iOS 27's history page is as answered as one
+        // declined on the first page, which iOS reports as determined.
+        let enabled = config.observedTypeIdentifiers.subtracting(declinedTypes).sorted()
         needsAuthorization = enabled.isEmpty
             ? false
             : await engine.authorizationNeeded(for: enabled)
@@ -416,7 +433,7 @@ final class AppModel {
     /// Observed types (raw-sync ∪ enabled aggregates) that iOS still reports as
     /// never-determined, one by one.
     private func pendingEnabledTypes() async -> [String] {
-        await pendingTypes(among: config.observedTypeIdentifiers.sorted())
+        await pendingTypes(among: config.observedTypeIdentifiers.subtracting(declinedTypes).sorted())
     }
 
     private func pendingTypes(among identifiers: [String]) async -> [String] {
@@ -470,9 +487,19 @@ final class AppModel {
             let pending = await pendingEnabledTypes()
             if !Set(pending).isSubset(of: undeterminableTypes) {
                 do {
-                    try await engine.requestAuthorization(for: enabled)
-                    markAuthorizationRequested()
-                    await noteUndeterminableTypes()
+                    let asking = enabled.filter { !declinedTypes.contains($0) }
+                    switch try await engine.requestAuthorization(for: asking) {
+                    case .answered:
+                        markAuthorizationRequested()
+                        await noteUndeterminableTypes()
+                    case .declined:
+                        // Don't Allow on iOS 27's history page: the user's
+                        // answer, not a failure — no banner, and asked, so
+                        // the observer and background schedule run as they
+                        // do after a Don't Allow on the first page.
+                        markAuthorizationRequested()
+                        declinedTypes.formUnion(pending)
+                    }
                 } catch {
                     lastErrorMessage = error.localizedDescription
                 }
