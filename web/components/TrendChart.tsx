@@ -33,7 +33,7 @@ import {
   xToTime,
   zoomDomain,
 } from "@/lib/chartDomain";
-import { displayUnit, formatBucket, formatValue, tickLabel } from "@/lib/format";
+import { displayUnit, formatBucket, formatValue, formatWindow, tickLabel } from "@/lib/format";
 import type { Series, SeriesPoint } from "@/lib/types";
 
 const PAD = { top: 16, right: 16, bottom: 28, left: 46 };
@@ -402,7 +402,7 @@ export function TrendChart({
   // Flip the tooltip inward near the edges rather than letting it overflow.
   const tipShift = ax < w * 0.22 ? "-8%" : ax > w * 0.78 ? "-92%" : "-50%";
 
-  const windowText = `${formatBucket(domain.start, bucketMs)} – ${formatBucket(Math.max(domain.start, domain.end - bucketMs), bucketMs)}`;
+  const windowText = formatWindow(domain.start, domain.end, bucketMs);
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>

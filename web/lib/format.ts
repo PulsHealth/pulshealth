@@ -114,6 +114,19 @@ export function formatBucket(ms: number, bucketMs: number): string {
   return dateFormatter({ month: "short", day: "numeric", year: "numeric" }).formatRange(new Date(ms), new Date(ms + bucketMs - 1));
 }
 
+// The readout for a zoomed window, [startMs, endMs): one range at the
+// chart's grain, so it never reads as two bucket spans joined by a dash.
+export function formatWindow(startMs: number, endMs: number, bucketMs: number): string {
+  const last = new Date(Math.max(startMs, endMs - 1));
+  if (bucketMs < 86_400_000) {
+    return dateFormatter({ month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).formatRange(new Date(startMs), last);
+  }
+  if (bucketMs >= 28 * 86_400_000) {
+    return dateFormatter({ month: "short", year: "numeric" }).formatRange(new Date(startMs), last);
+  }
+  return dateFormatter({ month: "short", day: "numeric", year: "numeric" }).formatRange(new Date(startMs), last);
+}
+
 export function formatMonth(ms: number): string {
   return dateFormatter({ month: "short", year: "numeric" }).format(new Date(ms));
 }

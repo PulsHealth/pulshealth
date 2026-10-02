@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bucketForDuration, defaultAgg, isCumulative, parseRange, RANGE_ORDER, RANGES, resolvePresetWindow,
 } from "./metrics";
-import { formatBucket, tickLabel } from "./format";
+import { formatBucket, formatWindow, tickLabel } from "./format";
 
 describe("metric semantics", () => {
   it("sums cumulative types and averages discrete ones", () => {
@@ -78,6 +78,9 @@ describe("metric semantics", () => {
       expect(formatBucket(Date.UTC(2025, 3, 1), 90 * day)).toMatch(/^Apr\s*–\s*Jun 2025$/);
       // Weekly buckets keep their day-precise span.
       expect(formatBucket(Date.UTC(2025, 0, 6), 7 * day)).toMatch(/^Jan 6\s*–\s*12, 2025$/);
+      // A zoomed window is one range, not two bucket labels joined by a dash.
+      expect(formatWindow(Date.UTC(2023, 1, 1), Date.UTC(2026, 1, 1), 90 * day)).toMatch(/^Feb 2023\s*–\s*Jan 2026$/);
+      expect(formatWindow(Date.UTC(2025, 2, 17), Date.UTC(2025, 5, 2), 7 * day)).toMatch(/^Mar 17\s*–\s*Jun 1, 2025$/);
     } finally {
       if (prev === undefined) delete process.env.PULS_TIME_ZONE;
       else process.env.PULS_TIME_ZONE = prev;
