@@ -169,6 +169,8 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("web_app role (integration)", () => {
   }, 60_000);
 
   afterAll(async () => {
+    // The viewer's own pool, opened by the tests that drive lib/queries.ts.
+    await (await import("./db")).getPool()?.end();
     if (admin) {
       const users = [A, B];
       // Compressed chunks: a prunable predicate, and no decompression cap.
@@ -328,6 +330,57 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("web_app role (integration)", () => {
         [A],
       ),
     ).toBe("42501");
+  });
+
+  // The viewer's real code over the views: lib/db.ts scoped() and every
+  // health query in lib/queries.ts, connected as web_app. PULS_TIME_ZONE must
+  // match the database's zone for the metric_daily path (CI sets both).
+  describe("the viewer's queries", () => {
+    type Queries = typeof import("./queries");
+    let queries: Queries;
+
+    beforeAll(async () => {
+      process.env.DATABASE_URL = WEB_URL;
+      queries = await import("./queries");
+      expect((await queries.getDataSource()).source).toBe("live");
+    });
+
+    it("overrides a WHERE clause that names someone else", async () => {
+      const { scoped } = await import("./db");
+      const rows = await scoped(A, (q) => q("SELECT uuid FROM workouts WHERE user_id = $1::uuid", [B]));
+      expect(rows).toEqual([]);
+      const own = await scoped(A, (q) => q<{ n: string }>("SELECT count(*) AS n FROM workouts"));
+      expect(Number(own[0].n)).toBe(1);
+    });
+
+    it("answers every page's questions for the scoped user", async () => {
+      const stats = await queries.getStats(A);
+      expect(stats.get(STEPS)?.rows).toBe(2);
+      expect(stats.get(SLEEP)?.rows).toBe(1);
+      expect(stats.get("HKWorkoutTypeIdentifier")?.rows).toBe(1);
+
+      const workouts = await queries.getWorkouts(A);
+      expect(workouts.map((w) => w.uuid)).toEqual([workoutIds[A]]);
+      const detail = await queries.getWorkoutDetail(A, workoutIds[A]);
+      expect(detail?.route).toHaveLength(3);
+      expect(detail?.source).toBe(`it-watch-${A}`);
+      expect(await queries.getWorkoutSeries(A, workoutIds[A])).toHaveLength(1);
+
+      expect((await queries.getActivityRings(A)).hasData).toBe(true);
+      expect((await queries.getLatestMany(A, [STEPS])).get(STEPS)?.value).toBe(200);
+      const series = await queries.getSeries(A, STEPS, "ALL");
+      expect(series.points.reduce((sum, p) => sum + p.value, 0)).toBe(300);
+      const sleep = await queries.getSeries(A, SLEEP, "30D");
+      expect(sleep.points.length).toBeGreaterThan(0);
+      const spark = await queries.getDailySparklines(A, [STEPS]);
+      expect(spark.get(STEPS)?.length).toBeGreaterThan(0);
+      expect((await queries.getProfile(A)).dob).toBeNull();
+    });
+
+    it("finds nothing of another user's, even by id", async () => {
+      expect(await queries.getWorkoutDetail(A, workoutIds[B])).toBeNull();
+      expect(await queries.getWorkoutSeries(A, workoutIds[B])).toEqual([]);
+    });
   });
 
   it("keeps its own account store", async () => {

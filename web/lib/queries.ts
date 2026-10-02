@@ -3,6 +3,15 @@
 // pages resolve it once per request with lib/viewer.ts (`viewerUser()`),
 // which keeps this module free of `cookies()` and testable without a request.
 //
+// Every health-data read runs inside `scoped(userId, …)` (lib/db.ts): one
+// read-only transaction with puls.user_id set to that user. In accounts mode
+// the viewer connects as web_app and the database filters every health
+// relation on that setting, so a query here cannot return another person's
+// rows even if its own filter were wrong. The `user_id = $n` filters stay
+// anyway: they are what scopes Basic mode (the grafana role), and the
+// planner uses them. Inside a `scoped` callback, use its `q` only — see
+// `scoped` for why a second connection there is a hazard.
+//
 // Demo fallback is a DEV-ONLY convenience: when running outside production
 // (`NODE_ENV !== "production"`) and the database is unconfigured/unreachable,
 // synthetic demo data keeps the UI populated. In production (the `web`
@@ -12,7 +21,7 @@
 // result stays empty.
 
 import { cache } from "react";
-import { query } from "./db";
+import { query, scoped, type QueryFn } from "./db";
 import { typeByIdentifier } from "./catalog";
 import { configuredTimeZone } from "./config";
 import { defaultAgg, RANGES, resolvePresetWindow } from "./metrics";
@@ -171,17 +180,18 @@ async function metricDailyUsable(): Promise<boolean> {
 // the view itself avoids treating min/max/mostRecent-only aggregate configs as
 // daily truth. Cached briefly, per user, to avoid a round-trip per query —
 // keyed by user so two people alternating in the switcher do not evict each
-// other's entry.
+// other's entry. Runs on the caller's scoped connection; the caller decides
+// first, outside its transaction, whether metric_daily is usable at all.
 const DAY_MS = 86_400_000;
+const NO_TYPES: ReadonlySet<string> = new Set();
 const mdTypesCache = new Map<string, { set: Set<string>; at: number }>();
 const mdTypesInFlight = new Map<string, Promise<Set<string>>>();
-async function metricDailyTypes(userId: string): Promise<Set<string>> {
-  if (!(await metricDailyUsable())) return new Set();
+async function metricDailyTypes(q: QueryFn, userId: string): Promise<Set<string>> {
   const cached = mdTypesCache.get(userId);
   if (cached && Date.now() - cached.at < 60_000) return cached.set;
   const inFlight = mdTypesInFlight.get(userId);
   if (inFlight) return inFlight;
-  const promise = query<{ identifier: string }>(
+  const promise = q<{ identifier: string }>(
     `SELECT DISTINCT identifier FROM metric_daily WHERE user_id = $1::uuid`, [userId],
   ).then((rows) => new Set(rows.map((row) => row.identifier)));
   mdTypesInFlight.set(userId, promise);
@@ -263,157 +273,163 @@ export async function getSeries(userId: string, identifier: string, range: Range
     if (!window) return empty; // All Time with no samples at all
     const { start: from, bucket, bucketMs } = window;
     const timeZone = configuredTimeZone();
+    // Decided before the transaction: it reads the database's zone through
+    // query(), which must not run inside a scoped callback.
+    const dailyUsable = type?.kind !== "category" && (await metricDailyUsable());
 
-    if (type?.kind === "category") {
-      const category = categoryAggregation(identifier);
-      const valueFilter = category.values ? "AND c.value = ANY($6::int[])" : "";
-      const params: unknown[] = category.values
-        ? [bucket, identifier, from, userId, timeZone, category.values]
-        : [bucket, identifier, from, userId, timeZone];
+    return await scoped(userId, async (q) => {
 
-      if (category.mode === "duration") {
-        const divisor = category.unit === "h" ? 3600 : 60;
-        // Code constants, not request input.
-        const shift = category.dayOffsetHours ? ` + interval '${category.dayOffsetHours} hours'` : "";
-        const unshift = category.dayOffsetHours ? ` - interval '${category.dayOffsetHours} hours'` : "";
-        // Durations overlap across sources the same way cumulative quantities
-        // do (Watch stages alongside a third-party app's asleepUnspecified),
-        // so establish each bucket's truth as the highest single-source total
-        // rather than summing everything.
-        const rows = await query<{ t: string; value: number }>(
-          `WITH per_source AS (
-             SELECT time_bucket($1::interval, c.start_ts${shift}, $5::text) AS t,
-                    c.source_id,
-                    (sum(extract(epoch from (c.end_ts - c.start_ts))) / ${divisor}.0)::float8 AS value
-               FROM category_samples c
-               JOIN sample_types st ON st.type_id = c.type_id
-              WHERE st.identifier = $2
-                AND c.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)${unshift}
-                AND c.user_id = $4::uuid
-                ${valueFilter}
-              GROUP BY 1, c.source_id
-           )
-           SELECT (extract(epoch from t) * 1000)::bigint AS t,
-                  max(value)::float8 AS value
-             FROM per_source
-            GROUP BY t ORDER BY t`,
+      if (type?.kind === "category") {
+        const category = categoryAggregation(identifier);
+        const valueFilter = category.values ? "AND c.value = ANY($6::int[])" : "";
+        const params: unknown[] = category.values
+          ? [bucket, identifier, from, userId, timeZone, category.values]
+          : [bucket, identifier, from, userId, timeZone];
+
+        if (category.mode === "duration") {
+          const divisor = category.unit === "h" ? 3600 : 60;
+          // Code constants, not request input.
+          const shift = category.dayOffsetHours ? ` + interval '${category.dayOffsetHours} hours'` : "";
+          const unshift = category.dayOffsetHours ? ` - interval '${category.dayOffsetHours} hours'` : "";
+          // Durations overlap across sources the same way cumulative quantities
+          // do (Watch stages alongside a third-party app's asleepUnspecified),
+          // so establish each bucket's truth as the highest single-source total
+          // rather than summing everything.
+          const rows = await q<{ t: string; value: number }>(
+            `WITH per_source AS (
+               SELECT time_bucket($1::interval, c.start_ts${shift}, $5::text) AS t,
+                      c.source_id,
+                      (sum(extract(epoch from (c.end_ts - c.start_ts))) / ${divisor}.0)::float8 AS value
+                 FROM category_samples c
+                 JOIN sample_types st ON st.type_id = c.type_id
+                WHERE st.identifier = $2
+                  AND c.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)${unshift}
+                  AND c.user_id = $4::uuid
+                  ${valueFilter}
+                GROUP BY 1, c.source_id
+             )
+             SELECT (extract(epoch from t) * 1000)::bigint AS t,
+                    max(value)::float8 AS value
+               FROM per_source
+              GROUP BY t ORDER BY t`,
+            params,
+          );
+          const points: SeriesPoint[] = rows.map((r) => ({
+            t: Number(r.t), value: Number(r.value), min: null, max: null, count: 0,
+          }));
+          return { identifier, unit: category.unit, agg: "sum", bucketMs, points };
+        }
+
+        const rows = await q<{ t: string; n: number }>(
+          `SELECT (extract(epoch from time_bucket($1::interval, c.start_ts, $5::text)) * 1000)::bigint AS t,
+                  count(*)::int AS n
+             FROM category_samples c
+             JOIN sample_types st ON st.type_id = c.type_id
+            WHERE st.identifier = $2
+              AND c.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)
+              AND c.user_id = $4::uuid
+              ${valueFilter}
+            GROUP BY 1 ORDER BY 1`,
           params,
         );
         const points: SeriesPoint[] = rows.map((r) => ({
-          t: Number(r.t), value: Number(r.value), min: null, max: null, count: 0,
+          t: Number(r.t), value: Number(r.n), min: null, max: null, count: Number(r.n),
         }));
         return { identifier, unit: category.unit, agg: "sum", bucketMs, points };
       }
 
-      const rows = await query<{ t: string; n: number }>(
-        `SELECT (extract(epoch from time_bucket($1::interval, c.start_ts, $5::text)) * 1000)::bigint AS t,
-                count(*)::int AS n
-           FROM category_samples c
-           JOIN sample_types st ON st.type_id = c.type_id
-          WHERE st.identifier = $2
-            AND c.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)
-            AND c.user_id = $4::uuid
-            ${valueFilter}
-          GROUP BY 1 ORDER BY 1`,
-        params,
-      );
-      const points: SeriesPoint[] = rows.map((r) => ({
-        t: Number(r.t), value: Number(r.n), min: null, max: null, count: Number(r.n),
-      }));
-      return { identifier, unit: category.unit, agg: "sum", bucketMs, points };
-    }
+      // Best-guess-of-truth view for covered types (steps/energy/distance/…) at
+      // day-or-coarser buckets: per day, the phone's canonical daily aggregate
+      // where one was uploaded, else the raw rollup — so a day the phone has not
+      // aggregated yet (today, or anything past its watermark) still shows.
+      // metric_daily is daily-grain, so the intraday (Day) view falls through
+      // to raw samples below.
+      const mdTypes = dailyUsable ? await metricDailyTypes(q, userId) : NO_TYPES;
+      if (mdTypes.has(identifier) && bucketMs >= DAY_MS) {
+        const params: unknown[] = [bucket, identifier, from, userId, timeZone];
+        const rows = await q<{ t: string; value: number }>(
+          `SELECT (extract(epoch from time_bucket($1::interval, day::timestamp AT TIME ZONE $5::text, $5::text)) * 1000)::bigint AS t,
+                  ${agg === "sum" ? "sum(value)" : "avg(value)"}::float8 AS value
+             FROM metric_daily
+            WHERE identifier = $2
+              AND day >= (time_bucket($1::interval, $3::timestamptz, $5::text) AT TIME ZONE $5::text)::date
+              AND user_id = $4::uuid
+            GROUP BY 1 ORDER BY 1`,
+          params,
+        );
+        const points: SeriesPoint[] = rows.map((r) => ({
+          t: Number(r.t),
+          value: Number(r.value) || 0,
+          min: null,
+          max: null,
+          count: 0,
+        }));
+        return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
+      }
 
-    // Best-guess-of-truth view for covered types (steps/energy/distance/…) at
-    // day-or-coarser buckets: per day, the phone's canonical daily aggregate
-    // where one was uploaded, else the raw rollup — so a day the phone has not
-    // aggregated yet (today, or anything past its watermark) still shows.
-    // metric_daily is daily-grain, so the intraday (Day) view falls through
-    // to raw samples below.
-    const mdTypes = await metricDailyTypes(userId);
-    if (mdTypes.has(identifier) && bucketMs >= DAY_MS) {
-      const params: unknown[] = [bucket, identifier, from, userId, timeZone];
-      const rows = await query<{ t: string; value: number }>(
-        `SELECT (extract(epoch from time_bucket($1::interval, day::timestamp AT TIME ZONE $5::text, $5::text)) * 1000)::bigint AS t,
-                ${agg === "sum" ? "sum(value)" : "avg(value)"}::float8 AS value
-           FROM metric_daily
-          WHERE identifier = $2
-            AND day >= (time_bucket($1::interval, $3::timestamptz, $5::text) AT TIME ZONE $5::text)::date
-            AND user_id = $4::uuid
-          GROUP BY 1 ORDER BY 1`,
-        params,
-      );
-      const points: SeriesPoint[] = rows.map((r) => ({
-        t: Number(r.t),
-        value: Number(r.value) || 0,
-        min: null,
-        max: null,
-        count: 0,
-      }));
-      return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
-    }
-
-    // Raw cumulative samples often overlap across iPhone and Watch. Establish
-    // truth at the requested intraday grain, or at local-day grain for longer
-    // charts, by choosing the highest source total. Only then roll those truth
-    // values into the requested bucket, so a week can use a different winning
-    // source on each day.
-    const truthBucket = bucketMs < DAY_MS ? bucket : "1 day";
-    let rows: SeriesRow[];
-    if (agg === "sum") {
-      const params: unknown[] = [bucket, truthBucket, identifier, from, userId, timeZone];
-      rows = await query<SeriesRow>(
-        `WITH per_source AS (
-           SELECT time_bucket($2::interval, q.start_ts, $6::text) AS truth_bucket,
-                  q.source_id,
-                  sum(q.value)::float8 AS value
+      // Raw cumulative samples often overlap across iPhone and Watch. Establish
+      // truth at the requested intraday grain, or at local-day grain for longer
+      // charts, by choosing the highest source total. Only then roll those truth
+      // values into the requested bucket, so a week can use a different winning
+      // source on each day.
+      const truthBucket = bucketMs < DAY_MS ? bucket : "1 day";
+      let rows: SeriesRow[];
+      if (agg === "sum") {
+        const params: unknown[] = [bucket, truthBucket, identifier, from, userId, timeZone];
+        rows = await q<SeriesRow>(
+          `WITH per_source AS (
+             SELECT time_bucket($2::interval, q.start_ts, $6::text) AS truth_bucket,
+                    q.source_id,
+                    sum(q.value)::float8 AS value
+               FROM quantity_samples q
+               JOIN sample_types st ON st.type_id = q.type_id
+              WHERE st.identifier = $3
+                AND q.start_ts >= time_bucket($1::interval, $4::timestamptz, $6::text)
+                AND q.user_id = $5::uuid
+              GROUP BY 1, q.source_id
+           ), truth AS (
+             SELECT truth_bucket, max(value)::float8 AS value
+               FROM per_source
+              GROUP BY truth_bucket
+           )
+           SELECT (extract(epoch from time_bucket($1::interval, truth_bucket, $6::text)) * 1000)::bigint AS t,
+                  sum(value)::float8 AS sum,
+                  NULL::float8 AS avg,
+                  NULL::float8 AS min,
+                  NULL::float8 AS max,
+                  count(*)::int AS n
+             FROM truth
+            GROUP BY time_bucket($1::interval, truth_bucket, $6::text)
+            ORDER BY time_bucket($1::interval, truth_bucket, $6::text)`,
+          params,
+        );
+      } else {
+        const params: unknown[] = [bucket, identifier, from, userId, timeZone];
+        rows = await q<SeriesRow>(
+          `SELECT (extract(epoch from time_bucket($1::interval, q.start_ts, $5::text)) * 1000)::bigint AS t,
+                  sum(q.value)::float8 AS sum,
+                  avg(q.value)::float8 AS avg,
+                  min(q.value)::float8 AS min,
+                  max(q.value)::float8 AS max,
+                  count(*)::int AS n
              FROM quantity_samples q
              JOIN sample_types st ON st.type_id = q.type_id
-            WHERE st.identifier = $3
-              AND q.start_ts >= time_bucket($1::interval, $4::timestamptz, $6::text)
-              AND q.user_id = $5::uuid
-            GROUP BY 1, q.source_id
-         ), truth AS (
-           SELECT truth_bucket, max(value)::float8 AS value
-             FROM per_source
-            GROUP BY truth_bucket
-         )
-         SELECT (extract(epoch from time_bucket($1::interval, truth_bucket, $6::text)) * 1000)::bigint AS t,
-                sum(value)::float8 AS sum,
-                NULL::float8 AS avg,
-                NULL::float8 AS min,
-                NULL::float8 AS max,
-                count(*)::int AS n
-           FROM truth
-          GROUP BY time_bucket($1::interval, truth_bucket, $6::text)
-          ORDER BY time_bucket($1::interval, truth_bucket, $6::text)`,
-        params,
-      );
-    } else {
-      const params: unknown[] = [bucket, identifier, from, userId, timeZone];
-      rows = await query<SeriesRow>(
-        `SELECT (extract(epoch from time_bucket($1::interval, q.start_ts, $5::text)) * 1000)::bigint AS t,
-                sum(q.value)::float8 AS sum,
-                avg(q.value)::float8 AS avg,
-                min(q.value)::float8 AS min,
-                max(q.value)::float8 AS max,
-                count(*)::int AS n
-           FROM quantity_samples q
-           JOIN sample_types st ON st.type_id = q.type_id
-          WHERE st.identifier = $2
-            AND q.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)
-            AND q.user_id = $4::uuid
-          GROUP BY 1 ORDER BY 1`,
-        params,
-      );
-    }
-    const points: SeriesPoint[] = rows.map((r) => ({
-      t: Number(r.t),
-      value: Number(agg === "sum" ? r.sum : r.avg) || 0,
-      min: r.min == null ? null : Number(r.min),
-      max: r.max == null ? null : Number(r.max),
-      count: Number(r.n),
-    }));
-    return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
+            WHERE st.identifier = $2
+              AND q.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)
+              AND q.user_id = $4::uuid
+            GROUP BY 1 ORDER BY 1`,
+          params,
+        );
+      }
+      const points: SeriesPoint[] = rows.map((r) => ({
+        t: Number(r.t),
+        value: Number(agg === "sum" ? r.sum : r.avg) || 0,
+        min: r.min == null ? null : Number(r.min),
+        max: r.max == null ? null : Number(r.max),
+        count: Number(r.n),
+      }));
+      return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
+    });
   } catch (e) {
     console.error("[queries] getSeries failed:", e);
     return ALLOW_DEMO ? demoSeries(identifier, range) : empty;
@@ -432,7 +448,7 @@ export async function getLatestMany(userId: string, identifiers: string[]): Prom
   }
 
   try {
-    const rows = await query<{ identifier: string; value: number; t: string }>(
+    const rows = await scoped(userId, (q) => q<{ identifier: string; value: number; t: string }>(
       `SELECT DISTINCT ON (st.identifier)
               st.identifier, q.value::float8 AS value,
               (extract(epoch from q.start_ts) * 1000)::bigint AS t
@@ -442,7 +458,7 @@ export async function getLatestMany(userId: string, identifiers: string[]): Prom
           AND q.user_id = $2::uuid
         ORDER BY st.identifier, q.start_ts DESC`,
       [identifiers, userId],
-    );
+    ));
     for (const r of rows) {
       out.set(r.identifier, {
         identifier: r.identifier,
@@ -477,7 +493,7 @@ export async function getTodayTotals(userId: string, identifiers: string[]): Pro
     // Read Today directly from raw local-day samples so the live headline does
     // not depend on aggregate refresh or bucket-settlement timing. Choose one
     // source per type to avoid overlapping Watch/phone totals.
-    const rows = await query<{ identifier: string; total: number }>(
+    const rows = await scoped(userId, (q) => q<{ identifier: string; total: number }>(
       `WITH per_source AS (
          SELECT st.identifier, q.source_id, sum(q.value)::float8 AS total
            FROM quantity_samples q
@@ -492,7 +508,7 @@ export async function getTodayTotals(userId: string, identifiers: string[]): Pro
          FROM per_source
         GROUP BY identifier`,
       [identifiers, userId, timeZone],
-    );
+    ));
     for (const r of rows) out.set(r.identifier, Number(r.total));
     return out;
   } catch (e) {
@@ -518,7 +534,7 @@ export async function getActivityRings(userId: string): Promise<ActivityRingsDat
   if (src !== "live") return notLive(src, () => demoActivityRings(), fallback);
 
   try {
-    const rows = await query<{
+    const rows = await scoped(userId, (q) => q<{
       date: string;
       move_kcal: number | null;
       move_goal_kcal: number | null;
@@ -540,7 +556,7 @@ export async function getActivityRings(userId: string): Promise<ActivityRingsDat
           AND date = (now() AT TIME ZONE $2::text)::date
         LIMIT 1`,
       [userId, configuredTimeZone()],
-    );
+    ));
     if (!rows.length) return fallback;
     const r = rows[0];
     return {
@@ -594,46 +610,48 @@ async function loadStats(userId: string): Promise<Map<string, TypeStat>> {
   }
 
   try {
-    const rows = await query<{ identifier: string; rows: string; earliest: string | null; latest: string | null }>(
-      `SELECT st.identifier,
-              count(*)::bigint AS rows,
-              (extract(epoch from min(x.start_ts)) * 1000)::bigint AS earliest,
-              (extract(epoch from max(x.start_ts)) * 1000)::bigint AS latest
-         FROM (
-           SELECT type_id, start_ts FROM quantity_samples WHERE user_id = $1::uuid
-           UNION ALL
-           SELECT type_id, start_ts FROM category_samples WHERE user_id = $1::uuid
-         ) x
-         JOIN sample_types st ON st.type_id = x.type_id
-        GROUP BY st.identifier`,
-      [userId],
-    );
-    for (const r of rows) {
-      out.set(r.identifier, {
-        identifier: r.identifier,
-        rows: Number(r.rows),
-        earliest: r.earliest == null ? null : Number(r.earliest),
-        latest: r.latest == null ? null : Number(r.latest),
-      });
-    }
-    // Workouts live in their own table.
-    const wk = await query<{ rows: string; earliest: string | null; latest: string | null }>(
-      `SELECT count(*)::bigint AS rows,
-              (extract(epoch from min(start_ts)) * 1000)::bigint AS earliest,
-              (extract(epoch from max(start_ts)) * 1000)::bigint AS latest
-         FROM workouts
-        WHERE user_id = $1::uuid`,
-      [userId],
-    );
-    if (wk[0] && Number(wk[0].rows) > 0) {
-      out.set("HKWorkoutTypeIdentifier", {
-        identifier: "HKWorkoutTypeIdentifier",
-        rows: Number(wk[0].rows),
-        earliest: wk[0].earliest == null ? null : Number(wk[0].earliest),
-        latest: wk[0].latest == null ? null : Number(wk[0].latest),
-      });
-    }
-    return out;
+    return await scoped(userId, async (q) => {
+      const rows = await q<{ identifier: string; rows: string; earliest: string | null; latest: string | null }>(
+        `SELECT st.identifier,
+                count(*)::bigint AS rows,
+                (extract(epoch from min(x.start_ts)) * 1000)::bigint AS earliest,
+                (extract(epoch from max(x.start_ts)) * 1000)::bigint AS latest
+           FROM (
+             SELECT type_id, start_ts FROM quantity_samples WHERE user_id = $1::uuid
+             UNION ALL
+             SELECT type_id, start_ts FROM category_samples WHERE user_id = $1::uuid
+           ) x
+           JOIN sample_types st ON st.type_id = x.type_id
+          GROUP BY st.identifier`,
+        [userId],
+      );
+      for (const r of rows) {
+        out.set(r.identifier, {
+          identifier: r.identifier,
+          rows: Number(r.rows),
+          earliest: r.earliest == null ? null : Number(r.earliest),
+          latest: r.latest == null ? null : Number(r.latest),
+        });
+      }
+      // Workouts live in their own table.
+      const wk = await q<{ rows: string; earliest: string | null; latest: string | null }>(
+        `SELECT count(*)::bigint AS rows,
+                (extract(epoch from min(start_ts)) * 1000)::bigint AS earliest,
+                (extract(epoch from max(start_ts)) * 1000)::bigint AS latest
+           FROM workouts
+          WHERE user_id = $1::uuid`,
+        [userId],
+      );
+      if (wk[0] && Number(wk[0].rows) > 0) {
+        out.set("HKWorkoutTypeIdentifier", {
+          identifier: "HKWorkoutTypeIdentifier",
+          rows: Number(wk[0].rows),
+          earliest: wk[0].earliest == null ? null : Number(wk[0].earliest),
+          latest: wk[0].latest == null ? null : Number(wk[0].latest),
+        });
+      }
+      return out;
+    });
   } catch (e) {
     console.error("[queries] getStats failed:", e);
     if (ALLOW_DEMO) for (const s of demoStats()) out.set(s.identifier, s);
@@ -658,83 +676,87 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
 
   try {
     const byId = new Map<string, number[]>();
-    const mdTypes = await metricDailyTypes(userId);
-    const mdIds = identifiers.filter((id) => mdTypes.has(id));
-    const rawIds = identifiers.filter((id) => !mdTypes.has(id));
-    const rawCumIds = rawIds.filter((id) => defaultAgg(id) === "sum");
-    const rawDiscIds = rawIds.filter((id) => defaultAgg(id) === "avg");
-    const timeZone = configuredTimeZone();
+    // Decided before the transaction (it reads through query()).
+    const dailyUsable = await metricDailyUsable();
+    return await scoped(userId, async (q) => {
+      const mdTypes = dailyUsable ? await metricDailyTypes(q, userId) : NO_TYPES;
+      const mdIds = identifiers.filter((id) => mdTypes.has(id));
+      const rawIds = identifiers.filter((id) => !mdTypes.has(id));
+      const rawCumIds = rawIds.filter((id) => defaultAgg(id) === "sum");
+      const rawDiscIds = rawIds.filter((id) => defaultAgg(id) === "avg");
+      const timeZone = configuredTimeZone();
 
-    // Covered types: daily best-guess-of-truth.
-    if (mdIds.length) {
-      const rows = await query<{ identifier: string; value: number }>(
-        `SELECT identifier,
-                (extract(epoch from (day::timestamp AT TIME ZONE $4::text)) * 1000)::bigint AS t,
-                value::float8 AS value
-           FROM metric_daily
-          WHERE identifier = ANY($1::text[])
-            AND user_id = $3::uuid
-            AND day >= (now() AT TIME ZONE $4::text)::date - $2::int
-          ORDER BY identifier, day`,
-        [mdIds, days, userId, timeZone],
-      );
-      for (const r of rows) {
-        const arr = byId.get(r.identifier) ?? [];
-        arr.push(Number(r.value) || 0);
-        byId.set(r.identifier, arr);
+      // Covered types: daily best-guess-of-truth.
+      if (mdIds.length) {
+        const rows = await q<{ identifier: string; value: number }>(
+          `SELECT identifier,
+                  (extract(epoch from (day::timestamp AT TIME ZONE $4::text)) * 1000)::bigint AS t,
+                  value::float8 AS value
+             FROM metric_daily
+            WHERE identifier = ANY($1::text[])
+              AND user_id = $3::uuid
+              AND day >= (now() AT TIME ZONE $4::text)::date - $2::int
+            ORDER BY identifier, day`,
+          [mdIds, days, userId, timeZone],
+        );
+        for (const r of rows) {
+          const arr = byId.get(r.identifier) ?? [];
+          arr.push(Number(r.value) || 0);
+          byId.set(r.identifier, arr);
+        }
       }
-    }
 
-    // Cumulative raw data: one source per local day to avoid Watch + phone
-    // double counts. Discrete readings remain a cross-source average.
-    if (rawCumIds.length) {
-      const rows = await query<{ identifier: string; value: number }>(
-        `WITH per_source AS (
-           SELECT st.identifier,
-                  time_bucket('1 day', q.start_ts, $4::text) AS day,
-                  q.source_id,
-                  sum(q.value)::float8 AS value
+      // Cumulative raw data: one source per local day to avoid Watch + phone
+      // double counts. Discrete readings remain a cross-source average.
+      if (rawCumIds.length) {
+        const rows = await q<{ identifier: string; value: number }>(
+          `WITH per_source AS (
+             SELECT st.identifier,
+                    time_bucket('1 day', q.start_ts, $4::text) AS day,
+                    q.source_id,
+                    sum(q.value)::float8 AS value
+               FROM quantity_samples q
+               JOIN sample_types st ON st.type_id = q.type_id
+              WHERE st.identifier = ANY($1::text[])
+                AND q.user_id = $3::uuid
+                AND q.start_ts >= (((now() AT TIME ZONE $4::text)::date - $2::int) AT TIME ZONE $4::text)
+              GROUP BY st.identifier, day, q.source_id
+           )
+           SELECT identifier, max(value)::float8 AS value
+             FROM per_source
+            GROUP BY identifier, day
+            ORDER BY identifier, day`,
+          [rawCumIds, days, userId, timeZone],
+        );
+        for (const r of rows) {
+          const arr = byId.get(r.identifier) ?? [];
+          arr.push(Number(r.value) || 0);
+          byId.set(r.identifier, arr);
+        }
+      }
+
+      if (rawDiscIds.length) {
+        const rows = await q<{ identifier: string; value: number }>(
+          `SELECT st.identifier, avg(q.value)::float8 AS value
              FROM quantity_samples q
              JOIN sample_types st ON st.type_id = q.type_id
             WHERE st.identifier = ANY($1::text[])
               AND q.user_id = $3::uuid
               AND q.start_ts >= (((now() AT TIME ZONE $4::text)::date - $2::int) AT TIME ZONE $4::text)
-            GROUP BY st.identifier, day, q.source_id
-         )
-         SELECT identifier, max(value)::float8 AS value
-           FROM per_source
-          GROUP BY identifier, day
-          ORDER BY identifier, day`,
-        [rawCumIds, days, userId, timeZone],
-      );
-      for (const r of rows) {
-        const arr = byId.get(r.identifier) ?? [];
-        arr.push(Number(r.value) || 0);
-        byId.set(r.identifier, arr);
+            GROUP BY st.identifier, time_bucket('1 day', q.start_ts, $4::text)
+            ORDER BY st.identifier, time_bucket('1 day', q.start_ts, $4::text)`,
+          [rawDiscIds, days, userId, timeZone],
+        );
+        for (const r of rows) {
+          const arr = byId.get(r.identifier) ?? [];
+          arr.push(Number(r.value) || 0);
+          byId.set(r.identifier, arr);
+        }
       }
-    }
 
-    if (rawDiscIds.length) {
-      const rows = await query<{ identifier: string; value: number }>(
-        `SELECT st.identifier, avg(q.value)::float8 AS value
-           FROM quantity_samples q
-           JOIN sample_types st ON st.type_id = q.type_id
-          WHERE st.identifier = ANY($1::text[])
-            AND q.user_id = $3::uuid
-            AND q.start_ts >= (((now() AT TIME ZONE $4::text)::date - $2::int) AT TIME ZONE $4::text)
-          GROUP BY st.identifier, time_bucket('1 day', q.start_ts, $4::text)
-          ORDER BY st.identifier, time_bucket('1 day', q.start_ts, $4::text)`,
-        [rawDiscIds, days, userId, timeZone],
-      );
-      for (const r of rows) {
-        const arr = byId.get(r.identifier) ?? [];
-        arr.push(Number(r.value) || 0);
-        byId.set(r.identifier, arr);
-      }
-    }
-
-    for (const id of identifiers) out.set(id, byId.get(id) ?? []);
-    return out;
+      for (const id of identifiers) out.set(id, byId.get(id) ?? []);
+      return out;
+    });
   } catch (e) {
     console.error("[queries] getDailySparklines failed:", e);
     if (ALLOW_DEMO) {
@@ -751,7 +773,7 @@ export async function getWorkouts(userId: string, limit = 40): Promise<Workout[]
   const src = await source();
   if (src !== "live") return notLive(src, () => demoWorkouts(limit), []);
   try {
-    const rows = await query<{
+    const rows = await scoped(userId, (q) => q<{
       uuid: string;
       activity_type: string;
       start: string;
@@ -772,7 +794,7 @@ export async function getWorkouts(userId: string, limit = 40): Promise<Workout[]
         ORDER BY start_ts DESC
         LIMIT $1`,
       [limit, userId],
-    );
+    ));
     if (!rows.length) return [];
     return rows.map((r) => ({
       uuid: r.uuid,
@@ -801,90 +823,92 @@ export const getWorkoutDetail = cache(async function getWorkoutDetail(userId: st
   if (!UUID_RE.test(uuid)) return null;
 
   try {
-    const rows = await query<{
-      uuid: string;
-      activity_type: string;
-      start: string;
-      end: string;
-      duration_s: number | null;
-      energy_kcal: number | null;
-      distance_m: number | null;
-      stats: Record<string, number> | null;
-      stats_detail: Record<string, WorkoutStat> | null;
-      events: WorkoutEvent[] | null;
-      activities: RawActivity[] | null;
-      metadata: Record<string, unknown> | null;
-      source: string | null;
-    }>(
-      `SELECT w.uuid::text,
-              w.activity_type,
-              (extract(epoch from w.start_ts) * 1000)::bigint AS start,
-              (extract(epoch from w.end_ts) * 1000)::bigint AS end,
-              w.duration_s::float8,
-              w.energy_kcal::float8,
-              w.distance_m::float8,
-              w.stats,
-              w.stats_detail,
-              w.events,
-              w.activities,
-              w.metadata,
-              s.name AS source
-         FROM workouts w
-         LEFT JOIN sources s ON s.source_id = w.source_id
-        WHERE w.uuid = $1::uuid
-          AND w.user_id = $2::uuid`,
-      [uuid, userId],
-    );
-    const r = rows[0];
-    if (!r) return null;
+    return await scoped(userId, async (q) => {
+      const rows = await q<{
+        uuid: string;
+        activity_type: string;
+        start: string;
+        end: string;
+        duration_s: number | null;
+        energy_kcal: number | null;
+        distance_m: number | null;
+        stats: Record<string, number> | null;
+        stats_detail: Record<string, WorkoutStat> | null;
+        events: WorkoutEvent[] | null;
+        activities: RawActivity[] | null;
+        metadata: Record<string, unknown> | null;
+        source: string | null;
+      }>(
+        `SELECT w.uuid::text,
+                w.activity_type,
+                (extract(epoch from w.start_ts) * 1000)::bigint AS start,
+                (extract(epoch from w.end_ts) * 1000)::bigint AS end,
+                w.duration_s::float8,
+                w.energy_kcal::float8,
+                w.distance_m::float8,
+                w.stats,
+                w.stats_detail,
+                w.events,
+                w.activities,
+                w.metadata,
+                s.name AS source
+           FROM workouts w
+           LEFT JOIN sources s ON s.source_id = w.source_id
+          WHERE w.uuid = $1::uuid
+            AND w.user_id = $2::uuid`,
+        [uuid, userId],
+      );
+      const r = rows[0];
+      if (!r) return null;
 
-    const routeRows = await query<{
-      t: string;
-      lat: number;
-      lon: number;
-      altitude_m: number | null;
-      speed_mps: number | null;
-    }>(
-      `SELECT (extract(epoch from ts) * 1000)::bigint AS t,
-              lat::float8, lon::float8, altitude_m::float8, speed_mps::float8
-         FROM workout_route_points
-        WHERE workout_uuid = $1::uuid
-          AND user_id = $2::uuid
-        ORDER BY ts`,
-      [uuid, userId],
-    );
-    const route: RoutePoint[] = routeRows.map((p) => ({
-      t: Number(p.t),
-      lat: Number(p.lat),
-      lon: Number(p.lon),
-      altitude: p.altitude_m == null ? null : Number(p.altitude_m),
-      speed: p.speed_mps == null ? null : Number(p.speed_mps),
-    }));
+      const routeRows = await q<{
+        t: string;
+        lat: number;
+        lon: number;
+        altitude_m: number | null;
+        speed_mps: number | null;
+      }>(
+        `SELECT (extract(epoch from ts) * 1000)::bigint AS t,
+                lat::float8, lon::float8, altitude_m::float8, speed_mps::float8
+           FROM workout_route_points
+          WHERE workout_uuid = $1::uuid
+            AND user_id = $2::uuid
+          ORDER BY ts`,
+        [uuid, userId],
+      );
+      const route: RoutePoint[] = routeRows.map((p) => ({
+        t: Number(p.t),
+        lat: Number(p.lat),
+        lon: Number(p.lon),
+        altitude: p.altitude_m == null ? null : Number(p.altitude_m),
+        speed: p.speed_mps == null ? null : Number(p.speed_mps),
+      }));
 
-    const activities: WorkoutActivitySegment[] = (r.activities ?? []).map((a) => ({
-      activityType: a.activityType || "Workout",
-      start: Number(a.start),
-      end: a.end == null ? null : Number(a.end),
-      durationS: Number(a.duration ?? 0),
-      statistics: a.statistics ?? {},
-    }));
+      const activities: WorkoutActivitySegment[] = (r.activities ?? []).map((a) => ({
+        activityType: a.activityType || "Workout",
+        start: Number(a.start),
+        end: a.end == null ? null : Number(a.end),
+        durationS: Number(a.duration ?? 0),
+        statistics: a.statistics ?? {},
+      }));
 
-    return {
-      uuid: r.uuid,
-      activityType: r.activity_type || "Workout",
-      start: Number(r.start),
-      end: Number(r.end),
-      durationS: Number(r.duration_s ?? 0),
-      energyKcal: r.energy_kcal == null ? null : Number(r.energy_kcal),
-      distanceM: r.distance_m == null ? null : Number(r.distance_m),
-      stats: r.stats ?? {},
-      statsDetail: r.stats_detail ?? {},
-      events: r.events ?? [],
-      activities,
-      metadata: r.metadata ?? {},
-      source: r.source,
-      route,
-    };
+      return {
+        uuid: r.uuid,
+        activityType: r.activity_type || "Workout",
+        start: Number(r.start),
+        end: Number(r.end),
+        durationS: Number(r.duration_s ?? 0),
+        energyKcal: r.energy_kcal == null ? null : Number(r.energy_kcal),
+        distanceM: r.distance_m == null ? null : Number(r.distance_m),
+        stats: r.stats ?? {},
+        statsDetail: r.stats_detail ?? {},
+        events: r.events ?? [],
+        activities,
+        metadata: r.metadata ?? {},
+        source: r.source,
+        route,
+      };
+    });
   } catch (e) {
     console.error("[queries] getWorkoutDetail failed:", e);
     return ALLOW_DEMO ? demoWorkoutDetail(uuid) : null;
@@ -907,7 +931,7 @@ export async function getWorkoutSeries(userId: string, uuid: string): Promise<Wo
   if (src !== "live") return notLive(src, () => demoWorkoutSeries(uuid), []);
   if (!UUID_RE.test(uuid)) return [];
   try {
-    const rows = await query<{ identifier: string; unit: string | null; t: string; value: number }>(
+    const rows = await scoped(userId, (q) => q<{ identifier: string; unit: string | null; t: string; value: number }>(
       `SELECT st.identifier,
               st.unit,
               (extract(epoch from p.ts) * 1000)::bigint AS t,
@@ -918,7 +942,7 @@ export async function getWorkoutSeries(userId: string, uuid: string): Promise<Wo
           AND p.user_id = $2::uuid
         ORDER BY st.identifier, p.ts`,
       [uuid, userId],
-    );
+    ));
     const byType = new Map<string, WorkoutSeries>();
     for (const r of rows) {
       let s = byType.get(r.identifier);
@@ -963,7 +987,7 @@ export async function getProfile(userId: string): Promise<Profile> {
   const src = await source();
   if (src !== "live") return notLive(src, demoProfile, fallback);
   try {
-    const rows = await query<{ dob: string | null; biological_sex: string | null; resting_hr: number | null }>(
+    const rows = await scoped(userId, (q) => q<{ dob: string | null; biological_sex: string | null; resting_hr: number | null }>(
       `SELECT (extract(epoch from (u.dob::timestamp AT TIME ZONE $2::text)) * 1000)::bigint AS dob,
               u.biological_sex,
               r.value::float8 AS resting_hr
@@ -979,7 +1003,7 @@ export async function getProfile(userId: string): Promise<Profile> {
          ) r ON true
         WHERE u.id = $1::uuid`,
       [userId, configuredTimeZone()],
-    );
+    ));
     const r = rows[0];
     if (!r) return fallback;
     const restingHr = r.resting_hr == null ? null : Number(r.resting_hr);
