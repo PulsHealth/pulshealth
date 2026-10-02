@@ -24,6 +24,7 @@ import { cache } from "react";
 import { query, scoped, type QueryFn } from "./db";
 import { typeByIdentifier } from "./catalog";
 import { configuredTimeZone } from "./config";
+import { viewerMode } from "./mode";
 import { defaultAgg, RANGES, resolvePresetWindow } from "./metrics";
 import {
   demoActivityRings,
@@ -89,7 +90,27 @@ export async function getDataSource(): Promise<DataSourceInfo> {
 async function checkDataSource(): Promise<DataSourceInfo> {
   let info: DataSourceInfo;
   try {
-    await query("SELECT 1");
+    if (viewerMode() === "accounts") {
+      // Accounts mode promises that the database, not this code, keeps people
+      // to their own records — which holds only as web_app. Connected as any
+      // role that can read the tables directly (grafana, the superuser), serve
+      // nothing: every query below returns empty when the source is not live,
+      // and /api/healthz reports it.
+      const rows = await query<{ direct: boolean }>(
+        `SELECT has_table_privilege('public.quantity_samples', 'SELECT')
+             OR has_table_privilege('public.users', 'SELECT') AS direct`,
+      );
+      if (rows[0]?.direct) {
+        warnOnce(
+          "accounts-role",
+          "[queries] WEB_ACCOUNTS is on, but this database role can read every user's records directly. " +
+            "Connect as web_app (WEB_DATABASE_URL in server/.env); serving no data until then.",
+        );
+        return { source: "error", detail: "Accounts mode needs the web_app database role" };
+      }
+    } else {
+      await query("SELECT 1");
+    }
     info = { source: "live", detail: "Connected to TimescaleDB" };
   } catch (e) {
     info = ALLOW_DEMO
@@ -976,6 +997,23 @@ export async function getUsers(): Promise<User[]> {
   } catch (e) {
     console.error("[queries] getUsers failed:", e);
     return ALLOW_DEMO ? demoUsers() : [];
+  }
+}
+
+// ── one user's own row (name/email from the phone's profile) ─────────────
+export async function getUser(userId: string): Promise<User> {
+  const fallback: User = { id: userId, name: null, email: null };
+  const src = await source();
+  if (src !== "live") return notLive(src, () => demoUsers().find((u) => u.id === userId) ?? fallback, fallback);
+  try {
+    const rows = await scoped(userId, (q) => q<{ id: string; name: string | null; email: string | null }>(
+      "SELECT id::text AS id, name, email FROM users WHERE id = $1::uuid",
+      [userId],
+    ));
+    return rows[0] ? { id: rows[0].id, name: rows[0].name, email: rows[0].email } : fallback;
+  } catch (e) {
+    console.error("[queries] getUser failed:", e);
+    return fallback;
   }
 }
 

@@ -60,18 +60,36 @@ const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  */
 export async function scoped<T>(userId: string, fn: (q: QueryFn) => Promise<T>): Promise<T> {
   if (!UUID_SHAPE.test(userId)) throw new Error("scoped(): the user id must be a UUID");
+  // `true`: local to this transaction. COMMIT or ROLLBACK clears it, so a
+  // pooled connection never carries one request's user into the next.
+  return inTransaction("BEGIN READ ONLY", [["SELECT set_config('puls.user_id', $1, true)", [userId]]], fn);
+}
+
+/**
+ * Runs `fn` in one read-write transaction with no user scope. For the
+ * viewer's own account store (schema auth) only — health data is read
+ * through `scoped`, and web_app cannot write it at all. The same rule about
+ * issuing statements through `q` only applies.
+ */
+export async function transaction<T>(fn: (q: QueryFn) => Promise<T>): Promise<T> {
+  return inTransaction("BEGIN", [], fn);
+}
+
+async function inTransaction<T>(
+  begin: string,
+  setup: [string, unknown[]][],
+  fn: (q: QueryFn) => Promise<T>,
+): Promise<T> {
   const p = getPool();
   if (!p) throw new Error("DATABASE_URL not configured");
 
   const client: PoolClient = await p.connect();
   // A connection whose transaction state is unknown must not go back to the
-  // pool, or the next request would inherit it (and its user setting).
+  // pool, or the next request would inherit it (and any user setting).
   let discard: Error | undefined;
   try {
-    await client.query("BEGIN READ ONLY");
-    // `true`: local to this transaction. COMMIT or ROLLBACK clears it, so a
-    // pooled connection never carries one request's user into the next.
-    await client.query("SELECT set_config('puls.user_id', $1, true)", [userId]);
+    await client.query(begin);
+    for (const [text, params] of setup) await client.query(text, params);
     const q: QueryFn = async <R = Record<string, unknown>>(text: string, params: unknown[] = []) => {
       const res = await client.query(text, params);
       return res.rows as R[];

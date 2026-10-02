@@ -38,6 +38,13 @@ describe("safeReturnPath", () => {
     expect(safeReturnPath("workouts")).toBe("/");
     expect(safeReturnPath("https://example.com/")).toBe("/");
     expect(safeReturnPath("//example.com/")).toBe("/");
+    // Browsers strip tabs and newlines from URLs before parsing them, so these
+    // would arrive as //evil.example.
+    expect(safeReturnPath("/\t/evil.example")).toBe("/");
+    expect(safeReturnPath("/\n/evil.example")).toBe("/");
+    expect(safeReturnPath("/\r\n/evil.example")).toBe("/");
+    expect(safeReturnPath("/x\\y")).toBe("/");
+    expect(safeReturnPath("/workouts/a?b=1#c")).toBe("/workouts/a?b=1#c");
     expect(safeReturnPath("/\\example.com")).toBe("/");
   });
 });
