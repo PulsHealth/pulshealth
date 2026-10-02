@@ -251,6 +251,34 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  tunnel:
+    # Optional, behind the `tunnel` profile: a Cloudflare Tunnel that serves
+    # the web viewer on a hostname of yours (https://viewer.example.com)
+    # without opening a port or revealing the host's address. Cloudflare
+    # terminates TLS and so sees the traffic; in return it adds its WAF, rate
+    # limiting and, optionally, Access in front. It reaches the viewer by its
+    # container name (http://web:3000 — the service URL to give the tunnel's
+    # route in the dashboard), so WEB_BIND_ADDR stays on loopback.
+    #
+    # Meant for the viewer's accounts mode (WEB_ACCOUNTS=true) with
+    # TRUST_PROXY_HEADERS=true, WEB_CLIENT_IP_HEADER=cf-connecting-ip and
+    # WEB_PUBLIC_URL set: a viewer in basic or open mode should not be on the
+    # internet. To keep it on across `docker compose up -d` and `make dev-up`,
+    # put COMPOSE_PROFILES=tunnel in .env. See server/README.md, "Exposing the
+    # server", and web/README.md, "Access control".
+    image: cloudflare/cloudflared:2026.9.3
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    logging: *app-logging
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      # The tunnel's token (Cloudflare dashboard → Networks → Tunnels → your
+      # tunnel → install connector). Whoever holds it can serve traffic for
+      # the tunnel's hostnames: treat it like a password.
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - web
+
   grafana:
     # Pinned: a :latest pull to Grafana 13 silently broke datasource
     # provisioning (legacy top-level `database:` key removed). Bump
