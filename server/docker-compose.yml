@@ -236,6 +236,12 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?set in .env}
       GF_USERS_ALLOW_SIGN_UP: "false"
+      # Geomap panels left on "Default base layer" tile CARTO's raster
+      # basemap, which has watermarked every keyless request ("API KEY
+      # REQUIRED") since September 2026. The provisioned Workout Route panel
+      # names its OpenStreetMap basemap explicitly; this makes a panel someone
+      # adds with the default do the same. No key, no account.
+      GF_GEOMAP_DEFAULT_BASELAYER_CONFIG: '{"type":"osm-standard","config":{}}'
       GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD}
       # Recipient of every alert (provisioning/alerting/contact-points.yml).
       GRAFANA_ALERT_EMAIL: ${GRAFANA_ALERT_EMAIL:-alerts@example.com}

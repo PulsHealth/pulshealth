@@ -779,6 +779,14 @@ automatically:
   samples/aggregates/deletions per day, and per-type row counts (quantity
   counts from the `quantity_rollups` rollup, not hypertable scans).
 
+The route map's basemap is OpenStreetMap, named explicitly in the panel, and
+Compose sets `GF_GEOMAP_DEFAULT_BASELAYER_CONFIG` to the same so a geomap
+panel you add with the *Default base layer* uses it too. Grafana's own
+default is CARTO, whose raster tiles have shown an "API KEY REQUIRED"
+watermark on every keyless request since September 2026; OpenStreetMap needs
+no key or account. The browser fetches the tiles from
+`tile.openstreetmap.org` directly while the panel is open.
+
 ### Alerting
 
 A red dashboard nobody has open alerts no one, so four rules in
