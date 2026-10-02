@@ -17,9 +17,6 @@ behind them.
   over several days; the iOS 26 continued-processing first run; leaving the
   app mid-backfill; an export on a device; and on iOS 27, limiting a type's
   history, widening it again, and the re-sweep that follows.
-- **Explore's search field:** on iOS 27 a `.navigationBarDrawer` search field
-  cannot both show on arrival and scroll away. A fix that makes it the list's
-  first row exists on a branch, not yet on main.
 
 ## 2. Standing maintenance
 
