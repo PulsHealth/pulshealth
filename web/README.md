@@ -208,15 +208,20 @@ The time arithmetic (clamp, zoom, pan, nearest bucket, wheel normalisation) is
 ## Map tiles
 
 The workout route map (`lib/mapStyles.ts`) draws its basemap from free public
-tile endpoints that need no API key: CARTO (`basemaps.cartocdn.com` — the dark,
-light and Voyager styles, and so the `auto` default), OpenStreetMap
-(`tile.openstreetmap.org`), Esri World Imagery, and OpenTopoMap. Each style
+tile endpoints that need no API key: Esri's Dark Gray and Light Gray Canvas
+(`server.arcgisonline.com` — the dark and light styles, and so the `auto`
+default), OpenStreetMap (`tile.openstreetmap.org`), Esri World Imagery, and
+OpenTopoMap. The Canvas tiles stop at zoom 16; Leaflet scales those up for the
+three levels past it. CARTO's basemaps used to supply the dark, light and
+Voyager styles, but since September 2026 they answer every keyless request
+with an "API KEY REQUIRED" tile, so they are gone: Voyager had no keyless
+equivalent, and a browser that had picked it falls back to Auto. Each style
 carries the attribution its operator requires, set in `mapStyles.ts` and
 rendered by Leaflet's attribution control — that is a licence condition, not
 decoration. These are other people's servers, though, offered under usage
 policies written for modest, non-redistributed use (the
 [OSMF tile usage policy](https://operations.osmfoundation.org/policies/tiles/),
-[CARTO's basemap terms](https://carto.com/basemaps/)). One person's viewer sits
+Esri's ArcGIS Online terms). One person's viewer sits
 well inside them; a public or heavily-trafficked deployment does not, and should
 point at its own tile server or a paid provider rather than lean on the free
 endpoints.
