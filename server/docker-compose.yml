@@ -76,6 +76,11 @@ services:
       GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?set in .env}
       API_DB_PASSWORD: ${API_DB_PASSWORD:?set in .env}
       INGEST_DB_PASSWORD: ${INGEST_DB_PASSWORD:?set in .env}
+      # Optional: the web_app role, which only the web viewer's accounts mode
+      # connects as (it reads health data solely through the per-user views
+      # in schema `web`). Unset, the role is not created and an existing one
+      # cannot log in. See web/README.md, "Access control".
+      WEB_DB_PASSWORD: ${WEB_DB_PASSWORD:-}
       # Calendar zone for every daily view (metric_daily, Grafana daily
       # panels, the api's local-day ranges). Must match the phone's zone.
       # 013_time_zone.sh validates it and stores it on the database
