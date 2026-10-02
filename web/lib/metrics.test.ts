@@ -17,7 +17,7 @@ describe("metric semantics", () => {
     expect(isCumulative("HKQuantityTypeIdentifierTimeInDaylight")).toBe(true);
   });
 
-  it("offers the Day view and every preset, and no Custom button", () => {
+  it("offers the Day view and every preset", () => {
     expect(RANGE_ORDER).toEqual(["D", "7D", "30D", "90D", "6M", "Y", "2Y", "5Y", "ALL"]);
     for (const k of RANGE_ORDER) expect(RANGES[k].key).toBe(k);
   });

@@ -7,7 +7,7 @@
 //   click / tap          → pins that bucket until another is picked or Escape
 //   wheel, trackpad pinch, two-finger pinch → zoom about the pointer
 //   horizontal drag, horizontal wheel      → pan while zoomed
-//   Reset (shown while zoomed)             → the full D/W/M/6M/Y range again
+//   Reset (shown while zoomed)             → the full selected range again
 //
 // The time-domain arithmetic lives in lib/chartDomain.ts (pure, unit-tested);
 // this file is the rendering and the pointer plumbing. The visible window

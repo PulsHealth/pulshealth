@@ -1,10 +1,10 @@
 # Puls Web
 
-A sleek, Apple-Health-inspired web frontend for the self-hosted Puls health store.
-Built with **Next.js (App Router) + TypeScript**, it reads directly from the same
-**TimescaleDB** that Grafana uses, and renders bespoke hand-built SVG charts —
-activity rings, range-banded trend lines, and bar series — with a Vercel-clean
-monochrome shell and per-category accent colors.
+The self-hosted web viewer for the Puls health store, in the style of Apple
+Health. Built with **Next.js (App Router) + TypeScript**, it reads directly
+from the same **TimescaleDB** that Grafana uses and draws its own SVG charts:
+activity rings, range-banded trend lines and bar series, with per-category
+accent colors.
 
 > **Local demo mode.** Outside production, an unset or unreachable `DATABASE_URL`
 > serves generated demo data. Production never fabricates health data: database
@@ -67,16 +67,15 @@ time. Which one:
 **This is a preference, not access control.** Everyone behind the one
 `WEB_AUTH_PASSWORD` can look at every user, and the cookie is nothing but the
 chosen id (a forged value is at worst an id the database does not have, which
-renders empty — with the switcher there to pick a real one). A viewer that
-must show one household member only their own records is a different design;
-until then, share the password with the people who may see everything in the
-database.
+renders empty — with the switcher there to pick a real one). The viewer cannot
+limit a person to their own records, so share the password only with people
+who may see everything in the database.
 
 ## Access control
 
 **`WEB_AUTH_PASSWORD` is a password prompt in front of the whole viewer.** Set
 it and every route asks for HTTP Basic credentials; leave it empty and the
-viewer has no login at all, exactly as it always did.
+viewer has no login at all.
 
 ```bash
 WEB_AUTH_PASSWORD="$(openssl rand -hex 12)"   # in server/.env
@@ -117,7 +116,7 @@ untrusted network, and never directly on the internet.
 |---|---|
 | `/` | **Today** — activity rings from today's local `HKActivitySummary`; falls back to today's quantity totals when today's summary is missing, plus headline metrics, recent workouts, and categories |
 | `/category/[group]` | All metrics in an Apple-Health group (Activity, Heart, Sleep, …) as live cards |
-| `/type/[id]` | **Metric detail** — interactive trend chart with Day/7D/30D/90D/6M/Y/2Y/5Y/All ranges (`?range=`; the old `W`/`M` links open 7D/30D; All Time starts at the first sample and sizes its buckets to the span), min–max band for instantaneous metrics, bar series for cumulative ones, range stats; hover, tap or arrow keys read a bucket, wheel/pinch zoom and drag pan (see "The trend chart" below) |
+| `/type/[id]` | **Metric detail** — interactive trend chart with D/7D/30D/90D/6M/Y/2Y/5Y/ALL ranges (see "The trend chart" below), min–max band for instantaneous metrics, bar series for cumulative ones, range stats; hover, tap or arrow keys read a bucket, wheel/pinch zoom and drag pan |
 | `/data` | **Catalog** — quantity, category, and workout types with supported viewer routes, grouped with per-user sample counts and last-seen |
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
@@ -142,9 +141,8 @@ web/
     └── format.ts        # value / unit / time formatting
 ```
 
-**How data is read.** The Go ingest API (`../server/ingest`) is write-mostly — its
-only GETs return type counts and reconciliation digests, not time series. So, like
-Grafana, this app queries TimescaleDB directly: `quantity_samples` /
+**How data is read.** Like Grafana, the viewer queries TimescaleDB directly
+rather than going through the product API: `quantity_samples` /
 `category_samples` / `workouts` joined to `sample_types`, bucketed with
 `time_bucket()`. Every health-data read is scoped to the chosen user (the
 `puls-user` cookie, else `PULS_USER_ID` — see "Choosing a user"), with calendar
@@ -153,9 +151,9 @@ Hours count only stood records, and other categories are occurrence counts.
 Cumulative raw samples total each source separately and choose the highest source
 per bucket to avoid overlapping phone/Watch double counts; when the viewer's
 `PULS_TIME_ZONE` equals the database's `puls_time_zone()`, daily canonical values
-come from `metric_daily` (any other zone, or an older database without the
-function, uses raw local buckets). Today totals always use current raw local-day values,
-so the live headline does not depend on aggregate refresh or bucket-settlement timing.
+come from `metric_daily`; otherwise they come from raw local buckets. Today's
+totals always use current raw local-day values, so the live headline does not
+depend on aggregate refresh or bucket-settlement timing.
 Instantaneous types average with a min–max band. Activity rings require the selected
 user's summary for the actual current local date.
 
@@ -174,6 +172,18 @@ merged catalog to the JSON.
 
 ## The trend chart
 
+**Ranges.** The selector (and `?range=`) offers D, 7D, 30D, 90D, 6M, Y, 2Y, 5Y
+and ALL; `lib/metrics.ts` holds the table. The old `W` and `M` links still
+open 7D and 30D. Each range fixes its bucket — hourly for D, daily through 90D,
+weekly for 6M and Y, two-weekly for 2Y, calendar months for 5Y — and ALL starts
+at the type's earliest sample (from the per-user stats the page loads anyway)
+and sizes its bucket to that span, from days up to calendar quarters, so a
+chart stays at roughly 30–90 points. Every bucket boundary is a local one in
+`PULS_TIME_ZONE`, and day-or-coarser buckets of a covered type read
+`metric_daily` (the hourly `quantity_rollups` underneath it) rather than raw
+samples; the rest read `quantity_samples`, as before, so a 5Y or ALL chart of
+a type without a daily aggregate is a scan of that type's whole history.
+
 `components/TrendChart.tsx` is hand-drawn SVG driven by pointer events — no
 chart library, in keeping with the viewer's dependency budget. On a metric page:
 
@@ -183,10 +193,10 @@ chart library, in keeping with the viewer's dependency budget. On a metric page:
 | Click / tap | Pins that bucket; the tooltip stays until another is picked, or Escape. Tapping again unpins |
 | Wheel, trackpad pinch, two-finger pinch | Zooms the time window about the pointer, never narrower than five buckets or wider than the data |
 | Horizontal drag, horizontal wheel | Pans the window while zoomed, stopping at the data's edges |
-| **Reset** (shown while zoomed) | Back to the full D/W/M/6M/Y range |
+| **Reset** (shown while zoomed) | Back to the full selected range |
 | Arrow keys, Home/End, PageUp/PageDown, `+`/`-`, Escape, `0` | Keyboard equivalents once the chart has focus (Tab reaches it): move the selection, zoom about it, clear the selection, then the zoom |
 
-Changing the range (D/W/M/6M/Y) always starts from the full new range with
+Changing the range always starts from the full new range with
 nothing pinned — the zoom never changes which range button is selected. The
 row above the chart is an `aria-live` readout of the active bucket (or the
 visible window while zoomed), so the value is never hover-only. The SVG uses

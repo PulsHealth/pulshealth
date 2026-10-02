@@ -105,26 +105,6 @@ describe("query semantics", () => {
     expect(yearSql).toContain("time_bucket($1::interval");
   });
 
-  it("propagates the dynamically selected bucket for custom ranges", async () => {
-    const { getSeries } = await import("./queries");
-    const { resolveCustomWindow } = await import("./metrics");
-    const bucketOf = () =>
-      queryMock.mock.calls.find(([sql]) => /FROM quantity_samples/.test(sql))?.[1]?.[0];
-
-    const thirtyDay = await getSeries(
-      USER_ID, "HKQuantityTypeIdentifierHeartRate", resolveCustomWindow("2026-01-01", "2026-01-30"),
-    );
-    expect(bucketOf()).toBe("1 day");
-    expect(thirtyDay.bucketMs).toBe(86_400_000);
-
-    queryMock.mockClear();
-    const fiveYear = await getSeries(
-      USER_ID, "HKQuantityTypeIdentifierHeartRate", resolveCustomWindow("2021-01-01", "2025-12-30"),
-    );
-    expect(bucketOf()).toBe("1 month");
-    expect(fiveYear.bucketMs).toBe(30 * 86_400_000);
-  });
-
   it("reads charts from metric_daily or raw samples, never aggregate_samples directly", async () => {
     // metric_daily already prefers the phone's daily aggregate day by day and
     // falls back to raw rollups; reading aggregate_samples directly lost today
@@ -134,22 +114,6 @@ describe("query semantics", () => {
     await getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", "D");
     const sql = queryMock.mock.calls.map(([text]) => text as string);
     expect(sql.some((text) => /aggregate_(series|samples)/.test(text))).toBe(false);
-  });
-
-  it("rejects invalid custom calendar dates", async () => {
-    const { resolveCustomWindow } = await import("./metrics");
-
-    expect(() =>
-      resolveCustomWindow("2026-02-30", "2026-03-01"),
-    ).toThrow("Invalid custom date range");
-
-    expect(() =>
-      resolveCustomWindow("2026-04-31", "2026-05-01"),
-    ).toThrow("Invalid custom date range");
-
-    expect(() =>
-      resolveCustomWindow("2026-03-01", "2026-02-28"),
-    ).toThrow("Invalid custom date range");
   });
 
   it("aligns chart windows to the bucket grain in the viewer's zone", async () => {
@@ -203,12 +167,10 @@ describe("query semantics", () => {
 
   it("binds the time zone wherever a query expects one", async () => {
     // Every `$n::text` a query hands to time_bucket or AT TIME ZONE must be
-    // the zone. PR #70 renumbered the category queries' parameters but not
-    // their SELECT lists, so charts bucketed by the user id and Postgres
-    // rejected it as a time zone ("time zone \"<uuid>\" not recognized").
+    // the zone: a renumbered parameter list that left a SELECT list behind
+    // once bucketed by the user id, which Postgres rejected as a time zone
+    // ("time zone \"<uuid>\" not recognized").
     const { getSeries } = await import("./queries");
-    const { resolveCustomWindow } = await import("./metrics");
-    const window = resolveCustomWindow("2026-09-01", "2026-09-30");
     for (const id of [
       "HKCategoryTypeIdentifierSleepAnalysis",
       "HKCategoryTypeIdentifierMindfulSession",
@@ -218,10 +180,10 @@ describe("query semantics", () => {
     ]) {
       await getSeries(USER_ID, id, "30D");
       await getSeries(USER_ID, id, "D");
-      await getSeries(USER_ID, id, window);
+      await getSeries(USER_ID, id, "ALL");
     }
     const charts = queryMock.mock.calls.filter(([sql]) => /time_bucket/.test(sql as string));
-    expect(charts.length).toBeGreaterThanOrEqual(15);
+    expect(charts.length).toBeGreaterThanOrEqual(10);
     for (const [sql, params] of charts as [string, unknown[]][]) {
       const zones = [
         ...sql.matchAll(/time_bucket\([^;]*?, *\$(\d+)::text\)/g),
@@ -230,24 +192,6 @@ describe("query semantics", () => {
       expect(zones.length, sql).toBeGreaterThan(0);
       for (const n of zones) expect(params[n - 1], `$${n} in ${sql}`).toBe("America/Los_Angeles");
     }
-  });
-
-  it("bounds a custom window by calendar dates in the viewer's zone", async () => {
-    const { getSeries } = await import("./queries");
-    const { resolveCustomWindow } = await import("./metrics");
-    const window = resolveCustomWindow("2026-09-01", "2026-09-30");
-    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", window);
-    await getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", window);
-    const [steps, stepParams] = queryMock.mock.calls.find(([sql]) => /FROM quantity_samples/.test(sql)) ?? [];
-    expect(steps).toContain("time_bucket($1::interval, ($4::date::timestamp AT TIME ZONE $6::text), $6::text)");
-    expect(steps).toContain("AND q.start_ts < ($7::date::timestamp AT TIME ZONE $6::text)");
-    expect(stepParams).toEqual(["1 day", "1 day", "HKQuantityTypeIdentifierStepCount", "2026-09-01", USER_ID, "America/Los_Angeles", "2026-10-01"]);
-    // Sleep is attributed to the wake day, so its end bound moves back by
-    // the same 6 hours as its start: a night beginning on the last evening
-    // belongs to the day after the window.
-    const [sleep, sleepParams] = queryMock.mock.calls.find(([sql]) => /FROM category_samples/.test(sql)) ?? [];
-    expect(sleep).toContain("AND c.start_ts < ($7::date::timestamp AT TIME ZONE $5::text) - interval '6 hours'");
-    expect(sleepParams?.[6]).toBe("2026-10-01");
   });
 
   it("attributes sleep to the wake day and dedups duration sources", async () => {
