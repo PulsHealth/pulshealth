@@ -142,7 +142,7 @@ public struct ExportFailureCopy: Sendable, Equatable {
         case none
         /// iOS Settings → Privacy & Security → Health.
         case healthAccess
-        /// The app's Data Types tab.
+        /// The Export tab's Data Types picker.
         case dataTypes
     }
 
@@ -182,8 +182,7 @@ public struct ExportFailureCopy: Sendable, Equatable {
         case .nothingSelected:
             self.init(
                 title: "Nothing Selected",
-                message: "No data types are selected. Choose some to include in this export, "
-                    + "or on the Data Types tab.",
+                message: "No data types are selected. Choose some under Data Types on the Export tab.",
                 suggestion: .dataTypes)
         case .noData:
             // HealthKit answers a declined read exactly like an empty one, so

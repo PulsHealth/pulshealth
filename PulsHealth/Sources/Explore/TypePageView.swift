@@ -714,14 +714,17 @@ private struct AggregatePreviewSection: View {
             controls
         } chart: {
             if let error {
-                EmptyState(title: "Could not compute", symbol: "exclamationmark.triangle", message: error)
+                PreviewState(title: "Could not compute", symbol: "exclamationmark.triangle", message: error, tint: .orange)
             } else if buckets.isEmpty, !isComputing {
-                EmptyState(title: "No buckets", symbol: "chart.bar", message: "Nothing in this window.")
+                PreviewState(title: "No buckets", symbol: "chart.bar", message: "Nothing in this window.")
             } else {
+                // The spinner sits top-leading: the chart's top-trailing
+                // corner is where its unit label is.
                 AggregatePreviewChart(
                     buckets: buckets, function: function ?? .average,
                     unit: config?.unitString, color: descriptor.group.color, readout: $readout)
-                .overlay(alignment: .topTrailing) {
+                .opacity(isComputing ? 0.6 : 1)
+                .overlay(alignment: .topLeading) {
                     if isComputing { ProgressView().controlSize(.small).padding(6) }
                 }
             }
@@ -805,6 +808,34 @@ private struct AggregatePreviewSection: View {
     private var inExportDraft: Bool {
         guard let config else { return false }
         return model.export.draft.aggregates.contains { $0.seriesIdentity == config.seriesIdentity }
+    }
+
+    /// The chart slot's empty and error states, the chart's own height so the
+    /// card does not jump between them, with explicit fonts: `EmptyState`
+    /// (`ContentUnavailableView`) is sized for a whole screen and its title
+    /// grows with the runtime (larger on iOS 27), so inside a card it read
+    /// bigger than every other state text on this page.
+    private struct PreviewState: View {
+        let title: String
+        let symbol: String
+        let message: String
+        var tint: Color = .secondary
+
+        var body: some View {
+            VStack(spacing: 6) {
+                Image(systemName: symbol)
+                    .font(.title3)
+                    .foregroundStyle(tint)
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 200)
+        }
     }
 
     private func intervalLabel(_ unit: AggregateIntervalUnit) -> String {
