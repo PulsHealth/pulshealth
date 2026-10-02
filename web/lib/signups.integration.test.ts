@@ -321,6 +321,18 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
 
     expect(await sqlState(signups.purgeUser(personSession, personUser))).toBe("42501");
     expect(await sqlState(signups.purgeUser(adminSession, ADMIN_USER))).toBe("42501"); // household
+    // A second purge of the same user while one runs fails at once (NOWAIT),
+    // rather than holding a pooled connection while it waits.
+    const holder = new Client({ connectionString: ADMIN_URL });
+    await holder.connect();
+    try {
+      await holder.query("BEGIN");
+      await holder.query("SELECT 1 FROM users WHERE id = $1 FOR UPDATE", [personUser]);
+      expect(await sqlState(signups.purgeUser(adminSession, personUser))).toBe("55P03");
+    } finally {
+      await holder.query("ROLLBACK");
+      await holder.end();
+    }
     const counts = await signups.purgeUser(adminSession, personUser);
     expect(counts.quantity_samples).toBe(5);
     expect(counts.quantity_rollups).toBe(5);
@@ -329,7 +341,8 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     const names = (await admin.query<{ id: number; name: string }>(
       "SELECT source_id AS id, name FROM sources WHERE source_id = ANY($1::smallint[]) ORDER BY source_id", [[own, shared]],
     )).rows;
-    expect(names).toEqual([{ id: own, name: `removed-${own}` }, { id: shared, name: `Shared ${tag}` }]);
+    expect(names[0].name).toMatch(/^removed-[0-9a-f-]{36}$/);
+    expect(names[1]).toEqual({ id: shared, name: `Shared ${tag}` });
     // The household's own record is untouched.
     expect((await admin.query("SELECT 1 FROM quantity_samples WHERE user_id = $1 AND source_id = $2", [ADMIN_USER, shared])).rows).toHaveLength(1);
     expect(Number((await admin.query(`SELECT count(*) FROM ${mat} WHERE user_id = $1`, [personUser])).rows[0].count)).toBe(0);

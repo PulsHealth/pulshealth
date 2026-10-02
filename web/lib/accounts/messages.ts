@@ -21,6 +21,7 @@ const ERRORS: Record<string, string> = {
   failed: "That did not work. Try again, and check the server log if it keeps failing.",
   devices: "You have ten connected iPhones already. Disconnect one first.",
   deletion_requested: "That person asked to be deleted, so their account stays disabled. Purge their data instead.",
+  purge_running: "A purge of that user is already running. It disappears from this list when it is done.",
 };
 
 const NOTICES: Record<string, string> = {

@@ -204,8 +204,13 @@ BEGIN
   END IF;
   -- Lock the user row: every insert that names this user (an account from
   -- an invite, a sync token, a batch) checks its foreign key with a lock
-  -- that waits on this one, then fails once the row is gone.
-  PERFORM 1 FROM public.users WHERE id = p_user FOR UPDATE;
+  -- that waits on this one, then fails once the row is gone. NOWAIT, so a
+  -- second purge of the same user (an administrator retrying after the page
+  -- timed out) fails at once instead of holding a connection while it waits.
+  PERFORM 1 FROM public.users WHERE id = p_user FOR UPDATE NOWAIT;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'no user %', p_user USING ERRCODE = 'P0002';
+  END IF;
   IF EXISTS (SELECT 1 FROM auth.accounts WHERE user_id = p_user AND disabled_at IS NULL) THEN
     RAISE EXCEPTION 'disable the account first' USING ERRCODE = '55000';
   END IF;
@@ -269,7 +274,12 @@ BEGIN
   -- Device and app names are personal ("Pat's iPhone"), but `sources` is
   -- shared and has no user: blank the name of each source no one else's
   -- records still use. A rename, not a delete, so no table has to check its
-  -- foreign keys; the name stays unique for ingest's upsert.
+  -- foreign keys. The new name is random, so no uploaded source can already
+  -- hold it and fail the unique key. The rows are locked first (renaming a
+  -- uniquely indexed column conflicts with a foreign-key check), so an
+  -- upload starting to use one of them waits the second or two this takes
+  -- rather than slipping in between the check and the rename.
+  PERFORM 1 FROM public.sources WHERE source_id = ANY (srcs) FOR UPDATE;
   SELECT coalesce(array_agg(DISTINCT u), '{}') INTO used FROM (
     SELECT source_id AS u FROM public.quantity_samples WHERE source_id = ANY (srcs)
     UNION SELECT source_id FROM public.category_samples       WHERE source_id = ANY (srcs)
@@ -279,7 +289,7 @@ BEGIN
     UNION SELECT source_id FROM public.state_of_mind          WHERE source_id = ANY (srcs)
     UNION SELECT source_id FROM public.medication_dose_events WHERE source_id = ANY (srcs)
   ) x;
-  UPDATE public.sources SET name = 'removed-' || source_id
+  UPDATE public.sources SET name = 'removed-' || gen_random_uuid()
    WHERE source_id = ANY (srcs) AND NOT source_id = ANY (used);
   GET DIAGNOSTICS n = ROW_COUNT; counts := counts || jsonb_build_object('sources_blanked', n);
 

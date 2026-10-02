@@ -42,7 +42,9 @@ export async function POST(request: NextRequest) {
         return seeOther("/admin?error=failed");
     }
   } catch (e) {
-    if (action === "enable" && (e as { code?: string }).code === "55000") return seeOther("/admin?error=deletion_requested");
+    const code = (e as { code?: string }).code;
+    if (action === "enable" && code === "55000") return seeOther("/admin?error=deletion_requested");
+    if (action === "purge" && code === "55P03") return seeOther("/admin?error=purge_running");
     console.error(`[puls-web] admin ${action} failed:`, e instanceof Error ? e.message : e);
     return seeOther("/admin?error=failed");
   }

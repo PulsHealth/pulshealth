@@ -1077,21 +1077,30 @@ BEGIN
   END IF;
 
   -- Nor write anything by any route, PUBLIC's grants included: outside the
-  -- account store in schema auth, web_app can change no relation, and in it
-  -- not auth.self_service_users, the list the definer functions trust.
+  -- account store in schema auth, web_app can change no relation or
+  -- sequence (nor add a trigger or a foreign key to one), and in it not
+  -- auth.self_service_users, the list the definer functions trust.
   IF EXISTS (
     SELECT 1
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f')
+    WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
       AND n.nspname NOT IN ('pg_catalog', 'information_schema')
       AND (n.nspname <> 'auth' OR c.oid = 'auth.self_service_users'::regclass)
-      AND (has_table_privilege(web_oid, c.oid, 'INSERT')
-           OR has_table_privilege(web_oid, c.oid, 'UPDATE')
-           OR has_table_privilege(web_oid, c.oid, 'DELETE')
-           OR has_table_privilege(web_oid, c.oid, 'TRUNCATE')
-           OR has_any_column_privilege(web_oid, c.oid, 'INSERT')
-           OR has_any_column_privilege(web_oid, c.oid, 'UPDATE'))
+      AND CASE WHEN c.relkind = 'S' THEN
+            has_sequence_privilege(web_oid, c.oid, 'UPDATE')
+            OR has_sequence_privilege(web_oid, c.oid, 'USAGE')
+          ELSE
+            has_table_privilege(web_oid, c.oid, 'INSERT')
+            OR has_table_privilege(web_oid, c.oid, 'UPDATE')
+            OR has_table_privilege(web_oid, c.oid, 'DELETE')
+            OR has_table_privilege(web_oid, c.oid, 'TRUNCATE')
+            OR has_table_privilege(web_oid, c.oid, 'TRIGGER')
+            OR has_table_privilege(web_oid, c.oid, 'REFERENCES')
+            OR has_any_column_privilege(web_oid, c.oid, 'INSERT')
+            OR has_any_column_privilege(web_oid, c.oid, 'UPDATE')
+            OR has_any_column_privilege(web_oid, c.oid, 'REFERENCES')
+          END
   ) THEN
     RAISE EXCEPTION 'web_app can write a relation outside the account store';
   END IF;
