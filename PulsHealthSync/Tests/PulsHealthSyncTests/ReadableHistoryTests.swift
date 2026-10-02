@@ -623,37 +623,47 @@ private func local(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0, _ min: Int = 0, _
     /// cancellation, and returns late or never. The caller is let go at the
     /// limit all the same.
     ///
-    /// The stuck call takes two minutes and the ceiling is one: what these
-    /// tests tell apart — let go at the limit, or kept until the call
-    /// returns — must stay minutes apart, because a loaded CI runner
-    /// stretches every wait (a 3 s call against a 2 s ceiling failed at
-    /// 2.05 s on both runners).
+    /// What these tests tell apart — let go at the limit, or kept until the
+    /// call returns — is an order, not a duration: the caller is back while
+    /// the stuck call has still not returned. A wall-clock bound said the
+    /// same thing until the Xcode 27 runner stretched a 200 ms ceiling to
+    /// 73–128 s under load and failed four runs that way; the order holds
+    /// however slow the runner is.
     @Test func aCallThatIgnoresCancellationIsCutOffAtTheLimit() async {
-        let started = ContinuousClock.now
+        let stuck = StuckCall()
         await #expect(throws: ReadableHistory.TimedOut.self) {
-            try await ReadableHistory.withTimeout(.milliseconds(200)) { () async -> Int in
-                await withCheckedContinuation { (continuation: CheckedContinuation<Int, Never>) in
-                    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { continuation.resume(returning: 1) }
-                }
-            }
+            try await ReadableHistory.withTimeout(.milliseconds(200)) { await stuck.run() }
         }
-        #expect(ContinuousClock.now - started < .seconds(60))
+        #expect(stuck.hasReturned == false)
     }
 
     @Test func cancellingTheCallerEndsTheWait() async {
+        let stuck = StuckCall()
         let task = Task {
-            try await ReadableHistory.withTimeout(.seconds(30)) { () async -> Int in
-                await withCheckedContinuation { (continuation: CheckedContinuation<Int, Never>) in
-                    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { continuation.resume(returning: 1) }
-                }
-            }
+            try await ReadableHistory.withTimeout(.seconds(30)) { await stuck.run() }
         }
         try? await Task.sleep(for: .milliseconds(100))
-        let started = ContinuousClock.now
         task.cancel()
         let result = await task.result
-        #expect(ContinuousClock.now - started < .seconds(60))
+        #expect(stuck.hasReturned == false)
         #expect(throws: CancellationError.self) { try result.get() }
+    }
+
+    /// A call that ignores cancellation and returns two minutes later, and
+    /// records when it has.
+    private final class StuckCall: @unchecked Sendable {
+        private let lock = NSLock()
+        private var returned = false
+
+        var hasReturned: Bool { lock.withLock { returned } }
+
+        func run() async -> Int {
+            let value = await withCheckedContinuation { (continuation: CheckedContinuation<Int, Never>) in
+                DispatchQueue.global().asyncAfter(deadline: .now() + 120) { continuation.resume(returning: 1) }
+            }
+            lock.withLock { returned = true }
+            return value
+        }
     }
 }
 
