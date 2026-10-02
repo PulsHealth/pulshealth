@@ -1076,6 +1076,36 @@ BEGIN
     RAISE EXCEPTION 'web_app can read a table holding per-user data directly';
   END IF;
 
+  -- Nor write anything by any route, PUBLIC's grants included: outside the
+  -- account store in schema auth, web_app can change no relation, and in it
+  -- not auth.self_service_users, the list the definer functions trust.
+  IF EXISTS (
+    SELECT 1
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f')
+      AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+      AND (n.nspname <> 'auth' OR c.oid = 'auth.self_service_users'::regclass)
+      AND (has_table_privilege(web_oid, c.oid, 'INSERT')
+           OR has_table_privilege(web_oid, c.oid, 'UPDATE')
+           OR has_table_privilege(web_oid, c.oid, 'DELETE')
+           OR has_table_privilege(web_oid, c.oid, 'TRUNCATE')
+           OR has_any_column_privilege(web_oid, c.oid, 'INSERT')
+           OR has_any_column_privilege(web_oid, c.oid, 'UPDATE'))
+  ) THEN
+    RAISE EXCEPTION 'web_app can write a relation outside the account store';
+  END IF;
+
+  -- A trigger runs without any EXECUTE check, so a SECURITY DEFINER trigger
+  -- on a table web_app writes would slip past the function check above:
+  -- schema auth has none (foreign keys' internal triggers aside).
+  IF EXISTS (
+    SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+    WHERE c.relnamespace = 'auth'::regnamespace AND NOT t.tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'schema auth has a trigger, which web_app''s writes would run';
+  END IF;
+
   -- Schema `web` holds exactly the views puls_create_web_views() just made,
   -- each a security barrier. Their definitions are that function's, rebuilt
   -- above on every run, so a hand-edited or hand-added view cannot outlive

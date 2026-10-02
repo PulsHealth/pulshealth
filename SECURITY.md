@@ -79,8 +79,8 @@ Everything in this repository is in scope, in particular:
   approval, to mint or revoke a sync token for anyone but the signed-in
   person, to reach `/admin` or its database functions without an
   administrator's session, or — even with SQL run as `web_app` — to give a
-  token to, disable or purge a user that no approved request created. See
-  the notes below.
+  sync token to, revoke the tokens of, or delete the data of a user that no
+  approved request created. See the notes below.
 
 Out of scope:
 
@@ -181,9 +181,11 @@ for judging what is.
   those an approved request created (`auth.self_service_users`, which only
   the approval function writes). So SQL run as `web_app` can at worst
   approve requests, give a self-service user a sync token (letting it upload
-  into that user), or disable or purge one; it cannot give the operator's
-  household a token, disable it or delete its data, and it reads every
-  user's records only as before (see the bullet above). The viewer shows a
+  into that user), or disable or purge one. It cannot give a household user
+  a sync token, revoke their phones' tokens or delete their data; it can
+  change their viewer accounts in `auth.accounts`, which it writes to sign
+  people in, and it reads every user's records only as before (see the
+  bullet above). The viewer shows a
   minted token once, as a pairing code, and keeps only its hash. The sign-up
   form creates nothing but a request and emails only the operator, so it
   cannot open the database to anyone or be used to mail a stranger; no

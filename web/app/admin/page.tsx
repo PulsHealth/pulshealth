@@ -92,11 +92,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
               </div>
               {a.selfService && !a.isAdmin && (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  <form method="post" action="/api/admin">
-                    <input type="hidden" name="action" value={a.disabledAt ? "enable" : "disable"} />
-                    <input type="hidden" name="id" value={a.id} />
-                    <button type="submit" className="btn">{a.disabledAt ? "Enable" : "Disable"}</button>
-                  </form>
+                  {!a.deletionRequestedAt && (
+                    <form method="post" action="/api/admin">
+                      <input type="hidden" name="action" value={a.disabledAt ? "enable" : "disable"} />
+                      <input type="hidden" name="id" value={a.id} />
+                      <button type="submit" className="btn">{a.disabledAt ? "Enable" : "Disable"}</button>
+                    </form>
+                  )}
                   {a.disabledAt && (
                     <form method="post" action="/api/admin" style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
                       <input type="hidden" name="action" value="purge" />
@@ -114,9 +116,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         </div>
         <p className="form-hint" style={{ maxWidth: 720, lineHeight: 1.5 }}>
           Disabling ends an account&apos;s sessions and disconnects its iPhones at once. Purging deletes every record stored
-          for that user, which decompresses old data as it goes and can take a minute on a long history. Only accounts
-          that came from an approved request can be changed here; household accounts (invited with make web-invite) are
-          managed from the server, so a compromised viewer can never reach them.
+          for that user. It unpacks the compressed history it shares with others as it goes, so on a long history it can
+          take several minutes; if the page times out first, the purge carries on and the account disappears from this
+          list when it is done. Only accounts that came from an approved request can be changed here. Household accounts
+          (invited with make web-invite) are managed from the server, and the viewer can never give them a sync token or
+          delete their data.
         </p>
       </section>
 

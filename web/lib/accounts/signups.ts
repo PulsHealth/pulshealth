@@ -8,7 +8,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { isIP } from "node:net";
 
-import { query, transaction } from "../db";
+import { longStatement, query, transaction } from "../db";
 import { newToken, tokenHash } from "./session";
 
 /** How long an approval's invite link works. */
@@ -240,11 +240,15 @@ export async function setAccountDisabled(session: Buffer, accountId: string, dis
   await query("SELECT auth.set_account_disabled($1, $2::uuid, $3)", [session, accountId, disabled]);
 }
 
+/** How long a purge may run: it unpacks the compressed batches the user's rows share. */
+export const PURGE_MINUTES = 30;
+
 /** Deletes everything stored for the user; rows removed per table. */
 export async function purgeUser(session: Buffer, userId: string): Promise<Record<string, number>> {
-  const [row] = await query<{ counts: Record<string, number> }>(
+  const [row] = await longStatement<{ counts: Record<string, number> }>(
     "SELECT auth.purge_user($1, $2::uuid) AS counts",
     [session, userId],
+    PURGE_MINUTES,
   );
   return row.counts;
 }

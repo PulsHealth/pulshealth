@@ -130,7 +130,9 @@ REVOKE ALL ON FUNCTION auth.approve_signup(bytea, uuid) FROM PUBLIC;
 
 -- Disables a self-service account (it cannot sign in, its sessions end and
 -- every sync token of its user is revoked, so its phone stops uploading) or
--- enables it again (tokens stay revoked: the person reconnects).
+-- enables it again (tokens stay revoked: the person reconnects). An account
+-- whose owner asked to be deleted cannot be enabled: the request stands
+-- until the data is purged.
 CREATE FUNCTION auth.set_account_disabled(p_session bytea, p_account uuid, p_disabled boolean)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER
@@ -144,7 +146,7 @@ BEGIN
   IF NOT FOUND OR NOT caller.is_admin THEN
     RAISE EXCEPTION 'only an administrator may disable accounts' USING ERRCODE = '42501';
   END IF;
-  SELECT a.id, a.user_id INTO target FROM auth.accounts a
+  SELECT a.id, a.user_id, a.deletion_requested_at INTO target FROM auth.accounts a
    WHERE a.id = p_account
      AND EXISTS (SELECT 1 FROM auth.self_service_users ss WHERE ss.user_id = a.user_id)
    FOR UPDATE;
@@ -156,8 +158,10 @@ BEGIN
     DELETE FROM auth.sessions WHERE account_id = p_account;
     UPDATE public.device_tokens SET status = 'revoked', revoked_at = now()
      WHERE user_id = target.user_id AND status = 'active';
+  ELSIF target.deletion_requested_at IS NOT NULL THEN
+    RAISE EXCEPTION 'this person asked to be deleted; purge instead' USING ERRCODE = '55000';
   ELSE
-    UPDATE auth.accounts SET disabled_at = NULL, deletion_requested_at = NULL WHERE id = p_account;
+    UPDATE auth.accounts SET disabled_at = NULL WHERE id = p_account;
   END IF;
 END
 $$;
@@ -166,11 +170,14 @@ REVOKE ALL ON FUNCTION auth.set_account_disabled(bytea, uuid, boolean) FROM PUBL
 -- Deletes everything stored for a self-service user whose account is
 -- disabled (or who never made one): health data in every table, the rows
 -- the quantity_rollups continuous aggregate made from it, sync tokens and
--- batches, the account, its requests and invites, and the user row. The
--- deletes are narrowed to the user's own types and time span, so only the
--- compressed batches holding this user's rows are opened (they are shared
--- with other users of the same type; the compression policy packs them up
--- again). Returns the rows removed per table.
+-- batches, the account, its requests and invites, and the user row; the
+-- names of devices and apps no one else's records use are blanked. The
+-- deletes on compressed hypertables are narrowed to the user's own
+-- segments (types and time span; workouts), so only the batches holding
+-- this user's rows are opened — shared with other users of the same type,
+-- so this can take minutes on a long history, and the viewer runs it with a
+-- long statement timeout. The compression policy packs them up again.
+-- Returns the rows removed per table.
 CREATE FUNCTION auth.purge_user(p_session bytea, p_user uuid)
 RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER
@@ -183,6 +190,9 @@ DECLARE
   lo      timestamptz;
   hi      timestamptz;
   types   smallint[];
+  srcs    smallint[];
+  used    smallint[];
+  wks     uuid[];
   mat     text;
 BEGIN
   SELECT * INTO caller FROM auth.session_owner(p_session);
@@ -206,8 +216,18 @@ BEGIN
   -- decompress more tuples than the default per-transaction cap.
   PERFORM set_config('timescaledb.max_tuples_decompressed_per_dml_transaction', '0', true);
 
-  SELECT min(start_ts), max(start_ts), array_agg(DISTINCT type_id)
-    INTO lo, hi, types FROM public.quantity_samples WHERE user_id = p_user;
+  SELECT min(start_ts), max(start_ts), array_agg(DISTINCT type_id), array_agg(DISTINCT source_id)
+    INTO lo, hi, types, srcs FROM public.quantity_samples WHERE user_id = p_user;
+  -- Every source the user's rows name, for the scrub at the end.
+  SELECT coalesce(array_agg(DISTINCT s), '{}') INTO srcs FROM (
+    SELECT unnest(srcs) AS s
+    UNION SELECT source_id FROM public.category_samples       WHERE user_id = p_user
+    UNION SELECT source_id FROM public.workouts               WHERE user_id = p_user
+    UNION SELECT source_id FROM public.heartbeat_series       WHERE user_id = p_user
+    UNION SELECT source_id FROM public.ecg_samples            WHERE user_id = p_user
+    UNION SELECT source_id FROM public.state_of_mind          WHERE user_id = p_user
+    UNION SELECT source_id FROM public.medication_dose_events WHERE user_id = p_user
+  ) x WHERE s IS NOT NULL;
   IF lo IS NOT NULL THEN
     DELETE FROM public.quantity_samples
      WHERE user_id = p_user AND type_id = ANY (types) AND start_ts BETWEEN lo AND hi;
@@ -217,10 +237,13 @@ BEGIN
   END IF;
   counts := counts || jsonb_build_object('quantity_samples', n);
 
-  -- workout_series_points is segmented by workout, so naming the user's
-  -- workouts opens only their own batches.
-  DELETE FROM public.workout_series_points
-   WHERE workout_uuid IN (SELECT uuid FROM public.workouts WHERE user_id = p_user) AND user_id = p_user;
+  -- workout_series_points is segmented by workout, so naming the workouts
+  -- opens only their batches. Taken from the points themselves, not from
+  -- workouts: ingest stores points whose workout row is missing or another
+  -- user's, and one left behind would stop the user row's delete below.
+  SELECT coalesce(array_agg(DISTINCT workout_uuid), '{}') INTO wks
+    FROM public.workout_series_points WHERE user_id = p_user;
+  DELETE FROM public.workout_series_points WHERE workout_uuid = ANY (wks) AND user_id = p_user;
   GET DIAGNOSTICS n = ROW_COUNT; counts := counts || jsonb_build_object('workout_series_points', n);
   DELETE FROM public.workout_route_points  WHERE user_id = p_user; GET DIAGNOSTICS n = ROW_COUNT; counts := counts || jsonb_build_object('workout_route_points', n);
   DELETE FROM public.category_samples      WHERE user_id = p_user; GET DIAGNOSTICS n = ROW_COUNT; counts := counts || jsonb_build_object('category_samples', n);
@@ -242,6 +265,23 @@ BEGIN
     EXECUTE format('DELETE FROM %s WHERE user_id = $1', mat) USING p_user;
     GET DIAGNOSTICS n = ROW_COUNT; counts := counts || jsonb_build_object('quantity_rollups', n);
   END IF;
+
+  -- Device and app names are personal ("Pat's iPhone"), but `sources` is
+  -- shared and has no user: blank the name of each source no one else's
+  -- records still use. A rename, not a delete, so no table has to check its
+  -- foreign keys; the name stays unique for ingest's upsert.
+  SELECT coalesce(array_agg(DISTINCT u), '{}') INTO used FROM (
+    SELECT source_id AS u FROM public.quantity_samples WHERE source_id = ANY (srcs)
+    UNION SELECT source_id FROM public.category_samples       WHERE source_id = ANY (srcs)
+    UNION SELECT source_id FROM public.workouts               WHERE source_id = ANY (srcs)
+    UNION SELECT source_id FROM public.heartbeat_series       WHERE source_id = ANY (srcs)
+    UNION SELECT source_id FROM public.ecg_samples            WHERE source_id = ANY (srcs)
+    UNION SELECT source_id FROM public.state_of_mind          WHERE source_id = ANY (srcs)
+    UNION SELECT source_id FROM public.medication_dose_events WHERE source_id = ANY (srcs)
+  ) x;
+  UPDATE public.sources SET name = 'removed-' || source_id
+   WHERE source_id = ANY (srcs) AND NOT source_id = ANY (used);
+  GET DIAGNOSTICS n = ROW_COUNT; counts := counts || jsonb_build_object('sources_blanked', n);
 
   DELETE FROM public.batches               WHERE user_id = p_user; GET DIAGNOSTICS n = ROW_COUNT; counts := counts || jsonb_build_object('batches', n);
   DELETE FROM public.ingest_rejections     WHERE user_id = p_user::text; GET DIAGNOSTICS n = ROW_COUNT; counts := counts || jsonb_build_object('ingest_rejections', n);

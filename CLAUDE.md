@@ -440,10 +440,13 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   created, because `web_app` writes `auth.sessions` and so can forge any
   session — the session check scopes normal use, it is not the barrier. The
   household (default user, `make issue-device`, `make web-invite`) is never
-  tokened, disabled or purged through the viewer. `099_read_roles.sh`
+  given a sync token, has its tokens revoked or its data purged through the
+  viewer (`web_app` can still change household *viewer* accounts in
+  `auth.accounts`, which it writes to sign people in). `099_read_roles.sh`
   asserts `web_app` can run exactly those definer functions (PUBLIC's
-  default EXECUTE included) and still has no write grant on `users`,
-  `device_tokens` or `auth.self_service_users`. A new privileged step is a
+  default EXECUTE included), can write no relation outside the account store
+  nor `auth.self_service_users` (PUBLIC's grants included), and that schema
+  `auth` has no triggers (a trigger runs without an EXECUTE check). A new privileged step is a
   new definer function there, a `GRANT` and an expected row, never a table
   grant. `purge_user`'s table list must cover every table with a `user_id`
   (its final `DELETE FROM users` fails on a missed foreign key;

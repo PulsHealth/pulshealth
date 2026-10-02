@@ -259,7 +259,7 @@ ask for access there, and the developer decides. What happens to your data:
 - **Leaving.** If you asked for access, **Delete my account** on the
   account page signs you out, disconnects your iPhones at once so nothing
   more is uploaded, and asks the developer to delete every row stored under
-  your user ID, which they do. Family members ask the developer, who does
+  your user ID, which they do, along with the names of your devices. Family members ask the developer, who does
   the same.
   Delete the database address in the app (or the app) to stop it trying.
 

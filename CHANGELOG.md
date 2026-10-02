@@ -58,8 +58,9 @@ accounts mode connects as.
   `WEB_INGEST_URL`), disconnect it, and delete their account; administrators
   disable accounts (which disconnects their phones) and purge a disabled
   user's data. All of it applies only to users an approved request created:
-  the operator's household is never given a token, disabled or purged
-  through the viewer, even by SQL run as its database role. Email through
+  the operator's household is never given a sync token, cut off from its
+  phones or purged through the viewer, even by SQL run as its database
+  role. Email through
   Amazon SES (`WEB_SES_*`, `WEB_MAIL_FROM`, `WEB_ADMIN_EMAIL`), off unless
   configured. Migration `016_web_signups.sql` adds the request table, the
   `SECURITY DEFINER` functions behind every privileged step, and an hourly

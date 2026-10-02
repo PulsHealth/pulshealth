@@ -57,6 +57,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
   let personCookie: string;
   let personSession: Buffer;
   let tokenHash: typeof import("./accounts/session").tokenHash;
+  const createdSources: number[] = [];
   let personUser: string;
   let signups: typeof import("./accounts/signups");
   let loginRoute: typeof import("@/app/api/auth/login/route");
@@ -101,6 +102,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
       await admin.query("DELETE FROM users WHERE id = $1", [user]);
     }
     await admin.query("DELETE FROM auth.signup_requests WHERE email LIKE $1", [`%-${tag}@example.com`]);
+    if (createdSources.length) await admin.query("DELETE FROM sources WHERE source_id = ANY($1::smallint[])", [createdSources]);
     await admin.end();
   }, 60_000);
 
@@ -272,11 +274,31 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     await admin.query(
       `INSERT INTO sample_types (identifier, kind, unit) VALUES ('HKQuantityTypeIdentifierStepCount', 'quantity', 'count') ON CONFLICT DO NOTHING`,
     );
+    // Two sources: the person's own phone, and one the household's records use too.
+    const source = async (name: string) => {
+      const id = (await admin.query<{ id: number }>("INSERT INTO sources (name) VALUES ($1) RETURNING source_id AS id", [name])).rows[0].id;
+      createdSources.push(id);
+      return id;
+    };
+    const own = await source(`Pat's iPhone ${tag}`);
+    const shared = await source(`Shared ${tag}`);
     await admin.query(
-      `INSERT INTO quantity_samples (uuid, type_id, start_ts, end_ts, value, user_id)
+      `INSERT INTO quantity_samples (uuid, type_id, start_ts, end_ts, value, user_id, source_id)
        SELECT gen_random_uuid(), (SELECT type_id FROM sample_types WHERE identifier = 'HKQuantityTypeIdentifierStepCount'),
-              now() - make_interval(days => g), now() - make_interval(days => g), g, $1
+              now() - make_interval(days => g), now() - make_interval(days => g), g, $1, CASE WHEN g <= 3 THEN $2::smallint ELSE $3::smallint END
          FROM generate_series(1, 5) g`,
+      [personUser, own, shared],
+    );
+    await admin.query(
+      `INSERT INTO quantity_samples (uuid, type_id, start_ts, end_ts, value, user_id, source_id)
+       VALUES (gen_random_uuid(), (SELECT type_id FROM sample_types WHERE identifier = 'HKQuantityTypeIdentifierStepCount'),
+               now() - interval '2 days', now() - interval '2 days', 1, $1, $2)`,
+      [ADMIN_USER, shared],
+    );
+    // A series point whose workout row is not the person's (ingest stores those).
+    await admin.query(
+      `INSERT INTO workout_series_points (workout_uuid, type_id, ts, value, user_id)
+       VALUES (gen_random_uuid(), (SELECT type_id FROM sample_types WHERE identifier = 'HKQuantityTypeIdentifierStepCount'), now(), 1, $1)`,
       [personUser],
     );
     // Materialize the hourly rollups, so purging has to clear them too.
@@ -293,16 +315,27 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     const { rows } = await admin.query("SELECT disabled_at IS NOT NULL AS disabled, deletion_requested_at IS NOT NULL AS asked FROM auth.accounts WHERE user_id = $1", [personUser]);
     expect(rows[0]).toEqual({ disabled: true, asked: true });
     expect((await admin.query("SELECT status FROM device_tokens WHERE id = $1", [minted.id])).rows[0].status).toBe("revoked");
+    // The request stands: an administrator cannot quietly enable the account again.
+    const personAccount = (await admin.query("SELECT id::text FROM auth.accounts WHERE user_id = $1", [personUser])).rows[0].id;
+    expect(await sqlState(signups.setAccountDisabled(adminSession, personAccount, false))).toBe("55000");
 
     expect(await sqlState(signups.purgeUser(personSession, personUser))).toBe("42501");
     expect(await sqlState(signups.purgeUser(adminSession, ADMIN_USER))).toBe("42501"); // household
     const counts = await signups.purgeUser(adminSession, personUser);
     expect(counts.quantity_samples).toBe(5);
     expect(counts.quantity_rollups).toBe(5);
+    expect(counts.workout_series_points).toBe(1);
+    expect(counts.sources_blanked).toBe(1);
+    const names = (await admin.query<{ id: number; name: string }>(
+      "SELECT source_id AS id, name FROM sources WHERE source_id = ANY($1::smallint[]) ORDER BY source_id", [[own, shared]],
+    )).rows;
+    expect(names).toEqual([{ id: own, name: `removed-${own}` }, { id: shared, name: `Shared ${tag}` }]);
+    // The household's own record is untouched.
+    expect((await admin.query("SELECT 1 FROM quantity_samples WHERE user_id = $1 AND source_id = $2", [ADMIN_USER, shared])).rows).toHaveLength(1);
     expect(Number((await admin.query(`SELECT count(*) FROM ${mat} WHERE user_id = $1`, [personUser])).rows[0].count)).toBe(0);
     for (const [table, where] of [
       ["users", "id"], ["quantity_samples", "user_id"], ["device_tokens", "user_id"], ["auth.accounts", "user_id"], ["auth.invites", "user_id"],
-      ["auth.self_service_users", "user_id"],
+      ["auth.self_service_users", "user_id"], ["workout_series_points", "user_id"],
     ] as const) {
       expect((await admin.query(`SELECT 1 FROM ${table} WHERE ${where} = $1`, [personUser])).rows, table).toHaveLength(0);
     }

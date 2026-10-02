@@ -251,7 +251,11 @@ phone can send anything. In order:
    its tokens at once, and tells the operator, who purges the data from
    `/admin`. An administrator can also **Disable** such an account (which
    disconnects its iPhones) and, once disabled, **Purge** everything stored
-   for that user, the hourly rollups included.
+   for that user, the hourly rollups included, and blank the names of
+   devices and apps no one else's records use. An account whose owner asked
+   to be deleted cannot be enabled again. Purge runs with a 30-minute
+   timeout of its own, since it unpacks the compressed history the user's
+   rows share with others; if the page times out first, it carries on.
 
 All of that applies only to **self-service** users: those an approved request
 created, recorded in `auth.self_service_users`. The operator's household —
@@ -272,8 +276,10 @@ person's own user, the administrator's steps only for an administrator. That
 scopes normal use, but it is not a barrier against SQL run as `web_app`,
 which writes `auth.sessions` to sign people in and so can forge a session.
 The barrier is the self-service list: such SQL could at worst give a
-self-service user a token, or disable or purge one. The household stays
-read-only to the viewer, as before.
+self-service user a token, or disable or purge one. It still cannot give a
+household user a sync token, revoke their phones' tokens or delete anything
+they stored. It can change their *viewer* accounts, as it always could,
+since it writes `auth.accounts` to sign people in.
 
 **Email** goes through Amazon SES's API (`lib/email.ts`, signed by hand, no
 dependency): `WEB_SES_ACCESS_KEY_ID`, `WEB_SES_SECRET_ACCESS_KEY`,

@@ -20,6 +20,7 @@ const ERRORS: Record<string, string> = {
   exists: "An account already signs in with that address.",
   failed: "That did not work. Try again, and check the server log if it keeps failing.",
   devices: "You have ten connected iPhones already. Disconnect one first.",
+  deletion_requested: "That person asked to be deleted, so their account stays disabled. Purge their data instead.",
 };
 
 const NOTICES: Record<string, string> = {
