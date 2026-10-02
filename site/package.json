@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "copy-blog-images": "mkdir -p public/blog && cp -r ../blog/images/. public/blog/",
-    "predev": "bun run copy-blog-images",
+    "gen-llms-txt": "bun scripts/gen-llms-txt.ts",
+    "predev": "bun run copy-blog-images && bun run gen-llms-txt",
     "dev": "next dev",
-    "prebuild": "bun run copy-blog-images",
+    "prebuild": "bun run copy-blog-images && bun run gen-llms-txt",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

@@ -52,7 +52,6 @@ data (`site/public/screenshots/`) the README can reuse.
 - SRV-13: `/v1/metrics/daily` is not paginated; a request is bounded only by
   its `start`, `end` and `types`. `server/api/docs.go` says a page size bounds
   it, which is not yet true.
-- AI-4: `llms.txt` is in the repository but pulshealth.com does not serve it.
 
 ## 4. Standing maintenance
 

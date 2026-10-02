@@ -166,6 +166,10 @@ jobs:
           test -f site/out/index.html
           test -f site/out/docs/index.html
           test -f site/out/sitemap.xml
+          # llms.txt is rendered from the repository root's llms.txt by
+          # site/scripts/gen-llms-txt.ts (prebuild), never copied by hand.
+          test -f site/out/llms.txt
+          grep -q 'https://pulshealth.com/docs/protocol/' site/out/llms.txt
 
   # The four app images build for linux/amd64 (no push) so a broken
   # Dockerfile fails a pull request instead of the next release. Same
