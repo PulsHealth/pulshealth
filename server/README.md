@@ -211,7 +211,7 @@ summary.
 | `NNN_name.sql` | One-shot: applied once, in one transaction with its `schema_migrations` row (`psql --single-transaction`, `ON_ERROR_STOP`), so a failed file leaves nothing behind and is retried next run. Applied files are immutable: the migrator stops if a recorded file's checksum changed (put the change in a new file) or a recorded file is missing (never rename or delete one). |
 | `-- puls:rerun` on the first line | Re-applied whenever its checksum changes. For `CREATE OR REPLACE`/upsert files edited in place: `009_metric_daily.sql` (the view and `puls_time_zone()`) and `010_category_labels.sql` (the label seed). |
 | `-- puls:no-transaction` on the first line | Applied statement by statement, for a statement that cannot run in a transaction block (`008_quantity_rollups.sql`: `refresh_continuous_aggregate`). Must be idempotent: a mid-file failure is retried from the top. |
-| `NNN_name.sh` | Run on every invocation, never recorded: `013_time_zone.sh` (stores `PULS_TIME_ZONE`) and `099_read_roles.sh` (creates the `grafana`, `api_reader` and `ingest` roles and sets their passwords from `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD` and `INGEST_DB_PASSWORD`). |
+| `NNN_name.sh` | Run on every invocation, never recorded: `013_time_zone.sh` (stores `PULS_TIME_ZONE`) and `099_read_roles.sh` (creates the `grafana`, `api_reader` and `ingest` roles and sets their passwords from `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD` and `INGEST_DB_PASSWORD`; and, when `WEB_DB_PASSWORD` is set, `web_app`, the web viewer's accounts-mode role). |
 
 **Adding a migration.** Create the next `NNN_name.sql` (three digits, an
 underscore, a name) with plain DDL/DML — no `BEGIN`/`COMMIT`, the migrator
@@ -221,7 +221,15 @@ Fresh and existing installs take the same path. New tables are readable by
 `099_read_roles.sh` sets (the script then revokes `grafana`'s SELECT on
 `device_tokens` on every run — credential hashes are not dashboard
 material). `api_reader` has an exact grant list instead: extend that script
-and its assertion when the product API reads a new table. Because `migrate`
+and its assertion when the product API reads a new table. So does `web_app`,
+the web viewer's role in accounts mode, which reads health data only through
+the per-user, security-barrier views in schema `web`
+(`015_web_accounts.sql`, filtered on the `puls.user_id` setting the viewer
+puts in each transaction): a table the viewer newly reads needs a view in a
+new migration, a `GRANT` and an expected row in the script, whose assertion
+also fails the run if `web_app` could read any table with a `user_id`
+directly. (Views, not row-level security: TimescaleDB refuses
+`ENABLE ROW LEVEL SECURITY` on a hypertable with columnstore enabled.) Because `migrate`
 applies every pending file before `ingest` starts, a table `InsertBatch`
 writes unconditionally is always there before the code that writes it.
 
@@ -909,14 +917,17 @@ throwaway container, never staged in a temporary file). Flags go through
 | `--no-start` | Leave the app services stopped afterwards; `docker compose up -d` when you are ready. |
 
 In order, it: starts `db` and verifies the archive is readable; stops
-`ingest`, `api`, `mcp`, `web` and `grafana`; drops and recreates the
+`ingest`, `api`, `mcp`, `web` and `grafana`; drops the web viewer's
+`web` and `auth` schemas (the dump recreates them; left in place they stop
+`pg_restore` at "schema already exists"), then drops and recreates the
 `public` schema while TimescaleDB is still live, so its event triggers
 dismantle hypertable chunks and continuous aggregates properly; reinstalls
 the extension (it lives in `public`, so the drop takes it too); runs
 `timescaledb_pre_restore()`, a **single-threaded** `pg_restore --no-owner
 --no-privileges`, `timescaledb_post_restore()` and `ANALYZE`; and finally
 `docker compose up -d`, where `migrate` recreates the `grafana`,
-`api_reader` and `ingest` roles from `.env` with their grants. The first
+`api_reader`, `ingest` and (with `WEB_DB_PASSWORD`) `web_app` roles from
+`.env` with their grants. The first
 check is the important one: a truncated file, a plain-SQL dump, the wrong
 file or a name not in the store is refused **before** anything is dropped.
 
