@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const queryMock = vi.hoisted(() => vi.fn());
-vi.mock("./db", () => ({ query: queryMock }));
+// scoped() runs the callback's statements through the same mock; its
+// transaction and user setting are lib/db.ts's business, tested there.
+vi.mock("./db", () => ({
+  query: queryMock,
+  scoped: (_userId: string, fn: (q: typeof queryMock) => Promise<unknown>) => fn(queryMock),
+}));
 
 const DEFAULT = "5ea4d000-0000-4000-8000-000000000001";
 const OTHER = "22222222-2222-4222-8222-222222222222";
