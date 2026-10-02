@@ -225,10 +225,12 @@ and its assertion when the product API reads a new table. So does `web_app`,
 the web viewer's role in accounts mode, which reads health data only through
 the per-user, security-barrier views in schema `web`
 (`015_web_accounts.sql`, filtered on the `puls.user_id` setting the viewer
-puts in each transaction): a table the viewer newly reads needs a view in a
-new migration, a `GRANT` and an expected row in the script, whose assertion
-also fails the run if `web_app` could read any table with a `user_id`
-directly. (Views, not row-level security: TimescaleDB refuses
+puts in each transaction). The views are rebuilt on every run by
+`puls_create_web_views()`, so a CASCADE or a column change heals itself on
+the next `docker compose up -d`; a table the viewer newly reads needs a new
+migration replacing that function, a `GRANT` and an expected row in the
+script, whose assertion fails the run on any other relation in `web` and if
+`web_app` could read any table with a `user_id` directly. (Views, not row-level security: TimescaleDB refuses
 `ENABLE ROW LEVEL SECURITY` on a hypertable with columnstore enabled.) Because `migrate`
 applies every pending file before `ingest` starts, a table `InsertBatch`
 writes unconditionally is always there before the code that writes it.

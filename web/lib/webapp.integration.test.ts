@@ -21,6 +21,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 const WEB_URL = process.env.WEB_APP_DATABASE_URL;
 const ADMIN_URL = process.env.ADMIN_DATABASE_URL;
 
+// In CI the job sets both; a missing one there must fail, not skip quietly.
+if (process.env.CI && process.env.PULS_WEB_INTEGRATION && (!WEB_URL || !ADMIN_URL)) {
+  throw new Error("PULS_WEB_INTEGRATION is set but WEB_APP_DATABASE_URL or ADMIN_DATABASE_URL is missing");
+}
+
 const A = randomUUID();
 const B = randomUUID();
 const STEPS = "HKQuantityTypeIdentifierStepCount";

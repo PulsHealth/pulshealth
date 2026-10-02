@@ -739,6 +739,14 @@ EOSQL
   exit 0
 fi
 
+# A database baselined from before 015 has no views to grant yet; the next
+# plain migrate run applies 015, and this section with it.
+if [[ "$(psql -X -q -tA --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+          -c "SELECT to_regprocedure('puls_create_web_views()') IS NOT NULL")" != t ]]; then
+  echo "099_read_roles: 015_web_accounts.sql is not applied yet; skipping the web_app role."
+  exit 0
+fi
+
 psql -q -v ON_ERROR_STOP=1 \
      -v web_password="${WEB_DB_PASSWORD}" \
      --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
@@ -800,6 +808,12 @@ ALTER ROLE web_app
   PASSWORD :'web_password';
 ALTER ROLE web_app RESET ALL;
 ALTER ROLE web_app IN DATABASE :"DBNAME" RESET ALL;
+-- The per-user views, rebuilt every run (015_web_accounts.sql): a view a
+-- CASCADE took with it (rebuilding quantity_rollups drops metric_daily's) or
+-- one a base-table column change left stale comes back here, before the
+-- grants below, instead of failing them.
+SELECT puls_create_web_views();
+
 -- The viewer's unqualified table names resolve to the per-user views first.
 -- Without this the role still reads nothing it should not (it has no grant
 -- on the tables); the viewer just gets "permission denied" everywhere.
@@ -996,16 +1010,35 @@ BEGIN
     RAISE EXCEPTION 'web_app can read a table holding per-user data directly';
   END IF;
 
-  -- Every view in `web` is a security barrier filtered on the session's user.
+  -- Schema `web` holds exactly the views puls_create_web_views() just made,
+  -- each a security barrier. Their definitions are that function's, rebuilt
+  -- above on every run, so a hand-edited or hand-added view cannot outlive
+  -- this check; the substring test is a last sanity check on the function
+  -- itself, not the proof (the integration test is:
+  -- web/lib/webapp.integration.test.ts).
   IF EXISTS (
+    WITH expected(relname) AS (VALUES
+      ('users'), ('quantity_samples'), ('category_samples'), ('workouts'),
+      ('sources'), ('workout_route_points'), ('workout_series_points'),
+      ('activity_summaries'), ('metric_daily')
+    ), actual AS (
+      SELECT c.relname::text FROM pg_class c
+      WHERE c.relnamespace = 'web'::regnamespace
+        AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+    )
+    (SELECT * FROM expected EXCEPT SELECT * FROM actual)
+    UNION ALL
+    (SELECT * FROM actual EXCEPT SELECT * FROM expected)
+  ) OR EXISTS (
     SELECT 1
     FROM pg_class c
     WHERE c.relnamespace = 'web'::regnamespace
+      AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
       AND (c.relkind <> 'v'
            OR NOT coalesce(c.reloptions @> ARRAY['security_barrier=true'], false)
            OR pg_get_viewdef(c.oid) NOT LIKE '%puls_viewer_user()%')
   ) THEN
-    RAISE EXCEPTION 'schema web holds a relation that is not a per-user security-barrier view';
+    RAISE EXCEPTION 'schema web does not hold exactly the per-user security-barrier views';
   END IF;
 END
 $$;

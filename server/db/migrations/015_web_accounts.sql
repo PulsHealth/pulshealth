@@ -88,8 +88,10 @@ CREATE INDEX invites_user_idx ON auth.invites (user_id);
 -- the viewer writes from its session, or NULL when nothing set it (a
 -- placeholder setting reads as '' once any transaction in the session has
 -- used it, hence the nullif). NULL matches no row.
+-- PARALLEL SAFE: parallel workers inherit the transaction's settings, and
+-- without the label no query that touches the views could run in parallel.
 CREATE FUNCTION puls_viewer_user() RETURNS uuid
-LANGUAGE sql STABLE AS $$
+LANGUAGE sql STABLE PARALLEL SAFE AS $$
   SELECT nullif(current_setting('puls.user_id', true), '')::uuid
 $$;
 
@@ -103,53 +105,76 @@ $$;
 -- security_barrier keeps a caller's own predicates from being evaluated
 -- before the user filter (a leaky function could otherwise see filtered-out
 -- rows). The filter compares against a sub-SELECT so the setting is read once
--- per query (an InitPlan) rather than once per row; chunk exclusion and the
--- tables' indexes still apply, compressed chunks included.
+-- per query (an InitPlan, handed to parallel workers) rather than once per
+-- row; chunk exclusion and the tables' indexes still apply, compressed
+-- chunks included.
 --
--- Adding a relation the viewer reads means a view (in a new migration),
--- a GRANT in 099_read_roles.sh and a row in that file's expected set; the
--- assertion there fails the migrate run on a missing one.
+-- The views are made by a function rather than written out here, and
+-- 099_read_roles.sh calls it on every migrate run, just before it grants
+-- web_app SELECT on them. Rebuilding quantity_rollups (008, documented as
+-- re-runnable) drops metric_daily and, by CASCADE, web.metric_daily with it;
+-- a base table that gains, loses or retypes a column needs its `SELECT *`
+-- view rebuilt. Both repair themselves on the next `docker compose up -d`
+-- instead of failing it. A change to the set of views or their filters is a
+-- new migration that replaces this function, plus the GRANT and expected
+-- rows in 099_read_roles.sh, whose assertion fails the run on any relation
+-- in `web` it does not expect.
 CREATE SCHEMA web;
 REVOKE ALL ON SCHEMA web FROM PUBLIC;
 
-CREATE VIEW web.users WITH (security_barrier) AS
-  SELECT * FROM public.users WHERE id = (SELECT puls_viewer_user());
+CREATE FUNCTION puls_create_web_views() RETURNS void
+LANGUAGE plpgsql AS $fn$
+BEGIN
+  -- No CASCADE: something unexpected that depends on these should stop the
+  -- run loudly, not vanish with them.
+  DROP VIEW IF EXISTS web.users, web.quantity_samples, web.category_samples,
+    web.workouts, web.sources, web.workout_route_points, web.workout_series_points,
+    web.activity_summaries, web.metric_daily;
 
-CREATE VIEW web.quantity_samples WITH (security_barrier) AS
-  SELECT * FROM public.quantity_samples WHERE user_id = (SELECT puls_viewer_user());
+  CREATE VIEW web.users WITH (security_barrier) AS
+    SELECT * FROM public.users WHERE id = (SELECT puls_viewer_user());
 
-CREATE VIEW web.category_samples WITH (security_barrier) AS
-  SELECT * FROM public.category_samples WHERE user_id = (SELECT puls_viewer_user());
+  CREATE VIEW web.quantity_samples WITH (security_barrier) AS
+    SELECT * FROM public.quantity_samples WHERE user_id = (SELECT puls_viewer_user());
 
-CREATE VIEW web.workouts WITH (security_barrier) AS
-  SELECT * FROM public.workouts WHERE user_id = (SELECT puls_viewer_user());
+  CREATE VIEW web.category_samples WITH (security_barrier) AS
+    SELECT * FROM public.category_samples WHERE user_id = (SELECT puls_viewer_user());
 
--- `sources` has no user_id, but it is not a neutral lookup: its names are
--- device names ("<name>'s Apple Watch") and its bundle ids name the apps
--- someone uses, for everyone on the server. The viewer only joins it for a
--- workout's source, so only the sources the viewer's own workouts name.
--- (sample_types stays a plain grant: it is the list of HealthKit identifiers
--- seen on this server, and the viewer's queries join it by identifier.)
-CREATE VIEW web.sources WITH (security_barrier) AS
-  SELECT s.* FROM public.sources s
-   WHERE EXISTS (SELECT 1 FROM public.workouts w
-                  WHERE w.source_id = s.source_id
-                    AND w.user_id = (SELECT puls_viewer_user()));
+  CREATE VIEW web.workouts WITH (security_barrier) AS
+    SELECT * FROM public.workouts WHERE user_id = (SELECT puls_viewer_user());
 
-CREATE VIEW web.workout_route_points WITH (security_barrier) AS
-  SELECT * FROM public.workout_route_points WHERE user_id = (SELECT puls_viewer_user());
+  -- `sources` has no user_id, but it is not a neutral lookup: its names are
+  -- device names ("<name>'s Apple Watch") and its bundle ids name the apps
+  -- someone uses, for everyone on the server. The viewer only joins it for a
+  -- workout's source, so only the sources the viewer's own workouts name.
+  -- (sample_types stays a plain grant: it is the list of HealthKit
+  -- identifiers seen on this server, and the viewer's queries join it by
+  -- identifier.)
+  CREATE VIEW web.sources WITH (security_barrier) AS
+    SELECT s.* FROM public.sources s
+     WHERE EXISTS (SELECT 1 FROM public.workouts w
+                    WHERE w.source_id = s.source_id
+                      AND w.user_id = (SELECT puls_viewer_user()));
 
-CREATE VIEW web.workout_series_points WITH (security_barrier) AS
-  SELECT * FROM public.workout_series_points WHERE user_id = (SELECT puls_viewer_user());
+  CREATE VIEW web.workout_route_points WITH (security_barrier) AS
+    SELECT * FROM public.workout_route_points WHERE user_id = (SELECT puls_viewer_user());
 
-CREATE VIEW web.activity_summaries WITH (security_barrier) AS
-  SELECT * FROM public.activity_summaries WHERE user_id = (SELECT puls_viewer_user());
+  CREATE VIEW web.workout_series_points WITH (security_barrier) AS
+    SELECT * FROM public.workout_series_points WHERE user_id = (SELECT puls_viewer_user());
 
--- metric_daily (009) reads the quantity_rollups continuous aggregate, which
--- cannot be filtered per role any other way. 009 is re-runnable and replaces
--- its view in place (CREATE OR REPLACE), which keeps this one working as
--- long as the column list only grows; a change that drops or retypes a
--- column has to drop this view first and recreate it, or the migrate run
--- fails on the dependency.
-CREATE VIEW web.metric_daily WITH (security_barrier) AS
-  SELECT * FROM public.metric_daily WHERE user_id = (SELECT puls_viewer_user());
+  CREATE VIEW web.activity_summaries WITH (security_barrier) AS
+    SELECT * FROM public.activity_summaries WHERE user_id = (SELECT puls_viewer_user());
+
+  -- metric_daily (009) reads the quantity_rollups continuous aggregate, which
+  -- cannot be filtered per role any other way. 009 is re-runnable and
+  -- replaces its view in place (CREATE OR REPLACE); that keeps working under
+  -- this one while its column list only grows. A 009 change that drops or
+  -- retypes a column has to DROP VIEW IF EXISTS web.metric_daily first (the
+  -- next 099 run recreates it).
+  CREATE VIEW web.metric_daily WITH (security_barrier) AS
+    SELECT * FROM public.metric_daily WHERE user_id = (SELECT puls_viewer_user());
+END
+$fn$;
+REVOKE ALL ON FUNCTION puls_create_web_views() FROM PUBLIC;
+
+SELECT puls_create_web_views();
