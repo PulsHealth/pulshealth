@@ -7,16 +7,16 @@ export type RouteClass =
   | "health"
   /** Build assets and icons the sign-in page itself needs. Nothing personal. */
   | "asset"
-  /** Signing in and accepting an invite: reachable without a session. */
+  /** Signing in, asking for an account, accepting an invite: reachable without a session. */
   | "public"
   /** Everything else: a valid session or nothing. */
   | "protected";
 
 /** Paths reachable without a session (beyond assets and the health check). */
-export const PUBLIC_PAGES = ["/login"] as const;
+export const PUBLIC_PAGES = ["/login", "/signup"] as const;
 // Sign-out too: leaving a session that already expired should not be an
 // error. Every POST, these included, still has to pass the origin check.
-export const PUBLIC_API = ["/api/auth/login", "/api/auth/invite", "/api/auth/logout"] as const;
+export const PUBLIC_API = ["/api/auth/login", "/api/auth/invite", "/api/auth/logout", "/api/auth/signup"] as const;
 
 export function classifyPath(pathname: string, development = false): RouteClass {
   if (pathname === "/api/healthz") return "health";
@@ -40,6 +40,8 @@ export function classifyPath(pathname: string, development = false): RouteClass 
 export type AccountsDecision =
   /** Serve it; no session needed. */
   | "pass"
+  /** Plain HTTP that came through the trusted TLS proxy: send it to https. */
+  | "upgrade"
   /** Plain HTTP outside development: refuse rather than take a password over it. */
   | "insecure"
   /** A state-changing request from another origin. */
@@ -52,10 +54,12 @@ export function decideAccounts(facts: {
   secure: boolean;
   sameOrigin: boolean;
   development: boolean;
+  /** The trusted proxy says the browser came over plain http (and can be redirected). */
+  forwardedHttp?: boolean;
 }): AccountsDecision {
   const route = classifyPath(facts.pathname, facts.development);
   if (route === "health" || route === "asset") return "pass";
-  if (!facts.secure) return "insecure";
+  if (!facts.secure) return facts.forwardedHttp ? "upgrade" : "insecure";
   if (!facts.sameOrigin) return "cross-origin";
   return route === "public" ? "pass" : "session";
 }

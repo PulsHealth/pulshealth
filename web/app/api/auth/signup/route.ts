@@ -1,0 +1,44 @@
+import { NextResponse, type NextRequest } from "next/server";
+
+import { field, readForm, requestIp, seeOther } from "@/lib/accounts/http";
+import { notifyNewRequest } from "@/lib/accounts/mail";
+import { signupRequests, takeAll } from "@/lib/accounts/ratelimit";
+import { accountExists, createSignupRequest } from "@/lib/accounts/signups";
+import { normalizeEmail } from "@/lib/accounts/store";
+import { signupsOpen } from "@/lib/mode";
+
+// The sign-up form posts here. It records a request and emails the
+// operator; it creates no user, account or token, and emails no one else, so
+// the form can neither open the database to anyone nor be used to mail a
+// stranger. The answer is the same whether or not the address already has
+// an account or a pending request, so the form does not reveal who uses the
+// viewer. Three requests an hour per client address; a filled-in honeypot
+// gets the same answer and is dropped.
+export const dynamic = "force-dynamic";
+
+export async function POST(request: NextRequest) {
+  if (!signupsOpen()) {
+    return new NextResponse("Not found\n", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  }
+  const form = await readForm(request);
+  const done = seeOther("/signup?notice=received");
+  if (field(form, "website")) return done;
+
+  const email = normalizeEmail(field(form, "email"));
+  if (!email) return seeOther("/signup?error=email");
+  if (field(form, "consent") !== "yes") return seeOther("/signup?error=consent");
+  if (!takeAll(signupRequests, [`ip:${requestIp(request)}`]).allowed) return seeOther("/signup?error=throttled");
+
+  const name = field(form, "name").trim();
+  const note = field(form, "note").trim();
+  try {
+    if (await accountExists(email)) return done;
+    const ip = requestIp(request);
+    const created = await createSignupRequest({ email, name, note, ip, userAgent: request.headers.get("user-agent") });
+    if (created) await notifyNewRequest({ name, email, note, ip: /^[0-9a-f.:]+$/i.test(ip) ? ip : null });
+    return done;
+  } catch (e) {
+    console.error("[puls-web] sign-up request failed:", e instanceof Error ? e.message : e);
+    return seeOther("/signup?error=unavailable");
+  }
+}

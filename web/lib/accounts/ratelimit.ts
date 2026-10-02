@@ -164,3 +164,9 @@ export function takeAll(
 export function refundAll(limiter: FailureLimiter, keys: string[], now = Date.now()): void {
   for (const key of keys) limiter.refund(key, now);
 }
+
+// Sign-up requests: three an hour per client address, every request charged
+// (asking is not a failure, but nothing legitimate asks more often). Kept on
+// globalThis for the same reason as authFailures.
+const globalForSignups = globalThis as typeof globalThis & { __pulsSignups?: FailureLimiter };
+export const signupRequests: FailureLimiter = (globalForSignups.__pulsSignups ??= new FailureLimiter(3, 0.05));

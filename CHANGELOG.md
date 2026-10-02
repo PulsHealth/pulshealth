@@ -28,9 +28,9 @@ operator action, and when it does this file says so at the top of the entry.
 ## Unreleased
 
 No operator action is required, but there is a schema migration: take
-`make backup` before upgrading, as for any. `015_web_accounts.sql` adds two
-schemas (`auth`, `web`), two functions and a set of views, and alters no
-existing table, so Grafana, the product API and ingest read and write exactly
+`make backup` before upgrading, as for any. `015_web_accounts.sql` and `016_web_signups.sql` add two
+schemas (`auth`, `web`), functions and views, and alter no existing table
+outside them, so Grafana, the product API and ingest read and write exactly
 as before. `ingest` gains a subcommand and one Go dependency; `web` gains an
 opt-in accounts mode. Nothing new is required in `.env`; `WEB_DB_PASSWORD`
 (which `scripts/bootstrap.sh` now generates) creates the `web_app` role that
@@ -50,6 +50,19 @@ accounts mode connects as.
   refused. Needs HTTPS in front, `WEB_DATABASE_URL` and
   `TRUST_PROXY_HEADERS=true`; see `web/README.md`, "Access control". Basic
   and open mode are unchanged.
+- **Access requests with approval** (`WEB_SIGNUPS=true`, accounts mode):
+  anyone can ask for an account at `/signup`; nothing is created — no user,
+  no account, no sync token — until an administrator approves on the new
+  `/admin` page, which emails the person an invite. Signed-in people connect
+  their own iPhone from their account page (a pairing code shown once, from
+  `WEB_INGEST_URL`), disconnect it, and delete their account; administrators
+  disable accounts (which disconnects their phones) and purge a disabled
+  user's data. Email through Amazon SES (`WEB_SES_*`, `WEB_MAIL_FROM`,
+  `WEB_ADMIN_EMAIL`), off unless configured. Migration
+  `016_web_signups.sql` adds the request table and the `SECURITY DEFINER`
+  functions behind every privileged step.
+- In accounts mode, a request that reached the viewer over plain HTTP through
+  the trusted proxy is redirected to HTTPS instead of refused.
 - An optional `tunnel` Compose profile: a Cloudflare Tunnel that serves the
   viewer on a domain of yours with no open port (`CLOUDFLARE_TUNNEL_TOKEN`,
   `COMPOSE_PROFILES=tunnel`); `server/README.md`, "Exposing the server".

@@ -72,9 +72,13 @@ Everything in this repository is in scope, in particular:
   mode in particular: reading another account's records by any route;
   signing in without the password or a valid invite; a session that survives
   sign-out, a password change or an invite reset; cross-site request forgery;
-  getting past the failed-sign-in throttle; an open redirect; and any table
+  getting past the failed-sign-in throttle; an open redirect; any table
   holding per-user data that the `web_app` database role can read directly
-  rather than through its per-user views. See the notes below.
+  rather than through its per-user views; and, with sign-up requests on, any
+  way to get an account, a user or a sync token without an administrator's
+  approval, to mint or revoke a sync token for anyone but the signed-in
+  person, or to reach `/admin` or its database functions without an
+  administrator's session. See the notes below.
 
 Out of scope:
 
@@ -159,8 +163,23 @@ for judging what is.
   HealthKit type identifiers seen on the server, and TimescaleDB catalog
   information such as approximate row counts and chunk time ranges, reachable
   only with arbitrary SQL. Failed sign-ins are throttled in process, per
-  address and per email, and reset when the container restarts. The viewer
-  sends no email, so a forgotten password is a new invite from the operator.
+  address and per email, and reset when the container restarts. A forgotten
+  password is a new invite from the operator.
+- **Accounts mode's privileged steps are database functions.** Approving a
+  request (which creates a user), minting or revoking a sync token,
+  disabling an account, deleting your own, and purging a user are
+  `SECURITY DEFINER` functions in schema `auth`
+  (`server/db/migrations/016_web_signups.sql`); `web_app` may run exactly
+  these, and still has no write grant on `users` or `device_tokens`. Each
+  takes the caller's session token in plaintext and checks its hash against
+  `auth.sessions` itself, so SQL run as `web_app` cannot act for a session it
+  has not seen — but a compromised viewer process sees the cookies of the
+  requests it serves, and can do what those people may: mint a sync token for
+  their own user, or, with an administrator's cookie, approve requests and
+  disable or purge accounts. The viewer shows a minted token once, as a
+  pairing code, and keeps only its hash. The sign-up form creates nothing
+  but a request and emails only the operator, so it cannot open the database
+  to anyone or be used to mail a stranger.
 - **Health data at rest.** The database holds identifiable data (name, email,
   date of birth, sex) alongside samples. Ingest connects as the scoped
   DML-only `ingest` role, which cannot create or drop objects; set

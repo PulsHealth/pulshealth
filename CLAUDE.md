@@ -422,9 +422,27 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   `users.email` are the phone's HealthKit profile, overwritten by every
   `{"profile":…}` line. Accounts are invite-only (`make web-invite`); an
   invite for a user with an account resets its password.
-- **The viewer never issues or displays an ingest token**, in any mode (no
-  pairing QR code in `web/` either). Pairing a phone is the operator's step
-  (`make issue-device`).
+- **The viewer mints an ingest token only for the signed-in person's own
+  user, and shows it only to them, once.** In accounts mode the account page's
+  "Connect this iPhone" calls `auth.issue_device_token(session, …)`, which
+  checks the session token itself and writes the hash; the plaintext appears
+  once as a pairing code and is never stored, logged, emailed or put in a URL.
+  Basic and open mode never mint one; household phones are still paired by the
+  operator (`make issue-device`). **Sign-up requests create nothing until an
+  administrator approves** (`WEB_SIGNUPS`, `/signup` → `/admin`): no user, no
+  account, no token, so no phone can send data. Every write beyond schema
+  `auth` — creating a user, minting/revoking tokens, disabling, deleting,
+  purging — is a `SECURITY DEFINER` function in `016_web_signups.sql` that
+  takes the caller's plaintext session token and checks it (search_path pinned
+  to `pg_catalog`, objects fully qualified); `099_read_roles.sh` asserts
+  `web_app` has EXECUTE on exactly those and still no write grant on `users` or
+  `device_tokens`. A new privileged step is a new definer function there, a
+  `GRANT` and an expected row, never a table grant. `purge_user`'s table list
+  must cover every table with a `user_id` (its final `DELETE FROM users` fails
+  on a missed foreign key; `ingest_rejections` has none, so add new such tables
+  by hand). Email (`web/lib/email.ts`, SES, hand-signed SigV4) goes only to the
+  operator and to people an administrator approved — keep the public form
+  unable to mail anyone else.
 
 ## Gotchas
 

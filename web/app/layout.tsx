@@ -63,7 +63,7 @@ async function shell(children: React.ReactNode) {
     const source = await getDataSource();
     return (
       <div className="shell">
-        <Sidebar source={source} users={[]} currentUserId={session.userId} account={{ email: session.email }} />
+        <Sidebar source={source} users={[]} currentUserId={session.userId} account={{ email: session.email, isAdmin: session.isAdmin }} />
         <main className="content">{children}</main>
       </div>
     );

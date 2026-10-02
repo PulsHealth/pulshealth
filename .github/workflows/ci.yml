@@ -445,7 +445,10 @@ jobs:
       # an unscoped one reads nothing, and nothing beneath the views is
       # reachable. accounts.integration.test.ts then drives accounts mode
       # through the viewer's own route handlers and proxy: invite, sign-in,
-      # a scoped read, password change, sign-out, throttling. Last of the
+      # a scoped read, password change, sign-out, throttling;
+      # signups.integration.test.ts the access requests and the definer
+      # functions behind them (approval, connecting an iPhone, disabling,
+      # deletion, purge). Last of the
       # suites on this database, so their fixtures cannot disturb the Go
       # tests' counts.
       - name: Set up Node for the web viewer
@@ -463,7 +466,7 @@ jobs:
           PULS_WEB_INTEGRATION: "1"
         run: |
           npm ci
-          npx vitest run lib/webapp.integration.test.ts lib/accounts.integration.test.ts
+          npx vitest run lib/webapp.integration.test.ts lib/accounts.integration.test.ts lib/signups.integration.test.ts
 
       # The exploration notebook, executed end to end against a seeded schema.
       # The test brings up its own throwaway TimescaleDB (the same pinned

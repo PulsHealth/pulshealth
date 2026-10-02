@@ -94,6 +94,15 @@ describe("accounts mode", () => {
     expect(findSession).not.toHaveBeenCalled();
   });
 
+  it("redirects plain HTTP from the trusted proxy to https on the public origin", async () => {
+    const res = await proxy(request("/workouts?range=W", { headers: { host: "viewer.example", "x-forwarded-proto": "http" } }));
+    expect(res.status).toBe(308);
+    expect(res.headers.get("location")).toBe("https://viewer.example/workouts?range=W");
+    process.env.WEB_PUBLIC_URL = "https://app.example";
+    const pinned = await proxy(request("/login", { headers: { host: "evil.example", "x-forwarded-proto": "http" } }));
+    expect(pinned.headers.get("location")).toBe("https://app.example/login");
+  });
+
   it("does not believe X-Forwarded-Proto unless told to", async () => {
     delete process.env.TRUST_PROXY_HEADERS;
     expect((await proxy(request("/login", { headers: viaProxy }))).status).toBe(403);

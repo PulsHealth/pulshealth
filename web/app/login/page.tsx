@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { AuthCard } from "@/components/AuthCard";
 import { errorMessage, noticeMessage, param } from "@/lib/accounts/messages";
-import { viewerMode } from "@/lib/mode";
+import { signupsOpen, viewerMode } from "@/lib/mode";
 import { currentSession, safeReturnPath } from "@/lib/viewer";
 
 // Sign in (accounts mode only). The form posts to /api/auth/login, which
@@ -44,10 +44,17 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
           Sign in
         </button>
       </form>
-      <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>
-        Accounts are by invitation. To join, or if you have forgotten your password, ask the person who runs
-        this viewer for an invite link.
-      </p>
+      {signupsOpen() ? (
+        <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>
+          New here? <a href="/signup" style={{ textDecoration: "underline" }}>Request access</a>. Forgotten your password? Ask
+          the person who runs this viewer for a new invite link.
+        </p>
+      ) : (
+        <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>
+          Accounts are by invitation. To join, or if you have forgotten your password, ask the person who runs
+          this viewer for an invite link.
+        </p>
+      )}
     </AuthCard>
   );
 }

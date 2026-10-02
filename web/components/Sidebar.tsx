@@ -20,7 +20,7 @@ export function Sidebar({
   users: User[];
   currentUserId: string;
   /** The signed-in account, in accounts mode; null otherwise. */
-  account?: { email: string } | null;
+  account?: { email: string; isAdmin: boolean } | null;
 }) {
   const path = usePathname();
   // A choice is only worth offering when there is one — or when the current
@@ -84,6 +84,12 @@ export function Sidebar({
           >
             <UserIcon className="nav-icon" />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.email}</span>
+          </Link>
+        )}
+        {account?.isAdmin && (
+          <Link href="/admin" aria-current={path === "/admin" ? "page" : undefined} className={`nav-link${path === "/admin" ? " active" : ""}`}>
+            <GridIcon className="nav-icon" />
+            <span>Admin</span>
           </Link>
         )}
         <Link href="/settings" className={`nav-link${path === "/settings" ? " active" : ""}`}>

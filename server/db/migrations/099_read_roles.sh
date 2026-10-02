@@ -739,11 +739,12 @@ EOSQL
   exit 0
 fi
 
-# A database baselined from before 015 has no views to grant yet; the next
-# plain migrate run applies 015, and this section with it.
+# A database baselined from before 015/016 has no views or functions to
+# grant yet; the next plain migrate run applies them, and this section with it.
 if [[ "$(psql -X -q -tA --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
-          -c "SELECT to_regprocedure('puls_create_web_views()') IS NOT NULL")" != t ]]; then
-  echo "099_read_roles: 015_web_accounts.sql is not applied yet; skipping the web_app role."
+          -c "SELECT to_regprocedure('puls_create_web_views()') IS NOT NULL
+                 AND to_regprocedure('auth.purge_user(text,uuid)') IS NOT NULL")" != t ]]; then
+  echo "099_read_roles: 015_web_accounts.sql or 016_web_signups.sql is not applied yet; skipping the web_app role."
   exit 0
 fi
 
@@ -846,7 +847,22 @@ GRANT SELECT ON TABLE public.sample_types TO web_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   auth.accounts,
   auth.sessions,
-  auth.invites
+  auth.invites,
+  auth.signup_requests
+TO web_app;
+
+-- The privileged steps of sign-up and self-service (016_web_signups.sql):
+-- each a SECURITY DEFINER function that checks the caller's session itself.
+-- web_app gets EXECUTE on exactly these and on no other function of its own
+-- (PostgreSQL's default PUBLIC EXECUTE covers built-ins like time_bucket).
+GRANT EXECUTE ON FUNCTION
+  auth.approve_signup(text, uuid),
+  auth.set_account_disabled(text, uuid, boolean),
+  auth.purge_user(text, uuid),
+  auth.issue_device_token(text, bytea, text, text),
+  auth.my_devices(text),
+  auth.revoke_my_device(text, bigint),
+  auth.delete_my_account(text)
 TO web_app;
 
 DO $$
@@ -916,7 +932,11 @@ BEGIN
       ('auth', 'invites', 'SELECT', false),
       ('auth', 'invites', 'INSERT', false),
       ('auth', 'invites', 'UPDATE', false),
-      ('auth', 'invites', 'DELETE', false)
+      ('auth', 'invites', 'DELETE', false),
+      ('auth', 'signup_requests', 'SELECT', false),
+      ('auth', 'signup_requests', 'INSERT', false),
+      ('auth', 'signup_requests', 'UPDATE', false),
+      ('auth', 'signup_requests', 'DELETE', false)
     ), actual AS (
       SELECT n.nspname::text, c.relname::text, acl.privilege_type, acl.is_grantable
       FROM pg_class c
@@ -970,10 +990,6 @@ BEGIN
     CROSS JOIN LATERAL aclexplode(a.attacl) acl
     WHERE acl.grantee = web_oid
   ) OR EXISTS (
-    SELECT 1 FROM pg_proc p
-    CROSS JOIN LATERAL aclexplode(p.proacl) acl
-    WHERE acl.grantee = web_oid
-  ) OR EXISTS (
     SELECT 1 FROM pg_type t
     CROSS JOIN LATERAL aclexplode(t.typacl) acl
     WHERE acl.grantee = web_oid
@@ -986,7 +1002,40 @@ BEGIN
     CROSS JOIN LATERAL aclexplode(p.paracl) acl
     WHERE acl.grantee = web_oid
   ) THEN
-    RAISE EXCEPTION 'web_app has unexpected column, function, type, default, or parameter ACLs';
+    RAISE EXCEPTION 'web_app has unexpected column, type, default, or parameter ACLs';
+  END IF;
+
+  -- Functions: EXECUTE on exactly the sign-up and self-service steps, each a
+  -- SECURITY DEFINER function pinned to search_path pg_catalog.
+  IF EXISTS (
+    WITH expected(signature) AS (VALUES
+      ('auth.approve_signup(text,uuid)'),
+      ('auth.set_account_disabled(text,uuid,boolean)'),
+      ('auth.purge_user(text,uuid)'),
+      ('auth.issue_device_token(text,bytea,text,text)'),
+      ('auth.my_devices(text)'),
+      ('auth.revoke_my_device(text,bigint)'),
+      ('auth.delete_my_account(text)')
+    ), actual AS (
+      SELECT p.oid::regprocedure::text AS signature
+      FROM pg_proc p
+      CROSS JOIN LATERAL aclexplode(p.proacl) acl
+      WHERE acl.grantee = web_oid AND acl.privilege_type = 'EXECUTE' AND NOT acl.is_grantable
+    )
+    (SELECT * FROM expected EXCEPT SELECT * FROM actual)
+    UNION ALL
+    (SELECT * FROM actual EXCEPT SELECT * FROM expected)
+  ) OR EXISTS (
+    SELECT 1 FROM pg_proc p
+    CROSS JOIN LATERAL aclexplode(p.proacl) acl
+    WHERE acl.grantee = web_oid AND acl.privilege_type <> 'EXECUTE'
+  ) OR EXISTS (
+    SELECT 1 FROM pg_proc p
+    CROSS JOIN LATERAL aclexplode(p.proacl) acl
+    WHERE acl.grantee = web_oid
+      AND NOT (p.prosecdef AND p.proconfig @> ARRAY['search_path=pg_catalog, pg_temp'])
+  ) THEN
+    RAISE EXCEPTION 'web_app function ACL set is not exactly the sign-up and self-service functions';
   END IF;
 
   -- The invariant itself, independent of how the grants above are spelled

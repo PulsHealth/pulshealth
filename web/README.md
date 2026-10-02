@@ -182,8 +182,9 @@ hours (`--hours`). Opening it asks for a password (at least 10 characters) and
 signs the person in. An invite for a user who already has an account resets
 its password and signs it out everywhere — that is the way back in after a
 forgotten password, since the viewer sends no email. `--admin` marks the
-account as an administrator (no extra powers yet). The viewer never issues or
-shows an ingest token; pairing a phone stays the operator's step.
+account as an administrator, which gives it `/admin` (below). Pairing a
+household phone stays the operator's step (`make issue-device`); a signed-in
+person can also connect their own iPhone from their account page (below).
 
 **Signing in.** `/login`, `/invite/<token>`, their two POST endpoints,
 `/api/auth/logout`, build assets and `/api/healthz` are reachable without a
@@ -216,6 +217,59 @@ Details:
 - The sign-in error never says which of email and password was wrong, and an
   unknown email costs the same scrypt as a wrong password.
 
+### Requests from strangers, with approval
+
+`WEB_SIGNUPS=true` (accounts mode only) adds `/signup`, where anyone can ask
+for an account — name, email, an optional note, and a box confirming they
+read the privacy policy. **Nothing exists for them until an administrator
+approves**: a request creates no user, no account and no sync token, so no
+phone can send anything. In order:
+
+1. The request is stored (`auth.signup_requests`) and the operator gets an
+   email (`WEB_ADMIN_EMAIL`, at most 30 a day). The form answers the same
+   whether or not the address is known, emails no one but the operator, keeps
+   one open request per address, drops a filled-in honeypot, and takes three
+   requests an hour per client address.
+2. An administrator opens `/admin` (in the sidebar) and approves or declines.
+   Approval creates the person's user and a 7-day invite and emails it to
+   them; when email is off or fails, the page shows the link once to send
+   by hand. Declining sends nothing.
+3. The person chooses a password, signs in on their iPhone and taps **Connect
+   this iPhone** on the account page: the viewer mints a sync token for that
+   person's own user, shows it once as a pairing code (a button that opens
+   PulsHealth on the iPhone, and a QR code for a computer), and keeps only its
+   hash. Phones connect to `WEB_INGEST_URL` (ingest's public HTTPS address;
+   Compose defaults it to `PULS_PUBLIC_URL`). The account page lists the
+   person's iPhones with a **Disconnect** for each.
+4. **Delete my account** disables the account, ends its sessions and revokes
+   its tokens at once, and tells the operator, who purges the data from
+   `/admin`. An administrator can also **Disable** any other account (which
+   disconnects its iPhones) and, once disabled, **Purge** everything stored
+   for that user.
+
+The privileged steps — creating a user, minting or revoking a token,
+disabling, deleting, purging — are `SECURITY DEFINER` functions in schema
+`auth` (`server/db/migrations/016_web_signups.sql`). `web_app` may run exactly
+those and still cannot write `users` or `device_tokens` itself. Each function
+takes the caller's session token and checks it against `auth.sessions` (which
+stores only hashes), so a bug that lets someone run SQL as `web_app` cannot
+borrow a session it has not seen, and a token is only ever minted for the
+signed-in person's own user.
+
+**Email** goes through Amazon SES's API (`lib/email.ts`, signed by hand, no
+dependency): `WEB_SES_ACCESS_KEY_ID`, `WEB_SES_SECRET_ACCESS_KEY`,
+`WEB_SES_REGION`, and `WEB_MAIL_FROM` on a domain SES has verified. Give that
+IAM user nothing but `ses:SendEmail` on the domain's identity, conditioned on
+`ses:FromAddress` being that one address. Without these settings nothing is
+emailed and `/admin` is the only place requests appear.
+
+**Before you approve someone you do not know,** know what it makes you:
+someone who holds a stranger's health records. In the US the FTC Health
+Breach Notification Rule likely applies, and the App Store's privacy answer
+for the app changes for those people (`docs/appstore/listing.md`). Say what
+you do with their data in your privacy policy; the project's own covers the
+maintainer's instance only.
+
 The code: `proxy.ts` and `lib/accounts/` (policy, request facts, sessions,
 passwords, throttling, the account store), the routes under `app/login`,
 `app/invite`, `app/account` and `app/api/auth`, and `scripts/invite.mjs`.
@@ -233,6 +287,9 @@ the whole flow and the role's isolation against a real database in CI.
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
 | `/settings` | Whose data is on screen and its profile (age, sex, heart-rate figures behind the zones); display preferences, saved in this browser |
+| `/account` | Accounts mode: connect or disconnect your iPhones, change the password, the browsers signed in, delete the account |
+| `/admin` | Accounts mode, administrators: approve or decline access requests; disable accounts, purge a disabled user's data |
+| `/signup`, `/login`, `/invite/[token]` | Accounts mode: ask for access (with `WEB_SIGNUPS`), sign in, accept an invite |
 
 ## Architecture
 
