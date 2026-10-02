@@ -538,6 +538,49 @@ leaks. Grafana, the product API and the MCP server stay on loopback and are
 reached only this way (or through your own proxy with its own
 authentication).
 
+### The web viewer on your own domain: Cloudflare Tunnel
+
+To let people outside your tailnet use the web viewer — family on their own
+phones, say — run it in **accounts mode** (each person signs in and sees only
+their own records; `web/README.md`, "Access control") and publish it through
+the optional `tunnel` service, a Cloudflare Tunnel. It needs a domain whose
+DNS is on Cloudflare, and no open port: `cloudflared` dials out and reaches
+the viewer as `http://web:3000` on the Compose network, so `WEB_BIND_ADDR`
+stays on loopback. Cloudflare terminates TLS, so it sees the traffic — say so
+to the people you invite.
+
+1. In the Cloudflare dashboard, create a tunnel (Networks → Tunnels), add a
+   published application route for your hostname (`viewer.example.com`) with
+   the service `http://web:3000`, and copy the tunnel's token.
+2. In `.env`:
+
+   ```bash
+   CLOUDFLARE_TUNNEL_TOKEN=<token>
+   COMPOSE_PROFILES=tunnel              # start the tunnel on every `up -d`
+   WEB_ACCOUNTS=true
+   WEB_DATABASE_URL=postgres://web_app:${WEB_DB_PASSWORD}@db:5432/postgres?sslmode=disable
+   TRUST_PROXY_HEADERS=true             # the tunnel is the only way in
+   WEB_CLIENT_IP_HEADER=cf-connecting-ip
+   WEB_PUBLIC_URL=https://viewer.example.com
+   ```
+
+   `CF-Connecting-IP` is the header to key throttling on: Cloudflare sets it
+   itself, whereas it appends to a client's `X-Forwarded-For`.
+   `TRUST_PROXY_HEADERS` is shared with ingest and the API; if ingest is
+   reached some other way that does not overwrite `X-Forwarded-For`, read
+   "Rate limiting" before turning it on.
+3. `docker compose up -d` (or `make dev-up`), then invite people:
+   `make issue-device NAME='…' ARGS='--user <uuid>'` for their phone, and
+   `make web-invite ARGS='--user <uuid> --email <address>'` for the viewer.
+
+While the viewer is invite-only, a second lock costs nothing: put Cloudflare
+Access (a one-time PIN to the invited addresses, or your identity provider) in
+front of the hostname, and add a Cloudflare rate-limiting rule on `/login`,
+`/invite/*` and `/api/auth/*` on top of the viewer's own throttling. Check
+from outside that `http://` is redirected to `https://` (Cloudflare's "Always
+Use HTTPS"), that `/workouts` sends you to `/login`, and that the viewer's log
+says `mode=accounts`.
+
 ## API
 
 Ingest speaks the Puls Sync Protocol, version **1**. The specification —

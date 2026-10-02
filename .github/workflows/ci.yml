@@ -99,11 +99,12 @@ jobs:
         run: |
           # Every way the stack is run: pulling the published images, the
           # developer overlay that builds them from the checkout, and the
-          # opt-in `backup` profile (which a plain `up -d` never starts, so
-          # nothing else would render it).
+          # opt-in `backup` and `tunnel` profiles (which a plain `up -d` never
+          # starts, so nothing else would render them).
           docker compose -f server/docker-compose.yml config --quiet
           docker compose -f server/docker-compose.yml -f server/compose.build.yml config --quiet
           docker compose -f server/docker-compose.yml --profile backup config --quiet
+          docker compose -f server/docker-compose.yml --profile tunnel config --quiet
           scripts=(server/db/migrate.sh server/db/migrations/*.sh server/backup/*.sh scripts/*.sh)
           for script in "${scripts[@]}"; do
             bash -n "$script"
