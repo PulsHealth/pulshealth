@@ -30,6 +30,15 @@ export function viewerMode(env: Env = process.env): ViewerMode {
 }
 
 /**
+ * Whether strangers may ask for an account (/signup). Only in accounts mode,
+ * and off unless WEB_SIGNUPS is on: a request creates nothing until an
+ * administrator approves it on /admin.
+ */
+export function signupsOpen(env: Env = process.env): boolean {
+  return viewerMode(env) === "accounts" && isTrue(env.WEB_SIGNUPS);
+}
+
+/**
  * Whether X-Forwarded-* and CF-Connecting-IP may be believed. Same switch,
  * same default and same caveat as ingest and the product API: only when a
  * proxy that overwrites those headers is the ONLY way to reach the port.

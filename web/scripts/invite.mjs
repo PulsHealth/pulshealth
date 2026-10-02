@@ -2,7 +2,7 @@
 // Issues a one-time invite link for the web viewer's accounts mode.
 //
 //   docker compose exec web node scripts/invite.mjs --user <uuid> --email <address> [--admin]
-//                                                   [--url https://<viewer host>] [--hours 48]
+//                                                   [--url https://<viewer host>] [--hours 48] [--send]
 //   make web-invite ARGS='--user <uuid> --email <address> [--admin]'
 //
 // The person opens the link, chooses a password and is signed in. If the user
@@ -17,23 +17,25 @@
 // a separate step on purpose — the viewer never hands out ingest credentials.
 //
 // The token is 32 random bytes; only its SHA-256 is stored (auth.invites),
-// and the link is printed here once. It works once and expires after
+// and the link is printed here once — or, with --send, emailed to the
+// invitee through Amazon SES (the WEB_SES_* and WEB_MAIL_FROM settings the
+// viewer uses) and not printed at all. It works once and expires after
 // --hours (48 by default). The base URL comes from --url, else WEB_PUBLIC_URL.
 //
 // Connects with the container's DATABASE_URL — in accounts mode, the web_app
 // role, which may write auth.invites and nothing that holds health data.
 
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const USAGE =
-  "usage: node scripts/invite.mjs --user <uuid> --email <address> [--admin] [--url https://<viewer host>] [--hours 48]";
+  "usage: node scripts/invite.mjs --user <uuid> --email <address> [--admin] [--url https://<viewer host>] [--hours 48] [--send]";
 
 /** Parsed options, or { error } with a message for the operator. */
 export function parseArgs(argv, env = {}) {
-  const options = { user: null, email: null, admin: false, url: env.WEB_PUBLIC_URL || null, hours: 48 };
+  const options = { user: null, email: null, admin: false, url: env.WEB_PUBLIC_URL || null, hours: 48, send: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     const value = () => {
@@ -47,6 +49,7 @@ export function parseArgs(argv, env = {}) {
       else if (arg === "--url") options.url = value();
       else if (arg === "--hours") options.hours = Number(value());
       else if (arg === "--admin") options.admin = true;
+      else if (arg === "--send") options.send = true;
       else if (arg === "--help" || arg === "-h") return { help: true };
       else return { error: `unknown argument: ${arg}` };
     } catch (e) {
@@ -73,6 +76,7 @@ export function parseArgs(argv, env = {}) {
     }
     options.url = url.origin;
   }
+  if (options.send && !options.url) return { error: "--send needs the viewer's address: --url, or WEB_PUBLIC_URL" };
   return { options };
 }
 
@@ -89,6 +93,61 @@ export function newInviteToken() {
   return { token: bytes.toString("base64url"), hash: createHash("sha256").update(bytes).digest() };
 }
 
+/**
+ * Emails a message through Amazon SES's v2 API with AWS Signature Version 4
+ * (the same signing as web/lib/email.ts, which the app bundle cannot share
+ * with this plain script). Throws on any failure.
+ * @param {{ to: string, subject: string, text: string }} message
+ * @param {Record<string, string | undefined>} [env]
+ * @param {Date} [now]
+ */
+export async function sesSend({ to, subject, text }, env = process.env, now = new Date()) {
+  const id = env.WEB_SES_ACCESS_KEY_ID, secret = env.WEB_SES_SECRET_ACCESS_KEY, from = env.WEB_MAIL_FROM;
+  if (!id || !secret || !from) throw new Error("email is not set up (WEB_SES_ACCESS_KEY_ID, WEB_SES_SECRET_ACCESS_KEY, WEB_MAIL_FROM)");
+  const region = env.WEB_SES_REGION || "us-east-1";
+  const host = `email.${region}.amazonaws.com`, path = "/v2/email/outbound-emails";
+  const body = JSON.stringify({
+    FromEmailAddress: from,
+    Destination: { ToAddresses: [to] },
+    Content: { Simple: { Subject: { Data: subject, Charset: "UTF-8" }, Body: { Text: { Data: text, Charset: "UTF-8" } } } },
+  });
+  const amzDate = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const day = amzDate.slice(0, 8);
+  const sha = (d) => createHash("sha256").update(d, "utf8").digest("hex");
+  const hmac = (k, d) => createHmac("sha256", k).update(d, "utf8").digest();
+  const canonical = ["POST", path, "", `content-type:application/json\nhost:${host}\nx-amz-date:${amzDate}\n`, "content-type;host;x-amz-date", sha(body)].join("\n");
+  const scope = `${day}/${region}/ses/aws4_request`;
+  const key = hmac(hmac(hmac(hmac(`AWS4${secret}`, day), region), "ses"), "aws4_request");
+  const signature = createHmac("sha256", key).update(["AWS4-HMAC-SHA256", amzDate, scope, sha(canonical)].join("\n"), "utf8").digest("hex");
+  const res = await fetch(`https://${host}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Amz-Date": amzDate,
+      Authorization: `AWS4-HMAC-SHA256 Credential=${id}/${scope}, SignedHeaders=content-type;host;x-amz-date, Signature=${signature}`,
+    },
+    body,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`SES answered ${res.status}: ${(await res.text()).slice(0, 200)}`);
+}
+
+export function inviteMessage({ link, expires, reset }) {
+  return {
+    subject: reset ? "Your PulsHealth password reset link" : "You're invited to the PulsHealth viewer",
+    text: [
+      reset
+        ? "Here is a link to choose a new password for your PulsHealth viewer account. Using it signs the account out everywhere else."
+        : "You've been invited to view your own health records in the PulsHealth viewer.",
+      "",
+      `Choose a password here (the link works once, until ${expires.toUTCString()}):`,
+      `  ${link}`,
+      "",
+      "If you weren't expecting this, ignore it; nothing happens unless the link is used.",
+    ].join("\n"),
+  };
+}
+
 async function main() {
   const parsed = parseArgs(process.argv.slice(2), process.env);
   if (parsed.help) {
@@ -99,7 +158,7 @@ async function main() {
     console.error(`invite: ${parsed.error}\n${USAGE}`);
     return 2;
   }
-  const { user, email, admin, url, hours } = parsed.options;
+  const { user, email, admin, url, hours, send } = parsed.options;
   if (!process.env.DATABASE_URL) {
     console.error("invite: DATABASE_URL is not set (run this inside the web container: docker compose exec web …)");
     return 1;
@@ -126,6 +185,16 @@ async function main() {
       [hash, user, email, admin, hours],
     );
     const path = `/invite/${token}`;
+    if (send) {
+      const message = inviteMessage({ link: `${url}${path}`, expires: inserted.rows[0].expires_at, reset: existing.rowCount > 0 });
+      try {
+        await sesSend({ to: email, ...message });
+        console.log(`Emailed ${existing.rowCount ? "a password-reset" : "an invite"} link to ${email}${admin ? " (administrator)" : ""}, user ${user}.`);
+        return 0;
+      } catch (e) {
+        console.error(`invite: the email was not sent (${e instanceof Error ? e.message : e}); here is the link to send yourself:`);
+      }
+    }
     const what = existing.rowCount
       ? `Password reset for ${existing.rows[0].email}'s account (it will sign in as ${email})`
       : `Invite for ${email}`;

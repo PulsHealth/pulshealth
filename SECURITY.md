@@ -72,9 +72,15 @@ Everything in this repository is in scope, in particular:
   mode in particular: reading another account's records by any route;
   signing in without the password or a valid invite; a session that survives
   sign-out, a password change or an invite reset; cross-site request forgery;
-  getting past the failed-sign-in throttle; an open redirect; and any table
+  getting past the failed-sign-in throttle; an open redirect; any table
   holding per-user data that the `web_app` database role can read directly
-  rather than through its per-user views. See the notes below.
+  rather than through its per-user views; and, with sign-up requests on, any
+  way to get an account, a user or a sync token without an administrator's
+  approval, to mint or revoke a sync token for anyone but the signed-in
+  person, to reach `/admin` or its database functions without an
+  administrator's session, or — even with SQL run as `web_app` — to give a
+  sync token to, revoke the tokens of, or delete the data of a user that no
+  approved request created. See the notes below.
 
 Out of scope:
 
@@ -159,8 +165,31 @@ for judging what is.
   HealthKit type identifiers seen on the server, and TimescaleDB catalog
   information such as approximate row counts and chunk time ranges, reachable
   only with arbitrary SQL. Failed sign-ins are throttled in process, per
-  address and per email, and reset when the container restarts. The viewer
-  sends no email, so a forgotten password is a new invite from the operator.
+  address and per email, and reset when the container restarts. A forgotten
+  password is a new invite from the operator.
+- **Accounts mode's privileged steps are database functions.** Approving a
+  request (which creates a user), minting or revoking a sync token,
+  disabling an account, deleting your own, and purging a user are
+  `SECURITY DEFINER` functions in schema `auth`
+  (`server/db/migrations/016_web_signups.sql`); `web_app` may run exactly
+  these, and still has no write grant on `users`, `device_tokens` or
+  `auth.self_service_users`. Each takes the caller's session (its SHA-256,
+  as `auth.sessions` stores it) and acts for that account. That is not a
+  barrier against a compromised viewer: `web_app` writes `auth.sessions` to
+  sign people in, so it can forge a session for any account. The barrier is
+  that every one of these functions acts only on **self-service** users,
+  those an approved request created (`auth.self_service_users`, which only
+  the approval function writes). So SQL run as `web_app` can at worst
+  approve requests, give a self-service user a sync token (letting it upload
+  into that user), or disable or purge one. It cannot give a household user
+  a sync token, revoke their phones' tokens or delete their data; it can
+  change their viewer accounts in `auth.accounts`, which it writes to sign
+  people in, and it reads every user's records only as before (see the
+  bullet above). The viewer shows a
+  minted token once, as a pairing code, and keeps only its hash. The sign-up
+  form creates nothing but a request and emails only the operator, so it
+  cannot open the database to anyone or be used to mail a stranger; no
+  address it handles is written to the log.
 - **Health data at rest.** The database holds identifiable data (name, email,
   date of birth, sex) alongside samples. Ingest connects as the scoped
   DML-only `ingest` role, which cannot create or drop objects; set

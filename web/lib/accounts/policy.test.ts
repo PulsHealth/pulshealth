@@ -12,6 +12,8 @@ describe("classifyPath", () => {
     expect(classifyPath("/api/auth/login")).toBe("public");
     expect(classifyPath("/api/auth/invite")).toBe("public");
     expect(classifyPath("/api/auth/logout")).toBe("public");
+    expect(classifyPath("/signup")).toBe("public");
+    expect(classifyPath("/api/auth/signup")).toBe("public");
     for (const path of [
       "/",
       "/workouts",
@@ -21,6 +23,10 @@ describe("classifyPath", () => {
       "/api/user",
       "/api/auth/password",
       "/api/auth/sessions",
+      "/api/auth/devices",
+      "/api/auth/delete-account",
+      "/api/admin",
+      "/admin",
       "/login/extra",
       "/invite/abc/def",
       "/invite/",
@@ -46,6 +52,11 @@ describe("decideAccounts", () => {
   it("answers the health check and assets whatever the transport", () => {
     expect(decideAccounts(facts("/api/healthz", { secure: false, sameOrigin: false }))).toBe("pass");
     expect(decideAccounts(facts("/_next/static/x.js", { secure: false }))).toBe("pass");
+  });
+
+  it("sends plain HTTP that came through the trusted proxy to https", () => {
+    expect(decideAccounts({ ...facts("/login", { secure: false }), forwardedHttp: true })).toBe("upgrade");
+    expect(decideAccounts({ ...facts("/workouts", { secure: false }), forwardedHttp: true })).toBe("upgrade");
   });
 
   it("refuses plain HTTP everywhere else, the sign-in page included", () => {

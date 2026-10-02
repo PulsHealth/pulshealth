@@ -11,9 +11,10 @@ that is the whole of it.
 
 ## The short version
 
-- **The developer of PulsHealth receives no data from you** — unless they have
-  invited you to use their own database, which is then the one you enter in
-  the app (see [If the developer invited you](#if-the-developer-invited-you)).
+- **The developer of PulsHealth receives no data from you** — unless you use
+  their own database and viewer, by invitation or by an access request they
+  approved; it is then the database the app uploads to (see
+  [If you use the developer's viewer](#if-you-use-the-developers-viewer)).
   There is no account to sign up for, no telemetry endpoint, and no
   developer server built into the app: it talks to the database address you
   enter and to nothing else.
@@ -210,16 +211,22 @@ provider's responsibility are yours:
   database. What you point at it, and what those tools do with the data, is
   outside the app's control.
 
-## If the developer invited you
+## If you use the developer's viewer
 
 The developer runs one PulsHealth database of their own, with the web viewer
-at `app.pulshealth.com`, for family and friends they invite. There is no
-sign-up: an account exists only because the developer created an invite for
-you. If you use it:
+at `app.pulshealth.com`. Family and friends get an invite; anyone else can
+ask for access there, and the developer decides. What happens to your data:
 
-- **The app still works exactly as described above.** It uploads only to the
-  database address you entered — in this case the developer's — and to
-  nowhere else.
+- **Asking for access.** The request form stores your name, email address,
+  an optional note, and your browser's IP address and name, and emails them
+  to the developer. Nothing else is created for you, and your iPhone cannot
+  send anything, unless the developer approves. A declined request is
+  deleted at once; an approved one 30 days after the decision. If you are
+  approved but never use the invite, everything made for you is deleted 30
+  days after the last invite was sent.
+- **The app still works exactly as described above.** Once approved, it
+  uploads only to the database address the pairing code gives it — in this
+  case the developer's — and to nowhere else.
 - **The developer holds your data.** Everything the app uploads (the health
   data you chose to sync, and the identity fields if you filled them in) is
   stored in the developer's database under your own user ID. The developer,
@@ -227,24 +234,34 @@ you. If you use it:
   thing: showing it back to you. It is not sold, shared or analysed, and no
   one else who uses the viewer can see it — the database itself limits each
   signed-in person to their own records.
-- **Your viewer account.** Signing in to the viewer stores your email
-  address, a one-way hash of your password (never the password), and, for
-  each browser you sign in from, when it signed in and was last used, its
-  browser and system name, and its IP address. The viewer sets one cookie,
-  which keeps you signed in; it holds a random value and nothing else.
+- **Your viewer account.** Signing in stores your email address, a one-way
+  hash of your password (never the password), and, for each browser you sign
+  in from, when it signed in and was last used, its browser and system name,
+  and its IP address. The viewer sets one cookie, which keeps you signed in;
+  it holds a random value and nothing else.
+- **Connecting your iPhone.** If you asked for access, the account page
+  makes a pairing code that lets your iPhone upload to your records (family
+  members' iPhones are paired by the developer). It is shown once and only a hash
+  of it is kept; the account page lists your connected iPhones and lets you
+  disconnect each.
+- **Email.** Messages about your account — an approval with the link to
+  choose a password — are sent through Amazon Simple Email Service from
+  `noreply@pulshealth.com`. Nothing else is emailed to you, and there is no
+  mailing list.
 - **Cloudflare carries the viewer's traffic.** `app.pulshealth.com` is
   reached through Cloudflare, which terminates its TLS connection and so
   handles the pages you open, health data on them included, under
   [Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/).
-  If the developer has put Cloudflare Access in front of it, signing in there
-  sends your email address to Cloudflare for a one-time code.
 - **Maps.** A workout's route map is drawn by your browser fetching map tiles
   directly from the provider named on the map (Esri, OpenStreetMap or
   OpenTopoMap). Those requests carry no health data, but they do reveal to
   that provider which area the map shows, and the viewer's address.
-- **Leaving.** Ask the developer, and they delete your viewer account and
-  every row stored under your user ID; delete the app's database address (or
-  the app) to stop uploading.
+- **Leaving.** If you asked for access, **Delete my account** on the
+  account page signs you out, disconnects your iPhones at once so nothing
+  more is uploaded, and asks the developer to delete every row stored under
+  your user ID, which they do, along with the names of your devices. Family members ask the developer, who does
+  the same.
+  Delete the database address in the app (or the app) to stop it trying.
 
 ## The website
 

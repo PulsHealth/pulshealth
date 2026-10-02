@@ -169,14 +169,16 @@ the request*. PulsHealth transmits health data off the device, but:
 
 1. **The app points at no developer server.** Nothing in the binary points at
    a developer-controlled host, and the source is public so this is
-   checkable rather than a promise. The developer does run one invite-only
-   database and viewer for family and friends (`app.pulshealth.com`), but the
-   app reaches it only the way it reaches anyone's: the invited person types
-   its address in. That is a person sharing their own self-hosted install,
-   not the app transmitting data to its developer, so the answer stays
-   "Data Not Collected" (decided 2026-10-02, when the instance was added). If
-   that instance ever opens to sign-ups, revisit this answer before it does:
-   `docs/open-source-plan.md` § 5.
+   checkable rather than a promise. The developer does run one database and
+   viewer of their own (`app.pulshealth.com`) for people they invite, and,
+   since 2026-10-02, for people whose access request they approve; the app
+   reaches it only through the pairing code that person is given, like
+   anyone's database. For family and friends that is a person sharing their
+   own install. **For anyone the developer does not know, it is collection by
+   the developer:** before approving the first such request, change App
+   Privacy to declare Health & Fitness data (and Contact Info: the email
+   address) collected, linked to the user, not used for tracking — and keep
+   the privacy policy's "If you use the developer's viewer" section true.
 2. **The only destination is chosen and controlled by the user.** The
    database URL is typed in by the user or scanned from a QR code their own
    backend printed. It is their infrastructure, not a third-party partner of the

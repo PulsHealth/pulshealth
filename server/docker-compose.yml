@@ -239,6 +239,20 @@ services:
       # The viewer's public https:// address: completes the links
       # `make web-invite` prints, and is accepted as an Origin.
       WEB_PUBLIC_URL: ${WEB_PUBLIC_URL:-}
+      # Accounts mode only. WEB_SIGNUPS=true lets strangers ask for an account
+      # at /signup; nothing exists for them until an administrator approves
+      # on /admin. WEB_INGEST_URL is where an iPhone connected from the
+      # account page syncs to (ingest's public HTTPS address, PULS_PUBLIC_URL
+      # unless set). The WEB_SES_* and WEB_MAIL_FROM lines turn on email
+      # (Amazon SES: the operator's notices to WEB_ADMIN_EMAIL, and approved
+      # people's invites); unset, nothing is emailed. See web/README.md.
+      WEB_SIGNUPS: ${WEB_SIGNUPS:-false}
+      WEB_INGEST_URL: ${WEB_INGEST_URL:-${PULS_PUBLIC_URL:-}}
+      WEB_SES_REGION: ${WEB_SES_REGION:-us-east-1}
+      WEB_SES_ACCESS_KEY_ID: ${WEB_SES_ACCESS_KEY_ID:-}
+      WEB_SES_SECRET_ACCESS_KEY: ${WEB_SES_SECRET_ACCESS_KEY:-}
+      WEB_MAIL_FROM: ${WEB_MAIL_FROM:-}
+      WEB_ADMIN_EMAIL: ${WEB_ADMIN_EMAIL:-}
     ports:
       # 3000 is Grafana. Default to loopback; to reach the viewer from other
       # machines set WEB_BIND_ADDR to a private interface, e.g. the host's

@@ -68,14 +68,26 @@ function text(status: number, body: string, extra: Record<string, string> = {}):
 async function accountsGate(request: NextRequest, nonce: string, csp: string, development: boolean): Promise<NextResponse> {
   const url = request.nextUrl;
   const trust = trustProxyHeaders();
+  const forwardedHttp = trust && request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase() === "http";
   const decision = decideAccounts({
     pathname: url.pathname,
     secure: isSecureRequest(url, request.headers, trust, development),
     sameOrigin: isSameOriginRequest(request.method, url, request.headers, trust, development, process.env.WEB_PUBLIC_URL),
     development,
+    forwardedHttp,
   });
 
   if (decision === "pass") return serve(request, nonce, csp);
+  if (decision === "upgrade") {
+    // The proxy reached us for a browser on plain http: send it to https on
+    // the public origin (never echoing a Host it might not own), before any
+    // cookie or form travels in the clear. 308 keeps a POST a POST.
+    const origin = publicOrigin(url, request.headers, trust, process.env.WEB_PUBLIC_URL).replace(/^http:/, "https:");
+    return new NextResponse(null, {
+      status: 308,
+      headers: { Location: new URL(`${url.pathname}${url.search}`, origin).toString(), "Cache-Control": "no-store" },
+    });
+  }
   if (decision === "insecure") {
     return text(
       403,

@@ -54,6 +54,8 @@ export interface Session {
   userId: string;
   email: string;
   isAdmin: boolean;
+  /** Made by an approved sign-up: may connect phones and delete itself here. */
+  selfService: boolean;
   /** True when this lookup slid the expiry forward (re-send the cookie). */
   refreshed: boolean;
 }
@@ -71,9 +73,11 @@ export async function findSession(token: string | null | undefined, touch = fals
     user_id: string;
     email: string;
     is_admin: boolean;
+    self_service: boolean;
     stale: boolean;
   }>(
     `SELECT s.account_id::text, a.user_id::text, a.email, a.is_admin,
+            EXISTS (SELECT 1 FROM auth.self_service_users ss WHERE ss.user_id = a.user_id) AS self_service,
             s.last_seen_at < now() - interval '1 hour' AS stale
        FROM auth.sessions s
        JOIN auth.accounts a ON a.id = s.account_id
@@ -102,6 +106,7 @@ export async function findSession(token: string | null | undefined, touch = fals
     userId: row.user_id,
     email: row.email,
     isAdmin: row.is_admin,
+    selfService: row.self_service,
     refreshed,
   };
 }

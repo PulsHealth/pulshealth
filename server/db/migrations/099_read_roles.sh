@@ -739,11 +739,12 @@ EOSQL
   exit 0
 fi
 
-# A database baselined from before 015 has no views to grant yet; the next
-# plain migrate run applies 015, and this section with it.
+# A database baselined from before 015/016 has no views or functions to
+# grant yet; the next plain migrate run applies them, and this section with it.
 if [[ "$(psql -X -q -tA --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
-          -c "SELECT to_regprocedure('puls_create_web_views()') IS NOT NULL")" != t ]]; then
-  echo "099_read_roles: 015_web_accounts.sql is not applied yet; skipping the web_app role."
+          -c "SELECT to_regprocedure('puls_create_web_views()') IS NOT NULL
+                 AND to_regprocedure('auth.purge_user(bytea,uuid)') IS NOT NULL")" != t ]]; then
+  echo "099_read_roles: 015_web_accounts.sql or 016_web_signups.sql is not applied yet; skipping the web_app role."
   exit 0
 fi
 
@@ -846,8 +847,26 @@ GRANT SELECT ON TABLE public.sample_types TO web_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   auth.accounts,
   auth.sessions,
-  auth.invites
+  auth.invites,
+  auth.signup_requests
 TO web_app;
+
+-- The privileged steps of sign-up and self-service (016_web_signups.sql):
+-- each a SECURITY DEFINER function that checks the caller's session itself.
+-- web_app gets EXECUTE on exactly these and on no other function of its own
+-- (PostgreSQL's default PUBLIC EXECUTE covers built-ins like time_bucket).
+GRANT EXECUTE ON FUNCTION
+  auth.approve_signup(bytea, uuid),
+  auth.set_account_disabled(bytea, uuid, boolean),
+  auth.purge_user(bytea, uuid),
+  auth.issue_device_token(bytea, bytea, text, text),
+  auth.my_devices(bytea),
+  auth.revoke_my_device(bytea, bigint),
+  auth.delete_my_account(bytea)
+TO web_app;
+
+-- Which users those functions may act on (written only by approve_signup).
+GRANT SELECT ON TABLE auth.self_service_users TO web_app;
 
 DO $$
 DECLARE
@@ -916,7 +935,12 @@ BEGIN
       ('auth', 'invites', 'SELECT', false),
       ('auth', 'invites', 'INSERT', false),
       ('auth', 'invites', 'UPDATE', false),
-      ('auth', 'invites', 'DELETE', false)
+      ('auth', 'invites', 'DELETE', false),
+      ('auth', 'signup_requests', 'SELECT', false),
+      ('auth', 'signup_requests', 'INSERT', false),
+      ('auth', 'signup_requests', 'UPDATE', false),
+      ('auth', 'signup_requests', 'DELETE', false),
+      ('auth', 'self_service_users', 'SELECT', false)
     ), actual AS (
       SELECT n.nspname::text, c.relname::text, acl.privilege_type, acl.is_grantable
       FROM pg_class c
@@ -970,10 +994,6 @@ BEGIN
     CROSS JOIN LATERAL aclexplode(a.attacl) acl
     WHERE acl.grantee = web_oid
   ) OR EXISTS (
-    SELECT 1 FROM pg_proc p
-    CROSS JOIN LATERAL aclexplode(p.proacl) acl
-    WHERE acl.grantee = web_oid
-  ) OR EXISTS (
     SELECT 1 FROM pg_type t
     CROSS JOIN LATERAL aclexplode(t.typacl) acl
     WHERE acl.grantee = web_oid
@@ -986,7 +1006,53 @@ BEGIN
     CROSS JOIN LATERAL aclexplode(p.paracl) acl
     WHERE acl.grantee = web_oid
   ) THEN
-    RAISE EXCEPTION 'web_app has unexpected column, function, type, default, or parameter ACLs';
+    RAISE EXCEPTION 'web_app has unexpected column, type, default, or parameter ACLs';
+  END IF;
+
+  -- Functions: EXECUTE on exactly the sign-up and self-service steps, each a
+  -- SECURITY DEFINER function pinned to search_path pg_catalog — counting
+  -- every definer function web_app can run by any route, PUBLIC's default
+  -- EXECUTE included (has_function_privilege), not only direct grants, so a
+  -- future definer function left executable by everyone fails the run.
+  -- Extensions' own functions are theirs to answer for.
+  IF EXISTS (
+    WITH expected(signature) AS (VALUES
+      ('auth.approve_signup(bytea,uuid)'),
+      ('auth.set_account_disabled(bytea,uuid,boolean)'),
+      ('auth.purge_user(bytea,uuid)'),
+      ('auth.issue_device_token(bytea,bytea,text,text)'),
+      ('auth.my_devices(bytea)'),
+      ('auth.revoke_my_device(bytea,bigint)'),
+      ('auth.delete_my_account(bytea)')
+    ), granted AS (
+      SELECT p.oid::regprocedure::text AS signature
+      FROM pg_proc p
+      CROSS JOIN LATERAL aclexplode(p.proacl) acl
+      WHERE acl.grantee = web_oid AND acl.privilege_type = 'EXECUTE' AND NOT acl.is_grantable
+    ), runnable_definers AS (
+      SELECT p.oid::regprocedure::text AS signature
+      FROM pg_proc p
+      WHERE p.prosecdef
+        AND has_function_privilege(web_oid, p.oid, 'EXECUTE')
+        AND NOT EXISTS (SELECT 1 FROM pg_depend d
+                        WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
+    )
+    (SELECT * FROM expected EXCEPT SELECT * FROM granted)
+    UNION ALL
+    (SELECT * FROM granted EXCEPT SELECT * FROM expected)
+    UNION ALL
+    (SELECT * FROM runnable_definers EXCEPT SELECT * FROM expected)
+  ) OR EXISTS (
+    SELECT 1 FROM pg_proc p
+    CROSS JOIN LATERAL aclexplode(p.proacl) acl
+    WHERE acl.grantee = web_oid AND acl.privilege_type <> 'EXECUTE'
+  ) OR EXISTS (
+    SELECT 1 FROM pg_proc p
+    CROSS JOIN LATERAL aclexplode(p.proacl) acl
+    WHERE acl.grantee = web_oid
+      AND NOT (p.prosecdef AND p.proconfig @> ARRAY['search_path=pg_catalog, pg_temp'])
+  ) THEN
+    RAISE EXCEPTION 'web_app function ACL set is not exactly the sign-up and self-service functions';
   END IF;
 
   -- The invariant itself, independent of how the grants above are spelled
@@ -1008,6 +1074,45 @@ BEGIN
            OR has_any_column_privilege(web_oid, c.oid, 'SELECT'))
   ) THEN
     RAISE EXCEPTION 'web_app can read a table holding per-user data directly';
+  END IF;
+
+  -- Nor write anything by any route, PUBLIC's grants included: outside the
+  -- account store in schema auth, web_app can change no relation or
+  -- sequence (nor add a trigger or a foreign key to one), and in it not
+  -- auth.self_service_users, the list the definer functions trust.
+  IF EXISTS (
+    SELECT 1
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
+      AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+      AND (n.nspname <> 'auth' OR c.oid = 'auth.self_service_users'::regclass)
+      AND CASE WHEN c.relkind = 'S' THEN
+            has_sequence_privilege(web_oid, c.oid, 'UPDATE')
+            OR has_sequence_privilege(web_oid, c.oid, 'USAGE')
+          ELSE
+            has_table_privilege(web_oid, c.oid, 'INSERT')
+            OR has_table_privilege(web_oid, c.oid, 'UPDATE')
+            OR has_table_privilege(web_oid, c.oid, 'DELETE')
+            OR has_table_privilege(web_oid, c.oid, 'TRUNCATE')
+            OR has_table_privilege(web_oid, c.oid, 'TRIGGER')
+            OR has_table_privilege(web_oid, c.oid, 'REFERENCES')
+            OR has_any_column_privilege(web_oid, c.oid, 'INSERT')
+            OR has_any_column_privilege(web_oid, c.oid, 'UPDATE')
+            OR has_any_column_privilege(web_oid, c.oid, 'REFERENCES')
+          END
+  ) THEN
+    RAISE EXCEPTION 'web_app can write a relation outside the account store';
+  END IF;
+
+  -- A trigger runs without any EXECUTE check, so a SECURITY DEFINER trigger
+  -- on a table web_app writes would slip past the function check above:
+  -- schema auth has none (foreign keys' internal triggers aside).
+  IF EXISTS (
+    SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+    WHERE c.relnamespace = 'auth'::regnamespace AND NOT t.tgisinternal
+  ) THEN
+    RAISE EXCEPTION 'schema auth has a trigger, which web_app''s writes would run';
   END IF;
 
   -- Schema `web` holds exactly the views puls_create_web_views() just made,

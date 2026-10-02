@@ -203,13 +203,17 @@ and so are the ones decided against (its "Not planned").
 
 - Android / Health Connect. The protocol is platform-neutral in shape, but
   the v1 type vocabulary is HealthKit identifiers.
-- A hosted PulsHealth service open to anyone. The maintainer runs one
-  invite-only instance of the viewer for family and friends, which is close
-  to a shared self-hosted install, and the privacy policy describes it.
-  Opening it to sign-ups would make the maintainer a vendor of personal
-  health records — in the US the FTC Health Breach Notification Rule likely
-  applies, the App Store "Data Not Collected" answer likely changes for those
-  users, and email verification, password reset and account deletion become
-  mandatory — so it needs a decision of its own, not a configuration change.
+- A hosted PulsHealth service open to anyone without review. The
+  maintainer's instance takes access requests from anyone
+  (`WEB_SIGNUPS`, decided 2026-10-02) but creates nothing until the
+  maintainer approves each one, so it stays a personal install shared by
+  choice. Approving people the maintainer does not know makes them a holder
+  of strangers' health records: in the US the FTC Health Breach
+  Notification Rule likely applies (a breach must be notified), the App
+  Store "Data Not Collected" answer changes for those users
+  (`docs/appstore/listing.md`), and the instance owes them deletion, which
+  it has (Delete my account, and purge on /admin). Password reset by email
+  and email verification are not built: a forgotten password is a new
+  invite, and approval is the verification.
 - Writing data back into HealthKit.
 - Native non-HTTP sinks in the app (see D3).

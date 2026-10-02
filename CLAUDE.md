@@ -422,9 +422,42 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   `users.email` are the phone's HealthKit profile, overwritten by every
   `{"profile":…}` line. Accounts are invite-only (`make web-invite`); an
   invite for a user with an account resets its password.
-- **The viewer never issues or displays an ingest token**, in any mode (no
-  pairing QR code in `web/` either). Pairing a phone is the operator's step
-  (`make issue-device`).
+- **The viewer mints an ingest token only for the signed-in person's own
+  user, and shows it only to them, once.** In accounts mode the account page's
+  "Connect this iPhone" calls `auth.issue_device_token(session, …)`, which
+  checks the session token itself and writes the hash; the plaintext appears
+  once as a pairing code and is never stored, logged, emailed or put in a URL.
+  Basic and open mode never mint one; household phones are still paired by the
+  operator (`make issue-device`). **Sign-up requests create nothing until an
+  administrator approves** (`WEB_SIGNUPS`, `/signup` → `/admin`): no user, no
+  account, no token, so no phone can send data. Every write beyond schema
+  `auth` — creating a user, minting/revoking tokens, disabling, deleting,
+  purging — is a `SECURITY DEFINER` function in `016_web_signups.sql` that
+  takes the caller's session hash (`Session.id`, never the plaintext cookie)
+  and checks it (search_path pinned to `pg_catalog`, objects fully
+  qualified). **The boundary is `auth.self_service_users`**, written only by
+  `approve_signup`: every function acts only on users an approved request
+  created, because `web_app` writes `auth.sessions` and so can forge any
+  session — the session check scopes normal use, it is not the barrier. The
+  household (default user, `make issue-device`, `make web-invite`) is never
+  given a sync token, has its tokens revoked or its data purged through the
+  viewer (`web_app` can still change household *viewer* accounts in
+  `auth.accounts`, which it writes to sign people in). `099_read_roles.sh`
+  asserts `web_app` can run exactly those definer functions (PUBLIC's
+  default EXECUTE included), can write no relation outside the account store
+  nor `auth.self_service_users` (PUBLIC's grants included), and that schema
+  `auth` has no triggers (a trigger runs without an EXECUTE check). A new privileged step is a
+  new definer function there, a `GRANT` and an expected row, never a table
+  grant. `purge_user`'s table list must cover every table with a `user_id`
+  (its final `DELETE FROM users` fails on a missed foreign key;
+  `ingest_rejections` has none, so add new such tables by hand) and the
+  `quantity_rollups` materialization; keep its deletes narrowed (types, time
+  span) so it opens only that user's compressed batches. `auth.prune_signups`
+  (an hourly TimescaleDB job) is what makes the privacy policy's 30-day
+  request deletion true; keep it scheduled. Email (`web/lib/email.ts`, SES,
+  hand-signed SigV4) goes only to the operator and to people an
+  administrator approved — keep the public form unable to mail anyone else,
+  and never log an address.
 
 ## Gotchas
 

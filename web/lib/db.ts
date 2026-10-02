@@ -1,5 +1,5 @@
 // Thin Postgres access. Server-only — never import from a client component.
-import { Pool, type PoolClient } from "pg";
+import { Pool, type PoolClient, type QueryConfig } from "pg";
 
 let pool: Pool | null = null;
 let initialized = false;
@@ -71,6 +71,21 @@ export async function scoped<T>(userId: string, fn: (q: QueryFn) => Promise<T>):
  * through `scoped`, and web_app cannot write it at all. The same rule about
  * issuing statements through `q` only applies.
  */
+/**
+ * One statement that may take minutes (purging a user, which unpacks shared
+ * compressed batches), in its own transaction with the server's and the
+ * client's timeouts raised to `minutes` for it alone.
+ */
+export async function longStatement<T = Record<string, unknown>>(text: string, params: unknown[], minutes: number): Promise<T[]> {
+  const ms = Math.round(minutes * 60_000);
+  return inTransaction("BEGIN", [[`SET LOCAL statement_timeout = ${ms}`, []]], async (_q, client) => {
+    // node-postgres reads a per-query query_timeout (client.js); its types omit it.
+    const config: QueryConfig<unknown[]> & { query_timeout: number } = { text, values: params, query_timeout: ms + 5_000 };
+    const res = await client.query(config);
+    return res.rows as T[];
+  });
+}
+
 export async function transaction<T>(fn: (q: QueryFn) => Promise<T>): Promise<T> {
   return inTransaction("BEGIN", [], fn);
 }
@@ -78,7 +93,7 @@ export async function transaction<T>(fn: (q: QueryFn) => Promise<T>): Promise<T>
 async function inTransaction<T>(
   begin: string,
   setup: [string, unknown[]][],
-  fn: (q: QueryFn) => Promise<T>,
+  fn: (q: QueryFn, client: PoolClient) => Promise<T>,
 ): Promise<T> {
   const p = getPool();
   if (!p) throw new Error("DATABASE_URL not configured");
@@ -94,7 +109,7 @@ async function inTransaction<T>(
       const res = await client.query(text, params);
       return res.rows as R[];
     };
-    const result = await fn(q);
+    const result = await fn(q, client);
     await client.query("COMMIT");
     return result;
   } catch (e) {
