@@ -1,10 +1,10 @@
 # Puls Web
 
-The self-hosted web viewer for the Puls health store, in the style of Apple
-Health. Built with **Next.js (App Router) + TypeScript**, it reads directly
-from the same **TimescaleDB** that Grafana uses and draws its own SVG charts:
-activity rings, range-banded trend lines and bar series, with per-category
-accent colors.
+A sleek, Apple-Health-inspired web frontend for the self-hosted Puls health store.
+Built with **Next.js (App Router) + TypeScript**, it reads directly from the same
+**TimescaleDB** that Grafana uses, and renders bespoke hand-built SVG charts —
+activity rings, range-banded trend lines, and bar series — with a Vercel-clean
+monochrome shell and per-category accent colors.
 
 > **Local demo mode.** Outside production, an unset or unreachable `DATABASE_URL`
 > serves generated demo data. Production never fabricates health data: database
@@ -67,15 +67,16 @@ time. Which one:
 **This is a preference, not access control.** Everyone behind the one
 `WEB_AUTH_PASSWORD` can look at every user, and the cookie is nothing but the
 chosen id (a forged value is at worst an id the database does not have, which
-renders empty — with the switcher there to pick a real one). The viewer cannot
-limit a person to their own records, so share the password only with people
-who may see everything in the database.
+renders empty — with the switcher there to pick a real one). A viewer that
+must show one household member only their own records is a different design;
+until then, share the password with the people who may see everything in the
+database.
 
 ## Access control
 
 **`WEB_AUTH_PASSWORD` is a password prompt in front of the whole viewer.** Set
 it and every route asks for HTTP Basic credentials; leave it empty and the
-viewer has no login at all.
+viewer has no login at all, exactly as it always did.
 
 ```bash
 WEB_AUTH_PASSWORD="$(openssl rand -hex 12)"   # in server/.env
@@ -116,7 +117,7 @@ untrusted network, and never directly on the internet.
 |---|---|
 | `/` | **Today** — activity rings from today's local `HKActivitySummary`; falls back to today's quantity totals when today's summary is missing, plus headline metrics, recent workouts, and categories |
 | `/category/[group]` | All metrics in an Apple-Health group (Activity, Heart, Sleep, …) as live cards |
-| `/type/[id]` | **Metric detail** — interactive trend chart with D/W/M/6M/Y ranges, min–max band for instantaneous metrics, bar series for cumulative ones, range stats |
+| `/type/[id]` | **Metric detail** — interactive trend chart with Day/7D/30D/90D/6M/Y/2Y/5Y/All ranges (`?range=`; the old `W`/`M` links open 7D/30D; All Time starts at the first sample and sizes its buckets to the span), min–max band for instantaneous metrics, bar series for cumulative ones, range stats |
 | `/data` | **Catalog** — quantity, category, and workout types with supported viewer routes, grouped with per-user sample counts and last-seen |
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
@@ -141,8 +142,9 @@ web/
     └── format.ts        # value / unit / time formatting
 ```
 
-**How data is read.** Like Grafana, the viewer queries TimescaleDB directly
-rather than going through the product API: `quantity_samples` /
+**How data is read.** The Go ingest API (`../server/ingest`) is write-mostly — its
+only GETs return type counts and reconciliation digests, not time series. So, like
+Grafana, this app queries TimescaleDB directly: `quantity_samples` /
 `category_samples` / `workouts` joined to `sample_types`, bucketed with
 `time_bucket()`. Every health-data read is scoped to the chosen user (the
 `puls-user` cookie, else `PULS_USER_ID` — see "Choosing a user"), with calendar
@@ -151,9 +153,9 @@ Hours count only stood records, and other categories are occurrence counts.
 Cumulative raw samples total each source separately and choose the highest source
 per bucket to avoid overlapping phone/Watch double counts; when the viewer's
 `PULS_TIME_ZONE` equals the database's `puls_time_zone()`, daily canonical values
-come from `metric_daily`; otherwise they come from raw local buckets. Today's
-totals always use current raw local-day values, so the live headline does not
-depend on aggregate refresh or bucket-settlement timing.
+come from `metric_daily` (any other zone, or an older database without the
+function, uses raw local buckets). Today totals always use current raw local-day values,
+so the live headline does not depend on aggregate refresh or bucket-settlement timing.
 Instantaneous types average with a min–max band. Activity rings require the selected
 user's summary for the actual current local date.
 

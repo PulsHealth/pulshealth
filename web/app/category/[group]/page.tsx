@@ -49,7 +49,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ group
     getTodayTotals(user, cumIds),
     getLatestMany(user, discIds),
     getStats(user),
-    Promise.all(otherTypes.map((t) => getSeries(user, t.identifier, "M"))),
+    Promise.all(otherTypes.map((t) => getSeries(user, t.identifier, "30D"))),
   ]);
   const otherById = new Map(otherSeries.map((s) => [s.identifier, s]));
 

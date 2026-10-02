@@ -15,7 +15,8 @@ import { cache } from "react";
 import { query } from "./db";
 import { typeByIdentifier } from "./catalog";
 import { configuredTimeZone } from "./config";
-import { defaultAgg, RANGES } from "./metrics";
+import { defaultAgg, RANGES, resolvePresetWindow } from "./metrics";
+import type { CustomSeriesWindow } from "./metrics";
 import {
   demoActivityRings,
   demoLatest,
@@ -239,14 +240,28 @@ export function categoryAggregation(identifier: string): CategoryAggregation {
   return { mode: "count", unit: "count" };
 }
 
-export async function getSeries(userId: string, identifier: string, range: RangeKey): Promise<Series> {
-  const spec = RANGES[range];
+/**
+ * One chart series: a preset range (what the selector and `?range=` offer),
+ * or a custom window between two calendar dates (`resolveCustomWindow`; no
+ * page passes one yet).
+ */
+export async function getSeries(
+  userId: string,
+  identifier: string,
+  range: RangeKey | CustomSeriesWindow,
+): Promise<Series> {
+  const preset = typeof range === "string" ? range : null;
+  const custom = typeof range === "string" ? null : range;
   const type = typeByIdentifier(identifier);
   const agg = defaultAgg(identifier);
-  const empty: Series = { identifier, unit: type?.unit ?? null, agg, bucketMs: spec.bucketMs, points: [] };
+  const empty: Series = {
+    identifier, unit: type?.unit ?? null, agg,
+    bucketMs: custom?.bucketMs ?? RANGES[preset ?? "7D"].bucketMs, points: [],
+  };
+  const demo = () => (preset ? demoSeries(identifier, preset) : empty);
 
   const src = await source();
-  if (src !== "live") return notLive(src, () => demoSeries(identifier, range), empty);
+  if (src !== "live") return notLive(src, demo, empty);
 
   try {
     // `from` is an instant (now − span). Every query below aligns it down to
@@ -254,15 +269,42 @@ export async function getSeries(userId: string, identifier: string, range: Range
     // time_bucket($1, $from, $tz): otherwise the first day/week bucket held a
     // partial slice (10:37 → midnight), rendered as a low bar, and became the
     // range's "Minimum".
-    const from = new Date(Date.now() - spec.spanMs);
+    //
+    // A custom window instead names calendar dates in the viewer's zone:
+    // `from` is its first day and it ends before `endExclusive`. Presets send
+    // the same SQL and parameters as always; a custom window changes only how
+    // `from` is read (local midnight of a date) and appends its end bound as
+    // the last parameter, so no other placeholder moves.
+    //
+    // All Time starts at the type's earliest sample, from the per-user stats
+    // the type page loads anyway (cached, and shared while in flight), so it
+    // costs no query of its own there.
+    let window: { from: Date | string; bucket: string; bucketMs: number };
+    if (custom) {
+      window = { from: custom.fromDate, bucket: custom.bucket, bucketMs: custom.bucketMs };
+    } else {
+      const earliest = preset === "ALL" ? (await getStats(userId)).get(identifier)?.earliest ?? null : null;
+      const resolved = resolvePresetWindow(preset ?? "7D", new Date(), earliest);
+      if (!resolved) return empty; // All Time with no samples at all
+      window = { from: resolved.start, bucket: resolved.bucket, bucketMs: resolved.bucketMs };
+    }
+    const { from, bucket, bucketMs } = window;
     const timeZone = configuredTimeZone();
+    const at = (param: number, tz: number) =>
+      custom ? `($${param}::date::timestamp AT TIME ZONE $${tz}::text)` : `$${param}::timestamptz`;
+    const endBefore = (column: string, params: unknown[], tz: number) => {
+      if (!custom) return "";
+      params.push(custom.endExclusive);
+      return `AND ${column} < ($${params.length}::date::timestamp AT TIME ZONE $${tz}::text)`;
+    };
 
     if (type?.kind === "category") {
       const category = categoryAggregation(identifier);
       const valueFilter = category.values ? "AND c.value = ANY($6::int[])" : "";
-      const params = category.values
-        ? [spec.bucket, identifier, from, userId, timeZone, category.values]
-        : [spec.bucket, identifier, from, userId, timeZone];
+      const params: unknown[] = category.values
+        ? [bucket, identifier, from, userId, timeZone, category.values]
+        : [bucket, identifier, from, userId, timeZone];
+      const end = endBefore("c.start_ts", params, 5);
 
       if (category.mode === "duration") {
         const divisor = category.unit === "h" ? 3600 : 60;
@@ -281,7 +323,8 @@ export async function getSeries(userId: string, identifier: string, range: Range
                FROM category_samples c
                JOIN sample_types st ON st.type_id = c.type_id
               WHERE st.identifier = $2
-                AND c.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)${unshift}
+                AND c.start_ts >= time_bucket($1::interval, ${at(3, 5)}, $5::text)${unshift}
+                ${end ? `${end}${unshift}` : ""}
                 AND c.user_id = $4::uuid
                 ${valueFilter}
               GROUP BY 1, c.source_id
@@ -295,7 +338,7 @@ export async function getSeries(userId: string, identifier: string, range: Range
         const points: SeriesPoint[] = rows.map((r) => ({
           t: Number(r.t), value: Number(r.value), min: null, max: null, count: 0,
         }));
-        return { identifier, unit: category.unit, agg: "sum", bucketMs: spec.bucketMs, points };
+        return { identifier, unit: category.unit, agg: "sum", bucketMs, points };
       }
 
       const rows = await query<{ t: string; n: number }>(
@@ -304,7 +347,8 @@ export async function getSeries(userId: string, identifier: string, range: Range
            FROM category_samples c
            JOIN sample_types st ON st.type_id = c.type_id
           WHERE st.identifier = $2
-            AND c.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)
+            AND c.start_ts >= time_bucket($1::interval, ${at(3, 5)}, $5::text)
+            ${end}
             AND c.user_id = $4::uuid
             ${valueFilter}
           GROUP BY 1 ORDER BY 1`,
@@ -313,23 +357,31 @@ export async function getSeries(userId: string, identifier: string, range: Range
       const points: SeriesPoint[] = rows.map((r) => ({
         t: Number(r.t), value: Number(r.n), min: null, max: null, count: Number(r.n),
       }));
-      return { identifier, unit: category.unit, agg: "sum", bucketMs: spec.bucketMs, points };
+      return { identifier, unit: category.unit, agg: "sum", bucketMs, points };
     }
 
     // Best-guess-of-truth view for covered types (steps/energy/distance/…) at
-    // day-or-coarser buckets. metric_daily is daily-grain, so the intraday (Day)
-    // view falls through to raw samples below.
+    // day-or-coarser buckets: per day, the phone's canonical daily aggregate
+    // where one was uploaded, else the raw rollup — so a day the phone has not
+    // aggregated yet (today, or anything past its watermark) still shows.
+    // metric_daily is daily-grain, so the intraday (Day) view falls through
+    // to raw samples below.
     const mdTypes = await metricDailyTypes(userId);
-    if (mdTypes.has(identifier) && spec.bucketMs >= DAY_MS) {
+    if (mdTypes.has(identifier) && bucketMs >= DAY_MS) {
+      const params: unknown[] = [bucket, identifier, from, userId, timeZone];
+      // metric_daily's days are already in this zone (metricDailyUsable), so
+      // a custom end date compares to them directly.
+      if (custom) params.push(custom.endExclusive);
       const rows = await query<{ t: string; value: number }>(
         `SELECT (extract(epoch from time_bucket($1::interval, day::timestamp AT TIME ZONE $5::text, $5::text)) * 1000)::bigint AS t,
                 ${agg === "sum" ? "sum(value)" : "avg(value)"}::float8 AS value
            FROM metric_daily
           WHERE identifier = $2
-            AND day >= (time_bucket($1::interval, $3::timestamptz, $5::text) AT TIME ZONE $5::text)::date
+            AND day >= (time_bucket($1::interval, ${at(3, 5)}, $5::text) AT TIME ZONE $5::text)::date
+            ${custom ? "AND day < $6::date" : ""}
             AND user_id = $4::uuid
           GROUP BY 1 ORDER BY 1`,
-        [spec.bucket, identifier, from, userId, timeZone],
+        params,
       );
       const points: SeriesPoint[] = rows.map((r) => ({
         t: Number(r.t),
@@ -338,7 +390,7 @@ export async function getSeries(userId: string, identifier: string, range: Range
         max: null,
         count: 0,
       }));
-      return { identifier, unit: type?.unit ?? null, agg, bucketMs: spec.bucketMs, points };
+      return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
     }
 
     // Raw cumulative samples often overlap across iPhone and Watch. Establish
@@ -346,9 +398,12 @@ export async function getSeries(userId: string, identifier: string, range: Range
     // charts, by choosing the highest source total. Only then roll those truth
     // values into the requested bucket, so a week can use a different winning
     // source on each day.
-    const truthBucket = spec.bucketMs < DAY_MS ? spec.bucket : "1 day";
-    const rows = agg === "sum"
-      ? await query<SeriesRow>(
+    const truthBucket = bucketMs < DAY_MS ? bucket : "1 day";
+    let rows: SeriesRow[];
+    if (agg === "sum") {
+      const params: unknown[] = [bucket, truthBucket, identifier, from, userId, timeZone];
+      const end = endBefore("q.start_ts", params, 6);
+      rows = await query<SeriesRow>(
         `WITH per_source AS (
            SELECT time_bucket($2::interval, q.start_ts, $6::text) AS truth_bucket,
                   q.source_id,
@@ -356,7 +411,8 @@ export async function getSeries(userId: string, identifier: string, range: Range
              FROM quantity_samples q
              JOIN sample_types st ON st.type_id = q.type_id
             WHERE st.identifier = $3
-              AND q.start_ts >= time_bucket($1::interval, $4::timestamptz, $6::text)
+              AND q.start_ts >= time_bucket($1::interval, ${at(4, 6)}, $6::text)
+              ${end}
               AND q.user_id = $5::uuid
             GROUP BY 1, q.source_id
          ), truth AS (
@@ -373,9 +429,12 @@ export async function getSeries(userId: string, identifier: string, range: Range
            FROM truth
           GROUP BY time_bucket($1::interval, truth_bucket, $6::text)
           ORDER BY time_bucket($1::interval, truth_bucket, $6::text)`,
-        [spec.bucket, truthBucket, identifier, from, userId, timeZone],
-      )
-      : await query<SeriesRow>(
+        params,
+      );
+    } else {
+      const params: unknown[] = [bucket, identifier, from, userId, timeZone];
+      const end = endBefore("q.start_ts", params, 5);
+      rows = await query<SeriesRow>(
         `SELECT (extract(epoch from time_bucket($1::interval, q.start_ts, $5::text)) * 1000)::bigint AS t,
                 sum(q.value)::float8 AS sum,
                 avg(q.value)::float8 AS avg,
@@ -385,11 +444,13 @@ export async function getSeries(userId: string, identifier: string, range: Range
            FROM quantity_samples q
            JOIN sample_types st ON st.type_id = q.type_id
           WHERE st.identifier = $2
-            AND q.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)
+            AND q.start_ts >= time_bucket($1::interval, ${at(3, 5)}, $5::text)
+            ${end}
             AND q.user_id = $4::uuid
           GROUP BY 1 ORDER BY 1`,
-        [spec.bucket, identifier, from, userId, timeZone],
+        params,
       );
+    }
     const points: SeriesPoint[] = rows.map((r) => ({
       t: Number(r.t),
       value: Number(agg === "sum" ? r.sum : r.avg) || 0,
@@ -397,10 +458,10 @@ export async function getSeries(userId: string, identifier: string, range: Range
       max: r.max == null ? null : Number(r.max),
       count: Number(r.n),
     }));
-    return { identifier, unit: type?.unit ?? null, agg, bucketMs: spec.bucketMs, points };
+    return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
   } catch (e) {
     console.error("[queries] getSeries failed:", e);
-    return ALLOW_DEMO ? demoSeries(identifier, range) : empty;
+    return ALLOW_DEMO ? demo() : empty;
   }
 }
 
@@ -634,7 +695,7 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
   if (src !== "live") {
     if (src === "demo") {
       for (const id of identifiers) {
-        out.set(id, demoSeries(id, "M").points.slice(-days).map((p) => p.value));
+        out.set(id, demoSeries(id, "30D").points.slice(-days).map((p) => p.value));
       }
     }
     return out;
@@ -723,7 +784,7 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
     console.error("[queries] getDailySparklines failed:", e);
     if (ALLOW_DEMO) {
       for (const id of identifiers) {
-        out.set(id, demoSeries(id, "M").points.slice(-days).map((p) => p.value));
+        out.set(id, demoSeries(id, "30D").points.slice(-days).map((p) => p.value));
       }
     }
     return out;
