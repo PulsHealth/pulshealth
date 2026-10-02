@@ -152,7 +152,7 @@ and so are the ones decided against (its "Not planned").
 | SRV-10 | Web viewer auth, and a viewer-scoped database role instead of `grafana`. | S | Auth done (`WEB_AUTH_PASSWORD`); the viewer keeps the read-only `grafana` role — roadmap, Not planned |
 | SRV-11 | A second user without a volume wipe. | S | Writes, and reads through the API, viewer and MCP server, done; a per-user read token is not planned — roadmap, Not planned |
 | SRV-12 | Grafana contact point from `GRAFANA_ALERT_EMAIL`; alert thresholds documented as tunables. | S | Done |
-| SRV-13 | The API additions agents ask for first — sleep, raw samples, workout series, State of Mind — and pagination on daily metrics. | S | Endpoints done; daily metrics are not paginated — roadmap § 3 |
+| SRV-13 | The API additions agents ask for first — sleep, raw samples, workout series, State of Mind — and pagination on daily metrics. | S | Done: `/v1/metrics/daily` pages in days across the requested types (`limit`, `offset`, `nextOffset`) |
 
 ### AI layer (R-AI)
 

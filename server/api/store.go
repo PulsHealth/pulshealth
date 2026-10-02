@@ -72,6 +72,24 @@ type DailyMetric struct {
 	Days       []DailyPoint `json:"days"`
 }
 
+// DailyFilters is one GET /v1/metrics/daily query. The page is counted in
+// days (one metric_daily row), not metrics: Limit and Offset walk the rows
+// in the order the response nests them — the requested types in request
+// order, each ascending by day — so a page boundary can fall inside a
+// metric's days and the next page continues that metric. Limit zero or less
+// means no limit (the export's whole range, see nullableLimit).
+type DailyFilters struct {
+	Types  []string
+	Start  time.Time
+	End    time.Time
+	Limit  int
+	Offset int
+}
+
+// Points is how many days a DailyMetrics answer carries across its metrics —
+// the row count the page's nextOffset advances by.
+func (m DailyMetric) points() int { return len(m.Days) }
+
 type ActivityDay struct {
 	Date            string   `json:"date"`
 	MoveKcal        *float64 `json:"moveKcal"`
@@ -284,12 +302,15 @@ func (st *Store) LatestMetrics(ctx context.Context, userID string, types []strin
 	return out, nil
 }
 
-func (st *Store) DailyMetrics(ctx context.Context, userID string, types []string, start, end time.Time) ([]DailyMetric, error) {
-	startDay, endDay, err := localDayRange(start, end, st.loc)
+func (st *Store) DailyMetrics(ctx context.Context, userID string, f DailyFilters) ([]DailyMetric, error) {
+	startDay, endDay, err := localDayRange(f.Start, f.End, st.loc)
 	if err != nil {
 		return nil, err
 	}
 
+	// Ordered by the position of each identifier in the request, then by
+	// day: the same order the response nests, so LIMIT/OFFSET pages are
+	// contiguous slices of what an unpaged answer would be.
 	rows, err := st.pool.Query(ctx, `
 		SELECT md.identifier, st.unit, md.day::text, md.value::float8
 		FROM metric_daily md
@@ -298,14 +319,15 @@ func (st *Store) DailyMetrics(ctx context.Context, userID string, types []string
 		  AND md.day < $2::date
 		  AND md.user_id = $3
 		  AND md.identifier = ANY($4::text[])
-		ORDER BY md.identifier, md.day`, startDay, endDay, userID, types)
+		ORDER BY array_position($4::text[], md.identifier), md.day
+		LIMIT $5 OFFSET $6`, startDay, endDay, userID, f.Types, nullableLimit(f.Limit), max(f.Offset, 0))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	byType := make(map[string]*DailyMetric, len(types))
-	order := make([]string, 0, len(types))
+	byType := make(map[string]*DailyMetric, len(f.Types))
+	order := make([]string, 0, len(f.Types))
 	for rows.Next() {
 		var (
 			identifier string
@@ -329,7 +351,7 @@ func (st *Store) DailyMetrics(ctx context.Context, userID string, types []string
 	}
 
 	out := make([]DailyMetric, 0, len(order))
-	for _, identifier := range types {
+	for _, identifier := range f.Types {
 		if metric, ok := byType[identifier]; ok {
 			out = append(out, *metric)
 		}

@@ -48,9 +48,9 @@ default user's data under another name. A value that is not a UUID is a
 **Range caps.** `samples` keeps the **31 days** `/v1/samples` enforces — a
 busy type runs to hundreds of thousands of rows a month. Every other dataset
 is capped at **366 days**, like `/v1/sleep/daily` and `/v1/state-of-mind`.
-That is stricter than `/v1/metrics/daily`, `/v1/activity/summary` and
-`/v1/workouts`, which page instead: a file is bounded only by its range, so it
-needs a cap. The cap measures the instant span; the day-grained datasets also
+That is stricter than `/v1/metrics/daily` and `/v1/workouts`, which page
+instead (and `/v1/activity/summary`, one small row per day): a file is
+bounded only by its range, so it needs a cap. The cap measures the instant span; the day-grained datasets also
 reject a range that touches more than 366 local calendar days, with their own
 message. Either way it is a `400` naming the limit, before the first byte of
 the file, in the JSON endpoints' shape:

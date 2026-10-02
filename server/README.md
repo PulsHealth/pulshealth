@@ -633,7 +633,12 @@ services should store the base URL as `PULS_API_BASE_URL` and the token as
   included: `rawRows`, `aggregateRows` and `rows` (their sum). Cached
   briefly, since it counts rows.
 - `GET /v1/metrics/latest?types=...`
-- `GET /v1/metrics/daily?types=...&start=...&end=...`
+- `GET /v1/metrics/daily?types=...&start=...&end=...&limit=10000&offset=0` —
+  one value per local day per type, paged in **days across the requested
+  types** (`limit` caps at 50000; page with `nextOffset`, a short page is
+  the last). The default page holds a year of 27 types, so a request that
+  names no `limit` gets what it always did; a page boundary can fall inside
+  a metric's days, so the next page may open with the same identifier.
 - `GET /v1/activity/summary?start=...&end=...`
 - `GET /v1/workouts?start=...&end=...&limit=50&offset=0`, `GET /v1/workouts/{uuid}`
 - `GET /v1/workouts/{uuid}/series?types=...&maxPoints=500` — each stream
