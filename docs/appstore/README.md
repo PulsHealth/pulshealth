@@ -10,7 +10,7 @@ and when, is the [Release record](#release-record) at the bottom.
 
 | Document | What it is |
 |---|---|
-| [`listing.md`](listing.md) | The App Store Connect record: name, subtitle, promotional text, description, keywords, URLs, category, age-rating answers, the App Privacy "Data Not Collected" answer and its reasoning, and what to do about screenshots. |
+| [`listing.md`](listing.md) | The App Store Connect record: name, subtitle, promotional text, description, keywords, URLs, category, age-rating answers, the App Privacy answer ("Data Linked to You" since 2026-10-02) and its reasoning, and what to do about screenshots. |
 | [`review-notes.md`](review-notes.md) | The App Review Information → Notes text, ready to paste once four placeholders are filled in, plus prepared answers for the questions this app invites. |
 | [`review-backend.md`](review-backend.md) | How to stand up the throwaway public server a reviewer needs, and how to tear it down afterwards. |
 | [`../privacy-policy.md`](../privacy-policy.md) | The privacy policy, served at `https://pulshealth.com/privacy` by `site/`. |
@@ -22,9 +22,11 @@ They cover **STORE-1**, **STORE-2**, **STORE-3** and **STORE-5** from
 
 PulsHealth sends the user's health data to a server the *user* runs — or, on
 request, writes it to files the user saves or sends themselves; the developer
-receives nothing, operates nothing, and has nothing to collect. Every
-document here is an application of that single fact, and every claim in them is
-checkable against the source in this repository.
+receives nothing and operates nothing in the app. The one exception is people
+who use the developer's own database and viewer, by invitation or an approved
+request, which is why App Privacy declares data linked to the user (see
+`listing.md`). Every document here is an application of those facts, and
+every claim in them is checkable against the source in this repository.
 
 ## Submission checklist
 
@@ -54,7 +56,8 @@ account, the signing team, a real device or personal contact details.
       questionnaire.
 - [ ] Check the processed build's privacy report: the app and the
       `PulsHealthSync` package each ship a `PrivacyInfo.xcprivacy` declaring no
-      tracking, no collected data, and `UserDefaults` / `CA92.1`.
+      tracking and `UserDefaults` / `CA92.1`. The app's lists the six collected
+      data types of `listing.md` § App Privacy; the package's lists none.
 - [ ] **maintainer only** — Run the TestFlight build on a real device,
       installed over the store version, for a few days. Background delivery,
       continued processing and an upgrade's first sync only show up there.
@@ -71,8 +74,9 @@ account, the signing team, a real device or personal contact details.
       promotional text, keywords, What's New — check the bracketed counts, and
       paste.
 - [ ] Age rating and App Privacy are answered as tabulated in `listing.md`
-      (4+, Data Not Collected). Revisit them only if something they ask about
-      changed.
+      (4+, Data Linked to You: six types, App Functionality, not tracking).
+      App Privacy is per app, not per version, so it is already live; revisit
+      it only if something it asks about changed.
 
 ### Screenshots
 
@@ -125,7 +129,7 @@ changes, revisit them in the same pull request:
 | The first-run flow's steps | `review-notes.md` — the reviewer walkthrough is step-by-step |
 | `ServerURLValidation`'s rules | `review-notes.md` — the ATS justification quotes them |
 | Anything about HealthKit write access | everything; read-only is the load-bearing claim |
-| The maintainer's invite-only viewer instance: who may join (today invitation only), what it stores, who carries its traffic (Cloudflare) | `privacy-policy.md` § If the developer invited you, the site's `/privacy` glance card, `listing.md` (App Privacy point 1). Opening it to sign-ups changes the App Privacy answer — decide that first |
+| The maintainer's viewer instance: who may join (invitation, or an approved access request since 2026-10-02), what it stores, who carries its traffic (Cloudflare) | `privacy-policy.md` § If you use the developer's viewer, the site's `/privacy` glance card, `listing.md` (App Privacy table and point 1), `PulsHealth/PrivacyInfo.xcprivacy` |
 | What ships to the store | [Release record](#release-record) — these documents describe the shipped binary, not whatever `main` happens to be |
 
 ## Release record
@@ -140,6 +144,7 @@ only are noted under the release that superseded them.
 | Bundle ID | `com.pulsHealth.PulsHealth` |
 | Category / rating / price | Health & Fitness (secondary: Utilities) · 4+ · Free |
 | First released | 2026-01-21 |
+| App Privacy | "Data Linked to You" since 2026-10-02 (Name, Email Address, Health, Fitness, User ID, Device ID; App Functionality; not tracking), changed in App Store Connect without a new build. "Data Not Collected" before. |
 
 | Version | Released | Notes |
 |---|---|---|

@@ -51,9 +51,12 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
   `NSLocalNetworkUsageDescription`. Settings enforces the same rule before a
   URL can be saved or tested.
 - `PrivacyInfo.xcprivacy` (bundle root, listed as a resource in `project.yml`):
-  no tracking, no collected data, and the one required-reason API the app uses
+  no tracking; the six data types the App Store label declares for people who
+  use the developer's own database (`docs/appstore/listing.md` § App Privacy),
+  linked, for App Functionality; and the one required-reason API the app uses
   — `UserDefaults` (CA92.1, the app's own flags). The `PulsHealthSync` package
-  ships its own manifest for the same API (background-task schedule status).
+  ships its own manifest for the same API (background-task schedule status),
+  with no collected data: the library sends only where its host app points.
 - Usage strings declare read-only HealthKit access (the app never writes health
   data) and camera access for one purpose only — reading the pairing QR code
   (`NSCameraUsageDescription`).
