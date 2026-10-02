@@ -103,6 +103,13 @@ export function formatBucket(ms: number, bucketMs: number): string {
   if (bucketMs <= 86_400_000) {
     return dateFormatter({ weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(new Date(ms));
   }
+  // A month or quarter bucket (5Y, ALL) is a calendar one on the server, but
+  // its bucketMs is a fixed 30 or 90 days, so a day-precise end would be off
+  // by up to two days ("Feb 1 – Mar 2"): name the months instead.
+  if (bucketMs >= 80 * 86_400_000) {
+    return dateFormatter({ month: "short", year: "numeric" }).formatRange(new Date(ms), new Date(ms + bucketMs - 1));
+  }
+  if (bucketMs >= 28 * 86_400_000) return formatMonth(ms);
   // Inclusive last day of the bucket.
   return dateFormatter({ month: "short", day: "numeric", year: "numeric" }).formatRange(new Date(ms), new Date(ms + bucketMs - 1));
 }

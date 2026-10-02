@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bucketForDuration, defaultAgg, isCumulative, parseRange, RANGE_ORDER, RANGES, resolvePresetWindow,
 } from "./metrics";
-import { tickLabel } from "./format";
+import { formatBucket, tickLabel } from "./format";
 
 describe("metric semantics", () => {
   it("sums cumulative types and averages discrete ones", () => {
@@ -65,5 +65,22 @@ describe("metric semantics", () => {
     const t = Date.UTC(2025, 0, 15, 12);
     expect(tickLabel(t, 30 * 86_400_000)).toMatch(/2025/);
     expect(tickLabel(t, 86_400_000)).not.toMatch(/2025/);
+  });
+
+  it("names a month or quarter bucket by its calendar months, not a day count", () => {
+    // Buckets start at local midnight in the app's zone; pin it so the
+    // instants below are bucket starts wherever the test runs.
+    const prev = process.env.PULS_TIME_ZONE;
+    process.env.PULS_TIME_ZONE = "UTC";
+    try {
+      const day = 86_400_000;
+      expect(formatBucket(Date.UTC(2025, 1, 1), 30 * day)).toBe("Feb 2025");
+      expect(formatBucket(Date.UTC(2025, 3, 1), 90 * day)).toMatch(/^Apr\s*–\s*Jun 2025$/);
+      // Weekly buckets keep their day-precise span.
+      expect(formatBucket(Date.UTC(2025, 0, 6), 7 * day)).toMatch(/^Jan 6\s*–\s*12, 2025$/);
+    } finally {
+      if (prev === undefined) delete process.env.PULS_TIME_ZONE;
+      else process.env.PULS_TIME_ZONE = prev;
+    }
   });
 });
