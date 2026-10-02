@@ -55,7 +55,7 @@ const pieces = [
     title: "iOS app",
     href: "/ios",
     icon: Smartphone,
-    description: "Reads Apple Health read-only. Explore and export it on the phone, or stream every sample to your database: full backfill first, then background sync. 80 types, workouts with GPS, activity rings.",
+    description: "Reads Apple Health read-only. Explore and export it on the phone, or stream every sample to your database: full backfill first, then background sync. 81 types, workouts with GPS, activity rings.",
   },
   {
     title: "PostgreSQL + TimescaleDB",

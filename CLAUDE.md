@@ -42,7 +42,7 @@ cd web && npm run gen:catalog
 # carries DEVELOPMENT_TEAM from Config/Local.xcconfig, which xcodegen seeds.
 cd PulsHealth && xcodegen && xcodebuild build -scheme PulsHealth \
   -destination 'platform=iOS Simulator,name=iPhone 17'
-# App-hosted XCTest (HealthKit entitlement): the 372-combo aggregate matrix
+# App-hosted XCTest (HealthKit entitlement): the 378-combo aggregate matrix
 cd PulsHealth && xcodebuild test -scheme PulsHealth \
   -destination 'platform=iOS Simulator,name=iPhone 17'
 
@@ -395,7 +395,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   uncatchable NSInvalidArgumentException when the query *executes*, not when it
   is built. Only ever offer or construct functions from
   `HealthTypeCatalog.allowedAggregateFunctions(for:)` (derived from
-  `aggregationStyle`), verified against all 372 type×function combos by
+  `aggregationStyle`), verified against all 378 type×function combos by
   `PulsHealth/HostedTests/AggregateMatrixTests` (ObjC exception catcher +
   legacy `execute()`); re-run it on each new iOS runtime.
   Settings → Validate Aggregate Functions checks the legal set on-device.
