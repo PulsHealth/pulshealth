@@ -91,6 +91,22 @@ export function formatToday(date = new Date()): string {
   return dateFormatter({ weekday: "long", month: "long", day: "numeric" }).format(date);
 }
 
+// The tooltip's timestamp for one chart bucket: an hour bucket names its clock
+// time, a day bucket its date, and a longer bucket the span it covers, so a
+// weekly total is never mistaken for one day's reading.
+export function formatBucket(ms: number, bucketMs: number): string {
+  if (bucketMs < 86_400_000) {
+    return dateFormatter({ weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(
+      new Date(ms),
+    );
+  }
+  if (bucketMs <= 86_400_000) {
+    return dateFormatter({ weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(new Date(ms));
+  }
+  // Inclusive last day of the bucket.
+  return dateFormatter({ month: "short", day: "numeric", year: "numeric" }).formatRange(new Date(ms), new Date(ms + bucketMs - 1));
+}
+
 export function tickLabel(ms: number, bucketMs: number): string {
   // Sub-day buckets show the clock; daily+ show the date.
   if (bucketMs < 86_400_000) return formatTime(ms);

@@ -417,6 +417,27 @@ button {
   z-index: 20;
 }
 
+/* The chart's focus ring sits on the wrapper that takes the arrow keys. */
+.chart-focus:focus-visible {
+  outline: 2px solid var(--border-strong);
+  outline-offset: 4px;
+}
+.chart-reset {
+  flex: none;
+  padding: 4px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.chart-reset:hover {
+  background: var(--panel-strong);
+}
+
 /* ── Leaflet route map ─────────────────────────────────────────────────── */
 /* The basemap style is chosen in Settings (lib/mapStyles); tiles render in
    their native colours, so no CSS recolouring here — only the chrome is themed. */
