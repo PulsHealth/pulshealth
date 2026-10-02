@@ -1,14 +1,14 @@
 import { createHash } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { newInviteToken, normalizeEmail, parseArgs } from "../scripts/invite.mjs";
+import { inviteMessage, newInviteToken, normalizeEmail, parseArgs, sesSend } from "../scripts/invite.mjs";
 
 const USER = "11111111-1111-4111-8111-111111111111";
 
 describe("scripts/invite.mjs", () => {
   it("parses a complete invite", () => {
     expect(parseArgs(["--user", USER.toUpperCase(), "--email", " Ann@Example.com ", "--admin"], {})).toEqual({
-      options: { user: USER, email: "ann@example.com", admin: true, url: null, hours: 48 },
+      options: { user: USER, email: "ann@example.com", admin: true, url: null, hours: 48, send: false },
     });
   });
 
@@ -40,5 +40,31 @@ describe("scripts/invite.mjs", () => {
     const { token, hash } = newInviteToken();
     expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(hash.equals(createHash("sha256").update(Buffer.from(token, "base64url")).digest())).toBe(true);
+  });
+
+  it("emails the link only with a full viewer address to put in it", () => {
+    expect(parseArgs(["--user", USER, "--email", "a@example.com", "--send"], {}).error).toMatch(/--send needs/);
+    expect(parseArgs(["--user", USER, "--email", "a@example.com", "--send"], { WEB_PUBLIC_URL: "https://viewer.example" }).options?.send).toBe(true);
+    const m = inviteMessage({ link: "https://viewer.example/invite/abc", expires: new Date("2026-10-04T00:00:00Z"), reset: false });
+    expect(m.text).toContain("https://viewer.example/invite/abc");
+    expect(inviteMessage({ link: "x", expires: new Date(), reset: true }).subject).toMatch(/reset/);
+  });
+
+  it("signs the SES request the same way as the viewer", async () => {
+    const { signV4 } = await import("./email");
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const now = new Date("2026-10-02T20:00:00Z");
+    const env = { WEB_SES_ACCESS_KEY_ID: "AKID", WEB_SES_SECRET_ACCESS_KEY: "secret", WEB_MAIL_FROM: "x@example.com" };
+    await sesSend({ to: "a@example.com", subject: "S", text: "T" }, env, now);
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const expected = signV4({
+      method: "POST", host: "email.us-east-1.amazonaws.com", path: "/v2/email/outbound-emails",
+      headers: { "content-type": "application/json" }, body: String(init.body), service: "ses", region: "us-east-1",
+      accessKeyId: "AKID", secretAccessKey: "secret", now,
+    });
+    expect((init.headers as Record<string, string>).Authorization).toBe(expected.authorization);
+    vi.unstubAllGlobals();
+    await expect(sesSend({ to: "a", subject: "s", text: "t" }, {})).rejects.toThrow(/not set up/);
   });
 });

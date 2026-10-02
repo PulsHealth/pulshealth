@@ -178,7 +178,8 @@ make web-invite ARGS='--user <uuid> --email ann@example.com' # a one-time viewer
 ```
 
 The second prints `https://<WEB_PUBLIC_URL>/invite/<token>`, valid once for 48
-hours (`--hours`). Opening it asks for a password (at least 10 characters) and
+hours (`--hours`); add `--send` to email it to the person instead (through
+the SES settings below) so the link never appears in your terminal. Opening it asks for a password (at least 10 characters) and
 signs the person in. An invite for a user who already has an account resets
 its password and signs it out everywhere — that is the way back in after a
 forgotten password, since the viewer sends no email. `--admin` marks the

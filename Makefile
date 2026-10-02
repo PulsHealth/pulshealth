@@ -60,7 +60,7 @@ devices: ## Per-device tokens: ARGS='list [--all]' | 'issue --user <uuid> --name
 # person's viewer account, or resets its password. Runs inside the running web
 # container, so it uses that container's database role and WEB_PUBLIC_URL.
 # The user must exist first — `make issue-device` creates it.
-web-invite: ## Invite someone to the web viewer (accounts mode): ARGS='--user <uuid> --email <address> [--admin]'
+web-invite: ## Invite someone to the web viewer (accounts mode): ARGS='--user <uuid> --email <address> [--admin] [--send]'
 	@$(if $(strip $(ARGS)),:,echo "usage: make web-invite ARGS='--user <uuid> --email <address> [--admin] [--url https://<viewer host>]'"; exit 2)
 	$(COMPOSE) exec web node scripts/invite.mjs $(ARGS)
 
