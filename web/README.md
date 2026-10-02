@@ -290,10 +290,10 @@ emailed and `/admin` is the only place requests appear.
 
 **Before you approve someone you do not know,** know what it makes you:
 someone who holds a stranger's health records. In the US the FTC Health
-Breach Notification Rule likely applies, and the App Store's privacy answer
-for the app changes for those people (`docs/appstore/listing.md`). Say what
-you do with their data in your privacy policy; the project's own covers the
-maintainer's instance only.
+Breach Notification Rule likely applies. Say what you do with their data in
+your privacy policy; the project's own covers the maintainer's instance only,
+and the app's App Store privacy answer declares the data collected there
+(`docs/appstore/listing.md`).
 
 The code: `proxy.ts` and `lib/accounts/` (policy, request facts, sessions,
 passwords, throttling, the account store), the routes under `app/login`,

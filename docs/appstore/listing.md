@@ -157,52 +157,65 @@ Answer every content question **None / No**. The result is **4+**.
 | In-app purchases | No | No StoreKit. |
 | Advertising | No | No ad SDK, no ad network. |
 
-## App Privacy — "Data Not Collected"
+## App Privacy — "Data Linked to You"
 
-In App Store Connect, App Privacy, answer **"No, we do not collect data from
-this app."**
+Since 2026-10-02 App Store Connect's App Privacy declares six data types,
+each **used for App Functionality only, linked to the user's identity, and
+not used for tracking**:
 
-Apple's own definition is the reason this is right, not a technicality. Apple
-defines "collect" as transmitting data off the device *in a way that lets you
-or your third-party partners access it for longer than is necessary to service
-the request*. PulsHealth transmits health data off the device, but:
+| Category | Data type | What it is in PulsHealth |
+|---|---|---|
+| Contact Info | Name | The optional name field the app uploads with the identity snapshot |
+| Contact Info | Email Address | The optional email field, the same way |
+| Health & Fitness | Health | Synced HealthKit samples, plus date of birth and sex from the identity snapshot |
+| Health & Fitness | Fitness | Workouts, routes and activity rings |
+| Identifiers | User ID | The user UUID sent with every upload (`X-User-ID`) |
+| Identifiers | Device ID | The per-install UUID the app generates for itself (`deviceID`) |
+
+Before that date the answer was **"No, we do not collect data from this
+app"**, and for anyone using their own database it still describes what
+happens. Apple defines "collect" as transmitting data off the device *in a
+way that lets you or your third-party partners access it for longer than is
+necessary to service the request*. The label is per app, not per user, so it
+now declares what the developer collects from the people who use the
+developer's own database:
 
 1. **The app points at no developer server.** Nothing in the binary points at
    a developer-controlled host, and the source is public so this is
    checkable rather than a promise. The developer does run one database and
-   viewer of their own (`app.pulshealth.com`) for people they invite, and,
-   since 2026-10-02, for people whose access request they approve; the app
+   viewer of their own (`app.pulshealth.com`) for people they invite and,
+   since 2026-10-02, for people whose access request they approve. The app
    reaches it only through the pairing code that person is given, like
-   anyone's database. For family and friends that is a person sharing their
-   own install. **For anyone the developer does not know, it is collection by
-   the developer:** before approving the first such request, change App
-   Privacy to declare Health & Fitness data (and Contact Info: the email
-   address) collected, linked to the user, not used for tracking — and keep
-   the privacy policy's "If you use the developer's viewer" section true.
-2. **The only destination is chosen and controlled by the user.** The
-   database URL is typed in by the user or scanned from a QR code their own
-   backend printed. It is their infrastructure, not a third-party partner of the
-   developer's, and the developer has no access to it. The same goes for an
-   on-device export (the Export tab): the app makes no network request
-   for it at all — it writes files and hands them to the iOS share sheet, and
-   the user picks where they go. Neither the developer nor any partner can
-   reach them, so it is not collection either.
+   anyone's database. **For those people it is collection by the
+   developer,** which is what the six types above declare. The privacy
+   policy's "If you use the developer's viewer" section says what happens to
+   that data. If the developer's instance ever stops taking anyone outside
+   the household, the answer can go back to "Data Not Collected".
+2. **For everyone else, the only destination is chosen and controlled by the
+   user.** The database URL is typed in by the user or scanned from a QR
+   code their own backend printed. It is their infrastructure, not a
+   third-party partner of the developer's, and the developer has no access
+   to it. The same goes for an on-device export (the Export tab): the app
+   makes no network request for it at all. It writes files and hands them
+   to the iOS share sheet, and the user picks where they go. Neither the
+   developer nor any partner can reach them, so it is not collection either.
 3. **There is no analytics, advertising, attribution, or crash-reporting SDK,
-   and no third-party dependency at all** — see `PulsHealthSync/Package.swift`,
-   which declares none.
+   and no third-party dependency at all.** See `PulsHealthSync/Package.swift`,
+   which declares none. So no data type is declared for any purpose but App
+   Functionality.
 4. **Nothing is used for tracking.** `PrivacyInfo.xcprivacy` declares
    `NSPrivacyTracking = false` with an empty `NSPrivacyTrackingDomains`, and
    there is no advertising identifier and no `identifierForVendor` use. The
    `deviceID` that rides an upload is a UUID the app generates for itself.
 
-This is the same answer other self-hosted HealthKit exporters give, and it is
-the honest one: the questionnaire asks what *the developer* collects.
-
-The privacy manifests (`PulsHealth/PrivacyInfo.xcprivacy` and the identical one
-inside the `PulsHealthSync` package) match: no tracking, no tracking domains,
-an empty `NSPrivacyCollectedDataTypes`, and one required-reason API —
-`NSPrivacyAccessedAPICategoryUserDefaults` with reason `CA92.1`, the app's own
-flags.
+The app's privacy manifest (`PulsHealth/PrivacyInfo.xcprivacy`) lists the
+same six types in `NSPrivacyCollectedDataTypes`, linked, not tracking, for
+App Functionality, from the first build after 1.6 (19). The `PulsHealthSync`
+package's own manifest keeps that list empty: the library sends data only
+where its host app points it, so what counts as collection is the app's to
+declare. Both declare no tracking and no tracking domains, and one
+required-reason API, `NSPrivacyAccessedAPICategoryUserDefaults` with reason
+`CA92.1`, for the app's own flags.
 
 ## Other App Store Connect answers
 

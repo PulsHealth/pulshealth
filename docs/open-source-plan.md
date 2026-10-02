@@ -185,7 +185,7 @@ and so are the ones decided against (its "Not planned").
 
 | # | Requirement | Pri | Status |
 |---|---|---|---|
-| STORE-1 | Privacy policy and support URLs on `pulshealth.com`; App Privacy "Data Not Collected". | M | Done (`/privacy`, `/support`) |
+| STORE-1 | Privacy policy and support URLs on `pulshealth.com`; an App Privacy answer that matches what the developer receives. | M | Done (`/privacy`, `/support`; "Data Linked to You" since 2026-10-02, `docs/appstore/listing.md`) |
 | STORE-2 | A throwaway review backend, its URL and token in the review notes. | M | Done (`docs/appstore/review-backend.md`) |
 | STORE-3 | App name reserved, screenshots, and a description that says plainly where data goes. | M | Done (`docs/appstore/listing.md`) |
 | STORE-4 | A TestFlight public link as the beta channel before the listing. | S | Skipped: the app went straight to the store |
@@ -210,8 +210,9 @@ and so are the ones decided against (its "Not planned").
   choice. Approving people the maintainer does not know makes them a holder
   of strangers' health records: in the US the FTC Health Breach
   Notification Rule likely applies (a breach must be notified), the App
-  Store "Data Not Collected" answer changes for those users
-  (`docs/appstore/listing.md`), and the instance owes them deletion, which
+  Store privacy answer declares their data (changed to "Data Linked to You"
+  on 2026-10-02, `docs/appstore/listing.md`), and the instance owes them
+  deletion, which
   it has (Delete my account, and purge on /admin). Password reset by email
   and email verification are not built: a forgotten password is a new
   invite, and approval is the verification.
