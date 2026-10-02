@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AUTH_FAILURE_BURST, checkAll, failAll, failureKeys, FailureLimiter } from "./ratelimit";
+import { AUTH_FAILURE_BURST, checkAll, failAll, failureKeys, FailureLimiter, refundAll, takeAll } from "./ratelimit";
 
 describe("FailureLimiter", () => {
   it("allows unknown keys without remembering them", () => {
@@ -54,5 +54,36 @@ describe("FailureLimiter", () => {
     for (let i = 0; i < AUTH_FAILURE_BURST; i++) failAll(limiter, failureKeys(`198.51.100.${i}`, "a@example.com"), 0);
     expect(checkAll(limiter, failureKeys("192.0.2.1", "a@example.com"), 0).allowed).toBe(false);
     expect(checkAll(limiter, failureKeys("192.0.2.1", "b@example.com"), 0).allowed).toBe(true);
+  });
+
+  it("takes the token before the check is awaited, so a parallel burst cannot outrun it", async () => {
+    const limiter = new FailureLimiter();
+    const keys = failureKeys("198.51.100.1", "a@example.com");
+    // Fifty attempts that all start before any finishes, as concurrent
+    // requests do: each takes its token synchronously, then "verifies".
+    const verify = () => new Promise((resolve) => setTimeout(resolve, 5));
+    const results = await Promise.all(
+      Array.from({ length: 50 }, async () => {
+        if (!takeAll(limiter, keys, 0).allowed) return "throttled";
+        await verify();
+        return "checked";
+      }),
+    );
+    expect(results.filter((r) => r === "checked")).toHaveLength(AUTH_FAILURE_BURST);
+  });
+
+  it("gives the token back for an attempt that did not fail", () => {
+    const limiter = new FailureLimiter();
+    const keys = ["ip:198.51.100.2"];
+    for (let i = 0; i < 100; i++) {
+      expect(takeAll(limiter, keys, 0).allowed).toBe(true);
+      refundAll(limiter, keys, 0); // a success
+    }
+    for (let i = 0; i < AUTH_FAILURE_BURST; i++) expect(takeAll(limiter, keys, 0).allowed).toBe(true);
+    expect(takeAll(limiter, keys, 0).allowed).toBe(false);
+    // A refund never fills a bucket past its burst.
+    for (let i = 0; i < 50; i++) refundAll(limiter, keys, 0);
+    for (let i = 0; i < AUTH_FAILURE_BURST; i++) takeAll(limiter, keys, 0);
+    expect(takeAll(limiter, keys, 0).allowed).toBe(false);
   });
 });

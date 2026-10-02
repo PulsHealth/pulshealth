@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 
 import { accountsOnly, field, readForm, requestIp, seeOther, setSessionCookie } from "@/lib/accounts/http";
 import { burnPasswordCheck, hashPassword, needsRehash, PASSWORD_MAX_LENGTH, verifyPassword } from "@/lib/accounts/password";
-import { authFailures, checkAll, failAll, failureKeys } from "@/lib/accounts/ratelimit";
+import { authFailures, failureKeys, refundAll, takeAll } from "@/lib/accounts/ratelimit";
 import { createSession, deleteSession, SESSION_COOKIE, tokenHash } from "@/lib/accounts/session";
 import { findAccountForLogin, normalizeEmail, replacePasswordHash } from "@/lib/accounts/store";
 import { safeReturnPath } from "@/lib/viewer";
@@ -11,12 +11,14 @@ import { safeReturnPath } from "@/lib/viewer";
 // plain HTTP and cross-site posts. Every outcome is a 303: back to /login
 // with an error code, or on to `next` with a new session cookie.
 //
-// Failures — wrong password, unknown email — are charged to the client's
-// address and to the email tried, and an exhausted bucket is refused before
-// the password is looked at (lib/accounts/ratelimit.ts). An unknown email
-// costs the same scrypt as a known one, so timing does not reveal which
-// addresses have accounts, and the error never says which half was wrong.
-// Nothing about a failed attempt is logged.
+// Each attempt takes a token from the client address's bucket and the
+// email's before anything is looked up, and gets it back only if it
+// succeeds (lib/accounts/ratelimit.ts) — so only failures cost, an exhausted
+// bucket is refused before the password is looked at, and parallel guesses
+// cannot all slip past the check while the first is still being verified.
+// An unknown email costs the same scrypt as a known one, so timing does not
+// reveal which addresses have accounts, and the error never says which half
+// was wrong. Nothing about a failed attempt is logged.
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
@@ -31,23 +33,18 @@ export async function POST(request: NextRequest) {
   const email = normalizeEmail(field(form, "email"));
   const password = field(form, "password");
   const keys = failureKeys(requestIp(request), email ?? undefined);
-  if (!checkAll(authFailures, keys).allowed) return back("throttled");
-  if (!email || !password || password.length > PASSWORD_MAX_LENGTH * 4) {
-    failAll(authFailures, keys);
-    return back("invalid");
-  }
+  if (!takeAll(authFailures, keys).allowed) return back("throttled");
+  // From here, returning without a refund records a failure.
+  if (!email || !password || password.length > PASSWORD_MAX_LENGTH * 4) return back("invalid");
 
   try {
     const account = await findAccountForLogin(email);
     if (!account) {
       await burnPasswordCheck(password);
-      failAll(authFailures, keys);
       return back("invalid");
     }
-    if (!(await verifyPassword(password, account.passwordHash))) {
-      failAll(authFailures, keys);
-      return back("invalid");
-    }
+    if (!(await verifyPassword(password, account.passwordHash))) return back("invalid");
+    refundAll(authFailures, keys);
     if (needsRehash(account.passwordHash)) await replacePasswordHash(account.id, await hashPassword(password));
 
     // A new session id on every sign-in; the one this browser held, if any,
@@ -60,6 +57,8 @@ export async function POST(request: NextRequest) {
     });
     return setSessionCookie(seeOther(next), token);
   } catch (e) {
+    // The server's fault, not a wrong guess.
+    refundAll(authFailures, keys);
     console.error("[puls-web] sign-in failed:", e instanceof Error ? e.message : e);
     return back("unavailable");
   }

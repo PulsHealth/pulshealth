@@ -21,6 +21,8 @@ if (process.env.CI && process.env.PULS_WEB_INTEGRATION && (!WEB_URL || !ADMIN_UR
 const A = randomUUID();
 const B = randomUUID();
 const EMAIL = `${A.slice(0, 8)}@example.com`;
+const OTHER_EMAIL = `${B.slice(0, 8)}@example.com`;
+const OTHER_PASSWORD = "the other person's passphrase";
 const PASSWORD = "a long enough passphrase";
 const COOKIE = "__Host-puls-session";
 const ORIGIN = "https://viewer.example";
@@ -79,6 +81,12 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
       `INSERT INTO auth.invites (token_hash, user_id, email, expires_at) VALUES ($1, $2, $3, now() + interval '1 hour')`,
       [invite.hash, A, EMAIL],
     );
+
+    // User B gets an account straight away, for the tests that need a second one.
+    const { hashPassword } = await import("./accounts/password");
+    await admin.query("INSERT INTO auth.accounts (user_id, email, password_hash) VALUES ($1, $2, $3)", [
+      B, OTHER_EMAIL, await hashPassword(OTHER_PASSWORD),
+    ]);
 
     loginRoute = await import("@/app/api/auth/login/route");
     logoutRoute = await import("@/app/api/auth/logout/route");
@@ -185,7 +193,12 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     );
     expect(ok.headers.get("location")).toBe("/account?notice=password");
     expect(await session.findSession(other)).toBeNull();
-    expect(await session.findSession(browser)).not.toBeNull();
+    // This browser's session is replaced too: a copy of its old cookie is dead.
+    const rotated = sessionCookie(ok);
+    expect(rotated).toBeTruthy();
+    expect(await session.findSession(browser)).toBeNull();
+    expect(await session.findSession(rotated)).not.toBeNull();
+    browser = rotated;
 
     const old = await loginRoute.POST(post("/api/auth/login", { email: EMAIL, password: PASSWORD }, { ip: "198.51.100.32" }));
     expect(old.headers.get("location")).toBe("/login?error=invalid");
@@ -209,6 +222,71 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     expect(res.headers.get("location")).toBe("/login?notice=signed-out");
     expect(res.headers.get("set-cookie")).toMatch(/Max-Age=0/i);
     expect(await session.findSession(browser)).toBeNull();
+  });
+
+  it("lets no more guesses through a parallel burst than the bucket holds", async () => {
+    // All in flight at once, from one address, at one account: only as many
+    // as the bucket holds may reach the password check — the right password
+    // among them included, whatever its place.
+    const attempts = Array.from({ length: 30 }, (_, i) =>
+      loginRoute.POST(post("/api/auth/login", { email: EMAIL, password: i === 29 ? "another long passphrase" : `parallel ${i} guess` }, { ip: "198.51.100.50" })),
+    );
+    const outcomes = (await Promise.all(attempts)).map((r) => r.headers.get("location"));
+    const evaluated = outcomes.filter((l) => l !== "/login?error=throttled");
+    expect(evaluated.length).toBeLessThanOrEqual(10);
+    expect(outcomes.filter((l) => l === "/login?error=throttled").length).toBeGreaterThanOrEqual(20);
+  });
+
+  it("charges nothing for a successful sign-in", async () => {
+    // Twenty in a row from one address: none is a failure, so none is refused.
+    // (A fresh email bucket: the parallel test above spent the shared one.)
+    for (let i = 0; i < 12; i++) {
+      const res = await loginRoute.POST(post("/api/auth/login", { email: OTHER_EMAIL, password: OTHER_PASSWORD }, { ip: "198.51.100.60" }));
+      expect(res.headers.get("location"), `attempt ${i}`).toBe("/");
+    }
+  });
+
+  it("does not let an invite issued before an account was disabled bring it back", async () => {
+    const stale = newInviteToken();
+    await admin.query(
+      `INSERT INTO auth.invites (token_hash, user_id, email, created_at, expires_at)
+       VALUES ($1, $2, $3, now() - interval '1 minute', now() + interval '1 hour')`,
+      [stale.hash, B, OTHER_EMAIL],
+    );
+    await admin.query("UPDATE auth.accounts SET disabled_at = now() WHERE user_id = $1", [B]);
+    const res = await inviteRoute.POST(
+      post("/api/auth/invite", { token: stale.token, password: "a brand new passphrase", confirm: "a brand new passphrase" }, { ip: "198.51.100.70" }),
+    );
+    expect(res.headers.get("location")).toBe(`/invite/${stale.token}?error=invalid`);
+    const login = await loginRoute.POST(post("/api/auth/login", { email: OTHER_EMAIL, password: OTHER_PASSWORD }, { ip: "198.51.100.71" }));
+    expect(login.headers.get("location")).toBe("/login?error=invalid");
+
+    // A newer invite is the operator's way back in.
+    const fresh = newInviteToken();
+    await admin.query(
+      `INSERT INTO auth.invites (token_hash, user_id, email, created_at, expires_at)
+       VALUES ($1, $2, $3, now() + interval '1 second', now() + interval '1 hour')`,
+      [fresh.hash, B, OTHER_EMAIL],
+    );
+    const back = await inviteRoute.POST(
+      post("/api/auth/invite", { token: fresh.token, password: OTHER_PASSWORD, confirm: OTHER_PASSWORD }, { ip: "198.51.100.72" }),
+    );
+    expect(back.headers.get("location")).toBe("/?notice=welcome");
+  });
+
+  it("retires the session a browser held when it accepts an invite", async () => {
+    const held = sessionCookie(await loginRoute.POST(post("/api/auth/login", { email: OTHER_EMAIL, password: OTHER_PASSWORD }, { ip: "198.51.100.80" })));
+    expect(await session.findSession(held)).not.toBeNull();
+    const reset = newInviteToken();
+    await admin.query(
+      `INSERT INTO auth.invites (token_hash, user_id, email, expires_at) VALUES ($1, $2, $3, now() + interval '1 hour')`,
+      [reset.hash, B, OTHER_EMAIL],
+    );
+    const res = await inviteRoute.POST(
+      post("/api/auth/invite", { token: reset.token, password: OTHER_PASSWORD, confirm: OTHER_PASSWORD }, { cookie: held, ip: "198.51.100.81" }),
+    );
+    expect(res.headers.get("location")).toBe("/?notice=welcome");
+    expect(await session.findSession(held)).toBeNull();
   });
 
   it("throttles one address, and one account from many addresses, before checking the password", async () => {

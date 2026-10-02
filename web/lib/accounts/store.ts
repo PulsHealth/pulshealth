@@ -47,11 +47,15 @@ export async function replacePasswordHash(accountId: string, hash: string): Prom
   await query("UPDATE auth.accounts SET password_hash = $2 WHERE id = $1", [accountId, hash]);
 }
 
-/** A new password: stored, and every other session of the account signed out. */
-export async function changePassword(accountId: string, hash: string, keepSession: Buffer): Promise<void> {
+/**
+ * A new password: stored, and every session of the account ended — the
+ * caller's too, which it replaces with a fresh one, so no copy of any cookie
+ * survives a password change.
+ */
+export async function changePassword(accountId: string, hash: string): Promise<void> {
   await transaction(async (q) => {
     await q("UPDATE auth.accounts SET password_hash = $2, password_changed_at = now() WHERE id = $1", [accountId, hash]);
-    await q("DELETE FROM auth.sessions WHERE account_id = $1 AND id <> $2", [accountId, keepSession]);
+    await q("DELETE FROM auth.sessions WHERE account_id = $1", [accountId]);
   });
 }
 
@@ -82,17 +86,20 @@ export type AcceptInviteResult = { ok: true; accountId: string } | { ok: false; 
 
 /**
  * Uses an invite: creates the user's account with this password or, when the
- * user already has one, resets it (re-enabling a disabled account and
- * signing out all of its sessions). The invite is spent, and any other
- * outstanding invite for the same user is withdrawn. One transaction; the
- * invite row is locked, so a link pressed twice is used once.
+ * user already has one, resets it (signing out all of its sessions). An
+ * account disabled after the invite was issued stays disabled — the invite
+ * reads as spent — while a newer invite re-enables it: disabling (by hand,
+ * `UPDATE auth.accounts SET disabled_at = now()`) must not be undone by a
+ * link that was already out. The invite is spent, and any other outstanding
+ * invite for the same user is withdrawn. One transaction; the invite row is
+ * locked, so a link pressed twice is used once.
  */
 export async function acceptInvite(token: string, passwordHash: string): Promise<AcceptInviteResult> {
   const hash = tokenHash(token);
   if (!hash) return { ok: false, reason: "invalid" };
   return transaction(async (q) => {
-    const invites = await q<{ id: string; user_id: string; email: string; is_admin: boolean }>(
-      `SELECT id::text, user_id::text, email, is_admin
+    const invites = await q<{ id: string; user_id: string; email: string; is_admin: boolean; created_at: Date }>(
+      `SELECT id::text, user_id::text, email, is_admin, created_at
          FROM auth.invites
         WHERE token_hash = $1 AND accepted_at IS NULL AND expires_at > now()
         FOR UPDATE`,
@@ -107,10 +114,12 @@ export async function acceptInvite(token: string, passwordHash: string): Promise
     );
     if (taken.length) return { ok: false, reason: "email_taken" } as const;
 
-    const existing = await q<{ id: string }>(
-      "SELECT id::text FROM auth.accounts WHERE user_id = $1 FOR UPDATE",
-      [invite.user_id],
+    const existing = await q<{ id: string; disabled_since_invite: boolean }>(
+      `SELECT id::text, disabled_at IS NOT NULL AND disabled_at >= $2 AS disabled_since_invite
+         FROM auth.accounts WHERE user_id = $1 FOR UPDATE`,
+      [invite.user_id, invite.created_at],
     );
+    if (existing[0]?.disabled_since_invite) return { ok: false, reason: "invalid" } as const;
     let accountId: string;
     if (existing[0]) {
       accountId = existing[0].id;

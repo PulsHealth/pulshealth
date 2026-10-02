@@ -54,7 +54,12 @@ export function safeReturnPath(value: string | null | undefined): string {
   const base = "http://viewer.invalid";
   try {
     const url = new URL(value, base);
-    return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : "/";
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    // Parsing resolves dot segments, and `/.//evil.example` comes out as
+    // `//evil.example` — another site. Check what comes out, not just what
+    // went in.
+    if (url.origin !== base || path.startsWith("//") || path.includes("\\")) return "/";
+    return path;
   } catch {
     return "/";
   }

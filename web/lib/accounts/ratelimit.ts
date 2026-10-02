@@ -8,6 +8,14 @@
 // password is checked, so an attacker who is out of tokens learns nothing
 // from the answer. Keep the constants in step with the Go copies.
 //
+// One difference from the Go copies, which compare a token in microseconds:
+// a password check here takes tens of milliseconds of scrypt and a database
+// round trip. Charging only after the check let a burst of parallel guesses
+// all pass the check before the first was charged — at scrypt speed, not ten
+// a minute. So an attempt takes its token up front, in the same synchronous
+// step as the check (`takeAll`), and gets it back when the attempt turns out
+// not to be a failure (`refundAll`): the net effect is still "failures only".
+//
 // Two kinds of key are charged per failure: the client address and, for a
 // sign-in, the email address tried. The address bucket stops one client
 // spraying many accounts; the email bucket stops many clients (or a forged
@@ -61,6 +69,14 @@ export class FailureLimiter {
     if (bucket.tokens >= 1) return { allowed: true };
     const waitMs = (1 - bucket.tokens) / this.refillPerMs;
     return { allowed: false, retryAfterSeconds: Math.ceil(waitMs / 1000) + 1 };
+  }
+
+  /** Gives back a token taken for an attempt that did not fail. */
+  refund(key: string, now = Date.now()): void {
+    const bucket = this.buckets.get(key);
+    if (!bucket) return;
+    this.refill(bucket, now);
+    bucket.tokens = Math.min(this.burst, bucket.tokens + 1);
   }
 
   /** Charges one token to `key`. A new bucket starts full. */
@@ -127,4 +143,24 @@ export function checkAll(
 
 export function failAll(limiter: FailureLimiter, keys: string[], now = Date.now()): void {
   for (const key of keys) limiter.fail(key, now);
+}
+
+/**
+ * Checks every key and, when all allow, takes a token from each — with no
+ * await in between, so of any number of concurrent attempts only as many as
+ * the buckets hold get through to the password check. Keep the token for a
+ * failure; give it back with `refundAll` for anything else.
+ */
+export function takeAll(
+  limiter: FailureLimiter,
+  keys: string[],
+  now = Date.now(),
+): { allowed: true } | { allowed: false; retryAfterSeconds: number } {
+  const gate = checkAll(limiter, keys, now);
+  if (gate.allowed) failAll(limiter, keys, now);
+  return gate;
+}
+
+export function refundAll(limiter: FailureLimiter, keys: string[], now = Date.now()): void {
+  for (const key of keys) limiter.refund(key, now);
 }

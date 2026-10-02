@@ -58,6 +58,16 @@ describe("isSameOriginRequest", () => {
     expect(isSameOriginRequest("POST", url, behindProxy({ origin: "https://viewer.example.evil.example" }), true, false, undefined)).toBe(false);
   });
 
+  it("behind a trusted TLS proxy, refuses a plain-http Origin for the same host", () => {
+    expect(isSameOriginRequest("POST", url, behindProxy({ origin: "http://viewer.example" }), true, false, undefined)).toBe(false);
+  });
+
+  it("accepts the dev server's own http://localhost origin", () => {
+    const dev = u("http://localhost:3005/api/auth/login");
+    const headers = h({ host: "localhost:3005", origin: "http://localhost:3005" });
+    expect(isSameOriginRequest("POST", dev, headers, false, true, undefined)).toBe(true);
+  });
+
   it("refuses anything Sec-Fetch-Site calls cross-site", () => {
     const headers = behindProxy({ origin: "https://viewer.example", "sec-fetch-site": "cross-site" });
     expect(isSameOriginRequest("POST", url, headers, true, false, undefined)).toBe(false);

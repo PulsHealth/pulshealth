@@ -85,14 +85,16 @@ export function allowedOrigins(
   url: URL,
   headers: Headers,
   trust: boolean,
-  development: boolean,
+  _development: boolean,
   publicUrl: string | undefined,
 ): Set<string> {
   const origins = new Set<string>();
   const host = (trust && firstValue(headers.get("x-forwarded-host"))) || headers.get("host") || url.host;
-  // As the container sees it, and — behind a TLS proxy — as the browser does.
-  origins.add(`${url.protocol}//${host}`.toLowerCase());
-  if (isSecureRequest(url, headers, trust, development)) origins.add(`https://${host}`.toLowerCase());
+  // The scheme the browser used: https behind a trusted TLS proxy (and then
+  // only https — a plain-http Origin for the same host is someone else),
+  // else what the container saw.
+  const forwardedHttps = trust && firstValue(headers.get("x-forwarded-proto"))?.toLowerCase() === "https";
+  origins.add(`${forwardedHttps ? "https:" : url.protocol}//${host}`.toLowerCase());
   if (publicUrl) {
     try {
       origins.add(new URL(publicUrl).origin.toLowerCase());

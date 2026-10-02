@@ -45,6 +45,11 @@ describe("safeReturnPath", () => {
     expect(safeReturnPath("/\r\n/evil.example")).toBe("/");
     expect(safeReturnPath("/x\\y")).toBe("/");
     expect(safeReturnPath("/workouts/a?b=1#c")).toBe("/workouts/a?b=1#c");
+    // Dot segments that parsing collapses into a scheme-relative URL.
+    for (const sneaky of ["/.//evil.example", "/..//evil.example", "/%2e//evil.example", "/a/..//evil.example", "/././/evil.example/x"]) {
+      expect(safeReturnPath(sneaky), sneaky).toBe("/");
+    }
+    expect(safeReturnPath("/a/../workouts")).toBe("/workouts");
     expect(safeReturnPath("/\\example.com")).toBe("/");
   });
 });
