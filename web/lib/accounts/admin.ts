@@ -1,26 +1,20 @@
-// Who may use /admin, and the session token the database functions need to
-// check that for themselves. Server-only.
-
-import { cookies } from "next/headers";
+// Who may use /admin and the account page's self-service. The database
+// functions behind them take `Session.id` (the stored hash) and check it
+// themselves. Server-only.
 
 import { viewerMode } from "../mode";
 import { currentSession } from "../viewer";
-import { SESSION_COOKIE, type Session } from "./session";
+import type { Session } from "./session";
 
-/** The signed-in administrator and their session token, or null. */
-export async function currentAdmin(): Promise<{ session: Session; token: string } | null> {
+/** The signed-in administrator, or null. */
+export async function currentAdmin(): Promise<Session | null> {
   if (viewerMode() !== "accounts") return null;
   const session = await currentSession().catch(() => null);
-  if (!session?.isAdmin) return null;
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  return token ? { session, token } : null;
+  return session?.isAdmin ? session : null;
 }
 
-/** The signed-in person (any account) and their session token, or null. */
-export async function currentAccount(): Promise<{ session: Session; token: string } | null> {
+/** The signed-in person (any account), or null. */
+export async function currentAccount(): Promise<Session | null> {
   if (viewerMode() !== "accounts") return null;
-  const session = await currentSession().catch(() => null);
-  if (!session) return null;
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  return token ? { session, token } : null;
+  return currentSession().catch(() => null);
 }

@@ -221,7 +221,9 @@ ask for access there, and the developer decides. What happens to your data:
   an optional note, and your browser's IP address and name, and emails them
   to the developer. Nothing else is created for you, and your iPhone cannot
   send anything, unless the developer approves. A declined request is
-  deleted at once; an approved one 30 days after the decision.
+  deleted at once; an approved one 30 days after the decision. If you are
+  approved but never use the invite, everything made for you is deleted 30
+  days after the last invite was sent.
 - **The app still works exactly as described above.** Once approved, it
   uploads only to the database address the pairing code gives it — in this
   case the developer's — and to nowhere else.
@@ -237,8 +239,9 @@ ask for access there, and the developer decides. What happens to your data:
   in from, when it signed in and was last used, its browser and system name,
   and its IP address. The viewer sets one cookie, which keeps you signed in;
   it holds a random value and nothing else.
-- **Connecting your iPhone.** The account page makes a pairing code that
-  lets your iPhone upload to your records. It is shown once and only a hash
+- **Connecting your iPhone.** If you asked for access, the account page
+  makes a pairing code that lets your iPhone upload to your records (family
+  members' iPhones are paired by the developer). It is shown once and only a hash
   of it is kept; the account page lists your connected iPhones and lets you
   disconnect each.
 - **Email.** Messages about your account — an approval with the link to
@@ -253,9 +256,11 @@ ask for access there, and the developer decides. What happens to your data:
   directly from the provider named on the map (Esri, OpenStreetMap or
   OpenTopoMap). Those requests carry no health data, but they do reveal to
   that provider which area the map shows, and the viewer's address.
-- **Leaving.** **Delete my account** on the account page signs you out,
-  disconnects your iPhones at once so nothing more is uploaded, and asks the
-  developer to delete every row stored under your user ID, which they do.
+- **Leaving.** If you asked for access, **Delete my account** on the
+  account page signs you out, disconnects your iPhones at once so nothing
+  more is uploaded, and asks the developer to delete every row stored under
+  your user ID, which they do. Family members ask the developer, who does
+  the same.
   Delete the database address in the app (or the app) to stop it trying.
 
 ## The website

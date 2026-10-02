@@ -35,7 +35,9 @@ export async function POST(request: NextRequest) {
     if (await accountExists(email)) return done;
     const ip = requestIp(request);
     const created = await createSignupRequest({ email, name, note, ip, userAgent: request.headers.get("user-agent") });
-    if (created) await notifyNewRequest({ name, email, note, ip: /^[0-9a-f.:]+$/i.test(ip) ? ip : null });
+    // Not awaited: the answer must not take longer for a new address than
+    // for one that already has an account, or its timing would tell them apart.
+    if (created) void notifyNewRequest({ name, email, note, ip: /^[0-9a-f.:]+$/i.test(ip) ? ip : null }).catch(() => {});
     return done;
   } catch (e) {
     console.error("[puls-web] sign-up request failed:", e instanceof Error ? e.message : e);

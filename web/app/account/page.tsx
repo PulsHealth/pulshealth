@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 
 import { ConnectIphone } from "@/components/ConnectIphone";
 import { PageHeader } from "@/components/PageHeader";
-import { currentAccount } from "@/lib/accounts/admin";
 import { errorMessage, noticeMessage, param } from "@/lib/accounts/messages";
 import { PASSWORD_MIN_LENGTH } from "@/lib/accounts/password";
 import { listSessions } from "@/lib/accounts/session";
@@ -24,11 +23,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
   if (viewerMode() !== "accounts") notFound();
   const session = await currentSession();
   if (!session) redirect("/login?next=%2Faccount");
-  const account = await currentAccount();
   const search = await searchParams;
   const [sessions, devices] = await Promise.all([
     listSessions(session.accountId, session.id),
-    account ? myDevices(account.token) : Promise.resolve([]),
+    session.selfService ? myDevices(session.id) : Promise.resolve([]),
   ]);
   const error = errorMessage(param(search.error));
   const notice = noticeMessage(param(search.notice));
@@ -48,6 +46,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
         </div>
       )}
 
+      {session.selfService && (
       <section className="rise" style={{ marginTop: 8 }}>
         <div className="eyebrow" style={{ marginBottom: 12 }}>Your iPhones</div>
         <ConnectIphone />
@@ -76,8 +75,9 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           </div>
         )}
       </section>
+      )}
 
-      <section className="rise" style={{ marginTop: 28 }}>
+      <section className="rise" style={{ marginTop: session.selfService ? 28 : 8 }}>
         <div className="eyebrow" style={{ marginBottom: 12 }}>Password</div>
         <form method="post" action="/api/auth/password" className="panel" style={{ padding: "20px 20px 6px", maxWidth: 560 }}>
           <input type="text" name="username" value={session.email} autoComplete="username" readOnly hidden />
@@ -130,7 +130,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
         )}
       </section>
 
-      {!session.isAdmin && (
+      {session.selfService && !session.isAdmin && (
         <section className="rise" style={{ marginTop: 28 }}>
           <div className="eyebrow" style={{ marginBottom: 12 }}>Delete account</div>
           <form method="post" action="/api/auth/delete-account" className="panel" style={{ padding: 20, maxWidth: 560 }}>

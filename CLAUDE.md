@@ -433,16 +433,28 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   account, no token, so no phone can send data. Every write beyond schema
   `auth` — creating a user, minting/revoking tokens, disabling, deleting,
   purging — is a `SECURITY DEFINER` function in `016_web_signups.sql` that
-  takes the caller's plaintext session token and checks it (search_path pinned
-  to `pg_catalog`, objects fully qualified); `099_read_roles.sh` asserts
-  `web_app` has EXECUTE on exactly those and still no write grant on `users` or
-  `device_tokens`. A new privileged step is a new definer function there, a
-  `GRANT` and an expected row, never a table grant. `purge_user`'s table list
-  must cover every table with a `user_id` (its final `DELETE FROM users` fails
-  on a missed foreign key; `ingest_rejections` has none, so add new such tables
-  by hand). Email (`web/lib/email.ts`, SES, hand-signed SigV4) goes only to the
-  operator and to people an administrator approved — keep the public form
-  unable to mail anyone else.
+  takes the caller's session hash (`Session.id`, never the plaintext cookie)
+  and checks it (search_path pinned to `pg_catalog`, objects fully
+  qualified). **The boundary is `auth.self_service_users`**, written only by
+  `approve_signup`: every function acts only on users an approved request
+  created, because `web_app` writes `auth.sessions` and so can forge any
+  session — the session check scopes normal use, it is not the barrier. The
+  household (default user, `make issue-device`, `make web-invite`) is never
+  tokened, disabled or purged through the viewer. `099_read_roles.sh`
+  asserts `web_app` can run exactly those definer functions (PUBLIC's
+  default EXECUTE included) and still has no write grant on `users`,
+  `device_tokens` or `auth.self_service_users`. A new privileged step is a
+  new definer function there, a `GRANT` and an expected row, never a table
+  grant. `purge_user`'s table list must cover every table with a `user_id`
+  (its final `DELETE FROM users` fails on a missed foreign key;
+  `ingest_rejections` has none, so add new such tables by hand) and the
+  `quantity_rollups` materialization; keep its deletes narrowed (types, time
+  span) so it opens only that user's compressed batches. `auth.prune_signups`
+  (an hourly TimescaleDB job) is what makes the privacy policy's 30-day
+  request deletion true; keep it scheduled. Email (`web/lib/email.ts`, SES,
+  hand-signed SigV4) goes only to the operator and to people an
+  administrator approved — keep the public form unable to mail anyone else,
+  and never log an address.
 
 ## Gotchas
 

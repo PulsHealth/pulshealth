@@ -77,8 +77,10 @@ Everything in this repository is in scope, in particular:
   rather than through its per-user views; and, with sign-up requests on, any
   way to get an account, a user or a sync token without an administrator's
   approval, to mint or revoke a sync token for anyone but the signed-in
-  person, or to reach `/admin` or its database functions without an
-  administrator's session. See the notes below.
+  person, to reach `/admin` or its database functions without an
+  administrator's session, or — even with SQL run as `web_app` — to give a
+  token to, disable or purge a user that no approved request created. See
+  the notes below.
 
 Out of scope:
 
@@ -170,16 +172,22 @@ for judging what is.
   disabling an account, deleting your own, and purging a user are
   `SECURITY DEFINER` functions in schema `auth`
   (`server/db/migrations/016_web_signups.sql`); `web_app` may run exactly
-  these, and still has no write grant on `users` or `device_tokens`. Each
-  takes the caller's session token in plaintext and checks its hash against
-  `auth.sessions` itself, so SQL run as `web_app` cannot act for a session it
-  has not seen — but a compromised viewer process sees the cookies of the
-  requests it serves, and can do what those people may: mint a sync token for
-  their own user, or, with an administrator's cookie, approve requests and
-  disable or purge accounts. The viewer shows a minted token once, as a
-  pairing code, and keeps only its hash. The sign-up form creates nothing
-  but a request and emails only the operator, so it cannot open the database
-  to anyone or be used to mail a stranger.
+  these, and still has no write grant on `users`, `device_tokens` or
+  `auth.self_service_users`. Each takes the caller's session (its SHA-256,
+  as `auth.sessions` stores it) and acts for that account. That is not a
+  barrier against a compromised viewer: `web_app` writes `auth.sessions` to
+  sign people in, so it can forge a session for any account. The barrier is
+  that every one of these functions acts only on **self-service** users,
+  those an approved request created (`auth.self_service_users`, which only
+  the approval function writes). So SQL run as `web_app` can at worst
+  approve requests, give a self-service user a sync token (letting it upload
+  into that user), or disable or purge one; it cannot give the operator's
+  household a token, disable it or delete its data, and it reads every
+  user's records only as before (see the bullet above). The viewer shows a
+  minted token once, as a pairing code, and keeps only its hash. The sign-up
+  form creates nothing but a request and emails only the operator, so it
+  cannot open the database to anyone or be used to mail a stranger; no
+  address it handles is written to the log.
 - **Health data at rest.** The database holds identifiable data (name, email,
   date of birth, sex) alongside samples. Ingest connects as the scoped
   DML-only `ingest` role, which cannot create or drop objects; set

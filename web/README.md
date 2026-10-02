@@ -233,8 +233,13 @@ phone can send anything. In order:
    requests an hour per client address.
 2. An administrator opens `/admin` (in the sidebar) and approves or declines.
    Approval creates the person's user and a 7-day invite and emails it to
-   them; when email is off or fails, the page shows the link once to send
-   by hand. Declining sends nothing.
+   them; when email is off, `WEB_PUBLIC_URL` is unset or the send fails, the
+   page shows the link once to send by hand. Declining deletes the request
+   and sends nothing. Approved people who have not used their invite are
+   listed with **Send a new invite** (the old link stops working) and
+   **Remove**. In the database, an hourly TimescaleDB job
+   (`auth.prune_signups`) deletes approved requests 30 days after the
+   decision, and an approved person with no account and no invite in 30 days.
 3. The person chooses a password, signs in on their iPhone and taps **Connect
    this iPhone** on the account page: the viewer mints a sync token for that
    person's own user, shows it once as a pairing code (a button that opens
@@ -244,18 +249,31 @@ phone can send anything. In order:
    person's iPhones with a **Disconnect** for each.
 4. **Delete my account** disables the account, ends its sessions and revokes
    its tokens at once, and tells the operator, who purges the data from
-   `/admin`. An administrator can also **Disable** any other account (which
+   `/admin`. An administrator can also **Disable** such an account (which
    disconnects its iPhones) and, once disabled, **Purge** everything stored
-   for that user.
+   for that user, the hourly rollups included.
+
+All of that applies only to **self-service** users: those an approved request
+created, recorded in `auth.self_service_users`. The operator's household —
+the default user, phones paired with `make issue-device`, accounts invited
+with `make web-invite` — is never given a token, disabled, deleted or purged
+through the viewer; those accounts see no **Connect this iPhone** or **Delete
+my account**, and `/admin` shows them without buttons. Manage them from the
+server.
 
 The privileged steps — creating a user, minting or revoking a token,
 disabling, deleting, purging — are `SECURITY DEFINER` functions in schema
 `auth` (`server/db/migrations/016_web_signups.sql`). `web_app` may run exactly
-those and still cannot write `users` or `device_tokens` itself. Each function
-takes the caller's session token and checks it against `auth.sessions` (which
-stores only hashes), so a bug that lets someone run SQL as `web_app` cannot
-borrow a session it has not seen, and a token is only ever minted for the
-signed-in person's own user.
+those and still cannot write `users`, `device_tokens` or
+`auth.self_service_users` itself. Each takes the caller's session as
+`auth.sessions` stores it (the cookie's SHA-256; the plaintext never reaches
+the database) and acts for that account: a token only for the signed-in
+person's own user, the administrator's steps only for an administrator. That
+scopes normal use, but it is not a barrier against SQL run as `web_app`,
+which writes `auth.sessions` to sign people in and so can forge a session.
+The barrier is the self-service list: such SQL could at worst give a
+self-service user a token, or disable or purge one. The household stays
+read-only to the viewer, as before.
 
 **Email** goes through Amazon SES's API (`lib/email.ts`, signed by hand, no
 dependency): `WEB_SES_ACCESS_KEY_ID`, `WEB_SES_SECRET_ACCESS_KEY`,

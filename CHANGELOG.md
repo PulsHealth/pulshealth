@@ -57,10 +57,14 @@ accounts mode connects as.
   their own iPhone from their account page (a pairing code shown once, from
   `WEB_INGEST_URL`), disconnect it, and delete their account; administrators
   disable accounts (which disconnects their phones) and purge a disabled
-  user's data. Email through Amazon SES (`WEB_SES_*`, `WEB_MAIL_FROM`,
-  `WEB_ADMIN_EMAIL`), off unless configured. Migration
-  `016_web_signups.sql` adds the request table and the `SECURITY DEFINER`
-  functions behind every privileged step.
+  user's data. All of it applies only to users an approved request created:
+  the operator's household is never given a token, disabled or purged
+  through the viewer, even by SQL run as its database role. Email through
+  Amazon SES (`WEB_SES_*`, `WEB_MAIL_FROM`, `WEB_ADMIN_EMAIL`), off unless
+  configured. Migration `016_web_signups.sql` adds the request table, the
+  `SECURITY DEFINER` functions behind every privileged step, and an hourly
+  TimescaleDB job that deletes approved requests and never-used approvals
+  after 30 days.
 - In accounts mode, a request that reached the viewer over plain HTTP through
   the trusted proxy is redirected to HTTPS instead of refused.
 - An optional `tunnel` Compose profile: a Cloudflare Tunnel that serves the

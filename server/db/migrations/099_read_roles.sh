@@ -743,7 +743,7 @@ fi
 # grant yet; the next plain migrate run applies them, and this section with it.
 if [[ "$(psql -X -q -tA --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
           -c "SELECT to_regprocedure('puls_create_web_views()') IS NOT NULL
-                 AND to_regprocedure('auth.purge_user(text,uuid)') IS NOT NULL")" != t ]]; then
+                 AND to_regprocedure('auth.purge_user(bytea,uuid)') IS NOT NULL")" != t ]]; then
   echo "099_read_roles: 015_web_accounts.sql or 016_web_signups.sql is not applied yet; skipping the web_app role."
   exit 0
 fi
@@ -856,14 +856,17 @@ TO web_app;
 -- web_app gets EXECUTE on exactly these and on no other function of its own
 -- (PostgreSQL's default PUBLIC EXECUTE covers built-ins like time_bucket).
 GRANT EXECUTE ON FUNCTION
-  auth.approve_signup(text, uuid),
-  auth.set_account_disabled(text, uuid, boolean),
-  auth.purge_user(text, uuid),
-  auth.issue_device_token(text, bytea, text, text),
-  auth.my_devices(text),
-  auth.revoke_my_device(text, bigint),
-  auth.delete_my_account(text)
+  auth.approve_signup(bytea, uuid),
+  auth.set_account_disabled(bytea, uuid, boolean),
+  auth.purge_user(bytea, uuid),
+  auth.issue_device_token(bytea, bytea, text, text),
+  auth.my_devices(bytea),
+  auth.revoke_my_device(bytea, bigint),
+  auth.delete_my_account(bytea)
 TO web_app;
+
+-- Which users those functions may act on (written only by approve_signup).
+GRANT SELECT ON TABLE auth.self_service_users TO web_app;
 
 DO $$
 DECLARE
@@ -936,7 +939,8 @@ BEGIN
       ('auth', 'signup_requests', 'SELECT', false),
       ('auth', 'signup_requests', 'INSERT', false),
       ('auth', 'signup_requests', 'UPDATE', false),
-      ('auth', 'signup_requests', 'DELETE', false)
+      ('auth', 'signup_requests', 'DELETE', false),
+      ('auth', 'self_service_users', 'SELECT', false)
     ), actual AS (
       SELECT n.nspname::text, c.relname::text, acl.privilege_type, acl.is_grantable
       FROM pg_class c
@@ -1006,25 +1010,38 @@ BEGIN
   END IF;
 
   -- Functions: EXECUTE on exactly the sign-up and self-service steps, each a
-  -- SECURITY DEFINER function pinned to search_path pg_catalog.
+  -- SECURITY DEFINER function pinned to search_path pg_catalog — counting
+  -- every definer function web_app can run by any route, PUBLIC's default
+  -- EXECUTE included (has_function_privilege), not only direct grants, so a
+  -- future definer function left executable by everyone fails the run.
+  -- Extensions' own functions are theirs to answer for.
   IF EXISTS (
     WITH expected(signature) AS (VALUES
-      ('auth.approve_signup(text,uuid)'),
-      ('auth.set_account_disabled(text,uuid,boolean)'),
-      ('auth.purge_user(text,uuid)'),
-      ('auth.issue_device_token(text,bytea,text,text)'),
-      ('auth.my_devices(text)'),
-      ('auth.revoke_my_device(text,bigint)'),
-      ('auth.delete_my_account(text)')
-    ), actual AS (
+      ('auth.approve_signup(bytea,uuid)'),
+      ('auth.set_account_disabled(bytea,uuid,boolean)'),
+      ('auth.purge_user(bytea,uuid)'),
+      ('auth.issue_device_token(bytea,bytea,text,text)'),
+      ('auth.my_devices(bytea)'),
+      ('auth.revoke_my_device(bytea,bigint)'),
+      ('auth.delete_my_account(bytea)')
+    ), granted AS (
       SELECT p.oid::regprocedure::text AS signature
       FROM pg_proc p
       CROSS JOIN LATERAL aclexplode(p.proacl) acl
       WHERE acl.grantee = web_oid AND acl.privilege_type = 'EXECUTE' AND NOT acl.is_grantable
+    ), runnable_definers AS (
+      SELECT p.oid::regprocedure::text AS signature
+      FROM pg_proc p
+      WHERE p.prosecdef
+        AND has_function_privilege(web_oid, p.oid, 'EXECUTE')
+        AND NOT EXISTS (SELECT 1 FROM pg_depend d
+                        WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
     )
-    (SELECT * FROM expected EXCEPT SELECT * FROM actual)
+    (SELECT * FROM expected EXCEPT SELECT * FROM granted)
     UNION ALL
-    (SELECT * FROM actual EXCEPT SELECT * FROM expected)
+    (SELECT * FROM granted EXCEPT SELECT * FROM expected)
+    UNION ALL
+    (SELECT * FROM runnable_definers EXCEPT SELECT * FROM expected)
   ) OR EXISTS (
     SELECT 1 FROM pg_proc p
     CROSS JOIN LATERAL aclexplode(p.proacl) acl

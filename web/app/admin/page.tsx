@@ -5,7 +5,7 @@ import { ApproveRequest } from "@/components/ApproveRequest";
 import { PageHeader } from "@/components/PageHeader";
 import { currentAdmin } from "@/lib/accounts/admin";
 import { errorMessage, noticeMessage, param } from "@/lib/accounts/messages";
-import { listAccounts, listSignupRequests } from "@/lib/accounts/signups";
+import { listAccounts, listSignupRequests, listUnusedApprovals } from "@/lib/accounts/signups";
 import { mailConfig } from "@/lib/email";
 import { formatFull } from "@/lib/format";
 import { signupsOpen } from "@/lib/mode";
@@ -23,7 +23,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const admin = await currentAdmin();
   if (!admin) notFound();
   const search = await searchParams;
-  const [requests, accounts] = await Promise.all([listSignupRequests(), listAccounts()]);
+  const [requests, accounts, unused] = await Promise.all([listSignupRequests(), listAccounts(), listUnusedApprovals()]);
   const pending = requests.filter((r) => r.status === "pending");
   const decided = requests.filter((r) => r.status !== "pending");
   const error = errorMessage(param(search.error));
@@ -81,6 +81,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 <div style={{ fontSize: 14.5, fontWeight: 550 }}>
                   {a.email}
                   {a.isAdmin && <span className="chip" style={{ marginLeft: 8 }}>Admin</span>}
+                  {!a.selfService && !a.isAdmin && <span className="chip" style={{ marginLeft: 8 }}>Household</span>}
                   {a.deletionRequestedAt && <span className="chip" style={{ marginLeft: 8, color: "#ff7b72" }}>Asked to be deleted</span>}
                   {a.disabledAt && !a.deletionRequestedAt && <span className="chip" style={{ marginLeft: 8 }}>Disabled</span>}
                 </div>
@@ -89,7 +90,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                   {a.lastSeenAt ? ` · last active ${formatFull(a.lastSeenAt)}` : ""}
                 </div>
               </div>
-              {!a.isAdmin && (
+              {a.selfService && !a.isAdmin && (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                   <form method="post" action="/api/admin">
                     <input type="hidden" name="action" value={a.disabledAt ? "enable" : "disable"} />
@@ -113,9 +114,40 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         </div>
         <p className="form-hint" style={{ maxWidth: 720, lineHeight: 1.5 }}>
           Disabling ends an account&apos;s sessions and disconnects its iPhones at once. Purging deletes every record stored
-          for that user, which decompresses old data as it goes and can take a minute on a long history.
+          for that user, which decompresses old data as it goes and can take a minute on a long history. Only accounts
+          that came from an approved request can be changed here; household accounts (invited with make web-invite) are
+          managed from the server, so a compromised viewer can never reach them.
         </p>
       </section>
+
+      {unused.length > 0 && (
+        <section className="rise" style={{ marginTop: 28 }}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>Approved, invite not used yet · {unused.length}</div>
+          <div className="panel" style={{ maxWidth: 820 }}>
+            {unused.map((u) => (
+              <div key={u.userId} className="session-row" style={{ alignItems: "flex-start" }}>
+                <div style={{ minWidth: 0, flex: "1 1 320px" }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 550 }}>{u.name || u.email}</div>
+                  <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>
+                    {u.email} · last invited {formatFull(u.invitedAt)}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <ApproveRequest id={u.userId} mode="reinvite" />
+                  <form method="post" action="/api/admin" style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                    <input type="hidden" name="action" value="purge" />
+                    <input type="hidden" name="id" value={u.userId} />
+                    <label style={{ fontSize: 12.5, color: "var(--muted)", display: "inline-flex", gap: 6, alignItems: "center" }}>
+                      <input type="checkbox" name="confirm" value="yes" required /> remove them
+                    </label>
+                    <button type="submit" className="btn" style={{ color: "#ff7b72" }}>Remove</button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {decided.length > 0 && (
         <section className="rise" style={{ marginTop: 28 }}>

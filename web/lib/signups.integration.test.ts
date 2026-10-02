@@ -3,8 +3,10 @@
 // a request creates nothing; only an administrator's session can approve it;
 // approval makes a user and an invite; the person connects their own iPhone
 // and nobody else's; disabling cuts the phone off; deleting an account and
-// purging a user leave nothing behind; and web_app still cannot write the
-// tables those functions write. Skipped without the two connection strings.
+// purging a user leave nothing behind, rollups included; web_app still cannot
+// write the tables those functions write; and even SQL run as web_app with a
+// session it forged cannot give the operator's household users a token,
+// disable them or purge them. Skipped without the two connection strings.
 
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
@@ -51,7 +53,10 @@ async function sqlState(p: Promise<unknown>): Promise<string | null> {
 describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", () => {
   let admin: Client;
   let adminCookie: string;
+  let adminSession: Buffer;
   let personCookie: string;
+  let personSession: Buffer;
+  let tokenHash: typeof import("./accounts/session").tokenHash;
   let personUser: string;
   let signups: typeof import("./accounts/signups");
   let loginRoute: typeof import("@/app/api/auth/login/route");
@@ -71,11 +76,13 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
       ADMIN_USER, ADMIN_EMAIL, await hashPassword(PASSWORD),
     ]);
     signups = await import("./accounts/signups");
+    tokenHash = (await import("./accounts/session")).tokenHash;
     loginRoute = await import("@/app/api/auth/login/route");
     inviteRoute = await import("@/app/api/auth/invite/route");
     signupRoute = await import("@/app/api/auth/signup/route");
     adminCookie = cookieOf(await loginRoute.POST(post("/api/auth/login", { email: ADMIN_EMAIL, password: PASSWORD }, { ip: "198.51.100.200" })))!;
     expect(adminCookie).toBeTruthy();
+    adminSession = tokenHash(adminCookie)!;
   }, 60_000);
 
   afterAll(async () => {
@@ -88,6 +95,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
       await admin.query("DELETE FROM device_tokens WHERE user_id = $1", [user]);
       await admin.query("DELETE FROM auth.invites WHERE user_id = $1", [user]);
       await admin.query("DELETE FROM auth.signup_requests WHERE user_id = $1", [user]);
+      await admin.query("DELETE FROM auth.sessions WHERE account_id IN (SELECT id FROM auth.accounts WHERE user_id = $1)", [user]);
       await admin.query("DELETE FROM auth.accounts WHERE user_id = $1", [user]);
       await admin.query("DELETE FROM quantity_samples WHERE user_id = $1 AND start_ts > now() - interval '400 days'", [user]);
       await admin.query("DELETE FROM users WHERE id = $1", [user]);
@@ -133,25 +141,28 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
 
   it("lets only an administrator's session approve, and approval makes a user and an invite", async () => {
     const [{ id }] = await requestRow(PERSON_EMAIL);
-    // web_app cannot fake it: no session, a made-up one, or a non-admin's.
-    expect(await sqlState(signups.approveSignup("x".repeat(43), "00000000-0000-4000-8000-000000000000", id))).toBe("42501");
+    // A made-up session, and the plaintext cookie instead of its hash, are refused.
+    expect(await sqlState(signups.approveSignup(Buffer.alloc(32, 7), "00000000-0000-4000-8000-000000000000", id))).toBe("42501");
+    expect(await sqlState(signups.approveSignup(Buffer.from(adminCookie), ADMIN_USER, id))).toBe("42501");
 
-    const approval = await signups.approveSignup(adminCookie, (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [ADMIN_EMAIL])).rows[0].id, id);
+    const approval = await signups.approveSignup(adminSession, (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [ADMIN_EMAIL])).rows[0].id, id);
     personUser = approval.userId;
     expect(approval.email).toBe(PERSON_EMAIL);
     expect(await requestRow(PERSON_EMAIL)).toMatchObject([{ status: "approved", user_id: personUser }]);
     expect((await admin.query("SELECT 1 FROM users WHERE id = $1", [personUser])).rows).toHaveLength(1);
-    expect(await sqlState(signups.approveSignup(adminCookie, ADMIN_USER, id))).toBe("P0002"); // decided already
+    expect((await admin.query("SELECT 1 FROM auth.self_service_users WHERE user_id = $1", [personUser])).rows).toHaveLength(1);
+    expect(await sqlState(signups.approveSignup(adminSession, ADMIN_USER, id))).toBe("P0002"); // decided already
 
     // The invite works like any other: the person chooses a password and is in.
     const accepted = await inviteRoute.POST(post("/api/auth/invite", { token: approval.inviteToken, password: PASSWORD, confirm: PASSWORD }, { ip: "198.51.100.40" }));
     expect(accepted.headers.get("location")).toBe("/?notice=welcome");
     personCookie = cookieOf(accepted)!;
     expect(personCookie).toBeTruthy();
+    personSession = tokenHash(personCookie)!;
   });
 
   it("connects the person's own iPhone, and nobody else's", async () => {
-    const minted = await signups.issueDeviceToken(personCookie, "Pat's iPhone");
+    const minted = await signups.issueDeviceToken(personSession, "Pat's iPhone");
     expect(minted.token).toMatch(/^[0-9a-f]{64}$/);
     const { rows } = await admin.query<{ user_id: string; token_hash: Buffer; token_prefix: string; status: string }>(
       "SELECT user_id::text, token_hash, token_prefix, status FROM device_tokens WHERE id = $1", [minted.id],
@@ -160,16 +171,18 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     expect(rows[0]).toMatchObject({ user_id: personUser, token_prefix: minted.token.slice(0, 8), status: "active" });
     expect(rows[0].token_hash.equals(createHash("sha256").update(minted.token, "ascii").digest())).toBe(true);
 
-    expect((await signups.myDevices(personCookie)).map((d) => d.id)).toEqual([minted.id]);
-    expect(await signups.myDevices(adminCookie)).toEqual([]);
-    // The admin cannot revoke the person's device as "their own".
-    expect(await signups.revokeMyDevice(adminCookie, minted.id)).toBe(false);
-    expect(await sqlState(signups.issueDeviceToken("y".repeat(43), "x"))).toBe("42501");
+    expect((await signups.myDevices(personSession)).map((d) => d.id)).toEqual([minted.id]);
+    // The administrator's user is the operator's own (household), not self-service:
+    // no phones here, and the person's phone is not theirs to revoke.
+    expect(await signups.myDevices(adminSession)).toEqual([]);
+    expect(await sqlState(signups.revokeMyDevice(adminSession, minted.id))).toBe("42501");
+    expect(await sqlState(signups.issueDeviceToken(adminSession, "x"))).toBe("42501");
+    expect(await sqlState(signups.issueDeviceToken(Buffer.alloc(32, 9), "x"))).toBe("42501");
 
     const link = signups.pairingLink("https://ingest.example/", minted.token, personUser);
     expect(link).toBe(`puls://pair?url=https%3A%2F%2Fingest.example%2F&token=${minted.token}&user=${personUser}`);
 
-    expect(await signups.revokeMyDevice(personCookie, minted.id)).toBe(true);
+    expect(await signups.revokeMyDevice(personSession, minted.id)).toBe(true);
     expect((await admin.query("SELECT status FROM device_tokens WHERE id = $1", [minted.id])).rows[0].status).toBe("revoked");
   });
 
@@ -179,27 +192,80 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     try {
       expect(await sqlState(web.query("INSERT INTO public.users (id) VALUES (gen_random_uuid())"))).toBe("42501");
       expect(await sqlState(web.query("SELECT 1 FROM public.device_tokens"))).toBe("42501");
-      expect(await sqlState(web.query("SELECT * FROM auth.session_owner('z')"))).toBe("42501");
+      expect(await sqlState(web.query("SELECT * FROM auth.session_owner('\\x00'::bytea)"))).toBe("42501");
+      expect(await sqlState(web.query("INSERT INTO auth.self_service_users (user_id) VALUES ($1)", [ADMIN_USER]))).toBe("42501");
+      expect(await sqlState(web.query("DELETE FROM auth.self_service_users"))).toBe("42501");
     } finally {
       await web.end();
     }
   });
 
-  it("disabling cuts the account off and its phones with it; enabling lets it sign in again", async () => {
-    const minted = await signups.issueDeviceToken(personCookie, "second");
-    const accountId = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [PERSON_EMAIL])).rows[0].id;
-    expect(await sqlState(signups.setAccountDisabled(personCookie, accountId, true))).toBe("42501");
+  it("keeps the operator's household out of reach of SQL run as web_app, even with a forged session", async () => {
+    // web_app writes auth.sessions to sign people in, so it can mint a session
+    // for any account. That must not open the household (users that did not
+    // come from an approved sign-up) to anything beyond reading.
+    const household = randomUUID();
+    await admin.query("INSERT INTO users (id) VALUES ($1)", [household]);
+    const web = new Client({ connectionString: WEB_URL });
+    await web.connect();
+    try {
+      const forged = createHash("sha256").update(`forged-${tag}`).digest();
+      const adminAccount = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [ADMIN_EMAIL])).rows[0].id;
+      await web.query("INSERT INTO auth.sessions (id, account_id, expires_at) VALUES ($1, $2, now() + interval '1 hour')", [forged, adminAccount]);
+      const householdAccount = (await web.query<{ id: string }>(
+        "INSERT INTO auth.accounts (user_id, email, password_hash) VALUES ($1, $2, 'x') RETURNING id::text", [household, `household-${tag}@example.com`],
+      )).rows[0].id;
+      const forgedHousehold = createHash("sha256").update(`forged-household-${tag}`).digest();
+      await web.query("INSERT INTO auth.sessions (id, account_id, expires_at) VALUES ($1, $2, now() + interval '1 hour')", [forgedHousehold, householdAccount]);
 
-    await signups.setAccountDisabled(adminCookie, accountId, true);
+      // An administrator's session (forged or real) cannot touch a household user...
+      for (const session of [forged, adminSession]) {
+        expect(await sqlState(web.query("SELECT auth.purge_user($1, $2::uuid)", [session, household]))).toBe("42501");
+        expect(await sqlState(web.query("SELECT auth.purge_user($1, $2::uuid)", [session, ADMIN_USER]))).toBe("42501");
+        expect(await sqlState(web.query("SELECT auth.set_account_disabled($1, $2::uuid, true)", [session, householdAccount]))).toBe("P0002");
+        expect(await sqlState(web.query("SELECT auth.set_account_disabled($1, $2::uuid, true)", [session, adminAccount]))).toBe("P0002");
+      }
+      // ...and a household account cannot mint itself a sync token or delete itself here.
+      const hash = createHash("sha256").update("f".repeat(64), "ascii").digest();
+      expect(await sqlState(web.query("SELECT auth.issue_device_token($1, $2, 'ffffffff', 'x')", [forgedHousehold, hash]))).toBe("42501");
+      expect(await sqlState(web.query("SELECT auth.delete_my_account($1)", [forgedHousehold]))).toBe("42501");
+      expect((await web.query("SELECT * FROM auth.my_devices($1)", [forgedHousehold])).rows).toEqual([]);
+      expect((await admin.query("SELECT 1 FROM device_tokens WHERE user_id = $1", [household])).rows).toHaveLength(0);
+      expect((await admin.query("SELECT disabled_at FROM auth.accounts WHERE id = $1", [adminAccount])).rows[0].disabled_at).toBeNull();
+    } finally {
+      await web.end();
+      await admin.query("DELETE FROM auth.sessions WHERE account_id IN (SELECT id FROM auth.accounts WHERE user_id = $1)", [household]);
+      await admin.query("DELETE FROM auth.sessions WHERE id = $1", [createHash("sha256").update(`forged-${tag}`).digest()]);
+      await admin.query("DELETE FROM auth.accounts WHERE user_id = $1", [household]);
+      await admin.query("DELETE FROM users WHERE id = $1", [household]);
+    }
+  });
+
+  it("disabling cuts the account off and its phones with it; enabling lets it sign in again", async () => {
+    const minted = await signups.issueDeviceToken(personSession, "second");
+    const accountId = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [PERSON_EMAIL])).rows[0].id;
+    expect(await sqlState(signups.setAccountDisabled(personSession, accountId, true))).toBe("42501");
+
+    await signups.setAccountDisabled(adminSession, accountId, true);
     expect((await admin.query("SELECT status FROM device_tokens WHERE id = $1", [minted.id])).rows[0].status).toBe("revoked");
     const { findSession } = await import("./accounts/session");
     expect(await findSession(personCookie)).toBeNull();
     const refused = await loginRoute.POST(post("/api/auth/login", { email: PERSON_EMAIL, password: PASSWORD }, { ip: "198.51.100.50" }));
     expect(refused.headers.get("location")).toBe("/login?error=invalid");
+    // The old session cannot mint a token for the disabled account.
+    expect(await sqlState(signups.issueDeviceToken(personSession, "too late"))).toBe("42501");
 
-    await signups.setAccountDisabled(adminCookie, accountId, false);
+    await signups.setAccountDisabled(adminSession, accountId, false);
     personCookie = cookieOf(await loginRoute.POST(post("/api/auth/login", { email: PERSON_EMAIL, password: PASSWORD }, { ip: "198.51.100.51" })))!;
     expect(personCookie).toBeTruthy();
+    personSession = tokenHash(personCookie)!;
+  });
+
+  it("caps active sync tokens at ten, even when minted at once", async () => {
+    const results = await Promise.allSettled(Array.from({ length: 14 }, (_, i) => signups.issueDeviceToken(personSession, `phone ${i}`)));
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(10);
+    for (const r of results) if (r.status === "rejected") expect((r.reason as DatabaseError).code).toBe("54000");
+    await admin.query("UPDATE device_tokens SET status = 'revoked', revoked_at = now() WHERE user_id = $1", [personUser]);
   });
 
   it("deleting your own account disables it at once; purging leaves nothing of the user", async () => {
@@ -213,20 +279,30 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
          FROM generate_series(1, 5) g`,
       [personUser],
     );
-    const minted = await signups.issueDeviceToken(personCookie, "third");
+    // Materialize the hourly rollups, so purging has to clear them too.
+    await admin.query("CALL refresh_continuous_aggregate('quantity_rollups', now() - interval '10 days', now())");
+    const mat = (await admin.query<{ name: string }>(
+      `SELECT format('%I.%I', materialization_hypertable_schema, materialization_hypertable_name) AS name
+         FROM timescaledb_information.continuous_aggregates WHERE view_name = 'quantity_rollups'`,
+    )).rows[0].name;
+    expect(Number((await admin.query(`SELECT count(*) FROM ${mat} WHERE user_id = $1`, [personUser])).rows[0].count)).toBe(5);
+    const minted = await signups.issueDeviceToken(personSession, "third");
 
-    expect(await sqlState(signups.deleteMyAccount(adminCookie))).toBe("42501"); // not for admins
-    expect(await signups.deleteMyAccount(personCookie)).toBe(personUser);
+    expect(await sqlState(signups.deleteMyAccount(adminSession))).toBe("42501"); // not for admins
+    expect(await signups.deleteMyAccount(personSession)).toBe(personUser);
     const { rows } = await admin.query("SELECT disabled_at IS NOT NULL AS disabled, deletion_requested_at IS NOT NULL AS asked FROM auth.accounts WHERE user_id = $1", [personUser]);
     expect(rows[0]).toEqual({ disabled: true, asked: true });
     expect((await admin.query("SELECT status FROM device_tokens WHERE id = $1", [minted.id])).rows[0].status).toBe("revoked");
 
-    expect(await sqlState(signups.purgeUser(personCookie, personUser))).toBe("42501");
-    expect(await sqlState(signups.purgeUser(adminCookie, ADMIN_USER))).toBe("42501"); // not your own
-    const counts = await signups.purgeUser(adminCookie, personUser);
+    expect(await sqlState(signups.purgeUser(personSession, personUser))).toBe("42501");
+    expect(await sqlState(signups.purgeUser(adminSession, ADMIN_USER))).toBe("42501"); // household
+    const counts = await signups.purgeUser(adminSession, personUser);
     expect(counts.quantity_samples).toBe(5);
+    expect(counts.quantity_rollups).toBe(5);
+    expect(Number((await admin.query(`SELECT count(*) FROM ${mat} WHERE user_id = $1`, [personUser])).rows[0].count)).toBe(0);
     for (const [table, where] of [
       ["users", "id"], ["quantity_samples", "user_id"], ["device_tokens", "user_id"], ["auth.accounts", "user_id"], ["auth.invites", "user_id"],
+      ["auth.self_service_users", "user_id"],
     ] as const) {
       expect((await admin.query(`SELECT 1 FROM ${table} WHERE ${where} = $1`, [personUser])).rows, table).toHaveLength(0);
     }
@@ -236,8 +312,60 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     const email = `flood0-${tag}@example.com`;
     const [{ id }] = await requestRow(email);
     const adminAccount = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [ADMIN_EMAIL])).rows[0].id;
-    const approval = await signups.approveSignup(adminCookie, adminAccount, id);
+    const approval = await signups.approveSignup(adminSession, adminAccount, id);
     await inviteRoute.POST(post("/api/auth/invite", { token: approval.inviteToken, password: PASSWORD, confirm: PASSWORD }, { ip: "198.51.100.60" }));
-    expect(await sqlState(signups.purgeUser(adminCookie, approval.userId))).toBe("55000");
+    expect(await sqlState(signups.purgeUser(adminSession, approval.userId))).toBe("55000");
+  });
+
+  it("lists an approval whose invite was never used, re-invites it, and reuses its user on a second request", async () => {
+    const email = `flood1-${tag}@example.com`;
+    const [{ id }] = await requestRow(email);
+    const adminAccount = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [ADMIN_EMAIL])).rows[0].id;
+    const first = await signups.approveSignup(adminSession, adminAccount, id);
+    expect((await signups.listUnusedApprovals()).map((u) => u.userId)).toContain(first.userId);
+
+    const again = await signups.reinvite(adminAccount, first.userId);
+    expect(again?.userId).toBe(first.userId);
+    // The first link stopped working; the new one is the only live invite.
+    const live = await admin.query("SELECT 1 FROM auth.invites WHERE user_id = $1 AND accepted_at IS NULL AND expires_at > now()", [first.userId]);
+    expect(live.rows).toHaveLength(1);
+    expect(await signups.reinvite(adminAccount, ADMIN_USER)).toBeNull(); // not an unused approval
+
+    // Asking again and being approved again lands on the same user, not a second one.
+    await signupRoute.POST(post("/api/auth/signup", { email, consent: "yes" }, { ip: "198.51.100.70" }));
+    const second = (await requestRow(email)).find((r) => r.status === "pending")!;
+    const reapproved = await signups.approveSignup(adminSession, adminAccount, second.id);
+    expect(reapproved.userId).toBe(first.userId);
+
+    // Never used, so it can be purged without disabling anything.
+    await signups.purgeUser(adminSession, first.userId);
+    expect(await signups.listUnusedApprovals()).not.toContainEqual(expect.objectContaining({ userId: first.userId }));
+  });
+
+  it("prunes decided requests and never-used approvals after 30 days, in the database", async () => {
+    const email = `flood2-${tag}@example.com`;
+    const [{ id }] = await requestRow(email);
+    const adminAccount = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [ADMIN_EMAIL])).rows[0].id;
+    const approval = await signups.approveSignup(adminSession, adminAccount, id);
+    const userExists = async () => (await admin.query("SELECT 1 FROM users WHERE id = $1", [approval.userId])).rows.length === 1;
+
+    await admin.query("CALL auth.prune_signups(0, NULL)");
+    expect(await requestRow(email)).toHaveLength(1); // recent: kept
+    expect(await userExists()).toBe(true);
+
+    await admin.query("UPDATE auth.signup_requests SET decided_at = decided_at - interval '31 days' WHERE id = $1", [id]);
+    await admin.query("UPDATE auth.self_service_users SET approved_at = approved_at - interval '31 days' WHERE user_id = $1", [approval.userId]);
+    await admin.query(
+      "UPDATE auth.invites SET created_at = created_at - interval '31 days', expires_at = expires_at - interval '31 days' WHERE user_id = $1",
+      [approval.userId],
+    );
+    await admin.query("CALL auth.prune_signups(0, NULL)");
+    expect(await requestRow(email)).toHaveLength(0);
+    expect(await userExists()).toBe(false);
+    expect((await admin.query("SELECT 1 FROM auth.invites WHERE user_id = $1", [approval.userId])).rows).toHaveLength(0);
+
+    // Scheduled, not left to someone opening /admin.
+    const jobs = await admin.query("SELECT schedule_interval::text FROM timescaledb_information.jobs WHERE proc_schema = 'auth' AND proc_name = 'prune_signups'");
+    expect(jobs.rows).toEqual([{ schedule_interval: "01:00:00" }]);
   });
 });

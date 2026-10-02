@@ -26,12 +26,13 @@ function ingestUrl(): string | null {
 export async function connectIphone(_prev: ConnectState, form: FormData): Promise<ConnectState> {
   const account = await currentAccount();
   if (!account) return { ok: false, error: "Sign in again, then try once more." };
+  if (!account.selfService) return { ok: false, error: "Phones for this account are connected by the operator." };
   const url = ingestUrl();
   if (!url) return { ok: false, error: "The operator has not set this viewer's sync address (WEB_INGEST_URL), so there is nothing to connect to yet." };
   const name = String(form.get("name") ?? "").trim().slice(0, 100) || "iPhone";
   try {
-    const { token } = await issueDeviceToken(account.token, name);
-    const link = pairingLink(url, token, account.session.userId);
+    const { token } = await issueDeviceToken(account.id, name);
+    const link = pairingLink(url, token, account.userId);
     return { ok: true, link, svg: qrSvg(link, { margin: 4, size: 240 }) };
   } catch (e) {
     if ((e as { code?: string }).code === "54000") return { ok: false, error: "You have ten connected iPhones already. Disconnect one first." };

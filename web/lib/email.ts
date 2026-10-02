@@ -7,8 +7,9 @@
 // WEB_SES_REGION (default us-east-1) and WEB_MAIL_FROM, an address SES has
 // verified. WEB_ADMIN_EMAIL is where the operator's notices go. Unconfigured,
 // nothing is sent and the admin page is the only place requests show up.
-// A failed send is logged (never the message body) and reported to the
-// caller, which carries on: an email is a courtesy, not part of a decision.
+// A failed send is logged (never the message body or an address) and
+// reported to the caller, which carries on: an email is a courtesy, not part
+// of a decision.
 
 import { createHash, createHmac } from "node:crypto";
 
@@ -93,6 +94,16 @@ export function signV4(input: SignInput): { authorization: string; amzDate: stri
   };
 }
 
+/** A header-safe subject: control characters (CR, LF) become spaces, at most 200 characters. */
+export function cleanSubject(subject: string): string {
+  return subject.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
+}
+
+/** SES error text with any email address taken out, so the log never keeps one. */
+export function redactAddresses(text: string): string {
+  return text.replace(/[^\s<>"'(),;:]+@[^\s<>"'(),;:]+/g, "<address>");
+}
+
 export interface Mail {
   to: string;
   subject: string;
@@ -112,7 +123,7 @@ export async function sendMail(mail: Mail, config = mailConfig(), fetchImpl: typ
     ...(mail.replyTo ? { ReplyToAddresses: [mail.replyTo] } : {}),
     Content: {
       Simple: {
-        Subject: { Data: mail.subject, Charset: "UTF-8" },
+        Subject: { Data: cleanSubject(mail.subject), Charset: "UTF-8" },
         Body: { Text: { Data: mail.text, Charset: "UTF-8" } },
       },
     },
@@ -137,12 +148,12 @@ export async function sendMail(mail: Mail, config = mailConfig(), fetchImpl: typ
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
-      console.error(`[puls-web] email not sent: SES answered ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      console.error(`[puls-web] email not sent: SES answered ${res.status}: ${redactAddresses((await res.text()).slice(0, 300))}`);
       return false;
     }
     return true;
   } catch (e) {
-    console.error("[puls-web] email not sent:", e instanceof Error ? e.message : e);
+    console.error("[puls-web] email not sent:", redactAddresses(e instanceof Error ? e.message : String(e)));
     return false;
   }
 }

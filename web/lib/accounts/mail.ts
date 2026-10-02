@@ -5,36 +5,46 @@
 // used to mail a stranger.
 
 import { mailConfig, sendMail } from "../email";
+import type { Env } from "../mode";
 
 export const APP_STORE_URL = "https://apps.apple.com/us/app/pulshealth/id6757657354";
 
-/** The viewer's public address, for links in email. */
-export function publicBase(env = process.env): string {
+/** The viewer's public address (WEB_PUBLIC_URL), for links in email; "" when unset. */
+export function publicBase(env: Env = process.env): string {
   try {
-    return new URL(env.WEB_PUBLIC_URL ?? "").origin;
+    const url = new URL(env.WEB_PUBLIC_URL ?? "");
+    return url.protocol === "https:" || url.protocol === "http:" ? url.origin : "";
   } catch {
     return "";
   }
 }
 
-// At most this many operator notices a day, however many requests arrive:
-// a flood of sign-ups must not become a flood of email. Requests past the
-// cap still wait on /admin.
-const ADMIN_NOTICES_PER_DAY = 30;
-const noticeLog: number[] = [];
+// At most this many operator notices of each kind a day: a flood of
+// sign-ups must not become a flood of email, nor crowd out the notice that
+// someone deleted their account. Requests past the cap still wait on /admin.
+export const NOTICES_PER_DAY = 30;
 
-function allowNotice(now = Date.now()): boolean {
-  while (noticeLog.length && now - noticeLog[0] > 86_400_000) noticeLog.shift();
-  if (noticeLog.length >= ADMIN_NOTICES_PER_DAY) return false;
-  noticeLog.push(now);
-  return true;
+export class DailyCap {
+  private log: number[] = [];
+  constructor(private readonly limit: number) {}
+  allow(now = Date.now()): boolean {
+    while (this.log.length && now - this.log[0] > 86_400_000) this.log.shift();
+    if (this.log.length >= this.limit) return false;
+    this.log.push(now);
+    return true;
+  }
 }
 
-async function noticeToAdmin(subject: string, text: string, replyTo?: string): Promise<boolean> {
+const requestNotices = new DailyCap(NOTICES_PER_DAY);
+const deletionNotices = new DailyCap(NOTICES_PER_DAY);
+
+async function noticeToAdmin(cap: DailyCap, subject: string, text: string, replyTo?: string): Promise<boolean> {
   const config = mailConfig();
-  if (!config?.admin || !allowNotice()) return false;
+  if (!config?.admin || !cap.allow()) return false;
   return sendMail({ to: config.admin, subject, text, replyTo }, config);
 }
+
+const adminLink = (base: string) => (base ? `${base}/admin` : "the viewer's /admin page");
 
 export function newRequestNotice(r: { name: string; email: string; note: string; ip: string | null }, base = publicBase()) {
   const who = r.name ? `${r.name} <${r.email}>` : r.email;
@@ -47,7 +57,7 @@ export function newRequestNotice(r: { name: string; email: string; note: string;
       r.ip ? `From ${r.ip}.` : "",
       "",
       "Nothing exists for them until you approve: no account, no user, no way to sync.",
-      `Approve or decline: ${base}/admin`,
+      `Approve or decline: ${adminLink(base)}`,
     ]
       .filter((line, i, all) => !(line === "" && all[i - 1] === ""))
       .join("\n"),
@@ -56,7 +66,7 @@ export function newRequestNotice(r: { name: string; email: string; note: string;
 
 export async function notifyNewRequest(r: { name: string; email: string; note: string; ip: string | null }): Promise<boolean> {
   const { subject, text } = newRequestNotice(r);
-  return noticeToAdmin(subject, text, r.email);
+  return noticeToAdmin(requestNotices, subject, text, r.email);
 }
 
 export function approvalMessage(r: { name: string; email: string; inviteToken: string; days: number }, base = publicBase()) {
@@ -84,21 +94,28 @@ export function approvalMessage(r: { name: string; email: string; inviteToken: s
   };
 }
 
+/**
+ * Emails an approved person their invite. False — nothing sent — without
+ * mail configured or without WEB_PUBLIC_URL (the links would have no host);
+ * the administrator is then shown the link to pass on.
+ */
 export async function sendApproval(r: { name: string; email: string; inviteToken: string; days: number }): Promise<boolean> {
   const config = mailConfig();
-  if (!config) return false;
-  const { subject, text } = approvalMessage(r);
+  const base = publicBase();
+  if (!config || !base) return false;
+  const { subject, text } = approvalMessage(r, base);
   return sendMail({ to: r.email, subject, text, replyTo: config.admin ?? undefined }, config);
 }
 
 export async function notifyDeletion(r: { email: string; userId: string }, base = publicBase()): Promise<boolean> {
   return noticeToAdmin(
+    deletionNotices,
     `PulsHealth: ${r.email} deleted their account`,
     [
       `${r.email} (user ${r.userId}) deleted their account on your viewer.`,
       "",
       "It is disabled and its sync tokens are revoked, so nothing more arrives.",
-      `Their data is still stored until you purge it: ${base}/admin`,
+      `Their data is still stored until you purge it: ${adminLink(base)}`,
     ].join("\n"),
   );
 }
