@@ -270,7 +270,8 @@ in short:
 - **Reconciliation:** HealthKit may purge deletion tombstones before a sync
   sees them. A type's sync details can compare per-UTC-month UUID digests
   with the server (`GET /v1/digest`), re-upload anything missing, and delete
-  server-side orphans.
+  server-side orphans — never from a month HealthKit returned nothing for,
+  since a type whose Health access is off reads exactly like one with no data.
 - **Locked devices:** HealthKit is unreadable while the phone is locked.
   Background wakes that find it locked are recorded as *skipped*, and the next
   unlock or app open catches up.

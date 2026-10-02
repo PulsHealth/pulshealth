@@ -13,13 +13,6 @@ behind them.
 1.6 (19) is on the store. The next upload needs a `MARKETING_VERSION` above
 1.6 and build 20 or later (`PulsHealth/project.yml`).
 
-- **Reconcile with Database on a type set to None can delete server rows.**
-  HealthKit answers a denied type with empty results, so
-  `HealthSyncEngine.reconcile` compares an empty device against the server —
-  from the type's recorded readable date, or from the sync start when none is
-  recorded (which is every denied type before iOS 27) — and sends each server
-  row in that range as a deletion. Manual action only, from a type's sync
-  detail (`TypeDetailView`).
 - **Device passes never run on hardware for 1.5 or 1.6:** background sync
   over several days; the iOS 26 continued-processing first run; leaving the
   app mid-backfill; an export on a device; and on iOS 27, limiting a type's

@@ -1021,4 +1021,72 @@ import Testing
         report.orphanDeletionsSent = 4
         #expect(report.summary == "2/12 windows repaired: +31 samples, -4 orphans")
     }
+
+    // A type whose Health read access is off — None in Settings, or never
+    // granted — answers every sample query with nothing and no error, and
+    // `HKHealthStore.authorizationStatus(for:)` reports only write access.
+    // So a month the device returns nothing for is indistinguishable from a
+    // denied type, and its server rows must not be deleted on that evidence.
+
+    @Test func anEmptyDeviceMonthKeepsItsServerRows() {
+        #expect(ReconcileDigest.orphanVerdict(localCount: 0, serverRows: 120, readAccessConfirmed: false) == .withhold)
+        #expect(ReconcileDigest.orphanVerdict(localCount: 0, serverRows: 1, readAccessConfirmed: false) == .withhold)
+    }
+
+    @Test func aMonthTheDeviceHasSamplesForStillDeletesItsOrphans() {
+        // The device can read the type: whatever it lacks is gone from Health.
+        #expect(ReconcileDigest.orphanVerdict(localCount: 1, serverRows: 120, readAccessConfirmed: false) == .delete)
+        #expect(ReconcileDigest.orphanVerdict(localCount: 119, serverRows: 120, readAccessConfirmed: false) == .delete)
+    }
+
+    @Test func nothingOnEitherSideHasNothingToWithhold() {
+        #expect(ReconcileDigest.orphanVerdict(localCount: 0, serverRows: 0, readAccessConfirmed: false) == .delete)
+    }
+
+    @Test func aConfirmedReadableRangeProvesAnEmptyMonthIsEmpty() {
+        // iOS 27 listed the type with an earliest readable date, which a type
+        // set to None never is: from that date on, empty is the truth.
+        #expect(ReconcileDigest.orphanVerdict(localCount: 0, serverRows: 120, readAccessConfirmed: true) == .delete)
+    }
+
+    @Test func aRunThatReadNothingAnywhereLooksUnreadable() {
+        #expect(ReconcileDigest.looksUnreadable(localTotal: 0, serverTotal: 4_000, readAccessConfirmed: false))
+        // One sample anywhere in the range proves the type is readable.
+        #expect(!ReconcileDigest.looksUnreadable(localTotal: 1, serverTotal: 4_000, readAccessConfirmed: false))
+        // Nothing on the server either: an empty type, not a denied one.
+        #expect(!ReconcileDigest.looksUnreadable(localTotal: 0, serverTotal: 0, readAccessConfirmed: false))
+        // A confirmed limit vouches for the empty answer.
+        #expect(!ReconcileDigest.looksUnreadable(localTotal: 0, serverTotal: 4_000, readAccessConfirmed: true))
+    }
+
+    @Test func readAccessIsConfirmedOnlyByAFreshListing() {
+        // The default: nothing vouched for the type.
+        #expect(!ReadableLimit(since: nil, isFresh: true).isConfirmed)
+        // What `readableLimit(for:recorded:)` builds when HealthKit cannot be
+        // asked: the recorded date stands in, and proves nothing.
+        #expect(!ReadableLimit(since: Date(), isFresh: false).isConfirmed)
+        #expect(ReadableLimit(since: Date(), isFresh: true, isConfirmed: true).isConfirmed)
+    }
+
+    @Test func reportSummaryNamesTheMonthsLeftAlone() {
+        var report = ReconciliationReport(type: "t")
+        report.windowsChecked = 12
+        report.windowsUnverified = 1
+        report.orphanDeletionsWithheld = 120
+        #expect(report.summary == "12 windows in sync; 1 window left alone: Health returned nothing where the database has 120 rows")
+        report.windowsMismatched = 1
+        report.samplesReuploaded = 3
+        report.windowsUnverified = 2
+        report.orphanDeletionsWithheld = 250
+        #expect(report.summary == "1/12 windows repaired: +3 samples, -0 orphans; 2 windows left alone: Health returned nothing where the database has 250 rows")
+    }
+
+    @Test func theUnreadableErrorSaysNothingWasDeleted() {
+        let error = SyncError.reconciliationUnreadable("Steps", serverRows: 4_000)
+        let text = error.localizedDescription
+        #expect(text.contains("no Steps samples"))
+        #expect(text.contains("4000"))
+        #expect(text.contains("nothing was deleted"))
+        #expect(text.contains("Settings"))
+    }
 }
