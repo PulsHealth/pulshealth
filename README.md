@@ -63,6 +63,21 @@ The iOS app 1.6: the first run, Explore, a Type page and the Export builder,
 taken in the simulator with the app's built-in demo data (nobody's real health
 data).
 
+<p align="center">
+  <img src="docs/images/web/today.png" alt="Web viewer, Today: activity rings with Move, Exercise and Stand, highlight cards with sparklines for steps, active energy, resting heart rate, sleep, HRV, distance, VO2 max and body weight, and recent workouts" width="49%">
+  <img src="docs/images/web/workouts.png" alt="Web viewer, Workouts: session, time, energy and distance totals over a list of logged workouts with duration, calories and distance" width="49%">
+</p>
+
+<p align="center">
+  <img src="docs/images/server/grafana-health.png" alt="Grafana PulsHealth dashboard: heart rate with workout annotations, daily steps, a device aggregate series, the metric explorer and sleep stages over the last seven days" width="80%">
+</p>
+
+The self-hosted web viewer (`web/`, Today and Workouts) and the provisioned
+Grafana dashboard (`server/grafana/`), both filled with generated demo data:
+the viewer's own local demo mode and a throwaway stack seeded through ingest
+with synthetic batches. No screenshot in this repository shows anyone's real
+health data.
+
 The database's data model, table guide and query patterns (including how to
 avoid iPhone + Watch double counting) are in
 [`docs/database-guide.md`](docs/database-guide.md).
