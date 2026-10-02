@@ -394,7 +394,7 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
                 </div>
                 <CardTitle className="transition-colors group-hover:text-brand">Knowledge base</CardTitle>
                 <CardDescription className="text-base">
-                  What each of the 177 Apple Health types measures: sampling, typical ranges, how
+                  What each of the 178 Apple Health types measures: sampling, typical ranges, how
                   devices differ, and the limits of the number.
                 </CardDescription>
               </CardHeader>
