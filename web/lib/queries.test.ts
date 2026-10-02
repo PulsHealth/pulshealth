@@ -105,28 +105,99 @@ describe("query semantics", () => {
     expect(yearSql).toContain("time_bucket($1::interval");
   });
 
+  it("reads charts from metric_daily or raw samples, never aggregate_samples directly", async () => {
+    // metric_daily already prefers the phone's daily aggregate day by day and
+    // falls back to raw rollups; reading aggregate_samples directly lost today
+    // and charted null buckets as zero.
+    const { getSeries } = await import("./queries");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "30D");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", "D");
+    const sql = queryMock.mock.calls.map(([text]) => text as string);
+    expect(sql.some((text) => /aggregate_(series|samples)/.test(text))).toBe(false);
+  });
+
   it("aligns chart windows to the bucket grain in the viewer's zone", async () => {
     const { getSeries } = await import("./queries");
-    await getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", "W");
+    await getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", "7D");
     await getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "Y");
-    await getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "M");
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "30D");
 
     const windows = queryMock.mock.calls
-      .map(([sql]) => sql as string)
-      .filter((sql) => /FROM (quantity|category)_samples/.test(sql));
+      .map(([sql, params]) => ({ sql: sql as string, params }))
+      .filter(({ sql }) => /FROM (quantity|category)_samples/.test(sql));
+
     expect(windows).toHaveLength(3);
-    for (const sql of windows) {
+
+    for (const { sql } of windows) {
       // Never a bare `start_ts >= $n`: that made the first day/week bucket a
       // partial slice from "now − span" to the next boundary.
       expect(sql, sql).not.toMatch(/start_ts >= \$\d\b/);
       expect(sql, sql).toMatch(/start_ts >= time_bucket\(\$1::interval, \$\d::timestamptz, \$\d::text\)/);
     }
+
+    expect(windows[0].params).toContain("1 day");
+    expect(windows[1].params).toContain("1 week");
+    expect(windows[2].params).toContain("1 day");
+  });
+
+  it("starts All Time at the type's earliest sample", async () => {
+    const { getSeries } = await import("./queries");
+    const user = "33333333-3333-4333-8333-333333333333"; // own stats cache entry
+    const earliest = Date.now() - 200 * 86_400_000;
+    queryMock.mockImplementation((text: string) => {
+      if (text.includes("SELECT st.identifier,")) {
+        return Promise.resolve([{
+          identifier: "HKQuantityTypeIdentifierHeartRate", rows: "10", earliest: String(earliest), latest: String(Date.now()),
+        }]);
+      }
+      return Promise.resolve([]);
+    });
+    const series = await getSeries(user, "HKQuantityTypeIdentifierHeartRate", "ALL");
+    const [, params] = queryMock.mock.calls.find(([sql]) => /time_bucket[\s\S]*FROM quantity_samples/.test(sql)) ?? [];
+    expect(params?.[0]).toBe("1 week");
+    expect(params?.[2]).toEqual(new Date(earliest));
+    expect(series.bucketMs).toBe(7 * 86_400_000);
+
+    // A type with no samples has no All Time window, and no chart query runs.
+    queryMock.mockClear();
+    const none = await getSeries(user, "HKQuantityTypeIdentifierBodyMass", "ALL");
+    expect(none.points).toEqual([]);
+    expect(queryMock.mock.calls.some(([sql]) => /time_bucket/.test(sql))).toBe(false);
+  });
+
+  it("binds the time zone wherever a query expects one", async () => {
+    // Every `$n::text` a query hands to time_bucket or AT TIME ZONE must be
+    // the zone: a renumbered parameter list that left a SELECT list behind
+    // once bucketed by the user id, which Postgres rejected as a time zone
+    // ("time zone \"<uuid>\" not recognized").
+    const { getSeries } = await import("./queries");
+    for (const id of [
+      "HKCategoryTypeIdentifierSleepAnalysis",
+      "HKCategoryTypeIdentifierMindfulSession",
+      "HKCategoryTypeIdentifierAppleStandHour",
+      "HKQuantityTypeIdentifierStepCount",
+      "HKQuantityTypeIdentifierHeartRate",
+    ]) {
+      await getSeries(USER_ID, id, "30D");
+      await getSeries(USER_ID, id, "D");
+      await getSeries(USER_ID, id, "ALL");
+    }
+    const charts = queryMock.mock.calls.filter(([sql]) => /time_bucket/.test(sql as string));
+    expect(charts.length).toBeGreaterThanOrEqual(10);
+    for (const [sql, params] of charts as [string, unknown[]][]) {
+      const zones = [
+        ...sql.matchAll(/time_bucket\([^;]*?, *\$(\d+)::text\)/g),
+        ...sql.matchAll(/AT TIME ZONE \$(\d+)::text/g),
+      ].map((m) => Number(m[1]));
+      expect(zones.length, sql).toBeGreaterThan(0);
+      for (const n of zones) expect(params[n - 1], `$${n} in ${sql}`).toBe("America/Los_Angeles");
+    }
   });
 
   it("attributes sleep to the wake day and dedups duration sources", async () => {
     const { getSeries } = await import("./queries");
-    await getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", "M");
-    await getSeries(USER_ID, "HKCategoryTypeIdentifierMindfulSession", "M");
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", "30D");
+    await getSeries(USER_ID, "HKCategoryTypeIdentifierMindfulSession", "30D");
 
     const [sleep, mindful] = queryMock.mock.calls
       .map(([sql]) => sql as string)
@@ -145,7 +216,7 @@ describe("query semantics", () => {
   it("scopes all health-data SQL and uses local Today boundaries", async () => {
     const queries = await import("./queries");
     await queries.getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "D");
-    await queries.getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "M");
+    await queries.getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", "30D");
     await queries.getLatestMany(USER_ID, ["HKQuantityTypeIdentifierHeartRate"]);
     await queries.getTodayTotals(USER_ID, ["HKQuantityTypeIdentifierStepCount"]);
     await queries.getActivityRings(USER_ID);

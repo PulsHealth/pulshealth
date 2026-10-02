@@ -45,9 +45,9 @@ export function defaultAgg(identifier: string): "sum" | "avg" {
 export interface RangeSpec {
   key: RangeKey;
   label: string;
-  /** how far back from now, in ms */
-  spanMs: number;
-  /** Postgres time_bucket interval literal */
+  /** how far back from now, in ms; null for ALL, which starts at the earliest sample */
+  spanMs: number | null;
+  /** Postgres time_bucket interval literal (ALL's is resolved per series; see resolvePresetWindow) */
   bucket: string;
   bucketMs: number;
 }
@@ -55,18 +55,64 @@ export interface RangeSpec {
 const HOUR = 3600_000;
 const DAY = 86_400_000;
 const WEEK = 7 * DAY;
+const MONTH = 30 * DAY;
+
+/** A bucket that keeps a chart of `durationMs` to roughly 30–90 points. */
+export function bucketForDuration(durationMs: number): {
+  bucket: string;
+  bucketMs: number;
+} {
+  if (durationMs <= 90 * DAY) return { bucket: "1 day", bucketMs: DAY };
+  if (durationMs <= 365 * DAY) return { bucket: "1 week", bucketMs: WEEK };
+  if (durationMs <= 730 * DAY) return { bucket: "2 weeks", bucketMs: 14 * DAY };
+  if (durationMs <= 1825 * DAY) return { bucket: "1 month", bucketMs: MONTH };
+  return { bucket: "3 months", bucketMs: 90 * DAY };
+}
 
 export const RANGES: Record<RangeKey, RangeSpec> = {
   D: { key: "D", label: "Day", spanMs: DAY, bucket: "1 hour", bucketMs: HOUR },
-  W: { key: "W", label: "Week", spanMs: 7 * DAY, bucket: "1 day", bucketMs: DAY },
-  M: { key: "M", label: "Month", spanMs: 30 * DAY, bucket: "1 day", bucketMs: DAY },
+  "7D": { key: "7D", label: "7 Days", spanMs: 7 * DAY, bucket: "1 day", bucketMs: DAY },
+  "30D": { key: "30D", label: "30 Days", spanMs: 30 * DAY, bucket: "1 day", bucketMs: DAY },
+  "90D": { key: "90D", label: "90 Days", spanMs: 90 * DAY, bucket: "1 day", bucketMs: DAY },
   "6M": { key: "6M", label: "6 Months", spanMs: 182 * DAY, bucket: "1 week", bucketMs: WEEK },
-  Y: { key: "Y", label: "Year", spanMs: 365 * DAY, bucket: "1 week", bucketMs: WEEK },
+  Y: { key: "Y", label: "1 Year", spanMs: 365 * DAY, bucket: "1 week", bucketMs: WEEK },
+  "2Y": { key: "2Y", label: "2 Years", spanMs: 730 * DAY, bucket: "2 weeks", bucketMs: 14 * DAY },
+  "5Y": { key: "5Y", label: "5 Years", spanMs: 1825 * DAY, bucket: "1 month", bucketMs: MONTH },
+  ALL: { key: "ALL", label: "All Time", spanMs: null, bucket: "3 months", bucketMs: 90 * DAY },
 };
 
-export const RANGE_ORDER: RangeKey[] = ["D", "W", "M", "6M", "Y"];
+export const RANGE_ORDER: RangeKey[] = ["D", "7D", "30D", "90D", "6M", "Y", "2Y", "5Y", "ALL"];
+
+// Links from before the longer ranges used W (week) and M (month); they are
+// the same windows as 7D and 30D.
+const RANGE_ALIASES: Record<string, RangeKey> = { W: "7D", M: "30D" };
 
 export function parseRange(v: string | null | undefined): RangeKey {
   if (v && (RANGE_ORDER as string[]).includes(v)) return v as RangeKey;
-  return "W";
+  return (v && RANGE_ALIASES[v]) || "7D";
+}
+
+/** Where a preset's chart starts, and its bucket. */
+export interface SeriesWindow {
+  start: Date;
+  bucket: string;
+  bucketMs: number;
+}
+
+/**
+ * The window a preset covers at `now`. ALL starts at the series' earliest
+ * sample and picks its bucket from that span, so a year of data is not four
+ * quarterly bars; with no sample at all there is no window (null).
+ */
+export function resolvePresetWindow(
+  range: RangeKey,
+  now: Date,
+  earliestMs?: number | null,
+): SeriesWindow | null {
+  const spec = RANGES[range];
+  if (spec.spanMs != null) {
+    return { start: new Date(now.getTime() - spec.spanMs), bucket: spec.bucket, bucketMs: spec.bucketMs };
+  }
+  if (earliestMs == null) return null;
+  return { start: new Date(earliestMs), ...bucketForDuration(now.getTime() - earliestMs) };
 }
