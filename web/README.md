@@ -198,14 +198,17 @@ Details:
 - The session cookie `__Host-puls-session` is `HttpOnly; Secure;
   SameSite=Lax; Path=/` and carries 32 random bytes; the database keeps only
   their SHA-256 (`auth.sessions`). Sessions last 30 days from last use. Every
-  sign-in gets a new session id, and signing out deletes the session row, so
-  a copy of the cookie stops working.
+  sign-in gets a new session id, signing out deletes the session row (so a
+  copy of the cookie stops working), and a password change or an invite
+  reset ends every session of the account and starts a fresh one.
 - Every state-changing request must carry an `Origin` of this viewer
   (`lib/accounts/request.ts`), on top of `SameSite=Lax`.
 - Failed sign-ins, bad invite links and wrong current passwords are throttled
   per client address and per email address, with the same token bucket as
   ingest and the product API (10, refilling 10 a minute; only failures draw,
-  and an exhausted bucket is refused before the password is looked at).
+  and an exhausted bucket is refused before the password is looked at). An
+  attempt takes its token before the check and gets it back on success, so
+  a burst of parallel guesses cannot all slip past while scrypt runs.
   Nothing about a failed attempt is logged.
 - The client address is `X-Forwarded-For`'s first entry, or the header
   `WEB_CLIENT_IP_HEADER` names (`cf-connecting-ip` behind Cloudflare, which

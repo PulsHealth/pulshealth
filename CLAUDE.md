@@ -413,7 +413,11 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   switcher — and one image serves all three modes (`web/lib/mode.ts`).
   Accounts mode refuses plain HTTP (403, except `/api/healthz`), checks
   `Origin` on every state-changing request, and throttles failed sign-ins
-  with the ingest/API failure-only bucket, keyed per address and per email.
+  with the ingest/API failure-only bucket, keyed per address and per email —
+  but the token is taken *before* the scrypt check and refunded on success
+  (`takeAll`/`refundAll`), or parallel guesses all pass the check first;
+  never charge on a GET (an `<img>` can trigger one). `safeReturnPath`
+  checks the *parsed* path too: `/.//x` parses to `//x`.
 - **Account identity lives in `auth.*`, never in `users`.** `users.name` and
   `users.email` are the phone's HealthKit profile, overwritten by every
   `{"profile":…}` line. Accounts are invite-only (`make web-invite`); an
