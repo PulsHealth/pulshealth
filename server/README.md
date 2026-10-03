@@ -81,11 +81,18 @@ comments. Beyond the passwords and tokens:
   rows. On every start `db/migrations/013_time_zone.sh` validates it against
   `pg_timezone_names` (an unknown name stops the stack) and stores it with
   `ALTER DATABASE … SET puls.time_zone`, read by `puls_time_zone()`. Compose
-  also hands it to `api` (which refuses an invalid name), `mcp` and `web`. To
-  change it, edit `.env` and:
+  also hands it to `api` and `web`. The API refuses an invalid name, and
+  compares its zone with `puls_time_zone()` at startup: a mismatch (a
+  database whose migrate has not re-run since `.env` changed, or a zone set
+  by hand) stops it with a log line naming both, since its days would
+  otherwise disagree with `metric_daily` silently; a database without the
+  function is logged and accepted. The API reports the zone as `timeZone`
+  on `GET /v1/users`, and the MCP server adopts it from there (set
+  `PULS_TIME_ZONE` on the MCP only to override it; see
+  `server/mcp/README.md`). To change it, edit `.env` and:
 
   ```bash
-  docker compose up -d     # migrate re-stores it; api/mcp/web are recreated
+  docker compose up -d     # migrate re-stores it; api/web are recreated, mcp restarts with api
   docker compose exec db psql -U postgres -d postgres -tAc "SELECT puls_time_zone()"
   ```
 
@@ -112,11 +119,17 @@ comments. Beyond the passwords and tokens:
 - `PULS_ALLOW_SHARED_TOKEN` — whether ingest accepts the shared `PULS_TOKEN`;
   default `true`. `false` (or an empty `PULS_TOKEN`) leaves only per-device
   tokens. See "Tokens".
-- `TRUST_PROXY_HEADERS` — whether ingest and the product API believe
-  `X-Forwarded-*`: which client a failed authentication is charged to, and
-  which host `GET /openapi.json` advertises in `servers[0].url`. Default
-  `false`, which answers from the request's own `Host`. Turn it on only
-  behind a proxy that owns those headers (see "Rate limiting").
+- `TRUST_PROXY_HEADERS` — whether ingest, the product API and the MCP
+  server believe `X-Forwarded-*`: which client a failed authentication is
+  charged to, and which host `GET /openapi.json` advertises in
+  `servers[0].url`. Default `false`, which answers from the request's own
+  `Host`. Turn it on only behind a proxy that owns those headers (see "Rate
+  limiting").
+- **On/off settings** (`TRUST_PROXY_HEADERS`, `PULS_ALLOW_SHARED_TOKEN`,
+  `PULS_MULTI_USER`, `WEB_ACCOUNTS`, ...) are read one way by every service:
+  `true`, `1`, `yes`, `on` or `false`, `0`, `no`, `off`, in any case;
+  empty means the default. Ingest, the API and the MCP server refuse to
+  start on anything else, naming the variable, rather than guess.
 - `PULS_USER_ID`, `PULS_MULTI_USER` — whose data the product API (and, by
   default, the viewer) answers for, and whether an API request may name
   someone else (see "Product API"). The viewer never reads
@@ -144,7 +157,22 @@ curl -s localhost:8080/healthz && curl -s localhost:8081/healthz
 ```
 
 `migrate` runs before `ingest`, `api`, `mcp`, `web` and `grafana` start, so
-new schema files are applied before the code that needs them. If a migration
+new schema files are applied before the code that needs them.
+
+**Health checks.** `ingest`, `api`, `mcp` and `web` carry Compose
+healthchecks, so `docker compose ps` shows each as `healthy` or `unhealthy`
+and `docker compose up -d --wait` returns only once they are healthy. The
+Go images are distroless (no shell, no curl), so each binary checks itself:
+`ingest healthcheck`, `api healthcheck` and `mcp healthcheck` GET their own
+`/healthz` on loopback and exit 0 on a 200 (`docker compose exec api /api
+healthcheck` runs it by hand); `web` asks `/api/healthz` with `node`.
+Healthy means able to do the job: ingest and the API when their database
+answers, mcp when the API does (it also waits for a healthy `api` to
+start). **Docker does not restart an unhealthy container** —
+`restart: unless-stopped` acts only when the process exits — so a wedged
+service stays up and `unhealthy` until something acts on it: point your
+monitoring at `docker compose ps` (or `docker events --filter
+event=health_status`), or restart it yourself. If a migration
 fails, the app services are not started (`dependency failed to start`) and
 the previous containers keep running; fix the cause and `docker compose up
 -d` again. Re-applying the schema from scratch means dropping the database
@@ -467,9 +495,14 @@ Retry-After: 7
 {"error":"too many failed authentications"}
 ```
 
-and the server logs the address, the path and the wait. The product API also
-logs every failed authentication (`auth failed`, with address and path, never
-the token).
+and the server logs the address, the path and the wait. The product API and
+the MCP server also log every failed authentication (`auth failed`, with
+address and path, never the token).
+
+**The MCP server's `--http` mode** (the `mcp` service, `/mcp` behind
+`PULS_MCP_TOKEN`) applies the same limiter with the same numbers, the same
+`TRUST_PROXY_HEADERS` switch and the same last-entry rule. The three copies
+of `ratelimit.go` are kept identical by `scripts/check-go-copies.sh` in CI.
 
 - **A correct token is never throttled.** Only failures draw from the bucket,
   so a backfill — thousands of authenticated uploads in a row — never
@@ -672,7 +705,8 @@ default user. A non-UUID value is a `400`. Neither counts against the
 failed-authentication limit, and an unknown id reads as a user with no
 data. `GET /v1/users` lists every user (only the default with the gate off)
 with name, e-mail, `createdAt`, `lastSync`, `batches` and
-`uploadedSamples`, plus `default` and `multiUser` flags. **Turning the gate
+`uploadedSamples`, plus `default` and `multiUser` flags and `timeZone`, the
+zone every local day is cut in (`PULS_TIME_ZONE`). **Turning the gate
 on widens what the one `PULS_API_TOKEN` reads from one person to everyone
 on the server** — and to any ChatGPT Action built from `/openapi.json`.
 
@@ -702,8 +736,11 @@ services should store the base URL as `PULS_API_BASE_URL` and the token as
 
 - `GET /v1/users`, `GET /v1/profile`
 - `GET /v1/catalog/types` — every type with data, aggregate-only ones
-  included: `rawRows`, `aggregateRows` and `rows` (their sum). Cached
-  briefly, since it counts rows.
+  included: `rawRows`, `aggregateRows` and `rows` (their sum). It counts
+  every row the user has, so it is cached per user for five minutes; after
+  that the cached answer is still served (for up to an hour) while one
+  background refresh replaces it, so only a user's first request waits for
+  the count.
 - `GET /v1/metrics/latest?types=...`
 - `GET /v1/metrics/daily?types=...&start=...&end=...&limit=10000&offset=0` —
   one value per local day per type, paged in **days across the requested
@@ -744,6 +781,16 @@ services should store the base URL as `PULS_API_BASE_URL` and the token as
   `Retry-After`. `tools/puls-export` is a CLI for it; columns and failure
   modes are in [`docs/export.md`](../docs/export.md).
 - `GET /healthz` — liveness and DB ping (no auth).
+
+Failures the middleware answers on any `/v1` route: `401` (wrong or missing
+token), `429` with `Retry-After` (see "Rate limiting"), `403` (`user=` for
+someone else with the gate off) and, on everything but the export, `504`
+when a query runs past 30 seconds. `/openapi.json` documents them per route.
+On shutdown (`docker compose stop`/`up -d` recreating it) requests get the
+15-second grace; then whatever is still running is cancelled, and an export
+still streaming is **aborted** (the client sees a broken transfer, never a
+short file that looks complete), so the container exits inside Compose's
+30-second `stop_grace_period`.
 
 ```bash
 curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
@@ -1064,7 +1111,10 @@ DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" go
 
 The product API's fixture-writing integration tests also need
 `PULS_API_WRITE_INTEGRATION_TESTS=1`; never run them against a live or
-shared database. They read through `DATABASE_URL` and write fixtures through
+shared database. Without their variables the integration tests skip, so a
+plain `go test ./...` stays green; with `PULS_CI_REQUIRE_INTEGRATION=1` (CI's
+db-integration job) a missing `DATABASE_URL` or write flag fails them
+instead, so a job that lost its database cannot pass by testing nothing. They read through `DATABASE_URL` and write fixtures through
 `ADMIN_DATABASE_URL` (falling back to `DATABASE_URL`), so pointing the first
 at `api_reader` and the second at the superuser tests the role's grants as
 well as the queries.

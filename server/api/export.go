@@ -94,6 +94,11 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	client := r.Context()
 	ctx, cancel := context.WithTimeout(client, exportMaxDuration)
 	defer cancel()
+	// Shutdown ends it too, once its grace has run out (see run): like the
+	// ceiling, that is not the client's doing, so a stream cut short by it
+	// is aborted below, never closed as if the file were complete.
+	stopAtShutdown := context.AfterFunc(s.lifetimeContext(), cancel)
+	defer stopAtShutdown()
 	r = r.WithContext(ctx)
 
 	format, err := exportFormatFor(r.URL.Query().Get("format"))
@@ -167,11 +172,11 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// The 200 and some rows are already on the wire (a write that timed
-		// out, or the ceiling, ends up here too), so the only honest signal
-		// left is an incomplete transfer: abort the response rather than
-		// close the chunked body cleanly on a short file. net/http
-		// recognises ErrAbortHandler, drops the connection without a stack
-		// trace, and the client's read fails.
+		// out, the ceiling and a shutdown past its grace end up here too),
+		// so the only honest signal left is an incomplete transfer: abort
+		// the response rather than close the chunked body cleanly on a
+		// short file. net/http recognises ErrAbortHandler, drops the
+		// connection without a stack trace, and the client's read fails.
 		//
 		// A test that drives this handler through httptest.NewRecorder() with
 		// a store that fails *after* the first row will see that panic

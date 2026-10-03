@@ -34,6 +34,11 @@ type UsersResponse struct {
 	Default string `json:"default"`
 	// Whether ?user= may name anyone else (PULS_MULTI_USER).
 	MultiUser bool `json:"multiUser"`
+	// The IANA zone every local day this API answers with is cut in
+	// (PULS_TIME_ZONE, checked against the database's puls_time_zone() at
+	// startup). A client that speaks in dates — the MCP server — adopts it
+	// instead of having to be told the same value separately.
+	TimeZone string `json:"timeZone"`
 }
 
 // Users returns every users row, oldest first, with its upload counts.
@@ -97,5 +102,10 @@ func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 		}
 		users = kept
 	}
-	writeJSON(w, http.StatusOK, UsersResponse{Users: users, Default: def, MultiUser: s.multiUser})
+	writeJSON(w, http.StatusOK, UsersResponse{
+		Users:     users,
+		Default:   def,
+		MultiUser: s.multiUser,
+		TimeZone:  s.location().String(),
+	})
 }

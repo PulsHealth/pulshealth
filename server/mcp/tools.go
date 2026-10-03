@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 	"time"
@@ -32,19 +33,29 @@ const (
 // service holds what every tool needs: the product API and the calendar
 // zone every day boundary is computed in. now is swapped in tests.
 type service struct {
-	api *APIClient
-	loc *time.Location
-	now func() time.Time
+	api  *APIClient
+	zone *serverZone
+	now  func() time.Time
+	log  *slog.Logger
 }
 
+// newService builds the tools over api. loc is the zone every date is in
+// (PULS_TIME_ZONE); nil means "the product API's", learned from GET
+// /v1/users before the first tool call (see ensureZone).
 func newService(api *APIClient, loc *time.Location) *service {
+	z := &serverZone{settled: loc != nil}
 	if loc == nil {
 		loc = time.UTC
 	}
-	return &service{api: api, loc: loc, now: time.Now}
+	z.loc.Store(loc)
+	return &service{api: api, zone: z, now: time.Now, log: slog.Default()}
 }
 
-func (s *service) localNow() time.Time { return s.now().In(s.loc) }
+func (s *service) localNow() time.Time { return s.now().In(s.location()) }
+
+// location is the zone dates are in: PULS_TIME_ZONE, the product API's once
+// learned, UTC until then.
+func (s *service) location() *time.Location { return s.zone.loc.Load() }
 
 // serverInstructions reach the model with the initialize handshake, before
 // it has read any tool description.
@@ -66,6 +77,7 @@ func (s *service) newServer(version string) *mcp.Server {
 		Version:    version,
 		WebsiteURL: "https://github.com/PulsHealth/pulshealth",
 	}, &mcp.ServerOptions{Instructions: serverInstructions})
+	server.AddReceivingMiddleware(s.zoneMiddleware)
 	s.addTools(server)
 	s.addResources(server)
 	s.addPrompts(server)
@@ -574,8 +586,8 @@ func (s *service) listUsers(ctx context.Context, _ *mcp.CallToolRequest, _ any) 
 			Name:            u.Name,
 			Email:           u.Email,
 			IsDefault:       u.UserID == resp.Default,
-			CreatedAt:       formatInstant(u.CreatedAt, s.loc),
-			LastSync:        formatInstantPtr(u.LastSync, s.loc),
+			CreatedAt:       formatInstant(u.CreatedAt, s.location()),
+			LastSync:        formatInstantPtr(u.LastSync, s.location()),
 			Batches:         u.Batches,
 			UploadedSamples: u.UploadedSamples,
 		})
@@ -598,7 +610,7 @@ func (s *service) getProfile(ctx context.Context, _ *mcp.CallToolRequest, in use
 		Name:          p.Name,
 		Email:         p.Email,
 		BiologicalSex: p.BiologicalSex,
-		TimeZone:      s.loc.String(),
+		TimeZone:      s.location().String(),
 		Today:         now.Format(dateLayout),
 		Now:           now.Format(time.RFC3339),
 	}
@@ -647,7 +659,7 @@ func (s *service) catalog(ctx context.Context, api *APIClient, userID string) (c
 	}
 	out := catalogOutput{
 		UserID:   userID,
-		TimeZone: s.loc.String(),
+		TimeZone: s.location().String(),
 		Today:    s.localNow().Format(dateLayout),
 		Types:    make([]catalogEntry, 0, len(types)),
 	}
@@ -659,8 +671,8 @@ func (s *service) catalog(ctx context.Context, api *APIClient, userID string) (c
 			Rows:          t.Rows,
 			RawRows:       t.RawRows,
 			AggregateRows: t.AggregateRows,
-			Earliest:      formatInstantPtr(t.Earliest, s.loc),
-			Latest:        formatInstantPtr(t.Latest, s.loc),
+			Earliest:      formatInstantPtr(t.Earliest, s.location()),
+			Latest:        formatInstantPtr(t.Latest, s.location()),
 		})
 	}
 	return out, nil
@@ -734,7 +746,7 @@ func (s *service) getLatestMetrics(ctx context.Context, _ *mcp.CallToolRequest, 
 			Identifier: m.Identifier,
 			Unit:       m.Unit,
 			Value:      round4Ptr(m.Value),
-			Timestamp:  formatInstant(m.Timestamp, s.loc),
+			Timestamp:  formatInstant(m.Timestamp, s.location()),
 		})
 	}
 	out.Missing = missingTypes(types, returned)
@@ -746,7 +758,7 @@ func (s *service) getDailyMetrics(ctx context.Context, _ *mcp.CallToolRequest, i
 	if err != nil {
 		return nil, nil, err
 	}
-	win, err := newDayWindow(in.StartDate, in.EndDate, s.loc, maxDaysPerCall)
+	win, err := newDayWindow(in.StartDate, in.EndDate, s.location(), maxDaysPerCall)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -760,7 +772,7 @@ func (s *service) getDailyMetrics(ctx context.Context, _ *mcp.CallToolRequest, i
 	}
 	out := dailyOutput{
 		UserID:    userID,
-		TimeZone:  s.loc.String(),
+		TimeZone:  s.location().String(),
 		StartDate: win.StartDate,
 		EndDate:   win.EndDate,
 		Metrics:   make([]dailyEntry, 0, len(metrics)),
@@ -779,7 +791,7 @@ func (s *service) getDailyMetrics(ctx context.Context, _ *mcp.CallToolRequest, i
 }
 
 func (s *service) getActivityRings(ctx context.Context, _ *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
-	win, err := newDayWindow(in.StartDate, in.EndDate, s.loc, maxDaysPerCall)
+	win, err := newDayWindow(in.StartDate, in.EndDate, s.location(), maxDaysPerCall)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -793,7 +805,7 @@ func (s *service) getActivityRings(ctx context.Context, _ *mcp.CallToolRequest, 
 	}
 	out := ringsOutput{
 		UserID:    userID,
-		TimeZone:  s.loc.String(),
+		TimeZone:  s.location().String(),
 		StartDate: win.StartDate,
 		EndDate:   win.EndDate,
 		Days:      make([]ringDay, 0, len(days)),
@@ -823,8 +835,8 @@ func (s *service) workoutEntry(w WorkoutSummary) workoutEntry {
 	return workoutEntry{
 		UUID:             w.UUID,
 		ActivityType:     w.ActivityType,
-		Start:            formatInstant(w.Start, s.loc),
-		End:              formatInstant(w.End, s.loc),
+		Start:            formatInstant(w.Start, s.location()),
+		End:              formatInstant(w.End, s.location()),
 		DurationS:        round4Ptr(w.DurationS),
 		DistanceM:        round4Ptr(w.DistanceM),
 		EnergyKcal:       round4Ptr(w.EnergyKcal),
@@ -850,7 +862,7 @@ func (s *service) listWorkouts(ctx context.Context, _ *mcp.CallToolRequest, in w
 
 	var start, end time.Time
 	if in.StartDate != "" {
-		t, err := parseDate(in.StartDate, "start_date", s.loc)
+		t, err := parseDate(in.StartDate, "start_date", s.location())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -859,7 +871,7 @@ func (s *service) listWorkouts(ctx context.Context, _ *mcp.CallToolRequest, in w
 		f.StartMS = &ms
 	}
 	if in.EndDate != "" {
-		t, err := parseDate(in.EndDate, "end_date", s.loc)
+		t, err := parseDate(in.EndDate, "end_date", s.location())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -879,7 +891,7 @@ func (s *service) listWorkouts(ctx context.Context, _ *mcp.CallToolRequest, in w
 	if err != nil {
 		return nil, nil, err
 	}
-	out := workoutsOutput{UserID: userID, TimeZone: s.loc.String(), Workouts: make([]workoutEntry, 0, len(page.Workouts))}
+	out := workoutsOutput{UserID: userID, TimeZone: s.location().String(), Workouts: make([]workoutEntry, 0, len(page.Workouts))}
 	for _, w := range page.Workouts {
 		out.Workouts = append(out.Workouts, s.workoutEntry(w))
 	}
@@ -926,7 +938,7 @@ func (s *service) getWorkout(ctx context.Context, _ *mcp.CallToolRequest, in wor
 }
 
 func (s *service) getSleep(ctx context.Context, _ *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
-	win, err := newDayWindow(in.StartDate, in.EndDate, s.loc, maxDaysPerCall)
+	win, err := newDayWindow(in.StartDate, in.EndDate, s.location(), maxDaysPerCall)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -940,7 +952,7 @@ func (s *service) getSleep(ctx context.Context, _ *mcp.CallToolRequest, in range
 	}
 	out := sleepOutput{
 		UserID:    userID,
-		TimeZone:  s.loc.String(),
+		TimeZone:  s.location().String(),
 		StartDate: win.StartDate,
 		EndDate:   win.EndDate,
 		Nights:    make([]sleepNight, 0, len(nights)),
@@ -948,8 +960,8 @@ func (s *service) getSleep(ctx context.Context, _ *mcp.CallToolRequest, in range
 	for _, n := range nights {
 		out.Nights = append(out.Nights, sleepNight{
 			Date:      n.Date,
-			Start:     formatInstant(n.Start, s.loc),
-			End:       formatInstant(n.End, s.loc),
+			Start:     formatInstant(n.Start, s.location()),
+			End:       formatInstant(n.End, s.location()),
 			InBedMin:  round4(n.InBedMinutes),
 			AsleepMin: round4(n.AsleepMinutes),
 			Stages: sleepStageBreak{
@@ -970,7 +982,7 @@ func (s *service) getSamples(ctx context.Context, _ *mcp.CallToolRequest, in sam
 	if typ == "" {
 		return nil, nil, errors.New("type must name one HealthKit identifier, e.g. HKQuantityTypeIdentifierHeartRate")
 	}
-	win, err := newDayWindow(in.StartDate, in.EndDate, s.loc, maxSampleDays)
+	win, err := newDayWindow(in.StartDate, in.EndDate, s.location(), maxSampleDays)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -998,7 +1010,7 @@ func (s *service) getSamples(ctx context.Context, _ *mcp.CallToolRequest, in sam
 	}
 	out := samplesOutput{
 		UserID:    userID,
-		TimeZone:  s.loc.String(),
+		TimeZone:  s.location().String(),
 		Type:      page.Type,
 		Kind:      page.Kind,
 		Unit:      page.Unit,
@@ -1009,8 +1021,8 @@ func (s *service) getSamples(ctx context.Context, _ *mcp.CallToolRequest, in sam
 	for _, sample := range page.Samples {
 		out.Samples = append(out.Samples, sampleEntry{
 			UUID:   sample.UUID,
-			Start:  formatInstant(sample.Start, s.loc),
-			End:    formatInstant(sample.End, s.loc),
+			Start:  formatInstant(sample.Start, s.location()),
+			End:    formatInstant(sample.End, s.location()),
 			Value:  round4Ptr(sample.Value),
 			Label:  sample.Label,
 			Source: sample.Source,
@@ -1057,10 +1069,10 @@ func (s *service) getWorkoutSeries(ctx context.Context, _ *mcp.CallToolRequest, 
 	}
 	out := workoutSeriesOutput{
 		UserID:    userID,
-		TimeZone:  s.loc.String(),
+		TimeZone:  s.location().String(),
 		UUID:      resp.UUID,
-		Start:     formatInstant(resp.Start, s.loc),
-		End:       formatInstant(resp.End, s.loc),
+		Start:     formatInstant(resp.Start, s.location()),
+		End:       formatInstant(resp.End, s.location()),
 		MaxPoints: resp.MaxPoints,
 		Series:    make([]seriesEntry, 0, len(resp.Series)),
 	}
@@ -1087,7 +1099,7 @@ func (s *service) getWorkoutSeries(ctx context.Context, _ *mcp.CallToolRequest, 
 }
 
 func (s *service) getStateOfMind(ctx context.Context, _ *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
-	win, err := newDayWindow(in.StartDate, in.EndDate, s.loc, maxDaysPerCall)
+	win, err := newDayWindow(in.StartDate, in.EndDate, s.location(), maxDaysPerCall)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1101,7 +1113,7 @@ func (s *service) getStateOfMind(ctx context.Context, _ *mcp.CallToolRequest, in
 	}
 	out := stateOfMindOutput{
 		UserID:    userID,
-		TimeZone:  s.loc.String(),
+		TimeZone:  s.location().String(),
 		StartDate: win.StartDate,
 		EndDate:   win.EndDate,
 		Entries:   make([]stateOfMindEntry, 0, len(entries)),
@@ -1109,7 +1121,7 @@ func (s *service) getStateOfMind(ctx context.Context, _ *mcp.CallToolRequest, in
 	for _, e := range entries {
 		out.Entries = append(out.Entries, stateOfMindEntry{
 			Date:                  e.Date,
-			Timestamp:             formatInstant(e.Timestamp, s.loc),
+			Timestamp:             formatInstant(e.Timestamp, s.location()),
 			Kind:                  e.Kind,
 			Valence:               round4Ptr(e.Valence),
 			ValenceClassification: e.ValenceClassification,
@@ -1133,7 +1145,7 @@ func (s *service) humanizeTimes(items []map[string]any) []map[string]any {
 		m := make(map[string]any, len(item))
 		for k, v := range item {
 			if f, ok := v.(float64); ok && (k == "start" || k == "end") && f >= 1e11 {
-				m[k] = formatInstant(int64(f), s.loc)
+				m[k] = formatInstant(int64(f), s.location())
 				continue
 			}
 			m[k] = v

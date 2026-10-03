@@ -556,8 +556,10 @@ When one batch carries the same bucket twice, the last line wins.
 
 ### 6.5 Activity summaries
 
-Identity: `(user, localDate)`, falling back to the UTC calendar date of
-`date` only when `localDate` is absent (older clients; see
+Identity: `(user, localDate)`, falling back, only when `localDate` is
+absent, to the calendar date of `date` shifted by the line's
+`temporalContext.utcOffsetSeconds` if it carries one, else its UTC date
+(older clients; see
 [section 12](#12-known-discrepancies-between-the-swift-models-and-the-go-parser)
 for why the fallback is imperfect). **Replace, not merge:** the line is the
 whole day ([4.6](#46-activity-summary)), so an upsert overwrites every stored
@@ -910,7 +912,7 @@ protocol; each is called out so a receiver author can choose deliberately.
 | `tzdbVersion` | Always encoded, `""` when unknown | Optional | Treat empty and absent alike. |
 | Explicit nulls | Current builds omit absent optionals, `ActivitySummaryRow`'s rings included; older builds sent `null`; `ProfilePayload` and `AggregateSampleRow.value` always write explicit nulls | Absent and `null` are treated alike everywhere; an activity summary's absent ring overwrites the stored column with NULL | Receivers MUST treat them alike, including when overwriting ([6.5](#65-activity-summaries)); senders SHOULD keep writing the explicit nulls where this document says the key is present. |
 | `duration` aggregates' `unit` | Sends `s` | Registers the type with its catalog unit and ignores `s` | Store the unit per bucket if you need it. |
-| Activity-summary day without `localDate` | Older clients sent only `date` (start of the local day) | Falls back to the UTC date of `date` | East of UTC that is the previous day (a 00:00+02:00 instant is 22:00Z the day before). Current clients always send `localDate`; receivers MUST prefer it. |
+| Activity-summary day without `localDate` | Older clients sent only `date` (start of the local day) | Falls back to the date of `date` shifted by the line's `temporalContext.utcOffsetSeconds` when present, else its UTC date | Without an offset, east of UTC that is the previous day (a 00:00+02:00 instant is 22:00Z the day before). Current clients always send `localDate`; receivers MUST prefer it. |
 | `X-Batch-ID` vs body `batchID` | Always equal | Only logged when different | Receivers MAY trust either; the body is authoritative. |
 | Sample `value` on quantity kinds | Always set | Optional, stored NULL when absent | The schema leaves it optional to match the receiver; senders always send it. |
 | Route point `lat`/`lon` bounds | Core Location values | Not range-checked | The schema does not add bounds either. |

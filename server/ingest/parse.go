@@ -726,15 +726,15 @@ func nextLine(sc *bufio.Scanner) ([]byte, error) {
 	return nil, fmt.Errorf("unexpected end of body")
 }
 
-func strictUnmarshal(data []byte, v any) error {
-	return json.Unmarshal(data, v)
-}
-
+// scanUnmarshal decodes one line. Deliberately not strict: unknown fields are
+// ignored, because new optional fields are additive in protocol v1 (a v1
+// receiver must accept them; see docs/protocol/README.md).
+//
 // Scanner may return a final partial token together with an underlying reader
 // error. Prefer and preserve that error (notably *http.MaxBytesError) over the
 // secondary JSON syntax error caused by the truncated token.
 func scanUnmarshal(sc *bufio.Scanner, data []byte, v any) error {
-	err := strictUnmarshal(data, v)
+	err := json.Unmarshal(data, v)
 	if scanErr := sc.Err(); scanErr != nil {
 		return scanErr
 	}

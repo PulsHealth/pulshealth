@@ -99,7 +99,7 @@ func (s *service) addPrompts(server *mcp.Server) {
 	}, func(_ context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 		end := s.localNow()
 		if v := req.Params.Arguments["week_ending"]; v != "" {
-			t, err := parseDate(v, "week_ending", s.loc)
+			t, err := parseDate(v, "week_ending", s.location())
 			if err != nil {
 				return nil, err
 			}

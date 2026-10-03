@@ -139,7 +139,7 @@ const productAPIDocsHTML = `<!doctype html>
   <p class="muted">Read-only API for downstream products that use PulsHealth data.</p>
 
   <h2>Access</h2>
-  <p>Send <code>Authorization: Bearer $PULS_API_TOKEN</code> on every data request. Discovery endpoints <code>/</code>, <code>/docs</code>, <code>/openapi.json</code>, and <code>/healthz</code> are available without the token.</p>
+  <p>Send <code>Authorization: Bearer $PULS_API_TOKEN</code> on every data request. Discovery endpoints <code>/</code>, <code>/docs</code>, <code>/openapi.json</code>, and <code>/healthz</code> are available without the token. A wrong or missing token is a <code>401</code>; after ten of them from one address in quick succession, that address gets <code>429</code> with <code>Retry-After</code> (about one more attempt a minute) until it slows down. A correct token is never throttled.</p>
   <pre><code>curl -H "Authorization: Bearer $PULS_API_TOKEN" "$PULS_API_BASE_URL/v1/catalog/types"</code></pre>
   <p>Every data request is answered for one user. By default that is the deployment&rsquo;s <code>PULS_USER_ID</code>; add <code>user=&lt;uuid&gt;</code> to any <code>/v1</code> query to ask about someone else. That is only allowed when the server runs with <code>PULS_MULTI_USER=true</code> &mdash; otherwise naming any other user is a <code>403</code>, never a quiet answer for the default user &mdash; and a value that is not a UUID is a <code>400</code>. Neither counts against the failed-authentication limit. <code>GET /v1/users</code> lists the users this deployment will answer for, with their upload counts.</p>
 
@@ -158,7 +158,7 @@ const productAPIDocsHTML = `<!doctype html>
   <table>
     <thead><tr><th>Method</th><th>Path</th><th>Query</th><th>Returns</th></tr></thead>
     <tbody>
-      <tr><td><code>GET</code></td><td><code>/v1/users</code></td><td></td><td>Who this deployment answers for: each user with name, e-mail, last sync and upload counts, plus the default user and whether <code>user=</code> may name others.</td></tr>
+      <tr><td><code>GET</code></td><td><code>/v1/users</code></td><td></td><td>Who this deployment answers for: each user with name, e-mail, last sync and upload counts, plus the default user, whether <code>user=</code> may name others, and <code>timeZone</code>, the <code>PULS_TIME_ZONE</code> every local day is cut in.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/profile</code></td><td></td><td>The user&rsquo;s profile fields.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/catalog/types</code></td><td></td><td>Available HealthKit identifiers, kind, unit, raw/aggregate row counts, earliest/latest timestamps.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/metrics/latest</code></td><td><code>types=a,b</code></td><td>Latest quantity value per requested identifier.</td></tr>
@@ -548,7 +548,7 @@ const productAPIOpenAPIJSON = `{
         "operationId": "listUsers",
         "summary": "Users this deployment answers for",
         "description": "Every user with the gate on (PULS_MULTI_USER=true); only the default user with it off. default is the user served when a request names none (PULS_USER_ID); multiUser says whether ?user= may name anyone else.",
-        "responses": { "200": { "description": "Users", "content": { "application/json": { "schema": { "type": "object", "properties": { "users": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }, "default": { "type": "string", "format": "uuid" }, "multiUser": { "type": "boolean" } } } } } } }
+        "responses": { "200": { "description": "Users", "content": { "application/json": { "schema": { "type": "object", "properties": { "users": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }, "default": { "type": "string", "format": "uuid" }, "multiUser": { "type": "boolean" }, "timeZone": { "type": "string", "description": "The IANA zone (PULS_TIME_ZONE) every local day this API answers with is cut in, e.g. Europe/Berlin; UTC when unset." } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/profile": {
@@ -556,7 +556,7 @@ const productAPIOpenAPIJSON = `{
         "operationId": "getProfile",
         "summary": "User profile",
         "parameters": [{ "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." }],
-        "responses": { "200": { "description": "Profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } }, "401": { "description": "Unauthorized" }, "404": { "description": "Profile not found" } }
+        "responses": { "200": { "description": "Profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } }, "401": { "description": "Unauthorized" }, "404": { "description": "Profile not found" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/catalog/types": {
@@ -564,7 +564,7 @@ const productAPIOpenAPIJSON = `{
         "operationId": "listCatalogTypes",
         "summary": "Available data types",
         "parameters": [{ "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." }],
-        "responses": { "200": { "description": "Catalog", "content": { "application/json": { "schema": { "type": "object", "properties": { "types": { "type": "array", "items": { "$ref": "#/components/schemas/CatalogType" } } } } } } } }
+        "responses": { "200": { "description": "Catalog", "content": { "application/json": { "schema": { "type": "object", "properties": { "types": { "type": "array", "items": { "$ref": "#/components/schemas/CatalogType" } } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/metrics/latest": {
@@ -574,7 +574,7 @@ const productAPIOpenAPIJSON = `{
         "parameters": [
           { "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." },
           { "name": "types", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers, at most 50." }],
-        "responses": { "200": { "description": "Latest metrics", "content": { "application/json": { "schema": { "type": "object", "properties": { "metrics": { "type": "array", "items": { "$ref": "#/components/schemas/LatestMetric" } } } } } } } }
+        "responses": { "200": { "description": "Latest metrics", "content": { "application/json": { "schema": { "type": "object", "properties": { "metrics": { "type": "array", "items": { "$ref": "#/components/schemas/LatestMetric" } } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/metrics/daily": {
@@ -590,7 +590,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 10000, "maximum": 50000 }, "description": "Day rows per page, across all requested types; larger values are clamped." },
           { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "default": 0 }, "description": "Day rows to skip; pass the previous page's nextOffset." }
         ],
-        "responses": { "200": { "description": "Daily metrics", "content": { "application/json": { "schema": { "type": "object", "properties": { "metrics": { "type": "array", "items": { "$ref": "#/components/schemas/DailyMetric" } }, "nextOffset": { "type": "integer", "description": "Offset to pass for the next page; a page with fewer day rows than limit means the end." } } } } } }, "400": { "description": "Missing types or range, or an invalid limit or offset" } }
+        "responses": { "200": { "description": "Daily metrics", "content": { "application/json": { "schema": { "type": "object", "properties": { "metrics": { "type": "array", "items": { "$ref": "#/components/schemas/DailyMetric" } }, "nextOffset": { "type": "integer", "description": "Offset to pass for the next page; a page with fewer day rows than limit means the end." } } } } } }, "400": { "description": "Missing types or range, or an invalid limit or offset" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/activity/summary": {
@@ -602,7 +602,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
         ],
-        "responses": { "200": { "description": "Activity days", "content": { "application/json": { "schema": { "type": "object", "properties": { "days": { "type": "array", "items": { "$ref": "#/components/schemas/ActivityDay" } } } } } } } }
+        "responses": { "200": { "description": "Activity days", "content": { "application/json": { "schema": { "type": "object", "properties": { "days": { "type": "array", "items": { "$ref": "#/components/schemas/ActivityDay" } } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/workouts": {
@@ -617,7 +617,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 50, "maximum": 200 } },
           { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "default": 0 } }
         ],
-        "responses": { "200": { "description": "Workouts", "content": { "application/json": { "schema": { "type": "object", "properties": { "workouts": { "type": "array", "items": { "$ref": "#/components/schemas/WorkoutSummary" } }, "nextOffset": { "type": "integer" } } } } } } }
+        "responses": { "200": { "description": "Workouts", "content": { "application/json": { "schema": { "type": "object", "properties": { "workouts": { "type": "array", "items": { "$ref": "#/components/schemas/WorkoutSummary" } }, "nextOffset": { "type": "integer" } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/workouts/{uuid}": {
@@ -627,7 +627,7 @@ const productAPIOpenAPIJSON = `{
         "parameters": [
           { "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." },
           { "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
-        "responses": { "200": { "description": "Workout detail", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutDetail" } } } }, "400": { "description": "Invalid UUID" }, "404": { "description": "Workout not found" } }
+        "responses": { "200": { "description": "Workout detail", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutDetail" } } } }, "400": { "description": "Invalid UUID" }, "404": { "description": "Workout not found" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/workouts/{uuid}/series": {
@@ -641,7 +641,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "types", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers, at most 50; omit for every recorded stream." },
           { "name": "maxPoints", "in": "query", "required": false, "schema": { "type": "integer", "default": 500, "maximum": 5000 } }
         ],
-        "responses": { "200": { "description": "Workout series", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutSeriesResponse" } } } }, "400": { "description": "Invalid UUID or parameters" }, "404": { "description": "Workout not found" } }
+        "responses": { "200": { "description": "Workout series", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutSeriesResponse" } } } }, "400": { "description": "Invalid UUID or parameters" }, "404": { "description": "Workout not found" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/sleep/daily": {
@@ -654,7 +654,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
         ],
-        "responses": { "200": { "description": "Sleep nights", "content": { "application/json": { "schema": { "type": "object", "properties": { "nights": { "type": "array", "items": { "$ref": "#/components/schemas/SleepNight" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" } }
+        "responses": { "200": { "description": "Sleep nights", "content": { "application/json": { "schema": { "type": "object", "properties": { "nights": { "type": "array", "items": { "$ref": "#/components/schemas/SleepNight" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/samples": {
@@ -670,7 +670,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 1000, "maximum": 5000 } },
           { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "default": 0 } }
         ],
-        "responses": { "200": { "description": "Samples", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SamplesPage" } } } }, "400": { "description": "Unknown type, a non-sample type, or a range over 31 days" } }
+        "responses": { "200": { "description": "Samples", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SamplesPage" } } } }, "400": { "description": "Unknown type, a non-sample type, or a range over 31 days" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/state-of-mind": {
@@ -682,7 +682,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
         ],
-        "responses": { "200": { "description": "Entries", "content": { "application/json": { "schema": { "type": "object", "properties": { "entries": { "type": "array", "items": { "$ref": "#/components/schemas/StateOfMindEntry" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" } }
+        "responses": { "200": { "description": "Entries", "content": { "application/json": { "schema": { "type": "object", "properties": { "entries": { "type": "array", "items": { "$ref": "#/components/schemas/StateOfMindEntry" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/summary": {
@@ -704,7 +704,10 @@ const productAPIOpenAPIJSON = `{
             }
           },
           "400": { "description": "A range or format outside the accepted values" },
-          "401": { "description": "Unauthorized" }
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" },
+          "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" },
+          "504": { "description": "The query ran past the 30-second limit; narrow the range" }
         }
       }
     },
@@ -733,7 +736,9 @@ const productAPIOpenAPIJSON = `{
           },
           "400": { "description": "Missing or invalid format or dataset, a missing dataset parameter, an unknown type, or a range over the dataset's cap" },
           "401": { "description": "Unauthorized" },
-          "503": { "description": "Too many exports already in progress; retry after the Retry-After interval" }
+          "503": { "description": "Too many exports already in progress; retry after the Retry-After interval" },
+          "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" },
+          "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }
         }
       }
     }

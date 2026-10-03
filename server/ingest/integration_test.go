@@ -50,10 +50,7 @@ func adminPool(t *testing.T, ctx context.Context) *pgxpool.Pool {
 // To run as the scoped ingest role (what production connects as once opted
 // in), point DATABASE_URL at it and ADMIN_DATABASE_URL at the superuser.
 func TestIntegration_IngestRoundTrip(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -158,10 +155,7 @@ func TestIntegration_IngestRoundTrip(t *testing.T) {
 // TestIntegration_CategoryLabelsJoin verifies that raw HKCategorySample values
 // can be joined to their HealthKit labels without changing category_samples.
 func TestIntegration_CategoryLabelsJoin(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -247,10 +241,7 @@ func TestIntegration_CategoryLabelsJoin(t *testing.T) {
 // insert, idempotent retry, stats, and deletion (incl. route points).
 // Gated on DATABASE_URL like TestIntegration_IngestRoundTrip.
 func TestIntegration_SeriesKindsAndRoutes(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -463,10 +454,7 @@ func TestIntegration_SeriesKindsAndRoutes(t *testing.T) {
 // db/migrations may not have reached a shared DB yet, so this test applies the
 // idempotent 003_aggregates.sql itself in case the volume predates it.
 func TestIntegration_AggregateUpsert(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -593,10 +581,7 @@ func TestIntegration_AggregateUpsert(t *testing.T) {
 }
 
 func TestIntegration_MetricDailyUsesCanonicalSeriesOnly(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -706,10 +691,7 @@ func TestIntegration_MetricDailyUsesCanonicalSeriesOnly(t *testing.T) {
 }
 
 func TestIntegration_ProfileSnapshotReplacement(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -779,10 +761,7 @@ func TestIntegration_ProfileSnapshotReplacement(t *testing.T) {
 // bytes, computed independently here) and /v1/uuids over HTTP, including the
 // 35-day range guard.
 func TestIntegration_DigestAndUUIDs(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -917,10 +896,7 @@ func TestIntegration_DigestAndUUIDs(t *testing.T) {
 }
 
 func TestIntegration_ReadEndpointsAreUserScoped(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -1037,10 +1013,7 @@ func TestIntegration_ReadEndpointsAreUserScoped(t *testing.T) {
 // limit (default 100k). 150k rows in one segment yield 150+ batches; 200
 // spread-out deletions touch enough of them to trip the old code.
 func TestIntegration_DeletionsOnCompressedChunk(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -1169,10 +1142,7 @@ func TestIntegration_DeletionsOnCompressedChunk(t *testing.T) {
 // headers (set on the batch header by the handler), parse_ms is passed in via
 // b.ParseMs, and insert_ms is measured inside InsertBatch.
 func TestIntegration_WakeTelemetryColumns(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -1266,10 +1236,7 @@ func TestIntegration_WakeTelemetryColumns(t *testing.T) {
 // A second batch carrying the same types, sources, series and temporal context
 // must not advance any of the four lookup sequences.
 func TestIntegration_LookupSequencesDoNotBurnOnRepeat(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -1347,10 +1314,7 @@ func TestIntegration_LookupSequencesDoNotBurnOnRepeat(t *testing.T) {
 // the middleware, land a batch stamped with the token, watch last_seen_at,
 // revoke. Gated on DATABASE_URL like TestIntegration_IngestRoundTrip.
 func TestIntegration_DeviceTokens(t *testing.T) {
-	url := os.Getenv("DATABASE_URL")
-	if url == "" {
-		t.Skip("DATABASE_URL not set; skipping integration test")
-	}
+	url := integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -1528,5 +1492,127 @@ func TestIntegration_DeviceTokens(t *testing.T) {
 	}
 	if code, _ := do(http.MethodGet, "/v1/capabilities", "itest-shared", "", ""); code != http.StatusOK {
 		t.Fatalf("shared token after revoke: %d", code)
+	}
+}
+
+// TestIntegration_InsertIntoCompressedChunk is R6's guard: a multi-year,
+// oldest-first backfill keeps writing into chunks the columnstore policy has
+// already compressed (anything older than 30 days). New samples must land
+// there, and a re-sent sample — the anchor-after-ack retry, possibly with a
+// differently cased UUID — must be a duplicate and a no-op: never an error,
+// never a second row, never an overwrite.
+func TestIntegration_InsertIntoCompressedChunk(t *testing.T) {
+	url := integrationDatabaseURL(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	pool, err := pgxpool.New(ctx, url)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer pool.Close()
+	store := NewStore(pool)
+
+	run := time.Now().UnixNano()
+	typeIdent := fmt.Sprintf("ITestCompressedIns%d", run)
+	// A month per run (1971–2000, past every compression horizon) keeps the
+	// rows apart from earlier runs against the same dev database; the type is
+	// unique per run, so sharing a chunk with another test is harmless.
+	monthStart := time.Date(1971+int(run/12%30), time.Month(1+run%12), 1, 0, 0, 0, 0, time.UTC)
+	id := func(n int) string {
+		return fmt.Sprintf("%08x-%04x-4000-8000-%012x", run>>32, n, run&0xffffffffffff)
+	}
+	sampleLine := func(uuid string, at time.Time, value float64) string {
+		ms := at.UnixMilli()
+		return fmt.Sprintf(`{"uuid":"%s","type":"%s","kind":"quantity","start":%d,"end":%d,"value":%g,"unit":"count","sourceName":"itest"}`,
+			uuid, typeIdent, ms, ms, value)
+	}
+	insert := func(batchID string, lines ...string) IngestResult {
+		t.Helper()
+		body := fmt.Sprintf(`{"batchID":"%s","deviceID":"itest","type":"%s","reason":"backfill","exportedAt":1718000000000,"sampleCount":%d,"deletionCount":0}`+"\n",
+			batchID, typeIdent, len(lines)) + strings.Join(lines, "\n") + "\n"
+		batch, err := ParseBatch(strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("ParseBatch: %v", err)
+		}
+		res, err := store.InsertBatch(ctx, batch, int64(len(body)))
+		if err != nil {
+			t.Fatalf("InsertBatch into a compressed chunk: %v", err)
+		}
+		return res
+	}
+
+	// Seed through the ingest path, then compress every chunk holding it.
+	stored := []string{id(1), id(2), id(3)}
+	var seed []string
+	for i, u := range stored {
+		seed = append(seed, sampleLine(u, monthStart.Add(time.Duration(i+1)*time.Hour), float64(i+1)))
+	}
+	if res := insert(id(0x100), seed...); res.Accepted != 3 {
+		t.Fatalf("seed accepted = %d, want 3", res.Accepted)
+	}
+	admin := adminPool(t, ctx)
+	seededEnd := monthStart.Add(24 * time.Hour)
+	// Chunks by range overlap, as in TestIntegration_DeletionsOnCompressedChunk
+	// (show_chunks' window must contain a chunk entirely).
+	if _, err := admin.Exec(ctx, `
+		SELECT compress_chunk(format('%I.%I', chunk_schema, chunk_name)::regclass,
+		                      if_not_compressed => true)
+		FROM timescaledb_information.chunks
+		WHERE hypertable_schema = 'public' AND hypertable_name = 'quantity_samples'
+		  AND range_end > $1::timestamptz AND range_start <= $2::timestamptz`,
+		monthStart, seededEnd); err != nil {
+		t.Fatalf("compress chunk: %v", err)
+	}
+	var uncompressed int
+	if err := admin.QueryRow(ctx, `
+		SELECT count(*) FROM timescaledb_information.chunks
+		WHERE hypertable_schema = 'public' AND hypertable_name = 'quantity_samples'
+		  AND range_end > $1::timestamptz AND range_start <= $2::timestamptz
+		  AND NOT is_compressed`, monthStart, seededEnd).Scan(&uncompressed); err != nil {
+		t.Fatalf("verify compression: %v", err)
+	}
+	if uncompressed != 0 {
+		t.Fatalf("%d chunk(s) holding the seeded rows are still uncompressed; the insert path under test would not touch the columnstore", uncompressed)
+	}
+
+	// Two new samples into the compressed range, plus a re-send of a stored
+	// one: upper-cased, with a different value that must not overwrite.
+	dup := strings.ToUpper(stored[0])
+	page := []string{
+		sampleLine(id(4), monthStart.Add(90*time.Minute), 4),
+		sampleLine(id(5), monthStart.Add(150*time.Minute), 5),
+		sampleLine(dup, monthStart.Add(time.Hour), 99),
+	}
+	res := insert(id(0x101), page...)
+	if res.Accepted != 2 || res.Duplicates != 1 {
+		t.Fatalf("into the compressed chunk: accepted %d, duplicates %d; want 2 and 1", res.Accepted, res.Duplicates)
+	}
+	// The same page again under a new batch id (a retry after a lost ack):
+	// all duplicates. Under the same batch id: a duplicate batch.
+	if res := insert(id(0x102), page...); res.Accepted != 0 || res.Duplicates != 3 {
+		t.Fatalf("re-sent page: accepted %d, duplicates %d; want 0 and 3", res.Accepted, res.Duplicates)
+	}
+	if res := insert(id(0x101), page...); !res.DuplicateBatch || res.Accepted != 0 {
+		t.Fatalf("re-sent batch: %+v, want a duplicate batch accepting nothing", res)
+	}
+
+	var rows int
+	var dupValue float64
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*),
+		       max(q.value) FILTER (WHERE q.uuid = $2::uuid)
+		FROM quantity_samples q
+		JOIN sample_types st USING (type_id)
+		WHERE st.identifier = $1 AND q.start_ts >= $3 AND q.start_ts < $4`,
+		typeIdent, stored[0], monthStart, seededEnd).Scan(&rows, &dupValue); err != nil {
+		t.Fatalf("count rows: %v", err)
+	}
+	if rows != 5 {
+		t.Errorf("rows = %d, want 5 (three seeded, two new, no second copy of the re-sent one)", rows)
+	}
+	if dupValue != 1 {
+		t.Errorf("re-sent sample's value = %v, want the stored 1: a duplicate must never overwrite", dupValue)
 	}
 }

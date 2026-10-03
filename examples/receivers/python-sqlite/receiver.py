@@ -213,8 +213,13 @@ def parse_batch(text):
 
 
 def local_day(a):
-    """Upsert key for an activity summary: localDate, else the UTC day of the legacy date."""
-    return a.get("localDate") or datetime.fromtimestamp(a["date"] / 1000, timezone.utc).strftime("%Y-%m-%d")
+    """Upsert key for an activity summary: localDate, else the legacy date
+    shifted by the line's temporalContext offset when it has one, else its UTC day."""
+    if a.get("localDate"):
+        return a["localDate"]
+    offset = (a.get("temporalContext") or {}).get("utcOffsetSeconds")
+    seconds = a["date"] / 1000 + (offset if isinstance(offset, (int, float)) else 0)
+    return datetime.fromtimestamp(seconds, timezone.utc).strftime("%Y-%m-%d")
 
 
 def apply_batch(db, b, user_id):

@@ -19,6 +19,7 @@ import (
 	// image without /usr/share/zoneinfo.
 	_ "time/tzdata"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -38,6 +39,10 @@ const (
 	defaultDailyLimit = 10000
 	maxDailyLimit     = 50000
 	catalogTTL        = 5 * time.Minute
+	// How long past catalogTTL a cached catalog is still served while a
+	// background refresh replaces it, and how long that refresh may take.
+	catalogMaxStale       = time.Hour
+	catalogRefreshTimeout = 2 * time.Minute
 	// How many users' catalog answers are cached at once (see
 	// storeCatalogTypes). Far more than a household; small enough that a
 	// caller spraying ?user= values holds nothing worth mentioning.
@@ -119,13 +124,34 @@ type Server struct {
 	catalogMu sync.Mutex
 	catalog   map[string]catalogEntry
 
+	// Whether a background catalog refresh is running (see
+	// refreshCatalogTypes; at most one at a time, under catalogMu), and the
+	// group tests wait on for it to finish.
+	catalogRefreshing bool
+	catalogRefreshes  sync.WaitGroup
+
 	// The bounded set of /v1/export slots (see maxConcurrentExports), made on
 	// first use so a Server built as a struct literal still has one.
 	exportOnce  sync.Once
 	exportSlots chan struct{}
+
+	// Cancelled once shutdown's grace has run out (see run): every handler's
+	// context and every background catalog refresh ends with it. Nil (a
+	// Server built as a struct literal) never ends.
+	lifetime context.Context
 }
 
 func main() {
+	// `api healthcheck [addr]` is the Compose healthcheck (healthcheck.go):
+	// the image is distroless, so there is no curl to ask /healthz with.
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		addr := os.Getenv("LISTEN_ADDR")
+		if addr == "" {
+			addr = ":8081"
+		}
+		os.Exit(runHealthcheck(os.Args[2:], addr, os.Stderr))
+	}
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
@@ -161,14 +187,22 @@ func run(logger *slog.Logger) error {
 	// bearer token is one static secret that docs/ai.md tells people to hand
 	// to a ChatGPT Action, and turning this on widens what it reads from one
 	// person to everyone on the server.
-	multiUser, err := parseBoolEnv("PULS_MULTI_USER", false)
+	multiUser, err := parseBoolEnv("PULS_MULTI_USER", os.Getenv("PULS_MULTI_USER"), false)
+	if err != nil {
+		return err
+	}
+	// Same switch, same default (off), same meaning and same spelling rule
+	// (envbool.go) as ingest's: only behind a trusted proxy, and then the LAST
+	// X-Forwarded-For entry. It decides both the rate-limit key and the host
+	// the OpenAPI document advertises.
+	trustProxyHeaders, err := parseBoolEnv("TRUST_PROXY_HEADERS", os.Getenv("TRUST_PROXY_HEADERS"), false)
 	if err != nil {
 		return err
 	}
 	// The calendar zone for the daily endpoints. Same value the database's
 	// puls.time_zone setting holds (db/migrations/013_time_zone.sh), so the API's
 	// day ranges and metric_daily's day column agree. Fail fast on a typo
-	// rather than serve misaligned days.
+	// rather than serve misaligned days; checked against the database below.
 	loc, err := loadTimeZone(os.Getenv("PULS_TIME_ZONE"))
 	if err != nil {
 		return err
@@ -187,10 +221,20 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
-	// Same switch, same default (off), same meaning as ingest's: only behind a
-	// trusted proxy, and then the LAST X-Forwarded-For entry. It decides both the
-	// rate-limit key and the host the OpenAPI document advertises.
-	trustProxyHeaders := os.Getenv("TRUST_PROXY_HEADERS") == "true"
+	// A zone that disagrees with the database's would cut every daily answer
+	// on different days than metric_daily and the dashboards, silently.
+	if err := verifyTimeZone(ctx, func(ctx context.Context) (string, error) {
+		var name string
+		err := pool.QueryRow(ctx, `SELECT puls_time_zone()`).Scan(&name)
+		return name, err
+	}, loc, logger); err != nil {
+		return err
+	}
+
+	// Handlers outlive their requests' cancellation only until shutdown's
+	// grace has run out: this is cancelled then (see the end of run).
+	lifetime, endLifetime := context.WithCancel(context.Background())
+	defer endLifetime()
 
 	srv := &Server{
 		store:             NewStore(pool, loc),
@@ -200,6 +244,7 @@ func run(logger *slog.Logger) error {
 		multiUser:         multiUser,
 		loc:               loc,
 		trustProxyHeaders: trustProxyHeaders,
+		lifetime:          lifetime,
 	}
 	logger.Info("starting",
 		"addr", addr,
@@ -232,7 +277,51 @@ func run(logger *slog.Logger) error {
 	logger.Info("shutting down")
 	shCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
-	return httpSrv.Shutdown(shCtx)
+	err = httpSrv.Shutdown(shCtx)
+	// Whatever is still running has had its grace. A handler's query is
+	// cancelled and its connection returned; an export still streaming is
+	// aborted, never ended as if the file were complete (see handleExport).
+	// Without this the deferred pool.Close waits on that connection until
+	// Compose's SIGKILL.
+	endLifetime()
+	return err
+}
+
+const (
+	// databaseTimeZoneTimeout bounds the startup comparison with the database.
+	databaseTimeZoneTimeout = 5 * time.Second
+	// SQLSTATE undefined_function: puls_time_zone() does not exist yet.
+	sqlstateUndefinedFunction = "42883"
+)
+
+// verifyTimeZone refuses to start when PULS_TIME_ZONE (loc) names another
+// zone than the database's puls_time_zone(): the API's day ranges and
+// metric_daily's day column would then disagree on every daily answer,
+// without an error anywhere. dbZone runs `SELECT puls_time_zone()`. A
+// database without the function (from before 009/013) cannot be checked and
+// is logged, as is a failed read: only a confirmed mismatch stops startup.
+func verifyTimeZone(ctx context.Context, dbZone func(context.Context) (string, error), loc *time.Location, logger *slog.Logger) error {
+	ctx, cancel := context.WithTimeout(ctx, databaseTimeZoneTimeout)
+	defer cancel()
+	name, err := dbZone(ctx)
+	var pgErr *pgconn.PgError
+	switch {
+	case errors.As(err, &pgErr) && pgErr.Code == sqlstateUndefinedFunction:
+		logger.Warn("the database has no puls_time_zone(), so PULS_TIME_ZONE cannot be checked against it; "+
+			"run the migrate service (docker compose up -d) to install it",
+			"time_zone", loc.String())
+		return nil
+	case err != nil:
+		logger.Warn("could not read the database's time zone; PULS_TIME_ZONE is unchecked",
+			"time_zone", loc.String(), "err", err.Error())
+		return nil
+	case !sameTimeZone(name, loc.String()):
+		return fmt.Errorf("PULS_TIME_ZONE is %q but the database's puls_time_zone() is %q: daily answers would be cut "+
+			"on different days than metric_daily and the dashboards. Give every service the same PULS_TIME_ZONE in "+
+			".env and run `docker compose up -d` (the migrate service stores it on the database)", loc.String(), name)
+	}
+	logger.Info("time zone matches the database", "time_zone", loc.String(), "database_time_zone", name)
+	return nil
 }
 
 // refusePlaceholder fails startup on a token still set to the .env.example
@@ -244,19 +333,6 @@ func refusePlaceholder(name, value string) error {
 			"(scripts/bootstrap.sh generates one, or use `openssl rand -hex 32`)", name, placeholderSecret)
 	}
 	return nil
-}
-
-// loadTimeZone resolves PULS_TIME_ZONE (an IANA name; empty means UTC).
-func loadTimeZone(name string) (*time.Location, error) {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return time.UTC, nil
-	}
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		return nil, fmt.Errorf("PULS_TIME_ZONE %q is not a valid IANA time zone: %w", name, err)
-	}
-	return loc, nil
 }
 
 func connectWithRetry(ctx context.Context, url string, logger *slog.Logger) (*pgxpool.Pool, error) {
@@ -343,7 +419,7 @@ func (s *Server) routes() http.Handler {
 		// its own terms, see export.go); every other handler is bounded so
 		// one slow query cannot hold a pool connection open indefinitely.
 		if rt.path != "/v1/export" {
-			handler = withTimeout(handlerTimeout, handler)
+			handler = s.untilShutdown(withTimeout(handlerTimeout, handler))
 		}
 		if rt.auth {
 			// Token first, then the user the request is about: a caller that
@@ -402,6 +478,29 @@ func withTimeout(d time.Duration, next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// untilShutdown cancels a handler's context when the server's lifetime ends
+// (shutdown's grace has run out), so its query returns its pooled
+// connection and pool.Close does not wait for Compose's SIGKILL. The export
+// does this itself, because it must tell that apart from a client hang-up.
+func (s *Server) untilShutdown(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		stop := context.AfterFunc(s.lifetimeContext(), cancel)
+		defer stop()
+		next(w, r.WithContext(ctx))
+	}
+}
+
+// lifetimeContext is the server's lifetime, or one that never ends for a
+// Server built as a struct literal.
+func (s *Server) lifetimeContext() context.Context {
+	if s.lifetime == nil {
+		return context.Background()
+	}
+	return s.lifetime
+}
+
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 	// Cached: this endpoint is unauthenticated, so request rate must not drive
 	// pool acquisitions. See health.go.
@@ -425,9 +524,19 @@ func (s *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, profile)
 }
 
+// handleCatalogTypes serves GET /v1/catalog/types from a per-user cache.
+// The query behind it counts every row the user has across the hypertables
+// (user_id is neither indexed nor the compression segment key, so it is a
+// decompressing scan), and it is the MCP's documented first call: so only a
+// user's very first request waits for it. After catalogTTL the cached answer
+// is still served — up to catalogMaxStale — while one background refresh
+// replaces it (see refreshCatalogTypes).
 func (s *Server) handleCatalogTypes(w http.ResponseWriter, r *http.Request) {
 	user := s.requestUser(r)
-	if types, ok := s.cachedCatalogTypes(user); ok {
+	if types, stale, ok := s.cachedCatalogTypes(user, time.Now()); ok {
+		if stale {
+			s.refreshCatalogTypes(user)
+		}
 		writeJSON(w, http.StatusOK, map[string][]CatalogType{"types": types})
 		return
 	}
@@ -882,26 +991,67 @@ func isUUID(s string) bool {
 		isHexN(s[19:23], 4) && isHexN(s[24:36], 12)
 }
 
-// catalogEntry is one user's cached /v1/catalog/types answer.
+// catalogEntry is one user's cached /v1/catalog/types answer: fresh until
+// expires, then served stale (while a refresh runs) until
+// expires+catalogMaxStale, after which it is gone.
 type catalogEntry struct {
 	types   []CatalogType
 	expires time.Time
 }
 
-func (s *Server) cachedCatalogTypes(user string) ([]CatalogType, bool) {
+// cachedCatalogTypes returns user's cached answer, and whether it is past
+// catalogTTL and due a refresh. An entry past catalogMaxStale is no answer:
+// a refresh that keeps failing must not serve a months-old catalog forever.
+func (s *Server) cachedCatalogTypes(user string, now time.Time) (types []CatalogType, stale, ok bool) {
 	s.catalogMu.Lock()
 	defer s.catalogMu.Unlock()
 
-	if entry, ok := s.catalog[user]; ok && time.Now().Before(entry.expires) {
-		return cloneCatalogTypes(entry.types), true
+	entry, found := s.catalog[user]
+	if !found || !now.Before(entry.expires.Add(catalogMaxStale)) {
+		return nil, false, false
 	}
-	return nil, false
+	return cloneCatalogTypes(entry.types), !now.Before(entry.expires), true
+}
+
+// refreshCatalogTypes recomputes user's catalog in the background, unless a
+// refresh (for anyone) is already running: one at a time, because each holds
+// a pooled connection for the length of a scan, and the pool is small. A
+// stale request that finds one running is simply served stale; a later one
+// refreshes. The refresh runs on its own context — never the request's,
+// which ends as soon as the stale answer is written — bounded by
+// catalogRefreshTimeout and the server's lifetime. A failure keeps the stale
+// answer and is logged.
+func (s *Server) refreshCatalogTypes(user string) {
+	s.catalogMu.Lock()
+	if s.catalogRefreshing {
+		s.catalogMu.Unlock()
+		return
+	}
+	s.catalogRefreshing = true
+	s.catalogRefreshes.Add(1)
+	s.catalogMu.Unlock()
+
+	go func() {
+		defer s.catalogRefreshes.Done()
+		ctx, cancel := context.WithTimeout(s.lifetimeContext(), catalogRefreshTimeout)
+		defer cancel()
+		types, err := s.store.CatalogTypes(ctx, user)
+		if err == nil {
+			s.storeCatalogTypes(user, cloneCatalogTypes(types))
+		} else {
+			s.log.Warn("catalog types refresh failed; serving the cached answer", "err", err.Error())
+		}
+		s.catalogMu.Lock()
+		s.catalogRefreshing = false
+		s.catalogMu.Unlock()
+	}()
 }
 
 // storeCatalogTypes caches one user's answer. The map is bounded at
 // catalogCacheMaxUsers because an authenticated caller can spray ?user=
 // values (with PULS_MULTI_USER on, any UUID is a valid selector); at the
-// bound, expired entries go first, then the one expiring soonest.
+// bound, entries past their stale window go first, then the one expiring
+// soonest.
 func (s *Server) storeCatalogTypes(user string, types []CatalogType) {
 	s.catalogMu.Lock()
 	defer s.catalogMu.Unlock()
@@ -912,7 +1062,7 @@ func (s *Server) storeCatalogTypes(user string, types []CatalogType) {
 	now := time.Now()
 	if _, ok := s.catalog[user]; !ok && len(s.catalog) >= catalogCacheMaxUsers {
 		for key, entry := range s.catalog {
-			if !now.Before(entry.expires) {
+			if !now.Before(entry.expires.Add(catalogMaxStale)) {
 				delete(s.catalog, key)
 			}
 		}
@@ -1024,18 +1174,4 @@ func (s *Server) location() *time.Location {
 // sameUser compares two UUIDs the way Postgres does: case does not matter.
 func sameUser(a, b string) bool {
 	return strings.EqualFold(a, b)
-}
-
-// parseBoolEnv reads a boolean environment variable (any spelling
-// strconv.ParseBool accepts), returning def when it is unset or blank.
-func parseBoolEnv(name string, def bool) (bool, error) {
-	raw := strings.TrimSpace(os.Getenv(name))
-	if raw == "" {
-		return def, nil
-	}
-	value, err := strconv.ParseBool(raw)
-	if err != nil {
-		return false, fmt.Errorf("%s must be true or false, got %q", name, raw)
-	}
-	return value, nil
 }

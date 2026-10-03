@@ -234,12 +234,14 @@ type User struct {
 }
 
 // UsersResponse is GET /v1/users: every user with rows, which one the API
-// answers for when no user is named, and whether it will answer for any
-// other (PULS_MULTI_USER).
+// answers for when no user is named, whether it will answer for any other
+// (PULS_MULTI_USER), and the zone its local days are cut in (PULS_TIME_ZONE;
+// empty from an API older than the field).
 type UsersResponse struct {
 	Users     []User `json:"users"`
 	Default   string `json:"default"`
 	MultiUser bool   `json:"multiUser"`
+	TimeZone  string `json:"timeZone"`
 }
 
 // APIError is a non-2xx answer from the product API. It surfaces to the

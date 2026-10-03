@@ -1392,9 +1392,22 @@ func activitySummaryDateKey(a *struct {
 		}
 		return a.LocalDate, nil
 	}
-	// Legacy fallback for old clients. This preserves prior UTC-date behavior,
-	// but cannot recover the intended local date when the client omitted it.
-	return msToTime(a.Date).Format("2006-01-02"), nil
+	// No localDate: a client from before it existed. date is the start of
+	// the phone's local day as an instant, and the ring belongs to that local
+	// day, never to the UTC one (east of UTC, local midnight is the previous
+	// UTC day, and the row would land on the wrong date). The batch header
+	// carries no offset, so the line's own temporalContext is the only one
+	// there is: shift by it when present.
+	if tc := a.TemporalContext; tc != nil {
+		return msToTime(a.Date).Add(time.Duration(tc.UTCOffsetSeconds) * time.Second).Format("2006-01-02"), nil
+	}
+	// Neither: the protocol's documented legacy rule (docs/protocol/README.md,
+	// fixture 03), the UTC date of date. Rejecting the line instead would 400
+	// the batch, which the app never retries, so such a client's rings would
+	// stop syncing for good; and the spec, the fixture corpus and the
+	// reference receiver all accept it. Wrong east of UTC, as documented
+	// there, but consistently so: one row per day, shifted.
+	return msToTime(a.Date).UTC().Format("2006-01-02"), nil
 }
 
 // metadataJSON renders sample metadata as a JSON text or nil for NULL.

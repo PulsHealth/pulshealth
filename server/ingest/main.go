@@ -93,6 +93,16 @@ func main() {
 		os.Exit(runQRCLI(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
 	}
 
+	// `ingest healthcheck [addr]` is the Compose healthcheck
+	// (healthcheck.go): the image is distroless, so there is no curl.
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		addr := os.Getenv("LISTEN_ADDR")
+		if addr == "" {
+			addr = ":8080"
+		}
+		os.Exit(runHealthcheck(os.Args[2:], addr, os.Stderr))
+	}
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
@@ -110,13 +120,9 @@ func run(logger *slog.Logger) error {
 	if err := refusePlaceholder("PULS_TOKEN", token); err != nil {
 		return err
 	}
-	allowShared := true
-	if raw := os.Getenv("PULS_ALLOW_SHARED_TOKEN"); raw != "" {
-		parsed, err := strconv.ParseBool(raw)
-		if err != nil {
-			return fmt.Errorf("PULS_ALLOW_SHARED_TOKEN must be true or false, got %q", raw)
-		}
-		allowShared = parsed
+	allowShared, err := parseBoolEnv("PULS_ALLOW_SHARED_TOKEN", os.Getenv("PULS_ALLOW_SHARED_TOKEN"), true)
+	if err != nil {
+		return err
 	}
 	allowShared = allowShared && token != ""
 	dbURL := os.Getenv("DATABASE_URL")
@@ -130,13 +136,10 @@ func run(logger *slog.Logger) error {
 	// Off by default: X-Forwarded-For is set by whoever sends the request,
 	// so believing it without a proxy in front would let one attacker look
 	// like an unlimited number of clients to the auth-failure limiter.
-	trustProxyHeaders := false
-	if raw := os.Getenv("TRUST_PROXY_HEADERS"); raw != "" {
-		parsed, err := strconv.ParseBool(raw)
-		if err != nil {
-			return fmt.Errorf("TRUST_PROXY_HEADERS must be true or false, got %q", raw)
-		}
-		trustProxyHeaders = parsed
+	// Parsed by the one rule all three Go services share (envbool.go).
+	trustProxyHeaders, err := parseBoolEnv("TRUST_PROXY_HEADERS", os.Getenv("TRUST_PROXY_HEADERS"), false)
+	if err != nil {
+		return err
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -421,7 +424,7 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 	// upserts the matching users row. The token id is recorded on the batch.
 	userID, ok := readUserID(w, r)
 	if !ok {
-		s.recordBatchRejection(r, http.StatusBadRequest, "identity", "X-User-ID is not a UUID", cr.n)
+		s.recordBatchRejection(r, http.StatusInternalServerError, "identity", "no authenticated user", cr.n)
 		return
 	}
 	batch.Header.UserID = userID
