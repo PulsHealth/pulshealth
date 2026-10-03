@@ -96,6 +96,38 @@ Out of scope:
 - HealthKit behaviour (delivery latency, permission-sheet quirks). Those are
   bugs, not vulnerabilities; use the issue tracker.
 
+## Threat model
+
+What the design protects, from whom, and what it assumes. The section after
+this one says how each piece holds up.
+
+- **What is worth protecting:** the health records in the database, the
+  identity snapshot beside them (name, email, date of birth), and the
+  credentials that write them (ingest tokens) or read them (the API, MCP and
+  viewer credentials, viewer sessions).
+- **Who is assumed hostile:** anyone on the network path between the phone
+  and the server, and anyone who can reach an exposed port: the ingest
+  endpoint, and in accounts mode the viewer. They are expected to guess
+  tokens and passwords, replay requests, forge `X-Forwarded-For` and other
+  client-written headers, send oversized or malformed batches, and try
+  cross-site requests against a signed-in browser. In accounts mode, other
+  account holders are hostile to each other.
+- **Who is trusted:** the operator and the host the stack runs on, the TLS
+  proxy in front of it (it appends the client address the limiters key on),
+  the unlocked phone and its Keychain, and whoever holds the shared
+  `PULS_TOKEN` (writes as any user) or the API and MCP tokens (read every
+  user once `PULS_MULTI_USER` is on): those reach every user by design.
+- **What it assumes:** TLS from the phone and browser to the proxy; every
+  service other than ingest and the accounts-mode viewer bound to loopback or
+  a private network; and real secrets in `.env`, which the services check
+  (none starts on `change-me`).
+- **What a breach costs:** a leaked per-device token writes and deletes one
+  user's data until revoked; a leaked shared token, every user's; a leaked
+  API or MCP token reads what that service reads; a
+  compromised viewer container in accounts mode reads every user's records
+  and can act on self-service users only (below); a compromised server host,
+  everything.
+
 ## Things to know about the current design
 
 These are documented properties of the current design; what is still open is

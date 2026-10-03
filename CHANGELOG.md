@@ -3,9 +3,8 @@
 What changed in each release of the **server stack** — the four images
 `ghcr.io/pulshealth/{ingest,api,mcp,web}`, which share one version that
 `PULS_VERSION` in `.env` selects. Upgrading is: bump it, bring the checkout
-to the same release (`git pull`, or `git checkout vX.Y.Z` — the compose file
-and the schema migrations come from it, not from the images), then
-`make pull up`.
+to the same release (`git checkout vX.Y.Z` — the compose file and the schema
+migrations come from it, not from the images), then `make pull up`.
 
 Two things are versioned separately and are not in this file:
 
@@ -24,6 +23,25 @@ a major for a change that needs operator action (a breaking config or schema
 change), a minor for features, a patch for fixes. While the stack is on 0.x
 that promise is weaker by convention — a minor may carry a change that needs
 operator action, and when it does this file says so at the top of the entry.
+
+## Compatibility
+
+Every server release so far speaks protocol v1 and every app release since
+self-hosted sync (1.4) sends v1, so any app version syncs to any server
+version. Features that need both sides say so here.
+
+| App ↓ / Server → | 0.1.x | 0.2.x | 0.3.x |
+|---|---|---|---|
+| 1.4 | syncs | syncs; per-device tokens work (the app just sends the token) | syncs |
+| 1.5, 1.6 | syncs; pairing links and QR codes | syncs | syncs; the viewer's "Connect this iPhone" code pairs through a link or the camera |
+| next (in-app PulsHealth database sign-in) | syncs | syncs | syncs; the sign-in needs a 0.3 viewer in accounts mode with `WEB_INGEST_URL` set |
+
+New HealthKit type identifiers (iOS 27's Recovery HRV, for one) reach any
+server: ingest registers types on first sight. What a receiver must accept
+within v1 is in `docs/protocol/README.md`, "Additive changes in v1". A
+future protocol v2 would be a server-first upgrade: an old server answers
+batches it cannot read with 400, which the app does not retry, so syncing
+pauses (nothing is lost) until the server is updated.
 
 ## Unreleased
 

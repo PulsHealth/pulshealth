@@ -236,8 +236,11 @@ provider's responsibility are yours:
 - **TLS.** The app requires HTTPS for anything that is not a local-network
   host, but the certificate and the reverse proxy in front of the ingest
   endpoint are yours to provide.
-- **The bearer token.** It is a single shared secret. Anyone who has it can
-  upload and delete data in your database. Rotate it if it leaks.
+- **The tokens that let a phone write.** While the shared `PULS_TOKEN` is
+  enabled, anyone who has it can upload and delete data for any user in your
+  database. A per-device token is bound to one user and can be revoked on its
+  own; once every phone has one, turn the shared token off
+  (`PULS_ALLOW_SHARED_TOKEN=false`). Rotate or revoke any token that leaks.
 - **Data at rest, backups, and deletion.** Your database holds identifiable
   health data. Encryption at rest, retention, and honouring your own deletion
   requests are yours to arrange. The project ships a backup service, but it is

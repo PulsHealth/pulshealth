@@ -211,6 +211,61 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.image }}-linux-amd64
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}-linux-amd64
 
+  # The stack as a self-hoster runs it: scripts/bootstrap.sh from a fresh
+  # checkout (generated .env, compose.build.yml, the migrate service), then
+  # the protocol corpus posted to the real ingest by the same smoke test that
+  # checks the Python reference receiver, then one read back through the
+  # product API. The other jobs test each piece; this is the only one that
+  # proves the built images start, find each other and agree on the schema.
+  stack-smoke:
+    name: Stack smoke test (bootstrap, corpus, API read-back)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Bring the stack up from this checkout
+        run: scripts/bootstrap.sh --build --time-zone UTC --no-qr
+
+      - name: Wait for every service's healthcheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 60); do
+            states=$(docker compose -f server/docker-compose.yml ps --format '{{.Service}} {{.State}} {{.Health}}')
+            if ! grep -qvE ' running( healthy)? *$' <<<"$states"; then
+              echo "$states"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "services did not become healthy:" >&2
+          echo "$states" >&2
+          exit 1
+
+      - name: Post the protocol corpus to ingest
+        shell: bash
+        run: |
+          set -euo pipefail
+          token=$(sed -n 's/^PULS_TOKEN=//p' server/.env)
+          python3 examples/receivers/python-sqlite/smoke_test.py --url http://127.0.0.1:8080 --token "$token"
+
+      - name: Read the corpus back through the product API
+        shell: bash
+        run: |
+          set -euo pipefail
+          token=$(sed -n 's/^PULS_API_TOKEN=//p' server/.env)
+          body=$(curl -fsS -H "Authorization: Bearer $token" \
+            'http://127.0.0.1:8081/v1/samples?type=HKQuantityTypeIdentifierHeartRate&start=1717990000000&end=1718100000000')
+          echo "$body"
+          count=$(jq '.samples | length' <<<"$body")
+          test "$count" -ge 1
+
+      - name: Show the service logs
+        if: failure()
+        run: docker compose -f server/docker-compose.yml logs --no-color --tail 200
+
   # The protocol corpus: every fixture in docs/protocol/fixtures must validate
   # against the JSON Schemas in docs/protocol/schema, and the Python reference
   # receiver must accept the corpus with the expected counts. Both fail when
@@ -371,6 +426,10 @@ jobs:
       # metric_daily buckets in puls_time_zone(): the database's zone and the
       # fixtures' must agree or server-computed days land on the wrong row.
       PULS_TIME_ZONE: America/Los_Angeles
+      # Every suite below fails, rather than skips, when its database or
+      # Docker is missing: a skipped integration test passes CI having proved
+      # nothing, which is how none of them ran anywhere before this job.
+      PULS_CI_REQUIRE_INTEGRATION: "1"
       # 55432, not 5432: the runner image ships a PostgreSQL of its own.
       ADMIN_DATABASE_URL: postgres://postgres:ci-secret@127.0.0.1:55432/postgres
     steps:

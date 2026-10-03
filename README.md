@@ -111,8 +111,15 @@ and `curl`.
 ```bash
 git clone https://github.com/PulsHealth/pulshealth.git
 cd pulshealth
+git checkout "$(git describe --tags --abbrev=0 --match 'v*')"   # the latest release
 scripts/bootstrap.sh --time-zone Europe/Berlin   # the zone your phone lives in
 ```
+
+Check out the release rather than running `main`: the compose file and the
+schema migrations come from the checkout, the images from the release, and
+`main` documents features no published image has yet. On a release tag the
+script pins `PULS_VERSION` to it in `server/.env`, and on anything else it
+warns before pulling.
 
 That creates `server/.env` with every secret generated, starts the stack
 (`docker compose up -d`, which pulls the published images from
@@ -145,9 +152,11 @@ Everything else binds to loopback on fixed host ports, which must be free: the
 product API on `8081`, the MCP server on `8082`, Grafana on `3000`, the web
 viewer on `3001`, Postgres on `5432`. Re-running `scripts/bootstrap.sh` never
 regenerates secrets. `make up`, `make down`, `make logs` and `make ps` wrap
-Compose (`make help` lists the rest). To upgrade, `git pull && make pull up`:
-the compose file and the schema migrations come from the checkout, so it moves
-with the images (`CHANGELOG.md` says what each release needs).
+Compose (`make help` lists the rest). To upgrade, check out the new release
+(`git fetch --tags && git checkout v<version>`), set `PULS_VERSION=<version>`
+in `server/.env` and `make pull up`: the compose file and the schema
+migrations come from the checkout, so it moves with the images
+(`CHANGELOG.md` says what each release needs).
 [`server/README.md`](server/README.md) covers configuration, images and
 versions, schema migrations, the database roles and Grafana.
 

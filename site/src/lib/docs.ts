@@ -97,7 +97,7 @@ export const DOCS: DocEntry[] = [
     title: "Security policy",
     repoPath: "SECURITY.md",
     description:
-      "Supported versions, how to report a vulnerability privately, and the known limitations of a single shared bearer token.",
+      "Supported versions, how to report a vulnerability privately, the threat model, and the trust boundaries of each token.",
     group: "Project",
   },
   {

@@ -134,9 +134,10 @@ The reference stack is plain Docker Compose; there is no deploy tooling in the
 repo. **Take a backup first** (`make backup` — see "Backup & restore"), then:
 
 ```bash
-git pull                                         # newer compose file and migrations
+git fetch --tags && git checkout v0.3.0         # the release: its compose file and migrations
 cd server
-# optional: pin the release in .env, e.g. PULS_VERSION=0.2.0 (default: latest)
+# in .env: PULS_VERSION=0.3.0 (bootstrap.sh pins it on a release checkout;
+# left at latest, the images can move ahead of this checkout's schema)
 docker compose pull && docker compose up -d      # or, at the repository root: make pull up
 docker compose logs migrate                      # what the schema step did
 curl -s localhost:8080/healthz && curl -s localhost:8081/healthz
