@@ -833,6 +833,25 @@ final class AppModel {
         }
     }
 
+    // MARK: - The PulsHealth database
+
+    /// Whether the applied database is the PulsHealth database, paired by
+    /// signing in on Sync → Database (`PulsHealthDatabase`). Derived from the
+    /// applied configuration — it ends the moment the app points anywhere
+    /// else — so the Sync tab and Settings can name it instead of its host.
+    var usesPulsHealthDatabase: Bool { appliedConfig.isSignedInDatabase }
+
+    /// Logs a pairing code the PulsHealth sign-in sheet handed back. Like a
+    /// confirmed link it only fills Sync → Database's fields; Save & Apply
+    /// applies it. The host only, never the code: it carries the token.
+    func noteSignInPairing(_ payload: PairingPayload) {
+        let label = pairingConfirmation(for: payload).serverLabel
+        Task {
+            await engine.eventLog.log(
+                .info, "Signed in to the PulsHealth database (\(label)) — details filled in, nothing applied")
+        }
+    }
+
     /// True while an accepted link is waiting for Sync → Database, i.e. the
     /// first-run flow is not the one that should take it. RootView switches to
     /// the Sync tab and pushes the Database screen on this.
