@@ -14,8 +14,8 @@ violation of a stated invariant. What is weak is the *edge*: resource bounds,
 proxy trust, release cadence, the first-run path for a self-hoster, and a few
 process-lifecycle cases on the phone. Those are what this roadmap orders.
 
-Status column: **done** = landed in the same series of commits as this
-document; **next** = small, safe, do before the next release; **later** = worth
+Status column: **done** = landed on the `deep-refactor` branch with this
+document (each fix with a test); **next** = small, safe, do before the next release; **later** = worth
 doing, needs design or a device pass; **no** = considered and declined, with
 the reason.
 
@@ -60,7 +60,7 @@ the reason.
 | R15 | `AppModel.swift` `applyConfiguration` | `expectBackfill()` is called before the `!isSyncingAll` guard; an Apply during a sync primes the engine for a backfill that never comes, and the new types trickle in silently. | Call `expectBackfill()` after the guard; tell the user when the backfill was deferred. | done |
 | R16 | `BackgroundSyncScheduler.swift` `handleContinuedBackfill` | The iOS 26 continued-processing path never checks `isHealthDataAccessible()`; a locked phone fails every type with `errorDatabaseInaccessible` instead of `skippedLocked`. | Check at start and on per-type failure. | next |
 | R17 | `AppModel.swift` continued backfill | Nothing sets `isSyncingAll` while a continued task is pending, so Sync Now and a second Start Initial Backfill can run alongside it. | A `continuedBackfillPending` flag cleared on first backfill activity. | next |
-| R18 | `web/lib/db.ts`, `web/lib/queries.ts` | Pool of 4; a type page runs four `scoped()` transactions in parallel plus two session lookups. A few concurrent people exhaust it, and every query's `catch` returns **empty data silently**. | Pool size from env; surface a query failure as the `"error"` source, not an empty chart. | done |
+| R18 | `web/lib/db.ts`, `web/lib/queries.ts` | Pool of 4; a type page runs four `scoped()` transactions in parallel plus two session lookups. A few concurrent people exhaust it, and every query's `catch` returns **empty data silently**. | Pool size from env; surface a query failure as the `"error"` source, not an empty chart. | done (partly: a failed read re-runs the database check, so a lost database or exhausted pool shows "Database unavailable" from the next page load; the failing page itself still renders empty) |
 | R19 | `server/api/store.go` `CatalogTypes` | `count/min/max` over the hypertables filtered on `user_id`, which has no index and is not the segment key: a full decompressing scan per cache miss, and the MCP's documented first call. | Serve stale while refreshing asynchronously; longer term, maintain counts from ingest. | later |
 | R20 | `server/api/main.go`, `server/mcp/main.go` | The `PULS_TIME_ZONE` invariant is never checked: the API never compares its zone with `puls_time_zone()`, and the stdio MCP takes the laptop's. | API checks at startup and refuses a mismatch; expose the zone on `/v1/users`. | next |
 | R21 | `server/ingest/store.go` legacy activity summary | A pre-`localDate` client's ring date is formatted in UTC, contradicting "never UTC-shifted" for phones east of UTC. | Shift by the batch's `utcOffsetSeconds`, else reject. | next |
@@ -93,6 +93,17 @@ the reason.
 |---|---|---|---|---|
 | P1 | `docs/protocol/fixtures/` | Every fixture timestamp is an integer and every UUID lower-case; the app sends fractional epoch-ms and upper-case UUIDs. The reference Python receiver compares UUIDs case-sensitively and gunzips without a size cap, both against the spec. A receiver that passes the corpus can still be wrong. | Fractional timestamps and mixed-case UUIDs in fixtures 01/02; fix the reference receiver. | next |
 | P2 | `docs/protocol/README.md` | Spec says the probe's `type` is the heart-rate identifier; the app sends `"probe"`. Spec shows activity summaries with explicit `null`s; the encoder omits nil fields, so an update-present-keys receiver keeps stale ring values. No fixture tests overwrite semantics. | Correct the text; a fixture with omitted summary fields and a second-pass `.expected.json`. | next |
+
+## 4b. Found while fixing
+
+Surfaced by the fixes above; not yet done.
+
+| # | Where | Finding | Fix | Status |
+|---|---|---|---|---|
+| F1 | `server/api/main.go` shutdown | Same hazard as R22 on the API: after its 15 s `Shutdown`, `pool.Close` waits on an in-flight export's connection until SIGKILL. Cancelling must not end a truncated export as if it were complete. | Cancel the export context after `Shutdown` and abort the response (as the ceiling already does). | next |
+| F2 | `016_web_signups.sql` session check | The definer functions check a session's `expires_at` only, not the new 90-day absolute cap. Every viewer request checks the session first, so this is defence in depth. | Add `created_at > now() - interval '90 days'` in a new migration replacing the check. | next |
+| F3 | `SyncStateStore` read-only mode | Read-only lasts the process lifetime: a prewarmed process the user opens later shows an empty configuration, and nothing applied is saved until a relaunch. Safe, but confusing. | Reload the store when protected data becomes available, or show a banner. | next |
+| F4 | `WakeLog`, `SyncEventLog` | Both read an unreadable file as a missing one, like the state store did. Only diagnostics are at risk. | Same read-only guard. | later |
 
 ## 5. Design and maintainability
 

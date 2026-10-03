@@ -27,14 +27,22 @@ operator action, and when it does this file says so at the top of the entry.
 
 ## Unreleased
 
-No operator action is required, but there is a schema migration: take
-`make backup` before upgrading, as for any. `015_web_accounts.sql` and `016_web_signups.sql` add two
+No operator action is required beyond the one case below, but there are
+schema migrations: take `make backup` before upgrading, as for any.
+`015_web_accounts.sql` and `016_web_signups.sql` add two
 schemas (`auth`, `web`), functions and views, and alter no existing table
 outside them, so Grafana, the product API and ingest read and write exactly
 as before. `ingest` gains a subcommand and one Go dependency; `web` gains an
 opt-in accounts mode. Nothing new is required in `.env`; `WEB_DB_PASSWORD`
 (which `scripts/bootstrap.sh` now generates) creates the `web_app` role that
-accounts mode connects as.
+accounts mode connects as. `017_prune_ingest_rejections.sql` adds a daily job
+that deletes rejected-batch records older than 90 days.
+
+**One case does need action:** an `.env` still holding the `change-me`
+placeholder from `.env.example` for a token or a database role password now
+stops the stack (see Security below). Generate real values
+(`openssl rand -hex 32`) before upgrading; an install made by
+`scripts/bootstrap.sh` already has them.
 
 ### Added
 
@@ -112,6 +120,36 @@ accounts mode connects as.
 - The viewer's return-path check refuses control characters and backslashes.
   Browsers strip tabs and newlines from a URL, so the user switcher's `next`
   field could be pointed off-site as `/<tab>/example.com`.
+- `restore.sh` stops the scheduled backup service while it runs (a dump
+  taken mid-restore could become the newest backup), refuses a dump name
+  missing from the store, and no longer suggests `docker compose down -v`,
+  which deletes the `backups` volume holding the dump.
+- A client that stops reading an export no longer holds its slot forever:
+  each export has a 60 s write deadline and a 30-minute ceiling.
+- A product-API query that runs out of time is a 504 asking for a narrower
+  range, not a 500.
+- Restarting ingest with a batch in flight no longer ends in SIGKILL
+  (`stop_grace_period: 30s`, inserts cancelled after shutdown).
+- The database container gets `shm_size: 1g`; Docker's 64 MB default fails
+  parallel queries over a few years of samples.
+
+### Security
+
+- **Rate limiting behind a proxy keys on the last `X-Forwarded-For`
+  entry**, in ingest, the product API and the viewer. Cloudflare, nginx
+  and Caddy append to the header, so the first entry was the client's own
+  choice and a fresh failure bucket per request was possible.
+- Ingest, the API and the MCP server (HTTP mode) refuse a token of
+  `change-me`, and the migrate service refuses it as a role password.
+- An MCP server pinned with `PULS_USER_ID` lists only its own user; it
+  listed every user's name and email.
+- Ingest decodes at most `PULS_MAX_INFLIGHT_BATCHES` (default 4) batches at
+  once and answers 503 with `Retry-After` beyond it, which the app retries.
+- Viewer passwords use scrypt N=2^16, r=8, p=2, rehashed on next sign-in,
+  and a session ends 90 days after sign-in however often it is used.
+  `WEB_DB_POOL_SIZE` sets the viewer's connection pool (default 4).
+- Releases: only a `v*` tag on `main` is published as a release, and
+  `latest` moves only after all four images are published.
 
 ## [0.2.0] - 2026-09-18
 
