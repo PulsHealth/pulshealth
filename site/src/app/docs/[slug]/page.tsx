@@ -3,9 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
+import { ApiBackLink, ApiNav, ApiReference } from "@/components/api-reference";
 import { DocsNav } from "@/components/docs-nav";
-import { docHref, docRoutes, getAllDocs, getDoc } from "@/lib/docs";
+import { type DocEntry, docHref, docRoutes, getAllDocs, getDoc } from "@/lib/docs";
 import { RepoMarkdown, readRepoFile, slugify, stripLeadingH1 } from "@/lib/markdown";
+import { loadApiDocument } from "@/lib/openapi";
 
 const GITHUB = "https://github.com/PulsHealth/pulshealth";
 
@@ -57,10 +59,77 @@ function tableOfContents(markdown: string): TocEntry[] {
   return entries;
 }
 
+/** Title, group and the source line under it, shared by both kinds of page. */
+function DocHeader({ doc }: { doc: DocEntry }) {
+  return (
+    <header className="mb-8">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand">{doc.group}</p>
+      <h1 className="text-4xl font-bold tracking-tight text-balance">{doc.title}</h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Source:{" "}
+        <a
+          href={`${GITHUB}/blob/main/${doc.repoPath}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 font-mono text-foreground/80 hover:text-brand"
+        >
+          {doc.repoPath}
+          <ArrowUpRight className="h-3 w-3" />
+        </a>{" "}
+        on GitHub ·{" "}
+        <a
+          href={`${GITHUB}/edit/main/${doc.repoPath}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-brand"
+        >
+          edit this page
+        </a>
+      </p>
+    </header>
+  );
+}
+
+/**
+ * An OpenAPI document, rendered as an API reference. The sidebar lists the
+ * endpoints rather than the other documents (the back link reaches those),
+ * and the article takes the right-hand column too: each endpoint sets its
+ * request and response examples beside its description.
+ */
+function ApiReferencePage({ doc }: { doc: DocEntry }) {
+  const loaded = loadApiDocument(doc.repoPath);
+  if (!loaded) notFound();
+  return (
+    <main className="min-h-screen bg-background pb-20">
+      <div className="container mx-auto max-w-[90rem] px-4 py-10 lg:py-14">
+        <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-12">
+          <aside className="hidden lg:block">
+            <div className="custom-scrollbar sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-2">
+              <ApiBackLink />
+              <ApiNav doc={loaded.doc} />
+            </div>
+          </aside>
+          <article className="min-w-0">
+            <details className="mb-8 rounded-lg border bg-muted/30 lg:hidden">
+              <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">Endpoints</summary>
+              <div className="border-t px-4 py-4">
+                <ApiNav doc={loaded.doc} />
+              </div>
+            </details>
+            <DocHeader doc={doc} />
+            <ApiReference doc={loaded.doc} />
+          </article>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export default async function DocPage({ params }: PageProps) {
   const { slug } = await params;
   const doc = getDoc(slug);
   if (!doc) notFound();
+  if (doc.format === "openapi") return <ApiReferencePage doc={doc} />;
 
   const raw = readRepoFile(doc.repoPath);
   if (!raw) notFound();
@@ -93,31 +162,7 @@ export default async function DocPage({ params }: PageProps) {
               </div>
             </details>
 
-            <header className="mb-8">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand">{doc.group}</p>
-              <h1 className="text-4xl font-bold tracking-tight text-balance">{doc.title}</h1>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Source:{" "}
-                <a
-                  href={`${GITHUB}/blob/main/${doc.repoPath}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-0.5 font-mono text-foreground/80 hover:text-brand"
-                >
-                  {doc.repoPath}
-                  <ArrowUpRight className="h-3 w-3" />
-                </a>{" "}
-                on GitHub ·{" "}
-                <a
-                  href={`${GITHUB}/edit/main/${doc.repoPath}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-brand"
-                >
-                  edit this page
-                </a>
-              </p>
-            </header>
+            <DocHeader doc={doc} />
 
             <div className="docs-prose prose prose-zinc dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-headings:scroll-mt-24">
               <RepoMarkdown source={body} docRepoPath={doc.repoPath} routes={docRoutes} />

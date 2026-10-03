@@ -27,6 +27,7 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 
 - [docs/database-guide.md](docs/database-guide.md): the authoritative guide to the schema — every table family, what each column means, which table answers which question, and the traps (device double counting above all). Rendered at https://pulshealth.com/docs/database/.
 - [docs/export.md](docs/export.md): bulk export of a whole range as streamed CSV or JSONL, over `GET /v1/export` or the `puls-export` CLI — and, with no server at all, from the app's Export tab. Rendered at https://pulshealth.com/docs/export/.
+- [docs/api.md](docs/api.md): the product API, the read-only HTTP API over the data — quickstart, authentication, choosing the user, conventions, paging, errors and rate limits. Rendered at https://pulshealth.com/docs/api/.
 - [server/README.md](server/README.md): running the reference backend — Compose services, environment, schema migrations, the ingest wire format and the product API. Rendered at https://pulshealth.com/docs/server/.
 
 ## AI assistants
@@ -36,7 +37,7 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 
 ## Optional
 
-- [server/api/docs.go](server/api/docs.go): the OpenAPI 3.1 document for the product API, served live at `/openapi.json` with an HTML reference at `/docs`.
+- [server/api/openapi.json](server/api/openapi.json): the OpenAPI 3.1 document for the product API — every endpoint, parameter and response field. The service embeds and serves it at `/openapi.json`; rendered as the API reference at https://pulshealth.com/docs/api-reference/.
 - [web/README.md](web/README.md): the Next.js viewer.
 - [PulsHealthSync/README.md](PulsHealthSync/README.md): the Swift sync package — architecture, wire format and performance numbers.
 - [PulsHealth/README.md](PulsHealth/README.md): the iOS app.

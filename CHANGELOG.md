@@ -68,6 +68,15 @@ accounts mode connects as.
   after 30 days.
 - In accounts mode, a request that reached the viewer over plain HTTP through
   the trusted proxy is redirected to HTTPS instead of refused.
+- **Product API documentation on pulshealth.com**: a guide
+  ([`docs/api.md`](docs/api.md), at `/docs/api/`) and an endpoint-by-endpoint
+  reference with examples (`/docs/api-reference/`), rendered from the
+  service's own OpenAPI document. That document now lives in
+  `server/api/openapi.json` (embedded in the `api` binary, served at
+  `/openapi.json` as before) and gains tags, a shared `Error` schema, every
+  error status each route can return (`400`, `401`, `403`, `429`, `500`),
+  field descriptions with units, and examples. Routes and response bodies are
+  unchanged.
 - An optional `tunnel` Compose profile: a Cloudflare Tunnel that serves the
   viewer on a domain of yours with no open port (`CLOUDFLARE_TUNNEL_TOKEN`,
   `COMPOSE_PROFILES=tunnel`); `server/README.md`, "Exposing the server".

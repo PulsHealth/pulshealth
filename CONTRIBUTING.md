@@ -127,8 +127,9 @@ npm run dev                     # demo data when DATABASE_URL is unset
 ### `site` (pulshealth.com marketing site)
 
 Built with **bun**, not npm, and distinct from `web/`. It reads
-`knowledge-base/`, `blog/` and eleven repository Markdown files by relative
-path, so a moved file makes the build emit fewer pages instead of failing. CI
+`knowledge-base/`, `blog/`, twelve repository Markdown files and the product
+API's OpenAPI document by relative path, so a moved file makes the build emit
+fewer pages instead of failing. CI
 compares the built knowledge-base, blog and docs pages with their sources
 (`site/README.md` has the details).
 
