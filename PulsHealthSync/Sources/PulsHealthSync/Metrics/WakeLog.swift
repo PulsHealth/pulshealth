@@ -145,13 +145,15 @@ public struct WakeRecord: Identifiable, Codable, Sendable, Equatable {
 }
 
 /// Durable, append-only log of wake records, parallel to `SyncEventLog`. Unlike
-/// the event log's fast-rolling 2k ring buffer, this keeps a much larger window
-/// (`capacity` wakes ≈ months) so a 1–2 week field study never loses early data,
+/// the event log's fast-rolling 2k ring buffer, this keeps a window of
+/// `capacity` wakes (weeks) so a 1–2 week field study never loses early data,
 /// and persists immediately on begin/finish so background kills don't lose the
 /// record.
 public actor WakeLog {
-    /// At a few dozen wakes/day this is several months of history.
-    public static let capacity = 10_000
+    /// At a few dozen wakes/day this is one to two months of history. Kept
+    /// modest on purpose: `begin` and `finish` each re-encode and rewrite the
+    /// whole file synchronously, inside the background budget.
+    public static let capacity = 2_000
 
     private(set) var records: [WakeRecord] = []
     private let logger = Logger(subsystem: PulsLog.subsystem, category: "wakes")

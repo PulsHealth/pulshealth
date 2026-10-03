@@ -21,7 +21,11 @@ struct BenchmarkView: View {
                     Button("Stop", role: .destructive) { benchmarkTask?.cancel() }
                 } else {
                     Button("Start Benchmark") { run() }
-                        .disabled(model.config.enabledTypes.isEmpty)
+                        .disabled(model.config.enabledTypes.isEmpty || model.backfillActive)
+                    if model.backfillActive {
+                        Text("A backfill is running. Wait for it to finish, then benchmark.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 }
             }
 
@@ -78,13 +82,16 @@ struct BenchmarkView: View {
         benchmarkTask = Task {
             let tmp = FileManager.default.temporaryDirectory
                 .appendingPathComponent("puls-benchmark-\(UUID())", isDirectory: true)
-            // Throwaway state: an in-memory token store keeps the benchmark's
-            // engine away from the app's Keychain item.
+            // Throwaway state, as HealthExporter does it: an in-memory token
+            // store keeps the benchmark's engine away from the app's Keychain
+            // item, and its own wake log keeps it from rewriting the app's
+            // real wake-log.json while a wake may be open.
             // No recent-window pass: it would send a month twice and the
             // throughput figure would count only the second time.
             let engine = HealthSyncEngine(
                 store: SyncStateStore(directory: tmp, tokenStore: InMemoryTokenStore()),
                 eventLog: SyncEventLog(directory: tmp),
+                wakeLog: WakeLog(directory: tmp),
                 recentWindowFirst: false
             )
             var benchConfig = config

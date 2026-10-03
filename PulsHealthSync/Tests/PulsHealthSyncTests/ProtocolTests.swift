@@ -240,6 +240,19 @@ import Testing
         #expect(ServerURLValidation.Failure.insecureRemoteHost("h").errorDescription?.contains("https://") == true)
     }
 
+    /// Credentials in the URL would be saved and logged with it (the log
+    /// scrubber strips queries, not userinfo); the token has its own field.
+    @Test func userinfoIsRejected() {
+        #expect(failure("https://user:secret@example.com") == .userinfo)
+        #expect(failure("https://user@example.com") == .userinfo)
+        #expect(failure("https://:secret@example.com/ingest") == .userinfo)
+        #expect(failure("http://user:secret@192.168.1.10:8080") == .userinfo)
+        #expect(ServerURLValidation.Failure.userinfo.errorDescription?.contains("token") == true)
+        // An "@" outside the authority is not userinfo.
+        #expect(url("https://example.com")?.absoluteString == "https://example.com")
+        #expect(url("https://example.com/@me")?.host == "example.com")
+    }
+
     @Test func localNetworkClassification() {
         #expect(ServerURLValidation.isLocalNetworkHost("localhost"))
         #expect(ServerURLValidation.isLocalNetworkHost("Printer.local."))

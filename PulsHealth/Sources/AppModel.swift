@@ -217,8 +217,16 @@ final class AppModel {
         // install that already has a server or types (an upgrade from before
         // this flow existed, or one whose Apply predates the durable flag) is
         // configured and must never be sent through first-run onboarding.
+        // A state file that exists but could not be read this launch (a
+        // prewarm before first unlock: `SyncStateStore.isReadOnly`) hides the
+        // configuration it holds behind an empty one. The install is not new,
+        // so first-run onboarding stays down — without recording the flag,
+        // since this launch cannot see what the file says.
+        let stateUnreadable = await engine.store.isReadOnly
         if showsOnboarding {
-            if config.serverURL != nil || !config.observedTypeIdentifiers.isEmpty
+            if stateUnreadable {
+                showsOnboarding = false
+            } else if config.serverURL != nil || !config.observedTypeIdentifiers.isEmpty
                 || authorizationRequested {
                 completeOnboarding()
             } else {
@@ -630,14 +638,18 @@ final class AppModel {
         // engine records it before the backfill below reads anything, which
         // is what lets a later widening be noticed.
         await refreshReadableHistory()
-        // A whole-history backfill may start in a task of its own (iOS 26,
-        // below), after the wake the observer registration triggers. Tell the
-        // engine it is coming so that wake does not take its types first.
-        if syncNewTypes, wholeHistory { await engine.expectBackfill() }
+        // Whether the backfill below will run at all — decided here, before
+        // the observer is registered, because a whole-history backfill may
+        // start in a task of its own (iOS 26, below) after the wake that
+        // registration triggers: the engine is told it is coming so that wake
+        // does not take its types first. Priming it for a backfill the
+        // `isSyncingAll` gate then refuses would only defer those types.
+        let backfillWillRun = syncNewTypes && configured && config.authToken != nil && !isSyncingAll
+        if backfillWillRun, wholeHistory { await engine.expectBackfill() }
         await engine.startObserving()
         await refresh()
 
-        guard syncNewTypes, configured, config.authToken != nil, !isSyncingAll else { return true }
+        guard syncNewTypes, configured, config.authToken != nil else { return true }
         // Types enabled but never synced (no anchor) start backfilling right
         // away so they appear live on the dashboard instead of "not synced".
         let newTypes = statuses
@@ -656,6 +668,13 @@ final class AppModel {
         let newRings = config.enabledTypes.contains(HealthTypeCatalog.activitySummaryIdentifier)
             && activitySummaryState.computedThrough == nil
         guard !newTypes.isEmpty || !newAggregates.isEmpty || newRings else { return true }
+        // Checked after the last await above, so nothing can start a sync
+        // between this and `isSyncingAll = true` below; and only once there is
+        // new work, so an Apply that enabled nothing new says nothing.
+        guard !isSyncingAll else {
+            lastErrorMessage = "A sync is running; new types will be backfilled on the next Sync Now."
+            return true
+        }
 
         // The whole history is the largest data movement an install makes, and
         // it used to stop the moment the user left the app: iOS suspended it

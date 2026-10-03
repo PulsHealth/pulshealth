@@ -233,6 +233,13 @@ public actor SyncStateStore {
 
     private let fileURL: URL
     private let tokenStore: TokenStore
+    /// True when `sync-state.json` existed at init but could not be read (see
+    /// `init`). The store then holds an empty configuration and, for the rest
+    /// of the process, writes nothing: every persist is refused, so the file on
+    /// disk is never replaced by that empty state, and the token store is never
+    /// written or cleared, since the Keychain item belongs to that file's
+    /// configuration — an Apply of the empty one would otherwise delete it.
+    public let isReadOnly: Bool
     /// Set when the last hand-off to the token store failed, so the next
     /// configuration write retries instead of assuming the token is safe.
     private var tokenStoreDirty = false
@@ -315,22 +322,41 @@ public actor SyncStateStore {
         let logger = Logger(subsystem: PulsLog.subsystem, category: "state")
 
         var loaded: PersistedState?
-        if let data = try? Data(contentsOf: fileURL) {
+        var unreadable = false
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            var data: Data?
             do {
-                loaded = try JSONDecoder.puls.decode(PersistedState.self, from: data)
+                data = try Data(contentsOf: fileURL)
             } catch {
-                // Starting fresh here would then persist an empty state over the
-                // only copy of every anchor and watermark (there are no backups).
-                // Move the undecodable file aside so it can be inspected or
-                // restored by hand, and only then start clean.
-                let quarantine = fileURL.appendingPathExtension(
-                    "corrupt-\(Int(Date().timeIntervalSince1970))")
-                try? FileManager.default.moveItem(at: fileURL, to: quarantine)
-                ProtectedStateFile.protect(quarantine)
-                logger.error(
-                    "Sync state file undecodable (\(error)); moved aside as \(quarantine.lastPathComponent) and starting fresh")
+                // The file is there but cannot be read — protected data not yet
+                // available (a prewarm launch before first unlock), or the path
+                // is not a regular file. Starting fresh and persisting would
+                // overwrite the only copy of every anchor and watermark, so the
+                // store opens empty and read-only for this process: every
+                // persist is refused and logged. The app relaunches often
+                // enough that the next launch, with the file readable, loads
+                // it as usual.
+                unreadable = true
+                logger.error("Sync state file exists but is unreadable (\(error)); opening read-only, nothing will be persisted this launch")
+            }
+            if let data {
+                do {
+                    loaded = try JSONDecoder.puls.decode(PersistedState.self, from: data)
+                } catch {
+                    // Starting fresh here would then persist an empty state over the
+                    // only copy of every anchor and watermark (there are no backups).
+                    // Move the undecodable file aside so it can be inspected or
+                    // restored by hand, and only then start clean.
+                    let quarantine = fileURL.appendingPathExtension(
+                        "corrupt-\(Int(Date().timeIntervalSince1970))")
+                    try? FileManager.default.moveItem(at: fileURL, to: quarantine)
+                    ProtectedStateFile.protect(quarantine)
+                    logger.error(
+                        "Sync state file undecodable (\(error)); moved aside as \(quarantine.lastPathComponent) and starting fresh")
+                }
             }
         }
+        self.isReadOnly = unreadable
         if var decoded = loaded {
             var rewrite = false
             if let legacyToken = decoded.configuration.authToken {
@@ -403,7 +429,8 @@ public actor SyncStateStore {
             self.deviceID = UUID().uuidString
             // A fresh file, but the Keychain may still hold a token from a
             // previous install of the same bundle — reuse it, exactly as the
-            // old file-based token would have survived a state reset.
+            // old file-based token would have survived a state reset. (Read
+            // only: a read-only store never writes it back or clears it.)
             self.configuration.authToken = (try? tokenStore.token()) ?? nil
         }
     }
@@ -443,6 +470,10 @@ public actor SyncStateStore {
     }
 
     private func storeToken(_ token: String?) {
+        guard !isReadOnly else {
+            logger.error("Bearer token not handed to the token store: the store is read-only because its file could not be read at launch")
+            return
+        }
         do {
             try tokenStore.setToken(token)
             tokenStoreDirty = false
@@ -959,7 +990,9 @@ public actor SyncStateStore {
     /// coalescing keeps disk I/O off the critical path while staying crash-safe
     /// (worst case we re-upload one already-uploaded page, which the server dedupes by UUID).
     private func persist() {
-        guard saveTask == nil else { return }
+        // persistNow() refuses and logs; no need to arm a timer for that on
+        // every state change.
+        guard !isReadOnly, saveTask == nil else { return }
         saveTask = Task {
             try? await Task.sleep(for: .milliseconds(250))
             saveTask = nil
@@ -968,6 +1001,10 @@ public actor SyncStateStore {
     }
 
     public func persistNow() {
+        guard !isReadOnly else {
+            logger.error("Sync state not persisted: the store is read-only because its file could not be read at launch")
+            return
+        }
         let snapshot = PersistedState(
             configuration: configuration, typeStates: typeStates, deviceID: deviceID,
             aggregateStates: aggregateStates, activitySummaryState: activitySummaryState,
