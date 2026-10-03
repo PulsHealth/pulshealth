@@ -525,7 +525,8 @@ jobs:
           PULS_WEB_INTEGRATION: "1"
         run: |
           npm ci
-          npx vitest run lib/webapp.integration.test.ts lib/accounts.integration.test.ts lib/signups.integration.test.ts
+          # Every *.integration.test.ts; a new suite needs no edit here.
+          npm run test:integration
 
       # The exploration notebook, executed end to end against a seeded schema.
       # The test brings up its own throwaway TimescaleDB (the same pinned

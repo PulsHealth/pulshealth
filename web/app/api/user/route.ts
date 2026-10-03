@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { UUID_RE } from "@/lib/config";
 import { viewerMode } from "@/lib/mode";
 import { getDataSource, getUsers } from "@/lib/queries";
+import { isUuid } from "@/lib/uuid";
 import { safeReturnPath, USER_COOKIE, userCookieOptions } from "@/lib/viewer";
 
 // The sidebar's user switcher posts here (SRV-11): a form with `user`, the
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const user = String(form.get("user") ?? "").trim().toLowerCase();
   const next = safeReturnPath(String(form.get("next") ?? ""));
 
-  if (!UUID_RE.test(user)) {
+  if (!isUuid(user)) {
     return new NextResponse("user must be a UUID\n", { status: 400, headers: TEXT });
   }
   if ((await getDataSource()).source === "live") {

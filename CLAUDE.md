@@ -552,7 +552,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
 - The `web` viewer's data pages are `export const dynamic = "force-dynamic"`.
   Don't reintroduce `revalidate`/ISR on them — it bakes a DB-less demo render
   at build time and serves it stale after deploys. **Demo data is dev-only:**
-  `web/lib/queries.ts` gates it on `ALLOW_DEMO = NODE_ENV !== "production"`
+  `web/lib/data/source.ts` gates it on `ALLOW_DEMO = NODE_ENV !== "production"`
   (the container sets `production`), so an unset or unreachable DB shows the
   `"error"` source ("Database unavailable"), never demo data.
 

@@ -7,8 +7,9 @@ activity rings, range-banded trend lines and bar series, with per-category
 accent colors.
 
 > **Local demo mode.** Outside production, an unset or unreachable `DATABASE_URL`
-> serves generated demo data. Production never fabricates health data: database
-> errors produce an explicit unavailable state and empty views.
+> serves generated demo data. Production never fabricates health data: a page
+> whose data cannot be read shows **Database unavailable** instead of its
+> charts.
 
 ## Quick start
 
@@ -45,10 +46,13 @@ and day boundaries; it defaults to `UTC` and must match the server stack's
 `PULS_TIME_ZONE` (the database exposes its own as `puls_time_zone()`; on a
 mismatch the viewer logs a warning and stops using `metric_daily`). The status
 dot shows **Live data** (green), **Demo data** (amber), or **Database unavailable**.
-A failed read makes the viewer check the database again at once rather than
-after its usual 30 seconds, so from the next page load a pool timeout or a
-lost database reads **Database unavailable** (and `/api/healthz` answers
-503) instead of empty charts under **Live data**.
+A page that cannot read its data — no database, an unreachable one, or one
+read that failed or timed out — shows **Database unavailable** in place of
+its content (with Try again), never empty charts that would read as "no
+data". A failed read also makes the viewer check the database again at once
+rather than after its usual 30 seconds, so a pool timeout or a lost database
+turns the status dot red from the next page load (and `/api/healthz`
+answers 503), while a single slow query fails only the page that ran it.
 
 `WEB_DB_POOL_SIZE` is how many database connections the viewer holds at most
 (default 4, clamped to 1–50). A type page runs several reads in parallel, so
@@ -309,8 +313,12 @@ and the app's App Store privacy answer declares the data collected there
 The code: `proxy.ts` and `lib/accounts/` (policy, request facts, sessions,
 passwords, throttling, the account store), the routes under `app/login`,
 `app/invite`, `app/account` and `app/api/auth`, and `scripts/invite.mjs`.
-`lib/accounts.integration.test.ts` and `lib/webapp.integration.test.ts` run
-the whole flow and the role's isolation against a real database in CI.
+`lib/accounts.integration.test.ts`, `lib/signups.integration.test.ts` and
+`lib/webapp.integration.test.ts` run the whole flow and the role's isolation
+against a real database in CI: `npm run test:integration` runs every
+`*.integration.test.ts` with `WEB_APP_DATABASE_URL` and `ADMIN_DATABASE_URL`
+set. Without them the suites skip, unless `PULS_CI_REQUIRE_INTEGRATION=1` (or
+`PULS_WEB_INTEGRATION=1`) makes that a failure.
 
 ## What's here
 
@@ -336,7 +344,9 @@ web/
 └── lib/
     ├── catalog.generated.ts  # GENERATED from ../docs/protocol/catalog.json (npm run gen:catalog)
     ├── catalog.ts       # the web catalog: generated core + web-only overlay, GROUPS, lookups
-    ├── queries.ts       # the single data API (user id as first argument); local demo fallback
+    ├── queries.ts       # the single data API (user id as first argument), re-exported from data/
+    ├── data/            # source.ts (live/demo/error, liveRead), series, stats, rings, workouts, users
+    ├── uuid.ts          # isUuid(): the one UUID check (canonical form, as ingest accepts)
     ├── viewer.ts        # which user this request shows: the session's (accounts), else puls-user cookie / PULS_USER_ID
     ├── mode.ts          # open / basic / accounts, from the environment
     ├── accounts/        # accounts mode: policy, sessions, passwords, throttling, account store
