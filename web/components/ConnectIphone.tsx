@@ -14,7 +14,8 @@ export function ConnectIphone() {
       <div className="panel" style={{ padding: 20, maxWidth: 560 }}>
         <div style={{ fontSize: 14, lineHeight: 1.55, marginBottom: 14 }}>
           <strong>On this iPhone?</strong> Tap the button, then confirm in PulsHealth. <strong>On a computer?</strong> Scan the
-          code with your iPhone&apos;s camera. It is shown once; reload the page and it is gone.
+          code with your iPhone&apos;s camera. It is shown once; reload the page and it is gone. Newer versions of the app can
+          also connect themselves: in PulsHealth, Sync → Database → PulsHealth Database → Sign In to PulsHealth.
         </div>
         <a href={state.link} className="btn btn-primary" style={{ marginBottom: 16 }}>
           Open in PulsHealth
