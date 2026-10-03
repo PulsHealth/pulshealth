@@ -147,11 +147,14 @@ public struct PairingPayload: Sendable, Equatable {
         return nil
     }
 
-    /// Writes the three values into a configuration draft. Nothing else in the
-    /// configuration is touched — a pairing code cannot change which types sync.
+    /// Writes the three values into a configuration draft, as a code that did
+    /// not come from an account sign-in (`ServerFieldsDraft.fill(fromSignIn:)`
+    /// records that case). Nothing else in the configuration is touched — a
+    /// pairing code cannot change which types sync.
     public func apply(to configuration: inout SyncConfiguration) {
         configuration.serverURL = serverURL
         configuration.authToken = token
         configuration.userID = userID
+        configuration.signedInDatabaseURL = nil
     }
 }

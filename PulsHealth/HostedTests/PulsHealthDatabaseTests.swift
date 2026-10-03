@@ -16,6 +16,9 @@ final class PulsHealthDatabaseTests: XCTestCase {
         XCTAssertEqual(PulsHealthDatabase.viewerURL.absoluteString, "https://app.pulshealth.com")
         XCTAssertEqual(PulsHealthDatabase.accountURL.absoluteString, "https://app.pulshealth.com/account")
         XCTAssertEqual(PulsHealthDatabase.requestAccessURL.absoluteString, "https://app.pulshealth.com/signup")
+        // Straight to the account page's Delete my account section
+        // (web/app/account/page.tsx, id="delete-account").
+        XCTAssertEqual(PulsHealthDatabase.deleteAccountURL.absoluteString, "https://app.pulshealth.com/account#delete-account")
         // The privacy policy's section on the developer's viewer, as the site
         // slugs its heading.
         XCTAssertEqual(PulsHealthDatabase.privacyURL.host(), "pulshealth.com")

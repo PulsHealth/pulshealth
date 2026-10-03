@@ -196,11 +196,17 @@ import Testing
         draft.fill(fromSignIn: pairing())
         draft.commit(to: &config)
 
-        PairingPayload(serverURL: URL(string: "https://other.example.test")!, token: "t", userID: user)
-            .apply(to: &config)
-        #expect(config.signedInDatabaseURL != nil)
+        var moved = config
+        moved.serverURL = URL(string: "https://other.example.test")
+        #expect(moved.signedInDatabaseURL != nil)
+        #expect(!moved.isSignedInDatabase)
+        #expect(!ServerFieldsDraft(configuration: moved).isSignedIn)
+
+        // A pairing code applied directly is not a sign-in, even for the
+        // same address, and clears the marker outright.
+        pairing().apply(to: &config)
+        #expect(config.signedInDatabaseURL == nil)
         #expect(!config.isSignedInDatabase)
-        #expect(!ServerFieldsDraft(configuration: config).isSignedIn)
 
         #expect(!SyncConfiguration(signedInDatabaseURL: URL(string: "https://puls.example.test")).isSignedInDatabase,
                 "no database configured at all")

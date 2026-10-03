@@ -23,8 +23,19 @@ enum PulsHealthDatabase {
     /// links to `requestAccessURL`.
     static var accountURL: URL { viewerURL.appending(path: "account") }
 
+    /// The account page's Delete my account section, directly: App Review
+    /// asks for a link straight to account deletion (5.1.1(v)). Signed out,
+    /// the sign-in page comes first.
+    static var deleteAccountURL: URL {
+        var components = URLComponents(url: accountURL, resolvingAgainstBaseURL: false)!
+        components.fragment = "delete-account"
+        return components.url!
+    }
+
     /// Where someone without an account asks for one; the developer approves
-    /// it, and the invite to choose a password arrives by email.
+    /// it, and the invite to choose a password arrives by email. Opened in
+    /// the sign-in sheet, like the account page: App Review expects an
+    /// app's registration to happen in the app, not in Safari.
     static var requestAccessURL: URL { viewerURL.appending(path: "signup") }
 
     /// The privacy policy's section on what the developer holds for the

@@ -2,16 +2,6 @@ import AuthenticationServices
 import SwiftUI
 import PulsHealthSync
 
-/// Where Sync → Database sends the data: the two choices at the top of the
-/// screen.
-enum DatabaseDestination: Hashable {
-    /// The developer's hosted database, paired by signing in
-    /// (`PulsHealthDatabase`).
-    case pulsHealth
-    /// One the person runs, paired with its code or typed in.
-    case own
-}
-
 /// Sync → Database. Two choices: the PulsHealth database, which needs an
 /// account and is paired by signing in, and your own database, paired with
 /// the code its setup prints (scanned, pasted, or accepted as a `puls://`
@@ -20,7 +10,8 @@ enum DatabaseDestination: Hashable {
 /// Either way the values are held in a `ServerFieldsDraft` — including the
 /// user ID a pairing code brings with it — and tested, and nothing reaches the
 /// configuration until Save & Apply (which still raises the server/user-change
-/// prompt if the target moved).
+/// prompt if the target moved). What the screen starts from and what Save &
+/// Apply commits is `DatabaseSetup`'s to decide.
 struct ServerSettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -29,16 +20,10 @@ struct ServerSettingsView: View {
     /// route can); the Sync tab's Set Up opens the form itself.
     let scanOnArrival: Bool
 
-    /// The choice at the top. Nil until one is made on an install with no
-    /// database: the screen asks rather than picking for the person.
-    @State private var destination: DatabaseDestination?
-    /// Your own database's fields.
-    @State private var server = ServerFieldsDraft()
-    /// The pairing code the PulsHealth sign-in sheet handed back this visit,
-    /// waiting for Save & Apply.
-    @State private var signedIn: ServerFieldsDraft?
-    @State private var signingIn = false
-    /// Why the last sign-in did not produce a pairing code.
+    @State private var setup = DatabaseSetup(applied: SyncConfiguration())
+    /// The page the web authentication sheet was opened on, while it is up.
+    @State private var sheetOpenOn: URL?
+    /// Why the last sheet did not produce a pairing code.
     @State private var signInProblem: String?
     @State private var confirmDisconnect = false
     @State private var loaded = false
@@ -52,7 +37,7 @@ struct ServerSettingsView: View {
     var body: some View {
         Form {
             destinationSection
-            switch destination {
+            switch setup.destination {
             case .pulsHealth: pulsHealthSections
             case .own: ownDatabaseSections
             case nil: EmptyView()
@@ -63,23 +48,27 @@ struct ServerSettingsView: View {
         .onAppear {
             if !loaded {
                 loaded = true
-                load()
+                setup = DatabaseSetup(applied: model.appliedConfig, scanOnArrival: scanOnArrival)
+                showScanner = scanOnArrival
             }
             // This screen is built lazily: an accepted pairing link can be
             // what brings it on screen for the first time, already waiting.
             collectConfirmedPairing()
         }
         .onChange(of: model.pairingAwaitsSyncTab) { collectConfirmedPairing() }
-        .onChange(of: server.urlText) {
+        // A sign-in's code stops asking for Save & Apply once it is applied,
+        // here or through the server-change prompt this screen raised.
+        .onChange(of: model.appliedConfig) { _, applied in setup.settle(applied: applied) }
+        .onChange(of: setup.own.urlText) {
             // A whole `puls://pair?…` string pasted into the URL field is a
             // pairing code, not a malformed URL.
-            if let payload = server.pairingCodeInURLField {
+            if let payload = setup.own.pairingCodeInURLField {
                 applyPairing(payload)
             } else {
                 connectionTest = nil
             }
         }
-        .onChange(of: server.tokenText) { connectionTest = nil }
+        .onChange(of: setup.own.tokenText) { connectionTest = nil }
         // The confirmation for an incoming link is an alert on RootView, and
         // it cannot come up over this sheet.
         .onChange(of: model.pairingLinkPrompt) { _, prompt in
@@ -116,7 +105,7 @@ struct ServerSettingsView: View {
         } header: {
             Text("Sync To")
         } footer: {
-            if destination == nil {
+            if setup.destination == nil {
                 Text("Choose where PulsHealth keeps a live copy of your Health data. You can change it later.")
             }
         }
@@ -143,7 +132,7 @@ struct ServerSettingsView: View {
                     Image(systemName: symbol)
                 }
                 Spacer()
-                if destination == choice {
+                if setup.destination == choice {
                     Image(systemName: "checkmark")
                         .fontWeight(.semibold)
                         .foregroundStyle(.tint)
@@ -152,21 +141,24 @@ struct ServerSettingsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(destination == choice ? .isSelected : [])
+        .accessibilityAddTraits(setup.destination == choice ? .isSelected : [])
     }
 
     // MARK: - PulsHealth database
 
     @ViewBuilder private var pulsHealthSections: some View {
-        if let signedIn {
-            // The sheet has handed back this iPhone's pairing code. The one
-            // step left goes first, so it cannot be missed.
+        if let signedIn = setup.signedIn {
+            // The sheet has handed back a pairing code. The one step left
+            // goes first, so it cannot be missed, with where it leads.
             Section {
                 Label {
                     Text("Your PulsHealth account sent this iPhone its pairing code. Tap Save & Apply to start syncing to the PulsHealth database.")
                 } icon: {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
+                }
+                if let label = setup.signedInDatabaseLabel {
+                    LabeledContent("Database", value: label)
                 }
                 if testingConnection {
                     HStack {
@@ -180,7 +172,7 @@ struct ServerSettingsView: View {
                 Text("Signed In")
             }
             applySection(disabled: signedIn.validatedURL == nil) {
-                Text("Nothing is sent until you tap Save & Apply.")
+                Text("No Health data is uploaded until you tap Save & Apply. Until then PulsHealth has only tested the connection, asking the database what it supports.")
             }
         } else if model.usesPulsHealthDatabase {
             Section {
@@ -212,41 +204,49 @@ struct ServerSettingsView: View {
                 Text("About the PulsHealth Database")
             }
             Section {
-                Button {
-                    signIn()
-                } label: {
-                    HStack {
-                        Label("Sign In to PulsHealth", systemImage: "person.crop.circle.badge.checkmark")
-                        if signingIn {
-                            Spacer()
-                            ProgressView()
-                        }
-                    }
-                }
-                .disabled(signingIn)
-                Link(destination: PulsHealthDatabase.requestAccessURL) {
-                    Label("Request Access", systemImage: "envelope")
-                }
+                sheetButton("Sign In to PulsHealth", systemImage: "person.crop.circle.badge.checkmark",
+                            page: PulsHealthDatabase.accountURL)
+                sheetButton("Request Access", systemImage: "envelope",
+                            page: PulsHealthDatabase.requestAccessURL)
                 if let signInProblem {
                     Label(signInProblem, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
             } footer: {
-                Text("Sign in, tap Connect this iPhone, then Open in PulsHealth. Request Access opens the form in Safari.")
+                Text("Sign in, tap Connect this iPhone, then Open in PulsHealth. Once you have asked for access, close the page; the email comes when the developer approves it.")
             }
         }
         // App Review 5.1.1(v): an app that leads people to an account lets
         // them start deleting it. Shown whether or not this iPhone is
-        // connected — an account can exist without one.
+        // connected — an account can exist without one, or with an iPhone
+        // paired from the account page's link, which the app cannot tell from
+        // any other database.
         Section {
-            Link(destination: PulsHealthDatabase.accountURL) {
+            Link(destination: PulsHealthDatabase.deleteAccountURL) {
                 Label("Delete PulsHealth Account", systemImage: "person.crop.circle.badge.xmark")
             }
             .tint(.red)
         } footer: {
             Text("Opens your account page in Safari. Its Delete my account signs you out, disconnects your iPhones and asks the developer to delete everything stored for you.")
         }
+    }
+
+    /// A row that opens one of the viewer's pages in the sign-in sheet, with a
+    /// spinner while that sheet is up.
+    private func sheetButton(_ title: String, systemImage: String, page: URL) -> some View {
+        Button {
+            openSheet(on: page)
+        } label: {
+            HStack {
+                Label(title, systemImage: systemImage)
+                if sheetOpenOn == page {
+                    Spacer()
+                    ProgressView()
+                }
+            }
+        }
+        .disabled(sheetOpenOn != nil)
     }
 
     // MARK: - Your own database
@@ -258,7 +258,7 @@ struct ServerSettingsView: View {
             } label: {
                 Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
             }
-            PastePairingCodeRow(urlText: server.urlText) { applyPairing($0) }
+            PastePairingCodeRow(urlText: setup.own.urlText) { applyPairing($0) }
         } footer: {
             Text("A pairing code, scanned, pasted, or opened as a puls:// link, fills in the URL, token and user ID your database's setup prints (`make pairing`) and tests them.")
         }
@@ -267,18 +267,18 @@ struct ServerSettingsView: View {
             // Verbatim prompts: as a string literal the URL became a
             // localized key, and Text styled it as a tappable link.
             LabeledContent("Database URL") {
-                TextField("Database URL", text: $server.urlText, prompt: Text(verbatim: "https://your-host:8443"))
+                TextField("Database URL", text: $setup.own.urlText, prompt: Text(verbatim: "https://your-host:8443"))
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
             }
-            if let issue = server.urlIssue {
+            if let issue = setup.own.urlIssue {
                 Label(issue, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundStyle(.red)
             }
             LabeledContent("Token") {
-                SecureField("Token", text: $server.tokenText, prompt: Text(verbatim: "Bearer token"))
+                SecureField("Token", text: $setup.own.tokenText, prompt: Text(verbatim: "Bearer token"))
             }
             Button {
                 runConnectionTest()
@@ -291,8 +291,8 @@ struct ServerSettingsView: View {
                     }
                 }
             }
-            .disabled(testingConnection || !server.isTestable)
-            if let pairedUserID = server.pairedUserID {
+            .disabled(testingConnection || !setup.own.isTestable)
+            if let pairedUserID = setup.own.pairedUserID {
                 // The third value of a pairing code has no field on this
                 // screen (it lives under Settings → User → Advanced), so
                 // say that it is staged too rather than changing it out
@@ -311,7 +311,7 @@ struct ServerSettingsView: View {
             Text("Database URL is the address your database's pairing code shows. Use https://; plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them.")
         }
 
-        applySection(disabled: server.urlIssue != nil) {
+        applySection(disabled: setup.own.urlIssue != nil) {
             Text("An empty URL disconnects the database; syncing stops and the Export tab keeps working.")
         }
     }
@@ -346,24 +346,8 @@ struct ServerSettingsView: View {
 
     // MARK: - Actions
 
-    /// Starts from what is applied: the PulsHealth database, your own, or —
-    /// with neither — no choice yet. Your own database's fields never start
-    /// with the PulsHealth database's URL and token in them.
-    private func load() {
-        if model.appliedConfig.isSignedInDatabase {
-            destination = .pulsHealth
-        } else if model.appliedConfig.serverURL != nil || scanOnArrival {
-            destination = .own
-        }
-        if !model.config.isSignedInDatabase {
-            server = ServerFieldsDraft(configuration: model.config)
-        }
-        showScanner = scanOnArrival
-    }
-
     private func choose(_ choice: DatabaseDestination) {
-        guard destination != choice else { return }
-        destination = choice
+        guard setup.choose(choice) else { return }
         // A result shown for the other choice's values says nothing here.
         connectionTestRun += 1
         connectionTest = nil
@@ -378,7 +362,7 @@ struct ServerSettingsView: View {
     /// the target moved.
     private func applyPairing(_ payload: PairingPayload) {
         choose(.own)
-        server.fill(from: payload)
+        setup.receivePairing(payload)
         // The code was printed by the server it describes; find out now
         // whether the phone can reach it rather than after Save & Apply.
         runConnectionTest()
@@ -392,39 +376,39 @@ struct ServerSettingsView: View {
         applyPairing(payload)
     }
 
-    /// Sign In to PulsHealth: the account page in iOS's web authentication
-    /// sheet. The person signs in (or asks for access from the sign-in
-    /// page), taps Connect this iPhone, then Open in PulsHealth, whose
-    /// `puls://pair?…` link the sheet hands back here.
+    /// Sign In to PulsHealth, or Request Access: one of the viewer's pages in
+    /// iOS's web authentication sheet. On the account page the person signs
+    /// in, taps Connect this iPhone, then Open in PulsHealth, whose
+    /// `puls://pair?…` link the sheet hands back here; on the sign-up page
+    /// they ask for access and close the sheet.
     ///
     /// The shared browser session, not an ephemeral one, so a sign-in done in
     /// Safari — where the invite to choose a password opens — carries over,
     /// and iOS says which site the app wants to use before the sheet opens.
     /// What comes back is treated like an accepted link: it fills a draft and
     /// is tested, and only Save & Apply applies it. No confirmation alert
-    /// first: the person started this from here, and the sheet only returns a
-    /// link that page sent.
-    private func signIn() {
-        guard !signingIn else { return }
-        signingIn = true
+    /// first — the person started this from here — but the screen names the
+    /// database the code points at.
+    private func openSheet(on page: URL) {
+        guard sheetOpenOn == nil else { return }
+        sheetOpenOn = page
         signInProblem = nil
         Task {
             let outcome: PulsHealthDatabase.SignInOutcome
             do {
                 let callback = try await webAuthenticationSession.authenticate(
-                    using: PulsHealthDatabase.accountURL,
+                    using: page,
                     callbackURLScheme: PulsHealthDatabase.callbackScheme,
                     preferredBrowserSession: .shared)
                 outcome = PulsHealthDatabase.outcome(ofCallback: callback)
             } catch {
                 outcome = PulsHealthDatabase.outcome(ofError: error)
             }
-            signingIn = false
+            sheetOpenOn = nil
             switch outcome {
             case .paired(let payload):
-                var draft = ServerFieldsDraft()
-                draft.fill(fromSignIn: payload)
-                signedIn = draft
+                choose(.pulsHealth)
+                setup.receiveSignIn(payload)
                 model.noteSignInPairing(payload)
                 runConnectionTest()
             case .cancelled:
@@ -437,10 +421,11 @@ struct ServerSettingsView: View {
 
     /// Runs the connection test against the values the current choice would
     /// apply — never the saved ones — and persists nothing; only the result
-    /// row changes.
+    /// row changes. It asks the database for its capabilities with the token
+    /// (falling back to a probe batch with no samples), and uploads no health
+    /// data.
     private func runConnectionTest() {
-        let draft = destination == .pulsHealth ? signedIn : server
-        guard let draft, let url = draft.validatedURL else { return }
+        guard let draft = setup.fieldsForChoice, let url = draft.validatedURL else { return }
         let token = draft.token
         guard !token.isEmpty else { return }
         let userID = draft.connectionTestUserID(fallback: model.config.userID)
@@ -459,28 +444,15 @@ struct ServerSettingsView: View {
     }
 
     private func apply() async {
-        switch destination {
-        case .pulsHealth:
-            guard var draft = signedIn else { return }
-            draft.commit(to: &model.config)
-            // As below: the paired user ID is in the draft now.
-            draft.markCommitted()
-            signedIn = draft
-        case .own:
-            // Save & Apply is disabled while the URL is invalid; an empty
-            // field clears the server.
-            server.commit(to: &model.config)
-            // The paired user ID is in the draft now, whichever way the
-            // server-change prompt goes; holding on to it would overwrite a
-            // later edit on the User page.
-            server.markCommitted()
-        case nil:
-            return
-        }
+        // Save & Apply is disabled while the URL is invalid; an empty field
+        // clears the server.
+        guard setup.commit(to: &model.config) else { return }
         // Applied: back to the Sync tab, which now shows the server's status.
         // Deferred to the server-change prompt instead: stay, so the fields
-        // are still here to adjust if the user cancels it.
+        // are still here to adjust if the user cancels it (and if they
+        // confirm it, `settle(applied:)` notices).
         if await model.applyConfiguration() {
+            setup.settle(applied: model.appliedConfig)
             dismiss()
         }
     }
