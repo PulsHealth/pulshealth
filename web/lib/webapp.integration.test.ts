@@ -18,6 +18,8 @@ import { randomUUID } from "node:crypto";
 import { Client, DatabaseError } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { configuredTimeZone } from "./config";
+
 const WEB_URL = process.env.WEB_APP_DATABASE_URL;
 const ADMIN_URL = process.env.ADMIN_DATABASE_URL;
 
@@ -151,9 +153,12 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("web_app role (integration)", () => {
            FROM generate_series(1, 3) g`,
         [workout, user, OLD_DAYS, heart],
       );
+      // "Today" in the zone getActivityRings reads it in, not the database
+      // session's (UTC on CI): from midnight UTC until the zone's own
+      // midnight, the two are different dates.
       await admin.query(
-        "INSERT INTO activity_summaries (date, user_id, move_kcal) VALUES (current_date, $1, 400)",
-        [user],
+        "INSERT INTO activity_summaries (date, user_id, move_kcal) VALUES ((now() AT TIME ZONE $2::text)::date, $1, 400)",
+        [user, configuredTimeZone()],
       );
     }
 
