@@ -34,9 +34,9 @@ the throwaway review backend of [`review-backend.md`](review-backend.md).
 Not standing up the review instance? Delete the YOUR OWN DATABASE block
 before pasting; nothing else refers to it.
 
-The field's limit is 4,000 characters. The block below is 3,853 with the
-placeholders and about 3,900 filled in (a 64-character token, a
-24-character password) — about 3,960 if each of its 57 line breaks
+The field's limit is 4,000 characters. The block below is 3,837 with the
+placeholders and about 3,890 filled in (a 64-character token, a
+24-character password) — about 3,950 if each of its 57 line breaks
 counts as two, which is the reading to budget for. Any addition needs a
 matching cut; measure the filled copy before pasting, and drop the optional
 block if it does not fit.
@@ -70,7 +70,7 @@ HOW TO EXERCISE THE APP (about 5 minutes)
 5. Sign in with the demo account, tap "Connect this iPhone", then "Open in PulsHealth". The sheet closes and the app tests the connection.
 6. Tap "Save & Apply". The Sync tab shows "PulsHealth Database" and the upload begins.
 
-ACCOUNT DELETION (5.1.1(v)): Sync > Database > "Delete PulsHealth Account" opens the account page, whose "Delete my account" deletes it and its data. Settings > Privacy & Data has the same link while connected.
+ACCOUNT DELETION (5.1.1(v)): Sync > Database > "Delete PulsHealth Account" opens the account page, whose "Delete my account" deletes it and its data. Settings > Privacy & Data has the same link.
 
 WHAT YOU SHOULD SEE
 
@@ -152,9 +152,11 @@ them to choose a password. Signing in happens on that website, in iOS's
 `ASWebAuthenticationSession`, and the app never sees the password; what it
 receives is the pairing code the account page makes for this iPhone. There
 is no third-party or social login, so Sign in with Apple is not required
-(4.8). Deletion (5.1.1(v)): Sync → Database → Delete PulsHealth Account, on
-screen whether or not the iPhone is connected (and under Settings → Privacy &
-Data while it is), opens the account page. There, Delete my account signs the
+(4.8). Asking for access happens in the same sheet (Request Access), not in
+Safari. Deletion (5.1.1(v)): Delete PulsHealth Account, on Sync → Database
+whether or not the iPhone is connected and always under Settings → Privacy &
+Data, opens the account page's Delete my account section directly
+(`/account#delete-account`). There, Delete my account signs the
 person out, disconnects their iPhones at once and has the developer purge
 every row stored under their user ID (`docs/privacy-policy.md`, "If you use
 the developer's viewer"). Disconnect in the app only stops syncing.

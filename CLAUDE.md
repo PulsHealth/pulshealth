@@ -380,8 +380,9 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   updates those documents in the same pull request, and the App Store listing's
   privacy answers with them (`docs/appstore/README.md` has the table).
 - **The PulsHealth database is one address and a pairing code.**
-  `PulsHealthDatabase.viewerURL` (`https://app.pulshealth.com`) is the only
-  developer-controlled host in the app. Never hard-code the database (ingest)
+  `PulsHealthDatabase.viewerURL` (`https://app.pulshealth.com`) is the
+  instance's only address in the app (the other developer addresses are
+  `pulshealth.com` pages opened in Safari). Never hard-code the database (ingest)
   URL: it comes back with the token and user from the viewer's `/account`
   page as an ordinary `puls://pair` code, through an
   `ASWebAuthenticationSession` (callback scheme `puls`, shared browser
@@ -392,8 +393,12 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   PulsHealth one is derived, `SyncConfiguration.isSignedInDatabase`: the
   optional `signedInDatabaseURL` (absent from 1.6 state files; never make it
   required) counts only while it equals `serverURL`, and export clears it.
-  Delete PulsHealth Account (App Review 5.1.1(v)) stays on Sync → Database
-  whether or not the iPhone is connected. Changing any of this means changing
+  The screen's decisions live in `DatabaseSetup` (it starts from the
+  *applied* configuration). Delete PulsHealth Account (App Review 5.1.1(v),
+  `/account#delete-account`, whose `id` lives in `web/app/account/page.tsx`)
+  stays on Sync → Database and in Settings whether or not the iPhone is
+  connected: an iPhone paired through the account page's link in Safari is
+  not marked. Changing any of this means changing
   `docs/privacy-policy.md` ("Where it goes", "If you use the developer's
   viewer", whose heading is the app's privacy link anchor),
   `docs/appstore/listing.md` and `review-notes.md` with it.

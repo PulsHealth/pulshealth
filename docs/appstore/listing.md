@@ -151,7 +151,7 @@ Answer every content question **None / No**. The result is **4+**.
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
 | Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. A Type page also shows one line on what the type measures and, behind the value histogram, the typical range from the project's knowledge base — general reference, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
-| Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth opens `app.pulshealth.com/account` in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the sign-in flow on that site (sign in, or the sign-in page's Request access, then Connect this iPhone), and closes when that page hands back the pairing code. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/docs/server/), and the PulsHealth database's Request Access, What the Developer Holds, Manage Account and Delete PulsHealth Account (app.pulshealth.com and pulshealth.com/privacy). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
+| Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth (or Request Access) opens `app.pulshealth.com/account` (or `/signup`) in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the account flow on that site (sign in or ask for access, then Connect this iPhone), and closes when that page hands back the pairing code or the person closes it. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/docs/server/), and the PulsHealth database's What the Developer Holds, Manage Account and Delete PulsHealth Account (app.pulshealth.com and pulshealth.com/privacy). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
 | User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, database URL, token) is shared with any other user or with the developer. |
 | Gambling and contests | No | — |
 | In-app purchases | No | No StoreKit. |
@@ -180,17 +180,19 @@ necessary to service the request*. The label is per app, not per user, so it
 now declares what the developer collects from the people who use the
 developer's own database:
 
-1. **The app's one developer address is the PulsHealth database's sign-in
-   page.** The developer runs one database and viewer of their own
-   (`app.pulshealth.com`) for people they invite and, since 2026-10-02, for
-   people whose access request they approve. The app offers it on Sync →
-   Database as the **PulsHealth database**, next to your own. Its only
-   built-in developer address is `https://app.pulshealth.com`
-   (`PulsHealth/Sources/PulsHealthDatabase.swift`), opened in an
-   `ASWebAuthenticationSession` when the person taps Sign In to PulsHealth.
+1. **The app sends data to no developer server unless the person chooses
+   the PulsHealth database.** The developer runs one database and viewer of
+   their own (`app.pulshealth.com`) for people they invite and, since
+   2026-10-02, for people whose access request they approve. The app offers
+   it on Sync → Database as the **PulsHealth database**, next to your own.
+   The developer addresses in the app are web pages it opens on a tap:
+   `pulshealth.com` (documentation, the privacy policy) and
+   `https://app.pulshealth.com` (`PulsHealth/Sources/PulsHealthDatabase.swift`),
+   whose account and sign-up pages open in an `ASWebAuthenticationSession`
+   when the person taps Sign In to PulsHealth or Request Access.
    The database's own address, a token and the user ID come back from that
-   page as an ordinary pairing code, and nothing is uploaded until the
-   person taps Save & Apply. (1.6 and earlier have no sign-in sheet and
+   page as an ordinary pairing code, and no health data is uploaded until
+   the person taps Save & Apply (before that, only a connection test). (1.6 and earlier have no sign-in sheet and
    reach that database only through the pairing code the account page
    shows, like anyone's database.) The source is public, so this is
    checkable rather than a promise. **For the people who choose it, it is

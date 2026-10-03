@@ -25,8 +25,8 @@ request, writes it to files the user saves or sends themselves; for those
 people the developer receives nothing. The one exception is people who use
 the developer's own database and viewer, by invitation or an approved
 request — which the app offers on Sync → Database as the **PulsHealth
-database**, its one built-in developer address
-(`PulsHealth/Sources/PulsHealthDatabase.swift`), reached by signing in — and
+database**, reached by signing in to its one fixed address
+(`PulsHealth/Sources/PulsHealthDatabase.swift`) — and
 that is why App Privacy declares data linked to the user (see `listing.md`).
 Every document here is an application of those facts, and every claim in
 them is checkable against the source in this repository.
@@ -81,15 +81,17 @@ account, the signing team, a real device or personal contact details.
       App Privacy is per app, not per version, so it is already live; revisit
       it only if something it asks about changed.
 - [ ] **The first release with the PulsHealth database option** (Sync →
-      Database → PulsHealth Database, the in-app sign-in): the marketing
-      copy still says there is no PulsHealth account or service, and was
-      deliberately left alone so the site would not advertise the option
-      before the store had it. Once that version is approved, update
-      `site/src/app/about/page.tsx`, `site/src/app/ios/page.tsx`,
-      `site/src/app/page.tsx` and `site/src/lib/faq.ts`, and the promotional
-      text in `listing.md` ("No account … nothing goes to the developer",
-      which is editable without a build), then deploy the site. Delete this
-      item afterwards.
+      Database → PulsHealth Database, the in-app sign-in) contradicts copy
+      that was deliberately left alone, so nothing advertised the option
+      before the store had it:
+      - **At submission:** the promotional text in `listing.md` ("No
+        account … nothing goes to the developer"). It is live while the
+        build is reviewed, and a listing that contradicts the build under
+        review is a 2.3 rejection.
+      - **Once approved:** the marketing pages `site/src/app/about/page.tsx`,
+        `site/src/app/ios/page.tsx`, `site/src/app/page.tsx` and
+        `site/src/lib/faq.ts`, then deploy the site.
+      Delete this item afterwards.
 
 ### Screenshots
 

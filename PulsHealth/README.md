@@ -173,11 +173,12 @@ Sources/
 ├── ServerSettingsView.swift  Sync → Database: first the choice, PulsHealth
 │                         Database or Your Own Database (none checked until
 │                         one is applied). PulsHealth: who holds the data
-│                         (What the Developer Holds), Request Access, Sign In
-│                         to PulsHealth (the web authentication sheet), then
-│                         the returned code tested above Save & Apply; once
-│                         applied, Manage Account and Disconnect; always,
-│                         Delete PulsHealth Account. Your own: the Database
+│                         (What the Developer Holds), Sign In to PulsHealth
+│                         and Request Access (both in the web authentication
+│                         sheet), then the returned code — its database named
+│                         — tested above Save & Apply; once applied, Manage
+│                         Account and Disconnect; always, Delete PulsHealth
+│                         Account. Your own: the Database
 │                         URL and Token fields (validated: https, or http for
 │                         local-network hosts only; held in a
 │                         ServerFieldsDraft until Save & Apply, with Scan /
@@ -187,9 +188,15 @@ Sources/
 │                         rejected / unsupported protocol / unreachable /
 │                         server error. Collects an accepted puls:// link's
 │                         payload (which selects Your Own Database).
+├── DatabaseSetup.swift   The Database screen's decisions, out of the view:
+│                         it starts from the *applied* configuration (not a
+│                         draft a cancelled server-change prompt left
+│                         behind), which fields Save & Apply commits, and
+│                         when a sign-in's code is applied (`settle`).
 ├── PulsHealthDatabase.swift  The PulsHealth database's one fixed address
 │                         (https://app.pulshealth.com) and the pages derived
-│                         from it (account, sign-up), the privacy-policy
+│                         from it (account, its #delete-account section,
+│                         sign-up), the privacy-policy
 │                         link, the sign-in callback scheme, and what a
 │                         sign-in sheet's callback or error means.
 ├── ActivityView.swift    Sync → Activity: segmented Log / Background over
@@ -229,8 +236,8 @@ Sources/
 │                         (version, and four Links — the documentation, the
 │                         privacy policy, the GitHub repository and its issue
 │                         tracker — that open in Safari). Privacy & Data also
-│                         carries Delete PulsHealth Account while the
-│                         PulsHealth database is applied. No footers. Also
+│                         carries Delete PulsHealth Account, always. No
+│                         footers. Also
 │                         UserView and the server-change prompt. The
 │                         database is not here; it is the Sync tab's.
 ├── OnboardingView.swift  First run: four pages swiped in a paging ScrollView,
@@ -269,9 +276,11 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
                           aggregate type×function combos behind an ObjC exception
                           catcher and fails on any mismatch with the library's
                           allowedAggregateFunctions — run on every new iOS runtime.
-                          Also PulsHealthDatabaseTests: the hosted address and
+                          Also PulsHealthDatabaseTests (the hosted address and
                           its pages, the callback scheme against the shipped
-                          Info.plist, and the sign-in sheet's outcomes.
+                          Info.plist, the sign-in sheet's outcomes) and
+                          DatabaseSetupTests (the Database screen's start,
+                          Save & Apply and sign-in settling).
 ```
 
 ## Behavior notes
@@ -315,21 +324,29 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   code, so they are the operator's to change. **Sign In to PulsHealth** opens
   `/account` in an `ASWebAuthenticationSession` (shared browser session, so a
   sign-in made in Safari, where the invite email opens, carries over; iOS
-  asks first). The person signs in, taps Connect this iPhone, then Open in
+  asks first), and **Request Access** opens `/signup` in the same sheet
+  (App Review expects registration in the app, not in Safari). The person signs in, taps Connect this iPhone, then Open in
   PulsHealth, and the sheet returns that `puls://pair?…` link to the app. It
   gets the same checks as a scanned code, fills a `ServerFieldsDraft`
-  (`fill(fromSignIn:)`) and is tested, and the screen puts Save & Apply
-  first, because nothing is applied until it is tapped. There is no "Pair
+  (`fill(fromSignIn:)`) and is tested, and the screen names its database
+  and puts Save & Apply first, because nothing is applied until it is
+  tapped. The test asks the database for its capabilities with the token
+  and uploads no health data. There is no "Pair
   with…?" alert, because the person started the flow and the sheet only
   returns what that page sent. A closed sheet says nothing: that covers
   someone who only asked for access, and a household account with nothing
   to connect. Which database is applied is derived:
   `SyncConfiguration.isSignedInDatabase`, true only while the applied URL is
   the one the sign-in delivered, so the Sync tab says "PulsHealth Database"
-  rather than the operator's host. Disconnect is the empty-URL path. Delete
-  PulsHealth Account (App Review 5.1.1(v)) opens the account page, whose
-  Delete my account does the rest. It is on the Database screen whether or not
-  this iPhone is connected, and under Settings → Privacy & Data while it is.
+  rather than the operator's host. A code opened from the account page in
+  Safari (the invite email leads there) is an ordinary incoming link instead:
+  confirmed, filled into Your Own Database and, to the app, any database —
+  the safety rule is that only the sheet can mark one. Disconnect is the
+  empty-URL path. Delete PulsHealth Account (App Review 5.1.1(v)) opens the
+  account page's `#delete-account` section, whose Delete my account does the
+  rest. It is on the Database screen whether or not this iPhone is
+  connected, and always under Settings → Privacy & Data, since an iPhone
+  paired through Safari is not marked.
 - **Without a database.** The first-run flow never asks for one: it asks for
   Health access for the starter set, and Start Exploring applies it. Nothing
   syncs (`AppModel.configured` needs a database URL in the applied

@@ -18,16 +18,20 @@ up, it exports a file when you ask for one, and that is the whole of it.
   then the database the app uploads to (see
   [If you use the developer's viewer](#if-you-use-the-developers-viewer)).
   There is no telemetry endpoint, and no account is needed to use the app:
-  one is needed only for that database. The only developer address built
-  into the app is that database's sign-in page (1.6 and earlier have none),
-  which it opens only when you tap Sign In to PulsHealth; otherwise it talks
-  to the database you set up and to nothing else.
+  one is needed only for that database. The app sends your data only to the
+  database you set up. The developer's addresses in it are web pages it
+  opens when you tap a link or button: on `pulshealth.com` (the
+  documentation and this policy) and, in versions that offer the PulsHealth
+  database, on `app.pulshealth.com` (signing in, asking for access, managing
+  or deleting your account). They open in Safari or in iOS's sign-in sheet,
+  and the app itself sends them nothing.
 - **Your health data leaves the phone in two ways, and both are yours.** The
   app uploads only to the database you set up in it — typed, taken from
   your database's pairing code (scanned, pasted, or opened as a link you
   confirm), or, for the PulsHealth database, handed to the app by its
   account page after you sign in — and it has no other upload destination
-  compiled into it. Nothing is uploaded until you tap Save & Apply. And when
+  compiled into it. No health data is uploaded until you tap Save & Apply;
+  before that, the app only tests the connection. And when
   you ask for an export, it writes files and hands them to the iOS share sheet;
   where they go from there is the choice you make in that sheet. An export
   involves no network request by the app at all.
@@ -82,12 +86,19 @@ inviting you to choose a password opens) carries over, and the viewer's
 cookie is kept by iOS with Safari's, not by the app. On that page, Connect
 this iPhone and then Open in PulsHealth hand the app a pairing code — the
 database's address, a token for this iPhone and your user ID — which fills
-in the database fields. The app accepts only a pairing code from that sheet,
-checks it like a scanned one, and sends nothing to that database until you
-tap Save & Apply. Closing the sheet changes nothing. Request Access, What the
-Developer Holds and Delete PulsHealth Account open the developer's pages in
-Safari, outside the app. (Versions up to 1.6 have no sign-in sheet: there,
-the account page's pairing code is scanned or opened like any other.)
+in the database fields, and shows the database it points to. The app
+accepts only a pairing code from that sheet and checks it like a scanned
+one. Before you tap Save & Apply it does one thing with it: a connection
+test, which asks that database what it supports, using the token, and
+uploads no health data. Closing the sheet changes nothing. Request Access
+opens the developer's request form in the same sheet; What the Developer
+Holds, Manage Account and Delete PulsHealth Account open the developer's
+pages in Safari, outside the app. A pairing code from the account page
+opened on the iPhone in Safari (where the invite email leads) instead
+reaches the app as an ordinary pairing link, which the app asks you to
+confirm and then treats like any database's. (Versions up to 1.6 have no
+sign-in sheet: there, the account page's pairing code is scanned or opened
+like any other.)
 
 Plain `http://` is permitted **only** for hosts on your local network
 (`localhost`, `*.local`, and the private IP ranges `10.x`, `172.16–31.x`,
@@ -290,8 +301,9 @@ decides. What happens to your data:
   OpenTopoMap). Those requests carry no health data, but they do reveal to
   that provider which area the map shows, and the viewer's address.
 - **Leaving.** If you asked for access, **Delete my account** on the
-  account page (the app's Delete PulsHealth Account, under Sync → Database,
-  opens it) signs you out, disconnects your iPhones at once so nothing
+  account page (the app's Delete PulsHealth Account, under Sync → Database
+  and Settings → Privacy & Data, opens it) signs you out, disconnects your
+  iPhones at once so nothing
   more is uploaded, and asks the developer to delete every row stored under
   your user ID, which they do, along with the names of your devices. Family members ask the developer, who does
   the same.
