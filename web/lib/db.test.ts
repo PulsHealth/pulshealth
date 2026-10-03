@@ -45,6 +45,19 @@ beforeEach(() => {
 
 const texts = () => fake.statements.map((s) => s.text);
 
+describe("poolSize", () => {
+  it("reads WEB_DB_POOL_SIZE, defaulting to 4 and clamping to 1–50", async () => {
+    const { poolSize } = await import("./db");
+    expect(poolSize(undefined)).toBe(4);
+    expect(poolSize("")).toBe(4);
+    expect(poolSize("many")).toBe(4);
+    expect(poolSize(" 12 ")).toBe(12);
+    expect(poolSize("0")).toBe(1);
+    expect(poolSize("-3")).toBe(1);
+    expect(poolSize("500")).toBe(50);
+  });
+});
+
 describe("scoped", () => {
   it("runs the callback in one read-only transaction with the user set locally", async () => {
     const { scoped } = await import("./db");

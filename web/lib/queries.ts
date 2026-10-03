@@ -132,6 +132,18 @@ async function source(): Promise<DataSourceInfo["source"]> {
   return (await getDataSource()).source;
 }
 
+// A live read failed. Besides logging it, drop the cached check so the next
+// getDataSource() probes again instead of reporting "live" for up to SRC_TTL:
+// a pool timeout or a lost database fails that probe too and becomes the
+// "error" source (the sidebar's "Database unavailable", /api/healthz's 503),
+// rather than a run of empty charts under "Live data". A failure confined to
+// one query (a statement timeout on one person's All Time chart) passes the
+// probe, so it does not blank the viewer for everyone.
+function readFailed(what: string, e: unknown): void {
+  console.error(`[queries] ${what} failed:`, e);
+  srcCache = null;
+}
+
 // Log a given warning once per process; the zone checks below run on every
 // request and would otherwise flood the log with the same line.
 const warnedOnce = new Set<string>();
@@ -452,7 +464,7 @@ export async function getSeries(userId: string, identifier: string, range: Range
       return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
     });
   } catch (e) {
-    console.error("[queries] getSeries failed:", e);
+    readFailed("getSeries", e);
     return ALLOW_DEMO ? demoSeries(identifier, range) : empty;
   }
 }
@@ -490,7 +502,7 @@ export async function getLatestMany(userId: string, identifiers: string[]): Prom
     }
     return out;
   } catch (e) {
-    console.error("[queries] getLatestMany failed:", e);
+    readFailed("getLatestMany", e);
     if (ALLOW_DEMO) for (const id of identifiers) out.set(id, demoLatest(id));
     return out;
   }
@@ -533,7 +545,7 @@ export async function getTodayTotals(userId: string, identifiers: string[]): Pro
     for (const r of rows) out.set(r.identifier, Number(r.total));
     return out;
   } catch (e) {
-    console.error("[queries] getTodayTotals failed:", e);
+    readFailed("getTodayTotals", e);
     for (const id of identifiers) out.set(id, ALLOW_DEMO ? demoTodaySum(id) : 0);
     return out;
   }
@@ -594,7 +606,7 @@ export async function getActivityRings(userId: string): Promise<ActivityRingsDat
       hasData: true,
     };
   } catch (e) {
-    console.error("[queries] getActivityRings failed:", e);
+    readFailed("getActivityRings", e);
     return ALLOW_DEMO ? demoActivityRings() : fallback;
   }
 }
@@ -674,7 +686,7 @@ async function loadStats(userId: string): Promise<Map<string, TypeStat>> {
       return out;
     });
   } catch (e) {
-    console.error("[queries] getStats failed:", e);
+    readFailed("getStats", e);
     if (ALLOW_DEMO) for (const s of demoStats()) out.set(s.identifier, s);
     return out;
   }
@@ -779,7 +791,7 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
       return out;
     });
   } catch (e) {
-    console.error("[queries] getDailySparklines failed:", e);
+    readFailed("getDailySparklines", e);
     if (ALLOW_DEMO) {
       for (const id of identifiers) {
         out.set(id, demoSeries(id, "30D").points.slice(-days).map((p) => p.value));
@@ -827,7 +839,7 @@ export async function getWorkouts(userId: string, limit = 40): Promise<Workout[]
       distanceM: r.distance_m == null ? null : Number(r.distance_m),
     }));
   } catch (e) {
-    console.error("[queries] getWorkouts failed:", e);
+    readFailed("getWorkouts", e);
     return ALLOW_DEMO ? demoWorkouts(limit) : [];
   }
 }
@@ -931,7 +943,7 @@ export const getWorkoutDetail = cache(async function getWorkoutDetail(userId: st
       };
     });
   } catch (e) {
-    console.error("[queries] getWorkoutDetail failed:", e);
+    readFailed("getWorkoutDetail", e);
     return ALLOW_DEMO ? demoWorkoutDetail(uuid) : null;
   }
 });
@@ -975,7 +987,7 @@ export async function getWorkoutSeries(userId: string, uuid: string): Promise<Wo
     }
     return [...byType.values()];
   } catch (e) {
-    console.error("[queries] getWorkoutSeries failed:", e);
+    readFailed("getWorkoutSeries", e);
     return ALLOW_DEMO ? demoWorkoutSeries(uuid) : [];
   }
 }
@@ -995,7 +1007,7 @@ export async function getUsers(): Promise<User[]> {
     );
     return rows.map((r) => ({ id: r.id, name: r.name, email: r.email }));
   } catch (e) {
-    console.error("[queries] getUsers failed:", e);
+    readFailed("getUsers", e);
     return ALLOW_DEMO ? demoUsers() : [];
   }
 }
@@ -1012,7 +1024,7 @@ export async function getUser(userId: string): Promise<User> {
     ));
     return rows[0] ? { id: rows[0].id, name: rows[0].name, email: rows[0].email } : fallback;
   } catch (e) {
-    console.error("[queries] getUser failed:", e);
+    readFailed("getUser", e);
     return fallback;
   }
 }
@@ -1051,7 +1063,7 @@ export async function getProfile(userId: string): Promise<Profile> {
       restingHr,
     );
   } catch (e) {
-    console.error("[queries] getProfile failed:", e);
+    readFailed("getProfile", e);
     return ALLOW_DEMO ? demoProfile() : fallback;
   }
 }

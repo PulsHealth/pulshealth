@@ -10,12 +10,18 @@ export function firstValue(header: string | null | undefined): string | null {
   return first ? first : null;
 }
 
+/** The last non-empty comma-separated value of a header, trimmed; null if none. */
+export function lastValue(header: string | null | undefined): string | null {
+  const values = header?.split(",").map((v) => v.trim()).filter(Boolean) ?? [];
+  return values.at(-1) ?? null;
+}
+
 /**
  * The header that carries the client's address when proxy headers are
- * trusted: `x-forwarded-for` (its first entry — right for a proxy that
- * overwrites it, such as Tailscale Serve), `cf-connecting-ip` (Cloudflare,
- * which appends to X-Forwarded-For but always overwrites this one) or
- * `x-real-ip`. Set by WEB_CLIENT_IP_HEADER.
+ * trusted: `x-forwarded-for` (its LAST entry — the one the trusted proxy
+ * appended; every documented proxy appends, and the entries before it are
+ * whatever the client sent), `cf-connecting-ip` (Cloudflare, which always
+ * overwrites this one) or `x-real-ip`. Set by WEB_CLIENT_IP_HEADER.
  */
 export function clientIpHeader(env: Env = process.env): string {
   const value = (env.WEB_CLIENT_IP_HEADER ?? "").trim().toLowerCase();
@@ -27,10 +33,12 @@ export function clientIpHeader(env: Env = process.env): string {
  * there is none to go on — Next.js does not expose the TCP peer — so every
  * client shares one bucket; accounts mode refuses plain HTTP outside
  * development anyway, which in production means TRUST_PROXY_HEADERS is on.
+ * The last entry, never the first: a client that sends its own
+ * X-Forwarded-For would otherwise pick a fresh bucket per request.
  */
 export function clientIp(headers: Headers, trust: boolean, headerName = clientIpHeader()): string {
   if (!trust) return "direct";
-  return firstValue(headers.get(headerName)) ?? "unknown";
+  return lastValue(headers.get(headerName)) ?? "unknown";
 }
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);

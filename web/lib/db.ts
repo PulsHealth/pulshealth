@@ -4,13 +4,29 @@ import { Pool, type PoolClient, type QueryConfig } from "pg";
 let pool: Pool | null = null;
 let initialized = false;
 
+const DEFAULT_POOL_SIZE = 4;
+const MAX_POOL_SIZE = 50;
+
+/**
+ * Connections this process may hold at once, from WEB_DB_POOL_SIZE (default
+ * 4, clamped to 1–50; anything unparseable is the default). A type page runs
+ * several `scoped` transactions in parallel, so a viewer with a few people on
+ * it at once wants more than the default — and the database's own
+ * max_connections (and the ingest and API pools) bound how many.
+ */
+export function poolSize(value: string | undefined = process.env.WEB_DB_POOL_SIZE): number {
+  const n = Number.parseInt((value ?? "").trim(), 10);
+  if (!Number.isFinite(n)) return DEFAULT_POOL_SIZE;
+  return Math.min(MAX_POOL_SIZE, Math.max(1, n));
+}
+
 export function getPool(): Pool | null {
   if (!process.env.DATABASE_URL) return null;
   if (!initialized) {
     initialized = true;
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      max: 4,
+      max: poolSize(),
       connectionTimeoutMillis: 4000,
       idleTimeoutMillis: 10_000,
       // Don't let a heavy ad-hoc query wedge a request.

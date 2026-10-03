@@ -11,8 +11,16 @@ describe("clientIp", () => {
     expect(clientIp(headers, false)).toBe("direct");
     expect(clientIp(headers, true, "x-forwarded-for")).toBe("198.51.100.7");
     expect(clientIp(headers, true, "cf-connecting-ip")).toBe("203.0.113.1");
-    expect(clientIp(h({ "x-forwarded-for": "198.51.100.7, 10.0.0.2" }), true, "x-forwarded-for")).toBe("198.51.100.7");
     expect(clientIp(h({}), true, "x-forwarded-for")).toBe("unknown");
+  });
+
+  it("charges the entry the trusted proxy appended, not one the client sent", () => {
+    // Proxies append: the client's own X-Forwarded-For comes first, the
+    // address the proxy saw last. Keying on the first would hand every
+    // request a fresh bucket.
+    expect(clientIp(h({ "x-forwarded-for": "evil, real" }), true, "x-forwarded-for")).toBe("real");
+    expect(clientIp(h({ "x-forwarded-for": "evil, real," }), true, "x-forwarded-for")).toBe("real");
+    expect(clientIp(h({ "x-forwarded-for": " , " }), true, "x-forwarded-for")).toBe("unknown");
   });
 
   it("reads WEB_CLIENT_IP_HEADER, defaulting to X-Forwarded-For", () => {

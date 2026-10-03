@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("../db", () => ({ query: vi.fn(), transaction: vi.fn() }));
+const queryMock = vi.hoisted(() => vi.fn());
+vi.mock("../db", () => ({ query: queryMock, transaction: vi.fn() }));
 
 describe("session tokens and cookie", async () => {
   const { newToken, SESSION_COOKIE, sessionCookieAttributes, tokenHash } = await import("./session");
@@ -20,6 +21,23 @@ describe("session tokens and cookie", async () => {
     for (const bad of [undefined, null, "", "short", `${newToken()}x`, "a".repeat(42) + "!"]) {
       expect(tokenHash(bad)).toBeNull();
     }
+  });
+
+  it("caps a session at 90 days from sign-in, however often it is used", async () => {
+    const { findSession, createSession, SESSION_ABSOLUTE_DAYS } = await import("./session");
+    expect(SESSION_ABSOLUTE_DAYS).toBe(90);
+    queryMock.mockReset();
+    queryMock.mockResolvedValue([]);
+    expect(await findSession(newToken(), true)).toBeNull();
+    const [lookup, params] = queryMock.mock.calls[0] as [string, unknown[]];
+    expect(lookup).toMatch(/s\.expires_at > now\(\)/);
+    expect(lookup).toMatch(/s\.created_at > now\(\) - make_interval\(days => \$2\)/);
+    expect(params[1]).toBe(SESSION_ABSOLUTE_DAYS);
+    // A row past the cap is dead weight too: the sign-in sweep removes it.
+    await createSession("00000000-0000-4000-8000-000000000000", { userAgent: null, ip: null });
+    const sweep = queryMock.mock.calls.find(([sql]) => String(sql).startsWith("DELETE FROM auth.sessions"));
+    expect(sweep?.[0]).toMatch(/created_at < now\(\) - make_interval\(days => \$1\)/);
+    expect(sweep?.[1]).toEqual([SESSION_ABSOLUTE_DAYS]);
   });
 
   it("is a __Host- cookie: Secure, HttpOnly, SameSite=Lax, Path=/, 30 days", () => {

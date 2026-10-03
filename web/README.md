@@ -45,6 +45,15 @@ and day boundaries; it defaults to `UTC` and must match the server stack's
 `PULS_TIME_ZONE` (the database exposes its own as `puls_time_zone()`; on a
 mismatch the viewer logs a warning and stops using `metric_daily`). The status
 dot shows **Live data** (green), **Demo data** (amber), or **Database unavailable**.
+A failed read makes the viewer check the database again at once rather than
+after its usual 30 seconds, so from the next page load a pool timeout or a
+lost database reads **Database unavailable** (and `/api/healthz` answers
+503) instead of empty charts under **Live data**.
+
+`WEB_DB_POOL_SIZE` is how many database connections the viewer holds at most
+(default 4, clamped to 1–50). A type page runs several reads in parallel, so
+a viewer that several people use at once wants more; the database's
+`max_connections`, shared with ingest, the API and Grafana, is the ceiling.
 
 ## Choosing a user
 
@@ -194,12 +203,13 @@ session; everything else redirects to `/login?next=…` (pages) or answers 401.
 other browser) and lists the account's sessions with a sign-out for each.
 Details:
 
-- Passwords are hashed with scrypt (N=2¹⁵, r=8, p=1, 32-byte salt) from
+- Passwords are hashed with scrypt (N=2¹⁶, r=8, p=2, 32-byte salt) from
   `node:crypto` (`lib/accounts/password.ts`); old parameters are upgraded on
   the next sign-in.
 - The session cookie `__Host-puls-session` is `HttpOnly; Secure;
   SameSite=Lax; Path=/` and carries 32 random bytes; the database keeps only
-  their SHA-256 (`auth.sessions`). Sessions last 30 days from last use. Every
+  their SHA-256 (`auth.sessions`). Sessions last 30 days from last use and
+  90 days from sign-in at most, however often they are used. Every
   sign-in gets a new session id, signing out deletes the session row (so a
   copy of the cookie stops working), and a password change or an invite
   reset ends every session of the account and starts a fresh one.
@@ -212,9 +222,10 @@ Details:
   attempt takes its token before the check and gets it back on success, so
   a burst of parallel guesses cannot all slip past while scrypt runs.
   Nothing about a failed attempt is logged.
-- The client address is `X-Forwarded-For`'s first entry, or the header
-  `WEB_CLIENT_IP_HEADER` names (`cf-connecting-ip` behind Cloudflare, which
-  appends to `X-Forwarded-For` rather than overwriting it).
+- The client address is `X-Forwarded-For`'s last entry — the one the
+  trusted proxy appended; anything before it is whatever the client sent —
+  or the header `WEB_CLIENT_IP_HEADER` names (`cf-connecting-ip` behind
+  Cloudflare).
 - The sign-in error never says which of email and password was wrong, and an
   unknown email costs the same scrypt as a wrong password.
 

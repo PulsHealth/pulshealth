@@ -313,3 +313,36 @@ describe("query semantics", () => {
     expect(second).not.toBe(first);
   });
 });
+
+describe("a failed read", () => {
+  it("re-checks the database, so a pool timeout becomes the error source", async () => {
+    vi.stubEnv("NODE_ENV", "production"); // no demo fallback
+    vi.resetModules();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { getDataSource, getWorkouts } = await import("./queries");
+      const probes = () => queryMock.mock.calls.filter(([sql]) => sql === "SELECT 1").length;
+      expect((await getDataSource()).source).toBe("live");
+      expect((await getDataSource()).source).toBe("live");
+      expect(probes()).toBe(1); // cached between reads that succeed
+
+      // One statement fails on its own: the probe still answers, so the
+      // viewer stays live for everyone else.
+      queryMock.mockImplementation((sql: string) =>
+        sql === "SELECT 1" ? Promise.resolve([]) : Promise.reject(new Error("canceling statement due to statement timeout")),
+      );
+      expect(await getWorkouts(USER_ID)).toEqual([]);
+      expect((await getDataSource()).source).toBe("live");
+      expect(probes()).toBe(2);
+
+      // The pool times out: so does the probe, and the source says so.
+      queryMock.mockRejectedValue(new Error("timeout exceeded when trying to connect"));
+      expect(await getWorkouts(USER_ID)).toEqual([]);
+      expect(await getDataSource()).toEqual({ source: "error", detail: "Database unreachable" });
+    } finally {
+      errorSpy.mockRestore();
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  });
+});
