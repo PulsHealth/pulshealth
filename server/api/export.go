@@ -57,6 +57,17 @@ const (
 	// Retry-After, never a queue: waiting would hold the very connection the
 	// limit exists to protect.
 	maxConcurrentExports = 2
+	// How long one write to the client may block. A client that stops
+	// reading fills the socket buffer and the next write never returns;
+	// without a deadline it held its slot (and, for samples and workouts, a
+	// pooled connection) until the process restarted. Renewed before every
+	// write, so a slow query between rows is never mistaken for a stalled
+	// client.
+	exportWriteTimeout = 60 * time.Second
+	// The absolute ceiling on one export, for a client that keeps reading
+	// just fast enough to beat exportWriteTimeout. Far beyond what the range
+	// caps need on any link that can carry the file at all.
+	exportMaxDuration = 30 * time.Minute
 )
 
 // exportDatasets names every value of the dataset parameter, in the order
@@ -79,6 +90,12 @@ type exportDataset struct {
 }
 
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
+	// The client's own context, kept to tell a hang-up from the ceiling.
+	client := r.Context()
+	ctx, cancel := context.WithTimeout(client, exportMaxDuration)
+	defer cancel()
+	r = r.WithContext(ctx)
+
 	format, err := exportFormatFor(r.URL.Query().Get("format"))
 	if err != nil {
 		s.writeStoreError(w, err, "export")
@@ -113,33 +130,33 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	// they are read.
 	w.WriteHeader(http.StatusOK)
 
-	encoder := format.newEncoder(w)
-	control := http.NewResponseController(w)
+	out := &exportWriter{ctx: ctx, w: w, control: http.NewResponseController(w)}
+	encoder := format.newEncoder(out)
 	rows := 0
 	err = encoder.Begin(dataset.Columns)
 	if err == nil {
 		// Push the header row (CSV) and the status line on their own, before
 		// the first row is read: the download then starts — and a proxy
 		// commits to the 200 — even when the scan is slow to produce a row.
-		err = flush(encoder, control)
+		err = flush(encoder, out)
 	}
 	if err == nil {
-		err = dataset.Rows(r.Context(), func(values []any) error {
+		err = dataset.Rows(ctx, func(values []any) error {
 			if err := encoder.Row(values); err != nil {
 				return err
 			}
 			rows++
 			if rows%exportFlushRows == 0 {
-				return flush(encoder, control)
+				return flush(encoder, out)
 			}
 			return nil
 		})
 	}
 	if err == nil {
-		err = flush(encoder, control)
+		err = flush(encoder, out)
 	}
 	if err != nil {
-		if r.Context().Err() != nil {
+		if client.Err() != nil {
 			// The client hung up part-way through — a Ctrl-C on a long
 			// download, which is a normal thing to do. There is nobody left
 			// to signal, and nothing here went wrong. err is logged anyway:
@@ -149,9 +166,10 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 				"dataset", dataset.Name, "rows", rows, "err", err.Error())
 			return
 		}
-		// The 200 and some rows are already on the wire, so the only honest
-		// signal left is an incomplete transfer: abort the response rather
-		// than close the chunked body cleanly on a short file. net/http
+		// The 200 and some rows are already on the wire (a write that timed
+		// out, or the ceiling, ends up here too), so the only honest signal
+		// left is an incomplete transfer: abort the response rather than
+		// close the chunked body cleanly on a short file. net/http
 		// recognises ErrAbortHandler, drops the connection without a stack
 		// trace, and the client's read fails.
 		//
@@ -180,14 +198,49 @@ func (s *Server) acquireExport() bool {
 
 func (s *Server) releaseExport() { <-s.exportSlots }
 
-// flush empties the encoder's buffer into the ResponseWriter and pushes the
-// chunk to the client. A ResponseWriter that cannot flush (a test recorder,
-// a wrapper) is not an error: the bytes are written either way.
-func flush(encoder exportEncoder, control *http.ResponseController) error {
+// flush empties the encoder's buffer into the response and pushes the chunk
+// to the client.
+func flush(encoder exportEncoder, out *exportWriter) error {
 	if err := encoder.Flush(); err != nil {
 		return err
 	}
-	if err := control.Flush(); err != nil && !errors.Is(err, http.ErrNotSupported) {
+	return out.Flush()
+}
+
+// exportWriter is the response as the export writes it: every write and
+// flush first checks the export's ceiling (ctx), then gives itself
+// exportWriteTimeout to complete. A ResponseWriter that cannot set a
+// deadline or flush (a test recorder, a wrapper) is not an error: the bytes
+// are written either way.
+type exportWriter struct {
+	ctx     context.Context
+	w       io.Writer
+	control *http.ResponseController
+}
+
+func (e *exportWriter) arm() error {
+	if err := e.ctx.Err(); err != nil {
+		return err
+	}
+	err := e.control.SetWriteDeadline(time.Now().Add(exportWriteTimeout))
+	if err != nil && !errors.Is(err, http.ErrNotSupported) {
+		return err
+	}
+	return nil
+}
+
+func (e *exportWriter) Write(p []byte) (int, error) {
+	if err := e.arm(); err != nil {
+		return 0, err
+	}
+	return e.w.Write(p)
+}
+
+func (e *exportWriter) Flush() error {
+	if err := e.arm(); err != nil {
+		return err
+	}
+	if err := e.control.Flush(); err != nil && !errors.Is(err, http.ErrNotSupported) {
 		return err
 	}
 	return nil

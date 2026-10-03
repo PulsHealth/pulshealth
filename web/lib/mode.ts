@@ -41,7 +41,8 @@ export function signupsOpen(env: Env = process.env): boolean {
 /**
  * Whether X-Forwarded-* and CF-Connecting-IP may be believed. Same switch,
  * same default and same caveat as ingest and the product API: only when a
- * proxy that overwrites those headers is the ONLY way to reach the port.
+ * trusted proxy is the ONLY way to reach the port (the client IP is then the
+ * last entry of the header, the one that proxy appended).
  */
 export function trustProxyHeaders(env: Env = process.env): boolean {
   return isTrue(env.TRUST_PROXY_HEADERS);

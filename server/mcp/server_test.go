@@ -350,3 +350,22 @@ func TestLoadConfig(t *testing.T) {
 		}
 	}
 }
+
+// A by-hand install from .env.example must not serve /mcp behind a token
+// anyone can guess (run refuses it in --http mode).
+func TestRefusePlaceholder(t *testing.T) {
+	for _, value := range []string{"change-me", " CHANGE-ME "} {
+		err := refusePlaceholder("PULS_MCP_TOKEN", value)
+		if err == nil {
+			t.Fatalf("refusePlaceholder(%q) = nil, want an error", value)
+		}
+		for _, want := range []string{"PULS_MCP_TOKEN", "scripts/bootstrap.sh", "openssl rand -hex 32"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("error %q does not mention %q", err, want)
+			}
+		}
+	}
+	if err := refusePlaceholder("PULS_MCP_TOKEN", "0123456789abcdef"); err != nil {
+		t.Errorf("a real token was refused: %v", err)
+	}
+}

@@ -35,6 +35,8 @@ const (
 	healthzTimeout  = 2 * time.Second
 	// Idle HTTP sessions (no request from the client) are dropped after this.
 	sessionTimeout = 30 * time.Minute
+	// What server/.env.example ships every secret as; see refusePlaceholder.
+	placeholderSecret = "change-me"
 )
 
 // buildVersion is set by the Dockerfile via -ldflags "-X main.buildVersion=…".
@@ -88,6 +90,17 @@ func loadConfig(getenv func(string) string) (config, error) {
 	}
 	cfg.loc = loc
 	return cfg, nil
+}
+
+// refusePlaceholder fails startup on a token still set to the .env.example
+// placeholder: an install made by hand from the example, without
+// scripts/bootstrap.sh, would otherwise accept a credential anyone can guess.
+func refusePlaceholder(name, value string) error {
+	if strings.EqualFold(strings.TrimSpace(value), placeholderSecret) {
+		return fmt.Errorf("%s is still the placeholder %q from .env.example: set a random value "+
+			"(scripts/bootstrap.sh generates one, or use `openssl rand -hex 32`)", name, placeholderSecret)
+	}
+	return nil
 }
 
 // loadUserID validates the optional PULS_USER_ID (a UUID; empty means the
@@ -145,8 +158,13 @@ func run(httpAddr string, logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	if httpAddr != "" && cfg.mcpToken == "" {
-		return errors.New("PULS_MCP_TOKEN must be set to serve --http: it is the only thing between the network and the health data")
+	if httpAddr != "" {
+		if cfg.mcpToken == "" {
+			return errors.New("PULS_MCP_TOKEN must be set to serve --http: it is the only thing between the network and the health data")
+		}
+		if err := refusePlaceholder("PULS_MCP_TOKEN", cfg.mcpToken); err != nil {
+			return err
+		}
 	}
 	api, err := NewAPIClient(cfg.apiURL, cfg.apiToken, nil)
 	if err != nil {

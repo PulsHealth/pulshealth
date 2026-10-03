@@ -46,6 +46,11 @@ const (
 	// 9999-12-31T23:59:59.999Z, the widest span the `date` casts can carry.
 	minEpochMS int64 = 0
 	maxEpochMS int64 = 253402300799999
+	// How many identifiers one types list may name. The catalog has under
+	// 200 types, and each named one is its own scan of the hypertables.
+	maxTypesPerRequest = 50
+	// What server/.env.example ships every secret as; see refusePlaceholder.
+	placeholderSecret = "change-me"
 )
 
 type apiStore interface {
@@ -94,8 +99,9 @@ type Server struct {
 	loc *time.Location
 
 	// Whether X-Forwarded-* may be believed: for the rate-limit key, and for
-	// the host the OpenAPI document advertises. Off unless a proxy that
-	// overwrites those headers is the only thing that can reach this port.
+	// the host the OpenAPI document advertises. Off unless a trusted proxy
+	// (which appends to X-Forwarded-For; the last entry is the key) is the
+	// only thing that can reach this port.
 	trustProxyHeaders bool
 
 	// Per-client-IP auth-failure buckets, made on first use so a Server built
@@ -133,6 +139,9 @@ func run(logger *slog.Logger) error {
 	token := os.Getenv("PULS_API_TOKEN")
 	if token == "" {
 		return errors.New("PULS_API_TOKEN must be set")
+	}
+	if err := refusePlaceholder("PULS_API_TOKEN", token); err != nil {
+		return err
 	}
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -178,8 +187,8 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
-	// Same switch, same default (off), same meaning as ingest's: only a proxy
-	// that overwrites X-Forwarded-* may be believed. It decides both the
+	// Same switch, same default (off), same meaning as ingest's: only behind a
+	// trusted proxy, and then the LAST X-Forwarded-For entry. It decides both the
 	// rate-limit key and the host the OpenAPI document advertises.
 	trustProxyHeaders := os.Getenv("TRUST_PROXY_HEADERS") == "true"
 
@@ -224,6 +233,17 @@ func run(logger *slog.Logger) error {
 	shCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	return httpSrv.Shutdown(shCtx)
+}
+
+// refusePlaceholder fails startup on a token still set to the .env.example
+// placeholder: an install made by hand from the example, without
+// scripts/bootstrap.sh, would otherwise accept a credential anyone can guess.
+func refusePlaceholder(name, value string) error {
+	if strings.EqualFold(strings.TrimSpace(value), placeholderSecret) {
+		return fmt.Errorf("%s is still the placeholder %q from .env.example: set a random value "+
+			"(scripts/bootstrap.sh generates one, or use `openssl rand -hex 32`)", name, placeholderSecret)
+	}
+	return nil
 }
 
 // loadTimeZone resolves PULS_TIME_ZONE (an IANA name; empty means UTC).
@@ -319,9 +339,9 @@ func (s *Server) routes() http.Handler {
 	mux := http.NewServeMux()
 	for _, rt := range s.apiRoutes() {
 		handler := rt.handler
-		// The export streams for as long as the download takes; every other
-		// handler is bounded so one slow query cannot hold a pool connection
-		// open indefinitely.
+		// The export streams for as long as the download takes (bounded on
+		// its own terms, see export.go); every other handler is bounded so
+		// one slow query cannot hold a pool connection open indefinitely.
 		if rt.path != "/v1/export" {
 			handler = withTimeout(handlerTimeout, handler)
 		}
@@ -371,7 +391,9 @@ func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 // max(4, NumCPU) — so a handful of them starve every other endpoint.
 //
 // /v1/export is deliberately exempt: it streams for as long as the download
-// takes, and is bounded instead by its own concurrency slots and range cap.
+// takes, and is bounded instead by its own concurrency slots, range cap,
+// per-write deadline and absolute ceiling (export.go). A handler that runs
+// out of time answers 504 through writeStoreError.
 func withTimeout(d time.Duration, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), d)
@@ -383,7 +405,7 @@ func withTimeout(d time.Duration, next http.HandlerFunc) http.HandlerFunc {
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 	// Cached: this endpoint is unauthenticated, so request rate must not drive
 	// pool acquisitions. See health.go.
-	if !s.health.status(r.Context(), s.store, time.Now()) {
+	if !s.health.status(s.store, time.Now()) {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"ok": false, "db": false})
 		return
 	}
@@ -393,8 +415,7 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 	profile, err := s.store.Profile(r.Context(), s.requestUser(r))
 	if err != nil {
-		s.log.Error("profile query failed", "err", err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "profile failed"})
+		s.writeStoreError(w, err, "profile")
 		return
 	}
 	if profile == nil {
@@ -413,8 +434,7 @@ func (s *Server) handleCatalogTypes(w http.ResponseWriter, r *http.Request) {
 
 	types, err := s.store.CatalogTypes(r.Context(), user)
 	if err != nil {
-		s.log.Error("catalog types query failed", "err", err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "catalog types failed"})
+		s.writeStoreError(w, err, "catalog types")
 		return
 	}
 	types = cloneCatalogTypes(types)
@@ -430,8 +450,7 @@ func (s *Server) handleLatestMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 	metrics, err := s.store.LatestMetrics(r.Context(), s.requestUser(r), types)
 	if err != nil {
-		s.log.Error("latest metrics query failed", "err", err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "latest metrics failed"})
+		s.writeStoreError(w, err, "latest metrics")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string][]LatestMetric{"metrics": metrics})
@@ -445,8 +464,7 @@ func (s *Server) handleDailyMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 	metrics, err := s.store.DailyMetrics(r.Context(), s.requestUser(r), filters)
 	if err != nil {
-		s.log.Error("daily metrics query failed", "err", err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "daily metrics failed"})
+		s.writeStoreError(w, err, "daily metrics")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -473,8 +491,7 @@ func (s *Server) handleActivitySummary(w http.ResponseWriter, r *http.Request) {
 	}
 	days, err := s.store.ActivitySummary(r.Context(), s.requestUser(r), start, end)
 	if err != nil {
-		s.log.Error("activity summary query failed", "err", err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "activity summary failed"})
+		s.writeStoreError(w, err, "activity summary")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string][]ActivityDay{"days": days})
@@ -488,8 +505,7 @@ func (s *Server) handleWorkouts(w http.ResponseWriter, r *http.Request) {
 	}
 	workouts, err := s.store.Workouts(r.Context(), s.requestUser(r), filters)
 	if err != nil {
-		s.log.Error("workouts query failed", "err", err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "workouts failed"})
+		s.writeStoreError(w, err, "workouts")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -506,8 +522,7 @@ func (s *Server) handleWorkout(w http.ResponseWriter, r *http.Request) {
 	}
 	workout, err := s.store.Workout(r.Context(), s.requestUser(r), uuid)
 	if err != nil {
-		s.log.Error("workout query failed", "uuid", uuid, "err", err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "workout failed"})
+		s.writeStoreError(w, err, "workout", "uuid", uuid)
 		return
 	}
 	if workout == nil {
@@ -558,8 +573,7 @@ func (s *Server) handleWorkoutSeries(w http.ResponseWriter, r *http.Request) {
 	}
 	series, err := s.store.WorkoutSeries(r.Context(), s.requestUser(r), uuid, types, maxPoints)
 	if err != nil {
-		s.log.Error("workout series query failed", "uuid", uuid, "err", err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "workout series failed"})
+		s.writeStoreError(w, err, "workout series", "uuid", uuid)
 		return
 	}
 	if series == nil {
@@ -584,15 +598,24 @@ func (s *Server) handleStateOfMind(w http.ResponseWriter, r *http.Request) {
 }
 
 // writeStoreError answers a failed store call: a requestError is the
-// caller's fault and comes back as a 400 with its message; anything else is
-// logged and answered with a generic 500.
-func (s *Server) writeStoreError(w http.ResponseWriter, err error, what string) {
+// caller's fault and comes back as a 400 with its message; a query that ran
+// past its deadline (handlerTimeout; pgx wraps context.DeadlineExceeded
+// whether it hit the pool, the query or the scan) is a 504 the caller can
+// act on; anything else is logged and answered with a generic 500. attrs
+// are extra log fields.
+func (s *Server) writeStoreError(w http.ResponseWriter, err error, what string, attrs ...any) {
 	var reqErr *requestError
 	if errors.As(err, &reqErr) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": reqErr.Error()})
 		return
 	}
-	s.log.Error(what+" query failed", "err", err.Error())
+	attrs = append(attrs, "err", err.Error())
+	if errors.Is(err, context.DeadlineExceeded) {
+		s.log.Warn(what+" query timed out", attrs...)
+		writeJSON(w, http.StatusGatewayTimeout, map[string]string{"error": "query took too long; narrow the range"})
+		return
+	}
+	s.log.Error(what+" query failed", attrs...)
 	writeJSON(w, http.StatusInternalServerError, map[string]string{"error": what + " failed"})
 }
 
@@ -608,6 +631,9 @@ func parseTypesParam(r *http.Request) ([]string, error) {
 		return nil, errors.New("missing types")
 	}
 	parts := strings.Split(raw, ",")
+	if len(parts) > maxTypesPerRequest {
+		return nil, fmt.Errorf("types names %d identifiers; at most %d per request", len(parts), maxTypesPerRequest)
+	}
 	types := make([]string, 0, len(parts))
 	seen := make(map[string]struct{}, len(parts))
 	for _, part := range parts {

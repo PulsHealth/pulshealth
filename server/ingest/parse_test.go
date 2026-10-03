@@ -652,10 +652,16 @@ type fakeStore struct {
 	// Counts database liveness probes, so a test can assert /healthz does not
 	// make one per request (see health.go).
 	pings atomic.Int64
+	// When set, InsertBatch returns what this does with the context it was
+	// given, so a test can block an insert or inspect its deadline.
+	onInsert func(ctx context.Context) error
 }
 
-func (f *fakeStore) InsertBatch(_ context.Context, b *Batch, n int64) (IngestResult, error) {
+func (f *fakeStore) InsertBatch(ctx context.Context, b *Batch, n int64) (IngestResult, error) {
 	f.gotBatch, f.gotBytes = b, n
+	if f.onInsert != nil {
+		return f.insertRes, f.onInsert(ctx)
+	}
 	return f.insertRes, f.insertErr
 }
 func (f *fakeStore) RecordRejection(_ context.Context, rejection IngestRejection) error {
@@ -694,8 +700,11 @@ func (f *fakeStore) RouteMetrics(_ context.Context, userID, uuid string) ([]Rout
 	f.routeCalls++
 	return f.metricsRes, nil
 }
-func (f *fakeStore) Ping(context.Context) error {
+func (f *fakeStore) Ping(ctx context.Context) error {
 	f.pings.Add(1)
+	if err := ctx.Err(); err != nil {
+		return err // a real pool refuses a cancelled context
+	}
 	return nil
 }
 

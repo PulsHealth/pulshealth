@@ -149,8 +149,11 @@ func (f *fakeStore) Summary(_ context.Context, user string, days int) (*SummaryD
 	return f.summary, nil
 }
 
-func (f *fakeStore) Ping(context.Context) error {
+func (f *fakeStore) Ping(ctx context.Context) error {
 	f.pings.Add(1)
+	if err := ctx.Err(); err != nil {
+		return err // a real pool refuses a cancelled context
+	}
 	return f.err
 }
 
@@ -399,15 +402,29 @@ func TestSleepDailyReturnsNightsWhenAuthorized(t *testing.T) {
 	assertJSONError(t, bad.Body.Bytes(), "end must be after start")
 }
 
+// storeBackedTargets is one valid request to every JSON endpoint that reads
+// the store, so a test can assert they all answer a store error alike.
+var storeBackedTargets = []string{
+	"/v1/users",
+	"/v1/profile",
+	"/v1/catalog/types",
+	"/v1/metrics/latest?types=HKQuantityTypeIdentifierBodyMass",
+	"/v1/metrics/daily?types=HKQuantityTypeIdentifierStepCount&start=1751328000000&end=1751414400000",
+	"/v1/activity/summary?start=1751328000000&end=1751414400000",
+	"/v1/workouts",
+	"/v1/workouts/44444444-4444-4444-8444-444444444444",
+	"/v1/workouts/44444444-4444-4444-8444-444444444444/series",
+	"/v1/sleep/daily?start=1751328000000&end=1751414400000",
+	"/v1/samples?type=HKQuantityTypeIdentifierHeartRate&start=1751328000000&end=1751414400000",
+	"/v1/state-of-mind?start=1751328000000&end=1751414400000",
+	"/v1/summary",
+}
+
 func TestStoreRequestErrorsBecome400(t *testing.T) {
 	t.Parallel()
 
 	srv := testServer(t, &fakeStore{err: badRequestf("range covers 400 days; at most 366 days per request")})
-	for _, target := range []string{
-		"/v1/sleep/daily?start=1751328000000&end=1751414400000",
-		"/v1/state-of-mind?start=1751328000000&end=1751414400000",
-		"/v1/samples?type=HKQuantityTypeIdentifierHeartRate&start=1751328000000&end=1751414400000",
-	} {
+	for _, target := range storeBackedTargets {
 		rec := serveAuthorized(t, srv, http.MethodGet, target, nil)
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("%s: status = %d, want 400", target, rec.Code)
@@ -422,6 +439,73 @@ func TestStoreRequestErrorsBecome400(t *testing.T) {
 		t.Errorf("status = %d, want 500", rec.Code)
 	}
 	assertJSONError(t, rec.Body.Bytes(), "sleep failed")
+}
+
+// A query that outlives handlerTimeout is for the caller to narrow, not a
+// server fault: a 504 that says so, on every endpoint. pgx wraps
+// context.DeadlineExceeded whether the pool, the query or the scan ran out.
+func TestStoreTimeoutsBecome504(t *testing.T) {
+	t.Parallel()
+
+	srv := testServer(t, &fakeStore{err: fmt.Errorf("timeout: %w", context.DeadlineExceeded)})
+	for _, target := range storeBackedTargets {
+		rec := serveAuthorized(t, srv, http.MethodGet, target, nil)
+		if rec.Code != http.StatusGatewayTimeout {
+			t.Errorf("%s: status = %d, want 504", target, rec.Code)
+		}
+		assertJSONError(t, rec.Body.Bytes(), "query took too long; narrow the range")
+	}
+}
+
+// Every types list names at most maxTypesPerRequest identifiers; each one is
+// its own scan.
+func TestTypesListsAreCapped(t *testing.T) {
+	t.Parallel()
+
+	types := func(n int) string {
+		names := make([]string, n)
+		for i := range names {
+			names[i] = fmt.Sprintf("HKQuantityTypeIdentifierT%d", i)
+		}
+		return strings.Join(names, ",")
+	}
+	srv := testServer(t, &fakeStore{})
+	for _, target := range []string{
+		"/v1/metrics/latest?types=%s",
+		"/v1/metrics/daily?types=%s&start=1751328000000&end=1751414400000",
+		"/v1/workouts/44444444-4444-4444-8444-444444444444/series?types=%s",
+		"/v1/export?format=csv&dataset=daily_metrics&types=%s&start=1751328000000&end=1751414400000",
+	} {
+		if rec := serveAuthorized(t, srv, http.MethodGet, fmt.Sprintf(target, types(maxTypesPerRequest)), nil); rec.Code == http.StatusBadRequest {
+			t.Errorf("%s: %d types refused: %s", target, maxTypesPerRequest, rec.Body.String())
+		}
+		rec := serveAuthorized(t, srv, http.MethodGet, fmt.Sprintf(target, types(maxTypesPerRequest+1)), nil)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: %d types: status = %d, want 400", target, maxTypesPerRequest+1, rec.Code)
+		}
+		assertJSONError(t, rec.Body.Bytes(), "types names 51 identifiers; at most 50 per request")
+	}
+}
+
+// A by-hand install from .env.example must not come up with a token anyone
+// can guess.
+func TestRefusePlaceholder(t *testing.T) {
+	t.Parallel()
+
+	for _, value := range []string{"change-me", " change-me\n", "CHANGE-ME"} {
+		err := refusePlaceholder("PULS_API_TOKEN", value)
+		if err == nil {
+			t.Fatalf("refusePlaceholder(%q) = nil, want an error", value)
+		}
+		for _, want := range []string{"PULS_API_TOKEN", "scripts/bootstrap.sh", "openssl rand -hex 32"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("error %q does not mention %q", err, want)
+			}
+		}
+	}
+	if err := refusePlaceholder("PULS_API_TOKEN", "0123456789abcdef"); err != nil {
+		t.Errorf("a real token was refused: %v", err)
+	}
 }
 
 func TestSamplesHandlerParsesFiltersAndReturnsPage(t *testing.T) {

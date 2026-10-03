@@ -81,8 +81,7 @@ func (st *Store) Users(ctx context.Context) ([]User, error) {
 func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := s.store.Users(r.Context())
 	if err != nil {
-		s.log.Error("users query failed", "err", err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "users failed"})
+		s.writeStoreError(w, err, "users")
 		return
 	}
 	def := s.defaultUser()

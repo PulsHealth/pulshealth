@@ -710,13 +710,18 @@ func TestListUsers(t *testing.T) {
 		t.Errorf("never-synced user = %+v", other)
 	}
 
-	// A pinned instance says so, so the model knows the other rows are
-	// out of reach here.
+	// A pinned instance says so, and lists its one person only: it can
+	// never be asked about anyone else, and that includes their name,
+	// e-mail and sync counts.
 	pinned := newService(f.client(t).ForUser(otherUserID), mustZone(t, "UTC"))
 	res, _, err = pinned.listUsers(context.Background(), nil, nil)
-	resultJSON(t, res, err, &out)
-	if out.PinnedUserID != otherUserID {
-		t.Errorf("pinned_user_id = %q, want %q", out.PinnedUserID, otherUserID)
+	var pinnedOut usersOutput
+	resultJSON(t, res, err, &pinnedOut)
+	if pinnedOut.PinnedUserID != otherUserID || pinnedOut.DefaultUserID != defaultUserID {
+		t.Errorf("header = %+v, want pinned_user_id %s and the default still named", pinnedOut, otherUserID)
+	}
+	if len(pinnedOut.Users) != 1 || pinnedOut.Users[0].UserID != otherUserID {
+		t.Errorf("a pinned instance listed %+v, want only %s", pinnedOut.Users, otherUserID)
 	}
 	if q := f.lastQuery(t, "/v1/users"); q.Has("user") {
 		t.Errorf("/v1/users carried user=%q from the pin", q.Get("user"))
