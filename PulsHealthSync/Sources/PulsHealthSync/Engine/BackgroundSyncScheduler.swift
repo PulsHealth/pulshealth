@@ -313,6 +313,45 @@ public final class BackgroundSyncScheduler: Sendable {
         }
     }
 
+    /// Runs the continued backfill (`syncAllEnabled(.backfill)`) under `wake`,
+    /// stopping it early once HealthKit reports its database locked and the
+    /// device confirms protected data is unavailable: from then on every
+    /// remaining type would fail the same way, one query and one warning each.
+    /// Stopping is the sweep's ordinary cancellation — at a page boundary,
+    /// acked anchors recorded, claims released. Returns whether it stopped
+    /// for that reason.
+    ///
+    /// Not on the protected-data flag alone: it turns false seconds after the
+    /// screen locks, while HealthKit's store stays readable for minutes
+    /// longer, and a backfill the person started should use that time.
+    private static func backfillStoppingWhenLocked(engine: HealthSyncEngine, wake: WakeContext) async -> Bool {
+        // Subscribed before the sweep starts, so no signal is missed. Every
+        // pass that meets `errorDatabaseInaccessible` treats it per type as a
+        // non-failure (idle, anchor untouched) and fires this.
+        let lockedSignals = await engine.healthDatabaseLockedSignals()
+        return await withTaskGroup(of: Bool.self, returning: Bool.self) { group in
+            group.addTask {
+                await WakeScope.$current.withValue(wake) {
+                    await engine.syncAllEnabled(reason: .backfill)
+                }
+                return false
+            }
+            group.addTask {
+                for await _ in lockedSignals {
+                    let accessible = await engine.isHealthDataAccessible()
+                    if !accessible { return true }
+                }
+                // Cancelled (the sweep finished first) or the engine went away.
+                return false
+            }
+            // Whichever finishes first decides; the other is cancelled and
+            // awaited before the group returns.
+            let lockedFirst = await group.next() ?? false
+            group.cancelAll()
+            return lockedFirst
+        }
+    }
+
     @available(iOS 26.0, *)
     private struct ContinuedTaskBox: @unchecked Sendable {
         let task: BGContinuedProcessingTask
@@ -356,19 +395,33 @@ public final class BackgroundSyncScheduler: Sendable {
             }
         }
         let syncWork = Task { [engine] in
-            await engine.registerWake(wake, detail: "continued-processing backfill")
-            await WakeScope.$current.withValue(wake) {
-                await engine.syncAllEnabled(reason: .backfill)
+            // As the catch-up task does: a locked device means HealthKit is
+            // unreadable, so check once rather than fail every type. The
+            // person started this and may have locked the phone straight
+            // after; the backfill resumes on the next unlocked run.
+            let outcome: WakeRecord.Outcome
+            if await engine.isHealthDataAccessible() {
+                await engine.registerWake(wake, detail: "continued-processing backfill")
+                let lockedMidRun = await BackgroundSyncScheduler.backfillStoppingWhenLocked(engine: engine, wake: wake)
+                if lockedMidRun {
+                    await engine.eventLog.log(
+                        .info, "Continued-processing backfill stopped: the device locked and HealthKit became unreadable — the rest resumes on the next unlocked run")
+                }
+                outcome = lockedMidRun ? .skippedLocked : .completed
+            } else {
+                await engine.registerWake(wake, detail: "continued-processing backfill — device locked, skipped")
+                outcome = .skippedLocked
             }
             await engine.store.persistNow()
             // Keep final progress, claim, and successful completion in one
-            // locked, non-suspending tail after persistence.
+            // locked, non-suspending tail after persistence. A lock is still a
+            // successful task as far as iOS is concerned (see `handle`).
             guard completionGate.claim(performing: {
                 progressTicker.cancel()
                 box.task.progress.completedUnitCount = box.task.progress.totalUnitCount
                 box.task.setTaskCompleted(success: true)
             }) else { return }
-            Task { await engine.finishWake(wake, outcome: .completed) }
+            Task { await engine.finishWake(wake, outcome: outcome) }
         }
         task.expirationHandler = { [engine] in
             guard completionGate.claim(performing: {

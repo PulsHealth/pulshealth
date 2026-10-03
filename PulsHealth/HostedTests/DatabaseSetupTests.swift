@@ -8,7 +8,9 @@ import PulsHealthSync
 final class DatabaseSetupTests: XCTestCase {
     private let user = "5ea4d000-0000-4000-8000-0000000000aa"
     private let mine = URL(string: "https://mine.example.test")!
-    private let hosted = URL(string: "https://ingest.example.test:8443")!
+    /// Under the viewer's domain (`PulsHealthDatabase.domain`), as a
+    /// sign-in's database must be to count as the PulsHealth database.
+    private let hosted = URL(string: "https://ingest.example.pulshealth.com:8443")!
 
     private func ownConfiguration() -> SyncConfiguration {
         SyncConfiguration(serverURL: mine, authToken: "own-token")
@@ -128,6 +130,33 @@ final class DatabaseSetupTests: XCTestCase {
         var setup = DatabaseSetup(applied: SyncConfiguration())
         XCTAssertNil(setup.signedInDatabaseLabel)
         setup.receiveSignIn(signInPayload())
-        XCTAssertEqual(setup.signedInDatabaseLabel, "ingest.example.test:8443")
+        XCTAssertEqual(setup.signedInDatabaseLabel, "ingest.example.pulshealth.com:8443")
+    }
+
+    /// The sheet is a browser: a code it hands back for a database outside
+    /// the viewer's domain is an ordinary pairing code for your own
+    /// database — filled in, applicable, never the PulsHealth database.
+    func testASignInCodeForAnotherDomainIsYourOwnDatabase() {
+        let elsewhere = PairingPayload(
+            serverURL: URL(string: "https://ingest.attacker.example")!, token: "other-token", userID: user)
+        var setup = DatabaseSetup(applied: SyncConfiguration())
+        XCTAssertFalse(setup.receiveSignIn(elsewhere))
+        XCTAssertEqual(setup.destination, .own)
+        XCTAssertNil(setup.signedIn)
+        XCTAssertEqual(setup.own.urlText, "https://ingest.attacker.example")
+        var config = SyncConfiguration()
+        XCTAssertTrue(setup.commit(to: &config))
+        XCTAssertEqual(config.serverURL, URL(string: "https://ingest.attacker.example"))
+        XCTAssertNil(config.signedInDatabaseURL)
+        XCTAssertFalse(PulsHealthDatabase.isSignedIn(config))
+
+        // A configuration marked signed-in for another host (a 1.6 build
+        // marked any sign-in code) is not the PulsHealth database either.
+        let legacy = SyncConfiguration(
+            serverURL: URL(string: "https://ingest.attacker.example"), authToken: "other-token",
+            signedInDatabaseURL: URL(string: "https://ingest.attacker.example"))
+        XCTAssertTrue(legacy.isSignedInDatabase)
+        XCTAssertFalse(PulsHealthDatabase.isSignedIn(legacy))
+        XCTAssertEqual(DatabaseSetup(applied: legacy).destination, .own)
     }
 }

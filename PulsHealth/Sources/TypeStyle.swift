@@ -4,6 +4,16 @@ import PulsHealthSync
 // Visual identity for catalog types, mirroring Apple Health's category palette.
 // UI-only concern, so it lives in the app rather than the library catalog.
 
+extension HealthTypeDescriptor {
+    /// The one search over types — Explore, both type pickers and the export
+    /// series list: the name, the category or the identifier, ignoring case.
+    func matchesSearch(_ text: String) -> Bool {
+        displayName.localizedCaseInsensitiveContains(text)
+            || group.rawValue.localizedCaseInsensitiveContains(text)
+            || identifier.localizedCaseInsensitiveContains(text)
+    }
+}
+
 extension HealthTypeDescriptor.Group {
     var color: Color {
         switch self {

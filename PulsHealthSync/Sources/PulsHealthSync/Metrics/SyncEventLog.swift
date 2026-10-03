@@ -43,16 +43,32 @@ public actor SyncEventLog {
     private var saveTask: Task<Void, Never>?
     /// Streams for live UI updates.
     private var continuations: [UUID: AsyncStream<SyncEvent>.Continuation] = [:]
+    /// True when `event-log.json` existed at init but could not be read
+    /// (protected data during a prewarm launch before first unlock). Events
+    /// are then kept in memory only — the live view still shows them — and
+    /// the file is never replaced by this launch's handful. Same rule as
+    /// `SyncStateStore.isReadOnly`.
+    public let isReadOnly: Bool
 
     public init(directory: URL? = nil) {
         let dir = directory ?? FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("PulsHealthSync", isDirectory: true)
         ProtectedStateFile.prepareDirectory(dir)
-        self.fileURL = dir.appendingPathComponent("event-log.json")
-        if let data = try? Data(contentsOf: fileURL),
-           let decoded = try? JSONDecoder.puls.decode([SyncEvent].self, from: data) {
-            events = decoded
+        let fileURL = dir.appendingPathComponent("event-log.json")
+        self.fileURL = fileURL
+        switch ProtectedStateFile.read(fileURL) {
+        case .missing:
+            isReadOnly = false
+        case .unreadable(let error):
+            isReadOnly = true
+            Logger(subsystem: PulsLog.subsystem, category: "events").error(
+                "Event log exists but is unreadable (\(error)); keeping events in memory only this launch")
+        case .data(let data):
+            isReadOnly = false
+            if let decoded = try? JSONDecoder.puls.decode([SyncEvent].self, from: data) {
+                events = decoded
+            }
         }
     }
 
@@ -110,7 +126,7 @@ public actor SyncEventLog {
     }
 
     private func scheduleSave() {
-        guard saveTask == nil else { return }
+        guard !isReadOnly, saveTask == nil else { return }
         saveTask = Task {
             try? await Task.sleep(for: .seconds(1))
             saveTask = nil

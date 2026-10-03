@@ -76,6 +76,13 @@ extension HealthSyncEngine {
         // sweep, the stream's fixed window start for the recent pass.
         var starts: [String: Date] = [:]
         var pending: [String] = []
+        // Types sitting out a cooldown after a terminal refusal, and types
+        // just back from one: those upload alone (`flush`), so a page the
+        // server refuses again is pinned on its own type and does not hold
+        // the rest of a pack back with it.
+        var cooling: Set<String> = []
+        var isolated: Set<String> = []
+        let bypassCooldown = Self.bypassesCooldown(reason)
         let now = Date()
         for id in ids {
             guard let descriptor = HealthTypeCatalog.descriptor(for: id),
@@ -84,6 +91,11 @@ extension HealthSyncEngine {
                 continue
             }
             let state = await store.state(for: id)
+            if state.isCoolingDown(at: now), !bypassCooldown {
+                cooling.insert(id)
+                continue
+            }
+            if state.terminalFailures != nil { isolated.insert(id) }
             switch pass {
             case .main:
                 starts[id] = config.startDate
@@ -94,16 +106,16 @@ extension HealthSyncEngine {
                 else { continue }
                 starts[id] = windowStart
             }
-            do {
-                cursors[id] = try decodeAnchor(
-                    pass == .main ? state.anchorData : state.recentAnchorData)
-            } catch {
-                await eventLog.log(.error, type: id, "Sync failed: \(error)")
-                continue
-            }
+            cursors[id] = await storedAnchor(
+                pass == .main ? state.anchorData : state.recentAnchorData, of: id, pass: pass)
             let isBackfill = !state.backfillComplete
             activities[id] = isBackfill ? .backfilling : .syncing
             pending.append(id)
+        }
+        if !cooling.isEmpty {
+            await eventLog.log(
+                .debug,
+                "Skipped \(cooling.count) type(s) cooling down after the server refused an upload: \(cooling.sorted().joined(separator: ", "))")
         }
         guard !pending.isEmpty else { return }
         notifyChanged()
@@ -195,8 +207,9 @@ extension HealthSyncEngine {
                 }
                 if buffered >= budget {
                     let flushed = await flush(
-                        buffer, budget: budget, keepPartial: true, reason: reason,
-                        transport: transport, config: config, pass: pass, starts: starts)
+                        buffer, budget: budget, keepPartial: true, isolating: isolated,
+                        reason: reason, transport: transport, config: config, pass: pass,
+                        starts: starts)
                     buffer = flushed.leftover
                     buffered = buffer.reduce(0) { $0 + $1.count }
                     uploads += flushed.uploads
@@ -210,8 +223,9 @@ extension HealthSyncEngine {
                 if upcoming.isEmpty { break }
             }
             let flushed = await flush(
-                buffer, budget: budget, keepPartial: false, reason: reason,
-                transport: transport, config: config, pass: pass, starts: starts)
+                buffer, budget: budget, keepPartial: false, isolating: isolated,
+                reason: reason, transport: transport, config: config, pass: pass,
+                starts: starts)
             uploads += flushed.uploads
             totalSamples += flushed.samples
             totalDeletions += flushed.deletions
@@ -223,7 +237,7 @@ extension HealthSyncEngine {
             pending = pending.filter { carried.contains($0) }
         }
 
-        for id in ids where activities[id] != .failed {
+        for id in ids where activities[id] != .failed && !cooling.contains(id) {
             // The recent pass reads a window, so its drain says nothing about
             // the rest of the type's history.
             if pass == .main, drainedCleanly.contains(id), !droppedAnything.contains(id),
@@ -261,21 +275,20 @@ extension HealthSyncEngine {
 
     /// Upload whole packs out of the buffer. `keepPartial` hands back a final
     /// under-budget pack so the next wave can top it up rather than sending a
-    /// half-empty request; the last flush of a run takes it as-is.
+    /// half-empty request; the last flush of a run takes it as-is. Pages of
+    /// `isolating` types each go in a pack of their own (`packsToSend`).
     private func flush(
-        _ buffer: [MergedPage], budget: Int, keepPartial: Bool, reason: SyncReason,
-        transport: SyncTransport, config: SyncConfiguration,
+        _ buffer: [MergedPage], budget: Int, keepPartial: Bool, isolating isolated: Set<String>,
+        reason: SyncReason, transport: SyncTransport, config: SyncConfiguration,
         pass: SweepPass, starts: [String: Date]
     ) async -> FlushResult {
         var result = FlushResult()
         guard !buffer.isEmpty else { return result }
 
-        var toSend = Self.pack(buffer, budget: budget)
-        if keepPartial, let last = toSend.last,
-           last.reduce(0, { $0 + $1.count }) < budget {
-            toSend.removeLast()
-            result.leftover = last
-        }
+        let planned = Self.packsToSend(
+            buffer, budget: budget, keepPartial: keepPartial, isolating: isolated)
+        let toSend = planned.send
+        result.leftover = planned.leftover
         let acked = await uploadPacks(
             toSend, reason: reason, transport: transport, config: config,
             pass: pass, starts: starts)
@@ -347,7 +360,10 @@ extension HealthSyncEngine {
                 $0.recentWindowStart = windowStart
             }
             $0.lastSyncAt = Date()
-            if clearingError { $0.lastError = nil }
+            if clearingError {
+                $0.lastError = nil
+                $0.clearCooldown()
+            }
         }
     }
 
@@ -393,6 +409,9 @@ extension HealthSyncEngine {
               let sampleType = descriptor.sampleType else {
             throw SyncError.unknownType(identifier)
         }
+        // Per-kind cap (`maxPageSize`): an ECG or heartbeat page is enriched
+        // in memory before upload, so it pages far smaller than the rest.
+        let pageSize = descriptor.pageSize(batchSize: config.batchSize)
         let queryStart = ContinuousClock.now
         let predicate = HKSamplePredicate<HKSample>.sample(
             type: sampleType,
@@ -403,7 +422,7 @@ extension HealthSyncEngine {
             )
         )
         let queryDescriptor = HKAnchoredObjectQueryDescriptor(
-            predicates: [predicate], anchor: anchor, limit: config.batchSize
+            predicates: [predicate], anchor: anchor, limit: pageSize
         )
         let result = try await queryDescriptor.result(for: healthStore)
         let queryDuration = (ContinuousClock.now - queryStart).seconds
@@ -438,7 +457,7 @@ extension HealthSyncEngine {
             newAnchorData: try encodeAnchor(result.newAnchor),
             enrichment: enrichment,
             queryDuration: queryDuration,
-            drained: rawCount < config.batchSize,
+            drained: rawCount < pageSize,
             rawCount: rawCount,
             dropped: result.addedSamples.count - samples.count
         )
@@ -450,34 +469,60 @@ extension HealthSyncEngine {
         guard HealthTypeCatalog.descriptor(for: identifier)?.sampleType != nil else { return nil }
         do {
             return try await queryPage(identifier, anchor: anchor, start: start, config: config)
-        } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
-            activities[identifier] = .failed
-            backfillRuns[identifier] = nil
-            await store.recordError(identifier: identifier, error: SyncError.authorizationNotDetermined)
-            await eventLog.log(.error, type: identifier, "Health access not determined — tap Grant Health Access on the Explore tab")
-            return nil
-        } catch let error as HKError where error.code == .errorDatabaseInaccessible {
-            // Device locked: the Health DB relocks ~10 min after lock. Expected
-            // during background runs — not a failure; the anchor is untouched
-            // and the next wake/foreground catches up.
-            activities[identifier] = .idle
-            await eventLog.log(.warn, type: identifier, "Health database locked (device locked) — will retry on next wake")
-            return nil
-        } catch is CancellationError {
-            // Background time expired; the anchor is untouched and the outer
-            // loop polls Task.isCancelled. Not a failure.
-            activities[identifier] = .idle
-            return nil
         } catch {
-            activities[identifier] = .failed
-            backfillRuns[identifier] = nil
-            await store.recordError(identifier: identifier, error: error)
-            await eventLog.log(.error, type: identifier, "Sync failed: \(error)")
-            return nil
+            switch PassFailure(error) {
+            case .authorizationNotDetermined:
+                activities[identifier] = .failed
+                backfillRuns[identifier] = nil
+                await store.recordError(identifier: identifier, error: SyncError.authorizationNotDetermined)
+                await eventLog.log(.error, type: identifier, "Health access not determined — tap Grant Health Access on the Explore tab")
+                return nil
+            case .databaseLocked:
+                noteHealthDatabaseLocked()
+                // Device locked: the Health DB relocks ~10 min after lock. Expected
+                // during background runs — not a failure; the anchor is untouched
+                // and the next wake/foreground catches up.
+                activities[identifier] = .idle
+                await eventLog.log(.warn, type: identifier, "Health database locked (device locked) — will retry on next wake")
+                return nil
+            case .cancelled:
+                // Background time expired; the anchor is untouched and the outer
+                // loop polls Task.isCancelled. Not a failure.
+                activities[identifier] = .idle
+                return nil
+            case .failed(let error):
+                activities[identifier] = .failed
+                backfillRuns[identifier] = nil
+                await store.recordError(identifier: identifier, error: error)
+                await eventLog.log(.error, type: identifier, "Sync failed: \(error)")
+                return nil
+            }
         }
     }
 
     // MARK: - Pack
+
+    /// What one flush sends, and the under-budget pack it holds back for the
+    /// next wave when `keepPartial` (never a page of an isolated type).
+    ///
+    /// A type whose last upload was refused terminally
+    /// (`TypeSyncState.terminalFailures`) travels alone: a merged pack the
+    /// server refuses cools every type in it, so the first try after the
+    /// cooldown has to say which page it was. The rest pack as usual. Either
+    /// way no page is split, so each page is still tied to exactly one ack.
+    static func packsToSend(
+        _ buffer: [MergedPage], budget: Int, keepPartial: Bool, isolating isolated: Set<String>
+    ) -> (send: [[MergedPage]], leftover: [MergedPage]) {
+        var send = pack(buffer.filter { !isolated.contains($0.identifier) }, budget: budget)
+        var leftover: [MergedPage] = []
+        if keepPartial, let last = send.last,
+           last.reduce(0, { $0 + $1.count }) < budget {
+            send.removeLast()
+            leftover = last
+        }
+        send += buffer.filter { isolated.contains($0.identifier) }.map { [$0] }
+        return (send, leftover)
+    }
 
     /// Greedily fill batches to `budget` samples+deletions, never splitting a
     /// page. A page at or over the budget travels alone rather than being cut,

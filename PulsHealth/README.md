@@ -162,7 +162,7 @@ Sources/
 ├── SyncView.swift        The Sync tab. No database applied: a setup card ("Keep
 │                         a copy in a database") with one Set Up button
 │                         (opens the Database screen). Otherwise the status
-│                         card (host, or "PulsHealth Database"; last sync,
+│                         card (host, or "PulsHealth Database · host"; last sync,
 │                         backfill progress + ETA,
 │                         failing count), the iOS 27 "Limited Health history"
 │                         card while any applied type is readable only from a
@@ -328,7 +328,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   (App Review expects registration in the app, not in Safari). The person signs in, taps Connect this iPhone, then Open in
   PulsHealth, and the sheet returns that `puls://pair?…` link to the app. It
   gets the same checks as a scanned code, fills a `ServerFieldsDraft`
-  (`fill(fromSignIn:)`) and is tested, and the screen names its database
+  (`fill(fromSignIn:domain:)`) and is tested, and the screen names its database
   and puts Save & Apply first, because nothing is applied until it is
   tapped. The test asks the database for its capabilities with the token
   and uploads no health data. There is no "Pair
@@ -336,9 +336,14 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   returns what that page sent. A closed sheet says nothing: that covers
   someone who only asked for access, and a household account with nothing
   to connect. Which database is applied is derived:
-  `SyncConfiguration.isSignedInDatabase`, true only while the applied URL is
-  the one the sign-in delivered, so the Sync tab says "PulsHealth Database"
-  rather than the operator's host. A code opened from the account page in
+  `PulsHealthDatabase.isSignedIn`: `SyncConfiguration.isSignedInDatabase`,
+  true only while the applied URL is the one the sign-in delivered, *and*
+  that URL's host under the viewer's registrable domain
+  (`PulsHealthDatabase.domain`). The sheet is a browser, so any page it
+  reached could send a `puls://pair` link: a code for a host outside the
+  domain is filled into Your Own Database with a warning naming the host,
+  and is never called the PulsHealth database. Where it is, the Sync tab
+  and the Database screen show its host beside the name. A code opened from the account page in
   Safari (the invite email leads there) is an ordinary incoming link instead:
   confirmed, filled into Your Own Database and, to the app, any database —
   the safety rule is that only the sheet can mark one. Disconnect is the
@@ -392,7 +397,12 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   survives backgrounding): Start Initial Backfill, and a whole-history Apply
   (the first Save & Apply after pairing, and a start-fresh server change).
   Adding a type under Synced Data backfills inline; earlier iOS keeps backfill
-  foreground-resumable. Every sync the app starts itself holds a
+  foreground-resumable. From submission until the task shows up (a type
+  backfilling, or its wake ending) `AppModel.continuedBackfillPending` counts
+  as `backfillActive`, so Sync Now and a second Start Initial Backfill wait.
+  The task checks for a locked device first, like the catch-up task, and
+  stops once HealthKit reports its database locked mid-run; either way the
+  wake is `skippedLocked` and the task still completes successfully. Every sync the app starts itself holds a
   background-task assertion, so leaving the app mid-sync gives it iOS's grace
   period and then stops it cleanly (`BackgroundExecution`) instead of freezing
   it.

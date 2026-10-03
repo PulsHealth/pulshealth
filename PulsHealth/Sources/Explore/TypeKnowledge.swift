@@ -3,10 +3,11 @@ import Foundation
 /// One knowledge-base article, decoded from the bundled `knowledge.json`
 /// (rendered by `scripts/gen-knowledge-json.py` from `knowledge-base/`).
 ///
-/// Only the fields the type page shows are modelled — the generator writes
-/// only those — and every one is optional because it writes `null` for
-/// anything a YAML file leaves out; a missing article must never take the
-/// page down with it.
+/// Only the fields the type page shows are modelled (the generator also
+/// writes a name and a default unit, which the catalog already has, and
+/// decoding ignores them), and every one is optional because it writes
+/// `null` for anything a YAML file leaves out; a missing article must never
+/// take the page down with it.
 struct TypeKnowledge: Decodable, Sendable {
     struct TypicalRange: Decodable, Sendable {
         var min: Double?
@@ -22,25 +23,15 @@ struct TypeKnowledge: Decodable, Sendable {
     }
 
     var identifier: String?
-    var humanReadableName: String?
     var shortDescription: String?
-    var defaultUnit: String?
     var typicalRange: TypicalRange?
     var categoryValues: [CategoryValue]?
 
     enum CodingKeys: String, CodingKey {
         case identifier
-        case humanReadableName = "human_readable_name"
         case shortDescription = "short_description"
-        case defaultUnit = "default_unit"
         case typicalRange = "typical_range"
         case categoryValues = "category_values"
-    }
-
-    /// The label the knowledge base gives a category type's raw value, when
-    /// the article lists its values: the enum name spelled out.
-    func categoryLabel(for rawValue: Int) -> String? {
-        categoryValues?.first { $0.value == rawValue }?.displayName
     }
 
     /// The enum name as words: `asleepCore` → "Asleep core", `asleepREM` →

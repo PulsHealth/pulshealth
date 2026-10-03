@@ -88,7 +88,10 @@ this iPhone and then Open in PulsHealth hand the app a pairing code — the
 database's address, a token for this iPhone and your user ID — which fills
 in the database fields, and shows the database it points to. The app
 accepts only a pairing code from that sheet and checks it like a scanned
-one. Before you tap Save & Apply it does one thing with it: a connection
+one. A code whose database is not under `pulshealth.com` is filled in as
+your own database, with a warning naming its address, never as the
+PulsHealth database; and the PulsHealth database is always shown with its
+address. Before you tap Save & Apply it does one thing with it: a connection
 test, which asks that database what it supports, using the token, and
 uploads no health data. Closing the sheet changes nothing. Request Access
 opens the developer's request form in the same sheet; What the Developer
@@ -151,7 +154,9 @@ Transport Security (`NSAllowsLocalNetworking`).
   of each background wake (when it ran, how long, how many samples moved). They
   stay on the device unless *you* share them from the Background Activity
   screen, which writes them to the app's temporary directory for the share
-  sheet. They hold counts and timings, not health values.
+  sheet and deletes them when you leave that screen (and at the next launch,
+  if the app was closed first). They hold counts and timings, not health
+  values.
 - **App preferences** — four `UserDefaults` flags (whether Health access has
   been requested, whether medication access has been requested, whether the
   first-run flow has been completed, and the background-task schedule status).

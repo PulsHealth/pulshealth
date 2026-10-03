@@ -454,19 +454,23 @@ extension HealthSyncEngine {
                 .info, type: typeID,
                 "Aggregate \(agg.summaryLabel): \(totalBuckets) buckets in \(chunks.count) batch(es), \(String(format: "%.1f", elapsed))s\(fullPass ? " (full recompute)" : "")\(pass == .priority ? " (recent window)" : "")\(clamped ? " (from \(window.from.formatted(date: .abbreviated, time: .omitted)) — Health access is limited to recent history)" : "")"
             )
-        } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
-            await store.recordAggregateError(configID: configID, error: SyncError.authorizationNotDetermined)
-            await eventLog.log(.error, type: typeID, "Aggregate \(agg.summaryLabel): Health access not determined")
-        } catch let error as HKError where error.code == .errorDatabaseInaccessible {
-            // Device locked — expected in background; watermark untouched.
-            await eventLog.log(.warn, type: typeID, "Aggregate \(agg.summaryLabel): Health database locked — will retry on next wake")
-        } catch is CancellationError {
-            // Background time expired mid-series; the watermark sits at the last
-            // acked chunk and the next wake resumes. Not a failure.
-            await eventLog.log(.debug, type: typeID, "Aggregate \(agg.summaryLabel): cancelled — will resume on next wake")
         } catch {
-            await store.recordAggregateError(configID: configID, error: error)
-            await eventLog.log(.error, type: typeID, "Aggregate \(agg.summaryLabel) failed: \(error)")
+            switch PassFailure(error) {
+            case .authorizationNotDetermined:
+                await store.recordAggregateError(configID: configID, error: SyncError.authorizationNotDetermined)
+                await eventLog.log(.error, type: typeID, "Aggregate \(agg.summaryLabel): Health access not determined")
+            case .databaseLocked:
+                noteHealthDatabaseLocked()
+                // Device locked — expected in background; watermark untouched.
+                await eventLog.log(.warn, type: typeID, "Aggregate \(agg.summaryLabel): Health database locked — will retry on next wake")
+            case .cancelled:
+                // Background time expired mid-series; the watermark sits at the last
+                // acked chunk and the next wake resumes. Not a failure.
+                await eventLog.log(.debug, type: typeID, "Aggregate \(agg.summaryLabel): cancelled — will resume on next wake")
+            case .failed(let error):
+                await store.recordAggregateError(configID: configID, error: error)
+                await eventLog.log(.error, type: typeID, "Aggregate \(agg.summaryLabel) failed: \(error)")
+            }
         }
         notifyChanged()
     }

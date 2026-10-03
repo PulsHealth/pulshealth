@@ -116,10 +116,37 @@ public struct ServerFieldsDraft: Sendable, Equatable {
     /// in the app (the PulsHealth database option), rather than one scanned,
     /// pasted or opened as a link. Filled in the same way; committing it also
     /// records that the database came from the sign-in
-    /// (`SyncConfiguration.signedInDatabaseURL`).
-    public mutating func fill(fromSignIn payload: PairingPayload) {
+    /// (`SyncConfiguration.signedInDatabaseURL`) — but only when the code's
+    /// database is under `domain`, the viewer's registrable domain.
+    ///
+    /// The sign-in sheet is a browser: any page it reached could have sent a
+    /// `puls://pair` link. A code for a host outside the domain still fills
+    /// the fields like any pairing code (the person can still choose to apply
+    /// it), but is never recorded as the signed-in database, so the app never
+    /// calls it the PulsHealth database. Returns whether it was recorded.
+    @discardableResult
+    public mutating func fill(fromSignIn payload: PairingPayload, domain: String) -> Bool {
         fill(from: payload)
+        guard Self.host(of: payload.serverURL, isWithin: domain) else { return false }
         signedInURL = payload.serverURL
+        return true
+    }
+
+    /// Whether `url`'s host is `domain` itself or a subdomain of it,
+    /// case-insensitively: `pulshealth.com` and `ingest.pulshealth.com` are
+    /// within `pulshealth.com`; `evilpulshealth.com`,
+    /// `pulshealth.com.example.net` and `pulshealth.com.` (a trailing dot)
+    /// are not. Deliberately strict — an empty label, a percent-escape or an
+    /// empty domain never matches — since a false "no" only costs a label.
+    public static func host(of url: URL, isWithin domain: String) -> Bool {
+        guard let rawHost = url.host, !rawHost.isEmpty else { return false }
+        let host = rawHost.lowercased()
+        let domain = domain.lowercased()
+        guard !domain.isEmpty, !domain.hasPrefix("."), !domain.hasSuffix("."),
+              !host.contains("%"),
+              !host.split(separator: ".", omittingEmptySubsequences: false).contains(where: \.isEmpty)
+        else { return false }
+        return host == domain || host.hasSuffix("." + domain)
     }
 
     /// Whether these fields describe the database a sign-in delivered: only

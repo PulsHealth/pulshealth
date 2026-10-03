@@ -387,12 +387,16 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   page as an ordinary `puls://pair` code, through an
   `ASWebAuthenticationSession` (callback scheme `puls`, shared browser
   session) that the person starts on Sync → Database. That code fills a
-  `ServerFieldsDraft` (`fill(fromSignIn:)`) and is tested, and Save & Apply
-  applies it, as with every pairing. Only a payload from that sheet or from a
-  confirmed link ever fills the fields. Whether the applied database is the
-  PulsHealth one is derived, `SyncConfiguration.isSignedInDatabase`: the
-  optional `signedInDatabaseURL` (absent from 1.6 state files; never make it
-  required) counts only while it equals `serverURL`, and export clears it.
+  `ServerFieldsDraft` (`fill(fromSignIn:domain:)`) and is tested, and Save &
+  Apply applies it, as with every pairing. Only a payload from that sheet or
+  from a confirmed link ever fills the fields. Whether the applied database
+  is the PulsHealth one is derived, `PulsHealthDatabase.isSignedIn`:
+  `SyncConfiguration.isSignedInDatabase` (the optional `signedInDatabaseURL`,
+  absent from 1.6 state files — never make it required — counts only while
+  it equals `serverURL`, and export clears it) **and** the host is under
+  `PulsHealthDatabase.domain`. A sign-in code for any other host fills the
+  fields as the person's own database, with a warning naming it, and the
+  PulsHealth label always shows the host beside it.
   The screen's decisions live in `DatabaseSetup` (it starts from the
   *applied* configuration). Delete PulsHealth Account (App Review 5.1.1(v),
   `/account#delete-account`, whose `id` lives in `web/app/account/page.tsx`)
