@@ -131,7 +131,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
       </section>
 
       {session.selfService && !session.isAdmin && (
-        <section className="rise" style={{ marginTop: 28 }}>
+        // The anchor is the app's Delete PulsHealth Account link
+        // (PulsHealthDatabase.deleteAccountURL): App Review wants a link
+        // straight to account deletion. Keep the id.
+        <section id="delete-account" className="rise" style={{ marginTop: 28, scrollMarginTop: 24 }}>
           <div className="eyebrow" style={{ marginBottom: 12 }}>Delete account</div>
           <form method="post" action="/api/auth/delete-account" className="panel" style={{ padding: 20, maxWidth: 560 }}>
             <p style={{ margin: "0 0 12px", fontSize: 14, lineHeight: 1.5 }}>

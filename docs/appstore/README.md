@@ -11,8 +11,8 @@ and when, is the [Release record](#release-record) at the bottom.
 | Document | What it is |
 |---|---|
 | [`listing.md`](listing.md) | The App Store Connect record: name, subtitle, promotional text, description, keywords, URLs, category, age-rating answers, the App Privacy answer ("Data Linked to You" since 2026-10-02) and its reasoning, and what to do about screenshots. |
-| [`review-notes.md`](review-notes.md) | The App Review Information → Notes text, ready to paste once four placeholders are filled in, plus prepared answers for the questions this app invites. |
-| [`review-backend.md`](review-backend.md) | How to stand up the throwaway public server a reviewer needs, and how to tear it down afterwards. |
+| [`review-notes.md`](review-notes.md) | The App Review Information → Notes text, ready to paste once its placeholders are filled in (a demo account on the PulsHealth database, and optionally the review backend), plus prepared answers for the questions this app invites. |
+| [`review-backend.md`](review-backend.md) | How to stand up the throwaway public server for the notes' optional your-own-database block, and how to tear it down afterwards. |
 | [`../privacy-policy.md`](../privacy-policy.md) | The privacy policy, served at `https://pulshealth.com/privacy` by `site/`. |
 
 They cover **STORE-1**, **STORE-2**, **STORE-3** and **STORE-5** from
@@ -21,12 +21,15 @@ They cover **STORE-1**, **STORE-2**, **STORE-3** and **STORE-5** from
 ## The one-sentence version
 
 PulsHealth sends the user's health data to a server the *user* runs — or, on
-request, writes it to files the user saves or sends themselves; the developer
-receives nothing and operates nothing in the app. The one exception is people
-who use the developer's own database and viewer, by invitation or an approved
-request, which is why App Privacy declares data linked to the user (see
-`listing.md`). Every document here is an application of those facts, and
-every claim in them is checkable against the source in this repository.
+request, writes it to files the user saves or sends themselves; for those
+people the developer receives nothing. The one exception is people who use
+the developer's own database and viewer, by invitation or an approved
+request — which the app offers on Sync → Database as the **PulsHealth
+database**, reached by signing in to its one fixed address
+(`PulsHealth/Sources/PulsHealthDatabase.swift`) — and
+that is why App Privacy declares data linked to the user (see `listing.md`).
+Every document here is an application of those facts, and every claim in
+them is checkable against the source in this repository.
 
 ## Submission checklist
 
@@ -77,6 +80,18 @@ account, the signing team, a real device or personal contact details.
       (4+, Data Linked to You: six types, App Functionality, not tracking).
       App Privacy is per app, not per version, so it is already live; revisit
       it only if something it asks about changed.
+- [ ] **The first release with the PulsHealth database option** (Sync →
+      Database → PulsHealth Database, the in-app sign-in) contradicts copy
+      that was deliberately left alone, so nothing advertised the option
+      before the store had it:
+      - **At submission:** the promotional text in `listing.md` ("No
+        account … nothing goes to the developer"). It is live while the
+        build is reviewed, and a listing that contradicts the build under
+        review is a 2.3 rejection.
+      - **Once approved:** the marketing pages `site/src/app/about/page.tsx`,
+        `site/src/app/ios/page.tsx`, `site/src/app/page.tsx` and
+        `site/src/lib/faq.ts`, then deploy the site.
+      Delete this item afterwards.
 
 ### Screenshots
 
@@ -90,13 +105,19 @@ account, the signing team, a real device or personal contact details.
 
 ### Review backend
 
-- [ ] Stand up the throwaway instance following
-      [`review-backend.md`](review-backend.md), and verify it from off-network
-      (`/healthz` and `/v1/capabilities`).
+- [ ] **maintainer only** — Create the demo account on the PulsHealth
+      database as a self-service account (ask for access on `/signup`,
+      approve it on `/admin`, choose its password from the invite), and put
+      its email and password in App Store Connect's sign-in fields
+      ([`review-notes.md`](review-notes.md) § Before you submit).
+- [ ] Optional, for the notes' YOUR OWN DATABASE block: stand up the
+      throwaway instance following [`review-backend.md`](review-backend.md),
+      and verify it from off-network (`/healthz` and `/v1/capabilities`).
+      Without it, delete that block from the notes.
 - [ ] Walk the whole of [`review-notes.md`](review-notes.md) on a spare device
       (or an erased simulator), exactly as written.
-- [ ] Fill the four placeholders and paste the notes block. Keep the filled-in
-      copy out of the repository — it holds a live token.
+- [ ] Fill the placeholders and paste the notes block. Keep the filled-in
+      copy out of the repository — it holds a live password and token.
 - [ ] **maintainer only** — App Review contact details (name, phone, e-mail)
       are personal and deliberately absent from this repository.
 
@@ -108,7 +129,8 @@ account, the signing team, a real device or personal contact details.
 
 ### After approval
 
-- [ ] Tear the review instance down, volume and DNS record included
+- [ ] Disable and purge the demo account on `/admin`, and tear the review
+      instance down if there was one, volume and DNS record included
       ([`review-backend.md`](review-backend.md) § 6).
 - [ ] Add the release to the [Release record](#release-record), and update
       `CLAUDE.md`'s "shipped software" bullet and `docs/roadmap.md`.
@@ -123,13 +145,14 @@ changes, revisit them in the same pull request:
 | Where data is sent, or any new outbound request | `privacy-policy.md`, `listing.md` (App Privacy), `review-notes.md` |
 | A new dependency of any kind | `privacy-policy.md`, `listing.md` — "zero third-party dependencies" stops being true |
 | A new permission or usage string | `privacy-policy.md`, `review-notes.md`, `PrivacyInfo.xcprivacy` |
-| A URL scheme, or any other way another app or a web page can hand the app input (today: `puls://pair`, confirmed before it fills anything) | `privacy-policy.md` (how the server URL gets into the app), `review-notes.md` (URL SCHEME), `listing.md` (the "Unrestricted web access" row) |
-| What is stored on the device, or where (today: sync state, logs, four preferences, a staged export, and per-type analysis summaries) | `privacy-policy.md` § What stays on the device, `SECURITY.md`, the site's `/privacy` glance card |
+| A URL scheme, or any other way another app or a web page can hand the app input (today: `puls://pair`, confirmed before it fills anything, and the PulsHealth database's sign-in sheet, which returns the same kind of code to the screen that opened it) | `privacy-policy.md` (how the server URL gets into the app), `review-notes.md` (URL SCHEME), `listing.md` (the "Unrestricted web access" row) |
+| What is stored on the device, or where (today: sync state — including whether its database came from the PulsHealth sign-in — logs, four preferences, a staged export, and per-type analysis summaries) | `privacy-policy.md` § What stays on the device, `SECURITY.md`, the site's `/privacy` glance card |
 | The on-device export: where files are staged, when the app deletes them (launch, new export, Delete Export, a completed share), what identity they carry, which share activities are offered | `privacy-policy.md` § Exports, `SECURITY.md`, the site's `/privacy` glance card, `review-notes.md` (WITHOUT A SERVER, HEALTHKIT), `listing.md` (description, App Privacy point 2) |
 | The first-run flow's steps | `review-notes.md` — the reviewer walkthrough is step-by-step |
 | `ServerURLValidation`'s rules | `review-notes.md` — the ATS justification quotes them |
 | Anything about HealthKit write access | everything; read-only is the load-bearing claim |
 | The maintainer's viewer instance: who may join (invitation, or an approved access request since 2026-10-02), what it stores, who carries its traffic (Cloudflare) | `privacy-policy.md` § If you use the developer's viewer, the site's `/privacy` glance card, `listing.md` (App Privacy table and point 1), `PulsHealth/PrivacyInfo.xcprivacy` |
+| The app's PulsHealth database option: its address (`PulsHealthDatabase.viewerURL`), the sign-in sheet, what the screen links to, account deletion | `privacy-policy.md` (short version, § Where it goes, § If you use the developer's viewer — keep that heading, the app links to its anchor), `listing.md` (description, App Privacy point 1, "Unrestricted web access", Sign in with Apple, Demo account), `review-notes.md` (demo account, steps, ACCOUNT DELETION), `SECURITY.md`, the site's `/privacy` glance card |
 | What ships to the store | [Release record](#release-record) — these documents describe the shipped binary, not whatever `main` happens to be |
 
 ## Release record

@@ -60,7 +60,9 @@ Everything in this repository is in scope, in particular:
   handling, data exposure beyond the read-only role they are meant to have.
 - **iOS app and `PulsHealthSync`**: handling of the server URL and bearer
   token, including a pairing link (`puls://pair`) changing the server without
-  the confirmation it is supposed to require; health data written anywhere
+  the confirmation it is supposed to require, and the PulsHealth database's
+  sign-in sheet: a payload it did not return filling the fields, or one it did
+  being applied without Save & Apply; health data written anywhere
   the user did not ask for — the one intended case is an on-device export,
   staged in the app's temporary directory and handed to the share sheet, so an
   export that lingers, lands somewhere else, or carries the token or profile
@@ -101,11 +103,16 @@ in `docs/roadmap.md`. They are not vulnerabilities to report; they are context
 for judging what is.
 
 - **Self-hosted.** PulsHealth is software you run; no PulsHealth service
-  receives your data. Where your server runs, how it is exposed, and who can
-  reach it are your decisions. The maintainer runs one invite-only instance
-  for family and friends (the viewer at `app.pulshealth.com`); a report about
-  the software covers it too, and one about that instance's configuration is
-  welcome through the same channel.
+  receives your data unless you choose one. Where your server runs, how it is
+  exposed, and who can reach it are your decisions. The maintainer runs one
+  instance (the viewer at `app.pulshealth.com`) for family and friends and
+  for people whose access request they approve. The app offers it as the
+  **PulsHealth database**, its only built-in destination, reached by
+  signing in from Sync → Database: an `ASWebAuthenticationSession` on the
+  account page, whose Connect this iPhone returns an ordinary pairing code.
+  The app holds that one address and nothing else about the instance. A
+  report about the software covers it too, and one about that instance's
+  configuration is welcome through the same channel.
 - **Bearer tokens.** The ingest server accepts two kinds. The shared
   `PULS_TOKEN` is a single static value: anyone who holds it can upload,
   delete, and (via the reconciliation endpoints) enumerate samples for *any*

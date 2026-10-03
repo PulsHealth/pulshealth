@@ -39,8 +39,8 @@ export default function PrivacyPage() {
           </CardHeader>
           <CardContent>
             <ul className="list-disc pl-6 space-y-2">
-              <li>The developer receives no health data, unless you use their own database and viewer at app.pulshealth.com — by invitation, or by an access request they approved. Then they hold your data for you alone, and delete your account and data whenever you ask. No developer server is built into the app.</li>
-              <li>Your health data leaves the phone only two ways, both yours: uploads to the database you run and configure, and files you export and share yourself.</li>
+              <li>The developer receives no health data, unless you choose their own database (the PulsHealth database, with its viewer at app.pulshealth.com) — by invitation, or by an access request they approved. Then they hold your data for you alone, and delete your account and data whenever you ask. Nothing in the app sends data to the developer unless you choose that database and sign in.</li>
+              <li>Your health data leaves the phone only two ways, both yours: uploads to the database you set up, one you run or the PulsHealth database, and files you export and share yourself.</li>
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>
               <li>No analytics, advertising, tracking or third-party SDKs in the app.</li>
               <li>The bearer token normally lives in the iOS Keychain. The app keeps no health samples: an export you ask for is staged in temporary storage until you share it, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>

@@ -45,7 +45,7 @@ targets:
         CFBundleDisplayName: PulsHealth
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        NSHealthShareUsageDescription: PulsHealth reads your health data to show it to you, export it to files you choose, and, if you set one up, sync it to your own database.
+        NSHealthShareUsageDescription: PulsHealth reads your health data to show it to you, export it to files you choose, and, if you set one up, sync it to the database you choose.
         NSHealthUpdateUsageDescription: PulsHealth does not write health data.
         # Sync → Database can read the pairing QR code a database's setup
         # prints instead of making the user type a URL, a token and a UUID.
@@ -57,6 +57,9 @@ targets:
         # tapped. A custom scheme authenticates nobody: any page or app can
         # fire one, so an incoming link only ever raises a confirmation naming
         # the host (AppModel.handleIncomingURL) — it fills nothing by itself.
+        # The same scheme is the PulsHealth database sign-in sheet's callback
+        # (PulsHealthDatabase.callbackScheme): its account page's Open in
+        # PulsHealth is such a link, which the sheet returns to the app.
         # The URL name derives from the bundle ID, so a fork needs no edit here.
         CFBundleURLTypes:
           - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER).pairing

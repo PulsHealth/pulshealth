@@ -26,7 +26,8 @@ enum ExportPlan {
     /// app's configuration to a server or to a person is removed:
     ///
     /// - no server URL and no token, so `configure` builds no HTTP transport
-    ///   and no API client — there is nothing the export engine *could* reach;
+    ///   and no API client — there is nothing the export engine *could* reach
+    ///   — and no record of a database paired by signing in;
     /// - no name, e-mail, date of birth or sex, so `enrich` attaches no
     ///   `{"profile":…}` line to workout batches. That line is the app's
     ///   settings, not HealthKit data, and on a replay it would overwrite the
@@ -46,6 +47,7 @@ enum ExportPlan {
         var config = request.configuration
         config.serverURL = nil
         config.authToken = nil
+        config.signedInDatabaseURL = nil
         config.userName = nil
         config.userEmail = nil
         config.userDateOfBirth = nil

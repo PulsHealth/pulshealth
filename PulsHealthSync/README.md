@@ -100,7 +100,9 @@ Sources/PulsHealthSync/
 │   │                                configured server, whether it is plain http.
 │   ├── ServerFieldsDraft.swift      The server fields as typed (URL, token, paired user
 │   │                                ID): validation, token normalization, and the one
-│   │                                fill(from:) / commit(to:) path for a pairing code.
+│   │                                fill(from:) / commit(to:) path for a pairing code
+│   │                                (fill(fromSignIn:) for one an account sign-in
+│   │                                returned, recorded as signedInDatabaseURL).
 │   └── DiagnosticTransports.swift   DryRunTransport (benchmark, discards output) and
 │                                    InstrumentedTransport (per-batch timing capture).
 ├── Models/
@@ -317,6 +319,16 @@ the package does with it.
   would replace a different configured server (same normalization as
   `ServerIdentity`), whether the connection is unencrypted — and accepting it
   goes no further than a scan: fields filled and tested, nothing applied.
+- **Pairing by signing in.** The app's PulsHealth database option gets the
+  same code from an account page, through a web sign-in sheet, rather than
+  from a QR code. Its database URL is the operator's to choose, so the app
+  cannot recognize that database by address. `ServerFieldsDraft.fill(fromSignIn:)`
+  marks the draft, and `commit(to:)` records the URL as
+  `SyncConfiguration.signedInDatabaseURL`. `isSignedInDatabase` holds only
+  while `serverURL` still equals it, so any other way of changing the URL
+  ends it, and nothing has to remember to clear it. The key is optional
+  (absent from 1.6 and older state files), is never sent, and
+  `ExportPlan.configuration` drops it with the URL and token.
 
 ## How a sync runs
 

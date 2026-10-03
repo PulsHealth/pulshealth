@@ -68,11 +68,12 @@ struct SyncView: View {
     // half-typed on the Database screen does not hide it.
     private var setupCard: some View {
         CardSection(
-            "Keep a copy in your own database",
-            subtitle: "Nothing is syncing yet. Connect your own database and new data is sent as it arrives; until then, the Export tab writes files without one."
+            "Keep a copy in a database",
+            subtitle: "Nothing is syncing yet. Use the PulsHealth database, with an account, or one you run yourself, and new data is sent as it arrives. Until then, the Export tab writes files without one."
         ) {
-            // One way in. The Database screen it opens starts with Scan
-            // Pairing Code and Paste, then the fields for typing it by hand.
+            // One way in. The Database screen it opens asks which of the two
+            // first: the PulsHealth database (sign in) or your own (scan,
+            // paste, or type it).
             Button {
                 path.append(.server(scan: false))
             } label: {
@@ -119,7 +120,10 @@ struct SyncView: View {
         }
     }
 
+    /// The PulsHealth database by name: its address is the operator's, and
+    /// means nothing to the person syncing to it. Any other by its host.
     private var host: String {
+        if model.usesPulsHealthDatabase { return "PulsHealth Database" }
         guard let url = model.appliedConfig.serverURL else { return "Database" }
         return url.host().map { $0 + (url.port.map { ":\($0)" } ?? "") } ?? url.absoluteString
     }

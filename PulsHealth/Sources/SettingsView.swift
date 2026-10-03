@@ -114,6 +114,13 @@ struct SettingsView: View {
                 // this one-tap way to remove all of them.
                 Button("Delete Analysis", role: .destructive) { confirmDeleteAnalysis = true }
                     .disabled(analyzed == 0 || !model.explore.running.isEmpty)
+                // App Review 5.1.1(v): the account the PulsHealth database
+                // needs can be deleted from the app. Sync → Database has it
+                // too; this is where people look for it. Always shown: an
+                // iPhone paired from the account page's link, rather than by
+                // signing in here, looks like any other database to the app.
+                Link("Delete PulsHealth Account", destination: PulsHealthDatabase.deleteAccountURL)
+                    .tint(.red)
             }
 
             Section("Diagnostics") {

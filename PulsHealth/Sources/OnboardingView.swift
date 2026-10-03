@@ -7,7 +7,8 @@ import PulsHealthSync
 /// 2. Health access for the starter set (`TypePresets.common`, preselected
 ///    by `AppModel`), picked in iOS's own sheet,
 /// 3. one-time exports,
-/// 4. syncing to a database of your own, and the button that finishes.
+/// 4. syncing to a database — the PulsHealth database or one of your own,
+///    both set up later from the Sync tab — and the button that finishes.
 ///
 /// Page 2 cannot be skipped (App Review rejected 1.4 under 5.1.1(iv) for a
 /// Skip). Until iOS has been asked about the starter set, the pager holds only
@@ -154,7 +155,7 @@ struct OnboardingView: View {
                         "Save any of it to CSV or JSONL files.")
                     feature(
                         "arrow.triangle.2.circlepath", "Sync",
-                        "Keep a live copy in your own database.")
+                        "Keep a live copy in a database.")
                 }
             }
         }
@@ -211,8 +212,10 @@ struct OnboardingView: View {
         pageLayout {
             VStack(spacing: 20) {
                 pageIcon("arrow.triangle.2.circlepath", color: .accentColor)
-                pageTitle("Sync to your own database")
-                bodyText("Keep a live copy of your Health data in a database you control. Connect your own, or set up the open-source PulsHealth example.")
+                pageTitle("Sync to a database")
+                // Words only: signing in to the PulsHealth database happens on
+                // Sync → Database, never in this flow.
+                bodyText("Keep a live copy of your Health data in the PulsHealth database, with an account, or in one you run yourself. Set it up any time from the Sync tab.")
                 // Opens in Safari, outside the app.
                 Link(destination: URL(string: "https://pulshealth.com/docs/server/")!) {
                     Label("Learn more", systemImage: "arrow.up.right.square")

@@ -21,17 +21,23 @@ public struct ServerFieldsDraft: Sendable, Equatable {
     /// Nil when the fields were typed by hand — the configuration's own user
     /// ID then stays as it is.
     public private(set) var pairedUserID: String?
+    /// The database URL an account sign-in delivered (`fill(fromSignIn:)`),
+    /// or the configuration's own when the fields were loaded from a database
+    /// paired that way. Nil for a scanned, pasted, linked or typed one.
+    public private(set) var signedInURL: URL?
 
     public init(urlText: String = "", tokenText: String = "") {
         self.urlText = urlText
         self.tokenText = tokenText
     }
 
-    /// The fields as a configuration has them.
+    /// The fields as a configuration has them, including whether its database
+    /// came from a sign-in, so saving them unchanged keeps it that way.
     public init(configuration: SyncConfiguration) {
         self.init(
             urlText: configuration.serverURL?.absoluteString ?? "",
             tokenText: configuration.authToken ?? "")
+        if configuration.isSignedInDatabase { signedInURL = configuration.signedInDatabaseURL }
     }
 
     // MARK: - URL
@@ -103,15 +109,32 @@ public struct ServerFieldsDraft: Sendable, Equatable {
         urlText = payload.serverURL.absoluteString
         tokenText = payload.token
         pairedUserID = payload.userID
+        signedInURL = nil
     }
 
+    /// A pairing code that came back from an account sign-in the user started
+    /// in the app (the PulsHealth database option), rather than one scanned,
+    /// pasted or opened as a link. Filled in the same way; committing it also
+    /// records that the database came from the sign-in
+    /// (`SyncConfiguration.signedInDatabaseURL`).
+    public mutating func fill(fromSignIn payload: PairingPayload) {
+        fill(from: payload)
+        signedInURL = payload.serverURL
+    }
+
+    /// Whether these fields describe the database a sign-in delivered: only
+    /// while the URL field still holds its address. Editing the URL ends it.
+    public var isSignedIn: Bool { signedInURL != nil && validatedURL == signedInURL }
+
     /// Writes the fields into a configuration draft: the validated URL (nil
-    /// when the field is empty or unusable), the token (nil when empty), and
-    /// the paired user ID when there is one. Nothing else is touched.
+    /// when the field is empty or unusable), the token (nil when empty), the
+    /// paired user ID when there is one, and whether the database came from
+    /// a sign-in. Nothing else is touched.
     public func commit(to configuration: inout SyncConfiguration) {
         configuration.serverURL = validatedURL
         configuration.authToken = token.isEmpty ? nil : token
         if let pairedUserID { configuration.userID = pairedUserID }
+        configuration.signedInDatabaseURL = isSignedIn ? validatedURL : nil
     }
 
     /// Call once the fields have been applied: the paired user ID has done its

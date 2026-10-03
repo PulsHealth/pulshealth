@@ -527,13 +527,15 @@ private final class ProgressBox: @unchecked Sendable {
             ],
             userID: "11111111-2222-4333-8444-555555555555",
             userName: "A Person", userEmail: "person@example.invalid",
-            userDateOfBirth: Fixture.date(0), userBiologicalSex: "female")
+            userDateOfBirth: Fixture.date(0), userBiologicalSex: "female",
+            signedInDatabaseURL: URL(string: "https://example.invalid"))
         config.batchSize = 500
         let floor = Fixture.date(978_307_200_000)
 
         let allTime = ExportPlan.configuration(for: request(config), floor: floor)
         #expect(allTime.serverURL == nil)
         #expect(allTime.authToken == nil)
+        #expect(allTime.signedInDatabaseURL == nil)
         #expect(allTime.userProfilePayload.isEmpty)
         #expect(allTime.userID == config.userID)
         #expect(allTime.startDate == floor)
