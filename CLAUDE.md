@@ -379,6 +379,24 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   dependency, a new outbound request, a new permission, a new on-disk store —
   updates those documents in the same pull request, and the App Store listing's
   privacy answers with them (`docs/appstore/README.md` has the table).
+- **The PulsHealth database is one address and a pairing code.**
+  `PulsHealthDatabase.viewerURL` (`https://app.pulshealth.com`) is the only
+  developer-controlled host in the app. Never hard-code the database (ingest)
+  URL: it comes back with the token and user from the viewer's `/account`
+  page as an ordinary `puls://pair` code, through an
+  `ASWebAuthenticationSession` (callback scheme `puls`, shared browser
+  session) that the person starts on Sync → Database. That code fills a
+  `ServerFieldsDraft` (`fill(fromSignIn:)`) and is tested, and Save & Apply
+  applies it, as with every pairing. Only a payload from that sheet or from a
+  confirmed link ever fills the fields. Whether the applied database is the
+  PulsHealth one is derived, `SyncConfiguration.isSignedInDatabase`: the
+  optional `signedInDatabaseURL` (absent from 1.6 state files; never make it
+  required) counts only while it equals `serverURL`, and export clears it.
+  Delete PulsHealth Account (App Review 5.1.1(v)) stays on Sync → Database
+  whether or not the iPhone is connected. Changing any of this means changing
+  `docs/privacy-policy.md` ("Where it goes", "If you use the developer's
+  viewer", whose heading is the app's privacy link anchor),
+  `docs/appstore/listing.md` and `review-notes.md` with it.
 
 - **The web viewer's accounts mode: the database decides what a signed-in
   person can read.** With `WEB_ACCOUNTS=true` the viewer connects as

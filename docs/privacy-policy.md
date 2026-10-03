@@ -3,25 +3,31 @@
 **Last updated: 2026-10-02**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
-database **you** run, or — if you have no database — writes it to files you
-then save or send yourself. This policy describes what the app does with your data.
-It is short because the app does very little: it reads Apple Health, it uploads
-to the one address you type in, it exports a file when you ask for one, and
-that is the whole of it.
+database — one **you** run, or, if you choose it and the developer approves
+your account, the developer's own (the PulsHealth database) — or, if you have
+no database, writes it to files you then save or send yourself. This policy
+describes what the app does with your data. It is short because the app does
+very little: it reads Apple Health, it uploads to the one database you set
+up, it exports a file when you ask for one, and that is the whole of it.
 
 ## The short version
 
 - **The developer of PulsHealth receives no data from you** — unless you use
-  their own database and viewer, by invitation or by an access request they
-  approved; it is then the database the app uploads to (see
+  their own database and viewer, which the app offers as the **PulsHealth
+  database**, by invitation or by an access request they approved; it is
+  then the database the app uploads to (see
   [If you use the developer's viewer](#if-you-use-the-developers-viewer)).
-  There is no account to sign up for, no telemetry endpoint, and no
-  developer server built into the app: it talks to the database address you
-  enter and to nothing else.
+  There is no telemetry endpoint, and no account is needed to use the app:
+  one is needed only for that database. The only developer address built
+  into the app is that database's sign-in page (1.6 and earlier have none),
+  which it opens only when you tap Sign In to PulsHealth; otherwise it talks
+  to the database you set up and to nothing else.
 - **Your health data leaves the phone in two ways, and both are yours.** The
-  app uploads only to the database URL you enter in it — typed, or taken from
+  app uploads only to the database you set up in it — typed, taken from
   your database's pairing code (scanned, pasted, or opened as a link you
-  confirm) — and it has no other network destination compiled into it. And when
+  confirm), or, for the PulsHealth database, handed to the app by its
+  account page after you sign in — and it has no other upload destination
+  compiled into it. Nothing is uploaded until you tap Save & Apply. And when
   you ask for an export, it writes files and hands them to the iOS share sheet;
   where they go from there is the choice you make in that sheet. An export
   involves no network request by the app at all.
@@ -60,10 +66,28 @@ export you make yourself.
 
 ## Where it goes
 
-To the database URL you configure — the address of the PulsHealth backend you
-run, or of a receiver you built from the protocol — over HTTPS, authenticated
-with a bearer token you also configure. That is the only network destination. (An export is not a
-network destination: see [Exports](#exports) below.)
+To the database you configure — the PulsHealth backend you run, a receiver
+you built from the protocol, or the PulsHealth database if you chose it and
+signed in — over HTTPS, authenticated with a bearer token. That is the only
+destination for your data. (An export is not a network destination: see
+[Exports](#exports) below.)
+
+**Signing in to the PulsHealth database.** Sync → Database → PulsHealth
+Database → Sign In to PulsHealth opens the account page at
+`app.pulshealth.com` in iOS's sign-in sheet, after iOS asks whether the app
+may use that site to sign in. The sheet is a browser run by iOS: what you
+type into it goes to the developer's viewer, not through the app, and it
+shares Safari's website data, so a sign-in made in Safari (where the email
+inviting you to choose a password opens) carries over, and the viewer's
+cookie is kept by iOS with Safari's, not by the app. On that page, Connect
+this iPhone and then Open in PulsHealth hand the app a pairing code — the
+database's address, a token for this iPhone and your user ID — which fills
+in the database fields. The app accepts only a pairing code from that sheet,
+checks it like a scanned one, and sends nothing to that database until you
+tap Save & Apply. Closing the sheet changes nothing. Request Access, What the
+Developer Holds and Delete PulsHealth Account open the developer's pages in
+Safari, outside the app. (Versions up to 1.6 have no sign-in sheet: there,
+the account page's pairing code is scanned or opened like any other.)
 
 Plain `http://` is permitted **only** for hosts on your local network
 (`localhost`, `*.local`, and the private IP ranges `10.x`, `172.16–31.x`,
@@ -88,8 +112,10 @@ Transport Security (`NSAllowsLocalNetworking`).
   data: unreadable until the first unlock after a restart, and excluded from
   device and iCloud backups, so a parked token is never carried off the phone.
 - **Sync state** — one file, `sync-state.json`, in the app's private container,
-  holding your configuration (database URL, chosen types, start date, and the
-  identity fields if you filled them in), the opaque HealthKit query anchors,
+  holding your configuration (database URL, chosen types, start date, the
+  identity fields if you filled them in, and — if you signed in to the
+  PulsHealth database — the database address that sign-in delivered, so the
+  app can tell that database from one you run), the opaque HealthKit query anchors,
   per-type counters, and progress watermarks. It is written atomically with
   iOS file protection and is excluded from device backups. It holds **no health
   samples** — a sync streams those to your database and keeps none of them in
@@ -175,14 +201,17 @@ to — before it fills anything in.
 
 PulsHealth does not use HealthKit data for advertising, marketing, or
 data-mining purposes, and does not disclose HealthKit data to any third party.
-It is not shared with, or sold to, anyone — there is nobody to share it with:
-the only recipient of an upload is your own database, and an exported file goes
-only where you send it.
+It is not shared with, or sold to, anyone. The only recipient of an upload is
+the database you set up — your own, or the PulsHealth database if you chose
+it, where the developer holds it for you as described
+[below](#if-you-use-the-developers-viewer) — and an exported file goes only
+where you send it.
 
 ## Children
 
-PulsHealth is not directed at children. It collects nothing centrally, so there
-is no children's data for the developer to hold.
+PulsHealth is not directed at children. Outside the PulsHealth database,
+whose accounts the developer approves one by one, it collects nothing
+centrally, so there is no children's data for the developer to hold.
 
 ## What you are responsible for as a self-hoster
 
@@ -214,8 +243,10 @@ provider's responsibility are yours:
 ## If you use the developer's viewer
 
 The developer runs one PulsHealth database of their own, with the web viewer
-at `app.pulshealth.com`. Family and friends get an invite; anyone else can
-ask for access there, and the developer decides. What happens to your data:
+at `app.pulshealth.com` — the **PulsHealth database** the app offers under
+Sync → Database. Family and friends get an invite; anyone else can ask for
+access there (the app's Request Access opens the form), and the developer
+decides. What happens to your data:
 
 - **Asking for access.** The request form stores your name, email address,
   an optional note, and your browser's IP address and name, and emails them
@@ -224,9 +255,10 @@ ask for access there, and the developer decides. What happens to your data:
   deleted at once; an approved one 30 days after the decision. If you are
   approved but never use the invite, everything made for you is deleted 30
   days after the last invite was sent.
-- **The app still works exactly as described above.** Once approved, it
-  uploads only to the database address the pairing code gives it — in this
-  case the developer's — and to nowhere else.
+- **The app still works exactly as described above.** Once approved, you
+  sign in from Sync → Database (or open the account page's pairing code on
+  the iPhone), and the app uploads only to the database address that code
+  gives it — in this case the developer's — and to nowhere else.
 - **The developer holds your data.** Everything the app uploads (the health
   data you chose to sync, and the identity fields if you filled them in) is
   stored in the developer's database under your own user ID. The developer,
@@ -240,8 +272,9 @@ ask for access there, and the developer decides. What happens to your data:
   and its IP address. The viewer sets one cookie, which keeps you signed in;
   it holds a random value and nothing else.
 - **Connecting your iPhone.** If you asked for access, the account page
-  makes a pairing code that lets your iPhone upload to your records (family
-  members' iPhones are paired by the developer). It is shown once and only a hash
+  makes a pairing code that lets your iPhone upload to your records — the
+  one the app's sign-in sheet receives (family members' iPhones are paired
+  by the developer). It is shown once and only a hash
   of it is kept; the account page lists your connected iPhones and lets you
   disconnect each.
 - **Email.** Messages about your account — an approval with the link to
@@ -257,11 +290,13 @@ ask for access there, and the developer decides. What happens to your data:
   OpenTopoMap). Those requests carry no health data, but they do reveal to
   that provider which area the map shows, and the viewer's address.
 - **Leaving.** If you asked for access, **Delete my account** on the
-  account page signs you out, disconnects your iPhones at once so nothing
+  account page (the app's Delete PulsHealth Account, under Sync → Database,
+  opens it) signs you out, disconnects your iPhones at once so nothing
   more is uploaded, and asks the developer to delete every row stored under
   your user ID, which they do, along with the names of your devices. Family members ask the developer, who does
   the same.
-  Delete the database address in the app (or the app) to stop it trying.
+  Tap Disconnect under Sync → Database (or delete the app) to stop it
+  trying.
 
 ## The website
 
