@@ -45,3 +45,4 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 - [SECURITY.md](SECURITY.md): how to report a vulnerability, which versions are supported, and the design properties to know about.
 - [CHANGELOG.md](CHANGELOG.md): what changed in each release of the server stack, and which versions are tracked elsewhere.
 - [docs/roadmap.md](docs/roadmap.md): what is still outstanding, in the order worth doing it, with the requirement IDs from the plan behind it, and what was decided against.
+- [docs/deep-review-2026-10.md](docs/deep-review-2026-10.md): the October 2026 deep review — security, reliability, operations and protocol findings, each with its fix and status; the current findings list and roadmap.

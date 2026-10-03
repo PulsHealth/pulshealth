@@ -204,9 +204,12 @@ token with `scripts/bootstrap.sh --issue-device "<label>" --user <that user
 ID>`, which ends in a QR code for that phone. A device token is bound to its
 user, so no phone can write as another. Reads default to `PULS_USER_ID`;
 `PULS_MULTI_USER=true` in `server/.env` lets the product API answer for any
-user a request names (`?user=<uuid>`, listed by `GET /v1/users`), which the
-MCP server and the web viewer use to pick whose data you see. It is off by
-default because the API's one token then reads everyone.
+user a request names (`?user=<uuid>`, listed by `GET /v1/users`), which is
+how the MCP server picks whose data you see. It is off by default because
+the API's one token then reads everyone. The web viewer does not read it: in
+basic and open mode its user switcher offers every user to whoever gets past
+its one password, and in accounts mode there is no switcher, since each
+person sees only their own records.
 
 ## Use it with AI
 

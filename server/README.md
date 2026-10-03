@@ -117,9 +117,11 @@ comments. Beyond the passwords and tokens:
   which host `GET /openapi.json` advertises in `servers[0].url`. Default
   `false`, which answers from the request's own `Host`. Turn it on only
   behind a proxy that owns those headers (see "Rate limiting").
-- `PULS_USER_ID`, `PULS_MULTI_USER` — whose data the product API and viewer
-  answer for, and whether a request may name someone else (see "Product
-  API").
+- `PULS_USER_ID`, `PULS_MULTI_USER` — whose data the product API (and, by
+  default, the viewer) answers for, and whether an API request may name
+  someone else (see "Product API"). The viewer never reads
+  `PULS_MULTI_USER`: its user switcher is a basic/open-mode feature that
+  offers every user to whoever passes its one password.
 - `PULS_VERSION` — the image tag the four app services run (default
   `latest`; see "Images and versions").
 - `PULS_PUBLIC_URL` — the URL the pairing block and device-token QR codes
@@ -144,9 +146,10 @@ curl -s localhost:8080/healthz && curl -s localhost:8081/healthz
 new schema files are applied before the code that needs them. If a migration
 fails, the app services are not started (`dependency failed to start`) and
 the previous containers keep running; fix the cause and `docker compose up
--d` again. Re-applying the schema from scratch means dropping the volume
-(`docker compose down -v && docker compose up -d`), which **destroys all
-data**.
+-d` again. Re-applying the schema from scratch means dropping the database
+volume (`docker compose down && docker volume rm pulshealth_db_data &&
+docker compose up -d`), which **destroys all data**; `down -v` would also
+delete the `backups` volume.
 
 ### Images and versions
 
@@ -166,10 +169,13 @@ list); each image carries its commit as the
 
 - On a git tag `vX.Y.Z`: the exact version (`X.Y.Z`), a floating `X.Y`,
   and `latest` (`v0.2.0` → `0.2.0`, `0.2`, `latest`). `latest`
-  and `X.Y` move only for non-prerelease tags, so `vX.Y.Z-rc1` publishes
-  `X.Y.Z-rc1` alone.
+  and `X.Y` move only for non-prerelease tags (so `vX.Y.Z-rc1` publishes
+  `X.Y.Z-rc1` alone), and only once all four images have published
+  `X.Y.Z`, so they never point at a mix of releases. A tag whose commit is
+  not on `main` publishes nothing.
 - On a manual run (`workflow_dispatch`, e.g. to try a branch's images): the
-  tag given as input, or the short commit SHA. Never `latest`.
+  tag given as input, or the short commit SHA. Never `latest` or an `X.Y`,
+  and never a version a git tag already names.
 
 `PULS_VERSION` in `.env` selects the tag (default `latest`). To upgrade a
 pinned install, bump it, check out the same release (`git checkout
@@ -356,7 +362,10 @@ Storing a second person's data therefore needs nothing: point another phone
 at the same ingest URL with its own user ID and `ensureUser` creates the row
 before the first insert. Reading it back is per request — the product API's
 `?user=<uuid>`, gated by `PULS_MULTI_USER` (see "Product API"), which the
-MCP server and the web viewer use too; Grafana's dashboard has a `user`
+MCP server uses too. The web viewer reads Postgres itself and ignores that
+switch: in basic and open mode its user switcher lists every user to whoever
+passes its one password; in accounts mode there is no switcher and each
+person sees only their own records. Grafana's dashboard has a `user`
 variable. Whether an ingest token is bound to a user depends on its kind
 (see "Tokens").
 
@@ -474,10 +483,13 @@ the token).
 
 The limit is keyed on the TCP peer address. Behind a proxy every request
 comes from the proxy, and one attacker exhausts the bucket for everyone;
-**`TRUST_PROXY_HEADERS=true`** keys it on the first `X-Forwarded-For` entry
-instead. Only set it when the proxy is the *only* route to the port and
-overwrites the header (reverse proxies and Tailscale Serve/Funnel do);
-otherwise the sender sets it, and one attacker looks like unlimited clients.
+**`TRUST_PROXY_HEADERS=true`** keys it on the **last** `X-Forwarded-For`
+entry instead: the one the trusted proxy appended. Reverse proxies,
+Cloudflare Tunnel and Tailscale Serve/Funnel append to whatever the client
+sent, so the first entry is the client's own choice and would hand it a
+fresh bucket per request. Only set it when the proxy is the *only* route to
+the port; otherwise the sender writes the last entry too, and one attacker
+looks like unlimited clients.
 Leave it `false` for `INGEST_BIND_ADDR=0.0.0.0` on a LAN. If every throttled
 client is logged as the same `172.x.x.1`, Docker's userland proxy is
 rewriting the source address; the fix is the same — a proxy that sets
@@ -566,9 +578,9 @@ to the people you invite.
 
    `CF-Connecting-IP` is the header to key throttling on: Cloudflare sets it
    itself, whereas it appends to a client's `X-Forwarded-For`.
-   `TRUST_PROXY_HEADERS` is shared with ingest and the API; if ingest is
-   reached some other way that does not overwrite `X-Forwarded-For`, read
-   "Rate limiting" before turning it on.
+   `TRUST_PROXY_HEADERS` is shared with ingest and the API; if ingest can
+   be reached other than through a proxy that appends to
+   `X-Forwarded-For`, read "Rate limiting" before turning it on.
 3. `docker compose up -d` (or `make dev-up`), then invite people:
    `make issue-device NAME='…' ARGS='--user <uuid>'` for their phone, and
    `make web-invite ARGS='--user <uuid> --email <address>'` for the viewer.
@@ -595,6 +607,12 @@ refused before decompression or any database work with HTTP 400
 `{"error":"unsupported protocol version","supportedVersions":[1]}` and
 recorded in `ingest_rejections` (stage `protocol`). The app never retries a
 4xx, so it shows this as a protocol mismatch instead of stalling silently.
+
+`ingest_rejections` holds one row of metadata (never the body) for every
+authenticated batch refused before it was committed, and keeps it for **90
+days**: a daily TimescaleDB job (`prune_ingest_rejections`,
+`017_prune_ingest_rejections.sql`) deletes older rows, so a client stuck
+re-sending a page the server always refuses cannot fill the disk.
 
 Every endpoint but `/healthz` needs `Authorization: Bearer <token>` (see
 "Tokens") and takes an optional `X-User-ID` UUID — the user rows are written
@@ -962,7 +980,9 @@ throwaway container, never staged in a temporary file). Flags go through
 | `--no-start` | Leave the app services stopped afterwards; `docker compose up -d` when you are ready. |
 
 In order, it: starts `db` and verifies the archive is readable; stops
-`ingest`, `api`, `mcp`, `web` and `grafana`; drops the web viewer's
+`ingest`, `api`, `mcp`, `web` and `grafana`, and the scheduled `backup`
+service if it is running (so it cannot dump a half-restored database; it is
+started again at the end); drops the web viewer's
 `web` and `auth` schemas (the dump recreates them; left in place they stop
 `pg_restore` at "schema already exists"), then drops and recreates the
 `public` schema while TimescaleDB is still live, so its event triggers

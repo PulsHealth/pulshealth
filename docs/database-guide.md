@@ -572,7 +572,8 @@ Important columns:
 | `bytes` | Compressed bytes read before failure |
 
 Use this with `batches` when deciding whether apparent silence means no wake or
-failed uploads.
+failed uploads. Rows are kept for 90 days: a daily TimescaleDB job
+(`017_prune_ingest_rejections.sql`) deletes older ones.
 
 ### 14. Deleted Samples
 

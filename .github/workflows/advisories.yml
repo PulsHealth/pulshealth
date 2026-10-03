@@ -26,6 +26,7 @@ on:
       - "**/package-lock.json"
       - "**/bun.lock"
       - "**/go.sum"
+      - "**/requirements.txt"
       - ".github/workflows/advisories.yml"
   schedule:
     # Mondays, a little before Dependabot's weekly run.
@@ -108,3 +109,26 @@ jobs:
           # knowledge-base files — and was previously audited nowhere.
           bun install --frozen-lockfile
           bun audit --audit-level=high
+
+  # A second opinion over every manifest and lockfile in the tree, including
+  # the ones nothing above audits (notebooks/requirements.txt). Its own job so
+  # it reports whether or not the ecosystem audits above went red; vulnerability
+  # scanning only — the secret scanner would flag the test fixtures' fake
+  # tokens, and scripts/check-public-tree.sh owns that question.
+  trivy:
+    name: Trivy filesystem scan (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Trivy (fs)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"

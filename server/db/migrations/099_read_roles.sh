@@ -33,6 +33,16 @@ set -euo pipefail
 INGEST_DB_PASSWORD="${INGEST_DB_PASSWORD:-}"
 WEB_DB_PASSWORD="${WEB_DB_PASSWORD:-}"
 
+# The placeholder in .env.example must never become a real role password (the
+# Go services refuse a token of change-me the same way). scripts/bootstrap.sh
+# generates every secret; by hand it is `openssl rand -hex 32`.
+for name in GRAFANA_DB_PASSWORD API_DB_PASSWORD INGEST_DB_PASSWORD WEB_DB_PASSWORD; do
+  if [[ ${!name} == change-me ]]; then
+    echo "099_read_roles.sh: $name is still 'change-me' in server/.env; set it (openssl rand -hex 32) or delete .env and run scripts/bootstrap.sh" >&2
+    exit 1
+  fi
+done
+
 POSTGRES_USER="${POSTGRES_USER:-postgres}"
 POSTGRES_DB="${POSTGRES_DB:-postgres}"
 

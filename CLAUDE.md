@@ -606,9 +606,11 @@ nothing here assumes a particular machine.
   copies across two modules; keep them in step). The refusal comes *before*
   the token comparison, or it would change only the status code, not the
   guessing rate; successes never draw, because a backfill is thousands of
-  requests. `TRUST_PROXY_HEADERS=true` keys on `X-Forwarded-For` and, on the
-  API, lets `X-Forwarded-Host` pick the host the unauthenticated
-  `/openapi.json` advertises. Limits: `server/README.md`, "Rate limiting".
+  requests. `TRUST_PROXY_HEADERS=true` keys on the **last**
+  `X-Forwarded-For` entry (the one the trusted proxy appended; appending
+  proxies let a client choose the first) and, on the API, lets
+  `X-Forwarded-Host` pick the host the unauthenticated `/openapi.json`
+  advertises. Limits: `server/README.md`, "Rate limiting".
 - **Ingest auth** (`server/ingest/auth.go`): the limiter, the shared token in
   memory, then the bearer's unsalted SHA-256 (the preimage is 256 random bits)
   in `device_tokens`. A database error there is **503 `authentication

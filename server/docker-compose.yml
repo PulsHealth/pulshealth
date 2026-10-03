@@ -35,6 +35,10 @@ services:
     # service below owns the schema and runs on every start instead.
     image: *db-image
     restart: unless-stopped
+    # Docker's default /dev/shm is 64 MB; PostgreSQL's parallel workers and
+    # hash joins use it, and a query over a few years of samples fails with
+    # "could not resize shared memory segment" once it is exhausted.
+    shm_size: 1g
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
     volumes:
@@ -98,6 +102,9 @@ services:
     image: ghcr.io/pulshealth/ingest:${PULS_VERSION:-latest}
     restart: unless-stopped
     logging: *app-logging
+    # Longer than Compose's 10 s default, so a batch being inserted when the
+    # stack restarts finishes and is acknowledged instead of being SIGKILLed.
+    stop_grace_period: 30s
     environment:
       # Connects as the scoped DML-only `ingest` role (created and kept
       # current by 099_read_roles.sh from INGEST_DB_PASSWORD) — the only
@@ -116,13 +123,18 @@ services:
       # address, so the URL the phone uses has to be handed in.
       PULS_PUBLIC_URL: ${PULS_PUBLIC_URL:-}
       LISTEN_ADDR: ":8080"
+      # Batches decoded and inserted concurrently; beyond it a request waits
+      # briefly, then gets 503 + Retry-After. Bounds the service's memory.
+      PULS_MAX_INFLIGHT_BATCHES: ${PULS_MAX_INFLIGHT_BATCHES:-4}
       # Whether to believe X-Forwarded-For when identifying the client an
-      # auth-failure budget belongs to. Only true when a proxy that
-      # overwrites that header is the ONLY way to reach port 8080 — a
-      # reverse proxy or Tailscale Serve/Funnel. Left false (the default),
-      # every client is identified by the TCP peer address, which is right
-      # for INGEST_BIND_ADDR=0.0.0.0 and for a proxy on the same host that
-      # does not rewrite the header. See server/README.md, "Rate limiting".
+      # auth-failure budget belongs to. Only true when a proxy is the ONLY
+      # way to reach port 8080 — a reverse proxy, Cloudflare Tunnel or
+      # Tailscale Serve/Funnel; the client is then the header's LAST entry,
+      # the one that proxy appended (a client can write the ones before it).
+      # Left false (the default), every client is identified by the TCP peer
+      # address, which is right for INGEST_BIND_ADDR=0.0.0.0 and for a proxy
+      # on the same host that does not set the header. See server/README.md,
+      # "Rate limiting".
       TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
     ports:
       # Loopback by default. Put a TLS-terminating proxy in front of it
@@ -144,6 +156,8 @@ services:
     image: ghcr.io/pulshealth/api:${PULS_VERSION:-latest}
     restart: unless-stopped
     logging: *app-logging
+    # Same reason as ingest's: let a streaming export finish on restart.
+    stop_grace_period: 30s
     environment:
       DATABASE_URL: postgres://api_reader:${API_DB_PASSWORD}@db:5432/postgres?sslmode=disable
       PULS_API_TOKEN: ${PULS_API_TOKEN:?set in .env}
@@ -231,14 +245,19 @@ services:
       # control".
       WEB_ACCOUNTS: ${WEB_ACCOUNTS:-false}
       # Same switch as ingest's and the API's: believe X-Forwarded-Proto/-Host
-      # and the client-address header only when a proxy that overwrites them
-      # is the only way in. WEB_CLIENT_IP_HEADER picks that header:
-      # x-forwarded-for (default), or cf-connecting-ip behind Cloudflare.
+      # and the client-address header only when a proxy is the only way in.
+      # WEB_CLIENT_IP_HEADER picks that header, read by its LAST entry (the
+      # one the proxy appended): x-forwarded-for (default), or
+      # cf-connecting-ip behind Cloudflare, which sets it itself.
       TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
       WEB_CLIENT_IP_HEADER: ${WEB_CLIENT_IP_HEADER:-x-forwarded-for}
       # The viewer's public https:// address: completes the links
       # `make web-invite` prints, and is accepted as an Origin.
       WEB_PUBLIC_URL: ${WEB_PUBLIC_URL:-}
+      # Postgres connections the viewer holds at once (clamped to 1–50). A
+      # type page runs several queries in parallel, so a viewer a few people
+      # use at the same time wants more than the default.
+      WEB_DB_POOL_SIZE: ${WEB_DB_POOL_SIZE:-4}
       # Accounts mode only. WEB_SIGNUPS=true lets strangers ask for an account
       # at /signup; nothing exists for them until an administrator approves
       # on /admin. WEB_INGEST_URL is where an iPhone connected from the
