@@ -20,6 +20,7 @@ public struct SyncConfiguration: Codable, Sendable, Equatable {
         case includeWorkoutRoutes, includeWorkoutEnhancedData
         case maxEnrichmentPointsPerBatch, aggregates
         case userID, userName, userEmail, userDateOfBirth, userBiologicalSex
+        case signedInDatabaseURL
     }
 
     /// Identifiers of the types to sync (keys into `HealthTypeCatalog`).
@@ -91,6 +92,23 @@ public struct SyncConfiguration: Codable, Sendable, Equatable {
     public var userDateOfBirth: Date?
     /// "female" | "male" | "other" | nil
     public var userBiologicalSex: String?
+    /// The database URL an account sign-in delivered, when the configured
+    /// database was set up that way rather than from a pairing code or typed
+    /// fields (`ServerFieldsDraft.fill(fromSignIn:)`). The app's "PulsHealth
+    /// database" option signs in to the developer's viewer, whose account page
+    /// hands back an ordinary pairing code; its database URL is the operator's
+    /// to choose, so the app cannot recognize that database by its address
+    /// and remembers how it was paired instead. Stored with the rest of the
+    /// configuration, never sent anywhere; nil for every other database.
+    public var signedInDatabaseURL: URL?
+
+    /// Whether the configured database is the one a sign-in delivered. Only
+    /// while `serverURL` still equals `signedInDatabaseURL`: pointing the app
+    /// anywhere else ends it, whichever way the new URL arrived, without
+    /// anything having to remember to clear the marker.
+    public var isSignedInDatabase: Bool {
+        serverURL != nil && serverURL == signedInDatabaseURL
+    }
 
     public init(
         enabledTypes: Set<String> = [],
@@ -109,7 +127,8 @@ public struct SyncConfiguration: Codable, Sendable, Equatable {
         userName: String? = nil,
         userEmail: String? = nil,
         userDateOfBirth: Date? = nil,
-        userBiologicalSex: String? = nil
+        userBiologicalSex: String? = nil,
+        signedInDatabaseURL: URL? = nil
     ) {
         self.enabledTypes = enabledTypes
         self.startDate = startDate
@@ -128,6 +147,7 @@ public struct SyncConfiguration: Codable, Sendable, Equatable {
         self.userEmail = userEmail
         self.userDateOfBirth = userDateOfBirth
         self.userBiologicalSex = userBiologicalSex
+        self.signedInDatabaseURL = signedInDatabaseURL
     }
 
     /// The identity payload sent on the profile line.
@@ -185,6 +205,7 @@ public struct SyncConfiguration: Codable, Sendable, Equatable {
         try Self.encodeNullable(userEmail, forKey: .userEmail, into: &c)
         try Self.encodeNullable(userDateOfBirth, forKey: .userDateOfBirth, into: &c)
         try Self.encodeNullable(userBiologicalSex, forKey: .userBiologicalSex, into: &c)
+        try c.encodeIfPresent(signedInDatabaseURL, forKey: .signedInDatabaseURL)
     }
 
     private static func encodeNullable<T: Encodable>(
@@ -225,5 +246,8 @@ public struct SyncConfiguration: Codable, Sendable, Equatable {
         userEmail = try c.decodeIfPresent(String.self, forKey: .userEmail)
         userDateOfBirth = try c.decodeIfPresent(Date.self, forKey: .userDateOfBirth)
         userBiologicalSex = try c.decodeIfPresent(String.self, forKey: .userBiologicalSex)
+        // Absent in every state file from before the PulsHealth database
+        // option: a database configured then was paired with a code or typed.
+        signedInDatabaseURL = try c.decodeIfPresent(URL.self, forKey: .signedInDatabaseURL)
     }
 }

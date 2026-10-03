@@ -141,6 +141,28 @@ import Testing
         #expect(reencoded.includeWorkoutRoutes == false)
     }
 
+    /// Every state file written before the PulsHealth database option (1.6
+    /// and earlier) lacks the sign-in marker; it decodes as "not signed in",
+    /// and the marker survives a round trip once there is one.
+    @Test func configDecodesStateFilesWrittenBeforeSignInPairing() throws {
+        let legacy = #"{"enabledTypes":[],"startDate":0,"serverURL":"https://puls.example.test","maxConcurrentTypes":4,"batchSize":1000}"#
+        let config = try JSONDecoder.puls.decode(SyncConfiguration.self, from: Data(legacy.utf8))
+        #expect(config.serverURL == URL(string: "https://puls.example.test"))
+        #expect(config.signedInDatabaseURL == nil)
+        #expect(!config.isSignedInDatabase)
+
+        let neverSignedIn = try JSONSerialization.jsonObject(
+            with: JSONEncoder.puls.encode(config)) as! [String: Any]
+        #expect(neverSignedIn["signedInDatabaseURL"] == nil, "absent, not null")
+
+        var signedIn = config
+        signedIn.signedInDatabaseURL = signedIn.serverURL
+        let roundTrip = try JSONDecoder.puls.decode(
+            SyncConfiguration.self, from: JSONEncoder.puls.encode(signedIn))
+        #expect(roundTrip.signedInDatabaseURL == URL(string: "https://puls.example.test"))
+        #expect(roundTrip.isSignedInDatabase)
+    }
+
     @Test func defaultConfigurationAssumesNoIdentity() {
         // The library ships with the protocol default user id only: no name,
         // email, date of birth or sex is baked in.

@@ -126,4 +126,83 @@ import Testing
         draft.commit(to: &config)
         #expect(config.userID == "5ea4d000-0000-4000-8000-000000000009")
     }
+
+    // MARK: - A database paired by signing in
+
+    /// The PulsHealth database option: the code an account sign-in hands back
+    /// fills the fields like any other, and committing it records where it
+    /// came from — the app cannot tell that database by its address.
+    @Test func aSignInPairingIsRecordedOnCommit() {
+        var config = SyncConfiguration()
+        var draft = ServerFieldsDraft()
+        draft.fill(fromSignIn: pairing())
+        #expect(draft.isSignedIn)
+        #expect(draft.pairedUserID == user)
+        #expect(draft.tokenText == "s3cr3t")
+
+        draft.commit(to: &config)
+        #expect(config.serverURL == URL(string: "https://puls.example.test:8443"))
+        #expect(config.signedInDatabaseURL == config.serverURL)
+        #expect(config.isSignedInDatabase)
+
+        // Loaded back onto the screen and saved unchanged, it stays one.
+        let reloaded = ServerFieldsDraft(configuration: config)
+        #expect(reloaded.isSignedIn)
+        reloaded.commit(to: &config)
+        #expect(config.isSignedInDatabase)
+    }
+
+    /// Any other way the fields change ends it: a URL typed over it, a code
+    /// that was scanned, pasted or linked (even one naming the same address),
+    /// or emptied fields — the way the app disconnects a database.
+    @Test func anyOtherPairingEndsTheSignIn() {
+        func signedInConfiguration() -> SyncConfiguration {
+            var config = SyncConfiguration()
+            var draft = ServerFieldsDraft()
+            draft.fill(fromSignIn: pairing())
+            draft.commit(to: &config)
+            return config
+        }
+
+        var typedOver = signedInConfiguration()
+        var typed = ServerFieldsDraft(configuration: typedOver)
+        typed.urlText = "https://mine.example.test"
+        #expect(!typed.isSignedIn)
+        typed.commit(to: &typedOver)
+        #expect(typedOver.signedInDatabaseURL == nil)
+        #expect(!typedOver.isSignedInDatabase)
+
+        var scannedOver = signedInConfiguration()
+        var scanned = ServerFieldsDraft(configuration: scannedOver)
+        scanned.fill(from: pairing())
+        #expect(!scanned.isSignedIn)
+        scanned.commit(to: &scannedOver)
+        #expect(!scannedOver.isSignedInDatabase)
+
+        var disconnected = signedInConfiguration()
+        ServerFieldsDraft().commit(to: &disconnected)
+        #expect(disconnected.serverURL == nil)
+        #expect(disconnected.authToken == nil)
+        #expect(disconnected.signedInDatabaseURL == nil)
+        #expect(!disconnected.isSignedInDatabase)
+    }
+
+    /// The marker only counts while the configured URL is the one it names,
+    /// so a path that sets the URL without knowing about it cannot leave a
+    /// different database labelled as the signed-in one.
+    @Test func theMarkerOnlyCountsForItsOwnURL() {
+        var config = SyncConfiguration()
+        var draft = ServerFieldsDraft()
+        draft.fill(fromSignIn: pairing())
+        draft.commit(to: &config)
+
+        PairingPayload(serverURL: URL(string: "https://other.example.test")!, token: "t", userID: user)
+            .apply(to: &config)
+        #expect(config.signedInDatabaseURL != nil)
+        #expect(!config.isSignedInDatabase)
+        #expect(!ServerFieldsDraft(configuration: config).isSignedIn)
+
+        #expect(!SyncConfiguration(signedInDatabaseURL: URL(string: "https://puls.example.test")).isSignedInDatabase,
+                "no database configured at all")
+    }
 }
