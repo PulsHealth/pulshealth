@@ -61,7 +61,7 @@ There are four categories of data on the wire:
 |---|---|---|
 | **Samples** (quantity, category, workout, heartbeat series, ECG, State of Mind, medication dose) and their **deletions** | HealthKit UUID | insert if unknown, never overwrite; delete by UUID |
 | **Workout route and series points** | (workout UUID, timestamp[, type]) | insert if unknown |
-| **Aggregate buckets** and **activity summaries** | a composite key, no UUID | upsert; explicit `null` clears |
+| **Aggregate buckets** and **activity summaries** | a composite key, no UUID | upsert; each line is the whole row, so a `null` (or, on an activity summary, an omitted field) clears |
 | **Profile** | the batch's user | replace the whole snapshot |
 
 A receiver that implements only `POST /v1/batches` is conformant. The read
@@ -101,7 +101,10 @@ separated by `\n`, one object per line, no byte-order mark, no pretty
 printing. The final line is newline-terminated. Receivers MUST tolerate blank
 lines between objects (the reference server skips them) and MUST decode
 incrementally or bound memory some other way: a batch can be tens of
-megabytes decompressed.
+megabytes decompressed. Receivers SHOULD also cap the **decompressed** size,
+not only the request body, and answer **413** past it ([2.5](#25-size-limits)):
+DEFLATE inflates up to about 1,000×, so a request well under any body limit
+can expand to gigabytes. The cap applies to a plain (`identity`) body too.
 
 The app produces gzip with its own framing (10-byte header, raw DEFLATE,
 CRC-32 and length trailer) so any standard gzip decoder reads it, and gzip
@@ -128,7 +131,7 @@ but SHOULD answer over-limit input with **413**, which the app does not retry.
 | Limit | Value |
 |---|---|
 | Compressed request body | 256 MiB |
-| Decompressed NDJSON | 128 MiB |
+| Decompressed NDJSON | 128 MiB (enforced while inflating, so a larger body is never held in memory) |
 | One NDJSON line | 4 MiB (real maxima: ECG voltage arrays and 4,000-point route lines, about 400 KB) |
 | Any single header count (`sampleCount`, …) | 100,000 |
 | All header counts combined | 200,000 |
@@ -165,7 +168,7 @@ Schema: [`schema/header.schema.json`](schema/header.schema.json).
 | `clientVersion` | string | v1 clients | Free text identifying the sender, e.g. `0.1.0 (57)`. Diagnostic only; log it, do not parse it. |
 | `batchID` | UUID | yes | Stable across retries of the same upload. A receiver MAY key replay detection on it ([6.1](#61-batch-replay)). |
 | `deviceID` | string | yes | Opaque, stable per app install. |
-| `type` | string | yes | A label: the type identifier that contributed the most samples, or, for a probe, any non-empty string (the app sends the heart-rate identifier). Receivers MUST NOT derive the types of the lines from it; every line names its own type. |
+| `type` | string | yes | A label: the type identifier that contributed the most samples, or, for the connection probe ([8.3](#83-connection-probe)), the literal string `probe`, which is not a type identifier. Any non-empty string is valid. Receivers MUST NOT derive the types of the lines from it; every line names its own type. |
 | `reason` | `backfill` \| `incremental` \| `manual` \| `reconciliation` | yes | What kind of sync produced the batch. `backfill` is the initial history pass; `incremental` follows a HealthKit change notification or a scheduled catch-up; `manual` is a user tap or the connection probe; `reconciliation` re-sends samples the digest comparison found missing. |
 | `exportedAt` | epoch ms | yes | When the sender serialized the batch. |
 | `sampleCount`, `deletionCount` | integer ≥ 0 | yes | Line counts. |
@@ -189,8 +192,13 @@ Within a line, unknown fields MUST be ignored.
 
 ### 3.4 Conventions
 
-- **Timestamps are epoch milliseconds**: JSON numbers, possibly fractional,
-  never ISO 8601. The accepted range is `-62135596800000` (0001-01-01) to
+- **Timestamps are epoch milliseconds**: JSON numbers, never ISO 8601. The
+  app's are usually **fractional** (`1718000000123.456`: HealthKit dates carry
+  sub-millisecond precision and the app encodes them as a `Double`), so a
+  receiver MUST accept a fraction wherever a timestamp appears — `start`,
+  `end`, `t`, `bucketStart`, `exportedAt`, metadata dates — and MAY round it to
+  its storage precision (the reference server keeps microseconds). An integer
+  is equally valid. The accepted range is `-62135596800000` (0001-01-01) to
   `253402300799999` (9999-12-31T23:59:59.999Z); anything outside is a 400 on
   the reference server rather than a garbage-but-valid timestamp. Where a
   timestamp is required, `0` counts as absent (`start`, `t`, `bucketStart`,
@@ -204,12 +212,18 @@ Within a line, unknown fields MUST be ignored.
   empty. It never changes the instant; it lets a receiver reconstruct local
   wall time. Older clients omit it.
 - **UUIDs** are the canonical 36-character `8-4-4-4-12` form. The app sends
-  them upper-case; receivers MUST compare case-insensitively.
+  them upper-case (Swift's `UUID` encoding); other senders may not, and a
+  receiver's own storage may hand them back lower-case. Receivers MUST compare case-insensitively — sample identity, deletions,
+  `workoutUUID`, `batchID` — and SHOULD normalise to one case before storing or
+  keying on a UUID. Fixture 01 stores a sample under an upper-case UUID that
+  fixtures 04 and 05 name in lower and mixed case.
 - **Optional fields** may be absent or `null` with the same meaning, except
   where a field's presence is itself meaningful ([4.5](#45-aggregate),
   [4.7](#47-profile)). The app omits absent optionals; older builds sent
   explicit `null`s (`"category":null,"workout":null` on a quantity sample),
-  and the fixtures keep one such line.
+  and the fixtures keep one such line. On the lines a receiver upserts
+  ([4.6](#46-activity-summary)) "the same meaning" includes overwriting: an
+  omitted field clears the stored value exactly as `null` does.
 - **Metadata** (`metadata` on samples and workout events) is an object of
   JSON scalars: strings, numbers, booleans. HealthKit dates become epoch-ms
   numbers and `HKQuantity` values become plain numbers, so a receiver cannot
@@ -385,12 +399,24 @@ arrives many times with different values, and an empty recompute arrives as
 Schema: [`schema/activity-summary.schema.json`](schema/activity-summary.schema.json).
 
 ```json
-{"activitySummary":{"date":1718000000000,"localDate":"2024-06-10","temporalContext":{"timeZoneID":"America/Los_Angeles","utcOffsetSeconds":-25200,"source":"device_current","confidence":"inferred"},"moveKcal":420.5,"moveGoalKcal":600.0,"exerciseMin":25.0,"exerciseGoalMin":30.0,"standHours":9.0,"standGoalHours":12.0,"moveMode":0,"moveTimeMin":null,"moveTimeGoalMin":null}}
+{"activitySummary":{"date":1718000000000,"localDate":"2024-06-10","temporalContext":{"timeZoneID":"America/Los_Angeles","utcOffsetSeconds":-25200,"source":"device_current","confidence":"inferred","tzdbVersion":""},"moveKcal":420.5,"moveGoalKcal":600,"exerciseMin":25,"exerciseGoalMin":30,"standHours":9,"standGoalHours":12,"moveMode":0}}
 ```
 
 One day of activity rings (`HKActivitySummary`). Not a sample: no UUID, one
 per local calendar day, and the current day changes all day, so it is
 re-sent on every run and upserted ([6.5](#65-activity-summaries)).
+
+**The line is the complete row for its day.** The app writes only the fields
+it has a value for: in the example, `moveTimeMin` and `moveTimeGoalMin` are
+absent because the Move ring is in kilocalories, and a ring HealthKit reports
+no value for is absent too, never `null`. (A line with explicit `null`s, as
+in fixture 03, means the same.) A receiver MUST store the line as the
+whole row: every ring field it stores takes the line's value, and an absent
+field sets that column to null. A receiver MUST NOT merge only the keys
+present into the stored row: that keeps a value the phone no longer reports.
+Fixture [`08-activity-summary-replace`](fixtures/08-activity-summary-replace.ndjson)
+re-sends a day fixture 03 stored, with three rings omitted, and its
+`expected.json` states the row that must result.
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
@@ -533,8 +559,9 @@ When one batch carries the same bucket twice, the last line wins.
 Identity: `(user, localDate)`, falling back to the UTC calendar date of
 `date` only when `localDate` is absent (older clients; see
 [section 12](#12-known-discrepancies-between-the-swift-models-and-the-go-parser)
-for why the fallback is imperfect). Upsert: every column is overwritten,
-nulls included, because the sender always sends the whole day. Last line
+for why the fallback is imperfect). **Replace, not merge:** the line is the
+whole day ([4.6](#46-activity-summary)), so an upsert overwrites every stored
+column, setting each field that is `null` **or absent** to null. Last line
 wins within a batch.
 
 ### 6.6 Route and series points
@@ -568,7 +595,7 @@ never as a failure. The reference server returns `200` with
 | `duplicates` | sample lines whose UUID was already stored (`sampleCount − accepted`; the whole `sampleCount` when the batch ID was a replay) |
 | `deleted` | sample rows actually removed by deletion lines |
 | `routePoints`, `seriesPoints` | points that created a row |
-| `aggregateSamples`, `activitySummaries` | buckets and days upserted (inserted or overwritten) |
+| `aggregateSamples`, `activitySummaries` | distinct buckets and days upserted (inserted or overwritten); a bucket or day named twice in one batch counts once |
 
 Receivers that return a body SHOULD use this shape so the fixture corpus and
 the smoke test can check them.
@@ -674,9 +701,11 @@ behave this way and a receiver MAY depend on it.
 ### 8.3 Connection probe
 
 When the app tests a connection it calls `GET /v1/capabilities`
-([9.1](#91-get-v1capabilities)). If that returns 404 it sends a header-only
-batch instead: every count 0, `reason` `manual`, a fresh `batchID`, `type`
-set to the heart-rate identifier. Any 2xx means the URL, the token, and the
+([9.1](#91-get-v1capabilities)). If that returns 404 or 405 it sends a
+header-only batch instead: every count 0, `reason` `manual`, a fresh
+`batchID`, `type` set to the string `probe` (`PulsProtocol.probeBatchType`),
+which is not a type identifier — a receiver that registers a type from the
+header label, or records the label per batch, should expect it. Any 2xx means the URL, the token, and the
 upload path work; a 401 is a wrong token and a 403 a token bound to a user
 other than the one the app is configured with ([2.4](#24-user-identity)).
 Receivers MUST accept a header-only batch (fixture
@@ -786,6 +815,38 @@ Not part of the protocol, but every receiver in this repository answers
   as the code on both sides (see the "wire format changes touch both sides"
   invariant in [`CLAUDE.md`](../../CLAUDE.md)).
 
+### Additive changes in v1
+
+Version 1 was published with server 0.1.0 (2026-09-14). Everything below
+arrived since without moving the number, because a receiver written against
+the earlier text still accepts every batch; a receiver author should expect
+all of it. Newest first, reconstructed from [`CHANGELOG.md`](../../CHANGELOG.md)
+and the repository's history (which starts on 2026-09-21). Fields that predate
+publication but are absent from pre-versioning clients (`schemaVersion`, `clientVersion`, the counts after
+`deletionCount`, the `…Context` objects, `localDate`) are described where they
+are defined and exercised by fixture `04`.
+
+| Change | Since | What a receiver sees |
+|---|---|---|
+| Type identifier `HKQuantityTypeIdentifierHeartRateVariabilityRMSSD` (`ms`, iOS 27) | app release after 1.6 | Sample and aggregate lines for a type it has not seen; §5 requires accepting unknown identifiers. |
+| A per-device token MAY be bound to a user, answering **403** when `X-User-ID` names another ([2.4](#24-user-identity)) | server 0.2.0 | Nothing on the wire. The app never retries a 403; from the release after 1.6 its connection test names it as a user mismatch. |
+| Recent data first: each backfill sends the last 30 days of a type before its history, and the full sweep later sends those samples again | app 1.6 | The same sample UUIDs in two batches with different `batchID`s; insert-if-absent ([6.2](#62-samples)) makes the second a duplicate. |
+| The profile line goes out only when non-empty, or when the user has just emptied a filled profile ([4.7](#47-profile)) | app 1.6 | Fewer `{"profile":{}}` lines; a reinstall no longer clears a stored profile. |
+
+**Corrections to this document** (the app always behaved this way; earlier
+text said otherwise):
+
+- The connection probe's `type` is the string `probe`, not the heart-rate
+  identifier ([8.3](#83-connection-probe)).
+- Activity-summary rings the app has no value for are omitted, not sent as
+  `null`, and an omitted ring overwrites the stored value with null
+  ([4.6](#46-activity-summary), [6.5](#65-activity-summaries)).
+- Timestamps are usually fractional and UUIDs upper-case
+  ([3.4](#34-conventions)); fixtures 01, 02, 04, 05 and 08 now carry that
+  shape.
+- `aggregateSamples` and `activitySummaries` in the response count distinct
+  buckets and days, as the reference server always has ([7.1](#71-success)).
+
 ## 11. Minimal conformant receiver checklist
 
 A receiver is conformant when it:
@@ -793,7 +854,8 @@ A receiver is conformant when it:
 - [ ] accepts `POST /v1/batches` with a bearer token, answering 401 for a
   wrong or missing one;
 - [ ] decodes a gzip body (and, ideally, a plain one) as UTF-8 NDJSON,
-  tolerating blank lines and bounding memory;
+  tolerating blank lines, bounding memory and capping the decompressed size
+  (413 past it);
 - [ ] honours `X-Puls-Protocol` and `schemaVersion`: absent means 1,
   unsupported or contradictory means the fixed 400 body of
   [7.3](#73-unsupported-protocol-version);
@@ -804,12 +866,15 @@ A receiver is conformant when it:
   identifier and every v1 line type, discarding what it does not store;
 - [ ] scopes everything by `X-User-ID` (default user when absent, 400 when
   malformed) and creates users on first sight;
+- [ ] accepts fractional epoch-ms timestamps everywhere;
 - [ ] stores samples keyed on UUID with insert-if-absent semantics, and
-  applies deletions by UUID as no-ops when unknown;
+  applies deletions by UUID as no-ops when unknown, comparing UUIDs
+  case-insensitively;
 - [ ] if it stores them: upserts aggregate buckets on
   `(user, type, func, intervalValue, intervalUnit, deviceFilter, bucketStart)`
   with `null` clearing the value, upserts activity summaries on
-  `(user, localDate)` overwriting every column, inserts route and series
+  `(user, localDate)` replacing the whole row (an absent field is null),
+  inserts route and series
   points if absent, and replaces the profile snapshot;
 - [ ] commits before answering, answers any 2xx on success, and answers
   transient failures with 5xx or 429, never with a 4xx;
@@ -822,7 +887,10 @@ A receiver is conformant when it:
 Prove it: run `tools/protocol-check` on batches you capture, and run
 `examples/receivers/python-sqlite/smoke_test.py --url <your receiver>
 --token <token>` against an empty store. It posts the whole corpus, replays
-every batch, and checks the negative cases above.
+every batch, and checks the negative cases above. The rows a fixture's
+`state` names (the activity-summary replace rule) cannot be read back over
+the protocol, so against `--url` it prints them for you to check in your
+store.
 
 ## 12. Known discrepancies between the Swift models and the Go parser
 
@@ -840,7 +908,7 @@ protocol; each is called out so a receiver author can choose deliberately.
 | `biologicalSex` | `female`, `male`, `other` or null | Any string accepted | The schema constrains the enum. |
 | `SampleKind.activitySummary` | Exists in the enum so the catalog can list the rings | `validKind` rejects it | Never on the wire as a sample; activity summaries always ride their own line. |
 | `tzdbVersion` | Always encoded, `""` when unknown | Optional | Treat empty and absent alike. |
-| Explicit nulls | Current builds omit absent optionals; older builds sent `null`; `ProfilePayload` and `AggregateSampleRow.value` always write explicit nulls | Absent and `null` are treated alike everywhere | Receivers MUST treat them alike; senders SHOULD keep writing the explicit nulls where this document says the key is present. |
+| Explicit nulls | Current builds omit absent optionals, `ActivitySummaryRow`'s rings included; older builds sent `null`; `ProfilePayload` and `AggregateSampleRow.value` always write explicit nulls | Absent and `null` are treated alike everywhere; an activity summary's absent ring overwrites the stored column with NULL | Receivers MUST treat them alike, including when overwriting ([6.5](#65-activity-summaries)); senders SHOULD keep writing the explicit nulls where this document says the key is present. |
 | `duration` aggregates' `unit` | Sends `s` | Registers the type with its catalog unit and ignores `s` | Store the unit per bucket if you need it. |
 | Activity-summary day without `localDate` | Older clients sent only `date` (start of the local day) | Falls back to the UTC date of `date` | East of UTC that is the previous day (a 00:00+02:00 instant is 22:00Z the day before). Current clients always send `localDate`; receivers MUST prefer it. |
 | `X-Batch-ID` vs body `batchID` | Always equal | Only logged when different | Receivers MAY trust either; the body is authoritative. |
