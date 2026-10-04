@@ -54,14 +54,14 @@ export default function AboutPage() {
             gives it your whole history to work from.
           </p>
 
-          <h2>How it is paid for</h2>
+          <h2>Open source, or run for you</h2>
           <p>
             The app, the self-hosted stack, the protocol and the knowledge base are free and
-            Apache-2.0. The one paid part is hosting: the PulsHealth database at{" "}
-            <a href="https://app.pulshealth.com/signup">app.pulshealth.com</a>, where I run the
-            database, the viewer and the AI connection for you. It runs the same open-source code
-            you can run yourself, and your data there is yours: shown back only to you and to the
-            assistants you connect, and deleted when you delete your account.
+            Apache-2.0. The PulsHealth database at{" "}
+            <a href="https://app.pulshealth.com/signup">app.pulshealth.com</a> is that same
+            open-source stack, run for you: I keep the database, the viewer and the AI connection
+            going. Your data there is yours: shown back only to you and to the assistants you
+            connect, and deleted when you delete your account.
           </p>
 
           <h2>Why the wire format is public</h2>
