@@ -3,6 +3,7 @@
 // the phone's HealthKit profile. Server-only.
 
 import { query, transaction } from "../db";
+import { revokeAllGrants } from "../oauth/store";
 import { tokenHash } from "./session";
 
 /**
@@ -50,12 +51,14 @@ export async function replacePasswordHash(accountId: string, hash: string): Prom
 /**
  * A new password: stored, and every session of the account ended — the
  * caller's too, which it replaces with a fresh one, so no copy of any cookie
- * survives a password change.
+ * survives a password change. Every AI assistant connected to the account
+ * (OAuth grant) is revoked with them.
  */
 export async function changePassword(accountId: string, hash: string): Promise<void> {
   await transaction(async (q) => {
     await q("UPDATE auth.accounts SET password_hash = $2, password_changed_at = now() WHERE id = $1", [accountId, hash]);
     await q("DELETE FROM auth.sessions WHERE account_id = $1", [accountId]);
+    await revokeAllGrants(q, accountId);
   });
 }
 
@@ -86,7 +89,8 @@ export type AcceptInviteResult = { ok: true; accountId: string } | { ok: false; 
 
 /**
  * Uses an invite: creates the user's account with this password or, when the
- * user already has one, resets it (signing out all of its sessions). An
+ * user already has one, resets it (signing out all of its sessions and
+ * revoking its AI assistants' grants). An
  * account disabled after the invite was issued stays disabled — the invite
  * reads as spent — while a newer invite re-enables it: disabling (by hand,
  * `UPDATE auth.accounts SET disabled_at = now()`) must not be undone by a
@@ -131,6 +135,7 @@ export async function acceptInvite(token: string, passwordHash: string): Promise
         [accountId, invite.email, passwordHash, invite.is_admin],
       );
       await q("DELETE FROM auth.sessions WHERE account_id = $1", [accountId]);
+      await revokeAllGrants(q, accountId);
     } else {
       const created = await q<{ id: string }>(
         `INSERT INTO auth.accounts (user_id, email, password_hash, is_admin, password_changed_at)

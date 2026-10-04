@@ -47,8 +47,16 @@ func (s *service) addResources(server *mcp.Server) {
 		Description: "The live catalog: every HealthKit type the server's default person has data for, with its unit, row counts and " +
 			"earliest/latest timestamps, plus today's date and the server's time zone (the same answer as list_available_types " +
 			"without a user; for another person call the tool).",
-	}, func(ctx context.Context, _ *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
-		out, err := s.catalog(ctx, s.api, s.api.User())
+	}, func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+		var extra *mcp.RequestExtra
+		if req != nil {
+			extra = req.Extra
+		}
+		api, _, err := s.callerAPI(extra)
+		if err != nil {
+			return nil, err
+		}
+		out, err := s.catalog(ctx, api, api.User())
 		if err != nil {
 			return nil, err
 		}

@@ -58,7 +58,8 @@ Two modes, one binary:
 # stdio (default): for Claude Desktop, Claude Code, Cursor, ...
 PULS_API_URL=https://<api-host>:8444 PULS_API_TOKEN=... ./pulshealth-mcp
 
-# streamable HTTP at /mcp, for remote connectors; refuses to start without PULS_MCP_TOKEN
+# streamable HTTP at /mcp, for remote connectors; refuses to start without
+# PULS_MCP_TOKEN or OAuth
 PULS_API_URL=http://127.0.0.1:8081 PULS_API_TOKEN=... PULS_MCP_TOKEN=... ./pulshealth-mcp --http 127.0.0.1:8082
 ```
 
@@ -77,20 +78,39 @@ mode, pointed at `http://api:8081` over the internal network.
 |---|---|
 | `PULS_API_URL` | Base URL of the product API. Default `http://127.0.0.1:8081`; Compose sets `http://api:8081`. |
 | `PULS_API_TOKEN` | The product API's bearer token (`PULS_API_TOKEN` in `server/.env`). Required. |
-| `PULS_MCP_TOKEN` | The bearer token MCP clients must present to `/mcp` in `--http` mode. Required in that mode, and refused if still `.env.example`'s `change-me`; ignored in stdio mode. |
+| `PULS_MCP_TOKEN` | The static bearer token MCP clients may present to `/mcp` in `--http` mode. Required in that mode unless OAuth is on, and refused if still `.env.example`'s `change-me`; ignored in stdio mode. |
+| `PULS_MCP_OAUTH_SECRET` | OAuth (below): the HMAC-SHA256 key the web viewer signs access tokens with. At least 32 characters, never `change-me`. |
+| `PULS_MCP_URL` | OAuth: this server's public URL, path included (`https://mcp.example.com/mcp`) — the resource identifier, and the only `aud` a token may carry. https, or http for a loopback host. |
+| `PULS_MCP_OAUTH_ISSUER` | OAuth: the authorization server's issuer, the viewer's public origin (its `WEB_PUBLIC_URL`; Compose passes that). OAuth is on when the secret or the URL is set, and then all three are required — a partial setting stops startup. The issuer alone leaves OAuth off. |
 | `PULS_TIME_ZONE` | Optional. IANA zone every date is expressed in. Leave it unset: the server then uses the zone the product API reports on `GET /v1/users` (the stack's `PULS_TIME_ZONE`, which the API checks against the database at startup), learned before the first tool call. Set, it wins, and a value that differs from the API's is logged as a warning — dates would then be cut on different days than the API's daily answers. Against an API too old to report its zone, unset means UTC. |
 | `TRUST_PROXY_HEADERS` | `--http` mode: whether the auth-failure limiter keys on the **last** `X-Forwarded-For` entry (the one a trusted proxy appended) instead of the TCP peer. Same switch, default (`false`) and spelling rule as ingest's and the API's: `true/false`, `1/0`, `yes/no`, `on/off`, any case; anything else stops startup. |
-| `PULS_USER_ID` | Optional. Pins this instance to one person: every API request names that user, and a tool call naming anyone else is refused without asking the API. Empty (the default) leaves the choice to each call, falling back to the API's own default user. Compose sets it from `PULS_MCP_USER_ID`. |
+| `PULS_USER_ID` | Optional. Pins this instance to one person: every API request names that user, and a tool call naming anyone else is refused without asking the API. Empty (the default) leaves the choice to each call, falling back to the API's own default user. Compose sets it from `PULS_MCP_USER_ID`. It binds stdio and the static token only: an OAuth access token is always pinned to its own `sub`. |
 
 ### HTTP endpoints (`--http`)
 
 - `POST/GET/DELETE /mcp` — the streamable HTTP transport, behind
-  `Authorization: Bearer $PULS_MCP_TOKEN`. Sessions idle for 30 minutes are
-  dropped. Failed authentications are throttled per client address exactly
+  `Authorization: Bearer <PULS_MCP_TOKEN or an OAuth access token>`.
+  Sessions idle for 30 minutes are dropped. A session belongs to the
+  identity that opened it (the static token, or one signed-in person): a
+  request on it with any other credential is a 403. With OAuth on, a 401
+  carries `WWW-Authenticate: Bearer resource_metadata="<origin>/.well-known/oauth-protected-resource/mcp"`
+  (plus `error="invalid_token"` when a token was presented), which is how
+  a client finds where to sign in. Failed guesses are throttled per client address exactly
   as on ingest and the API (`server/README.md`, "Rate limiting"): ten in a
   burst, then ten a minute (one every six seconds), answered `429` with `Retry-After` *before*
   the token is compared; a correct token is never throttled, and every
-  failure is logged (without the token).
+  failure is logged (without the token). Only a bearer that could be a
+  guess is gated or charged: a request with no bearer (an OAuth client's
+  discovery request) always gets its 401 challenge, and an access token
+  whose signature verifies is checked *before* the limiter — admitted if
+  valid, a `401 invalid_token` if expired or otherwise invalid, neither
+  charged — because hosted connectors share their operator's egress
+  addresses and would otherwise spend one budget for everyone behind them.
+- `GET /.well-known/oauth-protected-resource` and
+  `/.well-known/oauth-protected-resource/mcp` — with OAuth on only (404
+  otherwise), unauthenticated, CORS-open: the RFC 9728 document naming this
+  resource (`PULS_MCP_URL`), its authorization server (the issuer), the
+  scope `health:read` and header bearer tokens.
 - `GET /healthz` — unauthenticated; `{"ok":true,"api":true}` when the
   product API's own `/healthz` (which pings its database) answers, else 503.
   The image is distroless, so Compose's healthcheck runs the binary itself:
@@ -102,6 +122,36 @@ non-loopback `Host`) is switched off on purpose: a TLS reverse proxy on the
 same host — Tailscale Serve, Caddy, nginx — forwards exactly that shape to
 `127.0.0.1:8082`, and the bearer token, which a rebinding page cannot
 present, is the access control.
+
+### OAuth (resource server)
+
+Hosted connector screens (claude.ai, the Claude mobile app) accept only
+OAuth, and Claude Code's `/mcp` sign-in uses it too. The web viewer in
+accounts mode is the authorization server (`web/README.md`); this server is
+the resource server and still never touches the database. An access token is
+an HS256 JWT the viewer signs with `PULS_MCP_OAUTH_SECRET`
+(`oauth.go`): header exactly `{"alg":"HS256","typ":"at+jwt"}`, at most
+4096 bytes, signature compared in constant time, `iss` equal to the issuer,
+`aud` equal to `PULS_MCP_URL`, `exp` not past and `iat` not ahead (60 s of
+skew each way), `sub` a lower-case UUID, `scope` containing `health:read`.
+Anything else is a 401 logged with the reason (never the token). It is
+charged to the auth-failure limiter only when the signature did not verify;
+a correctly signed token that is expired or otherwise invalid cannot be a
+guess and is not charged, and a valid one is admitted even from a throttled
+address.
+
+A verified token acts for its `sub` and nobody else, through the same pin
+`PULS_USER_ID` enforces: every API request names that user, a tool call
+naming anyone else is refused before the API is asked, `list_users` returns
+only that person's row, and the `pulshealth://types` resource is theirs.
+The product API must allow it: unless `sub` is the API's `PULS_USER_ID`, that
+needs `PULS_MULTI_USER=true` (and then pin the static token with
+`PULS_MCP_USER_ID`, or it reads everyone). The static `PULS_MCP_TOKEN`
+behaves exactly as without OAuth.
+
+Tokens are not checked against the database, so a revoked grant or a
+disabled account keeps reading until its access token expires — at most 30
+minutes; the viewer refuses the refresh at once.
 
 ## Security notes
 
@@ -131,7 +181,9 @@ go build -o pulshealth-mcp . && PULS_API_TOKEN=x ./pulshealth-mcp --version
 Tests run against an `httptest` fake of the product API built from the
 OpenAPI shapes in `server/api/openapi.json` (date mapping across DST, error
 propagation, limits) plus an end-to-end pass over the SDK's in-memory
-transport and the HTTP transport with the token. This module deliberately
+transport and the HTTP transport with the token, the OAuth verifier against
+the shared contract's test vector and a table of forged and malformed tokens,
+per-person scoping over HTTP, and session binding across identities. This module deliberately
 takes one dependency beyond the standard library, the official
 `github.com/modelcontextprotocol/go-sdk`.
 

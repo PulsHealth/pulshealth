@@ -774,8 +774,9 @@ fi
 if [[ "$(psql -X -q -tA --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
           -c "SELECT to_regprocedure('puls_create_web_views()') IS NOT NULL
                  AND to_regprocedure('auth.purge_user(bytea,uuid)') IS NOT NULL
-                 AND to_regprocedure('auth.decline_signups(bytea,uuid[])') IS NOT NULL")" != t ]]; then
-  echo "099_read_roles: 015_web_accounts.sql, 016_web_signups.sql or 018_web_accounts_hardening.sql is not applied yet; skipping the web_app role."
+                 AND to_regprocedure('auth.decline_signups(bytea,uuid[])') IS NOT NULL
+                 AND to_regclass('auth.oauth_grants') IS NOT NULL")" != t ]]; then
+  echo "099_read_roles: 015_web_accounts.sql, 016_web_signups.sql, 018_web_accounts_hardening.sql or 019_oauth.sql is not applied yet; skipping the web_app role."
   exit 0
 fi
 
@@ -882,6 +883,16 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   auth.signup_requests
 TO web_app;
 
+-- OAuth for AI assistants (019_oauth.sql): registered clients, consents
+-- (grants, with the hash of their current refresh token) and authorization
+-- codes. The viewer is the authorization server and writes them like
+-- sessions; none holds health data.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
+  auth.oauth_clients,
+  auth.oauth_grants,
+  auth.oauth_codes
+TO web_app;
+
 -- The privileged steps of sign-up and self-service (016_web_signups.sql,
 -- 018_web_accounts_hardening.sql): each a SECURITY DEFINER function that
 -- checks the caller's session itself.
@@ -973,6 +984,18 @@ BEGIN
       ('auth', 'signup_requests', 'INSERT', false),
       ('auth', 'signup_requests', 'UPDATE', false),
       ('auth', 'signup_requests', 'DELETE', false),
+      ('auth', 'oauth_clients', 'SELECT', false),
+      ('auth', 'oauth_clients', 'INSERT', false),
+      ('auth', 'oauth_clients', 'UPDATE', false),
+      ('auth', 'oauth_clients', 'DELETE', false),
+      ('auth', 'oauth_grants', 'SELECT', false),
+      ('auth', 'oauth_grants', 'INSERT', false),
+      ('auth', 'oauth_grants', 'UPDATE', false),
+      ('auth', 'oauth_grants', 'DELETE', false),
+      ('auth', 'oauth_codes', 'SELECT', false),
+      ('auth', 'oauth_codes', 'INSERT', false),
+      ('auth', 'oauth_codes', 'UPDATE', false),
+      ('auth', 'oauth_codes', 'DELETE', false),
       ('auth', 'self_service_users', 'SELECT', false)
     ), actual AS (
       SELECT n.nspname::text, c.relname::text, acl.privilege_type, acl.is_grantable

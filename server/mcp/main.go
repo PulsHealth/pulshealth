@@ -27,6 +27,7 @@ import (
 	// distroless image, which has no /usr/share/zoneinfo.
 	_ "time/tzdata"
 
+	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -70,8 +71,12 @@ type config struct {
 	// userID pins this instance to one person: every request to the API
 	// names it, and a tool call naming anyone else is refused before the
 	// API is asked. Empty means unpinned — the API's own default user
-	// unless a call names one.
+	// unless a call names one. It applies to the static token (and stdio);
+	// an OAuth access token always acts for its own sub.
 	userID string
+	// oauth is non-nil when PULS_MCP_OAUTH_SECRET, PULS_MCP_URL and
+	// PULS_MCP_OAUTH_ISSUER are set (oauth.go).
+	oauth *oauthConfig
 }
 
 func loadConfig(getenv func(string) string) (config, error) {
@@ -103,6 +108,11 @@ func loadConfig(getenv func(string) string) (config, error) {
 		return cfg, err
 	}
 	cfg.trustProxyHeaders = trust
+	oauth, err := loadOAuthConfig(getenv)
+	if err != nil {
+		return cfg, err
+	}
+	cfg.oauth = oauth
 	return cfg, nil
 }
 
@@ -140,7 +150,7 @@ func main() {
 		os.Exit(runHealthcheck(os.Args[2:], ":8082", os.Stderr))
 	}
 
-	httpAddr := flag.String("http", "", "serve the streamable HTTP transport on this address (e.g. 127.0.0.1:8082) instead of stdio; requires PULS_MCP_TOKEN")
+	httpAddr := flag.String("http", "", "serve the streamable HTTP transport on this address (e.g. 127.0.0.1:8082) instead of stdio; requires PULS_MCP_TOKEN or OAuth (PULS_MCP_OAUTH_SECRET, PULS_MCP_URL, PULS_MCP_OAUTH_ISSUER)")
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
 	if *showVersion {
@@ -164,8 +174,8 @@ func run(httpAddr string, logger *slog.Logger) error {
 		return err
 	}
 	if httpAddr != "" {
-		if cfg.mcpToken == "" {
-			return errors.New("PULS_MCP_TOKEN must be set to serve --http: it is the only thing between the network and the health data")
+		if cfg.mcpToken == "" && cfg.oauth == nil {
+			return errors.New("PULS_MCP_TOKEN (or OAuth: PULS_MCP_OAUTH_SECRET, PULS_MCP_URL, PULS_MCP_OAUTH_ISSUER) must be set to serve --http: it is the only thing between the network and the health data")
 		}
 		if err := refusePlaceholder("PULS_MCP_TOKEN", cfg.mcpToken); err != nil {
 			return err
@@ -195,7 +205,7 @@ func run(httpAddr string, logger *slog.Logger) error {
 
 	httpSrv := &http.Server{
 		Addr:              httpAddr,
-		Handler:           svc.httpHandler(server, cfg.mcpToken, cfg.trustProxyHeaders, logger),
+		Handler:           svc.httpHandler(server, authenticator{staticToken: cfg.mcpToken, oauth: cfg.oauth, now: time.Now}, cfg.trustProxyHeaders, logger),
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
 		// No WriteTimeout: the streamable transport holds SSE streams open.
@@ -204,7 +214,7 @@ func run(httpAddr string, logger *slog.Logger) error {
 	errCh := make(chan error, 1)
 	go func() {
 		logger.Info("listening", "addr", httpAddr, "api", api.BaseURL(), "time_zone", zoneLogValue(cfg.loc), "user", userLogValue(cfg.userID),
-			"trust_proxy_headers", cfg.trustProxyHeaders, "auth_failure_burst", authFailureBurst, "auth_failures_per_minute", authFailurePerMinute,
+			"trust_proxy_headers", cfg.trustProxyHeaders, "static_token", cfg.mcpToken != "", "oauth", oauthLogValue(cfg.oauth), "auth_failure_burst", authFailureBurst, "auth_failures_per_minute", authFailurePerMinute,
 			"version", version())
 		if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
@@ -231,6 +241,15 @@ func userLogValue(userID string) string {
 	return userID
 }
 
+// oauthLogValue renders the OAuth setting for the startup line (never the
+// secret).
+func oauthLogValue(c *oauthConfig) string {
+	if c == nil {
+		return "off"
+	}
+	return c.resource + " (issuer " + c.issuer + ")"
+}
+
 // zoneLogValue renders the zone for the startup line.
 func zoneLogValue(loc *time.Location) string {
 	if loc == nil {
@@ -239,8 +258,9 @@ func zoneLogValue(loc *time.Location) string {
 	return loc.String()
 }
 
-// httpHandler serves /mcp behind the bearer token and /healthz without it.
-func (s *service) httpHandler(server *mcp.Server, token string, trustProxyHeaders bool, logger *slog.Logger) http.Handler {
+// httpHandler serves /mcp behind the bearer token and /healthz without it,
+// plus, with OAuth on, the protected-resource metadata (also without it).
+func (s *service) httpHandler(server *mcp.Server, authn authenticator, trustProxyHeaders bool, logger *slog.Logger) http.Handler {
 	mcpHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, &mcp.StreamableHTTPOptions{
 		SessionTimeout: sessionTimeout,
 		Logger:         logger,
@@ -255,20 +275,73 @@ func (s *service) httpHandler(server *mcp.Server, token string, trustProxyHeader
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
-	mux.Handle("/mcp", bearerAuth(token, newFailureLimiter(), trustProxyHeaders, logger, mcpHandler))
+	mux.Handle("/mcp", bearerAuth(authn, newFailureLimiter(), trustProxyHeaders, logger, withSDKTokenInfo(mcpHandler)))
+	if authn.oauth != nil {
+		// RFC 9728: the bare document and the one for this resource's path
+		// (what the 401's resource_metadata names) are the same.
+		meta := authn.oauth.metadataHandler()
+		mux.Handle(protectedResourcePath, meta)
+		if authn.oauth.metadataPath != protectedResourcePath {
+			mux.Handle(authn.oauth.metadataPath, meta)
+		}
+	}
 	return mux
 }
 
-// bearerAuth admits only requests carrying the configured token, behind the
-// auth-failure limiter (ratelimit.go) exactly as ingest and the API are: a
-// client that has spent its budget is refused with 429 *before* the token is
-// compared, only failures are charged, and a success never is — a connected
-// assistant makes many requests a conversation. Every failure is logged
-// (never the token, present or absent) so a brute force leaves a trace.
-func bearerAuth(token string, limiter *failureLimiter, trustProxyHeaders bool, logger *slog.Logger, next http.Handler) http.Handler {
+// bearerAuth admits only requests carrying the static token or (OAuth on) a
+// valid access token, and records who on the request (tokenInfoCtxKey) for
+// withSDKTokenInfo. Guesses sit behind the auth-failure limiter
+// (ratelimit.go) exactly as on ingest and the API: a client that has spent
+// its budget is refused with 429 *before* the token is compared, only
+// failures are charged, and a success never is — a connected assistant makes
+// many requests a conversation. Every failure is logged (never the token,
+// present or absent) so a brute force leaves a trace.
+//
+// Only a bearer that could be a guess is gated or charged. Hosted connectors
+// (claude.ai, Claude mobile) reach this server from their operator's shared
+// egress addresses, so charging their normal traffic would spend the budget
+// and lock out every person behind those addresses, valid tokens included:
+//
+//   - No bearer at all is the discovery request every OAuth client makes to
+//     receive the 401 and its resource_metadata. It guesses nothing and the
+//     challenge holds no secret, so it is never refused by the limiter nor
+//     charged.
+//   - A bearer whose HMAC this server's secret verifies (verifySigned) cannot
+//     be a guess. It is checked before the limiter — the check is constant
+//     time and costs about what the limiter does — so a valid access token is
+//     admitted even from an exhausted address, and a signed but invalid one
+//     (expired, which every connector presents each time its token lapses;
+//     wrong audience; ...) is a 401 invalid_token, uncharged.
+//   - Anything else — a wrong static token, garbage, a forged or unsigned
+//     JWT — is gated and charged as before.
+func bearerAuth(authn authenticator, limiter *failureLimiter, trustProxyHeaders bool, logger *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		ip := clientIP(r, trustProxyHeaders)
+		admit := func(info *auth.TokenInfo) {
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), tokenInfoCtxKey{}, info)))
+		}
+		refuse := func(presented bool, reason string) {
+			logger.Warn("auth failed", "ip", ip, "path", r.URL.Path, "had_bearer", presented, "reason", reason)
+			w.Header().Set("WWW-Authenticate", authn.challenge(presented))
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		}
+
+		got, presented := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+		if !presented {
+			refuse(false, "no bearer")
+			return
+		}
+		info, reason, signed := authn.verifySigned(got)
+		if signed {
+			if info != nil {
+				admit(info)
+			} else {
+				refuse(true, reason)
+			}
+			return
+		}
+
 		if ok, wait := limiter.allow(ip, time.Now()); !ok {
 			seconds := int(wait.Seconds())
 			if seconds < 1 {
@@ -279,15 +352,15 @@ func bearerAuth(token string, limiter *failureLimiter, trustProxyHeaders bool, l
 			writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many failed authentications"})
 			return
 		}
-		got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if !ok || subtle.ConstantTimeCompare([]byte(got), []byte(token)) != 1 {
-			limiter.recordFailure(ip, time.Now())
-			logger.Warn("auth failed", "ip", ip, "path", r.URL.Path, "had_bearer", ok)
-			w.Header().Set("WWW-Authenticate", `Bearer realm="pulshealth-mcp"`)
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		if authn.staticMatches(got) {
+			admit(&auth.TokenInfo{UserID: staticTokenIdentity})
 			return
 		}
-		next.ServeHTTP(w, r)
+		if reason == "" { // OAuth off: verifySigned had nothing to say
+			reason = "wrong token"
+		}
+		limiter.recordFailure(ip, time.Now())
+		refuse(true, reason)
 	})
 }
 
@@ -301,6 +374,11 @@ func (s *service) handleHealthz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "api": true})
+}
+
+// constantTimeEqual compares two secrets without leaking where they differ.
+func constantTimeEqual(a, b string) bool {
+	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

@@ -38,6 +38,7 @@ const NOTICES: Record<string, string> = {
   enabled: "Account enabled again. Its iPhones stay disconnected until reconnected.",
   purged: "Everything stored for that user was deleted.",
   device_revoked: "That iPhone is disconnected and can no longer upload.",
+  assistant_revoked: "Revoked. The assistant can no longer refresh its access, and what it holds expires within 30 minutes.",
   deleted: "Your account is deleted, and nothing more will be uploaded. The operator has been asked to remove your stored data.",
 };
 

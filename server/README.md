@@ -135,6 +135,16 @@ comments. Beyond the passwords and tokens:
   someone else (see "Product API"). The viewer never reads
   `PULS_MULTI_USER`: its user switcher is a basic/open-mode feature that
   offers every user to whoever passes its one password.
+- `PULS_MCP_OAUTH_SECRET`, `PULS_MCP_URL` (and `PULS_MCP_OAUTH_ISSUER`,
+  which Compose fills from `WEB_PUBLIC_URL`) — OAuth sign-in for the MCP
+  server's hosted connectors, beside `PULS_MCP_TOKEN`: the viewer in accounts
+  mode signs 30-minute access tokens for `PULS_MCP_URL` with the shared
+  secret (at least 32 characters, `openssl rand -hex 32`), and the `mcp`
+  service checks them without a database and reads only as the signed-in
+  person. Off while both are empty; the secret or the URL without the rest
+  stops `mcp` at startup. Anyone but `PULS_USER_ID` also needs
+  `PULS_MULTI_USER=true`. See [`docs/ai.md`](../docs/ai.md), "Hosted
+  connectors (OAuth)".
 - `PULS_VERSION` — the image tag the four app services run (default
   `latest`; see "Images and versions").
 - `PULS_PUBLIC_URL` — the URL the pairing block and device-token QR codes
@@ -508,8 +518,15 @@ the MCP server also log every failed authentication (`auth failed`, with
 address and path, never the token).
 
 **The MCP server's `--http` mode** (the `mcp` service, `/mcp` behind
-`PULS_MCP_TOKEN`) applies the same limiter with the same numbers, the same
-`TRUST_PROXY_HEADERS` switch and the same last-entry rule. The three copies
+`PULS_MCP_TOKEN` and, when on, OAuth access tokens) applies the same limiter
+with the same numbers, the same `TRUST_PROXY_HEADERS` switch and the same
+last-entry rule, but gates and charges only bearers that could be guesses:
+a request with no bearer (an OAuth client's discovery request) always gets
+its 401 challenge, and an access token whose HMAC verifies is checked before
+the limiter — admitted if valid (even from an exhausted address), a 401 if
+expired or otherwise invalid, never charged — since hosted connectors share
+their operator's egress addresses. A wrong static token, garbage or a forged
+JWT is charged as before. The three copies
 of `ratelimit.go` are kept identical by `scripts/check-go-copies.sh` in CI.
 
 - **A correct token is never throttled.** Only failures draw from the bucket,
@@ -551,6 +568,7 @@ set of secrets would strand both. Rotate one value at a time instead:
 | `PULS_TOKEN` | Edit `.env`, `docker compose up -d ingest`, then re-pair each phone from `make pairing`. |
 | A device token | `make devices ARGS='revoke <id>'`, then `scripts/bootstrap.sh --issue-device <label> [--user <uuid>]` and scan the new code on that phone. Effective on the next request; nothing restarts, and no other phone is affected. |
 | `PULS_API_TOKEN`, `PULS_MCP_TOKEN` | Edit `.env`, `docker compose up -d api mcp`, update the API consumers and AI clients (`docs/ai.md`). |
+| `PULS_MCP_OAUTH_SECRET` | Edit `.env`, `docker compose up -d web mcp`. Every access token signed with the old value stops working at once. Refresh tokens live in the database, not in the secret, so a connected assistant that refreshes on a 401 carries on; one that does not asks its user to sign in again. |
 | `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD`, `INGEST_DB_PASSWORD` | Edit `.env`, `docker compose up -d`: `migrate` re-runs `099_read_roles.sh`, which sets the new passwords, and the containers restart with them. |
 | `POSTGRES_PASSWORD` | The superuser password lives in the database, not in `.env`: `docker compose exec db psql -U postgres -c "ALTER USER postgres PASSWORD '<new>'"` first, then edit `.env` and `docker compose up -d`. |
 | `GRAFANA_PASSWORD` | Read at Grafana's first start only; change it in Grafana's own UI (or `docker compose exec grafana grafana cli admin reset-admin-password <new>`), then update `.env` to match. |
@@ -634,6 +652,13 @@ front of the hostname, and add a Cloudflare rate-limiting rule on `/login`,
 from outside that `http://` is redirected to `https://` (Cloudflare's "Always
 Use HTTPS"), that `/workouts` sends you to `/login`, and that the viewer's log
 says `mode=accounts`.
+
+The same tunnel can publish the MCP server for hosted AI connectors (the
+Claude mobile app, claude.ai): add a second route, `mcp.example.com` →
+`http://mcp:8082`, and set `PULS_MCP_OAUTH_SECRET` and
+`PULS_MCP_URL=https://mcp.example.com/mcp`. People then sign in to the
+assistant with their viewer account. See [`docs/ai.md`](../docs/ai.md),
+"Hosted connectors (OAuth)".
 
 ## API
 

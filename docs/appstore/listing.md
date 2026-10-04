@@ -198,7 +198,13 @@ developer's own database:
    checkable rather than a promise. **For the people who choose it, it is
    collection by the developer,** which is what the six types above
    declare. The privacy policy's "If you use the developer's viewer" section
-   says what happens to that data. If the developer's instance ever stops
+   says what happens to that data. Connecting an AI assistant to that
+   database (the viewer's OAuth consent, since 2026-10-04) changes none of
+   this: it happens on the website, not in the app, which gains no request,
+   permission or store for it; it adds no data type the app sends; and the
+   assistant's provider receives what it reads at the person's own
+   direction, revocably, not as the developer's partner — so it is neither
+   new collection by the app nor tracking. If the developer's instance ever stops
    taking anyone outside the household, and the app no longer offers it,
    the answer can go back to "Data Not Collected".
 2. **For everyone else, the only destination is chosen and controlled by the

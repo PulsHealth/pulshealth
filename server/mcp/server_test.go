@@ -238,7 +238,7 @@ func TestHTTP_TokenGatesMCPButNotHealthz(t *testing.T) {
 	f.respond("/v1/catalog/types", http.StatusOK, fixtureCatalog)
 	s := f.service(t, "UTC")
 	server := s.newServer("test")
-	ts := httptest.NewServer(s.httpHandler(server, "mcp-secret", false, slog.New(slog.NewTextHandler(io.Discard, nil))))
+	ts := httptest.NewServer(s.httpHandler(server, staticAuth("mcp-secret"), false, slog.New(slog.NewTextHandler(io.Discard, nil))))
 	defer ts.Close()
 
 	resp, err := http.Get(ts.URL + "/healthz")
@@ -298,7 +298,7 @@ func TestHTTP_HealthzReportsAPIDown(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := newService(api, nil)
-	ts := httptest.NewServer(s.httpHandler(s.newServer("test"), "x", false, slog.New(slog.NewTextHandler(io.Discard, nil))))
+	ts := httptest.NewServer(s.httpHandler(s.newServer("test"), staticAuth("x"), false, slog.New(slog.NewTextHandler(io.Discard, nil))))
 	defer ts.Close()
 	resp, err := http.Get(ts.URL + "/healthz")
 	if err != nil {

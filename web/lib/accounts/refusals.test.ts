@@ -100,6 +100,7 @@ const ROUTES: Record<string, { methods: Method[]; guard: Guard }> = {
       forbidden: [{ session: { selfService: false }, location: "/account?error=forbidden" }],
     },
   },
+  "/api/auth/assistants": { methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Faccount" } },
   "/api/auth/password": { methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Faccount" } },
   "/api/auth/sessions": { methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Faccount" } },
   "/api/auth/login": { methods: ["POST"], guard: { kind: "public", why: "signing in" } },

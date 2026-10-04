@@ -38,6 +38,15 @@ describe("classifyPath", () => {
     }
     expect(classifyPath("/__nextjs_original-stack-frame", true)).toBe("asset");
   });
+
+  it("puts the OAuth machine endpoints in their own class, and the consent page behind a session", () => {
+    for (const path of ["/.well-known/oauth-authorization-server", "/oauth/register", "/oauth/token", "/oauth/revoke"]) {
+      expect(classifyPath(path), path).toBe("oauth");
+    }
+    for (const path of ["/oauth/authorize", "/oauth/authorize/decision", "/oauth", "/oauth/token/x", "/.well-known/openid-configuration", "/api/auth/assistants"]) {
+      expect(classifyPath(path), path).toBe("protected");
+    }
+  });
 });
 
 describe("decideAccounts", () => {
@@ -74,6 +83,15 @@ describe("decideAccounts", () => {
     expect(decideAccounts(facts("/invite/tok"))).toBe("pass");
     expect(decideAccounts(facts("/"))).toBe("session");
     expect(decideAccounts(facts("/api/auth/password"))).toBe("session");
+  });
+
+  it("passes OAuth machine endpoints over HTTPS whatever their Origin, and refuses them over HTTP", () => {
+    expect(decideAccounts(facts("/oauth/token", { sameOrigin: false }))).toBe("pass");
+    expect(decideAccounts(facts("/oauth/register", { sameOrigin: false }))).toBe("pass");
+    expect(decideAccounts(facts("/oauth/token", { secure: false }))).toBe("insecure");
+    expect(decideAccounts({ ...facts("/oauth/token", { secure: false }), forwardedHttp: true })).toBe("upgrade");
+    expect(decideAccounts(facts("/oauth/authorize"))).toBe("session");
+    expect(decideAccounts(facts("/oauth/authorize", { sameOrigin: false }))).toBe("cross-origin");
   });
 
   it("redirects page loads to sign in and answers the rest 401", () => {

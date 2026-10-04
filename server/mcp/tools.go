@@ -60,7 +60,7 @@ func (s *service) location() *time.Location { return s.zone.loc.Load() }
 // serverInstructions reach the model with the initialize handshake, before
 // it has read any tool description.
 const serverInstructions = `Read-only access to Apple Health data synced by the PulsHealth app to a server its owner runs — usually one person's, ` +
-	`sometimes a household's: list_users names everyone with data, and every data tool takes an optional user (omit it for the server's default person). ` +
+	`sometimes a household's: list_users names everyone with data, and every data tool takes an optional user (omit it for the default person — on a connector you signed in to, the signed-in person). ` +
 	`Start with list_available_types: it lists which HealthKit types have data, how current they are, today's date and the server's time zone. ` +
 	`Read the pulshealth://guide resource for units, the iPhone-plus-Watch double-counting rule and which tool answers which question. ` +
 	`Dates are YYYY-MM-DD in the server's time zone; daily values are already deduplicated across devices, so never sum raw samples yourself ` +
@@ -136,7 +136,7 @@ const descGetProfile = `Who this data belongs to: name, email, date of birth (YY
 
 // descUserSuffix closes every per-user tool description: the same sentence
 // everywhere, so the model learns the rule once.
-const descUserSuffix = `user is optional: omit it for the server's default person, or pass a user_id from list_users to read another ` +
+const descUserSuffix = `user is optional: omit it for the default person (on a connector you signed in to, that is you), or pass a user_id from list_users to read another ` +
 	`person's data on a server several people share.`
 
 const descGetSummary = `The cheapest first call for "how have I been doing lately": one short markdown page (under sixty lines) ` +
@@ -251,30 +251,30 @@ const descGetStateOfMind = `State of Mind entries — the moods and emotions log
 
 // userInput is the whole input of the tools that need nothing else.
 type userInput struct {
-	User string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+	User string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the default person (the signed-in person on a signed-in connector)"`
 }
 
 type summaryInput struct {
 	Range string `json:"range,omitempty" jsonschema:"How many calendar days, ending today, to summarise: 7d, 14d, 30d or 90d. Optional; default 7d"`
-	User  string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+	User  string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the default person (the signed-in person on a signed-in connector)"`
 }
 
 type typesInput struct {
 	Types []string `json:"types" jsonschema:"HealthKit type identifiers, e.g. HKQuantityTypeIdentifierStepCount; 1 to 10 per call. list_available_types shows which exist"`
-	User  string   `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+	User  string   `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the default person (the signed-in person on a signed-in connector)"`
 }
 
 type dailyInput struct {
 	Types     []string `json:"types" jsonschema:"HealthKit type identifiers, e.g. HKQuantityTypeIdentifierStepCount; 1 to 10 per call. list_available_types shows which have daily values (aggregate_rows > 0)"`
 	StartDate string   `json:"start_date" jsonschema:"First day of the range, inclusive, as YYYY-MM-DD in the server's time zone"`
 	EndDate   string   `json:"end_date" jsonschema:"Last day of the range, inclusive, as YYYY-MM-DD; equal to start_date for a single day. At most 366 days per call"`
-	User      string   `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+	User      string   `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the default person (the signed-in person on a signed-in connector)"`
 }
 
 type rangeInput struct {
 	StartDate string `json:"start_date" jsonschema:"First day of the range, inclusive, as YYYY-MM-DD in the server's time zone"`
 	EndDate   string `json:"end_date" jsonschema:"Last day of the range, inclusive, as YYYY-MM-DD; equal to start_date for a single day. At most 366 days per call"`
-	User      string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+	User      string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the default person (the signed-in person on a signed-in connector)"`
 }
 
 type workoutsInput struct {
@@ -283,12 +283,12 @@ type workoutsInput struct {
 	ActivityType string `json:"activity_type,omitempty" jsonschema:"Exact snake_case activity name such as running, cycling, walking, hiking, swimming, strength_training, yoga. Optional; omit to list every activity"`
 	Limit        int    `json:"limit,omitempty" jsonschema:"Maximum number of workouts to return, 1 to 200; default 50"`
 	Offset       int    `json:"offset,omitempty" jsonschema:"Number of newest workouts to skip, for paging: pass the previous call's next_offset"`
-	User         string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+	User         string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the default person (the signed-in person on a signed-in connector)"`
 }
 
 type workoutInput struct {
 	UUID string `json:"uuid" jsonschema:"The workout's uuid exactly as returned by list_workouts"`
-	User string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+	User string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the default person (the signed-in person on a signed-in connector)"`
 }
 
 type samplesInput struct {
@@ -297,14 +297,14 @@ type samplesInput struct {
 	EndDate   string `json:"end_date" jsonschema:"Last day of the range, inclusive, as YYYY-MM-DD; equal to start_date for a single day. At most 31 days per call"`
 	Limit     int    `json:"limit,omitempty" jsonschema:"Maximum number of samples to return, 1 to 5000; default 500"`
 	Offset    int    `json:"offset,omitempty" jsonschema:"Number of samples to skip, for paging: pass the previous call's next_offset"`
-	User      string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+	User      string `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the default person (the signed-in person on a signed-in connector)"`
 }
 
 type workoutSeriesInput struct {
 	UUID      string   `json:"uuid" jsonschema:"The workout's uuid exactly as returned by list_workouts"`
 	Types     []string `json:"types,omitempty" jsonschema:"HealthKit identifiers to fetch, from the workout's available_metrics. Optional; omit for every recorded stream"`
 	MaxPoints int      `json:"max_points,omitempty" jsonschema:"Maximum points per series after downsampling, 1 to 5000; default 500"`
-	User      string   `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the server's default person"`
+	User      string   `json:"user,omitempty" jsonschema:"A user_id from list_users. Optional: omit for the default person (the signed-in person on a signed-in connector)"`
 }
 
 // Outputs. Every tool returns one compact JSON object as text; field names
@@ -543,36 +543,82 @@ func jsonResult(v any) (*mcp.CallToolResult, any, error) {
 	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: string(b)}}}, nil, nil
 }
 
+// callerAPI is the client a request acts through, by who sent it. stdio and
+// the static PULS_MCP_TOKEN get s.api — pinned to PULS_USER_ID or not, as
+// configured. An OAuth access token gets s.api pinned to its sub, whatever
+// PULS_USER_ID says: a signed-in person reads their own data and nobody
+// else's, through the same pin a PULS_USER_ID instance enforces. signedIn
+// says which, for the refusal's wording. Anything else fails closed.
+func (s *service) callerAPI(extra *mcp.RequestExtra) (api *APIClient, signedIn bool, err error) {
+	if extra == nil || extra.TokenInfo == nil || extra.TokenInfo.UserID == staticTokenIdentity {
+		return s.api, false, nil
+	}
+	sub := extra.TokenInfo.UserID
+	if !isUUID(sub) {
+		return nil, false, errors.New("this request's identity is not a user id")
+	}
+	return s.api.ForUser(sub), true, nil
+}
+
+// extraOf is a tool request's transport metadata (nil in direct calls).
+func extraOf(req *mcp.CallToolRequest) *mcp.RequestExtra {
+	if req == nil {
+		return nil
+	}
+	return req.Extra
+}
+
 // scope resolves a tool call's optional user argument to the client that
 // will make the call and the user id its output should carry ("" for the
-// API's default). A pinned instance answers for its one person only: a
-// call naming anyone else is refused here, before the API is asked, so the
-// refusal says "pinned" rather than whatever the API would have said.
-func (s *service) scope(user string) (*APIClient, string, error) {
+// API's default). A pinned caller answers for its one person only: a call
+// naming anyone else is refused here, before the API is asked, so the
+// refusal says "pinned" (or "signed in") rather than whatever the API would
+// have said.
+func (s *service) scope(req *mcp.CallToolRequest, user string) (*APIClient, string, error) {
+	base, signedIn, err := s.callerAPI(extraOf(req))
+	if err != nil {
+		return nil, "", err
+	}
 	user = strings.ToLower(strings.TrimSpace(user))
 	if user == "" {
-		return s.api, s.api.User(), nil
+		return base, base.User(), nil
 	}
 	if !isUUID(user) {
 		return nil, "", fmt.Errorf("user %q is not a user id; pass a user_id exactly as returned by list_users, or omit it for the default person", user)
 	}
-	if pinned := s.api.User(); pinned != "" && pinned != user {
+	if pinned := base.User(); pinned != "" && pinned != user {
+		if signedIn {
+			return nil, "", fmt.Errorf("this connection is signed in as user %s and can read only that person's data, not user %s; omit user", pinned, user)
+		}
 		return nil, "", fmt.Errorf("this MCP instance is pinned to user %s (PULS_USER_ID) and cannot read user %s; omit user, or use an instance that is not pinned", pinned, user)
 	}
-	return s.api.ForUser(user), user, nil
+	return base.ForUser(user), user, nil
 }
 
-// listUsers lists who has data. A pinned instance lists only its own person:
-// docs/ai.md promises it can never be asked about anyone else, and that
-// includes their name, e-mail and sync counts.
-func (s *service) listUsers(ctx context.Context, _ *mcp.CallToolRequest, _ any) (*mcp.CallToolResult, any, error) {
-	resp, err := s.api.Users(ctx)
+// listUsers lists who has data. A pinned caller — a PULS_USER_ID instance, or
+// a signed-in (OAuth) person — lists only its own person: docs/ai.md promises
+// it can never be asked about anyone else, and that includes their name,
+// e-mail and sync counts.
+func (s *service) listUsers(ctx context.Context, req *mcp.CallToolRequest, _ any) (*mcp.CallToolResult, any, error) {
+	base, signedIn, err := s.callerAPI(extraOf(req))
 	if err != nil {
 		return nil, nil, err
 	}
-	pinned := s.api.User()
+	resp, err := base.Users(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	pinned := base.User()
+	def := resp.Default
+	if signedIn {
+		// Every tool answers for the signed-in person; the API's default is
+		// someone else's id, which a stranger's connector has no business
+		// learning. (A PULS_USER_ID pin is the operator's own and still
+		// names it.)
+		def = pinned
+	}
 	out := usersOutput{
-		DefaultUserID: resp.Default,
+		DefaultUserID: def,
 		MultiUser:     resp.MultiUser,
 		PinnedUserID:  pinned,
 		Users:         make([]userEntry, 0, len(resp.Users)),
@@ -585,7 +631,7 @@ func (s *service) listUsers(ctx context.Context, _ *mcp.CallToolRequest, _ any) 
 			UserID:          u.UserID,
 			Name:            u.Name,
 			Email:           u.Email,
-			IsDefault:       u.UserID == resp.Default,
+			IsDefault:       u.UserID == def,
 			CreatedAt:       formatInstant(u.CreatedAt, s.location()),
 			LastSync:        formatInstantPtr(u.LastSync, s.location()),
 			Batches:         u.Batches,
@@ -595,8 +641,8 @@ func (s *service) listUsers(ctx context.Context, _ *mcp.CallToolRequest, _ any) 
 	return jsonResult(out)
 }
 
-func (s *service) getProfile(ctx context.Context, _ *mcp.CallToolRequest, in userInput) (*mcp.CallToolResult, any, error) {
-	api, _, err := s.scope(in.User)
+func (s *service) getProfile(ctx context.Context, req *mcp.CallToolRequest, in userInput) (*mcp.CallToolResult, any, error) {
+	api, _, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -631,7 +677,7 @@ var summaryRanges = []string{"7d", "14d", "30d", "90d"}
 // getSummary returns the API's markdown page as the tool's text: the one
 // tool whose answer is prose rather than JSON, because the page is written
 // for reading and the model reads markdown as well as anyone.
-func (s *service) getSummary(ctx context.Context, _ *mcp.CallToolRequest, in summaryInput) (*mcp.CallToolResult, any, error) {
+func (s *service) getSummary(ctx context.Context, req *mcp.CallToolRequest, in summaryInput) (*mcp.CallToolResult, any, error) {
 	rng := strings.TrimSpace(in.Range)
 	if rng == "" {
 		rng = summaryRanges[0]
@@ -639,7 +685,7 @@ func (s *service) getSummary(ctx context.Context, _ *mcp.CallToolRequest, in sum
 	if !slices.Contains(summaryRanges, rng) {
 		return nil, nil, fmt.Errorf("range %q is not one of %s", in.Range, strings.Join(summaryRanges, ", "))
 	}
-	api, _, err := s.scope(in.User)
+	api, _, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -678,8 +724,8 @@ func (s *service) catalog(ctx context.Context, api *APIClient, userID string) (c
 	return out, nil
 }
 
-func (s *service) listAvailableTypes(ctx context.Context, _ *mcp.CallToolRequest, in userInput) (*mcp.CallToolResult, any, error) {
-	api, userID, err := s.scope(in.User)
+func (s *service) listAvailableTypes(ctx context.Context, req *mcp.CallToolRequest, in userInput) (*mcp.CallToolResult, any, error) {
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -725,12 +771,12 @@ func missingTypes(requested []string, returned map[string]struct{}) []string {
 	return missing
 }
 
-func (s *service) getLatestMetrics(ctx context.Context, _ *mcp.CallToolRequest, in typesInput) (*mcp.CallToolResult, any, error) {
+func (s *service) getLatestMetrics(ctx context.Context, req *mcp.CallToolRequest, in typesInput) (*mcp.CallToolResult, any, error) {
 	types, err := normalizeTypes(in.Types)
 	if err != nil {
 		return nil, nil, err
 	}
-	api, userID, err := s.scope(in.User)
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -753,7 +799,7 @@ func (s *service) getLatestMetrics(ctx context.Context, _ *mcp.CallToolRequest, 
 	return jsonResult(out)
 }
 
-func (s *service) getDailyMetrics(ctx context.Context, _ *mcp.CallToolRequest, in dailyInput) (*mcp.CallToolResult, any, error) {
+func (s *service) getDailyMetrics(ctx context.Context, req *mcp.CallToolRequest, in dailyInput) (*mcp.CallToolResult, any, error) {
 	types, err := normalizeTypes(in.Types)
 	if err != nil {
 		return nil, nil, err
@@ -762,7 +808,7 @@ func (s *service) getDailyMetrics(ctx context.Context, _ *mcp.CallToolRequest, i
 	if err != nil {
 		return nil, nil, err
 	}
-	api, userID, err := s.scope(in.User)
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -790,12 +836,12 @@ func (s *service) getDailyMetrics(ctx context.Context, _ *mcp.CallToolRequest, i
 	return jsonResult(out)
 }
 
-func (s *service) getActivityRings(ctx context.Context, _ *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
+func (s *service) getActivityRings(ctx context.Context, req *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
 	win, err := newDayWindow(in.StartDate, in.EndDate, s.location(), maxDaysPerCall)
 	if err != nil {
 		return nil, nil, err
 	}
-	api, userID, err := s.scope(in.User)
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -845,7 +891,7 @@ func (s *service) workoutEntry(w WorkoutSummary) workoutEntry {
 	}
 }
 
-func (s *service) listWorkouts(ctx context.Context, _ *mcp.CallToolRequest, in workoutsInput) (*mcp.CallToolResult, any, error) {
+func (s *service) listWorkouts(ctx context.Context, req *mcp.CallToolRequest, in workoutsInput) (*mcp.CallToolResult, any, error) {
 	f := WorkoutFilters{Limit: in.Limit, Offset: in.Offset, ActivityType: strings.TrimSpace(in.ActivityType)}
 	if f.Limit == 0 {
 		f.Limit = defaultWorkoutLimit
@@ -883,7 +929,7 @@ func (s *service) listWorkouts(ctx context.Context, _ *mcp.CallToolRequest, in w
 		return nil, nil, fmt.Errorf("end_date %s is before start_date %s", end.Format(dateLayout), start.Format(dateLayout))
 	}
 
-	api, userID, err := s.scope(in.User)
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -902,12 +948,12 @@ func (s *service) listWorkouts(ctx context.Context, _ *mcp.CallToolRequest, in w
 	return jsonResult(out)
 }
 
-func (s *service) getWorkout(ctx context.Context, _ *mcp.CallToolRequest, in workoutInput) (*mcp.CallToolResult, any, error) {
+func (s *service) getWorkout(ctx context.Context, req *mcp.CallToolRequest, in workoutInput) (*mcp.CallToolResult, any, error) {
 	uuid := strings.ToLower(strings.TrimSpace(in.UUID))
 	if !isUUID(uuid) {
 		return nil, nil, fmt.Errorf("uuid %q is not a workout uuid; pass one exactly as returned by list_workouts", in.UUID)
 	}
-	api, userID, err := s.scope(in.User)
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -937,12 +983,12 @@ func (s *service) getWorkout(ctx context.Context, _ *mcp.CallToolRequest, in wor
 	return jsonResult(out)
 }
 
-func (s *service) getSleep(ctx context.Context, _ *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
+func (s *service) getSleep(ctx context.Context, req *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
 	win, err := newDayWindow(in.StartDate, in.EndDate, s.location(), maxDaysPerCall)
 	if err != nil {
 		return nil, nil, err
 	}
-	api, userID, err := s.scope(in.User)
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -977,7 +1023,7 @@ func (s *service) getSleep(ctx context.Context, _ *mcp.CallToolRequest, in range
 	return jsonResult(out)
 }
 
-func (s *service) getSamples(ctx context.Context, _ *mcp.CallToolRequest, in samplesInput) (*mcp.CallToolResult, any, error) {
+func (s *service) getSamples(ctx context.Context, req *mcp.CallToolRequest, in samplesInput) (*mcp.CallToolResult, any, error) {
 	typ := strings.TrimSpace(in.Type)
 	if typ == "" {
 		return nil, nil, errors.New("type must name one HealthKit identifier, e.g. HKQuantityTypeIdentifierHeartRate")
@@ -1000,7 +1046,7 @@ func (s *service) getSamples(ctx context.Context, _ *mcp.CallToolRequest, in sam
 		return nil, nil, errors.New("offset must be at least 0")
 	}
 
-	api, userID, err := s.scope(in.User)
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1036,7 +1082,7 @@ func (s *service) getSamples(ctx context.Context, _ *mcp.CallToolRequest, in sam
 	return jsonResult(out)
 }
 
-func (s *service) getWorkoutSeries(ctx context.Context, _ *mcp.CallToolRequest, in workoutSeriesInput) (*mcp.CallToolResult, any, error) {
+func (s *service) getWorkoutSeries(ctx context.Context, req *mcp.CallToolRequest, in workoutSeriesInput) (*mcp.CallToolResult, any, error) {
 	uuid := strings.ToLower(strings.TrimSpace(in.UUID))
 	if !isUUID(uuid) {
 		return nil, nil, fmt.Errorf("uuid %q is not a workout uuid; pass one exactly as returned by list_workouts", in.UUID)
@@ -1059,7 +1105,7 @@ func (s *service) getWorkoutSeries(ctx context.Context, _ *mcp.CallToolRequest, 
 		maxPoints = maxSeriesPoints
 	}
 
-	api, userID, err := s.scope(in.User)
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1098,12 +1144,12 @@ func (s *service) getWorkoutSeries(ctx context.Context, _ *mcp.CallToolRequest, 
 	return jsonResult(out)
 }
 
-func (s *service) getStateOfMind(ctx context.Context, _ *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
+func (s *service) getStateOfMind(ctx context.Context, req *mcp.CallToolRequest, in rangeInput) (*mcp.CallToolResult, any, error) {
 	win, err := newDayWindow(in.StartDate, in.EndDate, s.location(), maxDaysPerCall)
 	if err != nil {
 		return nil, nil, err
 	}
-	api, userID, err := s.scope(in.User)
+	api, userID, err := s.scope(req, in.User)
 	if err != nil {
 		return nil, nil, err
 	}

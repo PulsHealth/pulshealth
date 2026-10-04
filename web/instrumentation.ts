@@ -45,6 +45,15 @@ export async function register() {
         console.warn("[puls-web] WEB_PUBLIC_URL is not a URL; it is ignored.");
       }
     }
+    // OAuth for AI assistants: said once here; a broken setting is an error
+    // and leaves it off (every /oauth path a 404), never a crash.
+    const { oauthConfig } = await import("./lib/oauth/config");
+    const oauth = oauthConfig();
+    if (oauth) {
+      console.log(
+        `[puls-web] OAuth for AI assistants is ON: issuer ${oauth.issuer}, tokens for the MCP server at ${oauth.resource}.`,
+      );
+    }
     return;
   }
 

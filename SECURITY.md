@@ -58,6 +58,11 @@ Everything in this repository is in scope, in particular:
   modify data outside its intended reach.
 - **Product API** (`server/api`) and **MCP server** (`server/mcp`): token
   handling, data exposure beyond the read-only role they are meant to have.
+  With OAuth on, the MCP server in particular: accepting an access token
+  whose signature, `alg`, `typ`, issuer, audience, expiry or scope is wrong;
+  acting for anyone but the token's `sub` (a tool's `user` argument, a
+  `list_users` answer naming someone else, or an MCP session reused under
+  another identity); and any write.
 - **iOS app and `PulsHealthSync`**: handling of the server URL and bearer
   token, including a pairing link (`puls://pair`) changing the server without
   the confirmation it is supposed to require, and the PulsHealth database's
@@ -82,7 +87,16 @@ Everything in this repository is in scope, in particular:
   person, to reach `/admin` or its database functions without an
   administrator's session, or — even with SQL run as `web_app` — to give a
   sync token to, revoke the tokens of, or delete the data of a user that no
-  approved request created. See the notes below.
+  approved request created. With OAuth on (the viewer as the MCP server's
+  authorization server): an authorization code or access token for an
+  account other than the one that approved it; getting a code without the
+  consent screen's Allow, or by cross-site request; a redirect to an address
+  the client did not register; skipping PKCE; reusing a code or a rotated
+  refresh token without the grant being revoked; a grant that survives
+  revocation, a password change or reset, disabling or deletion for longer
+  than the 30-minute access-token lifetime; a token carrying any scope but
+  `health:read`; and a consent screen that misrepresents what is granted.
+  See the notes below.
 
 Out of scope:
 
@@ -104,26 +118,39 @@ this one says how each piece holds up.
 - **What is worth protecting:** the health records in the database, the
   identity snapshot beside them (name, email, date of birth), and the
   credentials that write them (ingest tokens) or read them (the API, MCP and
-  viewer credentials, viewer sessions).
+  viewer credentials, viewer sessions, OAuth refresh and access tokens, and
+  the `PULS_MCP_OAUTH_SECRET` that signs the latter).
 - **Who is assumed hostile:** anyone on the network path between the phone
   and the server, and anyone who can reach an exposed port: the ingest
-  endpoint, and in accounts mode the viewer. They are expected to guess
+  endpoint, in accounts mode the viewer, and with OAuth on the MCP server.
+  They are expected to guess
   tokens and passwords, replay requests, forge `X-Forwarded-For` and other
   client-written headers, send oversized or malformed batches, and try
   cross-site requests against a signed-in browser. In accounts mode, other
-  account holders are hostile to each other.
+  account holders are hostile to each other. With OAuth on, so is any OAuth
+  client: registration is open (dynamic client registration), a client's
+  name is whatever it says, and a client may try to phish a consent, steer
+  a code to its own redirect, or replay a code or refresh token.
 - **Who is trusted:** the operator and the host the stack runs on, the TLS
   proxy in front of it (it appends the client address the limiters key on),
-  the unlocked phone and its Keychain, and whoever holds the shared
+  the unlocked phone and its Keychain, an AI assistant a person approved
+  (it reads everything that person's grant covers, and its provider receives
+  it under the provider's terms — that is the point of the grant), and
+  whoever holds the shared
   `PULS_TOKEN` (writes as any user) or the API and MCP tokens (read every
   user once `PULS_MULTI_USER` is on): those reach every user by design.
-- **What it assumes:** TLS from the phone and browser to the proxy; every
-  service other than ingest and the accounts-mode viewer bound to loopback or
-  a private network; and real secrets in `.env`, which the services check
+- **What it assumes:** TLS from the phone, the browser and an MCP client to
+  the proxy; every service other than ingest, the accounts-mode viewer and
+  (with OAuth on) the MCP server bound to loopback or a private network; and real secrets in `.env`, which the services check
   (none starts on `change-me`).
 - **What a breach costs:** a leaked per-device token writes and deletes one
   user's data until revoked; a leaked shared token, every user's; a leaked
-  API or MCP token reads what that service reads; a
+  API or MCP token reads what that service reads; a leaked OAuth access
+  token reads one person's data for at most 30 minutes, and a leaked refresh
+  token until the grant is revoked or the legitimate client next refreshes
+  (reuse of a rotated token revokes the grant); a leaked
+  `PULS_MCP_OAUTH_SECRET` mints access tokens for any user, reading what the
+  MCP server reads, until it is rotated; a
   compromised viewer container in accounts mode reads every user's records
   and can act on self-service users only (below); a compromised server host,
   everything.
@@ -242,6 +269,35 @@ for judging what is.
   form creates nothing but a request and emails only the operator, so it
   cannot open the database to anyone or be used to mail a stranger; no
   address it handles is written to the log.
+- **AI assistants over OAuth.** In accounts mode, with
+  `PULS_MCP_OAUTH_SECRET` and `PULS_MCP_URL` set, the viewer is an OAuth 2.1
+  authorization server for the MCP server, so a person can connect an
+  assistant (a claude.ai custom connector, Claude Code, any MCP client) by
+  signing in and approving a consent screen. Off, every OAuth path is 404.
+  Clients register themselves (RFC 7591; rate-limited per address; HTTPS or
+  loopback redirect URIs only, the loopback port ignored as RFC 8252
+  allows); PKCE S256 is required; codes live five minutes and are single
+  use, and a second use revokes the grant made from the first; refresh
+  tokens rotate on every use, and presenting a rotated one revokes the
+  grant. Codes, refresh tokens and client secrets are stored only as
+  SHA-256. The access token is a 30-minute HS256 JWT (`aud` the MCP URL,
+  scope `health:read`) that the MCP server verifies by itself — it still
+  never talks to Postgres — so **revocation is not instant**: revoking on
+  the account page, a password change or reset, disabling or deleting the
+  account refuses the next refresh at once, but an access token already
+  issued keeps working until it expires, at most 30 minutes later. The
+  grant is read-only and covers one person: the MCP server sends every API
+  call with `user=` the token's `sub` and refuses any other. To read a user
+  other than the API's default, the product API needs `PULS_MULTI_USER=true`,
+  which also lets `PULS_API_TOKEN` and `PULS_MCP_TOKEN` read every user —
+  the static MCP token keeps working beside OAuth and is not bound to
+  anyone. A client's name on the consent screen is self-reported and marked
+  as such; the redirect host shown beside it is the part the viewer
+  enforces. What an approved assistant reads leaves the stack for that
+  assistant's provider, under the provider's terms; revoking stops further
+  reads, not what was already read. `PULS_MCP_OAUTH_SECRET` is shared by
+  the viewer and the MCP server and must be at least 32 characters (neither
+  starts on `change-me`); anyone holding it can mint tokens for any user.
 - **Health data at rest.** The database holds identifiable data (name, email,
   date of birth, sex) alongside samples. Ingest connects as the scoped
   DML-only `ingest` role, which cannot create or drop objects; set
