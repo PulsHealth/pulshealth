@@ -45,8 +45,8 @@ Waiting for a Swift toolchain or a test to land first
 `SyncKey`/`withClaim`, `FullPassSchedule`, the `AppModel` seam, merging the
 two type pickers and the duration formatters, the seven ingest `unnest`
 inserts; tests for the observer coalescer and the three-unacknowledged-
-deliveries rule, `migrate.sh`/`restore.sh`, the viewer's `app/api/*`
-refusals, and `AppModel` onboarding, Apply gating and pairing.
+deliveries rule, `migrate.sh`/`restore.sh`, and `AppModel` onboarding,
+Apply gating and pairing.
 
 ## Not planned
 
