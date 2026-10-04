@@ -10,14 +10,16 @@ import {
   listSignupRequests,
   listUnusedApprovals,
   pendingSignupCount,
+  SIGNUP_DAILY_CAP,
   SIGNUP_PENDING_CAP,
+  signupsToday,
 } from "@/lib/accounts/signups";
 import { mailConfig } from "@/lib/email";
 import { formatFull } from "@/lib/format";
 import { signupsOpen } from "@/lib/mode";
 
 // The operator's page (accounts mode, administrators only; anyone else gets
-// a 404): access requests to approve or decline, and the accounts, which
+// a 404): the sign-up waitlist to approve or decline, and the accounts, which
 // can be disabled — that also disconnects their iPhones — and, once
 // disabled, have their data purged.
 export const dynamic = "force-dynamic";
@@ -29,11 +31,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const admin = await currentAdmin();
   if (!admin) notFound();
   const search = await searchParams;
-  const [requests, accounts, unused, waiting] = await Promise.all([
+  const [requests, accounts, unused, waiting, today] = await Promise.all([
     listSignupRequests(),
     listAccounts(),
     listUnusedApprovals(),
     pendingSignupCount(),
+    signupsToday(),
   ]);
   const pending = requests.filter((r) => r.status === "pending");
   const decided = requests.filter((r) => r.status !== "pending");
@@ -48,7 +51,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         title="Admin"
         subtitle={
           signupsOpen()
-            ? "People ask for access at /signup. Nothing exists for them until you approve."
+            ? "People sign up at /signup and join the waitlist. Nothing exists for them until you approve."
             : "Sign-up requests are off (WEB_SIGNUPS). Invite people with make web-invite."
         }
       />
@@ -56,24 +59,26 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
       {notice && <div className="form-message notice" role="status" style={{ maxWidth: 720 }}>{notice}</div>}
       {!mail?.admin && (
         <div className="form-message" style={{ maxWidth: 720 }}>
-          Email is not set up ({mail ? "WEB_ADMIN_EMAIL" : "WEB_SES_* and WEB_MAIL_FROM"} in server/.env), so new requests only show
+          Email is not set up ({mail ? "WEB_ADMIN_EMAIL" : "WEB_SES_* and WEB_MAIL_FROM"} in server/.env), so new sign-ups only show
           up here{mail ? "" : ", and approved people get no email: you will be shown their invite link to send yourself"}.
         </div>
       )}
 
       <section className="rise" style={{ marginTop: 8 }}>
         <div className="eyebrow" style={{ marginBottom: 12 }}>
-          Waiting for you · {waiting}
-          {waiting > pending.length ? ` (the latest ${pending.length} shown)` : ""}
+          Waitlist · {waiting}
+          {waiting > pending.length ? ` (the oldest ${pending.length} shown)` : ""}
         </div>
-        {waiting >= SIGNUP_PENDING_CAP && (
+        {(waiting >= SIGNUP_PENDING_CAP || today >= SIGNUP_DAILY_CAP) && (
           <div className="form-message" role="status" style={{ maxWidth: 720 }}>
-            {SIGNUP_PENDING_CAP} requests are waiting, so new ones are dropped until you decide some (the form still tells
-            people their request was received). Requests nobody decides are deleted after 30 days.
+            {waiting >= SIGNUP_PENDING_CAP
+              ? `${SIGNUP_PENDING_CAP} people are on the waitlist, so new sign-ups are dropped until you decide some`
+              : `${SIGNUP_DAILY_CAP} people joined the waitlist in the last 24 hours, so new sign-ups are dropped until that eases`}{" "}
+            (the form still tells people they are on the waitlist).
           </div>
         )}
         <div className="panel" style={{ maxWidth: 820 }}>
-          {pending.length === 0 && <div className="session-row" style={{ color: "var(--muted)", fontSize: 14 }}>No requests waiting.</div>}
+          {pending.length === 0 && <div className="session-row" style={{ color: "var(--muted)", fontSize: 14 }}>No one on the waitlist.</div>}
           {pending.map((r) => (
             <div key={r.id} className="session-row" style={{ alignItems: "flex-start" }}>
               {/* Ticks belong to the Decline selected form below (form attribute: no nested forms). */}
@@ -82,7 +87,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 name="ids"
                 value={r.id}
                 form="decline-selected"
-                aria-label={`Select the request from ${r.email}`}
+                aria-label={`Select ${r.email}`}
                 style={{ marginTop: 4 }}
               />
               <div style={{ minWidth: 0, flex: "1 1 320px" }}>
@@ -90,7 +95,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 <div style={{ fontSize: 13.5, color: "var(--fg-soft)", marginTop: 2 }}>{r.email}</div>
                 {r.note && <div style={{ fontSize: 13.5, marginTop: 8, whiteSpace: "pre-wrap", lineHeight: 1.45 }}>{r.note}</div>}
                 <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 8 }}>
-                  Asked {formatFull(r.createdAt)}
+                  Joined {formatFull(r.createdAt)}
                   {r.ip ? ` · ${r.ip}` : ""}
                   {r.userAgent ? ` · ${r.userAgent.slice(0, 80)}` : ""}
                 </div>
@@ -120,7 +125,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
           </div>
         )}
         <p className="form-hint" style={{ maxWidth: 720, lineHeight: 1.5 }}>
-          Declining deletes a request and emails no one. A request nobody decides is deleted 30 days after it was made.
+          Oldest first. Approving emails the person an invite; declining removes them from the waitlist and emails no one.
+          People stay on the waitlist until you decide.
         </p>
       </section>
 

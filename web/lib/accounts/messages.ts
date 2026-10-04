@@ -24,16 +24,16 @@ const ERRORS: Record<string, string> = {
   purge_running: "A purge of that user is already running. It disappears from this list when it is done.",
   own_account: "You cannot disable or enable your own account here.",
   admin_account: "Administrators' accounts are managed from the server, not here.",
-  none_selected: "No requests were ticked. Tick the ones to decline first.",
+  none_selected: "No one was ticked. Tick the ones to decline first.",
 };
 
 const NOTICES: Record<string, string> = {
   "signed-out": "You are signed out.",
   password: "Password changed. Every other browser signed in to this account has been signed out.",
   sessions: "Signed out.",
-  received: "Thanks — your request is in. If it is approved you will get an email with a link to choose a password.",
-  denied: "Request declined and deleted. No email was sent.",
-  denied_many: "Those requests were declined and deleted. No email was sent.",
+  received: "Thanks for signing up. We're at capacity right now, so you're on the waitlist. We'll email you when your spot opens.",
+  denied: "Declined and removed from the waitlist. No email was sent.",
+  denied_many: "Those were declined and removed from the waitlist. No email was sent.",
   disabled: "Account disabled: it cannot sign in, and its iPhones were disconnected.",
   enabled: "Account enabled again. Its iPhones stay disconnected until reconnected.",
   purged: "Everything stored for that user was deleted.",

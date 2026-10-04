@@ -7,12 +7,13 @@ import { errorMessage, noticeMessage, param } from "@/lib/accounts/messages";
 import { signupsOpen } from "@/lib/mode";
 import { currentSession } from "@/lib/viewer";
 
-// Ask for an account (accounts mode, with WEB_SIGNUPS on). The form posts to
-// /api/auth/signup, which records the request and tells the operator; it
-// creates nothing else. An administrator approves on /admin, and only then
-// does the person get an email with a link to choose a password.
+// Sign up (accounts mode, with WEB_SIGNUPS on). The form posts to
+// /api/auth/signup, which puts the person on the waitlist (a pending
+// request) and tells the operator; it creates nothing else, and the page
+// never says an account was made. An administrator approves on /admin, and
+// only then does the person get an email with a link to choose a password.
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Request access — PulsHealth" };
+export const metadata: Metadata = { title: "Sign up — PulsHealth" };
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -24,9 +25,9 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
 
   if (notice === "received") {
     return (
-      <AuthCard title="Request sent" notice={noticeMessage("received")}>
+      <AuthCard title="You're on the waitlist" notice={noticeMessage("received")}>
         <p className="form-hint" style={{ margin: 0, lineHeight: 1.5 }}>
-          Nothing is set up for you until then — no account, and nowhere for your iPhone to send data.{" "}
+          Until then nothing is set up for you, and your iPhone has nowhere to send data.{" "}
           <Link href="/login" style={{ textDecoration: "underline" }}>Back to sign in</Link>
         </p>
       </AuthCard>
@@ -35,8 +36,8 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
 
   return (
     <AuthCard
-      title="Request access"
-      subtitle="This viewer is run by one person for the people they approve. Ask, and you will hear back by email."
+      title="Create your PulsHealth account"
+      subtitle="Sync your iPhone's health data here, and see it all on the web."
       error={errorMessage(param(params.error))}
     >
       <form method="post" action="/api/auth/signup">
@@ -49,7 +50,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
           <input id="email" name="email" type="email" autoComplete="email" maxLength={254} required />
         </div>
         <div className="form-field">
-          <label htmlFor="note">A note for the operator (optional)</label>
+          <label htmlFor="note">Anything you would like us to know (optional)</label>
           <textarea
             id="note"
             name="note"
@@ -78,12 +79,12 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
           <input type="checkbox" name="consent" value="yes" required style={{ marginTop: 3 }} />
           <span>
             I have read the{" "}
-            <a href="https://pulshealth.com/privacy" style={{ textDecoration: "underline" }}>privacy policy</a>: if I am
-            approved, the health data my iPhone sends is stored on the operator&apos;s server.
+            <a href="https://pulshealth.com/privacy" style={{ textDecoration: "underline" }}>privacy policy</a>: once my
+            account is set up, the health data my iPhone sends is stored on the operator&apos;s server.
           </span>
         </label>
         <button type="submit" className="btn btn-primary btn-block">
-          Send request
+          Sign up
         </button>
       </form>
       <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>
