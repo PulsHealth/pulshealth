@@ -15,8 +15,10 @@ the throwaway review backend of [`review-backend.md`](review-backend.md).
 **The demo account** (maintainer only, at submission time):
 
 - Create it the way a stranger would, so it is a *self-service* account:
-  ask for access at `https://app.pulshealth.com/signup` with an address you
-  control, approve it on `/admin`, and choose its password from the invite
+  create an account at `https://app.pulshealth.com/signup` (the app's Create
+  Account) with an address you control, approve it on `/admin` (a new
+  sign-up lands on the waitlist and cannot pair until approved, so the
+  reviewer needs this pre-approved account), and choose its password from the invite
   email. A household account (`make web-invite`) will not do: its account
   page has no Connect this iPhone, so the reviewer could not pair.
 - Put its email and password in App Store Connect's **Sign-in required**
@@ -52,7 +54,7 @@ use; the QR scanner is offered for completeness.
 ```
 WHAT THIS APP IS
 
-PulsHealth copies the user's Apple Health data to a database the user runs, or to the PulsHealth database, which the developer runs for people whose access request they approve. It also works with no database (WITHOUT A DATABASE, below).
+PulsHealth copies the user's Apple Health data to a database the user runs, or to the PulsHealth database, which the developer hosts for people with a PulsHealth account (new accounts are let in by hand, so use the demo account below). It also works with no database (WITHOUT A DATABASE, below).
 
 DEMO ACCOUNT (PulsHealth database)
 
@@ -126,7 +128,7 @@ data arrives. This is the same shape as other HealthKit exporters on the store;
 the difference is that the destination is the user's own machine rather than a
 vendor's cloud, which is the feature, not a limitation. For someone who wants
 continuous sync without running a database, the app also offers the
-developer's own instance, the PulsHealth database, by approved request.
+developer's own instance, the PulsHealth database, with a PulsHealth account.
 
 ### "Is the app usable without a database?"
 
@@ -135,7 +137,7 @@ flow does not ask for a database at all. Its four pages are "Unlock your
 Health Data" (Explore, Export, Sync), Health access, one-time exports ("No
 account and no database needed"), and "Sync to a database" (the PulsHealth
 database or your own), which says it can be set up any time from the Sync tab
-and links to pulshealth.com/docs/server/ in Safari. The Sync tab of an install
+and links to pulshealth.com/#ways in Safari. The Sync tab of an install
 with no database carries a setup card ("Keep a copy in a database", with a Set
 Up button that opens the Database screen and its two choices) instead of
 looking broken. The App Store description says the same.
@@ -146,13 +148,13 @@ only when the user taps Export, in the foreground.
 ### "Why an account, and how is it deleted?"
 
 The PulsHealth database holds health data for people the developer does not
-know, so access is by request: the person asks on
-`app.pulshealth.com/signup`, the developer approves, and an email invites
-them to choose a password. Signing in happens on that website, in iOS's
+know, so new accounts are let in by hand: the person creates an account on
+`app.pulshealth.com/signup` (Create Account in the app), the developer
+approves it, and an email invites them to choose a password. Signing in happens on that website, in iOS's
 `ASWebAuthenticationSession`, and the app never sees the password; what it
 receives is the pairing code the account page makes for this iPhone. There
 is no third-party or social login, so Sign in with Apple is not required
-(4.8). Asking for access happens in the same sheet (Request Access), not in
+(4.8). Creating an account happens in the same sheet (Create Account), not in
 Safari. Deletion (5.1.1(v)): Delete PulsHealth Account, on Sync → Database
 whether or not the iPhone is connected and always under Settings → Privacy &
 Data, opens the account page's Delete my account section directly

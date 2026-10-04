@@ -99,11 +99,11 @@ struct ServerSettingsView: View {
         Section {
             destinationRow(
                 .pulsHealth, title: "PulsHealth Database",
-                detail: "Hosted by the developer. Needs an account.",
+                detail: "Hosted for you. Sign in or create an account.",
                 symbol: "person.crop.circle")
             destinationRow(
                 .own, title: "Your Own Database",
-                detail: "One you run, connected with its pairing code.",
+                detail: "One you run yourself, connected with its pairing code.",
                 symbol: "externaldrive.connected.to.line.below")
         } header: {
             Text("Sync To")
@@ -197,13 +197,24 @@ struct ServerSettingsView: View {
                 Text("Your account page lists the iPhones connected to your account, and is where you change your password.")
             }
             Section {
+                // Opens in Safari, like the other links: a page of the
+                // documentation, not a request the app makes.
+                Link(destination: PulsHealthDatabase.aiAssistantsURL) {
+                    Label("Connect an AI Assistant", systemImage: "sparkles")
+                }
+            } footer: {
+                Text("Sign in from Claude or another assistant and ask it about your Health data.")
+            }
+            Section {
                 Button("Disconnect", role: .destructive) { confirmDisconnect = true }
             } footer: {
                 Text("Syncing stops. What was already sent stays in the PulsHealth database until you delete your account.")
             }
         } else {
             Section {
-                Text("The PulsHealth database is run by the app’s developer, who can access what is stored in it and uses it only to show it back to you. Accounts are by request: ask for access, and once the developer approves it you get an email to choose a password.")
+                Text("Keep a live copy of your Health data, see it on the web at app.pulshealth.com, and connect Claude or another AI assistant to it.")
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("The PulsHealth database is run by the app’s developer, who can access what is stored in it and uses it only to show it back to you.")
                     .fixedSize(horizontal: false, vertical: true)
                 Link(destination: PulsHealthDatabase.privacyURL) {
                     Label("What the Developer Holds", systemImage: "hand.raised")
@@ -214,15 +225,15 @@ struct ServerSettingsView: View {
             Section {
                 sheetButton("Sign In to PulsHealth", systemImage: "person.crop.circle.badge.checkmark",
                             page: PulsHealthDatabase.accountURL)
-                sheetButton("Request Access", systemImage: "envelope",
-                            page: PulsHealthDatabase.requestAccessURL)
+                sheetButton("Create Account", systemImage: "person.crop.circle.badge.plus",
+                            page: PulsHealthDatabase.signUpURL)
                 if let signInProblem {
                     Label(signInProblem, systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
             } footer: {
-                Text("Sign in, tap Connect this iPhone, then Open in PulsHealth. Once you have asked for access, close the page; the email comes when the developer approves it.")
+                Text("Sign in, tap Connect this iPhone, then Open in PulsHealth. New here? Create an account first.")
             }
         }
         // App Review 5.1.1(v): an app that leads people to an account lets
@@ -395,11 +406,11 @@ struct ServerSettingsView: View {
         applyPairing(payload)
     }
 
-    /// Sign In to PulsHealth, or Request Access: one of the viewer's pages in
+    /// Sign In to PulsHealth, or Create Account: one of the viewer's pages in
     /// iOS's web authentication sheet. On the account page the person signs
     /// in, taps Connect this iPhone, then Open in PulsHealth, whose
     /// `puls://pair?…` link the sheet hands back here; on the sign-up page
-    /// they ask for access and close the sheet.
+    /// they create an account and close the sheet.
     ///
     /// The shared browser session, not an ephemeral one, so a sign-in done in
     /// Safari — where the invite to choose a password opens — carries over,

@@ -56,7 +56,7 @@ as two (3,997 today), as the review notes do.
 ```
 PulsHealth lets you explore your iPhone's health data, export it to files, and sync it to a database: one you run yourself, or the PulsHealth database, with an account.
 
-The app uploads only to the database you set up, and nowhere else. Run your own and the developer never receives your data. Choose the PulsHealth database, by approved request, and the developer holds it for you alone.
+The app uploads only to the database you set up, and nowhere else. Run your own and the developer never receives your data. Choose the PulsHealth database, with a PulsHealth account, and the developer holds it for you alone.
 
 Your own database takes one Docker command: the open-source PulsHealth stack sets up PostgreSQL, Grafana, a web viewer, an API and an MCP server for AI assistants. Or use one you already run, through the open sync protocol.
 
@@ -90,7 +90,7 @@ PulsHealth is Apache-2.0 licensed. The app, the sync library, the wire protocol 
 
 REQUIREMENTS
 
-iPhone running iOS 17 or later. Syncing needs a database you can reach: your own, or an approved PulsHealth account. Exploring and exporting need neither. Apple Watch data arrives once iOS syncs it to the phone.
+iPhone running iOS 17 or later. Syncing needs a database you can reach: your own, or a PulsHealth account. Exploring and exporting need neither. Apple Watch data arrives once iOS syncs it to the phone.
 ```
 
 `[3961/4000]`
@@ -151,7 +151,7 @@ Answer every content question **None / No**. The result is **4+**.
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
 | Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. A Type page also shows one line on what the type measures and, behind the value histogram, the typical range from the project's knowledge base — general reference, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
-| Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth (or Request Access) opens `app.pulshealth.com/account` (or `/signup`) in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the account flow on that site (sign in or ask for access, then Connect this iPhone), and closes when that page hands back the pairing code or the person closes it. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/docs/server/), and the PulsHealth database's What the Developer Holds, Manage Account and Delete PulsHealth Account (app.pulshealth.com and pulshealth.com/privacy). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
+| Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth (or Create Account) opens `app.pulshealth.com/account` (or `/signup`) in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the account flow on that site (sign in or create an account, then Connect this iPhone), and closes when that page hands back the pairing code or the person closes it. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/#ways), and the PulsHealth database's What the Developer Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth Account (app.pulshealth.com, pulshealth.com/privacy and pulshealth.com/docs/ai/). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
 | User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, database URL, token) is shared with any other user or with the developer. |
 | Gambling and contests | No | — |
 | In-app purchases | No | No StoreKit. |
@@ -189,7 +189,7 @@ developer's own database:
    `pulshealth.com` (documentation, the privacy policy) and
    `https://app.pulshealth.com` (`PulsHealth/Sources/PulsHealthDatabase.swift`),
    whose account and sign-up pages open in an `ASWebAuthenticationSession`
-   when the person taps Sign In to PulsHealth or Request Access.
+   when the person taps Sign In to PulsHealth or Create Account.
    The database's own address, a token and the user ID come back from that
    page as an ordinary pairing code, and no health data is uploaded until
    the person taps Save & Apply (before that, only a connection test). (1.6 and earlier have no sign-in sheet and
@@ -239,12 +239,12 @@ required-reason API, `NSPrivacyAccessedAPICategoryUserDefaults` with reason
 |---|---|
 | Encryption (`ITSAppUsesNonExemptEncryption`) | `false`, already in `Info.plist`. The app uses only HTTPS through the OS, which is exempt. No compliance documentation is needed. |
 | Content rights | The app contains no third-party content. |
-| Sign in with Apple | Not required (guideline 4.8 applies to third-party or social login, and there is none). The PulsHealth database's account is the developer's own email-and-password account, created on its website by approved request; the app opens its sign-in page and never sees the password. |
+| Sign in with Apple | Not required (guideline 4.8 applies to third-party or social login, and there is none). The PulsHealth database's account is the developer's own email-and-password account, created on its website (Create Account opens its sign-up page; the developer lets new accounts in by hand); the app opens its sign-in page and never sees the password. |
 | Made for Kids | No. |
 | Price | Free. |
 | Availability | All territories. |
 | App Review contact | The maintainer fills this in — App Store Connect asks for a name, phone number and e-mail address, which are personal details and are deliberately not stored in this repository. |
-| Demo account | Yes: a self-service demo account on the PulsHealth database, which the maintainer creates and approves at submission time and purges after review. Its email and password go in App Store Connect's sign-in fields and the notes' placeholders, never in this repository. See [`review-notes.md`](review-notes.md); the throwaway database of [`review-backend.md`](review-backend.md) is now optional, for the your-own-database path. (Explore and Export work without either, and the notes say so.) |
+| Demo account | Yes: a self-service demo account on the PulsHealth database, which the maintainer creates and approves at submission time (a new sign-up waits on the waitlist until approved, so the reviewer cannot make one) and purges after review. Its email and password go in App Store Connect's sign-in fields and the notes' placeholders, never in this repository. See [`review-notes.md`](review-notes.md); the throwaway database of [`review-backend.md`](review-backend.md) is now optional, for the your-own-database path. (Explore and Export work without either, and the notes say so.) |
 
 ## Version information
 

@@ -106,8 +106,10 @@ account, the signing team, a real device or personal contact details.
 ### Review backend
 
 - [ ] **maintainer only** — Create the demo account on the PulsHealth
-      database as a self-service account (ask for access on `/signup`,
-      approve it on `/admin`, choose its password from the invite), and put
+      database as a self-service account (Create Account on `/signup`,
+      approve it on `/admin`, choose its password from the invite). It must
+      be pre-approved: a new sign-up lands on the waitlist, so a reviewer
+      cannot create a working account. Put
       its email and password in App Store Connect's sign-in fields
       ([`review-notes.md`](review-notes.md) § Before you submit).
 - [ ] Optional, for the notes' YOUR OWN DATABASE block: stand up the

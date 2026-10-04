@@ -90,7 +90,7 @@ struct SyncView: View {
     private var setupCard: some View {
         CardSection(
             "Keep a copy in a database",
-            subtitle: "Nothing is syncing yet. Use the PulsHealth database, with an account, or one you run yourself, and new data is sent as it arrives. Until then, the Export tab writes files without one."
+            subtitle: "Optional. Sync new data as it arrives, with a PulsHealth account or to a database you run yourself. Exploring and exporting never need one."
         ) {
             // One way in. The Database screen it opens asks which of the two
             // first: the PulsHealth database (sign in) or your own (scan,

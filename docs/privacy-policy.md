@@ -101,10 +101,10 @@ your own database, with a warning naming its address, never as the
 PulsHealth database; and the PulsHealth database is always shown with its
 address. Before you tap Save & Apply it does one thing with it: a connection
 test, which asks that database what it supports, using the token, and
-uploads no health data. Closing the sheet changes nothing. Request Access
-opens the developer's request form in the same sheet; What the Developer
-Holds, Manage Account and Delete PulsHealth Account open the developer's
-pages in Safari, outside the app. A pairing code from the account page
+uploads no health data. Closing the sheet changes nothing. Create Account
+opens the developer's sign-up form in the same sheet; What the Developer
+Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth
+Account open the developer's pages in Safari, outside the app. A pairing code from the account page
 opened on the iPhone in Safari (where the invite email leads) instead
 reaches the app as an ordinary pairing link, which the app asks you to
 confirm and then treats like any database's. (Versions up to 1.6 have no
@@ -277,7 +277,7 @@ provider's responsibility are yours:
 The developer runs one PulsHealth database of their own, with the web viewer
 at `app.pulshealth.com` — the **PulsHealth database** the app offers under
 Sync → Database. Family and friends get an invite; anyone else can sign up
-there (the app's Request Access opens the form) and joins a waitlist, and
+there (the app's Create Account opens the form) and joins a waitlist, and
 the developer lets people in from it. What happens to your data:
 
 - **Signing up.** The sign-up form stores your name, email address, an
