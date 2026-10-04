@@ -9,6 +9,7 @@ import { trustProxyHeaders, viewerMode } from "@/lib/mode";
 import { isOAuthPath, OAUTH_AUTHORIZE_PATH, OAUTH_DECISION_PATH, oauthConfig } from "@/lib/oauth/config";
 import { redirectOrigin } from "@/lib/oauth/validate";
 import { contentSecurityPolicy, newNonce } from "@/lib/securityHeaders";
+import { PATH_HEADER } from "@/lib/shell";
 import { safeReturnPath, USER_COOKIE, userCookieOptions } from "@/lib/viewer";
 
 // The gate in front of every request, in all three modes (lib/mode.ts).
@@ -78,6 +79,9 @@ function serve(request: NextRequest, nonce: string, csp: string): NextResponse {
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
+  // The layout serves pages under /oauth/ without the sidebar (app/layout.tsx).
+  // Always overwritten, so a client cannot choose it; it only picks a frame.
+  headers.set(PATH_HEADER, request.nextUrl.pathname);
   // The consent form posts to the page's own address; its handler lives beside it.
   if (request.method === "POST" && request.nextUrl.pathname === OAUTH_AUTHORIZE_PATH) {
     return NextResponse.rewrite(new URL(OAUTH_DECISION_PATH, request.url), { request: { headers } });

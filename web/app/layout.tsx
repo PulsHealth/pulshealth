@@ -10,6 +10,7 @@ import { getDataSource, getUsers } from "@/lib/queries";
 import { configuredTimeZone } from "@/lib/config";
 import { viewerMode } from "@/lib/mode";
 import { currentSession, viewerUser } from "@/lib/viewer";
+import { isBarePage, PATH_HEADER } from "@/lib/shell";
 
 export const metadata: Metadata = {
   title: "PulsHealth",
@@ -34,7 +35,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   await connection();
   // proxy.ts puts a fresh nonce in the Content-Security-Policy; the one inline
   // script here must carry it or the browser refuses to run it.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const timeZone = configuredTimeZone();
   const runtimeScript = `window.__PULS_TIME_ZONE__=${JSON.stringify(timeZone).replace(/</g, "\\u003c")};${themeScript}`;
   return (
@@ -45,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <div className="app-bg" />
         <div className="grain" />
-        <UnitsProvider>{await shell(children)}</UnitsProvider>
+        <UnitsProvider>{await shell(children, requestHeaders.get(PATH_HEADER))}</UnitsProvider>
       </body>
     </html>
   );
@@ -54,8 +56,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 // The sidebar and content column, or — in accounts mode, for someone not
 // signed in — just the page, centred: the sign-in and invite pages are the
 // only ones proxy.ts lets them reach, and a sidebar of links they cannot
-// follow would only bounce them back to sign in.
-async function shell(children: React.ReactNode) {
+// follow would only bounce them back to sign in. The OAuth consent page is
+// bare too, signed in or not: it stands in for another app's sign-in, and a
+// sidebar above it (on a phone) pushes the question off the screen.
+async function shell(children: React.ReactNode, pathname: string | null) {
+  if (isBarePage(pathname)) return <main className="auth-shell">{children}</main>;
   if (viewerMode() === "accounts") {
     // No switcher and no list of users: the session's user is the only one.
     const session = await currentSession().catch(() => null);
