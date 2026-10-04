@@ -4,7 +4,7 @@ import { decideAccounts, unauthenticatedAnswer } from "@/lib/accounts/policy";
 import { isSameOriginRequest, isSecureRequest, publicOrigin } from "@/lib/accounts/request";
 import { findSession, SESSION_COOKIE, sessionCookieAttributes } from "@/lib/accounts/session";
 import { AUTH_REALM, authorize } from "@/lib/auth";
-import { UUID_RE } from "@/lib/config";
+import { isUuid } from "@/lib/uuid";
 import { trustProxyHeaders, viewerMode } from "@/lib/mode";
 import { contentSecurityPolicy, newNonce } from "@/lib/securityHeaders";
 import { safeReturnPath, USER_COOKIE, userCookieOptions } from "@/lib/viewer";
@@ -172,6 +172,6 @@ function userFromQuery(request: NextRequest): string | null {
   const { pathname, searchParams } = request.nextUrl;
   if (pathname.startsWith("/api/") || pathname.startsWith("/_next/")) return null;
   const value = searchParams.get("user");
-  if (!value || !UUID_RE.test(value)) return null;
+  if (!value || !isUuid(value)) return null;
   return value.toLowerCase();
 }

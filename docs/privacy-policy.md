@@ -88,7 +88,10 @@ this iPhone and then Open in PulsHealth hand the app a pairing code — the
 database's address, a token for this iPhone and your user ID — which fills
 in the database fields, and shows the database it points to. The app
 accepts only a pairing code from that sheet and checks it like a scanned
-one. Before you tap Save & Apply it does one thing with it: a connection
+one. A code whose database is not under `pulshealth.com` is filled in as
+your own database, with a warning naming its address, never as the
+PulsHealth database; and the PulsHealth database is always shown with its
+address. Before you tap Save & Apply it does one thing with it: a connection
 test, which asks that database what it supports, using the token, and
 uploads no health data. Closing the sheet changes nothing. Request Access
 opens the developer's request form in the same sheet; What the Developer
@@ -151,7 +154,9 @@ Transport Security (`NSAllowsLocalNetworking`).
   of each background wake (when it ran, how long, how many samples moved). They
   stay on the device unless *you* share them from the Background Activity
   screen, which writes them to the app's temporary directory for the share
-  sheet. They hold counts and timings, not health values.
+  sheet and deletes them when you leave that screen (and at the next launch,
+  if the app was closed first). They hold counts and timings, not health
+  values.
 - **App preferences** — four `UserDefaults` flags (whether Health access has
   been requested, whether medication access has been requested, whether the
   first-run flow has been completed, and the background-task schedule status).
@@ -236,8 +241,11 @@ provider's responsibility are yours:
 - **TLS.** The app requires HTTPS for anything that is not a local-network
   host, but the certificate and the reverse proxy in front of the ingest
   endpoint are yours to provide.
-- **The bearer token.** It is a single shared secret. Anyone who has it can
-  upload and delete data in your database. Rotate it if it leaks.
+- **The tokens that let a phone write.** While the shared `PULS_TOKEN` is
+  enabled, anyone who has it can upload and delete data for any user in your
+  database. A per-device token is bound to one user and can be revoked on its
+  own; once every phone has one, turn the shared token off
+  (`PULS_ALLOW_SHARED_TOKEN=false`). Rotate or revoke any token that leaks.
 - **Data at rest, backups, and deletion.** Your database holds identifiable
   health data. Encryption at rest, retention, and honouring your own deletion
   requests are yours to arrange. The project ships a backup service, but it is
@@ -263,7 +271,9 @@ decides. What happens to your data:
   an optional note, and your browser's IP address and name, and emails them
   to the developer. Nothing else is created for you, and your iPhone cannot
   send anything, unless the developer approves. A declined request is
-  deleted at once; an approved one 30 days after the decision. If you are
+  deleted at once; an approved one 30 days after the decision; one nobody
+  decides, 30 days after you made it. While too many requests are waiting,
+  a new one is not stored at all (the form answers the same either way). If you are
   approved but never use the invite, everything made for you is deleted 30
   days after the last invite was sent.
 - **The app still works exactly as described above.** Once approved, you

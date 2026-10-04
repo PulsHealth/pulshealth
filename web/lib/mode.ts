@@ -39,10 +39,35 @@ export function signupsOpen(env: Env = process.env): boolean {
 }
 
 /**
+ * A boolean setting the way ingest, the product API and the MCP server read
+ * one (parseBoolEnv in each): true/1/yes/on or false/0/no/off, any case,
+ * surrounding space ignored; empty or unset is `fallback`. Anything else
+ * throws, naming the variable — a typo must not quietly mean "off" here and
+ * "on" in a Go service.
+ */
+export function parseFlag(name: string, value: string | undefined, fallback = false): boolean {
+  const v = (value ?? "").trim().toLowerCase();
+  if (v === "") return fallback;
+  if (v === "true" || v === "1" || v === "yes" || v === "on") return true;
+  if (v === "false" || v === "0" || v === "no" || v === "off") return false;
+  throw new Error(
+    `${name} must be true or false (also accepted: 1/0, yes/no, on/off), got ${JSON.stringify((value ?? "").trim())}`,
+  );
+}
+
+/**
  * Whether X-Forwarded-* and CF-Connecting-IP may be believed. Same switch,
- * same default and same caveat as ingest and the product API: only when a
- * proxy that overwrites those headers is the ONLY way to reach the port.
+ * same spelling rule (parseFlag), same default and same caveat as ingest and
+ * the product API: only when a trusted proxy is the ONLY way to reach the
+ * port (the client IP is then the last entry of the header, the one that
+ * proxy appended). An unparseable value stops the server at startup
+ * (instrumentation.ts); should one reach a request anyway, it means "do not
+ * trust", the safe reading.
  */
 export function trustProxyHeaders(env: Env = process.env): boolean {
-  return isTrue(env.TRUST_PROXY_HEADERS);
+  try {
+    return parseFlag("TRUST_PROXY_HEADERS", env.TRUST_PROXY_HEADERS);
+  } catch {
+    return false;
+  }
 }

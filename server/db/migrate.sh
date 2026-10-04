@@ -28,6 +28,10 @@
 #                  (roles and passwords, the calendar zone) and are never
 #                  recorded.
 #
+# Runs are serialised: each holds a PostgreSQL advisory lock from just after
+# the database answers until it exits, so a second run (`make migrate` during
+# `docker compose up -d`) waits and then finds the first one's work recorded.
+#
 # Connection (the Compose service sets these; defaults suit it):
 #   PGHOST (db)  PGPORT (5432)  POSTGRES_USER (postgres)  POSTGRES_DB (postgres)
 #   PGPASSWORD, or POSTGRES_PASSWORD as its fallback
@@ -178,6 +182,46 @@ done
 [[ ${#files[@]} -gt 0 ]] || die "no migrations found in $MIGRATIONS_DIR"
 
 wait_for_db
+
+# One run at a time. Two runs at once — `make migrate` while `docker compose
+# up -d` starts the migrate service — would both see a pending file as
+# unrecorded and apply it twice. The lock is a session-level advisory lock,
+# and this script talks to the database through many short psql sessions
+# (and the *.sh files through their own), so one session lives for the whole
+# run just to hold it: a psql in the background reading its commands from a
+# pipe this script keeps open. Nothing more is ever written to the pipe; it
+# closes when this script exits, however it exits (an error, a signal, the
+# container stopping), and psql then ends its session, which releases the
+# lock. The other sessions poll pg_locks until that session holds it, so a
+# second run waits here, before reading anything, and then sees the first
+# run's records.
+MIGRATE_LOCK_KEY="1886743667, 1" # ('puls' as an int4, 1): pg_advisory_lock(int, int)
+lock_app="puls-migrate-lock-$$"
+take_migrate_lock() {
+  local state waited=0 lock_pid
+  exec {lock_fd}> >(PGAPPNAME="$lock_app" exec psql -X -q -w -o /dev/null -v ON_ERROR_STOP=1 \
+                      --username "$POSTGRES_USER" --dbname "$POSTGRES_DB")
+  lock_pid=$!
+  printf 'SELECT pg_advisory_lock(%s);\n' "$MIGRATE_LOCK_KEY" >&"$lock_fd"
+  while :; do
+    # t: held; f: queued behind another run; empty: not connected yet.
+    state="$(sql -v app="$lock_app" <<'EOSQL'
+SELECT l.granted
+FROM pg_stat_activity a
+JOIN pg_locks l ON l.pid = a.pid AND l.locktype = 'advisory'
+WHERE a.application_name = :'app' AND a.datname = current_database();
+EOSQL
+)"
+    [[ $state == t ]] && return 0
+    kill -0 "$lock_pid" 2>/dev/null || die "could not take the migration lock on $target (its psql session ended)"
+    if [[ $state == f ]] && (( waited % 30 == 0 )); then
+      log "another migrate run holds the migration lock on $target; waiting for it to finish"
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+}
+take_migrate_lock
 
 # The timescaledb-ha image ships every versioned timescaledb-*.so back to
 # 2.17 and does not run ALTER EXTENSION on an existing volume, so a database

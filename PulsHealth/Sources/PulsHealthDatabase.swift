@@ -17,6 +17,27 @@ enum PulsHealthDatabase {
     /// The viewer, in accounts mode with access requests on.
     static let viewerURL = URL(string: "https://app.pulshealth.com")!
 
+    /// The viewer's registrable domain. A sign-in's pairing code counts as
+    /// the PulsHealth database only when its database is under it
+    /// (`ServerFieldsDraft.fill(fromSignIn:domain:)`): the sheet is a
+    /// browser, and any page it reached could have sent a `puls://pair` link.
+    /// `PulsHealthDatabaseTests` checks `viewerURL` is under it.
+    static let domain = "pulshealth.com"
+
+    /// Whether `url`'s host is under `domain`.
+    static func isUnderDomain(_ url: URL?) -> Bool {
+        guard let url else { return false }
+        return ServerFieldsDraft.host(of: url, isWithin: domain)
+    }
+
+    /// Whether `configuration` syncs to the PulsHealth database: paired by
+    /// signing in (`SyncConfiguration.isSignedInDatabase`) *and* under
+    /// `domain`. The second half also covers a configuration a 1.6 build
+    /// marked signed-in for a code from any host.
+    static func isSignedIn(_ configuration: SyncConfiguration) -> Bool {
+        configuration.isSignedInDatabase && isUnderDomain(configuration.serverURL)
+    }
+
     /// The account page: Connect this iPhone (which makes this iPhone's
     /// pairing code), the iPhones connected to the account, and Delete my
     /// account. Signed out, it sends the visitor to the sign-in page, which

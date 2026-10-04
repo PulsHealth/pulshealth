@@ -139,7 +139,7 @@ const productAPIDocsHTML = `<!doctype html>
   <p class="muted">Read-only API for downstream products that use PulsHealth data.</p>
 
   <h2>Access</h2>
-  <p>Send <code>Authorization: Bearer $PULS_API_TOKEN</code> on every data request. Discovery endpoints <code>/</code>, <code>/docs</code>, <code>/openapi.json</code>, and <code>/healthz</code> are available without the token.</p>
+  <p>Send <code>Authorization: Bearer $PULS_API_TOKEN</code> on every data request. Discovery endpoints <code>/</code>, <code>/docs</code>, <code>/openapi.json</code>, and <code>/healthz</code> are available without the token. A wrong or missing token is a <code>401</code>; after ten of them from one address in quick succession, that address gets <code>429</code> with <code>Retry-After</code> (ten more a minute, one every six seconds) until it slows down. A correct token is never throttled.</p>
   <pre><code>curl -H "Authorization: Bearer $PULS_API_TOKEN" "$PULS_API_BASE_URL/v1/catalog/types"</code></pre>
   <p>Every data request is answered for one user. By default that is the deployment&rsquo;s <code>PULS_USER_ID</code>; add <code>user=&lt;uuid&gt;</code> to any <code>/v1</code> query to ask about someone else. That is only allowed when the server runs with <code>PULS_MULTI_USER=true</code> &mdash; otherwise naming any other user is a <code>403</code>, never a quiet answer for the default user &mdash; and a value that is not a UUID is a <code>400</code>. Neither counts against the failed-authentication limit. <code>GET /v1/users</code> lists the users this deployment will answer for, with their upload counts.</p>
 
@@ -158,7 +158,7 @@ const productAPIDocsHTML = `<!doctype html>
   <table>
     <thead><tr><th>Method</th><th>Path</th><th>Query</th><th>Returns</th></tr></thead>
     <tbody>
-      <tr><td><code>GET</code></td><td><code>/v1/users</code></td><td></td><td>Who this deployment answers for: each user with name, e-mail, last sync and upload counts, plus the default user and whether <code>user=</code> may name others.</td></tr>
+      <tr><td><code>GET</code></td><td><code>/v1/users</code></td><td></td><td>Who this deployment answers for: each user with name, e-mail, last sync and upload counts, plus the default user, whether <code>user=</code> may name others, and <code>timeZone</code>, the <code>PULS_TIME_ZONE</code> every local day is cut in.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/profile</code></td><td></td><td>The user&rsquo;s profile fields.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/catalog/types</code></td><td></td><td>Available HealthKit identifiers, kind, unit, raw/aggregate row counts, earliest/latest timestamps.</td></tr>
       <tr><td><code>GET</code></td><td><code>/v1/metrics/latest</code></td><td><code>types=a,b</code></td><td>Latest quantity value per requested identifier.</td></tr>
@@ -193,10 +193,10 @@ const productAPIDocsHTML = `<!doctype html>
   <p><code>/v1/export</code> returns a whole range as a file rather than a JSON document, for a spreadsheet, a notebook, or a chat attachment. Both parameters are required: <code>format</code> is <code>csv</code> or <code>jsonl</code>, <code>dataset</code> is one of <code>daily_metrics</code>, <code>samples</code>, <code>workouts</code>, <code>sleep</code>, <code>activity</code>, <code>state_of_mind</code>. <code>start</code> and <code>end</code> are required for every dataset; <code>daily_metrics</code> also takes <code>types</code>, <code>samples</code> takes <code>type</code>, and <code>workouts</code> takes an optional <code>activityType</code>.</p>
   <pre><code>curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
   "$PULS_API_BASE_URL/v1/export?format=csv&amp;dataset=sleep&amp;start=1735689600000&amp;end=1738368000000"</code></pre>
-  <p>The response is streamed (<code>Transfer-Encoding: chunked</code>) and arrives as an attachment called <code>puls-&lt;dataset&gt;-&lt;start&gt;-&lt;end&gt;.&lt;csv|jsonl&gt;</code>. CSV opens with a header row; JSONL writes one JSON object per line whose keys are exactly those column names. Field names are the JSON endpoints' names; where an endpoint nests, the export flattens — a metric's days become one row each carrying <code>identifier</code> and <code>unit</code>, a night's stage minutes become <code>stages.core</code>, <code>stages.deep</code> and so on, and a list (a workout's <code>availableMetrics</code>, an entry's <code>labels</code>) is comma-joined inside its CSV cell and stays an array in JSONL. Ranges are capped at 31 days for <code>samples</code>, as on <code>/v1/samples</code>, and 366 days for every other dataset — the cap <code>/v1/sleep/daily</code> and <code>/v1/state-of-mind</code> already apply, and deliberately stricter than <code>/v1/metrics/daily</code> and <code>/v1/workouts</code>, which are bounded by a page size instead, and <code>/v1/activity/summary</code>, which is one small row per day. <code>daily_metrics</code> and <code>workouts</code> return the whole range (workouts newest first); <code>limit</code> and <code>offset</code> do not apply to an export. At most two exports run at once — each holds a database connection for the length of the download — and a third gets a <code>503</code> with <code>Retry-After</code>. A failure after the first rows are on the wire aborts the connection, so a truncated file is always a visibly failed download rather than a short one.</p>
+  <p>The response is streamed (<code>Transfer-Encoding: chunked</code>) and arrives as an attachment called <code>puls-&lt;dataset&gt;-&lt;start&gt;-&lt;end&gt;.&lt;csv|jsonl&gt;</code>. CSV opens with a header row; JSONL writes one JSON object per line whose keys are exactly those column names. Field names are the JSON endpoints' names; where an endpoint nests, the export flattens — a metric's days become one row each carrying <code>identifier</code> and <code>unit</code>, a night's stage minutes become <code>stages.core</code>, <code>stages.deep</code> and so on, and a list (a workout's <code>availableMetrics</code>, an entry's <code>labels</code>) is comma-joined inside its CSV cell and stays an array in JSONL. Ranges are capped at 31 days for <code>samples</code>, as on <code>/v1/samples</code>, and 366 days for every other dataset — the cap <code>/v1/sleep/daily</code> and <code>/v1/state-of-mind</code> already apply, and deliberately stricter than <code>/v1/metrics/daily</code> and <code>/v1/workouts</code>, which are bounded by a page size instead, and <code>/v1/activity/summary</code>, which is one small row per day. <code>daily_metrics</code> and <code>workouts</code> return the whole range (workouts newest first); <code>limit</code> and <code>offset</code> do not apply to an export. At most two exports run at once — each holds a database connection for the length of the download — and a third gets a <code>503</code> with <code>Retry-After</code>. An export ends after 30 minutes, and one whose client stops reading for a minute is dropped. A failure after the first rows are on the wire aborts the connection, so a truncated file is always a visibly failed download rather than a short one.</p>
 
   <h2>Conventions</h2>
-  <p>Every <code>/v1</code> endpoint takes the optional <code>user</code> parameter described under Access. All timestamps are epoch milliseconds (0 to 253402300799999; anything else is a <code>400</code>). Workout ranges are <code>[start, end)</code> on the workout start time. The daily endpoints (<code>/v1/metrics/daily</code>, <code>/v1/activity/summary</code>) return every local calendar day — in the server's configured zone, <code>PULS_TIME_ZONE</code> — that overlaps <code>[start, end)</code>, so a range that touches one minute of a day returns that whole day. Paged endpoints (<code>/v1/metrics/daily</code>, <code>/v1/workouts</code>, <code>/v1/samples</code>) take <code>limit</code> and <code>offset</code> and answer with <code>nextOffset</code>; a page shorter than <code>limit</code> is the last. <code>/v1/sleep/daily</code> and <code>/v1/state-of-mind</code> use those same local days and reject ranges over 366 days. Empty result sets return empty arrays.</p>
+  <p>Every <code>/v1</code> endpoint takes the optional <code>user</code> parameter described under Access. All timestamps are epoch milliseconds (0 to 253402300799999; anything else is a <code>400</code>). Workout ranges are <code>[start, end)</code> on the workout start time. The daily endpoints (<code>/v1/metrics/daily</code>, <code>/v1/activity/summary</code>) return every local calendar day — in the server's configured zone, <code>PULS_TIME_ZONE</code> — that overlaps <code>[start, end)</code>, so a range that touches one minute of a day returns that whole day. Paged endpoints (<code>/v1/metrics/daily</code>, <code>/v1/workouts</code>, <code>/v1/samples</code>) take <code>limit</code> and <code>offset</code> and answer with <code>nextOffset</code>; a page shorter than <code>limit</code> is the last. <code>/v1/sleep/daily</code> and <code>/v1/state-of-mind</code> use those same local days and reject ranges over 366 days. A <code>types</code> list names at most 50 identifiers. A query that runs longer than 30 seconds is a <code>504</code>: narrow the range. Empty result sets return empty arrays.</p>
 </main>
 </body>
 </html>
@@ -548,7 +548,7 @@ const productAPIOpenAPIJSON = `{
         "operationId": "listUsers",
         "summary": "Users this deployment answers for",
         "description": "Every user with the gate on (PULS_MULTI_USER=true); only the default user with it off. default is the user served when a request names none (PULS_USER_ID); multiUser says whether ?user= may name anyone else.",
-        "responses": { "200": { "description": "Users", "content": { "application/json": { "schema": { "type": "object", "properties": { "users": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }, "default": { "type": "string", "format": "uuid" }, "multiUser": { "type": "boolean" } } } } } } }
+        "responses": { "200": { "description": "Users", "content": { "application/json": { "schema": { "type": "object", "properties": { "users": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }, "default": { "type": "string", "format": "uuid" }, "multiUser": { "type": "boolean" }, "timeZone": { "type": "string", "description": "The IANA zone (PULS_TIME_ZONE) every local day this API answers with is cut in, e.g. Europe/Berlin; UTC when unset." } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/profile": {
@@ -556,7 +556,7 @@ const productAPIOpenAPIJSON = `{
         "operationId": "getProfile",
         "summary": "User profile",
         "parameters": [{ "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." }],
-        "responses": { "200": { "description": "Profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } }, "401": { "description": "Unauthorized" }, "404": { "description": "Profile not found" } }
+        "responses": { "200": { "description": "Profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } }, "401": { "description": "Unauthorized" }, "404": { "description": "Profile not found" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/catalog/types": {
@@ -564,7 +564,7 @@ const productAPIOpenAPIJSON = `{
         "operationId": "listCatalogTypes",
         "summary": "Available data types",
         "parameters": [{ "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." }],
-        "responses": { "200": { "description": "Catalog", "content": { "application/json": { "schema": { "type": "object", "properties": { "types": { "type": "array", "items": { "$ref": "#/components/schemas/CatalogType" } } } } } } } }
+        "responses": { "200": { "description": "Catalog", "content": { "application/json": { "schema": { "type": "object", "properties": { "types": { "type": "array", "items": { "$ref": "#/components/schemas/CatalogType" } } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/metrics/latest": {
@@ -573,8 +573,8 @@ const productAPIOpenAPIJSON = `{
         "summary": "Latest quantity metrics",
         "parameters": [
           { "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." },
-          { "name": "types", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers." }],
-        "responses": { "200": { "description": "Latest metrics", "content": { "application/json": { "schema": { "type": "object", "properties": { "metrics": { "type": "array", "items": { "$ref": "#/components/schemas/LatestMetric" } } } } } } } }
+          { "name": "types", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers, at most 50." }],
+        "responses": { "200": { "description": "Latest metrics", "content": { "application/json": { "schema": { "type": "object", "properties": { "metrics": { "type": "array", "items": { "$ref": "#/components/schemas/LatestMetric" } } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/metrics/daily": {
@@ -584,13 +584,13 @@ const productAPIOpenAPIJSON = `{
         "description": "One value per local calendar day (in the server's PULS_TIME_ZONE) for each requested type, every day overlapping [start, end). Paged in days across the requested types: limit and offset count day rows, not metrics, in the order the response nests them (the requested types in request order, each ascending by day); nextOffset is offset plus the rows on the page and a page shorter than limit is the last. The default page holds a year of 27 types.",
         "parameters": [
           { "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." },
-          { "name": "types", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers; the response keeps this order." },
+          { "name": "types", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers, at most 50; the response keeps this order." },
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 10000, "maximum": 50000 }, "description": "Day rows per page, across all requested types; larger values are clamped." },
           { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "default": 0 }, "description": "Day rows to skip; pass the previous page's nextOffset." }
         ],
-        "responses": { "200": { "description": "Daily metrics", "content": { "application/json": { "schema": { "type": "object", "properties": { "metrics": { "type": "array", "items": { "$ref": "#/components/schemas/DailyMetric" } }, "nextOffset": { "type": "integer", "description": "Offset to pass for the next page; a page with fewer day rows than limit means the end." } } } } } }, "400": { "description": "Missing types or range, or an invalid limit or offset" } }
+        "responses": { "200": { "description": "Daily metrics", "content": { "application/json": { "schema": { "type": "object", "properties": { "metrics": { "type": "array", "items": { "$ref": "#/components/schemas/DailyMetric" } }, "nextOffset": { "type": "integer", "description": "Offset to pass for the next page; a page with fewer day rows than limit means the end." } } } } } }, "400": { "description": "Missing types or range, or an invalid limit or offset" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/activity/summary": {
@@ -602,7 +602,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
         ],
-        "responses": { "200": { "description": "Activity days", "content": { "application/json": { "schema": { "type": "object", "properties": { "days": { "type": "array", "items": { "$ref": "#/components/schemas/ActivityDay" } } } } } } } }
+        "responses": { "200": { "description": "Activity days", "content": { "application/json": { "schema": { "type": "object", "properties": { "days": { "type": "array", "items": { "$ref": "#/components/schemas/ActivityDay" } } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/workouts": {
@@ -617,7 +617,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 50, "maximum": 200 } },
           { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "default": 0 } }
         ],
-        "responses": { "200": { "description": "Workouts", "content": { "application/json": { "schema": { "type": "object", "properties": { "workouts": { "type": "array", "items": { "$ref": "#/components/schemas/WorkoutSummary" } }, "nextOffset": { "type": "integer" } } } } } } }
+        "responses": { "200": { "description": "Workouts", "content": { "application/json": { "schema": { "type": "object", "properties": { "workouts": { "type": "array", "items": { "$ref": "#/components/schemas/WorkoutSummary" } }, "nextOffset": { "type": "integer" } } } } } }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/workouts/{uuid}": {
@@ -627,7 +627,7 @@ const productAPIOpenAPIJSON = `{
         "parameters": [
           { "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." },
           { "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
-        "responses": { "200": { "description": "Workout detail", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutDetail" } } } }, "400": { "description": "Invalid UUID" }, "404": { "description": "Workout not found" } }
+        "responses": { "200": { "description": "Workout detail", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutDetail" } } } }, "400": { "description": "Invalid UUID" }, "404": { "description": "Workout not found" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/workouts/{uuid}/series": {
@@ -638,10 +638,10 @@ const productAPIOpenAPIJSON = `{
         "parameters": [
           { "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." },
           { "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
-          { "name": "types", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers; omit for every recorded stream." },
+          { "name": "types", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Comma-separated HealthKit identifiers, at most 50; omit for every recorded stream." },
           { "name": "maxPoints", "in": "query", "required": false, "schema": { "type": "integer", "default": 500, "maximum": 5000 } }
         ],
-        "responses": { "200": { "description": "Workout series", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutSeriesResponse" } } } }, "400": { "description": "Invalid UUID or parameters" }, "404": { "description": "Workout not found" } }
+        "responses": { "200": { "description": "Workout series", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkoutSeriesResponse" } } } }, "400": { "description": "Invalid UUID or parameters" }, "404": { "description": "Workout not found" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/sleep/daily": {
@@ -654,7 +654,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
         ],
-        "responses": { "200": { "description": "Sleep nights", "content": { "application/json": { "schema": { "type": "object", "properties": { "nights": { "type": "array", "items": { "$ref": "#/components/schemas/SleepNight" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" } }
+        "responses": { "200": { "description": "Sleep nights", "content": { "application/json": { "schema": { "type": "object", "properties": { "nights": { "type": "array", "items": { "$ref": "#/components/schemas/SleepNight" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/samples": {
@@ -670,7 +670,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 1000, "maximum": 5000 } },
           { "name": "offset", "in": "query", "required": false, "schema": { "type": "integer", "default": 0 } }
         ],
-        "responses": { "200": { "description": "Samples", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SamplesPage" } } } }, "400": { "description": "Unknown type, a non-sample type, or a range over 31 days" } }
+        "responses": { "200": { "description": "Samples", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SamplesPage" } } } }, "400": { "description": "Unknown type, a non-sample type, or a range over 31 days" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/state-of-mind": {
@@ -682,7 +682,7 @@ const productAPIOpenAPIJSON = `{
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } }
         ],
-        "responses": { "200": { "description": "Entries", "content": { "application/json": { "schema": { "type": "object", "properties": { "entries": { "type": "array", "items": { "$ref": "#/components/schemas/StateOfMindEntry" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" } }
+        "responses": { "200": { "description": "Entries", "content": { "application/json": { "schema": { "type": "object", "properties": { "entries": { "type": "array", "items": { "$ref": "#/components/schemas/StateOfMindEntry" } } } } } } }, "400": { "description": "Invalid range, or a range over 366 days" }, "401": { "description": "Missing or wrong bearer token" }, "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" }, "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }, "504": { "description": "The query ran past the 30-second limit; narrow the range" } }
       }
     },
     "/v1/summary": {
@@ -704,7 +704,10 @@ const productAPIOpenAPIJSON = `{
             }
           },
           "400": { "description": "A range or format outside the accepted values" },
-          "401": { "description": "Unauthorized" }
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" },
+          "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" },
+          "504": { "description": "The query ran past the 30-second limit; narrow the range" }
         }
       }
     },
@@ -712,14 +715,14 @@ const productAPIOpenAPIJSON = `{
       "get": {
         "operationId": "exportDataset",
         "summary": "Bulk export one dataset as CSV or JSONL",
-        "description": "Streams a whole range as a file (Transfer-Encoding: chunked, Content-Disposition: attachment) instead of a JSON document. CSV opens the file with a header row; JSONL writes one JSON object per line whose keys are the same column names. Field names match the JSON endpoints; where an endpoint nests (a metric's days, a night's stages) the export flattens, repeating the identifying fields on every row and naming a nested field by its path. Ranges are capped at 31 days for samples (as /v1/samples is) and 366 days for every other dataset — the same cap /v1/sleep/daily and /v1/state-of-mind apply, and deliberately stricter than /v1/metrics/daily and /v1/workouts, which are bounded by a page size rather than by their range, and /v1/activity/summary, which is one small row per day. The daily_metrics and workouts datasets return the whole range (workouts newest first); limit and offset are not used here. At most 2 exports run at once, because each holds a database connection for the length of the download; over that is a 503 with Retry-After.",
+        "description": "Streams a whole range as a file (Transfer-Encoding: chunked, Content-Disposition: attachment) instead of a JSON document. CSV opens the file with a header row; JSONL writes one JSON object per line whose keys are the same column names. Field names match the JSON endpoints; where an endpoint nests (a metric's days, a night's stages) the export flattens, repeating the identifying fields on every row and naming a nested field by its path. Ranges are capped at 31 days for samples (as /v1/samples is) and 366 days for every other dataset — the same cap /v1/sleep/daily and /v1/state-of-mind apply, and deliberately stricter than /v1/metrics/daily and /v1/workouts, which are bounded by a page size rather than by their range, and /v1/activity/summary, which is one small row per day. The daily_metrics and workouts datasets return the whole range (workouts newest first); limit and offset are not used here. At most 2 exports run at once, because each holds a database connection for the length of the download; over that is a 503 with Retry-After. An export ends after 30 minutes, and one whose client stops reading for a minute is dropped.",
         "parameters": [
           { "name": "user", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" }, "description": "The user to answer for; defaults to the deployment's PULS_USER_ID. Any other user needs PULS_MULTI_USER=true, else 403. /v1/users lists them." },
           { "name": "format", "in": "query", "required": true, "schema": { "type": "string", "enum": ["csv", "jsonl"] } },
           { "name": "dataset", "in": "query", "required": true, "schema": { "type": "string", "enum": ["daily_metrics", "samples", "workouts", "sleep", "activity", "state_of_mind"] } },
           { "name": "start", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
           { "name": "end", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
-          { "name": "types", "in": "query", "required": false, "schema": { "type": "string" }, "description": "daily_metrics only, and required there: comma-separated HealthKit identifiers." },
+          { "name": "types", "in": "query", "required": false, "schema": { "type": "string" }, "description": "daily_metrics only, and required there: comma-separated HealthKit identifiers, at most 50." },
           { "name": "type", "in": "query", "required": false, "schema": { "type": "string" }, "description": "samples only, and required there: exactly one HealthKit identifier." },
           { "name": "activityType", "in": "query", "required": false, "schema": { "type": "string" }, "description": "workouts only: keep one activity type." }
         ],
@@ -733,7 +736,9 @@ const productAPIOpenAPIJSON = `{
           },
           "400": { "description": "Missing or invalid format or dataset, a missing dataset parameter, an unknown type, or a range over the dataset's cap" },
           "401": { "description": "Unauthorized" },
-          "503": { "description": "Too many exports already in progress; retry after the Retry-After interval" }
+          "503": { "description": "Too many exports already in progress; retry after the Retry-After interval" },
+          "403": { "description": "user names someone other than the default user while PULS_MULTI_USER is off" },
+          "429": { "description": "Too many failed authentications from this address; retry after the Retry-After interval" }
         }
       }
     }

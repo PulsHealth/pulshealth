@@ -240,6 +240,19 @@ import Testing
         #expect(ServerURLValidation.Failure.insecureRemoteHost("h").errorDescription?.contains("https://") == true)
     }
 
+    /// Credentials in the URL would be saved and logged with it (the log
+    /// scrubber strips queries, not userinfo); the token has its own field.
+    @Test func userinfoIsRejected() {
+        #expect(failure("https://user:secret@example.com") == .userinfo)
+        #expect(failure("https://user@example.com") == .userinfo)
+        #expect(failure("https://:secret@example.com/ingest") == .userinfo)
+        #expect(failure("http://user:secret@192.168.1.10:8080") == .userinfo)
+        #expect(ServerURLValidation.Failure.userinfo.errorDescription?.contains("token") == true)
+        // An "@" outside the authority is not userinfo.
+        #expect(url("https://example.com")?.absoluteString == "https://example.com")
+        #expect(url("https://example.com/@me")?.host == "example.com")
+    }
+
     @Test func localNetworkClassification() {
         #expect(ServerURLValidation.isLocalNetworkHost("localhost"))
         #expect(ServerURLValidation.isLocalNetworkHost("Printer.local."))
@@ -259,6 +272,8 @@ import Testing
 final class MockURLProtocol: URLProtocol {
     enum Reply: Sendable {
         case http(Int, Data)
+        /// A response with extra headers (`Retry-After`, say).
+        case httpWithHeaders(Int, [String: String], Data)
         case failure(URLError.Code)
     }
     struct Recorded: Sendable {
@@ -294,12 +309,9 @@ final class MockURLProtocol: URLProtocol {
         }
         switch handler(Recorded(request: request, body: Self.body(of: request))) {
         case .http(let status, let data):
-            let response = HTTPURLResponse(
-                url: request.url!, statusCode: status, httpVersion: "HTTP/1.1",
-                headerFields: ["Content-Type": "application/json"])!
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-            client?.urlProtocolDidFinishLoading(self)
+            respond(status: status, headers: [:], data: data)
+        case .httpWithHeaders(let status, let headers, let data):
+            respond(status: status, headers: headers, data: data)
         case .failure(let code):
             client?.urlProtocol(self, didFailWithError: URLError(
                 code, userInfo: [NSURLErrorFailingURLErrorKey: request.url as Any]))
@@ -307,6 +319,17 @@ final class MockURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+
+    private func respond(status: Int, headers: [String: String], data: Data) {
+        var fields = ["Content-Type": "application/json"]
+        fields.merge(headers) { _, new in new }
+        let response = HTTPURLResponse(
+            url: request.url!, statusCode: status, httpVersion: "HTTP/1.1",
+            headerFields: fields)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
 
     /// URLSession hands a URLProtocol the body as a stream, not `httpBody`.
     private static func body(of request: URLRequest) -> Data {

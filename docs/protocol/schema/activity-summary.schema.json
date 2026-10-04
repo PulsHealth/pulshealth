@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/PulsHealth/pulshealth/main/docs/protocol/schema/activity-summary.schema.json",
   "title": "Puls Sync Protocol v1: activity summary line",
-  "description": "One day of activity rings. Summaries have no UUID: identity is (user, localDate), falling back to the UTC calendar date of date when localDate is absent, and receivers upsert every column, including nulls.",
+  "description": "One day of activity rings. Summaries have no UUID: identity is (user, localDate), falling back to the UTC calendar date of date when localDate is absent. The line is the whole row for that day: the app omits rings it has no value for, an omitted field means null, and receivers replace every stored column (never merge the keys present).",
   "type": "object",
   "required": ["activitySummary"],
   "properties": {

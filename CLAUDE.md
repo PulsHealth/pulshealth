@@ -387,12 +387,16 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   page as an ordinary `puls://pair` code, through an
   `ASWebAuthenticationSession` (callback scheme `puls`, shared browser
   session) that the person starts on Sync → Database. That code fills a
-  `ServerFieldsDraft` (`fill(fromSignIn:)`) and is tested, and Save & Apply
-  applies it, as with every pairing. Only a payload from that sheet or from a
-  confirmed link ever fills the fields. Whether the applied database is the
-  PulsHealth one is derived, `SyncConfiguration.isSignedInDatabase`: the
-  optional `signedInDatabaseURL` (absent from 1.6 state files; never make it
-  required) counts only while it equals `serverURL`, and export clears it.
+  `ServerFieldsDraft` (`fill(fromSignIn:domain:)`) and is tested, and Save &
+  Apply applies it, as with every pairing. Only a payload from that sheet or
+  from a confirmed link ever fills the fields. Whether the applied database
+  is the PulsHealth one is derived, `PulsHealthDatabase.isSignedIn`:
+  `SyncConfiguration.isSignedInDatabase` (the optional `signedInDatabaseURL`,
+  absent from 1.6 state files — never make it required — counts only while
+  it equals `serverURL`, and export clears it) **and** the host is under
+  `PulsHealthDatabase.domain`. A sign-in code for any other host fills the
+  fields as the person's own database, with a warning naming it, and the
+  PulsHealth label always shows the host beside it.
   The screen's decisions live in `DatabaseSetup` (it starts from the
   *applied* configuration). Delete PulsHealth Account (App Review 5.1.1(v),
   `/account#delete-account`, whose `id` lives in `web/app/account/page.tsx`)
@@ -455,10 +459,13 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   administrator approves** (`WEB_SIGNUPS`, `/signup` → `/admin`): no user, no
   account, no token, so no phone can send data. Every write beyond schema
   `auth` — creating a user, minting/revoking tokens, disabling, deleting,
-  purging — is a `SECURITY DEFINER` function in `016_web_signups.sql` that
-  takes the caller's session hash (`Session.id`, never the plaintext cookie)
-  and checks it (search_path pinned to `pg_catalog`, objects fully
-  qualified). **The boundary is `auth.self_service_users`**, written only by
+  purging, declining requests — is a `SECURITY DEFINER` function in
+  `016_web_signups.sql` (replaced where needed in `018_web_accounts_hardening.sql`)
+  that takes the caller's session hash (`Session.id`, never the plaintext
+  cookie) and checks it (`auth.session_owner`: unexpired and under the
+  90-day absolute cap; search_path pinned to `pg_catalog`, objects fully
+  qualified). No administrator account, and not the caller's own, can be
+  disabled through the viewer. **The boundary is `auth.self_service_users`**, written only by
   `approve_signup`: every function acts only on users an approved request
   created, because `web_app` writes `auth.sessions` and so can forge any
   session — the session check scopes normal use, it is not the barrier. The
@@ -477,7 +484,8 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   `quantity_rollups` materialization; keep its deletes narrowed (types, time
   span) so it opens only that user's compressed batches. `auth.prune_signups`
   (an hourly TimescaleDB job) is what makes the privacy policy's 30-day
-  request deletion true; keep it scheduled. Email (`web/lib/email.ts`, SES,
+  request deletion true (decided and undecided requests alike) and sweeps
+  expired sessions; keep it scheduled. Email (`web/lib/email.ts`, SES,
   hand-signed SigV4) goes only to the operator and to people an
   administrator approved — keep the public form unable to mail anyone else,
   and never log an address.
@@ -536,8 +544,10 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   is its contract) and must stay one: no database URL, no writes, every tool
   annotated read-only. Its tool descriptions and embedded `guide.md` spell out
   units, the time-zone rule and the double-counting rule for the model — update
-  them with any change to the API's shapes. `PULS_TIME_ZONE` must be handed to
-  it separately (the API does not report its zone). In stdio mode stdout is the
+  them with any change to the API's shapes. Its zone comes from the API's
+  `GET /v1/users` (`timeZone`) unless `PULS_TIME_ZONE` is set, which only
+  warns when the two differ; the API itself refuses to start when its zone
+  and `puls_time_zone()` disagree. In stdio mode stdout is the
   transport: never print to it; logs go to stderr.
 - Grafana datasource UID `puls-tsdb` is hardcoded in dashboard JSON — keep it stable.
 - Debounces are intentional: state persist 250 ms, event-log save 1 s. Synced Data
@@ -552,7 +562,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
 - The `web` viewer's data pages are `export const dynamic = "force-dynamic"`.
   Don't reintroduce `revalidate`/ISR on them — it bakes a DB-less demo render
   at build time and serves it stale after deploys. **Demo data is dev-only:**
-  `web/lib/queries.ts` gates it on `ALLOW_DEMO = NODE_ENV !== "production"`
+  `web/lib/data/source.ts` gates it on `ALLOW_DEMO = NODE_ENV !== "production"`
   (the container sets `production`), so an unset or unreachable DB shows the
   `"error"` source ("Database unavailable"), never demo data.
 
@@ -606,9 +616,11 @@ nothing here assumes a particular machine.
   copies across two modules; keep them in step). The refusal comes *before*
   the token comparison, or it would change only the status code, not the
   guessing rate; successes never draw, because a backfill is thousands of
-  requests. `TRUST_PROXY_HEADERS=true` keys on `X-Forwarded-For` and, on the
-  API, lets `X-Forwarded-Host` pick the host the unauthenticated
-  `/openapi.json` advertises. Limits: `server/README.md`, "Rate limiting".
+  requests. `TRUST_PROXY_HEADERS=true` keys on the **last**
+  `X-Forwarded-For` entry (the one the trusted proxy appended; appending
+  proxies let a client choose the first) and, on the API, lets
+  `X-Forwarded-Host` pick the host the unauthenticated `/openapi.json`
+  advertises. Limits: `server/README.md`, "Rate limiting".
 - **Ingest auth** (`server/ingest/auth.go`): the limiter, the shared token in
   memory, then the bearer's unsalted SHA-256 (the preimage is 256 random bits)
   in `device_tokens`. A database error there is **503 `authentication
@@ -616,9 +628,10 @@ nothing here assumes a particular machine.
   so it would stall until the user retyped a correct token. Only wrong
   credentials charge the limiter; a user mismatch (403) does not.
   `099_read_roles.sh` revokes `grafana`'s default-privilege SELECT on
-  `device_tokens` every run; `api_reader` is an exact grant list asserted by a
-  `DO` block, so a table the product API newly reads goes on BOTH the `GRANT`
-  and the `expected_public` rows. `PULS_TOKEN` is optional; do not make it
+  `device_tokens` every run; `api_reader` and `ingest` are exact grant lists
+  asserted by `DO` blocks, so a table the product API newly reads, or ingest
+  newly writes, goes on BOTH its `GRANT` and its expected rows
+  (`grants_integration_test.go` checks ingest's as the role itself). `PULS_TOKEN` is optional; do not make it
   required again.
 - **`/healthz` is unauthenticated on both services, so it must not touch the
   pool per request** (`server/ingest/health.go`, `server/api/health.go` — again

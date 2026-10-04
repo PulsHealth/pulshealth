@@ -1,5 +1,8 @@
 # Roadmap — what is left
 
+**Current findings list and roadmap:** [`deep-review-2026-10.md`](deep-review-2026-10.md)
+(the October 2026 deep review, with each item's status); read it first.
+
 Reviewed 2026-10-01, after the app's 1.6 reached the App Store, and pruned the
 same day to what is worth doing. This is what is still outstanding, roughly in
 the order worth doing it; what was considered and dropped is under **Not
@@ -17,6 +20,12 @@ behind them.
   over several days; the iOS 26 continued-processing first run; leaving the
   app mid-backfill; an export on a device; and on iOS 27, limiting a type's
   history, widening it again, and the re-sweep that follows.
+- **Device passes for the October 2026 deep review** (written without a
+  Swift toolchain; CI builds and unit-tests them, nothing has run them on a
+  phone): R8's terminal-error cooldown, R16's stop on a locked device and
+  R17's pending continued backfill (`docs/deep-review-2026-10.md`).
+- **R8 is not shown in the app yet:** a type cooling down after a terminal
+  error reads as failed.
 
 ## 2. Standing maintenance
 
@@ -28,9 +37,18 @@ Not backlog — things that come due on someone else's schedule.
 | A major Xcode/iOS SDK update | Refresh `010_category_labels.sql` from `HKCategoryValues.h` and check the seed shape (`server/README.md`). |
 | Never yet done on real data | The backup restore drill. The one recorded in `server/README.md` ran against a throwaway stack; nothing else verifies that a dump restores. |
 | Publishing images from a new organization or a fork | A package `release.yml` creates starts private, and it can be made public only once the organization's package-creation policy allows public packages. Change the policy first, then flip each of the four in its package settings. |
-| A schema migration that is not additive | The quickstart clones `main`, which between releases can carry migrations the `latest` images have not caught up with. Harmless while every migration is additive; before one is not, point the quickstart at the release tag. |
 | Dependabot re-proposes eslint 10 or TypeScript 7 for `web`/`site` | Check upstream, then close against [#37](https://github.com/PulsHealth/pulshealth/issues/37). Both blockers are `eslint-config-next`'s own dependencies: `typescript-eslint` refuses TS >= 6.1 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)), and `eslint-plugin-react` still calls `context.getFilename()`, which ESLint 10 removed. Still true against `eslint-config-next` 16.3.8 (2026-10-01). |
 | A red `advisories` workflow run | Bump the dependency in its own pull request. `advisories.yml` is separate from `ci.yml` so it can go red without blocking a merge or a release; its header says when it runs and why. |
+
+## 3. Deferred from the October 2026 deep review
+
+Waiting for a Swift toolchain or a test to land first
+(`docs/deep-review-2026-10.md` §5 and §6): splitting the engine file,
+`SyncKey`/`withClaim`, `FullPassSchedule`, the `AppModel` seam, merging the
+two type pickers and the duration formatters, the seven ingest `unnest`
+inserts; tests for the observer coalescer and the three-unacknowledged-
+deliveries rule, `migrate.sh`/`restore.sh`, the viewer's `app/api/*`
+refusals, and `AppModel` onboarding, Apply gating and pairing.
 
 ## Not planned
 

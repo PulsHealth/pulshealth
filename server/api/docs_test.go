@@ -35,6 +35,7 @@ type openAPIPaths struct {
 			In       string `json:"in"`
 			Required bool   `json:"required"`
 		} `json:"parameters"`
+		Responses map[string]json.RawMessage `json:"responses"`
 	} `json:"paths"`
 	Components struct {
 		Schemas map[string]json.RawMessage `json:"schemas"`
@@ -341,4 +342,45 @@ func firstLines(s string, n int) string {
 		lines = lines[:n]
 	}
 	return fmt.Sprint(strings.Join(lines, "\n"))
+}
+
+// Every status the middleware can answer an authenticated route with is in
+// the document, so a generated client (a ChatGPT Action) knows a 429 means
+// "wait", a 403 means "this user is not readable here", and a 504 means
+// "narrow the range": auth's 401 and 429, scopeUser's 403 (?user= naming
+// someone else with PULS_MULTI_USER off), and withTimeout's 504 on everything
+// but the export. The open routes carry none of them.
+func TestOpenAPIDocumentsTheMiddlewareStatuses(t *testing.T) {
+	t.Parallel()
+
+	srv := testServer(t, &fakeStore{})
+	doc, _ := fetchOpenAPI(t, srv)
+	for _, rt := range srv.apiRoutes() {
+		responses := doc.Paths[rt.path]["get"].Responses
+		if _, ok := responses["200"]; !ok {
+			t.Errorf("%s: no 200 response", rt.path)
+		}
+		want := map[string]bool{"401": rt.auth, "403": rt.auth, "429": rt.auth, "504": rt.auth && rt.path != "/v1/export"}
+		for status, documented := range want {
+			if _, ok := responses[status]; ok != documented {
+				t.Errorf("%s: documents %s = %v, want %v", rt.path, status, ok, documented)
+			}
+		}
+	}
+
+	// And the router really answers those statuses on an authenticated route.
+	scoped := scopedServer(t, &fakeStore{}, defaultUserID, false)
+	rec := serveAuthorized(t, scoped, http.MethodGet, "/v1/profile?user=7b1e4c2a-9d3f-4e5a-8b6c-0f1d2e3a4b5c", nil)
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("?user= for someone else with the gate off = %d, want 403", rec.Code)
+	}
+	for i := 0; i <= authFailureBurst; i++ {
+		req := httptest.NewRequest(http.MethodGet, "/v1/profile", nil)
+		req.RemoteAddr = "192.0.2.7:1234"
+		rec = httptest.NewRecorder()
+		scoped.routes().ServeHTTP(rec, req)
+	}
+	if rec.Code != http.StatusTooManyRequests {
+		t.Errorf("after %d failed authentications = %d, want 429", authFailureBurst+1, rec.Code)
+	}
 }

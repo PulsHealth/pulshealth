@@ -145,26 +145,47 @@ public struct WakeRecord: Identifiable, Codable, Sendable, Equatable {
 }
 
 /// Durable, append-only log of wake records, parallel to `SyncEventLog`. Unlike
-/// the event log's fast-rolling 2k ring buffer, this keeps a much larger window
-/// (`capacity` wakes ≈ months) so a 1–2 week field study never loses early data,
+/// the event log's fast-rolling 2k ring buffer, this keeps a window of
+/// `capacity` wakes (weeks) so a 1–2 week field study never loses early data,
 /// and persists immediately on begin/finish so background kills don't lose the
 /// record.
 public actor WakeLog {
-    /// At a few dozen wakes/day this is several months of history.
-    public static let capacity = 10_000
+    /// At a few dozen wakes/day this is one to two months of history. Kept
+    /// modest on purpose: `begin` and `finish` each re-encode and rewrite the
+    /// whole file synchronously, inside the background budget.
+    public static let capacity = 2_000
 
     private(set) var records: [WakeRecord] = []
     private let logger = Logger(subsystem: PulsLog.subsystem, category: "wakes")
     private let fileURL: URL
     private var saveTask: Task<Void, Never>?
+    /// True when `wake-log.json` existed at init but could not be read
+    /// (protected data during a prewarm launch before first unlock). The log
+    /// then records in memory only for the rest of the process, so the file
+    /// on disk — weeks of field data — is never replaced by this launch's few
+    /// records. Same rule as `SyncStateStore.isReadOnly`.
+    public let isReadOnly: Bool
 
     public init(directory: URL? = nil) {
         let dir = directory ?? FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("PulsHealthSync", isDirectory: true)
         ProtectedStateFile.prepareDirectory(dir)
-        self.fileURL = dir.appendingPathComponent("wake-log.json")
-        if let data = try? Data(contentsOf: fileURL),
+        let fileURL = dir.appendingPathComponent("wake-log.json")
+        self.fileURL = fileURL
+        var data: Data?
+        switch ProtectedStateFile.read(fileURL) {
+        case .missing:
+            isReadOnly = false
+        case .unreadable(let error):
+            isReadOnly = true
+            Logger(subsystem: PulsLog.subsystem, category: "wakes").error(
+                "Wake log exists but is unreadable (\(error)); recording in memory only this launch")
+        case .data(let contents):
+            isReadOnly = false
+            data = contents
+        }
+        if let data,
            let decoded = try? JSONDecoder.puls.decode([WakeRecord].self, from: data) {
             records = decoded
             // Anything still "running" means we died before finishing it — a real
@@ -275,7 +296,7 @@ public actor WakeLog {
     // MARK: - Persistence
 
     private func scheduleSave() {
-        guard saveTask == nil else { return }
+        guard !isReadOnly, saveTask == nil else { return }
         saveTask = Task {
             try? await Task.sleep(for: .seconds(1))
             saveTask = nil
@@ -284,6 +305,7 @@ public actor WakeLog {
     }
 
     private func persistNow() {
+        guard !isReadOnly else { return }
         if let data = try? JSONEncoder.puls.encode(records) {
             try? ProtectedStateFile.write(data, to: fileURL)
         }

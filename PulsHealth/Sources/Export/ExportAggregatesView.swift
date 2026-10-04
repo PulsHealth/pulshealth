@@ -357,10 +357,7 @@ private struct ExportSeriesTypeList: View {
                     }
                 }
             } else {
-                let matches = candidates.filter {
-                    $0.displayName.localizedCaseInsensitiveContains(searchText)
-                        || $0.group.rawValue.localizedCaseInsensitiveContains(searchText)
-                }
+                let matches = candidates.filter { $0.matchesSearch(searchText) }
                 if matches.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                 } else {

@@ -17,7 +17,7 @@ func integrationStore(t *testing.T) (*Store, context.Context, func()) {
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		t.Skip("DATABASE_URL is unset")
+		skipIntegration(t, "DATABASE_URL is unset")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -60,7 +60,7 @@ func writeIntegrationStore(t *testing.T) (*Store, *pgxpool.Pool, context.Context
 	t.Helper()
 
 	if os.Getenv("PULS_API_WRITE_INTEGRATION_TESTS") != "1" {
-		t.Skip("PULS_API_WRITE_INTEGRATION_TESTS is not set to 1; skipping integration test that writes fixture rows")
+		skipIntegration(t, "PULS_API_WRITE_INTEGRATION_TESTS is not set to 1, so the tests that write fixture rows do not run")
 	}
 	store, ctx, cleanup := integrationStore(t)
 

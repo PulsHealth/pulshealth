@@ -38,7 +38,7 @@ func TestHealthCacheProbesAtMostOncePerTTL(t *testing.T) {
 	now := time.Unix(1_700_000_000, 0)
 
 	for range 100 {
-		if !h.status(context.Background(), p, now) {
+		if !h.status(p, now) {
 			t.Fatal("status = false, want true from a healthy database")
 		}
 	}
@@ -47,12 +47,12 @@ func TestHealthCacheProbesAtMostOncePerTTL(t *testing.T) {
 	}
 
 	// Just inside the TTL: still cached.
-	h.status(context.Background(), p, now.Add(healthTTL-time.Millisecond))
+	h.status(p, now.Add(healthTTL-time.Millisecond))
 	if n := p.calls.Load(); n != 1 {
 		t.Fatalf("a call inside the TTL made %d probes, want 1", n)
 	}
 	// Past it: one more.
-	h.status(context.Background(), p, now.Add(healthTTL))
+	h.status(p, now.Add(healthTTL))
 	if n := p.calls.Load(); n != 2 {
 		t.Fatalf("a call past the TTL made %d probes, want 2", n)
 	}
@@ -71,7 +71,7 @@ func TestHealthCacheCollapsesConcurrentProbes(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			h.status(context.Background(), p, now)
+			h.status(p, now)
 		}()
 	}
 	// Let them pile up, then release the single in-flight probe.
@@ -94,17 +94,17 @@ func TestHealthCacheReportsFailureAndRecovers(t *testing.T) {
 	p := &countingPinger{err: errors.New("database is down")}
 	now := time.Unix(1_700_000_000, 0)
 
-	if h.status(context.Background(), p, now) {
+	if h.status(p, now) {
 		t.Fatal("status = true, want false while the database is down")
 	}
 	p.err = nil
 	// Still cached as down inside the TTL...
-	if h.status(context.Background(), p, now.Add(healthTTL/2)) {
+	if h.status(p, now.Add(healthTTL/2)) {
 		t.Fatal("status changed inside the TTL")
 	}
 	// ...and recovers on the next probe, so a health check notices within
 	// one interval.
-	if !h.status(context.Background(), p, now.Add(healthTTL)) {
+	if !h.status(p, now.Add(healthTTL)) {
 		t.Fatal("status = false after the database recovered")
 	}
 }
@@ -124,5 +124,21 @@ func TestHealthzIsCachedEndToEnd(t *testing.T) {
 	}
 	if n := srv.store.(*fakeStore).pings.Load(); n > 1 {
 		t.Fatalf("50 /healthz requests made %d database pings, want at most 1", n)
+	}
+}
+
+// The probe must not run on the request's context: a health checker with a
+// short timeout would cancel it, and the cached `false` would 503 the next
+// poll. A request that arrives already cancelled still gets a real answer.
+func TestHealthzProbesOnItsOwnContext(t *testing.T) {
+	t.Parallel()
+	srv := newTestServer(&fakeStore{})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil).WithContext(ctx)
+	rec := httptest.NewRecorder()
+	srv.routes().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 from a healthy database despite a cancelled request", rec.Code)
 	}
 }

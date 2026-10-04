@@ -107,10 +107,12 @@ go install github.com/PulsHealth/pulshealth/server/mcp@latest
 
 Go 1.26 or newer. Check it with `PULS_API_TOKEN=x pulshealth-mcp --version`.
 
-Every stdio snippet below uses the same three variables: `PULS_API_URL`
-(the product API), `PULS_API_TOKEN` (from `server/.env`) and
-`PULS_TIME_ZONE` (the same value the stack runs with — the API does not
-report its zone, so the server has to be told; it defaults to UTC).
+Every stdio snippet below uses the same two variables: `PULS_API_URL`
+(the product API) and `PULS_API_TOKEN` (from `server/.env`). The calendar
+zone needs no setting: the MCP server asks the API for it (`GET /v1/users`
+reports the stack's `PULS_TIME_ZONE`, which the API checks against the
+database when it starts). Setting `PULS_TIME_ZONE` here overrides that, and a
+value that differs from the API's is logged as a warning.
 
 ### Claude Desktop
 
@@ -125,8 +127,7 @@ Edit `claude_desktop_config.json` (macOS:
       "command": "/usr/local/bin/pulshealth-mcp",
       "env": {
         "PULS_API_URL": "https://<machine>.<tailnet>.ts.net:8444",
-        "PULS_API_TOKEN": "<PULS_API_TOKEN from server/.env>",
-        "PULS_TIME_ZONE": "Europe/Berlin"
+        "PULS_API_TOKEN": "<PULS_API_TOKEN from server/.env>"
       }
     }
   }
@@ -144,7 +145,6 @@ Stdio, available in every project (`-s user`):
 claude mcp add pulshealth -s user \
   -e PULS_API_URL=https://<machine>.<tailnet>.ts.net:8444 \
   -e PULS_API_TOKEN=<PULS_API_TOKEN from server/.env> \
-  -e PULS_TIME_ZONE=Europe/Berlin \
   -- /usr/local/bin/pulshealth-mcp
 ```
 
@@ -169,8 +169,7 @@ tools. Try `/mcp__pulshealth__weekly_summary` for the built-in prompt.
       "command": "/usr/local/bin/pulshealth-mcp",
       "env": {
         "PULS_API_URL": "https://<machine>.<tailnet>.ts.net:8444",
-        "PULS_API_TOKEN": "<PULS_API_TOKEN from server/.env>",
-        "PULS_TIME_ZONE": "Europe/Berlin"
+        "PULS_API_TOKEN": "<PULS_API_TOKEN from server/.env>"
       }
     }
   }
@@ -212,7 +211,11 @@ tailscale serve --bg --https=8445 http://localhost:8082
 The endpoint is then `https://<machine>.<tailnet>.ts.net:8445/mcp` with
 `Authorization: Bearer $PULS_MCP_TOKEN`. Any reverse proxy that terminates
 TLS works the same (Caddy, nginx, a cloud tunnel); keep `/healthz` reachable
-for monitoring if you like, it needs no token.
+for monitoring if you like, it needs no token. Wrong tokens are throttled per
+client address like the API's (ten, then one every six seconds, `429` with
+`Retry-After`) and logged; behind a proxy that is the only way in, set
+`TRUST_PROXY_HEADERS=true` so each client keeps its own budget instead of
+sharing the proxy's.
 
 Clients that take a static bearer header — Claude Code, Cursor, the MCP
 Inspector, your own code — connect as shown above. The hosted connector
@@ -307,9 +310,9 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
   narrow ranges. `exportDataset` streams a CSV or JSONL *file*, which is
   exactly the wrong shape for a chat turn — use the JSON endpoints for
   questions and the `puls-export` CLI for files ([`export.md`](export.md)).
-- **Dates are epoch milliseconds** and the API does not report its zone, so
-  tell the GPT which zone the server runs in (`PULS_TIME_ZONE`) in its
-  instructions, or it will guess.
+- **Dates are epoch milliseconds.** The server's calendar zone is the
+  `timeZone` field of `listUsers`; tell the GPT in its instructions to read
+  it (or name the zone, `PULS_TIME_ZONE`, outright), or it will guess.
 - **The Action can name a user.** Every `/v1/*` operation takes an optional
   `user` query parameter and `listUsers` names everyone with data, so a GPT
   built on a shared server can read another household member's records if
@@ -389,5 +392,6 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
 | The tool returns `product API returned 401 ...` | `PULS_API_TOKEN` given to the MCP server differs from the API's. |
 | `product API unreachable at ...` | Wrong `PULS_API_URL`, tunnel not up, or the API container is down (`docker compose ps`). |
 | `PULS_MCP_TOKEN must be set to serve --http` at startup | HTTP mode refuses to run without its token — set it in `.env`. |
-| Daily figures are off by a day, or a day splits in two | `PULS_TIME_ZONE` on the MCP server does not match the stack's. |
+| Daily figures are off by a day, or a day splits in two | `PULS_TIME_ZONE` set on the MCP server differs from the stack's (its log warns); unset it to use the API's. |
+| A tool fails with `could not learn the server's time zone` | The MCP server could not reach `GET /v1/users` to ask for the zone; it tries again on the next call. Fix the API connection, or set `PULS_TIME_ZONE`. |
 | Client shows the server as failed to start | Run it by hand with the same env: errors go to stderr as JSON. `pulshealth-mcp --version` checks the binary. |

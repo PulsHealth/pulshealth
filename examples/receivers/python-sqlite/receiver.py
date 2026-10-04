@@ -12,7 +12,6 @@ PULS_BIND (default 127.0.0.1), PULS_PORT (default 8080). Python 3.11+.
 """
 from __future__ import annotations
 
-import gzip
 import hmac
 import json
 import os
@@ -20,12 +19,14 @@ import re
 import sqlite3
 import sys
 import threading
+import zlib
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PROTOCOL_VERSIONS = [1]
 DEFAULT_USER = "5ea4d000-0000-4000-8000-000000000001"
 MAX_BODY = 256 << 20  # compressed bytes, as the reference server
+MAX_DECODED = 128 << 20  # decompressed NDJSON bytes, as the reference server
 COUNTS = ("sampleCount", "deletionCount", "routeCount", "seriesCount",
           "aggregateCount", "activitySummaryCount", "profileCount")
 # kind -> the detail field that must be present for that kind
@@ -35,6 +36,12 @@ AGG_ENUMS = {"func": {"sum", "average", "min", "max", "mostRecent", "duration"},
              "intervalUnit": {"minute", "hour", "day", "week", "month"},
              "deviceFilter": {"all", "watch", "iphone"}}
 UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$")
+# An activity summary's stored columns: a line replaces all of them, an omitted field
+# with null (spec 6.5). Wire name -> column.
+RING_FIELDS = {"moveKcal": "move_kcal", "moveGoalKcal": "move_goal_kcal", "exerciseMin": "exercise_min",
+               "exerciseGoalMin": "exercise_goal_min", "standHours": "stand_hours",
+               "standGoalHours": "stand_goal_hours", "moveMode": "move_mode", "moveTimeMin": "move_time_min",
+               "moveTimeGoalMin": "move_time_goal_min"}
 ZERO_RESULT = {"accepted": 0, "deleted": 0, "duplicates": 0, "routePoints": 0,
                "seriesPoints": 0, "aggregateSamples": 0, "activitySummaries": 0}
 
@@ -73,8 +80,39 @@ class UnsupportedVersion(Exception):
     """A protocol version this receiver does not speak: fixed 400 body."""
 
 
+class TooLarge(Exception):
+    """Over a size limit: answered with 413, which the app never retries."""
+
+
 def is_uuid(v):
     return isinstance(v, str) and UUID_RE.match(v) is not None
+
+
+def norm_uuid(v):
+    """The stored form of a UUID. The app sends upper case, other senders may not, and
+    the spec says compare case-insensitively: store lower case, look up lower case."""
+    return v.lower()
+
+
+def gunzip(raw, limit=MAX_DECODED):
+    """Decode a gzip body (one member, or several back to back, as Go's reader allows)
+    without ever holding more than limit + 1 decoded bytes: a few kilobytes of gzip
+    can inflate to gigabytes. Raises TooLarge past the limit, BadRequest when invalid."""
+    if not raw:
+        raise BadRequest("invalid gzip body: empty")
+    out = bytearray()
+    while raw:
+        d = zlib.decompressobj(16 + zlib.MAX_WBITS)
+        try:
+            out += d.decompress(raw, limit + 1 - len(out))
+        except zlib.error as e:
+            raise BadRequest(f"invalid gzip body: {e}") from None
+        if len(out) > limit:
+            raise TooLarge(f"decompressed body exceeds {limit} bytes")
+        if not d.eof:
+            raise BadRequest("invalid gzip body: truncated")
+        raw = d.unused_data
+    return bytes(out)
 
 
 def is_ms(v):
@@ -135,20 +173,23 @@ def parse_batch(text):
             raise BadRequest(f"sample {i}: bad uuid, type, kind, or start")
         if KINDS[s["kind"]] and s.get(KINDS[s["kind"]]) is None:
             raise BadRequest(f"sample {i}: {s['kind']} sample missing {KINDS[s['kind']]}")
-        b["samples"].append(s)
+        b["samples"].append(s)  # the stored line keeps the sender's spelling; the key column does not
     for i, d in take(counts["deletionCount"], "deletion", "deleted"):
         if not is_uuid(d.get("uuid")) or not d.get("type"):
             raise BadRequest(f"deletion {i}: bad uuid or type")
+        d["uuid"] = norm_uuid(d["uuid"])
         b["deletions"].append(d)
     for i, r in take(counts["routeCount"], "route", "route"):
         if not is_uuid(r.get("workoutUUID")):
             raise BadRequest(f"route {i}: workoutUUID is not a UUID")
         points(r, "route", i, "lat", "lon")
+        r["workoutUUID"] = norm_uuid(r["workoutUUID"])
         b["routes"].append(r)
     for i, s in take(counts["seriesCount"], "series", "series"):
         if not is_uuid(s.get("workoutUUID")) or not s.get("type"):
             raise BadRequest(f"series {i}: bad workoutUUID or type")
         points(s, "series", i, "value")
+        s["workoutUUID"] = norm_uuid(s["workoutUUID"])
         b["series"].append(s)
     for i, a in take(counts["aggregateCount"], "aggregate", "aggregate"):
         iv = a.get("intervalValue")
@@ -172,8 +213,13 @@ def parse_batch(text):
 
 
 def local_day(a):
-    """Upsert key for an activity summary: localDate, else the UTC day of the legacy date."""
-    return a.get("localDate") or datetime.fromtimestamp(a["date"] / 1000, timezone.utc).strftime("%Y-%m-%d")
+    """Upsert key for an activity summary: localDate, else the legacy date
+    shifted by the line's temporalContext offset when it has one, else its UTC day."""
+    if a.get("localDate"):
+        return a["localDate"]
+    offset = (a.get("temporalContext") or {}).get("utcOffsetSeconds")
+    seconds = a["date"] / 1000 + (offset if isinstance(offset, (int, float)) else 0)
+    return datetime.fromtimestamp(seconds, timezone.utc).strftime("%Y-%m-%d")
 
 
 def apply_batch(db, b, user_id):
@@ -182,14 +228,14 @@ def apply_batch(db, b, user_id):
     with db:
         db.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
         if not db.execute("INSERT OR IGNORE INTO batches VALUES (?,?,?,?,?,?,?,?,?)",
-                          (h["batchID"], user_id, h.get("deviceID"), h["type"], h.get("reason"),
+                          (norm_uuid(h["batchID"]), user_id, h.get("deviceID"), h["type"], h.get("reason"),
                            h.get("schemaVersion") or 1, h.get("clientVersion"), h.get("exportedAt"), ts)).rowcount:
             res["duplicates"] = len(b["samples"])  # retried upload: already applied
             return res
         for s in b["samples"]:  # the UUID is the identity; a known UUID is never overwritten
             res["accepted"] += db.execute(
                 "INSERT OR IGNORE INTO samples VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                (s["uuid"], user_id, s["type"], s["kind"], s["start"], s.get("end") or s["start"], s.get("value"),
+                (norm_uuid(s["uuid"]), user_id, s["type"], s["kind"], s["start"], s.get("end") or s["start"], s.get("value"),
                  s.get("unit"), s.get("category"), s.get("sourceName"), s.get("device"),
                  json.dumps(s, separators=(",", ":")))).rowcount
         res["duplicates"] = len(b["samples"]) - res["accepted"]
@@ -208,24 +254,27 @@ def apply_batch(db, b, user_id):
                        " email=excluded.email, date_of_birth_ms=excluded.date_of_birth_ms,"
                        " biological_sex=excluded.biological_sex, updated_at=excluded.updated_at",
                        (user_id, p.get("name"), p.get("email"), p.get("dateOfBirth"), p.get("biologicalSex"), ts))
+        buckets, days = set(), set()  # counted once each, however many lines name them (last wins)
         for a in b["aggregates"]:  # upsert on the bucket identity; an explicit null clears the value
+            key = (a["type"], a["func"], a["intervalValue"], a["intervalUnit"], a["deviceFilter"], a["bucketStart"])
+            buckets.add(key)
             db.execute("INSERT INTO aggregates VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO UPDATE SET"
                        " bucket_end_ms=excluded.bucket_end_ms, value=excluded.value, unit=excluded.unit,"
                        " updated_at=excluded.updated_at",
                        (user_id, a["type"], a["func"], a["intervalValue"], a["intervalUnit"], a["deviceFilter"],
                         a["bucketStart"], a["bucketEnd"], a.get("value"), a.get("unit"), ts))
-            res["aggregateSamples"] += 1
-        for a in b["activitySummaries"]:  # upsert on the local day; every column is overwritten, nulls included
-            db.execute("INSERT INTO activity_summaries VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO UPDATE SET"
-                       " move_kcal=excluded.move_kcal, move_goal_kcal=excluded.move_goal_kcal,"
-                       " exercise_min=excluded.exercise_min, exercise_goal_min=excluded.exercise_goal_min,"
-                       " stand_hours=excluded.stand_hours, stand_goal_hours=excluded.stand_goal_hours,"
-                       " move_mode=excluded.move_mode, move_time_min=excluded.move_time_min,"
-                       " move_time_goal_min=excluded.move_time_goal_min, updated_at=excluded.updated_at",
-                       (user_id, local_day(a), a.get("moveKcal"), a.get("moveGoalKcal"), a.get("exerciseMin"),
-                        a.get("exerciseGoalMin"), a.get("standHours"), a.get("standGoalHours"), a.get("moveMode"),
-                        a.get("moveTimeMin"), a.get("moveTimeGoalMin"), ts))
-            res["activitySummaries"] += 1
+        res["aggregateSamples"] = len(buckets)
+        # One line is the whole day: the current app omits rings it has no value for, so
+        # an omitted field means null and overwrites, exactly like an explicit null.
+        # Merging only the keys present would keep yesterday's stale ring values.
+        cols = list(RING_FIELDS.values())
+        upsert = (f"INSERT INTO activity_summaries (user_id, date, {', '.join(cols)}, updated_at)"
+                  f" VALUES ({', '.join('?' * (len(cols) + 3))}) ON CONFLICT (user_id, date) DO UPDATE SET "
+                  + ", ".join(f"{c}=excluded.{c}" for c in cols + ["updated_at"]))
+        for a in b["activitySummaries"]:
+            days.add(local_day(a))
+            db.execute(upsert, (user_id, local_day(a), *(a.get(f) for f in RING_FIELDS), ts))
+        res["activitySummaries"] = len(days)
         for d in b["deletions"]:  # an unknown UUID is a no-op; a deleted workout takes its points along
             res["deleted"] += db.execute("DELETE FROM samples WHERE uuid=? AND user_id=?", (d["uuid"], user_id)).rowcount
             db.execute("DELETE FROM route_points WHERE workout_uuid=? AND user_id=?", (d["uuid"], user_id))
@@ -274,18 +323,23 @@ class Handler(BaseHTTPRequestHandler):
         user_id = self.headers.get("X-User-ID") or DEFAULT_USER
         if not is_uuid(user_id):
             return self.send_json(400, {"error": "X-User-ID is not a UUID"})
+        user_id = norm_uuid(user_id)
         length = int(self.headers.get("Content-Length") or 0)
         if length > MAX_BODY:
             return self.send_json(413, {"error": "body too large"})
         raw = self.rfile.read(length)
         encoding = self.headers.get("Content-Encoding", "identity")
-        if encoding == "gzip":
-            try:
-                raw = gzip.decompress(raw)
-            except (OSError, EOFError) as e:
-                return self.send_json(400, {"error": f"invalid gzip body: {e}"})
-        elif encoding not in ("", "identity"):
-            return self.send_json(400, {"error": f"unsupported Content-Encoding: {encoding}"})
+        try:
+            if encoding == "gzip":
+                raw = gunzip(raw)
+            elif encoding not in ("", "identity"):
+                raise BadRequest(f"unsupported Content-Encoding: {encoding}")
+            elif len(raw) > MAX_DECODED:
+                raise TooLarge(f"body exceeds {MAX_DECODED} bytes")
+        except TooLarge as e:
+            return self.send_json(413, {"error": str(e)})
+        except BadRequest as e:
+            return self.send_json(400, {"error": str(e)})
         try:
             batch = parse_batch(raw.decode("utf-8"))
             if proto and batch["header"].get("schemaVersion") not in (None, int(proto)):

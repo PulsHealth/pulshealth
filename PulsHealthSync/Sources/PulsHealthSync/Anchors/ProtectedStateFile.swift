@@ -29,6 +29,25 @@ enum ProtectedStateFile {
         protect(directory)
     }
 
+    /// What reading one of these files found. `unreadable` is not `missing`:
+    /// a file that exists but cannot be read — protected data before the first
+    /// unlock, during a prewarm launch — still holds everything it held, and
+    /// a writer that took it for absent would replace it with an empty one.
+    enum ReadResult {
+        case missing
+        case unreadable(any Error)
+        case data(Data)
+    }
+
+    static func read(_ url: URL) -> ReadResult {
+        guard FileManager.default.fileExists(atPath: url.path) else { return .missing }
+        do {
+            return .data(try Data(contentsOf: url))
+        } catch {
+            return .unreadable(error)
+        }
+    }
+
     /// Atomic write plus protection and backup exclusion. Throws only when the
     /// data itself could not be written.
     static func write(_ data: Data, to url: URL) throws {

@@ -13,6 +13,13 @@ public struct TypeSyncStatus: Identifiable, Sendable {
     /// Estimated seconds remaining for this type's backfill, if estimable.
     public var estimatedSecondsRemaining: Double?
 
+    /// Until when the automatic paths skip this type, after the server
+    /// refused its upload in a way a retry cannot change (`state.lastError`
+    /// says how); nil when it is not cooling down. Sync Now tries anyway.
+    public var cooldownUntil: Date? {
+        state.isCoolingDown() ? state.cooldownUntil : nil
+    }
+
     public enum Activity: String, Sendable {
         case idle
         case backfilling
@@ -49,6 +56,7 @@ public actor HealthSyncEngine {
     // backfill progress in step while pages from several types share an upload.
     var backfillRuns: [String: BackfillRun] = [:]
     private var changeContinuations: [UUID: AsyncStream<Void>.Continuation] = [:]
+    private var databaseLockedContinuations: [UUID: AsyncStream<Void>.Continuation] = [:]
     private let logger = Logger(subsystem: PulsLog.subsystem, category: "engine")
     /// Samples HealthKit returned that `SampleMapper` could not convert, per
     /// type, over this engine's lifetime. The event log already carries a
@@ -163,11 +171,32 @@ public actor HealthSyncEngine {
     /// applied only after the user has chosen to start fresh (`resetAll()`
     /// beforehand) or keep progress, and then with `confirmServerIdentity`
     /// so the store records the new identity as the one its progress belongs to.
+    ///
+    /// A nil `authToken` keeps the stored token for the same database and
+    /// user (`SyncStateStore.setConfiguration`); `clearAuthToken()` deletes it.
     public func configure(_ config: SyncConfiguration, confirmServerIdentity: Bool = false) async {
         await store.setConfiguration(config, confirmServerIdentity: confirmServerIdentity)
         await store.pruneAggregateStates(keeping: Set(config.aggregates.map(\.id)))
         observerCoalesceWindow = max(0, config.observerCoalesceWindow)
-        buildTransport(from: config)
+        // From the store, not `config`: the token the store kept is the one
+        // to sync with.
+        buildTransport(from: await store.configuration)
+        notifyChanged()
+    }
+
+    /// Replace the bearer token alone (`SyncStateStore.setAuthToken`).
+    public func setAuthToken(_ token: String) async {
+        await store.setAuthToken(token)
+        buildTransport(from: await store.configuration)
+        notifyChanged()
+    }
+
+    /// Delete the bearer token (`SyncStateStore.clearAuthToken`): the user
+    /// emptied the token field or disconnected the database. Syncing stops
+    /// until a token is applied again.
+    public func clearAuthToken() async {
+        await store.clearAuthToken()
+        buildTransport(from: await store.configuration)
         notifyChanged()
     }
 
@@ -469,6 +498,31 @@ public actor HealthSyncEngine {
         for c in changeContinuations.values { c.yield(()) }
     }
 
+    /// Fires each time a pass meets `errorDatabaseInaccessible` — HealthKit's
+    /// store locked under it. Every pass treats that as a non-failure (the
+    /// type goes idle, progress untouched) and only logs it, so this is the
+    /// typed signal for a caller that has to act on it: the continued
+    /// backfill stops once the device confirms it is locked
+    /// (`BackgroundSyncScheduler`).
+    public func healthDatabaseLockedSignals() -> AsyncStream<Void> {
+        let id = UUID()
+        return AsyncStream { continuation in
+            databaseLockedContinuations[id] = continuation
+            continuation.onTermination = { [weak self] _ in
+                Task { await self?.removeDatabaseLockedContinuation(id) }
+            }
+        }
+    }
+
+    private func removeDatabaseLockedContinuation(_ id: UUID) {
+        databaseLockedContinuations[id] = nil
+    }
+
+    /// Called from every `PassFailure.databaseLocked` branch.
+    func noteHealthDatabaseLocked() {
+        for c in databaseLockedContinuations.values { c.yield(()) }
+    }
+
     /// Both sweeps (`runSync` here, `MergedSync`) call this beside their
     /// "Dropped N of M samples" warning.
     func noteUnmappableSamples(_ count: Int, type identifier: String) {
@@ -725,7 +779,22 @@ public actor HealthSyncEngine {
         }
 
         let config = await store.configuration
-        let initialState = await store.state(for: identifier)
+        var initialState = await store.state(for: identifier)
+        // The server refused this type's last upload in a way a retry cannot
+        // change; its anchor has not moved, so this run would only re-send
+        // the same page. A run someone asked for tries anyway.
+        if initialState.isCoolingDown(), !Self.bypassesCooldown(reason) {
+            await eventLog.log(
+                .debug, type: identifier,
+                "Skipped: cooling down after the server refused an upload (\(initialState.terminalFailures ?? 0) in a row)")
+            return
+        }
+        let startAnchor = await storedAnchor(initialState.anchorData, of: identifier, pass: .main)
+        if startAnchor == nil, initialState.anchorData != nil {
+            // The anchor would not decode and the type was started over;
+            // run from the state that left (backfill reopened).
+            initialState = await store.state(for: identifier)
+        }
         let isBackfill = !initialState.backfillComplete
         activities[identifier] = isBackfill ? .backfilling : .syncing
         if isBackfill, backfillRuns[identifier] == nil {
@@ -751,8 +820,7 @@ public actor HealthSyncEngine {
         do {
             try Task.checkCancellation()
             var next: MergedPage? = try await queryPage(
-                identifier, anchor: try decodeAnchor(initialState.anchorData),
-                start: config.startDate, config: config)
+                identifier, anchor: startAnchor, start: config.startDate, config: config)
 
             while let page = next {
                 try Task.checkCancellation()
@@ -768,6 +836,7 @@ public actor HealthSyncEngine {
                         $0.anchorData = page.newAnchorData
                         $0.lastSyncAt = Date()
                         $0.lastError = nil
+                        $0.clearCooldown()
                     }
                     break
                 }
@@ -874,29 +943,33 @@ public actor HealthSyncEngine {
                 )
             }
             activities[identifier] = .idle
-        } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
-            activities[identifier] = .failed
-            backfillRuns[identifier] = nil
-            await store.recordError(identifier: identifier, error: SyncError.authorizationNotDetermined)
-            await eventLog.log(.error, type: identifier, "Health access not determined — tap Grant Health Access on the Explore tab")
-        } catch let error as HKError where error.code == .errorDatabaseInaccessible {
-            // Device locked: the Health DB is Protected-Unless-Open and relocks
-            // ~10 min after lock. Expected during background runs — not a failure;
-            // the anchor is untouched and the next wake/foreground catches up.
-            activities[identifier] = .idle
-            await eventLog.log(.warn, type: identifier, "Health database locked (device locked) — will retry on next wake")
-        } catch is CancellationError {
-            // Background time expired (BG task expiration handler cancels the
-            // sync task). Not a failure: the anchor sits at the last acked page
-            // and the next wake resumes from there. Recording it as an error
-            // would show every routine expiration as a failed type.
-            activities[identifier] = .idle
-            await eventLog.log(.debug, type: identifier, "Sync cancelled — will resume on next wake")
         } catch {
-            activities[identifier] = .failed
-            backfillRuns[identifier] = nil
-            await store.recordError(identifier: identifier, error: error)
-            await eventLog.log(.error, type: identifier, "Sync failed: \(error)")
+            switch PassFailure(error) {
+            case .authorizationNotDetermined:
+                activities[identifier] = .failed
+                backfillRuns[identifier] = nil
+                await store.recordError(identifier: identifier, error: SyncError.authorizationNotDetermined)
+                await eventLog.log(.error, type: identifier, "Health access not determined — tap Grant Health Access on the Explore tab")
+            case .databaseLocked:
+                noteHealthDatabaseLocked()
+                // Device locked: the Health DB is Protected-Unless-Open and relocks
+                // ~10 min after lock. Expected during background runs — not a failure;
+                // the anchor is untouched and the next wake/foreground catches up.
+                activities[identifier] = .idle
+                await eventLog.log(.warn, type: identifier, "Health database locked (device locked) — will retry on next wake")
+            case .cancelled:
+                // Background time expired (BG task expiration handler cancels the
+                // sync task). Not a failure: the anchor sits at the last acked page
+                // and the next wake resumes from there. Recording it as an error
+                // would show every routine expiration as a failed type.
+                activities[identifier] = .idle
+                await eventLog.log(.debug, type: identifier, "Sync cancelled — will resume on next wake")
+            case .failed(let error):
+                activities[identifier] = .failed
+                backfillRuns[identifier] = nil
+                await store.recordError(identifier: identifier, error: error)
+                await eventLog.log(.error, type: identifier, "Sync failed: \(error)")
+            }
         }
         notifyChanged()
     }
@@ -1099,26 +1172,20 @@ public actor HealthSyncEngine {
 
         for window in ReconcileDigest.monthWindows(from: from, to: now) {
             try Task.checkCancellation()
-            let predicate = HKSamplePredicate<HKSample>.sample(
-                type: sampleType,
-                predicate: HKQuery.predicateForSamples(
-                    withStart: window.start, end: window.end, options: .strictStartDate
-                )
-            )
-            let local = try await HKSampleQueryDescriptor(
-                predicates: [predicate], sortDescriptors: []
-            ).result(for: healthStore)
-            let localByUUID = Dictionary(
-                local.map { ($0.uuid, $0) }, uniquingKeysWith: { a, _ in a })
+            // UUIDs only, read a page at a time: a Watch heart-rate month is
+            // hundreds of thousands of samples, far too many to hold as
+            // `HKSample`s. The few the server turns out to be missing are
+            // fetched again by UUID below.
+            let localUUIDs = try await reconciliationUUIDs(of: sampleType, in: window)
             let server = serverByWindow[window.monthStart]
             let serverRows = server?.rows ?? 0
             report.windowsChecked += 1
-            localTotal += localByUUID.count
+            localTotal += localUUIDs.count
             serverTotal += serverRows
 
-            if localByUUID.isEmpty && serverRows == 0 { continue }
-            if let server, server.rows == Int64(localByUUID.count),
-               server.digest == ReconcileDigest.hexDigest(of: localByUUID.keys) {
+            if localUUIDs.isEmpty && serverRows == 0 { continue }
+            if let server, server.rows == Int64(localUUIDs.count),
+               server.digest == ReconcileDigest.hexDigest(of: localUUIDs) {
                 continue
             }
             // Nothing on the device, rows on the server: a type the app may
@@ -1126,7 +1193,7 @@ public actor HealthSyncEngine {
             // copy. The month is left as it is — there is nothing to
             // re-upload either — unless iOS 27 vouches for read access.
             if ReconcileDigest.orphanVerdict(
-                localCount: localByUUID.count, serverRows: serverRows,
+                localCount: localUUIDs.count, serverRows: serverRows,
                 readAccessConfirmed: readable.isConfirmed) == .withhold {
                 report.windowsUnverified += 1
                 report.orphanDeletionsWithheld += Int(serverRows)
@@ -1140,49 +1207,46 @@ public actor HealthSyncEngine {
 
             let serverUUIDs = try await apiClient.uuids(
                 type: identifier, from: window.start, to: window.end)
-            var samples: [SyncSample] = []
-            for (uuid, hkSample) in localByUUID where !serverUUIDs.contains(uuid) {
-                guard var dto = SampleMapper.map(hkSample, descriptor: descriptor) else { continue }
-                var page = [dto]
-                _ = try await enrich(
-                    &page, from: [hkSample], descriptor: descriptor,
-                    includeRoutes: config.includeWorkoutRoutes,
-                    includeEnhanced: config.includeWorkoutEnhancedData,
-                    userProfile: config.userProfilePayload,
-                    deferEnrichment: true
-                )
-                dto = page[0]
-                samples.append(dto)
-            }
-            let deletions = serverUUIDs.subtracting(localByUUID.keys)
+            let missing = Array(localUUIDs.subtracting(serverUUIDs))
+            let deletions = serverUUIDs.subtracting(localUUIDs)
                 .map { SyncDeletion(uuid: $0, type: identifier) }
-            guard !samples.isEmpty || !deletions.isEmpty else { continue }
+            guard !missing.isEmpty || !deletions.isEmpty else { continue }
 
             // Chunk by the configured batch size so a badly drifted month doesn't
-            // become one giant upload.
-            var pendingSamples = samples[...]
+            // become one giant upload — and fetch, map and enrich only the
+            // chunk about to go, so no more than one batch of samples is held.
+            var pendingMissing = missing[...]
             var pendingDeletions = deletions[...]
+            var reuploaded = 0
             repeat {
+                let chunk = Array(pendingMissing.prefix(config.batchSize))
+                pendingMissing = pendingMissing.dropFirst(config.batchSize)
+                let samples = try await reconciliationSamples(
+                    chunk, of: sampleType, descriptor: descriptor, config: config)
+                let chunkDeletions = Array(pendingDeletions.prefix(config.batchSize))
+                pendingDeletions = pendingDeletions.dropFirst(config.batchSize)
+                // A chunk whose samples were all deleted meanwhile, or would
+                // not map, has nothing to send unless deletions ride along.
+                guard !samples.isEmpty || !chunkDeletions.isEmpty else { continue }
                 let batch = SyncBatch(
                     deviceID: store.deviceID,
                     type: identifier,
                     reason: .reconciliation,
-                    samples: Array(pendingSamples.prefix(config.batchSize)),
-                    deletions: Array(pendingDeletions.prefix(config.batchSize))
+                    samples: samples,
+                    deletions: chunkDeletions
                 )
-                pendingSamples = pendingSamples.dropFirst(config.batchSize)
-                pendingDeletions = pendingDeletions.dropFirst(config.batchSize)
                 _ = try await transport.upload(batch)
-            } while !pendingSamples.isEmpty || !pendingDeletions.isEmpty
+                reuploaded += samples.count
+            } while !pendingMissing.isEmpty || !pendingDeletions.isEmpty
 
-            report.samplesReuploaded += samples.count
+            report.samplesReuploaded += reuploaded
             report.orphanDeletionsSent += deletions.count
-            if descriptor.kind == .workout, !samples.isEmpty {
+            if descriptor.kind == .workout, reuploaded > 0 {
                 repairedWorkoutSamples = true
             }
             await eventLog.log(
                 .warn, type: identifier,
-                "Reconciled \(Self.windowLabel(window.monthStart)): +\(samples.count) samples, -\(deletions.count) orphans"
+                "Reconciled \(Self.windowLabel(window.monthStart)): +\(reuploaded) samples, -\(deletions.count) orphans"
             )
         }
 
@@ -1220,6 +1284,64 @@ public actor HealthSyncEngine {
         await eventLog.log(.info, type: identifier, "Reconciliation finished: \(report.summary)")
         notifyChanged()
         return report
+    }
+
+    /// How many samples one reconciliation read holds at a time.
+    static let reconciliationPageSize = 5_000
+
+    /// Every UUID of `sampleType` starting in `window`, read with an anchored
+    /// query from a nil anchor — HealthKit's own cursor — `reconciliationPageSize`
+    /// at a time, so only UUIDs outlive a page. The same set the old
+    /// unlimited sample query produced: the same predicate, every page until
+    /// a short one.
+    private func reconciliationUUIDs(
+        of sampleType: HKSampleType, in window: ReconcileDigest.MonthWindow
+    ) async throws -> Set<UUID> {
+        let predicate = HKSamplePredicate<HKSample>.sample(
+            type: sampleType,
+            predicate: HKQuery.predicateForSamples(
+                withStart: window.start, end: window.end, options: .strictStartDate
+            )
+        )
+        var uuids = Set<UUID>()
+        var anchor: HKQueryAnchor?
+        while true {
+            try Task.checkCancellation()
+            let page = try await HKAnchoredObjectQueryDescriptor(
+                predicates: [predicate], anchor: anchor, limit: Self.reconciliationPageSize
+            ).result(for: healthStore)
+            for sample in page.addedSamples { uuids.insert(sample.uuid) }
+            anchor = page.newAnchor
+            // Raw count, deletions included, exactly as `queryPage` judges a
+            // short page: fewer than asked for means HealthKit has no more.
+            if page.addedSamples.count + page.deletedObjects.count < Self.reconciliationPageSize {
+                return uuids
+            }
+        }
+    }
+
+    /// The samples behind `uuids` — the ones the server is missing — mapped
+    /// and given the same enrichment the raw sweep gives them. A sample
+    /// deleted since the UUIDs were read is simply absent.
+    private func reconciliationSamples(
+        _ uuids: [UUID], of sampleType: HKSampleType, descriptor: HealthTypeDescriptor,
+        config: SyncConfiguration
+    ) async throws -> [SyncSample] {
+        guard !uuids.isEmpty else { return [] }
+        let predicate = HKSamplePredicate<HKSample>.sample(
+            type: sampleType, predicate: HKQuery.predicateForObjects(with: Set(uuids)))
+        let hkSamples = try await HKSampleQueryDescriptor(
+            predicates: [predicate], sortDescriptors: []
+        ).result(for: healthStore)
+        var samples = hkSamples.compactMap { SampleMapper.map($0, descriptor: descriptor) }
+        _ = try await enrich(
+            &samples, from: hkSamples, descriptor: descriptor,
+            includeRoutes: config.includeWorkoutRoutes,
+            includeEnhanced: config.includeWorkoutEnhancedData,
+            userProfile: config.userProfilePayload,
+            deferEnrichment: true
+        )
+        return samples
     }
 
     private static func windowLabel(_ date: Date) -> String {
@@ -1453,6 +1575,37 @@ public actor HealthSyncEngine {
         try? await healthStore.disableAllBackgroundDelivery()
     }
 
+    // MARK: - Cooldowns and unreadable anchors
+
+    /// Whether a run ignores type cooldowns (`TypeSyncState.cooldownUntil`):
+    /// one a person asked for — Sync Now, pull-to-refresh, Start Backfill, a
+    /// single type's Sync — rather than an observer wake, a background task
+    /// or a foreground pass. Its upload either goes through, which lifts the
+    /// cooldown, or is refused again, which lengthens it.
+    nonisolated static func bypassesCooldown(_ reason: SyncReason) -> Bool {
+        reason == .manual || WakeScope.current?.trigger == .manual
+    }
+
+    /// The anchor stored for `identifier` on `pass`'s stream, decoded. One
+    /// that will not decode (a restored or downgraded state file) is not
+    /// inspected and not retried forever: the stream is started over
+    /// (`SyncStateStore.restartForUnreadableAnchor`) and nil returned, so
+    /// this run reads it from the start. Re-sending what the server has is
+    /// a no-op. The caller must hold the type's claim.
+    func storedAnchor(_ data: Data?, of identifier: String, pass: SweepPass) async -> HKQueryAnchor? {
+        do {
+            return try decodeAnchor(data)
+        } catch {
+            await store.restartForUnreadableAnchor(identifier, recentStreamOnly: pass == .recent)
+            await eventLog.log(
+                .warn, type: identifier,
+                pass == .recent
+                    ? "Stored recent-window anchor unreadable (\(error)); re-reading the recent window"
+                    : "Stored anchor unreadable (\(error)); starting this type's history over — the server ignores samples it already has")
+            return nil
+        }
+    }
+
     // MARK: - Anchor codec
 
     nonisolated func decodeAnchor(_ data: Data?) throws -> HKQueryAnchor? {
@@ -1463,6 +1616,37 @@ public actor HealthSyncEngine {
     nonisolated func encodeAnchor(_ anchor: HKQueryAnchor?) throws -> Data? {
         guard let anchor else { return nil }
         return try NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true)
+    }
+}
+
+/// How a pass runner tells its failures apart. The per-type and merged
+/// sweeps, the aggregate, ring and workout-enrichment passes each used to
+/// spell out the same four `catch` clauses; this is that classification once,
+/// and each runner still decides what to log and record for each case.
+enum PassFailure {
+    /// Health access for the type was never asked for. Recorded as
+    /// `SyncError.authorizationNotDetermined`.
+    case authorizationNotDetermined
+    /// The device is locked and HealthKit unreadable. Not a failure: progress
+    /// is untouched and the next unlocked run catches up.
+    case databaseLocked
+    /// Background time ran out. Not a failure either.
+    case cancelled
+    /// Anything else, recorded as the pass's error.
+    case failed(any Error)
+
+    init(_ error: any Error) {
+        if let healthKitError = error as? HKError,
+           healthKitError.code == .errorAuthorizationNotDetermined {
+            self = .authorizationNotDetermined
+        } else if let healthKitError = error as? HKError,
+                  healthKitError.code == .errorDatabaseInaccessible {
+            self = .databaseLocked
+        } else if error is CancellationError {
+            self = .cancelled
+        } else {
+            self = .failed(error)
+        }
     }
 }
 

@@ -297,11 +297,7 @@ struct ExploreView: View {
     }
 
     private var searchResults: some View {
-        let matches = HealthTypeCatalog.all.filter {
-            $0.displayName.localizedCaseInsensitiveContains(searchText)
-                || $0.group.rawValue.localizedCaseInsensitiveContains(searchText)
-                || $0.identifier.localizedCaseInsensitiveContains(searchText)
-        }
+        let matches = HealthTypeCatalog.all.filter { $0.matchesSearch(searchText) }
         return Section {
             if matches.isEmpty {
                 ContentUnavailableView.search(text: searchText)

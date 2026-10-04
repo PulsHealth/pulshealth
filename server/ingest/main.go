@@ -24,12 +24,23 @@ import (
 )
 
 const (
-	maxWireBody     = 256 << 20 // compressed request body cap
-	maxDecodedBody  = 128 << 20 // decompressed NDJSON cap
-	shutdownTimeout = 15 * time.Second
+	maxWireBody    = 256 << 20 // compressed request body cap
+	maxDecodedBody = 128 << 20 // decompressed NDJSON cap
+	// Inside Compose's stop_grace_period (30 s), with room left for the
+	// inserts still running at the end of it to be cancelled and the pool
+	// closed before SIGKILL; see run.
+	shutdownTimeout = 20 * time.Second
 	maxUUIDRange    = 35 * 24 * time.Hour // /v1/uuids response size guard
 	// Upper bound on one batch's database work; see handleBatch.
 	insertDeadline = 5 * time.Minute
+	// Batches decoded and inserted at once (PULS_MAX_INFLIGHT_BATCHES), how
+	// long a request waits for a free slot, and the Retry-After it gets when
+	// none frees up. See acquireBatchSlot.
+	defaultMaxInflightBatches = 4
+	batchSlotWait             = 2 * time.Second
+	batchRetryAfterSeconds    = 5
+	// What server/.env.example ships every secret as; see refusePlaceholder.
+	placeholderSecret = "change-me"
 )
 
 // buildVersion identifies this build in GET /v1/capabilities. The Dockerfile
@@ -82,6 +93,16 @@ func main() {
 		os.Exit(runQRCLI(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
 	}
 
+	// `ingest healthcheck [addr]` is the Compose healthcheck
+	// (healthcheck.go): the image is distroless, so there is no curl.
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		addr := os.Getenv("LISTEN_ADDR")
+		if addr == "" {
+			addr = ":8080"
+		}
+		os.Exit(runHealthcheck(os.Args[2:], addr, os.Stderr))
+	}
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
@@ -96,13 +117,12 @@ func run(logger *slog.Logger) error {
 	// empty, or PULS_ALLOW_SHARED_TOKEN=false, means only device tokens
 	// authenticate. See auth.go for the order the two are checked in.
 	token := os.Getenv("PULS_TOKEN")
-	allowShared := true
-	if raw := os.Getenv("PULS_ALLOW_SHARED_TOKEN"); raw != "" {
-		parsed, err := strconv.ParseBool(raw)
-		if err != nil {
-			return fmt.Errorf("PULS_ALLOW_SHARED_TOKEN must be true or false, got %q", raw)
-		}
-		allowShared = parsed
+	if err := refusePlaceholder("PULS_TOKEN", token); err != nil {
+		return err
+	}
+	allowShared, err := parseBoolEnv("PULS_ALLOW_SHARED_TOKEN", os.Getenv("PULS_ALLOW_SHARED_TOKEN"), true)
+	if err != nil {
+		return err
 	}
 	allowShared = allowShared && token != ""
 	dbURL := os.Getenv("DATABASE_URL")
@@ -116,13 +136,10 @@ func run(logger *slog.Logger) error {
 	// Off by default: X-Forwarded-For is set by whoever sends the request,
 	// so believing it without a proxy in front would let one attacker look
 	// like an unlimited number of clients to the auth-failure limiter.
-	trustProxyHeaders := false
-	if raw := os.Getenv("TRUST_PROXY_HEADERS"); raw != "" {
-		parsed, err := strconv.ParseBool(raw)
-		if err != nil {
-			return fmt.Errorf("TRUST_PROXY_HEADERS must be true or false, got %q", raw)
-		}
-		trustProxyHeaders = parsed
+	// Parsed by the one rule all three Go services share (envbool.go).
+	trustProxyHeaders, err := parseBoolEnv("TRUST_PROXY_HEADERS", os.Getenv("TRUST_PROXY_HEADERS"), false)
+	if err != nil {
+		return err
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -134,8 +151,15 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
+	// Inserts outlive their request (see handleBatch) but not the process:
+	// this is cancelled once shutdown's grace has run out.
+	lifetime, endLifetime := context.WithCancel(context.Background())
+	defer endLifetime()
+
 	store := NewStore(pool)
 	srv := newServer(store, store, token, allowShared, trustProxyHeaders, logger)
+	srv.lifetime = lifetime
+	srv.batchSlots = make(chan struct{}, maxInflightBatches(os.Getenv("PULS_MAX_INFLIGHT_BATCHES")))
 	logAuthMode(logger, allowShared)
 	logger.Info("auth failure limiting",
 		"burst", authFailureBurst, "per_minute", authFailurePerMinute,
@@ -162,7 +186,7 @@ func run(logger *slog.Logger) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("listening", "addr", addr)
+		logger.Info("listening", "addr", addr, "max_inflight_batches", cap(srv.batchSlots))
 		if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
@@ -177,7 +201,36 @@ func run(logger *slog.Logger) error {
 	logger.Info("shutting down")
 	shCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
-	return httpSrv.Shutdown(shCtx)
+	err = httpSrv.Shutdown(shCtx)
+	// A batch still inserting has had its grace. Cancel it (the transaction
+	// rolls back and the phone resends; inserts are idempotent), or the
+	// deferred pool.Close waits out its insertDeadline and Compose SIGKILLs.
+	endLifetime()
+	return err
+}
+
+// refusePlaceholder fails startup on a token still set to the .env.example
+// placeholder: an install made by hand from the example, without
+// scripts/bootstrap.sh, would otherwise accept a credential anyone can guess.
+func refusePlaceholder(name, value string) error {
+	if strings.EqualFold(strings.TrimSpace(value), placeholderSecret) {
+		return fmt.Errorf("%s is still the placeholder %q from .env.example: set a random value "+
+			"(scripts/bootstrap.sh generates one, or use `openssl rand -hex 32`)", name, placeholderSecret)
+	}
+	return nil
+}
+
+// maxInflightBatches reads PULS_MAX_INFLIGHT_BATCHES: unset or not a number
+// is the default, and anything below 1 is 1.
+func maxInflightBatches(raw string) int {
+	n, err := strconv.Atoi(strings.TrimSpace(raw))
+	switch {
+	case err != nil:
+		return defaultMaxInflightBatches
+	case n < 1:
+		return 1
+	}
+	return n
 }
 
 // connectWithRetry waits for the database to come up (compose may start us
@@ -243,6 +296,12 @@ type Server struct {
 	// Last known database status for the unauthenticated /healthz, so its
 	// request rate cannot drive pool acquisitions (see health.go).
 	health healthCache
+
+	// One slot per batch being decoded and inserted (see acquireBatchSlot).
+	batchSlots chan struct{}
+	// Parent of every insert's context: cancelled when shutdown's grace runs
+	// out, so no insert outlives the process's last seconds.
+	lifetime context.Context
 }
 
 func newServer(store ingester, tokens tokenResolver, sharedToken string, allowShared, trustProxyHeaders bool, log *slog.Logger) *Server {
@@ -254,6 +313,8 @@ func newServer(store ingester, tokens tokenResolver, sharedToken string, allowSh
 		log:               log,
 		authFailures:      newFailureLimiter(),
 		trustProxyHeaders: trustProxyHeaders,
+		batchSlots:        make(chan struct{}, defaultMaxInflightBatches),
+		lifetime:          context.Background(),
 	}
 }
 
@@ -296,6 +357,20 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 		s.rejectProtocol(w, r, err, 0)
 		return
 	}
+
+	// Each batch may decode to maxDecodedBody, so only so many are handled at
+	// once. The slot is taken after auth (a full house neither charges nor
+	// skips the failure limiter) and before the body is read (a waiting
+	// request holds no decoded bytes). Not recorded as a rejection: writing
+	// to the database is the last thing to add while it is the bottleneck.
+	if !s.acquireBatchSlot(r.Context()) {
+		s.log.Warn("batch refused: too many in flight",
+			"batch_id", headerBatchID, "max_inflight_batches", cap(s.batchSlots))
+		w.Header().Set("Retry-After", strconv.Itoa(batchRetryAfterSeconds))
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "too many batches in flight; retry shortly"})
+		return
+	}
+	defer func() { <-s.batchSlots }()
 
 	cr := &countingReader{r: http.MaxBytesReader(w, r.Body, maxWireBody)}
 	var body io.Reader = cr
@@ -349,7 +424,7 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 	// upserts the matching users row. The token id is recorded on the batch.
 	userID, ok := readUserID(w, r)
 	if !ok {
-		s.recordBatchRejection(r, http.StatusBadRequest, "identity", "X-User-ID is not a UUID", cr.n)
+		s.recordBatchRejection(r, http.StatusInternalServerError, "identity", "no authenticated user", cr.n)
 		return
 	}
 	batch.Header.UserID = userID
@@ -376,8 +451,9 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 	// held this goroutine and its pool connection forever, and a phone that
 	// gave up mid-insert rolled back a nearly-committed batch only to resend
 	// it. The batch is idempotent end-to-end, so finishing the commit after a
-	// disconnect is strictly better than redoing the work on retry.
-	insertCtx, cancelInsert := context.WithTimeout(context.WithoutCancel(r.Context()), insertDeadline)
+	// disconnect is strictly better than redoing the work on retry. Only the
+	// server's own shutdown (s.lifetime) cuts it short.
+	insertCtx, cancelInsert := context.WithTimeout(s.lifetime, insertDeadline)
 	defer cancelInsert()
 	insertStart := time.Now()
 	res, err := s.store.InsertBatch(insertCtx, batch, cr.n)
@@ -429,6 +505,19 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 		"aggregateSamples":  res.AggregateSamples,
 		"activitySummaries": res.ActivitySummaries,
 	})
+}
+
+// acquireBatchSlot takes one of the batch slots, waiting up to batchSlotWait
+// (less if the client goes away) for one to free up.
+func (s *Server) acquireBatchSlot(ctx context.Context) bool {
+	ctx, cancel := context.WithTimeout(ctx, batchSlotWait)
+	defer cancel()
+	select {
+	case s.batchSlots <- struct{}{}:
+		return true
+	case <-ctx.Done():
+		return false
+	}
 }
 
 // rejectProtocol answers an unsupported or contradictory protocol version with
@@ -740,7 +829,7 @@ func (s *Server) handleCapabilities(w http.ResponseWriter, _ *http.Request) {
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 	// Cached: this endpoint is unauthenticated, so request rate must not drive
 	// pool acquisitions. See health.go.
-	if !s.health.status(r.Context(), s.store, time.Now()) {
+	if !s.health.status(s.store, time.Now()) {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"ok": false, "db": false})
 		return
 	}

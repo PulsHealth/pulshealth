@@ -5,7 +5,7 @@
 //
 //   WEB_APP_DATABASE_URL=postgres://web_app:<WEB_DB_PASSWORD>@127.0.0.1:5432/postgres
 //   ADMIN_DATABASE_URL=postgres://postgres:<POSTGRES_PASSWORD>@127.0.0.1:5432/postgres
-//   npx vitest run lib/webapp.integration.test.ts
+//   npm run test:integration   # every lib/*.integration.test.ts
 //
 // Fixtures go in as the superuser for two fresh users, with the old half of
 // each hypertable's rows compressed, and are read back as web_app. The claim
@@ -19,14 +19,11 @@ import { Client, DatabaseError } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { configuredTimeZone } from "./config";
+import { requireIntegrationDatabases } from "./integrationEnv";
 
-const WEB_URL = process.env.WEB_APP_DATABASE_URL;
-const ADMIN_URL = process.env.ADMIN_DATABASE_URL;
-
-// In CI the job sets both; a missing one there must fail, not skip quietly.
-if (process.env.CI && process.env.PULS_WEB_INTEGRATION && (!WEB_URL || !ADMIN_URL)) {
-  throw new Error("PULS_WEB_INTEGRATION is set but WEB_APP_DATABASE_URL or ADMIN_DATABASE_URL is missing");
-}
+// In CI the job sets both; a missing one there must fail, not skip quietly
+// (PULS_CI_REQUIRE_INTEGRATION / PULS_WEB_INTEGRATION, lib/integrationEnv.ts).
+const { webUrl: WEB_URL, adminUrl: ADMIN_URL } = requireIntegrationDatabases();
 
 const A = randomUUID();
 const B = randomUUID();

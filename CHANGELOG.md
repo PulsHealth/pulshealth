@@ -3,9 +3,8 @@
 What changed in each release of the **server stack** — the four images
 `ghcr.io/pulshealth/{ingest,api,mcp,web}`, which share one version that
 `PULS_VERSION` in `.env` selects. Upgrading is: bump it, bring the checkout
-to the same release (`git pull`, or `git checkout vX.Y.Z` — the compose file
-and the schema migrations come from it, not from the images), then
-`make pull up`.
+to the same release (`git checkout vX.Y.Z` — the compose file and the schema
+migrations come from it, not from the images), then `make pull up`.
 
 Two things are versioned separately and are not in this file:
 
@@ -25,16 +24,59 @@ change), a minor for features, a patch for fixes. While the stack is on 0.x
 that promise is weaker by convention — a minor may carry a change that needs
 operator action, and when it does this file says so at the top of the entry.
 
-## Unreleased
+## Compatibility
 
-No operator action is required, but there is a schema migration: take
-`make backup` before upgrading, as for any. `015_web_accounts.sql` and `016_web_signups.sql` add two
+Every server release so far speaks protocol v1 and every app release since
+self-hosted sync (1.4) sends v1, so any app version syncs to any server
+version. Features that need both sides say so here.
+
+| App ↓ / Server → | 0.1.x | 0.2.x | 0.3.x |
+|---|---|---|---|
+| 1.4 | syncs | syncs; per-device tokens work (the app just sends the token) | syncs |
+| 1.5, 1.6 | syncs; pairing links and QR codes | syncs | syncs; the viewer's "Connect this iPhone" code pairs through a link or the camera |
+| next (in-app PulsHealth database sign-in) | syncs | syncs | syncs; the sign-in needs a 0.3 viewer in accounts mode with `WEB_INGEST_URL` set |
+
+New HealthKit type identifiers (iOS 27's Recovery HRV, for one) reach any
+server: ingest registers types on first sight. What a receiver must accept
+within v1 is in `docs/protocol/README.md`, "Additive changes in v1". A
+future protocol v2 would be a server-first upgrade: an old server answers
+batches it cannot read with 400, which the app does not retry, so syncing
+pauses (nothing is lost) until the server is updated.
+
+## [0.3.0] - 2026-10-04
+
+**Upgrading:** take `make backup`, check out `v0.3.0`, set
+`PULS_VERSION=0.3.0`, then `make pull up`.
+
+No operator action is required beyond the cases below, but there are
+schema migrations: take `make backup` before upgrading, as for any.
+`015_web_accounts.sql` and `016_web_signups.sql` add two
 schemas (`auth`, `web`), functions and views, and alter no existing table
 outside them, so Grafana, the product API and ingest read and write exactly
 as before. `ingest` gains a subcommand and one Go dependency; `web` gains an
 opt-in accounts mode. Nothing new is required in `.env`; `WEB_DB_PASSWORD`
 (which `scripts/bootstrap.sh` now generates) creates the `web_app` role that
-accounts mode connects as.
+accounts mode connects as. `017_prune_ingest_rejections.sql` adds a daily job
+that deletes rejected-batch records older than 90 days;
+`018_web_accounts_hardening.sql` replaces four `auth` functions and adds
+one. `099_read_roles.sh` now gives the `ingest` role an exact grant list
+instead of DML on every table.
+
+**Four cases do need action** (each stops a service with a log line that
+says so, rather than misbehaving):
+
+- An `.env` still holding the `change-me` placeholder from `.env.example`
+  for a token or a database role password (see Security below). Generate
+  real values (`openssl rand -hex 32`); an install made by
+  `scripts/bootstrap.sh` already has them.
+- `TRUST_PROXY_HEADERS`, `PULS_ALLOW_SHARED_TOKEN` or `PULS_MULTI_USER` set
+  to anything but `true/false/1/0/yes/no/on/off` (or empty).
+- A table you added to the database yourself and have ingest write to:
+  give it a row in `099_read_roles.sh`'s ingest list.
+- An `api` service given a `PULS_TIME_ZONE` other than the one the
+  `migrate` service stored on the database (`puls_time_zone()`). Compose
+  hands every service the same `.env`, so this only happens to an `api` run
+  outside it; give both the same zone.
 
 ### Added
 
@@ -68,6 +110,15 @@ accounts mode connects as.
   after 30 days.
 - In accounts mode, a request that reached the viewer over plain HTTP through
   the trusted proxy is redirected to HTTPS instead of refused.
+- **Healthchecks** for ingest, the API, the MCP server and the viewer
+  (`docker compose ps` shows them; the Go images answer their own
+  `healthcheck` subcommand, having no shell). The MCP server waits for a
+  healthy API.
+- `GET /v1/users` reports the API's `timeZone`, and the MCP server takes
+  its zone from there when `PULS_TIME_ZONE` is unset (Compose no longer
+  passes it).
+- `/admin` shows how many requests wait, with Decline selected and Decline
+  all shown.
 - An optional `tunnel` Compose profile: a Cloudflare Tunnel that serves the
   viewer on a domain of yours with no open port (`CLOUDFLARE_TUNNEL_TOKEN`,
   `COMPOSE_PROFILES=tunnel`); `server/README.md`, "Exposing the server".
@@ -104,6 +155,23 @@ accounts mode connects as.
 
 ### Fixed
 
+- The product API refuses to start when its `PULS_TIME_ZONE` differs from
+  the database's `puls_time_zone()`, rather than answering every daily
+  query on the wrong calendar.
+- Stopping the API with an export in flight aborts the export (never a
+  cleanly closed, truncated file) instead of waiting for SIGKILL.
+- `/v1/catalog/types` is served from cache while one background refresh
+  runs, so a cache miss no longer scans every hypertable on the request.
+- A ring day from a client older than `localDate` is dated by its own
+  time-zone offset when the line carries one.
+- `migrate` holds an advisory lock for the whole run: `make migrate` during
+  `docker compose up -d` waits instead of applying a file twice.
+- A viewer read that fails shows "Database unavailable" on that page
+  instead of empty charts.
+- On a release checkout `scripts/bootstrap.sh` pins `PULS_VERSION` to it,
+  and on any other it warns that the latest images may not match the
+  checkout's schema.
+
 - `make devices ARGS='issue --name "My iPhone"'` no longer dies in `test` on
   the quoted label.
 - `make restore` drops the viewer's `auth` and `web` schemas along with
@@ -112,6 +180,50 @@ accounts mode connects as.
 - The viewer's return-path check refuses control characters and backslashes.
   Browsers strip tabs and newlines from a URL, so the user switcher's `next`
   field could be pointed off-site as `/<tab>/example.com`.
+- `restore.sh` stops the scheduled backup service while it runs (a dump
+  taken mid-restore could become the newest backup), refuses a dump name
+  missing from the store, and no longer suggests `docker compose down -v`,
+  which deletes the `backups` volume holding the dump.
+- A client that stops reading an export no longer holds its slot forever:
+  each export has a 60 s write deadline and a 30-minute ceiling.
+- A product-API query that runs out of time is a 504 asking for a narrower
+  range, not a 500.
+- Restarting ingest with a batch in flight no longer ends in SIGKILL
+  (`stop_grace_period: 30s`, inserts cancelled after shutdown).
+- The database container gets `shm_size: 1g`; Docker's 64 MB default fails
+  parallel queries over a few years of samples.
+
+### Security
+
+- **Rate limiting behind a proxy keys on the last `X-Forwarded-For`
+  entry**, in ingest, the product API and the viewer. Cloudflare, nginx
+  and Caddy append to the header, so the first entry was the client's own
+  choice and a fresh failure bucket per request was possible.
+- Ingest, the API and the MCP server (HTTP mode) refuse a token of
+  `change-me`, and the migrate service refuses it as a role password.
+- An MCP server pinned with `PULS_USER_ID` lists only its own user; it
+  listed every user's name and email.
+- Ingest decodes at most `PULS_MAX_INFLIGHT_BATCHES` (default 4) batches at
+  once and answers 503 with `Retry-After` beyond it, which the app retries.
+- Viewer passwords use scrypt N=2^16, r=8, p=2, rehashed on next sign-in,
+  and a session ends 90 days after sign-in however often it is used.
+  `WEB_DB_POOL_SIZE` sets the viewer's connection pool (default 4).
+- Releases: only a `v*` tag on `main` is published as a release, and
+  `latest` moves only after all four images are published.
+- The MCP server's HTTP mode throttles failed bearer tokens like ingest and
+  the API.
+- In accounts mode an administrator cannot disable another administrator
+  or themselves, the database's privileged functions enforce the 90-day
+  session cap too, undecided sign-up requests are deleted after 30 days,
+  and at 500 waiting the form stores nothing more.
+- A stranger can no longer keep an account owner locked out by failing
+  sign-ins as their email: a failure from an address one of the account's
+  sessions came from is charged only to that address.
+- The viewer warns when accounts mode trusts `X-Forwarded-For` (behind
+  Cloudflare, use `cf-connecting-ip`).
+- The `ingest` role holds an exact, asserted grant list: nothing on
+  `schema_migrations`, the views or the viewer's schemas, no `DELETE` on
+  `device_tokens`, no default privileges.
 
 ## [0.2.0] - 2026-09-18
 

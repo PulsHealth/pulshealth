@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const queryMock = vi.hoisted(() => vi.fn());
@@ -275,24 +278,53 @@ describe("query semantics", () => {
     // All Time pulls the per-user stats and every quantity chart consults the
     // database zone: both must happen before the chart's own transaction.
     // A fresh module per call, so the zone and stats caches are cold and each
-    // function has to do its own lookups.
+    // function has to do its own lookups. Every data function lib/data/
+    // exports must be listed here (checked below), so a new one cannot skip it.
     type Queries = typeof import("./queries");
-    const calls: [string, (queries: Queries) => Promise<unknown>][] = [];
+    const WORKOUT = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const calls: [string, string, (queries: Queries) => Promise<unknown>][] = [];
     for (const range of ["D", "30D", "ALL"] as const) {
-      calls.push([`steps ${range}`, (x) => x.getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", range)]);
-      calls.push([`sleep ${range}`, (x) => x.getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", range)]);
+      calls.push(["getSeries", `steps ${range}`, (x) => x.getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", range)]);
+      calls.push(["getSeries", `sleep ${range}`, (x) => x.getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", range)]);
     }
-    calls.push(["sparklines", (x) => x.getDailySparklines(USER_ID, ["HKQuantityTypeIdentifierStepCount"])]);
-    calls.push(["stats", (x) => x.getStats(USER_ID)]);
-    calls.push(["workout", (x) => x.getWorkoutDetail(USER_ID, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")]);
-    calls.push(["profile", (x) => x.getProfile(USER_ID)]);
-    for (const [name, call] of calls) {
+    calls.push(["getDailySparklines", "sparklines", (x) => x.getDailySparklines(USER_ID, ["HKQuantityTypeIdentifierStepCount", "HKQuantityTypeIdentifierHeartRate"])]);
+    calls.push(["getLatestMany", "latest", (x) => x.getLatestMany(USER_ID, ["HKQuantityTypeIdentifierHeartRate"])]);
+    calls.push(["getTodayTotals", "today", (x) => x.getTodayTotals(USER_ID, ["HKQuantityTypeIdentifierStepCount"])]);
+    calls.push(["getActivityRings", "rings", (x) => x.getActivityRings(USER_ID)]);
+    calls.push(["getStats", "stats", (x) => x.getStats(USER_ID)]);
+    calls.push(["getWorkouts", "workouts", (x) => x.getWorkouts(USER_ID, 3)]);
+    calls.push(["getWorkoutDetail", "workout", (x) => x.getWorkoutDetail(USER_ID, WORKOUT)]);
+    calls.push(["getWorkoutSeries", "workout series", (x) => x.getWorkoutSeries(USER_ID, WORKOUT)]);
+    calls.push(["getUser", "user", (x) => x.getUser(USER_ID)]);
+    calls.push(["getProfile", "profile", (x) => x.getProfile(USER_ID)]);
+    // Not health data, read outside any scope: the source probe and Basic
+    // mode's switcher list.
+    calls.push(["getDataSource", "source", (x) => x.getDataSource()]);
+    calls.push(["getUsers", "users", (x) => x.getUsers()]);
+    const UNSCOPED = new Set(["getDataSource", "getUsers"]);
+    for (const [fn, name, call] of calls) {
       vi.resetModules();
       nested.calls.length = 0;
       scopedStatements.length = 0;
       await call(await import("./queries"));
-      expect(scopedStatements.length, name).toBeGreaterThan(0);
+      if (!UNSCOPED.has(fn)) expect(scopedStatements.length, name).toBeGreaterThan(0);
       expect(nested.calls, name).toEqual([]);
+    }
+
+    // Every read in lib/data/, found by reading the files, is both exported
+    // through ./queries and exercised above.
+    const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "data");
+    const scopedReads = new Set<string>();
+    for (const file of readdirSync(dir).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))) {
+      const text = readFileSync(path.join(dir, file), "utf8");
+      for (const m of text.matchAll(/^export (?:async function|const) (get\w+)/gm)) scopedReads.add(m[1]);
+    }
+    expect(scopedReads.size).toBeGreaterThan(5);
+    const exported = await import("./queries");
+    const covered = new Set(calls.map(([fn]) => fn));
+    for (const fn of scopedReads) {
+      expect(typeof (exported as Record<string, unknown>)[fn], `${fn} is not exported from ./queries`).toBe("function");
+      expect(covered.has(fn), `${fn} is missing from the nested-connection check`).toBe(true);
     }
   });
 
@@ -311,5 +343,123 @@ describe("query semantics", () => {
     expect(scans.map(([, params]) => params[0])).toEqual([USER_ID, OTHER]);
     expect(firstAgain).toBe(first);
     expect(second).not.toBe(first);
+  });
+});
+
+describe("a failed read", () => {
+  it("throws DataUnavailableError on the page that hit it and re-checks the database", async () => {
+    vi.stubEnv("NODE_ENV", "production"); // no demo fallback
+    vi.resetModules();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { DataUnavailableError, getDataSource, getWorkouts, isDataUnavailable } = await import("./queries");
+      const probes = () => queryMock.mock.calls.filter(([sql]) => sql === "SELECT 1").length;
+      expect((await getDataSource()).source).toBe("live");
+      expect((await getDataSource()).source).toBe("live");
+      expect(probes()).toBe(1); // cached between reads that succeed
+
+      // One statement fails on its own: the page that ran it says so instead
+      // of charting nothing, and the probe still answers, so the viewer
+      // stays live for everyone else.
+      queryMock.mockImplementation((sql: string) =>
+        sql === "SELECT 1" ? Promise.resolve([]) : Promise.reject(new Error("canceling statement due to statement timeout")),
+      );
+      const failure = await getWorkouts(USER_ID).then(() => null, (e: unknown) => e);
+      expect(failure).toBeInstanceOf(DataUnavailableError);
+      // The digest is what survives Next.js's production error scrubbing
+      // and what app/error.tsx recognises.
+      expect(isDataUnavailable(failure)).toBe(true);
+      expect(isDataUnavailable({ digest: (failure as { digest: string }).digest })).toBe(true);
+      expect(isDataUnavailable(new Error("boom"))).toBe(false);
+      expect(isDataUnavailable({ digest: "1234567890" })).toBe(false);
+      expect((await getDataSource()).source).toBe("live");
+      expect(probes()).toBe(2);
+
+      // The pool times out: so does the probe, and the source says so.
+      queryMock.mockRejectedValue(new Error("timeout exceeded when trying to connect"));
+      await expect(getWorkouts(USER_ID)).rejects.toBeInstanceOf(DataUnavailableError);
+      expect(await getDataSource()).toEqual({ source: "error", detail: "Database unreachable" });
+      // …and while it does, every read throws without trying the database.
+      queryMock.mockClear();
+      await expect(getWorkouts(USER_ID)).rejects.toThrow("Database unreachable");
+      expect(queryMock).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  });
+
+  it("passes a nested read's failure through unchanged (All Time's stats)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.resetModules();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const { DataUnavailableError, getSeries } = await import("./queries");
+      queryMock.mockImplementation((sql: string) =>
+        sql.includes("UNION ALL") ? Promise.reject(new Error("statement timeout")) : Promise.resolve([]),
+      );
+      await expect(getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "ALL")).rejects.toBeInstanceOf(DataUnavailableError);
+      // Logged once, by the stats read that failed, not again by the chart.
+      expect(errorSpy.mock.calls.filter(([msg]) => String(msg).includes("failed"))).toHaveLength(1);
+    } finally {
+      errorSpy.mockRestore();
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  });
+});
+
+describe("with no live database", () => {
+  type Queries = typeof import("./queries");
+  // Every page-level read, with what it must not return in production.
+  const reads: [string, (x: Queries) => Promise<unknown>][] = [
+    ["getSeries", (x) => x.getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "30D")],
+    ["getLatestMany", (x) => x.getLatestMany(USER_ID, ["HKQuantityTypeIdentifierHeartRate"])],
+    ["getTodayTotals", (x) => x.getTodayTotals(USER_ID, ["HKQuantityTypeIdentifierStepCount"])],
+    ["getActivityRings", (x) => x.getActivityRings(USER_ID)],
+    ["getStats", (x) => x.getStats(USER_ID)],
+    ["getDailySparklines", (x) => x.getDailySparklines(USER_ID, ["HKQuantityTypeIdentifierStepCount"])],
+    ["getWorkouts", (x) => x.getWorkouts(USER_ID)],
+    ["getWorkoutDetail", (x) => x.getWorkoutDetail(USER_ID, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")],
+    ["getWorkoutSeries", (x) => x.getWorkoutSeries(USER_ID, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")],
+    ["getUser", (x) => x.getUser(USER_ID)],
+    ["getProfile", (x) => x.getProfile(USER_ID)],
+  ];
+
+  async function withoutDatabase(nodeEnv: string, fn: (x: Queries) => Promise<void>) {
+    vi.stubEnv("NODE_ENV", nodeEnv);
+    vi.stubEnv("DATABASE_URL", "");
+    vi.resetModules();
+    try {
+      await fn(await import("./queries"));
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  }
+
+  it("throws the error source in production, never demo data or an empty chart", async () => {
+    await withoutDatabase("production", async (x) => {
+      expect(await x.getDataSource()).toEqual({ source: "error", detail: "No DATABASE_URL configured" });
+      for (const [name, read] of reads) {
+        const failure = await read(x).then(() => null, (e: unknown) => e);
+        expect(x.isDataUnavailable(failure), name).toBe(true);
+      }
+      // The layout's switcher list is the exception: a layout is outside its
+      // page's error boundary, so it reads as empty instead.
+      expect(await x.getUsers()).toEqual([]);
+      expect(queryMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it("serves demo data outside production", async () => {
+    await withoutDatabase("development", async (x) => {
+      expect((await x.getDataSource()).source).toBe("demo");
+      for (const [name, read] of reads) await expect(read(x), name).resolves.toBeDefined();
+      expect((await x.getWorkouts(USER_ID)).length).toBeGreaterThan(0);
+      expect((await x.getUsers()).length).toBeGreaterThan(0);
+      expect(queryMock).not.toHaveBeenCalled();
+    });
   });
 });

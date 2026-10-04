@@ -16,6 +16,9 @@ public enum ServerURLValidation {
         case missingScheme
         case unsupportedScheme(String)
         case missingHost
+        /// `https://user:secret@host`: credentials in the URL would be saved and
+        /// logged with it; the token has a field of its own.
+        case userinfo
         /// `http://` to a host that is not on the local network.
         case insecureRemoteHost(String)
 
@@ -31,6 +34,8 @@ public enum ServerURLValidation {
                 return "Unsupported scheme \(scheme)://. Use https:// (or http:// for a local-network host)."
             case .missingHost:
                 return "The URL has no host name."
+            case .userinfo:
+                return "Leave the user name and password out of the URL. The token goes in its own field."
             case .insecureRemoteHost(let host):
                 return "Plain http:// is only allowed for local-network hosts (localhost, *.local, 10.x, 172.16–31.x, 192.168.x, 169.254.x). Use https:// for \(host)."
             }
@@ -47,6 +52,7 @@ public enum ServerURLValidation {
         guard let scheme = components.scheme?.lowercased() else { return .failure(.missingScheme) }
         guard scheme == "http" || scheme == "https" else { return .failure(.unsupportedScheme(scheme)) }
         guard let host = components.host, !host.isEmpty else { return .failure(.missingHost) }
+        guard components.user == nil, components.password == nil else { return .failure(.userinfo) }
         if scheme == "http", !isLocalNetworkHost(host) {
             return .failure(.insecureRemoteHost(host))
         }

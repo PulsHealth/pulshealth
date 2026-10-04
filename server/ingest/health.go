@@ -42,8 +42,10 @@ type healthCache struct {
 
 // status reports whether the database answered recently, probing at most once
 // per healthTTL. now is passed in so the behaviour is testable without
-// sleeping.
-func (h *healthCache) status(ctx context.Context, p pinger, now time.Time) bool {
+// sleeping. The probe runs on its own context, never the request's: a checker
+// with a timeout shorter than the probe would cancel it, and the cached
+// `false` would then 503 every poll for the next healthTTL.
+func (h *healthCache) status(p pinger, now time.Time) bool {
 	h.mu.Lock()
 	fresh := !h.checkedAt.IsZero() && now.Sub(h.checkedAt) < healthTTL
 	if fresh || h.probing {
@@ -57,7 +59,7 @@ func (h *healthCache) status(ctx context.Context, p pinger, now time.Time) bool 
 	h.probing = true
 	h.mu.Unlock()
 
-	probeCtx, cancel := context.WithTimeout(ctx, healthProbeTimeout)
+	probeCtx, cancel := context.WithTimeout(context.Background(), healthProbeTimeout)
 	defer cancel()
 	err := p.Ping(probeCtx)
 

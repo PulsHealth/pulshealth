@@ -8,6 +8,12 @@ Fixtures are applied in file-name order to what must be an empty store: the
 expected counts in each .expected.json assume that order (fixture 05 deletes a
 sample fixture 01 stored). Each fixture is then replayed at once, which must be
 a 2xx no-op. Exit status 0 when every check passes. Standard library only.
+
+A fixture's optional "state" lists rows the receiver must then hold (the
+counts cannot show that an activity summary replaced the stored day). The
+protocol has no endpoint to read them back, so they are checked only against
+the receiver.py this script spawns; with --url they are printed for checking
+by hand.
 """
 from __future__ import annotations
 
@@ -16,16 +22,24 @@ import gzip
 import json
 import os
 import socket
+import sqlite3
 import subprocess
 import sys
 import tempfile
 import time
 import urllib.error
 import urllib.request
+import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.normpath(os.path.join(HERE, "..", "..", "..", "docs", "protocol", "fixtures"))
 USER = "5ea4d000-0000-4000-8000-000000000001"
+MAX_DECODED = 128 << 20  # the decoded-body limit of the reference server (spec 2.5)
+# state field -> receiver.py column, for the tables a fixture's "state" can name
+STATE_COLUMNS = {"activitySummaries": ("activity_summaries", "date", "localDate", {
+    "moveKcal": "move_kcal", "moveGoalKcal": "move_goal_kcal", "exerciseMin": "exercise_min",
+    "exerciseGoalMin": "exercise_goal_min", "standHours": "stand_hours", "standGoalHours": "stand_goal_hours",
+    "moveMode": "move_mode", "moveTimeMin": "move_time_min", "moveTimeGoalMin": "move_time_goal_min"})}
 failures = []
 
 
@@ -61,7 +75,36 @@ def post_batch(base, token, ndjson_text, batch_id=None, headers=None):
     return request(base + "/v1/batches", token, "POST", gzip.compress(ndjson_text.encode()), h)
 
 
-def run(base, token):
+def check_state(name, state, db_path):
+    """Compare a fixture's "state" rows with what receiver.py stored."""
+    for table, rows in state.items():
+        if table not in STATE_COLUMNS:
+            check(False, f"{name}: state names unknown table {table!r}")
+            continue
+        sql_table, key_col, key_field, columns = STATE_COLUMNS[table]
+        for want in rows:
+            if db_path is None:
+                print(f"info {name}: after this batch the receiver must hold {table} {want} (not readable over HTTP; check by hand)")
+                continue
+            with sqlite3.connect(db_path) as db:
+                got = db.execute(f"SELECT {', '.join(columns.values())} FROM {sql_table} WHERE user_id=? AND {key_col}=?",
+                                 (USER, want[key_field])).fetchone()
+            got = dict(zip(columns, got)) if got else None
+            expect = {f: want[f] for f in columns}
+            check(got == expect, f"{name}: stored {table} {want[key_field]} {got} (want {expect})")
+
+
+def gzip_bomb(header, size):
+    """A valid header followed by `size` bytes of blank lines, gzipped: about size/1000 bytes on the wire."""
+    c = zlib.compressobj(1, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
+    out, chunk = [c.compress(header.encode())], b"\n" * (1 << 20)
+    for _ in range(size // len(chunk)):
+        out.append(c.compress(chunk))
+    out.append(c.flush())
+    return b"".join(out)
+
+
+def run(base, token, db_path=None):
     base = base.rstrip("/")
     status, body = request(base + "/healthz", None)
     check(status == 200, f"GET /healthz -> {status}")
@@ -93,8 +136,10 @@ def run(base, token):
         check(200 <= status < 300, f"{name}: replay -> {status} (want 2xx)")
         if body is not None:
             check(body.get("accepted") == 0, f"{name}: replay accepted {body.get('accepted')} (want 0)")
+        if "state" in expected:
+            check_state(name, expected["state"], db_path)
 
-    probe = ('{"schemaVersion":1,"clientVersion":"smoke-test","batchID":"%s","deviceID":"smoke","type":"HKQuantityTypeIdentifierHeartRate",'
+    probe = ('{"schemaVersion":1,"clientVersion":"smoke-test","batchID":"%s","deviceID":"smoke","type":"probe",'
              '"reason":"manual","exportedAt":1718000000000,"sampleCount":%d,"deletionCount":0}\n')
     status, _ = post_batch(base, "not-the-token", probe % ("b0000000-0000-4000-8000-000000000001", 0))
     check(status == 401, f"POST with a wrong token -> {status} (want 401)")
@@ -115,6 +160,14 @@ def run(base, token):
     status, _ = request(base + "/v1/batches", token, "POST", b"\x1f\x8bnot gzip",
                         {"Content-Type": "application/x-ndjson", "Content-Encoding": "gzip"})
     check(status == 400, f"POST invalid gzip -> {status} (want 400)")
+    bomb = gzip_bomb(probe % ("b0000000-0000-4000-8000-000000000007", 0), MAX_DECODED + (1 << 20))
+    status, _ = request(base + "/v1/batches", token, "POST", bomb,
+                        {"Content-Type": "application/x-ndjson", "Content-Encoding": "gzip"})
+    if 200 <= status < 300:
+        print(f"info POST {len(bomb)} gzip bytes inflating past {MAX_DECODED >> 20} MiB -> {status}: "
+              "this receiver's decoded limit is higher (allowed; it SHOULD answer 413 at its own)")
+    else:
+        check(status == 413, f"POST {len(bomb)} gzip bytes inflating past {MAX_DECODED >> 20} MiB -> {status} (want 413)")
 
 
 def spawn():
@@ -130,7 +183,7 @@ def spawn():
     for _ in range(100):
         try:
             if request(base + "/healthz", None)[0] == 200:
-                return proc, base, "smoke-test-token"
+                return proc, base, "smoke-test-token", env["PULS_DB"]
         except (urllib.error.URLError, ConnectionError):
             pass
         time.sleep(0.1)
@@ -143,15 +196,15 @@ def main():
     ap.add_argument("--url", help="base URL of a running receiver (default: spawn receiver.py)")
     ap.add_argument("--token", help="bearer token for --url (or PULS_TOKEN)")
     args = ap.parse_args()
-    proc = None
+    proc, db_path = None, None
     if args.url:
         base, token = args.url, args.token or os.environ.get("PULS_TOKEN")
         if not token:
             sys.exit("--token or PULS_TOKEN is required with --url")
     else:
-        proc, base, token = spawn()
+        proc, base, token, db_path = spawn()
     try:
-        run(base, token)
+        run(base, token, db_path)
     finally:
         if proc:
             proc.terminate()

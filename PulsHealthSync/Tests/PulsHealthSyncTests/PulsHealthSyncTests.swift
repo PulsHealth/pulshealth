@@ -561,6 +561,96 @@ import Testing
         #expect(try Data(contentsOf: dir.appendingPathComponent(quarantined)) == garbage)
     }
 
+    /// A state file that exists but cannot be read — protected data during a
+    /// prewarm launch before first unlock, simulated by a directory at its
+    /// path — is not "no file". Starting fresh there would persist an empty
+    /// state over the only copy of every anchor, and an Apply of the empty
+    /// configuration (no token) would delete the real Keychain item. The store
+    /// opens read-only instead: no quarantine, no write, no token hand-off,
+    /// for as long as the process lives — even once the file turns readable.
+    @Test func unreadableStateFileOpensReadOnlyAndWritesNothing() async throws {
+        /// Records every hand-off; starts out holding the install's token.
+        final class RecordingTokenStore: TokenStore, @unchecked Sendable {
+            private let lock = NSLock()
+            private var stored: String? = "keychain-secret"
+            private var writes: [String?] = []
+            func token() throws -> String? { lock.withLock { stored } }
+            func setToken(_ token: String?) throws {
+                lock.withLock {
+                    writes.append(token)
+                    stored = token
+                }
+            }
+            var current: String? { lock.withLock { stored } }
+            var writeCount: Int { lock.withLock { writes.count } }
+        }
+
+        // The real state file, as a previous launch left it.
+        let anchor = Data([7, 7, 7])
+        let original: Data
+        do {
+            let previousDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("puls-tests-\(UUID())", isDirectory: true)
+            let previous = SyncStateStore(directory: previousDir, tokenStore: InMemoryTokenStore())
+            var config = SyncConfiguration()
+            config.serverURL = URL(string: "https://health.example.com")
+            config.enabledTypes = ["HKQuantityTypeIdentifierStepCount"]
+            await previous.setConfiguration(config)
+            await previous.recordUploadedBatch(
+                identifier: "HKQuantityTypeIdentifierStepCount", newAnchorData: anchor, samples: 1,
+                deletions: 0, bytes: 1, sampleDateRange: nil, duration: 0, latency: nil)
+            await previous.persistNow()
+            original = try Data(contentsOf: previousDir.appendingPathComponent("sync-state.json"))
+        }
+
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("puls-tests-\(UUID())", isDirectory: true)
+        let file = dir.appendingPathComponent("sync-state.json")
+        try FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
+
+        let tokens = RecordingTokenStore()
+        let store = SyncStateStore(directory: dir, tokenStore: tokens)
+        #expect(await store.isReadOnly)
+        #expect(await store.configuration.serverURL == nil)
+        #expect(await store.typeStates.isEmpty)
+        // Nothing was moved aside: the path is still what was there.
+        var isDirectory: ObjCBool = false
+        #expect(FileManager.default.fileExists(atPath: file.path, isDirectory: &isDirectory))
+        #expect(isDirectory.boolValue)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path) == ["sync-state.json"])
+
+        // First unlock: the file is readable now, but this process opened
+        // without it and must leave it alone.
+        try FileManager.default.removeItem(at: file)
+        try original.write(to: file)
+
+        // Every write path: an Apply of a configuration without a token (the
+        // empty draft this launch shows), state writes (debounced), a reset,
+        // and an immediate persist.
+        var applied = SyncConfiguration()
+        applied.serverURL = URL(string: "https://other.example.com")
+        applied.authToken = nil
+        await store.setConfiguration(applied, confirmServerIdentity: true)
+        await store.recordUploadedBatch(
+            identifier: "HKQuantityTypeIdentifierHeartRate", newAnchorData: Data([1]), samples: 1,
+            deletions: 0, bytes: 1, sampleDateRange: nil, duration: 0, latency: nil)
+        await store.resetAll()
+        await store.persistNow()
+        try await Task.sleep(for: .milliseconds(500))  // past the 250 ms debounce
+
+        #expect(try Data(contentsOf: file) == original, "the read-only store wrote over the state file")
+        #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path) == ["sync-state.json"])
+        #expect(tokens.writeCount == 0, "the read-only store wrote or cleared the token")
+        #expect(tokens.current == "keychain-secret")
+
+        // The next launch loads the file as usual.
+        let relaunched = SyncStateStore(directory: dir, tokenStore: tokens)
+        #expect(await relaunched.isReadOnly == false)
+        #expect(await relaunched.configuration.serverURL?.host == "health.example.com")
+        #expect(await relaunched.configuration.authToken == "keychain-secret")
+        #expect(await relaunched.state(for: "HKQuantityTypeIdentifierStepCount").anchorData == anchor)
+    }
+
     @Test func recordsBatchesAndAdvancesCounters() async {
         let store = makeStore()
         let anchor = Data([1, 2, 3])

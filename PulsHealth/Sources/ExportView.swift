@@ -47,12 +47,7 @@ struct ExportView: View {
             case .edit(let config): ExportSeriesEditor(editing: config)
             }
         }
-        .alert("Delete this export?", isPresented: $confirmDelete) {
-            Button("Delete", role: .destructive) { model.export.discard() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Removes the exported files from this iPhone. Copies you already saved or sent elsewhere are not affected.")
-        }
+        .deleteExportAlert(isPresented: $confirmDelete, export: model.export)
     }
 
     // MARK: - Idle
@@ -509,6 +504,21 @@ struct ExportView: View {
     /// Rows shown before "and N more". A selection of eighty types that all
     /// fail the same way (a locked phone) should not push Share off the screen.
     private static let issueLimit = 8
+}
+
+extension View {
+    /// The confirmation before a staged export's files are deleted: the
+    /// Export tab's Delete Export and Settings → Privacy & Data's ask the same
+    /// question and do the same thing (`ExportModel.discard`).
+    @MainActor
+    func deleteExportAlert(isPresented: Binding<Bool>, export: ExportModel) -> some View {
+        alert("Delete this export?", isPresented: isPresented) {
+            Button("Delete", role: .destructive) { export.discard() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Removes the exported files from this iPhone. Copies you already saved or sent elsewhere are not affected.")
+        }
+    }
 }
 
 /// The ⓘ beside the Enhanced workout data toggle: what the switch adds, in a

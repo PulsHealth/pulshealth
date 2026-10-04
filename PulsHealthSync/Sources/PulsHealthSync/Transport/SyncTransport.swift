@@ -103,13 +103,57 @@ public enum TransportError: Error, LocalizedError, CustomStringConvertible {
     /// the entire raw response body — into whichever log interpolated it.
     public var description: String { errorDescription ?? "Transport error" }
 
-    /// Server 4xx errors won't succeed on retry; everything else might.
+    /// Server 4xx errors won't succeed on retry, nor will a network failure
+    /// that is about the request itself rather than the path to the server
+    /// (`isTerminal(_:)`); everything else might.
     var isRetryable: Bool {
         switch self {
         case .notConfigured: return false
         case .serverError(let status, _): return status >= 500 || status == 429
-        case .network: return true
+        case .network(let error): return !Self.isTerminal(error)
         case .unsupportedProtocol: return false
+        }
+    }
+
+    /// Whether this failure will repeat on every later attempt until
+    /// something changes — the configuration, the server, its certificate —
+    /// so the type that hit it should sit out a cooldown
+    /// (`TypeSyncState.cooldownUntil`) rather than re-read, re-encode and
+    /// re-send the same page on every wake. A 4xx other than 408 and 429
+    /// (401 included: the token is wrong until someone changes it), an
+    /// unsupported protocol, and a terminal network failure. Never a 5xx, a
+    /// timeout or an outage: those clear up on their own.
+    public var startsCooldown: Bool {
+        switch self {
+        case .notConfigured: return false
+        case .serverError(let status, _):
+            return (400..<500).contains(status) && status != 408 && status != 429
+        case .network(let error): return Self.isTerminal(error)
+        case .unsupportedProtocol: return true
+        }
+    }
+
+    /// Network failures no retry can fix: the URL itself is unusable, App
+    /// Transport Security refuses it, or the TLS handshake failed on a
+    /// certificate. Each needs a person to change something (the URL, the
+    /// server's certificate, the device clock). Deliberately not here: DNS,
+    /// connection, timeout and offline errors, and `secureConnectionFailed`,
+    /// which a middlebox or a flaky network can cause once.
+    static func isTerminal(_ error: any Error) -> Bool {
+        guard let urlError = error as? URLError else { return false }
+        switch urlError.code {
+        case .badURL,
+             .unsupportedURL,
+             .appTransportSecurityRequiresSecureConnection,
+             .serverCertificateUntrusted,
+             .serverCertificateHasBadDate,
+             .serverCertificateNotYetValid,
+             .serverCertificateHasUnknownRoot,
+             .clientCertificateRejected,
+             .clientCertificateRequired:
+            return true
+        default:
+            return false
         }
     }
 
@@ -151,6 +195,22 @@ public struct HTTPSyncTransport: SyncTransport {
 
     private let session: URLSession
     private let logger = Logger(subsystem: PulsLog.subsystem, category: "transport")
+    /// How the retry loop waits. `Task.sleep` in production; tests replace it
+    /// to record the schedule instead of sleeping through it.
+    var sleeper: @Sendable (TimeInterval) async throws -> Void = { seconds in
+        try await Task.sleep(for: .seconds(seconds))
+    }
+    /// The jitter factor applied to each backoff step; injectable for the
+    /// same reason.
+    var jitter: @Sendable () -> Double = { .random(in: 0.7...1.3) }
+
+    /// The longest `Retry-After` a retry will wait out within one run. Longer
+    /// than this the run gives up at once — anchors stay put and a later wake
+    /// sends the page — rather than sleep through its background time.
+    static let maxRetryAfter: TimeInterval = 60
+    /// The same limit for an observer wake, whose HealthKit completion
+    /// handlers are held until the wake ends (see `upload`).
+    static let maxObserverRetryAfter: TimeInterval = 10
 
     public init(baseURL: URL, authToken: String, userID: String = PulsDefaultUser.id, maxRetries: Int = 4, session: URLSession? = nil) {
         self.baseURL = baseURL
@@ -189,11 +249,15 @@ public struct HTTPSyncTransport: SyncTransport {
         // can outlast the app's background allowance, and HealthKit stops
         // waking the app after three unacknowledged deliveries. Spend one retry
         // there and give up: anchors stay put, so the next wake resends.
-        let retryBudget = WakeScope.current?.trigger == .observer ? min(maxRetries, 1) : maxRetries
+        let isObserverWake = WakeScope.current?.trigger == .observer
+        let retryBudget = isObserverWake ? min(maxRetries, 1) : maxRetries
+        let retryAfterLimit = isObserverWake ? Self.maxObserverRetryAfter : Self.maxRetryAfter
 
         var attempt = 0
         while true {
             let start = ContinuousClock.now
+            // What a 429 or 503 asked for, when it asked.
+            var retryAfter: TimeInterval?
             do {
                 let (data, response) = try await session.data(for: request)
                 let elapsed = (ContinuousClock.now - start).seconds
@@ -201,6 +265,10 @@ public struct HTTPSyncTransport: SyncTransport {
                     throw TransportError.network(URLError(.badServerResponse))
                 }
                 guard (200..<300).contains(http.statusCode) else {
+                    if http.statusCode == 429 || http.statusCode == 503 {
+                        retryAfter = Self.retryAfter(
+                            http.value(forHTTPHeaderField: "Retry-After"), now: Date())
+                    }
                     throw TransportError.fromResponse(status: http.statusCode, body: data)
                 }
                 logger.debug("Uploaded \(batch.samples.count) samples (\(body.count) bytes gzip, \(ndjson.count) raw) in \(elapsed, format: .fixed(precision: 3))s")
@@ -215,14 +283,50 @@ public struct HTTPSyncTransport: SyncTransport {
                 if Task.isCancelled { throw CancellationError() }
                 let transportError = (error as? TransportError) ?? .network(error)
                 attempt += 1
-                guard transportError.isRetryable, attempt <= retryBudget else {
+                guard transportError.isRetryable, attempt <= retryBudget,
+                      let delay = Self.retryDelay(
+                        attempt: attempt, retryAfter: retryAfter, limit: retryAfterLimit,
+                        jitter: self.jitter())
+                else {
                     throw transportError
                 }
-                let delay = min(30, pow(2.0, Double(attempt))) * .random(in: 0.7...1.3)
                 logger.warning("Upload attempt \(attempt) failed (\(String(describing: transportError))); retrying in \(delay, format: .fixed(precision: 1))s")
-                try await Task.sleep(for: .seconds(delay))
+                try await self.sleeper(delay)
             }
         }
+    }
+
+    /// How long to wait before retry number `attempt` (1-based): the server's
+    /// `Retry-After` when it sent one, else the exponential ladder (2, 4, 8,
+    /// 16 s, at most 30) times `jitter`. Nil when the server asked for longer
+    /// than `limit` — the run then stops instead of sleeping through its
+    /// background time, and a later wake sends the page. A `Retry-After` is
+    /// never shortened: retrying early would only be refused again.
+    static func retryDelay(
+        attempt: Int, retryAfter: TimeInterval?, limit: TimeInterval, jitter: Double
+    ) -> TimeInterval? {
+        if let retryAfter {
+            return retryAfter <= limit ? retryAfter : nil
+        }
+        return min(30, pow(2.0, Double(attempt))) * jitter
+    }
+
+    /// A `Retry-After` value in seconds: the delta-seconds form (`"5"`), or
+    /// an HTTP date, measured from `now`. Nil when absent or unparseable,
+    /// in which case the ordinary ladder applies. A date in the past is 0.
+    static func retryAfter(_ value: String?, now: Date) -> TimeInterval? {
+        guard let value = value?.trimmingCharacters(in: .whitespaces), !value.isEmpty else {
+            return nil
+        }
+        if let seconds = Int(value) {
+            return seconds >= 0 ? TimeInterval(seconds) : nil
+        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "GMT")
+        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
+        guard let date = formatter.date(from: value) else { return nil }
+        return max(0, date.timeIntervalSince(now))
     }
 
     /// The upload request for one batch. Internal so tests can verify the

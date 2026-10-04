@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
 )
 
 func twoUsers() []User {
@@ -132,6 +133,31 @@ func TestOpenAPIDeclaresTheUserParameterOnEveryScopedRoute(t *testing.T) {
 		want := rt.auth && rt.path != "/v1/users"
 		if declared != want {
 			t.Errorf("%s: user parameter declared = %v, want %v", rt.path, declared, want)
+		}
+	}
+}
+
+// R20: /v1/users reports the zone every local day is cut in, so a client
+// that speaks in dates (the MCP server) adopts it rather than being told the
+// same value separately.
+func TestUsersEndpointReportsTheTimeZone(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		loc  *time.Location
+		want string
+	}{{nil, "UTC"}, {mustLoadZone(t, "Europe/Berlin"), "Europe/Berlin"}} {
+		srv := scopedServer(t, &fakeStore{users: twoUsers()}, defaultUserID, false)
+		srv.loc = tc.loc
+		rec := serveAuthorized(t, srv, http.MethodGet, "/v1/users", nil)
+		var body struct {
+			TimeZone *string `json:"timeZone"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		if body.TimeZone == nil || *body.TimeZone != tc.want {
+			t.Errorf("timeZone = %v, want %q: %s", body.TimeZone, tc.want, rec.Body.String())
 		}
 	}
 }
