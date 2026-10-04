@@ -284,7 +284,12 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
                           its pages, the callback scheme against the shipped
                           Info.plist, the sign-in sheet's outcomes) and
                           DatabaseSetupTests (the Database screen's start,
-                          Save & Apply and sign-in settling).
+                          Save & Apply and sign-in settling), and AppModelTests
+                          (whether the first-run flow shows, its Health page,
+                          Start Exploring, Apply gating, pairing links) over
+                          AppModel's init(engine:scheduler:defaults:healthAccess:)
+                          seam — a temporary engine, a defaults suite and a
+                          stand-in for the permission sheets.
 ```
 
 ## Behavior notes

@@ -423,7 +423,9 @@ dozens within a few seconds — rather than one per change. They accumulate for
 callback so a continuous stream cannot starve the flush) and run as one wake
 over the deduped union of types. Every collected completion handler is
 released afterwards: HealthKit stops waking the app after three unacknowledged
-deliveries.
+deliveries. `ObserverCoalescerTests` pins the burst, the order (acknowledged
+after the wake, which stays for types another run holds), the expiry path
+(acknowledged from the expiration handler, once) and `stopObserving`.
 
 **Incremental uploads merge across types.** Upload cost is per request, not
 per sample, and incremental pages are small (a median of a few samples), so

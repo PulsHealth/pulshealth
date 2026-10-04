@@ -42,10 +42,9 @@ Not backlog — things that come due on someone else's schedule.
 
 Waiting for a Swift toolchain or a test to land first
 (`docs/deep-review-2026-10.md` §5 and §6): splitting the engine file,
-`SyncKey`/`withClaim`, `FullPassSchedule`, the `AppModel` seam, merging the
-two type pickers and the duration formatters, the seven ingest `unnest`
-inserts; tests for the observer coalescer and the three-unacknowledged-
-deliveries rule, and `AppModel` onboarding, Apply gating and pairing.
+`SyncKey`/`withClaim`, `FullPassSchedule`, splitting `AppModel` (its
+seam is in), merging the two type pickers and the duration formatters, the
+seven ingest `unnest` inserts.
 
 ## Not planned
 

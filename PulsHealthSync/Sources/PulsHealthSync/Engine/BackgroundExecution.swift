@@ -76,3 +76,11 @@ private final class BackgroundAssertion {
         identifier = .invalid
     }
 }
+
+/// `BackgroundExecution.run`'s shape, so the engine's observer wake can be
+/// handed a stand-in in tests.
+typealias BackgroundExecutionRunner = @Sendable (
+    _ name: String,
+    _ onExpiration: (@Sendable () -> Void)?,
+    _ work: @escaping @Sendable () async -> Void
+) async -> Bool

@@ -339,7 +339,7 @@ extension HealthSyncEngine {
             // Locked is the expected case and no fault (CLAUDE.md, "A locked
             // device…"); anything else is recorded against the series, so
             // it shows rather than the series just going quiet.
-            if await ProtectedData.isAvailable {
+            if await isHealthDataAccessible() {
                 await store.recordAggregateError(
                     configID: configID, error: SyncError.readableHistoryUnknown(descriptor.displayName))
                 await eventLog.log(
