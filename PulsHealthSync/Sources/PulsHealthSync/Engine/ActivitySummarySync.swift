@@ -85,7 +85,7 @@ extension HealthSyncEngine {
         if ReadableHistory.isSupported, !readable.isFresh, readable.since == nil {
             // As for aggregates: locked skips quietly, anything else is
             // recorded so the rings do not just go quiet.
-            if await ProtectedData.isAvailable {
+            if await isHealthDataAccessible() {
                 await store.recordActivitySummaryError(
                     error: SyncError.readableHistoryUnknown(
                         HealthTypeCatalog.descriptor(for: typeID)?.displayName ?? typeID))

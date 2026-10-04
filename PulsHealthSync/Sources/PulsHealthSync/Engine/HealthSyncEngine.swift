@@ -77,6 +77,16 @@ public actor HealthSyncEngine {
     /// state actor between mutating the two pending collections above.
     private var observerCoalesceWindow: TimeInterval = 2.0
 
+    /// Runs an observer wake under background time: `BackgroundExecution.run`
+    /// in the app. Replaced only by tests, which drive the expiration handler
+    /// themselves (the package's test runner has no `UIApplication`).
+    var backgroundExecution: BackgroundExecutionRunner = { name, onExpiration, work in
+        await BackgroundExecution.run(name, onExpiration: onExpiration, work)
+    }
+    /// Stands in for `ProtectedData.isAvailable` when set — tests only, for
+    /// the same reason. Nil in the app.
+    var protectedDataOverride: Bool?
+
     /// HealthKit's completion handler isn't statically Sendable but is
     /// documented safe to call from any thread; box it to cross the actor hop.
     struct ObserverCompletion: @unchecked Sendable {
@@ -204,7 +214,8 @@ public actor HealthSyncEngine {
     /// locked: every query would fail with `errorDatabaseInaccessible`, so
     /// callers should skip rather than burn a wake on ~80 doomed queries.
     public func isHealthDataAccessible() async -> Bool {
-        await ProtectedData.isAvailable
+        if let protectedDataOverride { return protectedDataOverride }
+        return await ProtectedData.isAvailable
     }
 
     private func buildTransport(from config: SyncConfiguration) {
@@ -556,7 +567,7 @@ public actor HealthSyncEngine {
         // HealthKit is unreadable, so this used to walk ~80 types and log a
         // warning for every one of them, several times a night, for nothing.
         // Anchors and watermarks are untouched; the next unlocked run catches up.
-        guard await ProtectedData.isAvailable else {
+        guard await isHealthDataAccessible() else {
             await eventLog.log(
                 .info,
                 "Device locked — HealthKit is unreadable; skipping \(reason.rawValue) sync of \(sampleIDs.count) types")
@@ -1424,7 +1435,7 @@ public actor HealthSyncEngine {
     /// extended by later ones: a self-restarting timer would let an unbroken
     /// stream of callbacks postpone the work indefinitely. Anything arriving
     /// after the flush simply forms the next (small) burst.
-    private func enqueueObserverUpdate(types: [String], completion: ObserverCompletion) {
+    func enqueueObserverUpdate(types: [String], completion: ObserverCompletion) {
         pendingObserverTypes.formUnion(types)
         pendingObserverCompletions.append(completion)
 
@@ -1446,7 +1457,7 @@ public actor HealthSyncEngine {
 
     /// Run everything the burst reported as one wake, then release every
     /// completion handler it collected.
-    private func flushObserverUpdates() async {
+    func flushObserverUpdates() async {
         observerFlushTask = nil
         let types = pendingObserverTypes
         let completions = pendingObserverCompletions
@@ -1465,7 +1476,7 @@ public actor HealthSyncEngine {
         // iOS grants on request, and be cancelled — not frozen — when it ends.
         // On expiry HealthKit is acknowledged from the handler itself: the
         // cancelled wake may not unwind to the `defer` before iOS suspends it.
-        await BackgroundExecution.run("PulsHealth observer wake", onExpiration: acknowledge) {
+        _ = await backgroundExecution("PulsHealth observer wake", acknowledge) {
             await self.runObserverWake(types: types, deliveries: deliveries)
         }
     }
@@ -1506,7 +1517,7 @@ public actor HealthSyncEngine {
         // wasted queries a day were going. Record the wake so the skip stays
         // visible in Background Activity, but do no work — the anchors are
         // untouched, so the next unlocked wake collects exactly this data.
-        guard await ProtectedData.isAvailable else {
+        guard await isHealthDataAccessible() else {
             let wake = await beginWake(
                 .observer, detail: "\(sorted.count) type(s) — device locked, skipped")
             await finishWake(wake, outcome: .skippedLocked)

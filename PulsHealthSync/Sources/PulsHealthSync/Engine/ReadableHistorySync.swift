@@ -51,7 +51,7 @@ extension HealthSyncEngine {
     /// unknown: the device is locked, or HealthKit failed (logged, scrubbed).
     func currentReadableHistory(for identifiers: Set<String>) async -> [String: Date]? {
         guard ReadableHistory.isSupported, !identifiers.isEmpty else { return [:] }
-        guard await ProtectedData.isAvailable else { return nil }
+        guard await isHealthDataAccessible() else { return nil }
         do {
             return try await ReadableHistory.query(identifiers, in: healthStore)
         } catch {
