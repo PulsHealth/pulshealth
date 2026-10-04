@@ -363,7 +363,7 @@ services:
     # Pinned: a :latest pull to Grafana 13 silently broke datasource
     # provisioning (legacy top-level `database:` key removed). Bump
     # deliberately and retest the dashboard after upgrades.
-    image: grafana/grafana:13.0.2
+    image: grafana/grafana:13.2.3
     restart: unless-stopped
     logging: *app-logging
     environment:
