@@ -544,8 +544,10 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   is its contract) and must stay one: no database URL, no writes, every tool
   annotated read-only. Its tool descriptions and embedded `guide.md` spell out
   units, the time-zone rule and the double-counting rule for the model — update
-  them with any change to the API's shapes. `PULS_TIME_ZONE` must be handed to
-  it separately (the API does not report its zone). In stdio mode stdout is the
+  them with any change to the API's shapes. Its zone comes from the API's
+  `GET /v1/users` (`timeZone`) unless `PULS_TIME_ZONE` is set, which only
+  warns when the two differ; the API itself refuses to start when its zone
+  and `puls_time_zone()` disagree. In stdio mode stdout is the
   transport: never print to it; logs go to stderr.
 - Grafana datasource UID `puls-tsdb` is hardcoded in dashboard JSON — keep it stable.
 - Debounces are intentional: state persist 250 ms, event-log save 1 s. Synced Data
