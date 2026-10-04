@@ -459,10 +459,13 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   administrator approves** (`WEB_SIGNUPS`, `/signup` → `/admin`): no user, no
   account, no token, so no phone can send data. Every write beyond schema
   `auth` — creating a user, minting/revoking tokens, disabling, deleting,
-  purging — is a `SECURITY DEFINER` function in `016_web_signups.sql` that
-  takes the caller's session hash (`Session.id`, never the plaintext cookie)
-  and checks it (search_path pinned to `pg_catalog`, objects fully
-  qualified). **The boundary is `auth.self_service_users`**, written only by
+  purging, declining requests — is a `SECURITY DEFINER` function in
+  `016_web_signups.sql` (replaced where needed in `018_web_accounts_hardening.sql`)
+  that takes the caller's session hash (`Session.id`, never the plaintext
+  cookie) and checks it (`auth.session_owner`: unexpired and under the
+  90-day absolute cap; search_path pinned to `pg_catalog`, objects fully
+  qualified). No administrator account, and not the caller's own, can be
+  disabled through the viewer. **The boundary is `auth.self_service_users`**, written only by
   `approve_signup`: every function acts only on users an approved request
   created, because `web_app` writes `auth.sessions` and so can forge any
   session — the session check scopes normal use, it is not the barrier. The
@@ -481,7 +484,8 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   `quantity_rollups` materialization; keep its deletes narrowed (types, time
   span) so it opens only that user's compressed batches. `auth.prune_signups`
   (an hourly TimescaleDB job) is what makes the privacy policy's 30-day
-  request deletion true; keep it scheduled. Email (`web/lib/email.ts`, SES,
+  request deletion true (decided and undecided requests alike) and sweeps
+  expired sessions; keep it scheduled. Email (`web/lib/email.ts`, SES,
   hand-signed SigV4) goes only to the operator and to people an
   administrator approved — keep the public form unable to mail anyone else,
   and never log an address.
@@ -622,9 +626,10 @@ nothing here assumes a particular machine.
   so it would stall until the user retyped a correct token. Only wrong
   credentials charge the limiter; a user mismatch (403) does not.
   `099_read_roles.sh` revokes `grafana`'s default-privilege SELECT on
-  `device_tokens` every run; `api_reader` is an exact grant list asserted by a
-  `DO` block, so a table the product API newly reads goes on BOTH the `GRANT`
-  and the `expected_public` rows. `PULS_TOKEN` is optional; do not make it
+  `device_tokens` every run; `api_reader` and `ingest` are exact grant lists
+  asserted by `DO` blocks, so a table the product API newly reads, or ingest
+  newly writes, goes on BOTH its `GRANT` and its expected rows
+  (`grants_integration_test.go` checks ingest's as the role itself). `PULS_TOKEN` is optional; do not make it
   required again.
 - **`/healthz` is unauthenticated on both services, so it must not touch the
   pool per request** (`server/ingest/health.go`, `server/api/health.go` — again

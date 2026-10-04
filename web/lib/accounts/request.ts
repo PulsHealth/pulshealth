@@ -29,6 +29,35 @@ export function clientIpHeader(env: Env = process.env): string {
 }
 
 /**
+ * What to tell the operator at startup about the client-address header, or
+ * null when there is nothing to say. Only with trusted proxy headers (without
+ * them no header is read). The last X-Forwarded-For entry is right behind
+ * exactly one appending proxy — Cloudflare's tunnel included — but one more
+ * appending hop (Cloudflare, then nginx) makes it that hop's address, and
+ * every client then shares one rate-limit bucket. Cloudflare overwrites
+ * CF-Connecting-IP with the visitor's address on every request, so behind it
+ * that is the header to name.
+ */
+export function clientIpHeaderWarning(trust: boolean, env: Env = process.env): string | null {
+  if (!trust) return null;
+  const raw = (env.WEB_CLIENT_IP_HEADER ?? "").trim();
+  if (raw && clientIpHeader(env) !== raw.toLowerCase()) {
+    return (
+      `WEB_CLIENT_IP_HEADER=${JSON.stringify(raw)} is not one of cf-connecting-ip, x-real-ip, x-forwarded-for; ` +
+      "sign-in throttling keys on X-Forwarded-For's last entry instead."
+    );
+  }
+  if (clientIpHeader(env) !== "x-forwarded-for") return null;
+  return (
+    "sign-in throttling keys on the last X-Forwarded-For entry (WEB_CLIENT_IP_HEADER is " +
+    (raw ? "x-forwarded-for" : "unset") +
+    "). That is the client only behind exactly one proxy that appends to it. Behind Cloudflare " +
+    "(the tunnel profile included) set WEB_CLIENT_IP_HEADER=cf-connecting-ip; behind two appending proxies, " +
+    "every client would share one bucket."
+  );
+}
+
+/**
  * The address a failed attempt is charged to. Without trusted proxy headers
  * there is none to go on — Next.js does not expose the TCP peer — so every
  * client shares one bucket; accounts mode refuses plain HTTP outside

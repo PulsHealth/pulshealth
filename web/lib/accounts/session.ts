@@ -130,12 +130,33 @@ export async function createSession(accountId: string, meta: SessionMeta): Promi
      VALUES ($1, $2, now() + make_interval(days => $3), $4, $5)`,
     [tokenHash(token), accountId, SESSION_DAYS, meta.userAgent?.slice(0, 300) ?? null, meta.ip && isIP(meta.ip) ? meta.ip : null],
   );
-  // Expired rows are dead weight; sign-ins are rare enough to sweep on.
-  await query(
-    "DELETE FROM auth.sessions WHERE expires_at < now() OR created_at < now() - make_interval(days => $1)",
-    [SESSION_ABSOLUTE_DAYS],
-  );
+  // Expired rows (sliding or absolute) are deleted by the database's hourly
+  // job (auth.prune_signups, 018_web_accounts_hardening.sql), not here: a
+  // sweep on every sign-in scanned the whole table on the request path.
   return token;
+}
+
+/**
+ * Whether `ip` is an address one of the account's live sessions signed in
+ * from — an address its owner has proved recently. Sign-in uses it to spare
+ * the owner the per-email failure bucket (lib/accounts/ratelimit.ts,
+ * `failureKeys`). False for anything that is not an IP address (a client
+ * without trusted proxy headers is "direct"), so the shared bucket of
+ * unidentified clients never counts as known.
+ */
+export async function signedInFrom(email: string, ip: string): Promise<boolean> {
+  if (!isIP(ip)) return false;
+  const rows = await query(
+    `SELECT 1
+       FROM auth.sessions s
+       JOIN auth.accounts a ON a.id = s.account_id
+      WHERE a.email = $1 AND s.ip = $2::inet
+        AND s.expires_at > now()
+        AND s.created_at > now() - make_interval(days => $3)
+      LIMIT 1`,
+    [email, ip, SESSION_ABSOLUTE_DAYS],
+  );
+  return rows.length > 0;
 }
 
 export async function deleteSession(id: Buffer): Promise<void> {

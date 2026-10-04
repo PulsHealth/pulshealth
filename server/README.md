@@ -239,7 +239,9 @@ in lexical order and records each in a `schema_migrations` table
 (`filename`, `applied_at`, `checksum`). It runs on every `docker compose up
 -d`, or by hand with `docker compose run --rm migrate` (`make migrate`), and
 logs one line per file — `applied`, `skipped`, `rerun` or `ran` — plus a
-summary.
+summary. Runs are serialised by a PostgreSQL advisory lock held for the
+whole run, so `make migrate` during `docker compose up -d` waits for the
+other run and then finds its work recorded.
 
 | File | Behaviour |
 |---|---|
@@ -252,11 +254,12 @@ summary.
 underscore, a name) with plain DDL/DML — no `BEGIN`/`COMMIT`, the migrator
 wraps it; `IF NOT EXISTS` is still welcome — and `docker compose up -d`.
 Fresh and existing installs take the same path. New tables are readable by
-`grafana` and writable by `ingest` at once through the default privileges
-`099_read_roles.sh` sets (the script then revokes `grafana`'s SELECT on
-`device_tokens` on every run — credential hashes are not dashboard
-material). `api_reader` has an exact grant list instead: extend that script
-and its assertion when the product API reads a new table. So does `web_app`,
+`grafana` at once through the default privileges `099_read_roles.sh` sets
+(the script then revokes `grafana`'s SELECT on `device_tokens` on every run
+— credential hashes are not dashboard material). `ingest` and `api_reader`
+have exact grant lists instead, asserted on every run: when ingest writes or
+the product API reads a new table, extend that script's list and its
+expected rows, or the service gets `permission denied` (42501). So does `web_app`,
 the web viewer's role in accounts mode, which reads health data only through
 the per-user, security-barrier views in schema `web`
 (`015_web_accounts.sql`, filtered on the `puls.user_id` setting the viewer
@@ -336,10 +339,13 @@ Ingest is the only internet-facing service, so it does not hold the
 superuser password: Compose connects it as the `ingest` role
 (`INGEST_DB_USER`, default `ingest`; `INGEST_DB_PASSWORD` is required),
 which `099_read_roles.sh` creates on every migrate run with exactly what
-`ingest/store.go` needs: `CONNECT`, `USAGE` on `public`,
-`SELECT/INSERT/UPDATE/DELETE` on every table and view in `public`,
-`USAGE/SELECT` on its sequences, and default privileges covering future
-tables and sequences. It has no `CREATE` on the schema, no `TRUNCATE`, and
+ingest's code needs, as an explicit list asserted row by row: `CONNECT`,
+`USAGE` on `public`, and per table only the verbs ingest uses (samples
+`SELECT/INSERT/DELETE`, upserted tables `UPDATE` too, `ingest_rejections`
+`INSERT` only, `device_tokens` without `DELETE`), `SELECT` on the four
+lookup sequences, nothing on `schema_migrations`, the views, or schemas
+`auth` and `web`, and no default privileges: a table added later is not
+ingest's until the list says so. It has no `CREATE` on the schema, no `TRUNCATE`, and
 none of `SUPERUSER`, `CREATEROLE`, `CREATEDB`, `REPLICATION` or
 `BYPASSRLS`, so an ingest bug or a leaked token cannot drop tables, alter
 roles, or `COPY TO PROGRAM`. Before it commits, the script checks the exact

@@ -182,6 +182,16 @@ it behind a TLS proxy (a Cloudflare Tunnel — see `server/README.md`,
 way to reach it, and set `TRUST_PROXY_HEADERS=true` so `X-Forwarded-Proto`,
 `X-Forwarded-Host` and the client address are believed. Keep `WEB_BIND_ADDR`
 on loopback. `next dev` on `http://localhost` works without a proxy.
+`TRUST_PROXY_HEADERS` is read as ingest and the product API read it —
+`true`/`1`/`yes`/`on` or `false`/`0`/`no`/`off`, any case, empty for the
+default (off) — and any other value stops the viewer at startup with a
+message naming it. With it on and the client address taken from
+`X-Forwarded-For` (`WEB_CLIENT_IP_HEADER` unset), the viewer logs a warning
+at startup: that is right behind exactly one proxy that appends to the
+header, but behind Cloudflare (the `tunnel` profile included)
+`WEB_CLIENT_IP_HEADER=cf-connecting-ip` is the header Cloudflare always
+overwrites, and behind two appending proxies every client would share one
+rate-limit bucket.
 
 **Inviting people.** There is no sign-up. An operator runs, for each person:
 
@@ -213,7 +223,10 @@ Details:
 - The session cookie `__Host-puls-session` is `HttpOnly; Secure;
   SameSite=Lax; Path=/` and carries 32 random bytes; the database keeps only
   their SHA-256 (`auth.sessions`). Sessions last 30 days from last use and
-  90 days from sign-in at most, however often they are used. Every
+  90 days from sign-in at most, however often they are used — checked by the
+  viewer on every request and again by every database function below; the
+  hourly `auth.prune_signups` job deletes expired rows (with their IP address
+  and browser name). Every
   sign-in gets a new session id, signing out deletes the session row (so a
   copy of the cookie stops working), and a password change or an invite
   reset ends every session of the account and starts a fresh one.
@@ -226,6 +239,19 @@ Details:
   attempt takes its token before the check and gets it back on success, so
   a burst of parallel guesses cannot all slip past while scrypt runs.
   Nothing about a failed attempt is logged.
+- The email bucket would let anyone keep a person signed out (ten wrong
+  guesses a minute, from anywhere). So a sign-in from an address one of the
+  account's own live sessions signed in from is charged to that address's
+  bucket only: the owner gets in from where they already use the viewer
+  while strangers keep the email bucket empty. The database is asked only
+  when the email bucket is what would refuse the attempt. Not chosen:
+  refusing only when both buckets are empty (a botnet of fresh addresses
+  could then guess at one account without limit), or a slower email bucket
+  (any finite refill can be held empty; it only changes the price). The
+  cost: someone sharing a known address (the same NAT) skips the email
+  bucket but not the address's own, so guesses at one account stay bounded —
+  ten a minute plus ten per address it has live sessions from. A new address
+  still answers to the email bucket.
 - The client address is `X-Forwarded-For`'s last entry — the one the
   trusted proxy appended; anything before it is whatever the client sent —
   or the header `WEB_CLIENT_IP_HEADER` names (`cf-connecting-ip` behind
@@ -245,16 +271,20 @@ phone can send anything. In order:
    email (`WEB_ADMIN_EMAIL`, at most 30 a day). The form answers the same
    whether or not the address is known, emails no one but the operator, keeps
    one open request per address, drops a filled-in honeypot, and takes three
-   requests an hour per client address.
+   requests an hour per client address. While 500 requests wait, new ones
+   are dropped — stored nowhere, emailed to no one — with the same answer,
+   and the server log says so once an hour.
 2. An administrator opens `/admin` (in the sidebar) and approves or declines.
    Approval creates the person's user and a 7-day invite and emails it to
    them; when email is off, `WEB_PUBLIC_URL` is unset or the send fails, the
    page shows the link once to send by hand. Declining deletes the request
-   and sends nothing. Approved people who have not used their invite are
-   listed with **Send a new invite** (the old link stops working) and
-   **Remove**. In the database, an hourly TimescaleDB job
+   and sends nothing — one at a time, the ticked ones (**Decline selected**)
+   or every one listed (**Decline all shown**). Approved people who have not
+   used their invite are listed with **Send a new invite** (the old link
+   stops working) and **Remove**. In the database, an hourly TimescaleDB job
    (`auth.prune_signups`) deletes approved requests 30 days after the
-   decision, and an approved person with no account and no invite in 30 days.
+   decision, requests nobody decided 30 days after they were made, and an
+   approved person with no account and no invite in 30 days.
 3. The person chooses a password, signs in on their iPhone and taps **Connect
    this iPhone** on the account page: the viewer mints a sync token for that
    person's own user, shows it once as a pairing code (a button that opens
@@ -268,7 +298,9 @@ phone can send anything. In order:
    disconnects its iPhones) and, once disabled, **Purge** everything stored
    for that user, the hourly rollups included, and blank the names of
    devices and apps no one else's records use. An account whose owner asked
-   to be deleted cannot be enabled again. Purge runs with a 30-minute
+   to be deleted cannot be enabled again. No administrator's account — your
+   own included — can be disabled or enabled here; manage those from the
+   server. Purge runs with a 30-minute
    timeout of its own, since it unpacks the compressed history the user's
    rows share with others; if the page times out first, it carries on.
 
@@ -281,8 +313,9 @@ my account**, and `/admin` shows them without buttons. Manage them from the
 server.
 
 The privileged steps — creating a user, minting or revoking a token,
-disabling, deleting, purging — are `SECURITY DEFINER` functions in schema
-`auth` (`server/db/migrations/016_web_signups.sql`). `web_app` may run exactly
+declining, disabling, deleting, purging — are `SECURITY DEFINER` functions in
+schema `auth` (`server/db/migrations/016_web_signups.sql`, replaced or added
+to by `018_web_accounts_hardening.sql`). `web_app` may run exactly
 those and still cannot write `users`, `device_tokens` or
 `auth.self_service_users` itself. Each takes the caller's session as
 `auth.sessions` stores it (the cookie's SHA-256; the plaintext never reaches
@@ -332,7 +365,7 @@ set. Without them the suites skip, unless `PULS_CI_REQUIRE_INTEGRATION=1` (or
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
 | `/settings` | Whose data is on screen and its profile (age, sex, heart-rate figures behind the zones); display preferences, saved in this browser |
 | `/account` | Accounts mode: connect or disconnect your iPhones, change the password, the browsers signed in, delete the account |
-| `/admin` | Accounts mode, administrators: approve or decline access requests; disable accounts, purge a disabled user's data |
+| `/admin` | Accounts mode, administrators: approve or decline access requests (one, the ticked ones, or all shown); disable non-administrator accounts, purge a disabled user's data |
 | `/signup`, `/login`, `/invite/[token]` | Accounts mode: ask for access (with `WEB_SIGNUPS`), sign in, accept an invite |
 
 ## Architecture

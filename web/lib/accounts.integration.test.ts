@@ -2,21 +2,22 @@
 // viewer's own route handlers and proxy.ts, connected as web_app: an invite
 // creates an account and signs in, sign-in and sign-out work and rotate
 // sessions, the signed-in user's reads are scoped to them, a password change
-// signs other browsers out, and failed attempts are throttled. Skipped
+// signs other browsers out, failed attempts are throttled — but never keep
+// the owner out of an address they signed in from — and expired sessions are
+// left to the database's hourly job. Skipped
 // without the same two connection strings as webapp.integration.test.ts.
 
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { newInviteToken } from "../scripts/invite.mjs";
+import { requireIntegrationDatabases } from "./integrationEnv";
 
-const WEB_URL = process.env.WEB_APP_DATABASE_URL;
-const ADMIN_URL = process.env.ADMIN_DATABASE_URL;
-if (process.env.CI && process.env.PULS_WEB_INTEGRATION && (!WEB_URL || !ADMIN_URL)) {
-  throw new Error("PULS_WEB_INTEGRATION is set but WEB_APP_DATABASE_URL or ADMIN_DATABASE_URL is missing");
-}
+// In CI the job sets both; a missing one there must fail, not skip quietly
+// (PULS_CI_REQUIRE_INTEGRATION / PULS_WEB_INTEGRATION, lib/integrationEnv.ts).
+const { webUrl: WEB_URL, adminUrl: ADMIN_URL } = requireIntegrationDatabases();
 
 const A = randomUUID();
 const B = randomUUID();
@@ -100,6 +101,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     await (await import("./db")).getPool()?.end();
     if (!admin) return;
     await admin.query("DELETE FROM auth.invites WHERE user_id = ANY($1)", [[A, B]]);
+    await admin.query("DELETE FROM auth.sessions WHERE account_id IN (SELECT id FROM auth.accounts WHERE user_id = ANY($1))", [[A, B]]);
     await admin.query("DELETE FROM auth.accounts WHERE user_id = ANY($1)", [[A, B]]);
     await admin.query("DELETE FROM workouts WHERE user_id = ANY($1)", [[A, B]]);
     await admin.query("DELETE FROM users WHERE id = ANY($1)", [[A, B]]);
@@ -301,5 +303,51 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     }
     const right = await loginRoute.POST(post("/api/auth/login", { email: EMAIL, password: "another long passphrase" }, { ip: "203.0.113.99" }));
     expect(right.headers.get("location")).toBe("/login?error=throttled");
+  });
+
+  it("still lets the owner in from an address one of their live sessions signed in from", async () => {
+    // The test above left EMAIL's bucket empty: strangers can keep it so.
+    // An address the account has a live session from answers only to its
+    // own bucket (lib/accounts/ratelimit.ts), so they cannot lock its owner out.
+    const accountId = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [EMAIL])).rows[0].id;
+    await admin.query(
+      "INSERT INTO auth.sessions (id, account_id, expires_at, ip) VALUES ($1, $2, now() + interval '1 day', '198.51.100.90')",
+      [randomBytes(32), accountId],
+    );
+    // An expired session's address proves nothing.
+    await admin.query(
+      "INSERT INTO auth.sessions (id, account_id, expires_at, ip) VALUES ($1, $2, now() - interval '1 minute', '198.51.100.91')",
+      [randomBytes(32), accountId],
+    );
+    const login = (ip: string) => loginRoute.POST(post("/api/auth/login", { email: EMAIL, password: "another long passphrase" }, { ip }));
+    expect((await login("203.0.113.98")).headers.get("location")).toBe("/login?error=throttled");
+    expect((await login("198.51.100.91")).headers.get("location")).toBe("/login?error=throttled");
+    const owner = await login("198.51.100.90");
+    expect(owner.headers.get("location")).toBe("/");
+    expect(sessionCookie(owner)).toBeTruthy();
+  });
+
+  it("leaves expired sessions to the database's hourly job, which removes them", async () => {
+    const accountId = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [OTHER_EMAIL])).rows[0].id;
+    const live = randomBytes(32);
+    const slid = randomBytes(32);
+    const capped = randomBytes(32);
+    await admin.query(
+      `INSERT INTO auth.sessions (id, account_id, created_at, expires_at) VALUES
+         ($1, $4, now(), now() + interval '1 day'),
+         ($2, $4, now() - interval '40 days', now() - interval '1 minute'),
+         ($3, $4, now() - interval '91 days', now() + interval '1 day')`,
+      [live, slid, capped, accountId],
+    );
+    const present = async () =>
+      (await admin.query<{ id: Buffer }>("SELECT id FROM auth.sessions WHERE id = ANY($1::bytea[])", [[live, slid, capped]])).rows.length;
+    // Signing in no longer sweeps them...
+    const res = await loginRoute.POST(post("/api/auth/login", { email: OTHER_EMAIL, password: OTHER_PASSWORD }, { ip: "198.51.100.95" }));
+    expect(res.headers.get("location")).toBe("/");
+    expect(await present()).toBe(3);
+    // ...the hourly job does: past the sliding expiry or the 90-day cap.
+    await admin.query("CALL auth.prune_signups(0, NULL)");
+    expect((await admin.query("SELECT id FROM auth.sessions WHERE id = ANY($1::bytea[])", [[live, slid, capped]])).rows.map((r) => r.id.toString("hex")))
+      .toEqual([live.toString("hex")]);
   });
 });

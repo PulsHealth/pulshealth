@@ -33,11 +33,32 @@ describe("session tokens and cookie", async () => {
     expect(lookup).toMatch(/s\.expires_at > now\(\)/);
     expect(lookup).toMatch(/s\.created_at > now\(\) - make_interval\(days => \$2\)/);
     expect(params[1]).toBe(SESSION_ABSOLUTE_DAYS);
-    // A row past the cap is dead weight too: the sign-in sweep removes it.
+    // Signing in no longer sweeps expired rows: the database's hourly job
+    // does (auth.prune_signups, 018_web_accounts_hardening.sql).
+    queryMock.mockReset();
+    queryMock.mockResolvedValue([]);
     await createSession("00000000-0000-4000-8000-000000000000", { userAgent: null, ip: null });
-    const sweep = queryMock.mock.calls.find(([sql]) => String(sql).startsWith("DELETE FROM auth.sessions"));
-    expect(sweep?.[0]).toMatch(/created_at < now\(\) - make_interval\(days => \$1\)/);
-    expect(sweep?.[1]).toEqual([SESSION_ABSOLUTE_DAYS]);
+    expect(queryMock).toHaveBeenCalledTimes(1);
+    expect(String(queryMock.mock.calls[0][0])).toMatch(/^\s*INSERT INTO auth\.sessions/);
+    expect(queryMock.mock.calls.some(([sql]) => /DELETE/.test(String(sql)))).toBe(false);
+  });
+
+  it("knows an address only from the account's own live sessions, and only a real address", async () => {
+    const { signedInFrom, SESSION_ABSOLUTE_DAYS } = await import("./session");
+    queryMock.mockReset();
+    queryMock.mockResolvedValueOnce([{ "?column?": 1 }]).mockResolvedValueOnce([]);
+    expect(await signedInFrom("a@example.com", "198.51.100.7")).toBe(true);
+    expect(await signedInFrom("a@example.com", "2001:db8::1")).toBe(false);
+    const [sql, params] = queryMock.mock.calls[0] as [string, unknown[]];
+    expect(sql).toMatch(/a\.email = \$1 AND s\.ip = \$2::inet/);
+    expect(sql).toMatch(/s\.expires_at > now\(\)/);
+    expect(sql).toMatch(/s\.created_at > now\(\) - make_interval\(days => \$3\)/);
+    expect(params).toEqual(["a@example.com", "198.51.100.7", SESSION_ABSOLUTE_DAYS]);
+    // Without trusted proxy headers every client is "direct": never known,
+    // and never a query.
+    queryMock.mockReset();
+    for (const ip of ["direct", "unknown", "", "evil, 198.51.100.7"]) expect(await signedInFrom("a@example.com", ip)).toBe(false);
+    expect(queryMock).not.toHaveBeenCalled();
   });
 
   it("is a __Host- cookie: Secure, HttpOnly, SameSite=Lax, Path=/, 30 days", () => {

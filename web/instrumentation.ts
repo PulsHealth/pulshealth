@@ -6,15 +6,28 @@
 // browser. Never logs a secret.
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
-  const { isTrue, viewerMode } = await import("./lib/mode");
+  const { parseFlag, viewerMode } = await import("./lib/mode");
   const mode = viewerMode();
+
+  // Read the way ingest and the API read it; a value none of them accepts
+  // stops the viewer here, as it stops them, rather than meaning "off".
+  let trustProxy: boolean;
+  try {
+    trustProxy = parseFlag("TRUST_PROXY_HEADERS", process.env.TRUST_PROXY_HEADERS);
+  } catch (e) {
+    console.error(`[puls-web] ${e instanceof Error ? e.message : String(e)}. Fix it in server/.env and restart.`);
+    process.exit(1);
+  }
 
   if (mode === "accounts") {
     console.log(
       "[puls-web] mode=accounts: people sign in with their own email and password (invite-only: " +
         "`make web-invite`), and each sees only their own records. /api/healthz stays open for health checks.",
     );
-    if (process.env.NODE_ENV === "production" && !isTrue(process.env.TRUST_PROXY_HEADERS)) {
+    const { clientIpHeaderWarning } = await import("./lib/accounts/request");
+    const ipWarning = clientIpHeaderWarning(trustProxy);
+    if (ipWarning) console.warn(`[puls-web] ${ipWarning}`);
+    if (process.env.NODE_ENV === "production" && !trustProxy) {
       console.warn(
         "[puls-web] TRUST_PROXY_HEADERS is not true, so every request looks like plain HTTP and accounts mode " +
           "refuses it. Run the viewer behind a TLS proxy (a Cloudflare Tunnel, Tailscale Serve, a reverse proxy) " +

@@ -6,7 +6,9 @@
 #               (SELECT on every table except device_tokens, which holds
 #               credential hashes and is revoked on every run)
 #   api_reader  read-only; product API, exact SELECT set     API_DB_PASSWORD     (required)
-#   ingest      DML-only writer for the ingest server        INGEST_DB_PASSWORD  (see below)
+#   ingest      writer for the ingest server: an exact list  INGEST_DB_PASSWORD  (see below)
+#               of the tables server/ingest uses, and on
+#               each only the privileges it uses
 #   web_app     the web viewer in accounts mode: reads health WEB_DB_PASSWORD     (optional)
 #               data only through the per-user views in schema
 #               `web` (015_web_accounts.sql), and keeps the
@@ -474,24 +476,99 @@ ALTER ROLE ingest
 ALTER ROLE ingest RESET ALL;
 ALTER ROLE ingest IN DATABASE :"DBNAME" RESET ALL;
 
--- Exactly the DML surface of server/ingest/store.go: row reads and writes on
--- the tables in public, including the ones future migrations add. No CREATE
--- on the schema and no TRUNCATE/REFERENCES/TRIGGER, so an ingest bug or a
--- leaked token cannot alter the schema, drop data wholesale, change roles, or
--- reach superuser-only paths such as COPY TO PROGRAM.
-GRANT CONNECT ON DATABASE :"DBNAME" TO ingest;
-GRANT USAGE ON SCHEMA public TO ingest;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ingest;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ingest;
+-- Exactly the tables, and on each exactly the privileges, the ingest server
+-- uses (server/ingest: store.go for batches and the read endpoints,
+-- devices.go for per-device tokens). The `ingest devices` CLI (`make
+-- devices`, `make issue-device`) runs as this role too, so its writes are
+-- here: issue = INSERT, revoke and rename = UPDATE — there is no DELETE on
+-- device_tokens. SELECT goes with every table written, because an UPDATE or
+-- DELETE reads its WHERE columns, ON CONFLICT DO UPDATE its arbiter, and
+-- RETURNING its columns. Nothing on schema_migrations, category_labels,
+-- quantity_rollups, metric_daily or the auth/web schemas. No CREATE on the
+-- schema and no TRUNCATE/REFERENCES/TRIGGER, so an ingest bug or a leaked
+-- token cannot alter the schema, drop data wholesale, change roles, or reach
+-- superuser-only paths such as COPY TO PROGRAM.
+--
+-- A table the ingest server newly reads or writes goes on this list; the
+-- assertion below then holds it to exactly that. Foreign-key checks run as
+-- the referenced table's owner, so `users` needs no grant for them.
+CREATE TEMP TABLE ingest_grants (relname text, privilege_type text) ON COMMIT DROP;
+INSERT INTO ingest_grants (relname, privilege_type)
+SELECT t.relname, p.privilege_type
+FROM (VALUES
+  -- ensureUser (INSERT … ON CONFLICT DO NOTHING) before every batch and every
+  -- issued token; upsertUserSQL (ON CONFLICT DO UPDATE) for a profile line.
+  ('users',                  ARRAY['SELECT', 'INSERT', 'UPDATE']),
+  -- ensureTypes: new identifiers, a changed unit; resolveType, Stats.
+  ('sample_types',           ARRAY['SELECT', 'INSERT', 'UPDATE']),
+  -- ensureSources, ensureTemporalContexts, ensureAggregateSeries: insert the
+  -- unknown, read back the ids.
+  ('sources',                ARRAY['SELECT', 'INSERT']),
+  ('temporal_contexts',      ARRAY['SELECT', 'INSERT']),
+  ('aggregate_series',       ARRAY['SELECT', 'INSERT']),
+  -- Upserted (aggregates overwrite; rings upsert by date).
+  ('aggregate_samples',      ARRAY['SELECT', 'INSERT', 'UPDATE']),
+  ('activity_summaries',     ARRAY['SELECT', 'INSERT', 'UPDATE']),
+  -- Raw samples: inserted, deleted by a deletion line, read by Stats,
+  -- Digest, UUIDs and the route endpoints. Never updated.
+  ('quantity_samples',       ARRAY['SELECT', 'INSERT', 'DELETE']),
+  ('category_samples',       ARRAY['SELECT', 'INSERT', 'DELETE']),
+  ('workouts',               ARRAY['SELECT', 'INSERT', 'DELETE']),
+  ('heartbeat_series',       ARRAY['SELECT', 'INSERT', 'DELETE']),
+  ('ecg_samples',            ARRAY['SELECT', 'INSERT', 'DELETE']),
+  ('state_of_mind',          ARRAY['SELECT', 'INSERT', 'DELETE']),
+  ('medication_dose_events', ARRAY['SELECT', 'INSERT', 'DELETE']),
+  ('workout_route_points',   ARRAY['SELECT', 'INSERT', 'DELETE']),
+  ('workout_series_points',  ARRAY['SELECT', 'INSERT', 'DELETE']),
+  -- Tombstones for deleted samples.
+  ('deleted_samples',        ARRAY['SELECT', 'INSERT']),
+  -- The batch reservation (ON CONFLICT (batch_id) DO NOTHING), its insert_ms,
+  -- and Stats' last-batch times.
+  ('batches',                ARRAY['SELECT', 'INSERT', 'UPDATE']),
+  -- RecordRejection: a plain INSERT, never read back.
+  ('ingest_rejections',      ARRAY['INSERT']),
+  -- ResolveDeviceToken (lookup, last_seen_at), and the CLI's issue, revoke,
+  -- rename and list.
+  ('device_tokens',          ARRAY['SELECT', 'INSERT', 'UPDATE'])
+) AS t(relname, privileges)
+CROSS JOIN LATERAL unnest(t.privileges) AS p(privilege_type)
+-- Present on every database this runs against after a normal migrate run;
+-- the guard only spares a baseline of a database from before a table existed.
+WHERE to_regclass(format('public.%I', t.relname)) IS NOT NULL;
 
 -- The lookup tables' ids are identity columns, whose nextval runs without a
--- privilege check, so inserts need nothing here. USAGE keeps a future
--- serial/DEFAULT nextval column working; SELECT makes pg_sequences.last_value
--- readable (TestIntegration_LookupSequencesDoNotBurnOnRepeat watches it as
--- this role). No UPDATE: nothing calls setval.
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ingest;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO ingest;
+-- privilege check, so inserts need nothing on their sequences. SELECT makes
+-- pg_sequences.last_value readable (TestIntegration_LookupSequencesDoNotBurnOnRepeat
+-- watches these four as this role). No USAGE or UPDATE: nothing calls
+-- nextval or setval itself.
+INSERT INTO ingest_grants (relname, privilege_type)
+SELECT s.relname, 'SELECT'
+FROM (VALUES ('sample_types', 'type_id'), ('sources', 'source_id'),
+             ('aggregate_series', 'series_id'), ('temporal_contexts', 'temporal_context_id')) AS v(tbl, col)
+CROSS JOIN LATERAL (
+  SELECT c.relname::text
+  FROM pg_class c
+  WHERE c.oid = pg_get_serial_sequence(format('public.%I', v.tbl), v.col)::regclass
+) AS s
+WHERE to_regclass(format('public.%I', v.tbl)) IS NOT NULL;
+
+DO $$
+DECLARE
+  g record;
+BEGIN
+  FOR g IN
+    SELECT relname, string_agg(privilege_type, ', ' ORDER BY privilege_type) AS privileges
+    FROM ingest_grants
+    GROUP BY relname
+  LOOP
+    -- TimescaleDB's grant hook carries a hypertable's grant to its chunks
+    -- and their columnstore storage, as it did for the blanket grant.
+    EXECUTE format('GRANT %s ON public.%I TO ingest', g.privileges, g.relname);
+  END LOOP;
+END
+$$;
+GRANT CONNECT ON DATABASE :"DBNAME" TO ingest;
+GRANT USAGE ON SCHEMA public TO ingest;
 
 -- InsertBatch opens every transaction with this SET LOCAL. Prove the role may
 -- set it now, on every migrate run, instead of finding out as 500s on the first batch if
@@ -500,11 +577,9 @@ SET ROLE ingest;
 SET LOCAL timescaledb.max_tuples_decompressed_per_dml_transaction = 0;
 RESET ROLE;
 
--- Prove the role configuration and ACL set are exact before committing. Unlike
--- api_reader, ingest legitimately holds default ACLs (tables and sequences
--- created later in public) and DML on every relation in public plus the chunks
--- and internal hypertables TimescaleDB derives from them; the checks below pin
--- those sets rather than forbid them.
+-- Prove the role configuration and ACL set are exact before committing, like
+-- api_reader: exactly the list above on relations outside TimescaleDB's
+-- internal schema, and in it only what the grant hook derived from that list.
 DO $$
 DECLARE
   ingest_oid oid := (SELECT oid FROM pg_roles WHERE rolname = 'ingest');
@@ -570,102 +645,66 @@ BEGIN
     RAISE EXCEPTION 'ingest database ACL set is not exact';
   END IF;
 
-  -- Every relation grant must be a non-grantable DML privilege on a relation in
-  -- public, or on a TimescaleDB-managed relation in _timescaledb_internal that
-  -- the grant hook derived from one (chunks, compressed/materialized
-  -- hypertables, continuous-aggregate helper views); or USAGE/SELECT on a
-  -- sequence in public. Anything else (TRUNCATE, REFERENCES, TRIGGER,
-  -- MAINTAIN, WITH GRANT OPTION, other schemas) fails the run.
+  -- Every schema but TimescaleDB's internal one: exactly the list. The
+  -- tables, their sequences, nothing else in public and nothing anywhere else.
+  IF EXISTS (
+    WITH expected AS (
+      SELECT 'public'::text AS nspname, relname, privilege_type, false AS is_grantable
+      FROM ingest_grants
+    ), actual AS (
+      SELECT n.nspname::text, c.relname::text, acl.privilege_type, acl.is_grantable
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      CROSS JOIN LATERAL aclexplode(c.relacl) acl
+      WHERE acl.grantee = ingest_oid
+        AND n.nspname <> '_timescaledb_internal'
+    )
+    (SELECT * FROM expected EXCEPT SELECT * FROM actual)
+    UNION ALL
+    (SELECT * FROM actual EXCEPT SELECT * FROM expected)
+  ) THEN
+    RAISE EXCEPTION 'ingest relation ACL set is not exactly the list in 099_read_roles.sh';
+  END IF;
+
+  -- _timescaledb_internal: only what the grant hook derives from the list —
+  -- a chunk carrying a privilege its hypertable has, or columnstore storage
+  -- (recognised as in the api_reader check above) carrying a DML privilege.
+  -- Never a continuous aggregate's internals: ingest has no grant on
+  -- quantity_rollups, and its inserts log invalidations through
+  -- TimescaleDB's own catalog access, not through a grant.
   IF EXISTS (
     SELECT 1
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
     CROSS JOIN LATERAL aclexplode(c.relacl) acl
     WHERE acl.grantee = ingest_oid
+      AND n.nspname = '_timescaledb_internal'
       AND NOT (
         NOT acl.is_grantable
         AND (
-          (n.nspname = 'public'
-             AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
-             AND acl.privilege_type IN ('SELECT', 'INSERT', 'UPDATE', 'DELETE'))
-          OR (n.nspname = 'public'
-             AND c.relkind = 'S'
-             AND acl.privilege_type IN ('USAGE', 'SELECT'))
-          OR (n.nspname = '_timescaledb_internal'
-             AND acl.privilege_type IN ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
-             AND (
-               -- a chunk of a hypertable or of a continuous aggregate
-               EXISTS (SELECT 1 FROM timescaledb_information.chunks ch
-                       WHERE ch.chunk_schema = n.nspname AND ch.chunk_name = c.relname)
-               -- a continuous aggregate's materialization hypertable
-               OR EXISTS (SELECT 1 FROM timescaledb_information.continuous_aggregates ca
-                          WHERE ca.materialization_hypertable_schema = n.nspname
-                            AND ca.materialization_hypertable_name = c.relname)
-               -- columnstore storage of any hypertable, old or new layout
-               -- (recognised as in the api_reader check above)
-               OR (c.relkind = 'r'
-                   AND EXISTS (SELECT 1 FROM pg_attribute a
-                               WHERE a.attrelid = c.oid AND a.attname = '_ts_meta_count'))
-               -- TimescaleDB <= 2.28's column-less compressed-hypertable
-               -- parent (see the api_reader check above)
-               OR (c.relkind = 'r'
-                   AND NOT EXISTS (SELECT 1 FROM pg_attribute a
-                                   WHERE a.attrelid = c.oid AND a.attnum > 0
-                                     AND NOT a.attisdropped))
-               -- a continuous aggregate's partial/direct helper view: a view
-               -- here that reads nothing but user hypertables or
-               -- materialization hypertables. TimescaleDB's own stats views
-               -- in this schema read _timescaledb_catalog and stay excluded.
-               OR (c.relkind = 'v'
-                   AND EXISTS (SELECT 1 FROM pg_rewrite rw WHERE rw.ev_class = c.oid)
-                   AND NOT EXISTS (
-                     SELECT 1
-                     FROM pg_rewrite rw
-                     JOIN pg_depend d
-                       ON d.classid = 'pg_rewrite'::regclass AND d.objid = rw.oid
-                      AND d.refclassid = 'pg_class'::regclass AND d.refobjid <> c.oid
-                     JOIN pg_class rc ON rc.oid = d.refobjid
-                     JOIN pg_namespace rn ON rn.oid = rc.relnamespace
-                     WHERE rw.ev_class = c.oid
-                       AND NOT EXISTS (SELECT 1 FROM timescaledb_information.hypertables h
-                                       WHERE h.hypertable_schema = rn.nspname
-                                         AND h.hypertable_name = rc.relname)
-                       AND NOT EXISTS (SELECT 1 FROM timescaledb_information.continuous_aggregates ca
-                                       WHERE ca.materialization_hypertable_schema = rn.nspname
-                                         AND ca.materialization_hypertable_name = rc.relname)))
-             ))
+          -- a chunk of a hypertable on the list, with one of its privileges
+          EXISTS (SELECT 1
+                  FROM timescaledb_information.chunks ch
+                  JOIN ingest_grants g
+                    ON ch.hypertable_schema = 'public'
+                   AND g.relname = ch.hypertable_name::text
+                  WHERE ch.chunk_schema = n.nspname AND ch.chunk_name = c.relname
+                    AND g.privilege_type = acl.privilege_type)
+          OR (acl.privilege_type IN ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
+              AND c.relkind = 'r'
+              AND (
+                -- columnstore storage of a hypertable, old or new layout
+                EXISTS (SELECT 1 FROM pg_attribute a
+                        WHERE a.attrelid = c.oid AND a.attname = '_ts_meta_count')
+                -- TimescaleDB <= 2.28's column-less compressed-hypertable
+                -- parent (see the api_reader check above)
+                OR NOT EXISTS (SELECT 1 FROM pg_attribute a
+                               WHERE a.attrelid = c.oid AND a.attnum > 0
+                                 AND NOT a.attisdropped)))
         )
       )
   ) THEN
-    RAISE EXCEPTION 'ingest relation ACL set is not exact';
-  END IF;
-
-  -- Coverage: every table, view and sequence in public carries the full set,
-  -- so a new migration's table is writable the moment it is created.
-  IF EXISTS (
-    SELECT 1
-    FROM pg_class c
-    JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE n.nspname = 'public'
-      AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
-      AND NOT (
-        has_table_privilege(ingest_oid, c.oid, 'SELECT')
-        AND has_table_privilege(ingest_oid, c.oid, 'INSERT')
-        AND has_table_privilege(ingest_oid, c.oid, 'UPDATE')
-        AND has_table_privilege(ingest_oid, c.oid, 'DELETE')
-      )
-  ) OR EXISTS (
-    SELECT 1
-    FROM pg_class c
-    JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE n.nspname = 'public'
-      AND c.relkind = 'S'
-      AND NOT (
-        has_sequence_privilege(ingest_oid, c.oid, 'USAGE')
-        AND has_sequence_privilege(ingest_oid, c.oid, 'SELECT')
-      )
-  ) THEN
-    RAISE EXCEPTION 'ingest is missing a DML or sequence privilege in public';
+    RAISE EXCEPTION 'ingest holds a privilege in _timescaledb_internal that no grant on the list explains';
   END IF;
 
   IF EXISTS (
@@ -684,34 +723,15 @@ BEGIN
     SELECT 1 FROM pg_parameter_acl p
     CROSS JOIN LATERAL aclexplode(p.paracl) acl
     WHERE acl.grantee = ingest_oid
+  ) OR EXISTS (
+    -- No default privileges any more: a table a later migration adds is not
+    -- writable until it is on the list above (DROP OWNED cleared the
+    -- blanket ones earlier versions of this file set).
+    SELECT 1 FROM pg_default_acl d
+    CROSS JOIN LATERAL aclexplode(d.defaclacl) acl
+    WHERE acl.grantee = ingest_oid
   ) THEN
-    RAISE EXCEPTION 'ingest has unexpected column, function, type, or parameter ACLs';
-  END IF;
-
-  -- Default ACLs: exactly the two declared above, granted for objects the
-  -- superuser running this script creates in public.
-  IF EXISTS (
-    WITH expected(defaclrole, nspname, objtype, privilege_type, is_grantable) AS (VALUES
-      (current_user::text, 'public', 'r', 'SELECT', false),
-      (current_user::text, 'public', 'r', 'INSERT', false),
-      (current_user::text, 'public', 'r', 'UPDATE', false),
-      (current_user::text, 'public', 'r', 'DELETE', false),
-      (current_user::text, 'public', 'S', 'USAGE', false),
-      (current_user::text, 'public', 'S', 'SELECT', false)
-    ), actual AS (
-      SELECT r.rolname::text, n.nspname::text, d.defaclobjtype::text,
-             acl.privilege_type, acl.is_grantable
-      FROM pg_default_acl d
-      JOIN pg_roles r ON r.oid = d.defaclrole
-      LEFT JOIN pg_namespace n ON n.oid = d.defaclnamespace
-      CROSS JOIN LATERAL aclexplode(d.defaclacl) acl
-      WHERE acl.grantee = ingest_oid
-    )
-    (SELECT * FROM expected EXCEPT SELECT * FROM actual)
-    UNION ALL
-    (SELECT * FROM actual EXCEPT SELECT * FROM expected)
-  ) THEN
-    RAISE EXCEPTION 'ingest default ACL set is not exact';
+    RAISE EXCEPTION 'ingest has unexpected column, function, type, parameter, or default ACLs';
   END IF;
 END
 $$;
@@ -749,12 +769,13 @@ EOSQL
   exit 0
 fi
 
-# A database baselined from before 015/016 has no views or functions to
+# A database baselined from before 015/016/018 has no views or functions to
 # grant yet; the next plain migrate run applies them, and this section with it.
 if [[ "$(psql -X -q -tA --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
           -c "SELECT to_regprocedure('puls_create_web_views()') IS NOT NULL
-                 AND to_regprocedure('auth.purge_user(bytea,uuid)') IS NOT NULL")" != t ]]; then
-  echo "099_read_roles: 015_web_accounts.sql or 016_web_signups.sql is not applied yet; skipping the web_app role."
+                 AND to_regprocedure('auth.purge_user(bytea,uuid)') IS NOT NULL
+                 AND to_regprocedure('auth.decline_signups(bytea,uuid[])') IS NOT NULL")" != t ]]; then
+  echo "099_read_roles: 015_web_accounts.sql, 016_web_signups.sql or 018_web_accounts_hardening.sql is not applied yet; skipping the web_app role."
   exit 0
 fi
 
@@ -861,8 +882,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   auth.signup_requests
 TO web_app;
 
--- The privileged steps of sign-up and self-service (016_web_signups.sql):
--- each a SECURITY DEFINER function that checks the caller's session itself.
+-- The privileged steps of sign-up and self-service (016_web_signups.sql,
+-- 018_web_accounts_hardening.sql): each a SECURITY DEFINER function that
+-- checks the caller's session itself.
 -- web_app gets EXECUTE on exactly these and on no other function of its own
 -- (PostgreSQL's default PUBLIC EXECUTE covers built-ins like time_bucket).
 GRANT EXECUTE ON FUNCTION
@@ -872,7 +894,8 @@ GRANT EXECUTE ON FUNCTION
   auth.issue_device_token(bytea, bytea, text, text),
   auth.my_devices(bytea),
   auth.revoke_my_device(bytea, bigint),
-  auth.delete_my_account(bytea)
+  auth.delete_my_account(bytea),
+  auth.decline_signups(bytea, uuid[])
 TO web_app;
 
 -- Which users those functions may act on (written only by approve_signup).
@@ -1033,7 +1056,8 @@ BEGIN
       ('auth.issue_device_token(bytea,bytea,text,text)'),
       ('auth.my_devices(bytea)'),
       ('auth.revoke_my_device(bytea,bigint)'),
-      ('auth.delete_my_account(bytea)')
+      ('auth.delete_my_account(bytea)'),
+      ('auth.decline_signups(bytea,uuid[])')
     ), granted AS (
       SELECT p.oid::regprocedure::text AS signature
       FROM pg_proc p

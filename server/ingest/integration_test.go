@@ -155,16 +155,15 @@ func TestIntegration_IngestRoundTrip(t *testing.T) {
 // TestIntegration_CategoryLabelsJoin verifies that raw HKCategorySample values
 // can be joined to their HealthKit labels without changing category_samples.
 func TestIntegration_CategoryLabelsJoin(t *testing.T) {
-	url := integrationDatabaseURL(t)
+	integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	pool, err := pgxpool.New(ctx, url)
-	if err != nil {
-		t.Fatalf("connect: %v", err)
-	}
-	defer pool.Close()
+	// A check of the schema Grafana and the product API read, not of ingest:
+	// the scoped ingest role has no grant on category_labels and no UPDATE
+	// on sources (099_read_roles.sh), so this runs as the admin connection.
+	pool := adminPool(t, ctx)
 
 	ddl, err := os.ReadFile("../db/migrations/010_category_labels.sql")
 	if err != nil {
@@ -581,15 +580,15 @@ func TestIntegration_AggregateUpsert(t *testing.T) {
 }
 
 func TestIntegration_MetricDailyUsesCanonicalSeriesOnly(t *testing.T) {
-	url := integrationDatabaseURL(t)
+	integrationDatabaseURL(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	pool, err := pgxpool.New(ctx, url)
-	if err != nil {
-		t.Fatalf("connect: %v", err)
-	}
-	defer pool.Close()
+	// A check of the metric_daily view the product API reads, with fixtures
+	// written straight to the tables: the scoped ingest role may not read
+	// the view nor delete the fixtures (099_read_roles.sh), so this runs as
+	// the admin connection.
+	pool := adminPool(t, ctx)
 
 	run := time.Now().UnixNano()
 	userID := fmt.Sprintf("%08x-0200-4000-8000-%012x", run>>32, run&0xffffffffffff)
@@ -704,9 +703,11 @@ func TestIntegration_ProfileSnapshotReplacement(t *testing.T) {
 
 	run := time.Now().UnixNano()
 	userID := fmt.Sprintf("%08x-0300-4000-8000-%012x", run>>32, run&0xffffffffffff)
+	// Cleanup as the admin connection: ingest never deletes batches or users.
+	admin := adminPool(t, ctx)
 	defer func() {
-		_, _ = pool.Exec(context.Background(), `DELETE FROM batches WHERE user_id = $1`, userID)
-		_, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, userID)
+		_, _ = admin.Exec(context.Background(), `DELETE FROM batches WHERE user_id = $1`, userID)
+		_, _ = admin.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, userID)
 	}()
 
 	send := func(seq int, profile string) {
@@ -1326,6 +1327,7 @@ func TestIntegration_DeviceTokens(t *testing.T) {
 	// before the pool closes, and t.Cleanup runs last-in first-out.
 	t.Cleanup(pool.Close)
 	store := NewStore(pool)
+	admin := adminPool(t, ctx)
 
 	run := time.Now().UnixNano()
 	tokenUser := fmt.Sprintf("%08x-0200-4000-8000-%012x", run>>32, run&0xffffffffffff)
@@ -1338,8 +1340,9 @@ func TestIntegration_DeviceTokens(t *testing.T) {
 	t.Cleanup(func() {
 		cctx, ccancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer ccancel()
-		_, _ = pool.Exec(cctx, `DELETE FROM batches WHERE device_token_id = $1`, issued.ID)
-		_, _ = pool.Exec(cctx, `DELETE FROM device_tokens WHERE id = $1`, issued.ID)
+		// As the admin connection: ingest revokes tokens, it never deletes them.
+		_, _ = admin.Exec(cctx, `DELETE FROM batches WHERE device_token_id = $1`, issued.ID)
+		_, _ = admin.Exec(cctx, `DELETE FROM device_tokens WHERE id = $1`, issued.ID)
 	})
 	if len(plaintext) != 64 || issued.ID == 0 || issued.TokenPrefix != plaintext[:8] {
 		t.Fatalf("issued = %q / %+v", plaintext, issued)

@@ -271,7 +271,9 @@ decides. What happens to your data:
   an optional note, and your browser's IP address and name, and emails them
   to the developer. Nothing else is created for you, and your iPhone cannot
   send anything, unless the developer approves. A declined request is
-  deleted at once; an approved one 30 days after the decision. If you are
+  deleted at once; an approved one 30 days after the decision; one nobody
+  decides, 30 days after you made it. While too many requests are waiting,
+  a new one is not stored at all (the form answers the same either way). If you are
   approved but never use the invite, everything made for you is deleted 30
   days after the last invite was sent.
 - **The app still works exactly as described above.** Once approved, you

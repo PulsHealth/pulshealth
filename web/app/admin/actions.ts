@@ -7,6 +7,7 @@ import { publicBase, sendApproval } from "@/lib/accounts/mail";
 import { publicOrigin } from "@/lib/accounts/request";
 import { APPROVAL_INVITE_DAYS, approveSignup, reinvite, type Approval } from "@/lib/accounts/signups";
 import { trustProxyHeaders } from "@/lib/mode";
+import { isUuid } from "@/lib/uuid";
 
 export type ApproveState =
   | null
@@ -22,7 +23,7 @@ export async function approveRequest(_prev: ApproveState, form: FormData): Promi
   const admin = await currentAdmin();
   if (!admin) return { ok: false, error: "Only an administrator can approve requests." };
   const id = String(form.get("id") ?? "");
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, error: "No such request." };
+  if (!isUuid(id)) return { ok: false, error: "No such request." };
   try {
     const approval =
       form.get("mode") === "reinvite"
