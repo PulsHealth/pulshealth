@@ -35,7 +35,7 @@ type NavItem = {
  */
 const primary: NavItem[] = [
   { title: "App", href: "/ios", description: "The free iOS app", icon: Smartphone },
-  { title: "Database", href: "/server", description: "The self-hosted stack", icon: Database },
+  { title: "Database", href: "/server", description: "Self-host the open-source stack", icon: Database },
   { title: "Docs", href: "/docs", description: "Setup, protocol, database, AI", icon: FileText },
   { title: "Knowledge Base", href: "/knowledge-base", description: "What each Apple Health type measures", icon: BookOpen },
   { title: "Blog", href: "/blog", description: "Posts from the project", icon: PenLine },

@@ -9,6 +9,7 @@ const columns: { heading: string; links: FooterLink[] }[] = [
     heading: "Project",
     links: [
       { title: "iOS App", href: "/ios" },
+      { title: "PulsHealth Database", href: "https://app.pulshealth.com/signup", external: true },
       { title: "Self-Hosted Database", href: "/server" },
       { title: "Documentation", href: "/docs" },
       { title: "Sync Protocol", href: "/docs/protocol" },
@@ -76,7 +77,7 @@ export function SiteFooter() {
               <span className="font-semibold">PulsHealth</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
-              Apple Health, in a database you run. Free app, open source, no service in between.
+              Your Apple Health data, ready for you and your AI. Free, open-source app; hosted or self-hosted database.
             </p>
           </div>
 

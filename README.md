@@ -13,7 +13,9 @@ an OpenAPI document, Grafana dashboards, a web viewer, and an MCP server so
 Claude, Cursor and other AI assistants can answer questions from your data.
 
 **[PulsHealth is on the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354)** —
-free, iPhone and iPad. The backend is yours to run; see [Quickstart](#quickstart).
+free, iPhone and iPad. Sync it to the **PulsHealth database**, hosted for you at
+[app.pulshealth.com](https://app.pulshealth.com/signup) (hosting is the one
+paid part), or run this backend yourself; see [Quickstart](#quickstart).
 
 **No server? Explore and export.** The **Explore** tab shows what Apple Health
 holds for every type: how many samples, since when, from which apps and
@@ -454,8 +456,10 @@ No. The app requests read access only, and its usage strings say so.
 The full list of design properties, and how to report a vulnerability, is in
 [`SECURITY.md`](SECURITY.md).
 
-- **Your data goes only to your server.** There is no PulsHealth service, no
-  analytics, no crash reporting.
+- **Your data goes only to the database you choose.** Self-hosted, that is
+  your server and the developer never sees it; on the PulsHealth database it
+  is held by the developer under your account (`docs/privacy-policy.md`). No
+  analytics, no crash reporting either way.
 - **An export is a file you hand over yourself.** The Export tab makes no
   network request: it stages files in the app's temporary directory (never
   backed up), hands them to the share sheet, and deletes its copy once the
@@ -488,8 +492,8 @@ The full list of design properties, and how to report a vulnerability, is in
 
 ## What this is not
 
-- **Not a hosted service.** Nobody runs a PulsHealth server for you, and
-  that is deliberate.
+- **Not a lock-in.** The PulsHealth database runs this same open-source
+  code; you can run it yourself instead, and export everything either way.
 - **Not on Android.** The v1 type vocabulary is HealthKit's. The protocol is
   platform-neutral in shape, so a Health Connect client is possible, but none
   is planned here.

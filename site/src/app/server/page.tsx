@@ -6,7 +6,7 @@ import { PageHero } from "@/components/page-hero";
 
 export const metadata = {
   title: "The Self-Hosted PulsHealth Stack",
-  description: "The open-source reference backend for PulsHealth: PostgreSQL 17 with TimescaleDB, a Go ingest API, a read-only product API, Grafana, a web viewer and an MCP server, all via Docker Compose on a machine you own.",
+  description: "Self-host the open-source PulsHealth database: PostgreSQL 17 with TimescaleDB, a Go ingest API, a read-only product API, Grafana, a web viewer and an MCP server for AI, all via Docker Compose on a machine you own. Free, Apache-2.0.",
   alternates: {
     canonical: '/server/',
   },
@@ -51,7 +51,16 @@ export default function SyncPage() {
       <PageHero
         eyebrow={<>Docker Compose &middot; Apache-2.0</>}
         title={<>Your own <span className="text-brand">health database</span></>}
-        lede="The open-source database stack the PulsHealth app syncs to: PostgreSQL with TimescaleDB and the services around it. It runs on a home machine, a NAS, or a rented box. There is no hosted option and no managed tier."
+        lede="The open-source database stack the PulsHealth app syncs to: PostgreSQL with TimescaleDB and the services around it, free to run on a home machine, a NAS, or a rented box. Your data stays on hardware you control."
+        note={
+          <>
+            Would rather not run a server?{" "}
+            <a href="https://app.pulshealth.com/signup" className="text-brand underline-offset-4 hover:underline">
+              The PulsHealth database
+            </a>{" "}
+            is the same stack, hosted for you.
+          </>
+        }
       >
         <Button asChild size="lg">
           <Link href="/docs/server">

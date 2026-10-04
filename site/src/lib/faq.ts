@@ -12,18 +12,23 @@ export interface FaqItem {
 
 export const faq: FaqItem[] = [
   {
-    q: "Is the app really free? What is the catch?",
-    a: "Free, no in-app purchases, no account. The catch is that you run the database yourself; there is no PulsHealth service to send data to. The open-source stack sets one up with one command on any Docker host, and exploring and exporting work without one.",
+    q: "Is the app really free? What costs money?",
+    a: "The app is free, with no in-app purchases, and exploring and exporting need no account. The one paid part is the PulsHealth database, where we host the database, viewer and AI connection for you. Running your own database with the open-source stack is free: one command on any Docker host.",
     home: true,
   },
   {
     q: "Do I need a domain, a VPN or Tailscale?",
-    a: "No. On the same Wi-Fi the phone can sync to your database over plain HTTP; the app allows that for local-network addresses only. From anywhere else you need HTTPS, which means a TLS proxy or a VPN such as Tailscale in front of the ingest port.",
+    a: "Not with the PulsHealth database: you connect the app to your account and that is all. For your own database, also no: on the same Wi-Fi the phone can sync to your database over plain HTTP; the app allows that for local-network addresses only. From anywhere else you need HTTPS, which means a TLS proxy or a VPN such as Tailscale in front of the ingest port.",
     home: true,
   },
   {
     q: "Where does my data go?",
-    a: "To the database URL you enter in the app, and nowhere else. The developer runs no server, has no account system and receives nothing. The app has zero third-party dependencies and no analytics SDK.",
+    a: "To the one database you set up in the app, and nowhere else. If it is your own, the developer receives nothing. If it is the PulsHealth database, we store your data there under your account, use it only to show it back to you and to the assistants you connect, never sell or share it, and delete it when you delete your account. Exploring and exporting send nothing at all. The app has zero third-party dependencies and no analytics SDK.",
+    home: true,
+  },
+  {
+    q: "How do I connect Claude?",
+    a: "On the PulsHealth database, add it as a custom connector in the Claude app or claude.ai, or with one command in Claude Code, then sign in and tap Allow. On your own database, run the MCP server that ships with the stack. Either way the assistant can read your data and change nothing. The AI guide in the documentation has the steps.",
     home: true,
   },
   {

@@ -89,12 +89,18 @@ export default function ConsultingPage() {
               <li>
                 <strong className="text-foreground">The whole project is Apache-2.0.</strong>{" "}
                 The app, the sync library, the self-hosted stack, the protocol specification and the
-                dashboards are all in one public repository. There are no paid features.
+                dashboards are all in one public repository. There are no paid features in the
+                app.
               </li>
               <li>
                 <strong className="text-foreground">The backend is pre-release.</strong>{" "}
                 Standing up the stack still expects someone comfortable with Docker. The
-                documentation covers it, but not everyone has the time.
+                documentation covers it, but not everyone has the time. If you only want the data
+                in a database and in Claude,{" "}
+                <a href="https://app.pulshealth.com/signup" className="text-brand underline-offset-4 hover:underline">
+                  the PulsHealth database
+                </a>{" "}
+                hosts it for you.
               </li>
               <li>
                 <strong className="text-foreground">Try the docs first.</strong>{" "}
