@@ -43,7 +43,10 @@ future protocol v2 would be a server-first upgrade: an old server answers
 batches it cannot read with 400, which the app does not retry, so syncing
 pauses (nothing is lost) until the server is updated.
 
-## Unreleased
+## [0.3.0] - 2026-10-04
+
+**Upgrading:** take `make backup`, check out `v0.3.0`, set
+`PULS_VERSION=0.3.0`, then `make pull up`.
 
 No operator action is required beyond the one case below, but there are
 schema migrations: take `make backup` before upgrading, as for any.
@@ -54,13 +57,22 @@ as before. `ingest` gains a subcommand and one Go dependency; `web` gains an
 opt-in accounts mode. Nothing new is required in `.env`; `WEB_DB_PASSWORD`
 (which `scripts/bootstrap.sh` now generates) creates the `web_app` role that
 accounts mode connects as. `017_prune_ingest_rejections.sql` adds a daily job
-that deletes rejected-batch records older than 90 days.
+that deletes rejected-batch records older than 90 days;
+`018_web_accounts_hardening.sql` replaces four `auth` functions and adds
+one. `099_read_roles.sh` now gives the `ingest` role an exact grant list
+instead of DML on every table.
 
-**One case does need action:** an `.env` still holding the `change-me`
-placeholder from `.env.example` for a token or a database role password now
-stops the stack (see Security below). Generate real values
-(`openssl rand -hex 32`) before upgrading; an install made by
-`scripts/bootstrap.sh` already has them.
+**Three cases do need action** (each stops a service with a log line that
+says so, rather than misbehaving):
+
+- An `.env` still holding the `change-me` placeholder from `.env.example`
+  for a token or a database role password (see Security below). Generate
+  real values (`openssl rand -hex 32`); an install made by
+  `scripts/bootstrap.sh` already has them.
+- `TRUST_PROXY_HEADERS`, `PULS_ALLOW_SHARED_TOKEN` or `PULS_MULTI_USER` set
+  to anything but `true/false/1/0/yes/no/on/off` (or empty).
+- A table you added to the database yourself and have ingest write to:
+  give it a row in `099_read_roles.sh`'s ingest list.
 
 ### Added
 
@@ -94,6 +106,15 @@ stops the stack (see Security below). Generate real values
   after 30 days.
 - In accounts mode, a request that reached the viewer over plain HTTP through
   the trusted proxy is redirected to HTTPS instead of refused.
+- **Healthchecks** for ingest, the API, the MCP server and the viewer
+  (`docker compose ps` shows them; the Go images answer their own
+  `healthcheck` subcommand, having no shell). The MCP server waits for a
+  healthy API.
+- `GET /v1/users` reports the API's `timeZone`, and the MCP server takes
+  its zone from there when `PULS_TIME_ZONE` is unset (Compose no longer
+  passes it).
+- `/admin` shows how many requests wait, with Decline selected and Decline
+  all shown.
 - An optional `tunnel` Compose profile: a Cloudflare Tunnel that serves the
   viewer on a domain of yours with no open port (`CLOUDFLARE_TUNNEL_TOKEN`,
   `COMPOSE_PROFILES=tunnel`); `server/README.md`, "Exposing the server".
@@ -129,6 +150,23 @@ stops the stack (see Security below). Generate real values
   longer appears in the process list while the code is drawn.
 
 ### Fixed
+
+- The product API refuses to start when its `PULS_TIME_ZONE` differs from
+  the database's `puls_time_zone()`, rather than answering every daily
+  query on the wrong calendar.
+- Stopping the API with an export in flight aborts the export (never a
+  cleanly closed, truncated file) instead of waiting for SIGKILL.
+- `/v1/catalog/types` is served from cache while one background refresh
+  runs, so a cache miss no longer scans every hypertable on the request.
+- A ring day from a client older than `localDate` is dated by its own
+  time-zone offset when the line carries one.
+- `migrate` holds an advisory lock for the whole run: `make migrate` during
+  `docker compose up -d` waits instead of applying a file twice.
+- A viewer read that fails shows "Database unavailable" on that page
+  instead of empty charts.
+- On a release checkout `scripts/bootstrap.sh` pins `PULS_VERSION` to it,
+  and on any other it warns that the latest images may not match the
+  checkout's schema.
 
 - `make devices ARGS='issue --name "My iPhone"'` no longer dies in `test` on
   the quoted label.
@@ -168,6 +206,20 @@ stops the stack (see Security below). Generate real values
   `WEB_DB_POOL_SIZE` sets the viewer's connection pool (default 4).
 - Releases: only a `v*` tag on `main` is published as a release, and
   `latest` moves only after all four images are published.
+- The MCP server's HTTP mode throttles failed bearer tokens like ingest and
+  the API.
+- In accounts mode an administrator cannot disable another administrator
+  or themselves, the database's privileged functions enforce the 90-day
+  session cap too, undecided sign-up requests are deleted after 30 days,
+  and at 500 waiting the form stores nothing more.
+- A stranger can no longer keep an account owner locked out by failing
+  sign-ins as their email: a failure from an address one of the account's
+  sessions came from is charged only to that address.
+- The viewer warns when accounts mode trusts `X-Forwarded-For` (behind
+  Cloudflare, use `cf-connecting-ip`).
+- The `ingest` role holds an exact, asserted grant list: nothing on
+  `schema_migrations`, the views or the viewer's schemas, no `DELETE` on
+  `device_tokens`, no default privileges.
 
 ## [0.2.0] - 2026-09-18
 
