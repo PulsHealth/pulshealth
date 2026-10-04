@@ -48,7 +48,13 @@ struct OnboardingView: View {
 
     /// Pages 3 and 4 are not in the pager until page 2 is settled: there is
     /// no page past it to swipe to, and no other way to reach one.
-    private var pages: [Page] { healthSettled ? Page.allCases : [.welcome, .health] }
+    private var pages: [Page] { Self.pages(healthSettled: healthSettled) }
+
+    /// The pager's pages for a Health page that is, or is not yet, settled.
+    /// Static so `AppModelTests` can hold it to App Review 5.1.1(iv).
+    static func pages(healthSettled: Bool) -> [Page] {
+        healthSettled ? Page.allCases : [.welcome, .health]
+    }
 
     /// A readable line length on iPad, where the screen is far wider than
     /// the text wants to be.

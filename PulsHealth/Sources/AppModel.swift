@@ -2,11 +2,28 @@ import Foundation
 import Observation
 import PulsHealthSync
 
+/// The HealthKit permission calls `AppModel` makes: the engine in the app.
+/// A seam so the hosted tests can walk onboarding and Apply without iOS's
+/// sheet coming up over the test host (`AppModelTests`).
+protocol HealthAccessRequesting: Sendable {
+    func authorizationNeeded(for identifiers: [String]) async -> Bool
+    func requestAuthorization(for identifiers: [String]) async throws -> HealthAccessRequestOutcome
+    @available(iOS 26.0, *)
+    func requestMedicationAuthorization() async throws
+}
+
+extension HealthSyncEngine: HealthAccessRequesting {}
+
 @MainActor
 @Observable
 final class AppModel {
     let engine: HealthSyncEngine
     let scheduler: BackgroundSyncScheduler
+    /// Where the durable launch flags live (`onboardingCompleted`,
+    /// `authorizationRequested`, …): `.standard` in the app.
+    @ObservationIgnored private let defaults: UserDefaults
+    /// HealthKit's permission state and sheets: the engine in the app.
+    @ObservationIgnored private let healthAccess: any HealthAccessRequesting
     /// The Export tab: the server-less way out. A model of its own so a run
     /// outlives the screen that started it (`ExportModel`).
     let export = ExportModel()
@@ -163,10 +180,20 @@ final class AppModel {
 
     private var started = false
 
-    init() {
-        let engine = HealthSyncEngine()
+    /// The app passes nothing. The hosted tests pass an engine over a
+    /// temporary directory, a scheduler with identifiers iOS will refuse,
+    /// a defaults suite of their own and a stand-in for the permission
+    /// sheets, so a test model shares no state with the test host's.
+    init(
+        engine: HealthSyncEngine = HealthSyncEngine(),
+        scheduler: BackgroundSyncScheduler? = nil,
+        defaults: UserDefaults = .standard,
+        healthAccess: (any HealthAccessRequesting)? = nil
+    ) {
         self.engine = engine
-        self.scheduler = BackgroundSyncScheduler(engine: engine)
+        self.scheduler = scheduler ?? BackgroundSyncScheduler(engine: engine)
+        self.defaults = defaults
+        self.healthAccess = healthAccess ?? engine
         self.explore = ExploreModel(engine: engine)
         // An analysis can show the permission sheet too; what it answered
         // for history (iOS 27) is recorded the same way as after Apply's.
@@ -189,7 +216,6 @@ final class AppModel {
         // launch opens straight into onboarding: `authorizationRequested` marks
         // any install that has been through Apply, including one that predates
         // this flow. `startBody` re-checks against the loaded configuration.
-        let defaults = UserDefaults.standard
         showsOnboarding = !defaults.bool(forKey: Self.onboardingCompletedKey)
             && !defaults.bool(forKey: "authorizationRequested")
     }
@@ -215,7 +241,7 @@ final class AppModel {
         // The Export tab's draft starts from the applied selection, if the
         // user has not already started editing it.
         export.seedFromApplied(config)
-        authorizationRequested = UserDefaults.standard.bool(forKey: "authorizationRequested")
+        authorizationRequested = defaults.bool(forKey: "authorizationRequested")
         // Don't trust the one-shot flag alone: types added to the catalog after
         // the first grant (or an interrupted permission sheet) stay notDetermined
         // and make their syncs fail until access is requested again.
@@ -375,7 +401,7 @@ final class AppModel {
     /// Marks the first run done and leaves the flow. Durable, so the flow is
     /// shown exactly once per install; Settings → Diagnostics can replay it.
     func completeOnboarding() {
-        UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
+        defaults.set(true, forKey: Self.onboardingCompletedKey)
         showsOnboarding = false
         onboardingIsRerun = false
     }
@@ -387,7 +413,7 @@ final class AppModel {
     /// The first-run flag is written first so a failure here cannot trap the
     /// user in the flow.
     func finishOnboarding() async {
-        UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
+        defaults.set(true, forKey: Self.onboardingCompletedKey)
         await applyConfiguration(syncNewTypes: true, wholeHistory: true)
         showsOnboarding = false
         onboardingIsRerun = false
@@ -430,7 +456,7 @@ final class AppModel {
     func onboardingHealthAccessPending() async -> Bool {
         await start()
         let enabled = config.observedTypeIdentifiers.subtracting(declinedTypes).sorted()
-        guard !enabled.isEmpty, await engine.authorizationNeeded(for: enabled) else { return false }
+        guard !enabled.isEmpty, await healthAccess.authorizationNeeded(for: enabled) else { return false }
         let pending = await pendingTypes(among: enabled)
         return !Set(pending).isSubset(of: undeterminableTypes)
     }
@@ -461,7 +487,7 @@ final class AppModel {
     var exportLacksMedicationAccess: Bool {
         guard #available(iOS 26.0, *) else { return false }
         return export.draft.types.contains(HealthTypeCatalog.medicationDoseIdentifier)
-            && !UserDefaults.standard.bool(forKey: Self.medicationAuthRequestedKey)
+            && !defaults.bool(forKey: Self.medicationAuthRequestedKey)
     }
 
     func startExport() {
@@ -491,11 +517,11 @@ final class AppModel {
         let selected = selection.types
             .union(selection.aggregates.map(\.typeIdentifier))
             .sorted()
-        guard !selected.isEmpty, await engine.authorizationNeeded(for: selected) else { return }
+        guard !selected.isEmpty, await healthAccess.authorizationNeeded(for: selected) else { return }
         let pending = await pendingTypes(among: selected)
         guard !Set(pending).isSubset(of: undeterminableTypes.union(declinedTypes)) else { return }
         do {
-            switch try await engine.requestAuthorization(for: selected.filter { !declinedTypes.contains($0) }) {
+            switch try await healthAccess.requestAuthorization(for: selected.filter { !declinedTypes.contains($0) }) {
             case .answered:
                 undeterminableTypes.formUnion(await pendingTypes(among: selected))
             case .declined:
@@ -526,7 +552,7 @@ final class AppModel {
         let enabled = config.observedTypeIdentifiers.subtracting(declinedTypes).sorted()
         needsAuthorization = enabled.isEmpty
             ? false
-            : await engine.authorizationNeeded(for: enabled)
+            : await healthAccess.authorizationNeeded(for: enabled)
     }
 
     /// Re-read how much history iOS 27 lets the app read for each applied
@@ -550,7 +576,7 @@ final class AppModel {
     private func pendingTypes(among identifiers: [String]) async -> [String] {
         var pending: [String] = []
         for id in identifiers {
-            if await engine.authorizationNeeded(for: [id]) { pending.append(id) }
+            if await healthAccess.authorizationNeeded(for: [id]) { pending.append(id) }
         }
         return pending
     }
@@ -591,7 +617,7 @@ final class AppModel {
     /// is determined it isn't asked again, so re-applying never re-prompts.
     func requestAccessForEnabledTypesIfNeeded() async {
         let enabled = config.observedTypeIdentifiers.sorted()
-        if !enabled.isEmpty, await engine.authorizationNeeded(for: enabled) {
+        if !enabled.isEmpty, await healthAccess.authorizationNeeded(for: enabled) {
             // If everything still pending is known-unpromptable (the iOS 26.5
             // blood-pressure regression), asking again just flashes the sheet —
             // keep the hint up and skip to the per-object step.
@@ -599,7 +625,7 @@ final class AppModel {
             if !Set(pending).isSubset(of: undeterminableTypes) {
                 do {
                     let asking = enabled.filter { !declinedTypes.contains($0) }
-                    switch try await engine.requestAuthorization(for: asking) {
+                    switch try await healthAccess.requestAuthorization(for: asking) {
                     case .answered:
                         markAuthorizationRequested()
                         await noteUndeterminableTypes()
@@ -640,7 +666,7 @@ final class AppModel {
     private func markAuthorizationRequested() {
         guard !authorizationRequested else { return }
         authorizationRequested = true
-        UserDefaults.standard.set(true, forKey: "authorizationRequested")
+        defaults.set(true, forKey: "authorizationRequested")
     }
 
     /// Push the draft to the engine. Returns false when nothing was applied
@@ -677,17 +703,17 @@ final class AppModel {
         // pairing with its old server, above all) must not clear the one the
         // server already holds (`ProfilePayload.shouldUpload`).
         let profile = config.userProfilePayload
-        let clearPending = UserDefaults.standard.bool(forKey: Self.profileClearPendingKey)
+        let clearPending = defaults.bool(forKey: Self.profileClearPendingKey)
         if config.serverURL != nil, config.authToken != nil,
            ProfilePayload.shouldUpload(profile, replacing: previousProfile, clearPending: clearPending) {
             do {
                 try await engine.syncProfile(reason: .manual)
-                UserDefaults.standard.set(false, forKey: Self.profileClearPendingKey)
+                defaults.set(false, forKey: Self.profileClearPendingKey)
             } catch {
                 // A clear that did not arrive is remembered for the next Apply;
                 // a filled profile needs no flag, it is always sent.
                 if profile.isEmpty {
-                    UserDefaults.standard.set(true, forKey: Self.profileClearPendingKey)
+                    defaults.set(true, forKey: Self.profileClearPendingKey)
                 }
                 lastErrorMessage = error.localizedDescription
             }
@@ -1132,7 +1158,7 @@ final class AppModel {
     private var medicationAccessNeeded: Bool {
         guard #available(iOS 26.0, *) else { return false }
         return config.enabledTypes.contains(HealthTypeCatalog.medicationDoseIdentifier)
-            && !UserDefaults.standard.bool(forKey: Self.medicationAuthRequestedKey)
+            && !defaults.bool(forKey: Self.medicationAuthRequestedKey)
     }
 
     /// Medications need HealthKit's per-object authorization sheet (the user picks
@@ -1186,8 +1212,8 @@ final class AppModel {
             }
         }
         do {
-            try await engine.requestMedicationAuthorization()
-            UserDefaults.standard.set(true, forKey: Self.medicationAuthRequestedKey)
+            try await healthAccess.requestMedicationAuthorization()
+            defaults.set(true, forKey: Self.medicationAuthRequestedKey)
         } catch {
             lastErrorMessage = error.localizedDescription
         }
