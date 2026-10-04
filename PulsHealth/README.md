@@ -163,8 +163,8 @@ Sources/
 │                         a copy in a database") with one Set Up button
 │                         (opens the Database screen). Otherwise the status
 │                         card (host, or "PulsHealth Database · host"; last sync,
-│                         backfill progress + ETA,
-│                         failing count), the iOS 27 "Limited Health history"
+│                         backfill progress + ETA, failing count, which types
+│                         are paused), the iOS 27 "Limited Health history"
 │                         card while any applied type is readable only from a
 │                         recent date, Sync Now, the synced types (TypeRow →
 │                         TypeDetailView), pull-to-refresh and the error alert;
@@ -224,6 +224,10 @@ Sources/
 │                         only when the server's capabilities advertise
 │                         `stats` / `digest` + `uuids`, plus reset. The Type
 │                         page embeds the same sections under "Sync details".
+│                         A type cooling down after a refused upload
+│                         (`TypeSyncStatus.cooldownUntil`) reads "Paused until
+│                         <time>" here, in its TypeRow and on the status card,
+│                         next to its error, and Sync Now is the way out.
 ├── SettingsView.swift    User row, Sync (start date, backfill trigger, reset
 │                         all anchors — shown only once a server is applied),
 │                         Performance (concurrency, batch size), Save & Apply

@@ -15,7 +15,11 @@ struct TypeDetailView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(status.descriptor.displayName)
                             .font(.title3.weight(.semibold))
-                        StatusPill(text: status.activity.label, color: status.activity.color)
+                        if status.isPaused {
+                            StatusPill(text: "Paused", color: .orange)
+                        } else {
+                            StatusPill(text: status.activity.label, color: status.activity.color)
+                        }
                     }
                     Spacer(minLength: 0)
                 }
@@ -45,6 +49,29 @@ extension TypeSyncStatus.Activity {
         case .backfilling, .syncing: .accentColor
         case .failed: .red
         }
+    }
+}
+
+extension TypeSyncStatus {
+    /// "Paused until 3:40 PM" while automatic syncs skip this type after an
+    /// upload failed in a way a retry cannot fix (`cooldownUntil`), nil
+    /// otherwise. The weekday is added when the pause runs past today (it
+    /// can last six hours).
+    var pausedUntilText: String? {
+        pausedUntilTime.map { "Paused until \($0)" }
+    }
+
+    /// The end of the pause alone: "3:40 PM", or "Mon 1:10 AM".
+    var pausedUntilTime: String? {
+        guard let until = cooldownUntil else { return nil }
+        return Calendar.current.isDateInToday(until)
+            ? until.formatted(date: .omitted, time: .shortened)
+            : until.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+    }
+
+    /// Cooling down and not running now: a Sync Now in progress overrides it.
+    var isPaused: Bool {
+        cooldownUntil != nil && activity != .syncing && activity != .backfilling
     }
 }
 
@@ -167,10 +194,19 @@ struct TypeSyncDetailsSections: View {
         }
 
         if let error = state.lastError {
-            Section("Last error") {
+            Section {
                 Text(error).font(.caption).foregroundStyle(.red)
                 if let at = state.lastErrorAt {
                     LabeledContent("At", value: at.formatted())
+                }
+                if status.isPaused, let paused = status.pausedUntilText {
+                    LabeledContent("Automatic sync", value: paused)
+                }
+            } header: {
+                Text("Last error")
+            } footer: {
+                if status.isPaused {
+                    Text("This upload failed in a way that retrying alone won’t fix, so automatic syncs skip this type for now. Each failure in a row doubles the wait, up to 6 hours. Sync This Type Now tries again right away, and changing the database settings lifts the pause.")
                 }
             }
         }

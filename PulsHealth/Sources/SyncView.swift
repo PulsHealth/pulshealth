@@ -125,6 +125,12 @@ struct SyncView: View {
                         .foregroundStyle(connection.color == .red ? Color.red : .secondary)
                         .lineLimit(3)
                 }
+                if let paused = pausedSummary {
+                    Text(paused)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             // Top-aligned, so a tile with a footnote does not push its
             // neighbour's label down to its middle.
@@ -174,6 +180,18 @@ struct SyncView: View {
             return (.green, "Connected", nil)
         }
         return (.gray, "Connection not tested", nil)
+    }
+
+    /// Types automatic syncs are skipping after a refused upload
+    /// (`TypeSyncStatus.cooldownUntil`): named when there is one, counted
+    /// when there are more. Each type's own row says until when.
+    private var pausedSummary: String? {
+        let paused = model.statuses.filter(\.isPaused)
+        guard let first = paused.first else { return nil }
+        if paused.count == 1, let time = first.pausedUntilTime {
+            return "\(first.descriptor.displayName) paused until \(time) after a refused upload. Sync Now retries."
+        }
+        return "\(paused.count) types paused after refused uploads. Sync Now retries."
     }
 
     /// iOS 27 limited history access: some types can be read, and so
@@ -316,6 +334,10 @@ struct TypeRow: View {
                 if let error = status.state.lastError {
                     Text(error).font(.caption2).foregroundStyle(.red).lineLimit(1)
                 }
+                if status.isPaused, let paused = status.pausedUntilText {
+                    Text("\(paused) · Sync Now retries")
+                        .font(.caption2).foregroundStyle(.orange).lineLimit(1)
+                }
             }
         }
     }
@@ -331,6 +353,8 @@ struct TypeRow: View {
             }
         case .syncing:
             ProgressView().controlSize(.mini)
+        case .failed where status.isPaused:
+            Image(systemName: "pause.circle.fill").foregroundStyle(.orange)
         case .failed:
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
         case .idle:

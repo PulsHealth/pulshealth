@@ -372,7 +372,10 @@ private struct ExploreTypeRow: View {
             if isRunning {
                 ProgressView().controlSize(.small)
             }
-            if let status, status.state.lastError != nil {
+            if let status, status.isPaused {
+                Image(systemName: "pause.circle.fill").foregroundStyle(.orange)
+                    .accessibilityLabel(status.pausedUntilText ?? "Paused")
+            } else if let status, status.state.lastError != nil {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
             }
         }
