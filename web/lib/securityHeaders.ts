@@ -30,7 +30,15 @@ export function tileImageSources(): string[] {
   return [...sources].sort();
 }
 
-export function contentSecurityPolicy(nonce: string, development: boolean): string {
+/**
+ * `formActions`: origins a form on this page may also lead to. The OAuth
+ * consent page (/oauth/authorize) posts to itself and is answered with a 303
+ * to the client's redirect URI, and browsers apply form-action to that
+ * redirect too, so proxy.ts names the redirect URI's origin there — only a
+ * syntactically valid one (lib/oauth/validate.ts, redirectOrigin), and only
+ * on that page.
+ */
+export function contentSecurityPolicy(nonce: string, development: boolean, formActions: string[] = []): string {
   return [
     "default-src 'self'",
     // React needs eval in development only (error stacks); never in production.
@@ -43,7 +51,7 @@ export function contentSecurityPolicy(nonce: string, development: boolean): stri
     "connect-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    ["form-action 'self'", ...formActions].join(" "),
     "frame-ancestors 'none'",
   ].join("; ");
 }

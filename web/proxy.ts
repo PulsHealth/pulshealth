@@ -6,6 +6,8 @@ import { findSession, SESSION_COOKIE, sessionCookieAttributes } from "@/lib/acco
 import { AUTH_REALM, authorize } from "@/lib/auth";
 import { isUuid } from "@/lib/uuid";
 import { trustProxyHeaders, viewerMode } from "@/lib/mode";
+import { isOAuthPath, OAUTH_AUTHORIZE_PATH, OAUTH_DECISION_PATH, oauthConfig } from "@/lib/oauth/config";
+import { redirectOrigin } from "@/lib/oauth/validate";
 import { contentSecurityPolicy, newNonce } from "@/lib/securityHeaders";
 import { safeReturnPath, USER_COOKIE, userCookieOptions } from "@/lib/viewer";
 
@@ -33,6 +35,14 @@ import { safeReturnPath, USER_COOKIE, userCookieOptions } from "@/lib/viewer";
 //           /api/healthz.
 // open      No password at all.
 //
+// OAuth for AI assistants (lib/oauth/config.ts) adds, in accounts mode only:
+// the machine endpoints (metadata, registration, token, revocation), which
+// need HTTPS but no session or Origin (lib/accounts/policy.ts, "oauth"); and
+// the consent page /oauth/authorize, an ordinary protected page whose form
+// POST is rewritten here to /oauth/authorize/decision (a page and a route
+// handler cannot share a path). While OAuth is off, in any mode, every one
+// of those paths is a 404.
+//
 // In basic and open mode `?user=<uuid>` on any page (SRV-11) puts the id in
 // the `puls-user` cookie and sends the browser to the same URL without the
 // parameter, so a bookmark or a Grafana link can pick a person. That happens
@@ -40,7 +50,20 @@ import { safeReturnPath, USER_COOKIE, userCookieOptions } from "@/lib/viewer";
 export default async function proxy(request: NextRequest) {
   const nonce = newNonce();
   const development = process.env.NODE_ENV !== "production";
-  const csp = contentSecurityPolicy(nonce, development);
+  const { pathname, searchParams } = request.nextUrl;
+  const oauthPath = isOAuthPath(pathname);
+  // The consent page's form leads (by 303) to the client's redirect URI.
+  const consentTarget =
+    oauthPath && pathname === OAUTH_AUTHORIZE_PATH && request.method === "GET" && searchParams.getAll("redirect_uri").length === 1
+      ? redirectOrigin(searchParams.get("redirect_uri"))
+      : null;
+  const csp = contentSecurityPolicy(nonce, development, consentTarget ? [consentTarget] : []);
+
+  if (oauthPath && !oauthConfig()) {
+    const off = text(404, "Not found");
+    off.headers.set("Content-Security-Policy", csp);
+    return off;
+  }
 
   const response =
     viewerMode() === "accounts"
@@ -55,6 +78,10 @@ function serve(request: NextRequest, nonce: string, csp: string): NextResponse {
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
+  // The consent form posts to the page's own address; its handler lives beside it.
+  if (request.method === "POST" && request.nextUrl.pathname === OAUTH_AUTHORIZE_PATH) {
+    return NextResponse.rewrite(new URL(OAUTH_DECISION_PATH, request.url), { request: { headers } });
+  }
   return NextResponse.next({ request: { headers } });
 }
 

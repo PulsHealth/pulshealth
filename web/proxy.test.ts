@@ -186,3 +186,99 @@ describe("accounts mode", () => {
     expect(passed(await proxy(request("/login", { headers: viaProxy })))).toBe(true);
   });
 });
+
+describe("OAuth for AI assistants", () => {
+  const OAUTH_ENV = {
+    WEB_ACCOUNTS: "true",
+    TRUST_PROXY_HEADERS: "true",
+    WEB_PUBLIC_URL: "https://viewer.example",
+    PULS_MCP_URL: "https://mcp.example/mcp",
+    PULS_MCP_OAUTH_SECRET: "0123456789abcdef0123456789abcdef",
+  };
+  const OAUTH_PATHS = [
+    "/.well-known/oauth-authorization-server",
+    "/oauth/register",
+    "/oauth/authorize",
+    "/oauth/authorize/decision",
+    "/oauth/token",
+    "/oauth/revoke",
+  ];
+  const AUTHORIZE =
+    "/oauth/authorize?client_id=pc_AAAAAAAAAAAAAAAAAAAAAAAA&redirect_uri=" +
+    encodeURIComponent("https://claude.ai/api/mcp/auth_callback") +
+    "&response_type=code&code_challenge=" +
+    "p".repeat(43) +
+    "&code_challenge_method=S256&state=s";
+
+  it("answers 404 on every OAuth path while OAuth is off, in every mode", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    for (const env of [{}, { WEB_AUTH_PASSWORD: "pw" }, { WEB_ACCOUNTS: "true", TRUST_PROXY_HEADERS: "true" }, { ...OAUTH_ENV, PULS_MCP_OAUTH_SECRET: "change-me" }]) {
+      Object.assign(process.env, env);
+      for (const path of OAUTH_PATHS) {
+        for (const method of ["GET", "POST"]) {
+          const res = await proxy(request(path, { method, headers: { ...viaProxy, origin: "https://viewer.example" } }));
+          expect(res.status, `${JSON.stringify(env)} ${method} ${path}`).toBe(404);
+        }
+      }
+      for (const k of Object.keys(env)) delete process.env[k];
+    }
+    expect(findSession).not.toHaveBeenCalled();
+  });
+
+  it("lets machine endpoints through over HTTPS with no session and any Origin", async () => {
+    Object.assign(process.env, OAUTH_ENV);
+    for (const path of ["/.well-known/oauth-authorization-server", "/oauth/register", "/oauth/token", "/oauth/revoke"]) {
+      for (const headers of [{ ...viaProxy, origin: "https://claude.ai" }, { ...viaProxy }]) {
+        expect(passed(await proxy(request(path, { method: "POST", headers }))), path).toBe(true);
+      }
+      expect(passed(await proxy(request(path, { method: "OPTIONS", headers: { ...viaProxy, origin: "https://claude.ai" } })))).toBe(true);
+    }
+    expect(findSession).not.toHaveBeenCalled();
+    // Still HTTPS only.
+    expect((await proxy(request("/oauth/token", { method: "POST" }))).status).toBe(403);
+  });
+
+  it("sends the consent page to sign in with the whole query, and keeps the form same-origin", async () => {
+    Object.assign(process.env, OAUTH_ENV);
+    findSession.mockResolvedValue(null);
+    const res = await proxy(request(AUTHORIZE, { headers: viaProxy }));
+    expect(res.status).toBe(303);
+    const loc = new URL(res.headers.get("location")!);
+    expect(loc.pathname).toBe("/login");
+    expect(loc.searchParams.get("next")).toBe(AUTHORIZE);
+
+    findSession.mockResolvedValue(SESSION);
+    const cross = await proxy(
+      request("/oauth/authorize", { method: "POST", headers: { ...viaProxy, origin: "https://evil.example" }, cookie: `__Host-puls-session=${TOKEN}` }),
+    );
+    expect(cross.status).toBe(403);
+    findSession.mockResolvedValue(null);
+    const noSession = await proxy(request("/oauth/authorize", { method: "POST", headers: { ...viaProxy, origin: "https://viewer.example" } }));
+    expect(noSession.status).toBe(401);
+  });
+
+  it("rewrites the consent form's POST to its handler", async () => {
+    Object.assign(process.env, OAUTH_ENV);
+    findSession.mockResolvedValue(SESSION);
+    const res = await proxy(
+      request("/oauth/authorize", { method: "POST", headers: { ...viaProxy, origin: "https://viewer.example" }, cookie: `__Host-puls-session=${TOKEN}` }),
+    );
+    expect(new URL(res.headers.get("x-middleware-rewrite")!).pathname).toBe("/oauth/authorize/decision");
+  });
+
+  it("lets the consent page's form lead to the redirect URI's origin, and only there", async () => {
+    Object.assign(process.env, OAUTH_ENV);
+    findSession.mockResolvedValue(SESSION);
+    const res = await proxy(request(AUTHORIZE, { headers: viaProxy, cookie: `__Host-puls-session=${TOKEN}` }));
+    expect(passed(res)).toBe(true);
+    const csp = res.headers.get("content-security-policy")!;
+    expect(csp).toContain("form-action 'self' https://claude.ai;");
+    expect(csp).toContain("frame-ancestors 'none'");
+    const other = await proxy(request("/account?redirect_uri=https%3A%2F%2Fclaude.ai%2Fcb", { headers: viaProxy, cookie: `__Host-puls-session=${TOKEN}` }));
+    expect(other.headers.get("content-security-policy")).toContain("form-action 'self';");
+    const bogus = await proxy(
+      request(`/oauth/authorize?redirect_uri=${encodeURIComponent("javascript:alert(1)")}`, { headers: viaProxy, cookie: `__Host-puls-session=${TOKEN}` }),
+    );
+    expect(bogus.headers.get("content-security-policy")).toContain("form-action 'self';");
+  });
+});

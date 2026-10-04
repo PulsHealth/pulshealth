@@ -17,6 +17,12 @@ describe("content security policy", () => {
     expect(csp).not.toContain("upgrade-insecure-requests"); // would break a plain-HTTP LAN install
   });
 
+  it("adds form-action origins only when asked (the OAuth consent page)", () => {
+    const csp = contentSecurityPolicy("n", false, ["https://claude.ai"]);
+    expect(csp).toContain("form-action 'self' https://claude.ai;");
+    expect(csp).toContain("frame-ancestors 'none'");
+  });
+
   it("makes a fresh nonce each time", () => {
     expect(newNonce()).not.toBe(newNonce());
     expect(atob(newNonce())).toHaveLength(16);

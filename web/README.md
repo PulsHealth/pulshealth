@@ -211,8 +211,8 @@ household phone stays the operator's step (`make issue-device`); a signed-in
 person can also connect their own iPhone from their account page (below).
 
 **Signing in.** `/login`, `/invite/<token>`, their two POST endpoints,
-`/api/auth/logout`, build assets and `/api/healthz` are reachable without a
-session; everything else redirects to `/login?next=…` (pages) or answers 401.
+`/api/auth/logout`, build assets, `/api/healthz` and (with OAuth on) the
+OAuth machine endpoints below are reachable without a session; everything else redirects to `/login?next=…` (pages) or answers 401.
 `/account` changes the password (it needs the current one, and signs out every
 other browser) and lists the account's sessions with a sign-out for each.
 Details:
@@ -353,6 +353,72 @@ against a real database in CI: `npm run test:integration` runs every
 set. Without them the suites skip, unless `PULS_CI_REQUIRE_INTEGRATION=1` (or
 `PULS_WEB_INTEGRATION=1`) makes that a failure.
 
+### AI assistants (OAuth)
+
+In accounts mode the viewer can also be the **OAuth 2.1 authorization
+server** for the MCP server (`server/mcp`, `docs/ai.md`), so the Claude apps
+and claude.ai's custom connectors (which reach the MCP server from
+Anthropic's cloud and speak only OAuth) and Claude Code can read one
+signed-in person's records. People connect with the account they already
+have here; nothing new to invite. Set, in `server/.env`:
+
+```bash
+PULS_MCP_OAUTH_SECRET=...    # openssl rand -hex 32; the MCP server gets the same value
+PULS_MCP_URL=https://mcp.example.com/mcp   # the MCP server's public URL, path included
+WEB_PUBLIC_URL=https://viewer.example.com  # already set for accounts mode: the issuer
+```
+
+It is on only with `WEB_ACCOUNTS=true` and all three set. Otherwise every
+OAuth path below answers 404. A secret shorter than 32 characters or the
+`change-me` placeholder, or a URL that is not https (http only on a loopback
+host, for development), leaves it off too. That is one error in the log
+naming the variable, never its value, and the viewer keeps serving.
+
+| Endpoint | What |
+|---|---|
+| `GET /.well-known/oauth-authorization-server` | RFC 8414 metadata. Code flow, PKCE `S256`, the one scope `health:read` |
+| `POST /oauth/register` | RFC 7591 dynamic registration (JSON). Redirect URIs are https without a fragment, or http to `localhost`, `127.0.0.1` or `[::1]` (any port: a loopback URI matches whatever port the app listens on, RFC 8252 §7.3). Public clients by default; `client_secret_post`/`_basic` get a secret, shown once and stored as its SHA-256. Ten an hour per client address, 200 an hour in all |
+| `GET /oauth/authorize` | The consent page. It needs a session, so it goes through `/login?next=…` with the whole query. It shows the app's self-reported name, where it returns to, the signed-in email and what it grants: read all health data on this account, the profile (name, date of birth) included, read-only, until revoked. An unknown client or an unregistered redirect URI is an error page, never a redirect. Every other problem goes back to the app as `error=`, with `state` and `iss` |
+| `POST /oauth/authorize` | The consent form (same origin and session, like every POST). It checks every parameter again. **Deny** sends `error=access_denied`. **Allow** sends a code: 32 random bytes, stored as its SHA-256, valid 5 minutes and once, and bound to the client, account, redirect URI, PKCE challenge, scope and resource. The answer is a 303 to the redirect URI. `proxy.ts` rewrites the POST to `app/oauth/authorize/decision`, because a page and a route handler cannot share a path |
+| `POST /oauth/token` | `authorization_code` (with `code_verifier`) and `refresh_token`. A code used twice revokes the grant its first use made. Refresh tokens rotate on every use and expire 60 days after the last one; presenting the one just replaced revokes the whole grant. A disabled account or one without a password gets nothing. Errors follow RFC 6749 §5.2. Failures only are throttled per client address, in a bucket separate from sign-in's (claude.ai's requests share a few cloud addresses) |
+| `POST /oauth/revoke` | RFC 7009. A refresh token revokes its grant. The answer is always 200 |
+
+The machine endpoints (metadata, registration, token, revocation) need
+HTTPS but no session and no `Origin`: other servers and apps call them
+without cookies. They answer `Access-Control-Allow-Origin: *` without
+credentials, and `Cache-Control: no-store`. The consent page cannot be
+framed (`frame-ancestors 'none'`, `X-Frame-Options: DENY`). Its CSP
+`form-action` names the redirect URI's origin, so the browser follows the
+303 back to the app.
+
+**Access tokens** are HS256 JWTs (`typ: at+jwt`, `lib/oauth/jwt.ts`). Their
+`iss` is `WEB_PUBLIC_URL` and their `aud` is `PULS_MCP_URL`. Their `sub` is
+the account's user id, and they last 30 minutes. The MCP server verifies
+them with the shared secret and never asks the database. So **a revocation
+takes up to 30 minutes to stop an assistant**: refreshing stops at once, but
+the access token it holds runs out its time. That applies to **Revoke** on
+the account page (the **AI assistants** section), to disabling an account
+(`auth.set_account_disabled`), to deleting one (`auth.delete_my_account`;
+purging deletes the grants with the account) and to a password change or
+invite reset, which all revoke every grant of the account. Rotating
+`PULS_MCP_OAUTH_SECRET` ends every access token at once. Refresh tokens
+stay valid, and assistants carry on with new access tokens.
+
+The MCP server calls the product API with `user=<sub>`. Unless that is the
+API's default user (`PULS_USER_ID`), the API needs `PULS_MULTI_USER=true`;
+without it the request is refused (403), not answered for someone else.
+
+Storage is `auth.oauth_clients`, `auth.oauth_grants` and `auth.oauth_codes`
+(`server/db/migrations/019_oauth.sql`), written by `web_app` like sessions.
+`099_read_roles.sh` grants and asserts exactly that. An hourly job,
+`auth.prune_oauth`, deletes expired codes, revoked or expired grants, and
+clients unused for 30 days that hold no live grant. As with sessions, SQL run
+as `web_app` (or a compromised viewer, which holds the signing secret) could
+forge a grant or a token for any account. The secret is the viewer's to
+keep. The code is in `lib/oauth/` and `app/oauth/`.
+`lib/oauth.integration.test.ts` runs single-use codes, rotation, reuse
+detection, revocation and the prune against a real database as `web_app`.
+
 ## What's here
 
 | Route | View |
@@ -364,7 +430,8 @@ set. Without them the suites skip, unless `PULS_CI_REQUIRE_INTEGRATION=1` (or
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
 | `/settings` | Whose data is on screen and its profile (age, sex, heart-rate figures behind the zones); display preferences, saved in this browser |
-| `/account` | Accounts mode: connect or disconnect your iPhones, change the password, the browsers signed in, delete the account |
+| `/account` | Accounts mode: connect or disconnect your iPhones, the AI assistants connected over OAuth (with Revoke), change the password, the browsers signed in, delete the account |
+| `/oauth/authorize` | Accounts mode with OAuth on: the consent page an AI assistant sends you to |
 | `/admin` | Accounts mode, administrators: approve or decline access requests (one, the ticked ones, or all shown); disable non-administrator accounts, purge a disabled user's data |
 | `/signup`, `/login`, `/invite/[token]` | Accounts mode: ask for access (with `WEB_SIGNUPS`), sign in, accept an invite |
 

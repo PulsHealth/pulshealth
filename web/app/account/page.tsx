@@ -9,11 +9,14 @@ import { listSessions } from "@/lib/accounts/session";
 import { myDevices } from "@/lib/accounts/signups";
 import { formatFull } from "@/lib/format";
 import { viewerMode } from "@/lib/mode";
+import { oauthConfig } from "@/lib/oauth/config";
+import { listConnectedApps } from "@/lib/oauth/store";
 import { currentSession } from "@/lib/viewer";
 
 // The signed-in person's own account (accounts mode only): connect an iPhone
-// (and disconnect one), change the password, see where the account is
-// signed in and sign those browsers out, and delete the account.
+// (and disconnect one), see and revoke the AI assistants connected over
+// OAuth, change the password, see where the account is signed in and sign
+// those browsers out, and delete the account.
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Account — PulsHealth" };
 
@@ -24,10 +27,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
   const session = await currentSession();
   if (!session) redirect("/login?next=%2Faccount");
   const search = await searchParams;
-  const [sessions, devices] = await Promise.all([
+  const [sessions, devices, assistants] = await Promise.all([
     listSessions(session.accountId, session.id),
     session.selfService ? myDevices(session.id) : Promise.resolve([]),
+    listConnectedApps(session.accountId),
   ]);
+  // Listed while OAuth is on, and afterwards for as long as any grant is left.
+  const showAssistants = oauthConfig() !== null || assistants.length > 0;
   const error = errorMessage(param(search.error));
   const notice = noticeMessage(param(search.notice));
 
@@ -77,7 +83,44 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
       </section>
       )}
 
-      <section className="rise" style={{ marginTop: session.selfService ? 28 : 8 }}>
+      {showAssistants && (
+        <section className="rise" style={{ marginTop: session.selfService ? 28 : 8 }}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>AI assistants</div>
+          <div className="panel" style={{ maxWidth: 720 }}>
+            {assistants.length === 0 && (
+              <div className="session-row" style={{ fontSize: 13.5, color: "var(--muted)" }}>
+                No assistant is connected. Add this viewer&apos;s MCP server as a connector in Claude to read your data
+                there; you will be asked here first.
+              </div>
+            )}
+            {assistants.map((a) => (
+              <div key={a.id} className="session-row">
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 550 }}>
+                    {a.clientName || "An unnamed app"}{" "}
+                    <span style={{ color: "var(--muted)", fontSize: 12, fontWeight: 400 }}>(self-reported name)</span>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>
+                    Connected {formatFull(a.createdAt)} · last used {formatFull(a.lastUsedAt)} · reads all your data, read-only
+                  </div>
+                </div>
+                <form method="post" action="/api/auth/assistants">
+                  <input type="hidden" name="id" value={a.id} />
+                  <button type="submit" className="btn">Revoke</button>
+                </form>
+              </div>
+            ))}
+          </div>
+          {assistants.length > 0 && (
+            <p className="form-hint" style={{ margin: "10px 0 0", maxWidth: 720, lineHeight: 1.5 }}>
+              Revoking stops an assistant at once from renewing its access; the access it already holds expires within
+              30 minutes.
+            </p>
+          )}
+        </section>
+      )}
+
+      <section className="rise" style={{ marginTop: session.selfService || showAssistants ? 28 : 8 }}>
         <div className="eyebrow" style={{ marginBottom: 12 }}>Password</div>
         <form method="post" action="/api/auth/password" className="panel" style={{ padding: "20px 20px 6px", maxWidth: 560 }}>
           <input type="text" name="username" value={session.email} autoComplete="username" readOnly hidden />
@@ -88,7 +131,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           <div className="form-field">
             <label htmlFor="password">New password</label>
             <input id="password" name="password" type="password" autoComplete="new-password" minLength={PASSWORD_MIN_LENGTH} required />
-            <span className="form-hint">At least {PASSWORD_MIN_LENGTH} characters. Changing it signs out every other browser.</span>
+            <span className="form-hint">
+              At least {PASSWORD_MIN_LENGTH} characters. Changing it signs out every other browser and disconnects every AI
+              assistant.
+            </span>
           </div>
           <div className="form-field">
             <label htmlFor="confirm">Repeat the new password</label>
