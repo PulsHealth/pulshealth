@@ -108,7 +108,7 @@ const outputs = [
   {
     title: "AI Assistants",
     badge: "mcp",
-    description: "A read-only MCP server lets Claude, Claude Code or Cursor answer questions from your data. ChatGPT connects through the API's OpenAPI document instead.",
+    description: "A read-only MCP server lets Claude answer questions from your data. On the PulsHealth database, add it to the Claude app or Claude Code and sign in; on your own server, Claude Code, Cursor and ChatGPT connect too.",
     icon: Bot,
   },
 ];
