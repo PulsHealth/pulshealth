@@ -96,6 +96,38 @@ Out of scope:
 - HealthKit behaviour (delivery latency, permission-sheet quirks). Those are
   bugs, not vulnerabilities; use the issue tracker.
 
+## Threat model
+
+What the design protects, from whom, and what it assumes. The section after
+this one says how each piece holds up.
+
+- **What is worth protecting:** the health records in the database, the
+  identity snapshot beside them (name, email, date of birth), and the
+  credentials that write them (ingest tokens) or read them (the API, MCP and
+  viewer credentials, viewer sessions).
+- **Who is assumed hostile:** anyone on the network path between the phone
+  and the server, and anyone who can reach an exposed port: the ingest
+  endpoint, and in accounts mode the viewer. They are expected to guess
+  tokens and passwords, replay requests, forge `X-Forwarded-For` and other
+  client-written headers, send oversized or malformed batches, and try
+  cross-site requests against a signed-in browser. In accounts mode, other
+  account holders are hostile to each other.
+- **Who is trusted:** the operator and the host the stack runs on, the TLS
+  proxy in front of it (it appends the client address the limiters key on),
+  the unlocked phone and its Keychain, and whoever holds the shared
+  `PULS_TOKEN` (writes as any user) or the API and MCP tokens (read every
+  user once `PULS_MULTI_USER` is on): those reach every user by design.
+- **What it assumes:** TLS from the phone and browser to the proxy; every
+  service other than ingest and the accounts-mode viewer bound to loopback or
+  a private network; and real secrets in `.env`, which the services check
+  (none starts on `change-me`).
+- **What a breach costs:** a leaked per-device token writes and deletes one
+  user's data until revoked; a leaked shared token, every user's; a leaked
+  API or MCP token reads what that service reads; a
+  compromised viewer container in accounts mode reads every user's records
+  and can act on self-service users only (below); a compromised server host,
+  everything.
+
 ## Things to know about the current design
 
 These are documented properties of the current design; what is still open is
@@ -124,7 +156,18 @@ for judging what is.
   existing install is unchanged; `PULS_ALLOW_SHARED_TOKEN=false` (or an empty
   `PULS_TOKEN`) turns it off, and the `X-User-ID` hole exists only while it
   is on. Failed authentications are rate-limited per client IP, which slows
-  guessing but does not change what a leaked token grants.
+  guessing but does not change what a leaked token grants. Behind a proxy
+  (`TRUST_PROXY_HEADERS=true`) the client is the **last** `X-Forwarded-For`
+  entry, the one the trusted proxy appended; proxies append, so the first is
+  whatever the client wrote.
+- **Trust boundaries.** While `PULS_ALLOW_SHARED_TOKEN` is on, the shared
+  `PULS_TOKEN` makes `X-User-ID` unauthenticated tenant selection: its holder
+  writes and reconciles as any user. `PULS_API_TOKEN` and `PULS_MCP_TOKEN`
+  read every user once `PULS_MULTI_USER` is on, and only the API's
+  `PULS_USER_ID` while it is off. Ingest, the product API and the MCP server
+  refuse to start on a token of `change-me`, and the migrate service refuses
+  a database role password of `change-me`, so the `.env.example`
+  placeholders cannot become live secrets.
 - **The token lives on the phone.** It is held in the Keychain, accessible
   after the first unlock so background syncs still run, and the sync-state and
   log files carry file protection and are excluded from device backups. If a
@@ -172,8 +215,10 @@ for judging what is.
   HealthKit type identifiers seen on the server, and TimescaleDB catalog
   information such as approximate row counts and chunk time ranges, reachable
   only with arbitrary SQL. Failed sign-ins are throttled in process, per
-  address and per email, and reset when the container restarts. A forgotten
-  password is a new invite from the operator.
+  address and per email, and reset when the container restarts; behind a
+  proxy the address is `WEB_CLIENT_IP_HEADER`'s last entry
+  (`cf-connecting-ip` behind Cloudflare), never a client-chosen first one.
+  A forgotten password is a new invite from the operator.
 - **Accounts mode's privileged steps are database functions.** Approving a
   request (which creates a user), minting or revoking a sync token,
   disabling an account, deleting your own, and purging a user are

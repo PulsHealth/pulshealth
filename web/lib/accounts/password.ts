@@ -3,14 +3,17 @@
 // so a later parameter bump verifies old hashes with their own parameters and
 // rewrites them on the next successful sign-in (`needsRehash`).
 //
-// N=2^15, r=8, p=1 is OWASP's floor for scrypt: about 32 MiB and a few tens of
-// milliseconds per attempt, which is affordable for a sign-in and makes an
-// offline guess at a stolen hash expensive. Failed attempts are rate limited
-// before they get here (lib/accounts/ratelimit.ts).
+// N=2^16, r=8, p=2 is within OWASP's recommended scrypt settings (N=2^16,
+// r=8, p=1 is its lowest listed; p=2 doubles the work at the same memory):
+// 64 MiB and on the order of a hundred milliseconds per attempt, affordable
+// for a sign-in and expensive for an offline guess at a stolen hash. Hashes
+// made under the earlier N=2^15, p=1 still verify and are rewritten on the
+// next sign-in. Failed attempts are rate limited before they get here
+// (lib/accounts/ratelimit.ts).
 
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual, type ScryptOptions } from "node:crypto";
 
-export const SCRYPT_PARAMS = { N: 2 ** 15, r: 8, p: 1 } as const;
+export const SCRYPT_PARAMS = { N: 2 ** 16, r: 8, p: 2 } as const;
 const SALT_BYTES = 32;
 const KEY_BYTES = 32;
 
@@ -19,9 +22,11 @@ export const PASSWORD_MIN_LENGTH = 10;
 export const PASSWORD_MAX_LENGTH = 256;
 
 function scrypt(password: string, salt: Buffer, keyLength: number, options: ScryptOptions): Promise<Buffer> {
-  // scrypt needs 128·N·r bytes; Node's default ceiling (32 MiB) is exactly the
-  // N=2^15, r=8 requirement and refuses it, so allow headroom.
-  const maxmem = 256 * (options.N ?? 0) * (options.r ?? 0);
+  // scrypt needs 128·r·(N + p + 2) bytes (64 MiB at the current
+  // parameters); Node's default ceiling is 32 MiB and refuses even N=2^15,
+  // r=8. Twice 128·r·(N + p) covers it for every N, r and p decode() admits.
+  const { N = 0, r = 0, p = 0 } = options;
+  const maxmem = 256 * r * (N + p);
   return new Promise((resolve, reject) => {
     scryptCallback(password.normalize("NFKC"), salt, keyLength, { ...options, maxmem }, (err, key) => {
       if (err) reject(err);
@@ -62,14 +67,15 @@ function decode(encoded: string): Decoded | null {
 
 /**
  * Whether `password` matches `encoded`. Constant-time in the comparison; a
- * malformed hash is simply a mismatch.
+ * malformed hash is simply a mismatch, and so is one whose parameters scrypt
+ * itself refuses (r=1 with N ≥ 2^16, say).
  */
 export async function verifyPassword(password: string, encoded: string): Promise<boolean> {
   const decoded = decode(encoded);
   if (!decoded) return false;
   const { N, r, p, salt, key } = decoded;
-  const candidate = await scrypt(password, salt, key.length, { N, r, p });
-  return timingSafeEqual(candidate, key);
+  const candidate = await scrypt(password, salt, key.length, { N, r, p }).catch(() => null);
+  return candidate !== null && timingSafeEqual(candidate, key);
 }
 
 /** Whether `encoded` was made with parameters other than the current ones. */

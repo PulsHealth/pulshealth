@@ -1,0 +1,19 @@
+{
+  "scenario": "An activity summary re-sent with fields omitted replaces the stored day",
+  "notes": "Fixture 03 stored 2024-06-10 with moveKcal 420.5, exerciseMin 25 and standHours 9. This line is the same day as the current app encodes it: absent rings are omitted, not sent as null. The line is the complete row for the day, so the three omitted values become null and the move goal changes to 650; a receiver that merges only the keys present keeps the stale rings and fails the state check. The counts are the same standalone.",
+  "status": 200,
+  "response": {
+    "accepted": 0,
+    "deleted": 0,
+    "duplicates": 0,
+    "routePoints": 0,
+    "seriesPoints": 0,
+    "aggregateSamples": 0,
+    "activitySummaries": 1
+  },
+  "state": {
+    "activitySummaries": [
+      {"localDate": "2024-06-10", "moveKcal": null, "moveGoalKcal": 650.0, "exerciseMin": null, "exerciseGoalMin": 30.0, "standHours": null, "standGoalHours": 12.0, "moveMode": 0, "moveTimeMin": null, "moveTimeGoalMin": null}
+    ]
+  }
+}

@@ -81,11 +81,18 @@ comments. Beyond the passwords and tokens:
   rows. On every start `db/migrations/013_time_zone.sh` validates it against
   `pg_timezone_names` (an unknown name stops the stack) and stores it with
   `ALTER DATABASE … SET puls.time_zone`, read by `puls_time_zone()`. Compose
-  also hands it to `api` (which refuses an invalid name), `mcp` and `web`. To
-  change it, edit `.env` and:
+  also hands it to `api` and `web`. The API refuses an invalid name, and
+  compares its zone with `puls_time_zone()` at startup: a mismatch (a
+  database whose migrate has not re-run since `.env` changed, or a zone set
+  by hand) stops it with a log line naming both, since its days would
+  otherwise disagree with `metric_daily` silently; a database without the
+  function is logged and accepted. The API reports the zone as `timeZone`
+  on `GET /v1/users`, and the MCP server adopts it from there (set
+  `PULS_TIME_ZONE` on the MCP only to override it; see
+  `server/mcp/README.md`). To change it, edit `.env` and:
 
   ```bash
-  docker compose up -d     # migrate re-stores it; api/mcp/web are recreated
+  docker compose up -d     # migrate re-stores it; api/web are recreated, mcp restarts with api
   docker compose exec db psql -U postgres -d postgres -tAc "SELECT puls_time_zone()"
   ```
 
@@ -112,14 +119,22 @@ comments. Beyond the passwords and tokens:
 - `PULS_ALLOW_SHARED_TOKEN` — whether ingest accepts the shared `PULS_TOKEN`;
   default `true`. `false` (or an empty `PULS_TOKEN`) leaves only per-device
   tokens. See "Tokens".
-- `TRUST_PROXY_HEADERS` — whether ingest and the product API believe
-  `X-Forwarded-*`: which client a failed authentication is charged to, and
-  which host `GET /openapi.json` advertises in `servers[0].url`. Default
-  `false`, which answers from the request's own `Host`. Turn it on only
-  behind a proxy that owns those headers (see "Rate limiting").
-- `PULS_USER_ID`, `PULS_MULTI_USER` — whose data the product API and viewer
-  answer for, and whether a request may name someone else (see "Product
-  API").
+- `TRUST_PROXY_HEADERS` — whether ingest, the product API and the MCP
+  server believe `X-Forwarded-*`: which client a failed authentication is
+  charged to, and which host `GET /openapi.json` advertises in
+  `servers[0].url`. Default `false`, which answers from the request's own
+  `Host`. Turn it on only behind a proxy that owns those headers (see "Rate
+  limiting").
+- **On/off settings** (`TRUST_PROXY_HEADERS`, `PULS_ALLOW_SHARED_TOKEN`,
+  `PULS_MULTI_USER`, `WEB_ACCOUNTS`, ...) are read one way by every service:
+  `true`, `1`, `yes`, `on` or `false`, `0`, `no`, `off`, in any case;
+  empty means the default. Ingest, the API and the MCP server refuse to
+  start on anything else, naming the variable, rather than guess.
+- `PULS_USER_ID`, `PULS_MULTI_USER` — whose data the product API (and, by
+  default, the viewer) answers for, and whether an API request may name
+  someone else (see "Product API"). The viewer never reads
+  `PULS_MULTI_USER`: its user switcher is a basic/open-mode feature that
+  offers every user to whoever passes its one password.
 - `PULS_VERSION` — the image tag the four app services run (default
   `latest`; see "Images and versions").
 - `PULS_PUBLIC_URL` — the URL the pairing block and device-token QR codes
@@ -132,21 +147,38 @@ The reference stack is plain Docker Compose; there is no deploy tooling in the
 repo. **Take a backup first** (`make backup` — see "Backup & restore"), then:
 
 ```bash
-git pull                                         # newer compose file and migrations
+git fetch --tags && git checkout v0.3.0         # the release: its compose file and migrations
 cd server
-# optional: pin the release in .env, e.g. PULS_VERSION=0.2.0 (default: latest)
+# in .env: PULS_VERSION=0.3.0 (bootstrap.sh pins it on a release checkout;
+# left at latest, the images can move ahead of this checkout's schema)
 docker compose pull && docker compose up -d      # or, at the repository root: make pull up
 docker compose logs migrate                      # what the schema step did
 curl -s localhost:8080/healthz && curl -s localhost:8081/healthz
 ```
 
 `migrate` runs before `ingest`, `api`, `mcp`, `web` and `grafana` start, so
-new schema files are applied before the code that needs them. If a migration
+new schema files are applied before the code that needs them.
+
+**Health checks.** `ingest`, `api`, `mcp` and `web` carry Compose
+healthchecks, so `docker compose ps` shows each as `healthy` or `unhealthy`
+and `docker compose up -d --wait` returns only once they are healthy. The
+Go images are distroless (no shell, no curl), so each binary checks itself:
+`ingest healthcheck`, `api healthcheck` and `mcp healthcheck` GET their own
+`/healthz` on loopback and exit 0 on a 200 (`docker compose exec api /api
+healthcheck` runs it by hand); `web` asks `/api/healthz` with `node`.
+Healthy means able to do the job: ingest and the API when their database
+answers, mcp when the API does (it also waits for a healthy `api` to
+start). **Docker does not restart an unhealthy container** —
+`restart: unless-stopped` acts only when the process exits — so a wedged
+service stays up and `unhealthy` until something acts on it: point your
+monitoring at `docker compose ps` (or `docker events --filter
+event=health_status`), or restart it yourself. If a migration
 fails, the app services are not started (`dependency failed to start`) and
 the previous containers keep running; fix the cause and `docker compose up
--d` again. Re-applying the schema from scratch means dropping the volume
-(`docker compose down -v && docker compose up -d`), which **destroys all
-data**.
+-d` again. Re-applying the schema from scratch means dropping the database
+volume (`docker compose down && docker volume rm pulshealth_db_data &&
+docker compose up -d`), which **destroys all data**; `down -v` would also
+delete the `backups` volume.
 
 ### Images and versions
 
@@ -166,10 +198,13 @@ list); each image carries its commit as the
 
 - On a git tag `vX.Y.Z`: the exact version (`X.Y.Z`), a floating `X.Y`,
   and `latest` (`v0.2.0` → `0.2.0`, `0.2`, `latest`). `latest`
-  and `X.Y` move only for non-prerelease tags, so `vX.Y.Z-rc1` publishes
-  `X.Y.Z-rc1` alone.
+  and `X.Y` move only for non-prerelease tags (so `vX.Y.Z-rc1` publishes
+  `X.Y.Z-rc1` alone), and only once all four images have published
+  `X.Y.Z`, so they never point at a mix of releases. A tag whose commit is
+  not on `main` publishes nothing.
 - On a manual run (`workflow_dispatch`, e.g. to try a branch's images): the
-  tag given as input, or the short commit SHA. Never `latest`.
+  tag given as input, or the short commit SHA. Never `latest` or an `X.Y`,
+  and never a version a git tag already names.
 
 `PULS_VERSION` in `.env` selects the tag (default `latest`). To upgrade a
 pinned install, bump it, check out the same release (`git checkout
@@ -204,7 +239,9 @@ in lexical order and records each in a `schema_migrations` table
 (`filename`, `applied_at`, `checksum`). It runs on every `docker compose up
 -d`, or by hand with `docker compose run --rm migrate` (`make migrate`), and
 logs one line per file — `applied`, `skipped`, `rerun` or `ran` — plus a
-summary.
+summary. Runs are serialised by a PostgreSQL advisory lock held for the
+whole run, so `make migrate` during `docker compose up -d` waits for the
+other run and then finds its work recorded.
 
 | File | Behaviour |
 |---|---|
@@ -217,11 +254,12 @@ summary.
 underscore, a name) with plain DDL/DML — no `BEGIN`/`COMMIT`, the migrator
 wraps it; `IF NOT EXISTS` is still welcome — and `docker compose up -d`.
 Fresh and existing installs take the same path. New tables are readable by
-`grafana` and writable by `ingest` at once through the default privileges
-`099_read_roles.sh` sets (the script then revokes `grafana`'s SELECT on
-`device_tokens` on every run — credential hashes are not dashboard
-material). `api_reader` has an exact grant list instead: extend that script
-and its assertion when the product API reads a new table. So does `web_app`,
+`grafana` at once through the default privileges `099_read_roles.sh` sets
+(the script then revokes `grafana`'s SELECT on `device_tokens` on every run
+— credential hashes are not dashboard material). `ingest` and `api_reader`
+have exact grant lists instead, asserted on every run: when ingest writes or
+the product API reads a new table, extend that script's list and its
+expected rows, or the service gets `permission denied` (42501). So does `web_app`,
 the web viewer's role in accounts mode, which reads health data only through
 the per-user, security-barrier views in schema `web`
 (`015_web_accounts.sql`, filtered on the `puls.user_id` setting the viewer
@@ -301,10 +339,13 @@ Ingest is the only internet-facing service, so it does not hold the
 superuser password: Compose connects it as the `ingest` role
 (`INGEST_DB_USER`, default `ingest`; `INGEST_DB_PASSWORD` is required),
 which `099_read_roles.sh` creates on every migrate run with exactly what
-`ingest/store.go` needs: `CONNECT`, `USAGE` on `public`,
-`SELECT/INSERT/UPDATE/DELETE` on every table and view in `public`,
-`USAGE/SELECT` on its sequences, and default privileges covering future
-tables and sequences. It has no `CREATE` on the schema, no `TRUNCATE`, and
+ingest's code needs, as an explicit list asserted row by row: `CONNECT`,
+`USAGE` on `public`, and per table only the verbs ingest uses (samples
+`SELECT/INSERT/DELETE`, upserted tables `UPDATE` too, `ingest_rejections`
+`INSERT` only, `device_tokens` without `DELETE`), `SELECT` on the four
+lookup sequences, nothing on `schema_migrations`, the views, or schemas
+`auth` and `web`, and no default privileges: a table added later is not
+ingest's until the list says so. It has no `CREATE` on the schema, no `TRUNCATE`, and
 none of `SUPERUSER`, `CREATEROLE`, `CREATEDB`, `REPLICATION` or
 `BYPASSRLS`, so an ingest bug or a leaked token cannot drop tables, alter
 roles, or `COPY TO PROGRAM`. Before it commits, the script checks the exact
@@ -356,7 +397,10 @@ Storing a second person's data therefore needs nothing: point another phone
 at the same ingest URL with its own user ID and `ensureUser` creates the row
 before the first insert. Reading it back is per request — the product API's
 `?user=<uuid>`, gated by `PULS_MULTI_USER` (see "Product API"), which the
-MCP server and the web viewer use too; Grafana's dashboard has a `user`
+MCP server uses too. The web viewer reads Postgres itself and ignores that
+switch: in basic and open mode its user switcher lists every user to whoever
+passes its one password; in accounts mode there is no switcher and each
+person sees only their own records. Grafana's dashboard has a `user`
 variable. Whether an ingest token is bound to a user depends on its kind
 (see "Tokens").
 
@@ -457,9 +501,14 @@ Retry-After: 7
 {"error":"too many failed authentications"}
 ```
 
-and the server logs the address, the path and the wait. The product API also
-logs every failed authentication (`auth failed`, with address and path, never
-the token).
+and the server logs the address, the path and the wait. The product API and
+the MCP server also log every failed authentication (`auth failed`, with
+address and path, never the token).
+
+**The MCP server's `--http` mode** (the `mcp` service, `/mcp` behind
+`PULS_MCP_TOKEN`) applies the same limiter with the same numbers, the same
+`TRUST_PROXY_HEADERS` switch and the same last-entry rule. The three copies
+of `ratelimit.go` are kept identical by `scripts/check-go-copies.sh` in CI.
 
 - **A correct token is never throttled.** Only failures draw from the bucket,
   so a backfill — thousands of authenticated uploads in a row — never
@@ -474,10 +523,13 @@ the token).
 
 The limit is keyed on the TCP peer address. Behind a proxy every request
 comes from the proxy, and one attacker exhausts the bucket for everyone;
-**`TRUST_PROXY_HEADERS=true`** keys it on the first `X-Forwarded-For` entry
-instead. Only set it when the proxy is the *only* route to the port and
-overwrites the header (reverse proxies and Tailscale Serve/Funnel do);
-otherwise the sender sets it, and one attacker looks like unlimited clients.
+**`TRUST_PROXY_HEADERS=true`** keys it on the **last** `X-Forwarded-For`
+entry instead: the one the trusted proxy appended. Reverse proxies,
+Cloudflare Tunnel and Tailscale Serve/Funnel append to whatever the client
+sent, so the first entry is the client's own choice and would hand it a
+fresh bucket per request. Only set it when the proxy is the *only* route to
+the port; otherwise the sender writes the last entry too, and one attacker
+looks like unlimited clients.
 Leave it `false` for `INGEST_BIND_ADDR=0.0.0.0` on a LAN. If every throttled
 client is logged as the same `172.x.x.1`, Docker's userland proxy is
 rewriting the source address; the fix is the same — a proxy that sets
@@ -566,9 +618,9 @@ to the people you invite.
 
    `CF-Connecting-IP` is the header to key throttling on: Cloudflare sets it
    itself, whereas it appends to a client's `X-Forwarded-For`.
-   `TRUST_PROXY_HEADERS` is shared with ingest and the API; if ingest is
-   reached some other way that does not overwrite `X-Forwarded-For`, read
-   "Rate limiting" before turning it on.
+   `TRUST_PROXY_HEADERS` is shared with ingest and the API; if ingest can
+   be reached other than through a proxy that appends to
+   `X-Forwarded-For`, read "Rate limiting" before turning it on.
 3. `docker compose up -d` (or `make dev-up`), then invite people:
    `make issue-device NAME='…' ARGS='--user <uuid>'` for their phone, and
    `make web-invite ARGS='--user <uuid> --email <address>'` for the viewer.
@@ -595,6 +647,12 @@ refused before decompression or any database work with HTTP 400
 `{"error":"unsupported protocol version","supportedVersions":[1]}` and
 recorded in `ingest_rejections` (stage `protocol`). The app never retries a
 4xx, so it shows this as a protocol mismatch instead of stalling silently.
+
+`ingest_rejections` holds one row of metadata (never the body) for every
+authenticated batch refused before it was committed, and keeps it for **90
+days**: a daily TimescaleDB job (`prune_ingest_rejections`,
+`017_prune_ingest_rejections.sql`) deletes older rows, so a client stuck
+re-sending a page the server always refuses cannot fill the disk.
 
 Every endpoint but `/healthz` needs `Authorization: Bearer <token>` (see
 "Tokens") and takes an optional `X-User-ID` UUID — the user rows are written
@@ -658,7 +716,8 @@ default user. A non-UUID value is a `400`. Neither counts against the
 failed-authentication limit, and an unknown id reads as a user with no
 data. `GET /v1/users` lists every user (only the default with the gate off)
 with name, e-mail, `createdAt`, `lastSync`, `batches` and
-`uploadedSamples`, plus `default` and `multiUser` flags. **Turning the gate
+`uploadedSamples`, plus `default` and `multiUser` flags and `timeZone`, the
+zone every local day is cut in (`PULS_TIME_ZONE`). **Turning the gate
 on widens what the one `PULS_API_TOKEN` reads from one person to everyone
 on the server** — and to any ChatGPT Action built from `/openapi.json`.
 
@@ -689,8 +748,11 @@ services should store the base URL as `PULS_API_BASE_URL` and the token as
 
 - `GET /v1/users`, `GET /v1/profile`
 - `GET /v1/catalog/types` — every type with data, aggregate-only ones
-  included: `rawRows`, `aggregateRows` and `rows` (their sum). Cached
-  briefly, since it counts rows.
+  included: `rawRows`, `aggregateRows` and `rows` (their sum). It counts
+  every row the user has, so it is cached per user for five minutes; after
+  that the cached answer is still served (for up to an hour) while one
+  background refresh replaces it, so only a user's first request waits for
+  the count.
 - `GET /v1/metrics/latest?types=...`
 - `GET /v1/metrics/daily?types=...&start=...&end=...&limit=10000&offset=0` —
   one value per local day per type, paged in **days across the requested
@@ -731,6 +793,16 @@ services should store the base URL as `PULS_API_BASE_URL` and the token as
   `Retry-After`. `tools/puls-export` is a CLI for it; columns and failure
   modes are in [`docs/export.md`](../docs/export.md).
 - `GET /healthz` — liveness and DB ping (no auth).
+
+Failures the middleware answers on any `/v1` route: `401` (wrong or missing
+token), `429` with `Retry-After` (see "Rate limiting"), `403` (`user=` for
+someone else with the gate off) and, on everything but the export, `504`
+when a query runs past 30 seconds. `/openapi.json` documents them per route.
+On shutdown (`docker compose stop`/`up -d` recreating it) requests get the
+15-second grace; then whatever is still running is cancelled, and an export
+still streaming is **aborted** (the client sees a broken transfer, never a
+short file that looks complete), so the container exits inside Compose's
+30-second `stop_grace_period`.
 
 ```bash
 curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
@@ -968,7 +1040,9 @@ throwaway container, never staged in a temporary file). Flags go through
 | `--no-start` | Leave the app services stopped afterwards; `docker compose up -d` when you are ready. |
 
 In order, it: starts `db` and verifies the archive is readable; stops
-`ingest`, `api`, `mcp`, `web` and `grafana`; drops the web viewer's
+`ingest`, `api`, `mcp`, `web` and `grafana`, and the scheduled `backup`
+service if it is running (so it cannot dump a half-restored database; it is
+started again at the end); drops the web viewer's
 `web` and `auth` schemas (the dump recreates them; left in place they stop
 `pg_restore` at "schema already exists"), then drops and recreates the
 `public` schema while TimescaleDB is still live, so its event triggers
@@ -1049,7 +1123,10 @@ DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@localhost:5432/postgres" go
 
 The product API's fixture-writing integration tests also need
 `PULS_API_WRITE_INTEGRATION_TESTS=1`; never run them against a live or
-shared database. They read through `DATABASE_URL` and write fixtures through
+shared database. Without their variables the integration tests skip, so a
+plain `go test ./...` stays green; with `PULS_CI_REQUIRE_INTEGRATION=1` (CI's
+db-integration job) a missing `DATABASE_URL` or write flag fails them
+instead, so a job that lost its database cannot pass by testing nothing. They read through `DATABASE_URL` and write fixtures through
 `ADMIN_DATABASE_URL` (falling back to `DATABASE_URL`), so pointing the first
 at `api_reader` and the second at the superuser tests the role's grants as
 well as the queries.

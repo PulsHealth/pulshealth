@@ -135,8 +135,9 @@ export interface ActivityRingsData {
 }
 
 export interface DataSourceInfo {
-  // "error": real DB configured but unreachable, and demo fallback is disabled
-  // (production). The UI shows empty data, never fabricated demo data.
+  // "error": no usable database (unset, unreachable, or the wrong role in
+  // accounts mode) and demo fallback is disabled (production). Pages show
+  // "Database unavailable" (lib/data/source.ts), never fabricated demo data.
   source: "live" | "demo" | "error";
   detail: string;
 }

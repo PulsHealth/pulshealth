@@ -297,19 +297,23 @@ extension HealthSyncEngine {
                 .info, type: typeID,
                 "Workout \(kind.rawValue): \(totalWorkouts) workout(s), \(totalBatches) batch(es), \(String(format: "%.1f", elapsed))s\(fullPass ? " (full recompute)" : "")")
             notifyChanged()
-        } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
-            await store.recordWorkoutEnrichmentError(kind, error: SyncError.authorizationNotDetermined)
-            await eventLog.log(.error, type: typeID, "Workout \(kind.rawValue): Health access not determined")
-        } catch let error as HKError where error.code == .errorDatabaseInaccessible {
-            // Device locked — expected in background; watermark untouched.
-            await eventLog.log(.warn, type: typeID, "Workout \(kind.rawValue): Health database locked — will retry on next wake")
-        } catch is CancellationError {
-            // Background time expired mid-phase. Not a failure: the watermark
-            // sits at the last fully-acked workout and the next wake resumes.
-            await eventLog.log(.debug, type: typeID, "Workout \(kind.rawValue): cancelled — will resume on next wake")
         } catch {
-            await store.recordWorkoutEnrichmentError(kind, error: error)
-            await eventLog.log(.error, type: typeID, "Workout \(kind.rawValue) sync failed: \(error)")
+            switch PassFailure(error) {
+            case .authorizationNotDetermined:
+                await store.recordWorkoutEnrichmentError(kind, error: SyncError.authorizationNotDetermined)
+                await eventLog.log(.error, type: typeID, "Workout \(kind.rawValue): Health access not determined")
+            case .databaseLocked:
+                noteHealthDatabaseLocked()
+                // Device locked — expected in background; watermark untouched.
+                await eventLog.log(.warn, type: typeID, "Workout \(kind.rawValue): Health database locked — will retry on next wake")
+            case .cancelled:
+                // Background time expired mid-phase. Not a failure: the watermark
+                // sits at the last fully-acked workout and the next wake resumes.
+                await eventLog.log(.debug, type: typeID, "Workout \(kind.rawValue): cancelled — will resume on next wake")
+            case .failed(let error):
+                await store.recordWorkoutEnrichmentError(kind, error: error)
+                await eventLog.log(.error, type: typeID, "Workout \(kind.rawValue) sync failed: \(error)")
+            }
         }
         notifyChanged()
     }

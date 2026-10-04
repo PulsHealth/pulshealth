@@ -1,5 +1,8 @@
 # Roadmap — what is left
 
+**Current findings list and roadmap:** [`deep-review-2026-10.md`](deep-review-2026-10.md)
+(the October 2026 deep review, with each item's status); read it first.
+
 Reviewed 2026-10-01, after the app's 1.6 reached the App Store, and pruned the
 same day to what is worth doing. This is what is still outstanding, roughly in
 the order worth doing it; what was considered and dropped is under **Not

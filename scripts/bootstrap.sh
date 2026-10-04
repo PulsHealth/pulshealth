@@ -199,6 +199,16 @@ shared_token_enabled() {
 # ---------------------------------------------------------------------------
 # Time zone.
 
+# The release this checkout is on: X.Y.Z when HEAD is exactly a vX.Y.Z tag,
+# empty otherwise (a branch, a commit between releases, no git at all).
+checkout_release() {
+  local tag
+  command -v git >/dev/null 2>&1 || return 0
+  tag=$(git -C "$root" describe --tags --exact-match --match 'v[0-9]*' HEAD 2>/dev/null || true)
+  [[ -n $tag ]] && printf '%s' "${tag#v}"
+  return 0
+}
+
 valid_zone() {
   local zone=$1
   [[ $zone =~ ^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$ ]] || return 1
@@ -638,6 +648,16 @@ else
   done
   note "Generated: $secrets $optional_secrets $optional_db_secrets"
 
+  # Pin the images to the release this checkout is, so the compose file and
+  # the schema files (from the checkout) and the images (from ghcr) cannot
+  # drift apart when `latest` moves on. Upgrading is then one deliberate step:
+  # check out the new tag, bump PULS_VERSION, `make pull up`.
+  release=$(checkout_release)
+  if [[ -n $release && $opt_build == 0 ]]; then
+    env_set PULS_VERSION "$release"
+    note "PULS_VERSION=$release (this checkout's release tag): the images match the compose file and schema."
+  fi
+
   zone=''
   zone_source=''
   if [[ -n $opt_time_zone ]]; then
@@ -694,6 +714,13 @@ if [[ $opt_build == 1 ]]; then
   compose up -d --build \
     || die "the build failed. The output above says which image; re-run after fixing it."
 else
+  version=$(env_get PULS_VERSION)
+  if [[ ( -z $version || $version == latest ) && -z $(checkout_release) ]]; then
+    note "!!  This checkout is not a release tag, but the images are the latest release. Features and"
+    note "!!  schema files newer than that release are in the checkout and not in the images. Check out"
+    note "!!  the release (git checkout \"\$(git describe --tags --abbrev=0 --match 'v*')\") or build"
+    note "!!  this checkout's own images: scripts/bootstrap.sh --build"
+  fi
   step "Starting the stack (pulling ghcr.io/pulshealth images as needed)"
   compose up -d || die "\`docker compose up -d\` failed (output above). If it could not pull
        ghcr.io/pulshealth/{ingest,api,mcp,web} — no release has been published yet, the

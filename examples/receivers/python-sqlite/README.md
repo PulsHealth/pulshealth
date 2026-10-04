@@ -62,12 +62,14 @@ routes and series are stored anyway; the feature list says what a receiver
 | `route_points` | `(workout_uuid, t_ms)` | GPS fixes |
 | `series_points` | `(workout_uuid, type, t_ms)` | intra-workout curves |
 | `aggregates` | `(user, type, func, interval, unit, device_filter, bucket_start_ms)` | statistics buckets, upserted; `value` NULL when the bucket is empty |
-| `activity_summaries` | `(user, date)` | one row per local day, upserted |
+| `activity_summaries` | `(user, date)` | one row per local day, replaced whole by each line (an omitted ring is NULL) |
 | `users` | `id` | profile snapshot per `X-User-ID` |
 | `batches` | `batch_id` | one row per accepted batch; a replayed batch ID is a no-op |
 
 Every row carries `user_id`. Timestamps are stored as epoch milliseconds, as
-they arrive. A query to get started:
+they arrive (usually fractional). UUIDs — sample, deletion, workout, batch and
+user — are stored lower-case, so the app's upper-case UUIDs match any other
+spelling. A query to get started:
 
 ```sql
 SELECT date(start_ms / 1000, 'unixepoch') AS day, round(avg(value), 1) AS bpm
@@ -79,10 +81,14 @@ GROUP BY day ORDER BY day DESC LIMIT 14;
 
 - Any 2xx is an acknowledgement; the receiver commits the whole batch in one
   transaction before answering `200` with the reference count body.
-- Samples are insert-if-absent on UUID; deletions are no-ops for unknown
-  UUIDs and take a workout's points along; aggregates and activity
-  summaries upsert with explicit nulls clearing values; the profile line
-  replaces the snapshot.
+- Samples are insert-if-absent on UUID, compared case-insensitively;
+  deletions are no-ops for unknown UUIDs and take a workout's points along;
+  aggregates upsert with an explicit null clearing the value; an activity
+  summary replaces the whole day, an omitted ring clearing the stored one;
+  the profile line replaces the snapshot.
+- A body is refused with `413` past 256 MiB on the wire or 128 MiB
+  decompressed; the gzip decoder stops at the limit rather than inflating a
+  small body into gigabytes.
 - Malformed input is a `400` with `{"error": "..."}` and is never retried by
   the app; a wrong token is `401`; an unsupported `X-Puls-Protocol` or
   `schemaVersion` gets the fixed
@@ -96,9 +102,10 @@ phone serialise, which is fine for a personal server.
 
 `smoke_test.py` posts every fixture from `docs/protocol/fixtures` in order,
 checks the returned counts against the `.expected.json` files, replays each
-batch (must be a 2xx no-op), and checks the negative cases (wrong token,
-unsupported version, garbage, count mismatch, unknown line type, bad user
-ID, bad gzip). With no arguments it starts `receiver.py` itself on a free
+batch (must be a 2xx no-op), checks any `state` rows against the SQLite file,
+and checks the negative cases (wrong token, unsupported version, garbage,
+count mismatch, unknown line type, bad user ID, bad gzip, a gzip body that
+inflates past 128 MiB). With no arguments it starts `receiver.py` itself on a free
 loopback port with a throwaway database:
 
 ```bash
@@ -113,4 +120,8 @@ python3 smoke_test.py --url https://health.example.net --token "$PULS_TOKEN"
 ```
 
 A receiver that returns no count body passes the status checks with a note;
-one that returns counts must match the reference server's numbers.
+one that returns counts must match the reference server's numbers. The
+protocol cannot read rows back, so with `--url` the `state` rows (fixture
+08's replaced day) are printed for you to compare with your store, and a
+receiver whose decompressed limit is above 128 MiB gets a note instead of a
+failure.

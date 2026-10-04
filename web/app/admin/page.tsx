@@ -5,7 +5,13 @@ import { ApproveRequest } from "@/components/ApproveRequest";
 import { PageHeader } from "@/components/PageHeader";
 import { currentAdmin } from "@/lib/accounts/admin";
 import { errorMessage, noticeMessage, param } from "@/lib/accounts/messages";
-import { listAccounts, listSignupRequests, listUnusedApprovals } from "@/lib/accounts/signups";
+import {
+  listAccounts,
+  listSignupRequests,
+  listUnusedApprovals,
+  pendingSignupCount,
+  SIGNUP_PENDING_CAP,
+} from "@/lib/accounts/signups";
 import { mailConfig } from "@/lib/email";
 import { formatFull } from "@/lib/format";
 import { signupsOpen } from "@/lib/mode";
@@ -23,7 +29,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const admin = await currentAdmin();
   if (!admin) notFound();
   const search = await searchParams;
-  const [requests, accounts, unused] = await Promise.all([listSignupRequests(), listAccounts(), listUnusedApprovals()]);
+  const [requests, accounts, unused, waiting] = await Promise.all([
+    listSignupRequests(),
+    listAccounts(),
+    listUnusedApprovals(),
+    pendingSignupCount(),
+  ]);
   const pending = requests.filter((r) => r.status === "pending");
   const decided = requests.filter((r) => r.status !== "pending");
   const error = errorMessage(param(search.error));
@@ -51,11 +62,29 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
       )}
 
       <section className="rise" style={{ marginTop: 8 }}>
-        <div className="eyebrow" style={{ marginBottom: 12 }}>Waiting for you · {pending.length}</div>
+        <div className="eyebrow" style={{ marginBottom: 12 }}>
+          Waiting for you · {waiting}
+          {waiting > pending.length ? ` (the latest ${pending.length} shown)` : ""}
+        </div>
+        {waiting >= SIGNUP_PENDING_CAP && (
+          <div className="form-message" role="status" style={{ maxWidth: 720 }}>
+            {SIGNUP_PENDING_CAP} requests are waiting, so new ones are dropped until you decide some (the form still tells
+            people their request was received). Requests nobody decides are deleted after 30 days.
+          </div>
+        )}
         <div className="panel" style={{ maxWidth: 820 }}>
           {pending.length === 0 && <div className="session-row" style={{ color: "var(--muted)", fontSize: 14 }}>No requests waiting.</div>}
           {pending.map((r) => (
             <div key={r.id} className="session-row" style={{ alignItems: "flex-start" }}>
+              {/* Ticks belong to the Decline selected form below (form attribute: no nested forms). */}
+              <input
+                type="checkbox"
+                name="ids"
+                value={r.id}
+                form="decline-selected"
+                aria-label={`Select the request from ${r.email}`}
+                style={{ marginTop: 4 }}
+              />
               <div style={{ minWidth: 0, flex: "1 1 320px" }}>
                 <div style={{ fontSize: 15, fontWeight: 600 }}>{r.name || r.email}</div>
                 <div style={{ fontSize: 13.5, color: "var(--fg-soft)", marginTop: 2 }}>{r.email}</div>
@@ -70,6 +99,29 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
             </div>
           ))}
         </div>
+        {pending.length > 1 && (
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginTop: 12, maxWidth: 820 }}>
+            <form id="decline-selected" method="post" action="/api/admin">
+              <input type="hidden" name="action" value="deny_many" />
+              <input type="hidden" name="scope" value="selected" />
+              <button type="submit" className="btn">Decline selected</button>
+            </form>
+            <form method="post" action="/api/admin" style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+              <input type="hidden" name="action" value="deny_many" />
+              <input type="hidden" name="scope" value="shown" />
+              {pending.map((r) => (
+                <input key={r.id} type="hidden" name="shown" value={r.id} />
+              ))}
+              <label style={{ fontSize: 12.5, color: "var(--muted)", display: "inline-flex", gap: 6, alignItems: "center" }}>
+                <input type="checkbox" name="confirm" value="yes" required /> all {pending.length} shown
+              </label>
+              <button type="submit" className="btn">Decline all shown</button>
+            </form>
+          </div>
+        )}
+        <p className="form-hint" style={{ maxWidth: 720, lineHeight: 1.5 }}>
+          Declining deletes a request and emails no one. A request nobody decides is deleted 30 days after it was made.
+        </p>
       </section>
 
       <section className="rise" style={{ marginTop: 28 }}>

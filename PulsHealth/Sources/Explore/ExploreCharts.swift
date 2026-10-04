@@ -166,13 +166,10 @@ struct ShareBars: View {
 
     let rows: [Row]
     let color: Color
-    /// The bar is a share of this; the largest row by default, so the widest
-    /// bar spans the card. Pass the total for bars that read as fractions of
-    /// the whole.
-    var scale: Double?
 
+    /// Bars are shares of the largest row, so the widest spans the card.
     private var denominator: Double {
-        max(scale ?? rows.map(\.measure).max() ?? 1, .leastNonzeroMagnitude)
+        max(rows.map(\.measure).max() ?? 1, .leastNonzeroMagnitude)
     }
 
     var body: some View {

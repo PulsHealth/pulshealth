@@ -406,7 +406,7 @@ func TestExportStreamsChunkedAndAbortsOnAMidStreamFailure(t *testing.T) {
 	)
 	failing := &streamingStore{
 		fakeStore: fakeStore{},
-		workoutRows: func(fn func(WorkoutSummary) error) error {
+		workoutRows: func(_ context.Context, fn func(WorkoutSummary) error) error {
 			// Not one row is produced until the test has read the header, so
 			// a header on the wire can only have come from the flush that
 			// follows it.
@@ -491,7 +491,7 @@ func TestExportRefusesMoreThanTheConcurrencyLimit(t *testing.T) {
 	defer releaseAll()
 
 	srv := exportServer(t, &streamingStore{
-		workoutRows: func(func(WorkoutSummary) error) error {
+		workoutRows: func(context.Context, func(WorkoutSummary) error) error {
 			inFlight <- struct{}{}
 			<-release
 			return nil
@@ -550,7 +550,7 @@ func TestExportClientDisconnectIsNotAFailure(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	srv := exportServer(t, &streamingStore{
-		workoutRows: func(fn func(WorkoutSummary) error) error {
+		workoutRows: func(_ context.Context, fn func(WorkoutSummary) error) error {
 			if err := fn(exportTestWorkout(0)); err != nil {
 				return err
 			}
@@ -602,9 +602,80 @@ func safeClose(ch chan struct{}) {
 // can make it block or fail part-way through.
 type streamingStore struct {
 	fakeStore
-	workoutRows func(fn func(WorkoutSummary) error) error
+	workoutRows func(ctx context.Context, fn func(WorkoutSummary) error) error
 }
 
-func (s *streamingStore) StreamWorkouts(_ context.Context, _ string, _ WorkoutFilters, fn func(WorkoutSummary) error) error {
-	return s.workoutRows(fn)
+func (s *streamingStore) StreamWorkouts(ctx context.Context, _ string, _ WorkoutFilters, fn func(WorkoutSummary) error) error {
+	return s.workoutRows(ctx, fn)
+}
+
+// deadlineRecorder is a ResponseRecorder that also records the write
+// deadlines set through http.ResponseController.
+type deadlineRecorder struct {
+	*httptest.ResponseRecorder
+	deadlines []time.Time
+}
+
+func (d *deadlineRecorder) SetWriteDeadline(t time.Time) error {
+	d.deadlines = append(d.deadlines, t)
+	return nil
+}
+
+// A client that stops reading must not hold an export slot, and a pooled
+// connection, forever: every write and flush renews a deadline of
+// exportWriteTimeout, and the whole export runs under exportMaxDuration.
+func TestExportBoundsEveryWriteAndTheWholeExport(t *testing.T) {
+	t.Parallel()
+
+	var ceiling time.Time
+	srv := exportServer(t, &streamingStore{
+		workoutRows: func(ctx context.Context, fn func(WorkoutSummary) error) error {
+			ceiling, _ = ctx.Deadline()
+			for i := 0; i < 2*exportFlushRows; i++ {
+				if err := fn(exportTestWorkout(i)); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	})
+	req := httptest.NewRequest(http.MethodGet, "/v1/export?format=csv&dataset=workouts&"+exportRange, nil)
+	req.Header.Set("Authorization", "Bearer secret")
+	rec := &deadlineRecorder{ResponseRecorder: httptest.NewRecorder()}
+	before := time.Now()
+	srv.routes().ServeHTTP(rec, req)
+	after := time.Now()
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body %s", rec.Code, rec.Body.String())
+	}
+	// The header flush, one per window, the final one, and the writes the
+	// encoder's buffer makes in between.
+	if len(rec.deadlines) < 4 {
+		t.Fatalf("%d write deadlines set, want one before every write and flush", len(rec.deadlines))
+	}
+	for i, d := range rec.deadlines {
+		if d.Before(before.Add(exportWriteTimeout)) || d.After(after.Add(exportWriteTimeout)) {
+			t.Fatalf("deadline %d = %v, want %v after the write", i, d, exportWriteTimeout)
+		}
+	}
+	if ceiling.Before(before.Add(exportMaxDuration)) || ceiling.After(after.Add(exportMaxDuration)) {
+		t.Errorf("the scan ran with deadline %v, want %v after the request", ceiling, exportMaxDuration)
+	}
+}
+
+// Past the ceiling the writer refuses every write and flush, which the
+// handler turns into an aborted transfer rather than a clean short file.
+func TestExportPastItsCeilingWritesNothingMore(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	out := &exportWriter{ctx: ctx, w: io.Discard, control: http.NewResponseController(httptest.NewRecorder())}
+	if _, err := out.Write([]byte("row\n")); !errors.Is(err, context.Canceled) {
+		t.Errorf("Write = %v, want the context's error", err)
+	}
+	if err := out.Flush(); !errors.Is(err, context.Canceled) {
+		t.Errorf("Flush = %v, want the context's error", err)
+	}
 }

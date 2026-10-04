@@ -4,7 +4,8 @@
 # Fails when any tracked file carries owner-specific or private-infrastructure
 # content: tailnet hostnames, personal mailboxes, home directories, an Apple
 # Developer Team ID, host-name gates, the retired private deploy tooling, or
-# the bare production host name in prose, config, and code files.
+# the bare production host name in prose, config, and code files, and
+# secret-shaped strings (cloud keys, API tokens, PEM private keys).
 #
 # Every pattern is a CLASS of identifier, never a literal personal value, so
 # this script is itself safe to publish. When a scrub finds a new kind of
@@ -26,12 +27,29 @@ patterns=(
   '[a-z0-9-]+\.[a-z0-9-]+\.ts\.net'   # a concrete tailnet FQDN (placeholders like <tailnet>.ts.net pass)
   '@gmail\.com'                       # personal mailboxes
   '/home/[a-z]'                       # a home directory on someone's host
-  'DEVELOPMENT_TEAM *= *[A-Z0-9]{10}' # an Apple Developer Team ID
+  'DEVELOPMENT_TEAM *[=:] *"?[A-Z0-9]{10}' # an Apple Developer Team ID (xcconfig `=` or xcodegen `:`)
+  '/Users/[a-z]'                      # a macOS home directory (placeholders like /Users/<you> pass)
   'hostname -s'                       # host-name gates in scripts
   'superpowers'                       # private planning artifacts
   'Shipyard'                          # a private deploy platform
   'deploy-grey'                       # the retired production deploy workflow
   'Graffit'                           # a private downstream consumer
+)
+
+# Secret-shaped strings, matched case-sensitively (their prefixes are fixed
+# case). A credential has no business in a public tree whoever it belongs to,
+# so these are classes too, never values. Private IP addresses are not on the
+# list: RFC 1918 examples (192.168.1.20) are all over the tests and identify
+# no one.
+secret_patterns=(
+  'AKIA[0-9A-Z]{16}'                       # AWS access key ID
+  'gh[pousr]_[A-Za-z0-9]{36}'              # GitHub token
+  'github_pat_[A-Za-z0-9_]{20,}'           # GitHub fine-grained token
+  '-----BEGIN ([A-Z]+ )?PRIVATE KEY-----'  # PEM private key (AuthKey_*.p8 included)
+  'xox[abprs]-[A-Za-z0-9-]{10,}'           # Slack token
+  'sk-ant-[A-Za-z0-9_-]{20,}'              # Anthropic API key
+  'AIza[0-9A-Za-z_-]{35}'                  # Google API key
+  'sk_live_[0-9A-Za-z]{20,}'               # Stripe live key
 )
 
 # The production host's bare name, matched as a whole word, but only in prose,
@@ -65,6 +83,12 @@ hits=$(
       args+=(-e "$pattern")
     done
     tracked | scan -iE "${args[@]}"
+
+    args=()
+    for pattern in "${secret_patterns[@]}"; do
+      args+=(-e "$pattern")
+    done
+    tracked | scan -E "${args[@]}"
 
     tracked | grep -zE -- "$host_word_files" | scan -iw -e "$host_word"
   } | sort -u

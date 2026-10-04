@@ -270,21 +270,3 @@ func TestCatalogCacheIsBounded(t *testing.T) {
 		t.Fatalf("the newest user was evicted from the cache")
 	}
 }
-
-func TestParseBoolEnv(t *testing.T) {
-	for raw, want := range map[string]bool{"": false, " true ": true, "1": true, "FALSE": false, "0": false} {
-		t.Setenv("PULS_TEST_BOOL", raw)
-		got, err := parseBoolEnv("PULS_TEST_BOOL", false)
-		if err != nil || got != want {
-			t.Fatalf("parseBoolEnv(%q) = %v, %v; want %v, nil", raw, got, err, want)
-		}
-	}
-	t.Setenv("PULS_TEST_BOOL", "")
-	if got, err := parseBoolEnv("PULS_TEST_BOOL", true); err != nil || !got {
-		t.Fatalf("parseBoolEnv(unset, default true) = %v, %v; want true", got, err)
-	}
-	t.Setenv("PULS_TEST_BOOL", "maybe")
-	if _, err := parseBoolEnv("PULS_TEST_BOOL", false); err == nil || !strings.Contains(err.Error(), "PULS_TEST_BOOL") {
-		t.Fatalf("parseBoolEnv(maybe) err = %v; want an error naming the variable", err)
-	}
-}

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -34,7 +35,18 @@ type expected struct {
 	Notes    string           `json:"notes"`
 	Status   int              `json:"status"`
 	Response map[string]int64 `json:"response"`
+	// State, when present, lists rows a receiver must hold once the corpus
+	// has been applied in file-name order up to and including this fixture.
+	// The response counts cannot show an overwrite; this can. Only
+	// "activitySummaries" is defined: each entry names a day by localDate and
+	// gives every ring field (see ringFields), null included.
+	State map[string][]map[string]any `json:"state"`
 }
+
+// ringFields are the stored columns of an activity summary: the whole row a
+// line replaces (spec §6.5). An omitted field is null.
+var ringFields = []string{"moveKcal", "moveGoalKcal", "exerciseMin", "exerciseGoalMin", "standHours",
+	"standGoalHours", "moveMode", "moveTimeMin", "moveTimeGoalMin"}
 
 func fixtures(t *testing.T) []string {
 	t.Helper()
@@ -177,6 +189,151 @@ func TestBatchLineDiscriminates(t *testing.T) {
 	}
 }
 
+// The corpus as a whole must exercise what the app actually sends, not just
+// what the reference server's own tests happen to use: upper-case UUIDs and
+// fractional epoch-millisecond timestamps (JSONEncoder's UUID and
+// .millisecondsSince1970 strategies), and a UUID re-sent in another case.
+func TestCorpusIsAppShaped(t *testing.T) {
+	var upper, fractional bool
+	seen := map[string]string{} // lower-cased UUID -> first spelling
+	var caseVariant bool
+	for _, path := range fixtures(t) {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
+			var doc map[string]any
+			dec := json.NewDecoder(strings.NewReader(line))
+			dec.UseNumber()
+			if err := dec.Decode(&doc); err != nil {
+				t.Fatalf("%s: %v", path, err)
+			}
+			walk(doc, func(key string, v any) {
+				switch x := v.(type) {
+				case string:
+					if (key == "uuid" || key == "workoutUUID") && x != strings.ToLower(x) {
+						upper = true
+					}
+					if key == "uuid" || key == "workoutUUID" {
+						if first, ok := seen[strings.ToLower(x)]; ok && first != x {
+							caseVariant = true
+						} else if !ok {
+							seen[strings.ToLower(x)] = x
+						}
+					}
+				case json.Number:
+					if (key == "start" || key == "end" || key == "t") && strings.Contains(x.String(), ".") {
+						fractional = true
+					}
+				}
+			})
+		}
+	}
+	if !upper {
+		t.Error("no fixture carries an upper-case UUID, which is what the app sends")
+	}
+	if !fractional {
+		t.Error("no fixture carries a fractional epoch-ms timestamp, which is what the app sends")
+	}
+	if !caseVariant {
+		t.Error("no fixture re-sends a UUID in another case; receivers must compare case-insensitively")
+	}
+}
+
+func walk(v any, f func(key string, v any)) {
+	switch x := v.(type) {
+	case map[string]any:
+		for k, child := range x {
+			f(k, child)
+			walk(child, f)
+		}
+	case []any:
+		for _, child := range x {
+			walk(child, f)
+		}
+	}
+}
+
+// Every "state" expectation must follow from the corpus under the spec's
+// replace semantics for activity summaries (§6.5): applied in file-name order,
+// each line becomes the whole row for its day, an omitted field null. An
+// expectation written for merge semantics, or a fixture edit that moves the
+// final row, fails here before any receiver is tested against it.
+func TestStateExpectationsFollowReplaceSemantics(t *testing.T) {
+	days := map[string]map[string]any{} // localDate -> ring field -> float64 or nil
+	stated := 0
+	for _, path := range fixtures(t) {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
+		for _, line := range lines[1:] {
+			var doc struct {
+				ActivitySummary map[string]any `json:"activitySummary"`
+			}
+			if err := json.Unmarshal([]byte(line), &doc); err != nil {
+				t.Fatalf("%s: %v", path, err)
+			}
+			a := doc.ActivitySummary
+			if a == nil {
+				continue
+			}
+			day, _ := a["localDate"].(string)
+			if day == "" {
+				ms, _ := a["date"].(float64)
+				day = time.UnixMilli(int64(ms)).UTC().Format(time.DateOnly)
+			}
+			row := map[string]any{}
+			for _, f := range ringFields {
+				row[f] = a[f] // absent and null alike: nil
+			}
+			days[day] = row
+		}
+
+		expRaw, err := os.ReadFile(strings.TrimSuffix(path, ".ndjson") + ".expected.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var exp expected
+		if err := json.Unmarshal(expRaw, &exp); err != nil {
+			t.Fatal(err)
+		}
+		for table, rows := range exp.State {
+			if table != "activitySummaries" {
+				t.Errorf("%s: state names %q; only activitySummaries is defined (teach this test and smoke_test.py first)", path, table)
+				continue
+			}
+			for _, want := range rows {
+				stated++
+				day, _ := want["localDate"].(string)
+				got, ok := days[day]
+				if !ok {
+					t.Errorf("%s: state expects day %q, which no fixture so far sends", path, day)
+					continue
+				}
+				if len(want) != len(ringFields)+1 {
+					t.Errorf("%s: state row %q must give localDate and exactly the fields %v", path, day, ringFields)
+				}
+				for _, f := range ringFields {
+					w, present := want[f]
+					if !present {
+						t.Errorf("%s: state row %q lacks %s (write null for an empty column)", path, day, f)
+						continue
+					}
+					if w != got[f] {
+						t.Errorf("%s: state row %q %s = %v, but replace semantics give %v", path, day, f, w, got[f])
+					}
+				}
+			}
+		}
+	}
+	if stated == 0 {
+		t.Error("no fixture states an activity-summary row; the overwrite rule is untested")
+	}
+}
+
 func mustDecode(t *testing.T, s string) any {
 	t.Helper()
 	doc, err := decode([]byte(s))
@@ -203,6 +360,12 @@ func TestSchemasAccept(t *testing.T) {
 		{"activity-summary", `{"activitySummary":{"date":1718086400000,"moveKcal":null,"moveMode":null}}`},
 		{"aggregate", `{"aggregate":{"type":"HKQuantityTypeIdentifierStepCount","func":"sum","intervalValue":1,"intervalUnit":"day","deviceFilter":"all","bucketStart":1718000000000,"bucketEnd":1718086400000,"value":null}}`},
 		{"route", `{"route":{"workoutUUID":"33333333-3333-4333-8333-333333333333","points":[]}}`},
+		// What the app sends: upper-case UUIDs, fractional epoch ms, omitted nil optionals.
+		{"sample", `{"uuid":"5D2A9C1E-7B3F-4E8A-9C6D-1F0E2B3A4C5D","type":"HKQuantityTypeIdentifierHeartRate","kind":"quantity","start":1718000000123.456,"end":1718000005123.456,"value":62.5,"unit":"count/min"}`},
+		{"deletion", `{"deleted":{"uuid":"5D2A9C1E-7b3f-4E8A-9c6d-1F0E2B3A4C5D","type":"x"}}`},
+		{"route", `{"route":{"workoutUUID":"9F86D081-884C-4D7A-9F2E-0B8A6C3D4E5F","points":[{"t":1718000001000.5,"lat":1,"lon":1}]}}`},
+		{"activity-summary", `{"activitySummary":{"date":1718000000000.5,"localDate":"2024-06-10","moveGoalKcal":650}}`},
+		{"header", `{"schemaVersion":1,"clientVersion":"1.6 (19)","batchID":"A1000000-0000-4000-8000-000000000001","deviceID":"d","type":"probe","reason":"manual","exportedAt":1718000000999.873,"sampleCount":0,"deletionCount":0,"routeCount":0,"seriesCount":0,"aggregateCount":0,"activitySummaryCount":0,"profileCount":0}`},
 	}
 	for _, tc := range cases {
 		if err := v.Validate(tc.schema, mustDecode(t, tc.line)); err != nil {

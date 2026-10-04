@@ -182,14 +182,18 @@ func (l *failureLimiter) size() int {
 // RemoteAddr is the only value the server observes for itself, so it is the
 // default. X-Forwarded-For is attacker-controlled — anyone can send one — and
 // trusting it blindly would hand out a fresh bucket per request. It is honoured
-// only when TRUST_PROXY_HEADERS=true says a proxy that overwrites the header
-// (a reverse proxy, Tailscale Serve/Funnel) is the only thing that can reach
-// this port, in which case the FIRST entry is the original client.
+// only when TRUST_PROXY_HEADERS=true says a proxy (a reverse proxy, a
+// Cloudflare Tunnel, Tailscale Serve/Funnel) is the only thing that can reach
+// this port. Such a proxy APPENDS the address it saw to whatever header the
+// client sent, so the LAST non-empty entry is the one it vouches for; the
+// first is whatever the client chose to write, and keying on it would again
+// mint a fresh bucket per request.
 func clientIP(r *http.Request, trustProxyHeaders bool) string {
 	if trustProxyHeaders {
-		if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-			if first := strings.TrimSpace(strings.Split(forwarded, ",")[0]); first != "" {
-				return first
+		entries := strings.Split(r.Header.Get("X-Forwarded-For"), ",")
+		for i := len(entries) - 1; i >= 0; i-- {
+			if last := strings.TrimSpace(entries[i]); last != "" {
+				return last
 			}
 		}
 	}

@@ -191,17 +191,21 @@ extension HealthSyncEngine {
                 .info, type: typeID,
                 "Activity rings: \(rows.count) day(s), \(String(format: "%.1f", elapsed))s\(fullPass ? " (full recompute)" : "")")
             notifyChanged()
-        } catch let error as HKError where error.code == .errorAuthorizationNotDetermined {
-            await store.recordActivitySummaryError(error: SyncError.authorizationNotDetermined)
-            await eventLog.log(.error, type: typeID, "Activity rings: Health access not determined")
-        } catch let error as HKError where error.code == .errorDatabaseInaccessible {
-            // Device locked — expected in background; watermark untouched.
-            await eventLog.log(.warn, type: typeID, "Activity rings: Health database locked — will retry on next wake")
-        } catch is CancellationError {
-            await eventLog.log(.debug, type: typeID, "Activity rings: cancelled — will resume on next wake")
         } catch {
-            await store.recordActivitySummaryError(error: error)
-            await eventLog.log(.error, type: typeID, "Activity rings sync failed: \(error)")
+            switch PassFailure(error) {
+            case .authorizationNotDetermined:
+                await store.recordActivitySummaryError(error: SyncError.authorizationNotDetermined)
+                await eventLog.log(.error, type: typeID, "Activity rings: Health access not determined")
+            case .databaseLocked:
+                noteHealthDatabaseLocked()
+                // Device locked — expected in background; watermark untouched.
+                await eventLog.log(.warn, type: typeID, "Activity rings: Health database locked — will retry on next wake")
+            case .cancelled:
+                await eventLog.log(.debug, type: typeID, "Activity rings: cancelled — will resume on next wake")
+            case .failed(let error):
+                await store.recordActivitySummaryError(error: error)
+                await eventLog.log(.error, type: typeID, "Activity rings sync failed: \(error)")
+            }
         }
         notifyChanged()
     }

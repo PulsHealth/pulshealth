@@ -124,10 +124,15 @@ func TestForwardedHeaderIsUsedWhenTrusted(t *testing.T) {
 		map[string]string{"X-Forwarded-For": "198.51.100.20"}); code != http.StatusTooManyRequests {
 		t.Fatalf("status = %d, want 429 for the exhausted forwarded client", code)
 	}
-	// A second client behind the same proxy still has its own budget, and
-	// the proxy hop itself is never the key.
+	// Prepending an entry of its own does not buy the exhausted client a
+	// fresh bucket: the proxy appends what it saw, and that is the key.
+	if code, _ := authAttempt(t, srv, "wrong", "172.17.0.2:5000",
+		map[string]string{"X-Forwarded-For": "203.0.113.99, 198.51.100.20"}); code != http.StatusTooManyRequests {
+		t.Fatalf("status = %d, want 429: a client-written first entry must not mint a new bucket", code)
+	}
+	// A second client behind the same proxy still has its own budget.
 	if code, _ := authAttempt(t, srv, "secret", "172.17.0.2:5000",
-		map[string]string{"X-Forwarded-For": "198.51.100.21, 172.17.0.2"}); code != http.StatusOK {
+		map[string]string{"X-Forwarded-For": "198.51.100.21"}); code != http.StatusOK {
 		t.Fatalf("status = %d, want 200 for a different forwarded client", code)
 	}
 }
@@ -143,9 +148,11 @@ func TestClientIP(t *testing.T) {
 		{"remote addr by default", "203.0.113.5:41234", "", false, "203.0.113.5"},
 		{"forwarded ignored by default", "203.0.113.5:41234", "198.51.100.1", false, "203.0.113.5"},
 		{"forwarded honoured when trusted", "172.17.0.2:41234", "198.51.100.1", true, "198.51.100.1"},
-		{"first forwarded entry wins", "172.17.0.2:41234", " 198.51.100.1 , 10.0.0.1", true, "198.51.100.1"},
+		{"last forwarded entry wins", "172.17.0.2:41234", " 10.0.0.1 , 198.51.100.1 ", true, "198.51.100.1"},
+		{"client-written first entry is ignored", "172.17.0.2:41234", "evil, real", true, "real"},
+		{"trailing blank entry is skipped", "172.17.0.2:41234", "198.51.100.1, ", true, "198.51.100.1"},
 		{"empty forwarded falls back", "172.17.0.2:41234", "", true, "172.17.0.2"},
-		{"blank forwarded entry falls back", "172.17.0.2:41234", " , 10.0.0.1", true, "172.17.0.2"},
+		{"blank forwarded entries fall back", "172.17.0.2:41234", " , ", true, "172.17.0.2"},
 		{"ipv6 remote addr loses the port", "[2001:db8::1]:41234", "", false, "2001:db8::1"},
 		{"unparsable remote addr is used whole", "not-host-port", "", false, "not-host-port"},
 	}

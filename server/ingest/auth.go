@@ -184,22 +184,18 @@ func (s *Server) resolveUser(p principal, r *http.Request) (string, *authRejecti
 	return "", rejectUserMismatch
 }
 
-// readUserID is what every handler asks for the request's user. The
-// middleware has already settled it; the fallback keeps the old header
-// contract for a handler invoked without the middleware.
+// readUserID is what every handler asks for the request's user: the one the
+// auth middleware settled from the credential (and, for the shared token,
+// X-User-ID). Every /v1 route is wrapped in auth (see routes). A handler
+// reached without it answers 500 and serves nothing: reading X-User-ID here
+// instead, as this once did, would be unauthenticated tenant selection on
+// any route someone forgot to wrap.
 func readUserID(w http.ResponseWriter, r *http.Request) (string, bool) {
-	if p, ok := principalFrom(r.Context()); ok {
+	if p, ok := principalFrom(r.Context()); ok && p.userID != "" {
 		return p.userID, true
 	}
-	userID := r.Header.Get("X-User-ID")
-	if userID == "" {
-		return defaultUserID, true
-	}
-	if !isUUID(userID) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "X-User-ID is not a UUID"})
-		return "", false
-	}
-	return userID, true
+	writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "no authenticated user"})
+	return "", false
 }
 
 // logAuthMode is the startup line that says which credentials this server

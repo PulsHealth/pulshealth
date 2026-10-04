@@ -12,6 +12,24 @@ enum SyncRoute: Hashable {
     case type(String)
 }
 
+/// Shown while this launch could not read the stored settings
+/// (`AppModel.stateFileUnreadable`): what is on screen is an empty stand-in,
+/// nothing is lost, and a relaunch loads the real thing.
+struct StateUnreadableNotice: View {
+    static let message = "PulsHealth started before this iPhone was unlocked and couldn’t read its settings, so none are shown and nothing can be saved. Nothing is lost: close PulsHealth from the app switcher and open it again."
+
+    var body: some View {
+        CardSection("Settings not loaded", subtitle: Self.message) {
+            Image(systemName: "lock.fill")
+                .font(.title3)
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+        } content: {
+            EmptyView()
+        }
+    }
+}
+
 /// The Sync tab: where the data goes and how that is going. With no server
 /// applied it is a setup card with one Set Up button — a supported way to
 /// use the app, not a fault; the first tap on Sync is where the server is
@@ -26,6 +44,9 @@ struct SyncView: View {
 
     var body: some View {
         List {
+            if model.stateFileUnreadable {
+                StateUnreadableNotice()
+            }
             if model.appliedConfig.serverURL == nil {
                 setupCard
             } else {
@@ -120,12 +141,12 @@ struct SyncView: View {
         }
     }
 
-    /// The PulsHealth database by name: its address is the operator's, and
-    /// means nothing to the person syncing to it. Any other by its host.
+    /// Any database by its host; the PulsHealth database by name *and* host,
+    /// so the label never hides where the data goes.
     private var host: String {
-        if model.usesPulsHealthDatabase { return "PulsHealth Database" }
         guard let url = model.appliedConfig.serverURL else { return "Database" }
-        return url.host().map { $0 + (url.port.map { ":\($0)" } ?? "") } ?? url.absoluteString
+        let address = url.host().map { $0 + (url.port.map { ":\($0)" } ?? "") } ?? url.absoluteString
+        return model.usesPulsHealthDatabase ? "PulsHealth Database · \(address)" : address
     }
 
     /// What is known about reaching the applied server, newest evidence first:

@@ -96,6 +96,9 @@ private func writeLegacyState(_ json: String, in dir: URL) throws {
         #expect(await reloaded.configuration.serverURL == URL(string: "https://example.test"))
     }
 
+    /// A configuration without a token no longer deletes it (R13): a caller
+    /// that rebuilt one without the token used to stall every sync. Deleting
+    /// is `clearAuthToken()`, asked for on purpose.
     @Test func clearingTheTokenDeletesItFromTheStore() async throws {
         let tokens = InMemoryTokenStore(token: "old")
         let store = SyncStateStore(directory: makeDir(), tokenStore: tokens)
@@ -103,7 +106,12 @@ private func writeLegacyState(_ json: String, in dir: URL) throws {
         var config = await store.configuration
         config.authToken = nil
         await store.setConfiguration(config)
+        #expect(try tokens.token() == "old")
+        #expect(await store.configuration.authToken == "old")
+
+        await store.clearAuthToken()
         #expect(try tokens.token() == nil)
+        #expect(await store.configuration.authToken == nil)
     }
 
     @Test func legacyFileTokenMigratesIntoTheStoreAndOutOfTheFile() async throws {

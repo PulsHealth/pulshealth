@@ -113,6 +113,31 @@ public struct HealthTypeDescriptor: Identifiable, Sendable, Hashable {
     /// (excluded from bulk authorization, observer, and background-delivery APIs).
     var needsPerObjectAuthorization: Bool { kind == .medicationDose }
 
+    /// The most samples of this kind one anchored page may hold, whatever the
+    /// configured `batchSize`; nil for no cap of its own. A page is enriched
+    /// in memory before it is encoded: one ECG carries ≈15,000 voltages and a
+    /// heartbeat series a few hundred beats, so a 1,000-sample page of either
+    /// is on the order of 100 MB of doubles, plus the body and its deflate —
+    /// past what a background wake may hold, and doubled by read-ahead.
+    public var maxPageSize: Int? {
+        switch kind {
+        case .ecg: return 20
+        case .heartbeatSeries: return 200
+        case .quantity, .category, .workout, .stateOfMind, .medicationDose, .activitySummary:
+            return nil
+        }
+    }
+
+    /// The anchored-query limit for this type under `batchSize`: the smaller
+    /// of the two, and at least 1. Both sweeps page with it and judge "drained"
+    /// against it, so a short page still means HealthKit had nothing more.
+    /// Never above `batchSize`, which is what keeps every page within the
+    /// merged path's pack budget (`max(maxMergedBatchSamples, batchSize)`):
+    /// a page is never split across uploads.
+    public func pageSize(batchSize: Int) -> Int {
+        max(1, min(batchSize, maxPageSize ?? batchSize))
+    }
+
     var unit: HKUnit? { unitString.map(HKUnit.init(from:)) }
 }
 

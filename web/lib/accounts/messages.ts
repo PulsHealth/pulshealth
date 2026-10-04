@@ -22,6 +22,9 @@ const ERRORS: Record<string, string> = {
   devices: "You have ten connected iPhones already. Disconnect one first.",
   deletion_requested: "That person asked to be deleted, so their account stays disabled. Purge their data instead.",
   purge_running: "A purge of that user is already running. It disappears from this list when it is done.",
+  own_account: "You cannot disable or enable your own account here.",
+  admin_account: "Administrators' accounts are managed from the server, not here.",
+  none_selected: "No requests were ticked. Tick the ones to decline first.",
 };
 
 const NOTICES: Record<string, string> = {
@@ -30,6 +33,7 @@ const NOTICES: Record<string, string> = {
   sessions: "Signed out.",
   received: "Thanks — your request is in. If it is approved you will get an email with a link to choose a password.",
   denied: "Request declined and deleted. No email was sent.",
+  denied_many: "Those requests were declined and deleted. No email was sent.",
   disabled: "Account disabled: it cannot sign in, and its iPhones were disconnected.",
   enabled: "Account enabled again. Its iPhones stay disconnected until reconnected.",
   purged: "Everything stored for that user was deleted.",

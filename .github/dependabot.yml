@@ -1,4 +1,4 @@
-# Dependabot keeps the six ecosystems moving. The `advisories` CI job reports
+# Dependabot keeps the seven ecosystems moving. The `advisories` CI job reports
 # what is vulnerable; nothing here raised a fix, so reports accumulated instead
 # of being acted on — js-yaml sat on a HIGH advisory as a direct production
 # dependency of site/, and tools/protocol-check drifted 25 minor versions
@@ -105,6 +105,22 @@ updates:
     open-pull-requests-limit: 4
     groups:
       base-images:
+        patterns: ["*"]
+    commit-message:
+      prefix: "deps"
+
+  # The images server/docker-compose.yml pins itself: TimescaleDB, Grafana
+  # and cloudflared (the four app images follow PULS_VERSION, not this). A
+  # TimescaleDB bump is a deliberate step even when it arrives here: read
+  # server/README.md, "Upgrading the database image", before merging one.
+  - package-ecosystem: docker-compose
+    directory: /server
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      compose-images:
         patterns: ["*"]
     commit-message:
       prefix: "deps"

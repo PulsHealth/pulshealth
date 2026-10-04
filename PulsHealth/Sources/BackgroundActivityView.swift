@@ -32,6 +32,12 @@ struct BackgroundActivityView: View {
         .task(id: model.wakeRecords.count) {
             exportURLs = await model.writeDiagnosticsBundle()
         }
+        // The files are only for that Export button; they do not outlive the
+        // screen (and any left by a crash go at the next launch).
+        .onDisappear {
+            exportURLs = []
+            model.removeDiagnosticsBundle()
+        }
         .refreshable { await model.refresh() }
     }
 

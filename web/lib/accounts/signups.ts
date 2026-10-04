@@ -23,25 +23,55 @@ export interface SignupInput {
 }
 
 /**
+ * At most this many requests wait for a decision; past it, new ones are
+ * dropped (the form still answers "received", so it reveals nothing). A
+ * flood cannot then bury real requests without bound or keep mailing the
+ * operator, and the database deletes any request left undecided for 30
+ * days (auth.prune_signups), so the queue drains by itself. Checked here,
+ * not by a constraint: a burst of concurrent requests can pass it by a few.
+ */
+export const SIGNUP_PENDING_CAP = 500;
+
+/**
+ * What became of a request: `created`; `exists`, already pending for this
+ * address; or `full`, dropped at SIGNUP_PENDING_CAP. Only `created` stored
+ * anything, and the requester is told the same in all three cases.
+ */
+export type SignupOutcome = "created" | "exists" | "full";
+
+/**
  * Records a request. Asking again while one is pending changes nothing and
  * is not an error (the person sees the same confirmation either way, so the
- * form does not reveal who has asked). True when a new request was created.
+ * form does not reveal who has asked).
  */
-export async function createSignupRequest(input: SignupInput): Promise<boolean> {
-  const rows = await query<{ id: string }>(
-    `INSERT INTO auth.signup_requests (email, name, note, ip, user_agent)
-     VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (email) WHERE status = 'pending' DO NOTHING
-     RETURNING id::text`,
+export async function createSignupRequest(input: SignupInput): Promise<SignupOutcome> {
+  const [row] = await query<{ pending: string; created: string }>(
+    `WITH waiting AS (
+       SELECT count(*) AS n FROM auth.signup_requests WHERE status = 'pending'
+     ), ins AS (
+       INSERT INTO auth.signup_requests (email, name, note, ip, user_agent)
+       SELECT $1::text, $2::text, $3::text, $4::inet, $5::text FROM waiting WHERE waiting.n < $6::bigint
+       ON CONFLICT (email) WHERE status = 'pending' DO NOTHING
+       RETURNING 1
+     )
+     SELECT (SELECT n FROM waiting) AS pending, (SELECT count(*) FROM ins) AS created`,
     [
       input.email,
       input.name.slice(0, 200),
       input.note.slice(0, 2000),
       input.ip && isIP(input.ip) ? input.ip : null,
       input.userAgent?.slice(0, 300) ?? null,
+      SIGNUP_PENDING_CAP,
     ],
   );
-  return rows.length > 0;
+  if (Number(row?.created) > 0) return "created";
+  return Number(row?.pending) >= SIGNUP_PENDING_CAP ? "full" : "exists";
+}
+
+/** How many requests wait for a decision (all of them, not only those /admin lists). */
+export async function pendingSignupCount(): Promise<number> {
+  const [row] = await query<{ n: string }>("SELECT count(*) AS n FROM auth.signup_requests WHERE status = 'pending'");
+  return Number(row?.n ?? 0);
 }
 
 /** Whether an account already signs in with this address. */
@@ -63,9 +93,12 @@ export interface SignupRequest {
 }
 
 export async function listSignupRequests(): Promise<SignupRequest[]> {
-  // The database deletes an approved request 30 days after the decision
-  // (auth.prune_signups, hourly); this only keeps the page from showing one
-  // in the hour before it goes. Declined ones were deleted when declined.
+  // The database deletes an approved request 30 days after the decision,
+  // and a pending one 30 days after it was made (auth.prune_signups,
+  // hourly); this only keeps the page from showing one in the hour before it
+  // goes. Declined ones were deleted when declined. Every pending request up
+  // to the cap is listed, so "Decline all shown" can clear a flood; then the
+  // 200 latest decisions.
   const rows = await query<{
     id: string;
     email: string;
@@ -77,11 +110,18 @@ export async function listSignupRequests(): Promise<SignupRequest[]> {
     ip: string | null;
     user_agent: string | null;
   }>(
-    `SELECT id::text, email, name, note, status, created_at, decided_at, host(ip) AS ip, user_agent
-       FROM auth.signup_requests
-      WHERE status = 'pending' OR decided_at > now() - interval '30 days'
-      ORDER BY status = 'pending' DESC, created_at DESC
-      LIMIT 200`,
+    `(SELECT id::text, email, name, note, status, created_at, decided_at, host(ip) AS ip, user_agent
+        FROM auth.signup_requests
+       WHERE status = 'pending' AND created_at > now() - interval '30 days'
+       ORDER BY created_at DESC
+       LIMIT $1)
+     UNION ALL
+     (SELECT id::text, email, name, note, status, created_at, decided_at, host(ip) AS ip, user_agent
+        FROM auth.signup_requests
+       WHERE status <> 'pending' AND decided_at > now() - interval '30 days'
+       ORDER BY decided_at DESC
+       LIMIT 200)`,
+    [SIGNUP_PENDING_CAP],
   );
   return rows.map((r) => ({
     id: r.id,
@@ -132,10 +172,19 @@ export async function approveSignup(session: Buffer, adminAccountId: string, req
   });
 }
 
-/** Declines a pending request by deleting it outright; true when one was. No email is sent. */
-export async function denySignup(requestId: string): Promise<boolean> {
-  const rows = await query("DELETE FROM auth.signup_requests WHERE id = $1::uuid AND status = 'pending' RETURNING 1", [requestId]);
-  return rows.length > 0;
+/** At most this many requests are declined in one go (auth.decline_signups refuses more). */
+export const DECLINE_MAX = 1000;
+
+/**
+ * Declines pending requests by deleting them outright; how many went. No
+ * email is sent. The database checks the administrator's session
+ * (auth.decline_signups, 018_web_accounts_hardening.sql) and leaves a
+ * decided request alone.
+ */
+export async function declineSignups(session: Buffer, requestIds: string[]): Promise<number> {
+  if (requestIds.length === 0) return 0;
+  const [row] = await query<{ n: number }>("SELECT auth.decline_signups($1, $2::uuid[]) AS n", [session, requestIds]);
+  return Number(row?.n ?? 0);
 }
 
 export interface AdminAccount {
@@ -234,6 +283,18 @@ export async function reinvite(adminAccountId: string, userId: string): Promise<
     );
     return { userId, email: row.email, name: row.name, inviteToken };
   });
+}
+
+/**
+ * Why /admin may not disable or enable this account, or null when it may:
+ * `own` for the administrator's own account, `admin` for any administrator's
+ * (they are managed from the server). The database refuses both too
+ * (auth.set_account_disabled); this is the clear answer before it does.
+ */
+export async function disableRefusal(adminAccountId: string, accountId: string): Promise<"own" | "admin" | null> {
+  if (accountId.toLowerCase() === adminAccountId.toLowerCase()) return "own";
+  const rows = await query<{ is_admin: boolean }>("SELECT is_admin FROM auth.accounts WHERE id = $1::uuid", [accountId]);
+  return rows[0]?.is_admin ? "admin" : null;
 }
 
 export async function setAccountDisabled(session: Buffer, accountId: string, disabled: boolean): Promise<void> {

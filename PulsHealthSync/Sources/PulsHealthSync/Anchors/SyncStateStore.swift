@@ -50,6 +50,18 @@ public struct TypeSyncState: Codable, Sendable, Equatable {
     /// decode as unlimited. Kept through a reset: it describes the grant,
     /// not progress.
     public var readableSince: Date?
+    /// Consecutive uploads of this type the server or the network refused in
+    /// a way a retry cannot change (`TransportError.startsCooldown`: a 4xx
+    /// other than 408/429, an unsupported protocol, a TLS or bad-URL
+    /// failure). Nil once one succeeds. Optional, like `cooldownUntil`, so
+    /// 1.6 state files decode.
+    public var terminalFailures: Int?
+    /// Until when the automatic paths leave this type alone after such a
+    /// refusal. The anchor has not moved, so every wake would otherwise
+    /// re-read, re-encode and re-send the same page only to be refused again.
+    /// Grows with `terminalFailures` (`cooldown(afterFailures:)`); a manual
+    /// sync ignores it, and an applied configuration change clears it.
+    public var cooldownUntil: Date?
 
     public init(identifier: String) {
         self.identifier = identifier
@@ -66,6 +78,40 @@ public struct TypeSyncState: Codable, Sendable, Equatable {
         self.lastObservedLatency = nil
         self.lastError = nil
         self.lastErrorAt = nil
+    }
+
+    // MARK: Cooldown after a terminal refusal
+
+    /// The first cooldown; each further refusal in a row doubles it.
+    public static let cooldownBase: TimeInterval = 15 * 60
+    /// Never longer than this, so a type a server-side fix has cured is
+    /// picked up again within hours even if nobody taps Sync Now.
+    public static let cooldownCap: TimeInterval = 6 * 60 * 60
+
+    /// 15 min, 30 min, 1 h, 2 h, 4 h, then 6 h for every refusal after.
+    public static func cooldown(afterFailures failures: Int) -> TimeInterval {
+        guard failures > 0 else { return 0 }
+        let doublings = Double(min(failures - 1, 16))
+        return min(cooldownCap, cooldownBase * pow(2, doublings))
+    }
+
+    /// Whether the automatic paths should skip this type at `now`.
+    public func isCoolingDown(at now: Date = Date()) -> Bool {
+        guard let cooldownUntil else { return false }
+        return cooldownUntil > now
+    }
+
+    /// Count one more terminal refusal and push the cooldown out.
+    mutating func recordTerminalFailure(at now: Date) {
+        let failures = (terminalFailures ?? 0) + 1
+        terminalFailures = failures
+        cooldownUntil = now.addingTimeInterval(Self.cooldown(afterFailures: failures))
+    }
+
+    /// An upload went through, or the configuration changed under it.
+    mutating func clearCooldown() {
+        terminalFailures = nil
+        cooldownUntil = nil
     }
 }
 
@@ -233,6 +279,13 @@ public actor SyncStateStore {
 
     private let fileURL: URL
     private let tokenStore: TokenStore
+    /// True when `sync-state.json` existed at init but could not be read (see
+    /// `init`). The store then holds an empty configuration and, for the rest
+    /// of the process, writes nothing: every persist is refused, so the file on
+    /// disk is never replaced by that empty state, and the token store is never
+    /// written or cleared, since the Keychain item belongs to that file's
+    /// configuration — an Apply of the empty one would otherwise delete it.
+    public let isReadOnly: Bool
     /// Set when the last hand-off to the token store failed, so the next
     /// configuration write retries instead of assuming the token is safe.
     private var tokenStoreDirty = false
@@ -315,7 +368,22 @@ public actor SyncStateStore {
         let logger = Logger(subsystem: PulsLog.subsystem, category: "state")
 
         var loaded: PersistedState?
-        if let data = try? Data(contentsOf: fileURL) {
+        var unreadable = false
+        switch ProtectedStateFile.read(fileURL) {
+        case .missing:
+            break
+        case .unreadable(let error):
+            // The file is there but cannot be read — protected data not yet
+            // available (a prewarm launch before first unlock), or the path
+            // is not a regular file. Starting fresh and persisting would
+            // overwrite the only copy of every anchor and watermark, so the
+            // store opens empty and read-only for this process: every
+            // persist is refused and logged. The app relaunches often
+            // enough that the next launch, with the file readable, loads
+            // it as usual.
+            unreadable = true
+            logger.error("Sync state file exists but is unreadable (\(error)); opening read-only, nothing will be persisted this launch")
+        case .data(let data):
             do {
                 loaded = try JSONDecoder.puls.decode(PersistedState.self, from: data)
             } catch {
@@ -331,6 +399,7 @@ public actor SyncStateStore {
                     "Sync state file undecodable (\(error)); moved aside as \(quarantine.lastPathComponent) and starting fresh")
             }
         }
+        self.isReadOnly = unreadable
         if var decoded = loaded {
             var rewrite = false
             if let legacyToken = decoded.configuration.authToken {
@@ -403,7 +472,8 @@ public actor SyncStateStore {
             self.deviceID = UUID().uuidString
             // A fresh file, but the Keychain may still hold a token from a
             // previous install of the same bundle — reuse it, exactly as the
-            // old file-based token would have survived a state reset.
+            // old file-based token would have survived a state reset. (Read
+            // only: a read-only store never writes it back or clears it.)
             self.configuration.authToken = (try? tokenStore.token()) ?? nil
         }
     }
@@ -423,6 +493,17 @@ public actor SyncStateStore {
     /// Replace the configuration. The token goes to the token store; the file
     /// gets everything else.
     ///
+    /// **A nil `authToken` keeps the stored token** as long as `config` names
+    /// the same database and user (`tokenCarriesOver`): a caller that rebuilds
+    /// a configuration without the token must not delete the credential and
+    /// stall every sync. Deleting it is `clearAuthToken()`, said on purpose.
+    /// A configuration for a different database or user (none included)
+    /// without a token still drops the old one: a token is only ever good for
+    /// the database that issued it, and must not ride along to another.
+    ///
+    /// Any change to the configuration lifts every type's cooldown
+    /// (`TypeSyncState.cooldownUntil`): the change may be the fix.
+    ///
     /// The server identity is recorded from `config` unless applying it would
     /// abandon progress earned against a different server or user
     /// (`serverIdentityChange(applying:)` non-nil) and the caller has not
@@ -431,10 +512,15 @@ public actor SyncStateStore {
     /// identity stays put, so a launch after an interrupted change still sees
     /// the mismatch and can ask again.
     public func setConfiguration(_ config: SyncConfiguration, confirmServerIdentity: Bool = false) {
+        var config = config
+        if config.authToken == nil, Self.tokenCarriesOver(from: configuration, to: config) {
+            config.authToken = configuration.authToken
+        }
         let change = serverIdentityChange(applying: config)
         if config.authToken != configuration.authToken || tokenStoreDirty {
             storeToken(config.authToken)
         }
+        if config != configuration { clearCooldowns() }
         configuration = config
         if change == nil || confirmServerIdentity, let applied = ServerIdentity(configuration: config) {
             serverIdentity = applied
@@ -442,7 +528,51 @@ public actor SyncStateStore {
         persist()
     }
 
+    /// Whether a configuration that carries no token keeps the stored one:
+    /// only when it names the same database URL and user ID.
+    nonisolated static func tokenCarriesOver(
+        from current: SyncConfiguration, to applied: SyncConfiguration
+    ) -> Bool {
+        applied.serverURL == current.serverURL && applied.userID == current.userID
+    }
+
+    /// Replace the bearer token, leaving the rest of the configuration as it
+    /// is. Same token-store hand-off (and the same parking in the state file
+    /// when the store refuses it) as `setConfiguration`.
+    public func setAuthToken(_ token: String) {
+        guard token != configuration.authToken || tokenStoreDirty else { return }
+        storeToken(token)
+        configuration.authToken = token
+        clearCooldowns()
+        persist()
+    }
+
+    /// Delete the bearer token from memory and from the token store — the
+    /// one way to do so now that `setConfiguration` keeps it on nil. For a
+    /// user who emptied the token field or disconnected the database.
+    public func clearAuthToken() {
+        // Unconditionally: an in-memory nil can also mean the token store
+        // could not be read at launch, and the user asked for the item gone.
+        storeToken(nil)
+        configuration.authToken = nil
+        persist()
+    }
+
+    /// Lift every type's cooldown.
+    private func clearCooldowns() {
+        for (identifier, state) in typeStates
+        where state.terminalFailures != nil || state.cooldownUntil != nil {
+            var cleared = state
+            cleared.clearCooldown()
+            typeStates[identifier] = cleared
+        }
+    }
+
     private func storeToken(_ token: String?) {
+        guard !isReadOnly else {
+            logger.error("Bearer token not handed to the token store: the store is read-only because its file could not be read at launch")
+            return
+        }
         do {
             try tokenStore.setToken(token)
             tokenStoreDirty = false
@@ -525,6 +655,7 @@ public actor SyncStateStore {
             s.lastSyncAt = Date()
             s.lastSyncDuration = duration
             s.lastError = nil
+            s.clearCooldown()
             // Overwritten on every batch, so a server that stopped reporting
             // does not leave a stale count behind.
             s.lastBatchAccepted = receipt?.accepted
@@ -546,11 +677,17 @@ public actor SyncStateStore {
             secrets: [configuration.authToken].compactMap { $0 })
     }
 
-    public func recordError(identifier: String, error: Error) {
+    /// Record a failed run. An upload refused in a way no retry can change
+    /// (`TransportError.startsCooldown`) also starts or lengthens the type's
+    /// cooldown; anything else — HealthKit, a network outage, a 5xx — does
+    /// not, and the next wake tries again as before.
+    public func recordError(identifier: String, error: Error, at now: Date = Date()) {
         let text = errorText(error)
+        let terminal = (error as? TransportError)?.startsCooldown == true
         update(identifier) { s in
             s.lastError = text
-            s.lastErrorAt = Date()
+            s.lastErrorAt = now
+            if terminal { s.recordTerminalFailure(at: now) }
         }
     }
 
@@ -575,6 +712,7 @@ public actor SyncStateStore {
             s.lastSyncAt = Date()
             s.lastSyncDuration = duration
             s.lastError = nil
+            s.clearCooldown()
             if let range = sampleDateRange {
                 s.earliestExported = s.earliestExported.map { min($0, range.lowerBound) } ?? range.lowerBound
                 s.latestExported = s.latestExported.map { max($0, range.upperBound) } ?? range.upperBound
@@ -620,6 +758,35 @@ public actor SyncStateStore {
             // In the same write as the reset: a crash that loses one loses
             // both, and the next refresh sees the widening again.
             s.readableSince = readableSince
+        }
+    }
+
+    /// A stored anchor that will not decode — a restored or downgraded state
+    /// file, a blob written by another OS — would fail the type on every run
+    /// until someone found Reset. Start that stream over instead. Its bytes
+    /// are never looked at: an `HKQueryAnchor` is opaque.
+    ///
+    /// For the main anchor this is the same restart as a widened grant
+    /// (`restartBackfillForWidenedAccess`) with the grant left as it is: both
+    /// anchors and the recent-window stream go and the backfill reopens.
+    /// Re-sending what the server already has is a no-op there (`ON CONFLICT
+    /// DO NOTHING` on UUID). For the recent-window stream only its own anchor
+    /// goes; the next recent pass re-reads its window.
+    ///
+    /// The caller must hold the type's claim, for the reason
+    /// `HealthSyncEngine.resetType` gives.
+    public func restartForUnreadableAnchor(_ identifier: String, recentStreamOnly: Bool) {
+        update(identifier) { s in
+            if recentStreamOnly {
+                s.recentAnchorData = nil
+                return
+            }
+            s.anchorData = nil
+            s.recentAnchorData = nil
+            s.recentWindowStart = nil
+            s.backfillComplete = false
+            s.totalSamplesExported = 0
+            s.lastSyncAt = nil
         }
     }
 
@@ -959,7 +1126,9 @@ public actor SyncStateStore {
     /// coalescing keeps disk I/O off the critical path while staying crash-safe
     /// (worst case we re-upload one already-uploaded page, which the server dedupes by UUID).
     private func persist() {
-        guard saveTask == nil else { return }
+        // persistNow() refuses and logs; no need to arm a timer for that on
+        // every state change.
+        guard !isReadOnly, saveTask == nil else { return }
         saveTask = Task {
             try? await Task.sleep(for: .milliseconds(250))
             saveTask = nil
@@ -968,6 +1137,10 @@ public actor SyncStateStore {
     }
 
     public func persistNow() {
+        guard !isReadOnly else {
+            logger.error("Sync state not persisted: the store is read-only because its file could not be read at launch")
+            return
+        }
         let snapshot = PersistedState(
             configuration: configuration, typeStates: typeStates, deviceID: deviceID,
             aggregateStates: aggregateStates, activitySummaryState: activitySummaryState,

@@ -238,7 +238,7 @@ func TestHTTP_TokenGatesMCPButNotHealthz(t *testing.T) {
 	f.respond("/v1/catalog/types", http.StatusOK, fixtureCatalog)
 	s := f.service(t, "UTC")
 	server := s.newServer("test")
-	ts := httptest.NewServer(s.httpHandler(server, "mcp-secret", slog.New(slog.NewTextHandler(io.Discard, nil))))
+	ts := httptest.NewServer(s.httpHandler(server, "mcp-secret", false, slog.New(slog.NewTextHandler(io.Discard, nil))))
 	defer ts.Close()
 
 	resp, err := http.Get(ts.URL + "/healthz")
@@ -298,7 +298,7 @@ func TestHTTP_HealthzReportsAPIDown(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := newService(api, nil)
-	ts := httptest.NewServer(s.httpHandler(s.newServer("test"), "x", slog.New(slog.NewTextHandler(io.Discard, nil))))
+	ts := httptest.NewServer(s.httpHandler(s.newServer("test"), "x", false, slog.New(slog.NewTextHandler(io.Discard, nil))))
 	defer ts.Close()
 	resp, err := http.Get(ts.URL + "/healthz")
 	if err != nil {
@@ -324,7 +324,7 @@ func TestLoadConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.apiURL != defaultAPIURL || cfg.loc.String() != "UTC" {
+	if cfg.apiURL != defaultAPIURL || cfg.loc != nil || cfg.trustProxyHeaders {
 		t.Errorf("defaults = %+v", cfg)
 	}
 	cfg, err = loadConfig(env(map[string]string{"PULS_API_TOKEN": "t", "PULS_API_URL": " http://api:8081/ ", "PULS_TIME_ZONE": "Europe/Berlin", "PULS_MCP_TOKEN": "m"}))
@@ -348,5 +348,24 @@ func TestLoadConfig(t *testing.T) {
 		if _, err := loadConfig(env(map[string]string{"PULS_API_TOKEN": "t", "PULS_USER_ID": bad})); err == nil || !strings.Contains(err.Error(), "PULS_USER_ID") {
 			t.Errorf("PULS_USER_ID=%q: err = %v, want a PULS_USER_ID error", bad, err)
 		}
+	}
+}
+
+// A by-hand install from .env.example must not serve /mcp behind a token
+// anyone can guess (run refuses it in --http mode).
+func TestRefusePlaceholder(t *testing.T) {
+	for _, value := range []string{"change-me", " CHANGE-ME "} {
+		err := refusePlaceholder("PULS_MCP_TOKEN", value)
+		if err == nil {
+			t.Fatalf("refusePlaceholder(%q) = nil, want an error", value)
+		}
+		for _, want := range []string{"PULS_MCP_TOKEN", "scripts/bootstrap.sh", "openssl rand -hex 32"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("error %q does not mention %q", err, want)
+			}
+		}
+	}
+	if err := refusePlaceholder("PULS_MCP_TOKEN", "0123456789abcdef"); err != nil {
+		t.Errorf("a real token was refused: %v", err)
 	}
 }

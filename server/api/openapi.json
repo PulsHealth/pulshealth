@@ -185,7 +185,7 @@
           "Users"
         ],
         "summary": "List users",
-        "description": "Every user with the gate on (`PULS_MULTI_USER=true`); only the default user with it off. `default` is the user served when a request names none (`PULS_USER_ID`); `multiUser` says whether ?user= may name anyone else.",
+        "description": "Every user with the gate on (`PULS_MULTI_USER=true`); only the default user with it off. `default` is the user served when a request names none (`PULS_USER_ID`); `multiUser` says whether ?user= may name anyone else. `timeZone` is the zone every local day in this API's answers is cut in.",
         "responses": {
           "200": {
             "description": "Users.",
@@ -211,6 +211,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -256,6 +259,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -267,7 +273,7 @@
           "Catalog"
         ],
         "summary": "List data types",
-        "description": "Every type with at least one row for this user, raw or aggregate, with its kind, canonical unit, row counts and time span. Counting rows is expensive, so the answer is cached per user for five minutes.",
+        "description": "Every type with at least one row for this user, raw or aggregate, with its kind, canonical unit, row counts and time span. Counting rows is expensive, so the answer is cached per user for five minutes. After that the cached answer is still served, for up to an hour, while one background refresh replaces it, so new uploads can take a little longer than five minutes to appear; only a user's first request waits for the count.",
         "parameters": [
           {
             "$ref": "#/components/parameters/User"
@@ -306,6 +312,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -329,7 +338,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Comma-separated HealthKit quantity identifiers."
+            "description": "Comma-separated HealthKit quantity identifiers, at most 50."
           }
         ],
         "responses": {
@@ -365,6 +374,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -388,7 +400,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Comma-separated HealthKit identifiers; the response keeps this order."
+            "description": "Comma-separated HealthKit identifiers, at most 50; the response keeps this order."
           },
           {
             "$ref": "#/components/parameters/Start"
@@ -458,6 +470,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -514,6 +529,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -621,6 +639,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -676,6 +697,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -702,7 +726,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Comma-separated HealthKit identifiers; omit for every recorded stream."
+            "description": "Comma-separated HealthKit identifiers, at most 50; omit for every recorded stream."
           },
           {
             "name": "maxPoints",
@@ -751,6 +775,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -814,6 +841,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -892,6 +922,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -955,6 +988,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -1039,6 +1075,9 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
+          },
+          "504": {
+            "$ref": "#/components/responses/GatewayTimeout"
           }
         }
       }
@@ -1050,7 +1089,7 @@
           "Export"
         ],
         "summary": "Export a dataset",
-        "description": "Streams a whole range as a file (`Transfer-Encoding: chunked`, `Content-Disposition: attachment`) instead of a JSON document. CSV opens the file with a header row; JSONL writes one JSON object per line whose keys are the same column names. Field names match the JSON endpoints; where an endpoint nests (a metric's days, a night's stages) the export flattens, repeating the identifying fields on every row and naming a nested field by its path. Ranges are capped at 31 days for samples (as `/v1/samples` is) and 366 days for every other dataset — the same cap `/v1/sleep/daily` and `/v1/state-of-mind` apply, and deliberately stricter than `/v1/metrics/daily` and `/v1/workouts`, which are bounded by a page size rather than by their range, and `/v1/activity/summary`, which is one small row per day. The `daily_metrics` and workouts datasets return the whole range (workouts newest first); `limit` and `offset` are not used here. At most 2 exports run at once, because each holds a database connection for the length of the download; over that is a 503 with `Retry-After`.",
+        "description": "Streams a whole range as a file (`Transfer-Encoding: chunked`, `Content-Disposition: attachment`) instead of a JSON document. CSV opens the file with a header row; JSONL writes one JSON object per line whose keys are the same column names. Field names match the JSON endpoints; where an endpoint nests (a metric's days, a night's stages) the export flattens, repeating the identifying fields on every row and naming a nested field by its path. Ranges are capped at 31 days for samples (as `/v1/samples` is) and 366 days for every other dataset — the same cap `/v1/sleep/daily` and `/v1/state-of-mind` apply, and deliberately stricter than `/v1/metrics/daily` and `/v1/workouts`, which are bounded by a page size rather than by their range, and `/v1/activity/summary`, which is one small row per day. The `daily_metrics` and workouts datasets return the whole range (workouts newest first); `limit` and `offset` are not used here. At most 2 exports run at once, because each holds a database connection for the length of the download; over that is a 503 with `Retry-After`. An export ends after 30 minutes, and one whose client stops reading for a minute is dropped; either way the connection is aborted, so the file is a visibly failed download rather than a short one. The 30-second query limit of the other routes does not apply.",
         "parameters": [
           {
             "$ref": "#/components/parameters/User"
@@ -1098,7 +1137,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "`daily_metrics` only, and required there: comma-separated HealthKit identifiers."
+            "description": "`daily_metrics` only, and required there: comma-separated HealthKit identifiers, at most 50."
           },
           {
             "name": "type",
@@ -1314,7 +1353,17 @@
         }
       },
       "InternalError": {
-        "description": "The query failed or took longer than 30 seconds. Details are in the server log, never in the response.",
+        "description": "The query failed. Details are in the server log, never in the response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "GatewayTimeout": {
+        "description": "The query ran past its 30-second limit and was cancelled (`{\"error\": \"query took too long; narrow the range\"}`). Narrow the range or page smaller.",
         "content": {
           "application/json": {
             "schema": {
@@ -2545,6 +2594,13 @@
             "description": "Whether `user=` may name anyone else (`PULS_MULTI_USER`).",
             "examples": [
               false
+            ]
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "The IANA zone (`PULS_TIME_ZONE`) every local calendar day this API answers with is cut in; `UTC` when unset. The API refuses to start when it disagrees with the database's zone.",
+            "examples": [
+              "Europe/Berlin"
             ]
           }
         }

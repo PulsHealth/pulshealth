@@ -272,3 +272,37 @@ func TestExportIsExemptFromTheHandlerDeadline(t *testing.T) {
 		t.Fatal("/v1/export is no longer a route; the exemption in routes() needs revisiting")
 	}
 }
+
+// A trusted proxy appends its observation to X-Forwarded-For; the client
+// controls every entry before it. Keying on the first entry would hand an
+// attacker a fresh bucket per request.
+func TestClientIPTakesTheLastForwardedEntry(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name       string
+		remoteAddr string
+		forwarded  string
+		trust      bool
+		want       string
+	}{
+		{"remote addr by default", "203.0.113.5:41234", "", false, "203.0.113.5"},
+		{"forwarded ignored by default", "203.0.113.5:41234", "198.51.100.1", false, "203.0.113.5"},
+		{"forwarded honoured when trusted", "172.17.0.2:41234", "198.51.100.1", true, "198.51.100.1"},
+		{"client-written first entry is ignored", "172.17.0.2:41234", "evil, real", true, "real"},
+		{"trailing blank entry is skipped", "172.17.0.2:41234", "198.51.100.1, ", true, "198.51.100.1"},
+		{"empty forwarded falls back", "172.17.0.2:41234", "", true, "172.17.0.2"},
+		{"blank forwarded entries fall back", "172.17.0.2:41234", " , ", true, "172.17.0.2"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/v1/profile", nil)
+			req.RemoteAddr = tc.remoteAddr
+			if tc.forwarded != "" {
+				req.Header.Set("X-Forwarded-For", tc.forwarded)
+			}
+			if got := clientIP(req, tc.trust); got != tc.want {
+				t.Fatalf("clientIP = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

@@ -7,6 +7,10 @@ import Testing
 @Suite struct ServerFieldsDraftTests {
     private let user = "5ea4d000-0000-4000-8000-000000000001"
 
+    /// The registrable domain the sign-in tests trust; `pairing()`'s default
+    /// database is under it.
+    private let domain = "example.test"
+
     private func pairing(_ url: String = "https://puls.example.test:8443") -> PairingPayload {
         PairingPayload(serverURL: URL(string: url)!, token: "s3cr3t", userID: user)
     }
@@ -135,7 +139,7 @@ import Testing
     @Test func aSignInPairingIsRecordedOnCommit() {
         var config = SyncConfiguration()
         var draft = ServerFieldsDraft()
-        draft.fill(fromSignIn: pairing())
+        draft.fill(fromSignIn: pairing(), domain: domain)
         #expect(draft.isSignedIn)
         #expect(draft.pairedUserID == user)
         #expect(draft.tokenText == "s3cr3t")
@@ -159,7 +163,7 @@ import Testing
         func signedInConfiguration() -> SyncConfiguration {
             var config = SyncConfiguration()
             var draft = ServerFieldsDraft()
-            draft.fill(fromSignIn: pairing())
+            draft.fill(fromSignIn: pairing(), domain: domain)
             draft.commit(to: &config)
             return config
         }
@@ -193,7 +197,7 @@ import Testing
     @Test func theMarkerOnlyCountsForItsOwnURL() {
         var config = SyncConfiguration()
         var draft = ServerFieldsDraft()
-        draft.fill(fromSignIn: pairing())
+        draft.fill(fromSignIn: pairing(), domain: domain)
         draft.commit(to: &config)
 
         var moved = config
@@ -210,5 +214,54 @@ import Testing
 
         #expect(!SyncConfiguration(signedInDatabaseURL: URL(string: "https://puls.example.test")).isSignedInDatabase,
                 "no database configured at all")
+    }
+
+    /// The sign-in sheet is a browser, and any page it reached could have
+    /// sent a `puls://pair` link: a code for a database outside the viewer's
+    /// domain fills the fields like any pairing code, but is never recorded
+    /// as the signed-in database.
+    @Test func aSignInCodeForAnotherDomainIsAnOrdinaryPairing() {
+        var draft = ServerFieldsDraft()
+        let recorded = draft.fill(fromSignIn: pairing("https://ingest.attacker.example:8443"), domain: domain)
+        #expect(!recorded)
+        #expect(!draft.isSignedIn)
+        #expect(draft.urlText == "https://ingest.attacker.example:8443")
+        #expect(draft.tokenText == "s3cr3t")
+        #expect(draft.pairedUserID == user)
+
+        var config = SyncConfiguration()
+        draft.commit(to: &config)
+        #expect(config.serverURL == URL(string: "https://ingest.attacker.example:8443"))
+        #expect(config.userID == user)
+        #expect(config.signedInDatabaseURL == nil)
+        #expect(!config.isSignedInDatabase)
+
+        var trusted = ServerFieldsDraft()
+        let trustedRecorded = trusted.fill(fromSignIn: pairing(), domain: domain)
+        #expect(trustedRecorded)
+        #expect(trusted.isSignedIn)
+    }
+
+    @Test func registrableDomainMatching() {
+        func within(_ url: String, _ domain: String = "pulshealth.com") -> Bool {
+            ServerFieldsDraft.host(of: URL(string: url)!, isWithin: domain)
+        }
+        #expect(within("https://pulshealth.com"))
+        #expect(within("https://app.pulshealth.com"))
+        #expect(within("https://ingest.db.pulshealth.com:8443/base"))
+        #expect(within("https://INGEST.PulsHealth.COM"))
+        #expect(within("https://ingest.pulshealth.com", "PulsHealth.com"))
+
+        #expect(!within("https://evilpulshealth.com"))
+        #expect(!within("https://pulshealth.com.attacker.example"))
+        #expect(!within("https://pulshealth.co"))
+        #expect(!within("https://pulshealth.com."))
+        #expect(!within("https://app.pulshealth.com."))
+        #expect(!within("https://attacker.example/pulshealth.com"))
+        #expect(!within("https://attacker.example?h=.pulshealth.com"))
+        #expect(!within("https://192.168.1.20"))
+        #expect(!within("https://pulshealth.com", ""))
+        #expect(!within("https://pulshealth.com", ".pulshealth.com"))
+        #expect(!within("https://pulshealth.com", "pulshealth.com."))
     }
 }

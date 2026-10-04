@@ -35,7 +35,7 @@ struct DatabaseSetup: Equatable {
     /// Your own database's fields never start with the PulsHealth database's
     /// URL and token in them.
     init(applied: SyncConfiguration, scanOnArrival: Bool = false) {
-        if applied.isSignedInDatabase {
+        if PulsHealthDatabase.isSignedIn(applied) {
             destination = .pulsHealth
             own = ServerFieldsDraft()
         } else {
@@ -60,19 +60,35 @@ struct DatabaseSetup: Equatable {
         own.fill(from: payload)
     }
 
-    /// The pairing code the PulsHealth sign-in sheet handed back.
-    mutating func receiveSignIn(_ payload: PairingPayload) {
+    /// The pairing code the PulsHealth sign-in sheet handed back. Returns
+    /// false when its database is not under the viewer's domain
+    /// (`PulsHealthDatabase.domain`): any page the sheet reached could have
+    /// sent a `puls://pair` link, so such a code is taken as an ordinary
+    /// pairing code for your own database instead — filled in and shown with
+    /// its host, never called the PulsHealth database.
+    @discardableResult
+    mutating func receiveSignIn(_ payload: PairingPayload) -> Bool {
         var draft = ServerFieldsDraft()
-        draft.fill(fromSignIn: payload)
+        guard draft.fill(fromSignIn: payload, domain: PulsHealthDatabase.domain) else {
+            receivePairing(payload)
+            return false
+        }
         signedIn = draft
         destination = .pulsHealth
+        return true
     }
 
     /// The database a sign-in's code points at, `host[:port][/path]`, shown
-    /// with it: any page the sheet reached could have sent a `puls://pair`
-    /// link, so the person sees where it leads before applying it.
+    /// with it: the person sees where it leads before applying it.
     var signedInDatabaseLabel: String? {
-        signedIn?.validatedURL.flatMap { ServerIdentity(url: $0, userID: "")?.serverLabel }
+        Self.databaseLabel(signedIn?.validatedURL)
+    }
+
+    /// `host[:port][/path]` for a database URL, the way the screen names a
+    /// database — the PulsHealth one included, so its label always says
+    /// where the data goes.
+    static func databaseLabel(_ url: URL?) -> String? {
+        url.flatMap { ServerIdentity(url: $0, userID: "")?.serverLabel }
     }
 
     /// The fields the current choice would test and commit.
@@ -111,7 +127,7 @@ struct DatabaseSetup: Equatable {
     /// the server-change prompt it raised was confirmed. Until then the
     /// screen keeps asking for Save & Apply — and stops as soon as it is done.
     mutating func settle(applied: SyncConfiguration) {
-        guard let signedIn, applied.isSignedInDatabase,
+        guard let signedIn, PulsHealthDatabase.isSignedIn(applied),
               applied.serverURL == signedIn.validatedURL,
               applied.authToken == signedIn.token
         else { return }

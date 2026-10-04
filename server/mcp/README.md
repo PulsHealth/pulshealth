@@ -15,7 +15,7 @@ prompts) see [`docs/ai.md`](../../docs/ai.md).
 
 | Tool | Answers |
 |---|---|
-| `list_users` | Everyone with data on the server, which one is the API's default, whether `multi_user` reads are on, and which user this instance is pinned to (if any). |
+| `list_users` | Everyone with data on the server, which one is the API's default, whether `multi_user` reads are on, and which user this instance is pinned to (if any; a pinned instance lists only that user). |
 | `get_summary(range?)` | `GET /v1/summary` as markdown text: the last 7d (default), 14d, 30d or 90d in under sixty lines — activity, heart, sleep, workouts, body, coverage. The cheapest first call for a broad question. |
 | `list_available_types` | Every HealthKit type with data: unit, row counts, earliest/latest, plus today's date and the time zone. The natural first call for anything specific. |
 | `get_profile` | Name, email, date of birth, age, biological sex. |
@@ -56,7 +56,7 @@ Two modes, one binary:
 
 ```bash
 # stdio (default): for Claude Desktop, Claude Code, Cursor, ...
-PULS_API_URL=https://<api-host>:8444 PULS_API_TOKEN=... PULS_TIME_ZONE=Europe/Berlin ./pulshealth-mcp
+PULS_API_URL=https://<api-host>:8444 PULS_API_TOKEN=... ./pulshealth-mcp
 
 # streamable HTTP at /mcp, for remote connectors; refuses to start without PULS_MCP_TOKEN
 PULS_API_URL=http://127.0.0.1:8081 PULS_API_TOKEN=... PULS_MCP_TOKEN=... ./pulshealth-mcp --http 127.0.0.1:8082
@@ -77,17 +77,25 @@ mode, pointed at `http://api:8081` over the internal network.
 |---|---|
 | `PULS_API_URL` | Base URL of the product API. Default `http://127.0.0.1:8081`; Compose sets `http://api:8081`. |
 | `PULS_API_TOKEN` | The product API's bearer token (`PULS_API_TOKEN` in `server/.env`). Required. |
-| `PULS_MCP_TOKEN` | The bearer token MCP clients must present to `/mcp` in `--http` mode. Required in that mode; ignored in stdio mode. |
-| `PULS_TIME_ZONE` | IANA zone every date is expressed in. Must equal the stack's `PULS_TIME_ZONE` — the product API does not report its zone, so this is how the two agree. Default `UTC`. |
+| `PULS_MCP_TOKEN` | The bearer token MCP clients must present to `/mcp` in `--http` mode. Required in that mode, and refused if still `.env.example`'s `change-me`; ignored in stdio mode. |
+| `PULS_TIME_ZONE` | Optional. IANA zone every date is expressed in. Leave it unset: the server then uses the zone the product API reports on `GET /v1/users` (the stack's `PULS_TIME_ZONE`, which the API checks against the database at startup), learned before the first tool call. Set, it wins, and a value that differs from the API's is logged as a warning — dates would then be cut on different days than the API's daily answers. Against an API too old to report its zone, unset means UTC. |
+| `TRUST_PROXY_HEADERS` | `--http` mode: whether the auth-failure limiter keys on the **last** `X-Forwarded-For` entry (the one a trusted proxy appended) instead of the TCP peer. Same switch, default (`false`) and spelling rule as ingest's and the API's: `true/false`, `1/0`, `yes/no`, `on/off`, any case; anything else stops startup. |
 | `PULS_USER_ID` | Optional. Pins this instance to one person: every API request names that user, and a tool call naming anyone else is refused without asking the API. Empty (the default) leaves the choice to each call, falling back to the API's own default user. Compose sets it from `PULS_MCP_USER_ID`. |
 
 ### HTTP endpoints (`--http`)
 
 - `POST/GET/DELETE /mcp` — the streamable HTTP transport, behind
   `Authorization: Bearer $PULS_MCP_TOKEN`. Sessions idle for 30 minutes are
-  dropped.
+  dropped. Failed authentications are throttled per client address exactly
+  as on ingest and the API (`server/README.md`, "Rate limiting"): ten in a
+  burst, then about one a minute, answered `429` with `Retry-After` *before*
+  the token is compared; a correct token is never throttled, and every
+  failure is logged (without the token).
 - `GET /healthz` — unauthenticated; `{"ok":true,"api":true}` when the
   product API's own `/healthz` (which pings its database) answers, else 503.
+  The image is distroless, so Compose's healthcheck runs the binary itself:
+  `mcp healthcheck [addr]` GETs `/healthz` on loopback (default `:8082`) and
+  exits 0 on a 200, 1 otherwise.
 
 The SDK's DNS-rebinding guard (reject a loopback listener seeing a
 non-loopback `Host`) is switched off on purpose: a TLS reverse proxy on the

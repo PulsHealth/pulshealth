@@ -97,11 +97,7 @@ struct TypePickerView: View {
     }
 
     private var searchResultsSection: some View {
-        let matches = HealthTypeCatalog.all.filter {
-            $0.displayName.localizedCaseInsensitiveContains(searchText)
-                || $0.group.rawValue.localizedCaseInsensitiveContains(searchText)
-                || $0.identifier.localizedCaseInsensitiveContains(searchText)
-        }
+        let matches = HealthTypeCatalog.all.filter { $0.matchesSearch(searchText) }
         let routeMatches = "Workout Routes".localizedCaseInsensitiveContains(searchText)
         let enhancedMatches = "Enhanced Workout Data".localizedCaseInsensitiveContains(searchText)
         return Section {

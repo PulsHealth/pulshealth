@@ -299,3 +299,33 @@ func TestPrincipalRoundTripsThroughContext(t *testing.T) {
 		t.Fatal("empty context yielded a principal")
 	}
 }
+
+// Identity comes only from the auth middleware. A handler reached without
+// it (a route someone forgot to wrap) must not fall back to X-User-ID —
+// that would be unauthenticated tenant selection — and serves nothing.
+func TestHandlersWithoutAuthNeverTrustXUserID(t *testing.T) {
+	fs := &fakeStore{}
+	srv := newTestServer(fs)
+	for name, handler := range map[string]http.HandlerFunc{
+		"stats":  srv.handleStats,
+		"routes": srv.handleRoutes,
+		"batch":  srv.handleBatch,
+	} {
+		method := http.MethodGet
+		var body io.Reader
+		if name == "batch" {
+			method = http.MethodPost
+			body = strings.NewReader(ndjson(t, 1, 0, hrSample))
+		}
+		req := httptest.NewRequest(method, "/v1/"+name, body)
+		req.Header.Set("X-User-ID", otherUser)
+		rec := httptest.NewRecorder()
+		handler(rec, req)
+		if rec.Code != http.StatusInternalServerError {
+			t.Errorf("%s without auth: status = %d, want 500", name, rec.Code)
+		}
+		if fs.gotUserID != "" || fs.gotBatch != nil {
+			t.Fatalf("%s without auth reached the store as %q", name, fs.gotUserID)
+		}
+	}
+}

@@ -25,7 +25,7 @@
       "minLength": 1
     },
     "type": {
-      "description": "A label for the batch: the type identifier that contributed the most samples, or any non-empty string for a probe. Receivers must not derive sample types from it.",
+      "description": "A label for the batch: the type identifier that contributed the most samples, or the string probe for the header-only connection probe. Any non-empty string is valid; receivers must not derive sample types from it.",
       "$ref": "common.schema.json#/$defs/typeIdentifier"
     },
     "reason": {

@@ -1,8 +1,25 @@
 // Thin Postgres access. Server-only — never import from a client component.
 import { Pool, type PoolClient, type QueryConfig } from "pg";
+import { isUuid } from "./uuid";
 
 let pool: Pool | null = null;
 let initialized = false;
+
+const DEFAULT_POOL_SIZE = 4;
+const MAX_POOL_SIZE = 50;
+
+/**
+ * Connections this process may hold at once, from WEB_DB_POOL_SIZE (default
+ * 4, clamped to 1–50; anything unparseable is the default). A type page runs
+ * several `scoped` transactions in parallel, so a viewer with a few people on
+ * it at once wants more than the default — and the database's own
+ * max_connections (and the ingest and API pools) bound how many.
+ */
+export function poolSize(value: string | undefined = process.env.WEB_DB_POOL_SIZE): number {
+  const n = Number.parseInt((value ?? "").trim(), 10);
+  if (!Number.isFinite(n)) return DEFAULT_POOL_SIZE;
+  return Math.min(MAX_POOL_SIZE, Math.max(1, n));
+}
 
 export function getPool(): Pool | null {
   if (!process.env.DATABASE_URL) return null;
@@ -10,7 +27,7 @@ export function getPool(): Pool | null {
     initialized = true;
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      max: 4,
+      max: poolSize(),
       connectionTimeoutMillis: 4000,
       idleTimeoutMillis: 10_000,
       // Don't let a heavy ad-hoc query wedge a request.
@@ -38,11 +55,6 @@ export const query: QueryFn = async <T = Record<string, unknown>>(text: string, 
   return res.rows as T[];
 };
 
-// Any canonical UUID. Deliberately looser than config's v1–v5 check: this
-// only has to keep the value a valid uuid for the setting's cast, and ids
-// arrive from phones the viewer did not mint.
-const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /**
  * Runs `fn` in one read-only transaction on one connection, with
  * `puls.user_id` set to `userId` for that transaction only.
@@ -59,18 +71,12 @@ const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  * exhaust the pool and wait on each other until the connection timeout.
  */
 export async function scoped<T>(userId: string, fn: (q: QueryFn) => Promise<T>): Promise<T> {
-  if (!UUID_SHAPE.test(userId)) throw new Error("scoped(): the user id must be a UUID");
+  if (!isUuid(userId)) throw new Error("scoped(): the user id must be a UUID");
   // `true`: local to this transaction. COMMIT or ROLLBACK clears it, so a
   // pooled connection never carries one request's user into the next.
   return inTransaction("BEGIN READ ONLY", [["SELECT set_config('puls.user_id', $1, true)", [userId]]], fn);
 }
 
-/**
- * Runs `fn` in one read-write transaction with no user scope. For the
- * viewer's own account store (schema auth) only — health data is read
- * through `scoped`, and web_app cannot write it at all. The same rule about
- * issuing statements through `q` only applies.
- */
 /**
  * One statement that may take minutes (purging a user, which unpacks shared
  * compressed batches), in its own transaction with the server's and the
@@ -86,6 +92,12 @@ export async function longStatement<T = Record<string, unknown>>(text: string, p
   });
 }
 
+/**
+ * Runs `fn` in one read-write transaction with no user scope. For the
+ * viewer's own account store (schema auth) only — health data is read
+ * through `scoped`, and web_app cannot write it at all. The same rule about
+ * issuing statements through `q` only applies.
+ */
 export async function transaction<T>(fn: (q: QueryFn) => Promise<T>): Promise<T> {
   return inTransaction("BEGIN", [], fn);
 }

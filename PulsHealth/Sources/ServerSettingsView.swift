@@ -25,6 +25,9 @@ struct ServerSettingsView: View {
     @State private var sheetOpenOn: URL?
     /// Why the last sheet did not produce a pairing code.
     @State private var signInProblem: String?
+    /// The host of a code the sign-in sheet handed back for a database outside
+    /// the viewer's domain, now filled in under your own database instead.
+    @State private var signInElsewhere: String?
     @State private var confirmDisconnect = false
     @State private var loaded = false
     @State private var testingConnection = false
@@ -182,6 +185,11 @@ struct ServerSettingsView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                 }
+                // Always with its address: the label says whose database it
+                // is, and the host says where the data actually goes.
+                if let label = DatabaseSetup.databaseLabel(model.appliedConfig.serverURL) {
+                    LabeledContent("Database", value: label)
+                }
                 Link(destination: PulsHealthDatabase.accountURL) {
                     Label("Manage Account", systemImage: "person.crop.circle")
                 }
@@ -252,6 +260,16 @@ struct ServerSettingsView: View {
     // MARK: - Your own database
 
     @ViewBuilder private var ownDatabaseSections: some View {
+        if let signInElsewhere {
+            Section {
+                Label {
+                    Text("The page you signed in to sent a pairing code for \(signInElsewhere), which is not the PulsHealth database. It is filled in below as your own database. Tap Save & Apply only if you trust that database.")
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
+        }
         Section {
             Button {
                 showScanner = true
@@ -362,6 +380,7 @@ struct ServerSettingsView: View {
     /// the target moved.
     private func applyPairing(_ payload: PairingPayload) {
         choose(.own)
+        signInElsewhere = nil
         setup.receivePairing(payload)
         // The code was printed by the server it describes; find out now
         // whether the phone can reach it rather than after Save & Apply.
@@ -393,6 +412,7 @@ struct ServerSettingsView: View {
         guard sheetOpenOn == nil else { return }
         sheetOpenOn = page
         signInProblem = nil
+        signInElsewhere = nil
         Task {
             let outcome: PulsHealthDatabase.SignInOutcome
             do {
@@ -406,11 +426,18 @@ struct ServerSettingsView: View {
             }
             sheetOpenOn = nil
             switch outcome {
-            case .paired(let payload):
+            case .paired(let payload) where PulsHealthDatabase.isUnderDomain(payload.serverURL):
                 choose(.pulsHealth)
                 setup.receiveSignIn(payload)
                 model.noteSignInPairing(payload)
                 runConnectionTest()
+            case .paired(let payload):
+                // Not under the viewer's domain: an ordinary pairing code for
+                // your own database (`DatabaseSetup.receiveSignIn`), filled in
+                // and tested, with a warning naming where it leads.
+                applyPairing(payload)
+                signInElsewhere = DatabaseSetup.databaseLabel(payload.serverURL)
+                    ?? payload.serverURL.absoluteString
             case .cancelled:
                 break
             case .failed(let message):
@@ -452,6 +479,10 @@ struct ServerSettingsView: View {
         // are still here to adjust if the user cancels it (and if they
         // confirm it, `settle(applied:)` notices).
         if await model.applyConfiguration() {
+            // An emptied token field means delete the token. The engine keeps
+            // the stored one when a configuration for the same database
+            // carries none, so the deletion is asked for here, explicitly.
+            if model.config.authToken == nil { await model.engine.clearAuthToken() }
             setup.settle(applied: model.appliedConfig)
             dismiss()
         }
@@ -464,6 +495,8 @@ struct ServerSettingsView: View {
     private func disconnect() async {
         ServerFieldsDraft().commit(to: &model.config)
         if await model.applyConfiguration() {
+            // Explicit: a configuration without a token no longer deletes it.
+            await model.engine.clearAuthToken()
             dismiss()
         }
     }

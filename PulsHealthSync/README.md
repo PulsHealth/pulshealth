@@ -250,10 +250,27 @@ stall every sync until the user retyped it. A state file from a build that kept
 the token inline is migrated the same way. Pass an `InMemoryTokenStore` to
 `SyncStateStore(directory:tokenStore:)` for tests and throwaway engines.
 
+A configuration applied with a nil `authToken` **keeps** the stored token as
+long as it names the same database URL and user ID, so a caller that rebuilds
+a configuration without the token cannot delete the credential by accident.
+Deleting it is explicit: `clearAuthToken()` (the app calls it for an emptied
+token field and for Disconnect). A configuration for a different database or
+user without a token still drops the old one; a token is never sent to a
+database that did not issue it. `setAuthToken(_:)` replaces the token alone.
+
 `sync-state.json`, `event-log.json`, `wake-log.json` and any quarantined copy are
 written with `FileProtectionType.completeUntilFirstUserAuthentication` and
 excluded from backup (`ProtectedStateFile`): anchors are opaque, device-specific
-`HKQueryAnchor` blobs that mean nothing on another device.
+`HKQueryAnchor` blobs that mean nothing on another device. A file that exists
+but cannot be read (protected data during a prewarm launch before first
+unlock) is never taken for a missing one: the store, the event log and the
+wake log each open read-only for that process (`isReadOnly`) and write
+nothing over it.
+
+A stored anchor that will not decode (a restored or downgraded state file) is
+never inspected: that type's stream starts over — both anchors cleared and the
+backfill reopened for the main anchor, the recent-window anchor alone for that
+stream — and the event log says so. The server ignores what it already has.
 
 Persisted progress is tied to a `ServerIdentity` (normalized host, port, path and
 user ID). `SyncStateStore.serverIdentityChange(applying:)` is non-nil when a new
@@ -349,13 +366,33 @@ the package does with it.
 2. Per type: `HKAnchoredObjectQuery` pages from the stored anchor (nil anchor +
    start-date predicate = backfill), 1,000 samples/page, each page read while
    the one before it uploads. Only the in-memory cursor runs ahead; an upload
-   that fails cancels the read and records nothing.
+   that fails cancels the read and records nothing. ECGs (20) and heartbeat
+   series (200) page smaller (`HealthTypeDescriptor.maxPageSize`): their pages
+   are enriched with every voltage or beat in memory before upload, and a
+   1,000-sample page of either is ~100 MB. Both sweeps use the same
+   `pageSize(batchSize:)`, never above `batchSize`.
 3. `SampleMapper` converts to DTOs; `SeriesEnricher` fills in series payloads;
    `NDJSONEncoder` produces a gzip batch.
 4. `HTTPSyncTransport` uploads. **Only on success** does `recordUploadedBatch`
    advance the anchor and counters — the transactional pattern that makes the
-   pipeline crash-safe (server dedupes re-sent pages by UUID).
-5. Deletions arrive as anchored-query tombstones and ride along in the same batch.
+   pipeline crash-safe (server dedupes re-sent pages by UUID). A 5xx, a 429 or
+   a network failure is retried on a 2, 4, 8, 16 s ladder (one retry in an
+   observer wake); a 429 or 503 with `Retry-After` waits what it asks, and
+   one asking longer than 60 s (10 s in an observer wake) ends the run instead.
+   A 4xx and a network failure no retry can fix (bad URL, ATS, a certificate
+   the system rejects) are not retried.
+5. **Cooldown after a terminal refusal.** When the server refuses a type's
+   upload in a way that will repeat (`TransportError.startsCooldown`: a 4xx
+   other than 408/429, an unsupported protocol, those network failures), the
+   anchor stays put and the type sits out a cooldown
+   (`TypeSyncState.cooldownUntil`, `TypeSyncStatus.cooldownUntil`): 15 min,
+   doubling per refusal in a row up to 6 h. Observer, background and
+   foreground runs skip it; a manual run (Sync Now, Start Backfill, a type's
+   Sync) tries anyway. An acked upload lifts it, and so does applying any
+   configuration change. A merged pack refused that way cools every type in
+   it, so a type back from a cooldown uploads in a pack of its own until one
+   of its uploads is acked.
+6. Deletions arrive as anchored-query tombstones and ride along in the same batch.
 
 `syncAllEnabled` runs its phases so the cheap, immediately useful data lands
 first: activity rings, the recent aggregate window (below), the raw types, the
@@ -579,7 +616,9 @@ kinds only) repairs that by hand: it asks the server for one UUID XOR digest
 per UTC month (`GET /v1/digest`), queries HealthKit for the same months by
 start date, and for every month whose digest or count differs fetches the
 server's UUIDs (`GET /v1/uuids`), re-uploads what the server lacks and sends
-a deletion for every server row the device did not return. The comparison
+a deletion for every server row the device did not return. A month is read
+as UUIDs only, 5,000 samples at a time through an anchored query; the samples
+the server lacks are fetched again by UUID, one upload batch at a time. The comparison
 starts at the sync's start date, or at the type's earliest readable date when
 iOS 27 limits it (above).
 

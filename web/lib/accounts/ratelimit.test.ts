@@ -56,6 +56,22 @@ describe("FailureLimiter", () => {
     expect(checkAll(limiter, failureKeys("192.0.2.1", "b@example.com"), 0).allowed).toBe(true);
   });
 
+  it("spares an address the account has proved the email bucket, so strangers cannot lock its owner out", () => {
+    const limiter = new FailureLimiter();
+    expect(failureKeys("198.51.100.9", "a@example.com", true)).toEqual(["ip:198.51.100.9"]);
+    expect(failureKeys("198.51.100.9", "a@example.com", false)).toEqual(["ip:198.51.100.9", "email:a@example.com"]);
+    // Strangers from many addresses empty the email bucket...
+    for (let i = 0; i < AUTH_FAILURE_BURST * 3; i++) takeAll(limiter, failureKeys(`203.0.113.${i}`, "a@example.com"), 0);
+    expect(takeAll(limiter, failureKeys("203.0.113.200", "a@example.com"), 0).allowed).toBe(false);
+    // ...and the owner, from an address one of their sessions came from, still gets in.
+    const owner = failureKeys("198.51.100.9", "a@example.com", true);
+    expect(takeAll(limiter, owner, 0).allowed).toBe(true);
+    refundAll(limiter, owner, 0);
+    // A known address is still held to its own bucket: guessing from it is bounded.
+    for (let i = 0; i < AUTH_FAILURE_BURST; i++) expect(takeAll(limiter, owner, 0).allowed).toBe(true);
+    expect(takeAll(limiter, owner, 0).allowed).toBe(false);
+  });
+
   it("takes the token before the check is awaited, so a parallel burst cannot outrun it", async () => {
     const limiter = new FailureLimiter();
     const keys = failureKeys("198.51.100.1", "a@example.com");

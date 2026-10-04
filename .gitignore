@@ -18,3 +18,22 @@ build/
 .claude/
 PulsHealth/Config/Local.xcconfig
 PulsHealth/PulsHealth.xcodeproj/
+
+# Local secrets and environment overrides (Next.js reads .env.local).
+.env.local
+*.env.local
+
+# The standalone CLIs' `go build` output.
+tools/puls-export/puls-export
+tools/protocol-check/protocol-check
+
+# App Store Connect API keys and archive/export artifacts
+# (docs/appstore/ keeps ExportOptions.plist out of the repository).
+AuthKey_*.p8
+ExportOptions.plist
+*.ipa
+*.xcarchive
+
+# Python virtual environments and test caches (notebooks/, tests/).
+.venv/
+.pytest_cache/

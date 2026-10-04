@@ -44,6 +44,24 @@ describe("password hashing", () => {
     expect(needsRehash(await hashPassword("new password!"))).toBe(false);
   });
 
+  it("uses N=2^16, r=8, p=2 and upgrades a hash made with the earlier parameters", async () => {
+    expect(SCRYPT_PARAMS).toEqual({ N: 2 ** 16, r: 8, p: 2 });
+    // Exactly what hashPassword wrote before the bump: N=2^15, r=8, p=1.
+    const { scryptSync, randomBytes } = await import("node:crypto");
+    const salt = randomBytes(32);
+    // Node's default maxmem (32 MiB) is just short of what N=2^15, r=8 needs.
+    const key = scryptSync("previous password!", salt, 32, { N: 2 ** 15, r: 8, p: 1, maxmem: 2 ** 26 });
+    const previous = ["scrypt", 2 ** 15, 8, 1, salt.toString("base64url"), key.toString("base64url")].join("$");
+    expect(await verifyPassword("previous password!", previous)).toBe(true);
+    expect(await verifyPassword("previous password?", previous)).toBe(false);
+    expect(needsRehash(previous)).toBe(true);
+    // maxmem covers p as well as N: the smallest N with the largest p
+    // decode() admits needs more than 256·N·r bytes.
+    const tiny = scryptSync("tiny password!", salt, 32, { N: 2, r: 1, p: 16 });
+    const tinyHash = ["scrypt", 2, 1, 16, salt.toString("base64url"), tiny.toString("base64url")].join("$");
+    expect(await verifyPassword("tiny password!", tinyHash)).toBe(true);
+  });
+
   it("rejects malformed or hostile encodings instead of trying them", async () => {
     for (const bad of [
       "",
@@ -54,6 +72,8 @@ describe("password hashing", () => {
       "scrypt$1000$8$1$c2FsdHNhbHRzYWx0c2FsdA$a2V5a2V5a2V5a2V5a2V5",
       "scrypt$1073741824$8$1$c2FsdHNhbHRzYWx0c2FsdA$a2V5a2V5a2V5a2V5a2V5",
       "scrypt$32768$999$1$c2FsdHNhbHRzYWx0c2FsdA$a2V5a2V5a2V5a2V5a2V5",
+      // Within decode()'s bounds, but scrypt refuses N ≥ 2^16 for r=1
+      "scrypt$65536$1$1$c2FsdHNhbHRzYWx0c2FsdA$a2V5a2V5a2V5a2V5a2V5aw",
     ]) {
       expect(await verifyPassword("anything at all", bad), bad).toBe(false);
       expect(needsRehash(bad), bad).toBe(true);

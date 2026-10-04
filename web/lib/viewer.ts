@@ -15,15 +15,16 @@
 // at worst a UUID the database does not have, which renders empty.
 //
 // `cookies()` needs a request scope, so this module is imported by pages and
-// route handlers only; lib/queries.ts takes the user id as a plain argument
-// and stays testable without one.
+// route handlers only; lib/queries.ts (lib/data/) takes the user id as a
+// plain argument and stays testable without one.
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { findSession, SESSION_COOKIE, type Session } from "./accounts/session";
-import { defaultUserId, UUID_RE } from "./config";
+import { defaultUserId } from "./config";
 import { viewerMode } from "./mode";
+import { isUuid } from "./uuid";
 
 /** Cookie holding the chosen user's id. */
 export const USER_COOKIE = "puls-user";
@@ -36,7 +37,7 @@ export const USER_COOKIE_MAX_AGE = 31_536_000;
  * fallback. Pure, so the tests can hit it without a request.
  */
 export function parseViewerUser(cookieValue: string | undefined, fallback: string): string {
-  if (cookieValue && UUID_RE.test(cookieValue)) return cookieValue.toLowerCase();
+  if (isUuid(cookieValue)) return cookieValue.toLowerCase();
   return fallback;
 }
 
@@ -89,8 +90,15 @@ export const currentSession = cache(async (): Promise<Session | null> => {
 /**
  * The user this request shows. Accounts mode: the session's user, or a
  * redirect to sign in. Otherwise: the cookie's choice, else PULS_USER_ID.
+ *
+ * Cached per request like `currentSession`, so the layout, the page and its
+ * generateMetadata share one answer (and, in accounts mode, one session
+ * lookup between them). That is a dedupe within one render, not a
+ * replacement for proxy.ts's own lookup: both still read the session row
+ * from the database on every request. Outside a React render (a route
+ * handler) `cache` does not memoize, and each call looks it up afresh.
  */
-export async function viewerUser(): Promise<string> {
+export const viewerUser = cache(async (): Promise<string> => {
   if (viewerMode() === "accounts") {
     const session = await currentSession();
     if (!session) redirect("/login");
@@ -98,4 +106,4 @@ export async function viewerUser(): Promise<string> {
   }
   const jar = await cookies();
   return parseViewerUser(jar.get(USER_COOKIE)?.value, defaultUserId());
-}
+});

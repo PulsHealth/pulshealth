@@ -6,18 +6,21 @@
 // purging a user leave nothing behind, rollups included; web_app still cannot
 // write the tables those functions write; and even SQL run as web_app with a
 // session it forged cannot give the operator's household users a token,
-// disable them or purge them. Skipped without the two connection strings.
+// disable them or purge them; no administrator's account can be disabled
+// through the viewer; a session past the 90-day cap does nothing; requests
+// are declined in bulk, pruned after 30 days undecided, and dropped quietly
+// past the queue's cap. Skipped without the two connection strings.
 
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 import { Client, DatabaseError } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-const WEB_URL = process.env.WEB_APP_DATABASE_URL;
-const ADMIN_URL = process.env.ADMIN_DATABASE_URL;
-if (process.env.CI && process.env.PULS_WEB_INTEGRATION && (!WEB_URL || !ADMIN_URL)) {
-  throw new Error("PULS_WEB_INTEGRATION is set but WEB_APP_DATABASE_URL or ADMIN_DATABASE_URL is missing");
-}
+import { requireIntegrationDatabases } from "./integrationEnv";
+
+// In CI the job sets both; a missing one there must fail, not skip quietly
+// (PULS_CI_REQUIRE_INTEGRATION / PULS_WEB_INTEGRATION, lib/integrationEnv.ts).
+const { webUrl: WEB_URL, adminUrl: ADMIN_URL } = requireIntegrationDatabases();
 
 const ADMIN_USER = randomUUID();
 const tag = ADMIN_USER.slice(0, 8);
@@ -63,6 +66,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
   let loginRoute: typeof import("@/app/api/auth/login/route");
   let inviteRoute: typeof import("@/app/api/auth/invite/route");
   let signupRoute: typeof import("@/app/api/auth/signup/route");
+  let adminRoute: typeof import("@/app/api/admin/route");
 
   beforeAll(async () => {
     process.env.WEB_ACCOUNTS = "true";
@@ -81,6 +85,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     loginRoute = await import("@/app/api/auth/login/route");
     inviteRoute = await import("@/app/api/auth/invite/route");
     signupRoute = await import("@/app/api/auth/signup/route");
+    adminRoute = await import("@/app/api/admin/route");
     adminCookie = cookieOf(await loginRoute.POST(post("/api/auth/login", { email: ADMIN_EMAIL, password: PASSWORD }, { ip: "198.51.100.200" })))!;
     expect(adminCookie).toBeTruthy();
     adminSession = tokenHash(adminCookie)!;
@@ -186,6 +191,25 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
 
     expect(await signups.revokeMyDevice(personSession, minted.id)).toBe(true);
     expect((await admin.query("SELECT status FROM device_tokens WHERE id = $1", [minted.id])).rows[0].status).toBe("revoked");
+  });
+
+  it("refuses a session signed in more than 90 days ago, in the database too", async () => {
+    // The viewer already refuses it (findSession); the definer functions
+    // check the same absolute cap themselves (auth.session_owner, 018). A
+    // session of the person's own, still inside its sliding 30 days.
+    const old = createHash("sha256").update(`old-${tag}`).digest();
+    await admin.query(
+      `INSERT INTO auth.sessions (id, account_id, created_at, expires_at)
+       SELECT $1, id, now() - interval '91 days', now() + interval '1 day' FROM auth.accounts WHERE user_id = $2`,
+      [old, personUser],
+    );
+    try {
+      expect(await sqlState(signups.issueDeviceToken(old, "too old"))).toBe("42501");
+      expect(await signups.myDevices(old)).toEqual([]);
+      expect(await signups.myDevices(personSession)).not.toEqual([]);
+    } finally {
+      await admin.query("DELETE FROM auth.sessions WHERE id = $1", [old]);
+    }
   });
 
   it("still cannot write users or device tokens directly", async () => {
@@ -413,5 +437,96 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     // Scheduled, not left to someone opening /admin.
     const jobs = await admin.query("SELECT schedule_interval::text FROM timescaledb_information.jobs WHERE proc_schema = 'auth' AND proc_name = 'prune_signups'");
     expect(jobs.rows).toEqual([{ schedule_interval: "01:00:00" }]);
+  });
+
+  it("never lets an administrator disable or enable an administrator's account, their own included", async () => {
+    // A self-service person the operator later made an administrator (SQL).
+    const email = `boss-${tag}@example.com`;
+    await signupRoute.POST(post("/api/auth/signup", { email, consent: "yes" }, { ip: "198.51.100.110" }));
+    const [{ id }] = await requestRow(email);
+    const adminAccount = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [ADMIN_EMAIL])).rows[0].id;
+    const approval = await signups.approveSignup(adminSession, adminAccount, id);
+    await inviteRoute.POST(post("/api/auth/invite", { token: approval.inviteToken, password: PASSWORD, confirm: PASSWORD }, { ip: "198.51.100.111" }));
+    const bossAccount = (await admin.query("UPDATE auth.accounts SET is_admin = true WHERE email = $1 RETURNING id::text", [email])).rows[0].id;
+    const bossCookie = cookieOf(await loginRoute.POST(post("/api/auth/login", { email, password: PASSWORD }, { ip: "198.51.100.112" })))!;
+    expect(bossCookie).toBeTruthy();
+    const bossSession = tokenHash(bossCookie)!;
+
+    // In the database: another administrator's account, and one's own.
+    expect(await sqlState(signups.setAccountDisabled(adminSession, bossAccount, true))).toBe("42501");
+    expect(await sqlState(signups.setAccountDisabled(bossSession, bossAccount, true))).toBe("42501");
+    expect(await sqlState(signups.setAccountDisabled(adminSession, bossAccount, false))).toBe("42501");
+    // Through /api/admin, with a clear answer.
+    const disable = (cookie: string) => adminRoute.POST(post("/api/admin", { action: "disable", id: bossAccount }, { cookie }));
+    expect((await disable(adminCookie)).headers.get("location")).toBe("/admin?error=admin_account");
+    expect((await disable(bossCookie)).headers.get("location")).toBe("/admin?error=own_account");
+    expect((await admin.query("SELECT disabled_at FROM auth.accounts WHERE id = $1", [bossAccount])).rows[0].disabled_at).toBeNull();
+  });
+
+  it("declines pending requests in bulk, for an administrator's session only, and leaves decided ones alone", async () => {
+    const emails = [`d1-${tag}@example.com`, `d2-${tag}@example.com`, `d3-${tag}@example.com`];
+    for (const [i, email] of emails.entries()) {
+      await signupRoute.POST(post("/api/auth/signup", { email, consent: "yes" }, { ip: `198.51.100.${120 + i}` }));
+    }
+    const ids = (await Promise.all(emails.map(requestRow))).map((rows) => rows[0].id);
+    expect(await sqlState(signups.declineSignups(Buffer.alloc(32, 7), ids))).toBe("42501");
+
+    // A decided request in the same batch is not deleted.
+    const decided = (await admin.query<{ id: string }>(
+      "SELECT id::text FROM auth.signup_requests WHERE email LIKE $1 AND status = 'approved' LIMIT 1", [`boss-${tag}@example.com`],
+    )).rows[0].id;
+    expect(await signups.declineSignups(adminSession, [ids[0], decided])).toBe(1);
+    expect(await requestRow(emails[0])).toHaveLength(0);
+    expect((await admin.query("SELECT 1 FROM auth.signup_requests WHERE id = $1", [decided])).rows).toHaveLength(1);
+
+    // /admin's Decline selected: the ticked ones only.
+    const form = new FormData();
+    form.set("action", "deny_many");
+    form.set("scope", "selected");
+    form.append("ids", ids[1]);
+    const res = await adminRoute.POST(
+      new NextRequest(new URL("/api/admin", "http://web:3000"), {
+        method: "POST",
+        headers: new Headers({
+          host: "viewer.example",
+          origin: "https://viewer.example",
+          "x-forwarded-proto": "https",
+          "x-forwarded-for": "198.51.100.200",
+          cookie: `${COOKIE}=${adminCookie}`,
+        }),
+        body: form,
+      }),
+    );
+    expect(res.headers.get("location")).toBe("/admin?notice=denied_many");
+    expect(await requestRow(emails[1])).toHaveLength(0);
+    expect(await requestRow(emails[2])).toHaveLength(1);
+  });
+
+  it("deletes a pending request nobody decided within 30 days", async () => {
+    const stale = `d3-${tag}@example.com`;
+    const fresh = `d4-${tag}@example.com`;
+    await signupRoute.POST(post("/api/auth/signup", { email: fresh, consent: "yes" }, { ip: "198.51.100.130" }));
+    await admin.query("UPDATE auth.signup_requests SET created_at = now() - interval '31 days' WHERE email = $1", [stale]);
+    await admin.query("CALL auth.prune_signups(0, NULL)");
+    expect(await requestRow(stale)).toHaveLength(0);
+    expect(await requestRow(fresh)).toMatchObject([{ status: "pending" }]);
+  });
+
+  it("drops new requests once 500 wait, saying the same as ever", async () => {
+    const { SIGNUP_PENDING_CAP } = signups;
+    const waiting = Number((await admin.query("SELECT count(*) FROM auth.signup_requests WHERE status = 'pending'")).rows[0].count);
+    await admin.query(
+      `INSERT INTO auth.signup_requests (email) SELECT 'fill' || g || '-' || $2 || '@example.com' FROM generate_series(1, $1::int) g`,
+      [Math.max(0, SIGNUP_PENDING_CAP - waiting), tag],
+    );
+    const email = `late-${tag}@example.com`;
+    const res = await signupRoute.POST(post("/api/auth/signup", { email, consent: "yes" }, { ip: "198.51.100.140" }));
+    expect(res.headers.get("location")).toBe("/signup?notice=received");
+    expect(await requestRow(email)).toHaveLength(0);
+
+    await admin.query("DELETE FROM auth.signup_requests WHERE email LIKE $1", [`fill%-${tag}@example.com`]);
+    const again = await signupRoute.POST(post("/api/auth/signup", { email, consent: "yes" }, { ip: "198.51.100.141" }));
+    expect(again.headers.get("location")).toBe("/signup?notice=received");
+    expect(await requestRow(email)).toMatchObject([{ status: "pending" }]);
   });
 });

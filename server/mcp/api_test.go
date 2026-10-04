@@ -15,7 +15,7 @@ import (
 )
 
 // fakeAPI is an httptest stand-in for the product API, answering with the
-// shapes in server/api/docs.go. Data routes need the bearer token; /healthz
+// shapes in server/api/openapi.json. Data routes need the bearer token; /healthz
 // does not, like the real thing. Every request URL is recorded so tests can
 // assert on the query the tools built.
 type fakeAPI struct {

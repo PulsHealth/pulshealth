@@ -24,6 +24,9 @@ struct SettingsView: View {
         @Bindable var model = model
         let analyzed = model.explore.profiles.count
         Form {
+            if model.stateFileUnreadable {
+                StateUnreadableNotice()
+            }
             Section {
                 NavigationLink(value: SettingsRoute.user) {
                     UserRow(name: model.config.userName, email: model.config.userEmail)
@@ -178,12 +181,7 @@ struct SettingsView: View {
         } message: {
             Text("Removes the stored summaries for \(analyzed) type\(analyzed == 1 ? "" : "s"). Nothing in Apple Health changes.")
         }
-        .alert("Delete this export?", isPresented: $confirmDeleteExport) {
-            Button("Delete", role: .destructive) { model.export.discard() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Removes the exported files from this iPhone. Copies you already saved or sent elsewhere are not affected.")
-        }
+        .deleteExportAlert(isPresented: $confirmDeleteExport, export: model.export)
         .alert("Start initial backfill?", isPresented: $confirmBackfill) {
             Button("Start Backfill") {
                 Task {

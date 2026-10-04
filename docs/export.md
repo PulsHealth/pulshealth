@@ -110,7 +110,10 @@ windows. Nothing is buffered to the length of the export, on either side:
 A failure once the body is on the wire **aborts the connection** rather than
 closing a short file cleanly, so a truncated export is always a visibly failed
 download (`curl: (18) transfer closed`, `puls-export: the download stopped
-early`) and never a file that quietly stops halfway. Everything that can be
+early`) and never a file that quietly stops halfway. The same goes for the
+export's own limits: it ends after **30 minutes**, a client that stops
+reading for **a minute** is dropped, and a server shutdown past its grace
+cuts it off. Everything that can be
 rejected — an unknown `dataset` or `format`, a missing filter, an identifier
 that has never been synced, a range over the cap — is checked *before* the
 first byte, and comes back as the usual JSON `400`.

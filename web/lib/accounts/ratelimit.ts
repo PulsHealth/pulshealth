@@ -19,9 +19,24 @@
 // Two kinds of key are charged per failure: the client address and, for a
 // sign-in, the email address tried. The address bucket stops one client
 // spraying many accounts; the email bucket stops many clients (or a forged
-// address header) guessing at one account. The price is that a sustained
-// attack on one email can keep its owner waiting too — refills take a
-// minute, and the hosted instance sits behind Cloudflare's own rate limits.
+// address header) guessing at one account.
+//
+// The email bucket alone would let anyone lock a person out: ten wrong
+// guesses a minute, from anywhere, keep it empty for as long as they care
+// to. So a sign-in from an address the account has proved — one of its own
+// live sessions signed in from it (`signedInFrom` in session.ts) — is charged
+// to its address bucket only (`failureKeys(ip, email, true)`): the owner at
+// home or on their usual network gets in while strangers hammer the email.
+// Considered and not chosen: refusing only when BOTH buckets are empty lets a
+// botnet of fresh addresses guess at one account without limit; a larger,
+// slower email bucket does not end the lockout — any finite refill can be
+// held empty by a sender at that rate — it only changes the price. What the
+// exemption costs: an attacker who shares a known address (the same NAT)
+// skips the email bucket, but still has its address bucket, so the guessing
+// rate at one account stays bounded — ten a minute, plus ten per address the
+// account has live sessions from. The owner on a new address is still
+// subject to the email bucket; the hosted instance also sits behind
+// Cloudflare's own rate limits.
 //
 // In-process memory, so it resets on restart and is per container: the
 // viewer runs as one.
@@ -122,9 +137,13 @@ const globalForLimiter = globalThis as typeof globalThis & { __pulsAuthFailures?
 /** The limiter every accounts route shares. */
 export const authFailures: FailureLimiter = (globalForLimiter.__pulsAuthFailures ??= new FailureLimiter());
 
-/** The bucket keys one attempt is charged to. */
-export function failureKeys(clientIp: string, email?: string): string[] {
-  return email ? [`ip:${clientIp}`, `email:${email}`] : [`ip:${clientIp}`];
+/**
+ * The bucket keys one attempt is charged to: the client address, and the
+ * email tried unless the address is one the account has proved
+ * (`knownAddress`, see the top of this file).
+ */
+export function failureKeys(clientIp: string, email?: string, knownAddress = false): string[] {
+  return email && !knownAddress ? [`ip:${clientIp}`, `email:${email}`] : [`ip:${clientIp}`];
 }
 
 /** Checks every key; the longest wait wins when any is exhausted. */

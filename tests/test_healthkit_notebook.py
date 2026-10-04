@@ -235,6 +235,10 @@ def test_healthkit_notebook_executes_against_seeded_database(tmp_path):
     assert NOTEBOOK.exists(), f"missing notebook: {NOTEBOOK}"
     docker_check = run(["docker", "info"], check=False)
     if docker_check.returncode != 0:
+        # CI sets PULS_CI_REQUIRE_INTEGRATION=1 so a runner without Docker
+        # fails here instead of passing with nothing run.
+        if os.environ.get("PULS_CI_REQUIRE_INTEGRATION") == "1":
+            pytest.fail("Docker daemon is not available and PULS_CI_REQUIRE_INTEGRATION=1")
         pytest.skip("Docker daemon is not available")
 
     container_name = f"puls-notebook-test-{int(time.time() * 1000)}"

@@ -68,7 +68,7 @@ HOW TO EXERCISE THE APP (about 5 minutes)
 3. Swipe to page 4 and tap "Start Exploring". The Explore tab appears.
 4. Open the Sync tab, tap "Set Up", choose "PulsHealth Database", then "Sign In to PulsHealth". iOS asks to use app.pulshealth.com to sign in: tap "Continue".
 5. Sign in with the demo account, tap "Connect this iPhone", then "Open in PulsHealth". The sheet closes and the app tests the connection.
-6. Tap "Save & Apply". The Sync tab shows "PulsHealth Database" and the upload begins.
+6. Tap "Save & Apply". The Sync tab shows "PulsHealth Database" with the database's address, and the upload begins.
 
 ACCOUNT DELETION (5.1.1(v)): Sync > Database > "Delete PulsHealth Account" opens the account page, whose "Delete my account" deletes it and its data. Settings > Privacy & Data has the same link.
 

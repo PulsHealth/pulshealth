@@ -100,11 +100,12 @@ tailscale serve --bg --https=8444 http://localhost:8081
 
 Any TLS-terminating proxy works (Caddy, nginx, a Cloudflare Tunnel).
 [Exposing the server](../server/README.md#exposing-the-server) covers the
-options. When the proxy overwrites `X-Forwarded-*` and is the only thing that
-can reach port 8081, set `TRUST_PROXY_HEADERS=true`. The failed-login limit
-then counts each real client address, and `/openapi.json` names the proxy's
-host as its server URL. Without that setting, both use what the service sees
-itself.
+options. When the proxy is the only thing that can reach port 8081, set
+`TRUST_PROXY_HEADERS=true`. The failed-login limit then counts each real
+client address (the **last** `X-Forwarded-For` entry, the one the proxy
+appended, since a client can write whatever it likes in front of it), and
+`/openapi.json` names the proxy's host (`X-Forwarded-Host`) as its server URL.
+Without that setting, both use what the service sees itself.
 
 ## Authentication
 
@@ -124,6 +125,9 @@ Successful requests are never throttled. Failed ones are (see
 [Rate limits](#rate-limits-and-timeouts)). Every authenticated response
 carries `Cache-Control: no-store`.
 
+The service refuses to start while `PULS_API_TOKEN` is still the
+`change-me` placeholder from `.env.example`.
+
 To rotate the token, set a new value in `server/.env` and run
 `docker compose up -d api mcp`, then update your clients.
 [Rotating secrets](../server/README.md#rotating-secrets) has the details.
@@ -141,7 +145,8 @@ exactly one user:
   quiet answer for the default user.
 - `GET /v1/users` lists the users this deployment answers for (only the
   default user while multi-user reads are off), with their last sync time
-  and upload counts.
+  and upload counts. It also reports `timeZone`, the server's
+  `PULS_TIME_ZONE` (see [Conventions](#conventions)).
 
 ```bash
 curl -s -H "Authorization: Bearer $PULS_API_TOKEN" "$PULS_API_BASE_URL/v1/users"
@@ -165,12 +170,16 @@ with no data.
   `/v1/activity/summary`, `/v1/sleep/daily`, `/v1/state-of-mind`) returns
   every local day that `[start, end)` touches, so a range that grazes one
   minute of a day returns that whole day. `date` fields are `YYYY-MM-DD`.
+  `GET /v1/users` reports the zone as `timeZone` (`UTC` when unset), and the
+  service refuses to start when `PULS_TIME_ZONE` disagrees with the zone
+  stored in the database.
 - **Units** are canonical per type and never the device's own: `count/min`
   for heart rate, `kcal` for energy, `m` for distance, `%` as a fraction
   (blood oxygen `0.97`). Each answer names its `unit`. The full table is the
   [type catalog](protocol/catalog.json).
 - **Identifiers** are HealthKit's, e.g. `HKQuantityTypeIdentifierStepCount`.
-  `GET /v1/catalog/types` lists the ones that hold data.
+  `GET /v1/catalog/types` lists the ones that hold data. A `types` list names
+  at most 50 of them; more is a `400`.
 - **Absent values** are `null`. An empty result is an empty array, never a
   `404`. Only a missing workout or profile is a `404`.
 - **Deduplication.** An iPhone and an Apple Watch often record the same
@@ -232,17 +241,19 @@ The message is for people and logs. Branch on the status code:
 
 | Status | Meaning |
 |---|---|
-| `400` | A parameter is missing, malformed or out of range, or a type has never been synced. The message names the problem. |
+| `400` | A parameter is missing, malformed or out of range (more than 50 `types`, say), or a type has never been synced. The message names the problem. |
 | `401` | The bearer token is missing or wrong. |
 | `403` | `user` names someone else while multi-user reads are off. |
 | `404` | The workout or profile does not exist for this user. |
 | `429` | Too many failed authentications from your address. Wait `Retry-After` seconds. |
-| `500` | The query failed or ran past 30 seconds. The cause is logged on the server, never returned. |
+| `500` | The query failed. The cause is logged on the server, never returned. |
 | `503` | `/v1/export`: two exports are already running (`Retry-After: 60`). `/healthz`: the database is not answering. |
+| `504` | The query ran past its 30 seconds. Narrow the range or page smaller. Not on `/v1/export`. |
 
 A failure partway through a `/v1/export` download aborts the connection
-instead of ending the file cleanly. A cut-off file always shows up as a failed
-download.
+instead of ending the file cleanly, and so do its own limits (30 minutes, or
+a client that stops reading for a minute) and a server shutdown past its
+15-second grace. A cut-off file always shows up as a failed download.
 
 ## Rate limits and timeouts
 
@@ -251,13 +262,17 @@ download.
   with `429` and `Retry-After` *before* the token is checked, so a guesser
   learns nothing. Successful requests never draw from the bucket, so a client
   polling with the right token is never slowed down.
-- **Each request has 30 seconds of database time.** Past that it is a `500`.
+- **Each request has 30 seconds of database time.** Past that it is a `504`.
   Narrow the range or page smaller. `/v1/export` is exempt: it streams for as
-  long as the download takes.
+  long as the download takes, up to its own limits below.
 - **At most two exports run at once.** Each holds a database connection for
-  the length of its download.
-- `/v1/catalog/types` is cached per user for five minutes, so new uploads
-  can take that long to appear in it.
+  the length of its download. An export ends after **30 minutes**, and one
+  whose client stops reading for **a minute** is dropped.
+- **A `types` list names at most 50 identifiers.** Each one is its own scan.
+- `/v1/catalog/types` is cached per user for five minutes. After that the
+  cached answer is still served (for up to an hour) while one background
+  refresh replaces it, so new uploads can take a little longer than five
+  minutes to appear in it.
 
 ## Endpoints
 

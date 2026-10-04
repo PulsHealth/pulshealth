@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { allowedOrigins, clientIp, clientIpHeader, isSameOriginRequest, isSecureRequest, isUnsafeMethod, publicOrigin } from "./request";
+import { allowedOrigins, clientIp, clientIpHeader, clientIpHeaderWarning, isSameOriginRequest, isSecureRequest, isUnsafeMethod, publicOrigin } from "./request";
 
 const h = (init: Record<string, string>) => new Headers(init);
 const u = (s: string) => new URL(s);
@@ -11,8 +11,16 @@ describe("clientIp", () => {
     expect(clientIp(headers, false)).toBe("direct");
     expect(clientIp(headers, true, "x-forwarded-for")).toBe("198.51.100.7");
     expect(clientIp(headers, true, "cf-connecting-ip")).toBe("203.0.113.1");
-    expect(clientIp(h({ "x-forwarded-for": "198.51.100.7, 10.0.0.2" }), true, "x-forwarded-for")).toBe("198.51.100.7");
     expect(clientIp(h({}), true, "x-forwarded-for")).toBe("unknown");
+  });
+
+  it("charges the entry the trusted proxy appended, not one the client sent", () => {
+    // Proxies append: the client's own X-Forwarded-For comes first, the
+    // address the proxy saw last. Keying on the first would hand every
+    // request a fresh bucket.
+    expect(clientIp(h({ "x-forwarded-for": "evil, real" }), true, "x-forwarded-for")).toBe("real");
+    expect(clientIp(h({ "x-forwarded-for": "evil, real," }), true, "x-forwarded-for")).toBe("real");
+    expect(clientIp(h({ "x-forwarded-for": " , " }), true, "x-forwarded-for")).toBe("unknown");
   });
 
   it("reads WEB_CLIENT_IP_HEADER, defaulting to X-Forwarded-For", () => {
@@ -92,5 +100,29 @@ describe("publicOrigin", () => {
     expect(publicOrigin(url, fwd, true, undefined)).toBe("https://viewer.example");
     expect(publicOrigin(url, fwd, false, undefined)).toBe("http://web:3000");
     expect(publicOrigin(url, h({ host: "viewer.example", "x-forwarded-proto": "javascript" }), true, undefined)).toBe("http://web:3000");
+  });
+});
+
+describe("clientIpHeaderWarning", () => {
+  it("says nothing without trusted proxy headers, or with a header a proxy overwrites", () => {
+    expect(clientIpHeaderWarning(false, {})).toBeNull();
+    expect(clientIpHeaderWarning(false, { WEB_CLIENT_IP_HEADER: "bogus" })).toBeNull();
+    expect(clientIpHeaderWarning(true, { WEB_CLIENT_IP_HEADER: "cf-connecting-ip" })).toBeNull();
+    expect(clientIpHeaderWarning(true, { WEB_CLIENT_IP_HEADER: " X-Real-IP " })).toBeNull();
+  });
+
+  it("points at cf-connecting-ip when trusted proxy headers key on X-Forwarded-For", () => {
+    for (const env of [{}, { WEB_CLIENT_IP_HEADER: "" }, { WEB_CLIENT_IP_HEADER: "X-Forwarded-For" }]) {
+      const warning = clientIpHeaderWarning(true, env);
+      expect(warning, JSON.stringify(env)).toMatch(/last X-Forwarded-For entry/);
+      expect(warning).toMatch(/WEB_CLIENT_IP_HEADER=cf-connecting-ip/);
+    }
+    expect(clientIpHeaderWarning(true, {})).toMatch(/WEB_CLIENT_IP_HEADER is unset/);
+  });
+
+  it("names a header it does not know, which silently falls back to X-Forwarded-For", () => {
+    expect(clientIpHeaderWarning(true, { WEB_CLIENT_IP_HEADER: "true-client-ip" })).toMatch(
+      /WEB_CLIENT_IP_HEADER="true-client-ip" is not one of/,
+    );
   });
 });

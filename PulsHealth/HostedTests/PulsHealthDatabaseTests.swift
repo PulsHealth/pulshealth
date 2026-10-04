@@ -23,6 +23,9 @@ final class PulsHealthDatabaseTests: XCTestCase {
         // slugs its heading.
         XCTAssertEqual(PulsHealthDatabase.privacyURL.host(), "pulshealth.com")
         XCTAssertEqual(PulsHealthDatabase.privacyURL.fragment(), "if-you-use-the-developers-viewer")
+        // A sign-in's code is trusted only under the viewer's own domain.
+        XCTAssertTrue(PulsHealthDatabase.isUnderDomain(PulsHealthDatabase.viewerURL))
+        XCTAssertFalse(PulsHealthDatabase.isUnderDomain(URL(string: "https://pulshealth.com.attacker.example")))
     }
 
     /// The sheet returns the account page's Open in PulsHealth link, a

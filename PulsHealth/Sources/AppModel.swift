@@ -28,6 +28,17 @@ final class AppModel {
     /// the separate fact of whether iOS ever launched it.
     private(set) var backgroundScheduleStatus = BackgroundTaskScheduleStatus()
     private(set) var isSyncingAll = false
+    /// True from the moment the iOS 26 continued-processing backfill is
+    /// submitted until it shows up: its first type starts backfilling, or its
+    /// wake ends (completed, expired, skipped while locked), or it never ran at
+    /// all (`continuedBackfillLaunchTimeout`). The task runs outside this model,
+    /// and until its sweep claims anything nothing else said a backfill was
+    /// coming — so Sync Now or a second Start Initial Backfill could run
+    /// alongside it. Part of `backfillActive`, which gates both.
+    private(set) var continuedBackfillPending = false
+    /// When the pending continued backfill was submitted: its wake record
+    /// starts after this.
+    @ObservationIgnored private var continuedBackfillSubmittedAt: Date?
     /// Server-side aggregates from GET /v1/stats, keyed by type identifier.
     private(set) var serverStats: [String: TypeServerStats] = [:]
     private(set) var serverStatsError: String?
@@ -86,6 +97,17 @@ final class AppModel {
         return observed.allSatisfy { $0.state.totalSamplesExported == 0 }
     }
     var lastErrorMessage: String?
+    /// True when this process opened `sync-state.json` read-only
+    /// (`SyncStateStore.isReadOnly`): it existed but could not be read, which
+    /// happens when iOS prewarms the app before the first unlock after a
+    /// restart. The store then shows an empty configuration and saves nothing
+    /// for the rest of the process, so the Sync tab and Settings say so
+    /// (`StateUnreadableNotice`) and Apply is refused rather than taking a
+    /// setup that would vanish. Reloading in place is not attempted: the
+    /// engine's transport, the observer registration and this model's own
+    /// launch flags (UserDefaults, unreadable at the same moment) were all
+    /// set up from that empty state, and only a relaunch redoes all of it.
+    private(set) var stateFileUnreadable = false
     /// True while the first-run flow covers the app (`OnboardingView`). Set
     /// synchronously in `init` so a fresh launch never flashes an unconfigured
     /// dashboard, then corrected in `startBody` once the persisted
@@ -158,6 +180,10 @@ final class AppModel {
         // delete a run's directory out from under it; and it is a synchronous
         // unlink, which works on a locked device too (a background launch).
         HealthExporter.removeAllExports()
+        // The Background Activity screen's diagnostics files (wake records and
+        // the event log: no samples, but about health data) go too, with any
+        // an earlier build left behind.
+        Self.removeDiagnosticsFiles()
         // Reading the persisted configuration is async, and the window is built
         // before it lands. Decide from the two durable flags alone so a first
         // launch opens straight into onboarding: `authorizationRequested` marks
@@ -217,8 +243,17 @@ final class AppModel {
         // install that already has a server or types (an upgrade from before
         // this flow existed, or one whose Apply predates the durable flag) is
         // configured and must never be sent through first-run onboarding.
+        // A state file that exists but could not be read this launch (a
+        // prewarm before first unlock: `SyncStateStore.isReadOnly`) hides the
+        // configuration it holds behind an empty one. The install is not new,
+        // so first-run onboarding stays down — without recording the flag,
+        // since this launch cannot see what the file says.
+        let stateUnreadable = await engine.store.isReadOnly
+        stateFileUnreadable = stateUnreadable
         if showsOnboarding {
-            if config.serverURL != nil || !config.observedTypeIdentifiers.isEmpty
+            if stateUnreadable {
+                showsOnboarding = false
+            } else if config.serverURL != nil || !config.observedTypeIdentifiers.isEmpty
                 || authorizationRequested {
                 completeOnboarding()
             } else {
@@ -260,6 +295,7 @@ final class AppModel {
         })
         wakeRecords = await engine.wakeLog.recent(limit: 1_000)
         backgroundScheduleStatus = scheduler.scheduleStatus()
+        settleContinuedBackfillPending(launchTimedOut: false)
     }
 
     func ensureBackgroundCatchupScheduled() async {
@@ -270,12 +306,21 @@ final class AppModel {
 
     // MARK: - Diagnostics export
 
-    /// Write the wake records (CSV + JSON) and the event log (JSON) to temp files
-    /// for the share sheet. Returns the files in a stable order so the Background
-    /// Activity screen can offer them via `ShareLink`.
+    /// Write the wake records (CSV + JSON), the event log (JSON) and the
+    /// catch-up schedule (JSON) for the share sheet. Returns the files in a
+    /// stable order so the Background Activity screen can offer them via
+    /// `ShareLink`.
+    ///
+    /// One fixed set of names in a directory of their own
+    /// (`diagnosticsDirectory`), each rewritten atomically: the screen
+    /// rewrites them on every appearance and every finished wake, and that
+    /// used to leave four new timestamped files in the temporary directory
+    /// each time, forever. An atomic replace also never pulls a file out from
+    /// under a share sheet that is reading it. The directory goes when the
+    /// screen does (`removeDiagnosticsBundle`) and at every launch.
     func writeDiagnosticsBundle() async -> [URL] {
-        let stamp = Self.exportStampFormatter.string(from: Date())
-        let dir = FileManager.default.temporaryDirectory
+        let dir = Self.diagnosticsDirectory
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let wakeCSV = await engine.wakeLog.exportCSV()
         let wakeJSON = await engine.wakeLog.exportJSON()
         let eventsJSON = await engine.eventLog.exportJSON()
@@ -284,10 +329,10 @@ final class AppModel {
         scheduleEncoder.dateEncodingStrategy = .iso8601
         let scheduleJSON = (try? scheduleEncoder.encode(backgroundScheduleStatus)) ?? Data()
         let files: [(String, Data)] = [
-            ("puls-wakes-\(stamp).csv", Data(wakeCSV.utf8)),
-            ("puls-wakes-\(stamp).json", wakeJSON),
-            ("puls-events-\(stamp).json", eventsJSON),
-            ("puls-background-schedule-\(stamp).json", scheduleJSON),
+            ("puls-wakes.csv", Data(wakeCSV.utf8)),
+            ("puls-wakes.json", wakeJSON),
+            ("puls-events.json", eventsJSON),
+            ("puls-background-schedule.json", scheduleJSON),
         ]
         var urls: [URL] = []
         for (name, data) in files {
@@ -297,11 +342,29 @@ final class AppModel {
         return urls
     }
 
-    private static let exportStampFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyyMMdd-HHmmss"
-        return f
-    }()
+    /// Deletes the diagnostics files: when the Background Activity screen
+    /// goes, and at launch.
+    func removeDiagnosticsBundle() {
+        Self.removeDiagnosticsFiles()
+    }
+
+    /// Where `writeDiagnosticsBundle` writes, under the temporary directory.
+    private nonisolated static var diagnosticsDirectory: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("PulsDiagnostics", isDirectory: true)
+    }
+
+    /// Removes the diagnostics directory, and the timestamped
+    /// `puls-wakes-*`, `puls-events-*` and `puls-background-schedule-*` files
+    /// earlier builds left directly in the temporary directory.
+    private nonisolated static func removeDiagnosticsFiles() {
+        let fm = FileManager.default
+        try? fm.removeItem(at: diagnosticsDirectory)
+        let legacyPrefixes = ["puls-wakes-", "puls-events-", "puls-background-schedule-"]
+        guard let names = try? fm.contentsOfDirectory(atPath: fm.temporaryDirectory.path) else { return }
+        for name in names where legacyPrefixes.contains(where: { name.hasPrefix($0) }) {
+            try? fm.removeItem(at: fm.temporaryDirectory.appendingPathComponent(name))
+        }
+    }
 
     // MARK: - First run
 
@@ -592,6 +655,12 @@ final class AppModel {
     func applyConfiguration(
         syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false
     ) async -> Bool {
+        // Nothing applied now would be saved (the store is read-only this
+        // process), and the empty configuration on screen is not the real one.
+        guard !stateFileUnreadable else {
+            lastErrorMessage = StateUnreadableNotice.message
+            return false
+        }
         if !serverChangeConfirmed, let change = await engine.serverIdentityChange(applying: config) {
             pendingServerChange = change
             pendingServerChangeWantsNewTypeSync = syncNewTypes
@@ -630,14 +699,19 @@ final class AppModel {
         // engine records it before the backfill below reads anything, which
         // is what lets a later widening be noticed.
         await refreshReadableHistory()
-        // A whole-history backfill may start in a task of its own (iOS 26,
-        // below), after the wake the observer registration triggers. Tell the
-        // engine it is coming so that wake does not take its types first.
-        if syncNewTypes, wholeHistory { await engine.expectBackfill() }
+        // Whether the backfill below will run at all — decided here, before
+        // the observer is registered, because a whole-history backfill may
+        // start in a task of its own (iOS 26, below) after the wake that
+        // registration triggers: the engine is told it is coming so that wake
+        // does not take its types first. Priming it for a backfill the
+        // `isSyncingAll` gate then refuses would only defer those types.
+        let backfillWillRun = syncNewTypes && configured && config.authToken != nil
+            && !isSyncingAll && !continuedBackfillPending
+        if backfillWillRun, wholeHistory { await engine.expectBackfill() }
         await engine.startObserving()
         await refresh()
 
-        guard syncNewTypes, configured, config.authToken != nil, !isSyncingAll else { return true }
+        guard syncNewTypes, configured, config.authToken != nil else { return true }
         // Types enabled but never synced (no anchor) start backfilling right
         // away so they appear live on the dashboard instead of "not synced".
         let newTypes = statuses
@@ -656,6 +730,13 @@ final class AppModel {
         let newRings = config.enabledTypes.contains(HealthTypeCatalog.activitySummaryIdentifier)
             && activitySummaryState.computedThrough == nil
         guard !newTypes.isEmpty || !newAggregates.isEmpty || newRings else { return true }
+        // Checked after the last await above, so nothing can start a sync
+        // between this and `isSyncingAll = true` below; and only once there is
+        // new work, so an Apply that enabled nothing new says nothing.
+        guard !isSyncingAll, !continuedBackfillPending else {
+            lastErrorMessage = "A sync is running; new types will be backfilled on the next Sync Now."
+            return true
+        }
 
         // The whole history is the largest data movement an install makes, and
         // it used to stop the moment the user left the app: iOS suspended it
@@ -664,7 +745,7 @@ final class AppModel {
         // Backfill uses, which keeps going with system progress UI. That task
         // runs `syncAllEnabled(.backfill)`: rings, aggregates and every type,
         // which on a whole-history apply is exactly the new work above.
-        if wholeHistory, #available(iOS 26.0, *), scheduler.startContinuedBackfill() {
+        if wholeHistory, #available(iOS 26.0, *), submitContinuedBackfill() {
             return true
         }
         // This is usually the largest data movement of an install, so it runs
@@ -836,10 +917,11 @@ final class AppModel {
     // MARK: - The PulsHealth database
 
     /// Whether the applied database is the PulsHealth database, paired by
-    /// signing in on Sync → Database (`PulsHealthDatabase`). Derived from the
-    /// applied configuration — it ends the moment the app points anywhere
-    /// else — so the Sync tab and Settings can name it instead of its host.
-    var usesPulsHealthDatabase: Bool { appliedConfig.isSignedInDatabase }
+    /// signing in on Sync → Database (`PulsHealthDatabase`), to a database
+    /// under the viewer's domain. Derived from the applied configuration — it
+    /// ends the moment the app points anywhere else — so the Sync tab and the
+    /// Database screen can name it, always beside its host.
+    var usesPulsHealthDatabase: Bool { PulsHealthDatabase.isSignedIn(appliedConfig) }
 
     /// Logs a pairing code the PulsHealth sign-in sheet handed back. Like a
     /// confirmed link it only fills Sync → Database's fields; Save & Apply
@@ -963,7 +1045,9 @@ final class AppModel {
         // a widened type has to be re-swept before this sync claims it.
         await refreshReadableHistory()
         // observedTypeIdentifiers: an aggregate-only setup (no raw types) still syncs.
-        guard !isSyncingAll, config.serverURL != nil,
+        // Not while a continued backfill is submitted but not yet running:
+        // it is about to sweep every type itself.
+        guard !isSyncingAll, !continuedBackfillPending, config.serverURL != nil,
               !config.observedTypeIdentifiers.isEmpty else { return }
         isSyncingAll = true
         defer { isSyncingAll = false }
@@ -983,10 +1067,17 @@ final class AppModel {
 
     func startBackfill() async {
         guard !isSyncingAll else { return }
+        // A continued backfill submitted or running already sweeps every type;
+        // a second one would run alongside it (the button is disabled on
+        // `backfillActive` too — this is the model's own guard).
+        guard !continuedBackfillPending, typesBackfilling == 0 else {
+            lastErrorMessage = "A backfill is already running. It continues in the background; its progress is on the Sync tab."
+            return
+        }
         // iOS 26: run as a continued-processing task so the backfill keeps going
         // with system progress UI if the user backgrounds the app (that path
         // records its own wake).
-        if #available(iOS 26.0, *), scheduler.startContinuedBackfill() {
+        if #available(iOS 26.0, *), submitContinuedBackfill() {
             return
         }
         isSyncingAll = true
@@ -1122,7 +1213,49 @@ final class AppModel {
     /// (`isSyncingAll`) or the iOS 26 continued-processing task, which runs
     /// outside this model and only shows up through the engine's activities.
     var backfillActive: Bool {
-        isSyncingAll || typesBackfilling > 0
+        isSyncingAll || continuedBackfillPending || typesBackfilling > 0
+    }
+
+    // MARK: - Continued backfill (iOS 26)
+
+    /// How long a submitted continued backfill may take to show up at all
+    /// (a wake record) before the pending flag is dropped. The request uses
+    /// the `.fail` strategy, so iOS either runs it at once or refuses the
+    /// submission; this only keeps a task iOS dropped without a word from
+    /// disabling Sync Now for the rest of the session.
+    private static let continuedBackfillLaunchTimeout: Duration = .seconds(120)
+
+    /// Submits the continued-processing backfill and marks it pending. False,
+    /// and nothing marked, when iOS refuses it — the caller then runs the
+    /// backfill in the app instead.
+    @available(iOS 26.0, *)
+    private func submitContinuedBackfill() -> Bool {
+        let submittedAt = Date()
+        guard scheduler.startContinuedBackfill() else { return false }
+        continuedBackfillPending = true
+        continuedBackfillSubmittedAt = submittedAt
+        Task { [weak self] in
+            try? await Task.sleep(for: AppModel.continuedBackfillLaunchTimeout)
+            guard let self, self.continuedBackfillSubmittedAt == submittedAt else { return }
+            await self.refresh()
+            self.settleContinuedBackfillPending(launchTimedOut: true)
+        }
+        return true
+    }
+
+    /// Drops `continuedBackfillPending` once the continued backfill has shown
+    /// up: a type is backfilling, or its wake (started after the submission)
+    /// has ended, or — after the launch timeout — it never recorded a wake.
+    /// A wake still running with no type backfilling yet (the rings and
+    /// aggregate phases come first) keeps it pending.
+    private func settleContinuedBackfillPending(launchTimedOut: Bool) {
+        guard continuedBackfillPending, let submittedAt = continuedBackfillSubmittedAt else { return }
+        let runs = wakeRecords.filter { $0.trigger == .backgroundContinued && $0.startedAt >= submittedAt }
+        let ended = runs.contains { $0.outcome != .running }
+        let neverLaunched = launchTimedOut && runs.isEmpty
+        guard typesBackfilling > 0 || ended || neverLaunched else { return }
+        continuedBackfillPending = false
+        continuedBackfillSubmittedAt = nil
     }
 
     func resetType(_ identifier: String) async {

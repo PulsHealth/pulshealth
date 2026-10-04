@@ -19,6 +19,25 @@ x-app-logging: &app-logging
 # deliberate step — see server/README.md, "Upgrading the database image".
 x-db-image: &db-image timescale/timescaledb-ha:pg17.11-ts2.29.2
 
+# Healthchecks for the app services. ingest, api and mcp are distroless (no
+# shell, no curl), so each binary checks itself: `<binary> healthcheck` GETs
+# its own /healthz on loopback and exits 0 on a 200. A check answers
+# "healthy" only when the service can do its job — ingest and the API when
+# their database answers, mcp when the product API does, web when its
+# database does. That status shows in `docker compose ps`, gates the
+# `depends_on: condition: service_healthy` below and `docker compose up
+# --wait`. It does NOT restart anything: `restart: unless-stopped` acts only
+# when a process exits, and Docker without Swarm never restarts a container
+# for being unhealthy. To act on it, watch `docker compose ps` (or the
+# health_status events) from your monitoring. The probes are cheap (/healthz
+# caches its database check for two seconds).
+x-app-healthcheck: &app-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 3
+  # connectWithRetry waits up to 60 s for the database at startup.
+  start_period: 60s
+
 # The four app services (ingest, api, mcp, web) pull published images from
 # ghcr.io/pulshealth/<name>:${PULS_VERSION:-latest} — built by
 # .github/workflows/release.yml for linux/amd64 and linux/arm64. To run
@@ -35,6 +54,10 @@ services:
     # service below owns the schema and runs on every start instead.
     image: *db-image
     restart: unless-stopped
+    # Docker's default /dev/shm is 64 MB; PostgreSQL's parallel workers and
+    # hash joins use it, and a query over a few years of samples fails with
+    # "could not resize shared memory segment" once it is exhausted.
+    shm_size: 1g
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
     volumes:
@@ -98,6 +121,9 @@ services:
     image: ghcr.io/pulshealth/ingest:${PULS_VERSION:-latest}
     restart: unless-stopped
     logging: *app-logging
+    # Longer than Compose's 10 s default, so a batch being inserted when the
+    # stack restarts finishes and is acknowledged instead of being SIGKILLed.
+    stop_grace_period: 30s
     environment:
       # Connects as the scoped DML-only `ingest` role (created and kept
       # current by 099_read_roles.sh from INGEST_DB_PASSWORD) — the only
@@ -116,13 +142,18 @@ services:
       # address, so the URL the phone uses has to be handed in.
       PULS_PUBLIC_URL: ${PULS_PUBLIC_URL:-}
       LISTEN_ADDR: ":8080"
+      # Batches decoded and inserted concurrently; beyond it a request waits
+      # briefly, then gets 503 + Retry-After. Bounds the service's memory.
+      PULS_MAX_INFLIGHT_BATCHES: ${PULS_MAX_INFLIGHT_BATCHES:-4}
       # Whether to believe X-Forwarded-For when identifying the client an
-      # auth-failure budget belongs to. Only true when a proxy that
-      # overwrites that header is the ONLY way to reach port 8080 — a
-      # reverse proxy or Tailscale Serve/Funnel. Left false (the default),
-      # every client is identified by the TCP peer address, which is right
-      # for INGEST_BIND_ADDR=0.0.0.0 and for a proxy on the same host that
-      # does not rewrite the header. See server/README.md, "Rate limiting".
+      # auth-failure budget belongs to. Only true when a proxy is the ONLY
+      # way to reach port 8080 — a reverse proxy, Cloudflare Tunnel or
+      # Tailscale Serve/Funnel; the client is then the header's LAST entry,
+      # the one that proxy appended (a client can write the ones before it).
+      # Left false (the default), every client is identified by the TCP peer
+      # address, which is right for INGEST_BIND_ADDR=0.0.0.0 and for a proxy
+      # on the same host that does not set the header. See server/README.md,
+      # "Rate limiting".
       TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
     ports:
       # Loopback by default. Put a TLS-terminating proxy in front of it
@@ -134,6 +165,9 @@ services:
       # is then the only protection, and anything else on that network can
       # see the traffic. Never do that on a network you do not control.
       - "${INGEST_BIND_ADDR:-127.0.0.1}:8080:8080"
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "/ingest", "healthcheck"]
     depends_on:
       db:
         condition: service_healthy
@@ -144,6 +178,8 @@ services:
     image: ghcr.io/pulshealth/api:${PULS_VERSION:-latest}
     restart: unless-stopped
     logging: *app-logging
+    # Same reason as ingest's: let a streaming export finish on restart.
+    stop_grace_period: 30s
     environment:
       DATABASE_URL: postgres://api_reader:${API_DB_PASSWORD}@db:5432/postgres?sslmode=disable
       PULS_API_TOKEN: ${PULS_API_TOKEN:?set in .env}
@@ -153,8 +189,10 @@ services:
       # only when PULS_MULTI_USER is true; off, any other user is a 403.
       PULS_USER_ID: ${PULS_USER_ID:-5ea4d000-0000-4000-8000-000000000001}
       PULS_MULTI_USER: ${PULS_MULTI_USER:-false}
-      # Same calendar zone as the database (see the db service). The api
-      # refuses to start on an unknown zone name.
+      # Same calendar zone as the database (see the migrate service). The
+      # api refuses to start on an unknown zone name, and on one that is not
+      # the database's puls_time_zone() (a migrate that has not re-run since
+      # .env changed). It reports the zone on GET /v1/users.
       PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
       # Whether X-Forwarded-* may be believed: the client an auth failure is
       # charged to, and the host /openapi.json advertises. Same switch and
@@ -164,6 +202,9 @@ services:
       # Loopback only: expose it through an authenticated HTTPS proxy (e.g.
       # Tailscale Serve). Do not publish the bearer-token surface on the LAN.
       - "127.0.0.1:8081:8081"
+    healthcheck:
+      <<: *app-healthcheck
+      test: ["CMD", "/api", "healthcheck"]
     depends_on:
       db:
         condition: service_healthy
@@ -183,9 +224,13 @@ services:
       PULS_API_URL: http://api:8081
       PULS_API_TOKEN: ${PULS_API_TOKEN:?set in .env}
       PULS_MCP_TOKEN: ${PULS_MCP_TOKEN:?set in .env}
-      # Every date the tools speak is a calendar day in this zone; the
-      # product API does not report its own, so the two must agree.
-      PULS_TIME_ZONE: ${PULS_TIME_ZONE:-UTC}
+      # No PULS_TIME_ZONE: every date the tools speak is a calendar day in
+      # the zone the product API reports (GET /v1/users), which is the
+      # stack's PULS_TIME_ZONE, checked against the database by the API.
+      # Same switch, default and rule as ingest's and the API's: the
+      # auth-failure limiter on /mcp keys on the LAST X-Forwarded-For entry
+      # only when a proxy is the only way in.
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
       # Optional: pin this connector to one person. Empty (the default)
       # leaves the choice to each tool call — the API's PULS_USER_ID unless
       # a call names another user, which the API's PULS_MULTI_USER gates.
@@ -197,8 +242,17 @@ services:
       # publish it only through an HTTPS proxy, like the API (e.g.
       # `tailscale serve --bg --https=8445 http://localhost:8082`).
       - "127.0.0.1:8082:8082"
+    healthcheck:
+      <<: *app-healthcheck
+      # The image's command serves --http :8082, the address this asks.
+      test: ["CMD", "/mcp", "healthcheck"]
     depends_on:
-      - api
+      # Healthy, not merely started: the MCP's own /healthz is the API's.
+      # Restarted with it, so a changed PULS_TIME_ZONE (which recreates the
+      # api) is picked up at once rather than at the MCP's hourly re-ask.
+      api:
+        condition: service_healthy
+        restart: true
 
   web:
     # Next.js health viewer. Reads Postgres directly over the internal
@@ -231,14 +285,19 @@ services:
       # control".
       WEB_ACCOUNTS: ${WEB_ACCOUNTS:-false}
       # Same switch as ingest's and the API's: believe X-Forwarded-Proto/-Host
-      # and the client-address header only when a proxy that overwrites them
-      # is the only way in. WEB_CLIENT_IP_HEADER picks that header:
-      # x-forwarded-for (default), or cf-connecting-ip behind Cloudflare.
+      # and the client-address header only when a proxy is the only way in.
+      # WEB_CLIENT_IP_HEADER picks that header, read by its LAST entry (the
+      # one the proxy appended): x-forwarded-for (default), or
+      # cf-connecting-ip behind Cloudflare, which sets it itself.
       TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
       WEB_CLIENT_IP_HEADER: ${WEB_CLIENT_IP_HEADER:-x-forwarded-for}
       # The viewer's public https:// address: completes the links
       # `make web-invite` prints, and is accepted as an Origin.
       WEB_PUBLIC_URL: ${WEB_PUBLIC_URL:-}
+      # Postgres connections the viewer holds at once (clamped to 1–50). A
+      # type page runs several queries in parallel, so a viewer a few people
+      # use at the same time wants more than the default.
+      WEB_DB_POOL_SIZE: ${WEB_DB_POOL_SIZE:-4}
       # Accounts mode only. WEB_SIGNUPS=true lets strangers ask for an account
       # at /signup; nothing exists for them until an administrator approves
       # on /admin. WEB_INGEST_URL is where an iPhone connected from the
@@ -259,6 +318,13 @@ services:
       # Tailscale IPv4, rather than 0.0.0.0 — WEB_AUTH_PASSWORD is a password
       # prompt, not TLS, so the bind address still matters.
       - "${WEB_BIND_ADDR:-127.0.0.1}:3001:3000"
+    healthcheck:
+      <<: *app-healthcheck
+      interval: 30s
+      # A Node image: node's own fetch asks /api/healthz (exempt from the
+      # Basic login and from accounts mode's HTTPS rule), 200 when the
+      # database answers.
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/healthz',{signal:AbortSignal.timeout(4000)}).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
     depends_on:
       db:
         condition: service_healthy

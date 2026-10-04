@@ -25,7 +25,9 @@
 #   1. Starts `db` alone and checks the archive is readable, before anything is
 #      destroyed.
 #   2. Stops ingest, api, mcp, web and grafana, so nothing writes to — or
-#      caches from — the database while it is being replaced.
+#      caches from — the database while it is being replaced, and the
+#      scheduled `backup` service if it is running, so it cannot dump a
+#      half-restored database as the newest backup (step 7 starts it again).
 #   3. Drops the `web` and `auth` schemas (the viewer's per-user views, which
 #      depend on public, and its accounts) — the dump recreates them, and a
 #      schema that survived would stop pg_restore at "already exists" — then
@@ -47,10 +49,12 @@
 #   7. `docker compose up -d`: migrate re-runs the role and time-zone scripts
 #      (which is what puts the grants back), then the app services return.
 #
-# Restoring into a wiped volume works the same way: `docker compose down -v`,
-# then run this script — it creates the extension if the fresh database has
-# none. The dump carries `schema_migrations`, so the migrate service afterwards
-# sees an up-to-date schema and applies nothing.
+# Restoring into a wiped volume works the same way: `docker compose down &&
+# docker volume rm pulshealth_db_data` (never `down -v`: that also removes the
+# `backups` volume holding the dump), then run this script — it creates the
+# extension if the fresh database has none. The dump carries
+# `schema_migrations`, so the migrate service afterwards sees an up-to-date
+# schema and applies nothing.
 
 set -euo pipefail
 
@@ -105,7 +109,7 @@ done
 command -v docker >/dev/null 2>&1 || die "docker is required but not installed"
 
 # No --profile here: this must never start the scheduled backup service as a
-# side effect of restoring. The one call that needs the profile asks for it.
+# side effect of restoring. The calls that need the profile use backup_compose.
 compose() {
   if [[ $opt_build == 1 ]]; then
     docker compose --project-directory "$server_dir" \
@@ -113,6 +117,11 @@ compose() {
   else
     docker compose --project-directory "$server_dir" -f "$server_dir/docker-compose.yml" "$@"
   fi
+}
+
+backup_compose() {
+  docker compose --project-directory "$server_dir" --profile backup \
+    -f "$server_dir/docker-compose.yml" "$@"
 }
 
 # Plain KEY=value lookup in .env, same rules as scripts/bootstrap.sh.
@@ -157,10 +166,7 @@ fi
 dump_source() {
   case $source_kind in
     host) cat -- "$dump_arg" ;;
-    volume)
-      docker compose --project-directory "$server_dir" --profile backup \
-        -f "$server_dir/docker-compose.yml" run --rm -T backup cat "$dump_name"
-      ;;
+    volume) backup_compose run --rm -T backup cat "$dump_name" ;;
   esac
 }
 
@@ -176,11 +182,17 @@ compose exec -T db pg_isready -U postgres -d postgres >/dev/null 2>&1 \
   || die "the database did not become ready; look at: docker compose logs db"
 
 step "Checking the dump"
-[[ $source_kind != volume ]] || note "Reading $dump_name from the backup store."
+if [[ $source_kind == volume ]]; then
+  note "Reading $dump_name from the backup store."
+  # --entrypoint: the service's own entrypoint is backup.sh, which would take
+  # `test` as an (unknown) subcommand. /backups is where the store is mounted.
+  backup_compose run --rm -T --entrypoint test backup -f "/backups/$dump_name" \
+    || die "$dump_name is not in the backup store (\`make backup-list\` shows what is), and no file of that name exists here."
+fi
 # A truncated file, a plain-SQL dump or the wrong file entirely fails here,
 # while the current database is still intact.
 if ! dump_source | compose exec -T db pg_restore --list >/dev/null 2>&1; then
-  die "$dump_name could not be read as a pg_dump custom-format archive. If you gave a name from the backup store, the line above says whether it is there at all (\`make backup-list\`)."
+  die "$dump_name could not be read as a pg_dump custom-format archive."
 fi
 note "$dump_name is a readable custom-format archive."
 
@@ -201,6 +213,14 @@ fi
 
 step "Stopping the app services"
 compose stop ingest api mcp web grafana
+# The scheduled backup loop too, or its next run could dump a half-restored
+# database as the newest backup. Remembered, so the end of the script puts it
+# back only if it was on.
+backup_was_running=0
+if [[ -n $(backup_compose ps -q --status running backup 2>/dev/null) ]]; then
+  backup_was_running=1
+  backup_compose stop backup
+fi
 
 step "Clearing the current schema"
 # Sessions that have not noticed the stop (a Grafana pool, a psql left open)
@@ -243,6 +263,8 @@ db_psql -c "ANALYZE" >/dev/null
 
 if [[ $opt_no_start == 1 ]]; then
   note "App services left stopped (--no-start). Bring them back with: docker compose up -d"
+  [[ $backup_was_running == 0 ]] \
+    || note "The scheduled backup service was stopped too: docker compose --profile backup up -d backup"
   exit 0
 fi
 
@@ -255,6 +277,7 @@ if [[ $opt_build == 1 ]]; then
 else
   compose up -d
 fi
+[[ $backup_was_running == 0 ]] || backup_compose up -d backup
 
 step "Restored"
 db_psql -tAc "SELECT 'quantity_samples rows: ' || count(*) FROM quantity_samples" || true

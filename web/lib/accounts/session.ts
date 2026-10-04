@@ -6,7 +6,8 @@
 // Domain, so no other host or path can plant or shadow it. HttpOnly keeps it
 // from scripts; SameSite=Lax keeps it off cross-site POSTs (proxy.ts also
 // checks Origin). Sessions last 30 days from last use: an active one slides
-// forward at most once an hour.
+// forward at most once an hour — and 90 days from sign-in at most, so a
+// stolen cookie that is kept warm still dies.
 //
 // Server-only (node:crypto, the database).
 
@@ -16,6 +17,8 @@ import { query } from "../db";
 
 export const SESSION_COOKIE = "__Host-puls-session";
 export const SESSION_DAYS = 30;
+/** Absolute lifetime from sign-in; sliding never extends a session past it. */
+export const SESSION_ABSOLUTE_DAYS = 90;
 const SESSION_MAX_AGE_SECONDS = SESSION_DAYS * 86_400;
 const TOKEN_BYTES = 32;
 // 32 bytes in unpadded base64url.
@@ -61,9 +64,10 @@ export interface Session {
 }
 
 /**
- * The live session a cookie names, or null: unknown, expired, or its account
- * disabled or without a password. `touch` slides an active session's expiry
- * (proxy.ts does, once an hour at most); pages only read.
+ * The live session a cookie names, or null: unknown, expired (sliding or
+ * absolute), or its account disabled or without a password. `touch` slides
+ * an active session's expiry (proxy.ts does, once an hour at most); pages
+ * only read.
  */
 export async function findSession(token: string | null | undefined, touch = false): Promise<Session | null> {
   const id = tokenHash(token);
@@ -83,9 +87,10 @@ export async function findSession(token: string | null | undefined, touch = fals
        JOIN auth.accounts a ON a.id = s.account_id
       WHERE s.id = $1
         AND s.expires_at > now()
+        AND s.created_at > now() - make_interval(days => $2)
         AND a.disabled_at IS NULL
         AND a.password_hash IS NOT NULL`,
-    [id],
+    [id, SESSION_ABSOLUTE_DAYS],
   );
   const row = rows[0];
   if (!row) return null;
@@ -125,9 +130,33 @@ export async function createSession(accountId: string, meta: SessionMeta): Promi
      VALUES ($1, $2, now() + make_interval(days => $3), $4, $5)`,
     [tokenHash(token), accountId, SESSION_DAYS, meta.userAgent?.slice(0, 300) ?? null, meta.ip && isIP(meta.ip) ? meta.ip : null],
   );
-  // Expired rows are dead weight; sign-ins are rare enough to sweep on.
-  await query("DELETE FROM auth.sessions WHERE expires_at < now()");
+  // Expired rows (sliding or absolute) are deleted by the database's hourly
+  // job (auth.prune_signups, 018_web_accounts_hardening.sql), not here: a
+  // sweep on every sign-in scanned the whole table on the request path.
   return token;
+}
+
+/**
+ * Whether `ip` is an address one of the account's live sessions signed in
+ * from — an address its owner has proved recently. Sign-in uses it to spare
+ * the owner the per-email failure bucket (lib/accounts/ratelimit.ts,
+ * `failureKeys`). False for anything that is not an IP address (a client
+ * without trusted proxy headers is "direct"), so the shared bucket of
+ * unidentified clients never counts as known.
+ */
+export async function signedInFrom(email: string, ip: string): Promise<boolean> {
+  if (!isIP(ip)) return false;
+  const rows = await query(
+    `SELECT 1
+       FROM auth.sessions s
+       JOIN auth.accounts a ON a.id = s.account_id
+      WHERE a.email = $1 AND s.ip = $2::inet
+        AND s.expires_at > now()
+        AND s.created_at > now() - make_interval(days => $3)
+      LIMIT 1`,
+    [email, ip, SESSION_ABSOLUTE_DAYS],
+  );
+  return rows.length > 0;
 }
 
 export async function deleteSession(id: Buffer): Promise<void> {
@@ -155,8 +184,9 @@ export async function listSessions(accountId: string, currentId: Buffer): Promis
     `SELECT id, created_at, last_seen_at, user_agent, host(ip) AS ip
        FROM auth.sessions
       WHERE account_id = $1 AND expires_at > now()
+        AND created_at > now() - make_interval(days => $2)
       ORDER BY last_seen_at DESC`,
-    [accountId],
+    [accountId, SESSION_ABSOLUTE_DAYS],
   );
   return rows.map((r) => ({
     id: r.id.toString("hex"),
