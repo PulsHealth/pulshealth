@@ -38,7 +38,7 @@ type Way = {
   key: string;
   name: string;
   tagline: string;
-  price: string;
+  badge: string;
   icon: typeof Smartphone;
   where: string;
   points: string[];
@@ -51,7 +51,7 @@ const ways: Way[] = [
     key: "app",
     name: "The app",
     tagline: "Explore and export, on the phone.",
-    price: "Free",
+    badge: "No account",
     icon: Smartphone,
     where: "On your iPhone, until you share an export.",
     points: [
@@ -65,7 +65,7 @@ const ways: Way[] = [
     key: "hosted",
     name: "The PulsHealth database",
     tagline: "We run the database for you.",
-    price: "The one paid part",
+    badge: "Hosted for you",
     icon: Cloud,
     where: "On our database, under your own account.",
     points: [
@@ -81,7 +81,7 @@ const ways: Way[] = [
     key: "self",
     name: "Your own database",
     tagline: "Run the open-source stack yourself.",
-    price: "Free",
+    badge: "Self-hosted",
     icon: Server,
     where: "On a machine you control.",
     points: [
@@ -164,7 +164,7 @@ const claims = [
 
 type Cell = boolean | string;
 const comparison: { name: string; href?: string; cells: Cell[] }[] = [
-  { name: "PulsHealth", cells: [true, true, "Apache-2.0", "Hosted for you, or your Postgres", true, true, "Free app; hosting paid"] },
+  { name: "PulsHealth", cells: [true, true, "Apache-2.0", "Hosted for you, or your Postgres", true, true, "Free app"] },
   { name: "Health Auto Export", href: "https://www.healthyapps.dev/", cells: [false, "Community receivers", "Closed", "Your endpoint, Drive, MQTT…", "Community-documented", false, "Subscription"] },
   { name: "HealthSave", href: "https://healthsave.app/", cells: [false, "Source-available", "Elastic 2.0", "Your TimescaleDB", false, false, "One-time"] },
   { name: "FreeReps", href: "https://freereps.meltforce.org/", cells: [true, true, "MIT", "Your server (Tailscale)", false, true, "Free"] },
@@ -312,7 +312,7 @@ export default async function HomePage() {
                     <way.icon className="h-6 w-6" />
                   </div>
                   <Badge variant={way.featured ? "default" : "secondary"} className="font-normal">
-                    {way.price}
+                    {way.badge}
                   </Badge>
                 </div>
                 <CardTitle className="text-xl">{way.name}</CardTitle>
@@ -346,8 +346,8 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
           ))}
         </div>
         <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-muted-foreground">
-          Everything except hosting is free, and the app has no in-app purchases. Both
-          databases run the same open-source code.
+          The app is free, with no in-app purchases. Both databases run the same
+          open-source code.
         </p>
       </section>
 

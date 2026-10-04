@@ -14,8 +14,8 @@ Claude, Cursor and other AI assistants can answer questions from your data.
 
 **[PulsHealth is on the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354)** —
 free, iPhone and iPad. Sync it to the **PulsHealth database**, hosted for you at
-[app.pulshealth.com](https://app.pulshealth.com/signup) (hosting is the one
-paid part), or run this backend yourself; see [Quickstart](#quickstart).
+[app.pulshealth.com](https://app.pulshealth.com/signup), or run this backend
+yourself; see [Quickstart](#quickstart).
 
 **No server? Explore and export.** The **Explore** tab shows what Apple Health
 holds for every type: how many samples, since when, from which apps and

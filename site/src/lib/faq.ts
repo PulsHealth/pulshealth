@@ -12,8 +12,8 @@ export interface FaqItem {
 
 export const faq: FaqItem[] = [
   {
-    q: "Is the app really free? What costs money?",
-    a: "The app is free, with no in-app purchases, and exploring and exporting need no account. The one paid part is the PulsHealth database, where we host the database, viewer and AI connection for you. Running your own database with the open-source stack is free: one command on any Docker host.",
+    q: "Is the app really free?",
+    a: "Yes. There are no in-app purchases, and exploring and exporting need no account. The open-source stack is free to run yourself: one command on any Docker host. Or use the PulsHealth database, where we run the database, viewer and AI connection for you.",
     home: true,
   },
   {

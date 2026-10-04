@@ -171,7 +171,7 @@ export default function AppPage() {
                 <strong className="text-foreground">Syncing needs a database.</strong>{" "}
                 Exploring and exporting work without one: the app shows what Apple Health holds and
                 writes it to CSV or JSONL files on the phone. To sync, sign in to the PulsHealth
-                database, which we host for you (the one paid part), or run the open-source stack
+                database, which we host for you, or run the open-source stack
                 yourself, which comes up with one command. A receiver for the documented protocol
                 in front of a database you already have works too.
               </li>
