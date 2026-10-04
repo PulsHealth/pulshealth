@@ -237,6 +237,17 @@ services:
       # Deliberately not the API's PULS_USER_ID: pinning to that would make
       # the connector unable to read anyone else even with the gate open.
       PULS_USER_ID: ${PULS_MCP_USER_ID:-}
+      # Optional OAuth sign-in for hosted connectors (claude.ai, the Claude
+      # mobile app, Claude Code's /mcp), alongside PULS_MCP_TOKEN. The viewer
+      # in accounts mode is the authorization server and signs 30-minute
+      # access tokens with PULS_MCP_OAUTH_SECRET; this service checks them
+      # locally (still no database) and reads only as the signed-in person.
+      # On when the secret and PULS_MCP_URL (this server's public URL, path
+      # included) are set; the issuer is the viewer's WEB_PUBLIC_URL. Empty,
+      # nothing changes. See docs/ai.md, "Hosted connectors (OAuth)".
+      PULS_MCP_OAUTH_SECRET: ${PULS_MCP_OAUTH_SECRET:-}
+      PULS_MCP_URL: ${PULS_MCP_URL:-}
+      PULS_MCP_OAUTH_ISSUER: ${PULS_MCP_OAUTH_ISSUER:-${WEB_PUBLIC_URL:-}}
     ports:
       # Loopback only: the token grants read access to the health data, so
       # publish it only through an HTTPS proxy, like the API (e.g.
@@ -312,6 +323,12 @@ services:
       WEB_SES_SECRET_ACCESS_KEY: ${WEB_SES_SECRET_ACCESS_KEY:-}
       WEB_MAIL_FROM: ${WEB_MAIL_FROM:-}
       WEB_ADMIN_EMAIL: ${WEB_ADMIN_EMAIL:-}
+      # Accounts mode only: the viewer is the OAuth authorization server for
+      # the MCP server's hosted connectors, signing access tokens for
+      # PULS_MCP_URL with PULS_MCP_OAUTH_SECRET (the same two values the mcp
+      # service gets). Unset, every OAuth path is a 404. See docs/ai.md.
+      PULS_MCP_OAUTH_SECRET: ${PULS_MCP_OAUTH_SECRET:-}
+      PULS_MCP_URL: ${PULS_MCP_URL:-}
     ports:
       # 3000 is Grafana. Default to loopback; to reach the viewer from other
       # machines set WEB_BIND_ADDR to a private interface, e.g. the host's
@@ -338,7 +355,10 @@ services:
     # terminates TLS and so sees the traffic; in return it adds its WAF, rate
     # limiting and, optionally, Access in front. It reaches the viewer by its
     # container name (http://web:3000 — the service URL to give the tunnel's
-    # route in the dashboard), so WEB_BIND_ADDR stays on loopback.
+    # route in the dashboard), so WEB_BIND_ADDR stays on loopback. A second
+    # route on the same tunnel can publish the MCP server for hosted
+    # connectors (https://mcp.example.com → http://mcp:8082; docs/ai.md,
+    # "Hosted connectors (OAuth)").
     #
     # Meant for the viewer's accounts mode (WEB_ACCOUNTS=true) with
     # TRUST_PROXY_HEADERS=true, WEB_CLIENT_IP_HEADER=cf-connecting-ip and

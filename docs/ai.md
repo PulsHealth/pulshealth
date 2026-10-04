@@ -93,7 +93,8 @@ optional cell that sends it to Claude.
 2. **Remote connector (streamable HTTP).** The Compose stack's `mcp`
    service serves `/mcp` on `127.0.0.1:8082`; publish it over HTTPS and any
    client that can send a bearer header connects to it. No binary on the
-   client side.
+   client side. Clients that only sign in (claude.ai, the Claude mobile app)
+   use OAuth through the web viewer: "Hosted connectors (OAuth)" below.
 
 ### Get the binary
 
@@ -219,9 +220,8 @@ sharing the proxy's.
 
 Clients that take a static bearer header — Claude Code, Cursor, the MCP
 Inspector, your own code — connect as shown above. The hosted connector
-screens in claude.ai and ChatGPT expect an OAuth flow rather than a pasted
-token; until the server speaks OAuth (or you front it with an OAuth-capable
-proxy), use one of the clients above, or the stdio binary.
+screens (claude.ai, the Claude mobile app) take no header, only an OAuth
+sign-in: see the next section.
 
 Quick check from a shell:
 
@@ -234,6 +234,86 @@ curl -s -X POST https://<machine>.<tailnet>.ts.net:8445/mcp \
 
 A `401` means the token; a `503` from `/healthz` means the product API (or
 its database) is down.
+
+### Hosted connectors (OAuth): claude.ai, the Claude mobile app, Claude Code sign-in
+
+claude.ai's custom connectors — which the Claude mobile app then uses too —
+connect from Anthropic's cloud and authenticate only with OAuth: no pasted
+token. The server speaks it. The web viewer in accounts mode is the
+**authorization server**: a person signs in there with their own viewer
+account and approves the assistant, and the viewer issues it a 30-minute
+access token (renewed with a refresh token). The `mcp` service is the
+**resource server**: it checks each token's signature with a secret it shares
+with the viewer, without a database, and reads **only the signed-in person's
+data** — every API call names them, a tool asking about anyone else is
+refused, and `list_users` shows them alone. `PULS_MCP_TOKEN` keeps working
+beside it for the clients above.
+
+What it needs:
+
+- **The viewer in accounts mode on a public HTTPS address**
+  (`WEB_ACCOUNTS=true`, `WEB_PUBLIC_URL=https://viewer.example.com`; see
+  `server/README.md`, "The web viewer on your own domain"). People sign in
+  there, so their accounts are the ones `make web-invite` (or approved
+  sign-ups) created.
+- **The MCP server on a public HTTPS address.** Anthropic's servers make the
+  calls, so a tailnet-only or loopback URL will not do. With the Compose
+  `tunnel` profile already serving the viewer, add a second published route
+  on the same Cloudflare tunnel: `mcp.example.com` → `http://mcp:8082`
+  (port 8082 stays on loopback; Cloudflare terminates TLS and so sees the
+  traffic). Any other TLS-terminating proxy works too; keep
+  `TRUST_PROXY_HEADERS=true` when it is the only way in.
+- **Two lines in `server/.env`**, read by both `web` and `mcp`:
+
+  ```bash
+  PULS_MCP_OAUTH_SECRET=<openssl rand -hex 32>
+  PULS_MCP_URL=https://mcp.example.com/mcp   # the exact URL you give the connector
+  ```
+
+  The issuer is the viewer's `WEB_PUBLIC_URL` (Compose passes it as
+  `PULS_MCP_OAUTH_ISSUER`). Then `docker compose up -d`. The `mcp` log's
+  `listening` line names the URL and the issuer under `oauth` (`off` when
+  it is not on), and
+  `curl -s https://mcp.example.com/.well-known/oauth-protected-resource/mcp`
+  returns the resource document naming the viewer.
+- **`PULS_MULTI_USER=true`** on the API for anyone but the default user
+  (`PULS_USER_ID`): otherwise the API refuses their reads (a `403` in the
+  tool's error). With it on, `PULS_MCP_TOKEN` can read everyone, so pin it:
+  `PULS_MCP_USER_ID=<the person it is for>`.
+
+**claude.ai and the mobile app.** Settings → Connectors → **Add custom
+connector**; give it a name and the URL (`https://mcp.example.com/mcp`) and
+leave the advanced OAuth fields (client ID and secret) empty — the client
+registers itself. **Connect** opens the viewer's sign-in and a consent page
+naming the client; **Allow** returns you to Claude. The connector then
+appears in the Claude mobile app on the same account. Each person who uses
+it connects with their own viewer account and sees only their own data.
+
+**Claude Code.**
+
+```bash
+claude mcp add --transport http pulshealth https://mcp.example.com/mcp
+```
+
+then `/mcp` inside a session, choose `pulshealth` and **Authenticate**: the
+same sign-in and consent in your browser.
+
+Things to know:
+
+- **Revocation takes up to 30 minutes.** The account page's AI assistants
+  list revokes a connection, and disabling, deleting or resetting the password
+  of an account revokes all of its connections; the refresh is refused at
+  once, but an access token already issued is valid until it expires (at
+  most 30 minutes), because the MCP server does not ask the database. Rotating
+  `PULS_MCP_OAUTH_SECRET` (`docker compose up -d web mcp`) ends every access
+  token immediately.
+- **Your data passes through the AI provider.** Every answer a tool gives —
+  readings, workouts, sleep, your profile's name and date of birth — goes to
+  Anthropic (or whoever runs the client) to be read by the model, under that
+  provider's terms and retention, exactly as with any other connector. The
+  consent page says what is shared; connect only if that is acceptable.
+- **The grant is read-only and all-or-nothing:** one scope, `health:read`,
+  covering every type the server holds for you.
 
 ## ChatGPT: the product API as a custom GPT Action
 
@@ -382,8 +462,11 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
   notes in `server/mcp/README.md`.
 - With the API's `PULS_MULTI_USER` off (the default) the assistant sees one
   person only. With it on, pin each connector to its person (`PULS_USER_ID`;
-  see the multi-user note above). Nothing here can write to the database or
-  to Apple Health.
+  see the multi-user note above). An OAuth sign-in is always pinned to the
+  person who signed in. Nothing here can write to the database or to Apple
+  Health.
+- **A hosted connector sends your data to its provider** and is revoked with
+  up to 30 minutes' delay; see "Hosted connectors (OAuth)".
 
 ## Troubleshooting
 
@@ -391,7 +474,10 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
 |---|---|
 | The tool returns `product API returned 401 ...` | `PULS_API_TOKEN` given to the MCP server differs from the API's. |
 | `product API unreachable at ...` | Wrong `PULS_API_URL`, tunnel not up, or the API container is down (`docker compose ps`). |
-| `PULS_MCP_TOKEN must be set to serve --http` at startup | HTTP mode refuses to run without its token — set it in `.env`. |
+| `PULS_MCP_TOKEN (or OAuth: …) must be set to serve --http` at startup | HTTP mode refuses to run without its token — set it in `.env`. |
+| `OAuth needs all of PULS_MCP_OAUTH_SECRET, PULS_MCP_URL and PULS_MCP_OAUTH_ISSUER` at startup | One of the OAuth settings is set without the others; the issuer comes from `WEB_PUBLIC_URL`. |
+| claude.ai says it cannot connect, or never shows a sign-in | The MCP URL is not reachable from the internet, or OAuth is off (`/.well-known/oauth-protected-resource/mcp` is a 404); check the `mcp` log's `listening` line. |
+| A signed-in connector's tools fail with a `403` from the product API | The person is not the API's default user and `PULS_MULTI_USER` is off. |
 | Daily figures are off by a day, or a day splits in two | `PULS_TIME_ZONE` set on the MCP server differs from the stack's (its log warns); unset it to use the API's. |
 | A tool fails with `could not learn the server's time zone` | The MCP server could not reach `GET /v1/users` to ask for the zone; it tries again on the next call. Fix the API connection, or set `PULS_TIME_ZONE`. |
 | Client shows the server as failed to start | Run it by hand with the same env: errors go to stderr as JSON. `pulshealth-mcp --version` checks the binary. |

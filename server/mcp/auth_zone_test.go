@@ -63,7 +63,7 @@ func TestBearerAuthThrottlesFailuresOnly(t *testing.T) {
 		reached++
 		w.WriteHeader(http.StatusNoContent)
 	})
-	h := bearerAuth("mcp-secret", newFailureLimiter(), false, logger, next)
+	h := bearerAuth(staticAuth("mcp-secret"), newFailureLimiter(), false, logger, next)
 	const attacker, friend = "198.51.100.9:5555", "203.0.113.4:6666"
 
 	// A correct token is never throttled, however often it is used.
@@ -109,7 +109,7 @@ func TestBearerAuthForwardedForRule(t *testing.T) {
 	ok := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
 	const proxy = "127.0.0.1:40000"
 
-	trusted := bearerAuth("mcp-secret", newFailureLimiter(), true, discard, ok)
+	trusted := bearerAuth(staticAuth("mcp-secret"), newFailureLimiter(), true, discard, ok)
 	for i := 0; i < authFailureBurst; i++ {
 		mcpAttempt(t, trusted, "Bearer nope", proxy, "198.51.100."+strings.Repeat("1", i%3+1)+", 192.0.2.50")
 	}
@@ -120,7 +120,7 @@ func TestBearerAuthForwardedForRule(t *testing.T) {
 		t.Fatalf("another client behind the same proxy = %d, want it served", rec.Code)
 	}
 
-	untrusted := bearerAuth("mcp-secret", newFailureLimiter(), false, discard, ok)
+	untrusted := bearerAuth(staticAuth("mcp-secret"), newFailureLimiter(), false, discard, ok)
 	for i := 0; i < authFailureBurst; i++ {
 		mcpAttempt(t, untrusted, "Bearer nope", proxy, "192.0.2."+strings.Repeat("9", i%3+1))
 	}
