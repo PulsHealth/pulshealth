@@ -338,23 +338,68 @@ func TestOAuthChallengeAndLimiter(t *testing.T) {
 			t.Fatalf("valid token %d = %d", i, rec.Code)
 		}
 	}
-	// Expired tokens are failures like any other: the budget runs out and
-	// then even a valid token is refused before it is looked at.
+	// A signed but expired token guesses nothing (forging it needs the
+	// secret): it is a 401 invalid_token, never charged, however often.
 	expired := signJWT(vectorSecret, goodHeader, claimsJSON(map[string]any{"exp": vectorIat}))
+	wrongAud := signJWT(vectorSecret, goodHeader, claimsJSON(map[string]any{"aud": "https://other.example.com/mcp"}))
+	for i := 0; i < authFailureBurst*3; i++ {
+		for _, tok := range []string{expired, wrongAud} {
+			rec := mcpAttempt(t, h, "Bearer "+tok, "192.0.2.3:1", "")
+			if rec.Code != http.StatusUnauthorized || !strings.Contains(rec.Header().Get("WWW-Authenticate"), `error="invalid_token"`) {
+				t.Fatalf("signed invalid token %d = %d %q, want 401 invalid_token", i, rec.Code, rec.Header().Get("WWW-Authenticate"))
+			}
+		}
+	}
+	if rec := mcpAttempt(t, h, "Bearer "+vectorToken, "192.0.2.3:1", ""); rec.Code != http.StatusNoContent {
+		t.Errorf("valid token after many expired ones = %d, want it served", rec.Code)
+	}
+	// Bearer-less discovery requests are never charged nor refused.
+	for i := 0; i < authFailureBurst*3; i++ {
+		rec := mcpAttempt(t, h, "", "192.0.2.4:1", "")
+		if rec.Code != http.StatusUnauthorized || !strings.Contains(rec.Header().Get("WWW-Authenticate"), meta) {
+			t.Fatalf("discovery %d = %d %q, want 401 with the challenge", i, rec.Code, rec.Header().Get("WWW-Authenticate"))
+		}
+	}
+	if rec := mcpAttempt(t, h, "Bearer "+vectorToken, "192.0.2.4:1", ""); rec.Code != http.StatusNoContent {
+		t.Errorf("valid token after discovery requests = %d", rec.Code)
+	}
+
+	// Guesses — garbage, a forged signature, a wrong static token — are
+	// still charged and, once the budget is spent, refused before compare.
+	guesses := []string{"garbage", flipLast(vectorToken), "mcp-secreu", signJWT(strings.Repeat("z", 64), goodHeader, claimsJSON(nil))}
 	for i := 0; i < authFailureBurst; i++ {
-		mcpAttempt(t, h, "Bearer "+expired, "192.0.2.3:1", "")
+		if rec := mcpAttempt(t, h, "Bearer "+guesses[i%len(guesses)], "192.0.2.5:1", ""); rec.Code != http.StatusUnauthorized {
+			t.Fatalf("guess %d = %d, want 401", i, rec.Code)
+		}
 	}
-	if rec := mcpAttempt(t, h, "Bearer "+vectorToken, "192.0.2.3:1", ""); rec.Code != http.StatusTooManyRequests {
-		t.Errorf("after the burst = %d, want 429", rec.Code)
+	for _, g := range append(guesses, "mcp-secret") {
+		if rec := mcpAttempt(t, h, "Bearer "+g, "192.0.2.5:1", ""); rec.Code != http.StatusTooManyRequests {
+			t.Errorf("guess or static token after the burst = %d, want 429", rec.Code)
+		}
 	}
-	if reached != authFailureBurst*2 {
-		t.Errorf("reached %d, want %d", reached, authFailureBurst*2)
+	// An exhausted address still admits a correctly signed valid token (its
+	// HMAC is checked before the limiter), still answers discovery with the
+	// challenge, and still says invalid_token to a signed expired one.
+	if rec := mcpAttempt(t, h, "Bearer "+vectorToken, "192.0.2.5:1", ""); rec.Code != http.StatusNoContent {
+		t.Errorf("valid access token from an exhausted address = %d, want it served", rec.Code)
+	}
+	if rec := mcpAttempt(t, h, "", "192.0.2.5:1", ""); rec.Code != http.StatusUnauthorized || !strings.Contains(rec.Header().Get("WWW-Authenticate"), meta) {
+		t.Errorf("discovery from an exhausted address = %d, want 401 with the challenge", rec.Code)
+	}
+	if rec := mcpAttempt(t, h, "Bearer "+expired, "192.0.2.5:1", ""); rec.Code != http.StatusUnauthorized {
+		t.Errorf("signed expired token from an exhausted address = %d, want 401", rec.Code)
+	}
+
+	if want := authFailureBurst*2 + 3; reached != want {
+		t.Errorf("reached %d, want %d", reached, want)
 	}
 	out := logs.String()
-	if !strings.Contains(out, "expired") {
-		t.Errorf("failure reason not logged: %s", out)
+	for _, want := range []string{"expired", "audience", "no bearer", "bad signature", "auth throttled"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("%q not logged: %s", want, out)
+		}
 	}
-	if strings.Contains(out, vectorToken[:40]) || strings.Contains(out, expired[40:80]) {
+	if strings.Contains(out, vectorToken[:40]) || strings.Contains(out, expired[40:80]) || strings.Contains(out, "garbage") {
 		t.Errorf("a token reached the log: %s", out)
 	}
 }

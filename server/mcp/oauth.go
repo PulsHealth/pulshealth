@@ -173,11 +173,22 @@ type jwtClaims struct {
 	Jti      string `json:"jti"`
 }
 
+// errTokenMalformed and errTokenSignature mean the signature was never
+// verified: the bearer could be a guess. errTokenClaims means it was — the
+// token was minted with PULS_MCP_OAUTH_SECRET and is only expired, for
+// another audience, unreadable after signing, and so on — so it guesses
+// nothing (see tokenSigned and bearerAuth).
 var (
 	errTokenMalformed = errors.New("malformed token")
 	errTokenSignature = errors.New("bad signature")
 	errTokenClaims    = errors.New("claims rejected")
 )
+
+// tokenSigned reports whether a verifyAccessToken result carries a signature
+// this server verified, valid claims or not.
+func tokenSigned(err error) bool {
+	return err == nil || errors.Is(err, errTokenClaims)
+}
 
 // b64 is unpadded base64url, strict about non-canonical trailing bits so
 // one token has one spelling.
@@ -186,7 +197,8 @@ var b64 = base64.RawURLEncoding.Strict()
 // verifyAccessToken checks an access token and returns the person it acts
 // for. The checks run in this order: shape and size, header, signature
 // (constant time), and only then the claims, so nothing unsigned is
-// interpreted beyond the header.
+// interpreted beyond the header. Every failure after the signature check is
+// errTokenClaims (tokenSigned).
 func (c *oauthConfig) verifyAccessToken(token string, now time.Time) (*jwtClaims, error) {
 	if len(token) > maxAccessTokenLen {
 		return nil, fmt.Errorf("%w: too long", errTokenMalformed)
@@ -221,12 +233,12 @@ func (c *oauthConfig) verifyAccessToken(token string, now time.Time) (*jwtClaims
 
 	payload, err := b64.DecodeString(parts[1])
 	if err != nil {
-		return nil, fmt.Errorf("%w: payload encoding", errTokenMalformed)
+		return nil, fmt.Errorf("%w: payload encoding", errTokenClaims)
 	}
 	var claims jwtClaims
 	dec := json.NewDecoder(bytes.NewReader(payload))
 	if err := dec.Decode(&claims); err != nil || dec.More() {
-		return nil, fmt.Errorf("%w: payload json", errTokenMalformed)
+		return nil, fmt.Errorf("%w: payload json", errTokenClaims)
 	}
 	switch {
 	case claims.Iss != c.issuer:
@@ -260,26 +272,35 @@ func staticAuth(token string) authenticator {
 	return authenticator{staticToken: token, now: time.Now}
 }
 
-// authenticate returns the TokenInfo for a bearer, or nil and a reason fit
-// for the log (never the token) when it is neither the static token nor a
-// valid access token.
-func (a authenticator) authenticate(bearer string) (*auth.TokenInfo, string) {
-	if a.staticToken != "" && constantTimeEqual(bearer, a.staticToken) {
-		return &auth.TokenInfo{UserID: staticTokenIdentity}, ""
-	}
+// verifySigned checks a bearer as an access token (OAuth on only). It is
+// the step bearerAuth runs *before* the limiter: a signed token proves
+// knowledge of nothing an attacker can guess, and the check is an HMAC
+// compared in constant time over at most maxAccessTokenLen bytes, so it is
+// as cheap to run for a throttled address as the limiter itself. ok is false
+// when the bearer is not a token this server's secret signed; the caller
+// then treats it as a guess.
+func (a authenticator) verifySigned(bearer string) (info *auth.TokenInfo, reason string, ok bool) {
 	if a.oauth == nil {
-		return nil, "wrong token"
+		return nil, "", false
 	}
 	claims, err := a.oauth.verifyAccessToken(bearer, a.now())
+	if !tokenSigned(err) {
+		return nil, err.Error(), false
+	}
 	if err != nil {
-		return nil, err.Error()
+		return nil, err.Error(), true
 	}
 	return &auth.TokenInfo{
 		UserID:     claims.Sub,
 		Scopes:     strings.Fields(claims.Scope),
 		Expiration: time.Unix(*claims.Exp, 0),
 		Extra:      map[string]any{"client_id": claims.ClientID},
-	}, ""
+	}, "", true
+}
+
+// staticMatches reports whether a bearer is the static PULS_MCP_TOKEN.
+func (a authenticator) staticMatches(bearer string) bool {
+	return a.staticToken != "" && constantTimeEqual(bearer, a.staticToken)
 }
 
 // challenge is the WWW-Authenticate value of a 401.

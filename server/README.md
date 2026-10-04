@@ -520,8 +520,13 @@ address and path, never the token).
 **The MCP server's `--http` mode** (the `mcp` service, `/mcp` behind
 `PULS_MCP_TOKEN` and, when on, OAuth access tokens) applies the same limiter
 with the same numbers, the same `TRUST_PROXY_HEADERS` switch and the same
-last-entry rule; an invalid or expired access token is a failure like a
-wrong static token. The three copies
+last-entry rule, but gates and charges only bearers that could be guesses:
+a request with no bearer (an OAuth client's discovery request) always gets
+its 401 challenge, and an access token whose HMAC verifies is checked before
+the limiter — admitted if valid (even from an exhausted address), a 401 if
+expired or otherwise invalid, never charged — since hosted connectors share
+their operator's egress addresses. A wrong static token, garbage or a forged
+JWT is charged as before. The three copies
 of `ratelimit.go` are kept identical by `scripts/check-go-copies.sh` in CI.
 
 - **A correct token is never throttled.** Only failures draw from the bucket,

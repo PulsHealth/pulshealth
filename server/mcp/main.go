@@ -290,16 +290,58 @@ func (s *service) httpHandler(server *mcp.Server, authn authenticator, trustProx
 
 // bearerAuth admits only requests carrying the static token or (OAuth on) a
 // valid access token, and records who on the request (tokenInfoCtxKey) for
-// withSDKTokenInfo. It sits behind the
-// auth-failure limiter (ratelimit.go) exactly as ingest and the API are: a
-// client that has spent its budget is refused with 429 *before* the token is
-// compared, only failures are charged, and a success never is — a connected
-// assistant makes many requests a conversation. Every failure is logged
-// (never the token, present or absent) so a brute force leaves a trace.
+// withSDKTokenInfo. Guesses sit behind the auth-failure limiter
+// (ratelimit.go) exactly as on ingest and the API: a client that has spent
+// its budget is refused with 429 *before* the token is compared, only
+// failures are charged, and a success never is — a connected assistant makes
+// many requests a conversation. Every failure is logged (never the token,
+// present or absent) so a brute force leaves a trace.
+//
+// Only a bearer that could be a guess is gated or charged. Hosted connectors
+// (claude.ai, Claude mobile) reach this server from their operator's shared
+// egress addresses, so charging their normal traffic would spend the budget
+// and lock out every person behind those addresses, valid tokens included:
+//
+//   - No bearer at all is the discovery request every OAuth client makes to
+//     receive the 401 and its resource_metadata. It guesses nothing and the
+//     challenge holds no secret, so it is never refused by the limiter nor
+//     charged.
+//   - A bearer whose HMAC this server's secret verifies (verifySigned) cannot
+//     be a guess. It is checked before the limiter — the check is constant
+//     time and costs about what the limiter does — so a valid access token is
+//     admitted even from an exhausted address, and a signed but invalid one
+//     (expired, which every connector presents each time its token lapses;
+//     wrong audience; ...) is a 401 invalid_token, uncharged.
+//   - Anything else — a wrong static token, garbage, a forged or unsigned
+//     JWT — is gated and charged as before.
 func bearerAuth(authn authenticator, limiter *failureLimiter, trustProxyHeaders bool, logger *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		ip := clientIP(r, trustProxyHeaders)
+		admit := func(info *auth.TokenInfo) {
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), tokenInfoCtxKey{}, info)))
+		}
+		refuse := func(presented bool, reason string) {
+			logger.Warn("auth failed", "ip", ip, "path", r.URL.Path, "had_bearer", presented, "reason", reason)
+			w.Header().Set("WWW-Authenticate", authn.challenge(presented))
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		}
+
+		got, presented := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+		if !presented {
+			refuse(false, "no bearer")
+			return
+		}
+		info, reason, signed := authn.verifySigned(got)
+		if signed {
+			if info != nil {
+				admit(info)
+			} else {
+				refuse(true, reason)
+			}
+			return
+		}
+
 		if ok, wait := limiter.allow(ip, time.Now()); !ok {
 			seconds := int(wait.Seconds())
 			if seconds < 1 {
@@ -310,20 +352,15 @@ func bearerAuth(authn authenticator, limiter *failureLimiter, trustProxyHeaders 
 			writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many failed authentications"})
 			return
 		}
-		got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		var info *auth.TokenInfo
-		reason := "no bearer"
-		if ok {
-			info, reason = authn.authenticate(got)
-		}
-		if info == nil {
-			limiter.recordFailure(ip, time.Now())
-			logger.Warn("auth failed", "ip", ip, "path", r.URL.Path, "had_bearer", ok, "reason", reason)
-			w.Header().Set("WWW-Authenticate", authn.challenge(ok))
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		if authn.staticMatches(got) {
+			admit(&auth.TokenInfo{UserID: staticTokenIdentity})
 			return
 		}
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), tokenInfoCtxKey{}, info)))
+		if reason == "" { // OAuth off: verifySigned had nothing to say
+			reason = "wrong token"
+		}
+		limiter.recordFailure(ip, time.Now())
+		refuse(true, reason)
 	})
 }
 

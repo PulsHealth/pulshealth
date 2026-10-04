@@ -87,6 +87,17 @@ func TestBearerAuthThrottlesFailuresOnly(t *testing.T) {
 	if reached != authFailureBurst*3 {
 		t.Fatalf("handler reached %d times, want only the %d successes", reached, authFailureBurst*3)
 	}
+	// No bearer guesses nothing: answered 401 with the challenge, never 429,
+	// and never charged (a fresh address stays unspent after many).
+	if rec := mcpAttempt(t, h, "", attacker, ""); rec.Code != http.StatusUnauthorized || rec.Header().Get("WWW-Authenticate") == "" {
+		t.Fatalf("no bearer from an exhausted address = %d, want 401 with a challenge", rec.Code)
+	}
+	for i := 0; i < authFailureBurst*2; i++ {
+		mcpAttempt(t, h, "", "192.0.2.77:1", "")
+	}
+	if rec := mcpAttempt(t, h, "Bearer mcp-secret", "192.0.2.77:1", ""); rec.Code != http.StatusNoContent {
+		t.Fatalf("bearer-less requests charged the limiter: %d", rec.Code)
+	}
 	// Another address keeps its own bucket.
 	if rec := mcpAttempt(t, h, "Bearer mcp-secret", friend, ""); rec.Code != http.StatusNoContent {
 		t.Fatalf("an untouched address = %d, want it served", rec.Code)

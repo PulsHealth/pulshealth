@@ -214,7 +214,9 @@ The endpoint is then `https://<machine>.<tailnet>.ts.net:8445/mcp` with
 TLS works the same (Caddy, nginx, a cloud tunnel); keep `/healthz` reachable
 for monitoring if you like, it needs no token. Wrong tokens are throttled per
 client address like the API's (ten, then one every six seconds, `429` with
-`Retry-After`) and logged; behind a proxy that is the only way in, set
+`Retry-After`) and logged — but not a request with no token (an OAuth
+client's discovery request) or an access token the server signed, valid or
+expired, so connectors sharing an address never lock each other out; behind a proxy that is the only way in, set
 `TRUST_PROXY_HEADERS=true` so each client keeps its own budget instead of
 sharing the proxy's.
 

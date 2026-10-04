@@ -95,11 +95,17 @@ mode, pointed at `http://api:8081` over the internal network.
   request on it with any other credential is a 403. With OAuth on, a 401
   carries `WWW-Authenticate: Bearer resource_metadata="<origin>/.well-known/oauth-protected-resource/mcp"`
   (plus `error="invalid_token"` when a token was presented), which is how
-  a client finds where to sign in. Failed authentications are throttled per client address exactly
+  a client finds where to sign in. Failed guesses are throttled per client address exactly
   as on ingest and the API (`server/README.md`, "Rate limiting"): ten in a
   burst, then ten a minute (one every six seconds), answered `429` with `Retry-After` *before*
   the token is compared; a correct token is never throttled, and every
-  failure is logged (without the token).
+  failure is logged (without the token). Only a bearer that could be a
+  guess is gated or charged: a request with no bearer (an OAuth client's
+  discovery request) always gets its 401 challenge, and an access token
+  whose signature verifies is checked *before* the limiter — admitted if
+  valid, a `401 invalid_token` if expired or otherwise invalid, neither
+  charged — because hosted connectors share their operator's egress
+  addresses and would otherwise spend one budget for everyone behind them.
 - `GET /.well-known/oauth-protected-resource` and
   `/.well-known/oauth-protected-resource/mcp` — with OAuth on only (404
   otherwise), unauthenticated, CORS-open: the RFC 9728 document naming this
@@ -128,8 +134,11 @@ an HS256 JWT the viewer signs with `PULS_MCP_OAUTH_SECRET`
 4096 bytes, signature compared in constant time, `iss` equal to the issuer,
 `aud` equal to `PULS_MCP_URL`, `exp` not past and `iat` not ahead (60 s of
 skew each way), `sub` a lower-case UUID, `scope` containing `health:read`.
-Anything else is a 401, charged to the auth-failure limiter and logged with
-the reason (never the token).
+Anything else is a 401 logged with the reason (never the token). It is
+charged to the auth-failure limiter only when the signature did not verify;
+a correctly signed token that is expired or otherwise invalid cannot be a
+guess and is not charged, and a valid one is admitted even from a throttled
+address.
 
 A verified token acts for its `sub` and nobody else, through the same pin
 `PULS_USER_ID` enforces: every API request names that user, a tool call
