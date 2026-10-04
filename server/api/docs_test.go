@@ -29,17 +29,24 @@ type openAPIPaths struct {
 		Summary     string `json:"summary"`
 		// Absent means "inherit the document's security"; an empty array
 		// means the operation is open.
-		Security   *[]map[string][]string `json:"security"`
-		Parameters []struct {
-			Name     string `json:"name"`
-			In       string `json:"in"`
-			Required bool   `json:"required"`
-		} `json:"parameters"`
-		Responses map[string]json.RawMessage `json:"responses"`
+		Security   *[]map[string][]string     `json:"security"`
+		Parameters []openAPIParam             `json:"parameters"`
+		Responses  map[string]json.RawMessage `json:"responses"`
 	} `json:"paths"`
 	Components struct {
-		Schemas map[string]json.RawMessage `json:"schemas"`
+		Schemas    map[string]json.RawMessage `json:"schemas"`
+		Parameters map[string]openAPIParam    `json:"parameters"`
+		Responses  map[string]json.RawMessage `json:"responses"`
 	} `json:"components"`
+}
+
+// openAPIParam is one parameter of an operation: inline, or a $ref into
+// components.parameters, which fetchOpenAPI resolves in place.
+type openAPIParam struct {
+	Ref      string `json:"$ref"`
+	Name     string `json:"name"`
+	In       string `json:"in"`
+	Required bool   `json:"required"`
 }
 
 // fetchOpenAPI serves GET /openapi.json and decodes it.
@@ -55,6 +62,24 @@ func fetchOpenAPI(t *testing.T, srv *Server) (openAPIPaths, []byte) {
 	var doc openAPIPaths
 	if err := json.Unmarshal(body, &doc); err != nil {
 		t.Fatalf("the served OpenAPI document is not valid JSON: %v", err)
+	}
+	// Shared parameters (user, start, end, ...) are $refs; resolve them so
+	// every check below sees the parameter itself.
+	for path, operations := range doc.Paths {
+		for method, operation := range operations {
+			for i, param := range operation.Parameters {
+				if param.Ref == "" {
+					continue
+				}
+				name, ok := strings.CutPrefix(param.Ref, "#/components/parameters/")
+				resolved, found := doc.Components.Parameters[name]
+				if !ok || !found {
+					t.Fatalf("%s %s: parameter $ref %q does not resolve", method, path, param.Ref)
+				}
+				operation.Parameters[i] = resolved
+			}
+			operations[method] = operation
+		}
 	}
 	return doc, body
 }
@@ -160,9 +185,9 @@ func pathPlaceholders(path string) map[string]bool {
 	return out
 }
 
-// A $ref that names a schema the document does not define breaks every
-// importer, and a schema nothing refers to is dead weight the next editor
-// will trust.
+// A $ref that names a component the document does not define breaks every
+// importer, and a schema, parameter or response nothing refers to is dead
+// weight the next editor will trust.
 func TestOpenAPIRefsResolve(t *testing.T) {
 	t.Parallel()
 
@@ -176,19 +201,25 @@ func TestOpenAPIRefsResolve(t *testing.T) {
 	referenced := map[string]bool{}
 	collectRefs(tree, referenced)
 
+	defined := map[string]bool{}
+	for name := range doc.Components.Schemas {
+		defined["#/components/schemas/"+name] = true
+	}
+	for name := range doc.Components.Parameters {
+		defined["#/components/parameters/"+name] = true
+	}
+	for name := range doc.Components.Responses {
+		defined["#/components/responses/"+name] = true
+	}
+
 	for ref := range referenced {
-		name, ok := strings.CutPrefix(ref, "#/components/schemas/")
-		if !ok {
-			t.Errorf("$ref %q does not point into #/components/schemas", ref)
-			continue
-		}
-		if _, ok := doc.Components.Schemas[name]; !ok {
-			t.Errorf("$ref %q names a schema the document does not define", ref)
+		if !defined[ref] {
+			t.Errorf("$ref %q names nothing the document's components define", ref)
 		}
 	}
-	for name := range doc.Components.Schemas {
-		if !referenced["#/components/schemas/"+name] {
-			t.Errorf("components.schemas.%s is defined but nothing refers to it", name)
+	for ref := range defined {
+		if !referenced[ref] {
+			t.Errorf("%s is defined but nothing refers to it", strings.TrimPrefix(ref, "#/"))
 		}
 	}
 }
@@ -342,6 +373,36 @@ func firstLines(s string, n int) string {
 		lines = lines[:n]
 	}
 	return fmt.Sprint(strings.Join(lines, "\n"))
+}
+
+// Every authenticated operation can answer 401 (wrong token), 429 (too many
+// wrong tokens) and 500, and every /v1 route can answer 400 and 403 (the
+// user parameter); a reference that leaves them out tells a client those
+// statuses never happen.
+func TestOpenAPIDocumentsTheErrorResponses(t *testing.T) {
+	t.Parallel()
+
+	srv := testServer(t, &fakeStore{})
+	_, body := fetchOpenAPI(t, srv)
+	var doc struct {
+		Paths map[string]map[string]struct {
+			Responses map[string]json.RawMessage `json:"responses"`
+		} `json:"paths"`
+	}
+	if err := json.Unmarshal(body, &doc); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	for _, rt := range srv.apiRoutes() {
+		if !rt.auth {
+			continue
+		}
+		responses := doc.Paths[rt.path]["get"].Responses
+		for _, code := range []string{"200", "400", "401", "403", "429", "500"} {
+			if _, ok := responses[code]; !ok {
+				t.Errorf("%s: the document does not describe a %s response", rt.path, code)
+			}
+		}
+	}
 }
 
 // Every status the middleware can answer an authenticated route with is in

@@ -28,7 +28,7 @@ the self-hosted backend is pre-release.
 | `PulsHealthSync/` | Swift package: sync engine, transport, NDJSON encoding (iOS 17+, Swift 6 strict concurrency, no dependencies) | `PulsHealthSync/README.md` |
 | `PulsHealth/` | SwiftUI app around the package. The Xcode project is **generated** — run `xcodegen` after adding or renaming a file | `PulsHealth/README.md` |
 | `server/ingest/` | Go ingest server: parses batches, writes Postgres | `server/README.md` |
-| `server/api/` | Go product API: read-only JSON + `/v1/export`, OpenAPI at `/openapi.json`, HTML at `/docs` | `server/README.md` |
+| `server/api/` | Go product API: read-only JSON + `/v1/export`, OpenAPI at `/openapi.json`, HTML at `/docs` | `docs/api.md`, `server/README.md` |
 | `server/mcp/` | Go MCP server, read-only, over the product API only | `server/mcp/README.md`, `docs/ai.md` |
 | `server/db/` | `migrate.sh` and the numbered migrations it applies | `server/README.md` |
 | `server/backup/` | The opt-in `backup` Compose profile: scheduled `pg_dump`s and the restore drill | `server/README.md` |
@@ -50,7 +50,7 @@ Do not infer these from code you happen to be reading; go to the source.
 | What goes on the wire, and what a receiver must accept | [`docs/protocol/README.md`](docs/protocol/README.md) — Puls Sync Protocol v1, with JSON Schemas in `docs/protocol/schema/` and a fixture corpus in `docs/protocol/fixtures/` |
 | Which HealthKit types exist, their `kind`, canonical `unit` and legal aggregate functions | [`docs/protocol/catalog.json`](docs/protocol/catalog.json) — **generated** from `PulsHealthSync/Sources/PulsHealthSync/Models/HealthTypeCatalog.swift`; `web/lib/catalog.generated.ts` is generated from it in turn. Never hand-edit either. `docs/protocol/catalog.md` documents the render chain |
 | What each table and column means, and how to query it without misreading the data | [`docs/database-guide.md`](docs/database-guide.md) |
-| What the product API serves and in what shape | The OpenAPI document in `server/api/docs.go`, served at `/openapi.json` and mirrored as HTML at `/docs`. A test compares it against the router in both directions — adding a route without documenting it fails the build |
+| What the product API serves and in what shape | The OpenAPI document `server/api/openapi.json`, embedded in the binary and served at `/openapi.json`, summarised as HTML at `/docs`, and rendered as the reference at pulshealth.com/docs/api-reference/. A test compares it against the router in both directions — adding a route without documenting it fails the build |
 | What the schema is | `server/db/migrations/`, applied by `server/db/migrate.sh` |
 | What a bulk export contains | [`docs/export.md`](docs/export.md) |
 

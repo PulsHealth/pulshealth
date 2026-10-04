@@ -697,6 +697,11 @@ as or read for, defaulting to the seeded default user.
 
 ## Product API
 
+The full documentation is [`docs/api.md`](../docs/api.md) (quickstart,
+conventions, paging, errors, rate limits) and the endpoint-by-endpoint
+[API reference](api/openapi.json), rendered from the OpenAPI document the
+service serves. This section is what an operator needs.
+
 The product read API is a separate Go service on loopback port 8081; expose
 it only through an authenticated HTTPS proxy (see "Exposing the server").
 Clients send `Authorization: Bearer $PULS_API_TOKEN` — not the phone's
@@ -735,7 +740,8 @@ phone uploads a recent window of aggregates before its raw sweep on a first
 backfill.
 
 The service describes itself at `GET /` (a JSON index), `GET /docs` (a
-browser-readable reference) and `GET /openapi.json` (OpenAPI 3.1). Other
+browser-readable reference) and `GET /openapi.json` (OpenAPI 3.1, the
+embedded `server/api/openapi.json`). Other
 services should store the base URL as `PULS_API_BASE_URL` and the token as
 `PULS_API_TOKEN`. Every `/v1` route but `/v1/users` takes the optional
 `user` parameter above:

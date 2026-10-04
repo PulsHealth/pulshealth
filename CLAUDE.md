@@ -352,12 +352,15 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   opens Sync → Database with it.
 - **`site/` reads its content by relative path:** `knowledge-base/`
   (`site/src/lib/api.ts`), `blog/` (`site/src/lib/blog.ts`, `copy-blog-images`
-  in `site/package.json`) and the eleven repository markdown files in the
+  in `site/package.json`) and the thirteen repository files in the
   `site/src/lib/docs.ts` manifest (rendered at `/docs/<slug>/`; never edit the
-  markdown for the site). Move or rename any of them and the build **still
+  source for the site): twelve Markdown files and the product API's
+  `server/api/openapi.json`, which renders as the API reference
+  (`format: "openapi"`) and which `site/scripts/gen-openapi.ts` publishes at
+  `/openapi.json`. Move or rename any of them and the build **still
   succeeds** with fewer pages, so the `site` CI job asserts the counts: one
   type page per tracked YAML file (178), one per `blog/articles/*.mdx`, one per
-  manifest entry (`manifest=11` in `ci.yml` moves with the manifest). Keep that
+  manifest entry (`manifest=13` in `ci.yml` moves with the manifest). Keep that
   check honest; don't loosen it.
 - **The app is shipped software, not a source drop.** It is on the App Store as
   [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354), so the
@@ -540,7 +543,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   an earliest readable date (`ReadableLimit.isConfirmed`). A run that reads
   nothing anywhere throws `reconciliationUnreadable`.
 - The ingest container is distroless: no shell, debug via `docker compose logs ingest`.
-- `server/mcp` is a read-only client of the product API (`server/api/docs.go`
+- `server/mcp` is a read-only client of the product API (`server/api/openapi.json`
   is its contract) and must stay one: no database URL, no writes, every tool
   annotated read-only. Its tool descriptions and embedded `guide.md` spell out
   units, the time-zone rule and the double-counting rule for the model — update

@@ -5,9 +5,10 @@
   "scripts": {
     "copy-blog-images": "mkdir -p public/blog && cp -r ../blog/images/. public/blog/",
     "gen-llms-txt": "bun scripts/gen-llms-txt.ts",
-    "predev": "bun run copy-blog-images && bun run gen-llms-txt",
+    "gen-openapi": "bun scripts/gen-openapi.ts",
+    "predev": "bun run copy-blog-images && bun run gen-llms-txt && bun run gen-openapi",
     "dev": "next dev",
-    "prebuild": "bun run copy-blog-images && bun run gen-llms-txt",
+    "prebuild": "bun run copy-blog-images && bun run gen-llms-txt && bun run gen-openapi",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

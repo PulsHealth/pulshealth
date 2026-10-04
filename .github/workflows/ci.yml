@@ -160,7 +160,7 @@ jobs:
           blogs=$(find site/out/blog -mindepth 1 -maxdepth 1 -type d | wc -l)
           # The docs manifest (DOCS in site/src/lib/docs.ts) is explicit, not
           # a glob, so its length is a constant: bump it with the manifest.
-          manifest=11
+          manifest=13
           docs=$(find site/out/docs -mindepth 1 -maxdepth 1 -type d | wc -l)
           echo "knowledge-base types: $types sources, $built pages"
           echo "blog articles: $posts sources, $blogs pages"
@@ -175,6 +175,11 @@ jobs:
           # site/scripts/gen-llms-txt.ts (prebuild), never copied by hand.
           test -f site/out/llms.txt
           grep -q 'https://pulshealth.com/docs/protocol/' site/out/llms.txt
+          # The API reference renders server/api/openapi.json, and
+          # scripts/gen-openapi.ts (prebuild) publishes it for download. A
+          # reference with no endpoints in it would still build.
+          test -f site/out/openapi.json
+          grep -q 'id="getDailyMetrics"' site/out/docs/api-reference/index.html
 
   # The four app images build for linux/amd64 (no push) so a broken
   # Dockerfile fails a pull request instead of the next release. Same

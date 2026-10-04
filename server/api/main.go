@@ -364,7 +364,7 @@ func connectWithRetry(ctx context.Context, url string, logger *slog.Logger) (*pg
 
 // route is one entry of the router. path is the same route as an OpenAPI
 // path, which is what lets TestOpenAPIDescribesTheRouter compare the two:
-// an endpoint added here but not to the document in docs.go (or the other
+// an endpoint added here but not to the document in openapi.json (or the other
 // way round) fails the build rather than shipping an OpenAPI document that
 // lies to a generated client.
 type route struct {

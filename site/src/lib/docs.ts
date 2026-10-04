@@ -18,8 +18,13 @@ export interface DocEntry {
   /** Route segment: `/docs/<slug>/`. */
   slug: string;
   title: string;
-  /** Repo-relative path of the Markdown source. */
+  /** Repo-relative path of the source: Markdown, or an OpenAPI document. */
   repoPath: string;
+  /**
+   * How the source is rendered: Markdown (the default) or, for an OpenAPI
+   * document, as an API reference (`src/components/api-reference.tsx`).
+   */
+  format?: "markdown" | "openapi";
   /** One sentence, for the index card, the search entry and the meta description. */
   description: string;
   group: DocGroup;
@@ -50,6 +55,23 @@ export const DOCS: DocEntry[] = [
     repoPath: "docs/database-guide.md",
     description:
       "What the database stores, how the schema is shaped, and how to query it without misreading the health data, including iPhone plus Watch double counting.",
+    group: "Reference",
+  },
+  {
+    slug: "api",
+    title: "Product API",
+    repoPath: "docs/api.md",
+    description:
+      "The read-only HTTP API over your health data: a quickstart, authentication, choosing the user, conventions, paging, errors and rate limits.",
+    group: "Reference",
+  },
+  {
+    slug: "api-reference",
+    title: "API reference",
+    repoPath: "server/api/openapi.json",
+    format: "openapi",
+    description:
+      "Every product API endpoint with its parameters, responses, fields and a curl example, rendered from the OpenAPI 3.1 document the service serves.",
     group: "Reference",
   },
   {

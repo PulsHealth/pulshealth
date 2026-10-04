@@ -16,7 +16,7 @@ import (
 // The product API (server/api) is the only thing this server talks to: it
 // never opens a database connection, so the API's bearer token and read-only
 // database role are the whole trust boundary. The shapes below mirror
-// components.schemas in server/api/docs.go (the OpenAPI document); keep them
+// components.schemas in server/api/openapi.json (the OpenAPI document); keep them
 // in step when the API changes.
 
 const (
