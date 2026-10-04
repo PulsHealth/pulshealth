@@ -24,8 +24,6 @@ behind them.
   Swift toolchain; CI builds and unit-tests them, nothing has run them on a
   phone): R8's terminal-error cooldown, R16's stop on a locked device and
   R17's pending continued backfill (`docs/deep-review-2026-10.md`).
-- **R8 is not shown in the app yet:** a type cooling down after a terminal
-  error reads as failed.
 
 ## 2. Standing maintenance
 
