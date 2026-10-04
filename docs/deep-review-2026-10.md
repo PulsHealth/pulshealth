@@ -120,7 +120,8 @@ the API, every route's statuses documented and checked against the router;
 `web/lib/data/` with one UUID helper and a per-request `viewerUser()`; the
 diagnostics files deleted. Deferred until there is a compiler in the loop
 or a test to hold them: the engine file split and `SyncKey`/`withClaim`,
-`FullPassSchedule`, the `AppModel` seam and split, merging the two type
+`FullPassSchedule`, the `AppModel` split (its seam landed with the §6 #8
+tests), merging the two type
 pickers, the three duration formatters (they format different things), and
 the seven ingest unnest inserts (they differ in conflict targets, joins and
 `RETURNING`; only the integration suite could show a shared helper
@@ -140,11 +141,11 @@ equivalent).
 1. Appending-proxy `X-Forwarded-For` in all three limiters (**done** with S1).
 2. An existing-but-unreadable state file (**done** with R1).
 3. A stalled export reader (**done** with R3).
-4. The observer coalescer and the "three unacknowledged deliveries" rule, which live only in comments.
+4. The observer coalescer and the "three unacknowledged deliveries" rule, which live only in comments (**done**: `PulsHealthSync/Tests/PulsHealthSyncTests/ObserverCoalescerTests.swift` — one wake per burst over the union of its types, a stream that cannot postpone the flush, a wake on a held type acknowledging only after the release, expiry acknowledging from the handler and only once, `stopObserving` releasing a pending burst; the flush's background runner and the protected-data check are injectable for it).
 5. The HTTP retry loop itself (backoff, the observer's budget of one, 429) (**done** with R11).
 6. `migrate.sh` and `restore.sh`, the two scripts that can destroy data, have no automated coverage (**done**: `server/db/test-migrate.sh`, the db-migrate job, pins migrate.sh's whole contract against a throwaway TimescaleDB — lexical order, recorded checksums, `*.sh` every run, `-- puls:rerun`, edited and missing applied files refused, a failing file rolled back, `-- puls:no-transaction`, baseline and its refusals, and the advisory lock under two concurrent runs; `server/backup/test-restore.sh`, at the end of the stack smoke test, dumps synthetic data with compressed chunks and the continuous aggregate and restores it over the live database and into a wiped volume, every table's row count identical. It found that `restore.sh` refused most real-sized dumps streamed from the backup store: its pre-flight `pg_restore --list` closes the pipe early, and pipefail counted the writer's broken pipe. And that `migrate.sh`'s advisory lock did not serialise two containerised runs: it found its lock session by `application_name` `puls-migrate-lock-$$`, and `$$` is 1 in every container, so the compose service and a `docker compose run --rm migrate` beside it shared one name. Both fixed in the same change).
 7. Every `app/api/*` route and both server actions refusing without a session or admin (**done**: `web/lib/accounts/refusals.test.ts` walks every `app/api/**/route.ts` on disk and fails on one without a row: the proxy's 401, cross-origin 403 and plain-HTTP 403, each handler's own refusal with the database unreached, and the two server actions).
-8. `AppModel` onboarding-flag correction, Apply gating, pairing first-wins.
+8. `AppModel` onboarding-flag correction, Apply gating, pairing first-wins (**done**: `PulsHealth/HostedTests/AppModelTests.swift`, over the new `AppModel.init(engine:scheduler:defaults:healthAccess:)` seam — the flags in `init`, the correction in `start()`, the Health page that holds the pager, `finishOnboarding`'s apply, staged edits, the server-change prompt, the unreadable state file, and pairing links during the flow and at launch).
 
 ## Not planned
 
