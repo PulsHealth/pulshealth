@@ -174,10 +174,11 @@ Sources/
 │                         Database or Your Own Database (none checked until
 │                         one is applied). PulsHealth: who holds the data
 │                         (What the Developer Holds), Sign In to PulsHealth
-│                         and Request Access (both in the web authentication
+│                         and Create Account (both in the web authentication
 │                         sheet), then the returned code — its database named
 │                         — tested above Save & Apply; once applied, Manage
-│                         Account and Disconnect; always, Delete PulsHealth
+│                         Account, Connect an AI Assistant (docs, in
+│                         Safari) and Disconnect; always, Delete PulsHealth
 │                         Account. Your own: the Database
 │                         URL and Token fields (validated: https, or http for
 │                         local-network hosts only; held in a
@@ -251,7 +252,7 @@ Sources/
 │                         TypePresets.common, behind one Continue button);
 │                         one-time exports; "Sync to a database" (the
 │                         PulsHealth database or your own, both set up from
-│                         the Sync tab; Learn more → pulshealth.com/docs/server/
+│                         the Sync tab; Learn more → pulshealth.com/#ways
 │                         in Safari) with Start Exploring, which applies the
 │                         selection. Page 2 cannot be skipped: until iOS has
 │                         been asked, pages 3 and 4 are not in the pager, and
@@ -333,7 +334,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   code, so they are the operator's to change. **Sign In to PulsHealth** opens
   `/account` in an `ASWebAuthenticationSession` (shared browser session, so a
   sign-in made in Safari, where the invite email opens, carries over; iOS
-  asks first), and **Request Access** opens `/signup` in the same sheet
+  asks first), and **Create Account** opens `/signup` in the same sheet
   (App Review expects registration in the app, not in Safari). The person signs in, taps Connect this iPhone, then Open in
   PulsHealth, and the sheet returns that `puls://pair?…` link to the app. It
   gets the same checks as a scanned code, fills a `ServerFieldsDraft`
@@ -343,7 +344,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   and uploads no health data. There is no "Pair
   with…?" alert, because the person started the flow and the sheet only
   returns what that page sent. A closed sheet says nothing: that covers
-  someone who only asked for access, and a household account with nothing
+  someone who only created an account, and a household account with nothing
   to connect. Which database is applied is derived:
   `PulsHealthDatabase.isSignedIn`: `SyncConfiguration.isSignedInDatabase`,
   true only while the applied URL is the one the sign-in delivered, *and*

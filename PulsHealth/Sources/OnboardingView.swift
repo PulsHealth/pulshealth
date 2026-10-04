@@ -221,9 +221,9 @@ struct OnboardingView: View {
                 pageTitle("Sync to a database")
                 // Words only: signing in to the PulsHealth database happens on
                 // Sync → Database, never in this flow.
-                bodyText("Keep a live copy of your Health data in the PulsHealth database, with an account, or in one you run yourself. Set it up any time from the Sync tab.")
+                bodyText("Optional: keep a live copy of your Health data with a PulsHealth account, or in a database you run yourself. Exploring and exporting never need one. Set it up any time from the Sync tab.")
                 // Opens in Safari, outside the app.
-                Link(destination: URL(string: "https://pulshealth.com/docs/server/")!) {
+                Link(destination: URL(string: "https://pulshealth.com/#ways")!) {
                     Label("Learn more", systemImage: "arrow.up.right.square")
                 }
                 if model.confirmedPairing != nil {

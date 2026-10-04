@@ -2,8 +2,8 @@ import AuthenticationServices
 import Foundation
 import PulsHealthSync
 
-/// The PulsHealth database: the developer's own instance of the stack, which
-/// anyone may ask to join (`web/README.md`, "Access requests"). Sync →
+/// The PulsHealth database: the developer's own instance of the stack, hosted
+/// for the people who sign up (`web/README.md`, "Access requests"). Sync →
 /// Database offers it next to a database of your own.
 ///
 /// The app knows exactly one address for it, the viewer's, and this is the
@@ -41,7 +41,7 @@ enum PulsHealthDatabase {
     /// The account page: Connect this iPhone (which makes this iPhone's
     /// pairing code), the iPhones connected to the account, and Delete my
     /// account. Signed out, it sends the visitor to the sign-in page, which
-    /// links to `requestAccessURL`.
+    /// links to `signUpURL`.
     static var accountURL: URL { viewerURL.appending(path: "account") }
 
     /// The account page's Delete my account section, directly: App Review
@@ -53,11 +53,16 @@ enum PulsHealthDatabase {
         return components.url!
     }
 
-    /// Where someone without an account asks for one; the developer approves
-    /// it, and the invite to choose a password arrives by email. Opened in
-    /// the sign-in sheet, like the account page: App Review expects an
-    /// app's registration to happen in the app, not in Safari.
-    static var requestAccessURL: URL { viewerURL.appending(path: "signup") }
+    /// Where someone without an account creates one (Create Account; the
+    /// page reads "Create your PulsHealth account"). Opened in the sign-in
+    /// sheet, like the account page: App Review expects an app's
+    /// registration to happen in the app, not in Safari.
+    static var signUpURL: URL { viewerURL.appending(path: "signup") }
+
+    /// How to connect Claude or another AI assistant to the PulsHealth
+    /// database: a documentation page, opened in Safari. The app itself makes
+    /// no request for it.
+    static let aiAssistantsURL = URL(string: "https://pulshealth.com/docs/ai/")!
 
     /// The privacy policy's section on what the developer holds for the
     /// people who use it.
@@ -73,8 +78,8 @@ enum PulsHealthDatabase {
     enum SignInOutcome: Equatable {
         /// The account page sent this iPhone's pairing code.
         case paired(PairingPayload)
-        /// The person closed the sheet — after signing in, after asking for
-        /// access, or with nothing to connect (a household account, whose
+        /// The person closed the sheet — after signing in, after creating
+        /// an account, or with nothing to connect (a household account, whose
         /// iPhones the developer pairs). Their call, so nothing is said.
         case cancelled
         /// Something to tell them, worded for the screen.

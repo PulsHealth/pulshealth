@@ -15,7 +15,8 @@ final class PulsHealthDatabaseTests: XCTestCase {
     func testAddressesDeriveFromTheViewer() {
         XCTAssertEqual(PulsHealthDatabase.viewerURL.absoluteString, "https://app.pulshealth.com")
         XCTAssertEqual(PulsHealthDatabase.accountURL.absoluteString, "https://app.pulshealth.com/account")
-        XCTAssertEqual(PulsHealthDatabase.requestAccessURL.absoluteString, "https://app.pulshealth.com/signup")
+        XCTAssertEqual(PulsHealthDatabase.signUpURL.absoluteString, "https://app.pulshealth.com/signup")
+        XCTAssertEqual(PulsHealthDatabase.aiAssistantsURL.absoluteString, "https://pulshealth.com/docs/ai/")
         // Straight to the account page's Delete my account section
         // (web/app/account/page.tsx, id="delete-account").
         XCTAssertEqual(PulsHealthDatabase.deleteAccountURL.absoluteString, "https://app.pulshealth.com/account#delete-account")
