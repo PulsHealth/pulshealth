@@ -70,6 +70,11 @@ cd ../../tools/puls-export && go vet ./... && go test ./...
 cd tools/protocol-check && go test ./... && go run . ../../docs/protocol/fixtures/*.ndjson
 python3 examples/receivers/python-sqlite/smoke_test.py
 
+# migrate.sh's contract, against a throwaway TimescaleDB it starts (Docker
+# only); the restore drill DESTROYS the stack's database: scratch stacks only
+server/db/test-migrate.sh
+server/backup/test-restore.sh --scratch --build   # after bootstrap.sh --build
+
 # Notebook, against a throwaway TimescaleDB it starts (needs Docker and psql)
 pip install -r notebooks/requirements.txt && python -m pytest tests/test_healthkit_notebook.py -rs
 

@@ -196,7 +196,11 @@ wait_for_db
 # second run waits here, before reading anything, and then sees the first
 # run's records.
 MIGRATE_LOCK_KEY="1886743667, 1" # ('puls' as an int4, 1): pg_advisory_lock(int, int)
-lock_app="puls-migrate-lock-$$"
+# The session is found by its application_name, so the name must be unique
+# per run. $$ alone is not: in a container bash is PID 1, so the compose
+# service and a `docker compose run --rm migrate` beside it would share a
+# name, and the second run would take the first one's held lock for its own.
+lock_app="puls-migrate-lock-${HOSTNAME:-host}-$$-$RANDOM$RANDOM"
 take_migrate_lock() {
   local state waited=0 lock_pid
   exec {lock_fd}> >(PGAPPNAME="$lock_app" exec psql -X -q -w -o /dev/null -v ON_ERROR_STOP=1 \

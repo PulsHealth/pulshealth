@@ -190,8 +190,15 @@ if [[ $source_kind == volume ]]; then
     || die "$dump_name is not in the backup store (\`make backup-list\` shows what is), and no file of that name exists here."
 fi
 # A truncated file, a plain-SQL dump or the wrong file entirely fails here,
-# while the current database is still intact.
-if ! dump_source | compose exec -T db pg_restore --list >/dev/null 2>&1; then
+# while the current database is still intact. Only the reader's verdict
+# counts: `pg_restore --list` stops at the end of the table of contents, so
+# the writer of any dump bigger than the pipe's buffers dies of a broken pipe
+# (always for one streamed out of the backup store), and under pipefail that
+# refused every real-sized dump. A source that fails outright leaves
+# pg_restore an empty or truncated archive, which it rejects anyway.
+list_status=0
+{ dump_source 2>/dev/null || true; } | compose exec -T db pg_restore --list >/dev/null 2>&1 || list_status=$?
+if [[ $list_status -ne 0 ]]; then
   die "$dump_name could not be read as a pg_dump custom-format archive."
 fi
 note "$dump_name is a readable custom-format archive."

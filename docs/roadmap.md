@@ -33,7 +33,7 @@ Not backlog — things that come due on someone else's schedule.
 |---|---|
 | A new iOS runtime | Re-run the app-hosted `AggregateMatrixTests` (378 type×function combos): the legal set is HealthKit's, not ours. |
 | A major Xcode/iOS SDK update | Refresh `010_category_labels.sql` from `HKCategoryValues.h` and check the seed shape (`server/README.md`). |
-| Never yet done on real data | The backup restore drill. The one recorded in `server/README.md` ran against a throwaway stack; nothing else verifies that a dump restores. |
+| Never yet done on real data | The backup restore drill. CI now runs it on synthetic data (`server/backup/test-restore.sh` in the stack smoke test); the one recorded in `server/README.md` ran against a throwaway stack, and nothing yet verifies that a real install's dump restores. |
 | Publishing images from a new organization or a fork | A package `release.yml` creates starts private, and it can be made public only once the organization's package-creation policy allows public packages. Change the policy first, then flip each of the four in its package settings. |
 | Dependabot re-proposes eslint 10 or TypeScript 7 for `web`/`site` | Check upstream, then close against [#37](https://github.com/PulsHealth/pulshealth/issues/37). Both blockers are `eslint-config-next`'s own dependencies: `typescript-eslint` refuses TS >= 6.1 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)), and `eslint-plugin-react` still calls `context.getFilename()`, which ESLint 10 removed. Still true against `eslint-config-next` 16.3.8 (2026-10-01). |
 | A red `advisories` workflow run | Bump the dependency in its own pull request. `advisories.yml` is separate from `ci.yml` so it can go red without blocking a merge or a release; its header says when it runs and why. |
@@ -45,8 +45,7 @@ Waiting for a Swift toolchain or a test to land first
 `SyncKey`/`withClaim`, `FullPassSchedule`, the `AppModel` seam, merging the
 two type pickers and the duration formatters, the seven ingest `unnest`
 inserts; tests for the observer coalescer and the three-unacknowledged-
-deliveries rule, `migrate.sh`/`restore.sh`, and `AppModel` onboarding,
-Apply gating and pairing.
+deliveries rule, and `AppModel` onboarding, Apply gating and pairing.
 
 ## Not planned
 
