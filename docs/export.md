@@ -295,8 +295,9 @@ let the phone's next sync recompute them.
 
 ## See also
 
-- The endpoint reference on the running server: `GET /docs`, and the
-  machine-readable [`/openapi.json`](../server/api/docs.go).
+- The [API reference](../server/api/openapi.json) and the
+  [product API guide](api.md); on the running server, `GET /docs` and the
+  machine-readable `/openapi.json`.
 - [`docs/database-guide.md`](database-guide.md) — what the columns mean and
   which trap each dataset avoids.
 - [`docs/ai.md`](ai.md) — the same data through an MCP client or a ChatGPT

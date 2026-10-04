@@ -121,13 +121,13 @@ go build -o pulshealth-mcp . && PULS_API_TOKEN=x ./pulshealth-mcp --version
 ```
 
 Tests run against an `httptest` fake of the product API built from the
-OpenAPI shapes in `server/api/docs.go` (date mapping across DST, error
+OpenAPI shapes in `server/api/openapi.json` (date mapping across DST, error
 propagation, limits) plus an end-to-end pass over the SDK's in-memory
 transport and the HTTP transport with the token. This module deliberately
 takes one dependency beyond the standard library, the official
 `github.com/modelcontextprotocol/go-sdk`.
 
-When the product API's shapes change (`server/api/docs.go`), update
+When the product API's shapes change (`server/api/openapi.json`), update
 `api.go`, the tool descriptions in `tools.go`, and `guide.md` in the same
 change. Where the API pages, the client either passes the page through
 (`list_workouts`, `get_samples` expose `limit`/`offset`) or follows it to

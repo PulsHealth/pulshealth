@@ -535,7 +535,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   an earliest readable date (`ReadableLimit.isConfirmed`). A run that reads
   nothing anywhere throws `reconciliationUnreadable`.
 - The ingest container is distroless: no shell, debug via `docker compose logs ingest`.
-- `server/mcp` is a read-only client of the product API (`server/api/docs.go`
+- `server/mcp` is a read-only client of the product API (`server/api/openapi.json`
   is its contract) and must stay one: no database URL, no writes, every tool
   annotated read-only. Its tool descriptions and embedded `guide.md` spell out
   units, the time-zone rule and the double-counting rule for the model — update
