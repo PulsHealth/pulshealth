@@ -143,7 +143,7 @@ equivalent).
 4. The observer coalescer and the "three unacknowledged deliveries" rule, which live only in comments.
 5. The HTTP retry loop itself (backoff, the observer's budget of one, 429) (**done** with R11).
 6. `migrate.sh` and `restore.sh`, the two scripts that can destroy data, have no automated coverage (`migrate.sh` partly: the db-migrate job, and the stack smoke test runs it from `bootstrap.sh`).
-7. Every `app/api/*` route and both server actions refusing without a session or admin (partly: the admin route's refusals, `routes.test.ts`).
+7. Every `app/api/*` route and both server actions refusing without a session or admin (**done**: `web/lib/accounts/refusals.test.ts` walks every `app/api/**/route.ts` on disk and fails on one without a row: the proxy's 401, cross-origin 403 and plain-HTTP 403, each handler's own refusal with the database unreached, and the two server actions).
 8. `AppModel` onboarding-flag correction, Apply gating, pairing first-wins.
 
 ## Not planned
