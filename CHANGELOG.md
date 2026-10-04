@@ -48,7 +48,7 @@ pauses (nothing is lost) until the server is updated.
 **Upgrading:** take `make backup`, check out `v0.3.0`, set
 `PULS_VERSION=0.3.0`, then `make pull up`.
 
-No operator action is required beyond the one case below, but there are
+No operator action is required beyond the cases below, but there are
 schema migrations: take `make backup` before upgrading, as for any.
 `015_web_accounts.sql` and `016_web_signups.sql` add two
 schemas (`auth`, `web`), functions and views, and alter no existing table
@@ -62,7 +62,7 @@ that deletes rejected-batch records older than 90 days;
 one. `099_read_roles.sh` now gives the `ingest` role an exact grant list
 instead of DML on every table.
 
-**Three cases do need action** (each stops a service with a log line that
+**Four cases do need action** (each stops a service with a log line that
 says so, rather than misbehaving):
 
 - An `.env` still holding the `change-me` placeholder from `.env.example`
@@ -73,6 +73,10 @@ says so, rather than misbehaving):
   to anything but `true/false/1/0/yes/no/on/off` (or empty).
 - A table you added to the database yourself and have ingest write to:
   give it a row in `099_read_roles.sh`'s ingest list.
+- An `api` service given a `PULS_TIME_ZONE` other than the one the
+  `migrate` service stored on the database (`puls_time_zone()`). Compose
+  hands every service the same `.env`, so this only happens to an `api` run
+  outside it; give both the same zone.
 
 ### Added
 
