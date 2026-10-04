@@ -498,6 +498,27 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   administrator approved — keep the public form unable to mail anyone else,
   and never log an address.
 
+- **AI assistants connect over OAuth, and the token decides whose data.**
+  In accounts mode, with `PULS_MCP_OAUTH_SECRET` and `PULS_MCP_URL` set,
+  the viewer is the OAuth authorization server (`web/lib/oauth/`,
+  `019_oauth.sql`: `auth.oauth_clients`/`grants`/`codes`, the hourly
+  `auth.prune_oauth` job) and `server/mcp` the resource server; every OAuth
+  path 404s otherwise. Access tokens are HS256 `at+jwt` (header exactly
+  `alg`+`typ`, 30 minutes, `aud` = `PULS_MCP_URL`, `sub` = the user) that the
+  MCP verifies itself — it still never touches Postgres — so revocation
+  reaches a live token only when it expires; refresh is refused at once.
+  PKCE S256 is required, codes are single use (a replay revokes the grant),
+  refresh tokens rotate (presenting the replaced one revokes the grant), and
+  disabling, deleting or a password change/reset revokes grants. A JWT
+  request acts only for its `sub`: every API call names it, a `user`
+  argument naming anyone else is refused, `list_users` shows that person
+  alone, and an MCP session stays bound to the identity that opened it.
+  Reading anyone but the API's default user needs `PULS_MULTI_USER=true`,
+  so pin the static `PULS_MCP_TOKEN` path with `PULS_MCP_USER_ID` then.
+  The secret is used byte for byte on both sides (never trimmed). Changing
+  any of this changes `docs/privacy-policy.md`, `SECURITY.md`, `docs/ai.md`
+  and the site's `/privacy` with it.
+
 ## Gotchas
 
 - `HKQueryAnchor` blobs are opaque NSKeyedArchiver data — never inspect or

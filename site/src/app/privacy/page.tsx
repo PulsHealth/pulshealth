@@ -40,6 +40,7 @@ export default function PrivacyPage() {
           <CardContent>
             <ul className="list-disc pl-6 space-y-2">
               <li>The developer receives no health data, unless you choose their own database (the PulsHealth database, with its viewer at app.pulshealth.com) — by invitation, or by an access request they approved. Then they hold your data for you alone, and delete your account and data whenever you ask. Nothing in the app sends data to the developer unless you choose that database and sign in.</li>
+              <li>With the PulsHealth database you can connect an AI assistant, such as Claude, to your records by signing in and approving it. It gets read-only access to your health data and profile until you revoke it on your account page (its current access then runs out within 30 minutes), and its provider receives what it reads under the provider&rsquo;s own terms. The app is not involved, and the developer sends your data to no AI provider on its own.</li>
               <li>Your health data leaves the phone only two ways, both yours: uploads to the database you set up, one you run or the PulsHealth database, and files you export and share yourself.</li>
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>
               <li>No analytics, advertising, tracking or third-party SDKs in the app.</li>

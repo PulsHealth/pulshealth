@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-02**
+**Last updated: 2026-10-04**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you choose it and the developer approves
@@ -25,6 +25,14 @@ up, it exports a file when you ask for one, and that is the whole of it.
   database, on `app.pulshealth.com` (signing in, asking for access, managing
   or deleting your account). They open in Safari or in iOS's sign-in sheet,
   and the app itself sends them nothing.
+- **An AI assistant reads your data only if you connect one, and only
+  from the database, never from the app.** If you use the PulsHealth
+  database, you can connect an assistant such as Claude to your records by
+  signing in and approving it (see
+  [If you use the developer's viewer](#if-you-use-the-developers-viewer)).
+  Its provider then receives what the assistant reads, under the
+  provider's own terms. The app is not involved, and the developer sends
+  your data to no AI provider on its own.
 - **Your health data leaves the phone in two ways, and both are yours.** The
   app uploads only to the database you set up in it — typed, taken from
   your database's pairing code (scanned, pasted, or opened as a link you
@@ -221,7 +229,9 @@ It is not shared with, or sold to, anyone. The only recipient of an upload is
 the database you set up — your own, or the PulsHealth database if you chose
 it, where the developer holds it for you as described
 [below](#if-you-use-the-developers-viewer) — and an exported file goes only
-where you send it.
+where you send it. Likewise, the only AI assistant that reads data from the
+PulsHealth database is one you connected and approved yourself, and it can
+be revoked at any time.
 
 ## Children
 
@@ -257,7 +267,10 @@ provider's responsibility are yours:
 - **Anything you connect to the database.** Grafana, the web viewer, the MCP
   server for AI assistants, notebooks, and your own queries all read the same
   database. What you point at it, and what those tools do with the data, is
-  outside the app's control.
+  outside the app's control. An AI assistant connected to the MCP server —
+  with its token, or through the viewer's sign-in and consent screen if you
+  turn that on — hands what it reads to that assistant's provider, under
+  the provider's terms.
 
 ## If you use the developer's viewer
 
@@ -284,7 +297,8 @@ decides. What happens to your data:
   data you chose to sync, and the identity fields if you filled them in) is
   stored in the developer's database under your own user ID. The developer,
   as the person who runs that database, can access it. It is used for one
-  thing: showing it back to you. It is not sold, shared or analysed, and no
+  thing: showing it back to you — in the viewer, and to an AI assistant you
+  connect yourself (below). It is not sold, shared or analysed, and no
   one else who uses the viewer can see it — the database itself limits each
   signed-in person to their own records.
 - **Your viewer account.** Signing in stores your email address, a one-way
@@ -298,13 +312,48 @@ decides. What happens to your data:
   by the developer). It is shown once and only a hash
   of it is kept; the account page lists your connected iPhones and lets you
   disconnect each.
+- **AI assistants you connect.** You can connect an AI assistant that
+  speaks the Model Context Protocol (MCP) — the Claude app or claude.ai as a
+  custom connector, Claude Code, or another MCP client — to your records.
+  The assistant reaches the developer's MCP server, which sends it to sign
+  in at `app.pulshealth.com`; there a consent screen names the assistant (by
+  the name it gave itself, which the viewer cannot verify), where it will
+  send you back, and the account it will read, and nothing is granted until
+  you tap Allow. What it grants is **read-only** access to all the health
+  data stored under your user ID and your profile (the identity fields the
+  app uploaded, such as your name and date of birth) — it cannot
+  upload, change or delete anything, and it cannot read anyone else's
+  records. It lasts until you revoke it under AI assistants on the account
+  page, which lists each connected assistant with when it was connected and
+  last used. Revoking stops it from renewing at once; the short-lived
+  access it already holds runs out within **30 minutes**. Changing or
+  resetting your password, having your account disabled, or deleting it
+  revokes every connection the same way, and a connection unused for 60
+  days lapses on its own.
+  **What the assistant reads goes to its provider** — for Claude,
+  Anthropic — **under that provider's terms and privacy policy, not this
+  one.** The developer does not choose, see or control what the provider
+  keeps, and revoking a connection stops further reads but does not delete
+  what the provider already received. The developer sends your data to no
+  AI provider on its own; it answers only the requests your connected
+  assistant makes.
+  For the connection, the viewer stores each assistant's registration (the
+  name it gave itself and the addresses it may send you back to), and for
+  your connection a one-way hash of its renewal token and when it was
+  created, last used and revoked; the five-minute sign-in code is likewise
+  kept only as a hash and used once. The 30-minute access tokens are
+  signed, not stored. Deleting your account deletes your connections;
+  expired codes and dead connections are deleted automatically, as is a
+  registration no connection has used for 30 days.
 - **Email.** Messages about your account — an approval with the link to
   choose a password — are sent through Amazon Simple Email Service from
   `noreply@pulshealth.com`. Nothing else is emailed to you, and there is no
   mailing list.
-- **Cloudflare carries the viewer's traffic.** `app.pulshealth.com` is
-  reached through Cloudflare, which terminates its TLS connection and so
-  handles the pages you open, health data on them included, under
+- **Cloudflare carries the viewer's traffic.** `app.pulshealth.com`, and
+  `mcp.pulshealth.com` that a connected AI assistant reads from, are
+  reached through Cloudflare, which terminates their TLS connections and so
+  handles the pages you open and the answers an assistant receives, health
+  data in them included, under
   [Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/).
 - **Maps.** A workout's route map is drawn by your browser fetching map tiles
   directly from the provider named on the map (Esri, OpenStreetMap or
@@ -314,7 +363,7 @@ decides. What happens to your data:
   account page (the app's Delete PulsHealth Account, under Sync → Database
   and Settings → Privacy & Data, opens it) signs you out, disconnects your
   iPhones at once so nothing
-  more is uploaded, and asks the developer to delete every row stored under
+  more is uploaded, revokes every AI assistant you connected, and asks the developer to delete every row stored under
   your user ID, which they do, along with the names of your devices. Family members ask the developer, who does
   the same.
   Tap Disconnect under Sync → Database (or delete the app) to stop it
