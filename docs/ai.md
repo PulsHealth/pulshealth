@@ -17,6 +17,64 @@ under `/docs/` (the file on GitHub where there is none), so an assistant can
 follow them from either copy. [`AGENTS.md`](../AGENTS.md) is the companion
 for an assistant contributing to the code.
 
+## Connect Claude to your PulsHealth account
+
+If your iPhone syncs to the PulsHealth database (you signed in on
+**Sync → Database** in the app, or have an account at
+<https://app.pulshealth.com>), there is nothing to install or run. The MCP
+server is already up at:
+
+```
+https://mcp.pulshealth.com/mcp
+```
+
+You connect an assistant by signing in with your PulsHealth account and
+approving it, once per app. It can then read your data — and only yours —
+until you revoke it.
+
+**The Claude app (iPhone, Android, desktop, claude.ai)**
+
+1. On claude.ai, open **Settings → Connectors** and choose **Add custom
+   connector**.
+2. Name it `PulsHealth`, paste the URL above, leave the advanced OAuth
+   fields empty, and choose **Add**.
+3. Choose **Connect**. A PulsHealth page opens: sign in, check the app named
+   on it, and choose **Allow**.
+
+Connectors follow your Claude account, so it appears in the mobile and
+desktop apps too. Turn it on for a chat from the tools menu in the message
+box, then ask, for example, *"How did I sleep last week?"* Custom connectors
+are a feature of Claude's plans; Anthropic's help pages say which ones.
+
+**Claude Code**
+
+```bash
+claude mcp add --transport http -s user pulshealth https://mcp.pulshealth.com/mcp
+```
+
+Then, in any session, run `/mcp`, pick `pulshealth` and choose
+**Authenticate**: the same sign-in and **Allow** page opens in your browser.
+`claude mcp list` shows it as connected afterwards.
+
+**Other assistants.** Any MCP client that supports OAuth sign-in (the MCP
+authorization spec) connects the same way with the same URL. Clients that
+only take a pasted token cannot use the hosted server.
+
+**What you are allowing.** Read-only access to everything on your account:
+the health data your iPhone synced and your profile (name, date of birth).
+Nothing can be written or deleted, and nobody else's records are reachable.
+What the assistant reads goes to its provider (Anthropic, for Claude) under
+that provider's terms — the [privacy policy](https://pulshealth.com/privacy)
+has the details.
+
+**Disconnecting.** Your account page at <https://app.pulshealth.com/account>
+lists every connected assistant under **AI assistants**, with **Revoke**. The
+assistant cannot renew its access after that, and the access it already
+holds expires within 30 minutes. Changing your password or deleting your
+account disconnects every assistant.
+
+The rest of this page is for people running their own PulsHealth server.
+
 ## What is available today
 
 | Ask about | Tool the assistant uses |

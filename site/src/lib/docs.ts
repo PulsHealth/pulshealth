@@ -87,7 +87,7 @@ export const DOCS: DocEntry[] = [
     title: "Use it with AI",
     repoPath: "docs/ai.md",
     description:
-      "Client-side setup for asking Claude Desktop, Claude Code, Cursor or ChatGPT about your data through the read-only MCP server and the OpenAPI route.",
+      "Connect the Claude app or Claude Code to your PulsHealth account by signing in, or point Claude Desktop, Cursor or ChatGPT at your own server through the read-only MCP server and the OpenAPI route.",
     group: "Reference",
   },
   {

@@ -79,7 +79,7 @@ const pieces = [
     title: "MCP server for AI",
     href: "/docs/ai",
     icon: Bot,
-    description: "Read-only, over the product API, so Claude, Claude Code or Cursor can answer questions from your own daily metrics, rings, workouts and sleep.",
+    description: "Read-only, over the product API, so Claude, Claude Code or Cursor can answer questions from your own daily metrics, rings, workouts and sleep. On the PulsHealth database, sign in from the Claude app and ask.",
   },
   {
     title: "CSV and JSONL export",

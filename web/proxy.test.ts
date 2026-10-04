@@ -55,6 +55,13 @@ describe("every mode", () => {
     expect(nonce).toBeTruthy();
     expect(res.headers.get("x-middleware-request-x-nonce")).toBe(nonce);
   });
+
+  it("hands the page its path, overwriting any the client sent", async () => {
+    const req = request("/workouts");
+    req.headers.set("x-puls-pathname", "/oauth/authorize");
+    const res = await proxy(req);
+    expect(res.headers.get("x-middleware-request-x-puls-pathname")).toBe("/workouts");
+  });
 });
 
 describe("open and basic mode (unchanged)", () => {
