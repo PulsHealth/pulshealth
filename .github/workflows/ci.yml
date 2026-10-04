@@ -227,7 +227,7 @@ jobs:
   # product API. The other jobs test each piece; this is the only one that
   # proves the built images start, find each other and agree on the schema.
   stack-smoke:
-    name: Stack smoke test (bootstrap, corpus, API read-back)
+    name: Stack smoke test (bootstrap, corpus, API read-back, restore)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -270,6 +270,14 @@ jobs:
           echo "$body"
           count=$(jq '.samples | length' <<<"$body")
           test "$count" -ge 1
+
+      # The restore drill on synthetic data: compressed chunks and a
+      # continuous aggregate, dumped by the backup service, restored by
+      # restore.sh over the live database and again into a wiped volume, with
+      # every table's row count compared and both services' grants exercised.
+      # Last, because it replaces the database the steps above wrote.
+      - name: Back up and restore the database (restore drill)
+        run: server/backup/test-restore.sh --scratch --build
 
       - name: Show the service logs
         if: failure()
