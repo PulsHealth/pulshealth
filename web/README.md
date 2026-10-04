@@ -259,11 +259,11 @@ Details:
 - The sign-in error never says which of email and password was wrong, and an
   unknown email costs the same scrypt as a wrong password.
 
-### Requests from strangers, with approval
+### Sign-ups, with approval (the waitlist)
 
-`WEB_SIGNUPS=true` (accounts mode only) adds `/signup`, where anyone can ask
-for an account — name, email, an optional note, and a box confirming they
-read the privacy policy. **Nothing exists for them until an administrator
+`WEB_SIGNUPS=true` (accounts mode only) adds `/signup`, where anyone can sign
+up — name, email, an optional note, and a box confirming they read the
+privacy policy — and is told they are on the waitlist. **Nothing exists for them until an administrator
 approves**: a request creates no user, no account and no sync token, so no
 phone can send anything. In order:
 
@@ -271,10 +271,12 @@ phone can send anything. In order:
    email (`WEB_ADMIN_EMAIL`, at most 30 a day). The form answers the same
    whether or not the address is known, emails no one but the operator, keeps
    one open request per address, drops a filled-in honeypot, and takes three
-   requests an hour per client address. While 500 requests wait, new ones
-   are dropped — stored nowhere, emailed to no one — with the same answer,
-   and the server log says so once an hour.
-2. An administrator opens `/admin` (in the sidebar) and approves or declines.
+   requests an hour per client address. Once 500 have been stored in the
+   last 24 hours, or 10,000 wait, new ones are dropped — stored nowhere,
+   emailed to no one — with the same answer, and the server log says so once
+   an hour.
+2. An administrator opens `/admin` (in the sidebar), where the waitlist is
+   listed oldest first, and approves or declines.
    Approval creates the person's user and a 7-day invite and emails it to
    them; when email is off, `WEB_PUBLIC_URL` is unset or the send fails, the
    page shows the link once to send by hand. Declining deletes the request
@@ -282,9 +284,10 @@ phone can send anything. In order:
    or every one listed (**Decline all shown**). Approved people who have not
    used their invite are listed with **Send a new invite** (the old link
    stops working) and **Remove**. In the database, an hourly TimescaleDB job
-   (`auth.prune_signups`) deletes approved requests 30 days after the
-   decision, requests nobody decided 30 days after they were made, and an
-   approved person with no account and no invite in 30 days.
+   (`auth.prune_signups`, replaced by `020_waitlist_retention.sql`) deletes
+   approved requests 30 days after the decision and an approved person with
+   no account and no invite in 30 days. Requests nobody has decided stay on
+   the waitlist until an administrator does.
 3. The person chooses a password, signs in on their iPhone and taps **Connect
    this iPhone** on the account page: the viewer mints a sync token for that
    person's own user, shows it once as a pairing code (a button that opens

@@ -116,7 +116,7 @@ describe("/api/admin", async () => {
 describe("/api/auth/signup", async () => {
   const { POST } = await import("@/app/api/auth/signup/route");
 
-  it("answers a request dropped at the cap exactly like an accepted one, and mails no one", async () => {
+  it("answers a sign-up dropped from a full waitlist exactly like an accepted one, and mails no one", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     signups.accountExists.mockResolvedValue(false);
     const outcomes: string[] = [];
@@ -130,7 +130,7 @@ describe("/api/auth/signup", async () => {
     expect(mail.notifyNewRequest).toHaveBeenCalledTimes(1);
     // The operator hears about the full queue once, without an address.
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(String(warn.mock.calls[0][0])).toMatch(/500 sign-up requests are waiting/);
+    expect(String(warn.mock.calls[0][0])).toMatch(/sign-up waitlist is full \(500 joined in the last 24 hours, or 10000 are waiting\)/);
     expect(String(warn.mock.calls[0][0])).not.toMatch(/@/);
     warn.mockRestore();
   });

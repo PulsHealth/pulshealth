@@ -10,7 +10,7 @@ const GITHUB = "https://github.com/PulsHealth/pulshealth";
 export const metadata = {
   title: "Support - Getting Help with PulsHealth",
   description:
-    "Where to get help with PulsHealth: the FAQ for the questions that come up most, the documentation, the issue tracker, private vulnerability reporting, and email.",
+    "Where to get help with PulsHealth, the app, the PulsHealth database and the self-hosted stack: the FAQ, the documentation, the issue tracker, private vulnerability reporting, and email.",
   alternates: {
     canonical: "/support/",
   },
@@ -20,7 +20,7 @@ const supportOptions = [
   {
     title: "Documentation",
     description:
-      "Setting up the self-hosted stack, the sync protocol, the database guide, exports, and the AI assistant recipes.",
+      "Connecting Claude to your data, setting up the self-hosted stack, the sync protocol, the database guide and exports.",
     icon: FileText,
     href: "/docs",
     cta: "Read the Docs",
@@ -46,7 +46,7 @@ const supportOptions = [
   {
     title: "Email",
     description:
-      "For anything you would rather not discuss in public. Answers that would help the next person too are better as an issue.",
+      "For anything you would rather not discuss in public, including your PulsHealth database account. Answers that would help the next person too are better as an issue.",
     icon: Mail,
     href: "mailto:support@pulshealth.com",
     cta: "support@pulshealth.com",

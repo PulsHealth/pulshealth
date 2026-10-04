@@ -276,19 +276,21 @@ provider's responsibility are yours:
 
 The developer runs one PulsHealth database of their own, with the web viewer
 at `app.pulshealth.com` — the **PulsHealth database** the app offers under
-Sync → Database. Family and friends get an invite; anyone else can ask for
-access there (the app's Request Access opens the form), and the developer
-decides. What happens to your data:
+Sync → Database. Family and friends get an invite; anyone else can sign up
+there (the app's Request Access opens the form) and joins a waitlist, and
+the developer lets people in from it. What happens to your data:
 
-- **Asking for access.** The request form stores your name, email address,
-  an optional note, and your browser's IP address and name, and emails them
-  to the developer. Nothing else is created for you, and your iPhone cannot
-  send anything, unless the developer approves. A declined request is
-  deleted at once; an approved one 30 days after the decision; one nobody
-  decides, 30 days after you made it. While too many requests are waiting,
-  a new one is not stored at all (the form answers the same either way). If you are
-  approved but never use the invite, everything made for you is deleted 30
-  days after the last invite was sent.
+- **Signing up.** The sign-up form stores your name, email address, an
+  optional note, and your browser's IP address and name, and emails them to
+  the developer. They are used only to decide on your account and to
+  contact you about it. Signing up puts you on the waitlist; nothing else is
+  created for you, and your iPhone cannot send anything, until the
+  developer approves you. Your sign-up is kept until the developer decides
+  on it; you can ask for it to be removed sooner by writing to
+  support@pulshealth.com. A declined sign-up is deleted at once; an
+  approved one 30 days after the decision. If you are approved but never
+  use the invite, everything made for you is deleted 30 days after the last
+  invite was sent.
 - **The app still works exactly as described above.** Once approved, you
   sign in from Sync → Database (or open the account page's pairing code on
   the iPhone), and the app uploads only to the database address that code
@@ -306,7 +308,7 @@ decides. What happens to your data:
   in from, when it signed in and was last used, its browser and system name,
   and its IP address. The viewer sets one cookie, which keeps you signed in;
   it holds a random value and nothing else.
-- **Connecting your iPhone.** If you asked for access, the account page
+- **Connecting your iPhone.** If you signed up, the account page
   makes a pairing code that lets your iPhone upload to your records — the
   one the app's sign-in sheet receives (family members' iPhones are paired
   by the developer). It is shown once and only a hash

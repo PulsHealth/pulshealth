@@ -23,19 +23,28 @@ export interface SignupInput {
 }
 
 /**
- * At most this many requests wait for a decision; past it, new ones are
- * dropped (the form still answers "received", so it reveals nothing). A
- * flood cannot then bury real requests without bound or keep mailing the
- * operator, and the database deletes any request left undecided for 30
- * days (auth.prune_signups), so the queue drains by itself. Checked here,
- * not by a constraint: a burst of concurrent requests can pass it by a few.
+ * The waitlist's bounds. Undecided requests are a waitlist now and are kept
+ * until an administrator decides (020_waitlist_retention.sql), so nothing
+ * drains a flood by itself; instead at most SIGNUP_DAILY_CAP requests are
+ * stored in any 24 hours, and none once SIGNUP_PENDING_CAP wait. Past
+ * either, a new one is dropped (the form still answers "on the waitlist",
+ * so it reveals nothing). A flood then takes weeks to fill the list, cannot
+ * keep mailing the operator (that has its own daily cap, mail.ts), and
+ * /admin can decline it in bulk; real people are not turned away for being
+ * on a long list. Checked here, not by a constraint: a burst of concurrent
+ * requests can pass either by a few.
  */
-export const SIGNUP_PENDING_CAP = 500;
+export const SIGNUP_PENDING_CAP = 10_000;
+export const SIGNUP_DAILY_CAP = 500;
+
+/** How many waiting requests /admin lists at once, oldest first. */
+export const SIGNUP_LIST_LIMIT = 500;
 
 /**
  * What became of a request: `created`; `exists`, already pending for this
- * address; or `full`, dropped at SIGNUP_PENDING_CAP. Only `created` stored
- * anything, and the requester is told the same in all three cases.
+ * address; or `full`, dropped at SIGNUP_DAILY_CAP or SIGNUP_PENDING_CAP.
+ * Only `created` stored anything, and the requester is told the same in all
+ * three cases.
  */
 export type SignupOutcome = "created" | "exists" | "full";
 
@@ -45,16 +54,20 @@ export type SignupOutcome = "created" | "exists" | "full";
  * form does not reveal who has asked).
  */
 export async function createSignupRequest(input: SignupInput): Promise<SignupOutcome> {
-  const [row] = await query<{ pending: string; created: string }>(
+  const [row] = await query<{ pending: string; today: string; created: string }>(
     `WITH waiting AS (
-       SELECT count(*) AS n FROM auth.signup_requests WHERE status = 'pending'
+       SELECT count(*) FILTER (WHERE status = 'pending') AS n,
+              count(*) FILTER (WHERE created_at > now() - interval '1 day') AS today
+         FROM auth.signup_requests
      ), ins AS (
        INSERT INTO auth.signup_requests (email, name, note, ip, user_agent)
-       SELECT $1::text, $2::text, $3::text, $4::inet, $5::text FROM waiting WHERE waiting.n < $6::bigint
+       SELECT $1::text, $2::text, $3::text, $4::inet, $5::text FROM waiting
+        WHERE waiting.n < $6::bigint AND waiting.today < $7::bigint
        ON CONFLICT (email) WHERE status = 'pending' DO NOTHING
        RETURNING 1
      )
-     SELECT (SELECT n FROM waiting) AS pending, (SELECT count(*) FROM ins) AS created`,
+     SELECT (SELECT n FROM waiting) AS pending, (SELECT today FROM waiting) AS today,
+            (SELECT count(*) FROM ins) AS created`,
     [
       input.email,
       input.name.slice(0, 200),
@@ -62,15 +75,22 @@ export async function createSignupRequest(input: SignupInput): Promise<SignupOut
       input.ip && isIP(input.ip) ? input.ip : null,
       input.userAgent?.slice(0, 300) ?? null,
       SIGNUP_PENDING_CAP,
+      SIGNUP_DAILY_CAP,
     ],
   );
   if (Number(row?.created) > 0) return "created";
-  return Number(row?.pending) >= SIGNUP_PENDING_CAP ? "full" : "exists";
+  return Number(row?.pending) >= SIGNUP_PENDING_CAP || Number(row?.today) >= SIGNUP_DAILY_CAP ? "full" : "exists";
 }
 
 /** How many requests wait for a decision (all of them, not only those /admin lists). */
 export async function pendingSignupCount(): Promise<number> {
   const [row] = await query<{ n: string }>("SELECT count(*) AS n FROM auth.signup_requests WHERE status = 'pending'");
+  return Number(row?.n ?? 0);
+}
+
+/** How many requests were stored in the last 24 hours (SIGNUP_DAILY_CAP counts these). */
+export async function signupsToday(): Promise<number> {
+  const [row] = await query<{ n: string }>("SELECT count(*) AS n FROM auth.signup_requests WHERE created_at > now() - interval '1 day'");
   return Number(row?.n ?? 0);
 }
 
@@ -93,12 +113,12 @@ export interface SignupRequest {
 }
 
 export async function listSignupRequests(): Promise<SignupRequest[]> {
-  // The database deletes an approved request 30 days after the decision,
-  // and a pending one 30 days after it was made (auth.prune_signups,
-  // hourly); this only keeps the page from showing one in the hour before it
-  // goes. Declined ones were deleted when declined. Every pending request up
-  // to the cap is listed, so "Decline all shown" can clear a flood; then the
-  // 200 latest decisions.
+  // The waitlist, oldest first (SIGNUP_LIST_LIMIT of it): pending requests
+  // are kept until decided (020_waitlist_retention.sql). Then the 200 latest
+  // decisions: the database deletes an approved request 30 days after the
+  // decision (auth.prune_signups, hourly), and the filter only keeps the page
+  // from showing one in the hour before it goes. Declined ones were deleted
+  // when declined.
   const rows = await query<{
     id: string;
     email: string;
@@ -112,8 +132,8 @@ export async function listSignupRequests(): Promise<SignupRequest[]> {
   }>(
     `(SELECT id::text, email, name, note, status, created_at, decided_at, host(ip) AS ip, user_agent
         FROM auth.signup_requests
-       WHERE status = 'pending' AND created_at > now() - interval '30 days'
-       ORDER BY created_at DESC
+       WHERE status = 'pending'
+       ORDER BY created_at
        LIMIT $1)
      UNION ALL
      (SELECT id::text, email, name, note, status, created_at, decided_at, host(ip) AS ip, user_agent
@@ -121,7 +141,7 @@ export async function listSignupRequests(): Promise<SignupRequest[]> {
        WHERE status <> 'pending' AND decided_at > now() - interval '30 days'
        ORDER BY decided_at DESC
        LIMIT 200)`,
-    [SIGNUP_PENDING_CAP],
+    [SIGNUP_LIST_LIMIT],
   );
   return rows.map((r) => ({
     id: r.id,

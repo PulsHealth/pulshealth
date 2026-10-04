@@ -9,7 +9,7 @@ const GITHUB = "https://github.com/PulsHealth/pulshealth";
 export const metadata = {
   title: "About PulsHealth - Why It Exists and Who Maintains It",
   description:
-    "PulsHealth is a one-maintainer open-source project: an iPhone app that copies Apple Health into a database you run, an example self-hosted stack, and a public wire protocol. Why it exists, what it is not, and how to get involved.",
+    "PulsHealth is a one-maintainer open-source project: a free iPhone app to explore, export and sync Apple Health, a database to sync it to (hosted for you, or self-hosted), an MCP server for AI, and a public wire protocol. Why it exists, how it is paid for, and how to get involved.",
   alternates: {
     canonical: "/about/",
   },
@@ -21,7 +21,7 @@ export default function AboutPage() {
       <PageHero
         eyebrow="About the project"
         title="About PulsHealth"
-        lede="PulsHealth is a one-maintainer open-source project: an iPhone app that copies Apple Health into a database you run, and everything needed to make that useful."
+        lede="PulsHealth is a one-maintainer open-source project: a free iPhone app that gets your Apple Health data out of the phone, and everything needed to use it, with AI or with your own tools."
       >
         <Button asChild size="lg">
           <a href={GITHUB} target="_blank" rel="noopener noreferrer">
@@ -30,8 +30,8 @@ export default function AboutPage() {
           </a>
         </Button>
         <Button asChild size="lg" variant="outline">
-          <Link href="/server">
-            Set Up Your Database
+          <Link href="/#ways">
+            Ways to Use It
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
@@ -49,8 +49,19 @@ export default function AboutPage() {
           </p>
           <p>
             The app reads Apple Health, lets you explore and export it, and posts every sample to
-            the database address you give it. There is no PulsHealth account and no PulsHealth
-            server.
+            the one database you set up: your own, or the PulsHealth database, which I host for
+            people who would rather not run a server. Connected to an AI assistant, that database
+            gives it your whole history to work from.
+          </p>
+
+          <h2>How it is paid for</h2>
+          <p>
+            The app, the self-hosted stack, the protocol and the knowledge base are free and
+            Apache-2.0. The one paid part is hosting: the PulsHealth database at{" "}
+            <a href="https://app.pulshealth.com/signup">app.pulshealth.com</a>, where I run the
+            database, the viewer and the AI connection for you. It runs the same open-source code
+            you can run yourself, and your data there is yours: shown back only to you and to the
+            assistants you connect, and deleted when you delete your account.
           </p>
 
           <h2>Why the wire format is public</h2>
@@ -74,11 +85,14 @@ export default function AboutPage() {
 
           <h2>What it is not</h2>
           <ul>
-            <li>Not a company, and not a service. There is nothing to sign up for.</li>
-            <li>Not a hosted tier, and there are no plans for one. The point is that you host it.</li>
             <li>
-              No telemetry. The app has zero third-party dependencies and sends nothing to the
-              developer. The <Link href="/privacy">privacy policy</Link> has the details.
+              Not a lock-in. Everything the hosted database does, you can run yourself from the
+              same repository.
+            </li>
+            <li>
+              No telemetry. The app has zero third-party dependencies and sends the developer
+              nothing, unless you choose the PulsHealth database as the place to sync. The{" "}
+              <Link href="/privacy">privacy policy</Link> has the details.
             </li>
             <li>Not a medical device. It moves data; it does not interpret it.</li>
           </ul>

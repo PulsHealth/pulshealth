@@ -3,19 +3,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { field, readForm, requestIp, seeOther } from "@/lib/accounts/http";
 import { notifyNewRequest } from "@/lib/accounts/mail";
 import { signupRequests, takeAll } from "@/lib/accounts/ratelimit";
-import { accountExists, createSignupRequest, SIGNUP_PENDING_CAP } from "@/lib/accounts/signups";
+import { accountExists, createSignupRequest, SIGNUP_DAILY_CAP, SIGNUP_PENDING_CAP } from "@/lib/accounts/signups";
 import { normalizeEmail } from "@/lib/accounts/store";
 import { signupsOpen } from "@/lib/mode";
 
-// The sign-up form posts here. It records a request and emails the
+// The sign-up form posts here. It puts the person on the waitlist (a
+// pending request an administrator approves or declines) and emails the
 // operator; it creates no user, account or token, and emails no one else, so
 // the form can neither open the database to anyone nor be used to mail a
 // stranger. The answer is the same whether or not the address already has
 // an account or a pending request, so the form does not reveal who uses the
 // viewer. Three requests an hour per client address; a filled-in honeypot
-// gets the same answer and is dropped, and so does a request made while
-// SIGNUP_PENDING_CAP requests already wait (the operator is told in the
-// server log, at most once an hour, never with an address).
+// gets the same answer and is dropped, and so does a request made while the
+// waitlist is full — SIGNUP_DAILY_CAP stored in the last 24 hours, or
+// SIGNUP_PENDING_CAP waiting (the operator is told in the server log, at
+// most once an hour, never with an address).
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
@@ -56,7 +58,7 @@ function warnQueueFull(now = Date.now()): void {
   if (queueFull.__pulsSignupQueueFullAt !== undefined && now - queueFull.__pulsSignupQueueFullAt < QUEUE_FULL_WARN_MS) return;
   queueFull.__pulsSignupQueueFullAt = now;
   console.warn(
-    `[puls-web] ${SIGNUP_PENDING_CAP} sign-up requests are waiting, so new ones are dropped (the form still says ` +
-      "received). Decide or decline them on /admin; undecided requests are deleted after 30 days.",
+    `[puls-web] the sign-up waitlist is full (${SIGNUP_DAILY_CAP} joined in the last 24 hours, or ${SIGNUP_PENDING_CAP} ` +
+      "are waiting), so new sign-ups are dropped (the form still says they joined). Approve or decline them on /admin.",
   );
 }

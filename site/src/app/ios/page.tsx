@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Activity, ArrowRight, BarChart3, Bot, Compass, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Heart, History, Lock, Moon, QrCode, RefreshCw, Scale, Share2, Terminal, Utensils, Wind } from "lucide-react";
+import { Activity, ArrowRight, BarChart3, Bot, Cloud, Compass, Database, Dumbbell, Ear, FileJson, FileSpreadsheet, Footprints, Gauge, Heart, History, Lock, Moon, QrCode, RefreshCw, Scale, Share2, Terminal, Utensils, Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +10,11 @@ import { PageHero } from "@/components/page-hero";
 import { getCatalog, getCatalogByGroup } from "@/lib/catalog";
 
 const GITHUB = "https://github.com/PulsHealth/pulshealth";
+const SIGNUP_URL = "https://app.pulshealth.com/signup";
 
 export const metadata = {
-  title: "PulsHealth for iOS - Apple Health, Synced to Your Own Database",
-  description: "A free, open-source iOS app that reads Apple Health read-only. Explore and export it on the phone, or stream every sample to a database you run yourself: full historical backfill, then continuous near-real-time sync. On the App Store, Apache-2.0.",
+  title: "PulsHealth for iOS - Explore, Export and Sync Apple Health",
+  description: "A free, open-source iOS app that reads Apple Health read-only. Explore and export it on the phone with no account, or sync every sample to a database, hosted for you or run by you, and connect it to Claude. Full historical backfill, then continuous background sync. On the App Store, Apache-2.0.",
   alternates: {
     canonical: '/ios/',
   },
@@ -32,7 +33,7 @@ const phoneFeatures = [
   },
   {
     title: "Sync When You Are Ready",
-    description: "Setup is four short pages, and none of them asks for a database. Connect one from the Sync tab whenever you like. On iOS 27, share only the past 30 days and PulsHealth says so, leaves older data in your database untouched, and catches up once you allow the rest.",
+    description: "Setup is four short pages, and none of them asks for a database. Connect one from the Sync tab whenever you like: sign in to the PulsHealth database, or pair with your own. On iOS 27, share only the past 30 days and PulsHealth says so, leaves older data in your database untouched, and catches up once you allow the rest.",
     icon: RefreshCw,
   },
 ];
@@ -61,8 +62,8 @@ const syncFeatures = [
     icon: Lock,
   },
   {
-    title: "Pair by Scanning",
-    description: "The PulsHealth stack prints a pairing block with the URL, bearer token and user ID, plus a QR code that encodes all three. Scan it from the Sync tab or with the Camera app, paste the pairing code, or type the values in. The app always asks before it uses one.",
+    title: "Sign In or Scan to Pair",
+    description: "For the PulsHealth database, sign in from Sync → Database, or open the pairing code from your account page. A self-hosted stack prints a pairing block with the URL, bearer token and user ID, plus a QR code that encodes all three: scan it, paste it, or type the values in. The app always asks before it uses one.",
     icon: QrCode,
   },
   {
@@ -94,9 +95,9 @@ const catalogTypeCount = getCatalog().types.length;
 
 const outputs = [
   {
-    title: "SQL and Grafana",
+    title: "The Viewer, SQL and Grafana",
     badge: "postgres",
-    description: "Data lands in PostgreSQL 17 with TimescaleDB. Query it directly, or use the provisioned Grafana dashboards and the web viewer that ship with the stack.",
+    description: "Data lands in PostgreSQL 17 with TimescaleDB. On the PulsHealth database, browse it in the web viewer. On your own, query it directly too, or use the provisioned Grafana dashboards.",
     icon: Database,
   },
   {
@@ -108,7 +109,7 @@ const outputs = [
   {
     title: "AI Assistants",
     badge: "mcp",
-    description: "A read-only MCP server lets Claude answer questions from your data. On the PulsHealth database, add it to the Claude app or Claude Code and sign in; on your own server, Claude Code, Cursor and ChatGPT connect too.",
+    description: "A read-only MCP server gives Claude your whole history: plan training from your runs, HRV and sleep, or get a weekly report. On the PulsHealth database, add it to the Claude app or Claude Code, sign in and tap Allow; on your own server, Cursor and ChatGPT connect too.",
     icon: Bot,
   },
 ];
@@ -125,7 +126,7 @@ const appJsonLd = {
   codeRepository: GITHUB,
   isAccessibleForFree: true,
   description:
-    "Explores, exports and syncs Apple Health, read-only, to a database you run. Full historical backfill, then continuous background sync. No account, no PulsHealth service.",
+    "Explores and exports Apple Health with no account, and syncs it, read-only, to a database hosted for you or run by you. Full historical backfill, then continuous background sync.",
 };
 
 export default function AppPage() {
@@ -134,15 +135,15 @@ export default function AppPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
       <PageHero
         eyebrow={<>Free on the App Store &middot; Open source</>}
-        title={<>Apple Health, <span className="text-brand">in your own database</span></>}
-        lede="PulsHealth for iOS lets you explore and export your Apple Health data, and sync every sample to a database you run. It never writes back to Apple Health. It syncs the full history first, then keeps up in the background. There is no PulsHealth account and no PulsHealth cloud."
+        title={<>Your Apple Health data, <span className="text-brand">out of the phone</span></>}
+        lede="PulsHealth for iOS lets you explore and export your Apple Health data, free and with no account. When you want more, it syncs every sample to a database, hosted for you or run by you, ready for your own tools and for Claude. It never writes back to Apple Health."
       >
         <AppStoreBadge />
-        <Button asChild size="lg" variant="outline">
-          <Link href="/server">
-            <Database className="mr-2 h-4 w-4" />
-            Set Up Your Database
-          </Link>
+        <Button asChild size="lg">
+          <a href={SIGNUP_URL}>
+            <Cloud className="mr-2 h-4 w-4" />
+            Get Started
+          </a>
         </Button>
         <Button asChild variant="outline" size="lg">
           <Link href="#features">How It Works</Link>
@@ -167,19 +168,26 @@ export default function AppPage() {
                 background-delivery entitlement requires one.
               </li>
               <li>
-                <strong className="text-foreground">Syncing needs a database of your own.</strong>{" "}
+                <strong className="text-foreground">Syncing needs a database.</strong>{" "}
                 Exploring and exporting work without one: the app shows what Apple Health holds and
-                writes it to CSV or JSONL files on the phone. To sync, run the open-source
-                PulsHealth stack, which comes up with one command, or put a receiver for the
-                documented protocol in front of a database you already have.
+                writes it to CSV or JSONL files on the phone. To sync, sign in to the PulsHealth
+                database, which we host for you (the one paid part), or run the open-source stack
+                yourself, which comes up with one command. A receiver for the documented protocol
+                in front of a database you already have works too.
               </li>
               <li>
                 <strong className="text-foreground">All of it is open source.</strong> The app,
                 the sync library, the self-hosted stack, the protocol and the dashboards are in one
-                Apache-2.0 repository.
+                Apache-2.0 repository. The PulsHealth database runs the same code.
               </li>
             </ul>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Button asChild>
+                <a href={SIGNUP_URL}>
+                  <Cloud className="mr-2 h-4 w-4" />
+                  Get Started
+                </a>
+              </Button>
               <Button asChild variant="outline">
                 <Link href="/server">
                   <Database className="mr-2 h-4 w-4" />
@@ -280,7 +288,7 @@ export default function AppPage() {
             </div>
             <div>
               <div className="text-4xl font-bold text-brand mb-2">0</div>
-              <div className="text-muted-foreground">Accounts, servers or trackers run by the developer</div>
+              <div className="text-muted-foreground">Trackers, and no account needed to explore or export</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-brand mb-2">iOS 17+</div>
@@ -372,8 +380,8 @@ export default function AppPage() {
                 One URL, one documented format
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
-                The app posts gzip-compressed NDJSON over HTTPS to the address you enter, with a
-                bearer token you also choose. That is its only network destination. The format has
+                The app posts gzip-compressed NDJSON over HTTPS to the one database you set up,
+                with a bearer token for this iPhone. That is its only upload destination. The format has
                 a written spec, so the reference stack is one possible receiver rather than the
                 only one.
               </p>
@@ -442,7 +450,7 @@ X-User-ID: <your user id>
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">What you can do with it</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            All of this ships in the same repository as the app.
+            All of this ships in the same repository as the app, and comes with either database.
           </p>
         </div>
 
@@ -472,11 +480,11 @@ X-User-ID: <your user id>
       <section className="cta-gradient text-white">
         <div className="container mx-auto max-w-7xl px-4 py-24 text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-4">
-            Install it, then point it at your database
+            Install it, then pick a database
           </h2>
           <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            You need an iPhone on iOS 17 or later and, for syncing, a database you can reach;
-            exploring and exporting work without one. Apple Watch data
+            You need an iPhone on iOS 17 or later and, for syncing, a database: ours, or one
+            you run. Exploring and exporting work without one. Apple Watch data
             arrives once iOS syncs it to the phone. If you would rather build it yourself, the
             repository has the Xcode instructions.
           </p>
@@ -488,12 +496,19 @@ X-User-ID: <your user id>
               variant="outline"
               className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white dark:bg-transparent dark:border-white/40 dark:hover:bg-white/10"
             >
-              <Link href="/server">
-                <Database className="mr-2 h-4 w-4" />
-                Set Up Your Database
-              </Link>
+              <a href={SIGNUP_URL}>
+                <Cloud className="mr-2 h-4 w-4" />
+                Get Started
+              </a>
             </Button>
           </div>
+          <p className="mt-4 text-sm opacity-90">
+            Or{" "}
+            <Link href="/server" className="underline underline-offset-4">
+              self-host the database
+            </Link>
+            , free.
+          </p>
           <p className="mt-8 text-sm opacity-75 max-w-2xl mx-auto">
             PulsHealth is not a medical device and gives no medical advice. Data is only as
             accurate as whatever recorded it into Apple Health. The name and logo belong to the

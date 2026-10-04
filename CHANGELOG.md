@@ -57,6 +57,18 @@ pauses (nothing is lost) until the server is updated.
   `503`, `504`), field descriptions with units, and examples. Routes and
   response bodies are unchanged.
 
+### Changed
+
+- **Sign-ups are a waitlist** (accounts mode, `WEB_SIGNUPS`). `/signup` reads
+  as ordinary sign-up ("Create your PulsHealth account", **Sign up**) and
+  then tells the person they are on the waitlist; nothing is created and no
+  one but the operator is emailed, as before. `/admin` lists the waitlist
+  oldest first. Undecided requests are no longer deleted after 30 days:
+  `020_waitlist_retention.sql` replaces `auth.prune_signups`, which still
+  deletes approved requests 30 days after the decision, never-used
+  approvals and expired sessions. The 500-pending ceiling becomes 500 new
+  sign-ups per 24 hours and 10,000 waiting.
+
 ## [0.3.0] - 2026-10-04
 
 **Upgrading:** take `make backup`, check out `v0.3.0`, set

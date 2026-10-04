@@ -8,8 +8,10 @@
 // session it forged cannot give the operator's household users a token,
 // disable them or purge them; no administrator's account can be disabled
 // through the viewer; a session past the 90-day cap does nothing; requests
-// are declined in bulk, pruned after 30 days undecided, and dropped quietly
-// past the queue's cap. Skipped without the two connection strings.
+// are declined in bulk, kept on the waitlist however long undecided
+// (020_waitlist_retention.sql), listed oldest first, and dropped quietly past
+// the waitlist's daily intake or ceiling. Skipped without the two connection
+// strings.
 
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
@@ -502,31 +504,56 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     expect(await requestRow(emails[2])).toHaveLength(1);
   });
 
-  it("deletes a pending request nobody decided within 30 days", async () => {
+  it("keeps a waitlist entry nobody decided, however old, and lists the waitlist oldest first", async () => {
     const stale = `d3-${tag}@example.com`;
     const fresh = `d4-${tag}@example.com`;
     await signupRoute.POST(post("/api/auth/signup", { email: fresh, consent: "yes" }, { ip: "198.51.100.130" }));
-    await admin.query("UPDATE auth.signup_requests SET created_at = now() - interval '31 days' WHERE email = $1", [stale]);
+    await admin.query("UPDATE auth.signup_requests SET created_at = now() - interval '400 days' WHERE email = $1", [stale]);
     await admin.query("CALL auth.prune_signups(0, NULL)");
-    expect(await requestRow(stale)).toHaveLength(0);
+    expect(await requestRow(stale)).toMatchObject([{ status: "pending" }]);
     expect(await requestRow(fresh)).toMatchObject([{ status: "pending" }]);
+
+    const listed = (await signups.listSignupRequests()).filter((r) => r.status === "pending").map((r) => r.email);
+    expect(listed.indexOf(stale)).toBeGreaterThanOrEqual(0);
+    expect(listed.indexOf(stale)).toBeLessThan(listed.indexOf(fresh));
+    const created = (await signups.listSignupRequests()).filter((r) => r.status === "pending").map((r) => r.createdAt);
+    expect(created).toEqual([...created].sort((a, b) => a - b));
   });
 
-  it("drops new requests once 500 wait, saying the same as ever", async () => {
-    const { SIGNUP_PENDING_CAP } = signups;
-    const waiting = Number((await admin.query("SELECT count(*) FROM auth.signup_requests WHERE status = 'pending'")).rows[0].count);
-    await admin.query(
-      `INSERT INTO auth.signup_requests (email) SELECT 'fill' || g || '-' || $2 || '@example.com' FROM generate_series(1, $1::int) g`,
-      [Math.max(0, SIGNUP_PENDING_CAP - waiting), tag],
-    );
+  it("drops new sign-ups past the daily intake or the waitlist's ceiling, saying the same as ever", async () => {
+    const { SIGNUP_DAILY_CAP, SIGNUP_PENDING_CAP } = signups;
+    const count = async (where: string) => Number((await admin.query(`SELECT count(*) FROM auth.signup_requests WHERE ${where}`)).rows[0].count);
+    const fill = (n: number, prefix: string, age: string) =>
+      admin.query(
+        `INSERT INTO auth.signup_requests (email, created_at)
+         SELECT $3 || g || '-' || $2 || '@example.com', now() - $4::interval FROM generate_series(1, $1::int) g`,
+        [Math.max(0, n), tag, prefix, age],
+      );
+    const signUp = (email: string, ip: string) => signupRoute.POST(post("/api/auth/signup", { email, consent: "yes" }, { ip }));
     const email = `late-${tag}@example.com`;
-    const res = await signupRoute.POST(post("/api/auth/signup", { email, consent: "yes" }, { ip: "198.51.100.140" }));
-    expect(res.headers.get("location")).toBe("/signup?notice=received");
-    expect(await requestRow(email)).toHaveLength(0);
 
-    await admin.query("DELETE FROM auth.signup_requests WHERE email LIKE $1", [`fill%-${tag}@example.com`]);
-    const again = await signupRoute.POST(post("/api/auth/signup", { email, consent: "yes" }, { ip: "198.51.100.141" }));
-    expect(again.headers.get("location")).toBe("/signup?notice=received");
+    // The daily intake: SIGNUP_DAILY_CAP stored in the last 24 hours.
+    await fill(SIGNUP_DAILY_CAP - (await count("created_at > now() - interval '1 day'")), "today", "0");
+    expect((await signUp(email, "198.51.100.140")).headers.get("location")).toBe("/signup?notice=received");
+    expect(await requestRow(email)).toHaveLength(0);
+    // A day later they are still waiting, and new sign-ups are taken again.
+    await admin.query("UPDATE auth.signup_requests SET created_at = now() - interval '2 days' WHERE email LIKE $1", [`today%-${tag}@example.com`]);
+    expect((await signUp(email, "198.51.100.141")).headers.get("location")).toBe("/signup?notice=received");
     expect(await requestRow(email)).toMatchObject([{ status: "pending" }]);
+
+    // The ceiling: SIGNUP_PENDING_CAP waiting, however old.
+    const later = `later-${tag}@example.com`;
+    await fill(SIGNUP_PENDING_CAP - (await count("status = 'pending'")), "fill", "3 days");
+    expect((await signUp(later, "198.51.100.142")).headers.get("location")).toBe("/signup?notice=received");
+    expect(await requestRow(later)).toHaveLength(0);
+    // The hourly job does not drain it: the waitlist is kept until decided.
+    await admin.query("CALL auth.prune_signups(0, NULL)");
+    expect(await count("status = 'pending'")).toBeGreaterThanOrEqual(SIGNUP_PENDING_CAP);
+    // /admin lists the oldest SIGNUP_LIST_LIMIT, which Decline all shown can clear.
+    expect((await signups.listSignupRequests()).filter((r) => r.status === "pending")).toHaveLength(signups.SIGNUP_LIST_LIMIT);
+
+    await admin.query("DELETE FROM auth.signup_requests WHERE email LIKE $1 OR email LIKE $2", [`fill%-${tag}@example.com`, `today%-${tag}@example.com`]);
+    expect((await signUp(later, "198.51.100.143")).headers.get("location")).toBe("/signup?notice=received");
+    expect(await requestRow(later)).toMatchObject([{ status: "pending" }]);
   });
 });

@@ -491,9 +491,12 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   `ingest_rejections` has none, so add new such tables by hand) and the
   `quantity_rollups` materialization; keep its deletes narrowed (types, time
   span) so it opens only that user's compressed batches. `auth.prune_signups`
-  (an hourly TimescaleDB job) is what makes the privacy policy's 30-day
-  request deletion true (decided and undecided requests alike) and sweeps
-  expired sessions; keep it scheduled. Email (`web/lib/email.ts`, SES,
+  (an hourly TimescaleDB job, last replaced in `020_waitlist_retention.sql`)
+  is what makes the privacy policy's deletion of approved requests 30 days
+  after the decision true and sweeps expired sessions; keep it scheduled.
+  Undecided requests are the waitlist and are kept until decided — the
+  policy promises no deletion for them, so don't reintroduce one without
+  changing it. Email (`web/lib/email.ts`, SES,
   hand-signed SigV4) goes only to the operator and to people an
   administrator approved — keep the public form unable to mail anyone else,
   and never log an address.
