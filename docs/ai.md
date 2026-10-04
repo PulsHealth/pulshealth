@@ -212,7 +212,7 @@ The endpoint is then `https://<machine>.<tailnet>.ts.net:8445/mcp` with
 `Authorization: Bearer $PULS_MCP_TOKEN`. Any reverse proxy that terminates
 TLS works the same (Caddy, nginx, a cloud tunnel); keep `/healthz` reachable
 for monitoring if you like, it needs no token. Wrong tokens are throttled per
-client address like the API's (ten, then about one a minute, `429` with
+client address like the API's (ten, then one every six seconds, `429` with
 `Retry-After`) and logged; behind a proxy that is the only way in, set
 `TRUST_PROXY_HEADERS=true` so each client keeps its own budget instead of
 sharing the proxy's.

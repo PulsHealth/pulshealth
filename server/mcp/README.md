@@ -88,7 +88,7 @@ mode, pointed at `http://api:8081` over the internal network.
   `Authorization: Bearer $PULS_MCP_TOKEN`. Sessions idle for 30 minutes are
   dropped. Failed authentications are throttled per client address exactly
   as on ingest and the API (`server/README.md`, "Rate limiting"): ten in a
-  burst, then about one a minute, answered `429` with `Retry-After` *before*
+  burst, then ten a minute (one every six seconds), answered `429` with `Retry-After` *before*
   the token is compared; a correct token is never throttled, and every
   failure is logged (without the token).
 - `GET /healthz` — unauthenticated; `{"ok":true,"api":true}` when the
