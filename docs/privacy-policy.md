@@ -3,8 +3,8 @@
 **Last updated: 2026-10-04**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
-database — one **you** run, or, if you choose it and the developer approves
-your account, the developer's own (the PulsHealth database) — or, if you have
+database — one **you** run, or, if you create a PulsHealth account, the
+developer's own (the PulsHealth database) — or, if you have
 no database, writes it to files you then save or send yourself. This policy
 describes what the app does with your data. It is short because the app does
 very little: it reads Apple Health, it uploads to the one database you set
@@ -12,17 +12,20 @@ up, it exports a file when you ask for one, and that is the whole of it.
 
 ## The short version
 
-- **The developer of PulsHealth receives no data from you** — unless you use
-  their own database and viewer, which the app offers as the **PulsHealth
-  database**, by invitation or by an access request they approved; it is
-  then the database the app uploads to (see
+- **Exporting, or syncing to a database you run, gives the developer no
+  data.** An export goes only where you send it, and a database you set up
+  yourself is yours alone: either way the developer receives nothing from
+  you. There is no telemetry endpoint, and no account is needed to use the
+  app.
+- **If you create a PulsHealth account and sync to the PulsHealth database,
+  your data is stored there.** That is the developer's own database and
+  viewer at `app.pulshealth.com`; the health data you choose to sync is kept
+  in it under your account (see
   [If you use the developer's viewer](#if-you-use-the-developers-viewer)).
-  There is no telemetry endpoint, and no account is needed to use the app:
-  one is needed only for that database. The app sends your data only to the
-  database you set up. The developer's addresses in it are web pages it
+  The app sends your data only to the database you set up. The developer's addresses in it are web pages it
   opens when you tap a link or button: on `pulshealth.com` (the
   documentation and this policy) and, in versions that offer the PulsHealth
-  database, on `app.pulshealth.com` (signing in, asking for access, managing
+  database, on `app.pulshealth.com` (signing in, creating an account, managing
   or deleting your account). They open in Safari or in iOS's sign-in sheet,
   and the app itself sends them nothing.
 - **An AI assistant reads your data only if you connect one, and only
@@ -235,9 +238,8 @@ be revoked at any time.
 
 ## Children
 
-PulsHealth is not directed at children. Outside the PulsHealth database,
-whose accounts the developer approves one by one, it collects nothing
-centrally, so there is no children's data for the developer to hold.
+PulsHealth is not directed at children. Outside the PulsHealth database, it
+collects nothing centrally, so there is no children's data for the developer to hold.
 
 ## What you are responsible for as a self-hoster
 
@@ -276,23 +278,18 @@ provider's responsibility are yours:
 
 The developer runs one PulsHealth database of their own, with the web viewer
 at `app.pulshealth.com` — the **PulsHealth database** the app offers under
-Sync → Database. Family and friends get an invite; anyone else can sign up
-there (the app's Create Account opens the form) and joins a waitlist, and
-the developer lets people in from it. What happens to your data:
+Sync → Database. You create an account there (the app's Create Account
+opens the form), or the developer invites you. What happens to your data:
 
 - **Signing up.** The sign-up form stores your name, email address, an
   optional note, and your browser's IP address and name, and emails them to
-  the developer. They are used only to decide on your account and to
-  contact you about it. Signing up puts you on the waitlist; nothing else is
-  created for you, and your iPhone cannot send anything, until the
-  developer approves you. Your sign-up is kept until the developer decides
-  on it; you can ask for it to be removed sooner by writing to
-  support@pulshealth.com. A declined sign-up is deleted at once; an
-  approved one 30 days after the decision. If you are approved but never
-  use the invite, everything made for you is deleted 30 days after the last
-  invite was sent.
-- **The app still works exactly as described above.** Once approved, you
-  sign in from Sync → Database (or open the account page's pairing code on
+  the developer. They are used only to set up your account and to contact
+  you about it. Nothing else is created for you, and your iPhone cannot
+  send anything, until your account is set up and you have chosen a
+  password from the emailed link. You can ask for your sign-up to be
+  removed at any time by writing to support@pulshealth.com.
+- **The app still works exactly as described above.** Once your account is
+  set up, you sign in from Sync → Database (or open the account page's pairing code on
   the iPhone), and the app uploads only to the database address that code
   gives it — in this case the developer's — and to nowhere else.
 - **The developer holds your data.** Everything the app uploads (the health
@@ -347,8 +344,8 @@ the developer lets people in from it. What happens to your data:
   signed, not stored. Deleting your account deletes your connections;
   expired codes and dead connections are deleted automatically, as is a
   registration no connection has used for 30 days.
-- **Email.** Messages about your account — an approval with the link to
-  choose a password — are sent through Amazon Simple Email Service from
+- **Email.** Messages about your account — the link to choose a
+  password — are sent through Amazon Simple Email Service from
   `noreply@pulshealth.com`. Nothing else is emailed to you, and there is no
   mailing list.
 - **Cloudflare carries the viewer's traffic.** `app.pulshealth.com`, and
