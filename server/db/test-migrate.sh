@@ -74,8 +74,9 @@ newdb() { sql postgres "CREATE DATABASE $1" >/dev/null; }
 # migrate <database> <migrations dir> [args...]: migrate.sh as the compose
 # service runs it, against one database of the throwaway server.
 migrate() {
-  local database=$1 dir=$2; shift 2
-  docker run --rm --network "$net" \
+  local database=$1 dir=$2 name=(); shift 2
+  [[ -z ${MIGRATE_NAME:-} ]] || name=(--name "$MIGRATE_NAME")
+  docker run --rm ${name[@]+"${name[@]}"} --network "$net" \
     -v "$here/migrate.sh:/puls/migrate.sh:ro" \
     -v "$dir:/puls/migrations:ro" \
     -e PGHOST="$db" -e PGPASSWORD=ci-secret -e MIGRATIONS_DIR=/puls/migrations \
@@ -286,8 +287,11 @@ sql_file "$d" 001_init.sql </dev/null
 # Not idempotent, and slow enough that two unserialised runs would overlap.
 sql_file "$d" 002_slow.sql <<<"SELECT pg_sleep(3); CREATE TABLE once_only (x int);"
 # Hold migrate.sh's lock (pg_advisory_lock(int, int) on ('puls', 1)) for 6 s
-# from another session; a run started meanwhile must wait it out.
-docker exec "$db" psql -X -U postgres -d c_lock -q -o /dev/null \
+# from another session; a run started meanwhile must wait it out. The holder
+# carries the application_name every containerised run (bash is PID 1) used
+# to mark its lock session with: a run must recognise its own session, not
+# take another run's held lock for its own.
+docker exec -e PGAPPNAME=puls-migrate-lock-1 "$db" psql -X -U postgres -d c_lock -q -o /dev/null \
   -c "SELECT pg_advisory_lock(1886743667, 1)" -c "SELECT pg_sleep(6)" &
 holder=$!
 for _ in $(seq 1 50); do
@@ -302,20 +306,33 @@ grep -qF "holds the migration lock" <<<"$out" || { echo "$out"; fail "no waiting
 [[ $waited -ge 4 ]] || fail "migrate finished in ${waited}s while the lock was held for 6s"
 grep '^migrate: done' <<<"$out"
 eq "$(sql c_lock "SELECT count(*) FROM schema_migrations")" 2 "records after waiting"
-# Two runs at once on a fresh database: one applies, the other waits and then
-# finds the work recorded. Without the lock both would apply 002_slow.sql and
-# the second CREATE TABLE would fail.
-newdb c_race
-migrate c_race "$d" >"$work/race1.log" 2>&1 & r1=$!
-migrate c_race "$d" >"$work/race2.log" 2>&1 & r2=$!
-s1=0 s2=0
-wait "$r1" || s1=$?
-wait "$r2" || s2=$?
-cat "$work/race1.log" "$work/race2.log" | grep '^migrate: done' || true
-[[ $s1 -eq 0 && $s2 -eq 0 ]] || { cat "$work/race1.log" "$work/race2.log"; fail "concurrent runs: exit $s1 and $s2"; }
-summaries=$(cat "$work/race1.log" "$work/race2.log" | grep -oE '[0-9]+ applied, [0-9]+ rerun, [0-9]+ skipped' | sort | tr '\n' '|')
-eq "$summaries" "0 applied, 0 rerun, 2 skipped|2 applied, 0 rerun, 0 skipped|" "concurrent run summaries"
-eq "$(sql c_race "SELECT count(*) FROM log WHERE name = '002_slow.sql'")" 1 "002_slow.sql applications"
+# Two runs at once on a fresh database, three times over: one applies, the
+# other waits and then finds the work recorded. Without the lock both would
+# apply 002_slow.sql and the second CREATE TABLE would fail. Both run as PID 1
+# in their containers, as the compose service and `docker compose run` do.
+# A broken lock can also deadlock the pair, so each race has a deadline.
+for race in 1 2 3; do
+  newdb "c_race$race"
+  MIGRATE_NAME="$db-race-a" migrate "c_race$race" "$d" >"$work/race1.log" 2>&1 & r1=$!
+  MIGRATE_NAME="$db-race-b" migrate "c_race$race" "$d" >"$work/race2.log" 2>&1 & r2=$!
+  for _ in $(seq 1 60); do
+    kill -0 "$r1" 2>/dev/null || kill -0 "$r2" 2>/dev/null || break
+    sleep 1
+  done
+  if kill -0 "$r1" 2>/dev/null || kill -0 "$r2" 2>/dev/null; then
+    docker rm -f "$db-race-a" "$db-race-b" >/dev/null 2>&1 || true
+    cat "$work/race1.log" "$work/race2.log"
+    fail "concurrent runs still running after 60 s (race $race)"
+  fi
+  s1=0 s2=0
+  wait "$r1" || s1=$?
+  wait "$r2" || s2=$?
+  [[ $s1 -eq 0 && $s2 -eq 0 ]] || { cat "$work/race1.log" "$work/race2.log"; fail "concurrent runs: exit $s1 and $s2"; }
+  summaries=$(cat "$work/race1.log" "$work/race2.log" | grep -oE '[0-9]+ applied, [0-9]+ rerun, [0-9]+ skipped' | sort | tr '\n' '|')
+  eq "$summaries" "0 applied, 0 rerun, 2 skipped|2 applied, 0 rerun, 0 skipped|" "concurrent run summaries ($race)"
+  eq "$(sql "c_race$race" "SELECT count(*) FROM log WHERE name = '002_slow.sql'")" 1 "002_slow.sql applications ($race)"
+  echo "race $race: $summaries"
+done
 endgroup
 
 echo "migrate.sh contract: all scenarios passed"
