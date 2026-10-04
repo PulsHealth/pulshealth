@@ -241,7 +241,9 @@ in lexical order and records each in a `schema_migrations` table
 logs one line per file — `applied`, `skipped`, `rerun` or `ran` — plus a
 summary. Runs are serialised by a PostgreSQL advisory lock held for the
 whole run, so `make migrate` during `docker compose up -d` waits for the
-other run and then finds its work recorded.
+other run and then finds its work recorded. `db/test-migrate.sh` (CI's
+Schema migrations job) checks every rule below against a throwaway
+TimescaleDB it starts; it needs only Docker.
 
 | File | Behaviour |
 |---|---|
@@ -1086,7 +1088,14 @@ make restore FILE=puls-<timestamp>.dump ARGS=--yes
 ```
 
 Add `--build` to both scripts to drill against images built from the
-checkout. A good restore, as recorded on a throwaway stack, looks like this:
+checkout. CI runs this drill on synthetic data at the end of every stack
+smoke test — `backup/test-restore.sh --scratch --build`, which seeds
+compressed chunks, takes a dump with the backup service, restores it over
+the live database and again into a wiped volume, and checks the list below
+mechanically. It destroys the stack's database, hence `--scratch`; it is no
+substitute for drilling a dump of your own data.
+
+A good restore, as recorded on a throwaway stack, looks like this:
 
 - `docker compose ps`: six services up, `db` healthy.
 - `docker compose logs migrate`: **`0 applied, 0 rerun, <every .sql file>

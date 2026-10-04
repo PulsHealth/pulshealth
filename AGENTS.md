@@ -141,6 +141,15 @@ cd tools/protocol-check && go test ./... && go run . ../../docs/protocol/fixture
 python3 examples/receivers/python-sqlite/smoke_test.py
 ```
 
+**Migrator and restore** — `migrate.sh`'s contract against a throwaway
+TimescaleDB it starts (needs Docker only), and the restore drill, which
+**destroys the stack's database** and so runs only on a scratch stack:
+
+```bash
+server/db/test-migrate.sh
+scripts/bootstrap.sh --build && server/backup/test-restore.sh --scratch --build
+```
+
 **Exploration notebook** — every cell must execute against a seeded schema
 (the test starts its own throwaway TimescaleDB; needs Docker and `psql`):
 
@@ -182,7 +191,7 @@ cd PulsHealth && xcodegen && xcodebuild test -scheme PulsHealth \
 docker compose -f server/docker-compose.yml config --quiet
 docker compose -f server/docker-compose.yml -f server/compose.build.yml config --quiet
 docker compose -f server/docker-compose.yml --profile backup config --quiet
-shellcheck server/db/migrate.sh server/db/migrations/*.sh server/backup/*.sh scripts/*.sh
+shellcheck server/db/*.sh server/db/migrations/*.sh server/backup/*.sh scripts/*.sh
 scripts/check-knowledge-json.sh    # needs python3 with PyYAML
 scripts/check-public-tree.sh
 ```
