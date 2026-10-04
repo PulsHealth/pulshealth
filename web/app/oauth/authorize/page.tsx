@@ -10,8 +10,11 @@ import { currentSession } from "@/lib/viewer";
 // The authorization endpoint's consent page (OAuth on, accounts mode only).
 // proxy.ts has already sent anyone without a session to /login, which comes
 // back here with the whole query. A bad client or redirect URI is an error
-// page — never a redirect to an address nobody registered; any other
-// problem goes back to the client as `error=`. The form posts to
+// page with nowhere to go. Any other problem is an error page too, with a
+// "Return to <host>" link carrying `error=`, `state` and `iss` — never an
+// automatic redirect: anyone can register a client, so redirecting on a
+// malformed request would make this an open redirector (RFC 9700 §4.11.2).
+// Only the person's own Deny, on the decision route, redirects. The form posts to
 // /oauth/authorize, which proxy.ts hands to ./decision/route.ts after the
 // same-origin and session checks; that route checks every parameter again.
 // The page cannot be framed (frame-ancestors 'none', X-Frame-Options DENY),
@@ -53,13 +56,23 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Se
     );
   }
   if (check.kind === "error") {
-    redirect(
-      redirectWith(check.redirectUri, {
-        error: check.error,
-        error_description: check.description,
-        state: check.state,
-        iss: config.issuer,
-      }),
+    const back = redirectWith(check.redirectUri, {
+      error: check.error,
+      error_description: check.description,
+      state: check.state,
+      iss: config.issuer,
+    });
+    return (
+      <div style={{ display: "grid", placeItems: "center", padding: "32px 0" }}>
+        <AuthCard title="This link cannot connect an app" error={`The app's request is not valid: ${check.description}.`}>
+          <p className="form-hint" style={{ margin: "0 0 18px", lineHeight: 1.5 }}>
+            Nothing was shared. You can tell the app what went wrong; it will not get access.
+          </p>
+          <a href={back} className="btn" style={{ display: "block", textAlign: "center" }} rel="noreferrer">
+            Return to <span className="mono">{destination(check.redirectUri)}</span>
+          </a>
+        </AuthCard>
+      </div>
     );
   }
 

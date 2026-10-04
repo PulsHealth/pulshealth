@@ -122,6 +122,9 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("OAuth for AI assistants (integration)",
     expect(first.grant.userId).toBe(PERSON);
     expect(first.grant.scope).toBe("health:read");
     expect((await grantRow(first.grant.grantId)).revoked).toBe(false);
+    // Another client presenting the spent code learns nothing and revokes nothing.
+    expect(await exchange(code, { clientId: "pc_BBBBBBBBBBBBBBBBBBBBBBBB" })).toEqual({ ok: false, error: "invalid_grant" });
+    expect((await grantRow(first.grant.grantId)).revoked).toBe(false);
     const again = await exchange(code);
     expect(again).toEqual({ ok: false, error: "invalid_grant", reused: true });
     expect((await grantRow(first.grant.grantId)).revoked).toBe(true);

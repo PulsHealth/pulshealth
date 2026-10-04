@@ -151,16 +151,66 @@ describe("registration", () => {
     expect(store.registerClient).not.toHaveBeenCalled();
   });
 
-  it("allows ten registrations an hour per address", async () => {
+  it("allows thirty registrations an hour per address, an IPv6 address by its /64, and has no global cap", async () => {
     store.registerClient.mockResolvedValue({ id: CLIENT_ID, secret: null, createdAt: 0 });
     const { POST } = await import("@/app/oauth/register/route");
     const ip = freshIp();
     const body = JSON.stringify({ redirect_uris: ["https://a.example/cb"] });
-    for (let i = 0; i < 10; i++) expect((await POST(req("/oauth/register", { body, ip }))).status).toBe(201);
+    for (let i = 0; i < 30; i++) expect((await POST(req("/oauth/register", { body, ip }))).status).toBe(201);
     const refused = await POST(req("/oauth/register", { body, ip }));
     expect(refused.status).toBe(429);
     expect(Number(refused.headers.get("retry-after"))).toBeGreaterThan(0);
     expect((await POST(req("/oauth/register", { body }))).status).toBe(201);
+
+    // One /64 is one bucket, whatever the low 64 bits.
+    for (let i = 0; i < 30; i++) {
+      expect((await POST(req("/oauth/register", { body, ip: `2001:db8:1:2::${(i + 1).toString(16)}` }))).status).toBe(201);
+    }
+    expect((await POST(req("/oauth/register", { body, ip: "2001:db8:1:2:ffff:ffff:ffff:ffff" }))).status).toBe(429);
+    expect((await POST(req("/oauth/register", { body, ip: "2001:db8:1:3::1" }))).status).toBe(201);
+
+    // Many addresses together are not throttled as a whole: draining the old
+    // 200-an-hour global cap from a handful of addresses blocked everyone.
+    for (let n = 0; n < 10; n++) {
+      const each = `203.0.113.${n + 1}`;
+      for (let i = 0; i < 25; i++) expect((await POST(req("/oauth/register", { body, ip: each }))).status).toBe(201);
+    }
+    expect((await POST(req("/oauth/register", { body }))).status).toBe(201);
+  });
+
+  it("refuses a redirect URI on the viewer's own origin", async () => {
+    const { POST } = await import("@/app/oauth/register/route");
+    for (const uri of [`${ISSUER}/account`, `${ISSUER}/oauth/authorize`, "https://VIEWER.example.com:443/x"]) {
+      const res = await POST(req("/oauth/register", { body: JSON.stringify({ redirect_uris: ["https://a.example/cb", uri] }) }));
+      expect(res.status, uri).toBe(400);
+      expect(await res.json()).toMatchObject({ error: "invalid_redirect_uri" });
+    }
+    expect(store.registerClient).not.toHaveBeenCalled();
+  });
+
+  it("refuses an oversized body before reading it, and stops reading a chunked one at the limit", async () => {
+    const { POST } = await import("@/app/oauth/register/route");
+    const declared = await POST(req("/oauth/register", { body: "{}", headers: { "content-length": String(16 * 1024 + 1) } }));
+    expect(declared.status).toBe(400);
+    expect((await declared.json()).error_description).toBe("the registration is too large");
+
+    let pulled = 0;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled++;
+        controller.enqueue(new Uint8Array(4096).fill(0x20));
+      },
+    });
+    const chunked = new NextRequest(new URL("/oauth/register", "http://web:3000"), {
+      method: "POST",
+      headers: { host: "viewer.example.com", "x-forwarded-proto": "https", "x-forwarded-for": freshIp() },
+      body: endless,
+      duplex: "half",
+    } as ConstructorParameters<typeof NextRequest>[1]);
+    const res = await POST(chunked);
+    expect(res.status).toBe(400);
+    expect(pulled).toBeLessThan(10);
+    expect(store.registerClient).not.toHaveBeenCalled();
   });
 });
 
@@ -256,6 +306,15 @@ describe("token endpoint", () => {
     expect((await scoped.json()).error).toBe("invalid_scope");
   });
 
+  it("refuses a body over 16 KiB, declared or not", async () => {
+    const { POST } = await import("@/app/oauth/token/route");
+    const declared = await POST(req("/oauth/token", { body: "grant_type=x", type: "application/x-www-form-urlencoded", headers: { "content-length": "999999" } }));
+    expect(await declared.json()).toMatchObject({ error: "invalid_request", error_description: "the request is too large" });
+    const big = await POST(tokenReq({ ...exchange, pad: "x".repeat(17 * 1024) }));
+    expect(await big.json()).toMatchObject({ error: "invalid_request", error_description: "the request is too large" });
+    expect(store.findClient).not.toHaveBeenCalled();
+  });
+
   it("charges failures to the address, refunds successes and server errors", async () => {
     const { POST } = await import("@/app/oauth/token/route");
     const ip = freshIp();
@@ -289,6 +348,30 @@ describe("revocation", () => {
     expect(res.status).toBe(200);
     expect(store.revokeRefreshToken).toHaveBeenCalledWith(TOKEN, CLIENT_ID);
     expect((await POST(req("/oauth/revoke", { body: "" }))).status).toBe(200);
+  });
+
+  it("throttles revocations that revoke nothing, per address, and refunds the ones that do", async () => {
+    const { POST } = await import("@/app/oauth/revoke/route");
+    const ip = freshIp();
+    const revoke = () => POST(req("/oauth/revoke", { body: form({ token: TOKEN }), type: "application/x-www-form-urlencoded", ip }));
+    store.revokeRefreshToken.mockResolvedValue(true);
+    for (let i = 0; i < 100; i++) expect((await revoke()).status).toBe(200);
+    store.revokeRefreshToken.mockResolvedValue(false);
+    for (let i = 0; i < 60; i++) expect((await revoke()).status).toBe(200);
+    const throttled = await revoke();
+    expect(throttled.status).toBe(429);
+    expect(Number(throttled.headers.get("retry-after"))).toBeGreaterThan(0);
+    const calls = store.revokeRefreshToken.mock.calls.length;
+    await revoke();
+    expect(store.revokeRefreshToken.mock.calls.length).toBe(calls);
+    expect((await POST(req("/oauth/revoke", { body: form({ token: TOKEN }), type: "application/x-www-form-urlencoded" }))).status).toBe(200);
+  });
+
+  it("refuses a body over 16 KiB without looking the token up", async () => {
+    const { POST } = await import("@/app/oauth/revoke/route");
+    const res = await POST(req("/oauth/revoke", { body: form({ token: TOKEN, pad: "x".repeat(17 * 1024) }), type: "application/x-www-form-urlencoded" }));
+    expect(res.status).toBe(400);
+    expect(store.revokeRefreshToken).not.toHaveBeenCalled();
   });
 });
 
@@ -340,8 +423,25 @@ describe("the consent decision", () => {
     const res = await POST(decide({ ...consent, redirect_uri: "https://evil.example/cb", decision: "allow" }));
     expect(res.status).toBe(400);
     expect(res.headers.get("location")).toBeNull();
-    const noPkce = await POST(decide({ ...consent, code_challenge_method: "plain", decision: "allow" }));
-    expect(new URL(noPkce.headers.get("location")!).searchParams.get("error")).toBe("invalid_request");
+    expect(store.createCode).not.toHaveBeenCalled();
+  });
+
+  it("never redirects to the client on an invalid request, Deny included: back to the consent page instead", async () => {
+    sessions.findSession.mockResolvedValue(SESSION);
+    const { POST } = await import("@/app/oauth/authorize/decision/route");
+    for (const [bad, decision] of [
+      [{ code_challenge_method: "plain" }, "allow"],
+      [{ response_type: "bogus" }, "allow"],
+      [{ response_type: "bogus" }, "deny"],
+      [{ scope: "health:write" }, "deny"],
+    ] as const) {
+      const res = await POST(decide({ ...consent, ...bad, decision }));
+      expect(res.status).toBe(303);
+      const location = res.headers.get("location")!;
+      expect(location.startsWith("/oauth/authorize?")).toBe(true);
+      const back = new URLSearchParams(location.slice("/oauth/authorize?".length));
+      expect(Object.fromEntries(back)).toEqual({ ...consent, ...bad });
+    }
     expect(store.createCode).not.toHaveBeenCalled();
   });
 

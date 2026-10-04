@@ -182,6 +182,10 @@ describe("dynamic client registration", () => {
       if (!r.ok) expect(r.error).toBe("invalid_client_metadata");
     }
     expect(validateRegistration(null).ok).toBe(false);
+    const own = validateRegistration({ redirect_uris: ["https://viewer.example/oauth/authorize"] }, "https://viewer.example");
+    expect(own).toMatchObject({ ok: false, error: "invalid_redirect_uri", description: "a redirect URI must not point at this server" });
+    expect(validateRegistration({ redirect_uris: ["https://viewer.example:8443/cb"] }, "https://viewer.example").ok).toBe(true);
+    expect(validateRegistration({ redirect_uris: ["https://viewer.example/cb"] }).ok).toBe(true);
     expect(validateRegistration([]).ok).toBe(false);
   });
 

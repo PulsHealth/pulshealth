@@ -3,14 +3,15 @@ import type { NextRequest } from "next/server";
 import { requestIp } from "@/lib/accounts/http";
 import { refundAll, takeAll } from "@/lib/accounts/ratelimit";
 import { issueAccessToken } from "@/lib/oauth/jwt";
-import { clientCredentials, formParam, json, oauthError, oauthOrNotFound, preflight, tokenFailures } from "@/lib/oauth/http";
+import { clientCredentials, formParam, json, oauthError, oauthOrNotFound, parseForm, preflight, readBodyCapped, tokenFailures } from "@/lib/oauth/http";
 import { clientSecretMatches, exchangeCode, findClient, type GrantResult, refreshGrant } from "@/lib/oauth/store";
 
 // The token endpoint (RFC 6749 §3.2), form-encoded:
 //
 //   authorization_code  code, redirect_uri, code_verifier (PKCE S256),
 //                       client_id (+ secret for a confidential client).
-//                       Single use; a second use revokes the grant.
+//                       Single use; a second use by the same client
+//                       revokes the grant.
 //   refresh_token       Rotates on every use; an already-rotated token
 //                       revokes the grant.
 //
@@ -20,8 +21,6 @@ import { clientSecretMatches, exchangeCode, findClient, type GrantResult, refres
 // token is taken before anything is checked and refunded on success or on
 // the server's own error. Nothing about a request is logged.
 export const dynamic = "force-dynamic";
-
-const MAX_BODY = 16 * 1024;
 
 export async function POST(request: NextRequest) {
   const { config, off } = oauthOrNotFound();
@@ -42,10 +41,9 @@ export async function POST(request: NextRequest) {
   }
   let form: FormData;
   try {
-    const text = await request.text();
-    if (text.length > MAX_BODY) return oauthError(400, "invalid_request", "the request is too large");
-    form = new FormData();
-    for (const [k, v] of new URLSearchParams(text)) form.append(k, v);
+    const text = await readBodyCapped(request);
+    if (text === null) return oauthError(400, "invalid_request", "the request is too large");
+    form = parseForm(text);
   } catch {
     return oauthError(400, "invalid_request");
   }

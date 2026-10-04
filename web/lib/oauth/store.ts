@@ -132,10 +132,14 @@ async function startGrant(
 /**
  * The authorization_code grant: spends the code and starts a grant. The code
  * row is locked, so a code exchanged twice at once is spent once. A code
- * already spent revokes the grant its first exchange made (RFC 6749 §4.1.2:
- * someone else has it). A wrong verifier, redirect URI or client leaves the
- * code unspent: a thief who has the code but not the verifier must not be
- * able to burn it.
+ * already spent, presented again by the client it was issued to, revokes the
+ * grant its first exchange made (RFC 6749 §4.1.2: someone else has it). The
+ * caller has already authenticated that client (a confidential client's
+ * secret checked), so another client presenting a spent code — a code is
+ * no secret once it has crossed a browser — gets a plain invalid_grant and
+ * cannot revoke someone's grant with it. A wrong verifier, redirect URI or
+ * client leaves an unspent code unspent: a thief who has the code but not
+ * the verifier must not be able to burn it.
  */
 export async function exchangeCode(input: {
   code: string;
@@ -173,6 +177,7 @@ export async function exchangeCode(input: {
     const code = rows[0];
     if (!code) return { ok: false, error: "invalid_grant" } as const;
     if (code.used) {
+      if (code.client_id !== input.clientId) return { ok: false, error: "invalid_grant" } as const;
       if (code.grant_id) {
         await q("UPDATE auth.oauth_grants SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL", [code.grant_id]);
       }

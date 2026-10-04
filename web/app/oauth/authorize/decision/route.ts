@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { field, readForm, requestSession } from "@/lib/accounts/http";
+import { field, readForm, requestSession, seeOther } from "@/lib/accounts/http";
 import { notFound } from "@/lib/oauth/http";
 import { oauthConfig } from "@/lib/oauth/config";
 import { createCode, findClient } from "@/lib/oauth/store";
@@ -12,7 +12,10 @@ import { checkAuthorizeRequest, redirectWith } from "@/lib/oauth/validate";
 // checked again (the form's hidden fields are the browser's to change):
 // Deny → `error=access_denied`; Allow → a one-time code for this account,
 // bound to the client, redirect URI, PKCE challenge, scope and resource. Both
-// go back to the client's redirect URI by 303, with `state` and `iss`.
+// go back to the client's redirect URI by 303, with `state` and `iss`. An
+// invalid request never redirects there (RFC 9700 §4.11.2, see ../page.tsx):
+// it goes back by 303 to the consent page with the same query, which shows
+// the error and a link the person may follow.
 export const dynamic = "force-dynamic";
 
 function text(status: number, body: string): NextResponse {
@@ -38,11 +41,7 @@ export async function POST(request: NextRequest) {
     const client = await findClient(params.get("client_id"));
     const check = checkAuthorizeRequest(params, client, config.resource);
     if (check.kind === "fatal") return text(400, check.message);
-    if (check.kind === "error") {
-      return seeOtherAbsolute(
-        redirectWith(check.redirectUri, { error: check.error, error_description: check.description, state: check.state, iss: config.issuer }),
-      );
-    }
+    if (check.kind === "error") return seeOther(`/oauth/authorize?${params.toString()}`);
     const req = check.request;
     if (field(form, "decision") !== "allow") {
       return seeOtherAbsolute(redirectWith(req.redirectUri, { error: "access_denied", state: req.state, iss: config.issuer }));

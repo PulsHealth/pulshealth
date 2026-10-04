@@ -128,7 +128,12 @@ export function cleanClientName(raw: unknown): string {
     .trim();
 }
 
-export function validateRegistration(body: unknown): RegistrationResult {
+/**
+ * Checks an RFC 7591 registration. `ownOrigin`, this viewer's origin
+ * (WEB_PUBLIC_URL's), is refused as a redirect URI's: no legitimate client
+ * returns to the authorization server's own pages.
+ */
+export function validateRegistration(body: unknown, ownOrigin?: string): RegistrationResult {
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
     return { ok: false, error: "invalid_client_metadata", description: "the body must be a JSON object" };
   }
@@ -141,6 +146,9 @@ export function validateRegistration(body: unknown): RegistrationResult {
   for (const uri of uris) {
     const problem = redirectUriProblem(uri);
     if (problem) return { ok: false, error: "invalid_redirect_uri", description: problem };
+    if (ownOrigin && new URL(uri as string).origin === new URL(ownOrigin).origin) {
+      return { ok: false, error: "invalid_redirect_uri", description: "a redirect URI must not point at this server" };
+    }
   }
 
   const method = meta.token_endpoint_auth_method ?? "none";
