@@ -114,7 +114,7 @@ struct SyncIntro: View {
             .controlSize(.large)
         }
         choiceCard(
-            symbol: "externaldrive.fill.badge.checkmark", color: .green,
+            symbol: "externaldrive.connected.to.line.below.fill", color: .green,
             title: "Your Own Database",
             detail: "Run the open-source PulsHealth server on a computer or cloud you control, and connect to it with its pairing code.",
             footer: "Optional. Exploring and exporting never need a database, and you can switch later."
@@ -130,8 +130,12 @@ struct SyncIntro: View {
                 .controlSize(.large)
                 // Opens in Safari, like the app's other documentation links.
                 Link(destination: Self.selfHostURL) {
-                    Label("How to Set One Up", systemImage: "arrow.up.right.square")
-                        .font(.subheadline)
+                    HStack(spacing: 5) {
+                        Text("How to Set One Up")
+                        Image(systemName: "arrow.up.right")
+                            .imageScale(.small)
+                    }
+                    .font(.subheadline)
                 }
                 // Borderless, or a list row with two controls sends a tap
                 // anywhere in it to both.
@@ -149,7 +153,9 @@ struct SyncIntro: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top, spacing: 14) {
                     Image(systemName: symbol)
-                        .font(.system(size: 34))
+                        // The Database screen's symbols for the same two
+                        // choices, so the card and the row it opens match.
+                        .font(.system(size: 30))
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(color)
                         .frame(width: 40)
