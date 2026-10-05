@@ -45,6 +45,18 @@ final class DatabaseSetupTests: XCTestCase {
         XCTAssertNil(pulsHealth.signedIn)
     }
 
+    /// The Sync tab's first-time screen opens the Database screen with a
+    /// choice made; it holds only while no database is applied.
+    func testPreferredChoiceOnlyWithoutADatabase() {
+        XCTAssertEqual(DatabaseSetup(applied: SyncConfiguration(), preferred: .pulsHealth).destination, .pulsHealth)
+        XCTAssertEqual(DatabaseSetup(applied: SyncConfiguration(), preferred: .own).destination, .own)
+        XCTAssertEqual(DatabaseSetup(applied: ownConfiguration(), preferred: .pulsHealth).destination, .own)
+        XCTAssertEqual(DatabaseSetup(applied: hostedConfiguration(), preferred: .own).destination, .pulsHealth)
+        XCTAssertEqual(
+            DatabaseSetup(applied: SyncConfiguration(), scanOnArrival: true, preferred: .pulsHealth).destination, .own,
+            "a scan is always for your own database")
+    }
+
     /// Your own database is applied; Save & Apply on the PulsHealth path
     /// raises the server-change prompt, which is cancelled, so the staged
     /// draft now holds the PulsHealth values. Coming back must show the

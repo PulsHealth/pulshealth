@@ -68,7 +68,7 @@ HOW TO EXERCISE THE APP (about 5 minutes)
 1. Launch the app. A four-page introduction starts; swipe left to turn pages.
 2. On page 2, tap "Continue" (a swipe left does the same). iOS shows its permission sheet: tap "Turn On All", then "Allow" (iOS 27: "Select All", "Continue", then "All Recorded Data and Future Data", "Allow"). The app requests READ access only. Page 3 follows.
 3. Swipe to page 4 and tap "Start Exploring". The Explore tab appears.
-4. Open the Sync tab, tap "Set Up", choose "PulsHealth Database", then "Sign In to PulsHealth". iOS asks to use app.pulshealth.com to sign in: tap "Continue".
+4. Open the Sync tab, tap "Sign In or Create Account" on the PulsHealth Database card, then "Sign In to PulsHealth". iOS asks to use app.pulshealth.com to sign in: tap "Continue".
 5. Sign in with the demo account, tap "Connect this iPhone", then "Open in PulsHealth". The sheet closes and the app tests the connection.
 6. Tap "Save & Apply". The Sync tab shows "PulsHealth Database" with the database's address, and the upload begins.
 
@@ -135,12 +135,11 @@ developer's own instance, the PulsHealth database, with a PulsHealth account.
 Yes, since 1.5 added the on-device export, and since 1.6 the first-run
 flow does not ask for a database at all. Its four pages are "Unlock your
 Health Data" (Explore, Export, Sync), Health access, one-time exports ("No
-account and no database needed"), and "Sync to a database" (the PulsHealth
-database or your own), which says it can be set up any time from the Sync tab
-and links to pulshealth.com/#ways in Safari. The Sync tab of an install
-with no database carries a setup card ("Keep a copy in a database", with a Set
-Up button that opens the Database screen and its two choices) instead of
-looking broken. The App Store description says the same.
+account and no database needed"), and "Always in sync" (the PulsHealth
+database or your own), which says it is optional and can be set up any time
+from the Sync tab, and links to pulshealth.com/#ways in Safari. The Sync tab
+of an install with no database explains syncing and offers the two choices
+(each opens the Database screen) instead of looking broken. The App Store description says the same.
 
 What such an install does *not* do is anything in the background: exports run
 only when the user taps Export, in the foreground.

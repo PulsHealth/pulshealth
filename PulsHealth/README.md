@@ -159,9 +159,8 @@ Sources/
 │                         cancel, idle-timer and background-task assertion),
 │                         the finished export, and the lifetime of its staged
 │                         files. A run outlives the screen that started it.
-├── SyncView.swift        The Sync tab. No database applied: a setup card ("Keep
-│                         a copy in a database") with one Set Up button
-│                         (opens the Database screen). Otherwise the status
+├── SyncView.swift        The Sync tab. No database applied: the first-time
+│                         screen (SyncIntro). Otherwise the status
 │                         card (host, or "PulsHealth Database · host"; last sync,
 │                         backfill progress + ETA, failing count, which types
 │                         are paused), the iOS 27 "Limited Health history"
@@ -250,7 +249,7 @@ Sources/
 │                         (Explore, Export, Sync); "Which Health data would
 │                         you like to use?" (iOS's sheet for the preselected
 │                         TypePresets.common, behind one Continue button);
-│                         one-time exports; "Sync to a database" (the
+│                         one-time exports; "Always in sync" (the
 │                         PulsHealth database or your own, both set up from
 │                         the Sync tab; Learn more → pulshealth.com/#ways
 │                         in Safari) with Start Exploring, which applies the
@@ -262,9 +261,17 @@ Sources/
 │                         opens with the fields filled. Settings →
 │                         Diagnostics → "Show Onboarding Again" replays it
 │                         (with a Close button) for testing.
+├── SyncIntro.swift       The Sync tab with no database applied: "Always in
+│                         Sync" (automatic, whole history, use it your way,
+│                         you stay in control), then two cards — PulsHealth
+│                         Database (Sign In or Create Account) and Your Own
+│                         Database (Connect Your Database; How to Set One Up →
+│                         pulshealth.com/docs/server/#setup in Safari). Each
+│                         opens the Database screen with that option chosen;
+│                         nothing is applied from here.
 ├── PairingScannerView.swift  AVFoundation QR sheet feeding PairingPayload.parse.
-│                         Used by Sync → Database (the setup card's Scan Pairing
-│                         Code opens it on arrival). Handles
+│                         Used by Sync → Database (its Scan Pairing Code, or a
+│                         route with scan: true, opens it). Handles
 │                         not-yet-asked, denied, and no-camera, each with a
 │                         "Type It Instead" way out; no frame is ever stored.
 ├── PairingLinkPrompt.swift  The "Pair with <host>?" alert an incoming puls://
@@ -365,7 +372,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 - **Without a database.** The first-run flow never asks for one: it asks for
   Health access for the starter set, and Start Exploring applies it. Nothing
   syncs (`AppModel.configured` needs a database URL in the applied
-  configuration), the Sync tab shows a setup card with a Set Up button instead
+  configuration), the Sync tab shows its first-time screen (`SyncIntro`) instead
   of a status, and the Explore and Export tabs work regardless.
 - **The Export tab** writes a selection of its own — `ExportDraft`: types,
   aggregate series, workout switches, a preset or custom range, the format
