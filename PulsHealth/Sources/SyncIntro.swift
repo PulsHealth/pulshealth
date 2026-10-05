@@ -68,7 +68,7 @@ struct SyncIntro: View {
                 "The first sync brings over your past data, then it keeps up from there.")
             highlight(
                 "sparkles", .purple, "Use It Your Way",
-                "Ask Claude or another AI assistant, browse it on the web, or query it with SQL.")
+                "Ask Claude or another AI assistant about it, or browse it on the web.")
             highlight(
                 "hand.raised.fill", .blue, "You Stay in Control",
                 "Choose which data syncs and where it goes. Disconnect any time.")

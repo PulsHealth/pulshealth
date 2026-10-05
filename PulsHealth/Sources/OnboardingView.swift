@@ -228,7 +228,7 @@ struct OnboardingView: View {
                         "New data syncs by itself in the background.")
                     feature(
                         "sparkles", "Use it your way",
-                        "Ask your AI assistant, browse it on the web, or query it with SQL.")
+                        "Ask your AI assistant about it, or browse it on the web.")
                 }
                 bodyText("Optional. Set it up any time from the Sync tab.")
                     .font(.footnote)
