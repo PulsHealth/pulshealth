@@ -5,8 +5,9 @@ import PulsHealthSync
 /// stack's path, can pop back to the Database screen when a pairing link is
 /// accepted while another of them is on top.
 enum SyncRoute: Hashable {
-    /// The Database screen; `scan` opens the pairing scanner on arrival.
-    case server(scan: Bool)
+    /// The Database screen; `scan` opens the pairing scanner on arrival, and
+    /// `choice` is the option picked on the first-time screen (`SyncIntro`).
+    case server(scan: Bool, choice: DatabaseDestination? = nil)
     case syncedData
     case activity
     case type(String)
@@ -31,14 +32,15 @@ struct StateUnreadableNotice: View {
 }
 
 /// The Sync tab: where the data goes and how that is going. With no server
-/// applied it is a setup card with one Set Up button — a supported way to
-/// use the app, not a fault; the first tap on Sync is where the server is
-/// asked for, never the first-run flow. With one it is the status of the sync, the synced types, and the way to
-/// the Database, Synced Data and Activity screens.
+/// applied it is the first-time screen (`SyncIntro`): what syncing does and
+/// the two places it can go — a supported way to use the app, not a fault;
+/// the first tap on Sync is where the database is asked for, never the
+/// first-run flow. With one it is the status of the sync, the synced types,
+/// and the way to the Database, Synced Data and Activity screens.
 struct SyncView: View {
     /// The stack's path, owned by `RootView` (a pairing link pushes onto it
-    /// from outside); the setup card pushes the Database screen through it so
-    /// Set Up can be a button rather than a list row.
+    /// from outside); the first-time screen pushes the Database screen
+    /// through it so its choices can be buttons rather than list rows.
     @Binding var path: [SyncRoute]
     @Environment(AppModel.self) private var model
 
@@ -47,8 +49,10 @@ struct SyncView: View {
             if model.stateFileUnreadable {
                 StateUnreadableNotice()
             }
+            // Keyed on the *applied* server — where data goes today — so a URL
+            // half-typed on the Database screen does not hide it.
             if model.appliedConfig.serverURL == nil {
-                setupCard
+                SyncIntro { path.append(.server(scan: false, choice: $0)) }
             } else {
                 statusCard
                 limitedHistoryNotice
@@ -60,7 +64,7 @@ struct SyncView: View {
         .navigationTitle("Sync")
         .navigationDestination(for: SyncRoute.self) { route in
             switch route {
-            case .server(let scan): ServerSettingsView(scanOnArrival: scan)
+            case .server(let scan, let choice): ServerSettingsView(scanOnArrival: scan, preferred: choice)
             case .syncedData: TypePickerView()
             case .activity: ActivityView()
             case .type(let id):
@@ -80,30 +84,6 @@ struct SyncView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(model.lastErrorMessage ?? "")
-        }
-    }
-
-    // MARK: - No server
-
-    // Keyed on the *applied* server — where data goes today — so a URL
-    // half-typed on the Database screen does not hide it.
-    private var setupCard: some View {
-        CardSection(
-            "Keep a copy in a database",
-            subtitle: "Optional. Sync new data as it arrives, with a PulsHealth account or to a database you run yourself. Exploring and exporting never need one."
-        ) {
-            // One way in. The Database screen it opens asks which of the two
-            // first: the PulsHealth database (sign in) or your own (scan,
-            // paste, or type it).
-            Button {
-                path.append(.server(scan: false))
-            } label: {
-                Label("Set Up", systemImage: "externaldrive.connected.to.line.below")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.top, 2)
         }
     }
 

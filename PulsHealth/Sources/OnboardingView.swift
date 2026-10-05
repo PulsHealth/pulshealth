@@ -161,7 +161,7 @@ struct OnboardingView: View {
                         "Save any of it to CSV or JSONL files.")
                     feature(
                         "arrow.triangle.2.circlepath", "Sync",
-                        "Keep a live copy in a database.")
+                        "Keep a live, always up-to-date copy in a database.")
                 }
             }
         }
@@ -218,10 +218,20 @@ struct OnboardingView: View {
         pageLayout {
             VStack(spacing: 20) {
                 pageIcon("arrow.triangle.2.circlepath", color: .accentColor)
-                pageTitle("Sync to a database")
+                pageTitle("Always in sync")
                 // Words only: signing in to the PulsHealth database happens on
                 // Sync → Database, never in this flow.
-                bodyText("Optional: keep a live copy of your Health data with a PulsHealth account, or in a database you run yourself. Exploring and exporting never need one. Set it up any time from the Sync tab.")
+                bodyText("Keep a live copy of your Health data in a database, with a PulsHealth account or one you run yourself.")
+                VStack(alignment: .leading, spacing: 18) {
+                    feature(
+                        "bolt.heart", "Automatic",
+                        "New data syncs by itself in the background.")
+                    feature(
+                        "sparkles", "Use it your way",
+                        "Ask your AI assistant, browse it on the web, or query it with SQL.")
+                }
+                bodyText("Optional. Set it up any time from the Sync tab.")
+                    .font(.footnote)
                 // Opens in Safari, outside the app.
                 Link(destination: URL(string: "https://pulshealth.com/#ways")!) {
                     Label("Learn more", systemImage: "arrow.up.right.square")

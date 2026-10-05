@@ -19,6 +19,9 @@ struct ServerSettingsView: View {
     /// A caller that wants the scanner already up on arrival (a pairing
     /// route can); the Sync tab's Set Up opens the form itself.
     let scanOnArrival: Bool
+    /// The choice made on the Sync tab's first-time screen, if that is what
+    /// opened this one (`DatabaseSetup.init(applied:scanOnArrival:preferred:)`).
+    var preferred: DatabaseDestination? = nil
 
     @State private var setup = DatabaseSetup(applied: SyncConfiguration())
     /// The page the web authentication sheet was opened on, while it is up.
@@ -51,7 +54,7 @@ struct ServerSettingsView: View {
         .onAppear {
             if !loaded {
                 loaded = true
-                setup = DatabaseSetup(applied: model.appliedConfig, scanOnArrival: scanOnArrival)
+                setup = DatabaseSetup(applied: model.appliedConfig, scanOnArrival: scanOnArrival, preferred: preferred)
                 showScanner = scanOnArrival
             }
             // This screen is built lazily: an accepted pairing link can be

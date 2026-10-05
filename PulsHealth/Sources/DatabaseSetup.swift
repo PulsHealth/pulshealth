@@ -34,12 +34,16 @@ struct DatabaseSetup: Equatable {
     ///
     /// Your own database's fields never start with the PulsHealth database's
     /// URL and token in them.
-    init(applied: SyncConfiguration, scanOnArrival: Bool = false) {
+    ///
+    /// `preferred` is the choice the person already made before arriving (the
+    /// Sync tab's first-time screen); it applies only on an install with no
+    /// database, where the screen would otherwise ask.
+    init(applied: SyncConfiguration, scanOnArrival: Bool = false, preferred: DatabaseDestination? = nil) {
         if PulsHealthDatabase.isSignedIn(applied) {
             destination = .pulsHealth
             own = ServerFieldsDraft()
         } else {
-            destination = applied.serverURL != nil || scanOnArrival ? .own : nil
+            destination = applied.serverURL != nil || scanOnArrival ? .own : preferred
             own = ServerFieldsDraft(configuration: applied)
         }
     }
