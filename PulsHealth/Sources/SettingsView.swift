@@ -33,7 +33,7 @@ struct SettingsView: View {
                 }
             }
 
-            // Keyed on the *applied* server, like the Sync tab's setup card:
+            // Keyed on the *applied* server, like the Sync tab's first-time screen:
             // without one there is nothing for a start date, a backfill or
             // an anchor to act on.
             if model.appliedConfig.serverURL != nil {

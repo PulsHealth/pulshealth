@@ -206,8 +206,8 @@ In the app:
 Open the web viewer at `http://localhost:3001` on the server, or Grafana at
 `http://localhost:3000`, and watch the data arrive.
 
-Without step 2 the app syncs nothing and the Sync tab shows a setup card
-instead of a status; Explore and Export work regardless.
+Without step 2 the app syncs nothing and the Sync tab shows its first-time
+setup screen instead of a status; Explore and Export work regardless.
 
 **Several people on one server.** Every install starts with the same default
 user ID, so give each phone its own under **Settings → User**, and its own

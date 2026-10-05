@@ -306,7 +306,7 @@ data.
 1 Unlock your Health Data (first-run page 1), 2 Explore, 3 Heart Rate's Type
 page, 4 the same page scrolled to the value histogram and samples over time,
 5 the Export builder, 6 Sync to your own database (first-run page 4; the
-page now reads "Sync to a database", so retake shot 6 for the next
+page now reads "Always in sync", so retake shot 6 for the next
 submission). iPad 13"
 slot (2064 × 2752): Unlock your Health Data and Explore. Shots 5 and 6 of the
 order above (Sync status after a backfill, Background Activity) need a real
