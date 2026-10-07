@@ -2,7 +2,7 @@ import SwiftUI
 import PulsHealthSync
 
 /// Export → Data types: which types the export draft covers. The same shape as
-/// the Synced Data browser (categories that drill into per-category lists,
+/// the Raw Samples picker (categories that drill into per-category lists,
 /// search across every type), but with checkmarks rather than toggles and a
 /// draft of its own: nothing chosen here touches the sync selection.
 struct ExportTypePickerView: View {

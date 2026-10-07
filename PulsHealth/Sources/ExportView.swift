@@ -1,8 +1,8 @@
 import SwiftUI
 import PulsHealthSync
 
-/// The Export tab: build an export (data types, aggregate series, a range, a
-/// format, zipped or not), write it straight from Apple Health to files on the
+/// The Export tab: build an export (raw data types, aggregated types, a range,
+/// a format, zipped or not), write it straight from Apple Health to files on the
 /// phone and hand them to the share sheet. No server is involved, which is the point: this is
 /// the app's whole use for someone who does not run one.
 ///
@@ -13,21 +13,6 @@ struct ExportView: View {
     @Environment(AppModel.self) private var model
     @State private var sharing = false
     @State private var confirmDelete = false
-    /// The Add Series / Edit Series sheet: nil = closed, `.new` = adding,
-    /// `.edit` = the series being changed.
-    @State private var editing: SeriesEdit?
-
-    private enum SeriesEdit: Identifiable {
-        case new
-        case edit(AggregateConfig)
-
-        var id: String {
-            switch self {
-            case .new: "new"
-            case .edit(let config): config.id.uuidString
-            }
-        }
-    }
 
     var body: some View {
         List {
@@ -41,12 +26,6 @@ struct ExportView: View {
             }
         }
         .navigationTitle("Export")
-        .sheet(item: $editing) { edit in
-            switch edit {
-            case .new: ExportSeriesEditor()
-            case .edit(let config): ExportSeriesEditor(editing: config)
-            }
-        }
         .deleteExportAlert(isPresented: $confirmDelete, export: model.export)
     }
 
@@ -57,7 +36,7 @@ struct ExportView: View {
             noticeSection(notice)
         }
         dataSection
-        seriesSection
+        aggregatesSection
         rangeSection
         formatSection
         exportButtonSection
@@ -67,7 +46,7 @@ struct ExportView: View {
         @Bindable var export = model.export
         let count = export.draft.types.count
         let workouts = export.draft.types.contains(HealthTypeCatalog.workoutIdentifier)
-        return Section("Data") {
+        return Section("Raw Samples") {
             NavigationLink {
                 ExportTypePickerView()
             } label: {
@@ -97,31 +76,26 @@ struct ExportView: View {
         }
     }
 
-    private var seriesSection: some View {
-        Section {
-            ForEach(model.export.draft.aggregates) { config in
-                Button {
-                    editing = .edit(config)
-                } label: {
-                    ExportSeriesRow(config: config)
-                }
-                .buttonStyle(.plain)
-            }
-            .onDelete { offsets in
-                let ids = offsets.map { model.export.draft.aggregates[$0].id }
-                for id in ids { model.export.removeAggregate(id: id) }
-            }
-            Button {
-                editing = .new
+    /// The same Aggregates picker and type pages as Sync, over this
+    /// export's draft.
+    private var aggregatesSection: some View {
+        let count = AggregateList(model.export.draft.aggregates).typeIdentifiers.count
+        return Section {
+            NavigationLink {
+                AggregatesPickerView(scope: .export)
             } label: {
-                Label("Add Series", systemImage: "plus")
+                HStack(spacing: 12) {
+                    TypeIcon(symbol: "chart.bar.xaxis", color: .accentColor, size: .small)
+                    Text("Aggregated types")
+                    Spacer()
+                    Text(count == 0 ? "None" : "\(count) type\(count == 1 ? "" : "s")")
+                        .foregroundStyle(.secondary)
+                }
             }
         } header: {
-            Text("Aggregate series")
+            Text("Aggregates")
         } footer: {
-            if model.export.draft.aggregates.isEmpty {
-                Text("Optional. One value per day, week or month, like daily steps.")
-            }
+            Text("Raw samples and aggregates start from what Sync sends. Changes here are this export’s only.")
         }
     }
 
@@ -198,12 +172,12 @@ struct ExportView: View {
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
                 if selection.isEmpty {
-                    Text("Nothing is selected. Choose data types or add a series above.")
+                    Text("Nothing is selected. Choose data types or aggregated types above.")
                 } else if model.exportBlockedByBackfill {
                     Text("A backfill is running. It reads the same Health data, and the two would slow each other to a crawl. Export once it has finished.")
                 }
                 if model.exportLacksMedicationAccess {
-                    Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Synced Data. Until that has been answered this export contains no doses.")
+                    Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Raw Samples. Until that has been answered this export contains no doses.")
                         .foregroundStyle(.orange)
                 }
             }
@@ -359,7 +333,7 @@ struct ExportView: View {
                 detailRow("Range", finished.rangeLabel)
                 detailRow("Data types", "\(selection.types.count)")
                 if !selection.aggregates.isEmpty {
-                    detailRow("Aggregate series", "\(selection.aggregates.count)")
+                    detailRow("Aggregates", "\(selection.aggregates.count)")
                 }
                 if selection.types.contains(HealthTypeCatalog.workoutIdentifier) {
                     if selection.includeWorkoutRoutes { detailRow("Workout routes", "Included") }

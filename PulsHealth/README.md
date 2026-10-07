@@ -71,8 +71,8 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
 
 Four tabs, each its own `NavigationStack`: **Explore** (the catalog, with the
 Health-access cards), **Export** (files, no server needed), **Sync** (the
-database — the PulsHealth database or your own — status, synced types,
-activity) and **Settings**.
+database — the PulsHealth database or your own — status, Raw Samples and
+Aggregates, activity) and **Settings**.
 
 ```
 Sources/
@@ -123,7 +123,8 @@ Sources/
 │   ├── TypePageView.swift  The Type page: the analysis (started on open),
 │   │                       stat tiles, the value distribution, samples over
 │   │                       time, sources and devices, cadence; an aggregate
-│   │                       preview (quantity types, after an analysis); and,
+│   │                       preview (quantity types, after an analysis) with
+│   │                       Add to Export and Add to Sync; and,
 │   │                       for a synced type, the sync details
 │   │                       (TypeSyncDetailsSections).
 │   ├── ExploreCharts.swift The page's Swift Charts: the histogram (over the
@@ -135,8 +136,9 @@ Sources/
 │                           category value names), decoded from the
 │                           bundled knowledge.json (rendered from
 │                           knowledge-base/ by scripts/gen-knowledge-json.py).
-├── ExportView.swift      The Export tab as a builder: data types (a picker of
-│                         its own), aggregate series (Add Series), a range (30
+├── ExportView.swift      The Export tab as a builder: Raw Samples (data types,
+│                         a picker of its own), Aggregates (Aggregated types:
+│                         Sync's Aggregates picker over the draft), a range (30
 │                         days / 90 days / a year / all time, or a start and
 │                         end date), CSV or JSONL, zipped or not, then
 │                         running → result (totals, per-dataset rows, an
@@ -144,16 +146,13 @@ Sources/
 │                         UIActivityViewController share sheet, whose
 │                         completion is what deletes the staged copy.
 ├── Export/
-│   ├── ExportTypePickerView.swift  Export → Data types: the Synced Data
-│   │                       browser's shape (categories, per-category lists,
-│   │                       search) with checkmarks rather than toggles, over
-│   │                       the export's own draft — nothing chosen here
-│   │                       touches the sync selection.
-│   └── ExportAggregatesView.swift  The Add Series sheet (quick series as
-│                           chips, then the full editor) and the draft's
-│                           series rows.
+│   └── ExportTypePickerView.swift  Export → Data types: the Raw Samples
+│                           picker's shape (categories, per-category lists,
+│                           search) with checkmarks rather than toggles, over
+│                           the export's own draft — nothing chosen here
+│                           touches the sync selection.
 ├── ExportModel.swift     @MainActor @Observable, owned by AppModel: the draft
-│                         (types, series, workout switches, range, format,
+│                         (types, aggregates, workout switches, range, format,
 │                         zip — seeded once from the applied sync selection,
 │                         then the export's own), the run in flight (progress,
 │                         cancel, idle-timer and background-task assertion),
@@ -165,9 +164,14 @@ Sources/
 │                         backfill progress + ETA, failing count, which types
 │                         are paused), the iOS 27 "Limited Health history"
 │                         card while any applied type is readable only from a
-│                         recent date, Sync Now, the synced types (TypeRow →
-│                         TypeDetailView), pull-to-refresh and the error alert;
-│                         then rows to Synced Data, Database and Activity. The
+│                         recent date, Sync Now, then two sections, each with
+│                         Edit in its header for its picker: Raw Samples (the
+│                         applied raw types, TypeRow → TypeDetailView) and
+│                         Aggregates (the applied aggregated types, what each
+│                         has and how far it got → AggregateTypeView; when
+│                         empty, Match Raw Samples), each showing five rows
+│                         until Show All; pull-to-refresh and the error alert;
+│                         then rows to Database and Activity. The
 │                         PendingChangesBar sits on this tab.
 ├── ServerSettingsView.swift  Sync → Database: first the choice, PulsHealth
 │                         Database or Your Own Database (none checked until
@@ -207,16 +211,42 @@ Sources/
 │                         gap, expired/interrupted count, per-trigger rollups, a
 │                         recent-wakes list, and a ShareLink that exports wakes
 │                         (CSV+JSON) + the event log (JSON) for offline analysis.
-├── TypePickerView.swift  Sync → Synced Data: ~80 types grouped by category;
-│                         Common/All/None
-│                         presets. Quantity rows link into TypeConfigView; other
-│                         kinds keep plain toggles. Also PendingChangesBar.
-├── TypeConfigView.swift  Per-quantity-type config: raw-sync toggle + aggregate
-│                         series list, plus AggregateEditorView (function picker
-│                         restricted to allowedAggregateFunctions, interval,
-│                         device filter, start date, settle delay, status,
-│                         Sync Now / Recompute All / Delete). Identity edits
-│                         reset the watermark (different server series).
+├── RawSamplesPickerView.swift  Sync → Raw Samples → Edit: ~80 types grouped
+│                         by category, every one a switch (raw samples only;
+│                         workout routes and enhanced data under Workouts);
+│                         All Types / Common Set / None. Also TypePresets and
+│                         the PendingChangesBar ("2 raw types · 1 aggregated
+│                         type").
+├── Aggregates/           Built once, over an AggregateScope: Sync's staged
+│   │                     config or the export's draft (AppModel.editAggregates).
+│   │                     The daily default, labels, suggestions and Match Raw
+│   │                     Samples are the library's (AggregateChoices.swift).
+│   ├── AggregateScope.swift  The scope, the edit helper, and Sync's status
+│   │                       line per aggregate (Waiting for Apply, Up to date,
+│   │                       Catching up, an error).
+│   ├── AggregatesPickerView.swift  The measurements by category, searchable;
+│   │                       Calendar-style rows: tap adds the type with its
+│   │                       daily default (sum for cumulative, average for
+│   │                       discrete, 1 day, all devices) or removes it (asking
+│   │                       first when it has more), ⓘ opens its page. •••:
+│   │                       Match Raw Samples, All Measurements, None.
+│   ├── AggregateTypeView.swift  A type's aggregates: one row each, its menu
+│   │                       Value / Every / Devices (checkmarks; only legal
+│   │                       functions; choices that would duplicate another
+│   │                       are disabled; an older odd interval stays listed),
+│   │                       Options… (Sync: start date, wait for late Apple
+│   │                       Watch data, status, Recompute) and Remove. Add
+│   │                       Aggregate suggests common ones and ends with
+│   │                       Custom…. In Sync, changing one that has sent values
+│   │                       asks first (the old one stays in the database), and
+│   │                       a type without its daily default says it is left
+│   │                       out of daily metrics. A changed aggregate keeps its
+│   │                       id, so Apply resets its watermark.
+│   └── CustomAggregateSheet.swift  Custom…: Value and Every (segmented),
+│                           Devices, a live preview (AggregatePreviewPane over
+│                           HealthExplorer.aggregatePreview, shared with the
+│                           Type page) and how many values it makes. Nothing
+│                           is added until Add.
 ├── TypeDetailView.swift  Sync → type: a header (icon, name, activity) over
 │                         TypeSyncDetailsSections — anchor/activity/rate/ETA,
 │                         volume counters, timeline, server-side counts
@@ -375,10 +405,10 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   configuration), the Sync tab shows its first-time screen (`SyncIntro`) instead
   of a status, and the Explore and Export tabs work regardless.
 - **The Export tab** writes a selection of its own — `ExportDraft`: types,
-  aggregate series, workout switches, a preset or custom range, the format
+  aggregates, workout switches, a preset or custom range, the format
   and whether to zip it —
   seeded once from the applied sync selection and edited on the tab, never
-  written back to it (a series added here is the export's alone). It goes to
+  written back to it (an aggregate added here is the export's alone). It goes to
   CSV or JSONL through the package's `HealthExporter`, which runs on a
   throwaway engine and never touches the app's sync state (root `CLAUDE.md`,
   "Export never shares sync state"). Before a run the app requests Health
@@ -407,13 +437,18 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 - A newly enabled type with no anchor auto-backfills from the configured start date;
   a newly added aggregate config with no watermark does the same.
 - Aggregates are independent of raw sync (a type can sync only its daily sum, no raw
-  samples) — authorization and observer registration cover the union of both. A
+  samples), which is why the Sync tab gives each its own section and picker —
+  authorization and observer registration cover the union of both. Nothing
+  adds aggregates by itself: a type switched on under Raw Samples sends raw
+  samples only, an update leaves an install's aggregates as they were (the
+  empty Aggregates section offers Match Raw Samples), and onboarding applies
+  the raw common set alone. A
   bucket inside its settle delay uploads on the next trigger after it settles;
   recent buckets are recomputed each run, so late Watch data self-corrects.
 - Backfill on iOS 26 runs as a `BGContinuedProcessingTask` (system progress UI,
   survives backgrounding): Start Initial Backfill, and a whole-history Apply
   (the first Save & Apply after pairing, and a start-fresh server change).
-  Adding a type under Synced Data backfills inline; earlier iOS keeps backfill
+  Adding a type in either picker backfills inline; earlier iOS keeps backfill
   foreground-resumable. From submission until the task shows up (a type
   backfilling, or its wake ending) `AppModel.continuedBackfillPending` counts
   as `backfillActive`, so Sync Now and a second Start Initial Backfill wait.

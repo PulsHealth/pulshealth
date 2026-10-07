@@ -615,8 +615,9 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   and `puls_time_zone()` disagree. In stdio mode stdout is the
   transport: never print to it; logs go to stderr.
 - Grafana datasource UID `puls-tsdb` is hardcoded in dashboard JSON — keep it stable.
-- Debounces are intentional: state persist 250 ms, event-log save 1 s. Synced Data
-  edits are not debounced — they are staged in `AppModel.config` and reach the
+- Debounces are intentional: state persist 250 ms, event-log save 1 s. Edits
+  in the Sync tab's Raw Samples and Aggregates pickers (and a type's aggregate
+  page) are not debounced — they are staged in `AppModel.config` and reach the
   engine only when the user taps Apply (`applyChanges`).
 - **Public tree.** This repository is public: no personal identifiers, hostnames,
   e-mail addresses, Apple Team IDs or credentials in tracked files (`.env`,

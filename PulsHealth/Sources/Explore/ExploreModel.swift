@@ -243,12 +243,13 @@ final class ExploreModel {
         }
     }
 
-    /// The permission step, the same one the export makes: ask for a type
-    /// iOS still reports undetermined, once. Types iOS refuses to put in the
+    /// The permission step, the same one the export makes, before an
+    /// analysis and a Custom… aggregate's preview: ask for a type iOS still
+    /// reports undetermined, once. Types iOS refuses to put in the
     /// sheet are not asked for again, and the medication picker is never
     /// requested here (it presents itself and may never return —
     /// CLAUDE.md, the medication gotcha).
-    private func requestAccessIfNeeded(_ id: String) async {
+    func requestAccessIfNeeded(_ id: String) async {
         guard id != HealthTypeCatalog.medicationDoseIdentifier,
               !undeterminableTypes.contains(id),
               await engine.authorizationNeeded(for: [id])

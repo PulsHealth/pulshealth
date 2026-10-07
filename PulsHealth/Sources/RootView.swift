@@ -41,9 +41,9 @@ struct RootView: View {
                 .tabItem { Label("Export", systemImage: "square.and.arrow.up") }
                 .tag(Tab.export)
             NavigationStack(path: $syncPath) { SyncView(path: $syncPath) }
-                // The Synced Data screen is pushed on this stack, so its
-                // Apply/Discard bar belongs to the tab, not to a screen that
-                // could be popped with edits still staged.
+                // The Raw Samples and Aggregates pickers are pushed on this
+                // stack, so their Apply/Discard bar belongs to the tab, not
+                // to a screen that could be popped with edits still staged.
                 .safeAreaInset(edge: .bottom) { PendingChangesBar() }
                 .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
                 .tag(Tab.sync)
@@ -66,7 +66,7 @@ struct RootView: View {
             selection = .sync
         }
         // Save & Apply on Settings, the User page, the Database screen or the
-        // Synced Data bar can all raise the server/user-change prompt; show it
+        // Sync tab's Apply bar can all raise the server/user-change prompt; show it
         // above every tab.
         .serverChangePrompt()
         // First run only: a fresh install lands here with no server and no

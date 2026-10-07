@@ -18,7 +18,7 @@ import PulsHealthSync
 /// question was settled) all four pages are there from the start.
 ///
 /// Nothing reaches the engine until Start Exploring: `model.config` is the
-/// same staged draft the Synced Data screen edits, and `finishOnboarding()` is
+/// same staged draft the Raw Samples picker edits, and `finishOnboarding()` is
 /// the same Save & Apply path. Leaving the app at any point leaves the install
 /// as it was, and the flow reappears on the next launch until it is finished.
 ///

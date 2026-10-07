@@ -166,12 +166,13 @@ conversion, the same aggregate math — against a throwaway engine whose
 transport appends to files instead of POSTing. The files are staged in the
 app's temporary directory for the share sheet.
 
-**In the app it is the Export tab**, a builder. Pick the data types, add any
-aggregate series (hourly, daily, weekly or monthly values for a quantity
-type), a time range (last 30 days, 90 days, a year, all time, or your own
-start and end date), CSV or JSONL, and whether to zip it. The draft starts
-from the selection applied under Sync → Synced Data — the same types,
-aggregate series and workout route/stream switches. What you change in it is
+**In the app it is the Export tab**, a builder. Pick the data types (raw
+samples), the aggregated types — the same Aggregates picker and type pages as
+Sync: each type starts with its daily total or average, and its page adds
+hourly, weekly, monthly or per-device values — a time range (last 30 days,
+90 days, a year, all time, or your own start and end date), CSV or JSONL,
+and whether to zip it. The draft starts from what Sync sends, as applied —
+the same raw types, aggregates and workout route/stream switches. What you change in it is
 this export's alone, never the sync's, and the sync start date in Settings
 plays no part.
 

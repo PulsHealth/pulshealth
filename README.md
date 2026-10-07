@@ -44,7 +44,7 @@ columns are in [`docs/export.md`](docs/export.md#on-device-export-no-server).
 
 | Component | Path | What it is |
 |---|---|---|
-| **iOS app** | [`PulsHealth/`](PulsHealth/README.md) | SwiftUI app over the package, in four tabs: **Explore** (every HealthKit type by category, each with a page of analysis charts, an aggregate preview and the type's typical range), **Export** (types, aggregate series, any date range, CSV or JSONL — no server needed), **Sync** (the database connection, backfill progress and ETA, per-type status, the event log and background-activity telemetry) and **Settings** (user, sync tuning, privacy and data, diagnostics). |
+| **iOS app** | [`PulsHealth/`](PulsHealth/README.md) | SwiftUI app over the package, in four tabs: **Explore** (every HealthKit type by category, each with a page of analysis charts, an aggregate preview and the type's typical range), **Export** (raw types, aggregates, any date range, CSV or JSONL — no server needed), **Sync** (the database connection, backfill progress and ETA, what is sent — Raw Samples and Aggregates, each with its own picker — per-type status, the event log and background-activity telemetry) and **Settings** (user, sync tuning, privacy and data, diagnostics). |
 | **`PulsHealthSync`** | [`PulsHealthSync/`](PulsHealthSync/README.md) | Swift package (iOS 17+, Swift 6 strict concurrency, zero dependencies): anchored-query sync engine, on-device aggregates, activity rings, background scheduling, HTTP transport, NDJSON encoding, on-device export. Embeddable in other apps. |
 | **Reference server** | [`server/`](server/README.md) | Docker Compose stack: TimescaleDB, Go ingest API, Go product API (OpenAPI 3.1), Grafana with provisioned dashboards and alert rules. |
 | **Web viewer** | [`web/`](web/README.md) | Next.js viewer (activity rings, trends, workouts, catalog) reading Postgres directly. |
@@ -191,17 +191,19 @@ In the app:
 
 1. Swipe through the first run and grant Health access when asked (the app is
    read-only; it never writes to HealthKit). It asks about a "Common" starter
-   set; add more types later under **Sync → Synced Data**. It does not ask for
-   a database.
+   set; add more types later under **Sync → Raw Samples → Edit**. It does not
+   ask for a database.
 2. **Sync tab → Set Up** (later, **Sync → Database**): scan the pairing
    block's QR code with **Scan Pairing Code**, paste its `puls://pair?…` line
    with **Paste Pairing Code**, or type the **Database URL** and **Token**.
    The iOS Camera app works too: it offers to open PulsHealth, which asks you
    to confirm the host before it fills anything in. Then tap **Test
    Connection** and **Save & Apply**.
-3. **Sync → Synced Data:** adjust what to sync and tap Apply. New types
-   backfill from your chosen start date; the Sync tab shows per-type progress,
-   rate and ETA.
+3. **Sync → Raw Samples** and **Sync → Aggregates**, each with **Edit**:
+   choose which types send every sample and which send a daily total or
+   average (add hourly, weekly or per-device aggregates on a type's page),
+   then tap Apply. New types backfill from your chosen start date; the Sync
+   tab shows per-type progress, rate and ETA.
 
 Open the web viewer at `http://localhost:3001` on the server, or Grafana at
 `http://localhost:3000`, and watch the data arrive.
@@ -288,7 +290,10 @@ in short:
   buckets — sums, averages, minima, maxima — by hour, day, week or month, and
   optionally per device (Watch vs. iPhone). They have no UUIDs, so the server
   upserts them, and each run recomputes a trailing window so late Watch data
-  corrects itself.
+  corrects itself. In the app a type added to **Aggregates** starts with its
+  daily total (steps, energy) or daily average (heart rate, weight), the one
+  the database's daily views read; **Match Raw Samples** gives every raw
+  measurement its own in one tap.
 - **Activity rings** (`HKActivitySummary`) sync as one upserted row per day,
   refreshed on every sync run and at most hourly off observer wakes.
 - **Safety nets:** a `BGProcessingTask` runs periodic catch-up syncs when the

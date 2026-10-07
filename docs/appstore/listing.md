@@ -262,7 +262,14 @@ live — App Store Connect keeps the history.
 
 > Recovery HRV: on iOS 27, PulsHealth can now sync the RMSSD heart rate
 > variability your Apple Watch records on watchOS 27, next to the HRV it
-> already sends. Turn it on in Sync → Synced Data → Heart.
+> already sends. Turn it on in Sync → Raw Samples → Heart.
+>
+> Aggregates, simpler: the Sync tab now has two sections, Raw Samples and
+> Aggregates, each with its own list. Add a measurement to Aggregates and it
+> sends a daily total or average, which your database's daily charts and AI
+> assistants use; Match Raw Samples does it for everything you sync. Add
+> hourly, weekly or per-device ones on the type's page, with a preview.
+> Export uses the same lists.
 
 ## Screenshots
 

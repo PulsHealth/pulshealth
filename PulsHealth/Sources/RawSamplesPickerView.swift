@@ -1,8 +1,8 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Named starting selections. `common` is what the Synced Data menu's "Enable
-/// Common Set" applies and what first-run onboarding preselects, so the two
+/// Named starting selections. `common` is what the Raw Samples menu's
+/// "Common Set" applies and what first-run onboarding preselects, so the two
 /// cannot drift apart.
 enum TypePresets {
     static let common: Set<String> = [
@@ -23,10 +23,11 @@ enum TypePresets {
     ]
 }
 
-/// Sync → Synced Data, structured like Apple Health's Browse screen: a
-/// category list with colored icons that drills into per-category toggle
-/// pages, plus search across every type.
-struct TypePickerView: View {
+/// Sync → Raw Samples → Edit, structured like Apple Health's Browse screen:
+/// a category list with colored icons that drills into per-category pages of
+/// switches, plus search across every type. A type switched on sends its
+/// raw samples, and nothing else: its aggregates are the Aggregates picker's.
+struct RawSamplesPickerView: View {
     @Environment(AppModel.self) private var model
     @State private var searchText = ""
 
@@ -38,16 +39,23 @@ struct TypePickerView: View {
                 searchResultsSection
             }
         }
-        .navigationTitle("Synced Data")
+        .navigationTitle("Raw Samples")
         .searchable(
             text: $searchText, placement: .navigationBarDrawer(displayMode: .always),
             prompt: "Search data types")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Enable Common Set", systemImage: "star") { enableCommon() }
-                    Button("Enable All", systemImage: "checkmark.circle") { enableAll() }
-                    Button("Disable All", systemImage: "xmark.circle", role: .destructive) {
+                    Button("All Types") {
+                        model.config.enabledTypes = Set(HealthTypeCatalog.all.map(\.identifier))
+                    }
+                    Button {
+                        model.config.enabledTypes = TypePresets.common
+                    } label: {
+                        Text("Common Set")
+                        Text("Steps, heart, sleep, workouts and more")
+                    }
+                    Button("None", role: .destructive) {
                         model.config.enabledTypes = []
                     }
                 } label: {
@@ -65,35 +73,17 @@ struct TypePickerView: View {
                     NavigationLink {
                         TypeCategoryView(group: group, types: types)
                     } label: {
-                        categoryRow(group, types: types)
+                        PickerCategoryRow(
+                            group: group, total: types.count,
+                            selected: types.count { model.config.enabledTypes.contains($0.identifier) })
                     }
                 }
             }
         } header: {
             Text("Health Categories")
         } footer: {
-            Text("\(model.config.enabledTypes.count) of \(HealthTypeCatalog.all.count) types enabled. Changes are staged — tap Apply to start syncing the new selection.")
+            Text("\(model.config.enabledTypes.count) of \(HealthTypeCatalog.all.count) types send their raw samples: every reading, as recorded.")
         }
-    }
-
-    private func categoryRow(_ group: HealthTypeDescriptor.Group, types: [HealthTypeDescriptor]) -> some View {
-        let enabled = types.count { model.config.enabledTypes.contains($0.identifier) }
-        return HStack(spacing: 12) {
-            Image(systemName: group.symbol)
-                .font(.body)
-                .foregroundStyle(group.color)
-                .frame(width: 28)
-            Text(group.rawValue)
-                .fontWeight(.semibold)
-                .foregroundStyle(group.color)
-            Spacer()
-            if enabled > 0 {
-                Text("\(enabled) of \(types.count)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 2)
     }
 
     private var searchResultsSection: some View {
@@ -105,11 +95,7 @@ struct TypePickerView: View {
                 ContentUnavailableView.search(text: searchText)
             } else {
                 ForEach(matches) { descriptor in
-                    if descriptor.kind == .quantity {
-                        TypeConfigLinkRow(descriptor: descriptor, showsCategory: true)
-                    } else {
-                        TypeToggleRow(descriptor: descriptor, showsCategory: true)
-                    }
+                    TypeToggleRow(descriptor: descriptor, showsCategory: true)
                 }
                 if routeMatches {
                     WorkoutRoutesToggleRow(showsCategory: true)
@@ -120,18 +106,10 @@ struct TypePickerView: View {
             }
         }
     }
-
-    private func enableCommon() {
-        model.config.enabledTypes = TypePresets.common
-    }
-
-    private func enableAll() {
-        model.config.enabledTypes = Set(HealthTypeCatalog.all.map(\.identifier))
-    }
 }
 
-/// One category's toggle list (Apple Health category page).
-struct TypeCategoryView: View {
+/// One category's switches (Apple Health category page).
+private struct TypeCategoryView: View {
     @Environment(AppModel.self) private var model
     let group: HealthTypeDescriptor.Group
     let types: [HealthTypeDescriptor]
@@ -140,11 +118,7 @@ struct TypeCategoryView: View {
         List {
             Section {
                 ForEach(types) { descriptor in
-                    if descriptor.kind == .quantity {
-                        TypeConfigLinkRow(descriptor: descriptor, showsCategory: false)
-                    } else {
-                        TypeToggleRow(descriptor: descriptor, showsCategory: false)
-                    }
+                    TypeToggleRow(descriptor: descriptor, showsCategory: false)
                 }
                 if group == .workouts {
                     WorkoutRoutesToggleRow(showsCategory: false)
@@ -152,7 +126,7 @@ struct TypeCategoryView: View {
                 }
             } header: {
                 let enabled = types.count { model.config.enabledTypes.contains($0.identifier) }
-                Text("\(enabled) of \(types.count) enabled")
+                Text("\(enabled) of \(types.count) on")
             } footer: {
                 if group == .workouts {
                     Text("Workout Routes attaches the GPS path to each exported workout. Enhanced Data adds the intra-workout heart-rate / power / cadence / speed curves, per-metric min/avg/max, lap & segment markers, multi-sport splits, and your age (for heart-rate zones). Both apply only to workouts synced from then on; effort scores are always included.")
@@ -164,10 +138,10 @@ struct TypeCategoryView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Enable All in \(group.rawValue)", systemImage: "checkmark.circle") {
+                    Button("Turn All On", systemImage: "checkmark.circle") {
                         model.config.enabledTypes.formUnion(types.map(\.identifier))
                     }
-                    Button("Disable All in \(group.rawValue)", systemImage: "xmark.circle", role: .destructive) {
+                    Button("Turn All Off", systemImage: "xmark.circle", role: .destructive) {
                         model.config.enabledTypes.subtract(types.map(\.identifier))
                     }
                 } label: {
@@ -175,45 +149,6 @@ struct TypeCategoryView: View {
                 }
             }
         }
-    }
-}
-
-/// Chevron row for quantity types: drills into the per-type config screen
-/// (raw toggle + aggregates), with a trailing raw/aggregate summary. A Toggle
-/// inside a NavigationLink label is awkward in Lists, so the raw toggle lives
-/// inside TypeConfigView.
-private struct TypeConfigLinkRow: View {
-    @Environment(AppModel.self) private var model
-    let descriptor: HealthTypeDescriptor
-    let showsCategory: Bool
-
-    var body: some View {
-        NavigationLink {
-            TypeConfigView(descriptor: descriptor)
-        } label: {
-            HStack(spacing: 12) {
-                TypeIcon(descriptor)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(descriptor.displayName)
-                    if showsCategory {
-                        Text(descriptor.group.rawValue)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-                Text(summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 2)
-    }
-
-    private var summary: String {
-        let raw = model.config.enabledTypes.contains(descriptor.identifier) ? "On" : "Off"
-        let aggregates = model.aggregates(for: descriptor.identifier).count
-        return aggregates > 0 ? "\(raw) · \(aggregates) agg" : raw
     }
 }
 
@@ -324,9 +259,10 @@ private struct WorkoutEnhancedDataToggleRow: View {
 }
 
 /// Floating Apply/Discard bar shown on the Sync tab while the staged
-/// configuration draft differs from what's applied to the engine. Nothing the
-/// user toggles on the Synced Data screen — raw types, aggregates, workout
-/// routes — reaches the sync engine or starts backfilling until they tap Apply.
+/// configuration draft differs from what's applied to the engine. Nothing
+/// chosen in the Raw Samples or Aggregates pickers, or on a type's aggregate
+/// page — raw types, aggregates, workout routes — reaches the sync engine or
+/// starts backfilling until they tap Apply.
 struct PendingChangesBar: View {
     @Environment(AppModel.self) private var model
     @State private var applying = false

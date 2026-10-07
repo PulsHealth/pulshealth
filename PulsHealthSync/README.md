@@ -113,6 +113,12 @@ Sources/PulsHealthSync/
 │   │                                filter/start/settle delay. allowedAggregateFunctions
 │   │                                derives the crash-safe function set per type from
 │   │                                HKQuantityType.aggregationStyle.
+│   ├── AggregateChoices.swift       What the app offers when setting up aggregates:
+│   │                                each type's daily default (total or average,
+│   │                                1 day, all devices), plain labels ("Daily
+│   │                                total"), Add Aggregate suggestions, the edits
+│   │                                (AggregateList, incl. Match Raw Samples) and
+│   │                                an aggregate's progress. UI vocabulary only.
 │   ├── SyncModels.swift             Wire DTOs: SyncSample (+ ECG/StateOfMind/Medication
 │   │                                detail structs), SyncDeletion, RoutePayload,
 │   │                                AggregateSampleRow, ActivitySummaryRow, SyncBatch,
@@ -210,7 +216,8 @@ Tests (`Tests/PulsHealthSyncTests/`, Swift Testing) cover everything that runs
 without HealthKit:
 
 - the catalog (unique identifiers, unit parsing, declarative OS gates, legal
-  aggregate functions) and the published vocabulary: `CatalogVocabularyTests`
+  aggregate functions, the aggregate choices the app offers —
+  `AggregateChoicesTests`) and the published vocabulary: `CatalogVocabularyTests`
   renders `docs/protocol/catalog.json` and compares it byte for byte, or
   rewrites it with `TEST_RUNNER_PULS_WRITE_CATALOG=1` on the xcodebuild
   command;

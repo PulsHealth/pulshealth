@@ -8,9 +8,14 @@ enum SyncRoute: Hashable {
     /// The Database screen; `scan` opens the pairing scanner on arrival, and
     /// `choice` is the option picked on the first-time screen (`SyncIntro`).
     case server(scan: Bool, choice: DatabaseDestination? = nil)
-    case syncedData
+    /// The Raw Samples and Aggregates pickers (each section's Edit).
+    case rawSamples
+    case aggregates
     case activity
+    /// A type's raw sync details.
     case type(String)
+    /// A type's aggregates.
+    case aggregateType(String)
 }
 
 /// Shown while this launch could not read the stored settings
@@ -35,14 +40,21 @@ struct StateUnreadableNotice: View {
 /// applied it is the first-time screen (`SyncIntro`): what syncing does and
 /// the two places it can go — a supported way to use the app, not a fault;
 /// the first tap on Sync is where the database is asked for, never the
-/// first-run flow. With one it is the status of the sync, the synced types,
-/// and the way to the Database, Synced Data and Activity screens.
+/// first-run flow. With one it is the status of the sync, what is sent —
+/// Raw Samples and Aggregates, each with Edit for its picker — and the way to
+/// the Database and Activity screens.
 struct SyncView: View {
     /// The stack's path, owned by `RootView` (a pairing link pushes onto it
     /// from outside); the first-time screen pushes the Database screen
-    /// through it so its choices can be buttons rather than list rows.
+    /// through it so its choices can be buttons rather than list rows, and
+    /// the sections' Edit buttons push their pickers the same way.
     @Binding var path: [SyncRoute]
     @Environment(AppModel.self) private var model
+    @State private var showsAllRaw = false
+    @State private var showsAllAggregates = false
+
+    /// Rows a section shows before Show All.
+    private static let collapsedRows = 5
 
     var body: some View {
         List {
@@ -57,7 +69,8 @@ struct SyncView: View {
                 statusCard
                 limitedHistoryNotice
                 syncNowSection
-                typesSection
+                rawSamplesSection
+                aggregatesSection
             }
             linksSection
         }
@@ -65,11 +78,16 @@ struct SyncView: View {
         .navigationDestination(for: SyncRoute.self) { route in
             switch route {
             case .server(let scan, let choice): ServerSettingsView(scanOnArrival: scan, preferred: choice)
-            case .syncedData: TypePickerView()
+            case .rawSamples: RawSamplesPickerView()
+            case .aggregates: AggregatesPickerView(scope: .sync)
             case .activity: ActivityView()
             case .type(let id):
                 if let status = model.statuses.first(where: { $0.id == id }) {
                     TypeDetailView(status: status)
+                }
+            case .aggregateType(let id):
+                if let descriptor = HealthTypeCatalog.descriptor(for: id) {
+                    AggregateTypeView(descriptor: descriptor, scope: .sync)
                 }
             }
         }
@@ -232,18 +250,97 @@ struct SyncView: View {
         }
     }
 
-    private var typesSection: some View {
-        Section("Types") {
-            if model.statuses.isEmpty {
-                EmptyState(
-                    title: "No types synced",
-                    symbol: "square.grid.2x2",
-                    message: "Choose some under Synced Data below and tap Apply.")
+    // MARK: - What is sent
+
+    /// The types that send raw samples, as applied: what needs attention
+    /// first, the first few until Show All.
+    private var rawSamplesSection: some View {
+        let sorted = sortedStatuses
+        let shown = showsAllRaw ? sorted : Array(sorted.prefix(Self.collapsedRows))
+        return Section {
+            if sorted.isEmpty {
+                Text("No raw samples are sent. Tap Edit to choose types.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-            ForEach(sortedStatuses) { status in
+            ForEach(shown) { status in
                 NavigationLink(value: SyncRoute.type(status.id)) {
                     TypeRow(status: status)
                 }
+            }
+            showAllButton(count: sorted.count, expanded: $showsAllRaw)
+        } header: {
+            sectionHeader("Raw Samples", route: .rawSamples)
+        }
+    }
+
+    /// The aggregated types, as applied, each with what it has and how far
+    /// it has got.
+    private var aggregatesSection: some View {
+        let types = aggregatedTypes
+        let shown = showsAllAggregates ? types : Array(types.prefix(Self.collapsedRows))
+        return Section {
+            if types.isEmpty {
+                aggregatesEmptyState
+            }
+            ForEach(shown, id: \.identifier) { descriptor in
+                NavigationLink(value: SyncRoute.aggregateType(descriptor.identifier)) {
+                    AggregatedTypeRow(descriptor: descriptor)
+                }
+            }
+            showAllButton(count: types.count, expanded: $showsAllAggregates)
+        } header: {
+            sectionHeader("Aggregates", route: .aggregates)
+        } footer: {
+            Text("Daily totals and averages feed your database’s daily charts and AI assistants.")
+        }
+    }
+
+    /// No aggregates applied: what they are for, and the one tap that gives
+    /// every raw measurement its daily one (a staged edit, like any other).
+    private var aggregatesEmptyState: some View {
+        let raw = model.config.enabledTypes
+        let missing = model.aggregateList(.sync).missingDailyDefaults(for: raw)
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("A daily total or average for each measurement, computed on this iPhone.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            // Nothing to match (no raw measurements, or already matched and
+            // waiting for Apply): no button rather than a dead one.
+            if missing > 0 {
+                Button("Match Raw Samples") {
+                    model.editAggregates(.sync) { $0.addDailyDefaults(for: raw) }
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    /// The applied aggregates' types, by name.
+    private var aggregatedTypes: [HealthTypeDescriptor] {
+        Set(model.appliedConfig.aggregates.map(\.typeIdentifier))
+            .compactMap(HealthTypeCatalog.descriptor(for:))
+            .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+    }
+
+    /// "Raw Samples ··· Edit", as Apple Health's Pinned header has it.
+    private func sectionHeader(_ title: String, route: SyncRoute) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Button("Edit") { path.append(route) }
+                .font(.subheadline)
+                .textCase(nil)
+                .accessibilityLabel("Edit \(title)")
+        }
+    }
+
+    @ViewBuilder
+    private func showAllButton(count: Int, expanded: Binding<Bool>) -> some View {
+        if count > Self.collapsedRows {
+            Button(expanded.wrappedValue ? "Show Less" : "Show All \(count)") {
+                withAnimation { expanded.wrappedValue.toggle() }
             }
         }
     }
@@ -267,15 +364,6 @@ struct SyncView: View {
 
     private var linksSection: some View {
         Section {
-            NavigationLink(value: SyncRoute.syncedData) {
-                Label {
-                    LabeledContent("Synced Data") {
-                        Text("\(model.appliedConfig.enabledTypes.count) types")
-                    }
-                } icon: {
-                    Image(systemName: "checklist")
-                }
-            }
             if model.appliedConfig.serverURL != nil {
                 NavigationLink(value: SyncRoute.server(scan: false)) {
                     Label("Database", systemImage: "externaldrive.connected.to.line.below")
@@ -283,6 +371,33 @@ struct SyncView: View {
             }
             NavigationLink(value: SyncRoute.activity) {
                 Label("Activity", systemImage: "text.alignleft")
+            }
+        }
+    }
+}
+
+/// An aggregated type in the Sync tab: what it has ("Daily total, hourly
+/// total") and how far it has got, from the applied configuration.
+private struct AggregatedTypeRow: View {
+    @Environment(AppModel.self) private var model
+    let descriptor: HealthTypeDescriptor
+
+    var body: some View {
+        let list = AggregateList(model.appliedConfig.aggregates)
+        let status = AggregateStatus.combined(
+            list.configs(for: descriptor.identifier).map(model.aggregateStatus))
+        HStack(spacing: 12) {
+            TypeIcon(descriptor)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(descriptor.displayName)
+                Text([list.summary(for: descriptor.identifier), status.map { $0.isFailure ? "not synced" : $0.text.lowercasedFirst }]
+                    .compactMap { $0 }.joined(separator: " · "))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                if let status, status.isFailure {
+                    Text(status.text).font(.caption2).foregroundStyle(.red).lineLimit(1)
+                }
             }
         }
     }
