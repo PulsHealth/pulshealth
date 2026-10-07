@@ -1048,7 +1048,7 @@ final class AppModel {
                 await engine.store.resetAggregate(configID: agg.id)
                 await engine.eventLog.log(
                     .warn, type: agg.typeIdentifier,
-                    "Aggregate \(agg.summaryLabel) reconfigured — next sync recomputes the whole series")
+                    "Aggregate changed to \(agg.label.lowercasedFirst) — the next sync computes it from the start")
             }
         }
     }
@@ -1369,12 +1369,12 @@ final class AppModel {
     func resetAggregate(id: UUID) async {
         let aggregate = config.aggregates.first { $0.id == id }
         guard await engine.resetAggregate(configID: id) else {
-            lastErrorMessage = "\(aggregate?.summaryLabel ?? "This aggregate") is computing right now. Wait for it to finish, then recompute."
+            lastErrorMessage = "\(aggregate?.label ?? "This aggregate") is being computed right now. Wait for it to finish, then recompute."
             return
         }
         await engine.eventLog.log(
             .warn, type: aggregate?.typeIdentifier,
-            "Aggregate \(aggregate?.summaryLabel ?? id.uuidString) reset — next sync recomputes the whole series")
+            "Aggregate \(aggregate.map { $0.label.lowercasedFirst } ?? id.uuidString) reset — the next sync computes it from the start")
         await refresh()
     }
 

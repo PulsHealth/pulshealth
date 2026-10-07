@@ -145,9 +145,8 @@ public struct AggregateList: Equatable, Sendable {
     }
 
     /// Every catalog type on this OS that can be aggregated, in catalog order.
-    public static var measurementTypes: [HealthTypeDescriptor] {
+    public static let measurementTypes: [HealthTypeDescriptor] =
         HealthTypeCatalog.all.filter { AggregateConfig.dailyDefault(for: $0.identifier) != nil }
-    }
 
     /// The types with at least one config.
     public var typeIdentifiers: Set<String> {
