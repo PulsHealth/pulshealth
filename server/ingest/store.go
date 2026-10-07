@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgconn"
+	"log/slog"
 	"math/rand/v2"
 	"slices"
 	"strings"
@@ -869,24 +870,7 @@ func ensureSources(ctx context.Context, tx pgx.Tx, samples []Sample) (map[source
 		versions = append(versions, k.version)
 	}
 
-	// Skip triples we already know: ON CONFLICT discards the row but not the
-	// identity value nextval already handed out, and source_id is a smallint
-	// too (see ensureTypes for the outage this caused).
-	_, err := tx.Exec(ctx, `
-		INSERT INTO sources (name, bundle_id, version)
-		SELECT v.name, v.bundle_id, v.version
-		FROM unnest($1::text[], $2::text[], $3::text[])
-			AS v(name, bundle_id, version)
-		WHERE NOT EXISTS (
-			SELECT 1 FROM sources s
-			WHERE s.name = v.name
-			  AND s.bundle_id = v.bundle_id
-			  AND s.version = v.version
-		)
-		ORDER BY v.name, v.bundle_id, v.version
-		ON CONFLICT (name, bundle_id, version) DO NOTHING`,
-		names, bundles, versions)
-	if err != nil {
+	if err := registerSources(ctx, tx, names, bundles, versions); err != nil {
 		return nil, err
 	}
 
@@ -907,6 +891,142 @@ func ensureSources(ctx context.Context, tx pgx.Tx, samples []Sample) (map[source
 		ids[k] = id
 	}
 	return ids, rows.Err()
+}
+
+// sourceRegistrationLock is the transaction-level advisory lock that
+// serialises source registration: ('puls' as an int4, 2), beside migrate.sh's
+// ('puls', 1).
+const sourceRegistrationLock = "1886743667, 2"
+
+// sourceIDCeiling is smallint's maximum, the most source_id values there are.
+const sourceIDCeiling = 32767
+
+// registerSources inserts the triples sources does not have yet, reusing
+// free source_id values below the identity sequence before drawing new ones.
+//
+// source_id is a smallint referenced as smallint by quantity_samples (and its
+// quantity_rollups aggregate) and six more tables; widening it means
+// decompressing every columnstore chunk (TimescaleDB refuses ALTER TYPE on a
+// hypertable with compressed chunks) and rebuilding the aggregate. Before the
+// 2026-08 anti-join fix, ON CONFLICT burned an identity value per known
+// triple per batch, leaving the sequence at 29521 of 32767 with only 536 rows
+// (2026-10-06): ~29k ids that no row holds and nextval will never return. So
+// new triples take the lowest of those first; only when none is left below
+// the sequence does nextval run. That makes the capacity 32767 rows, not
+// 32767 nextval calls.
+//
+// Every gap id is at most the sequence's last value, so it never collides
+// with a later nextval. The advisory lock makes concurrent registrations
+// take gaps one transaction at a time (it is held to commit, so the next one
+// sees the rows); a writer outside this path that holds an uncommitted id
+// (a test fixture) is met by ON CONFLICT DO NOTHING and the loop below
+// tries again with the next gap.
+func registerSources(ctx context.Context, tx pgx.Tx, names, bundles, versions []string) error {
+	// Steady state: every triple is known, so take no lock and write nothing.
+	if n, err := countMissingSources(ctx, tx, names, bundles, versions); err != nil || n == 0 {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(`+sourceRegistrationLock+`)`); err != nil {
+		return fmt.Errorf("source registration lock: %w", err)
+	}
+
+	for attempt := 0; attempt < 3; attempt++ {
+		// Fill gaps first. pg_sequence_last_value is NULL until the sequence
+		// is first called, and then nothing below it is a gap.
+		_, err := tx.Exec(ctx, `
+			WITH want AS (
+				SELECT v.name, v.bundle_id, v.version,
+				       row_number() OVER (ORDER BY v.name, v.bundle_id, v.version) AS n
+				FROM unnest($1::text[], $2::text[], $3::text[])
+					AS v(name, bundle_id, version)
+				WHERE NOT EXISTS (
+					SELECT 1 FROM sources s
+					WHERE s.name = v.name
+					  AND s.bundle_id = v.bundle_id
+					  AND s.version = v.version
+				)
+			), free AS (
+				SELECT g AS source_id, row_number() OVER (ORDER BY g) AS n
+				FROM generate_series(1, COALESCE(pg_sequence_last_value(
+					pg_get_serial_sequence('public.sources', 'source_id')::regclass), 0)) AS g
+				WHERE NOT EXISTS (SELECT 1 FROM sources s WHERE s.source_id = g)
+				ORDER BY g
+				LIMIT (SELECT count(*) FROM want)
+			)
+			INSERT INTO sources (source_id, name, bundle_id, version)
+			OVERRIDING SYSTEM VALUE
+			SELECT f.source_id, w.name, w.bundle_id, w.version
+			FROM want w JOIN free f USING (n)
+			ORDER BY w.n
+			ON CONFLICT DO NOTHING`,
+			names, bundles, versions)
+		if err != nil {
+			return err
+		}
+
+		// No gap left for the rest: draw new values. The anti-join keeps
+		// known triples from burning one (see ensureTypes for the outage
+		// that caused).
+		if err := insertSourcesFromSequence(ctx, tx, names, bundles, versions); err != nil {
+			return err
+		}
+
+		n, err := countMissingSources(ctx, tx, names, bundles, versions)
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			warnIfSourcesNearCeiling(ctx, tx)
+			return nil
+		}
+	}
+	return fmt.Errorf("sources: triples still unregistered after 3 attempts")
+}
+
+func countMissingSources(ctx context.Context, tx pgx.Tx, names, bundles, versions []string) (int, error) {
+	var n int
+	err := tx.QueryRow(ctx, `
+		SELECT count(*)
+		FROM unnest($1::text[], $2::text[], $3::text[]) AS v(name, bundle_id, version)
+		WHERE NOT EXISTS (
+			SELECT 1 FROM sources s
+			WHERE s.name = v.name
+			  AND s.bundle_id = v.bundle_id
+			  AND s.version = v.version
+		)`, names, bundles, versions).Scan(&n)
+	return n, err
+}
+
+// warnIfSourcesNearCeiling logs once sources holds 80% of the ids there are,
+// the point to widen source_id (see registerSources). Grafana's "Lookup
+// sequence near exhaustion" rule alerts on the same measure.
+func warnIfSourcesNearCeiling(ctx context.Context, tx pgx.Tx) {
+	var n int
+	if err := tx.QueryRow(ctx, `SELECT count(*) FROM sources`).Scan(&n); err != nil {
+		return
+	}
+	if n*5 >= sourceIDCeiling*4 {
+		slog.WarnContext(ctx, "sources is near the smallint ceiling; widen source_id",
+			"rows", n, "ceiling", sourceIDCeiling)
+	}
+}
+
+func insertSourcesFromSequence(ctx context.Context, tx pgx.Tx, names, bundles, versions []string) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO sources (name, bundle_id, version)
+		SELECT v.name, v.bundle_id, v.version
+		FROM unnest($1::text[], $2::text[], $3::text[])
+			AS v(name, bundle_id, version)
+		WHERE NOT EXISTS (
+			SELECT 1 FROM sources s
+			WHERE s.name = v.name
+			  AND s.bundle_id = v.bundle_id
+			  AND s.version = v.version
+		)
+		ORDER BY v.name, v.bundle_id, v.version
+		ON CONFLICT (name, bundle_id, version) DO NOTHING`,
+		names, bundles, versions)
+	return err
 }
 
 type temporalContextKey struct {
