@@ -8,7 +8,7 @@ COMPOSE       := docker compose --project-directory server -f server/docker-comp
 COMPOSE_BUILD := $(COMPOSE) -f server/compose.build.yml
 ARGS          ?=
 
-.PHONY: help bootstrap up down pull logs ps migrate baseline pairing issue-device devices web-invite dev-up \
+.PHONY: help bootstrap up down pull logs ps migrate baseline pairing issue-device devices web-invite web-demo dev-up \
         backup backup-list restore site-dev site-build site-lint deploy-site
 
 help: ## List targets
@@ -63,6 +63,14 @@ devices: ## Per-device tokens: ARGS='list [--all]' | 'issue --user <uuid> --name
 web-invite: ## Invite someone to the web viewer (accounts mode): ARGS='--user <uuid> --email <address> [--admin] [--send]'
 	@$(if $(strip $(ARGS)),:,echo "usage: make web-invite ARGS='--user <uuid> --email <address> [--admin] [--url https://<viewer host>]'"; exit 2)
 	$(COMPOSE) exec web node scripts/invite.mjs $(ARGS)
+
+# The account behind the public demo (accounts mode, WEB_DEMO_USER): no
+# password signs in to it, /demo does. The user must exist first and hold only
+# sample data — `make issue-device NAME='Demo data' ARGS='--user <uuid>'`
+# creates it and the loader's token. Prints the WEB_DEMO_USER line for .env.
+web-demo: ## Create the public demo's view-only account (accounts mode): ARGS='--user <uuid> [--email demo@demo.invalid]'
+	@$(if $(strip $(ARGS)),:,echo "usage: make web-demo ARGS='--user <uuid> [--email demo@demo.invalid]'"; exit 2)
+	$(COMPOSE) exec web node scripts/demo.mjs $(ARGS)
 
 dev-up: ## Build the four app images from this checkout and start the stack
 	DEPLOY_COMMIT=$$(git rev-parse HEAD 2>/dev/null || echo unknown) $(COMPOSE_BUILD) up -d --build $(ARGS)

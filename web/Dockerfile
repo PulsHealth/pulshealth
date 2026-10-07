@@ -29,9 +29,9 @@ RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 # Standalone bundle + static assets (no public/ dir in this project).
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# The accounts-mode invite command (`make web-invite`); it imports pg, which
-# the standalone bundle already carries for the server.
-COPY --from=builder --chown=nextjs:nodejs /app/scripts/invite.mjs ./scripts/invite.mjs
+# The accounts-mode operator commands (`make web-invite`, `make web-demo`);
+# they import pg, which the standalone bundle already carries for the server.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/invite.mjs /app/scripts/demo.mjs ./scripts/
 USER nextjs
 EXPOSE 3000
 CMD ["node", "server.js"]

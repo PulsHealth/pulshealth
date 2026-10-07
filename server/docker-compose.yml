@@ -323,6 +323,11 @@ services:
       WEB_SES_SECRET_ACCESS_KEY: ${WEB_SES_SECRET_ACCESS_KEY:-}
       WEB_MAIL_FROM: ${WEB_MAIL_FROM:-}
       WEB_ADMIN_EMAIL: ${WEB_ADMIN_EMAIL:-}
+      # Accounts mode only: the user whose account is the public demo. /demo
+      # signs visitors into it, view-only, for two hours; it must hold only
+      # sample data (`make web-demo` creates the account). Unset, /demo is a
+      # 404. See web/README.md, "Demo account".
+      WEB_DEMO_USER: ${WEB_DEMO_USER:-}
       # Accounts mode only: the viewer is the OAuth authorization server for
       # the MCP server's hosted connectors, signing access tokens for
       # PULS_MCP_URL with PULS_MCP_OAUTH_SECRET (the same two values the mcp
