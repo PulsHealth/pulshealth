@@ -467,22 +467,9 @@ struct AggregatePreviewChart: View {
             ForEach(Array(buckets.enumerated()), id: \.offset) { _, bucket in
                 if let value = bucket.value {
                     if isColumn {
-                        BarMark(
-                            xStart: .value("From", bucket.start), xEnd: .value("To", bucket.end),
-                            y: .value(function.displayName, value))
-                        .foregroundStyle(
-                            selected == nil || selected?.start == bucket.start ? color : color.opacity(0.4))
+                        column(bucket, value: value)
                     } else {
-                        AreaMark(x: .value("Time", bucket.start), y: .value(function.displayName, value))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [color.opacity(0.25), color.opacity(0.02)],
-                                    startPoint: .top, endPoint: .bottom))
-                            .interpolationMethod(.monotone)
-                        LineMark(x: .value("Time", bucket.start), y: .value(function.displayName, value))
-                            .foregroundStyle(color)
-                            .lineStyle(StrokeStyle(lineWidth: 2))
-                            .interpolationMethod(.monotone)
+                        line(bucket, value: value)
                     }
                 }
             }
@@ -517,6 +504,37 @@ struct AggregatePreviewChart: View {
         .chartYAxisLabel(unit ?? "")
         .frame(height: 200)
         .accessibilityLabel(accessibilityText)
+    }
+
+    /// An amount per bucket, from zero up, as wide as its bucket. (A
+    /// `BarMark` given an x range and a `y` draws a thin bar floating at the
+    /// value, not a column.)
+    @ChartContentBuilder
+    private func column(_ bucket: HealthExplorer.AggregateBucket, value: Double) -> some ChartContent {
+        let name = function.displayName
+        // A tenth of the bucket off each side, so neighbours do not merge.
+        let inset = bucket.end.timeIntervalSince(bucket.start) * 0.1
+        RectangleMark(
+            xStart: .value("From", bucket.start.addingTimeInterval(inset)),
+            xEnd: .value("To", bucket.end.addingTimeInterval(-inset)),
+            yStart: .value(name, 0), yEnd: .value(name, value))
+        .foregroundStyle(selected == nil || selected?.start == bucket.start ? color : color.opacity(0.4))
+    }
+
+    /// A level: the line and the wash under it.
+    @ChartContentBuilder
+    private func line(_ bucket: HealthExplorer.AggregateBucket, value: Double) -> some ChartContent {
+        let name = function.displayName
+        AreaMark(x: .value("Time", bucket.start), y: .value(name, value))
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [color.opacity(0.25), color.opacity(0.02)],
+                    startPoint: .top, endPoint: .bottom))
+            .interpolationMethod(.monotone)
+        LineMark(x: .value("Time", bucket.start), y: .value(name, value))
+            .foregroundStyle(color)
+            .lineStyle(StrokeStyle(lineWidth: 2))
+            .interpolationMethod(.monotone)
     }
 
     private var accessibilityText: String {

@@ -88,7 +88,10 @@ struct AggregateTypeView: View {
                 Text("Any value, interval or device, with a preview")
             }
         } label: {
+            // The whole row opens the menu, not just its words.
             Label("Add Aggregate", systemImage: "plus")
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
         }
     }
 }
@@ -142,6 +145,8 @@ private struct AggregateRow: View {
             .contentShape(Rectangle())
             .opacity(config.enabled || scope == .export ? 1 : 0.5)
         }
+        // A row of the list, not a tinted button: its menu is how it is changed.
+        .tint(.primary)
         .padding(.vertical, 2)
     }
 
@@ -298,9 +303,10 @@ private struct AggregateOptionsSheet: View {
 
     private func statusSection(_ applied: AggregateConfig) -> some View {
         let state = model.aggregateStates[configID]
+        let status = AggregateStatus.progress(AggregateProgress(config: applied, state: state))
         return Section("Status") {
-            LabeledContent("Status", value: AggregateStatus.progress(
-                AggregateProgress(config: applied, state: state)).text)
+            Text(status.text)
+                .foregroundStyle(status.isFailure ? Color.red : .primary)
             LabeledContent("Sent through", value: state?.computedThrough?.formatted(date: .abbreviated, time: .shortened) ?? "Nothing yet")
             LabeledContent("Values sent", value: (state?.totalBucketsUploaded ?? 0).formatted())
             if let last = state?.lastComputedAt {

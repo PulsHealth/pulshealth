@@ -305,11 +305,14 @@ struct SyncView: View {
             Text("A daily total or average for each measurement, computed on this iPhone.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Button("Match Raw Samples") {
-                model.editAggregates(.sync) { $0.addDailyDefaults(for: raw) }
+            // Nothing to match (no raw measurements, or already matched and
+            // waiting for Apply): no button rather than a dead one.
+            if missing > 0 {
+                Button("Match Raw Samples") {
+                    model.editAggregates(.sync) { $0.addDailyDefaults(for: raw) }
+                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.bordered)
-            .disabled(missing == 0)
         }
         .padding(.vertical, 4)
     }
