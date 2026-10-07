@@ -18,7 +18,7 @@ It reads content from the **repository around it**, by relative path, so
 
 Moving `site/` (or anything it reads) breaks the loaders without a build
 error — they log "not found" and simply emit fewer pages. The page count is
-the tell: a full build exports **216** static pages, 178 of them under
+the tell: a full build exports **215** static pages, 178 of them under
 `knowledge-base/types/` and 13 under `docs/`. (The one exception is
 `llms.txt`: `gen-llms-txt` fails the build when the repository file is
 missing, since there is no page count to notice it by.) The `site` job in
@@ -42,7 +42,7 @@ bun run dev        # localhost:3000
 ## Build and lint
 
 ```bash
-bun run build      # static export to site/out/ (214 pages)
+bun run build      # static export to site/out/ (215 pages)
 bun run lint       # ESLint (2 known warnings, no errors)
 ```
 
