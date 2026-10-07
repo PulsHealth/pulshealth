@@ -159,6 +159,11 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("web_app role (integration)", () => {
       );
     }
 
+    // Materialize these fixtures explicitly: yesterday can be below the
+    // real-time rollup watermark after another suite refreshed the view.
+    // The test must not depend on the background refresh job's timing.
+    await admin.query("CALL refresh_continuous_aggregate('quantity_rollups', now() - interval '400 days', now())");
+
     // The old halves go into the columnstore, so the views are proven over
     // compressed chunks too, not only over plain heap rows.
     for (const hypertable of ["quantity_samples", "workout_series_points"]) {

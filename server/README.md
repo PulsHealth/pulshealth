@@ -1167,3 +1167,12 @@ instead, so a job that lost its database cannot pass by testing nothing. They re
 `ADMIN_DATABASE_URL` (falling back to `DATABASE_URL`), so pointing the first
 at `api_reader` and the second at the superuser tests the role's grants as
 well as the queries.
+
+### Personal phone pairing migration (021/022)
+
+Apply `021_personal_device_pairing.sql` with the migrate service before
+updating the viewer: all enabled personal accounts can issue/list/revoke their
+own device tokens, independently of signup origin. Account deletion, disable
+and purge permissions are unchanged. `022_device_pairing_policy.sh` runs on
+every migration and excludes the configured `WEB_DEMO_USER` from phone pairing
+in the database; Compose passes that value to both migrate and web.

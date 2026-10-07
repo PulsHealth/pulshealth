@@ -5,5 +5,5 @@ export const PATH_HEADER = "x-puls-pathname";
 
 /** The OAuth consent and error pages: another app's sign-in, not the viewer. */
 export function isBarePage(pathname: string | null | undefined): boolean {
-  return pathname === "/oauth" || (pathname ?? "").startsWith("/oauth/");
+  return pathname === "/connect/iphone" || pathname === "/oauth" || (pathname ?? "").startsWith("/oauth/");
 }

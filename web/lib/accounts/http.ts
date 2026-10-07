@@ -6,8 +6,8 @@ import { clientIp } from "./request";
 import { findSession, SESSION_COOKIE, sessionCookieAttributes, type Session } from "./session";
 
 /**
- * 303 to a same-origin path, so the browser follows a form POST with a GET.
- * A relative Location: a proxy's internal host never appears in it.
+ * 303 after a form POST. Callers use a fixed same-origin path or the fixed
+ * puls://pair callback; a proxy's internal host never appears in Location.
  */
 export function seeOther(location: string): NextResponse {
   return new NextResponse(null, { status: 303, headers: { Location: location, "Cache-Control": "no-store" } });

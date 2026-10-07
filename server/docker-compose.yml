@@ -104,6 +104,8 @@ services:
       # in schema `web`). Unset, the role is not created and an existing one
       # cannot log in. See web/README.md, "Access control".
       WEB_DB_PASSWORD: ${WEB_DB_PASSWORD:-}
+      # 022 keeps public-demo phone pairing disabled in the database.
+      WEB_DEMO_USER: ${WEB_DEMO_USER:-}
       # Calendar zone for every daily view (metric_daily, Grafana daily
       # panels, the api's local-day ranges). Must match the phone's zone.
       # 013_time_zone.sh validates it and stores it on the database

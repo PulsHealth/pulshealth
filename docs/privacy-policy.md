@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-06**
+**Last updated: 2026-10-07**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
@@ -88,14 +88,14 @@ destination for your data. (An export is not a network destination: see
 [Exports](#exports) below.)
 
 **Signing in to the PulsHealth database.** Sync → Database → PulsHealth
-Database → Sign In to PulsHealth opens the account page at
+Database → Sign In to PulsHealth opens the phone connection page at
 `app.pulshealth.com` in iOS's sign-in sheet, after iOS asks whether the app
 may use that site to sign in. The sheet is a browser run by iOS: what you
 type into it goes to the developer's viewer, not through the app, and it
 shares Safari's website data, so a sign-in made in Safari (where the email
 inviting you to choose a password opens) carries over, and the viewer's
 cookie is kept by iOS with Safari's, not by the app. On that page, Connect
-this iPhone and then Open in PulsHealth hand the app a pairing code — the
+this iPhone hands the app a pairing code — the
 database's address, a token for this iPhone and your user ID — which fills
 in the database fields, and shows the database it points to. The app
 accepts only a pairing code from that sheet and checks it like a scanned
@@ -362,8 +362,8 @@ opens the form), or the developer invites you. What happens to your data:
   OpenTopoMap). Those requests carry no health data, but they do reveal to
   that provider which area the map shows, and the viewer's address.
 - **Leaving.** If you asked for access, **Delete my account** on the
-  account page (the app's Delete PulsHealth Account, under Sync → Database
-  and Settings → Privacy & Data, opens it) signs you out, disconnects your
+  account page (the app's Delete PulsHealth Account, under Settings → Privacy
+  & Data, opens it) signs you out, disconnects your
   iPhones at once so nothing
   more is uploaded, revokes every AI assistant you connected, and asks the developer to delete every row stored under
   your user ID, which they do, along with the names of your devices. Family members ask the developer, who does

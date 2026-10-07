@@ -101,8 +101,10 @@ const ROUTES: Record<string, { methods: Method[]; guard: Guard }> = {
     guard: {
       kind: "session",
       noSession: "/login?next=%2Faccount",
-      forbidden: [{ session: { selfService: false }, location: "/account?error=forbidden" }],
     },
+  },
+  "/api/auth/connect-iphone": {
+    methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Fconnect%2Fiphone" },
   },
   "/api/auth/assistants": { methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Faccount" } },
   "/api/auth/password": { methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Faccount" } },
@@ -312,7 +314,7 @@ describe("the handlers themselves, should a request get past the proxy", () => {
       findSession.mockResolvedValue(session);
       const res = await handle(path, method, request(path, method, SAME_ORIGIN));
       expect(res.status, JSON.stringify(session)).toBe(303);
-      expect(res.headers.get("location")).toBe("/account?error=demo");
+      expect(res.headers.get("location")).toBe(path === "/api/auth/connect-iphone" ? "/connect/iphone?error=demo" : "/account?error=demo");
       expect(res.cookies.get("__Host-puls-session")).toBeUndefined();
     }
     expectNothingReached();
@@ -369,14 +371,12 @@ describe("the server actions", () => {
     expectNothingReached();
   });
 
-  it("Connect this iPhone refuses without a session and for household accounts", async () => {
+  it("Connect this iPhone refuses without a live accounts-mode session", async () => {
     const { connectIphone } = await import("@/app/account/actions");
     cookieValue.current = undefined;
     findSession.mockResolvedValue(null);
     expect(await connectIphone(null, form())).toEqual({ ok: false, error: "Sign in again, then try once more." });
     cookieValue.current = TOKEN;
-    findSession.mockResolvedValue({ ...SESSION, selfService: false });
-    expect(await connectIphone(null, form())).toEqual({ ok: false, error: "Phones for this account are connected by the operator." });
     findSession.mockRejectedValue(new Error("connection refused"));
     expect(await connectIphone(null, form())).toMatchObject({ ok: false });
     delete process.env.WEB_ACCOUNTS;

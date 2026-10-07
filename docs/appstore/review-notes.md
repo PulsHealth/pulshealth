@@ -19,8 +19,8 @@ the throwaway review backend of [`review-backend.md`](review-backend.md).
   Account) with an address you control, approve it on `/admin` (a new
   sign-up lands on the waitlist and cannot pair until approved, so the
   reviewer needs this pre-approved account), and choose its password from the invite
-  email. A household account (`make web-invite`) will not do: its account
-  page has no Connect this iPhone, so the reviewer could not pair.
+  email. An invited personal account can also pair, but use a self-service
+  review account so the reviewer can exercise account deletion too.
 - Put its email and password in App Store Connect's **Sign-in required**
   fields and in the two placeholders below. Never commit them.
 - Its data goes into the production database under its own user ID, so
@@ -69,10 +69,10 @@ HOW TO EXERCISE THE APP (about 5 minutes)
 2. On page 2, tap "Continue" (a swipe left does the same). iOS shows its permission sheet: tap "Turn On All", then "Allow" (iOS 27: "Select All", "Continue", then "All Recorded Data and Future Data", "Allow"). The app requests READ access only. Page 3 follows.
 3. Swipe to page 4 and tap "Start Exploring". The Explore tab appears.
 4. Open the Sync tab, tap "Sign In or Create Account" on the PulsHealth Database card, then "Sign In to PulsHealth". iOS asks to use app.pulshealth.com to sign in: tap "Continue".
-5. Sign in with the demo account, tap "Connect this iPhone", then "Open in PulsHealth". The sheet closes and the app tests the connection.
+5. Sign in with the review account and tap "Connect this iPhone". The sheet returns directly to the app, which tests the connection.
 6. Tap "Save & Apply". The Sync tab shows "PulsHealth Database" with the database's address, and the upload begins.
 
-ACCOUNT DELETION (5.1.1(v)): Sync > Database > "Delete PulsHealth Account" opens the account page, whose "Delete my account" deletes it and its data. Settings > Privacy & Data has the same link.
+ACCOUNT DELETION (5.1.1(v)): Settings > Privacy & Data > "Delete PulsHealth Account" opens the account page, whose "Delete my account" deletes it and its data.
 
 WHAT YOU SHOULD SEE
 
@@ -151,12 +151,11 @@ know, so new accounts are let in by hand: the person creates an account on
 `app.pulshealth.com/signup` (Create Account in the app), the developer
 approves it, and an email invites them to choose a password. Signing in happens on that website, in iOS's
 `ASWebAuthenticationSession`, and the app never sees the password; what it
-receives is the pairing code the account page makes for this iPhone. There
+receives is the pairing code the connection page makes for this iPhone. There
 is no third-party or social login, so Sign in with Apple is not required
 (4.8). Creating an account happens in the same sheet (Create Account), not in
-Safari. Deletion (5.1.1(v)): Delete PulsHealth Account, on Sync → Database
-whether or not the iPhone is connected and always under Settings → Privacy &
-Data, opens the account page's Delete my account section directly
+Safari. Deletion (5.1.1(v)): Delete PulsHealth Account under Settings → Privacy &
+Data, whether or not the iPhone is connected, opens the account page's Delete my account section directly
 (`/account#delete-account`). There, Delete my account signs the
 person out, disconnects their iPhones at once and has the developer purge
 every row stored under their user ID (`docs/privacy-policy.md`, "If you use

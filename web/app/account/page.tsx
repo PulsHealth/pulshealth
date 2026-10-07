@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import { ConnectIphone } from "@/components/ConnectIphone";
 import { PageHeader } from "@/components/PageHeader";
@@ -29,10 +30,11 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
   const session = await currentSession();
   if (!session) redirect("/login?next=%2Faccount");
   const search = await searchParams;
+  const returnToApp = /iPhone|iPad|iPod/.test((await headers()).get("user-agent") ?? "");
   if (session.demo) return <DemoAccount error={errorMessage(param(search.error))} />;
   const [sessions, devices, assistants] = await Promise.all([
     listSessions(session.accountId, session.id),
-    session.selfService ? myDevices(session.id) : Promise.resolve([]),
+    myDevices(session.id),
     listConnectedApps(session.accountId),
   ]);
   // Listed while OAuth is on, and afterwards for as long as any grant is left.
@@ -55,10 +57,9 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
         </div>
       )}
 
-      {session.selfService && (
       <section className="rise" style={{ marginTop: 8 }}>
         <div className="eyebrow" style={{ marginBottom: 12 }}>Your iPhones</div>
-        <ConnectIphone />
+        <ConnectIphone returnToApp={returnToApp} />
         {devices.length > 0 && (
           <div className="panel" style={{ maxWidth: 720, marginTop: 14 }}>
             {devices.map((d) => (
@@ -84,10 +85,9 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           </div>
         )}
       </section>
-      )}
 
       {showAssistants && (
-        <section className="rise" style={{ marginTop: session.selfService ? 28 : 8 }}>
+        <section className="rise" style={{ marginTop: 28 }}>
           <div className="eyebrow" style={{ marginBottom: 12 }}>AI assistants</div>
           <div className="panel" style={{ maxWidth: 720 }}>
             {assistants.length === 0 && (
@@ -123,7 +123,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
         </section>
       )}
 
-      <section className="rise" style={{ marginTop: session.selfService || showAssistants ? 28 : 8 }}>
+      <section className="rise" style={{ marginTop: 28 }}>
         <div className="eyebrow" style={{ marginBottom: 12 }}>Password</div>
         <form method="post" action="/api/auth/password" className="panel" style={{ padding: "20px 20px 6px", maxWidth: 560 }}>
           <input type="text" name="username" value={session.email} autoComplete="username" readOnly hidden />
@@ -224,7 +224,11 @@ function DemoAccount({ error }: { error: string | null }) {
             This is a shared demo account. Its health records are de-identified sample data. Browse every page
             as you would your own; nothing here can be changed, and this visit ends after {DEMO_SESSION_HOURS} hours.
           </p>
+          <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.55 }}>
+            To connect your iPhone, sign in to your own account first.
+          </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a href="/login?next=%2Fconnect%2Fiphone" className="btn btn-primary">Sign in to your account</a>
             {signupsOpen() && (
               <a href="/signup" className="btn btn-primary">
                 Create your account

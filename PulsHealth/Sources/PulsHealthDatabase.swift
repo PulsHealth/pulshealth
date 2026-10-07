@@ -9,7 +9,7 @@ import PulsHealthSync
 /// The app knows exactly one address for it, the viewer's, and this is the
 /// only place it is written down. Everything a sync needs — the database URL,
 /// a token for this iPhone, the user ID — comes back from the viewer's
-/// account page as an ordinary `puls://pair?…` pairing code, so where the
+/// connection page as an ordinary `puls://pair?…` pairing code, so where the
 /// database itself lives stays the operator's choice and is never compiled
 /// in. That is also why the app recognizes it afterwards by how it was paired
 /// (`SyncConfiguration.isSignedInDatabase`), not by its address.
@@ -44,6 +44,10 @@ enum PulsHealthDatabase {
     /// links to `signUpURL`.
     static var accountURL: URL { viewerURL.appending(path: "account") }
 
+    /// A focused page that connects this phone and returns its pairing code
+    /// directly to the sign-in sheet, including for an existing web session.
+    static var connectURL: URL { viewerURL.appending(path: "connect/iphone") }
+
     /// The account page's Delete my account section, directly: App Review
     /// asks for a link straight to account deletion (5.1.1(v)). Signed out,
     /// the sign-in page comes first.
@@ -69,7 +73,7 @@ enum PulsHealthDatabase {
     static let privacyURL = URL(string: "https://pulshealth.com/privacy#if-you-use-the-developers-viewer")!
 
     /// The sign-in sheet's callback scheme: the pairing code's own. The
-    /// account page's Open in PulsHealth is a `puls://pair?…` link, and while
+    /// connection page returns a `puls://pair?…` redirect, and while
     /// the sheet is up it hands that link back to the app rather than iOS
     /// opening it.
     static let callbackScheme = PairingPayload.scheme
@@ -94,7 +98,7 @@ enum PulsHealthDatabase {
         case .success(let payload):
             return .paired(payload)
         case .failure(.notAPairingCode):
-            return .failed("PulsHealth didn’t send a pairing code. Sign in again, tap Connect this iPhone, then Open in PulsHealth.")
+            return .failed("PulsHealth didn’t send a pairing code. Connect again and tap Connect this iPhone.")
         case .failure:
             // The token never appears here: no failure description carries one.
             return .failed("The pairing code from your PulsHealth account can’t be used. Sign in again and tap Connect this iPhone for a new one.")

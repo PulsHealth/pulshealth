@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { isBarePage } from "./shell";
 
 describe("isBarePage", () => {
-  it("is the OAuth pages only", () => {
+  it("centres OAuth and phone connection pages", () => {
+    expect(isBarePage("/connect/iphone")).toBe(true);
+    expect(isBarePage("/connect/iphonex")).toBe(false);
     expect(isBarePage("/oauth/authorize")).toBe(true);
     expect(isBarePage("/oauth")).toBe(true);
     expect(isBarePage("/oauthx")).toBe(false);

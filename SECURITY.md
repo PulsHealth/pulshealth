@@ -171,7 +171,7 @@ for judging what is.
   for people whose access request they approve. The app offers it as the
   **PulsHealth database**, its only built-in destination, reached by
   signing in from Sync → Database: an `ASWebAuthenticationSession` on the
-  account page, whose Connect this iPhone returns an ordinary pairing code.
+  phone connection page, whose Connect this iPhone returns an ordinary pairing code.
   The app holds that one address and nothing else about the instance. A
   report about the software covers it too, and one about that instance's
   configuration is welcome through the same channel.
@@ -259,15 +259,16 @@ for judging what is.
   as `auth.sessions` stores it) and acts for that account. That is not a
   barrier against a compromised viewer: `web_app` writes `auth.sessions` to
   sign people in, so it can forge a session for any account. The barrier is
-  that every one of these functions acts only on **self-service** users,
-  those an approved request created (`auth.self_service_users`, which only
-  the approval function writes). So SQL run as `web_app` can at worst
-  approve requests, give a self-service user a sync token (letting it upload
-  into that user), or disable or purge one. It cannot give a household user
-  a sync token, revoke their phones' tokens or delete their data; it can
-  change their viewer accounts in `auth.accounts`, which it writes to sign
-  people in, and it reads every user's records only as before (see the
-  bullet above). The viewer shows a
+  that destructive functions act only on **self-service** users, those an
+  approved request created (`auth.self_service_users`). Phone pairing works
+  for every enabled personal account's own user, including invited users
+  and administrators (021_personal_device_pairing.sql). Consequently SQL as
+  `web_app` can mint/revoke sync tokens for personal accounts as well as
+  modify viewer accounts; it still cannot disable/delete/purge household
+  health data. The configured public demo cannot issue/list/revoke tokens,
+  even through forged sessions: `auth.device_pairing_policy`, writable only
+  by the operator and set by 022 from `WEB_DEMO_USER`, excludes it. Existing
+  data reads remain scoped through the security-barrier views. The viewer shows a
   minted token once, as a pairing code, and keeps only its hash. The sign-up
   form creates nothing but a request and emails only the operator, so it
   cannot open the database to anyone or be used to mail a stranger; no

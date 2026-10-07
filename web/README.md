@@ -206,9 +206,9 @@ the SES settings below) so the link never appears in your terminal. Opening it a
 signs the person in. An invite for a user who already has an account resets
 its password and signs it out everywhere — that is the way back in after a
 forgotten password, since the viewer sends no email. `--admin` marks the
-account as an administrator, which gives it `/admin` (below). Pairing a
-household phone stays the operator's step (`make issue-device`); a signed-in
-person can also connect their own iPhone from their account page (below).
+account as an administrator, which gives it `/admin` (below). Every signed-in
+personal account can connect its own iPhone from the app or the account page;
+`make issue-device` also remains available to the operator.
 
 **Signing in.** `/login`, `/invite/<token>`, their two POST endpoints,
 `/api/auth/logout`, `/demo` (a 404 unless the demo below is on), build
@@ -308,13 +308,23 @@ phone can send anything. In order:
    timeout of its own, since it unpacks the compressed history the user's
    rows share with others; if the page times out first, it carries on.
 
-All of that applies only to **self-service** users: those an approved request
-created, recorded in `auth.self_service_users`. The operator's household —
-the default user, phones paired with `make issue-device`, accounts invited
-with `make web-invite` — is never given a token, disabled, deleted or purged
-through the viewer; those accounts see no **Connect this iPhone** or **Delete
-my account**, and `/admin` shows them without buttons. Manage them from the
-server.
+**Every enabled personal account can connect and disconnect its own iPhones**,
+including an administrator or an account created with `make web-invite`.
+`/connect/iphone` is the app's focused connection page: after signing in
+(or using an existing browser session), **Connect this iPhone** posts once
+and returns the `puls://pair` callback directly to the app. The app reviews
+and tests the connection; **Save & Apply** starts syncing. For older app versions, `/account` also returns directly on an iPhone;
+on a desktop it provides the pairing link and QR code.
+
+Account deletion, administrator disabling and purge still apply only to
+**self-service** users created by approved requests (`auth.self_service_users`).
+Household users and administrator accounts are managed from the server for
+those actions. The public demo cannot connect, list or disconnect iPhones:
+the viewer rejects its session, and the database's operator-owned
+`auth.device_pairing_policy` excludes `WEB_DEMO_USER` too. `022_device_pairing_policy.sh`
+updates that policy on every migrate run; keep the migrate service's
+`WEB_DEMO_USER` in step with the viewer's. Deploy migration 021 and run 022
+before deploying a viewer that offers pairing to invited accounts.
 
 The privileged steps — creating a user, minting or revoking a token,
 declining, disabling, deleting, purging — are `SECURITY DEFINER` functions in
@@ -327,10 +337,11 @@ the database) and acts for that account: a token only for the signed-in
 person's own user, the administrator's steps only for an administrator. That
 scopes normal use, but it is not a barrier against SQL run as `web_app`,
 which writes `auth.sessions` to sign people in and so can forge a session.
-The barrier is the self-service list: such SQL could at worst give a
-self-service user a token, or disable or purge one. It still cannot give a
-household user a sync token, revoke their phones' tokens or delete anything
-they stored. It can change their *viewer* accounts, as it always could,
+Device pairing acts for the session's own user for every personal account.
+Since SQL as `web_app` can forge a session, a compromised viewer can mint or
+revoke tokens for any personal account; it still cannot pair the configured
+public demo, or disable/delete/purge household health data. The self-service
+list remains the boundary for data deletion, separate from phone pairing. It can change their *viewer* accounts, as it always could,
 since it writes `auth.accounts` to sign people in.
 
 **Email** goes through Amazon SES's API (`lib/email.ts`, signed by hand, no
@@ -616,3 +627,9 @@ endpoints.
 - Pages render dynamically. Data-source and catalog-stat checks use short in-process
   TTL caches to avoid repeated database work.
 - Theme (dark/light) is set before paint and persisted to `localStorage`.
+
+For the developer-hosted database, `WEB_INGEST_URL` must be an HTTPS address
+under `pulshealth.com`. The iOS app checks that domain before naming the
+connection PulsHealth; an address outside it is treated as Your Own Database.
+Use a public ingest hostname routed to the ingest service, independently of
+the viewer hostname. Keep the previous sync address serving existing phones.
