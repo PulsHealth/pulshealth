@@ -1,0 +1,4 @@
+# Demo packs are derived from a real person's history: never commit one.
+*.json.gz
+*.json
+__pycache__/
