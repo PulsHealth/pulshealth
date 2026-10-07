@@ -19,7 +19,9 @@ type Search = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function SignupPage({ searchParams }: { searchParams: Search }) {
   if (!signupsOpen()) notFound();
-  if (await currentSession().catch(() => null)) redirect("/");
+  // Signed in already: nothing to ask for — unless it is the shared demo.
+  const session = await currentSession().catch(() => null);
+  if (session && !session.demo) redirect("/");
   const params = await searchParams;
   const notice = param(params.notice);
 
