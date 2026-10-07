@@ -67,7 +67,7 @@ const services = [
   },
   {
     title: "MCP server",
-    description: "Read-only, talking only to the product API, so Claude, Claude Code or Cursor can answer questions from your data. Run it as a local binary or as a remote connector over HTTPS.",
+    description: "Read-only, talking only to the product API, so any AI assistant that speaks MCP (Claude, Cursor, Qwen and others) can answer questions from your data. Run it as a local binary or as a remote connector over HTTPS.",
     icon: Bot,
   },
 ];

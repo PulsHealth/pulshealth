@@ -13,7 +13,7 @@ interface DocsNavProps {
 export function DocsNav({ current, className }: DocsNavProps) {
   return (
     <nav aria-label="Documentation" className={cn("text-sm", className)}>
-      {getDocLinksByGroup().map(({ group, links }) => (
+      {getDocLinksByGroup({ sidebar: true }).map(({ group, links }) => (
         <div key={group} className="mb-6 last:mb-0">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group}</p>
           <ul className="space-y-0.5">

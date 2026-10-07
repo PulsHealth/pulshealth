@@ -31,7 +31,7 @@ export const metadata = {
 };
 
 const groupLedes: Record<string, string> = {
-  "Getting started": "Run your own database and point the app at it.",
+  "Getting started": "Get the app, choose where your data lives, and connect your AI.",
   Reference: "The wire format, the database, the APIs and the pieces around them.",
   Project: "How the project is run: reporting problems, what shipped, what is next.",
 };
@@ -161,7 +161,7 @@ export default function DocsPage() {
                         {link.repoPath ? (
                           <p className="pt-1 font-mono text-xs text-muted-foreground">{link.repoPath}</p>
                         ) : (
-                          <p className="pt-1 text-xs font-medium text-brand">Start here</p>
+                          <p className="pt-1 text-xs font-medium text-brand">{link.label}</p>
                         )}
                       </CardHeader>
                     </Card>
