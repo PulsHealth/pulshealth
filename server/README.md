@@ -691,7 +691,10 @@ as or read for, defaulting to the seeded default user.
   header. Sample `kind` is `quantity`, `category`, `workout`,
   `heartbeatSeries`, `ecg`, `stateOfMind` or `medicationDose`, each in its
   own table. Samples are keyed on UUID and never overwritten, so a retry is
-  idempotent. Aggregate buckets and daily activity summaries are recomputed
+  idempotent. (`quantity_samples`, a hypertable, can only key on `(uuid,
+  start_ts)`; before inserting, ingest also drops any quantity sample whose
+  UUID is stored with a start within 1 ms, since float epoch milliseconds
+  from different app builds can land a microsecond apart.) Aggregate buckets and daily activity summaries are recomputed
   on the phone and **upserted**, and an explicit `null` value overwrites a
   stored one. The profile line replaces the user's whole profile (null or
   omitted fields clear stored values; no profile line leaves it unchanged).

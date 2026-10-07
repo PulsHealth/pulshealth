@@ -1543,9 +1543,110 @@ func metadataJSON(m map[string]any) (*string, error) {
 	return &s, nil
 }
 
+// quantityDuplicateTolerance is how far apart two start times of one sample
+// UUID may be and still be the same sample to the near-duplicate guard.
+const quantityDuplicateTolerance = time.Millisecond
+
+// withoutStoredQuantity drops the quantity samples that are already stored —
+// same UUID, start within quantityDuplicateTolerance — and repeats of a UUID
+// within the batch, so insertQuantity counts them as duplicates.
+//
+// quantity_samples' primary key is (uuid, start_ts), not uuid: it is a
+// hypertable partitioned on start_ts, and a unique index must include the
+// partitioning column. So ON CONFLICT only catches a re-send whose start lands
+// on the stored microsecond. Wire times are float epoch milliseconds, and two
+// client encoder versions can round the same HealthKit instant a fraction of a
+// microsecond apart, across a microsecond boundary: on 2026-09-04 a history
+// re-send stored 106,919 second copies whose start_ts was 1 µs off the first
+// (removed 2026-10-06). A HealthKit UUID names one immutable sample, so a
+// stored row with this UUID and nearly the same start is this sample.
+//
+// The lookup is bounded to the batch's start range (± the tolerance) and its
+// types so TimescaleDB excludes chunks at plan time and, in compressed chunks,
+// skips columnstore batches by type segment, start_ts min/max and the uuid
+// bloom filter. Measured on production (7.1M rows, 107 monthly chunks, 105
+// compressed) with 1,000-sample batches: ~1 ms for a recent page, ~0.3–2.5 ms
+// for a historical page in a compressed chunk; a pathological batch of 1,000
+// random samples spread over seven years scans every chunk and takes ~0.6 s.
+//
+// Two concurrent batches carrying one sample a microsecond apart can still
+// both insert; the client never uploads the same type from two runs at once.
+func withoutStoredQuantity(ctx context.Context, tx pgx.Tx, samples []Sample,
+	typeIDs map[string]int16) ([]Sample, error) {
+	if len(samples) == 0 {
+		return samples, nil
+	}
+	seen := make(map[string]bool, len(samples))
+	kept := make([]Sample, 0, len(samples))
+	uuids := make([]string, 0, len(samples))
+	var tids []int16
+	var lo, hi time.Time
+	for i := range samples {
+		u := strings.ToLower(samples[i].UUID)
+		if seen[u] {
+			continue
+		}
+		seen[u] = true
+		kept = append(kept, samples[i])
+		uuids = append(uuids, u)
+		if tid := typeIDs[samples[i].Type]; !slices.Contains(tids, tid) {
+			tids = append(tids, tid)
+		}
+		start := msToTime(samples[i].Start)
+		if len(kept) == 1 || start.Before(lo) {
+			lo = start
+		}
+		if len(kept) == 1 || start.After(hi) {
+			hi = start
+		}
+	}
+
+	rows, err := tx.Query(ctx, `
+		SELECT uuid::text, start_ts FROM quantity_samples
+		WHERE uuid = ANY($1::uuid[]) AND type_id = ANY($2::smallint[])
+		  AND start_ts BETWEEN $3 AND $4`,
+		uuids, tids, lo.Add(-quantityDuplicateTolerance), hi.Add(quantityDuplicateTolerance))
+	if err != nil {
+		return nil, err
+	}
+	stored := make(map[string][]time.Time)
+	for rows.Next() {
+		var u string
+		var ts time.Time
+		if err := rows.Scan(&u, &ts); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		stored[u] = append(stored[u], ts)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(stored) == 0 {
+		return kept, nil
+	}
+
+	fresh := kept[:0]
+	for i := range kept {
+		start := msToTime(kept[i].Start)
+		if !slices.ContainsFunc(stored[strings.ToLower(kept[i].UUID)], func(ts time.Time) bool {
+			d := ts.Sub(start)
+			return d >= -quantityDuplicateTolerance && d <= quantityDuplicateTolerance
+		}) {
+			fresh = append(fresh, kept[i])
+		}
+	}
+	return fresh, nil
+}
+
 func insertQuantity(ctx context.Context, tx pgx.Tx, samples []Sample,
 	typeIDs map[string]int16, sourceIDs map[sourceKey]int16,
 	temporalContextIDs map[temporalContextKey]int32, userID string) (int64, error) {
+	samples, err := withoutStoredQuantity(ctx, tx, samples, typeIDs)
+	if err != nil {
+		return 0, fmt.Errorf("near-duplicate guard: %w", err)
+	}
 	if len(samples) == 0 {
 		return 0, nil
 	}
