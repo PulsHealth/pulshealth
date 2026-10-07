@@ -546,6 +546,14 @@ generated files; never edit them by hand. `npm run check:catalog` (run in CI)
 fails when the generated file is stale, and `lib/catalog.test.ts` pins the
 merged catalog to the JSON.
 
+## Navigation
+
+Desktop shows a persistent sidebar. At widths of 880 px and below, a compact
+header keeps the page in view and **Menu** opens the scrollable navigation,
+including categories and account controls. Choosing a link, tapping outside,
+or pressing Escape closes it; Escape returns focus to the Menu button.
+The shared demo keeps a visible **Demo** badge even with the menu closed.
+
 ## The trend chart
 
 **Ranges.** The selector (and `?range=`) offers D, 7D, 30D, 90D, 6M, Y, 2Y, 5Y
