@@ -11,7 +11,6 @@ import {
   Lock,
   ShieldCheck,
   Smartphone,
-  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
@@ -19,7 +18,7 @@ import { AiChatPreview } from "@/components/ai-chat-preview";
 import { AnimatedWord } from "@/components/animated-word";
 import { getAllTypes } from "@/lib/api";
 import { faq } from "@/lib/faq";
-import { GITHUB_URL, formatStars, getRepoStats } from "@/lib/github";
+import { GITHUB_URL } from "@/lib/github";
 
 /** The hosted database's sign-up page, on the viewer's origin. */
 const SIGNUP_URL = "https://app.pulshealth.com/signup";
@@ -195,8 +194,6 @@ function Feature({
 }
 
 export default async function HomePage() {
-  const { stars } = await getRepoStats();
-  const starLabel = formatStars(stars);
   const homeFaq = faq.filter((f) => f.home);
   const kbCount = (await getAllTypes()).length;
 
@@ -213,7 +210,7 @@ export default async function HomePage() {
               your health data
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-              Years of Apple Health data, off your iPhone and ready for you and your AI.
+              Automatically sync and control your Apple Health data.
             </p>
             <AppStoreBadge className="mt-8 [&_img]:h-12" />
             <p className="mt-5 flex flex-wrap items-center justify-center gap-x-2 text-sm text-muted-foreground">
@@ -223,9 +220,8 @@ export default async function HomePage() {
               <span aria-hidden>&middot;</span>
               <span>Read-only</span>
               <span aria-hidden>&middot;</span>
-              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
-                <Star className="h-3.5 w-3.5" aria-hidden />
-                {starLabel ? `${starLabel} on GitHub` : "Open source"}
+              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                Open source
               </a>
             </p>
           </div>
