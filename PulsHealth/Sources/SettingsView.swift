@@ -309,7 +309,7 @@ struct ConnectionTestResultRow: View {
 }
 
 /// The fresh-vs-keep prompt raised when Save & Apply (from the Database screen,
-/// Settings, the User page or the Synced Data bar) would point the sync at a different server or
+/// Settings, the User page or the Sync tab's Apply bar) would point the sync at a different server or
 /// user ID than the stored anchors and watermarks were earned against.
 /// Attached at the root so it appears whichever tab the apply came from.
 struct ServerChangePrompt: ViewModifier {

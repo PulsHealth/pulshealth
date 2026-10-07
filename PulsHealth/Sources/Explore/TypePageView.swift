@@ -651,10 +651,10 @@ private struct SourcesSection: View {
     }
 }
 
-/// The buckets a configured series would produce, computed through the
-/// explorer as the sync would compute them and uploaded nowhere. Recomputed
-/// on every control change after a short debounce; the previous computation
-/// is cancelled first.
+/// The buckets an aggregate would produce, computed through the explorer as
+/// the sync would compute them and sent nowhere (`AggregatePreviewPane`),
+/// with the controls to try others and the buttons that add the one shown to
+/// Sync or to the export.
 private struct AggregatePreviewSection: View {
     let descriptor: HealthTypeDescriptor
     @Environment(AppModel.self) private var model
@@ -662,11 +662,7 @@ private struct AggregatePreviewSection: View {
     @State private var interval: AggregateIntervalUnit = .day
     @State private var deviceFilter: AggregateDeviceFilter = .all
     @State private var window: PreviewWindow = .month
-    @State private var buckets: [HealthExplorer.AggregateBucket] = []
-    @State private var isComputing = false
-    @State private var error: String?
     @State private var readout: String?
-    @State private var task: Task<Void, Never>?
     @State private var added = false
 
     enum PreviewWindow: String, CaseIterable, Identifiable {
@@ -685,10 +681,10 @@ private struct AggregatePreviewSection: View {
     }
 
     private var functions: [AggregateFunction] {
-        HealthTypeCatalog.allowedAggregateFunctions(for: descriptor.identifier)
+        AggregateFunction.choices(for: descriptor.identifier)
     }
 
-    /// Where the selected window begins, as `schedule` computes it.
+    /// Where the selected window begins, as the preview computes it.
     private var windowStart: Date {
         Calendar.current.date(byAdding: .day, value: -window.days, to: Date()) ?? Date()
     }
@@ -700,33 +696,17 @@ private struct AggregatePreviewSection: View {
             intervalValue: 1, intervalUnit: interval, deviceFilter: deviceFilter)
     }
 
-    private var alreadyInDraft: Bool {
-        guard let config else { return false }
-        return model.aggregates(for: descriptor.identifier).contains { $0.seriesIdentity == config.seriesIdentity }
-    }
-
     var body: some View {
         ChartCard(
             "Aggregate preview",
-            subtitle: "What a synced series would hold, computed the way the sync computes it",
+            subtitle: "What an aggregate would hold, computed the way the sync computes it",
             readout: readout
         ) {
             controls
         } chart: {
-            if let error {
-                PreviewState(title: "Could not compute", symbol: "exclamationmark.triangle", message: error, tint: .orange)
-            } else if buckets.isEmpty, !isComputing {
-                PreviewState(title: "No buckets", symbol: "chart.bar", message: "Nothing in this window.")
-            } else {
-                // The spinner sits top-leading: the chart's top-trailing
-                // corner is where its unit label is.
-                AggregatePreviewChart(
-                    buckets: buckets, function: function ?? .average,
-                    unit: config?.unitString, color: descriptor.group.color, readout: $readout)
-                .opacity(isComputing ? 0.6 : 1)
-                .overlay(alignment: .topLeading) {
-                    if isComputing { ProgressView().controlSize(.small).padding(6) }
-                }
+            if let config {
+                AggregatePreviewPane(
+                    config: config, days: window.days, color: descriptor.group.color, readout: $readout)
             }
             if let since = model.explore.quickFacts[descriptor.identifier]?.readableSince,
                since > windowStart {
@@ -737,28 +717,22 @@ private struct AggregatePreviewSection: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            syncButtons
+            addButtons
         }
         .onAppear {
             if function == nil { function = functions.first }
-            schedule()
         }
-        .onChange(of: function) { schedule() }
-        .onChange(of: interval) { schedule() }
-        .onChange(of: deviceFilter) { schedule() }
-        .onChange(of: window) { schedule() }
-        .onDisappear { task?.cancel() }
     }
 
     @ViewBuilder private var controls: some View {
         VStack(spacing: 8) {
             HStack {
-                Picker("Function", selection: $function) {
-                    ForEach(functions) { Text($0.displayName).tag(Optional($0)) }
+                Picker("Value", selection: $function) {
+                    ForEach(functions) { Text($0.plainName).tag(Optional($0)) }
                 }
                 Spacer()
                 Picker("Interval", selection: $interval) {
-                    ForEach([AggregateIntervalUnit.hour, .day, .week, .month]) { Text(intervalLabel($0)).tag($0) }
+                    ForEach(AggregateIntervalUnit.choices) { Text(intervalLabel($0)).tag($0) }
                 }
             }
             .pickerStyle(.menu)
@@ -776,65 +750,35 @@ private struct AggregatePreviewSection: View {
         }
     }
 
-    @ViewBuilder private var syncButtons: some View {
+    /// The aggregate the chart shows, into the export's draft or Sync's. In
+    /// either it joins the type's aggregates, which puts the type among the
+    /// aggregated ones if it was not already.
+    @ViewBuilder private var addButtons: some View {
         if let config {
+            let inExport = model.aggregateList(.export).duplicates(config)
+            let inSync = model.aggregateList(.sync).duplicates(config)
             HStack(spacing: 12) {
-                // The same series the chart shows, into the Export tab's
-                // draft (dedupes by series identity).
-                Button(inExportDraft ? "In Export draft" : "Add to Export") {
-                    model.export.addAggregate(config)
+                Button(inExport ? "In Export" : "Add to Export") {
+                    model.editAggregates(.export) { $0.add(config) }
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .disabled(inExportDraft)
+                .disabled(inExport)
                 if model.appliedConfig.serverURL != nil {
-                    Button(alreadyInDraft ? "In sync draft" : "Sync this series") {
-                        model.addAggregate(config)
+                    Button(inSync ? "In Sync" : "Add to Sync") {
+                        model.editAggregates(.sync) { $0.add(config) }
                         added = true
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .disabled(alreadyInDraft)
+                    .disabled(inSync)
                 }
             }
-            if added || alreadyInDraft {
-                Text("Apply it on Sync → Synced Data.")
+            if added, inSync, model.hasPendingChanges {
+                Text("Apply it on the Sync tab.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-        }
-    }
-
-    private var inExportDraft: Bool {
-        guard let config else { return false }
-        return model.export.draft.aggregates.contains { $0.seriesIdentity == config.seriesIdentity }
-    }
-
-    /// The chart slot's empty and error states, the chart's own height so the
-    /// card does not jump between them, with explicit fonts: `EmptyState`
-    /// (`ContentUnavailableView`) is sized for a whole screen and its title
-    /// grows with the runtime (larger on iOS 27), so inside a card it read
-    /// bigger than every other state text on this page.
-    private struct PreviewState: View {
-        let title: String
-        let symbol: String
-        let message: String
-        var tint: Color = .secondary
-
-        var body: some View {
-            VStack(spacing: 6) {
-                Image(systemName: symbol)
-                    .font(.title3)
-                    .foregroundStyle(tint)
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity, minHeight: 200)
         }
     }
 
@@ -845,36 +789,6 @@ private struct AggregatePreviewSection: View {
         case .day: "Daily"
         case .week: "Weekly"
         case .month: "Monthly"
-        }
-    }
-
-    private func schedule() {
-        task?.cancel()
-        guard let config else { return }
-        readout = nil
-        isComputing = true
-        error = nil
-        let days = window.days
-        let explorer = model.explore.explorer
-        let anchor = Calendar.current.startOfDay(for: model.appliedConfig.startDate)
-        task = Task {
-            // Debounce: a picker tapped twice computes once.
-            try? await Task.sleep(for: .milliseconds(250))
-            guard !Task.isCancelled else { return }
-            let to = Date()
-            let from = Calendar.current.date(byAdding: .day, value: -days, to: to) ?? to
-            do {
-                let result = try await explorer.aggregatePreview(config, from: from, to: to, gridAnchor: anchor)
-                guard !Task.isCancelled else { return }
-                buckets = result
-            } catch is CancellationError {
-                return
-            } catch {
-                guard !Task.isCancelled else { return }
-                self.error = ExploreModel.friendlyMessage(for: error)
-                buckets = []
-            }
-            isComputing = false
         }
     }
 }

@@ -326,7 +326,7 @@ final class AppModelTests: XCTestCase {
 
     // MARK: - Apply gating
 
-    /// Synced Data edits are staged in `config` and reach the engine only on
+    /// Edits on the Sync tab's pickers are staged in `config` and reach the engine only on
     /// Apply.
     func testStagedEditsReachTheEngineOnlyOnApply() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true])

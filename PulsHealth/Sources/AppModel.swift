@@ -71,10 +71,11 @@ final class AppModel {
     /// the Sync tab can say what is known about the applied server without
     /// testing again. Not persisted: a fresh launch knows nothing.
     private(set) var lastConnectionTest: ConnectionTestRecord?
-    /// The live editing draft bound by the Synced Data, Server and Settings screens.
+    /// The live editing draft bound by the Raw Samples and Aggregates pickers,
+    /// the Database screen and Settings.
     var config = SyncConfiguration()
-    /// Snapshot of what's actually been pushed to the engine. The Synced Data
-    /// screen edits `config` freely; changes only reach the engine (and start
+    /// Snapshot of what's actually been pushed to the engine. The Sync tab's
+    /// pickers edit `config` freely; changes only reach the engine (and start
     /// backfilling) when `applyChanges()` advances this to match.
     private(set) var appliedConfig = SyncConfiguration()
     var authorizationRequested = false
@@ -465,7 +466,7 @@ final class AppModel {
 
     /// What the Export tab exports: its own draft (`ExportModel.draft`),
     /// seeded from the applied selection and edited on the tab. It is not the
-    /// Synced Data draft: what is chosen there counts only after Apply, and
+    /// Sync tab's draft: what is chosen there counts only after Apply, and
     /// what is chosen here never reaches the sync at all.
     var exportSelection: ExportSelectionSummary {
         ExportSelectionSummary(selection: export.draft.selection())
@@ -676,7 +677,7 @@ final class AppModel {
     ///
     /// `wholeHistory` marks an apply whose backfill is every enabled type from
     /// the start date — the first run, or a start-fresh server change — as
-    /// opposed to a type or two added on the Synced Data screen.
+    /// opposed to a type or two added in the Raw Samples picker.
     @discardableResult
     func applyConfiguration(
         syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false
@@ -971,10 +972,10 @@ final class AppModel {
         return confirmedPairing
     }
 
-    // MARK: - Staged Synced Data changes
+    // MARK: - Staged Sync changes
 
-    /// True while the Synced Data draft differs from what's applied to the
-    /// engine. Scoped to the fields that screen edits (raw types, aggregates,
+    /// True while the Sync tab's draft differs from what's applied to the
+    /// engine. Scoped to the fields its pickers edit (raw types, aggregates,
     /// workout routes) so Settings-only edits don't trip the Apply bar. Drives
     /// the pending-changes bar on the Sync tab.
     var hasPendingChanges: Bool {
@@ -999,18 +1000,17 @@ final class AppModel {
             || config.userBiologicalSex != appliedConfig.userBiologicalSex
     }
 
-    /// Short description of what's staged, e.g. "2 data types · 1 aggregate".
+    /// Short description of what's staged, e.g. "2 raw types · 1 aggregated
+    /// type": a type counts once however many of its aggregates changed.
     var pendingChangesSummary: String {
         var parts: [String] = []
-        let typeDelta = config.enabledTypes.symmetricDifference(appliedConfig.enabledTypes).count
-        if typeDelta > 0 {
-            parts.append("\(typeDelta) data type\(typeDelta == 1 ? "" : "s")")
+        let rawDelta = config.enabledTypes.symmetricDifference(appliedConfig.enabledTypes).count
+        if rawDelta > 0 {
+            parts.append("\(rawDelta) raw type\(rawDelta == 1 ? "" : "s")")
         }
-        let applied = Dictionary(uniqueKeysWithValues: appliedConfig.aggregates.map { ($0.id, $0) })
-        let draft = Dictionary(uniqueKeysWithValues: config.aggregates.map { ($0.id, $0) })
-        let aggDelta = Set(applied.keys).union(draft.keys).count { applied[$0] != draft[$0] }
-        if aggDelta > 0 {
-            parts.append("\(aggDelta) aggregate\(aggDelta == 1 ? "" : "s")")
+        let aggregated = AggregateList.changedTypes(from: appliedConfig.aggregates, to: config.aggregates).count
+        if aggregated > 0 {
+            parts.append("\(aggregated) aggregated type\(aggregated == 1 ? "" : "s")")
         }
         if config.includeWorkoutRoutes != appliedConfig.includeWorkoutRoutes {
             parts.append("workout routes")
@@ -1021,7 +1021,7 @@ final class AppModel {
         return parts.isEmpty ? "configuration" : parts.joined(separator: " · ")
     }
 
-    /// Commits the staged Synced Data draft: pushes it to the engine and starts
+    /// Commits the Sync tab's staged draft: pushes it to the engine and starts
     /// backfilling newly enabled types/aggregates. Mirrors Settings' Save & Apply.
     func applyChanges() async {
         await applyConfiguration(syncNewTypes: true)
@@ -1207,7 +1207,7 @@ final class AppModel {
                 self.authorizationHint = """
                 iOS didn't show the medication picker, so medication doses stay \
                 unauthorized. Try Save & Apply again, or turn Medication Doses off \
-                under Synced Data.
+                under Sync → Raw Samples.
                 """
             }
         }
@@ -1362,22 +1362,8 @@ final class AppModel {
 
     // MARK: - Aggregates
 
-    func aggregates(for typeIdentifier: String) -> [AggregateConfig] {
-        config.aggregates.filter { $0.typeIdentifier == typeIdentifier }
-    }
-
-    func addAggregate(_ aggregate: AggregateConfig) {
-        config.aggregates.append(aggregate)
-    }
-
-    func updateAggregate(_ aggregate: AggregateConfig) {
-        guard let index = config.aggregates.firstIndex(where: { $0.id == aggregate.id }) else { return }
-        config.aggregates[index] = aggregate
-    }
-
-    func deleteAggregate(id: UUID) {
-        config.aggregates.removeAll { $0.id == id }
-    }
+    // Edits to the Sync draft's aggregates go through `editAggregates(.sync)`
+    // (Aggregates/AggregateScope.swift), shared with the export's.
 
     /// Clears the watermark so the next sync recomputes the whole series.
     func resetAggregate(id: UUID) async {

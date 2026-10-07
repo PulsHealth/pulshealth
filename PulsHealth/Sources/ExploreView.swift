@@ -105,7 +105,7 @@ struct ExploreView: View {
                     "Health access incomplete",
                     subtitle: "Some enabled data types haven't been authorized yet, so their syncs will fail."
                 ) {
-                    // The Synced Data screen's Apply bar only appears while
+                    // The Sync tab's Apply bar only appears while
                     // changes are staged, so in this exact situation (types
                     // added to the catalog after the first grant, or an
                     // interrupted permission sheet) there was no button to

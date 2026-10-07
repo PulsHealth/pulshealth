@@ -92,29 +92,6 @@ final class ExportModel {
         draft.includeWorkoutEnhancedData = applied.includeWorkoutEnhancedData
     }
 
-    /// Add a series to the draft. A series already there (same
-    /// `seriesIdentity`, whatever its id) is left alone: an export has no use
-    /// for the same buckets twice.
-    func addAggregate(_ config: AggregateConfig) {
-        guard !draft.aggregates.contains(where: { $0.seriesIdentity == config.seriesIdentity }) else { return }
-        draft.aggregates.append(config)
-    }
-
-    /// Replace the series with `config.id`, or add it. The edited series may
-    /// now match another one; that one goes.
-    func updateAggregate(_ config: AggregateConfig) {
-        draft.aggregates.removeAll { $0.id != config.id && $0.seriesIdentity == config.seriesIdentity }
-        if let index = draft.aggregates.firstIndex(where: { $0.id == config.id }) {
-            draft.aggregates[index] = config
-        } else {
-            draft.aggregates.append(config)
-        }
-    }
-
-    func removeAggregate(id: UUID) {
-        draft.aggregates.removeAll { $0.id == id }
-    }
-
     /// Add a type to the draft ("Export This Type" on a type's page).
     func include(type id: String) {
         draft.types.insert(id)
@@ -190,7 +167,7 @@ final class ExportModel {
         let rangeLabel = draft.rangeLabel()
         let coverage = "\(selection.types.count) type\(selection.types.count == 1 ? "" : "s")"
             + (selection.aggregates.isEmpty
-                ? "" : ", \(selection.aggregates.count) series")
+                ? "" : ", \(selection.aggregates.count) aggregate\(selection.aggregates.count == 1 ? "" : "s")")
         // A device that locks mid-run turns every remaining type into a
         // failure, so for the length of the run: no auto-lock, and a
         // background-task assertion so a glance at another app does not
@@ -327,7 +304,8 @@ struct ExportDraft: Equatable {
     /// HealthKit type identifiers (`HealthTypeCatalog`). The common set until
     /// the applied selection is known.
     var types: Set<String> = TypePresets.common
-    /// Ad hoc series, independent of the sync config's.
+    /// Aggregates, edited through the same picker and type pages as Sync's
+    /// (`AggregateScope.export`), independent of the sync config's.
     var aggregates: [AggregateConfig] = []
     var includeWorkoutRoutes = false
     var includeWorkoutEnhancedData = false
