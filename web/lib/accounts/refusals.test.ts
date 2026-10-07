@@ -9,7 +9,10 @@
 //     administrator; not a self-service account) is a 303 with
 //     error=forbidden, and in either case the database is never reached;
 //   - the server actions (/admin's Approve, the account page's Connect this
-//     iPhone), which run outside the route table but behind the same proxy.
+//     iPhone), which run outside the route table but behind the same proxy;
+//   - a demo session (WEB_DEMO_USER, view-only): every session route, both
+//     server actions and the OAuth consent decision refuse it — a 303 to
+//     /account?error=demo, or the consent's 403 — before the database.
 //
 // ROUTES below is checked against the files on disk and against each
 // module's exported methods, so a new route.ts (or a new method on an old
@@ -65,6 +68,7 @@ interface Session {
   email: string;
   isAdmin: boolean;
   selfService: boolean;
+  demo: boolean;
   refreshed: boolean;
 }
 
@@ -136,8 +140,11 @@ const SESSION: Session = {
   email: "person@example.com",
   isAdmin: false,
   selfService: true,
+  demo: false,
   refreshed: false,
 };
+// The shared demo account's session, as findSession returns it.
+const DEMO: Session = { ...SESSION, email: "demo@demo.invalid", isAdmin: false, selfService: false, demo: true };
 const OTHER = "20000000-0000-4000-8000-000000000002";
 
 // A browser behind the TLS proxy (TRUST_PROXY_HEADERS=true), same origin.
@@ -296,6 +303,31 @@ describe("the handlers themselves, should a request get past the proxy", () => {
     expectNothingReached();
   });
 
+  // Every route that needs a session changes something about an account,
+  // so every one refuses the view-only demo; a new one fails here until it
+  // does (lib/accounts/http.ts refuseDemo).
+  it.each(guarded)("$method $path refuses a demo session: 303 to /account?error=demo", async ({ path, method }) => {
+    // Even a demo account whose row says administrator or self-service.
+    for (const session of [DEMO, { ...DEMO, isAdmin: true, selfService: true }]) {
+      findSession.mockResolvedValue(session);
+      const res = await handle(path, method, request(path, method, SAME_ORIGIN));
+      expect(res.status, JSON.stringify(session)).toBe(303);
+      expect(res.headers.get("location")).toBe("/account?error=demo");
+      expect(res.cookies.get("__Host-puls-session")).toBeUndefined();
+    }
+    expectNothingReached();
+  });
+
+  it("POST /api/auth/logout still signs a demo session out (it ends only this browser's session)", async () => {
+    findSession.mockResolvedValue(DEMO);
+    db.query.mockImplementationOnce(async () => [] as never);
+    const res = await handle("/api/auth/logout", "POST", request("/api/auth/logout", "POST", SAME_ORIGIN));
+    expect(res.headers.get("location")).toBe("/login?notice=signed-out");
+    expect(res.cookies.get("__Host-puls-session")?.maxAge).toBe(0);
+    expect(db.query).toHaveBeenCalledTimes(1);
+    expect(String((db.query.mock.calls[0] as unknown[])[0])).toBe("DELETE FROM auth.sessions WHERE id = $1");
+  });
+
   it.each(rows.filter((r) => r.guard.kind === "absent"))("$method $path does not exist in accounts mode", async ({ path, method }) => {
     findSession.mockResolvedValue({ ...SESSION, isAdmin: true });
     const res = await handle(path, method, request(path, method, SAME_ORIGIN));
@@ -350,6 +382,46 @@ describe("the server actions", () => {
     delete process.env.WEB_ACCOUNTS;
     findSession.mockResolvedValue(SESSION);
     expect(await connectIphone(null, form())).toMatchObject({ ok: false });
+    expectNothingReached();
+  });
+
+  it("both refuse a demo session, whatever its rows say", async () => {
+    const { approveRequest } = await import("@/app/admin/actions");
+    const { connectIphone } = await import("@/app/account/actions");
+    for (const session of [DEMO, { ...DEMO, isAdmin: true, selfService: true }]) {
+      findSession.mockResolvedValue(session);
+      expect(await approveRequest(null, form())).toEqual({ ok: false, error: "Only an administrator can approve requests." });
+      expect(await connectIphone(null, form())).toEqual({ ok: false, error: expect.stringMatching(/^Not available on the demo account/) });
+    }
+    expectNothingReached();
+  });
+});
+
+describe("the OAuth consent decision", () => {
+  it("never connects an assistant to the demo account", async () => {
+    process.env.WEB_PUBLIC_URL = "https://viewer.example";
+    process.env.PULS_MCP_URL = "https://mcp.example/mcp";
+    process.env.PULS_MCP_OAUTH_SECRET = "0123456789abcdef0123456789abcdef0123456789abcdef";
+    const { POST } = await import("@/app/oauth/authorize/decision/route");
+    const body = new FormData();
+    for (const [k, v] of [
+      ["decision", "allow"],
+      ["client_id", "pc_AAAAAAAAAAAAAAAAAAAAAAAA"],
+      ["redirect_uri", "https://claude.ai/api/mcp/auth_callback"],
+      ["response_type", "code"],
+      ["code_challenge", "p_j-Nj_Xa-C0MOoCl6lv9UzGgSvHUvKaouTlEnyXOiE"],
+      ["code_challenge_method", "S256"],
+      ["scope", "health:read"],
+    ]) {
+      body.append(k, v);
+    }
+    findSession.mockResolvedValue(DEMO);
+    const res = await POST(
+      new NextRequest(new URL("/oauth/authorize/decision", "http://web:3000"), { method: "POST", headers: new Headers(SAME_ORIGIN), body }),
+    );
+    expect(res.status).toBe(403);
+    expect(res.headers.get("location")).toBeNull();
+    expect(await res.text()).toMatch(/AI assistants cannot connect to the demo account/);
     expectNothingReached();
   });
 });

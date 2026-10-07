@@ -14,6 +14,7 @@ describe("classifyPath", () => {
     expect(classifyPath("/api/auth/logout")).toBe("public");
     expect(classifyPath("/signup")).toBe("public");
     expect(classifyPath("/api/auth/signup")).toBe("public");
+    expect(classifyPath("/demo")).toBe("public");
     for (const path of [
       "/",
       "/workouts",
@@ -28,6 +29,8 @@ describe("classifyPath", () => {
       "/api/admin",
       "/admin",
       "/login/extra",
+      "/demo/x",
+      "/demo/",
       "/invite/abc/def",
       "/invite/",
       "/_next/image",

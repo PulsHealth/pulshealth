@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-04**
+**Last updated: 2026-10-06**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
@@ -305,6 +305,9 @@ opens the form), or the developer invites you. What happens to your data:
   in from, when it signed in and was last used, its browser and system name,
   and its IP address. The viewer sets one cookie, which keeps you signed in;
   it holds a random value and nothing else.
+- **The demo.** "See the live demo" signs you into a shared demo account
+  that shows de-identified sample data and lets you change nothing. That
+  session records no IP address or browser name, and ends after two hours.
 - **Connecting your iPhone.** If you signed up, the account page
   makes a pairing code that lets your iPhone upload to your records — the
   one the app's sign-in sheet receives (family members' iPhones are paired

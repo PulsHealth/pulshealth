@@ -56,6 +56,12 @@ pauses (nothing is lost) until the server is updated.
   error status each route can return (`400`, `401`, `403`, `429`, `500`,
   `503`, `504`), field descriptions with units, and examples. Routes and
   response bodies are unchanged.
+- **A public demo for the viewer** (accounts mode, `WEB_DEMO_USER`, opt-in).
+  `/demo` signs anyone into one shared, view-only account holding sample
+  data, for two hours, recording no IP address or browser; `make web-demo`
+  creates the account. Every route that changes an account refuses it, and
+  `/demo` never replaces a session the browser already holds. No schema
+  change. See `web/README.md`, "Demo account".
 
 ### Changed
 

@@ -8,7 +8,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { UnitsProvider } from "@/components/UnitsProvider";
 import { getDataSource, getUsers } from "@/lib/queries";
 import { configuredTimeZone } from "@/lib/config";
-import { viewerMode } from "@/lib/mode";
+import { signupsOpen, viewerMode } from "@/lib/mode";
 import { currentSession, viewerUser } from "@/lib/viewer";
 import { isBarePage, PATH_HEADER } from "@/lib/shell";
 
@@ -68,7 +68,13 @@ async function shell(children: React.ReactNode, pathname: string | null) {
     const source = await getDataSource();
     return (
       <div className="shell">
-        <Sidebar source={source} users={[]} currentUserId={session.userId} account={{ email: session.email, isAdmin: session.isAdmin }} />
+        <Sidebar
+          source={source}
+          users={[]}
+          currentUserId={session.userId}
+          account={{ email: session.email, isAdmin: session.isAdmin, demo: session.demo }}
+          signupsOpen={signupsOpen()}
+        />
         <main className="content">{children}</main>
       </div>
     );

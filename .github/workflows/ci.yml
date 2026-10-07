@@ -312,6 +312,13 @@ jobs:
       - name: Smoke-test the Python reference receiver with the corpus
         run: python3 examples/receivers/python-sqlite/smoke_test.py
 
+      - name: Test the demo-data scripts, and their batches against the schemas
+        # scripts/demo-data: build_pack.py and load.py, on synthetic rows.
+        run: |
+          python3 -m unittest discover -s scripts/demo-data -p 'test_*.py'
+          python3 scripts/demo-data/test_demo_data.py --emit "$RUNNER_TEMP/demo-batches"
+          cd tools/protocol-check && go run . "$RUNNER_TEMP"/demo-batches/*.ndjson
+
   # server/db/migrate.sh, the script that applies the schema to every install,
   # against a throwaway TimescaleDB on the pinned image (server/db/test-migrate.sh
   # starts and removes it). The repository's own migrations: fresh (every file

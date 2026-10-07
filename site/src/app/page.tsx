@@ -9,6 +9,7 @@ import {
   EyeOff,
   Globe,
   Lock,
+  MousePointerClick,
   ShieldCheck,
   Smartphone,
 } from "lucide-react";
@@ -23,6 +24,8 @@ import { GITHUB_URL } from "@/lib/github";
 
 /** The hosted database's sign-up page, on the viewer's origin. */
 const SIGNUP_URL = "https://app.pulshealth.com/signup";
+/** Signs a visitor straight into the viewer's view-only demo account (web/app/demo). */
+const DEMO_URL = "https://app.pulshealth.com/demo";
 
 /** The app's structured data; the home page is the app's page now. */
 const appJsonLd = {
@@ -118,7 +121,7 @@ const stepVisuals: ReactNode[] = [
       ))}
     </ul>
   </div>,
-  <div key="ai" className="relative h-full">
+  <a key="ai" href={DEMO_URL} aria-label="Open the live demo of the web viewer" className="group relative block h-full">
     <Image
       src="/screenshots/viewer-today.webp"
       alt="The web viewer's Today page"
@@ -134,7 +137,7 @@ const stepVisuals: ReactNode[] = [
         7 h 04 m a night, 22 min more than last week.
       </p>
     </div>
-  </div>,
+  </a>,
 ];
 
 const privacy = [
@@ -213,7 +216,15 @@ export default async function HomePage() {
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
               Automatically sync and control your Apple Health data.
             </p>
-            <AppStoreBadge className="mt-8 [&_img]:h-12" />
+            <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row">
+              <AppStoreBadge className="[&_img]:h-12" />
+              <Button asChild size="lg" variant="outline" className="h-12 px-6 text-base">
+                <a href={DEMO_URL}>
+                  <MousePointerClick className="mr-2 h-4 w-4" aria-hidden />
+                  See the live demo
+                </a>
+              </Button>
+            </div>
             <p className="mt-5 flex flex-wrap items-center justify-center gap-x-2 text-sm text-muted-foreground">
               <span>Free</span>
               <span aria-hidden>&middot;</span>
@@ -303,11 +314,18 @@ export default async function HomePage() {
             title="Your whole history on the web"
             flip
             visual={
-              <figure className="overflow-hidden rounded-xl border bg-[#0b0b0c] shadow-2xl shadow-black/20">
-                <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+              <a href={DEMO_URL} className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <figure className="overflow-hidden rounded-xl border bg-[#0b0b0c] shadow-2xl shadow-black/20 transition-transform group-hover:-translate-y-0.5">
+                <div className="flex items-center justify-between gap-1.5 border-b border-white/10 px-4 py-2.5">
+                  <span className="flex gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-white/60 group-hover:text-white">
+                    Try it live
+                    <ArrowRight className="h-3 w-3" aria-hidden />
+                  </span>
                 </div>
                 <Image
                   src="/screenshots/viewer-today.webp"
@@ -317,6 +335,7 @@ export default async function HomePage() {
                   className="w-full"
                 />
               </figure>
+            </a>
             }
           >
             <p>
@@ -324,17 +343,24 @@ export default async function HomePage() {
               years of them, in a web viewer.
             </p>
             <p>
-              Use the PulsHealth database, hosted for you, or run your own with one script.
+              Use the PulsHealth database, hosted for you, or{" "}
+              <Link href="/server" className={textLink}>
+                run your own
+              </Link>{" "}
+              with one script. The demo is the real viewer, with six months of sample data.
             </p>
             <div className="flex flex-col gap-3 pt-2 sm:flex-row">
               <Button asChild>
+                <a href={DEMO_URL}>
+                  <MousePointerClick className="mr-2 h-4 w-4" aria-hidden />
+                  See the live demo
+                </a>
+              </Button>
+              <Button asChild variant="outline">
                 <a href={SIGNUP_URL}>
                   Get started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </a>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/server">Run your own</Link>
               </Button>
             </div>
           </Feature>

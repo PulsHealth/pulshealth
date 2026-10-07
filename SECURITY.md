@@ -96,7 +96,10 @@ Everything in this repository is in scope, in particular:
   revocation, a password change or reset, disabling or deletion for longer
   than the 30-minute access-token lifetime; a token carrying any scope but
   `health:read`; and a consent screen that misrepresents what is granted.
-  See the notes below.
+  With the public demo on (`WEB_DEMO_USER`): anything a demo session can
+  change about the demo account (an AI assistant connected to it included),
+  reaching any other account from one, and `/demo` replacing a session the
+  browser already holds. See the notes below.
 
 Out of scope:
 
@@ -269,6 +272,13 @@ for judging what is.
   form creates nothing but a request and emails only the operator, so it
   cannot open the database to anyone or be used to mail a stranger; no
   address it handles is written to the log.
+- **The public demo.** With `WEB_DEMO_USER` set, `/demo` signs anyone into
+  one operator-made account holding sample data, with no password
+  (`web/README.md`, "Demo account"). It is view-only by refusal in every
+  handler that changes an account, not by hidden buttons; its sessions last
+  two hours without sliding and store no IP address or browser name; it
+  never replaces a live session; it is refused for an administrator's
+  account, a sign-up-made user and the household's default user.
 - **AI assistants over OAuth.** In accounts mode, with
   `PULS_MCP_OAUTH_SECRET` and `PULS_MCP_URL` set, the viewer is an OAuth 2.1
   authorization server for the MCP server, so a person can connect an
