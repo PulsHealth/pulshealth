@@ -41,4 +41,16 @@ describe("register", () => {
     const cf = await run({ TRUST_PROXY_HEADERS: "on", WEB_ACCOUNTS: "true", WEB_CLIENT_IP_HEADER: "cf-connecting-ip" });
     expect(cf.warn, cf.warn.join("\n")).toEqual([]);
   });
+
+  it("stops at startup on a WEB_DEMO_USER that is not a UUID, and says when the demo is on or ignored", async () => {
+    const bad = await run({ WEB_ACCOUNTS: "true", WEB_DEMO_USER: "demo" });
+    expect(bad.outcome).toBe("exit 1");
+    expect(bad.error.join("\n")).toMatch(/WEB_DEMO_USER must be the demo user's UUID/);
+    const on = await run({ WEB_ACCOUNTS: "true", WEB_DEMO_USER: "0d3a0000-0000-4000-8000-0000000000ab", WEB_CLIENT_IP_HEADER: "cf-connecting-ip", TRUST_PROXY_HEADERS: "on" });
+    expect(on.outcome).toBe("ok");
+    expect(on.warn).toEqual([]);
+    const ignored = await run({ WEB_DEMO_USER: "0d3a0000-0000-4000-8000-0000000000ab" });
+    expect(ignored.outcome).toBe("ok");
+    expect(ignored.warn.join("\n")).toMatch(/WEB_DEMO_USER is set but ignored/);
+  });
 });

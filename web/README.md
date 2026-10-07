@@ -211,8 +211,9 @@ household phone stays the operator's step (`make issue-device`); a signed-in
 person can also connect their own iPhone from their account page (below).
 
 **Signing in.** `/login`, `/invite/<token>`, their two POST endpoints,
-`/api/auth/logout`, build assets, `/api/healthz` and (with OAuth on) the
-OAuth machine endpoints below are reachable without a session; everything else redirects to `/login?next=…` (pages) or answers 401.
+`/api/auth/logout`, `/demo` (a 404 unless the demo below is on), build
+assets, `/api/healthz` and (with OAuth on) the OAuth machine endpoints below
+are reachable without a session; everything else redirects to `/login?next=…` (pages) or answers 401.
 `/account` changes the password (it needs the current one, and signs out every
 other browser) and lists the account's sessions with a sign-out for each.
 Details:
@@ -356,6 +357,56 @@ against a real database in CI: `npm run test:integration` runs every
 set. Without them the suites skip, unless `PULS_CI_REQUIRE_INTEGRATION=1` (or
 `PULS_WEB_INTEGRATION=1`) makes that a failure.
 
+### Demo account
+
+`WEB_DEMO_USER=<uuid>` (accounts mode only) opens a public demo:
+`https://<viewer>/demo` signs anyone straight into one shared account, with no
+password, so they can browse every page with sample data. The user must hold
+only sample data, loaded with its own sync token —
+[`scripts/demo-data/`](../scripts/demo-data/README.md) makes a de-identified
+copy of someone's recent history and keeps it current. Setup:
+
+```bash
+make issue-device NAME='Demo data' ARGS='--user <uuid>'   # creates the user; the loader's token
+make web-demo ARGS='--user <uuid>'                        # its viewer account
+# server/.env: WEB_DEMO_USER=<uuid>, then
+docker compose up -d web
+```
+
+`make web-demo` (`scripts/demo.mjs`) gives the account the address
+`demo@demo.invalid` (`--email` to change it; `.invalid` can never receive
+mail) and the scrypt hash of 32 random bytes that are thrown away, so no
+password signs in to it. It reports an existing account instead of making a
+second one. What the viewer does with it:
+
+- **View-only, on the server.** Every route that changes an account —
+  password, sessions, AI assistants, iPhones, deletion, `/admin` — and the
+  Connect this iPhone action refuse a demo session (`refuseDemo` in
+  `lib/accounts/http.ts`; `refusals.test.ts` fails for a route that does
+  not), and the OAuth consent page and its decision never connect an
+  assistant to it. A demo session is never an administrator or
+  self-service, whatever the rows say. Sign out still works. The account
+  page shows only a card saying what the account is; the sidebar shows
+  "Demo · sample data", both with Create your account when `WEB_SIGNUPS` is
+  on, and `/login` offers Explore the demo.
+- **Never someone's real session.** A browser whose cookie names a live
+  session, the demo's or anyone's, is sent to `/` untouched, so another site
+  cannot link a signed-in person out of their own account.
+- **Sessions for strangers.** Two hours from the visit, never sliding, with
+  no IP address or browser name stored. `/demo` starts at most 20 an hour
+  per client address, from its own bucket (never the sign-in failure
+  buckets: it is a GET).
+- **Only a fit account.** `/demo` answers 503, and logs why without naming
+  anyone, when the account is missing, disabled, an administrator's, or
+  made by an approved sign-up (the viewer's self-service may act on those).
+  A `WEB_DEMO_USER` that is not a UUID, or is the household's default user
+  (`PULS_USER_ID`), stops the viewer at startup.
+
+To turn it off, unset `WEB_DEMO_USER` and `docker compose up -d web`; disable
+the account too (`UPDATE auth.accounts SET disabled_at = now() WHERE user_id
+= '<uuid>'`), or the demo sessions already handed out keep working, no
+longer view-only, until their two hours end.
+
 ### AI assistants (OAuth)
 
 In accounts mode the viewer can also be the **OAuth 2.1 authorization
@@ -434,10 +485,11 @@ detection, revocation and the prune against a real database as `web_app`.
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
 | `/settings` | Whose data is on screen and its profile (age, sex, heart-rate figures behind the zones); display preferences, saved in this browser |
-| `/account` | Accounts mode: connect or disconnect your iPhones, the AI assistants connected over OAuth (with Revoke), change the password, the browsers signed in, delete the account |
+| `/account` | Accounts mode: connect or disconnect your iPhones, the AI assistants connected over OAuth (with Revoke), change the password, the browsers signed in, delete the account. The demo account sees only what it is |
 | `/oauth/authorize` | Accounts mode with OAuth on: the consent page an AI assistant sends you to |
 | `/admin` | Accounts mode, administrators: approve or decline access requests (one, the ticked ones, or all shown); disable non-administrator accounts, purge a disabled user's data |
 | `/signup`, `/login`, `/invite/[token]` | Accounts mode: ask for access (with `WEB_SIGNUPS`), sign in, accept an invite |
+| `/demo` | Accounts mode with `WEB_DEMO_USER`: signs the browser into the shared, view-only demo account |
 
 ## Architecture
 

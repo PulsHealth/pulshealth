@@ -457,6 +457,21 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   `users.email` are the phone's HealthKit profile, overwritten by every
   `{"profile":…}` line. Accounts are invite-only (`make web-invite`); an
   invite for a user with an account resets its password.
+- **The public demo is a config-selected, operator-made, view-only
+  account.** `WEB_DEMO_USER` (accounts mode) names the user whose
+  `auth.accounts` row is the demo (`make web-demo`: an `.invalid` address,
+  a hash of discarded random bytes); no schema or grant is involved. `GET
+  /demo` (`app/demo/route.ts`, public in `policy.ts`) never replaces a live
+  session (any cookie naming one → 303 `/`), refuses an account that is
+  disabled, an administrator's or in `auth.self_service_users` (503), and
+  starts sessions of 2 h that never slide (`findSession` skips the UPDATE)
+  with no IP or user agent, 20/h per address from its own bucket — never the
+  failure buckets. View-only is enforced in each handler, not the UI:
+  every session route calls `refuseDemo` (`refusals.test.ts` fails for one
+  that does not), as do Connect this iPhone, `currentAdmin` and the OAuth
+  consent; `Session.demo` forces `isAdmin`/`selfService` false. Logout
+  stays allowed. A malformed `WEB_DEMO_USER`, or the household's
+  `PULS_USER_ID`, stops the viewer at startup.
 - **The viewer mints an ingest token only for the signed-in person's own
   user, and shows it only to them, once.** In accounts mode the account page's
   "Connect this iPhone" calls `auth.issue_device_token(session, …)`, which

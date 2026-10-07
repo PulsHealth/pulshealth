@@ -1,6 +1,7 @@
 "use server";
 
 import { currentAccount } from "@/lib/accounts/admin";
+import { errorMessage } from "@/lib/accounts/messages";
 import { issueDeviceToken, pairingLink } from "@/lib/accounts/signups";
 import { qrSvg } from "@/lib/qr";
 
@@ -26,6 +27,7 @@ function ingestUrl(): string | null {
 export async function connectIphone(_prev: ConnectState, form: FormData): Promise<ConnectState> {
   const account = await currentAccount();
   if (!account) return { ok: false, error: "Sign in again, then try once more." };
+  if (account.demo) return { ok: false, error: errorMessage("demo")! };
   if (!account.selfService) return { ok: false, error: "Phones for this account are connected by the operator." };
   const url = ingestUrl();
   if (!url) return { ok: false, error: "The operator has not set this viewer's sync address (WEB_INGEST_URL), so there is nothing to connect to yet." };

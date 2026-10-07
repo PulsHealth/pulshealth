@@ -6,7 +6,7 @@
 // browser. Never logs a secret.
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
-  const { parseFlag, viewerMode } = await import("./lib/mode");
+  const { parseDemoUser, parseFlag, viewerMode } = await import("./lib/mode");
   const mode = viewerMode();
 
   // Read the way ingest and the API read it; a value none of them accepts
@@ -14,6 +14,16 @@ export async function register() {
   let trustProxy: boolean;
   try {
     trustProxy = parseFlag("TRUST_PROXY_HEADERS", process.env.TRUST_PROXY_HEADERS);
+  } catch (e) {
+    console.error(`[puls-web] ${e instanceof Error ? e.message : String(e)}. Fix it in server/.env and restart.`);
+    process.exit(1);
+  }
+
+  // The demo account's user: a value that is not a UUID stops the viewer,
+  // rather than quietly meaning "no demo".
+  let demoUser: string | null;
+  try {
+    demoUser = parseDemoUser(process.env);
   } catch (e) {
     console.error(`[puls-web] ${e instanceof Error ? e.message : String(e)}. Fix it in server/.env and restart.`);
     process.exit(1);
@@ -37,6 +47,12 @@ export async function register() {
     if (process.env.WEB_AUTH_PASSWORD) {
       console.warn("[puls-web] WEB_AUTH_PASSWORD is set but ignored: accounts mode signs people in itself.");
     }
+    if (demoUser) {
+      console.log(
+        `[puls-web] The demo is ON: /demo signs visitors into the account of user ${demoUser}, view-only, ` +
+          "for two hours (WEB_DEMO_USER).",
+      );
+    }
     const publicUrl = process.env.WEB_PUBLIC_URL;
     if (publicUrl) {
       try {
@@ -56,6 +72,8 @@ export async function register() {
     }
     return;
   }
+
+  if (demoUser) console.warn("[puls-web] WEB_DEMO_USER is set but ignored: the demo needs accounts mode (WEB_ACCOUNTS=true).");
 
   if (mode === "basic") {
     console.log(

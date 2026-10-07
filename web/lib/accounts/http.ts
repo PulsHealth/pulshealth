@@ -29,10 +29,21 @@ export async function requestSession(request: NextRequest): Promise<Session | nu
   return findSession(request.cookies.get(SESSION_COOKIE)?.value);
 }
 
-/** Puts a new session's token in the cookie. */
-export function setSessionCookie(response: NextResponse, token: string): NextResponse {
-  response.cookies.set(SESSION_COOKIE, token, sessionCookieAttributes());
+/** Puts a new session's token in the cookie (`maxAge` seconds; 30 days by default). */
+export function setSessionCookie(response: NextResponse, token: string, maxAge?: number): NextResponse {
+  response.cookies.set(SESSION_COOKIE, token, sessionCookieAttributes(maxAge));
   return response;
+}
+
+/**
+ * The demo account is view-only, and that is enforced here, not by hiding
+ * buttons: every route that changes anything about an account calls this
+ * right after finding the session, and answers a demo session with a 303 to
+ * the account page saying so (`error=demo`). Signing out is the one
+ * exception — it ends only this browser's session.
+ */
+export function refuseDemo(session: Session): NextResponse | null {
+  return session.demo ? seeOther("/account?error=demo") : null;
 }
 
 export function clearSessionCookie(response: NextResponse): NextResponse {

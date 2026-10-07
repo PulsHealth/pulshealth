@@ -15,12 +15,15 @@ export function Sidebar({
   users,
   currentUserId,
   account = null,
+  signupsOpen = false,
 }: {
   source: DataSourceInfo;
   users: User[];
   currentUserId: string;
-  /** The signed-in account, in accounts mode; null otherwise. */
-  account?: { email: string; isAdmin: boolean } | null;
+  /** The signed-in account, in accounts mode; null otherwise. `demo`: the shared, view-only demo account. */
+  account?: { email: string; isAdmin: boolean; demo?: boolean } | null;
+  /** Whether /signup takes requests (lib/mode.ts signupsOpen), for the demo's "Create your account". */
+  signupsOpen?: boolean;
 }) {
   const path = usePathname();
   // A choice is only worth offering when there is one — or when the current
@@ -42,6 +45,21 @@ export function Sidebar({
         </span>
         <span className="brand-name">PulsHealth</span>
       </Link>
+
+      {account?.demo && (
+        // At the top, so a phone (where the sidebar sits above the page) shows it first.
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", padding: "0 8px 12px" }}>
+          <span className="chip" title="A shared demo account with de-identified sample data. Nothing here can be changed.">
+            <span className="dot" style={{ background: "#ff9f0a" }} />
+            <span style={{ fontSize: 12 }}>Demo · sample data</span>
+          </span>
+          {signupsOpen && (
+            <a href="/signup" style={{ fontSize: 12.5, color: "var(--fg-soft)", textDecoration: "underline" }}>
+              Create your account
+            </a>
+          )}
+        </div>
+      )}
 
       <nav>
         {primary.map((item) => {
@@ -80,10 +98,12 @@ export function Sidebar({
             href="/account"
             aria-current={path === "/account" ? "page" : undefined}
             className={`nav-link${path === "/account" ? " active" : ""}`}
-            title={`Signed in as ${account.email}`}
+            title={account.demo ? "The shared demo account" : `Signed in as ${account.email}`}
           >
             <UserIcon className="nav-icon" />
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.email}</span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {account.demo ? "Demo account" : account.email}
+            </span>
           </Link>
         )}
         {account?.isAdmin && (
