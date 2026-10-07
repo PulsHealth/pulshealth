@@ -46,11 +46,11 @@ export default async function KnowledgeBasePage() {
           </Badge>
 
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 max-w-3xl">
-            The missing manual for <span className="text-brand">Apple Health</span> data — built for AI.
+            The missing manual for <span className="text-brand">Apple Health</span> data
           </h1>
 
           <p className="text-lg md:text-xl text-zinc-500 max-w-2xl leading-relaxed">
-            A comprehensive reference for all 178 HealthKit data types — sampling rates, typical ranges, cross-device comparisons, compaction policies.
+            A comprehensive reference for all 178 HealthKit data types: sampling rates, typical ranges, cross-device comparisons, compaction policies.
             Designed for AI agents, developers, clinicians, and researchers.
           </p>
 
