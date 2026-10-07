@@ -46,7 +46,8 @@ struct StateUnreadableNotice: View {
 struct SyncView: View {
     /// The stack's path, owned by `RootView` (a pairing link pushes onto it
     /// from outside); the first-time screen pushes the Database screen
-    /// through it so its choices can be buttons rather than list rows.
+    /// through it so its choices can be buttons rather than list rows, and
+    /// the sections' Edit buttons push their pickers the same way.
     @Binding var path: [SyncRoute]
     @Environment(AppModel.self) private var model
     @State private var showsAllRaw = false
@@ -328,6 +329,7 @@ struct SyncView: View {
             Button("Edit") { path.append(route) }
                 .font(.subheadline)
                 .textCase(nil)
+                .accessibilityLabel("Edit \(title)")
         }
     }
 
