@@ -208,16 +208,17 @@ export default async function HomePage() {
       <section className="w-full border-b bg-gradient-to-b from-background via-background to-muted/50">
         <div className="container mx-auto max-w-7xl px-4 pb-20 pt-20 md:pt-28">
           <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
-            <h1 className="text-[clamp(2.25rem,10.5vw,3.75rem)] font-bold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl xl:text-8xl">
+            <h1 className="text-[clamp(2.25rem,10vw,3.5rem)] font-bold leading-[1.05] tracking-tight text-foreground sm:text-[3.5rem] lg:text-[4rem] xl:text-[5rem]">
               <AnimatedWord words={heroWords} />
               your health data
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-              A free iPhone app that keeps your whole Apple Health history in a database, so you
-              and your AI can work from your real numbers.
+              Years of Apple Health data, off your iPhone and ready for you and your AI.
             </p>
             <AppStoreBadge className="mt-8 [&_img]:h-12" />
             <p className="mt-5 flex flex-wrap items-center justify-center gap-x-2 text-sm text-muted-foreground">
+              <span>Free</span>
+              <span aria-hidden>&middot;</span>
               <span>No account needed</span>
               <span aria-hidden>&middot;</span>
               <span>Read-only</span>
