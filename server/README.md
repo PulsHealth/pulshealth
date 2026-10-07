@@ -960,7 +960,7 @@ A red dashboard nobody has open alerts no one, so four rules in
 | Ingest is rejecting batches | > 10 rejections in 30 min | ~10 min | A real outage rejects ~85 an hour; the benign `context canceled` class runs 1–2 per *month*. Nothing lives between those numbers. |
 | A batch is stuck on a rejected page | the same 4xx message in ≥ 3 distinct hours of the last 6 | ~3 h | A page the server always rejects (a new line type before the server update, an oversized line, an out-of-range value) is re-sent about hourly and never reaches the rate rule; the client does not retry 4xx, so that type stalls until server or client is fixed. |
 | Ingest stalled | no batch for > 14 h | 14.5 h | Over 60 days of `batches`, only 2 normal gaps exceeded 14 h, versus 7 at 12 h and 22 at 10 h. |
-| Lookup sequence near exhaustion | any smallint identity sequence > 95% | ~5 min | At the ceiling every insert fails and ingest stops. Not 80%: `sources_source_id_seq` legitimately sits near 90% with unreclaimable gaps, and a permanently red rule gets muted. |
+| Lookup sequence near exhaustion | any smallint lookup id > 80% used | ~5 min | At the ceiling every insert fails and ingest stops. `sample_types` and `aggregate_series` are measured by sequence `last_value`; `sources` by row count, because ingest gives new sources the ids below `sources_source_id_seq` that no row holds before it calls `nextval` (the sequence sits near 90% from the pre-fix leak, with ~1.6% of ids in use). |
 
 To re-derive the staleness threshold after usage patterns change:
 

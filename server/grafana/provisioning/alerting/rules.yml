@@ -195,11 +195,17 @@ groups:
       # outright. smallint identity columns cap at 32767 and the table's row
       # count tells you nothing about how close the sequence is.
       #
-      # Not 80%: sources_source_id_seq legitimately sits at ~90% with
-      # unreclaimable gaps (its live ids scatter up to 29459, so RESTART would
-      # collide), and a permanently-firing rule is a rule people mute. At 95%
-      # the fixed ~0/day burn never trips it, while a reintroduced leak at the
-      # old ~500/day rate fires with roughly three days of runway left.
+      # sources is measured by rows, not by its sequence: ingest gives new
+      # sources the ids below sources_source_id_seq that no row holds (the
+      # ~29k the pre-fix leak burned; see registerSources in
+      # server/ingest/store.go) before calling nextval, so its sequence stays
+      # near 90% while 32767 - count(*) ids are actually left. The other
+      # sequences (sample_types, aggregate_series) do not reuse gaps, so their
+      # last_value is their measure. 80% leaves time to act: thousands of ids
+      # at the current single-digit-per-week rate, and still days at the old
+      # ~500/day leak rate. The CASE keeps the query NULL when the
+      # sequences are unreadable (see noDataState below); greatest() alone
+      # would skip the NULL and report sources by itself.
       - uid: puls-sequence-exhaustion
         title: Lookup sequence near exhaustion
         condition: C
@@ -214,9 +220,13 @@ groups:
               format: table
               rawQuery: true
               rawSql: |
-                SELECT max(100.0 * last_value / max_value)::float8 AS pct_used
-                FROM pg_sequences
-                WHERE max_value <= 32767
+                SELECT CASE WHEN seq.pct IS NULL THEN NULL
+                            ELSE greatest(seq.pct, src.pct) END::float8 AS pct_used
+                FROM (SELECT max(100.0 * last_value / max_value) AS pct
+                      FROM pg_sequences
+                      WHERE max_value <= 32767
+                        AND sequencename <> 'sources_source_id_seq') AS seq,
+                     (SELECT 100.0 * count(*) / 32767 AS pct FROM sources) AS src
           - refId: B
             relativeTimeRange: { from: 600, to: 0 }
             datasourceUid: __expr__
@@ -236,7 +246,7 @@ groups:
               datasource: { type: __expr__, uid: __expr__ }
               expression: B
               conditions:
-                - evaluator: { type: gt, params: [95] }
+                - evaluator: { type: gt, params: [80] }
         # pg_sequences.last_value reads NULL without SELECT on the sequences
         # (099_read_roles.sh grants it), so without the grant this query
         # returns NULL → the reducer drops it → NoData → Alerting. Do not
@@ -249,13 +259,15 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: A smallint identity sequence is within 5% of its 32767 ceiling.
+          summary: A smallint lookup id is past 80% of its 32767 ceiling.
           description: >-
             When it hits the ceiling every insert fails with SQLSTATE 2200H and
             ingest stops completely. Check which one with:
             SELECT sequencename, last_value, max_value FROM pg_sequences
             WHERE max_value <= 32767 ORDER BY last_value DESC;
-            If the table's row count is far below last_value, something is
-            burning nextval on conflicts again - see ensureTypes in
-            server/ingest/store.go.
+            and SELECT count(*) FROM sources; (sources counts rows, since
+            ingest reuses its free ids). If a table's row count is far below
+            last_value, something is burning nextval on conflicts again - see
+            ensureTypes in server/ingest/store.go. If sources itself is
+            filling up, widen source_id (see registerSources).
         isPaused: false
