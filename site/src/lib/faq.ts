@@ -8,6 +8,8 @@ export interface FaqItem {
   a: string;
   /** Show on the home page as well as the support page. */
   home?: boolean;
+  /** The support page's group: the basics, or why a sync looks wrong. */
+  topic?: "basics" | "sync";
 }
 
 export const faq: FaqItem[] = [
@@ -40,7 +42,7 @@ export const faq: FaqItem[] = [
   },
   {
     q: "How is it different from other Apple Health exporters?",
-    a: "Three things together: the app and the database are both open source, the sync format is written down so anything can receive it, and the database can be hosted for you or run by you, with Claude connected either way. The About page compares it with Health Auto Export, HealthSave, FreeReps and Apple's own export.",
+    a: "Three things together: the app and the database are both open source, the sync format is written down so anything can receive it, and the database can be hosted for you or run by you, with any AI agent connected over MCP either way. The About page compares it with Health Auto Export, HealthSave, FreeReps and Apple's own export.",
     home: true,
   },
   {
@@ -51,25 +53,31 @@ export const faq: FaqItem[] = [
   {
     q: "My Watch data arrives minutes or hours late.",
     a: "Watch to iPhone HealthKit transfer is scheduled by watchOS and cannot be forced by any app. Opening PulsHealth, or putting the Watch on its charger, usually prompts it. Once the data is on the phone it syncs normally.",
+    topic: "sync",
   },
   {
     q: "Steps, active energy and distance lag by up to an hour, while workouts appear in seconds.",
     a: "iOS throttles \"immediate\" background delivery for those high-frequency types to roughly hourly, without saying so, and it is not configurable. Anything else you record on the phone, and every foreground open, syncs right away.",
+    topic: "sync",
   },
   {
     q: "Nothing synced overnight.",
     a: "While the phone is locked, HealthKit is unreadable, and iOS prefers to run background processing when the device is idle, which is to say locked, overnight. PulsHealth detects this, records the wake as skipped (locked) on the Background Activity screen instead of claiming a sync, and catches up at the next unlock or app open.",
+    topic: "sync",
   },
   {
     q: "I swiped the app away and it stopped syncing.",
     a: "iOS does not wake force-quit apps for background delivery or scheduled tasks. Open the app again and it resumes; leaving it in the app switcher is enough.",
+    topic: "sync",
   },
   {
     q: "Blood pressure never shows up in the permission sheet.",
     a: "On iOS 26 the Health permission sheet silently omits blood pressure systolic and diastolic, so they can never be granted from within the app (Apple Feedback FB22735935; iOS 27 fixes it). Grant them yourself in Settings, Privacy & Security, Health, PulsHealth. The app shows a hint when it detects the situation and backfills the full history once access exists.",
+    topic: "sync",
   },
   {
     q: "Daily step totals in the database are higher than the Health app shows.",
     a: "The iPhone and the Watch both record steps, and a naive sum of raw samples counts both. Use the metric_daily view, or the app's on-device aggregate series, which HealthKit already de-duplicates, instead of summing quantity_samples. The database guide explains the query patterns.",
+    topic: "sync",
   },
 ];

@@ -3,6 +3,7 @@ import { BookOpen, Bug, FileText, Mail, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHero } from "@/components/page-hero";
+import { FaqList } from "@/components/faq-list";
 import { faq } from "@/lib/faq";
 
 const GITHUB = "https://github.com/PulsHealth/pulshealth";
@@ -20,7 +21,7 @@ const supportOptions = [
   {
     title: "Documentation",
     description:
-      "Connecting Claude to your data, setting up the self-hosted stack, the sync protocol, the database guide and exports.",
+      "Connecting an AI assistant, running your own database, the sync protocol, the database guide and exports.",
     icon: FileText,
     href: "/docs",
     cta: "Read the Docs",
@@ -62,28 +63,24 @@ export default function SupportPage() {
         eyebrow="Support"
         size="compact"
         title="Getting help"
-        lede="Most support happens in the open on GitHub, where the answers help the next person too. Start with the FAQ. Most sync questions turn out to be iOS behaviour rather than bugs."
+        lede="Start with the answers below. Most sync questions turn out to be iOS behaviour, not bugs."
       />
 
       <section className="container mx-auto max-w-4xl px-4 py-16">
-        <h2 className="text-2xl font-bold tracking-tight mb-2">Frequently asked</h2>
-        <p className="text-muted-foreground mb-8">
-          The same answers as the README.
+        <h2 className="mb-4 text-2xl font-bold tracking-tight">The basics</h2>
+        <FaqList items={faq.filter((f) => f.topic !== "sync")} />
+
+        <h2 className="mb-2 mt-14 text-2xl font-bold tracking-tight">When a sync looks wrong</h2>
+        <p className="mb-4 text-muted-foreground">
+          Usually iOS deciding when apps may run, not something the app can change.
         </p>
-        <dl className="divide-y rounded-lg border bg-card">
-          {faq.map((item) => (
-            <div key={item.q} className="px-5 py-5">
-              <dt className="font-semibold text-foreground">{item.q}</dt>
-              <dd className="mt-2 text-muted-foreground text-pretty">{item.a}</dd>
-            </div>
-          ))}
-        </dl>
+        <FaqList items={faq.filter((f) => f.topic === "sync")} />
         <p className="mt-6 text-sm text-muted-foreground">
           Still stuck? The{" "}
           <Link href="/docs" className="text-brand underline-offset-4 hover:underline">
             documentation
           </Link>{" "}
-          covers the self-hosted stack, the protocol and the database in depth, and the{" "}
+          covers connecting an AI, running your own database and the protocol in depth, and the{" "}
           <Link href="/knowledge-base" className="text-brand underline-offset-4 hover:underline">
             knowledge base
           </Link>{" "}
@@ -118,13 +115,15 @@ export default function SupportPage() {
               </Card>
             ))}
           </div>
-          <p className="mt-8 text-sm text-muted-foreground flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            Building something with health data and AI? See{" "}
-            <Link href="/consulting" className="text-brand underline-offset-4 hover:underline">
-              consulting
-            </Link>
-            .
+          <p className="mt-8 flex items-center gap-2 text-sm text-muted-foreground">
+            <BookOpen className="h-4 w-4 shrink-0" aria-hidden />
+            <span>
+              Building something with health data and AI? See{" "}
+              <Link href="/consulting" className="text-brand underline-offset-4 hover:underline">
+                consulting
+              </Link>
+              .
+            </span>
           </p>
         </div>
       </section>

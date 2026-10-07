@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
 import { AiChatPreview } from "@/components/ai-chat-preview";
 import { AnimatedWord } from "@/components/animated-word";
+import { FaqList } from "@/components/faq-list";
 import { getAllTypes } from "@/lib/api";
 import { faq } from "@/lib/faq";
 import { GITHUB_URL } from "@/lib/github";
@@ -401,17 +402,7 @@ export default async function HomePage() {
       <section className="border-t bg-muted/30">
         <div className="container mx-auto max-w-3xl px-4 py-24">
           <h2 className="mb-8 text-center text-3xl font-bold tracking-tight md:text-4xl">Questions</h2>
-          <div className="divide-y rounded-xl border bg-card">
-            {homeFaq.map((item) => (
-              <details key={item.q} className="group px-5 py-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
-                  {item.q}
-                  <span className="font-mono text-muted-foreground transition-transform group-open:rotate-45">+</span>
-                </summary>
-                <p className="mt-3 text-muted-foreground text-pretty">{item.a}</p>
-              </details>
-            ))}
-          </div>
+          <FaqList items={homeFaq} />
           <p className="mt-6 text-center text-sm text-muted-foreground">
             More on the{" "}
             <Link href="/support" className="text-brand underline-offset-4 hover:underline">
