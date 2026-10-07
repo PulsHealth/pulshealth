@@ -2072,10 +2072,10 @@ func applyDeletions(ctx context.Context, tx pgx.Tx, dels []Deletion, userID stri
 	var deleted int64
 	// quantity_samples is a compressed hypertable: a bare uuid predicate can't
 	// prune columnstore batches (segmentby type_id, orderby start_ts), so a
-	// direct DELETE decompresses the whole table. Resolve the full (uuid,
-	// start_ts) primary keys on the read path first — reads decompress freely —
-	// then delete by PK so chunk and batch pruning apply.
-	n, err := deleteQuantityByPK(ctx, tx, uuids, userID)
+	// direct DELETE decompresses the whole table. deleteQuantitySamples
+	// (quantity_delete.go) resolves the rows on the read path and deletes them
+	// in a few range-bounded statements that keep chunk and batch pruning.
+	n, err := deleteQuantitySamples(ctx, tx, uuids, userID)
 	if err != nil {
 		return deleted, fmt.Errorf("delete from quantity_samples: %w", err)
 	}
@@ -2114,46 +2114,6 @@ func applyDeletions(ctx context.Context, tx pgx.Tx, dels []Deletion, userID stri
 		uuids, types, userID)
 	if err != nil {
 		return deleted, fmt.Errorf("record tombstones: %w", err)
-	}
-	return deleted, nil
-}
-
-// deleteQuantityByPK deletes quantity samples by full (uuid, start_ts)
-// primary key. The start_ts equality lets TimescaleDB prune both hypertable
-// chunks and compressed columnstore batches, so each delete decompresses at
-// most a few batches instead of the entire table.
-func deleteQuantityByPK(ctx context.Context, tx pgx.Tx, uuids []string, userID string) (int64, error) {
-	rows, err := tx.Query(ctx,
-		`SELECT uuid, start_ts FROM quantity_samples WHERE uuid = ANY($1::uuid[]) AND user_id = $2`, uuids, userID)
-	if err != nil {
-		return 0, err
-	}
-	var pkUUIDs []string
-	var pkStarts []time.Time
-	for rows.Next() {
-		var u string
-		var ts time.Time
-		if err := rows.Scan(&u, &ts); err != nil {
-			rows.Close()
-			return 0, err
-		}
-		pkUUIDs = append(pkUUIDs, u)
-		pkStarts = append(pkStarts, ts)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return 0, err
-	}
-
-	var deleted int64
-	for i := range pkUUIDs {
-		tag, err := tx.Exec(ctx,
-			`DELETE FROM quantity_samples WHERE uuid = $1 AND start_ts = $2`,
-			pkUUIDs[i], pkStarts[i])
-		if err != nil {
-			return deleted, err
-		}
-		deleted += tag.RowsAffected()
 	}
 	return deleted, nil
 }
