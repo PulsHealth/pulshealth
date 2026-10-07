@@ -14,7 +14,6 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
 import { AiChatPreview } from "@/components/ai-chat-preview";
 import { AnimatedWord } from "@/components/animated-word";
@@ -76,7 +75,7 @@ const steps = [
 ];
 
 /** The headline's first word cycles through these. */
-const heroWords = ["Unlock", "Explore", "Understand", "Analyze", "Export", "Own"];
+const heroWords = ["Unlock", "Explore", "Understand", "Analyze", "Export"];
 
 /** Demo rows for the database step of the figure. */
 const dbRows = [
@@ -202,78 +201,67 @@ export default async function HomePage() {
     <main className="flex min-h-screen flex-col">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
 
-      {/* Hero */}
-      <section className="w-full border-b bg-gradient-to-b from-background to-muted/40">
-        <div className="container mx-auto flex max-w-7xl flex-col items-center px-4 pb-16 pt-16 text-center md:pb-20 md:pt-24">
-          <Badge variant="outline" className="rounded-full bg-background/60 px-4 py-1 text-sm backdrop-blur-sm">
-            Free app &middot; Open source
-          </Badge>
-          <h1 className="mt-8 text-5xl font-bold tracking-tight text-foreground md:text-7xl">
-            <AnimatedWord words={heroWords} />
-            <br />
-            your health data
-          </h1>
-          <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-            A free iPhone app that keeps your whole Apple Health history in a database, so you
-            and your AI can work from your real numbers.
-          </p>
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-            <AppStoreBadge />
-            <Button asChild size="lg" variant="ghost">
-              <a href="#how-it-works">
-                How it works
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
-          </div>
-          <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            <li>No account needed</li>
-            <li>Read-only</li>
-            <li>No tracking</li>
-            <li>
+      {/* Hero: the headline, then what PulsHealth is, as one opening */}
+      <section className="w-full border-b bg-gradient-to-b from-background via-background to-muted/50">
+        <div className="container mx-auto max-w-7xl px-4 pb-20 pt-20 md:pt-28">
+          <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
+            <h1 className="text-[clamp(2.25rem,10.5vw,3.75rem)] font-bold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl xl:whitespace-nowrap xl:text-[5.25rem]">
+              <AnimatedWord words={heroWords} />{" "}
+              <br className="xl:hidden" />
+              your health data
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
+              A free iPhone app that keeps your whole Apple Health history in a database, so you
+              and your AI can work from your real numbers.
+            </p>
+            <AppStoreBadge className="mt-8 [&_img]:h-12" />
+            <p className="mt-5 flex flex-wrap items-center justify-center gap-x-2 text-sm text-muted-foreground">
+              <span>No account needed</span>
+              <span aria-hidden>&middot;</span>
+              <span>Read-only</span>
+              <span aria-hidden>&middot;</span>
               <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
                 <Star className="h-3.5 w-3.5" aria-hidden />
-                {starLabel ? `${starLabel} on GitHub` : "Open source on GitHub"}
+                {starLabel ? `${starLabel} on GitHub` : "Open source"}
               </a>
-            </li>
-          </ul>
+            </p>
+          </div>
+
+          <div id="how-it-works" className="mx-auto mt-20 max-w-6xl scroll-mt-20 md:mt-28">
+            <h2 className="mb-8 text-center text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+              How it works
+            </h2>
+            <ol className="grid gap-6 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-4">
+              {steps.map((step, i) => (
+                <Fragment key={step.title}>
+                  {i > 0 && (
+                    <li aria-hidden className="flex justify-center text-brand/60 lg:mt-[6.75rem] lg:items-start">
+                      <ArrowDown className="h-6 w-6 lg:hidden" />
+                      <ArrowRight className="hidden h-6 w-6 lg:block" />
+                    </li>
+                  )}
+                  <li className="min-w-0">
+                    <div className="relative h-60 overflow-hidden rounded-2xl border bg-card shadow-sm">
+                      {stepVisuals[i]}
+                    </div>
+                    <div className="mt-5 flex items-center gap-2.5">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-brand-foreground">
+                        {i + 1}
+                      </span>
+                      <h3 className="text-lg font-semibold">{step.title}</h3>
+                    </div>
+                    <p className="mt-2 text-muted-foreground text-pretty">{step.body}</p>
+                    <p className="mt-3 text-sm">{step.more}</p>
+                  </li>
+                </Fragment>
+              ))}
+            </ol>
+            <p className="mx-auto mt-12 max-w-2xl text-center text-sm text-muted-foreground">
+              All of it is open source under Apache-2.0, and the hosted database runs the same
+              code you can run yourself.
+            </p>
+          </div>
         </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="container mx-auto max-w-7xl scroll-mt-16 px-4 pb-20 pt-16">
-        <h2 className="mb-10 text-center text-3xl font-bold tracking-tight md:text-4xl">How it works</h2>
-
-        <ol className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-4">
-          {steps.map((step, i) => (
-            <Fragment key={step.title}>
-              {i > 0 && (
-                <li aria-hidden className="flex justify-center text-brand/60 lg:mt-[6.75rem] lg:items-start">
-                  <ArrowDown className="h-6 w-6 lg:hidden" />
-                  <ArrowRight className="hidden h-6 w-6 lg:block" />
-                </li>
-              )}
-              <li className="min-w-0">
-                <div className="relative h-60 overflow-hidden rounded-2xl border bg-card shadow-sm">
-                  {stepVisuals[i]}
-                </div>
-                <div className="mt-5 flex items-center gap-2.5">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-brand-foreground">
-                    {i + 1}
-                  </span>
-                  <h3 className="text-lg font-semibold">{step.title}</h3>
-                </div>
-                <p className="mt-2 text-muted-foreground text-pretty">{step.body}</p>
-                <p className="mt-3 text-sm">{step.more}</p>
-              </li>
-            </Fragment>
-          ))}
-        </ol>
-
-        <p className="mx-auto mt-14 max-w-2xl text-center text-sm text-muted-foreground">
-          All of it is open source under Apache-2.0, and the hosted database runs the same code
-          you can run yourself.
-        </p>
       </section>
 
       {/* What you get */}
