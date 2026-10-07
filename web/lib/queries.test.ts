@@ -339,7 +339,7 @@ describe("query semantics", () => {
 
     // Both users' scans ran, each bound to its own id, and the first user's
     // entry survived the second user's — same-instance from the TTL cache.
-    const scans = queryMock.mock.calls.filter(([sql]) => sql.includes("UNION ALL"));
+    const scans = queryMock.mock.calls.filter(([sql]) => sql.includes("FROM quantity_samples") && sql.includes("GROUP BY type_id"));
     expect(scans.map(([, params]) => params[0])).toEqual([USER_ID, OTHER]);
     expect(firstAgain).toBe(first);
     expect(second).not.toBe(first);
@@ -397,7 +397,7 @@ describe("a failed read", () => {
     try {
       const { DataUnavailableError, getSeries } = await import("./queries");
       queryMock.mockImplementation((sql: string) =>
-        sql.includes("UNION ALL") ? Promise.reject(new Error("statement timeout")) : Promise.resolve([]),
+        sql.includes("GROUP BY type_id") ? Promise.reject(new Error("statement timeout")) : Promise.resolve([]),
       );
       await expect(getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "ALL")).rejects.toBeInstanceOf(DataUnavailableError);
       // Logged once, by the stats read that failed, not again by the chart.
