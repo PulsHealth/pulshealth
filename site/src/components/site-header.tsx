@@ -4,12 +4,13 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { BookOpen, Briefcase, FileText, LogIn, Menu, PenLine, Star } from "lucide-react"
+import { BookOpen, Briefcase, FileText, LogIn, Menu, PenLine, Smartphone, Star } from "lucide-react"
 import { GitHubIcon } from "@/components/brand-icons"
 
 import { cn } from "@/lib/utils"
 import { GITHUB_URL, formatStars } from "@/lib/github"
 import { Button } from "@/components/ui/button"
+import { APP_STORE_URL } from "@/components/app-store-badge"
 import {
   Sheet,
   SheetContent,
@@ -25,19 +26,20 @@ type NavItem = {
   href: string
   description: string
   icon: typeof FileText
+  /** Other paths that belong to this item. */
+  also?: string[]
 }
 
 /**
  * Four items, all on-site. PulsHealth is one product, explained on the home
- * page, so the app and self-hosting pages are not tabs of their own: they are
- * linked from the home page's "How it works", the footer and the mobile
- * menu's "More". Docs are the way into the protocol, the AI setup and the
- * database manual; GitHub is the star pill on the right. Consulting is the
- * business behind the project and stays visible; About and Support live in
- * the footer.
+ * page, so the app has no page of its own and self-hosting is a guide inside
+ * Docs (`/server`, highlighted as Docs). Docs are the way into the protocol,
+ * the AI setup and the database manual; GitHub is the star pill and the App
+ * Store link the button on the right. Consulting is the business behind the
+ * project and stays visible; About and Support live in the footer.
  */
 const primary: NavItem[] = [
-  { title: "Docs", href: "/docs", description: "Setup, protocol, database, AI", icon: FileText },
+  { title: "Docs", href: "/docs", description: "Self-hosting, protocol, database, AI", icon: FileText, also: ["/server"] },
   { title: "Knowledge Base", href: "/knowledge-base", description: "What each Apple Health type measures", icon: BookOpen },
   { title: "Blog", href: "/blog", description: "Posts from the project", icon: PenLine },
   { title: "Consulting", href: "/consulting", description: "Help with health data and AI", icon: Briefcase },
@@ -47,7 +49,6 @@ const primary: NavItem[] = [
 const APP_URL = "https://app.pulshealth.com/"
 
 const secondary: { title: string; href: string }[] = [
-  { title: "The app", href: "/ios" },
   { title: "Self-hosting", href: "/server" },
   { title: "Support & FAQ", href: "/support" },
   { title: "About", href: "/about" },
@@ -58,7 +59,8 @@ export function SiteHeader({ stars }: { stars: number | null }) {
   const pathname = usePathname()
   const [open, setOpen] = React.useState(false)
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+  const matches = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+  const isActive = (item: NavItem) => [item.href, ...(item.also ?? [])].some(matches)
   const starLabel = formatStars(stars)
 
   return (
@@ -76,9 +78,9 @@ export function SiteHeader({ stars }: { stars: number | null }) {
               href={item.href}
               className={cn(
                 "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isActive(item.href) && "bg-accent/60 text-foreground",
+                isActive(item) && "bg-accent/60 text-foreground",
               )}
-              aria-current={isActive(item.href) ? "page" : undefined}
+              aria-current={isActive(item) ? "page" : undefined}
             >
               {item.title}
             </Link>
@@ -103,6 +105,11 @@ export function SiteHeader({ stars }: { stars: number | null }) {
           <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
             <a href={APP_URL}>Sign in</a>
           </Button>
+          <Button asChild size="sm" className="hidden lg:inline-flex">
+            <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+              Get the app
+            </a>
+          </Button>
           <ModeToggle />
 
           <Sheet open={open} onOpenChange={setOpen}>
@@ -125,7 +132,7 @@ export function SiteHeader({ stars }: { stars: number | null }) {
                       onClick={() => setOpen(false)}
                       className={cn(
                         "flex items-center gap-4 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        isActive(item.href) && "bg-accent/60",
+                        isActive(item) && "bg-accent/60",
                       )}
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
@@ -154,6 +161,12 @@ export function SiteHeader({ stars }: { stars: number | null }) {
                 </div>
 
                 <div className="mt-auto space-y-2 border-t pt-4">
+                  <Button asChild className="h-12 w-full text-base">
+                    <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
+                      <Smartphone className="mr-2 h-4 w-4" aria-hidden />
+                      Get the app
+                    </a>
+                  </Button>
                   <Button asChild variant="outline" className="h-12 w-full text-base">
                     <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
                       <GitHubIcon className="mr-2 h-4 w-4" />

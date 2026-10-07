@@ -19,7 +19,6 @@ export const faq: FaqItem[] = [
   {
     q: "Do I need a domain, a VPN or Tailscale?",
     a: "Not with the PulsHealth database: you connect the app to your account and that is all. For your own database, also no: on the same Wi-Fi the phone can sync to your database over plain HTTP; the app allows that for local-network addresses only. From anywhere else you need HTTPS, which means a TLS proxy or a VPN such as Tailscale in front of the ingest port.",
-    home: true,
   },
   {
     q: "Where does my data go?",
@@ -34,11 +33,14 @@ export const faq: FaqItem[] = [
   {
     q: "Can I sync to a database I already have?",
     a: "Yes, through a receiver for the Puls Sync Protocol v1, the wire format the app speaks. It is specified with a JSON Schema per line type, a fixture corpus, a conformance checker and a complete receiver in one Python file. Anything that speaks it is a valid destination.",
-    home: true,
   },
   {
     q: "How long does a first backfill take?",
     a: "It depends on the phone, not the database, because reading HealthKit is the slow part. The app includes a benchmark that reads real data without uploading it, so you can measure your own device first. Progress is saved after every confirmed batch, so you can interrupt it safely.",
+  },
+  {
+    q: "How is it different from other Apple Health exporters?",
+    a: "Three things together: the app and the database are both open source, the sync format is written down so anything can receive it, and the database can be hosted for you or run by you, with Claude connected either way. The About page compares it with Health Auto Export, HealthSave, FreeReps and Apple's own export.",
     home: true,
   },
   {
