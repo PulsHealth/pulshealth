@@ -13,6 +13,8 @@
 // Accounts mode wins when both are set: the shared password would otherwise
 // sit in front of a login that already identifies the person.
 
+import { isUuid } from "./uuid";
+
 export type ViewerMode = "accounts" | "basic" | "open";
 
 /** The environment, or a stand-in for it in tests. */
@@ -69,5 +71,33 @@ export function trustProxyHeaders(env: Env = process.env): boolean {
     return parseFlag("TRUST_PROXY_HEADERS", env.TRUST_PROXY_HEADERS);
   } catch {
     return false;
+  }
+}
+
+/**
+ * WEB_DEMO_USER read strictly: the user id lower-cased, null when empty or
+ * unset, and an error naming the variable for anything that is not a UUID
+ * (instrumentation.ts stops the viewer on it at startup).
+ */
+export function parseDemoUser(value: string | undefined): string | null {
+  const v = (value ?? "").trim();
+  if (v === "") return null;
+  if (!isUuid(v)) throw new Error(`WEB_DEMO_USER must be the demo user's UUID, got ${JSON.stringify(v)}`);
+  return v.toLowerCase();
+}
+
+/**
+ * The user whose account is the public demo (`/demo` signs visitors into
+ * it, view-only), or null when there is none. Accounts mode only; ignored in
+ * the others. The demo account is the auth.accounts row with this user_id,
+ * created by `make web-demo`. A malformed value stops the server at startup;
+ * should one reach a request anyway, it means "no demo", so /demo is a 404.
+ */
+export function demoUserId(env: Env = process.env): string | null {
+  if (viewerMode(env) !== "accounts") return null;
+  try {
+    return parseDemoUser(env.WEB_DEMO_USER);
+  } catch {
+    return null;
   }
 }

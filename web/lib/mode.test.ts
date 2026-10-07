@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isTrue, parseFlag, signupsOpen, trustProxyHeaders, viewerMode } from "./mode";
+import { demoUserId, isTrue, parseDemoUser, parseFlag, signupsOpen, trustProxyHeaders, viewerMode } from "./mode";
 
 describe("viewerMode", () => {
   it("is accounts when WEB_ACCOUNTS is on, whatever else is set", () => {
@@ -47,5 +47,22 @@ describe("viewerMode", () => {
     expect(signupsOpen({ WEB_ACCOUNTS: "true" })).toBe(false);
     expect(signupsOpen({ WEB_SIGNUPS: "true" })).toBe(false);
     expect(signupsOpen({ WEB_AUTH_PASSWORD: "pw", WEB_SIGNUPS: "true" })).toBe(false);
+  });
+
+  it("reads WEB_DEMO_USER as a UUID, only in accounts mode", () => {
+    const id = "0D3A0000-0000-4000-8000-0000000000AB";
+    expect(parseDemoUser(id)).toBe(id.toLowerCase());
+    expect(parseDemoUser(` ${id} `)).toBe(id.toLowerCase());
+    for (const empty of [undefined, "", "  "]) expect(parseDemoUser(empty), String(empty)).toBeNull();
+    for (const bad of ["demo", "0d3a0000-0000-4000-8000", `${id}x`, "'; DROP TABLE users; --"]) {
+      expect(() => parseDemoUser(bad), bad).toThrow(/^WEB_DEMO_USER must be the demo user's UUID/);
+    }
+    expect(demoUserId({ WEB_ACCOUNTS: "true", WEB_DEMO_USER: id })).toBe(id.toLowerCase());
+    expect(demoUserId({ WEB_ACCOUNTS: "true" })).toBeNull();
+    // Ignored outside accounts mode.
+    expect(demoUserId({ WEB_DEMO_USER: id })).toBeNull();
+    expect(demoUserId({ WEB_AUTH_PASSWORD: "pw", WEB_DEMO_USER: id })).toBeNull();
+    // At request time (startup already refused it) a malformed value is no demo.
+    expect(demoUserId({ WEB_ACCOUNTS: "true", WEB_DEMO_USER: "demo" })).toBeNull();
   });
 });

@@ -25,6 +25,8 @@ const ERRORS: Record<string, string> = {
   own_account: "You cannot disable or enable your own account here.",
   admin_account: "Administrators' accounts are managed from the server, not here.",
   none_selected: "No one was ticked. Tick the ones to decline first.",
+  demo: "Not available on the demo account. It shows sample data, and nothing about it can be changed.",
+  demo_busy: "Too many demo visits from your network. Try again in a few minutes.",
 };
 
 const NOTICES: Record<string, string> = {

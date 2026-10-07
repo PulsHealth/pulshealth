@@ -29,9 +29,9 @@ export async function requestSession(request: NextRequest): Promise<Session | nu
   return findSession(request.cookies.get(SESSION_COOKIE)?.value);
 }
 
-/** Puts a new session's token in the cookie. */
-export function setSessionCookie(response: NextResponse, token: string): NextResponse {
-  response.cookies.set(SESSION_COOKIE, token, sessionCookieAttributes());
+/** Puts a new session's token in the cookie (`maxAge` seconds; 30 days by default). */
+export function setSessionCookie(response: NextResponse, token: string, maxAge?: number): NextResponse {
+  response.cookies.set(SESSION_COOKIE, token, sessionCookieAttributes(maxAge));
   return response;
 }
 
