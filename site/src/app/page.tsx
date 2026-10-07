@@ -65,7 +65,7 @@ const steps = [
   },
   {
     title: "You and your AI use it",
-    body: "Browse it in the web viewer, ask Claude about it, or pull it into a notebook or spreadsheet.",
+    body: "Browse it in the web viewer, ask your AI about it, or pull it into a notebook or spreadsheet.",
     more: (
       <Link href="/docs/ai" className={`inline-flex items-center ${textLink}`}>
         Connect an assistant <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -73,6 +73,9 @@ const steps = [
     ),
   },
 ];
+
+/** AI clients named in the "Ask your AI" row; any MCP client works. */
+const aiClients = ["Claude", "ChatGPT", "Cursor", "Qwen", "Any MCP client"];
 
 /** The headline's first word cycles through these. */
 const heroWords = ["Unlock", "Explore", "Understand", "Analyze", "Export"];
@@ -344,9 +347,16 @@ export default async function HomePage() {
             visual={<AiChatPreview />}
           >
             <p>
-              Add PulsHealth to Claude, sign in and tap Allow. It reads your data and cannot change
-              it.
+              PulsHealth comes with an MCP server, so any AI agent that speaks MCP can use your
+              data. Connect it and sign in; it reads your data and cannot change it.
             </p>
+            <ul className="flex flex-wrap gap-2 text-sm" aria-label="Works with">
+              {aiClients.map((client) => (
+                <li key={client} className="rounded-full border bg-background px-3 py-1 text-foreground">
+                  {client}
+                </li>
+              ))}
+            </ul>
             <p>
               It already knows the hard parts: units, your time zone, and steps counted twice by
               iPhone and Watch.

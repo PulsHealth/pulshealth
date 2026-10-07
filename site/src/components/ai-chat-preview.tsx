@@ -92,7 +92,7 @@ export function AiChatPreview() {
         </div>
       </div>
       <figcaption className="mt-3 text-center text-xs text-muted-foreground">
-        An example with demo data. Works with Claude and other MCP clients.
+        An example with demo data. Works with any AI agent that speaks MCP.
       </figcaption>
     </figure>
   );

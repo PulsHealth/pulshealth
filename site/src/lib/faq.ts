@@ -26,8 +26,8 @@ export const faq: FaqItem[] = [
     home: true,
   },
   {
-    q: "How do I connect Claude?",
-    a: "On the PulsHealth database, add it as a custom connector in the Claude app or claude.ai, or with one command in Claude Code, then sign in and tap Allow. On your own database, run the MCP server that ships with the stack. Either way the assistant can read your data and change nothing. The AI guide in the documentation has the steps.",
+    q: "Which AI can I connect?",
+    a: "Any AI agent that speaks MCP: PulsHealth ships an MCP server, so Claude, ChatGPT, Cursor, Qwen and other MCP clients can read your data. On the PulsHealth database, add it as a connector, sign in and allow access; on your own database, run the MCP server that ships with the stack. ChatGPT can also use the product API as a custom GPT Action. Either way the assistant can read your data and change nothing. The AI guide in the documentation has the steps for each client.",
     home: true,
   },
   {

@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://pulshealth.com'),
   title: "PulsHealth - Your Apple Health Data, Ready for You and Your AI",
-  description: "A free, open-source iPhone app that keeps your whole Apple Health history in a database, hosted for you or run by you, so you and Claude can work from your real numbers. Read-only, no tracking, Apache-2.0.",
+  description: "A free, open-source iPhone app that keeps your whole Apple Health history in a database, hosted for you or run by you, so you and your AI can work from your real numbers. Read-only, no tracking, Apache-2.0.",
   alternates: {
     canonical: '/',
     types: {
