@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check, Minus } from "lucide-react";
 import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/page-hero";
@@ -14,6 +14,27 @@ export const metadata = {
     canonical: "/about/",
   },
 };
+
+type Cell = boolean | string;
+
+/** Moved here from the home page: the detail for anyone comparing apps. */
+const comparison: { name: string; href?: string; cells: Cell[] }[] = [
+  { name: "PulsHealth", cells: [true, true, "Apache-2.0", "Hosted for you, or your Postgres", true, true, "Free app"] },
+  { name: "Health Auto Export", href: "https://www.healthyapps.dev/", cells: [false, "Community receivers", "Closed", "Your endpoint, Drive, MQTT…", "Community-documented", false, "Subscription"] },
+  { name: "HealthSave", href: "https://healthsave.app/", cells: [false, "Source-available", "Elastic 2.0", "Your TimescaleDB", false, false, "One-time"] },
+  { name: "FreeReps", href: "https://freereps.meltforce.org/", cells: [true, true, "MIT", "Your server (Tailscale)", false, true, "Free"] },
+  { name: "Apple's export", cells: [false, false, "—", "A zip of XML", false, false, "Free"] },
+];
+const comparisonColumns = ["Open-source app", "Open-source backend", "License", "Where data lives", "Wire format specified", "AI assistant access", "Price"];
+
+function CellValue({ value }: { value: Cell }) {
+  if (value === true) return <Check className="mx-auto h-4 w-4 text-brand" aria-label="Yes" />;
+  if (value === false) return <Minus className="mx-auto h-4 w-4 text-muted-foreground/60" aria-label="No" />;
+  return <span className="text-muted-foreground">{value}</span>;
+}
+
+const prose =
+  "prose prose-lg mx-auto max-w-3xl dark:prose-invert prose-a:text-brand prose-a:no-underline hover:prose-a:underline";
 
 export default function AboutPage() {
   return (
@@ -30,15 +51,15 @@ export default function AboutPage() {
           </a>
         </Button>
         <Button asChild size="lg" variant="outline">
-          <Link href="/#ways">
-            Ways to Use It
+          <Link href="/#how-it-works">
+            How It Works
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
       </PageHero>
 
       <section className="container mx-auto max-w-7xl px-4 py-20">
-        <div className="prose prose-lg mx-auto max-w-3xl dark:prose-invert prose-a:text-brand prose-a:no-underline hover:prose-a:underline">
+        <div className={prose}>
           <h2>Why it exists</h2>
           <p>
             Apple Health keeps years of your data behind an API that only apps on your phone can
@@ -96,7 +117,60 @@ export default function AboutPage() {
             </li>
             <li>Not a medical device. It moves data; it does not interpret it.</li>
           </ul>
+        </div>
 
+        <div className="mx-auto mt-16 max-w-5xl">
+          <div className="mx-auto max-w-3xl">
+            <h2 id="compared" className="scroll-mt-24 text-3xl font-bold tracking-tight">
+              Compared with the alternatives
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Other ways to get Apple Health out of the phone, and where they differ.
+            </p>
+          </div>
+          <div className="mt-8 overflow-x-auto rounded-xl border bg-card">
+            <table className="w-full min-w-[820px] text-sm">
+              <thead>
+                <tr className="border-b bg-muted/40 text-left">
+                  <th className="px-4 py-3 font-semibold">&nbsp;</th>
+                  {comparisonColumns.map((col) => (
+                    <th key={col} className="px-4 py-3 text-center font-semibold">{col}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {comparison.map((row) => (
+                  <tr key={row.name} className={`border-b last:border-0 ${row.name === "PulsHealth" ? "bg-brand-muted/40" : ""}`}>
+                    <th scope="row" className="px-4 py-3 text-left font-medium">
+                      {row.href ? (
+                        <a href={row.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                          {row.name}
+                        </a>
+                      ) : (
+                        row.name
+                      )}
+                    </th>
+                    {row.cells.map((cell, i) => (
+                      <td key={i} className="px-4 py-3 text-center">
+                        <CellValue value={cell} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Checked in September 2026 against each project&apos;s public site. If something here is
+            out of date,{" "}
+            <a href={`${GITHUB}/issues`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
+              open an issue
+            </a>{" "}
+            and it will be corrected.
+          </p>
+        </div>
+
+        <div className={`${prose} mt-16`}>
           <h2>How to help</h2>
           <p>
             Try it and report what breaks. Implement the protocol against your own backend and
