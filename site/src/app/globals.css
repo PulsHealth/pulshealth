@@ -182,17 +182,19 @@
 /*
  * rehype-pretty-code with a {light, dark} theme pair emits both palettes on
  * every token as --shiki-light / --shiki-dark and marks the <code> with
- * data-theme="light dark"; pick one per colour scheme. Blog posts use a
- * single theme (no space in data-theme), so they are untouched.
+ * data-theme="light dark"; pick one per colour scheme. Plain-text blocks
+ * and unstyled tokens carry no variables, so they fall back to the text
+ * colour (without it they inherited prose's near-white pre colour). Blog
+ * posts use a single theme (no space in data-theme), so they are untouched.
  */
 code[data-theme*=" "],
 code[data-theme*=" "] span {
-  color: var(--shiki-light);
+  color: var(--shiki-light, var(--foreground));
 }
 
 .dark code[data-theme*=" "],
 .dark code[data-theme*=" "] span {
-  color: var(--shiki-dark);
+  color: var(--shiki-dark, var(--foreground));
 }
 
 /* Code blocks in documents rendered from the repository (/docs, /privacy) */
