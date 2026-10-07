@@ -104,8 +104,11 @@ describe("query semantics", () => {
     const calls = queryMock.mock.calls.filter(([sql]) => sql !== "SELECT 1");
     expect(calls.some(([sql]) => sql.includes("metric_daily"))).toBe(false);
     const [sql, params] = calls.find(([text]) => text.includes("FROM quantity_samples")) ?? [];
-    expect(sql).toContain("max(total)");
-    expect(sql).toContain("(now() AT TIME ZONE $3::text)::date");
+    expect(sql).toContain("max(p.total)");
+    // Local midnights as timestamptz, not the `timestamp` that
+    // `date AT TIME ZONE` gives (read in the session's zone, UTC).
+    expect(sql).toContain("((now() AT TIME ZONE $3::text)::date::timestamp AT TIME ZONE $3::text)");
+    expect(sql).toContain("(((now() AT TIME ZONE $3::text)::date + 1)::timestamp AT TIME ZONE $3::text)");
     expect(params).toEqual([
       ["HKQuantityTypeIdentifierStepCount"], USER_ID, "America/Los_Angeles",
     ]);
@@ -272,6 +275,33 @@ describe("query semantics", () => {
 
     const cumulativeSql = healthCalls.find(([sql]) => sql.includes("WITH per_source") && sql.includes("truth AS"))?.[0];
     expect(cumulativeSql).toBeTruthy();
+  });
+
+  it("filters the sample tables only in ways a security-barrier view takes in", async () => {
+    // As web_app every sample table is a security-barrier view: a join
+    // condition, or a timestamptz compared with a `timestamp`, stays outside
+    // it, and the read scans every chunk (seconds instead of milliseconds).
+    const queries = await import("./queries");
+    for (const range of ["D", "30D", "Y"] as const) {
+      await queries.getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", range);
+      await queries.getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", range);
+      await queries.getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", range);
+      await queries.getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", range);
+    }
+    await queries.getLatestMany(USER_ID, ["HKQuantityTypeIdentifierHeartRate"]);
+    await queries.getTodayTotals(USER_ID, ["HKQuantityTypeIdentifierStepCount"]);
+    await queries.getDailySparklines(USER_ID, ["HKQuantityTypeIdentifierStepCount", "HKQuantityTypeIdentifierHeartRate"]);
+    vi.resetModules();
+    await (await import("./queries")).getStats(USER_ID);
+
+    const sampleSql = scopedStatements.map((s) => s.sql).filter((sql) => /(quantity|category)_samples/.test(sql));
+    expect(sampleSql.length).toBeGreaterThan(10);
+    for (const sql of sampleSql) {
+      expect(sql, sql).not.toMatch(/JOIN sample_types \w+ ON \w+\.type_id = [qc]\.type_id/);
+      // `date AT TIME ZONE` (also after `+ 1` or `- n`) is a `timestamp`.
+      expect(sql, sql).not.toMatch(/::date(\s*[-+]\s*[$\w:]+\))?\s+AT TIME ZONE/);
+      expect(sql, sql).not.toContain("UNION ALL");
+    }
   });
 
   it("never opens a second connection from inside a scoped transaction", async () => {

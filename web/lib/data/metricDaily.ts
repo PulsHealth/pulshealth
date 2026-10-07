@@ -1,12 +1,11 @@
 // When charts may read metric_daily, the database's canonical daily view,
 // instead of rolling raw samples up themselves.
 
-import { query, type QueryFn } from "../db";
+import { query } from "../db";
 import { configuredTimeZone } from "../config";
 import { warnOnce } from "./source";
 
 export const DAY_MS = 86_400_000;
-export const NO_TYPES: ReadonlySet<string> = new Set();
 
 // The database's own calendar zone. `puls_time_zone()` returns the server
 // stack's PULS_TIME_ZONE (stored on the database by db/migrations/013_time_zone.sh;
@@ -65,31 +64,4 @@ export async function metricDailyUsable(): Promise<boolean> {
     );
   }
   return false;
-}
-
-// Types for which a user actually has canonical metric_daily rows. The view
-// is daily-grain, so callers use it only for day-or-coarser buckets. Querying
-// the view itself avoids treating min/max/mostRecent-only aggregate configs as
-// daily truth. Cached briefly, per user, to avoid a round-trip per query —
-// keyed by user so two people alternating in the switcher do not evict each
-// other's entry. Runs on the caller's scoped connection; the caller decides
-// first, outside its transaction, whether metric_daily is usable at all.
-const mdTypesCache = new Map<string, { set: Set<string>; at: number }>();
-const mdTypesInFlight = new Map<string, Promise<Set<string>>>();
-export async function metricDailyTypes(q: QueryFn, userId: string): Promise<Set<string>> {
-  const cached = mdTypesCache.get(userId);
-  if (cached && Date.now() - cached.at < 60_000) return cached.set;
-  const inFlight = mdTypesInFlight.get(userId);
-  if (inFlight) return inFlight;
-  const promise = q<{ identifier: string }>(
-    `SELECT DISTINCT identifier FROM metric_daily WHERE user_id = $1::uuid`, [userId],
-  ).then((rows) => new Set(rows.map((row) => row.identifier)));
-  mdTypesInFlight.set(userId, promise);
-  try {
-    const set = await promise;
-    mdTypesCache.set(userId, { set, at: Date.now() });
-    return set;
-  } finally {
-    if (mdTypesInFlight.get(userId) === promise) mdTypesInFlight.delete(userId);
-  }
 }

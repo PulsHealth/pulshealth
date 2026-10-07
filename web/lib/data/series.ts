@@ -3,14 +3,24 @@
 // issues its statements through that callback's `q` only; anything that reads
 // through `query()` (the metric_daily zone gate, All Time's stats) is decided
 // before the transaction opens.
+//
+// In accounts mode every table here is a security-barrier view (schema web,
+// 015_web_accounts.sql), and Postgres pushes a caller's condition into one
+// only when it is leakproof — never a join condition, and never a comparison
+// between a timestamptz column and a `timestamp`. A filter that stays outside
+// the view reaches neither the chunk exclusion nor the indexes: a read that
+// takes milliseconds as grafana scans every chunk as web_app. So a type is
+// picked with `type_id = (SELECT … FROM sample_types …)` (an InitPlan, a
+// constant by the time the scan starts), not with a join on sample_types,
+// and every time bound is a timestamptz.
 
-import { scoped } from "../db";
+import { scoped, type QueryFn } from "../db";
 import { typeByIdentifier } from "../catalog";
 import { configuredTimeZone } from "../config";
 import { defaultAgg, RANGES, resolvePresetWindow } from "../metrics";
 import { demoLatest, demoSeries, demoTodaySum } from "../demo";
 import type { Latest, RangeKey, Series, SeriesPoint } from "../types";
-import { DAY_MS, metricDailyTypes, metricDailyUsable, NO_TYPES } from "./metricDaily";
+import { DAY_MS, metricDailyUsable } from "./metricDaily";
 import { liveRead } from "./source";
 import { getStats } from "./stats";
 
@@ -107,8 +117,7 @@ export async function getSeries(userId: string, identifier: string, range: Range
                       c.source_id,
                       (sum(extract(epoch from (c.end_ts - c.start_ts))) / ${divisor}.0)::float8 AS value
                  FROM category_samples c
-                 JOIN sample_types st ON st.type_id = c.type_id
-                WHERE st.identifier = $2
+                WHERE c.type_id = (SELECT type_id FROM sample_types WHERE identifier = $2)
                   AND c.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)${unshift}
                   AND c.user_id = $4::uuid
                   ${valueFilter}
@@ -130,8 +139,7 @@ export async function getSeries(userId: string, identifier: string, range: Range
           `SELECT (extract(epoch from time_bucket($1::interval, c.start_ts, $5::text)) * 1000)::bigint AS t,
                   count(*)::int AS n
              FROM category_samples c
-             JOIN sample_types st ON st.type_id = c.type_id
-            WHERE st.identifier = $2
+            WHERE c.type_id = (SELECT type_id FROM sample_types WHERE identifier = $2)
               AND c.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)
               AND c.user_id = $4::uuid
               ${valueFilter}
@@ -149,9 +157,10 @@ export async function getSeries(userId: string, identifier: string, range: Range
       // where one was uploaded, else the raw rollup — so a day the phone has not
       // aggregated yet (today, or anything past its watermark) still shows.
       // metric_daily is daily-grain, so the intraday (Day) view falls through
-      // to raw samples below.
-      const mdTypes = dailyUsable ? await metricDailyTypes(q, userId) : NO_TYPES;
-      if (mdTypes.has(identifier) && bucketMs >= DAY_MS) {
+      // to raw samples below, and so does a type it does not cover (no daily
+      // sum or average series configured): it has no rows there, and asking
+      // costs about a millisecond (009_metric_daily.sql takes the type filter).
+      if (dailyUsable && bucketMs >= DAY_MS) {
         const params: unknown[] = [bucket, identifier, from, userId, timeZone];
         const rows = await q<{ t: string; value: number }>(
           `SELECT (extract(epoch from time_bucket($1::interval, day::timestamp AT TIME ZONE $5::text, $5::text)) * 1000)::bigint AS t,
@@ -163,14 +172,16 @@ export async function getSeries(userId: string, identifier: string, range: Range
             GROUP BY 1 ORDER BY 1`,
           params,
         );
-        const points: SeriesPoint[] = rows.map((r) => ({
-          t: Number(r.t),
-          value: Number(r.value) || 0,
-          min: null,
-          max: null,
-          count: 0,
-        }));
-        return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
+        if (rows.length) {
+          const points: SeriesPoint[] = rows.map((r) => ({
+            t: Number(r.t),
+            value: Number(r.value) || 0,
+            min: null,
+            max: null,
+            count: 0,
+          }));
+          return { identifier, unit: type?.unit ?? null, agg, bucketMs, points };
+        }
       }
 
       // Raw cumulative samples often overlap across iPhone and Watch. Establish
@@ -188,8 +199,7 @@ export async function getSeries(userId: string, identifier: string, range: Range
                     q.source_id,
                     sum(q.value)::float8 AS value
                FROM quantity_samples q
-               JOIN sample_types st ON st.type_id = q.type_id
-              WHERE st.identifier = $3
+              WHERE q.type_id = (SELECT type_id FROM sample_types WHERE identifier = $3)
                 AND q.start_ts >= time_bucket($1::interval, $4::timestamptz, $6::text)
                 AND q.user_id = $5::uuid
               GROUP BY 1, q.source_id
@@ -219,8 +229,7 @@ export async function getSeries(userId: string, identifier: string, range: Range
                   max(q.value)::float8 AS max,
                   count(*)::int AS n
              FROM quantity_samples q
-             JOIN sample_types st ON st.type_id = q.type_id
-            WHERE st.identifier = $2
+            WHERE q.type_id = (SELECT type_id FROM sample_types WHERE identifier = $2)
               AND q.start_ts >= time_bucket($1::interval, $3::timestamptz, $5::text)
               AND q.user_id = $4::uuid
             GROUP BY 1 ORDER BY 1`,
@@ -240,21 +249,43 @@ export async function getSeries(userId: string, identifier: string, range: Range
 }
 
 // ── latest reading per type ──────────────────────────────────────────────
+// Through a security-barrier view Postgres will not read a hypertable newest
+// chunk first for ORDER BY … LIMIT 1, so an open-ended probe sorts every
+// sample of the type (1.2 M heart-rate readings: 0.1–0.4 s). A probe bounded
+// to the last fortnight touches only the newest chunks; a type with nothing
+// that recent is sparse, and gets the open-ended probe cheaply.
+const LATEST_RECENT_DAYS = 14;
+
 export async function getLatestMany(userId: string, identifiers: string[]): Promise<Map<string, Latest>> {
   const out = new Map<string, Latest>();
   if (!identifiers.length) return out;
   return liveRead("getLatestMany", () => new Map(identifiers.map((id) => [id, demoLatest(id)])), async () => {
-    const rows = await scoped(userId, (q) => q<{ identifier: string; value: number; t: string }>(
-      `SELECT DISTINCT ON (st.identifier)
-              st.identifier, q.value::float8 AS value,
-              (extract(epoch from q.start_ts) * 1000)::bigint AS t
-         FROM quantity_samples q
-         JOIN sample_types st ON st.type_id = q.type_id
-        WHERE st.identifier = ANY($1::text[])
-          AND q.user_id = $2::uuid
-        ORDER BY st.identifier, q.start_ts DESC`,
-      [identifiers, userId],
-    ));
+    // One probe per type: the type reaches the scan as an outer reference of
+    // the LATERAL, which a security-barrier view accepts (a DISTINCT ON over
+    // a join read every sample there is).
+    const latest = (q: QueryFn, ids: string[], recentDays: number | null) =>
+      q<{ identifier: string; value: number; t: string }>(
+        `SELECT st.identifier, l.value, l.t
+           FROM sample_types st
+          CROSS JOIN LATERAL (
+            SELECT q.value::float8 AS value,
+                   (extract(epoch from q.start_ts) * 1000)::bigint AS t
+              FROM quantity_samples q
+             WHERE q.type_id = st.type_id
+               AND q.user_id = $2::uuid
+               ${recentDays == null ? "" : "AND q.start_ts >= now() - make_interval(days => $3::int)"}
+             ORDER BY q.start_ts DESC
+             LIMIT 1
+          ) l
+          WHERE st.identifier = ANY($1::text[])`,
+        recentDays == null ? [ids, userId] : [ids, userId, recentDays],
+      );
+    const rows = await scoped(userId, async (q) => {
+      const recent = await latest(q, identifiers, LATEST_RECENT_DAYS);
+      const found = new Set(recent.map((r) => r.identifier));
+      const older = identifiers.filter((id) => !found.has(id));
+      return older.length ? [...recent, ...(await latest(q, older, null))] : recent;
+    });
     for (const r of rows) {
       out.set(r.identifier, {
         identifier: r.identifier,
@@ -278,20 +309,24 @@ export async function getTodayTotals(userId: string, identifiers: string[]): Pro
     // Read Today directly from raw local-day samples so the live headline does
     // not depend on aggregate refresh or bucket-settlement timing. Choose one
     // source per type to avoid overlapping Watch/phone totals.
+    //
+    // The bounds are local midnights as timestamptz: `date AT TIME ZONE`
+    // alone yields a `timestamp`, which the comparison reads in the session's
+    // zone (UTC on the server), so Today ran 10:00 to 10:00 in California.
     const rows = await scoped(userId, (q) => q<{ identifier: string; total: number }>(
       `WITH per_source AS (
-         SELECT st.identifier, q.source_id, sum(q.value)::float8 AS total
+         SELECT q.type_id, q.source_id, sum(q.value)::float8 AS total
            FROM quantity_samples q
-           JOIN sample_types st ON st.type_id = q.type_id
-          WHERE st.identifier = ANY($1::text[])
+          WHERE q.type_id = ANY (ARRAY(SELECT type_id FROM sample_types WHERE identifier = ANY($1::text[])))
             AND q.user_id = $2::uuid
-            AND q.start_ts >= ((now() AT TIME ZONE $3::text)::date AT TIME ZONE $3::text)
-            AND q.start_ts < (((now() AT TIME ZONE $3::text)::date + 1) AT TIME ZONE $3::text)
-          GROUP BY st.identifier, q.source_id
+            AND q.start_ts >= ((now() AT TIME ZONE $3::text)::date::timestamp AT TIME ZONE $3::text)
+            AND q.start_ts < (((now() AT TIME ZONE $3::text)::date + 1)::timestamp AT TIME ZONE $3::text)
+          GROUP BY q.type_id, q.source_id
        )
-       SELECT identifier, max(total)::float8 AS total
-         FROM per_source
-        GROUP BY identifier`,
+       SELECT st.identifier, max(p.total)::float8 AS total
+         FROM per_source p
+         JOIN sample_types st ON st.type_id = p.type_id
+        GROUP BY st.identifier`,
       [identifiers, userId, timeZone],
     ));
     for (const r of rows) out.set(r.identifier, Number(r.total));
@@ -311,15 +346,11 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
     // Decided before the transaction (it reads through query()).
     const dailyUsable = await metricDailyUsable();
     return await scoped(userId, async (q) => {
-      const mdTypes = dailyUsable ? await metricDailyTypes(q, userId) : NO_TYPES;
-      const mdIds = identifiers.filter((id) => mdTypes.has(id));
-      const rawIds = identifiers.filter((id) => !mdTypes.has(id));
-      const rawCumIds = rawIds.filter((id) => defaultAgg(id) === "sum");
-      const rawDiscIds = rawIds.filter((id) => defaultAgg(id) === "avg");
       const timeZone = configuredTimeZone();
 
-      // Covered types: daily best-guess-of-truth.
-      if (mdIds.length) {
+      // Covered types: daily best-guess-of-truth. A type metric_daily has no
+      // rows for (not covered, or nothing in the window) reads raw samples.
+      if (dailyUsable) {
         const rows = await q<{ identifier: string; value: number }>(
           `SELECT identifier,
                   (extract(epoch from (day::timestamp AT TIME ZONE $4::text)) * 1000)::bigint AS t,
@@ -329,7 +360,7 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
               AND user_id = $3::uuid
               AND day >= (now() AT TIME ZONE $4::text)::date - $2::int
             ORDER BY identifier, day`,
-          [mdIds, days, userId, timeZone],
+          [identifiers, days, userId, timeZone],
         );
         for (const r of rows) {
           const arr = byId.get(r.identifier) ?? [];
@@ -337,27 +368,30 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
           byId.set(r.identifier, arr);
         }
       }
+      const rawIds = identifiers.filter((id) => !byId.has(id));
+      const rawCumIds = rawIds.filter((id) => defaultAgg(id) === "sum");
+      const rawDiscIds = rawIds.filter((id) => defaultAgg(id) === "avg");
 
       // Cumulative raw data: one source per local day to avoid Watch + phone
       // double counts. Discrete readings remain a cross-source average.
       if (rawCumIds.length) {
         const rows = await q<{ identifier: string; value: number }>(
           `WITH per_source AS (
-             SELECT st.identifier,
+             SELECT q.type_id,
                     time_bucket('1 day', q.start_ts, $4::text) AS day,
                     q.source_id,
                     sum(q.value)::float8 AS value
                FROM quantity_samples q
-               JOIN sample_types st ON st.type_id = q.type_id
-              WHERE st.identifier = ANY($1::text[])
+              WHERE q.type_id = ANY (ARRAY(SELECT type_id FROM sample_types WHERE identifier = ANY($1::text[])))
                 AND q.user_id = $3::uuid
-                AND q.start_ts >= (((now() AT TIME ZONE $4::text)::date - $2::int) AT TIME ZONE $4::text)
-              GROUP BY st.identifier, day, q.source_id
+                AND q.start_ts >= (((now() AT TIME ZONE $4::text)::date - $2::int)::timestamp AT TIME ZONE $4::text)
+              GROUP BY q.type_id, day, q.source_id
            )
-           SELECT identifier, max(value)::float8 AS value
-             FROM per_source
-            GROUP BY identifier, day
-            ORDER BY identifier, day`,
+           SELECT st.identifier, max(p.value)::float8 AS value
+             FROM per_source p
+             JOIN sample_types st ON st.type_id = p.type_id
+            GROUP BY st.identifier, p.day
+            ORDER BY st.identifier, p.day`,
           [rawCumIds, days, userId, timeZone],
         );
         for (const r of rows) {
@@ -369,14 +403,17 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
 
       if (rawDiscIds.length) {
         const rows = await q<{ identifier: string; value: number }>(
-          `SELECT st.identifier, avg(q.value)::float8 AS value
-             FROM quantity_samples q
-             JOIN sample_types st ON st.type_id = q.type_id
-            WHERE st.identifier = ANY($1::text[])
-              AND q.user_id = $3::uuid
-              AND q.start_ts >= (((now() AT TIME ZONE $4::text)::date - $2::int) AT TIME ZONE $4::text)
-            GROUP BY st.identifier, time_bucket('1 day', q.start_ts, $4::text)
-            ORDER BY st.identifier, time_bucket('1 day', q.start_ts, $4::text)`,
+          `SELECT st.identifier, d.value
+             FROM (
+               SELECT q.type_id, time_bucket('1 day', q.start_ts, $4::text) AS day, avg(q.value)::float8 AS value
+                 FROM quantity_samples q
+                WHERE q.type_id = ANY (ARRAY(SELECT type_id FROM sample_types WHERE identifier = ANY($1::text[])))
+                  AND q.user_id = $3::uuid
+                  AND q.start_ts >= (((now() AT TIME ZONE $4::text)::date - $2::int)::timestamp AT TIME ZONE $4::text)
+                GROUP BY q.type_id, day
+             ) d
+             JOIN sample_types st ON st.type_id = d.type_id
+            ORDER BY st.identifier, d.day`,
           [rawDiscIds, days, userId, timeZone],
         );
         for (const r of rows) {
