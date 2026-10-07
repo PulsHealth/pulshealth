@@ -31,6 +31,7 @@ export default async function ConnectPage({ searchParams }: { searchParams: Sear
       <button type="submit" className="btn btn-primary btn-block">Connect this iPhone</button>
     </form>
     <form method="post" action="/api/auth/logout" style={{ marginTop: 16 }}>
+      <input type="hidden" name="next" value="/connect/iphone" />
       <button type="submit" className="btn">Sign out to use a different account</button>
     </form>
   </AuthCard>;

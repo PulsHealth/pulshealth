@@ -103,6 +103,7 @@ describe("personal phone pairing", () => {
     const html = renderToStaticMarkup(createElement(() => element));
     expect(html).toContain('action="/api/auth/connect-iphone"');
     expect(html).toContain("Save &amp; Apply before Health data is uploaded");
+    expect(html).toContain('name="next" value="/connect/iphone"');
     for (const fn of Object.values(lookups)) expect(fn).not.toHaveBeenCalled();
   });
 

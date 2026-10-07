@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 
-import { accountsOnly, clearSessionCookie, seeOther } from "@/lib/accounts/http";
+import { accountsOnly, clearSessionCookie, field, readForm, seeOther } from "@/lib/accounts/http";
 import { deleteSession, SESSION_COOKIE, tokenHash } from "@/lib/accounts/session";
+import { safeReturnPath } from "@/lib/viewer";
 
 // Sign out: the session row is deleted (not just the cookie), so a copy of
 // the cookie stops working too. Reachable without a live session — signing
@@ -20,5 +21,6 @@ export async function POST(request: NextRequest) {
       console.error("[puls-web] sign-out could not delete the session:", e instanceof Error ? e.message : e);
     }
   }
-  return clearSessionCookie(seeOther("/login?notice=signed-out"));
+  const next = safeReturnPath(field(await readForm(request), "next"));
+  return clearSessionCookie(seeOther(`/login?notice=signed-out${next === "/" ? "" : `&next=${encodeURIComponent(next)}`}`));
 }
