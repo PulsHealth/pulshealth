@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AppStoreBadge } from "@/components/app-store-badge";
+import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
 import { AiChatPreview } from "@/components/ai-chat-preview";
 import { getAllTypes } from "@/lib/api";
 import { faq } from "@/lib/faq";
@@ -22,6 +22,22 @@ import { GITHUB_URL, formatStars, getRepoStats } from "@/lib/github";
 
 /** The hosted database's sign-up page, on the viewer's origin. */
 const SIGNUP_URL = "https://app.pulshealth.com/signup";
+
+/** The app's structured data; the home page is the app's page now. */
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "PulsHealth",
+  operatingSystem: "iOS 17 or later",
+  applicationCategory: "HealthApplication",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  installUrl: APP_STORE_URL,
+  license: "https://www.apache.org/licenses/LICENSE-2.0",
+  codeRepository: GITHUB_URL,
+  isAccessibleForFree: true,
+  description:
+    "Explores and exports Apple Health with no account, and syncs it, read-only, to a database hosted for you or run by you. Full historical backfill, then continuous background sync.",
+};
 
 const textLink = "font-medium text-brand underline-offset-4 hover:underline";
 
@@ -131,6 +147,8 @@ export default async function HomePage() {
 
   return (
     <main className="flex min-h-screen flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
+
       {/* Hero */}
       <section className="w-full overflow-hidden border-b bg-gradient-to-b from-background to-muted/40">
         <div className="container mx-auto grid max-w-7xl items-center gap-14 px-4 pb-20 pt-16 lg:grid-cols-[1.1fr_1fr] lg:pb-24 lg:pt-24">
