@@ -362,7 +362,9 @@ set. Without them the suites skip, unless `PULS_CI_REQUIRE_INTEGRATION=1` (or
 `WEB_DEMO_USER=<uuid>` (accounts mode only) opens a public demo:
 `https://<viewer>/demo` signs anyone straight into one shared account, with no
 password, so they can browse every page with sample data. The user must hold
-only sample data, loaded however you like with its own sync token. Setup:
+only sample data, loaded with its own sync token —
+[`scripts/demo-data/`](../scripts/demo-data/README.md) makes a de-identified
+copy of someone's recent history and keeps it current. Setup:
 
 ```bash
 make issue-device NAME='Demo data' ARGS='--user <uuid>'   # creates the user; the loader's token
