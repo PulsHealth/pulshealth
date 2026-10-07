@@ -150,7 +150,7 @@ export default async function DocPage({ params }: PageProps) {
                 <ArrowLeft className="h-3.5 w-3.5" />
                 All documentation
               </Link>
-              <DocsNav current={doc.slug} />
+              <DocsNav current={docHref(doc.slug)} />
             </div>
           </aside>
 
@@ -158,7 +158,7 @@ export default async function DocPage({ params }: PageProps) {
             <details className="mb-8 rounded-lg border bg-muted/30 lg:hidden">
               <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">All docs</summary>
               <div className="border-t px-4 py-4">
-                <DocsNav current={doc.slug} />
+                <DocsNav current={docHref(doc.slug)} />
               </div>
             </details>
 

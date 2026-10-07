@@ -160,3 +160,58 @@ export function getDocsByGroup(): Array<{ group: DocGroup; docs: DocEntry[] }> {
     ({ docs }) => docs.length > 0,
   );
 }
+
+/**
+ * Pages written for the site that belong to the documentation all the same:
+ * listed on `/docs` and in the docs sidebar, but routed where they are, not
+ * under `/docs/<slug>/`. They are deliberately not in `DOCS`, which the
+ * build renders from repository files and CI counts against `out/docs/`.
+ */
+export interface DocGuide {
+  title: string;
+  href: string;
+  description: string;
+  group: DocGroup;
+}
+
+export const GUIDES: DocGuide[] = [
+  {
+    title: "Self-hosting",
+    href: "/server/",
+    description:
+      "Run the open-source PulsHealth database on a machine you own: one script brings it up and prints the code that pairs the app.",
+    group: "Getting started",
+  },
+];
+
+/** One entry in the docs sidebar or on the index: a rendered document or a guide. */
+export interface DocLink {
+  key: string;
+  title: string;
+  href: string;
+  description: string;
+  /** The source file, for a rendered document. */
+  repoPath?: string;
+}
+
+/** Guides first in their group, then the rendered documents in manifest order. */
+export function getDocLinksByGroup(): Array<{ group: DocGroup; links: DocLink[] }> {
+  return DOC_GROUPS.map((group) => ({
+    group,
+    links: [
+      ...GUIDES.filter((guide) => guide.group === group).map((guide) => ({
+        key: guide.href,
+        title: guide.title,
+        href: guide.href,
+        description: guide.description,
+      })),
+      ...DOCS.filter((doc) => doc.group === group).map((doc) => ({
+        key: doc.slug,
+        title: doc.title,
+        href: docHref(doc.slug),
+        description: doc.description,
+        repoPath: doc.repoPath,
+      })),
+    ],
+  })).filter(({ links }) => links.length > 0);
+}
