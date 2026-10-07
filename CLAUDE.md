@@ -558,11 +558,17 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   are usually iOS behavior, not bugs — see the latency table in the root README.
 - `quantity_samples` chunks >30 days old are columnstore-compressed (segmentby
   `type_id`, orderby `start_ts`). DELETE/UPDATE against them must be prunable —
-  include `start_ts` (and ideally `type_id`) in the predicate, never bare
-  `uuid` — or TimescaleDB trips its per-transaction decompression limit
+  scalar `start_ts` comparisons (and ideally `type_id =`) in the predicate;
+  bare `uuid`, `start_ts = ANY(...)` and joins prune no batch — or TimescaleDB
+  decompresses whole chunks and trips its per-transaction decompression limit
   (SQLSTATE 53400 → 500s, sync stalls). `InsertBatch` lifts the limit via
-  `SET LOCAL` as a safety net; `TestIntegration_DeletionsOnCompressedChunk`
-  guards the deletion path.
+  `SET LOCAL` as a safety net. Run such statements with
+  `pgx.QueryExecModeExec`: a cached generic plan (pgx's statement cache, from
+  the sixth use on a connection) excludes no chunk at plan time and skips the
+  uuid bloom filters on reads, ~10x slower. `deleteQuantitySamples`
+  (`server/ingest/quantity_delete.go`) is the pattern;
+  `TestIntegration_ManyDeletionsAcrossCompressedAndRecentChunks` guards it
+  under a small decompression cap.
 - **The viewer's reads go through security barriers** (accounts mode), and
   Postgres pushes a filter into one only when it is leakproof. One left
   outside scans every chunk — seconds, not milliseconds — so in
