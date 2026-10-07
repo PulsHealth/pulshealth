@@ -10,7 +10,7 @@ const UpdatesDialog = dynamic(
 );
 
 /**
- * "Follow the project", shared by the home and iOS pages. Three ways, in the
+ * "Follow the project", at the foot of the blog. Three ways, in the
  * order an open-source visitor expects: watch releases, subscribe to the
  * feed, or leave an email. The email path is the only one that sends the
  * site anything, and the privacy policy's website section says what.

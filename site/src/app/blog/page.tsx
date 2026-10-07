@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 import { Badge } from "@/components/ui/badge";
 import { getAllPosts } from "@/lib/blog";
+import { FollowProject } from "@/components/follow-project";
 
 export const metadata = {
   title: "Blog - PulsHealth",
@@ -79,15 +80,9 @@ export default async function BlogPage() {
             ))}
           </ul>
         )}
-
-        <p className="mt-12 border-t pt-6 text-sm text-muted-foreground">
-          Subscribe with the{" "}
-          <a href="/feed.xml" className="text-brand hover:underline">
-            RSS feed
-          </a>
-          .
-        </p>
       </div>
+
+      <FollowProject className="mt-8" />
     </main>
   );
 }
