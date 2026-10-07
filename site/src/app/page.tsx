@@ -87,7 +87,7 @@ const privacy = [
 /** A phone screenshot in a plain rounded frame. */
 function Phone({ src, alt, className }: { src: string; alt: string; className?: string }) {
   return (
-    <div className={`overflow-hidden rounded-[2rem] border-[5px] border-foreground/90 bg-foreground/90 shadow-2xl shadow-black/15 dark:border-white/15 dark:shadow-black/50 ${className ?? ""}`}>
+    <div className={`overflow-hidden rounded-[2rem] border-[5px] border-neutral-900 bg-neutral-900 shadow-2xl shadow-black/15 dark:border-neutral-700 dark:bg-neutral-700 dark:shadow-black/50 ${className ?? ""}`}>
       <Image src={src} alt={alt} width={600} height={1304} className="block w-full rounded-[1.6rem]" />
     </div>
   );
