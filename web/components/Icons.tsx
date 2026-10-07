@@ -22,6 +22,12 @@ function Svg({ className, size = 18, style, children }: P & { children: React.Re
   );
 }
 
+export const MenuIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 6h16M4 12h16M4 18h16" />
+  </Svg>
+);
+
 export const HomeIcon = (p: P) => (
   <Svg {...p}>
     <path d="M3 10.5 12 3l9 7.5" />
