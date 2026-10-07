@@ -638,6 +638,35 @@ func TestMsToTime(t *testing.T) {
 	}
 }
 
+// TestMsToTimeTruncatesToStoredMicrosecond pins msToTime to the microsecond
+// timestamptz keeps, truncated the way every stored row was (pgx drops the
+// nanoseconds): an identical re-send must land on the row's exact start_ts.
+func TestMsToTimeTruncatesToStoredMicrosecond(t *testing.T) {
+	base := time.Date(2026, 9, 4, 15, 56, 51, 0, time.UTC)
+	for _, tc := range []struct {
+		ms   float64
+		want time.Duration // past base
+	}{
+		// Float64 resolves ~0.24 µs at this epoch; stay clear of boundaries.
+		{float64(base.UnixMilli()) + 776.0006, 776000 * time.Microsecond},
+		{float64(base.UnixMilli()) + 776.0015, 776001 * time.Microsecond},
+		{float64(base.UnixMilli()) + 776.0025, 776002 * time.Microsecond},
+		{float64(base.UnixMilli()) + 776, 776000 * time.Microsecond},
+	} {
+		got := msToTime(tc.ms)
+		if got.Nanosecond()%1000 != 0 {
+			t.Errorf("msToTime(%f) = %v carries sub-microsecond nanoseconds", tc.ms, got)
+		}
+		if want := base.Add(tc.want); !got.Equal(want) {
+			t.Errorf("msToTime(%f) = %v, want %v", tc.ms, got.Format(time.RFC3339Nano), want.Format(time.RFC3339Nano))
+		}
+	}
+	// Before 1970 truncation is still a floor, like timestamptz's encoding.
+	if got, want := msToTime(-0.0015), time.Unix(0, -2000).UTC(); !got.Equal(want) {
+		t.Errorf("msToTime(-0.0015) = %v, want %v", got.Format(time.RFC3339Nano), want.Format(time.RFC3339Nano))
+	}
+}
+
 func TestValidWireMS(t *testing.T) {
 	for _, ms := range []float64{0, 1718000000000, minWireMS, maxWireMS, -1} {
 		if !validWireMS(ms) {

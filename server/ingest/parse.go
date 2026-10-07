@@ -435,9 +435,21 @@ func validWireMS(ms float64) bool {
 
 // msToTime converts fractional epoch milliseconds to time.Time (UTC) without
 // overflowing: whole seconds and the sub-second fraction are split first.
+//
+// The result is truncated to whole microseconds, which is exactly what
+// timestamptz stores (pgx drops the sub-microsecond nanoseconds on encode), so
+// the value the Go code holds is the value the row gets. Truncation, not
+// rounding, on purpose: every stored row was written that way, so the same
+// wire value keeps landing on the same microsecond and an identical re-send
+// still hits the (uuid, start_ts) primary key. Rounding would buy nothing —
+// HealthKit instants carry sub-microsecond precision (stored microsecond
+// digits are uniform), so float noise between two encoders straddles a
+// microsecond boundary equally often either way — and it would move about
+// half of all existing rows a microsecond away from their next re-send. That
+// residual 1 µs split is what insertQuantity's near-duplicate guard is for.
 func msToTime(ms float64) time.Time {
 	sec, frac := math.Modf(ms / 1000)
-	return time.Unix(int64(sec), int64(math.Round(frac*1e9))).UTC()
+	return time.Unix(int64(sec), int64(math.Round(frac*1e9))).UTC().Truncate(time.Microsecond)
 }
 
 // timeToMS converts time.Time back to epoch milliseconds.
