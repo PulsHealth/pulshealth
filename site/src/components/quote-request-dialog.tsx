@@ -8,12 +8,11 @@ interface QuoteRequestDialogProps {
 }
 
 const consultingConfig: FormDialogConfig = {
-  title: "Tell me what you're building",
+  title: "Get in touch",
   description:
-    "What you have, what you want it to do, and what is in the way. I read every message myself and reply from support@pulshealth.com.",
+    "Tell me what you are working on. I read every message myself and reply from support@pulshealth.com.",
   successTitle: "Got it",
-  successDescription:
-    "I will reply within a few days. If the answer is in the docs, I will point you to it.",
+  successDescription: "Thanks. I will reply within a few days.",
   submitLabel: "Send",
   submittingLabel: "Sending...",
   fields: [
@@ -40,9 +39,9 @@ const consultingConfig: FormDialogConfig = {
     },
     {
       id: "message",
-      label: "What are you trying to do?",
+      label: "What are you working on?",
       type: "textarea",
-      placeholder: "The setup you have, the outcome you want, and anything already tried.",
+      placeholder: "The data you have, what you want from it, and where you are stuck.",
       required: true,
     },
   ],

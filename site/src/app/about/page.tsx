@@ -79,8 +79,8 @@ export default function AboutPage() {
             <a href={`${GITHUB}/issues`} target="_blank" rel="noopener noreferrer">
               GitHub issues
             </a>
-            , where the answer helps the next person too. If you want it set up for you, or built
-            on, there is a <Link href="/consulting">consulting page</Link>.
+            , where the answer helps the next person too. For help with health data and AI more
+            broadly, there is <Link href="/consulting">consulting</Link>.
           </p>
 
           <h2>What it is not</h2>

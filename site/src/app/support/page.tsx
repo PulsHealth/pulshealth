@@ -120,7 +120,7 @@ export default function SupportPage() {
           </div>
           <p className="mt-8 text-sm text-muted-foreground flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
-            Want it set up for you, or built on? See{" "}
+            Building something with health data and AI? See{" "}
             <Link href="/consulting" className="text-brand underline-offset-4 hover:underline">
               consulting
             </Link>
