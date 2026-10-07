@@ -92,6 +92,15 @@ pauses (nothing is lost) until the server is updated.
   touches only that type (`/v1/metrics/daily`, Grafana and the viewer
   alike). Same rows; `009_metric_daily.sql` is re-applied by `migrate` on
   the next `docker compose up -d`, no operator action.
+- **Batches with many deletions are fast.** Ingest deleted quantity samples
+  one statement per row, through cached generic plans that open every chunk
+  and skip the uuid bloom filters: on production a batch of 500+ deletions
+  took 1.7 s at the median and up to 11.7 s, long enough for iOS to end the
+  background wake and the app to send it again. It now deletes in a few
+  range-bounded statements planned for their values, which decompress no
+  more columnstore batches than before. On a test database, 1000 deletions
+  went from ~2 s to ~0.2 s (recent or clustered samples) and from ~3.3 s to
+  ~1.7 s (spread over three compressed years).
 
 ## [0.3.0] - 2026-10-04
 
