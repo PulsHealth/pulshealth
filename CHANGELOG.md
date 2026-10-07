@@ -69,6 +69,29 @@ pauses (nothing is lost) until the server is updated.
   approvals and expired sessions. The 500-pending ceiling becomes 500 new
   sign-ups per 24 hours and 10,000 waiting.
 
+### Fixed
+
+- **The viewer is fast in accounts mode.** As `web_app` it reads through
+  security-barrier views, which take a caller's filter only when it is
+  leakproof; several reads joined or compared in ways that stayed outside
+  the view and scanned every chunk. One dashboard load spent ~9.5 s in the
+  database on a household's history; on a copy of it a warm load now takes
+  ~60 ms end to end (type pages 15–55 ms, categories under 0.2 s). The
+  per-user sample counts are cached stale-while-revalidate and stream in
+  after the page instead of holding it.
+- **Today's totals covered the right day.** Their bounds were read in the
+  database session's zone (UTC), so Today ran from 10:00 the day before to
+  10:00 in California.
+- **Sample counts include quantity samples.** In accounts mode the Browse
+  cards, the Data page and "All-time samples" left out every quantity
+  sample: the stats query's `UNION ALL` ran as a parallel plan that
+  TimescaleDB 2.29 answers without that half.
+- **`metric_daily` takes its readers' filters.** It used to build every day
+  of every type on each read (~1 s); a read by type and day range now
+  touches only that type (`/v1/metrics/daily`, Grafana and the viewer
+  alike). Same rows; `009_metric_daily.sql` is re-applied by `migrate` on
+  the next `docker compose up -d`, no operator action.
+
 ## [0.3.0] - 2026-10-04
 
 **Upgrading:** take `make backup`, check out `v0.3.0`, set
