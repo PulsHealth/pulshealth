@@ -44,7 +44,8 @@ the internet needs HTTPS in front of it. On a phone on the same Wi-Fi:
    URL `http://192.168.1.23:8080` (your address), Token the `PULS_TOKEN`
    value. Tap **Test Connection**; it calls `/v1/capabilities` and should
    report a receiver speaking protocol 1. Then **Save & Apply**.
-3. **Sync → Synced Data**: pick what to sync, tap Apply. Batches start
+3. **Sync → Raw Samples → Edit** (and **Aggregates → Edit** for daily
+   totals and averages): pick what to sync, tap Apply. Batches start
    arriving within seconds; the receiver logs one line per request.
 
 Because the receiver advertises only `batches` and `profile`, the app hides
