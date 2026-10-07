@@ -2,12 +2,13 @@ import { getAllTypes, getTypeById } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ExternalLink, Calendar, Database, Info, ArrowLeft } from "lucide-react";
+import { ExternalLink, Calendar, Database, Info, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { HealthIcon } from "@/components/health-icon";
 import { ClinicalRangesTable } from "@/components/clinical-ranges-table";
+import { PageHero } from "@/components/page-hero";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -40,74 +41,55 @@ export default async function TypeDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const names = new Map((await getAllTypes()).map((t) => [t.identifier, t.human_readable_name]));
+  const facts = [
+    { label: "Unit", value: data.default_unit || "None", mono: Boolean(data.default_unit) },
+    { label: "Since", value: `iOS ${data.ios_introduced.version} (${data.ios_introduced.year})` },
+    { label: "Kind", value: data.type.replace(/^HK/, "").replace(/Type$/, "") },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-muted/30">
-        <div className="container mx-auto max-w-7xl px-4 py-10">
-          <Link
-            href="/knowledge-base"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Knowledge Base
-          </Link>
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div className="flex gap-4">
-              <div
-                className="p-3 rounded-2xl h-fit shrink-0 shadow-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
-                style={{
-                  backgroundColor: data.color ? `${data.color}20` : undefined,
-                  color: data.color || undefined
-                }}
-              >
-                <HealthIcon
-                  iconName={data.icon}
-                  category={data.category}
-                  className="h-8 w-8"
-                  strokeWidth={2.5}
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <Badge variant="outline" className="text-brand border-brand/30 bg-brand-muted dark:text-brand-light dark:border-brand/30">
-                    {data.type}
-                  </Badge>
-                  <Badge variant="secondary">
-                    {data.category}
-                  </Badge>
-                </div>
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-                  {data.human_readable_name}
-                </h1>
-                <p className="text-lg text-muted-foreground mt-2 max-w-2xl">
-                  {data.short_description}
-                </p>
-              </div>
-            </div>
+      <PageHero
+        size="compact"
+        eyebrow={
+          <>
+            <Link href="/knowledge-base" className="hover:text-brand">Knowledge Base</Link>
+            <span className="mx-1.5 text-muted-foreground" aria-hidden>/</span>
+            {data.category}
+          </>
+        }
+        title={
+          <>
+            <span
+              aria-hidden
+              className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground shadow-sm"
+              style={{
+                backgroundColor: data.color ? `${data.color}20` : undefined,
+                color: data.color || undefined,
+              }}
+            >
+              <HealthIcon iconName={data.icon} category={data.category} className="h-7 w-7" strokeWidth={2.5} />
+            </span>
+            {data.human_readable_name}
+          </>
+        }
+        lede={data.short_description}
+      >
+        <ul className="flex flex-wrap justify-center gap-2 text-sm">
+          {facts.map((fact) => (
+            <li key={fact.label} className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1">
+              <span className="text-muted-foreground">{fact.label}</span>
+              <span className={fact.mono ? "font-mono font-medium" : "font-medium"}>{fact.value}</span>
+            </li>
+          ))}
+        </ul>
+      </PageHero>
 
-            <div className="flex flex-col gap-2 text-sm text-muted-foreground bg-card border rounded-lg p-4 min-w-[200px]">
-              <div className="flex justify-between">
-                <span>Unit:</span>
-                <span className="font-mono font-medium text-foreground">{data.default_unit || "N/A"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Since:</span>
-                <span className="font-medium text-foreground">iOS {data.ios_introduced.version} ({data.ios_introduced.year})</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Source:</span>
-                <span className="font-medium text-foreground">{data.source}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto max-w-7xl px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="container mx-auto max-w-6xl px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Main Content Column */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-8 min-w-0">
 
           {/* Clinical Ranges Section */}
           {data.clinical_ranges && data.clinical_ranges.length > 0 && (
@@ -115,7 +97,7 @@ export default async function TypeDetailPage({ params }: PageProps) {
           )}
 
           {/* Description Markdown */}
-          <section className="prose prose-zinc max-w-none dark:prose-invert">
+          <section className="prose max-w-none dark:prose-invert">
             <ReactMarkdown>{data.description}</ReactMarkdown>
           </section>
         </div>
@@ -134,9 +116,16 @@ export default async function TypeDetailPage({ params }: PageProps) {
             <CardContent className="space-y-4 text-sm">
               <div>
                 <span className="text-muted-foreground block mb-1">Identifier</span>
-                <code className="block bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-200 px-2 py-1 rounded-md text-xs select-all border border-zinc-200 dark:border-zinc-700 font-mono break-all">
+                <code className="block bg-muted text-foreground px-2 py-1 rounded-md text-xs select-all border font-mono break-all">
                   {data.identifier}
                 </code>
+              </div>
+
+              <Separator />
+
+              <div>
+                <span className="text-muted-foreground block mb-1">Source</span>
+                <span className="font-medium">{data.source}</span>
               </div>
 
               <Separator />
@@ -176,7 +165,7 @@ export default async function TypeDetailPage({ params }: PageProps) {
                 <div>
                   <span className="text-muted-foreground block mb-1">Typical Range</span>
                   <div className="font-medium">
-                    {data.typical_range.min} - {data.typical_range.max} {data.typical_range.unit}
+                    {data.typical_range.min} to {data.typical_range.max} {data.typical_range.unit}
                   </div>
                   {data.typical_range.notes && (
                     <p className="text-xs text-muted-foreground mt-1 italic">
@@ -232,11 +221,11 @@ export default async function TypeDetailPage({ params }: PageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {data.related_types.map((related) => (
                 <Link href={`/knowledge-base/types/${related.identifier}`} key={related.identifier}>
-                  <Card className="hover:bg-muted/50 transition-colors h-full">
-                    <CardHeader className="p-4">
-                      <CardTitle className="text-sm font-medium flex items-center justify-between">
-                        <span className="truncate pr-2">{related.identifier.replace("HKQuantityTypeIdentifier", "")}</span>
-                        <ArrowRightIcon className="h-4 w-4 text-muted-foreground" />
+                  <Card className="h-full gap-0 py-0 transition-colors hover:border-brand/40 hover:bg-muted/50">
+                    <CardHeader className="p-4 pb-1">
+                      <CardTitle className="flex items-center justify-between gap-2 text-sm font-medium">
+                        <span>{names.get(related.identifier) ?? related.identifier.replace(/^HK\w+?TypeIdentifier/, "")}</span>
+                        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0 text-xs text-muted-foreground">
@@ -251,24 +240,4 @@ export default async function TypeDetailPage({ params }: PageProps) {
       </main>
     </div>
   );
-}
-
-function ArrowRightIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 12h14" />
-      <path d="m12 5 7 7-7 7" />
-    </svg>
-  )
 }

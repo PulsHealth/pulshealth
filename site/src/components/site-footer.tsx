@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { GITHUB_URL } from "@/lib/github"
+import { APP_STORE_URL } from "@/components/app-store-badge"
 
 type FooterLink = { title: string; href: string; external?: boolean }
 
@@ -8,9 +9,9 @@ const columns: { heading: string; links: FooterLink[] }[] = [
   {
     heading: "Project",
     links: [
-      { title: "iOS App", href: "/ios" },
+      { title: "Get the App", href: APP_STORE_URL, external: true },
       { title: "PulsHealth Database", href: "https://app.pulshealth.com/signup", external: true },
-      { title: "Self-Hosted Database", href: "/server" },
+      { title: "Self-hosting", href: "/server" },
       { title: "Documentation", href: "/docs" },
       { title: "Sync Protocol", href: "/docs/protocol" },
       { title: "Use It With AI", href: "/docs/ai" },

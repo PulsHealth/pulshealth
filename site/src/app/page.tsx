@@ -1,697 +1,464 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Fragment, type ReactNode } from "react";
 import {
+  ArrowDown,
   ArrowRight,
-  BookOpen,
-  Briefcase,
   Bot,
-  Check,
-  Cloud,
   Database,
-  FileCode2,
-  FileSpreadsheet,
-  LayoutDashboard,
+  EyeOff,
+  Globe,
   Lock,
   MousePointerClick,
-  Minus,
-  PenLine,
-  Server,
+  ShieldCheck,
   Smartphone,
-  Star,
 } from "lucide-react";
-import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
-import { FollowProject } from "@/components/follow-project";
+import { AiChatPreview } from "@/components/ai-chat-preview";
+import { AnimatedWord } from "@/components/animated-word";
+import { FaqList } from "@/components/faq-list";
 import { getAllTypes } from "@/lib/api";
-import { getCatalog } from "@/lib/catalog";
 import { faq } from "@/lib/faq";
-import { GITHUB_URL, formatStars, getRepoStats } from "@/lib/github";
-
-const BLOB = `${GITHUB_URL}/blob/main`;
+import { GITHUB_URL } from "@/lib/github";
 
 /** The hosted database's sign-up page, on the viewer's origin. */
 const SIGNUP_URL = "https://app.pulshealth.com/signup";
-/** Signs a visitor straight into the viewer's demo account (web/app/demo). */
+/** Signs a visitor straight into the viewer's view-only demo account (web/app/demo). */
 const DEMO_URL = "https://app.pulshealth.com/demo";
 
-type Way = {
-  key: string;
-  name: string;
-  tagline: string;
-  badge: string;
-  icon: typeof Smartphone;
-  where: string;
-  points: string[];
-  cta: { label: string; href: string; external?: boolean };
-  featured?: boolean;
+/** The app's structured data; the home page is the app's page now. */
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "PulsHealth",
+  operatingSystem: "iOS 17 or later",
+  applicationCategory: "HealthApplication",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  installUrl: APP_STORE_URL,
+  license: "https://www.apache.org/licenses/LICENSE-2.0",
+  codeRepository: GITHUB_URL,
+  isAccessibleForFree: true,
+  description:
+    "Explores and exports Apple Health with no account, and syncs it, read-only, to a database hosted for you or run by you. Full historical backfill, then continuous background sync.",
 };
 
-const ways: Way[] = [
+const textLink = "font-medium text-brand underline-offset-4 hover:underline";
+
+/** "How it works": the one flow every way of using PulsHealth shares. */
+const steps = [
   {
-    key: "app",
-    name: "The app",
-    tagline: "Explore and export, on the phone.",
-    badge: "No account",
-    icon: Smartphone,
-    where: "On your iPhone, until you share an export.",
-    points: [
-      "Every Apple Health type, with a year of analysis per type",
-      "CSV or JSONL export for any types and dates",
-      "No account, no database, no network",
-    ],
-    cta: { label: "Download on the App Store", href: APP_STORE_URL, external: true },
+    title: "The app reads Apple Health",
+    body: "Free and read-only, on your iPhone. Explore every type, or export CSV and JSONL, with no account.",
+    more: (
+      <a href="#iphone" className={`inline-flex items-center ${textLink}`}>
+        On your iPhone <ArrowRight className="ml-1 h-3.5 w-3.5" />
+      </a>
+    ),
   },
   {
-    key: "hosted",
-    name: "The PulsHealth database",
-    tagline: "We run the database for you.",
-    badge: "Hosted for you",
-    icon: Cloud,
-    where: "On our database, under your own account.",
-    points: [
-      "Connect the app to your account and your history syncs, then keeps up",
-      "The web viewer at app.pulshealth.com",
-      "Connect Claude: sign in and tap Allow",
-      "Nothing to install or keep updated",
-    ],
-    cta: { label: "Get started", href: SIGNUP_URL, external: true },
-    featured: true,
+    title: "It syncs to your database",
+    body: "Your whole history first, then it keeps up in the background.",
+    more: (
+      <span className="text-muted-foreground">
+        <a href={SIGNUP_URL} className={textLink}>Hosted for you</a>, or{" "}
+        <Link href="/server" className={textLink}>run your own</Link>.
+      </span>
+    ),
   },
   {
-    key: "self",
-    name: "Your own database",
-    tagline: "Run the open-source stack yourself.",
-    badge: "Self-hosted",
-    icon: Server,
-    where: "On a machine you control.",
-    points: [
-      "PostgreSQL with TimescaleDB, Grafana, the viewer, the API and the MCP server",
-      "One script on any Docker host, and a QR code to pair",
-      "Or write a receiver for the documented protocol",
-    ],
-    cta: { label: "Set up your database", href: "/server" },
+    title: "You and your AI use it",
+    body: "Browse it in the web viewer, ask your AI about it, or pull it into a notebook or spreadsheet.",
+    more: (
+      <Link href="/docs/ai" className={`inline-flex items-center ${textLink}`}>
+        Connect an assistant <ArrowRight className="ml-1 h-3.5 w-3.5" />
+      </Link>
+    ),
   },
 ];
 
-const prompts = [
-  "Plan the next 16 weeks of marathon training from my last three months of runs, my heart rate and my HRV.",
-  "Write my weekly report: training load, sleep and resting heart rate, against the month before.",
-  "How does my sleep change in the days after a hard training week?",
-  "Where have my runs got faster this year, and what else changed around then?",
+/** AI clients named in the "Ask your AI" row; any MCP client works. */
+const aiClients = ["Claude", "ChatGPT", "Cursor", "Qwen", "Any MCP client"];
+
+/** The headline's first word cycles through these. */
+const heroWords = ["Unlock", "Explore", "Understand", "Analyze", "Export"];
+
+/** Demo rows for the database step of the figure. */
+const dbRows = [
+  ["Heart rate", "62 bpm", "7:41"],
+  ["Steps", "1,204", "7:40"],
+  ["Sleep", "7 h 12 m", "6:58"],
+  ["HRV", "48 ms", "6:55"],
+  ["Run", "5.2 km", "Sun"],
 ];
 
-const pieces = [
+/** The figure's three pictures, one per step, all the same height. */
+const stepVisuals: ReactNode[] = [
+  <div key="phone" className="flex h-full justify-center pt-5">
+    <div className="w-40 overflow-hidden rounded-t-[1.75rem] border-[4px] border-b-0 border-neutral-900 bg-neutral-900 dark:border-neutral-700 dark:bg-neutral-700">
+      <Image
+        src="/screenshots/app-explore.webp"
+        alt="The app's Explore tab: Apple Health types by category"
+        width={600}
+        height={1304}
+        className="block w-full rounded-t-[1.5rem]"
+      />
+    </div>
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-card to-transparent" />
+  </div>,
+  <div key="db" className="flex h-full flex-col justify-center px-5">
+    <p className="mb-3 flex items-center gap-2 text-sm font-medium">
+      <Database className="h-4 w-4 text-brand" aria-hidden />
+      Your database
+    </p>
+    <ul className="space-y-1.5 text-xs">
+      {dbRows.map(([type, value, time]) => (
+        <li key={type} className="flex items-center justify-between gap-3 rounded-md bg-muted/70 px-2.5 py-1.5">
+          <span className="text-muted-foreground">{type}</span>
+          <span className="ml-auto font-mono tabular-nums">{value}</span>
+          <span className="w-8 text-right font-mono text-muted-foreground tabular-nums">{time}</span>
+        </li>
+      ))}
+    </ul>
+  </div>,
+  <a key="ai" href={DEMO_URL} aria-label="Open the live demo of the web viewer" className="group relative block h-full">
+    <Image
+      src="/screenshots/viewer-today.webp"
+      alt="The web viewer's Today page"
+      width={1440}
+      height={900}
+      className="absolute inset-0 h-full w-full object-cover object-left-top"
+    />
+    <div className="absolute inset-x-3 bottom-3 space-y-1.5 text-xs">
+      <p className="ml-auto w-fit rounded-xl rounded-br-sm bg-brand px-3 py-1.5 text-brand-foreground shadow-md">
+        How did I sleep this week?
+      </p>
+      <p className="w-fit max-w-[95%] rounded-xl rounded-bl-sm border bg-card px-3 py-1.5 shadow-md">
+        7 h 04 m a night, 22 min more than last week.
+      </p>
+    </div>
+  </a>,
+];
+
+const privacy = [
   {
-    title: "iOS app",
-    href: "/ios",
-    icon: Smartphone,
-    description: "Reads Apple Health read-only. Explore and export it on the phone, or stream every sample to a database: full backfill first, then background sync. Workouts with GPS, activity rings.",
+    icon: ShieldCheck,
+    title: "Read-only",
+    body: "The app reads Apple Health and never writes to it.",
   },
   {
-    title: "PostgreSQL + TimescaleDB",
-    href: "/server",
-    icon: Database,
-    description: "Samples land in hypertables with compression on older chunks. Migrations run automatically on every start. Hosted for you, or on your own Docker host.",
+    icon: Lock,
+    title: "Only where you send it",
+    body: "Run your own database and we never see your data. On ours it is never sold or shared.",
   },
   {
-    title: "Grafana and a web viewer",
-    href: "/server",
-    icon: LayoutDashboard,
-    description: "A Next.js viewer over the same database: rings, trends, workouts. Self-hosted, it adds provisioned Grafana dashboards and an optional password; hosted, it is your account at app.pulshealth.com.",
-  },
-  {
-    title: "MCP server for AI",
-    href: "/docs/ai",
-    icon: Bot,
-    description: "Read-only, over the product API, so Claude, Claude Code or Cursor can answer from your daily metrics, rings, workouts and sleep. It ships a guide that tells the model about units and double counting.",
-  },
-  {
-    title: "Open wire protocol",
-    href: "/docs/protocol",
-    icon: FileCode2,
-    description: "Gzip NDJSON over HTTPS, a JSON Schema per line type, canonical units, a fixture corpus and a Python reference receiver. Or write your own backend.",
-  },
-  {
-    title: "CSV and JSONL export",
-    href: "/docs/export",
-    icon: FileSpreadsheet,
-    description: "From the app with no database at all, or streamed out of the product API with a small CLI. The quickest route to a spreadsheet or a notebook.",
+    icon: EyeOff,
+    title: "No tracking",
+    body: "No analytics, ads or third-party code in the app. Exploring and exporting send nothing.",
   },
 ];
 
-const claims = [
-  {
-    title: "The app alone sends nothing",
-    body: "Exploring and exporting need no account and make no network request. An export goes wherever you send it from the share sheet.",
-    check: { label: "Export/", href: `${GITHUB_URL}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Export` },
-  },
-  {
-    title: "Your database, or ours: your choice",
-    body: "The app uploads only to the database you set up. Run your own and the developer never sees your data. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is never sold or shared, and deleting your account deletes it.",
-    check: { label: "Transport/", href: `${GITHUB_URL}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Transport` },
-  },
-  {
-    title: "Zero third-party dependencies in the app",
-    body: "No analytics SDK, no crash reporter, no ad library. The Swift package and the app depend on Apple frameworks and nothing else.",
-    check: { label: "Package.swift", href: `${BLOB}/PulsHealthSync/Package.swift` },
-  },
-  {
-    title: "Read-only, in the code",
-    body: "The app asks HealthKit for read permission only and never writes, edits or deletes. The usage strings say so, and the code shows it.",
-    check: { label: "HealthSyncEngine.swift", href: `${BLOB}/PulsHealthSync/Sources/PulsHealthSync/Engine/HealthSyncEngine.swift` },
-  },
-];
-
-type Cell = boolean | string;
-const comparison: { name: string; href?: string; cells: Cell[] }[] = [
-  { name: "PulsHealth", cells: [true, true, "Apache-2.0", "Hosted for you, or your Postgres", true, true, "Free app"] },
-  { name: "Health Auto Export", href: "https://www.healthyapps.dev/", cells: [false, "Community receivers", "Closed", "Your endpoint, Drive, MQTT…", "Community-documented", false, "Subscription"] },
-  { name: "HealthSave", href: "https://healthsave.app/", cells: [false, "Source-available", "Elastic 2.0", "Your TimescaleDB", false, false, "One-time"] },
-  { name: "FreeReps", href: "https://freereps.meltforce.org/", cells: [true, true, "MIT", "Your server (Tailscale)", false, true, "Free"] },
-  { name: "Apple's export", cells: [false, false, "—", "A zip of XML", false, false, "Free"] },
-];
-const comparisonColumns = ["Open-source app", "Open-source backend", "License", "Where data lives", "Wire format specified", "AI assistant access", "Price"];
-
-/** Knowledge-base pages shown as examples, in this order. */
-const kbExamples = [
-  "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
-  "HKQuantityTypeIdentifierVO2Max",
-  "HKCategoryTypeIdentifierSleepAnalysis",
-];
-
-function CellValue({ value }: { value: Cell }) {
-  if (value === true) return <Check className="mx-auto h-4 w-4 text-brand" aria-label="Yes" />;
-  if (value === false) return <Minus className="mx-auto h-4 w-4 text-muted-foreground/60" aria-label="No" />;
-  return <span className="text-muted-foreground">{value}</span>;
+/** A phone screenshot in a plain rounded frame. */
+function Phone({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  return (
+    <div className={`overflow-hidden rounded-[2rem] border-[5px] border-neutral-900 bg-neutral-900 shadow-2xl shadow-black/15 dark:border-neutral-700 dark:bg-neutral-700 dark:shadow-black/50 ${className ?? ""}`}>
+      <Image src={src} alt={alt} width={600} height={1304} className="block w-full rounded-[1.6rem]" />
+    </div>
+  );
 }
 
-function WayCta({ cta, featured }: { cta: Way["cta"]; featured?: boolean }) {
-  const content = (
-    <>
-      {cta.label}
-      <ArrowRight className="ml-2 h-4 w-4" />
-    </>
-  );
+/** One "What you get" row: words on one side, a picture on the other. */
+function Feature({
+  id,
+  icon: Icon,
+  title,
+  children,
+  visual,
+  flip,
+}: {
+  id?: string;
+  icon: typeof Smartphone;
+  title: string;
+  children: ReactNode;
+  visual: ReactNode;
+  flip?: boolean;
+}) {
   return (
-    <Button asChild variant={featured ? "default" : "outline"} className="w-full">
-      {cta.external ? (
-        <a href={cta.href} target={cta.href === APP_STORE_URL ? "_blank" : undefined} rel="noopener noreferrer">
-          {content}
-        </a>
-      ) : (
-        <Link href={cta.href}>{content}</Link>
-      )}
-    </Button>
+    <div id={id} className="grid scroll-mt-20 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+      <div className={flip ? "lg:order-2" : undefined}>
+        <div className="mb-4 w-fit rounded-xl bg-brand-muted p-3 text-brand">
+          <Icon className="h-6 w-6" aria-hidden />
+        </div>
+        <h3 className="mb-4 text-2xl font-bold tracking-tight md:text-3xl">{title}</h3>
+        <div className="space-y-4 text-lg text-muted-foreground text-pretty">{children}</div>
+      </div>
+      <div className={flip ? "lg:order-1" : undefined}>{visual}</div>
+    </div>
   );
 }
 
 export default async function HomePage() {
-  const { stars } = await getRepoStats();
-  const starLabel = formatStars(stars);
   const homeFaq = faq.filter((f) => f.home);
-  const syncedTypeCount = getCatalog().types.length;
-  const kbTypes = await getAllTypes();
-  const kbCount = kbTypes.length;
-  const kbFeatured = kbExamples
-    .map((id) => kbTypes.find((t) => t.identifier === id))
-    .filter((t): t is NonNullable<typeof t> => Boolean(t));
+  const kbCount = (await getAllTypes()).length;
 
   return (
     <main className="flex min-h-screen flex-col">
-      {/* Hero */}
-      <section className="w-full border-b bg-gradient-to-b from-background to-muted/40 pt-20 pb-16">
-        <div className="container mx-auto flex max-w-7xl flex-col items-center space-y-6 px-4 text-center">
-          <Badge variant="outline" className="rounded-full bg-background/60 px-4 py-1 text-sm backdrop-blur-sm">
-            Free app &middot; Open source &middot; Apache-2.0
-          </Badge>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
 
-          <h1 className="max-w-4xl text-4xl font-bold tracking-tight text-foreground text-balance md:text-6xl">
-            Your Apple Health data, ready for <span className="text-brand">you and your AI</span>.
-          </h1>
-
-          <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-            A free, open-source iPhone app to explore and export everything in Apple Health. Sync
-            it to a database, hosted for you or run by you, and give Claude your whole health
-            history to work from.
-          </p>
-
-          <div className="flex flex-col items-center gap-4 pt-2 sm:flex-row">
-            <AppStoreBadge />
-            <Button asChild size="lg">
-              <a href={SIGNUP_URL}>
-                <Cloud className="mr-2 h-4 w-4" />
-                Get started
-              </a>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <a href={DEMO_URL}>
-                <MousePointerClick className="mr-2 h-4 w-4" />
-                See the live demo
-              </a>
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Prefer to run it yourself?{" "}
-            <Link href="/server" className="text-brand underline-offset-4 hover:underline">
-              Self-host the database
-            </Link>
-            .
-          </p>
-
-          <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-2 text-sm text-muted-foreground">
-            <li>No account needed for the app</li>
-            <li>No telemetry</li>
-            <li>Read-only HealthKit access</li>
-            <li>Zero dependencies in the app</li>
-            <li>
-              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
-                <Star className="h-3.5 w-3.5" aria-hidden />
-                {starLabel ? `${starLabel} on GitHub` : "Source on GitHub"}
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Product shot */}
-        <div className="container mx-auto mt-14 max-w-6xl px-4">
-          <a href={DEMO_URL} className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-          <figure className="overflow-hidden rounded-xl border bg-[#0b0b0c] shadow-2xl shadow-black/20 transition-transform group-hover:-translate-y-0.5">
-            <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-2.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-              <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-              <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-              <span className="ml-3 truncate font-mono text-[11px] text-white/40">https://health.example.net</span>
+      {/* Hero: the headline, then what PulsHealth is, as one opening */}
+      <section className="w-full border-b bg-gradient-to-b from-background via-background to-muted/50">
+        <div className="container mx-auto max-w-7xl px-4 pb-20 pt-20 md:pt-28">
+          <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
+            <h1 className="text-[clamp(2.25rem,10vw,3.5rem)] font-bold leading-[1.05] tracking-tight text-foreground sm:text-[3.5rem] lg:text-[4rem] xl:text-[5rem]">
+              <AnimatedWord words={heroWords} />
+              your health data
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
+              Automatically sync and control your Apple Health data.
+            </p>
+            <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row">
+              <AppStoreBadge className="[&_img]:h-12" />
+              <Button asChild size="lg" variant="outline" className="h-12 px-6 text-base">
+                <a href={DEMO_URL}>
+                  <MousePointerClick className="mr-2 h-4 w-4" aria-hidden />
+                  See the live demo
+                </a>
+              </Button>
             </div>
-            <Image
-              src="/screenshots/viewer-today.webp"
-              alt="The PulsHealth web viewer showing today's activity rings, highlight tiles for steps, energy, resting heart rate, sleep, HRV, distance, VO2 max and body weight, and recent workouts."
-              width={1440}
-              height={900}
-              priority
-              className="w-full"
-            />
-            <figcaption className="flex items-center justify-between gap-4 border-t border-white/10 px-4 py-2 text-xs text-white/50">
-              <span>The web viewer, which comes with either database, against demo data.</span>
-              <span className="inline-flex shrink-0 items-center gap-1 text-white/80 group-hover:text-white">
-                Try it live
-                <ArrowRight className="h-3 w-3" aria-hidden />
-              </span>
-            </figcaption>
-          </figure>
-          </a>
+            <p className="mt-5 flex flex-wrap items-center justify-center gap-x-2 text-sm text-muted-foreground">
+              <span>Free</span>
+              <span aria-hidden>&middot;</span>
+              <span>No account needed</span>
+              <span aria-hidden>&middot;</span>
+              <span>Read-only</span>
+              <span aria-hidden>&middot;</span>
+              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                Open source
+              </a>
+            </p>
+          </div>
+
+          <div id="how-it-works" className="mx-auto mt-20 max-w-6xl scroll-mt-20 md:mt-28">
+            <h2 className="mb-8 text-center text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+              How it works
+            </h2>
+            <ol className="grid gap-6 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-4">
+              {steps.map((step, i) => (
+                <Fragment key={step.title}>
+                  {i > 0 && (
+                    <li aria-hidden className="flex justify-center text-brand/60 lg:mt-[6.75rem] lg:items-start">
+                      <ArrowDown className="h-6 w-6 lg:hidden" />
+                      <ArrowRight className="hidden h-6 w-6 lg:block" />
+                    </li>
+                  )}
+                  <li className="min-w-0">
+                    <div className="relative h-60 overflow-hidden rounded-2xl border bg-card shadow-sm">
+                      {stepVisuals[i]}
+                    </div>
+                    <div className="mt-5 flex items-center gap-2.5">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-brand-foreground">
+                        {i + 1}
+                      </span>
+                      <h3 className="text-lg font-semibold">{step.title}</h3>
+                    </div>
+                    <p className="mt-2 text-muted-foreground text-pretty">{step.body}</p>
+                    <p className="mt-3 text-sm">{step.more}</p>
+                  </li>
+                </Fragment>
+              ))}
+            </ol>
+          </div>
         </div>
       </section>
 
-      {/* Three ways */}
-      <section id="ways" className="container mx-auto max-w-7xl scroll-mt-16 px-4 py-24">
+      {/* What you get */}
+      <section className="border-y bg-muted/30">
+        <div className="container mx-auto max-w-6xl space-y-28 px-4 py-24">
+          <h2 className="sr-only">What you get</h2>
+
+          <Feature
+            id="iphone"
+            icon={Smartphone}
+            title="Explore and export on your iPhone"
+            visual={
+              <div className="relative mx-auto flex max-w-md justify-center gap-5 pb-8 sm:gap-6">
+                <Phone
+                  src="/screenshots/app-explore.webp"
+                  alt="Explore tab: Apple Health types by category, each with its sample count over the past year"
+                  className="w-[46%]"
+                />
+                <Phone
+                  src="/screenshots/app-type-page.webp"
+                  alt="Heart Rate's type page: description, analysis over the past year, sample counts, sources and the value distribution"
+                  className="w-[46%] translate-y-8"
+                />
+              </div>
+            }
+          >
+            <p>
+              Every Apple Health type with a year of analysis, and a plain explanation of what it
+              measures from our{" "}
+              <Link href="/knowledge-base" className={textLink}>
+                guide to all {kbCount} types
+              </Link>
+              .
+            </p>
+            <p>Export any types and dates to CSV or JSONL. No account, nothing leaves the phone.</p>
+            <div className="pt-2">
+              <AppStoreBadge />
+            </div>
+          </Feature>
+
+          <Feature
+            icon={Globe}
+            title="Your whole history on the web"
+            flip
+            visual={
+              <a href={DEMO_URL} className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <figure className="overflow-hidden rounded-xl border bg-[#0b0b0c] shadow-2xl shadow-black/20 transition-transform group-hover:-translate-y-0.5">
+                <div className="flex items-center justify-between gap-1.5 border-b border-white/10 px-4 py-2.5">
+                  <span className="flex gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-white/60 group-hover:text-white">
+                    Try it live
+                    <ArrowRight className="h-3 w-3" aria-hidden />
+                  </span>
+                </div>
+                <Image
+                  src="/screenshots/viewer-today.webp"
+                  alt="The PulsHealth web viewer showing today's activity rings, highlight tiles for steps, energy, resting heart rate, sleep, HRV, distance, VO2 max and body weight, and recent workouts."
+                  width={1440}
+                  height={900}
+                  className="w-full"
+                />
+              </figure>
+            </a>
+            }
+          >
+            <p>
+              Once it syncs, every sample lands in a database: rings, trends, sleep and workouts,
+              years of them, in a web viewer.
+            </p>
+            <p>
+              Use the PulsHealth database, hosted for you, or{" "}
+              <Link href="/server" className={textLink}>
+                run your own
+              </Link>{" "}
+              with one script. The demo is the real viewer, with six months of de-identified sample data.
+            </p>
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+              <Button asChild>
+                <a href={DEMO_URL}>
+                  <MousePointerClick className="mr-2 h-4 w-4" aria-hidden />
+                  See the live demo
+                </a>
+              </Button>
+              <Button asChild variant="outline">
+                <a href={SIGNUP_URL}>
+                  Get started
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </a>
+              </Button>
+            </div>
+          </Feature>
+
+          <Feature
+            icon={Bot}
+            title="Ask your AI"
+            visual={<AiChatPreview />}
+          >
+            <p>
+              PulsHealth comes with an MCP server, so any AI agent that speaks MCP can use your
+              data. Connect it and sign in; it reads your data and cannot change it.
+            </p>
+            <ul className="flex flex-wrap gap-2 text-sm" aria-label="Works with">
+              {aiClients.map((client) => (
+                <li key={client} className="rounded-full border bg-background px-3 py-1 text-foreground">
+                  {client}
+                </li>
+              ))}
+            </ul>
+            <p>
+              It already knows the hard parts: units, your time zone, and steps counted twice by
+              iPhone and Watch.
+            </p>
+            <div className="pt-2">
+              <Button asChild variant="outline">
+                <Link href="/docs/ai">
+                  Connect an assistant
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </Feature>
+        </div>
+      </section>
+
+      {/* Privacy */}
+      <section className="container mx-auto max-w-6xl px-4 py-24">
         <div className="mb-12 text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Three ways to use it</h2>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Start with the app. Add a database when you want your data somewhere you can query,
-            chart and hand to an AI. The same app syncs to either one.
+          <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">Private by design</h2>
+          <p className="mx-auto max-w-xl text-lg text-muted-foreground">
+            Health data is personal. Here is what that means in practice.
           </p>
         </div>
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          {ways.map((way) => (
-            <Card
-              key={way.key}
-              className={`flex h-full min-w-0 flex-col ${way.featured ? "border-brand/50 shadow-lg shadow-brand/5 ring-1 ring-brand/20" : ""}`}
-            >
-              <CardHeader>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="w-fit rounded-xl bg-brand-muted p-3 text-brand">
-                    <way.icon className="h-6 w-6" />
-                  </div>
-                  <Badge variant={way.featured ? "default" : "secondary"} className="font-normal">
-                    {way.badge}
-                  </Badge>
-                </div>
-                <CardTitle className="text-xl">{way.name}</CardTitle>
-                <CardDescription className="text-base">{way.tagline}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col">
-                <ul className="mb-5 space-y-2.5 text-sm">
-                  {way.points.map((point) => (
-                    <li key={point} className="flex items-start gap-2.5">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-                      <span className="text-muted-foreground">{point}</span>
-                    </li>
-                  ))}
-                </ul>
-                {way.key === "self" && (
-                  <div className="mb-5 overflow-x-auto rounded-md border bg-muted/40 px-3 py-2.5">
-                    <pre className="font-mono text-xs leading-relaxed text-muted-foreground">
-                      <code>{`git clone https://github.com/PulsHealth/pulshealth.git
-cd pulshealth
-scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
-                    </pre>
-                  </div>
-                )}
-                <p className="mb-5 mt-auto border-t pt-4 text-sm">
-                  <span className="font-medium text-foreground">Where your data lives: </span>
-                  <span className="text-muted-foreground">{way.where}</span>
-                </p>
-                <WayCta cta={way.cta} featured={way.featured} />
-              </CardContent>
-            </Card>
+        <div className="grid gap-10 md:grid-cols-3">
+          {privacy.map((item) => (
+            <div key={item.title} className="text-center">
+              <div className="mx-auto mb-4 w-fit rounded-xl bg-brand-muted p-3 text-brand">
+                <item.icon className="h-6 w-6" aria-hidden />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold">{item.title}</h3>
+              <p className="mx-auto max-w-xs text-muted-foreground text-pretty">{item.body}</p>
+            </div>
           ))}
         </div>
-        <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-muted-foreground">
-          The app is free, with no in-app purchases. Both databases run the same
-          open-source code.
+        <p className="mt-12 text-center text-sm">
+          <Link href="/privacy" className={`inline-flex items-center ${textLink}`}>
+            Read the privacy policy, with links to the code
+            <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          </Link>
         </p>
       </section>
 
-      {/* AI */}
-      <section className="border-y bg-muted/30">
-        <div className="container mx-auto max-w-7xl px-4 py-24">
-          <div className="mx-auto grid max-w-6xl items-start gap-12 lg:grid-cols-2">
-            <div>
-              <Badge variant="outline" className="mb-4">MCP &middot; Claude</Badge>
-              <h2 className="mb-4 text-3xl font-bold tracking-tight">Give Claude your health context</h2>
-              <p className="mb-6 text-lg text-muted-foreground">
-                PulsHealth ships a read-only MCP server, so an assistant can work from your actual
-                runs, heart rate, HRV, sleep, workouts and rings instead of what you remember to
-                tell it.
-              </p>
-              <ul className="space-y-4 text-muted-foreground">
-                <li className="flex items-start gap-3">
-                  <Cloud className="mt-1 h-5 w-5 shrink-0 text-brand" />
-                  <span>
-                    <strong className="text-foreground">On the PulsHealth database</strong>, add
-                    it as a connector in the Claude app (iPhone, Android, desktop or claude.ai) or
-                    in Claude Code, sign in and tap Allow. Nothing to install.
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Server className="mt-1 h-5 w-5 shrink-0 text-brand" />
-                  <span>
-                    <strong className="text-foreground">On your own database</strong>, run the
-                    MCP server locally or as a remote connector for Claude, Claude Code, Cursor or
-                    any other MCP client.
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Lock className="mt-1 h-5 w-5 shrink-0 text-brand" />
-                  <span>
-                    It can read, never write. Its built-in guide tells the model about units, your
-                    time zone and iPhone-plus-Watch double counting, so the numbers come out right.
-                  </span>
-                </li>
-              </ul>
-              <div className="mt-8">
-                <Button asChild>
-                  <Link href="/docs/ai">
-                    <Bot className="mr-2 h-4 w-4" />
-                    Connect an assistant
-                  </Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="rounded-xl border bg-card p-6">
-              <p className="mb-4 text-sm font-medium text-muted-foreground">Things to ask</p>
-              <ul className="space-y-3">
-                {prompts.map((prompt) => (
-                  <li key={prompt} className="rounded-lg border bg-background px-4 py-3 text-sm leading-relaxed text-foreground">
-                    &ldquo;{prompt}&rdquo;
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Feedback grounded in your own numbers, not medical advice. What the assistant reads
-                goes to its provider under that provider&apos;s terms.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Knowledge base */}
-      <section className="container mx-auto max-w-7xl px-4 py-24">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_1.1fr]">
-          <div>
-            <Badge variant="outline" className="mb-4">Knowledge base</Badge>
-            <h2 className="mb-4 text-3xl font-bold tracking-tight">Know what the numbers mean</h2>
-            <p className="mb-4 text-lg text-muted-foreground">
-              All {kbCount} Apple Health types, explained: what each one measures, how the Watch,
-              the iPhone and third-party devices collect it, how often, typical ranges with
-              sources, and where the number stops being reliable.
-            </p>
-            <p className="mb-6 text-muted-foreground">
-              Two HRV readings from different devices are not the same measurement, and a sum of
-              iPhone and Watch steps counts twice. Knowing that matters to you, and to any AI
-              reading your data. The app uses it too: each type&apos;s page shows its description and
-              typical range.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild>
-                <Link href="/knowledge-base">
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Browse the knowledge base
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/blog">
-                  <PenLine className="mr-2 h-4 w-4" />
-                  Read the blog
-                </Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {kbFeatured.map((t) => (
-              <Link key={t.identifier} href={`/knowledge-base/types/${t.identifier}`} className="group block">
-                <Card className="transition-all duration-200 hover:border-brand/40 hover:shadow-lg">
-                  <CardHeader>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <CardTitle className="text-lg transition-colors group-hover:text-brand">
-                        {t.human_readable_name}
-                      </CardTitle>
-                      <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                        {t.devices.length} device notes
-                      </span>
-                    </div>
-                    <CardDescription className="line-clamp-3 text-sm">{t.short_description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* What is in the box */}
-      <section className="border-y bg-muted/30">
-        <div className="container mx-auto max-w-7xl px-4 py-24">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight">What is included</h2>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              All of it is in one Apache-2.0 repository: the app syncs {syncedTypeCount} HealthKit
-              types, and every piece below is yours to run. The PulsHealth database runs the same
-              code.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {pieces.map((piece) => (
-              <Link key={piece.title} href={piece.href} className="group">
-                <Card className="h-full transition-all duration-200 hover:border-brand/40 hover:shadow-lg">
-                  <CardHeader>
-                    <div className="mb-4 w-fit rounded-xl bg-brand-muted p-3 text-brand">
-                      <piece.icon className="h-6 w-6" />
-                    </div>
-                    <CardTitle className="text-xl transition-colors group-hover:text-brand">
-                      {piece.title}
-                    </CardTitle>
-                    <CardDescription className="text-base">{piece.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <span className="inline-flex items-center text-sm font-medium text-brand">
-                      Learn more <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-
-          <figure className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-xl border bg-[#0b0b0c] shadow-xl shadow-black/10">
-            <Image
-              src="/screenshots/viewer-workouts.webp"
-              alt="The web viewer's workouts page: session count, total time, energy and distance, then a list of workouts with duration, calories and distance."
-              width={1440}
-              height={900}
-              className="w-full"
-            />
-            <figcaption className="border-t border-white/10 px-4 py-2 text-xs text-white/50">
-              Workouts in the web viewer. On your own stack, Grafana dashboards cover the same data and ingest health.
-            </figcaption>
-          </figure>
-        </div>
-      </section>
-
-      {/* Privacy: checkable claims */}
-      <section className="container mx-auto max-w-7xl px-4 py-24">
-        <div className="mb-12 text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Privacy, with the code to show for it</h2>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Health data is personal. Each claim below links to the code behind it, and the{" "}
-            <Link href="/privacy" className="text-brand underline-offset-4 hover:underline">
-              privacy policy
-            </Link>{" "}
-            has the details.
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {claims.map((claim) => (
-            <div key={claim.title} className="flex flex-col rounded-xl border bg-card p-6">
-              <div className="mb-4 w-fit rounded-xl bg-brand-muted p-3 text-brand">
-                <Lock className="h-6 w-6" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">{claim.title}</h3>
-              <p className="mb-4 flex-1 text-muted-foreground">{claim.body}</p>
-              <a
-                href={claim.check.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 font-mono text-xs text-brand hover:underline"
-              >
-                <GitHubIcon className="h-3.5 w-3.5" />
-                check: {claim.check.label}
-              </a>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Comparison */}
-      <section className="border-y bg-muted/30">
-        <div className="container mx-auto max-w-7xl px-4 py-24">
-          <div className="mb-10 text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight">Compared with the alternatives</h2>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Other ways to get Apple Health out of the phone, and where they differ.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto rounded-xl border bg-card">
-            <table className="w-full min-w-[820px] text-sm">
-              <thead>
-                <tr className="border-b bg-muted/40 text-left">
-                  <th className="px-4 py-3 font-semibold">&nbsp;</th>
-                  {comparisonColumns.map((col) => (
-                    <th key={col} className="px-4 py-3 text-center font-semibold">{col}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {comparison.map((row) => (
-                  <tr key={row.name} className={`border-b last:border-0 ${row.name === "PulsHealth" ? "bg-brand-muted/40" : ""}`}>
-                    <th scope="row" className="px-4 py-3 text-left font-medium">
-                      {row.href ? (
-                        <a href={row.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                          {row.name}
-                        </a>
-                      ) : (
-                        row.name
-                      )}
-                    </th>
-                    {row.cells.map((cell, i) => (
-                      <td key={i} className="px-4 py-3 text-center">
-                        <CellValue value={cell} />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            Checked in September 2026 against each project&apos;s public site. If something here is
-            out of date,{" "}
-            <a href={`${GITHUB_URL}/issues`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">
-              open an issue
-            </a>{" "}
-            and it will be corrected.
-          </p>
-        </div>
-      </section>
-
       {/* FAQ */}
-      <section>
+      <section className="border-t bg-muted/30">
         <div className="container mx-auto max-w-3xl px-4 py-24">
-          <h2 className="mb-8 text-center text-3xl font-bold tracking-tight">Common questions</h2>
-          <div className="divide-y rounded-xl border bg-card">
-            {homeFaq.map((item) => (
-              <details key={item.q} className="group px-5 py-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
-                  {item.q}
-                  <span className="font-mono text-muted-foreground transition-transform group-open:rotate-45">+</span>
-                </summary>
-                <p className="mt-3 text-muted-foreground text-pretty">{item.a}</p>
-              </details>
-            ))}
-          </div>
+          <h2 className="mb-8 text-center text-3xl font-bold tracking-tight md:text-4xl">Questions</h2>
+          <FaqList items={homeFaq} />
           <p className="mt-6 text-center text-sm text-muted-foreground">
             More on the{" "}
             <Link href="/support" className="text-brand underline-offset-4 hover:underline">
               support page
             </Link>
-            , including the iOS behaviours that look like bugs.
+            .
           </p>
         </div>
       </section>
 
-      {/* Consulting */}
-      <section className="border-t bg-muted/30">
+      {/* Closing */}
+      <section className="border-t">
         <div className="container mx-auto max-w-7xl px-4 py-24">
-          <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.2fr_1fr]">
-            <div>
-              <Badge variant="outline" className="mb-4">Consulting</Badge>
-              <h2 className="mb-4 text-3xl font-bold tracking-tight">Consulting</h2>
-              <p className="text-lg text-muted-foreground">
-                The app, the stack and the documentation are free. If you want help setting up
-                the stack, connecting your data to AI tools, implementing the protocol against
-                your own backend, or building on the data, I do that work.
-              </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg">
-                  <Link href="/consulting">
-                    <Briefcase className="mr-2 h-4 w-4" />
-                    Consulting
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <a href="mailto:support@pulshealth.com">Email the maintainer</a>
-                </Button>
-              </div>
-            </div>
-            <ul className="space-y-3 rounded-xl border bg-card p-6 text-sm">
-              {[
-                "Get the self-hosted stack running, and keep it running",
-                "Wire your health data into Claude, Cursor or ChatGPT",
-                "Implement or review a Puls Sync Protocol receiver",
-                "Dashboards, exports and analysis on your own data",
-                "Health-data engineering beyond this project",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-                  <span className="text-muted-foreground">{item}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+            <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">Start with the app</h2>
+            <p className="mb-8 text-lg text-muted-foreground text-pretty">
+              It is free, needs no account, and keeps everything on your phone until you connect a
+              database.
+            </p>
+            <AppStoreBadge />
+            <p className="mt-6 text-sm text-muted-foreground">
+              Want the database hosted for you?{" "}
+              <a href={SIGNUP_URL} className={textLink}>
+                Get started
+              </a>
+              .
+            </p>
           </div>
         </div>
       </section>
-
-      <FollowProject />
     </main>
   );
 }

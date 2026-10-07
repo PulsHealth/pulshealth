@@ -1,9 +1,35 @@
 import { notFound } from "next/navigation";
+import { GitHubIcon } from "@/components/brand-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RepoMarkdown, readRepoFile, stripLeadingH1 } from "@/lib/markdown";
 
 const GITHUB = "https://github.com/PulsHealth/pulshealth";
 const POLICY_PATH = "docs/privacy-policy.md";
+const BLOB = `${GITHUB}/blob/main`;
+
+/** The claims the policy rests on, each with the code that backs it. */
+const claims = [
+  {
+    title: "The app alone sends nothing",
+    body: "Exploring and exporting need no account and make no network request. An export goes wherever you send it from the share sheet.",
+    check: { label: "Export/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Export` },
+  },
+  {
+    title: "Your database, or ours: your choice",
+    body: "The app uploads only to the database you set up. Run your own and the developer never sees your data. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is never sold or shared, and deleting your account deletes it.",
+    check: { label: "Transport/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Transport` },
+  },
+  {
+    title: "Zero third-party dependencies in the app",
+    body: "No analytics SDK, no crash reporter, no ad library. The Swift package and the app depend on Apple frameworks and nothing else.",
+    check: { label: "Package.swift", href: `${BLOB}/PulsHealthSync/Package.swift` },
+  },
+  {
+    title: "Read-only, in the code",
+    body: "The app asks HealthKit for read permission only and never writes, edits or deletes. The usage strings say so, and the code shows it.",
+    check: { label: "HealthSyncEngine.swift", href: `${BLOB}/PulsHealthSync/Sources/PulsHealthSync/Engine/HealthSyncEngine.swift` },
+  },
+];
 
 export const metadata = {
   title: "Privacy Policy - PulsHealth",
@@ -50,6 +76,30 @@ export default function PrivacyPage() {
             </ul>
           </CardContent>
         </Card>
+
+        <section aria-labelledby="check-it" className="mb-10">
+          <h2 id="check-it" className="text-xl font-semibold tracking-tight">Check it in the code</h2>
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            The app is open source, so each of these links to the code behind it.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {claims.map((claim) => (
+              <div key={claim.title} className="flex flex-col rounded-xl border bg-card p-4">
+                <h3 className="font-semibold">{claim.title}</h3>
+                <p className="mt-1 flex-1 text-sm leading-relaxed text-muted-foreground">{claim.body}</p>
+                <a
+                  href={claim.check.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 font-mono text-xs text-brand hover:underline"
+                >
+                  <GitHubIcon className="h-3.5 w-3.5" />
+                  check: {claim.check.label}
+                </a>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <div className="prose prose-zinc dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline">
           <p>
