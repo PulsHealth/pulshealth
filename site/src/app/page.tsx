@@ -12,6 +12,7 @@ import {
   FileSpreadsheet,
   LayoutDashboard,
   Lock,
+  MousePointerClick,
   Minus,
   PenLine,
   Server,
@@ -33,6 +34,8 @@ const BLOB = `${GITHUB_URL}/blob/main`;
 
 /** The hosted database's sign-up page, on the viewer's origin. */
 const SIGNUP_URL = "https://app.pulshealth.com/signup";
+/** Signs a visitor straight into the viewer's demo account (web/app/demo). */
+const DEMO_URL = "https://app.pulshealth.com/demo";
 
 type Way = {
   key: string;
@@ -243,6 +246,12 @@ export default async function HomePage() {
                 Get started
               </a>
             </Button>
+            <Button asChild size="lg" variant="outline">
+              <a href={DEMO_URL}>
+                <MousePointerClick className="mr-2 h-4 w-4" />
+                See the live demo
+              </a>
+            </Button>
           </div>
           <p className="text-sm text-muted-foreground">
             Prefer to run it yourself?{" "}
@@ -268,7 +277,8 @@ export default async function HomePage() {
 
         {/* Product shot */}
         <div className="container mx-auto mt-14 max-w-6xl px-4">
-          <figure className="overflow-hidden rounded-xl border bg-[#0b0b0c] shadow-2xl shadow-black/20">
+          <a href={DEMO_URL} className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <figure className="overflow-hidden rounded-xl border bg-[#0b0b0c] shadow-2xl shadow-black/20 transition-transform group-hover:-translate-y-0.5">
             <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-2.5">
               <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
               <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
@@ -283,10 +293,15 @@ export default async function HomePage() {
               priority
               className="w-full"
             />
-            <figcaption className="border-t border-white/10 px-4 py-2 text-xs text-white/50">
-              The web viewer, which comes with either database, against demo data.
+            <figcaption className="flex items-center justify-between gap-4 border-t border-white/10 px-4 py-2 text-xs text-white/50">
+              <span>The web viewer, which comes with either database, against demo data.</span>
+              <span className="inline-flex shrink-0 items-center gap-1 text-white/80 group-hover:text-white">
+                Try it live
+                <ArrowRight className="h-3 w-3" aria-hidden />
+              </span>
             </figcaption>
           </figure>
+          </a>
         </div>
       </section>
 
