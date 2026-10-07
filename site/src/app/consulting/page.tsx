@@ -56,7 +56,7 @@ export default function ConsultingPage() {
     <main className="flex min-h-screen flex-col">
       <PageHero
         eyebrow="Consulting"
-        title={<>Help with <span className="text-brand">health data and AI</span></>}
+        title={<>From health data to <span className="text-brand">AI that works</span></>}
         lede="For teams building with wearables, health records and AI."
       >
         <ContactButton label="Get in touch" />
