@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import {
+  ArrowDown,
   ArrowRight,
   Bot,
   Database,
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
 import { AiChatPreview } from "@/components/ai-chat-preview";
+import { AnimatedWord } from "@/components/animated-word";
 import { getAllTypes } from "@/lib/api";
 import { faq } from "@/lib/faq";
 import { GITHUB_URL, formatStars, getRepoStats } from "@/lib/github";
@@ -44,7 +46,6 @@ const textLink = "font-medium text-brand underline-offset-4 hover:underline";
 /** "How it works": the one flow every way of using PulsHealth shares. */
 const steps = [
   {
-    icon: Smartphone,
     title: "The app reads Apple Health",
     body: "Free and read-only, on your iPhone. Explore every type, or export CSV and JSONL, with no account.",
     more: (
@@ -54,7 +55,6 @@ const steps = [
     ),
   },
   {
-    icon: Database,
     title: "It syncs to your database",
     body: "Your whole history first, then it keeps up in the background.",
     more: (
@@ -65,7 +65,6 @@ const steps = [
     ),
   },
   {
-    icon: Bot,
     title: "You and your AI use it",
     body: "Browse it in the web viewer, ask Claude about it, or pull it into a notebook or spreadsheet.",
     more: (
@@ -76,10 +75,64 @@ const steps = [
   },
 ];
 
-const prompts = [
-  "Plan the next 16 weeks of marathon training from my last three months of runs, my heart rate and my HRV.",
-  "Write my weekly report: training load, sleep and resting heart rate, against the month before.",
-  "Where have my runs got faster this year, and what else changed around then?",
+/** The headline's first word cycles through these. */
+const heroWords = ["Unlock", "Explore", "Understand", "Analyze", "Export", "Own"];
+
+/** Demo rows for the database step of the figure. */
+const dbRows = [
+  ["Heart rate", "62 bpm", "7:41"],
+  ["Steps", "1,204", "7:40"],
+  ["Sleep", "7 h 12 m", "6:58"],
+  ["HRV", "48 ms", "6:55"],
+  ["Run", "5.2 km", "Sun"],
+];
+
+/** The figure's three pictures, one per step, all the same height. */
+const stepVisuals: ReactNode[] = [
+  <div key="phone" className="flex h-full justify-center pt-5">
+    <div className="w-40 overflow-hidden rounded-t-[1.75rem] border-[4px] border-b-0 border-neutral-900 bg-neutral-900 dark:border-neutral-700 dark:bg-neutral-700">
+      <Image
+        src="/screenshots/app-explore.webp"
+        alt="The app's Explore tab: Apple Health types by category"
+        width={600}
+        height={1304}
+        className="block w-full rounded-t-[1.5rem]"
+      />
+    </div>
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-card to-transparent" />
+  </div>,
+  <div key="db" className="flex h-full flex-col justify-center px-5">
+    <p className="mb-3 flex items-center gap-2 text-sm font-medium">
+      <Database className="h-4 w-4 text-brand" aria-hidden />
+      Your database
+    </p>
+    <ul className="space-y-1.5 text-xs">
+      {dbRows.map(([type, value, time]) => (
+        <li key={type} className="flex items-center justify-between gap-3 rounded-md bg-muted/70 px-2.5 py-1.5">
+          <span className="text-muted-foreground">{type}</span>
+          <span className="ml-auto font-mono tabular-nums">{value}</span>
+          <span className="w-8 text-right font-mono text-muted-foreground tabular-nums">{time}</span>
+        </li>
+      ))}
+    </ul>
+  </div>,
+  <div key="ai" className="relative h-full">
+    <Image
+      src="/screenshots/viewer-today.webp"
+      alt="The web viewer's Today page"
+      width={1440}
+      height={900}
+      className="absolute inset-0 h-full w-full object-cover object-left-top"
+    />
+    <div className="absolute inset-x-3 bottom-3 space-y-1.5 text-xs">
+      <p className="ml-auto w-fit rounded-xl rounded-br-sm bg-brand px-3 py-1.5 text-brand-foreground shadow-md">
+        How did I sleep this week?
+      </p>
+      <p className="w-fit max-w-[95%] rounded-xl rounded-bl-sm border bg-card px-3 py-1.5 shadow-md">
+        7 h 04 m a night, 22 min more than last week.
+      </p>
+    </div>
+  </div>,
 ];
 
 const privacy = [
@@ -150,81 +203,72 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
 
       {/* Hero */}
-      <section className="w-full overflow-hidden border-b bg-gradient-to-b from-background to-muted/40">
-        <div className="container mx-auto grid max-w-7xl items-center gap-14 px-4 pb-20 pt-16 lg:grid-cols-[1.1fr_1fr] lg:pb-24 lg:pt-24">
-          <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-            <Badge variant="outline" className="mb-6 rounded-full bg-background/60 px-4 py-1 text-sm backdrop-blur-sm">
-              Free app &middot; Open source
-            </Badge>
-            <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-foreground text-balance md:text-6xl">
-              Ask AI about your <span className="text-brand">Apple Health</span> data.
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
-              PulsHealth keeps your whole Apple Health history in a database, so you and Claude can
-              work from your real numbers.
-            </p>
-            <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row">
-              <AppStoreBadge />
-              <Button asChild size="lg" variant="ghost">
-                <a href="#how-it-works">
-                  How it works
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </a>
-              </Button>
-            </div>
-            <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-start">
-              <li>No account needed</li>
-              <li>Read-only</li>
-              <li>No tracking</li>
-              <li>
-                <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
-                  <Star className="h-3.5 w-3.5" aria-hidden />
-                  {starLabel ? `${starLabel} on GitHub` : "Open source on GitHub"}
-                </a>
-              </li>
-            </ul>
+      <section className="w-full border-b bg-gradient-to-b from-background to-muted/40">
+        <div className="container mx-auto flex max-w-7xl flex-col items-center px-4 pb-16 pt-16 text-center md:pb-20 md:pt-24">
+          <Badge variant="outline" className="rounded-full bg-background/60 px-4 py-1 text-sm backdrop-blur-sm">
+            Free app &middot; Open source
+          </Badge>
+          <h1 className="mt-8 text-5xl font-bold tracking-tight text-foreground md:text-7xl">
+            <AnimatedWord words={heroWords} />
+            <br />
+            your health data
+          </h1>
+          <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
+            A free iPhone app that keeps your whole Apple Health history in a database, so you
+            and your AI can work from your real numbers.
+          </p>
+          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+            <AppStoreBadge />
+            <Button asChild size="lg" variant="ghost">
+              <a href="#how-it-works">
+                How it works
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </a>
+            </Button>
           </div>
-
-          <AiChatPreview />
+          <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <li>No account needed</li>
+            <li>Read-only</li>
+            <li>No tracking</li>
+            <li>
+              <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
+                <Star className="h-3.5 w-3.5" aria-hidden />
+                {starLabel ? `${starLabel} on GitHub` : "Open source on GitHub"}
+              </a>
+            </li>
+          </ul>
         </div>
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="container mx-auto max-w-7xl scroll-mt-16 px-4 py-24">
-        <div className="mb-14 text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">How it works</h2>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            One app keeps a database of your health data up to date. You, and the AI you choose,
-            read from it.
-          </p>
-        </div>
+      <section id="how-it-works" className="container mx-auto max-w-7xl scroll-mt-16 px-4 pb-20 pt-16">
+        <h2 className="mb-10 text-center text-3xl font-bold tracking-tight md:text-4xl">How it works</h2>
 
-        <div className="relative mx-auto max-w-5xl">
-          <div
-            aria-hidden
-            className="absolute left-[16.67%] right-[16.67%] top-7 hidden h-px bg-brand/30 lg:block"
-          />
-          <ol className="relative grid gap-10 lg:grid-cols-3 lg:gap-8">
-            {steps.map((step, i) => (
-              <li key={step.title} className="relative flex gap-5 lg:flex-col lg:items-center lg:text-center">
-                {i < steps.length - 1 && (
-                  <div aria-hidden className="absolute -bottom-10 left-7 top-14 w-px bg-brand/30 lg:hidden" />
-                )}
-                <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-brand/30 bg-background text-brand shadow-sm">
-                  <step.icon className="h-6 w-6" />
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-semibold text-brand-foreground">
+        <ol className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-4">
+          {steps.map((step, i) => (
+            <Fragment key={step.title}>
+              {i > 0 && (
+                <li aria-hidden className="flex justify-center text-brand/60 lg:mt-[6.75rem] lg:items-start">
+                  <ArrowDown className="h-6 w-6 lg:hidden" />
+                  <ArrowRight className="hidden h-6 w-6 lg:block" />
+                </li>
+              )}
+              <li className="min-w-0">
+                <div className="relative h-60 overflow-hidden rounded-2xl border bg-card shadow-sm">
+                  {stepVisuals[i]}
+                </div>
+                <div className="mt-5 flex items-center gap-2.5">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-brand-foreground">
                     {i + 1}
                   </span>
-                </div>
-                <div className="min-w-0 pt-1 lg:pt-5">
                   <h3 className="text-lg font-semibold">{step.title}</h3>
-                  <p className="mt-2 text-muted-foreground text-pretty">{step.body}</p>
-                  <p className="mt-3 text-sm">{step.more}</p>
                 </div>
+                <p className="mt-2 text-muted-foreground text-pretty">{step.body}</p>
+                <p className="mt-3 text-sm">{step.more}</p>
               </li>
-            ))}
-          </ol>
-        </div>
+            </Fragment>
+          ))}
+        </ol>
 
         <p className="mx-auto mt-14 max-w-2xl text-center text-sm text-muted-foreground">
           All of it is open source under Apache-2.0, and the hosted database runs the same code
@@ -314,21 +358,7 @@ export default async function HomePage() {
           <Feature
             icon={Bot}
             title="Ask your AI"
-            visual={
-              <div className="rounded-2xl border bg-card p-6 shadow-xl shadow-black/5">
-                <p className="mb-4 text-sm font-medium text-muted-foreground">Things to ask</p>
-                <ul className="space-y-3">
-                  {prompts.map((prompt) => (
-                    <li key={prompt} className="rounded-xl border bg-background px-4 py-3 text-sm leading-relaxed">
-                      &ldquo;{prompt}&rdquo;
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Answers from your own numbers, not medical advice.
-                </p>
-              </div>
-            }
+            visual={<AiChatPreview />}
           >
             <p>
               Add PulsHealth to Claude, sign in and tap Allow. It reads your data and cannot change
