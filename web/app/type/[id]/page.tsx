@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { RangeSelector } from "@/components/RangeSelector";
 import { TrendChart } from "@/components/TrendChart";
@@ -20,6 +21,19 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const type = typeByIdentifier(id);
   return { title: type ? `${type.name} — PulsHealth` : "PulsHealth" };
+}
+
+// The per-user stats are a count over every sample: cached, but the first
+// read after a restart takes seconds, so this tile streams in after the page.
+async function AllTimeSamples({ user, id }: { user: string; id: string }) {
+  const stat = (await getStats(user)).get(id);
+  return (
+    <Stat
+      label="All-time samples"
+      value={stat ? formatCompact(stat.rows) : "—"}
+      sub={stat?.earliest ? `since ${formatFull(stat.earliest)}` : undefined}
+    />
+  );
 }
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -50,11 +64,10 @@ export default async function TypePage({
   const cumulative = isCumulative(id);
 
   const user = await viewerUser();
-  const [series, latestMap, todays, stats] = await Promise.all([
+  const [series, latestMap, todays] = await Promise.all([
     getSeries(user, id, range),
     getLatestMany(user, [id]),
     cumulative ? getTodayTotals(user, [id]) : Promise.resolve(new Map<string, number>()),
-    getStats(user),
   ]);
 
   const vals = series.points.map((p) => p.value).filter(Number.isFinite);
@@ -68,7 +81,6 @@ export default async function TypePage({
   const min = mins.length ? Math.min(...mins) : null;
   const max = maxs.length ? Math.max(...maxs) : null;
   const sum = vals.length ? vals.reduce((a, b) => a + b, 0) : null;
-  const stat = stats.get(id);
   const latest = latestMap.get(id);
 
   const unit = series.unit ?? type.unit;
@@ -130,11 +142,9 @@ export default async function TypePage({
         ) : (
           <Stat label="Buckets" value={`${series.points.length}`} />
         )}
-        <Stat
-          label="All-time samples"
-          value={stat ? formatCompact(stat.rows) : "—"}
-          sub={stat?.earliest ? `since ${formatFull(stat.earliest)}` : undefined}
-        />
+        <Suspense fallback={<Stat label="All-time samples" value="…" />}>
+          <AllTimeSamples user={user} id={id} />
+        </Suspense>
       </div>
     </>
   );
