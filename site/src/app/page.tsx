@@ -10,7 +10,6 @@ import {
   Globe,
   Lock,
   MousePointerClick,
-  ShieldCheck,
   Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,7 @@ const appJsonLd = {
   codeRepository: GITHUB_URL,
   isAccessibleForFree: true,
   description:
-    "Explores and exports Apple Health with no account, and syncs it, read-only, to a database hosted for you or run by you. Full historical backfill, then continuous background sync.",
+    "Explores and exports Apple Health with no account, and syncs it to a database hosted for you or run by you. Full historical backfill, then continuous background sync.",
 };
 
 const textLink = "font-medium text-brand underline-offset-4 hover:underline";
@@ -49,7 +48,7 @@ const textLink = "font-medium text-brand underline-offset-4 hover:underline";
 const steps = [
   {
     title: "The app reads Apple Health",
-    body: "Free and read-only, on your iPhone. Explore every type, or export CSV and JSONL, with no account.",
+    body: "Free, on your iPhone. Explore every type, or export CSV and JSONL, with no account.",
     more: (
       <a href="#iphone" className={`inline-flex items-center ${textLink}`}>
         On your iPhone <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -142,11 +141,6 @@ const stepVisuals: ReactNode[] = [
 
 const privacy = [
   {
-    icon: ShieldCheck,
-    title: "Read-only",
-    body: "The app reads Apple Health and never writes to it.",
-  },
-  {
     icon: Lock,
     title: "Only where you send it",
     body: "Run your own database and we never see your data. On ours it is never sold or shared.",
@@ -229,8 +223,6 @@ export default async function HomePage() {
               <span>Free</span>
               <span aria-hidden>&middot;</span>
               <span>No account needed</span>
-              <span aria-hidden>&middot;</span>
-              <span>Read-only</span>
               <span aria-hidden>&middot;</span>
               <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                 Open source
@@ -372,7 +364,7 @@ export default async function HomePage() {
           >
             <p>
               PulsHealth comes with an MCP server, so any AI agent that speaks MCP can use your
-              data. Connect it and sign in; it reads your data and cannot change it.
+              data.
             </p>
             <ul className="flex flex-wrap gap-2 text-sm" aria-label="Works with">
               {aiClients.map((client) => (
@@ -381,10 +373,6 @@ export default async function HomePage() {
                 </li>
               ))}
             </ul>
-            <p>
-              It already knows the hard parts: units, your time zone, and steps counted twice by
-              iPhone and Watch.
-            </p>
             <div className="pt-2">
               <Button asChild variant="outline">
                 <Link href="/docs/ai">
@@ -405,7 +393,7 @@ export default async function HomePage() {
             Health data is personal. Here is what that means in practice.
           </p>
         </div>
-        <div className="grid gap-10 md:grid-cols-3">
+        <div className="grid gap-10 md:grid-cols-2">
           {privacy.map((item) => (
             <div key={item.title} className="text-center">
               <div className="mx-auto mb-4 w-fit rounded-xl bg-brand-muted p-3 text-brand">
