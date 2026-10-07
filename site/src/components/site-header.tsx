@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { BookOpen, Briefcase, Database, FileText, LogIn, Menu, PenLine, Smartphone, Star } from "lucide-react"
+import { BookOpen, Briefcase, FileText, LogIn, Menu, PenLine, Star } from "lucide-react"
 import { GitHubIcon } from "@/components/brand-icons"
 
 import { cn } from "@/lib/utils"
@@ -24,28 +24,31 @@ type NavItem = {
   title: string
   href: string
   description: string
-  icon: typeof Smartphone
+  icon: typeof FileText
 }
 
 /**
- * Six items, all on-site. Docs are the way into the protocol, the AI setup
- * and the server manual; GitHub is the star pill on the right. Consulting is
- * the business behind the project and stays visible; About and Support live
- * in the footer.
+ * Four items, all on-site. PulsHealth is one product, explained on the home
+ * page, so the app and self-hosting pages are not tabs of their own: they are
+ * linked from the home page's "How it works", the footer and the mobile
+ * menu's "More". Docs are the way into the protocol, the AI setup and the
+ * database manual; GitHub is the star pill on the right. Consulting is the
+ * business behind the project and stays visible; About and Support live in
+ * the footer.
  */
 const primary: NavItem[] = [
-  { title: "App", href: "/ios", description: "The free iOS app", icon: Smartphone },
-  { title: "Database", href: "/server", description: "Self-host the open-source stack", icon: Database },
   { title: "Docs", href: "/docs", description: "Setup, protocol, database, AI", icon: FileText },
   { title: "Knowledge Base", href: "/knowledge-base", description: "What each Apple Health type measures", icon: BookOpen },
   { title: "Blog", href: "/blog", description: "Posts from the project", icon: PenLine },
-  { title: "Consulting", href: "/consulting", description: "Setup, hosting and custom work, from the maintainer", icon: Briefcase },
+  { title: "Consulting", href: "/consulting", description: "Help with health data and AI", icon: Briefcase },
 ]
 
 /** The hosted web viewer: another origin, so a plain link, not next/link. */
 const APP_URL = "https://app.pulshealth.com/"
 
 const secondary: { title: string; href: string }[] = [
+  { title: "The app", href: "/ios" },
+  { title: "Self-hosting", href: "/server" },
   { title: "Support & FAQ", href: "/support" },
   { title: "About", href: "/about" },
   { title: "Privacy", href: "/privacy" },
