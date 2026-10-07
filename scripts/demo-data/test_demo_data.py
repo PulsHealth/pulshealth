@@ -66,7 +66,7 @@ def make_pack(days=14, seed=1):
     raw["quantity"] = [q for q in raw["quantity"] if q[0] in bp.QUANTITY]
     rng = random.Random(seed)
     scrub = bp.Scrubber(rng)
-    loops = {n: bp.Loop(c, a, b, rng) for n, (c, a, b) in bp.LOOPS.items()}
+    loops = {n: bp.Loop(c, a, b, t, rng) for n, (c, a, b, t) in bp.LOOPS.items()}
     quantity = bp.transform_quantity(raw["quantity"], scrub)
     category = bp.transform_category(raw["category"], scrub)
     workouts = bp.transform_workouts(raw["workouts"], raw["series"], scrub, loops)
@@ -145,12 +145,20 @@ class BuildPackTests(unittest.TestCase):
             for ev in w["events"]:
                 self.assertEqual(len(ev), 3)
             lat, lon = w["route"][0][1], w["route"][0][2]
-            (clat, clon), _a, _b = bp.LOOPS["park"]
+            (clat, clon), _a, _b, _t = bp.LOOPS["park"]
             self.assertLess(abs(lat - clat), 0.02)
             self.assertLess(abs(lon - clon), 0.04)
             # distance along the route ≈ the workout's own scaled distance
             ser = sum(v for _, v in w["series"][Q + "DistanceCycling"])
             self.assertAlmostEqual(ser, 750 * 10.6 * self.scrub.factor["distance"], delta=5)
+
+    def test_routes_climb_the_way_the_viewer_counts_it(self):
+        route = self.pack["workouts"][0]["route"]
+        alts = [p[3] for p in route]
+        # web/lib/geo.ts: only per-point rises over a metre count
+        gain = sum(b - a for a, b in zip(alts, alts[1:]) if b - a > 1)
+        self.assertGreater(gain, 20)
+        self.assertLess(gain, 300)
 
     def test_sleep_nights_move_as_one_block(self):
         sleep = self.pack["types"].index(C + "SleepAnalysis")
@@ -198,6 +206,15 @@ class LoadTests(unittest.TestCase):
         # a later run sends the same samples under the same UUIDs, plus new ones
         (later, *_), _ = self._build(now + dt.timedelta(hours=3), days=20)
         self.assertLessEqual({s["uuid"] for s in samples} - {s["uuid"] for s in later}, set())
+
+    def test_a_night_of_sleep_waits_for_the_morning(self):
+        sleep = C + "SleepAnalysis"
+        def sleep_sent(hour, day=18):
+            now = dt.datetime(2026, 3, day, hour, 0, tzinfo=self.tl.tz)
+            (samples, *_), _ = self._build(now, hours=11)  # from 16:00 or 22:00: one night at most
+            return [x for x in samples if x["type"] == sleep]
+        self.assertEqual(sleep_sent(3), [])  # mid-night: nothing yet
+        self.assertEqual(len(sleep_sent(9)), 16)  # the whole night once it is over
 
     def test_loops_get_fresh_uuids(self):
         a = self.tl.uuid(0, "q1")

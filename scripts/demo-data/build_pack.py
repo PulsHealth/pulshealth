@@ -144,12 +144,17 @@ AGGREGATES = [
 ]
 
 # Loops in a public park (Golden Gate Park, San Francisco) the generated
-# routes run on: centre, semi-axes in metres (east-west, north-south).
+# routes run on: centre, semi-axes in metres (east-west, north-south), and
+# terrain: altitude at the west end, the rise to the east end, and the
+# height and count of the bumps along the way (metres).
 LOOPS = {
-    "park": ((37.7703, -122.4835), 2300.0, 330.0),
-    "lake": ((37.7697, -122.4757), 260.0, 170.0),
+    "park": ((37.7703, -122.4835), 2300.0, 330.0, (12.0, 50.0, 4.0, 11)),
+    "lake": ((37.7697, -122.4757), 260.0, 170.0, (45.0, 4.0, 1.5, 5)),
 }
 ROUTE_STEP_S = 5
+# Altitudes come out in steps of this size, like a GPS's: a reader that
+# ignores per-point changes under a metre (web/lib/geo.ts) still sees climbs.
+ALT_STEP_M = 1.5
 
 
 def die(msg: str) -> None:
@@ -340,20 +345,29 @@ def label(device: str) -> str:
 
 
 def transform_category(rows, scrub: Scrubber):
-    """[identifier, source, t, dur, value]; each sleep night moved as a block."""
+    """[identifier, source, t, dur, value, hold]; each sleep night moved as a
+    block. `hold` (sleep only) is seconds from a sample's start to its night's
+    end: the Watch hands a night over in the morning, so load.py sends none of
+    it before then."""
     keep = []
     for ident, name, bundle, t, dur, value in rows:
         device = device_of(name, bundle)
         if CATEGORY[ident] == device:
             keep.append([ident, label(device), float(t), float(dur), int(value)])
     sleep = sorted((r for r in keep if r[0] == C + "SleepAnalysis"), key=lambda r: r[2])
-    shift, night_end = 0.0, None
+    nights, night_end = [], None
     for r in sleep:
         if night_end is None or r[2] - night_end > 3 * 3600:
-            shift = scrub.rng.choice((-1, 1)) * scrub.rng.uniform(0, 20 * 60)
+            nights.append([])
             night_end = r[2]
         night_end = max(night_end, r[2] + r[3])
-        r[2] += shift
+        nights[-1].append(r)
+    for night in nights:
+        shift = scrub.rng.choice((-1, 1)) * scrub.rng.uniform(0, 20 * 60)
+        end = max(r[2] + r[3] for r in night)
+        for r in night:
+            r.append(round(end - r[2], 3))
+            r[2] += shift
     for r in keep:
         r[2], r[3] = round(r[2], 3), round(r[3], 3)
     return [r for r in keep if r[2] >= 0]
@@ -425,8 +439,9 @@ def relative_activities(raw: str | None, start_ms: float):
 class Loop:
     """A closed path (a wobbly ellipse) walked by arc length."""
 
-    def __init__(self, centre, a, b, rng: random.Random, n=2000):
+    def __init__(self, centre, a, b, terrain, rng: random.Random, n=2000):
         lat0, lon0 = centre
+        self.terrain = terrain
         self.m_lat = 111_320.0
         self.m_lon = 111_320.0 * math.cos(math.radians(lat0))
         ph1, ph2 = rng.uniform(0, 2 * math.pi), rng.uniform(0, 2 * math.pi)
@@ -454,7 +469,10 @@ class Loop:
                 hi = mid
         p, q = self.pts[lo % len(self.pts)], self.pts[hi % len(self.pts)]
         f = (d - self.cum[lo]) / max(1e-9, self.cum[hi] - self.cum[lo])
-        return p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f
+        u = 2 * math.pi * (lo + f) / len(self.pts)
+        base, rise, bump, bumps = self.terrain
+        alt = base + rise * (1 + math.cos(u)) / 2 + bump * math.sin(bumps * u)
+        return p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f, round(alt / ALT_STEP_M) * ALT_STEP_M
 
 
 def generate_route(activity: str, span_s: float, distance_m: float | None, dist_series, rng: random.Random, loops):
@@ -467,7 +485,6 @@ def generate_route(activity: str, span_s: float, distance_m: float | None, dist_
     loop = loops["lake"] if activity == "walking" or (activity == "running" and total < 3000) else loops["park"]
     origin = rng.uniform(0, loop.length)
     sign = rng.choice((-1, 1))
-    base_alt = rng.uniform(40, 70)
 
     # cumulative distance at time offset, from the (already scaled) series
     if dist_series:
@@ -500,10 +517,9 @@ def generate_route(activity: str, span_s: float, distance_m: float | None, dist_
     for i in range(steps):
         t = min(i * ROUTE_STEP_S, span_s)
         d = dist_at(t)
-        lat, lon = loop.at(origin + sign * d)
+        lat, lon, alt = loop.at(origin + sign * d)
         lat += rng.gauss(0, 1.5) / loop.m_lat
         lon += rng.gauss(0, 1.5) / loop.m_lon
-        alt = base_alt + 12 * math.sin(2 * math.pi * ((origin + sign * d) % loop.length) / loop.length)
         speed = course = None
         if prev is not None:
             dt_s = t - prev[0]
@@ -624,7 +640,7 @@ def main() -> None:
 
     rng = random.Random(args.seed) if args.seed is not None else random.SystemRandom()
     scrub = Scrubber(rng)
-    loops = {name: Loop(c, a, b, rng) for name, (c, a, b) in LOOPS.items()}
+    loops = {name: Loop(c, a, b, t, rng) for name, (c, a, b, t) in LOOPS.items()}
 
     quantity = transform_quantity(raw["quantity"], scrub)
     category = transform_category(raw["category"], scrub)

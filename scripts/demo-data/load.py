@@ -132,10 +132,10 @@ def build(pack: dict, tl: Timeline, start_ms: float, now_ms: float):
                 line["metadata"] = md
             samples.append(line)
 
-        for i, (t, s, _d, sec, dur, value) in category[day]:
+        for i, (t, s, _d, sec, dur, value, *hold) in category[day]:
             begin = tl.instant_ms(date, sec)
             end = begin + dur * 1000
-            if end > now_ms:
+            if begin + (hold[0] if hold else dur) * 1000 > now_ms:  # a night goes out once it is over
                 continue
             if types[t] == STAND and value == 0:  # HKCategoryValueAppleStandHour.stood
                 stood += 1
