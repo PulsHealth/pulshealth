@@ -51,18 +51,22 @@ describe("viewerMode", () => {
 
   it("reads WEB_DEMO_USER as a UUID, only in accounts mode", () => {
     const id = "0D3A0000-0000-4000-8000-0000000000AB";
-    expect(parseDemoUser(id)).toBe(id.toLowerCase());
-    expect(parseDemoUser(` ${id} `)).toBe(id.toLowerCase());
-    for (const empty of [undefined, "", "  "]) expect(parseDemoUser(empty), String(empty)).toBeNull();
+    expect(parseDemoUser({ WEB_DEMO_USER: id })).toBe(id.toLowerCase());
+    expect(parseDemoUser({ WEB_DEMO_USER: ` ${id} ` })).toBe(id.toLowerCase());
+    for (const empty of [undefined, "", "  "]) expect(parseDemoUser({ WEB_DEMO_USER: empty }), String(empty)).toBeNull();
     for (const bad of ["demo", "0d3a0000-0000-4000-8000", `${id}x`, "'; DROP TABLE users; --"]) {
-      expect(() => parseDemoUser(bad), bad).toThrow(/^WEB_DEMO_USER must be the demo user's UUID/);
+      expect(() => parseDemoUser({ WEB_DEMO_USER: bad }), bad).toThrow(/^WEB_DEMO_USER must be the demo user's UUID/);
     }
+    // Never the household's own user: the seeded one, or PULS_USER_ID.
+    expect(() => parseDemoUser({ WEB_DEMO_USER: "5EA4D000-0000-4000-8000-000000000001" })).toThrow(/household's default user/);
+    expect(() => parseDemoUser({ WEB_DEMO_USER: id, PULS_USER_ID: id.toLowerCase() })).toThrow(/household's default user/);
     expect(demoUserId({ WEB_ACCOUNTS: "true", WEB_DEMO_USER: id })).toBe(id.toLowerCase());
     expect(demoUserId({ WEB_ACCOUNTS: "true" })).toBeNull();
     // Ignored outside accounts mode.
     expect(demoUserId({ WEB_DEMO_USER: id })).toBeNull();
     expect(demoUserId({ WEB_AUTH_PASSWORD: "pw", WEB_DEMO_USER: id })).toBeNull();
-    // At request time (startup already refused it) a malformed value is no demo.
+    // At request time (startup already refused it) a refused value is no demo.
     expect(demoUserId({ WEB_ACCOUNTS: "true", WEB_DEMO_USER: "demo" })).toBeNull();
+    expect(demoUserId({ WEB_ACCOUNTS: "true", WEB_DEMO_USER: id, PULS_USER_ID: id })).toBeNull();
   });
 });

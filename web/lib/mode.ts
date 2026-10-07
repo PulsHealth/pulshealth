@@ -13,6 +13,7 @@
 // Accounts mode wins when both are set: the shared password would otherwise
 // sit in front of a login that already identifies the person.
 
+import { DEFAULT_USER_ID } from "./config";
 import { isUuid } from "./uuid";
 
 export type ViewerMode = "accounts" | "basic" | "open";
@@ -76,14 +77,20 @@ export function trustProxyHeaders(env: Env = process.env): boolean {
 
 /**
  * WEB_DEMO_USER read strictly: the user id lower-cased, null when empty or
- * unset, and an error naming the variable for anything that is not a UUID
- * (instrumentation.ts stops the viewer on it at startup).
+ * unset, and an error naming the variable for anything that is not a UUID —
+ * or that is the household's default user (PULS_USER_ID, or the seeded one):
+ * anyone can open the demo, so it must be a user holding only sample data.
+ * instrumentation.ts stops the viewer on an error at startup.
  */
-export function parseDemoUser(value: string | undefined): string | null {
-  const v = (value ?? "").trim();
+export function parseDemoUser(env: Env = process.env): string | null {
+  const v = (env.WEB_DEMO_USER ?? "").trim();
   if (v === "") return null;
   if (!isUuid(v)) throw new Error(`WEB_DEMO_USER must be the demo user's UUID, got ${JSON.stringify(v)}`);
-  return v.toLowerCase();
+  const id = v.toLowerCase();
+  if (id === DEFAULT_USER_ID || id === (env.PULS_USER_ID ?? "").trim().toLowerCase()) {
+    throw new Error("WEB_DEMO_USER names the household's default user (PULS_USER_ID); the demo must be a user that holds only sample data");
+  }
+  return id;
 }
 
 /**
@@ -96,7 +103,7 @@ export function parseDemoUser(value: string | undefined): string | null {
 export function demoUserId(env: Env = process.env): string | null {
   if (viewerMode(env) !== "accounts") return null;
   try {
-    return parseDemoUser(env.WEB_DEMO_USER);
+    return parseDemoUser(env);
   } catch {
     return null;
   }

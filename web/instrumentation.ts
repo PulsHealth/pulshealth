@@ -23,7 +23,7 @@ export async function register() {
   // rather than quietly meaning "no demo".
   let demoUser: string | null;
   try {
-    demoUser = parseDemoUser(process.env.WEB_DEMO_USER);
+    demoUser = parseDemoUser(process.env);
   } catch (e) {
     console.error(`[puls-web] ${e instanceof Error ? e.message : String(e)}. Fix it in server/.env and restart.`);
     process.exit(1);
