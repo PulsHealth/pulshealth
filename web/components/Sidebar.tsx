@@ -49,7 +49,7 @@ export function Sidebar({
       {account?.demo && (
         // At the top, so a phone (where the sidebar sits above the page) shows it first.
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", padding: "0 8px 12px" }}>
-          <span className="chip" title="A shared demo account: sample data, not a real person's. Nothing here can be changed.">
+          <span className="chip" title="A shared demo account with de-identified sample data. Nothing here can be changed.">
             <span className="dot" style={{ background: "#ff9f0a" }} />
             <span style={{ fontSize: 12 }}>Demo · sample data</span>
           </span>

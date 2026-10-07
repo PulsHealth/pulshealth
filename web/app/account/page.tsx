@@ -221,7 +221,7 @@ function DemoAccount({ error }: { error: string | null }) {
             <span style={{ fontSize: 14, fontWeight: 600 }}>Demo · sample data</span>
           </div>
           <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.55, color: "var(--fg-soft)" }}>
-            This is a shared demo account. Its health records are sample data, not a real person&apos;s. Browse every page
+            This is a shared demo account. Its health records are de-identified sample data. Browse every page
             as you would your own; nothing here can be changed, and this visit ends after {DEMO_SESSION_HOURS} hours.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

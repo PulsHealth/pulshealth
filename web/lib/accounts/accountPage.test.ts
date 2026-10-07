@@ -62,7 +62,7 @@ describe("the account page for a demo session", () => {
   it("says what the account is and offers only signing out", async () => {
     const html = await render();
     expect(html).toContain("Demo account");
-    expect(html).toContain("sample data, not a real person&#x27;s");
+    expect(html).toContain("de-identified sample data");
     expect(html).toContain('action="/api/auth/logout"');
     for (const absent of ["demo@demo.invalid", "/api/auth/password", "/api/auth/sessions", "/api/auth/devices", "/api/auth/assistants", "/api/auth/delete-account", 'href="/signup"']) {
       expect(html, absent).not.toContain(absent);

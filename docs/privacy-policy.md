@@ -306,9 +306,8 @@ opens the form), or the developer invites you. What happens to your data:
   and its IP address. The viewer sets one cookie, which keeps you signed in;
   it holds a random value and nothing else.
 - **The demo.** "See the live demo" signs you into a shared demo account
-  that shows sample data, not anyone's records, and lets you change
-  nothing. That session records no IP address or browser name, and ends
-  after two hours.
+  that shows de-identified sample data and lets you change nothing. That
+  session records no IP address or browser name, and ends after two hours.
 - **Connecting your iPhone.** If you signed up, the account page
   makes a pairing code that lets your iPhone upload to your records — the
   one the app's sign-in sheet receives (family members' iPhones are paired
