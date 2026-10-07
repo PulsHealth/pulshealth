@@ -21,7 +21,6 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { AppStoreBadge } from "@/components/app-store-badge";
 import { FollowProject } from "@/components/follow-project";
 import { getAllTypes } from "@/lib/api";
-import { getCatalog } from "@/lib/catalog";
 import { faq } from "@/lib/faq";
 import { GITHUB_URL, formatStars, getRepoStats } from "@/lib/github";
 
@@ -33,41 +32,39 @@ const SIGNUP_URL = "https://app.pulshealth.com/signup";
 const textLink = "font-medium text-brand underline-offset-4 hover:underline";
 
 /** "How it works": the one flow every way of using PulsHealth shares. */
-function howItWorks(syncedTypeCount: number) {
-  return [
-    {
-      icon: Smartphone,
-      title: "The app reads Apple Health",
-      body: "Free and read-only, on your iPhone. Explore every type, or export CSV and JSONL, with no account.",
-      more: (
-        <Link href="/ios" className={`inline-flex items-center ${textLink}`}>
-          About the app <ArrowRight className="ml-1 h-3.5 w-3.5" />
-        </Link>
-      ),
-    },
-    {
-      icon: Database,
-      title: "It syncs to your database",
-      body: `Every sample of ${syncedTypeCount} types: your whole history first, then it keeps up in the background.`,
-      more: (
-        <span className="text-muted-foreground">
-          <a href={SIGNUP_URL} className={textLink}>Hosted for you</a>, or{" "}
-          <Link href="/server" className={textLink}>run your own</Link>.
-        </span>
-      ),
-    },
-    {
-      icon: Bot,
-      title: "You and your AI use it",
-      body: "Browse it in the web viewer, ask Claude about it, or pull it into a notebook or spreadsheet.",
-      more: (
-        <Link href="/docs/ai" className={`inline-flex items-center ${textLink}`}>
-          Connect an assistant <ArrowRight className="ml-1 h-3.5 w-3.5" />
-        </Link>
-      ),
-    },
-  ];
-}
+const steps = [
+  {
+    icon: Smartphone,
+    title: "The app reads Apple Health",
+    body: "Free and read-only, on your iPhone. Explore every type, or export CSV and JSONL, with no account.",
+    more: (
+      <Link href="/ios" className={`inline-flex items-center ${textLink}`}>
+        About the app <ArrowRight className="ml-1 h-3.5 w-3.5" />
+      </Link>
+    ),
+  },
+  {
+    icon: Database,
+    title: "It syncs to your database",
+    body: "Your whole history first, then it keeps up in the background.",
+    more: (
+      <span className="text-muted-foreground">
+        <a href={SIGNUP_URL} className={textLink}>Hosted for you</a>, or{" "}
+        <Link href="/server" className={textLink}>run your own</Link>.
+      </span>
+    ),
+  },
+  {
+    icon: Bot,
+    title: "You and your AI use it",
+    body: "Browse it in the web viewer, ask Claude about it, or pull it into a notebook or spreadsheet.",
+    more: (
+      <Link href="/docs/ai" className={`inline-flex items-center ${textLink}`}>
+        Connect an assistant <ArrowRight className="ml-1 h-3.5 w-3.5" />
+      </Link>
+    ),
+  },
+];
 
 const prompts = [
   "Plan the next 16 weeks of marathon training from my last three months of runs, my heart rate and my HRV.",
@@ -126,7 +123,6 @@ export default async function HomePage() {
   const { stars } = await getRepoStats();
   const starLabel = formatStars(stars);
   const homeFaq = faq.filter((f) => f.home);
-  const steps = howItWorks(getCatalog().types.length);
   const kbTypes = await getAllTypes();
   const kbCount = kbTypes.length;
   const kbFeatured = kbExamples
