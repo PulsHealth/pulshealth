@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1618,4 +1619,147 @@ func TestIntegration_InsertIntoCompressedChunk(t *testing.T) {
 	if dupValue != 1 {
 		t.Errorf("re-sent sample's value = %v, want the stored 1: a duplicate must never overwrite", dupValue)
 	}
+}
+
+// TestIntegration_QuantityNearDuplicates is the guard against the 2026-09-04
+// re-send: two client encoder versions sent the same samples with start times
+// a microsecond apart, the (uuid, start_ts) primary key saw two rows, and
+// 106,919 second copies were stored. A re-send whose start is within a
+// millisecond of the stored row must be a duplicate — counted as one, never a
+// second row — whether the row sits in a plain chunk or a compressed one,
+// while new UUIDs in the same batch are still inserted.
+func TestIntegration_QuantityNearDuplicates(t *testing.T) {
+	url := integrationDatabaseURL(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	pool, err := pgxpool.New(ctx, url)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer pool.Close()
+	store := NewStore(pool)
+
+	run := time.Now().UnixNano()
+	typeIdent := fmt.Sprintf("ITestNearDup%d", run)
+	id := func(n int) string {
+		return fmt.Sprintf("%08x-%04x-4000-8000-%012x", run>>32, n, run&0xffffffffffff)
+	}
+	sampleLine := func(uuid string, startMS float64, value float64) string {
+		ms := strconv.FormatFloat(startMS, 'f', -1, 64)
+		return fmt.Sprintf(`{"uuid":"%s","type":"%s","kind":"quantity","start":%s,"end":%s,"value":%g,"unit":"count","sourceName":"itest"}`,
+			uuid, typeIdent, ms, ms, value)
+	}
+	insert := func(batchID string, lines ...string) IngestResult {
+		t.Helper()
+		body := fmt.Sprintf(`{"batchID":"%s","deviceID":"itest","type":"%s","reason":"backfill","exportedAt":1718000000000,"sampleCount":%d,"deletionCount":0}`+"\n",
+			batchID, typeIdent, len(lines)) + strings.Join(lines, "\n") + "\n"
+		batch, err := ParseBatch(strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("ParseBatch: %v", err)
+		}
+		res, err := store.InsertBatch(ctx, batch, int64(len(body)))
+		if err != nil {
+			t.Fatalf("InsertBatch: %v", err)
+		}
+		return res
+	}
+	rowsFor := func(uuid string) []time.Time {
+		t.Helper()
+		rows, err := pool.Query(ctx,
+			`SELECT start_ts FROM quantity_samples WHERE uuid = $1 ORDER BY start_ts`, uuid)
+		if err != nil {
+			t.Fatalf("query rows: %v", err)
+		}
+		defer rows.Close()
+		var out []time.Time
+		for rows.Next() {
+			var ts time.Time
+			if err := rows.Scan(&ts); err != nil {
+				t.Fatalf("scan: %v", err)
+			}
+			out = append(out, ts)
+		}
+		return out
+	}
+	// A microsecond on the wire, as the two encoders differed.
+	const usMS = 0.001
+
+	// checkCase seeds one sample at startMS, then re-sends it a microsecond
+	// later and earlier (each its own batch, as a retry is) alongside a new
+	// UUID, and repeats one UUID within a batch.
+	checkCase := func(name string, startMS float64, firstID int, compress func()) {
+		t.Run(name, func(t *testing.T) {
+			stored := id(firstID)
+			if res := insert(id(firstID+0x100), sampleLine(stored, startMS, 1)); res.Accepted != 1 {
+				t.Fatalf("seed accepted = %d, want 1", res.Accepted)
+			}
+			if compress != nil {
+				compress()
+			}
+			before := rowsFor(stored)
+			if len(before) != 1 {
+				t.Fatalf("seeded rows = %d, want 1", len(before))
+			}
+
+			fresh := id(firstID + 1)
+			res := insert(id(firstID+0x101),
+				sampleLine(strings.ToUpper(stored), startMS+usMS, 99),
+				sampleLine(fresh, startMS+60_000, 2))
+			if res.Accepted != 1 || res.Duplicates != 1 {
+				t.Fatalf("re-send 1 µs later + a new sample: accepted %d, duplicates %d; want 1 and 1", res.Accepted, res.Duplicates)
+			}
+			if res := insert(id(firstID+0x102), sampleLine(stored, startMS-usMS, 99)); res.Accepted != 0 || res.Duplicates != 1 {
+				t.Fatalf("re-send 1 µs earlier: accepted %d, duplicates %d; want 0 and 1", res.Accepted, res.Duplicates)
+			}
+			repeated := id(firstID + 2)
+			if res := insert(id(firstID+0x103),
+				sampleLine(repeated, startMS+120_000, 3),
+				sampleLine(repeated, startMS+120_000+usMS, 3)); res.Accepted != 1 || res.Duplicates != 1 {
+				t.Fatalf("one UUID twice in a batch: accepted %d, duplicates %d; want 1 and 1", res.Accepted, res.Duplicates)
+			}
+
+			if after := rowsFor(stored); len(after) != 1 || !after[0].Equal(before[0]) {
+				t.Errorf("stored sample rows = %v, want only the original %v", after, before)
+			}
+			for _, u := range []string{fresh, repeated} {
+				if got := len(rowsFor(u)); got != 1 {
+					t.Errorf("rows for %s = %d, want 1", u, got)
+				}
+			}
+		})
+	}
+
+	// Recent: an uncompressed chunk, start with a sub-millisecond fraction.
+	recent := float64(time.Now().Add(-48*time.Hour).UnixMilli()) + 0.776
+	checkCase("uncompressed", recent, 0x10, nil)
+
+	// Historical: a chunk the columnstore policy would have compressed. A
+	// month per run (1971–2000) keeps runs against one database apart.
+	monthStart := time.Date(1971+int(run/12%30), time.Month(1+run%12), 1, 0, 0, 0, 0, time.UTC)
+	old := float64(monthStart.Add(time.Hour).UnixMilli()) + 0.776
+	admin := adminPool(t, ctx)
+	checkCase("compressed", old, 0x20, func() {
+		if _, err := admin.Exec(ctx, `
+			SELECT compress_chunk(format('%I.%I', chunk_schema, chunk_name)::regclass,
+			                      if_not_compressed => true)
+			FROM timescaledb_information.chunks
+			WHERE hypertable_schema = 'public' AND hypertable_name = 'quantity_samples'
+			  AND range_end > $1::timestamptz AND range_start <= $2::timestamptz`,
+			monthStart, monthStart.Add(24*time.Hour)); err != nil {
+			t.Fatalf("compress chunk: %v", err)
+		}
+		var uncompressed int
+		if err := admin.QueryRow(ctx, `
+			SELECT count(*) FROM timescaledb_information.chunks
+			WHERE hypertable_schema = 'public' AND hypertable_name = 'quantity_samples'
+			  AND range_end > $1::timestamptz AND range_start <= $2::timestamptz
+			  AND NOT is_compressed`, monthStart, monthStart.Add(24*time.Hour)).Scan(&uncompressed); err != nil {
+			t.Fatalf("verify compression: %v", err)
+		}
+		if uncompressed != 0 {
+			t.Fatalf("%d chunk(s) still uncompressed; the guard would not be tested against the columnstore", uncompressed)
+		}
+	})
 }
