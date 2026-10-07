@@ -205,9 +205,8 @@ export default async function HomePage() {
       <section className="w-full border-b bg-gradient-to-b from-background via-background to-muted/50">
         <div className="container mx-auto max-w-7xl px-4 pb-20 pt-20 md:pt-28">
           <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
-            <h1 className="text-[clamp(2.25rem,10.5vw,3.75rem)] font-bold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl xl:whitespace-nowrap xl:text-[5.25rem]">
-              <AnimatedWord words={heroWords} />{" "}
-              <br className="xl:hidden" />
+            <h1 className="text-[clamp(2.25rem,10.5vw,3.75rem)] font-bold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl xl:text-8xl">
+              <AnimatedWord words={heroWords} />
               your health data
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty md:text-xl">
@@ -256,10 +255,6 @@ export default async function HomePage() {
                 </Fragment>
               ))}
             </ol>
-            <p className="mx-auto mt-12 max-w-2xl text-center text-sm text-muted-foreground">
-              All of it is open source under Apache-2.0, and the hosted database runs the same
-              code you can run yourself.
-            </p>
           </div>
         </div>
       </section>
