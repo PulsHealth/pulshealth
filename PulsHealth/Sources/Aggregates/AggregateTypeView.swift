@@ -31,7 +31,7 @@ struct AggregateTypeView: View {
             } footer: {
                 if scope == .sync, !configs.contains(where: \.isDailyDefault),
                    let daily = AggregateConfig.dailyDefault(for: descriptor.identifier) {
-                    Text("Without a \(daily.label.lowercased()), \(descriptor.displayName) is left out of your database’s daily metrics.")
+                    Text("Without \(daily.label.lowercased().withArticle), \(descriptor.displayName) is left out of your database’s daily metrics.")
                 }
             }
         }
@@ -337,4 +337,10 @@ extension String {
     var lowercasedFirst: String { prefix(1).lowercased() + dropFirst() }
     /// "5 minutes" → "5 minutes"; "minute" → "Minute".
     var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
+    /// "a daily total", "an hourly average", "an average every 5 minutes".
+    var withArticle: String {
+        let silentH = lowercased().hasPrefix("hour")
+        let vowel = first.map { "aeiou".contains($0.lowercased()) } ?? false
+        return (vowel || silentH ? "an " : "a ") + self
+    }
 }

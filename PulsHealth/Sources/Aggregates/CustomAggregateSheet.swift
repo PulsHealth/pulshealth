@@ -77,7 +77,7 @@ struct CustomAggregateSheet: View {
                 } header: {
                     Text("Preview · Last \(previewWindow)")
                 } footer: {
-                    Text(isDuplicate ? "\(descriptor.displayName) already has a \(config.label.lowercasedFirst)." : countText)
+                    Text(isDuplicate ? "\(descriptor.displayName) already has \(config.label.lowercasedFirst.withArticle)." : countText)
                 }
             }
             .navigationTitle("Custom Aggregate")
@@ -95,9 +95,15 @@ struct CustomAggregateSheet: View {
                 }
             }
             .onAppear {
-                // Opens on the daily default, or on hours when the type has
-                // that already, so it does not open on something it cannot add.
-                if model.aggregateList(scope).duplicates(config) { unit = .hour }
+                // Opens on the daily default, or on the first interval the
+                // type does not have yet, so it does not open on something it
+                // cannot add.
+                let list = model.aggregateList(scope)
+                if let free = [AggregateIntervalUnit.day, .hour, .week, .month].first(where: { unit in
+                    !list.duplicates(config.with(interval: (1, unit)))
+                }) {
+                    unit = free
+                }
             }
             // Asks iOS once for a type it has never asked about, as a type's
             // page in Explore does; without access the preview reads empty.
