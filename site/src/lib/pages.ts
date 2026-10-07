@@ -37,7 +37,7 @@ export const STATIC_PAGES: SearchItem[] = [
     id: 'page-about',
     type: 'page',
     title: 'About',
-    description: 'Learn about PulsHealth and our mission',
+    description: 'Why PulsHealth exists, who makes it, and how it compares with other Apple Health exporters',
     href: '/about',
     icon: 'Info',
   },
