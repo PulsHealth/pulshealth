@@ -351,11 +351,11 @@ opens the form), or the developer invites you. What happens to your data:
   password — are sent through Amazon Simple Email Service from
   `noreply@pulshealth.com`. Nothing else is emailed to you, and there is no
   mailing list.
-- **Cloudflare carries the viewer's traffic.** `app.pulshealth.com`, and
-  `mcp.pulshealth.com` that a connected AI assistant reads from, are
-  reached through Cloudflare, which terminates their TLS connections and so
-  handles the pages you open and the answers an assistant receives, health
-  data in them included, under
+- **Cloudflare carries the hosted database's traffic.** `app.pulshealth.com`,
+  the sync receiver at `ingest.pulshealth.com`, and `mcp.pulshealth.com` that
+  a connected AI assistant reads from are reached through Cloudflare, which
+  terminates their TLS connections. It handles the pages you open, the
+  health data your phone uploads and the answers an assistant receives, under
   [Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/).
 - **Maps.** A workout's route map is drawn by your browser fetching map tiles
   directly from the provider named on the map (Esri, OpenStreetMap or

@@ -80,11 +80,11 @@ enum PulsHealthDatabase {
 
     /// How a sign-in sheet ended.
     enum SignInOutcome: Equatable {
-        /// The account page sent this iPhone's pairing code.
+        /// The viewer sent this iPhone's pairing code.
         case paired(PairingPayload)
-        /// The person closed the sheet — after signing in, after creating
-        /// an account, or with nothing to connect (a household account, whose
-        /// iPhones the developer pairs). Their call, so nothing is said.
+        /// The person closed the sheet without a pairing code. The view can
+        /// explain that connecting is unfinished, or leave account creation
+        /// quiet when closing was expected.
         case cancelled
         /// Something to tell them, worded for the screen.
         case failed(String)
