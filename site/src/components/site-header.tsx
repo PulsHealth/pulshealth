@@ -4,13 +4,12 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { BookOpen, Briefcase, FileText, LogIn, Menu, PenLine, Smartphone, Star } from "lucide-react"
+import { BookOpen, Briefcase, FileText, LogIn, Menu, PenLine, Star } from "lucide-react"
 import { GitHubIcon } from "@/components/brand-icons"
 
 import { cn } from "@/lib/utils"
 import { GITHUB_URL, formatStars } from "@/lib/github"
 import { Button } from "@/components/ui/button"
-import { APP_STORE_URL } from "@/components/app-store-badge"
 import {
   Sheet,
   SheetContent,
@@ -34,8 +33,8 @@ type NavItem = {
  * Four items, all on-site. PulsHealth is one product, explained on the home
  * page, so the app has no page of its own and self-hosting is a guide inside
  * Docs (`/server`, highlighted as Docs). Docs are the way into the protocol,
- * the AI setup and the database manual; GitHub is the star pill and the App
- * Store link the button on the right. Consulting is the business behind the
+ * the AI setup and the database manual; GitHub is the star pill on the
+ * right. Consulting is the business behind the
  * project and stays visible; About and Support live in the footer.
  */
 const primary: NavItem[] = [
@@ -105,11 +104,6 @@ export function SiteHeader({ stars }: { stars: number | null }) {
           <Button asChild variant="ghost" size="sm" className="hidden lg:inline-flex">
             <a href={APP_URL}>Sign in</a>
           </Button>
-          <Button asChild size="sm" className="hidden lg:inline-flex">
-            <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-              Get the app
-            </a>
-          </Button>
           <ModeToggle />
 
           <Sheet open={open} onOpenChange={setOpen}>
@@ -161,12 +155,6 @@ export function SiteHeader({ stars }: { stars: number | null }) {
                 </div>
 
                 <div className="mt-auto space-y-2 border-t pt-4">
-                  <Button asChild className="h-12 w-full text-base">
-                    <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
-                      <Smartphone className="mr-2 h-4 w-4" aria-hidden />
-                      Get the app
-                    </a>
-                  </Button>
                   <Button asChild variant="outline" className="h-12 w-full text-base">
                     <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
                       <GitHubIcon className="mr-2 h-4 w-4" />
