@@ -347,7 +347,7 @@ export default async function HomePage() {
               <Link href="/server" className={textLink}>
                 run your own
               </Link>{" "}
-              with one script. The demo is the real viewer, with six months of sample data.
+              with one script. The demo is the real viewer, with six months of de-identified sample data.
             </p>
             <div className="flex flex-col gap-3 pt-2 sm:flex-row">
               <Button asChild>
