@@ -24,12 +24,11 @@ beforeEach(() => {
   warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 });
 
-function mockDatabase(zoneLookup: () => Promise<unknown[]>) {
+// metricDailyRows: what metric_daily holds for the window (a covered type).
+function mockDatabase(zoneLookup: () => Promise<unknown[]>, metricDailyRows: unknown[] = [{ identifier: STEPS, t: "0", value: 1 }]) {
   queryMock.mockImplementation((text: string) => {
     if (text.includes("puls_time_zone()")) return zoneLookup();
-    if (text.includes("SELECT DISTINCT identifier FROM metric_daily")) {
-      return Promise.resolve([{ identifier: STEPS }]);
-    }
+    if (text.includes("FROM metric_daily")) return Promise.resolve(metricDailyRows);
     return Promise.resolve([]);
   });
 }
@@ -50,6 +49,19 @@ describe("metric_daily zone guard", () => {
     expect(usedMetricDailySeries()).toBe(true);
     expect(usedRawBuckets()).toBe(false);
     expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it("reads raw samples for a type metric_daily has no rows for", async () => {
+    // Not covered (no daily sum or average series), or nothing in the window
+    // yet: the same answer raw samples give, so the chart asks them.
+    mockDatabase(() => Promise.resolve([{ zone: "Europe/Berlin" }]), []);
+    const { getDailySparklines, getSeries } = await import("./queries");
+    await getSeries(USER_ID, STEPS, "Y");
+    await getDailySparklines(USER_ID, [STEPS]);
+
+    expect(usedMetricDailySeries()).toBe(true);
+    expect(usedRawBuckets()).toBe(true);
+    expect(sqlCalls().filter((sql) => sql.includes("FROM quantity_samples"))).toHaveLength(2);
   });
 
   it("falls back to raw local buckets and warns once on a zone mismatch", async () => {

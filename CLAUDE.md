@@ -563,6 +563,18 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   (SQLSTATE 53400 → 500s, sync stalls). `InsertBatch` lifts the limit via
   `SET LOCAL` as a safety net; `TestIntegration_DeletionsOnCompressedChunk`
   guards the deletion path.
+- **The viewer's reads go through security barriers** (accounts mode), and
+  Postgres pushes a filter into one only when it is leakproof. One left
+  outside scans every chunk — seconds, not milliseconds — so in
+  `web/lib/data/`: pick a type with `type_id = (SELECT … FROM sample_types …)`,
+  never a join to `sample_types` before aggregating; make every time bound a
+  timestamptz (`date AT TIME ZONE tz` is a `timestamp`, read in the session's
+  UTC); bound `ORDER BY start_ts DESC LIMIT 1` in time (the barrier blocks the
+  newest-chunk-first scan); and never `UNION ALL` two hypertables (TimescaleDB
+  2.29 answers the parallel plan without one half). `queries.test.ts` checks
+  the first, second and last. `metric_daily` (`009`, `puls:rerun`) is shaped
+  so filters on identifier, type, user and day reach both tiers — keep its
+  window partitioned on those columns.
 - Reconciliation (digest/UUID repair) covers only quantity/category/workout
   kinds, and **never deletes from a month HealthKit returned nothing for**
   (`ReconcileDigest.orphanVerdict`): read denial is undetectable —

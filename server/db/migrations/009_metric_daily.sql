@@ -47,6 +47,16 @@ LANGUAGE sql STABLE AS $$
   SELECT COALESCE(NULLIF(current_setting('puls.time_zone', true), ''), 'UTC')
 $$;
 
+-- Shaped so that a reader's filter on identifier, type_id, user_id or day
+-- reaches both tiers: the tiers are stacked (UNION ALL) and the preferred row
+-- per (type, user, day) is picked by a window partitioned on exactly those
+-- columns, through which Postgres pushes such a filter; the fallback reads
+-- quantity_rollups one type at a time (LATERAL), so a type filter becomes an
+-- index condition there. The previous FULL JOIN of the two tiers on COALESCEd
+-- keys took no filter at all: every read, however narrow, built every day of
+-- every type back to the first sample (~1 s on a household's history), and the
+-- web viewer reads it several times per page. Same rows, same preference:
+-- a canonical aggregate wins its day (newest upload first), else the rollup.
 CREATE OR REPLACE VIEW metric_daily AS
 WITH type_semantics AS (
   SELECT type_id,
@@ -56,58 +66,56 @@ WITH type_semantics AS (
   GROUP BY type_id
   HAVING bool_or(agg_func IN ('sum', 'average'))
 ),
-canonical_agg AS (
-  SELECT s.type_id, b.user_id,
+candidates AS (
+  SELECT t.identifier, s.type_id, b.user_id,
          (b.bucket_start AT TIME ZONE puls_time_zone())::date AS day,
          b.value,
-         row_number() OVER (
-           PARTITION BY s.type_id, b.user_id,
-                        (b.bucket_start AT TIME ZONE puls_time_zone())::date
-           ORDER BY b.updated_at DESC, b.bucket_start DESC
-         ) AS preference
+         1 AS tier, b.updated_at, b.bucket_start
   FROM aggregate_samples b
   JOIN aggregate_series s USING (series_id)
   JOIN type_semantics ts USING (type_id)
+  JOIN sample_types t ON t.type_id = s.type_id
   WHERE b.value IS NOT NULL
     AND s.interval_value = 1
     AND s.interval_unit = 'day'
     AND s.device_filter = 'all'
     AND ((ts.semantic = 'cumulative' AND s.agg_func = 'sum')
       OR (ts.semantic = 'discrete' AND s.agg_func = 'average'))
+  UNION ALL
+  SELECT t.identifier, ts.type_id, d.user_id, d.day, d.value,
+         2, NULL::timestamptz, NULL::timestamptz
+  FROM type_semantics ts
+  JOIN sample_types t ON t.type_id = ts.type_id
+  CROSS JOIN LATERAL (
+    SELECT per_source.user_id, per_source.day,
+           CASE WHEN ts.semantic = 'cumulative'
+                THEN (array_agg(per_source.value ORDER BY per_source.value DESC))[1]
+                ELSE sum(per_source.value * per_source.n) / nullif(sum(per_source.n), 0) END AS value
+    FROM (
+      SELECT r.user_id, r.source_id,
+             (r.bucket AT TIME ZONE puls_time_zone())::date AS day,
+             CASE WHEN ts.semantic = 'cumulative' THEN sum(r.sum_value)
+                  ELSE sum(r.avg_value * r.n) / nullif(sum(r.n), 0) END AS value,
+             sum(r.n) AS n
+      FROM quantity_rollups r
+      WHERE r.type_id = ts.type_id
+      GROUP BY r.user_id, r.source_id, day
+    ) per_source
+    GROUP BY per_source.user_id, per_source.day
+  ) d
 ),
-agg_daily AS (
-  SELECT type_id, user_id, day, value
-  FROM canonical_agg
-  WHERE preference = 1
-),
-rollup_src AS (
-  SELECT r.type_id, r.user_id, r.source_id, ts.semantic,
-         (r.bucket AT TIME ZONE puls_time_zone())::date AS day,
-         CASE WHEN ts.semantic = 'cumulative' THEN sum(r.sum_value)
-              ELSE sum(r.avg_value * r.n) / nullif(sum(r.n), 0) END AS value,
-         sum(r.n) AS n
-  FROM quantity_rollups r
-  JOIN type_semantics ts USING (type_id)
-  GROUP BY r.type_id, r.user_id, r.source_id, ts.semantic, day
-),
-rollup_daily AS (
-  SELECT type_id, user_id, day,
-         CASE WHEN semantic = 'cumulative'
-              THEN (array_agg(value ORDER BY value DESC))[1]
-              ELSE sum(value * n) / nullif(sum(n), 0) END AS value
-  FROM rollup_src
-  GROUP BY type_id, user_id, day, semantic
+ranked AS (
+  SELECT *,
+         row_number() OVER (
+           PARTITION BY identifier, type_id, user_id, day
+           ORDER BY tier, updated_at DESC, bucket_start DESC
+         ) AS preference
+  FROM candidates
 )
-SELECT t.identifier,
-       COALESCE(a.type_id, r.type_id) AS type_id,
-       COALESCE(a.user_id, r.user_id) AS user_id,
-       COALESCE(a.day, r.day)         AS day,
-       COALESCE(a.value, r.value)     AS value,
-       CASE WHEN a.value IS NOT NULL THEN 'aggregate' ELSE 'rollup' END AS source
-FROM agg_daily a
-FULL JOIN rollup_daily r
-  ON a.type_id = r.type_id AND a.user_id = r.user_id AND a.day = r.day
-JOIN sample_types t ON t.type_id = COALESCE(a.type_id, r.type_id);
+SELECT identifier, type_id, user_id, day, value,
+       CASE WHEN tier = 1 THEN 'aggregate' ELSE 'rollup' END AS source
+FROM ranked
+WHERE preference = 1;
 
 -- Read-only role grants are applied by 099_read_roles.sh after all relations
 -- used by Grafana and the product API exist.

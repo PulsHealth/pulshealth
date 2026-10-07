@@ -104,8 +104,11 @@ describe("query semantics", () => {
     const calls = queryMock.mock.calls.filter(([sql]) => sql !== "SELECT 1");
     expect(calls.some(([sql]) => sql.includes("metric_daily"))).toBe(false);
     const [sql, params] = calls.find(([text]) => text.includes("FROM quantity_samples")) ?? [];
-    expect(sql).toContain("max(total)");
-    expect(sql).toContain("(now() AT TIME ZONE $3::text)::date");
+    expect(sql).toContain("max(p.total)");
+    // Local midnights as timestamptz, not the `timestamp` that
+    // `date AT TIME ZONE` gives (read in the session's zone, UTC).
+    expect(sql).toContain("((now() AT TIME ZONE $3::text)::date::timestamp AT TIME ZONE $3::text)");
+    expect(sql).toContain("(((now() AT TIME ZONE $3::text)::date + 1)::timestamp AT TIME ZONE $3::text)");
     expect(params).toEqual([
       ["HKQuantityTypeIdentifierStepCount"], USER_ID, "America/Los_Angeles",
     ]);
@@ -274,6 +277,33 @@ describe("query semantics", () => {
     expect(cumulativeSql).toBeTruthy();
   });
 
+  it("filters the sample tables only in ways a security-barrier view takes in", async () => {
+    // As web_app every sample table is a security-barrier view: a join
+    // condition, or a timestamptz compared with a `timestamp`, stays outside
+    // it, and the read scans every chunk (seconds instead of milliseconds).
+    const queries = await import("./queries");
+    for (const range of ["D", "30D", "Y"] as const) {
+      await queries.getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", range);
+      await queries.getSeries(USER_ID, "HKQuantityTypeIdentifierHeartRate", range);
+      await queries.getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", range);
+      await queries.getSeries(USER_ID, "HKCategoryTypeIdentifierAppleStandHour", range);
+    }
+    await queries.getLatestMany(USER_ID, ["HKQuantityTypeIdentifierHeartRate"]);
+    await queries.getTodayTotals(USER_ID, ["HKQuantityTypeIdentifierStepCount"]);
+    await queries.getDailySparklines(USER_ID, ["HKQuantityTypeIdentifierStepCount", "HKQuantityTypeIdentifierHeartRate"]);
+    vi.resetModules();
+    await (await import("./queries")).getStats(USER_ID);
+
+    const sampleSql = scopedStatements.map((s) => s.sql).filter((sql) => /(quantity|category)_samples/.test(sql));
+    expect(sampleSql.length).toBeGreaterThan(10);
+    for (const sql of sampleSql) {
+      expect(sql, sql).not.toMatch(/JOIN sample_types \w+ ON \w+\.type_id = [qc]\.type_id/);
+      // `date AT TIME ZONE` (also after `+ 1` or `- n`) is a `timestamp`.
+      expect(sql, sql).not.toMatch(/::date(\s*[-+]\s*[$\w:]+\))?\s+AT TIME ZONE/);
+      expect(sql, sql).not.toContain("UNION ALL");
+    }
+  });
+
   it("never opens a second connection from inside a scoped transaction", async () => {
     // All Time pulls the per-user stats and every quantity chart consults the
     // database zone: both must happen before the chart's own transaction.
@@ -339,7 +369,7 @@ describe("query semantics", () => {
 
     // Both users' scans ran, each bound to its own id, and the first user's
     // entry survived the second user's — same-instance from the TTL cache.
-    const scans = queryMock.mock.calls.filter(([sql]) => sql.includes("UNION ALL"));
+    const scans = queryMock.mock.calls.filter(([sql]) => sql.includes("FROM quantity_samples") && sql.includes("GROUP BY type_id"));
     expect(scans.map(([, params]) => params[0])).toEqual([USER_ID, OTHER]);
     expect(firstAgain).toBe(first);
     expect(second).not.toBe(first);
@@ -397,7 +427,7 @@ describe("a failed read", () => {
     try {
       const { DataUnavailableError, getSeries } = await import("./queries");
       queryMock.mockImplementation((sql: string) =>
-        sql.includes("UNION ALL") ? Promise.reject(new Error("statement timeout")) : Promise.resolve([]),
+        sql.includes("GROUP BY type_id") ? Promise.reject(new Error("statement timeout")) : Promise.resolve([]),
       );
       await expect(getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", "ALL")).rejects.toBeInstanceOf(DataUnavailableError);
       // Logged once, by the stats read that failed, not again by the chart.

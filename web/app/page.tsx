@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { ActivityRings, type RingDatum } from "@/components/ActivityRings";
 import { Distance } from "@/components/Distance";
 import { MetricCard } from "@/components/MetricCard";
@@ -12,6 +13,7 @@ import { getActivityRings, getLatestMany, getSeries, getStats, getTodayTotals, g
 import { viewerUser } from "@/lib/viewer";
 import { formatCompact, formatDuration, formatFull, formatToday } from "@/lib/format";
 import { greetingAt } from "@/lib/time";
+import type { TypeStat } from "@/lib/types";
 
 // Always render live from the DB — no build-time demo snapshot, no stale cache.
 export const dynamic = "force-dynamic";
@@ -38,15 +40,15 @@ const RING_TYPES = [
 export default async function Dashboard() {
   const now = new Date();
   const user = await viewerUser();
-  const [latest, todays, stats, workouts, activity] = await Promise.all([
+  // All at once: none of these needs another's answer. The per-type sample
+  // counts in Browse are the exception, streamed in below.
+  const [latest, todays, workouts, activity, seriesList] = await Promise.all([
     getLatestMany(user, KEY_METRICS.filter((id) => !isCumulative(id))),
     getTodayTotals(user, [...new Set([...RING_TYPES, ...KEY_METRICS.filter(isCumulative)])]),
-    getStats(user),
     getWorkouts(user, 3),
     getActivityRings(user),
+    Promise.all(KEY_METRICS.map((id) => getSeries(user, id, "30D"))),
   ]);
-
-  const seriesList = await Promise.all(KEY_METRICS.map((id) => getSeries(user, id, "30D")));
   const seriesById = new Map(seriesList.map((s) => [s.identifier, s]));
 
   // Rings: prefer the real HKActivitySummary (Move / Exercise / Stand with the
@@ -160,28 +162,43 @@ export default async function Dashboard() {
 
       {/* Browse categories */}
       <h2 className="eyebrow" style={{ margin: "34px 0 14px" }}>Browse</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(186px, 1fr))", gap: 14 }}>
-        {GROUPS.map((g) => {
-          const types = typesInGroup(g);
-          const totalRows = types.reduce((sum, t) => sum + (stats.get(t.identifier)?.rows ?? 0), 0);
-          return (
-            <Link key={g} href={g === "workouts" ? "/workouts" : `/category/${g}`} className="card" style={{ padding: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span
-                  style={{ width: 38, height: 38, borderRadius: 11, display: "grid", placeItems: "center", background: `${GROUP_COLOR[g]}1a`, color: GROUP_COLOR[g] }}
-                >
-                  <GroupIcon group={g} size={20} />
-                </span>
-                <ChevronRight size={16} className="muted" />
-              </div>
-              <div style={{ fontWeight: 550, marginTop: 14 }}>{GROUP_LABELS[g]}</div>
-              <div className="mono" style={{ fontSize: 12, color: "var(--faint)", marginTop: 3 }}>
-                {types.length} types · {formatCompact(totalRows)} samples
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      <Suspense fallback={<Browse />}>
+        <BrowseWithCounts user={user} />
+      </Suspense>
     </>
+  );
+}
+
+// The per-type sample counts come from the per-user stats, a count over every
+// sample: cached, but the first read after a restart takes seconds, so the
+// cards render at once and the counts stream in.
+async function BrowseWithCounts({ user }: { user: string }) {
+  return <Browse stats={await getStats(user)} />;
+}
+
+function Browse({ stats }: { stats?: Map<string, TypeStat> }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(186px, 1fr))", gap: 14 }}>
+      {GROUPS.map((g) => {
+        const types = typesInGroup(g);
+        const totalRows = stats ? types.reduce((sum, t) => sum + (stats.get(t.identifier)?.rows ?? 0), 0) : null;
+        return (
+          <Link key={g} href={g === "workouts" ? "/workouts" : `/category/${g}`} className="card" style={{ padding: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span
+                style={{ width: 38, height: 38, borderRadius: 11, display: "grid", placeItems: "center", background: `${GROUP_COLOR[g]}1a`, color: GROUP_COLOR[g] }}
+              >
+                <GroupIcon group={g} size={20} />
+              </span>
+              <ChevronRight size={16} className="muted" />
+            </div>
+            <div style={{ fontWeight: 550, marginTop: 14 }}>{GROUP_LABELS[g]}</div>
+            <div className="mono" style={{ fontSize: 12, color: "var(--faint)", marginTop: 3 }}>
+              {types.length} types{totalRows == null ? "" : ` · ${formatCompact(totalRows)} samples`}
+            </div>
+          </Link>
+        );
+      })}
+    </div>
   );
 }
