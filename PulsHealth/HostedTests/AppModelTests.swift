@@ -47,6 +47,7 @@ final class AppModelTests: XCTestCase {
     private let user = "5ea4d000-0000-4000-8000-0000000000aa"
     private let mine = URL(string: "https://mine.example.test")!
     private let steps = "HKQuantityTypeIdentifierStepCount"
+    private let heartRate = "HKQuantityTypeIdentifierHeartRate"
 
     private var cleanups: [() async -> Void] = []
 
@@ -350,6 +351,77 @@ final class AppModelTests: XCTestCase {
         h.model.config.enabledTypes = []
         h.model.discardChanges()
         XCTAssertEqual(h.model.config.enabledTypes, [steps])
+    }
+
+    /// Aggregates chosen in Sync's pickers wait for Apply like raw types, and
+    /// the Apply bar counts types, not configs: Match Raw Samples gives each
+    /// raw measurement its daily default and nothing else.
+    func testAggregateEditsAreStagedAndCountedByType() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        let sleep = "HKCategoryTypeIdentifierSleepAnalysis"
+
+        h.model.config.enabledTypes = [steps, heartRate, sleep]
+        h.model.editAggregates(.sync) { $0.addDailyDefaults(for: h.model.rawTypes(.sync)) }
+        XCTAssertEqual(h.model.pendingChangesSummary, "3 raw types · 2 aggregated types")
+        let staged = h.model.config.aggregates
+        XCTAssertEqual(Set(staged.map(\.typeIdentifier)), [steps, heartRate], "sleep cannot be aggregated")
+        XCTAssertTrue(staged.allSatisfy(\.isDailyDefault))
+        var applied = await h.engine.store.configuration
+        XCTAssertTrue(applied.aggregates.isEmpty, "staged, not applied")
+
+        await h.model.applyChanges()
+        applied = await h.engine.store.configuration
+        XCTAssertEqual(applied.aggregates, staged)
+        XCTAssertFalse(h.model.hasPendingChanges)
+
+        let daily = try XCTUnwrap(staged.first { $0.typeIdentifier == heartRate })
+        h.model.editAggregates(.sync) {
+            $0.add(AggregateConfig(typeIdentifier: heartRate, function: .max))
+            $0.update(daily.with(interval: (1, .hour)))
+        }
+        XCTAssertEqual(h.model.pendingChangesSummary, "1 aggregated type")
+        h.model.discardChanges()
+        XCTAssertEqual(h.model.config.aggregates, staged)
+    }
+
+    /// Changing what an applied aggregate computes keeps its id, so Apply
+    /// resets its watermark and the next sync computes it from the start;
+    /// until then its status is "Waiting for Apply".
+    func testChangingAnAggregateRecomputesItAfterApply() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.editAggregates(.sync) { $0.addType(steps) }
+        await h.model.applyChanges()
+        let daily = try XCTUnwrap(h.model.config.aggregates.first)
+        await h.engine.store.recordAggregateUpload(
+            configID: daily.id, newComputedThrough: Date(), buckets: 30, bytes: 1_000)
+        await h.model.refresh()
+        XCTAssertTrue(h.model.aggregateHasSentValues(daily))
+        if case .waitingForApply = h.model.aggregateStatus(daily) { XCTFail("applied, not waiting") }
+
+        let weekly = daily.with(interval: (1, .week))
+        h.model.editAggregates(.sync) { $0.update(weekly) }
+        XCTAssertEqual(h.model.aggregateStatus(weekly), .waitingForApply)
+        XCTAssertFalse(h.model.aggregateHasSentValues(weekly), "the new one has sent nothing")
+
+        await h.model.applyChanges()
+        let state = await h.engine.store.aggregateState(for: daily.id)
+        XCTAssertNil(state.computedThrough, "a different aggregate starts over")
+    }
+
+    /// The export's aggregates are its own: editing them stages nothing for
+    /// Sync, and Sync's edits do not reach the export draft.
+    func testExportAggregatesNeverTouchSync() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.editAggregates(.export) { $0.addType(steps) }
+        XCTAssertEqual(h.model.export.draft.aggregates.map(\.typeIdentifier), [steps])
+        XCTAssertTrue(h.model.config.aggregates.isEmpty)
+        XCTAssertFalse(h.model.hasPendingChanges)
+
+        h.model.editAggregates(.sync) { $0.addType(heartRate) }
+        XCTAssertEqual(h.model.export.draft.aggregates.map(\.typeIdentifier), [steps])
     }
 
     /// A draft pointing at another database than the stored progress belongs
