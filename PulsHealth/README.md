@@ -181,8 +181,8 @@ Sources/
 │                         sheet), then the returned code — its database named
 │                         — tested above Save & Apply; once applied, Manage
 │                         Account, Connect an AI Assistant (docs, in
-│                         Safari) and Disconnect; always, Delete PulsHealth
-│                         Account. Your own: the Database
+│                         Safari) and Disconnect. Account deletion stays
+│                         under Settings → Privacy & Data. Your own: the Database
 │                         URL and Token fields (validated: https, or http for
 │                         local-network hosts only; held in a
 │                         ServerFieldsDraft until Save & Apply, with Scan /
@@ -369,20 +369,21 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   `PulsHealthDatabase.viewerURL`; the database's own URL, the token and the
   user ID come back from the viewer's account page as an ordinary pairing
   code, so they are the operator's to change. **Sign In to PulsHealth** opens
-  `/account` in an `ASWebAuthenticationSession` (shared browser session, so a
+  `/connect/iphone` in an `ASWebAuthenticationSession` (shared browser session, so a
   sign-in made in Safari, where the invite email opens, carries over; iOS
   asks first), and **Create Account** opens `/signup` in the same sheet
-  (App Review expects registration in the app, not in Safari). The person signs in, taps Connect this iPhone, then Open in
-  PulsHealth, and the sheet returns that `puls://pair?…` link to the app. It
+  (App Review expects registration in the app, not in Safari). The person signs in and taps Connect this iPhone; the sheet returns that `puls://pair?…` link to the app. It
   gets the same checks as a scanned code, fills a `ServerFieldsDraft`
   (`fill(fromSignIn:domain:)`) and is tested, and the screen names its database
   and puts Save & Apply first, because nothing is applied until it is
   tapped. The test asks the database for its capabilities with the token
   and uploads no health data. There is no "Pair
   with…?" alert, because the person started the flow and the sheet only
-  returns what that page sent. A closed sheet says nothing: that covers
-  someone who only created an account, and a household account with nothing
-  to connect. Which database is applied is derived:
+  returns what that page sent. Closing Create Account says nothing. Closing
+  the connection sheet before
+  the callback explains that the phone is still unconnected. Every enabled
+  personal account can connect, including invited and administrator accounts;
+  the public demo instead offers personal sign-in. Which database is applied is derived:
   `PulsHealthDatabase.isSignedIn`: `SyncConfiguration.isSignedInDatabase`,
   true only while the applied URL is the one the sign-in delivered, *and*
   that URL's host under the viewer's registrable domain
@@ -395,9 +396,9 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   confirmed, filled into Your Own Database and, to the app, any database —
   the safety rule is that only the sheet can mark one. Disconnect is the
   empty-URL path. Delete PulsHealth Account (App Review 5.1.1(v)) opens the
-  account page's `#delete-account` section, whose Delete my account does the
-  rest. It is on the Database screen whether or not this iPhone is
-  connected, and always under Settings → Privacy & Data, since an iPhone
+  account page's `#delete-account` section from Settings → Privacy & Data, whose Delete my account does the
+  rest. It remains under Settings → Privacy & Data whether or not this iPhone
+  is connected, since an iPhone
   paired through Safari is not marked.
 - **Without a database.** The first-run flow never asks for one: it asks for
   Health access for the starter set, and Start Exploring applies it. Nothing

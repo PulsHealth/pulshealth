@@ -391,7 +391,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   `PulsHealthDatabase.viewerURL` (`https://app.pulshealth.com`) is the
   instance's only address in the app (the other developer addresses are
   `pulshealth.com` pages opened in Safari). Never hard-code the database (ingest)
-  URL: it comes back with the token and user from the viewer's `/account`
+  URL: it comes back with the token and user from the viewer's `/connect/iphone`
   page as an ordinary `puls://pair` code, through an
   `ASWebAuthenticationSession` (callback scheme `puls`, shared browser
   session) that the person starts on Sync → Database. That code fills a
@@ -408,7 +408,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   The screen's decisions live in `DatabaseSetup` (it starts from the
   *applied* configuration). Delete PulsHealth Account (App Review 5.1.1(v),
   `/account#delete-account`, whose `id` lives in `web/app/account/page.tsx`)
-  stays on Sync → Database and in Settings whether or not the iPhone is
+  stays in Settings → Privacy & Data whether or not the iPhone is
   connected: an iPhone paired through the account page's link in Safari is
   not marked. Changing any of this means changing
   `docs/privacy-policy.md` ("Where it goes", "If you use the developer's
@@ -476,9 +476,14 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   user, and shows it only to them, once.** In accounts mode the account page's
   "Connect this iPhone" calls `auth.issue_device_token(session, …)`, which
   checks the session token itself and writes the hash; the plaintext appears
-  once as a pairing code and is never stored, logged, emailed or put in a URL.
-  Basic and open mode never mint one; household phones are still paired by the
-  operator (`make issue-device`). **Sign-up requests create nothing until an
+  once as a `puls://pair` callback and is never stored, logged, emailed or
+  put in a web URL.
+  Basic and open mode never mint one. All enabled personal accounts, including
+  invited accounts and administrators, can pair their own iPhones. The app's
+  `/connect/iphone` form POST returns the pairing callback directly; GET never
+  mints a token. The configured public demo cannot issue/list/revoke phone
+  tokens, enforced also by operator-owned `auth.device_pairing_policy`
+  (021/022; `WEB_DEMO_USER` passed to migrate and web). **Sign-up requests create nothing until an
   administrator approves** (`WEB_SIGNUPS`, `/signup` → `/admin`): no user, no
   account, no token, so no phone can send data. Every write beyond schema
   `auth` — creating a user, minting/revoking tokens, disabling, deleting,
@@ -488,17 +493,15 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   cookie) and checks it (`auth.session_owner`: unexpired and under the
   90-day absolute cap; search_path pinned to `pg_catalog`, objects fully
   qualified). No administrator account, and not the caller's own, can be
-  disabled through the viewer. **The boundary is `auth.self_service_users`**, written only by
-  `approve_signup`: every function acts only on users an approved request
-  created, because `web_app` writes `auth.sessions` and so can forge any
-  session — the session check scopes normal use, it is not the barrier. The
-  household (default user, `make issue-device`, `make web-invite`) is never
-  given a sync token, has its tokens revoked or its data purged through the
-  viewer (`web_app` can still change household *viewer* accounts in
-  `auth.accounts`, which it writes to sign people in). `099_read_roles.sh`
+  disabled through the viewer. **The deletion boundary is `auth.self_service_users`**, written only by
+  `approve_signup`: disabling/deletion/purge act only on users an approved
+  request created. Phone pairing instead acts for every personal session's
+  own user. `web_app` writes `auth.sessions` and so can forge any session —
+  a compromised viewer can issue/revoke personal sync tokens, but cannot
+  pair the public demo or delete/purge household health data. `099_read_roles.sh`
   asserts `web_app` can run exactly those definer functions (PUBLIC's
   default EXECUTE included), can write no relation outside the account store
-  nor `auth.self_service_users` (PUBLIC's grants included), and that schema
+  nor `auth.self_service_users` or `auth.device_pairing_policy` (PUBLIC's grants included), and that schema
   `auth` has no triggers (a trigger runs without an EXECUTE check). A new privileged step is a
   new definer function there, a `GRANT` and an expected row, never a table
   grant. `purge_user`'s table list must cover every table with a `user_id`

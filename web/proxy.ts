@@ -58,7 +58,13 @@ export default async function proxy(request: NextRequest) {
     oauthPath && pathname === OAUTH_AUTHORIZE_PATH && request.method === "GET" && searchParams.getAll("redirect_uri").length === 1
       ? redirectOrigin(searchParams.get("redirect_uri"))
       : null;
-  const csp = contentSecurityPolicy(nonce, development, consentTarget ? [consentTarget] : []);
+  const formActions = consentTarget ? [consentTarget] : [];
+  // The phone connection form returns to the fixed puls://pair callback.
+  // Browsers apply form-action to the POST's redirect too.
+  if (viewerMode() === "accounts" && (pathname === "/connect/iphone" || pathname === "/api/auth/connect-iphone" || pathname === "/account")) {
+    formActions.push("puls:");
+  }
+  const csp = contentSecurityPolicy(nonce, development, formActions);
 
   if (oauthPath && !oauthConfig()) {
     const off = text(404, "Not found");

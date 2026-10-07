@@ -1143,7 +1143,7 @@ BEGIN
     JOIN pg_namespace n ON n.oid = c.relnamespace
     WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
       AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-      AND (n.nspname <> 'auth' OR c.oid = 'auth.self_service_users'::regclass)
+      AND (n.nspname <> 'auth' OR c.oid IN ('auth.self_service_users'::regclass, 'auth.device_pairing_policy'::regclass))
       AND CASE WHEN c.relkind = 'S' THEN
             has_sequence_privilege(web_oid, c.oid, 'UPDATE')
             OR has_sequence_privilege(web_oid, c.oid, 'USAGE')

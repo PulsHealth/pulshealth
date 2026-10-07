@@ -282,10 +282,34 @@ describe("OAuth for AI assistants", () => {
     expect(csp).toContain("form-action 'self' https://claude.ai;");
     expect(csp).toContain("frame-ancestors 'none'");
     const other = await proxy(request("/account?redirect_uri=https%3A%2F%2Fclaude.ai%2Fcb", { headers: viaProxy, cookie: `__Host-puls-session=${TOKEN}` }));
-    expect(other.headers.get("content-security-policy")).toContain("form-action 'self';");
+    expect(other.headers.get("content-security-policy")).toContain("form-action 'self' puls:;");
+    expect(other.headers.get("content-security-policy")).not.toContain("https://evil.example");
     const bogus = await proxy(
       request(`/oauth/authorize?redirect_uri=${encodeURIComponent("javascript:alert(1)")}`, { headers: viaProxy, cookie: `__Host-puls-session=${TOKEN}` }),
     );
     expect(bogus.headers.get("content-security-policy")).toContain("form-action 'self';");
+  });
+});
+
+
+describe("phone connection handoff", () => {
+  it("remembers the connection page across sign-in and blocks foreign POSTs", async () => {
+    process.env.WEB_ACCOUNTS = "true";
+    process.env.TRUST_PROXY_HEADERS = "true";
+    findSession.mockResolvedValue(null);
+    const login = await proxy(request("/connect/iphone", { headers: viaProxy }));
+    expect(new URL(login.headers.get("location")!).searchParams.get("next")).toBe("/connect/iphone");
+    findSession.mockResolvedValue(SESSION);
+    const rejected = await proxy(request("/api/auth/connect-iphone", { method: "POST", headers: { ...viaProxy, origin: "https://evil.example" }, cookie: `__Host-puls-session=${TOKEN}` }));
+    expect(rejected.status).toBe(403);
+  });
+  it("allows the fixed app callback only on the connection pages", async () => {
+    process.env.WEB_ACCOUNTS = "true";
+    process.env.TRUST_PROXY_HEADERS = "true";
+    findSession.mockResolvedValue(SESSION);
+    for (const path of ["/connect/iphone", "/api/auth/connect-iphone", "/account", "/login"]) {
+      const res = await proxy(request(path, { headers: viaProxy, cookie: `__Host-puls-session=${TOKEN}` }));
+      expect(res.headers.get("content-security-policy")!.includes("puls:")).toBe(path !== "/login");
+    }
   });
 });

@@ -5,8 +5,7 @@
 // and nobody else's; disabling cuts the phone off; deleting an account and
 // purging a user leave nothing behind, rollups included; web_app still cannot
 // write the tables those functions write; and even SQL run as web_app with a
-// session it forged cannot give the operator's household users a token,
-// disable them or purge them; no administrator's account can be disabled
+// session it forged cannot disable or purge household users; no administrator's account can be disabled
 // through the viewer; a session past the 90-day cap does nothing; requests
 // are declined in bulk, kept on the waitlist however long undecided
 // (020_waitlist_retention.sql), listed oldest first, and dropped quietly past
@@ -181,11 +180,13 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     expect(rows[0].token_hash.equals(createHash("sha256").update(minted.token, "ascii").digest())).toBe(true);
 
     expect((await signups.myDevices(personSession)).map((d) => d.id)).toEqual([minted.id]);
-    // The administrator's user is the operator's own (household), not self-service:
-    // no phones here, and the person's phone is not theirs to revoke.
-    expect(await signups.myDevices(adminSession)).toEqual([]);
-    expect(await sqlState(signups.revokeMyDevice(adminSession, minted.id))).toBe("42501");
-    expect(await sqlState(signups.issueDeviceToken(adminSession, "x"))).toBe("42501");
+    // An invited administrator connects their own phone too, but cannot
+    // see or revoke another person's token.
+    const own = await signups.issueDeviceToken(adminSession, "Administrator's iPhone");
+    expect((await signups.myDevices(adminSession)).map((d) => d.id)).toEqual([own.id]);
+    expect(await signups.revokeMyDevice(adminSession, minted.id)).toBe(false);
+    expect(await signups.revokeMyDevice(personSession, own.id)).toBe(false);
+    expect(await signups.revokeMyDevice(adminSession, own.id)).toBe(true);
     expect(await sqlState(signups.issueDeviceToken(Buffer.alloc(32, 9), "x"))).toBe("42501");
 
     const link = signups.pairingLink("https://ingest.example/", minted.token, personUser);
@@ -193,6 +194,24 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
 
     expect(await signups.revokeMyDevice(personSession, minted.id)).toBe(true);
     expect((await admin.query("SELECT status FROM device_tokens WHERE id = $1", [minted.id])).rows[0].status).toBe("revoked");
+  });
+
+  it("returns a session-scoped pairing callback directly to the app", async () => {
+    process.env.WEB_INGEST_URL = "https://ingest.example.test";
+    const { POST } = await import("@/app/api/auth/connect-iphone/route");
+    // Caller-supplied identities cannot change whose token is issued.
+    const response = await POST(post("/api/auth/connect-iphone", { name: "Connection flow", user: personUser }, { cookie: adminCookie }));
+    expect(response.status).toBe(303);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const link = new URL(response.headers.get("location")!);
+    expect(link.protocol).toBe("puls:");
+    expect(link.hostname).toBe("pair");
+    expect(link.searchParams.get("user")).toBe(ADMIN_USER);
+    expect(link.searchParams.get("url")).toBe("https://ingest.example.test");
+    const token = link.searchParams.get("token")!;
+    const row = (await admin.query("SELECT id, user_id::text FROM device_tokens WHERE token_hash = $1", [createHash("sha256").update(token, "ascii").digest()])).rows[0];
+    expect(row.user_id).toBe(ADMIN_USER);
+    expect(await signups.revokeMyDevice(adminSession, row.id)).toBe(true);
   });
 
   it("refuses a session signed in more than 90 days ago, in the database too", async () => {
@@ -253,17 +272,31 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
         expect(await sqlState(web.query("SELECT auth.set_account_disabled($1, $2::uuid, true)", [session, householdAccount]))).toBe("P0002");
         expect(await sqlState(web.query("SELECT auth.set_account_disabled($1, $2::uuid, true)", [session, adminAccount]))).toBe("P0002");
       }
-      // ...and a household account cannot mint itself a sync token or delete itself here.
+      // ...and an invited personal account can pair itself, but cannot delete itself here.
       const hash = createHash("sha256").update("f".repeat(64), "ascii").digest();
-      expect(await sqlState(web.query("SELECT auth.issue_device_token($1, $2, 'ffffffff', 'x')", [forgedHousehold, hash]))).toBe("42501");
+      await web.query("SELECT auth.issue_device_token($1, $2, 'ffffffff', 'x')", [forgedHousehold, hash]);
       expect(await sqlState(web.query("SELECT auth.delete_my_account($1)", [forgedHousehold]))).toBe("42501");
-      expect((await web.query("SELECT * FROM auth.my_devices($1)", [forgedHousehold])).rows).toEqual([]);
-      expect((await admin.query("SELECT 1 FROM device_tokens WHERE user_id = $1", [household])).rows).toHaveLength(0);
+      const phones = (await web.query("SELECT * FROM auth.my_devices($1)", [forgedHousehold])).rows;
+      expect(phones).toHaveLength(1);
+      expect((await admin.query("SELECT 1 FROM device_tokens WHERE user_id = $1", [household])).rows).toHaveLength(1);
+      // The configured public demo remains view-only even through forged SQL.
+      const previous = (await admin.query("SELECT demo_user_id FROM auth.device_pairing_policy")).rows[0].demo_user_id;
+      await admin.query("UPDATE auth.device_pairing_policy SET demo_user_id = $1", [household]);
+      try {
+        expect(await sqlState(signups.issueDeviceToken(forgedHousehold, "blocked"))).toBe("42501");
+        expect(await signups.myDevices(forgedHousehold)).toEqual([]);
+        expect(await sqlState(signups.revokeMyDevice(forgedHousehold, phones[0].id))).toBe("42501");
+        expect(await sqlState(web.query("UPDATE auth.device_pairing_policy SET demo_user_id = NULL"))).toBe("42501");
+        expect(await sqlState(web.query("DELETE FROM auth.device_pairing_policy"))).toBe("42501");
+      } finally {
+        await admin.query("UPDATE auth.device_pairing_policy SET demo_user_id = $1", [previous]);
+      }
       expect((await admin.query("SELECT disabled_at FROM auth.accounts WHERE id = $1", [adminAccount])).rows[0].disabled_at).toBeNull();
     } finally {
       await web.end();
       await admin.query("DELETE FROM auth.sessions WHERE account_id IN (SELECT id FROM auth.accounts WHERE user_id = $1)", [household]);
       await admin.query("DELETE FROM auth.sessions WHERE id = $1", [createHash("sha256").update(`forged-${tag}`).digest()]);
+      await admin.query("DELETE FROM device_tokens WHERE user_id = $1", [household]);
       await admin.query("DELETE FROM auth.accounts WHERE user_id = $1", [household]);
       await admin.query("DELETE FROM users WHERE id = $1", [household]);
     }

@@ -65,7 +65,7 @@ export interface Session {
   userId: string;
   email: string;
   isAdmin: boolean;
-  /** Made by an approved sign-up: may connect phones and delete itself here. */
+  /** Made by an approved sign-up: may delete itself here. */
   selfService: boolean;
   /**
    * The shared demo account's (WEB_DEMO_USER): view-only. Every route and

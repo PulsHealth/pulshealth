@@ -226,6 +226,16 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     expect(await session.findSession(browser)).toBeNull();
   });
 
+  it.each([
+    ["/connect/iphone", "/login?notice=signed-out&next=%2Fconnect%2Fiphone"],
+    ["https://elsewhere.example/connect", "/login?notice=signed-out"],
+    ["//elsewhere.example/connect", "/login?notice=signed-out"],
+  ])("preserves a safe connection destination when switching accounts: %s", async (next, location) => {
+    const res = await logoutRoute.POST(post("/api/auth/logout", { next }));
+    expect(res.headers.get("location")).toBe(location);
+    expect(res.headers.get("set-cookie")).toMatch(/Max-Age=0/i);
+  });
+
   it("lets no more guesses through a parallel burst than the bucket holds", async () => {
     // All in flight at once, from one address, at one account: only as many
     // as the bucket holds may reach the password check — the right password

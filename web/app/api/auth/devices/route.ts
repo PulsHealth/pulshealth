@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
   if (!session) return seeOther("/login?next=%2Faccount");
   const demo = refuseDemo(session);
   if (demo) return demo;
-  if (!session.selfService) return seeOther("/account?error=forbidden");
   const form = await readForm(request);
   try {
     await revokeMyDevice(session.id, field(form, "id"));

@@ -183,7 +183,7 @@ struct ServerSettingsView: View {
         } else if model.usesPulsHealthDatabase {
             Section {
                 Label {
-                    Text("Syncing to the PulsHealth database")
+                    Text("Connected to the PulsHealth database")
                 } icon: {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
@@ -227,7 +227,7 @@ struct ServerSettingsView: View {
             }
             Section {
                 sheetButton("Sign In to PulsHealth", systemImage: "person.crop.circle.badge.checkmark",
-                            page: PulsHealthDatabase.accountURL)
+                            page: PulsHealthDatabase.connectURL)
                 sheetButton("Create Account", systemImage: "person.crop.circle.badge.plus",
                             page: PulsHealthDatabase.signUpURL)
                 if let signInProblem {
@@ -236,21 +236,8 @@ struct ServerSettingsView: View {
                         .foregroundStyle(.red)
                 }
             } footer: {
-                Text("Sign in, tap Connect this iPhone, then Open in PulsHealth. New here? Create an account first.")
+                Text("Sign in and tap Connect this iPhone to return here. Then tap Save & Apply to start syncing. New here? Create an account first.")
             }
-        }
-        // App Review 5.1.1(v): an app that leads people to an account lets
-        // them start deleting it. Shown whether or not this iPhone is
-        // connected — an account can exist without one, or with an iPhone
-        // paired from the account page's link, which the app cannot tell from
-        // any other database.
-        Section {
-            Link(destination: PulsHealthDatabase.deleteAccountURL) {
-                Label("Delete PulsHealth Account", systemImage: "person.crop.circle.badge.xmark")
-            }
-            .tint(.red)
-        } footer: {
-            Text("Opens your account page in Safari. Its Delete my account signs you out, disconnects your iPhones and asks the developer to delete everything stored for you.")
         }
     }
 
@@ -410,8 +397,8 @@ struct ServerSettingsView: View {
     }
 
     /// Sign In to PulsHealth, or Create Account: one of the viewer's pages in
-    /// iOS's web authentication sheet. On the account page the person signs
-    /// in, taps Connect this iPhone, then Open in PulsHealth, whose
+    /// iOS's web authentication sheet. On the connection page the person signs
+    /// in and taps Connect this iPhone, whose
     /// `puls://pair?…` link the sheet hands back here; on the sign-up page
     /// they create an account and close the sheet.
     ///
@@ -453,7 +440,9 @@ struct ServerSettingsView: View {
                 signInElsewhere = DatabaseSetup.databaseLabel(payload.serverURL)
                     ?? payload.serverURL.absoluteString
             case .cancelled:
-                break
+                if page == PulsHealthDatabase.connectURL {
+                    signInProblem = "This iPhone isn’t connected yet. Sign in and tap Connect this iPhone to return to PulsHealth."
+                }
             case .failed(let message):
                 signInProblem = message
             }
