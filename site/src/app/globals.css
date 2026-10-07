@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Build output and Next's cache hold minified and binary files whose junk
+   "classes" break the CSS parser. .gitignore already keeps Tailwind out of
+   them in a normal checkout, but not in a linked git worktree. */
+@source not "../../.next";
+@source not "../../out";
 @plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 
