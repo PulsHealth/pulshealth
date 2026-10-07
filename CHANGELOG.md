@@ -74,9 +74,10 @@ pauses (nothing is lost) until the server is updated.
 - **The viewer is fast in accounts mode.** As `web_app` it reads through
   security-barrier views, which take a caller's filter only when it is
   leakproof; several reads joined or compared in ways that stayed outside
-  the view and scanned every chunk. One dashboard load spent ~9.5 s in the
-  database on a household's history; on a copy of it a warm load now takes
-  ~60 ms end to end (type pages 15–55 ms, categories under 0.2 s). The
+  the view and scanned every chunk: one dashboard load spent ~9.5 s in the
+  database on a household's history. On a copy of it, on one machine, a
+  dashboard load went from 2.4 s to ~60 ms, a type page from 2.2 s to
+  15–55 ms and the largest category from 4.6 s to under 0.2 s. The
   per-user sample counts are cached stale-while-revalidate and stream in
   after the page instead of holding it.
 - **Today's totals covered the right day.** Their bounds were read in the
