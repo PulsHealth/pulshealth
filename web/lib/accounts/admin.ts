@@ -6,11 +6,11 @@ import { viewerMode } from "../mode";
 import { currentSession } from "../viewer";
 import type { Session } from "./session";
 
-/** The signed-in administrator, or null. */
+/** The signed-in administrator, or null — never a demo session. */
 export async function currentAdmin(): Promise<Session | null> {
   if (viewerMode() !== "accounts") return null;
   const session = await currentSession().catch(() => null);
-  return session?.isAdmin ? session : null;
+  return session?.isAdmin && !session.demo ? session : null;
 }
 
 /** The signed-in person (any account), or null. */

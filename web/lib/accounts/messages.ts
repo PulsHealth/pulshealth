@@ -44,6 +44,10 @@ const NOTICES: Record<string, string> = {
   deleted: "Your account is deleted, and nothing more will be uploaded. The operator has been asked to remove your stored data.",
 };
 
+/** The OAuth consent page's answer to a demo session (no assistant connects to the demo). */
+export const DEMO_ASSISTANT_REFUSAL =
+  "AI assistants cannot connect to the demo account. Sign out, then sign in with your own account to connect one.";
+
 /** One query parameter as a single string (Next.js hands over string | string[]). */
 export function param(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;

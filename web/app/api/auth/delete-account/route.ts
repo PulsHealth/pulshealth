@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-import { accountsOnly, clearSessionCookie, field, readForm, requestSession, seeOther } from "@/lib/accounts/http";
+import { accountsOnly, refuseDemo, clearSessionCookie, field, readForm, requestSession, seeOther } from "@/lib/accounts/http";
 import { notifyDeletion } from "@/lib/accounts/mail";
 import { deleteMyAccount } from "@/lib/accounts/signups";
 
@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
   if (off) return off;
   const session = await requestSession(request);
   if (!session) return seeOther("/login?next=%2Faccount");
+  const demo = refuseDemo(session);
+  if (demo) return demo;
   if (session.isAdmin || !session.selfService) return seeOther("/account?error=forbidden");
   const form = await readForm(request);
   if (field(form, "confirm") !== "yes") return seeOther("/account?error=failed");
