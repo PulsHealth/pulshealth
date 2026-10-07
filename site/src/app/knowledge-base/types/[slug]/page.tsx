@@ -17,7 +17,12 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const data = await getTypeById(slug);
+  if (!data) notFound();
+
   return {
+    title: `${data.human_readable_name} - Apple HealthKit - PulsHealth`,
+    description: data.short_description,
     robots: "index, follow, noai, noimageai",
     alternates: {
       canonical: `/knowledge-base/types/${slug}/`,
@@ -219,21 +224,32 @@ export default async function TypeDetailPage({ params }: PageProps) {
           <section className="lg:col-span-2 lg:row-start-2">
             <h3 className="text-xl font-semibold mb-4">Related Metrics</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {data.related_types.map((related) => (
-                <Link href={`/knowledge-base/types/${related.identifier}`} key={related.identifier}>
+              {data.related_types.map((related) => {
+                const hasPage = names.has(related.identifier);
+                const card = (
                   <Card className="h-full gap-0 py-0 transition-colors hover:border-brand/40 hover:bg-muted/50">
                     <CardHeader className="p-4 pb-1">
                       <CardTitle className="flex items-center justify-between gap-2 text-sm font-medium">
                         <span>{names.get(related.identifier) ?? related.identifier.replace(/^HK\w+?TypeIdentifier/, "")}</span>
-                        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        {hasPage && <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0 text-xs text-muted-foreground">
                       {related.relationship}
                     </CardContent>
                   </Card>
-                </Link>
-              ))}
+                );
+                // Related concepts may be workouts, metadata, or types the
+                // knowledge base does not document. Keep their explanation,
+                // but only make a link when a destination page exists.
+                return hasPage ? (
+                  <Link href={`/knowledge-base/types/${related.identifier}/`} key={related.identifier}>
+                    {card}
+                  </Link>
+                ) : (
+                  <div key={related.identifier}>{card}</div>
+                );
+              })}
             </div>
           </section>
         )}

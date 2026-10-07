@@ -61,6 +61,15 @@ from anywhere, it locates the repository itself.
 
 ## Configuration
 
+Retired URLs with replacement content have redirect stubs under `public/`
+(including `/ai/`, `/privacy-protect/`, `/docs/self-hosting/` and `/license/`).
+These use an immediate meta refresh, a destination canonical and `noindex`,
+the same convention as `/app/`, `/ios/`, `/sync/` and `/terms/`. They stay out
+of the sitemap; Search Console exclusions for these stubs and the private
+`app.pulshealth.com` viewer are intentional.
+Related metrics on a type page link only to types with a knowledge-base
+page; other related concepts remain visible as text cards.
+
 `.env.production` carries the one public build-time value, the endpoint the
 two forms post to, and is tracked, since a static export bakes it into the
 HTML anyway. `.env.example` documents it for a local `.env.local`. The site

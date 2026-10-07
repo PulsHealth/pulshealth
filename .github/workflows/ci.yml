@@ -161,7 +161,9 @@ jobs:
           # The docs manifest (DOCS in site/src/lib/docs.ts) is explicit, not
           # a glob, so its length is a constant: bump it with the manifest.
           manifest=13
-          docs=$(find site/out/docs -mindepth 1 -maxdepth 1 -type d | wc -l)
+          # The retired self-hosting URL is a public/ redirect stub, not a
+          # rendered manifest entry. Check it separately without counting it.
+          docs=$(find site/out/docs -mindepth 1 -maxdepth 1 -type d ! -name self-hosting | wc -l)
           echo "knowledge-base types: $types sources, $built pages"
           echo "blog articles: $posts sources, $blogs pages"
           echo "documentation: $manifest manifest entries, $docs pages"
@@ -171,6 +173,7 @@ jobs:
           test -f site/out/index.html
           test -f site/out/docs/index.html
           test -f site/out/sitemap.xml
+          test -f site/out/docs/self-hosting/index.html
           # llms.txt is rendered from the repository root's llms.txt by
           # site/scripts/gen-llms-txt.ts (prebuild), never copied by hand.
           test -f site/out/llms.txt
