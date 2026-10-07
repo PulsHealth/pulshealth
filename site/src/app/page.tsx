@@ -3,14 +3,10 @@ import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
-  Briefcase,
   Bot,
   Check,
   Cloud,
   Database,
-  FileCode2,
-  FileSpreadsheet,
-  LayoutDashboard,
   Lock,
   Minus,
   PenLine,
@@ -21,8 +17,8 @@ import {
 import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AppStoreBadge } from "@/components/app-store-badge";
 import { FollowProject } from "@/components/follow-project";
 import { getAllTypes } from "@/lib/api";
 import { getCatalog } from "@/lib/catalog";
@@ -34,109 +30,50 @@ const BLOB = `${GITHUB_URL}/blob/main`;
 /** The hosted database's sign-up page, on the viewer's origin. */
 const SIGNUP_URL = "https://app.pulshealth.com/signup";
 
-type Way = {
-  key: string;
-  name: string;
-  tagline: string;
-  badge: string;
-  icon: typeof Smartphone;
-  where: string;
-  points: string[];
-  cta: { label: string; href: string; external?: boolean };
-  featured?: boolean;
-};
+const textLink = "font-medium text-brand underline-offset-4 hover:underline";
 
-const ways: Way[] = [
-  {
-    key: "app",
-    name: "The app",
-    tagline: "Explore and export, on the phone.",
-    badge: "No account",
-    icon: Smartphone,
-    where: "On your iPhone, until you share an export.",
-    points: [
-      "Every Apple Health type, with a year of analysis per type",
-      "CSV or JSONL export for any types and dates",
-      "No account, no database, no network",
-    ],
-    cta: { label: "Download on the App Store", href: APP_STORE_URL, external: true },
-  },
-  {
-    key: "hosted",
-    name: "The PulsHealth database",
-    tagline: "We run the database for you.",
-    badge: "Hosted for you",
-    icon: Cloud,
-    where: "On our database, under your own account.",
-    points: [
-      "Connect the app to your account and your history syncs, then keeps up",
-      "The web viewer at app.pulshealth.com",
-      "Connect Claude: sign in and tap Allow",
-      "Nothing to install or keep updated",
-    ],
-    cta: { label: "Get started", href: SIGNUP_URL, external: true },
-    featured: true,
-  },
-  {
-    key: "self",
-    name: "Your own database",
-    tagline: "Run the open-source stack yourself.",
-    badge: "Self-hosted",
-    icon: Server,
-    where: "On a machine you control.",
-    points: [
-      "PostgreSQL with TimescaleDB, Grafana, the viewer, the API and the MCP server",
-      "One script on any Docker host, and a QR code to pair",
-      "Or write a receiver for the documented protocol",
-    ],
-    cta: { label: "Set up your database", href: "/server" },
-  },
-];
+/** "How it works": the one flow every way of using PulsHealth shares. */
+function howItWorks(syncedTypeCount: number) {
+  return [
+    {
+      icon: Smartphone,
+      title: "The app reads Apple Health",
+      body: "Free and read-only, on your iPhone. Explore every type, or export CSV and JSONL, with no account.",
+      more: (
+        <Link href="/ios" className={`inline-flex items-center ${textLink}`}>
+          About the app <ArrowRight className="ml-1 h-3.5 w-3.5" />
+        </Link>
+      ),
+    },
+    {
+      icon: Database,
+      title: "It syncs to your database",
+      body: `Every sample of ${syncedTypeCount} types: your whole history first, then it keeps up in the background.`,
+      more: (
+        <span className="text-muted-foreground">
+          <a href={SIGNUP_URL} className={textLink}>Hosted for you</a>, or{" "}
+          <Link href="/server" className={textLink}>run your own</Link>.
+        </span>
+      ),
+    },
+    {
+      icon: Bot,
+      title: "You and your AI use it",
+      body: "Browse it in the web viewer, ask Claude about it, or pull it into a notebook or spreadsheet.",
+      more: (
+        <Link href="/docs/ai" className={`inline-flex items-center ${textLink}`}>
+          Connect an assistant <ArrowRight className="ml-1 h-3.5 w-3.5" />
+        </Link>
+      ),
+    },
+  ];
+}
 
 const prompts = [
   "Plan the next 16 weeks of marathon training from my last three months of runs, my heart rate and my HRV.",
   "Write my weekly report: training load, sleep and resting heart rate, against the month before.",
   "How does my sleep change in the days after a hard training week?",
   "Where have my runs got faster this year, and what else changed around then?",
-];
-
-const pieces = [
-  {
-    title: "iOS app",
-    href: "/ios",
-    icon: Smartphone,
-    description: "Reads Apple Health read-only. Explore and export it on the phone, or stream every sample to a database: full backfill first, then background sync. Workouts with GPS, activity rings.",
-  },
-  {
-    title: "PostgreSQL + TimescaleDB",
-    href: "/server",
-    icon: Database,
-    description: "Samples land in hypertables with compression on older chunks. Migrations run automatically on every start. Hosted for you, or on your own Docker host.",
-  },
-  {
-    title: "Grafana and a web viewer",
-    href: "/server",
-    icon: LayoutDashboard,
-    description: "A Next.js viewer over the same database: rings, trends, workouts. Self-hosted, it adds provisioned Grafana dashboards and an optional password; hosted, it is your account at app.pulshealth.com.",
-  },
-  {
-    title: "MCP server for AI",
-    href: "/docs/ai",
-    icon: Bot,
-    description: "Read-only, over the product API, so Claude, Claude Code or Cursor can answer from your daily metrics, rings, workouts and sleep. It ships a guide that tells the model about units and double counting.",
-  },
-  {
-    title: "Open wire protocol",
-    href: "/docs/protocol",
-    icon: FileCode2,
-    description: "Gzip NDJSON over HTTPS, a JSON Schema per line type, canonical units, a fixture corpus and a Python reference receiver. Or write your own backend.",
-  },
-  {
-    title: "CSV and JSONL export",
-    href: "/docs/export",
-    icon: FileSpreadsheet,
-    description: "From the app with no database at all, or streamed out of the product API with a small CLI. The quickest route to a spreadsheet or a notebook.",
-  },
 ];
 
 const claims = [
@@ -185,31 +122,11 @@ function CellValue({ value }: { value: Cell }) {
   return <span className="text-muted-foreground">{value}</span>;
 }
 
-function WayCta({ cta, featured }: { cta: Way["cta"]; featured?: boolean }) {
-  const content = (
-    <>
-      {cta.label}
-      <ArrowRight className="ml-2 h-4 w-4" />
-    </>
-  );
-  return (
-    <Button asChild variant={featured ? "default" : "outline"} className="w-full">
-      {cta.external ? (
-        <a href={cta.href} target={cta.href === APP_STORE_URL ? "_blank" : undefined} rel="noopener noreferrer">
-          {content}
-        </a>
-      ) : (
-        <Link href={cta.href}>{content}</Link>
-      )}
-    </Button>
-  );
-}
-
 export default async function HomePage() {
   const { stars } = await getRepoStats();
   const starLabel = formatStars(stars);
   const homeFaq = faq.filter((f) => f.home);
-  const syncedTypeCount = getCatalog().types.length;
+  const steps = howItWorks(getCatalog().types.length);
   const kbTypes = await getAllTypes();
   const kbCount = kbTypes.length;
   const kbFeatured = kbExamples
@@ -290,64 +207,46 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Three ways */}
-      <section id="ways" className="container mx-auto max-w-7xl scroll-mt-16 px-4 py-24">
-        <div className="mb-12 text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight">Three ways to use it</h2>
+      {/* How it works */}
+      <section id="how-it-works" className="container mx-auto max-w-7xl scroll-mt-16 px-4 py-24">
+        <div className="mb-14 text-center">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight">How it works</h2>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Start with the app. Add a database when you want your data somewhere you can query,
-            chart and hand to an AI. The same app syncs to either one.
+            One app keeps a database of your health data up to date. You, and the AI you choose,
+            read from it.
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {ways.map((way) => (
-            <Card
-              key={way.key}
-              className={`flex h-full min-w-0 flex-col ${way.featured ? "border-brand/50 shadow-lg shadow-brand/5 ring-1 ring-brand/20" : ""}`}
-            >
-              <CardHeader>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="w-fit rounded-xl bg-brand-muted p-3 text-brand">
-                    <way.icon className="h-6 w-6" />
-                  </div>
-                  <Badge variant={way.featured ? "default" : "secondary"} className="font-normal">
-                    {way.badge}
-                  </Badge>
-                </div>
-                <CardTitle className="text-xl">{way.name}</CardTitle>
-                <CardDescription className="text-base">{way.tagline}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col">
-                <ul className="mb-5 space-y-2.5 text-sm">
-                  {way.points.map((point) => (
-                    <li key={point} className="flex items-start gap-2.5">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-                      <span className="text-muted-foreground">{point}</span>
-                    </li>
-                  ))}
-                </ul>
-                {way.key === "self" && (
-                  <div className="mb-5 overflow-x-auto rounded-md border bg-muted/40 px-3 py-2.5">
-                    <pre className="font-mono text-xs leading-relaxed text-muted-foreground">
-                      <code>{`git clone https://github.com/PulsHealth/pulshealth.git
-cd pulshealth
-scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
-                    </pre>
-                  </div>
+        <div className="relative mx-auto max-w-5xl">
+          <div
+            aria-hidden
+            className="absolute left-[16.67%] right-[16.67%] top-7 hidden h-px bg-brand/30 lg:block"
+          />
+          <ol className="relative grid gap-10 lg:grid-cols-3 lg:gap-8">
+            {steps.map((step, i) => (
+              <li key={step.title} className="relative flex gap-5 lg:flex-col lg:items-center lg:text-center">
+                {i < steps.length - 1 && (
+                  <div aria-hidden className="absolute -bottom-10 left-7 top-14 w-px bg-brand/30 lg:hidden" />
                 )}
-                <p className="mb-5 mt-auto border-t pt-4 text-sm">
-                  <span className="font-medium text-foreground">Where your data lives: </span>
-                  <span className="text-muted-foreground">{way.where}</span>
-                </p>
-                <WayCta cta={way.cta} featured={way.featured} />
-              </CardContent>
-            </Card>
-          ))}
+                <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-brand/30 bg-background text-brand shadow-sm">
+                  <step.icon className="h-6 w-6" />
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-semibold text-brand-foreground">
+                    {i + 1}
+                  </span>
+                </div>
+                <div className="min-w-0 pt-1 lg:pt-5">
+                  <h3 className="text-lg font-semibold">{step.title}</h3>
+                  <p className="mt-2 text-muted-foreground text-pretty">{step.body}</p>
+                  <p className="mt-3 text-sm">{step.more}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
-        <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-muted-foreground">
-          The app is free, with no in-app purchases. Both databases run the same
-          open-source code.
+
+        <p className="mx-auto mt-14 max-w-2xl text-center text-sm text-muted-foreground">
+          All of it is open source under Apache-2.0, and the hosted database runs the same code
+          you can run yourself.
         </p>
       </section>
 
@@ -471,56 +370,6 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
         </div>
       </section>
 
-      {/* What is in the box */}
-      <section className="border-y bg-muted/30">
-        <div className="container mx-auto max-w-7xl px-4 py-24">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight">What is included</h2>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              All of it is in one Apache-2.0 repository: the app syncs {syncedTypeCount} HealthKit
-              types, and every piece below is yours to run. The PulsHealth database runs the same
-              code.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {pieces.map((piece) => (
-              <Link key={piece.title} href={piece.href} className="group">
-                <Card className="h-full transition-all duration-200 hover:border-brand/40 hover:shadow-lg">
-                  <CardHeader>
-                    <div className="mb-4 w-fit rounded-xl bg-brand-muted p-3 text-brand">
-                      <piece.icon className="h-6 w-6" />
-                    </div>
-                    <CardTitle className="text-xl transition-colors group-hover:text-brand">
-                      {piece.title}
-                    </CardTitle>
-                    <CardDescription className="text-base">{piece.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <span className="inline-flex items-center text-sm font-medium text-brand">
-                      Learn more <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-
-          <figure className="mx-auto mt-12 max-w-4xl overflow-hidden rounded-xl border bg-[#0b0b0c] shadow-xl shadow-black/10">
-            <Image
-              src="/screenshots/viewer-workouts.webp"
-              alt="The web viewer's workouts page: session count, total time, energy and distance, then a list of workouts with duration, calories and distance."
-              width={1440}
-              height={900}
-              className="w-full"
-            />
-            <figcaption className="border-t border-white/10 px-4 py-2 text-xs text-white/50">
-              Workouts in the web viewer. On your own stack, Grafana dashboards cover the same data and ingest health.
-            </figcaption>
-          </figure>
-        </div>
-      </section>
-
       {/* Privacy: checkable claims */}
       <section className="container mx-auto max-w-7xl px-4 py-24">
         <div className="mb-12 text-center">
@@ -636,42 +485,20 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
 
       {/* Consulting */}
       <section className="border-t bg-muted/30">
-        <div className="container mx-auto max-w-7xl px-4 py-24">
-          <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.2fr_1fr]">
+        <div className="container mx-auto max-w-7xl px-4 py-16">
+          <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-6 text-center md:flex-row md:text-left">
             <div>
-              <Badge variant="outline" className="mb-4">Consulting</Badge>
-              <h2 className="mb-4 text-3xl font-bold tracking-tight">Consulting</h2>
-              <p className="text-lg text-muted-foreground">
-                The app, the stack and the documentation are free. If you want help setting up
-                the stack, connecting your data to AI tools, implementing the protocol against
-                your own backend, or building on the data, I do that work.
+              <h2 className="text-2xl font-bold tracking-tight">Building with health data and AI?</h2>
+              <p className="mt-2 text-muted-foreground">
+                I help teams make sense of health data and put AI to work on it.
               </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg">
-                  <Link href="/consulting">
-                    <Briefcase className="mr-2 h-4 w-4" />
-                    Consulting
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <a href="mailto:support@pulshealth.com">Email the maintainer</a>
-                </Button>
-              </div>
             </div>
-            <ul className="space-y-3 rounded-xl border bg-card p-6 text-sm">
-              {[
-                "Get the self-hosted stack running, and keep it running",
-                "Wire your health data into Claude, Cursor or ChatGPT",
-                "Implement or review a Puls Sync Protocol receiver",
-                "Dashboards, exports and analysis on your own data",
-                "Health-data engineering beyond this project",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-                  <span className="text-muted-foreground">{item}</span>
-                </li>
-              ))}
-            </ul>
+            <Button asChild size="lg" className="shrink-0">
+              <Link href="/consulting">
+                Get in touch
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
