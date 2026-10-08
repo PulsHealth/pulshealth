@@ -491,7 +491,8 @@ opens the form), or the developer invites you. What happens to your data:
   recipients and are not removed by deleting your PulsHealth account.
 
 - **Operational logs.** Server security and operational logs can include network
-  addresses, request or batch identifiers, status codes and timings. They are
+  addresses, user/device/token and batch identifiers, health type names, counts,
+  status codes and timings (not complete health-data request bodies). They are
   restricted to the operator and used for security and troubleshooting, not
   advertising. They are separate from the account database: account deletion
   does not selectively rewrite historical log files. Container logs rotate by
