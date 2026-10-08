@@ -1,54 +1,65 @@
 ---
-title: "PulsHealth is open source"
+title: "PulsHealth Is Open Source: Explore, Export, and Use Your Apple Health Data"
 date: "2026-09-15"
-updated: "2026-10-07"
+updated: "2026-10-08"
+draft: false
+author: "Sean Wade"
 tags: ["announcement", "self-hosting", "apple-health", "open-source"]
-excerpt: "The iPhone app, the sync library, the reference server, the wire protocol and this site are all in one Apache-2.0 repository: what is in it, and how to try it."
+excerpt: "Use Apple Health on your own terms: explore on your iPhone, export files, or sync to a hosted or self-hosted database. The app, server, and protocol are open source."
 ---
 
-<Callout type="info" title="Update, October 2026">
-Two things have changed since this post. You no longer have to run anything yourself: the [PulsHealth database](https://app.pulshealth.com/signup) is hosted for you, on the same open-source stack. And any AI agent that speaks MCP can read your data, on either database. The [consulting page](/consulting) now covers health data and AI work in general.
-</Callout>
+Apple Health collects a useful history, but the next step often happens somewhere else: a spreadsheet, a browser dashboard, a Python notebook, or a question you want an assistant to help investigate. PulsHealth gives that history a route out of the phone, with choices about where it goes.
 
-PulsHealth is an iPhone app that copies Apple Health into a database you run. Every part of it is now public under the Apache License 2.0, in one repository: the app, the Swift package underneath it, the server stack, the wire protocol, the dashboards, the knowledge base and this website.
+The iPhone app, Swift sync library, reference server, protocol specification, dashboards, and this website are in [one Apache-2.0 repository](https://github.com/PulsHealth/pulshealth). You can inspect them, run the stack yourself, or build a receiver that accepts the documented format.
 
-This replaces an earlier post that described a hosted product and an AI agent. Neither was built. This is what the project actually is.
+*Rewritten October 8, 2026: this post now covers Explore and Export, the hosted database's access-request process, and current AI connections. The original publication date is retained.*
 
-<KeyTakeaways>
-- The app is free on the App Store and reads Apple Health read-only. It posts to one URL you choose and nowhere else.
-- The reference server is a Docker Compose stack: PostgreSQL 17 with TimescaleDB, a Go ingest API, a read-only product API, Grafana, a web viewer and an MCP server.
-- The wire format is specified, not just implemented, so a backend of your own is a supported path.
-- The server stack is at 0.2.0, with published container images for amd64 and arm64.
-</KeyTakeaways>
+## Start with the data already on your phone
 
-## What the app does
+You do not need a server or a PulsHealth account to start. The free [iPhone app](https://apps.apple.com/us/app/pulshealth/id6757657354) has two useful entry points before you connect a database.
 
-It asks Apple Health for read permission on the types you pick, exports the full history from a start date you choose, and then keeps up: a HealthKit observer plus background delivery drains new samples and deletions as iOS allows, a background processing task catches up while the phone is idle, and every foreground open runs a full pass.
+**Explore** helps you understand what is in Apple Health. Open a data type to inspect its sample count, sources, value distribution, and how observations arrive over time. That answers a practical first question: do you have the measurements needed for the analysis you had in mind?
 
-Each type has its own cursor, and the cursor is saved only after your server confirms the batch. A failed upload re-sends the same page, and the server deduplicates by sample UUID, so the pipeline is idempotent end to end. The app stores no health samples on the phone; they stream through it.
+**Export** writes selected data to CSV or JSONL files. Choose the types and date range for that export, then save or share the result. This works on demand without configuring sync. CSV is useful for a spreadsheet; JSONL retains the richer structured representation. Their differences are documented in the [export guide](/docs/export/).
 
-Eighty HealthKit types are in the catalog today, grouped the way Apple Health groups them, with canonical units for every quantity. Workouts carry their GPS routes and per-second sensor series. Activity rings arrive as one row per day. Any quantity type can also be sent as on-device aggregates, hourly sums or daily averages, optionally split by Watch versus iPhone.
+The distinction matters when you have a single task. If you want to make one chart from last month's measurements, a file may be all you need. A continuously updated database becomes useful when you want that chart to stay current, query a longer history repeatedly, or connect other tools.
 
-## What the server does
+## Choose where ongoing sync goes
 
-`scripts/bootstrap.sh` generates every secret, starts the stack, waits for ingest to answer, and prints a pairing block: the URL the phone should use, the bearer token, the user ID, and a QR code encoding all three. Scan it in the app and you are connected.
+PulsHealth can send selected records to a database hosted for you or a database you operate. Both paths use the project's server software, but the responsibility for the stored data is different.
 
-Everything binds to loopback by default, ingest included. Where the phone reaches ingest is the one decision the script leaves to you: bind it to the LAN for a phone on the same Wi-Fi, or put a TLS proxy or a VPN such as Tailscale in front of it.
+| Path | What you take on | Where your synced health data lives |
+|---|---|---|
+| Export a file | Decide where to save and share it | Your chosen file destination |
+| Hosted PulsHealth database | Request access, connect your phone, choose what to sync | The PulsHealth operator's server |
+| Self-hosted database | Run, secure, update, and back up the stack | Infrastructure you control |
 
-Once the data is in Postgres it is yours to use. Query it with SQL, open the provisioned Grafana dashboards or the web viewer, stream any dataset out as CSV or JSONL, or point Claude, Claude Code or Cursor at the read-only MCP server and ask questions.
+Hosted access currently starts with an [access request](https://app.pulshealth.com/signup). Submitting the form does not immediately create a working account: requests require approval. Once admitted, use your account page's pairing instructions to connect your iPhone. As of this update, the App Store version is **1.6**: use its existing database pairing flow. The newer in-app hosted sign-in flow is in the source repository but is not part of that shipped version. The [release record](https://github.com/PulsHealth/pulshealth/blob/main/docs/appstore/README.md#release-record) tracks the distinction.
 
-## What is still young
+For self-hosting, the [server guide](/docs/server/) covers the Docker Compose stack and phone connection. It includes PostgreSQL with TimescaleDB, ingestion, a read API, a web viewer, Grafana, and the MCP integration. Use the maintained guide for commands and current requirements rather than copying an old installation recipe from an announcement.
 
-The stack is at 0.2.0. Two things to know before you rely on it. Ingest can issue a token per phone, bound to one user and revocable on its own, but a new install starts with a shared token that works for every user until you switch it off. And backups ship with the stack as an opt-in Compose profile, off until you turn them on.
+## What sync does—and what it cannot promise
 
-## Why the protocol is public
+You choose the data types and the history you want to send. The app reads available records and keeps track of acknowledged uploads so interrupted work can resume. It also handles newly available records and supported deletions as syncing continues.
 
-The reference stack is one receiver, not the only one. The Puls Sync Protocol v1 is written down with a JSON Schema for every line type, a fixture corpus, a conformance checker and a complete receiver in one standard-library Python file writing to SQLite. If the spec is unclear somewhere, there is an issue template for exactly that.
+There are different shapes of data. Individual measurements, sleep categories, workouts, daily activity summaries, and aggregate series are not interchangeable rows. PulsHealth preserves those distinctions so that an analysis can ask for the appropriate representation. The [database guide](/docs/database/) explains how to query them without silently double-counting overlapping sources or confusing summaries with raw records.
 
-## How to try it
+Sync also depends on the phone. Health access, Watch-to-iPhone delivery, connectivity, and the execution time iOS grants all affect when a record arrives. A database makes data easier to use after it gets there; it does not make background delivery instantaneous. The app's status and activity views help you see progress and diagnose interruptions.
 
-1. On a machine with Docker, clone the repository and run the bootstrap script with the time zone your phone lives in.
-2. Install [PulsHealth from the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354) and scan the pairing code.
-3. Pick the types you want, choose a start date, and let the backfill run.
+For self-hosting, backups require attention: the project provides an opt-in backup service, and it is your responsibility to enable and test it. A running database and a recoverable backup are separate achievements.
 
-Bugs, questions and protocol gaps go through [GitHub issues](https://github.com/PulsHealth/pulshealth/issues). If you want it set up for you or built on, there is a [consulting page](/consulting). Everything on it is also free.
+## Connect tools without replacing your data store
+
+The web viewer is one way to browse your records. SQL, downloadable files, the read API, and Grafana provide other routes. You can change the presentation without asking your phone to collect its history again.
+
+The MCP server lets compatible AI assistants query the product API with read-only tools. It can support questions such as which days have missing records or how recorded workout frequency changed between two periods. Hosted connections use account authorization; self-hosted setups have their own configuration. The [AI connection guide](/docs/ai/) documents supported connection methods and the tested Claude flow.
+
+Read-only access prevents the connector from changing stored records. It does **not** keep queried data away from the assistant's provider. Authorizing a connection allows that provider to receive what its assistant reads, under its own terms. Read the [privacy policy](/privacy/) before connecting, and check source records when an answer matters.
+
+## A specified protocol gives you another option
+
+You do not have to use the reference database. The [Puls Sync Protocol](/docs/protocol/) defines the upload format, with schemas and example fixtures. The repository includes a small Python receiver that writes to SQLite, showing how an independent implementation can work.
+
+That is an important part of making the source useful. A receiver should be able to follow an explicit contract rather than reverse-engineer whichever server implementation happens to exist today.
+
+If you want to try PulsHealth, begin with Explore or a small export. If you need ongoing access, choose a hosted account or follow the self-hosting guide. If something is unclear or broken, bring a reproducible example to [GitHub issues](https://github.com/PulsHealth/pulshealth/issues), with private records and credentials removed. Useful health-data tools begin with understanding what the data actually says.

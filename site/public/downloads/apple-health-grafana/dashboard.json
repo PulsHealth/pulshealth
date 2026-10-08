@@ -1,0 +1,213 @@
+{
+  "id": null,
+  "uid": "puls-blog-starter",
+  "title": "PulsHealth \u2014 daily data and coverage",
+  "description": "Starter dashboard. Read README before use. Uses existing puls-tsdb datasource; no credentials included.",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "timezone": "browser",
+  "refresh": "",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "tags": [
+    "pulshealth",
+    "tutorial"
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Daily steps by provenance",
+      "type": "timeseries",
+      "description": "Daily values in the stack time zone; aggregate and fallback series stay distinct. Edge days are whole-day totals.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT day::timestamp AT TIME ZONE puls_time_zone() AS time,\n       value, source AS metric\nFROM metric_daily\nWHERE identifier = 'HKQuantityTypeIdentifierStepCount'\n  AND user_id = ${user:sqlstring}::uuid\n  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_time_zone())::date\n  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_time_zone())::date\nORDER BY time",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false,
+            "showPoints": "always",
+            "lineWidth": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 2,
+      "title": "Hours since latest received batch (90-day lookback)",
+      "type": "stat",
+      "description": "Ignores dashboard time selection. A recent receipt may contain old records. No value means no batch in 90 days.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT EXTRACT(EPOCH FROM (now() - max(received_at))) / 3600 AS hours\nFROM batches\nWHERE user_id = ${user:sqlstring}::uuid\n  AND received_at >= now() - interval '90 days'",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false,
+            "showPoints": "always",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Recorded workout duration",
+      "type": "timeseries",
+      "description": "One point per workout; records, not proof of complete activity coverage.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT start_ts AS time, duration_s / 60.0 AS minutes\nFROM workouts\nWHERE user_id = ${user:sqlstring}::uuid\n  AND $__timeFilter(start_ts)\nORDER BY time",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false,
+            "showPoints": "always",
+            "lineWidth": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 4,
+      "title": "Daily step provenance",
+      "type": "table",
+      "description": "Whole local calendar days intersecting selected range; aggregate is preferred over rollup.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "puls-tsdb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "puls-tsdb"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT day::text AS day, value AS steps, source\nFROM metric_daily\nWHERE identifier = 'HKQuantityTypeIdentifierStepCount'\n  AND user_id = ${user:sqlstring}::uuid\n  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_time_zone())::date\n  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_time_zone())::date\nORDER BY day DESC",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "custom": {
+            "spanNulls": false,
+            "showPoints": "always",
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {}
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "user",
+        "label": "User UUID",
+        "type": "textbox",
+        "current": {
+          "text": "00000000-0000-0000-0000-000000000000",
+          "value": "00000000-0000-0000-0000-000000000000"
+        },
+        "options": [],
+        "query": "00000000-0000-0000-0000-000000000000",
+        "hide": 0,
+        "skipUrlSync": true
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  }
+}

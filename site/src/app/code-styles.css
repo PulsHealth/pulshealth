@@ -1,7 +1,7 @@
 @reference "./globals.css";
 
 /* Code block styling with rehype-pretty-code */
-[data-rehype-pretty-code-figure] {
+figure[data-rehype-pretty-code-figure] {
   @apply my-6;
 }
 
@@ -9,12 +9,17 @@
   @apply overflow-x-auto rounded-lg border border-zinc-700 bg-[#0d1117] py-4 text-sm leading-relaxed;
 }
 
-[data-rehype-pretty-code-figure] code {
+[data-rehype-pretty-code-figure] pre code {
   @apply grid font-mono;
 }
 
-[data-rehype-pretty-code-figure] [data-line] {
+[data-rehype-pretty-code-figure] pre [data-line] {
   @apply px-4 border-l-2 border-transparent;
+}
+
+/* Inline identifiers stay in the sentence and wrap on narrow screens. */
+.prose :not(pre) > code {
+  overflow-wrap: anywhere;
 }
 
 /* Line highlighting */

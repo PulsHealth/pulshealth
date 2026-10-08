@@ -1,17 +1,35 @@
-# Blog ideas
+# Blog library and follow-up ideas
 
-A lightweight backlog, not a publication schedule. Keep each idea to a reader
-question, an observation to develop, and links to supporting material. These
-are proposed topics; choose one when ready to write.
+The starter collection covers getting Apple Health data out, understanding its
+measurements, and using it in spreadsheets, Python, dashboards, and AI tools.
+The new guides use an editorial date sequence from June 8 to October 8, 2026;
+October revisions identify when instructions, sources, and analysis were checked.
+Existing posts retain their original dates and permanent URLs.
 
-| Idea | Reader question | Observation to develop | Starting material |
-|---|---|---|---|
-| From Apple Health to your first SQL query | How do I do something useful with my own data? | A worked example makes the path from phone to an answer concrete. | [Database guide](../docs/database-guide.md), [exploration notebook](../notebooks/healthkit_database_exploration.ipynb), [server setup](../server/README.md) |
-| What happens when your phone is locked? | Why does background sync sometimes wait? | Describe the constraints and the decisions behind reliable catch-up, using actual behavior. | [Sync package](../PulsHealthSync/README.md), [app](../PulsHealth/README.md) |
-| Asking AI questions about your health data | What can an assistant actually answer from my data? | Show an end-to-end example, its evidence and its limitations. | [AI guide](../docs/ai.md), [MCP server](../server/mcp/README.md) |
-| Why health-data averages can mislead | Which samples belong in this average? | Explain device sources, raw samples, aggregates and calendar boundaries with a reproducible example. | [Database guide](../docs/database-guide.md), [protocol](../docs/protocol/README.md) |
+| Reader question | Article |
+|---|---|
+| How do I get a usable spreadsheet? | [Export to CSV and Excel](articles/export-apple-health-to-csv-excel.mdx) |
+| How can I see my data on a larger screen? | [View on Mac or PC](articles/view-apple-health-on-mac-pc.mdx) |
+| Why do the totals disagree? | [Step counts that do not match](articles/apple-health-step-counts-dont-match.mdx) |
+| How can an assistant answer from my records? | [ChatGPT and Claude](articles/apple-health-chatgpt-claude.mdx) |
+| What does the sleep chart actually measure? | [Sleep stages](articles/apple-watch-sleep-stages.mdx) |
+| Why is my cardio fitness estimate low? | [Cardio fitness](articles/apple-watch-cardio-fitness-low.mdx) |
+| How do I keep my history when changing phones? | [Backups and transfers](articles/back-up-apple-health-data.mdx) |
+| How do I make useful charts myself? | [Python analysis](articles/analyze-apple-health-with-python.mdx) |
+| How do I build a dashboard I control? | [Grafana dashboard](articles/apple-health-grafana-dashboard.mdx) |
+| Where did the data stop moving? | [Sync troubleshooting](articles/apple-health-not-syncing.mdx) |
+| What do individual HRV readings mean? | [Revised HRV guide](articles/apple-watch-hrv-complete-guide.mdx) |
+| What is open and what can I run? | [Revised open-source introduction](articles/pulshealth-is-open-source.mdx) |
 
-Before expanding the metrics series, review the existing HRV post's numerical
-ranges and health claims against primary sources and add citations. Capture
-any corrections explicitly rather than attaching sources that only loosely
-support the prose.
+## Follow-up research
+
+- Compare a daily average with the underlying sampling schedule: how much
+  changes when a device records more often during workouts?
+- Explain a sleep episode spanning midnight, a time-zone change, and a missing
+  night with a reproducible example.
+- Build a personal weekly report that reports coverage alongside every trend.
+
+Before writing a follow-up, check whether it belongs as an improvement to one
+of the existing guides. Keep device behavior tied to official documentation,
+health claims tied to primary research, and personal examples explicitly scoped
+to one dataset. Private extracts never belong in this public repository.

@@ -143,11 +143,11 @@ export const mdxComponents: MDXComponents = {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-0.5"
+          className="inline"
           {...props}
         >
           {children}
-          <ExternalLink className="h-3 w-3 ml-0.5" />
+          <ExternalLink className="inline-block h-3 w-3 ml-0.5 align-baseline" />
         </a>
       );
     }
