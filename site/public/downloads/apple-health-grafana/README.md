@@ -26,9 +26,12 @@ fixtures were excluded. The four queries also executed successfully against
 a private owner-scoped production database in a READ ONLY transaction with a
 25-second statement timeout. A seven-day window returned 7 daily step rows,
 10 workout rows, 7 provenance rows, and 1 receipt-age row. No private query
-outputs are included. This does not test Grafana rendering, macro expansion
-inside Grafana, or production TimescaleDB performance. Review the Query
-Inspector and compare a known day after import.
+outputs are included. The exact dashboard was additionally rendered in Grafana 13.2.3 with
+PostgreSQL 17 synthetic fixtures: 14 daily rows, 6 workouts, and a receipt-age
+result. Query Inspector confirmed expanded date/UUID filters and 14 step rows.
+Fixture source: blog/analysis/grafana-fixture.sql in the repository. This does
+not test production TimescaleDB performance. Review the Query Inspector and
+compare a known day after import.
 
 queries.sql contains Grafana templates, not standalone psql statements.
 Setup: https://pulshealth.com/docs/server/

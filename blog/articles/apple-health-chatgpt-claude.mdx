@@ -94,6 +94,25 @@ PulsHealth's `get_daily_metrics` returns daily metrics; `get_samples` returns ra
 
 Check the denominator yourself: a total divided by 13 recorded days is a different statistic from that total divided by all 15 calendar days. Neither should be mislabeled. If the requested period is incomplete, say so in the chart and answer.
 
+## Try a complete example without sharing your records
+
+Download [sleep-example.csv](/downloads/apple-health-ai/sleep-example.csv). It contains 14 invented wake dates, September 1–14, with one missing duration in each seven-day period. Dates are already assigned by local wake-up day; there are no instants to convert and no source-device column. This is a teaching table, not a raw HealthKit or PulsHealth export.
+
+Attach it to your chosen assistant with this prompt:
+
+> This CSV is synthetic. Compare September 1–7 with September 8–14, inclusive, using asleep_minutes. Keep the supplied wake_date unchanged. Show the recorded-night count, missing dates, sorted observed values, and median for each period. Exclude blank cells without treating them as zero. Report the difference in medians in minutes. Do not infer a medical cause or invent a source device.
+
+Here is the **checked reference answer** to compare with its response. This is a worked calculation, not a claimed ChatGPT or Claude transcript:
+
+| Period | Recorded nights | Missing date | Sorted observed minutes | Median |
+|---|---:|---|---|---:|
+| September 1–7 | 6 of 7 | September 3 | 390, 410, 420, 430, 450, 480 | 425 min |
+| September 8–14 | 6 of 7 | September 11 | 420, 440, 450, 460, 470, 480 | 455 min |
+
+With six observed values, the median is the mean of the third and fourth: `(420 + 430) / 2 = 425` and `(450 + 460) / 2 = 455`. The second period's recorded-night median is **30 minutes longer**. Nothing in the file tells us what happened on the two missing nights or why the recorded durations differ.
+
+You can independently reproduce the table with [check_sleep.py](/downloads/apple-health-ai/check_sleep.py). Save it beside the CSV and run `python3 check_sleep.py`; it uses only Python's standard library. If an assistant gives a different result, compare its included rows and treatment of blanks before accepting its explanation.
+
 ## Read-only access still sends information to a provider
 
 Read-only describes what a connection can change. It does not mean analysis remains on your phone or server. When a cloud assistant requests PulsHealth records, its provider receives the returned information. Self-hosting the database does not change that part of the path.
