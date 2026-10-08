@@ -154,6 +154,7 @@ struct SettingsView: View {
 
             Section("About") {
                 LabeledContent("Version", value: Self.versionString)
+                Link("Write a Review", destination: ReviewRequests.writeReviewURL)
                 Link("Documentation", destination: URL(string: "https://pulshealth.com/docs/")!)
                 Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy")!)
                 Link("Open Source on GitHub", destination: URL(string: "https://github.com/PulsHealth/pulshealth")!)

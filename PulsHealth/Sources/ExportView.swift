@@ -27,6 +27,7 @@ struct ExportView: View {
         }
         .navigationTitle("Export")
         .deleteExportAlert(isPresented: $confirmDelete, export: model.export)
+        .reviewRequestOpportunity(.export, blocked: sharing || confirmDelete)
     }
 
     // MARK: - Idle
@@ -461,7 +462,10 @@ struct ExportView: View {
                 // needs one (`ActivitySheet`).
                 .background(
                     ActivitySheet(isPresented: $sharing, items: finished.result.files) { completed in
+                        let qualifies = completed && finished.result.isComplete
+                            && finished.result.writtenRows > 0 && !finished.filesRemoved
                         model.export.shareFinished(completed: completed)
+                        if qualifies { model.reviews.offer(.export) }
                     })
             }
             // Its own section: under the clear row above, a second row would

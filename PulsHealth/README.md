@@ -497,3 +497,30 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   `X-Wake-ID`/`X-Wake-Trigger` headers, so the server's `batches` rows join
   back to the device records. **Sync → Activity → Background → Export** shares
   the wakes (CSV and JSON) and the event log (JSON).
+
+## App Store reviews
+
+Settings → About → Write a Review permanently opens Apple's review page.
+Automatic requests use Apple's native StoreKit prompt, with no custom prompt
+or satisfaction question. A request is offered only at a completed task:
+
+- A complete, nonempty export has been successfully shared or saved, and the
+  person used the app in a previous foreground session.
+- A foreground/manual upload finishes while Sync is visible, after three
+  active days and acknowledged uploads on at least two days. The first
+  30 seconds of a visit never offer a sync review request.
+- The person returns to Explore from a complete, populated analysis, after
+  three active days.
+
+`ReviewRequests` shares a 120-day cooldown and one attempt per marketing
+version across all tabs. A two-second pause precedes the API call. Navigation,
+interaction, backgrounding, an inactive scene or a presented sheet/alert
+cancels it. Onboarding, permission/setup issues, pending edits, failed types,
+and running sync/backfill/export work suppress it. Cancelled opportunities
+consume no cooldown. Apple controls whether its prompt appears; an API call
+records an **attempt**, never a submitted rating or review. TestFlight does
+not show the native prompt.
+
+Only day/session counters, the latest recorded successful-upload date, and
+request-attempt metadata persist in the app's own UserDefaults. No health
+values or type identifiers are stored there, and nothing is sent to analytics.

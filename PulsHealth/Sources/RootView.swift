@@ -30,11 +30,14 @@ struct RootView: View {
         return []
     }()
     @Environment(AppModel.self) private var model
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         @Bindable var model = model
         TabView(selection: $selection) {
-            NavigationStack(path: $explorePath) { ExploreView() }
+            NavigationStack(path: $explorePath) {
+                ExploreView().reviewRequestOpportunity(.explore, blocked: !explorePath.isEmpty)
+            }
                 .tabItem { Label("Explore", systemImage: "heart.text.square") }
                 .tag(Tab.explore)
             NavigationStack { ExportView() }
@@ -50,6 +53,42 @@ struct RootView: View {
             NavigationStack { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
+        }
+        .task {
+            if scenePhase == .active { model.reviews.beginSession() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { model.reviews.beginSession() }
+            else if phase == .background { model.reviews.endSession() }
+        }
+        .onChange(of: selection) { _, _ in model.reviews.cancelPending() }
+        .onChange(of: syncPath) { _, _ in model.reviews.cancelPending() }
+        .onChange(of: explorePath) { old, new in
+            model.reviews.cancelPending()
+            // Returning from a complete populated analysis is a natural pause;
+            // opening a chart, or returning from an empty/failed read, isn't.
+            guard selection == .explore, new.isEmpty,
+                  case .type(let id) = old.last,
+                  let profile = model.explore.profiles[id], profile.isComplete,
+                  profile.sampleCount > 0 else { return }
+            model.reviews.offer(.explore)
+        }
+        .onChange(of: model.wakeRecords) { old, new in
+            let successes = new.filter { $0.outcome == .completed && $0.batches > 0 && $0.bytes > 0 }
+            model.reviews.recordSuccessfulSyncs(at: successes.compactMap(\.endedAt))
+            let previousCompleted = Set(old.filter { $0.outcome == .completed }.map(\.id))
+            // History may include background uploads. Only a newly completed
+            // foreground/manual upload visible on Sync can offer the prompt.
+            guard scenePhase == .active, selection == .sync, syncPath.isEmpty,
+                  let started = model.reviews.sessionStartedAt,
+                  successes.contains(where: { wake in
+                      !wake.trigger.isBackground && (wake.endedAt ?? .distantPast) >= started
+                          && !previousCompleted.contains(wake.id)
+                  }) else { return }
+            model.reviews.offer(.sync)
+        }
+        .onChange(of: model.reviewRequestsBlocked) { _, blocked in
+            if blocked { model.reviews.cancelPending() }
         }
         // An incoming `puls://` link asks before it fills anything. While the
         // first-run flow covers this view the prompt is OnboardingView's; and

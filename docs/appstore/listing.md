@@ -154,7 +154,7 @@ Answer every content question **None / No**. The result is **4+**.
 | Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth (or Create Account) opens `app.pulshealth.com/connect/iphone` (or `/signup`) in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the account flow on that site (sign in or create an account, then Connect this iPhone), and closes when that page hands back the pairing code or the person closes it. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/#ways), and the PulsHealth database's What the Developer Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth Account (app.pulshealth.com, pulshealth.com/privacy and pulshealth.com/docs/ai/). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
 | User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, database URL, token) is shared with any other user or with the developer. |
 | Gambling and contests | No | — |
-| In-app purchases | No | No StoreKit. |
+| In-app purchases | No | StoreKit is used only for native rating/review requests. |
 | Advertising | No | No ad SDK, no ad network. |
 
 ## App Privacy — "Data Linked to You"
@@ -318,3 +318,13 @@ submission). iPad 13"
 slot (2064 × 2752): Unlock your Health Data and Explore. Shots 5 and 6 of the
 order above (Sync status after a backfill, Background Activity) need a real
 device and days of wakes; they can join the set in a later version.
+
+### Native review requests (next submission)
+
+StoreKit requests a rating or review only after completed tasks and a pause,
+with a shared 120-day cooldown and one attempt per app version. Settings →
+About → Write a Review opens Apple's review page. Usage-day counters and
+attempt metadata stay in UserDefaults; no health values, identifiers or
+review responses are collected for this feature. It introduces no analytics
+SDK or additional App Privacy data collection. The existing UserDefaults
+required-reason declaration covers the app's own review timing preferences.
