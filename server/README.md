@@ -1176,3 +1176,15 @@ own device tokens, independently of signup origin. Account deletion, disable
 and purge permissions are unchanged. `022_device_pairing_policy.sh` runs on
 every migration and excludes the configured `WEB_DEMO_USER` from phone pairing
 in the database; Compose passes that value to both migrate and web.
+
+### Recording-quality compatibility
+
+`023_recording_quality.sql` keeps raw data intact while making daily analytics
+accept only complete local-calendar buckets (including DST). It also provides
+`puls_heart_rate_motion_context(jsonb)` for explicitly decoding legacy 0/1
+booleans in heart-rate motion metadata. See the [database guide](../docs/database-guide.md#recording-behavior-and-historical-metadata).
+Apply it through the migrate service; no resync or historical data rewrite is
+required. `server/db/test-migrate.sh` checks the decoder, shifted/wrong-end
+buckets, 23/25-hour days and user scope on a throwaway database. Migration 023
+supersedes the historical view definition in 009. Later daily-view migrations
+must sort after 023 so replay does not restore an older definition.
