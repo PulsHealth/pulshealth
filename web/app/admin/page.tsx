@@ -47,7 +47,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   return (
     <>
       <PageHeader
-        eyebrow="Admin"
         title="Admin"
         subtitle={
           signupsOpen()

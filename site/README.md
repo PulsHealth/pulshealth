@@ -5,6 +5,8 @@ pages, the blog, and the HealthKit knowledge-base viewer. It is a separate
 thing from [`web/`](../web/README.md), which is the self-hosted viewer that
 reads your own Postgres.
 
+Page heroes begin with the title and description, without a page-label pill.
+
 It reads content from the **repository around it**, by relative path, so
 `site/` and the things it reads must stay where they are:
 

@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/PageHeader";
 import { WorkoutDetailView } from "@/components/WorkoutDetailView";
 import { ChevronRight } from "@/components/Icons";
 import { formatActivity } from "@/lib/activity";
-import { GROUP_COLOR } from "@/lib/colors";
 import { getProfile, getWorkoutDetail, getWorkoutSeries } from "@/lib/queries";
 import { viewerUser } from "@/lib/viewer";
 import { formatFull, formatTime } from "@/lib/format";
@@ -37,8 +36,6 @@ export default async function WorkoutDetailPage({ params }: { params: Promise<{ 
       </nav>
 
       <PageHeader
-        eyebrow="Workout"
-        accent={GROUP_COLOR.workouts}
         title={title}
         subtitle={`${formatFull(w.start)} – ${formatTime(w.end)}`}
       />

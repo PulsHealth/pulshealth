@@ -90,7 +90,6 @@ export default function Fun100SupportPage() {
   return (
     <main className="flex flex-1 flex-col">
       <PageHero
-        eyebrow="Fun100"
         size="compact"
         title="Fun100 Support"
         lede="Fun100 is an iPhone app for running a fitness challenge with a small group of friends."

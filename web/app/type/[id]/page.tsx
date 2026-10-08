@@ -98,8 +98,6 @@ export default async function TypePage({
       </nav>
 
       <PageHeader
-        eyebrow={GROUP_LABELS[type.group]}
-        accent={color}
         title={type.name}
         subtitle={
           <span className="mono" style={{ fontSize: 12.5 }}>

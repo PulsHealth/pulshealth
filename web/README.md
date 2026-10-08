@@ -565,6 +565,9 @@ including categories and account controls. Choosing a link, tapping outside,
 or pressing Escape closes it; Escape returns focus to the Menu button.
 The shared demo keeps a visible **Demo** badge even with the menu closed.
 
+Page headers begin with the title and description, without a page label above
+them. Demo and live data indicators remain visible in the navigation.
+
 ## The trend chart
 
 **Ranges.** The selector (and `?range=`) offers D, 7D, 30D, 90D, 6M, Y, 2Y, 5Y

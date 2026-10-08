@@ -55,7 +55,6 @@ export default function ConsultingPage() {
   return (
     <main className="flex min-h-screen flex-col">
       <PageHero
-        eyebrow="Consulting"
         title={<>Let&apos;s build something <span className="text-brand">together</span></>}
         lede="For teams working with wearables, health records and AI."
       >

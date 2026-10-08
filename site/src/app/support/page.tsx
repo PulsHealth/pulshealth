@@ -60,7 +60,6 @@ export default function SupportPage() {
   return (
     <main className="flex flex-1 flex-col">
       <PageHero
-        eyebrow="Support"
         size="compact"
         title="Getting help"
         lede="Start with the answers below. Most sync questions turn out to be iOS behaviour, not bugs."

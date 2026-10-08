@@ -60,8 +60,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ group
   return (
     <>
       <PageHeader
-        eyebrow="Category"
-        accent={color}
         title={
           <span style={{ display: "inline-flex", alignItems: "center", gap: 14 }}>
             <span style={{ width: 44, height: 44, borderRadius: 13, display: "grid", placeItems: "center", background: `${color}1a`, color }}>

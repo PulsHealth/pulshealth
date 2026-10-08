@@ -140,7 +140,6 @@ export default function DocsPage() {
   return (
     <main className="flex min-h-screen flex-col">
       <PageHero
-        eyebrow="Documentation"
         size="compact"
         title="The manuals"
         lede="Everything is written next to the code it describes and rendered here from the same files, so the page you read is the file in the repository."

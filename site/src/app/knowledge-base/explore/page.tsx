@@ -27,7 +27,6 @@ export default async function ExplorePage() {
     <main className="min-h-screen pb-20">
       <PageHero
         size="compact"
-        eyebrow={<Link href="/knowledge-base" className="hover:text-brand">Knowledge Base</Link>}
         title={<>All {allTypes.length} <span className="text-brand">data types</span></>}
         lede="Every Apple Health type, grouped the way Apple Health groups them."
       />

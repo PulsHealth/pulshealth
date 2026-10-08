@@ -54,7 +54,6 @@ export default function AboutPage() {
   return (
     <main className="flex min-h-screen flex-col">
       <PageHero
-        eyebrow="About"
         size="compact"
         title="Your health data, yours to use"
         lede="PulsHealth gets your Apple Health history off the iPhone and into a database you and your AI can use."
