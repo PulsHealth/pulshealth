@@ -1246,3 +1246,7 @@ For a manual reconstruction on a disposable database, replay the current view
 replacements in 023 and 026 after 008/009 and before rebuilding the scoped views in 099.
 Replaying only the historical 009 definition does not include the boundary fix.
 Normal installs and baseline recovery use the migrator's complete ordered set.
+
+## Hosted operations
+
+For an operator storing other people's health data, [the hosted operations runbook](../docs/hosted-operations.md) covers daily checks, deletion escalation, retention, restore protection and launch acceptance. Run `python3 server/ops/hosted-check.py` from the repository root on the Docker host; it checks the hosted seven-day retention policy and exits nonzero when attention is needed. It reports counts, never health data or credentials. These hosted checks do not change independent self-hosters' configuration defaults.

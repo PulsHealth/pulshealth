@@ -65,13 +65,13 @@ export default function PrivacyPage() {
           </CardHeader>
           <CardContent>
             <ul className="list-disc pl-6 space-y-2">
-              <li>Exporting from the app, or syncing to a database you run yourself, gives the developer no data.</li>
-              <li>If you create a PulsHealth account and sync to the PulsHealth database (with its viewer at app.pulshealth.com), your data is stored there, under your account, for you alone. Account deletion disconnects access and automatically removes your account and stored records; a private status link confirms completion. A minimal deletion record prevents older backups from restoring deleted data. Creating an account also sends the signup details described below.</li>
+              <li>Exploring stays on your phone. Self-hosted sync goes to your database; ordinary exports go only where you share them.</li>
+              <li>If you create a PulsHealth account and sync to the PulsHealth database (with its viewer at app.pulshealth.com), your data is stored under your account. The operator can access it; hosting is not end-to-end encrypted. Account deletion disconnects access and automatically removes your account and stored records; a private status link confirms completion. A minimal deletion record prevents older backups from restoring deleted data. Creating an account also sends the signup details described below.</li>
               <li>With the PulsHealth database you can connect an AI assistant, such as Claude, to your records by signing in and approving it. It gets read-only access to your health data and profile until you revoke it on your account page (its current access then runs out within 30 minutes), and its provider receives what it reads under the provider&rsquo;s own terms. The app is not involved, and the developer sends your data to no AI provider on its own.</li>
               <li>You choose each way health data leaves the phone: sync to your configured database, exports you share yourself, or one-time ZIP delivery to a request destination you review and approve. Opening a request alone sends nothing.</li>
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>
               <li>No analytics, advertising, tracking or third-party SDKs in the app.</li>
-              <li>The bearer token normally lives in the iOS Keychain. The app keeps no health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
+              <li>The bearer token normally lives in the iOS Keychain. The app does not retain synced health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
               <li>This website loads no analytics and sets no cookies. Its two forms send only what you type.</li>
             </ul>
           </CardContent>
