@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import * as yaml from "js-yaml";
 import { HealthKitType, SearchItem } from "./types";
-import { getAllPosts } from "./blog";
+import { getPublishedPosts } from "./blog";
 import { getAllDocs } from "./docs";
 import { STATIC_PAGES } from "./pages";
 
@@ -97,7 +97,7 @@ export async function getTypeById(
 }
 
 export async function getAllSearchItems(): Promise<SearchItem[]> {
-  const [types, posts, docs] = await Promise.all([getAllTypes(), getAllPosts(), getAllDocs()]);
+  const [types, posts, docs] = await Promise.all([getAllTypes(), getPublishedPosts(), getAllDocs()]);
 
   // Documentation pages rendered from the repository
   const docItems: SearchItem[] = docs.map((doc) => ({

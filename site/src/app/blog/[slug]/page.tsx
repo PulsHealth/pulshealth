@@ -1,4 +1,5 @@
 import "@/app/code-styles.css";
+import { blogRevision } from "@/lib/blog-reload.generated";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, ArrowLeft } from "lucide-react";
@@ -9,6 +10,7 @@ import { mdxComponents } from "@/components/mdx-components";
 import { ShareButtons } from "@/components/share-buttons";
 import type { Metadata } from "next";
 import remarkGfm from "remark-gfm";
+import { serializeJsonLd } from "@/lib/json-ld";
 import rehypePrettyCode from "rehype-pretty-code";
 import type { Options } from "rehype-pretty-code";
 
@@ -54,7 +56,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: post.excerpt,
       url,
       siteName: "PulsHealth",
-      publishedTime: post.date,
+      publishedTime: post.date || undefined,
+      modifiedTime: post.updated,
       authors: post.author ? [post.author] : undefined,
       tags: post.tags,
       images: [
@@ -73,10 +76,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: [ogImage],
     },
     robots: {
-      index: true,
+      index: !post.draft,
       follow: true,
       googleBot: {
-        index: true,
+        index: !post.draft,
         follow: true,
         "max-video-preview": -1,
         "max-image-preview": "large",
@@ -103,7 +106,8 @@ export default async function BlogPostPage({ params }: PageProps) {
     headline: post.title,
     description: post.excerpt,
     image: ogImage,
-    datePublished: post.date,
+    datePublished: post.date || undefined,
+    dateModified: post.updated,
     author: post.author
       ? {
           "@type": "Person",
@@ -126,12 +130,13 @@ export default async function BlogPostPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div key={blogRevision} className="min-h-screen bg-background">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       {/* Header */}
+      {post.draft && <p className="border-b bg-amber-50 px-4 py-3 text-center text-amber-950">Draft preview — excluded from publishing.</p>}
       <header className="border-b bg-muted/30">
         <div className="container mx-auto max-w-4xl px-4 py-10">
           <Link
@@ -154,7 +159,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                   {post.author}
                 </span>
               )}
-              <span className="flex items-center gap-1.5">
+              {post.date && <span className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
                 <time dateTime={post.date}>
                   {new Date(post.date).toLocaleDateString("en-US", {
@@ -164,7 +169,8 @@ export default async function BlogPostPage({ params }: PageProps) {
                     year: "numeric",
                   })}
                 </time>
-              </span>
+              </span>}
+              {post.updated && <span>Updated <time dateTime={post.updated}>{new Date(post.updated).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" })}</time></span>}
               <span className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
                 {post.readingTime} min read

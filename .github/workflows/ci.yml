@@ -143,46 +143,8 @@ jobs:
         run: |
           bun install --frozen-lockfile
           bun run lint
+          bun run test
           bun run build
-
-      - name: Check the export is complete
-        shell: bash
-        run: |
-          set -euo pipefail
-          # site/ reads knowledge-base/, blog/ and the documentation manifest's
-          # markdown files as repository-root siblings, by relative path
-          # (src/lib/api.ts, src/lib/blog.ts, src/lib/docs.ts). Break that and
-          # the loaders log and return nothing: the build still SUCCEEDS, it
-          # just exports far fewer pages. So assert the counts.
-          types=$(git ls-files 'knowledge-base/*/**.yaml' | wc -l)
-          built=$(find site/out/knowledge-base/types -name index.html | wc -l)
-          posts=$(git ls-files 'blog/articles/*.mdx' | wc -l)
-          blogs=$(find site/out/blog -mindepth 1 -maxdepth 1 -type d | wc -l)
-          # The docs manifest (DOCS in site/src/lib/docs.ts) is explicit, not
-          # a glob, so its length is a constant: bump it with the manifest.
-          manifest=13
-          # The retired self-hosting URL is a public/ redirect stub, not a
-          # rendered manifest entry. Check it separately without counting it.
-          docs=$(find site/out/docs -mindepth 1 -maxdepth 1 -type d ! -name self-hosting | wc -l)
-          echo "knowledge-base types: $types sources, $built pages"
-          echo "blog articles: $posts sources, $blogs pages"
-          echo "documentation: $manifest manifest entries, $docs pages"
-          test "$built" -eq "$types"
-          test "$blogs" -eq "$posts"
-          test "$docs" -eq "$manifest"
-          test -f site/out/index.html
-          test -f site/out/docs/index.html
-          test -f site/out/sitemap.xml
-          test -f site/out/docs/self-hosting/index.html
-          # llms.txt is rendered from the repository root's llms.txt by
-          # site/scripts/gen-llms-txt.ts (prebuild), never copied by hand.
-          test -f site/out/llms.txt
-          grep -q 'https://pulshealth.com/docs/protocol/' site/out/llms.txt
-          # The API reference renders server/api/openapi.json, and
-          # scripts/gen-openapi.ts (prebuild) publishes it for download. A
-          # reference with no endpoints in it would still build.
-          test -f site/out/openapi.json
-          grep -q 'id="getDailyMetrics"' site/out/docs/api-reference/index.html
 
   # The four app images build for linux/amd64 (no push) so a broken
   # Dockerfile fails a pull request instead of the next release. Same

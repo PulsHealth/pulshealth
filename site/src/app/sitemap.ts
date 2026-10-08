@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllTypes } from "@/lib/api";
-import { getAllPosts } from "@/lib/blog";
+import { getPublishedPosts } from "@/lib/blog";
 import { docHref, getAllDocs } from "@/lib/docs";
 import { STATIC_PAGES } from "@/lib/pages";
 
@@ -40,10 +40,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Blog posts
-  const posts = await getAllPosts();
+  const posts = await getPublishedPosts();
   const blogEntries: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}/`,
-    lastModified: new Date(post.date),
+    lastModified: new Date(post.updated || post.date),
     changeFrequency: "monthly",
     priority: 0.8,
   }));

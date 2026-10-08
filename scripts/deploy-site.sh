@@ -17,7 +17,7 @@
 # Requirements: bun, and the AWS CLI with credentials allowed to write the
 # bucket and create invalidations on the distribution. Nothing here reads
 # server/.env; the site has no secrets (its .env.production holds only the
-# public form endpoint and GA measurement ID, which a static export bakes
+# public form endpoint, which a static export bakes
 # into the HTML anyway).
 #
 # Portable bash (3.2, macOS's default).
@@ -80,16 +80,10 @@ fi
 [ -d "$out_dir" ] ||
   { echo "deploy-site: $out_dir does not exist; drop --skip-build" >&2; exit 1; }
 
-# 178 knowledge-base types + blog + the static pages. A build that lost the
-# relative path to ../knowledge-base still succeeds, just much smaller, and
-# syncing that with --delete would take the knowledge base off the site.
-types=$(find "$out_dir/knowledge-base/types" -name index.html 2>/dev/null | wc -l | tr -d ' ')
-if [ "$types" -lt 178 ]; then
-  echo "deploy-site: only $types knowledge-base type pages in $out_dir (expected 178)." >&2
-  echo "deploy-site: refusing to sync a partial export." >&2
-  exit 1
-fi
-echo "deploy-site: $(find "$out_dir" -name '*.html' | wc -l | tr -d ' ') HTML files, $types knowledge-base types"
+# The same checks run after every build and in CI. Recheck even with
+# --skip-build before a sync that can delete published pages.
+need bun
+(cd "$site_dir" && bun run check:export)
 
 need aws
 

@@ -22,19 +22,18 @@ It reads content from the **repository around it**, by relative path, so
 | Source | Read by | How |
 |---|---|---|
 | [`../knowledge-base/`](../knowledge-base/README.md) | `src/lib/api.ts` | `path.join(process.cwd(), "..", "knowledge-base")` — 178 YAML type files become `/knowledge-base/types/<slug>/` |
-| [`../blog/`](../blog/BLOG_SYSTEM.md) | `src/lib/blog.ts`, `package.json` | `../blog/articles/*.mdx` become `/blog/<slug>/`; `copy-blog-images` copies `../blog/images` into `public/blog/` before every dev run and build |
+| [`../blog/`](../blog/BLOG_SYSTEM.md) | `src/lib/blog.ts`, `package.json` | published `../blog/articles/*.{md,mdx}` become `/blog/<slug>/`; image sync recreates `public/blog/` from published posts, and preview watches drafts and images |
 | [`../llms.txt`](../llms.txt) | `scripts/gen-llms-txt.ts`, `package.json` | `gen-llms-txt` renders it to `public/llms.txt` before every dev run and build, so the site serves it at `/llms.txt`. Its repo-relative Markdown links are rewritten the way links inside a rendered document are: to `https://pulshealth.com/docs/<slug>/` for a file in the docs manifest below, otherwise to the file on GitHub; absolute URLs pass through. The output is gitignored; the repository file is the only source |
 | Twelve Markdown documents: `server/README.md`, `docs/protocol/README.md`, `docs/database-guide.md`, `docs/api.md`, `docs/export.md`, `docs/ai.md`, `server/mcp/README.md`, `web/README.md`, `PulsHealthSync/README.md`, `SECURITY.md`, `CHANGELOG.md`, `docs/roadmap.md` (and `docs/privacy-policy.md` for `/privacy`) | `src/lib/docs.ts` (the registry), `src/lib/markdown.tsx` (the renderer) | Each becomes `/docs/<slug>/`, rendered at build time from the file itself. Relative links inside a document resolve to the other rendered documents where there is one, otherwise to the file on GitHub |
 | [`../server/api/openapi.json`](../server/api/openapi.json) | `src/lib/openapi.ts`, `src/components/api-reference.tsx`, `scripts/gen-openapi.ts` | The product API's OpenAPI document, the same file the Go service embeds. Its manifest entry carries `format: "openapi"`, so `/docs/api-reference/` renders it as an endpoint reference rather than as Markdown. `gen-openapi` also copies it to `public/openapi.json` (gitignored) before every dev run and build, with the server URL set to the API's default local address, for the reference's download link |
 
-Moving `site/` (or anything it reads) breaks the loaders without a build
-error — they log "not found" and simply emit fewer pages. The page count is
-the tell: a full build exports **215** static pages, 178 of them under
-`knowledge-base/types/` and 13 under `docs/`. (The one exception is
-`llms.txt`: `gen-llms-txt` fails the build when the repository file is
-missing, since there is no page count to notice it by.) The `site` job in
-`.github/workflows/ci.yml` asserts the counts, that `out/llms.txt` and
-`out/openapi.json` exist, and that the API reference lists its endpoints.
+`site/` must stay beside its content sources. Missing or malformed blog
+content fails with its filename. The shared `scripts/check-export.ts` runs
+after every build, in CI, and before deployment (even with `--skip-build`).
+It checks exact published blog/knowledge-base/docs pages, draft exclusion,
+RSS/search/sitemap entries, article links/images and required generated assets.
+A full build currently exports **215** static pages, 178 of them under
+`knowledge-base/types/` and 13 under `docs/`; published posts add pages.
 
 Two of those pages are not PulsHealth: `/fun100/` and `/fun100/privacy/` are
 the App Store support and privacy-policy URLs for Fun100, a separate app by
@@ -54,11 +53,15 @@ bun run dev        # localhost:3000
 
 ```bash
 bun run build      # static export to site/out/ (215 pages)
-bun run lint       # ESLint (2 known warnings, no errors)
+bun run lint       # ESLint, no warnings or errors
+bun run test       # blog regression tests
+bun run blog:check # lint, tests, build and export checks
 ```
 
 `make site-dev`, `make site-build` and `make site-lint` from the repository
-root do the same.
+root do the same. `make blog-check` runs the complete authoring check.
+The [writing guide](../blog/BLOG_SYSTEM.md) covers drafts, a post template,
+ideas, sources and publishing.
 
 ## Deploy
 

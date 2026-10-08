@@ -87,8 +87,10 @@ export interface HealthKitType {
 
 export interface BlogPost {
   slug: string;
+  draft: boolean;
   title: string;
   date: string;
+  updated?: string;
   author: string;
   tags: string[];
   excerpt: string;

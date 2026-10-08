@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { blogRevision } from "@/lib/blog-reload.generated";
 
 import { PageHero } from "@/components/page-hero";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,7 @@ export const metadata = {
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString("en-US", {
-                  timeZone: "UTC",
+    timeZone: "UTC",
     month: "long",
     day: "numeric",
     year: "numeric",
@@ -30,7 +31,7 @@ export default async function BlogPage() {
   const posts = await getAllPosts(); // newest first
 
   return (
-    <main className="flex min-h-screen flex-col">
+    <main key={blogRevision} className="flex min-h-screen flex-col">
       <PageHero
         size="compact"
         title="The PulsHealth blog"
@@ -48,7 +49,8 @@ export default async function BlogPage() {
               <li key={post.slug} className="py-8 first:pt-0 last:pb-0">
                 <article className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    <time dateTime={post.date}>{formatDate(post.date)}</time>
+                    {post.draft ? <Badge variant="outline">Draft preview</Badge> : <time dateTime={post.date}>{formatDate(post.date)}</time>}
+                    {post.updated && <span> · Updated <time dateTime={post.updated}>{formatDate(post.updated)}</time></span>}
                     <span aria-hidden="true"> · </span>
                     {post.readingTime} min read
                   </p>
