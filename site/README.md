@@ -5,6 +5,10 @@ pages, the blog, and the HealthKit knowledge-base viewer. It is a separate
 thing from [`web/`](../web/README.md), which is the self-hosted viewer that
 reads your own Postgres.
 
+The desktop and mobile navigation list App (the hosted viewer at
+app.pulshealth.com), Knowledge Base, Docs, and Consulting in that order.
+Blog remains linked from the footer.
+
 Page heroes begin with the title and description, without a page-label pill.
 
 It reads content from the **repository around it**, by relative path, so

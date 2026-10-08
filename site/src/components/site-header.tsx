@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { BookOpen, Briefcase, FileText, LogIn, Menu, PenLine, Star } from "lucide-react"
+import { BookOpen, Briefcase, FileText, LogIn, Menu, Star } from "lucide-react"
 import { GitHubIcon } from "@/components/brand-icons"
 
 import { cn } from "@/lib/utils"
@@ -25,27 +25,25 @@ type NavItem = {
   href: string
   description: string
   icon: typeof FileText
+  external?: boolean
   /** Other paths that belong to this item. */
   also?: string[]
 }
 
-/**
- * Four items, all on-site. PulsHealth is one product, explained on the home
- * page, so the app has no page of its own and self-hosting is a guide inside
- * Docs (`/server`, highlighted as Docs). Docs are the way into the protocol,
- * the AI setup and the database manual; GitHub is the star pill on the
- * right. Consulting is the business behind the
- * project and stays visible; About and Support live in the footer.
- */
-const primary: NavItem[] = [
-  { title: "Docs", href: "/docs", description: "Self-hosting, protocol, database, AI", icon: FileText, also: ["/server"] },
-  { title: "Knowledge Base", href: "/knowledge-base", description: "What each Apple Health type measures", icon: BookOpen },
-  { title: "Blog", href: "/blog", description: "Posts from the project", icon: PenLine },
-  { title: "Consulting", href: "/consulting", description: "Help with health data and AI", icon: Briefcase },
-]
-
 /** The hosted web viewer: another origin, so a plain link, not next/link. */
 const APP_URL = "https://app.pulshealth.com/"
+
+/**
+ * The hosted app comes first, followed by the knowledge base, docs and
+ * consulting. Self-hosting (`/server`) belongs to Docs. Blog stays in the
+ * footer until there is more content.
+ */
+const primary: NavItem[] = [
+  { title: "App", href: APP_URL, description: "Open your health dashboard", icon: LogIn, external: true },
+  { title: "Knowledge Base", href: "/knowledge-base", description: "What each Apple Health type measures", icon: BookOpen },
+  { title: "Docs", href: "/docs", description: "Self-hosting, protocol, database, AI", icon: FileText, also: ["/server"] },
+  { title: "Consulting", href: "/consulting", description: "Help with health data and AI", icon: Briefcase },
+]
 
 const secondary: { title: string; href: string }[] = [
   { title: "Self-hosting", href: "/server" },
@@ -59,7 +57,7 @@ export function SiteHeader({ stars }: { stars: number | null }) {
   const [open, setOpen] = React.useState(false)
 
   const matches = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
-  const isActive = (item: NavItem) => [item.href, ...(item.also ?? [])].some(matches)
+  const isActive = (item: NavItem) => !item.external && [item.href, ...(item.also ?? [])].some(matches)
   const starLabel = formatStars(stars)
 
   return (
@@ -71,19 +69,22 @@ export function SiteHeader({ stars }: { stars: number | null }) {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
-          {primary.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isActive(item) && "bg-accent/60 text-foreground",
-              )}
-              aria-current={isActive(item) ? "page" : undefined}
-            >
-              {item.title}
-            </Link>
-          ))}
+          {primary.map((item) => {
+            const NavLink = item.external ? "a" : Link
+            return (
+              <NavLink
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive(item) && "bg-accent/60 text-foreground",
+                )}
+                aria-current={isActive(item) ? "page" : undefined}
+              >
+                {item.title}
+              </NavLink>
+            )
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -119,23 +120,26 @@ export function SiteHeader({ stars }: { stars: number | null }) {
               </SheetHeader>
               <nav className="mt-6 flex flex-col gap-6" aria-label="Mobile">
                 <div className="space-y-1">
-                  {primary.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "flex items-center gap-4 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        isActive(item) && "bg-accent/60",
-                      )}
-                    >
-                      <item.icon className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-                      <div className="min-w-0">
-                        <div className="font-medium">{item.title}</div>
-                        <div className="truncate text-xs text-muted-foreground">{item.description}</div>
-                      </div>
-                    </Link>
-                  ))}
+                  {primary.map((item) => {
+                    const NavLink = item.external ? "a" : Link
+                    return (
+                      <NavLink
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={cn(
+                          "flex items-center gap-4 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          isActive(item) && "bg-accent/60",
+                        )}
+                      >
+                        <item.icon className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                        <div className="min-w-0">
+                          <div className="font-medium">{item.title}</div>
+                          <div className="truncate text-xs text-muted-foreground">{item.description}</div>
+                        </div>
+                      </NavLink>
+                    )
+                  })}
                 </div>
 
                 <div>
