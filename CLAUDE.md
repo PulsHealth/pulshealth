@@ -318,7 +318,8 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   new `NNN_name.sql`; an applied file is immutable (a changed checksum or a
   missing recorded file aborts the run, and the app services do not start).
   First-line exceptions: `-- puls:rerun` (re-applied whenever it changes —
-  `009_metric_daily.sql`, `010_category_labels.sql`) and
+  `009_metric_daily.sql`, `010_category_labels.sql`,
+  `023_recording_quality.sql`) and
   `-- puls:no-transaction` (statement by statement — `008_quantity_rollups.sql`,
   for `refresh_continuous_aggregate`). `*.sh` files (`013_time_zone.sh`,
   `099_read_roles.sh`) run every time from `.env` values, so rotating a

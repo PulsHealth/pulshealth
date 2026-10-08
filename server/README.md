@@ -258,7 +258,7 @@ TimescaleDB it starts; it needs only Docker.
 | File | Behaviour |
 |---|---|
 | `NNN_name.sql` | One-shot: applied once, in one transaction with its `schema_migrations` row (`psql --single-transaction`, `ON_ERROR_STOP`), so a failed file leaves nothing behind and is retried next run. Applied files are immutable: the migrator stops if a recorded file's checksum changed (put the change in a new file) or a recorded file is missing (never rename or delete one). |
-| `-- puls:rerun` on the first line | Re-applied whenever its checksum changes. For `CREATE OR REPLACE`/upsert files edited in place: `009_metric_daily.sql` (the view and `puls_time_zone()`) and `010_category_labels.sql` (the label seed). |
+| `-- puls:rerun` on the first line | Re-applied whenever its checksum changes. For `CREATE OR REPLACE`/upsert files edited in place: `009_metric_daily.sql` (the original daily view and timezone helper), `010_category_labels.sql` (the label seed), and `023_recording_quality.sql` (the current daily view and metadata decoder). |
 | `-- puls:no-transaction` on the first line | Applied statement by statement, for a statement that cannot run in a transaction block (`008_quantity_rollups.sql`: `refresh_continuous_aggregate`). Must be idempotent: a mid-file failure is retried from the top. |
 | `NNN_name.sh` | Run on every invocation, never recorded: `013_time_zone.sh` (stores `PULS_TIME_ZONE`) and `099_read_roles.sh` (creates the `grafana`, `api_reader` and `ingest` roles and sets their passwords from `GRAFANA_DB_PASSWORD`, `API_DB_PASSWORD` and `INGEST_DB_PASSWORD`; and, when `WEB_DB_PASSWORD` is set, `web_app`, the web viewer's accounts-mode role). |
 
@@ -303,8 +303,9 @@ docker compose up -d
 **without running any of them**, runs the `*.sh` files (so the `ingest` role
 exists before ingest starts), and prints what it recorded. Re-runnable files
 are recorded without a checksum, so the next `docker compose up -d` applies
-`009_metric_daily.sql` and `010_category_labels.sql` once — safe, since both
-are `CREATE OR REPLACE`/upsert. If a one-shot file has *not* been applied to
+`009_metric_daily.sql`, `010_category_labels.sql` and
+`023_recording_quality.sql` once — safe, since these files use
+`CREATE OR REPLACE`/upsert. If a one-shot file has *not* been applied to
 your database, apply it by hand first, then baseline:
 
 ```bash
@@ -763,7 +764,7 @@ query with no matching rows returns an empty array.
 **Daily metrics need an aggregate, not just raw rows.** `metric_daily` — and
 so `/v1/metrics/daily`, Grafana's daily panels and the web viewer's daily
 charts — takes a type's cumulative/discrete semantics from
-`aggregate_series` (`db/migrations/009_metric_daily.sql`), which only
+`aggregate_series` (`db/migrations/023_recording_quality.sql`), which only
 aggregate lines write. A type with raw samples and no aggregate configured
 has latest readings and intraday values but no daily row. That is why the
 phone uploads a recent window of aggregates before its raw sweep on a first
@@ -1188,3 +1189,8 @@ required. `server/db/test-migrate.sh` checks the decoder, shifted/wrong-end
 buckets, 23/25-hour days and user scope on a throwaway database. Migration 023
 supersedes the historical view definition in 009. Later daily-view migrations
 must sort after 023 so replay does not restore an older definition.
+
+For a manual reconstruction on a disposable database, replay the current view
+replacement in 023 after 008/009 and before rebuilding the scoped views in 099.
+Replaying only the historical 009 definition does not include the boundary fix.
+Normal installs and baseline recovery use the migrator's complete ordered set.
