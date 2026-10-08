@@ -19,7 +19,6 @@ export default async function DataPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Catalog"
         title="All Data"
         subtitle="HealthKit quantity, category, and workout data with supported viewer pages, grouped the way Apple Health organizes it."
         right={

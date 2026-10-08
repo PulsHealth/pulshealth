@@ -44,7 +44,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
 
   return (
     <>
-      <PageHeader eyebrow="Account" title="Account" subtitle={`Signed in as ${session.email}.`} />
+      <PageHeader title="Account" subtitle={`Signed in as ${session.email}.`} />
 
       {error && (
         <div className="form-message error" role="alert" style={{ maxWidth: 560 }}>
@@ -208,7 +208,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
 function DemoAccount({ error }: { error: string | null }) {
   return (
     <>
-      <PageHeader eyebrow="Account" title="Demo account" subtitle="You are exploring PulsHealth with sample data." />
+      <PageHeader title="Demo account" subtitle="You are exploring PulsHealth with sample data." />
       {error && (
         <div className="form-message error" role="alert" style={{ maxWidth: 560 }}>
           {error}

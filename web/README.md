@@ -567,6 +567,9 @@ The shared demo keeps a visible **Demo** badge even with the menu closed.
 A **Back to pulshealth.com** link appears in the navigation and on sign-in,
 sign-up and invite cards.
 
+Page headers begin with the title and description, without a page label above
+them. Demo and live data indicators remain visible in the navigation.
+
 ## The trend chart
 
 **Ranges.** The selector (and `?range=`) offers D, 7D, 30D, 90D, 6M, Y, 2Y, 5Y

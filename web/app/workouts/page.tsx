@@ -30,8 +30,6 @@ export default async function WorkoutsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Workouts"
-        accent={color}
         title="Workouts"
         subtitle="Latest 120 logged training sessions, newest first. Summary totals cover this list."
       />

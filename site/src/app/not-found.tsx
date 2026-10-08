@@ -18,7 +18,6 @@ export default function NotFound() {
   return (
     <main className="flex flex-1 flex-col">
       <PageHero
-        eyebrow="404"
         title="This page is not here"
         lede="It may have moved when the site changed. One of these should get you there."
       >

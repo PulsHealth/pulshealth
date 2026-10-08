@@ -11,7 +11,7 @@ import { GROUP_COLOR } from "@/lib/colors";
 import { isCumulative } from "@/lib/metrics";
 import { getActivityRings, getLatestMany, getSeries, getStats, getTodayTotals, getWorkouts } from "@/lib/queries";
 import { viewerUser } from "@/lib/viewer";
-import { formatCompact, formatDuration, formatFull, formatToday } from "@/lib/format";
+import { formatCompact, formatDuration, formatFull } from "@/lib/format";
 import { greetingAt } from "@/lib/time";
 import type { TypeStat } from "@/lib/types";
 
@@ -82,7 +82,6 @@ export default async function Dashboard() {
   return (
     <>
       <PageHeader
-        eyebrow={`Today · ${formatToday(now)}`}
         title={greetingAt(now)}
         subtitle="Your health data, synced from Apple Health to your own server — and finally easy to look at."
       />

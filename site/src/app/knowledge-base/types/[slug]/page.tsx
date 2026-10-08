@@ -57,13 +57,6 @@ export default async function TypeDetailPage({ params }: PageProps) {
     <div className="min-h-screen bg-background">
       <PageHero
         size="compact"
-        eyebrow={
-          <>
-            <Link href="/knowledge-base" className="hover:text-brand">Knowledge Base</Link>
-            <span className="mx-1.5 text-muted-foreground" aria-hidden>/</span>
-            {data.category}
-          </>
-        }
         title={
           <>
             <span

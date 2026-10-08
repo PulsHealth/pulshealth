@@ -15,7 +15,6 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Settings"
         title="Settings"
         subtitle="Preferences are saved in this browser."
       />

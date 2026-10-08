@@ -33,7 +33,6 @@ export default async function BlogPage() {
     <main className="flex min-h-screen flex-col">
       <PageHero
         size="compact"
-        eyebrow="Blog"
         title="The PulsHealth blog"
         lede="Posts about health metrics and the engineering of syncing them."
       />

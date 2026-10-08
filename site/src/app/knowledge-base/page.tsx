@@ -36,7 +36,6 @@ export default async function KnowledgeBasePage() {
   return (
     <main className="flex min-h-screen flex-col">
       <PageHero
-        eyebrow="Knowledge Base"
         title={<>The missing manual for <span className="text-brand">Apple Health</span> data</>}
         lede={`All ${allTypes.length} HealthKit data types explained: what each one measures, how often it is sampled, typical ranges, and how devices compare.`}
         note={

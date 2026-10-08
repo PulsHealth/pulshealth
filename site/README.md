@@ -9,6 +9,8 @@ The desktop and mobile navigation list App (the hosted viewer at
 app.pulshealth.com), Knowledge Base, Docs, and Consulting in that order.
 Blog remains linked from the footer.
 
+Page heroes begin with the title and description, without a page-label pill.
+
 It reads content from the **repository around it**, by relative path, so
 `site/` and the things it reads must stay where they are:
 
