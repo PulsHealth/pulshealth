@@ -56,7 +56,7 @@ as two (3,997 today), as the review notes do.
 ```
 PulsHealth lets you explore your iPhone's health data, export it to files, and sync it to a database: one you run yourself, or the PulsHealth database, with an account.
 
-The app uploads only to the database you set up, and nowhere else. Run your own and the developer never receives your data. Choose the PulsHealth database, with a PulsHealth account, and the developer holds it for you alone.
+Regular sync uploads to the database you set up. A one-time Data Request can send a ZIP to a separate HTTPS destination you explicitly approve. Run your own and the developer never receives your data. Choose the PulsHealth database, with a PulsHealth account, and the developer holds it for you alone.
 
 Your own database takes one Docker command: the open-source PulsHealth stack sets up PostgreSQL, Grafana, a web viewer, an API and an MCP server for AI assistants. Or use one you already run, through the open sync protocol.
 
@@ -69,6 +69,7 @@ WHAT IT DOES
 • You pick the data. Around 80 HealthKit types grouped the way Apple Health groups them: activity, heart, body, respiratory, sleep, nutrition, vitals, workouts and more. Turn on a starter set in one tap, or choose type by type.
 • See what you have. Explore lists every type by category. Open one to see its past year: how many samples, from which apps and devices, how the values are spread and how much arrives each day, plus a line on what the type measures. Summaries only; no samples are kept.
 • More than raw numbers. Workouts carry their GPS route and per-second sensor series; activity rings come across as daily summaries; and any quantity type can also be sent as on-device aggregates (hourly sums, daily averages) instead of, or alongside, raw samples.
+• Data Requests. Create a link or QR code in Settings specifying data and dates. Participants review it, then Generate & Share or Generate & Send to an approved compatible HTTPS receiver. No ongoing sync or study enrollment.
 • Export to files. With or without a database, build each export on its own: the types and series you want, for the last 30 days, 90 days, a year, all time, or a date range you choose, to CSV (one file per kind of data, for spreadsheets) or JSONL (complete, and replayable into your database later), then save to Files or share.
 • Set up in a minute. Sign in to your PulsHealth account from the Sync tab, or scan the pairing QR code your own stack prints, with its URL, token and user ID — or type them in by hand.
 • Nothing is hidden. A live event log, per-type counters, a background-activity screen showing every wake iOS granted, and an export of it all for offline analysis.
@@ -76,11 +77,11 @@ WHAT IT DOES
 PRIVACY
 
 • Read-only. PulsHealth reads from Apple Health and never writes, changes or deletes anything there.
-• One destination for your data: the database you set up. HTTPS is required for anything that is not on your own local network.
-• An export makes no network request. The files are staged in temporary storage, handed to the iOS share sheet, and deleted from the app once shared.
+• Sync goes to your configured database. Request delivery goes only to the HTTPS destination you review and approve.
+• An ordinary export makes no network request. The files are staged in temporary storage, handed to the iOS share sheet, and deleted from the app once shared.
 • No analytics, no advertising, no tracking, no third-party SDKs — the app and its sync library have zero third-party dependencies.
 • Your bearer token lives in the iOS Keychain, bound to this device.
-• The camera is used for exactly one thing: reading the pairing QR code. No image is stored or sent; declining it simply means typing the details instead.
+• The camera reads database pairing and Data Request QR codes. No image is stored or sent; declining it simply means typing the details instead.
 
 Privacy policy: pulshealth.com/privacy
 
@@ -151,7 +152,7 @@ Answer every content question **None / No**. The result is **4+**.
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
 | Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. A Type page also shows one line on what the type measures and, behind the value histogram, the typical range from the project's knowledge base — general reference, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
-| Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth (or Create Account) opens `app.pulshealth.com/connect/iphone` (or `/signup`) in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the account flow on that site (sign in or create an account, then Connect this iPhone), and closes when that page hands back the pairing code or the person closes it. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/#ways), and the PulsHealth database's What the Developer Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth Account (app.pulshealth.com, pulshealth.com/privacy and pulshealth.com/docs/ai/). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It *receives* one kind of URL — a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
+| Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth (or Create Account) opens `app.pulshealth.com/connect/iphone` (or `/signup`) in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the account flow on that site (sign in or create an account, then Connect this iPhone), and closes when that page hands back the pairing code or the person closes it. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/#ways), and the PulsHealth database's What the Developer Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth Account (app.pulshealth.com, pulshealth.com/privacy and pulshealth.com/docs/ai/). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It receives `puls://request?data=…` links that show a one-time request for review, and a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
 | User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, database URL, token) is shared with any other user or with the developer. |
 | Gambling and contests | No | — |
 | In-app purchases | No | StoreKit is used only for native rating/review requests. |
@@ -207,14 +208,14 @@ developer's own database:
    new collection by the app nor tracking. If the developer's instance ever stops
    taking anyone outside the household, and the app no longer offers it,
    the answer can go back to "Data Not Collected".
-2. **For everyone else, the only destination is chosen and controlled by the
-   user.** The database URL is typed in by the user or scanned from a QR
+2. **Other destinations are chosen by the user.** The database URL is typed in by the user or scanned from a QR
    code their own backend printed. It is their infrastructure, not a
    third-party partner of the developer's, and the developer has no access
    to it. The same goes for an on-device export (the Export tab): the app
    makes no network request for it at all. It writes files and hands them
-   to the iOS share sheet, and the user picks where they go. Neither the
-   developer nor any partner can reach them, so it is not collection either.
+   to the iOS share sheet, and the user picks where they go. One-time Data Requests additionally upload directly to a recipient the user
+   reviews and approves. The recipient receives and controls that copy under
+   their own policies; the developer is not automatically a recipient.
 3. **There is no analytics, advertising, attribution, or crash-reporting SDK,
    and no third-party dependency at all.** See `PulsHealthSync/Package.swift`,
    which declares none. So no data type is declared for any purpose but App

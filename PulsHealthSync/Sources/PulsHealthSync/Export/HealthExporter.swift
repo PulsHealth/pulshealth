@@ -224,7 +224,9 @@ public final class HealthExporter: Sendable {
                 notRepresented: Self.named(tally.notRepresented(in: request.format)),
                 unmappableSamples: unmappable,
                 limitedHistory: limitedHistory,
-                failures: failures)
+                failures: failures,
+                requestWarnings: request.dataRequest == nil ? nil : ExportPlan.warnings(from: events, excluding: failures),
+                dataRequest: request.dataRequest, submissionID: request.submissionID)
             let manifestBytes: Int64
             do {
                 manifestBytes = try manifest.write(to: manifestURL)

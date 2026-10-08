@@ -708,3 +708,12 @@ nothing here assumes a particular machine.
   pool per request** (`server/ingest/health.go`, `server/api/health.go` — again
   copies): the database status is cached for two seconds and concurrent
   callers share one probe, or a loop of GETs holds every pooled connection.
+
+### Data Request exports
+
+`DataRequestModel` uses the isolated `HealthExporter`, never sync anchors. Its
+caller-owned temporary root is `PulsHealthRequests`, cleared at launch and when
+the request closes. Confirmed uploads and completed share handoffs remove files;
+upload failures retain the same file and submission ID for manual retry. Camera
+use now includes request QR codes as well as database pairing. Keep the privacy
+policy and receiver contract (`docs/requests.md`) aligned with delivery changes.

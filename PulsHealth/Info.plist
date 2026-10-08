@@ -46,9 +46,9 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>PulsHealth uses the camera only to scan the pairing code for your database.</string>
+	<string>PulsHealth uses the camera to scan database pairing and data request QR codes.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>PulsHealth reads your health data to show it to you, export it to files you choose, and, if you set one up, sync it to the database you choose.</string>
+	<string>PulsHealth reads your health data to show it to you, export or send a one-time request you approve, and, if you set one up, sync it to the database you choose.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>PulsHealth does not write health data.</string>
 	<key>NSLocalNetworkUsageDescription</key>

@@ -93,16 +93,16 @@ A user's own database often runs on their home network, where a public TLS certi
 HEALTHKIT (Guideline 5.1.3)
 
 - Read-only. The app never calls a HealthKit write API.
-- Health data is not used for advertising, marketing or data mining, and is not shared with any third party. It leaves the app only as uploads to the user's chosen database, or as export files the user shares.
+- Health data is not used for advertising, marketing or data mining, and is not sold. It leaves the app as sync to the configured database, exports the user shares, or one-time request delivery explicitly approved by the user.
 - Never written to iCloud. The app keeps none, except an export the user asked for, in its temporary directory (never backed up) until shared.
 
 CAMERA
 
-Used only to read the pairing QR code. No frame is stored or sent. Declining is handled: the same screen offers "Type It Instead".
+Used to read database pairing and Data Request QR codes. No frame is stored or sent. Declining is handled: the same screen offers "Type It Instead".
 
 URL SCHEME (puls://)
 
-One custom scheme, for pairing links (puls://pair?...), the text a pairing QR code encodes. A link configures nothing by itself: the app asks the user to confirm its host, and accepting only fills in the fields on Sync > Database. The sign-in sheet returns the same kind of link. Either way only "Save & Apply" applies it.
+One custom scheme also accepts puls://request?data=... links, which show data, dates, purpose and recipient before Generate & Share or Generate & Send. Opening alone authorizes nothing. The same scheme handles pairing links (puls://pair?...), the text a pairing QR code encodes. A link configures nothing by itself: the app asks the user to confirm its host, and accepting only fills in the fields on Sync > Database. The sign-in sheet returns the same kind of link. Either way only "Save & Apply" applies it.
 
 BACKGROUND MODES
 
@@ -228,3 +228,15 @@ modals and unfinished work suppress requests. Attempts are spaced at least
 a prompt is shown. There is no satisfaction pre-prompt, reward or filtering by
 an expressed rating. The on-device timing counters contain no health values
 and are not sent to the developer. This flow does not appear in TestFlight.
+
+### Data Requests (next release)
+
+Settings → Create Request builds a self-contained link and QR code without a
+HealthKit read. Choose data types, past dates and CSV or JSONL. Leave delivery
+off to test Generate & Share without a receiver. Open the link or use Settings
+→ Open or Scan Request. Review the request, then generate. Requests with a
+compatible HTTPS endpoint combine generation and sending in one explicit action.
+A partial extraction requires Send Available Data; an unconfirmed receipt allows
+manual retry with the same submission ID. No ongoing collection, participant
+account, institutional verification, or study enrollment is implemented.
+See docs/requests.md for the receiver contract. Use synthetic data for review.
