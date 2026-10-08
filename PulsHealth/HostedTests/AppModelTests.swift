@@ -325,6 +325,45 @@ final class AppModelTests: XCTestCase {
                 || wakes.contains { $0.detail == "apply: backfill newly enabled types" })
     }
 
+    func testFirstDatabaseApplyStartsBackfillAfterOnboarding() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.config.serverURL = URL(string: "http://127.0.0.1:9")!
+        h.model.config.authToken = "token"
+        h.model.config.enabledTypes = [steps]
+        let applied = await h.model.applyDatabaseConfiguration()
+        XCTAssertTrue(applied)
+        XCTAssertTrue(h.model.backfillActive)
+        let settled = await eventually { !h.model.isSyncingAll }
+        XCTAssertTrue(settled)
+    }
+
+    func testDatabaseApplyClearsAnEmptiedTokenBeforeStartingObservers() async throws {
+        let stored = SyncConfiguration(serverURL: mine, authToken: "old-token")
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: stored)
+        await h.model.start()
+        h.model.config.authToken = nil
+        let applied = await h.model.applyDatabaseConfiguration()
+        XCTAssertTrue(applied)
+        let token = await h.engine.store.configuration.authToken
+        XCTAssertNil(token)
+        XCTAssertNil(h.model.appliedConfig.authToken)
+    }
+
+    func testTestingAnUnappliedDatabaseDoesNotChangeFeatureGates() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CapabilityTestProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let result = await h.model.testConnection(url: mine, token: "draft-token", session: session)
+        XCTAssertTrue(result.isSuccess)
+        XCTAssertFalse(h.model.serverSupportsStats)
+        XCTAssertFalse(h.model.serverSupportsReconciliation)
+        XCTAssertNil(h.model.appliedConfig.serverURL)
+    }
+
     // MARK: - Apply gating
 
     /// Edits on the Sync tab's pickers are staged in `config` and reach the engine only on
@@ -529,4 +568,17 @@ final class AppModelTests: XCTestCase {
         XCTAssertNil(h.model.pairingLinkPrompt)
         XCTAssertNil(h.model.confirmedPairing)
     }
+}
+
+private final class CapabilityTestProtocol: URLProtocol, @unchecked Sendable {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil,
+                                       headerFields: ["Content-Type": "application/json"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(#"{"protocolVersions":[1],"features":["stats","digest","uuids"]}"#.utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
 }

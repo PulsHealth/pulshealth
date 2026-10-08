@@ -173,7 +173,7 @@ func connectInMemory(t *testing.T, s *service) *mcp.ClientSession {
 }
 
 // R20: without PULS_TIME_ZONE, every date is in the zone the product API
-// reports on /v1/users, learned once before the first call — never the
+// reports on /v1/users, refreshed before each call — never the
 // laptop's, never a silent UTC.
 func TestZoneIsLearnedFromTheAPI(t *testing.T) {
 	f := newFakeAPI(t)
@@ -196,8 +196,8 @@ func TestZoneIsLearnedFromTheAPI(t *testing.T) {
 			t.Errorf("call %d answered %s, want Tokyo's zone and date", i, text)
 		}
 	}
-	if n := len(f.callsTo("/v1/users")); n != 1 {
-		t.Errorf("/v1/users asked %d times, want once", n)
+	if n := len(f.callsTo("/v1/users")); n != 2 {
+		t.Errorf("/v1/users asked %d times, want once per call", n)
 	}
 }
 

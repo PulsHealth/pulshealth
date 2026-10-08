@@ -6,6 +6,8 @@
 #   server/backup/restore.sh puls-20260908T031500Z.dump    # a name in the backup store
 #   make restore FILE=<either of the above>
 #
+#   --deletion-ledger-ready  attest the independent deletion ledger is current
+#                            (required with strict backup retention)
 #   --yes        skip the confirmation prompt (for scripted drills)
 #   --no-start   leave the app services stopped when the restore finishes,
 #                instead of bringing the stack back up
@@ -63,6 +65,7 @@ root=$(cd "$script_dir/../.." && pwd)
 server_dir=$root/server
 env_file=$server_dir/.env
 
+opt_ledger_ready=0
 opt_yes=0
 opt_no_start=0
 # Same environment switch as scripts/bootstrap.sh, so an install that runs from
@@ -95,6 +98,7 @@ usage() {
 
 while (($# > 0)); do
   case $1 in
+    --deletion-ledger-ready) opt_ledger_ready=1; shift ;;
     --yes|-y) opt_yes=1; shift ;;
     --no-start) opt_no_start=1; shift ;;
     --build) opt_build=1; shift ;;
@@ -136,6 +140,15 @@ env_get() {
   printf '%s' "$line"
 }
 
+strict_retention=${PULS_BACKUP_STRICT_RETENTION:-$(env_get PULS_BACKUP_STRICT_RETENTION)}
+ledger_enabled=${PULS_DELETION_LEDGER_DIR:-$(env_get PULS_DELETION_LEDGER_DIR)}
+if [[ $strict_retention == true || -n $ledger_enabled ]]; then
+  [[ $opt_ledger_ready == 1 ]] || die "restore requires --deletion-ledger-ready: verify the independent current deletion ledger has survived; never use one rolled back with this dump"
+fi
+ledger_work=$(mktemp -d)
+chmod 700 "$ledger_work"
+trap 'rm -rf "$ledger_work"' EXIT
+
 pgpass=$(env_get POSTGRES_PASSWORD)
 [[ -n $pgpass ]] || die "POSTGRES_PASSWORD is not set in $env_file"
 
@@ -143,7 +156,7 @@ pgpass=$(env_get POSTGRES_PASSWORD)
 # host, and the tool version always matches the server.
 db_psql() {
   compose exec -T -e PGPASSWORD="$pgpass" db \
-    psql -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"
+    psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"
 }
 
 # --- where the dump comes from ------------------------------------------------
@@ -229,6 +242,30 @@ if [[ -n $(backup_compose ps -q --status running backup 2>/dev/null) ]]; then
   backup_compose stop backup
 fi
 
+# Snapshot after web stops, so no accepted deletion can race the ledger read.
+# Any unreadable/corrupt ledger fails with app services stopped, before DROP.
+if [[ $opt_ledger_ready == 1 ]]; then
+  backup_compose run --rm -T --entrypoint bash backup /puls/deletion-ledger.sh > "$ledger_work/receipts.tsv"
+  {
+    echo 'CREATE TEMP TABLE restore_deletions (filename uuid, receipt jsonb);'
+    echo "COPY restore_deletions FROM STDIN;"
+    cat "$ledger_work/receipts.tsv"
+    echo '\.'
+    cat <<'SQL'
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM restore_deletions WHERE
+    receipt->>'version' IS DISTINCT FROM '1' OR
+    receipt->>'user_id' IS DISTINCT FROM filename::text OR
+    receipt->>'requested_at' IS NULL OR
+    NOT isfinite((receipt->>'requested_at')::timestamptz)) THEN
+    RAISE EXCEPTION 'invalid deletion ledger receipt';
+  END IF;
+END $$;
+SQL
+  } > "$ledger_work/validate.sql"
+  db_psql < "$ledger_work/validate.sql" >/dev/null
+fi
+
 step "Clearing the current schema"
 # Sessions that have not noticed the stop (a Grafana pool, a psql left open)
 # would block the DROP; end them first.
@@ -267,6 +304,17 @@ db_psql -c "SELECT timescaledb_post_restore()" >/dev/null
 
 step "Refreshing planner statistics"
 db_psql -c "ANALYZE" >/dev/null
+
+if [[ $opt_ledger_ready == 1 ]]; then
+  step "Applying migrations and replaying independent deletion receipts"
+  # Restored snapshots can predate the deletion helper. Migrate without ever
+  # starting web/ingest, then purge every independently recorded deletion.
+  compose run --rm -T migrate
+  {
+    cat "$ledger_work/validate.sql"
+    echo "SELECT auth.replay_account_deletion(filename, (receipt->>'requested_at')::timestamptz) FROM restore_deletions;"
+  } | db_psql >/dev/null
+fi
 
 if [[ $opt_no_start == 1 ]]; then
   note "App services left stopped (--no-start). Bring them back with: docker compose up -d"

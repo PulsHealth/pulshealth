@@ -110,6 +110,102 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
 
   let browser: string | undefined;
 
+  it("allows only one concurrent password change authorized by the same credentials", async () => {
+    const store = await import("./accounts/store");
+    const account = (await store.findAccountForLogin(OTHER_EMAIL))!;
+    const meta = { userAgent: null, ip: null };
+    const held = await session.createSession(account.id, meta);
+    const id = session.tokenHash(held)!;
+    try {
+      const brokenMeta = {
+        get userAgent(): string | null { throw new Error("session creation failed"); },
+        ip: null,
+      };
+      await expect(store.changePasswordAndSession(account.id, account.passwordHash, id, "rolled-back-hash", brokenMeta))
+        .rejects.toThrow("session creation failed");
+      expect(await store.findPasswordHash(account.id)).toBe(account.passwordHash);
+      expect(await session.findSession(held)).not.toBeNull();
+
+      const results = await Promise.all([
+        store.changePasswordAndSession(account.id, account.passwordHash, id, "new-hash-one", meta),
+        store.changePasswordAndSession(account.id, account.passwordHash, id, "new-hash-two", meta),
+      ]);
+      expect(results.filter(Boolean)).toHaveLength(1);
+      expect(await session.findSession(held)).toBeNull();
+      const replacement = results.find((token) => token !== null)!;
+      expect(await session.findSession(replacement)).not.toBeNull();
+      const currentHash = (await store.findPasswordHash(account.id))!;
+      // Even a verified current password cannot revive a revoked session.
+      expect(await store.changePasswordAndSession(account.id, currentHash, id, "stale-session-change", meta)).toBeNull();
+      await store.changePassword(account.id, account.passwordHash);
+      expect(await session.findSession(replacement)).toBeNull();
+    } finally {
+      await store.changePassword(account.id, account.passwordHash);
+    }
+  });
+
+  it("rolls back an invite reset if its replacement session cannot be created", async () => {
+    const store = await import("./accounts/store");
+    const account = (await store.findAccountForLogin(OTHER_EMAIL))!;
+    const meta = { userAgent: null, ip: null };
+    const held = await session.createSession(account.id, meta);
+    const invite = newInviteToken();
+    await admin.query(
+      "INSERT INTO auth.invites (token_hash, user_id, email, expires_at) VALUES ($1, $2, $3, now() + interval '1 hour')",
+      [invite.hash, B, OTHER_EMAIL],
+    );
+    try {
+      const brokenMeta = {
+        get userAgent(): string | null { throw new Error("session creation failed"); },
+        ip: null,
+      };
+      await expect(store.acceptInvite(invite.token, "reset-hash", brokenMeta, session.tokenHash(held)))
+        .rejects.toThrow("session creation failed");
+      expect(await store.findPasswordHash(account.id)).toBe(account.passwordHash);
+      expect(await store.findInvite(invite.token)).not.toBeNull();
+      expect(await session.findSession(held)).not.toBeNull();
+
+      const result = await store.acceptInvite(invite.token, "reset-hash", meta, session.tokenHash(held));
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(await session.findSession(result.sessionToken)).not.toBeNull();
+      expect(await session.findSession(held)).toBeNull();
+      await store.changePassword(account.id, account.passwordHash);
+      expect(await session.findSession(result.sessionToken)).toBeNull();
+    } finally {
+      await store.changePassword(account.id, account.passwordHash);
+      await admin.query("DELETE FROM auth.invites WHERE token_hash = $1", [invite.hash]);
+    }
+  });
+
+  it("rejects stale password verification and rehashes without undoing a password change", async () => {
+    const store = await import("./accounts/store");
+    const account = await store.findAccountForLogin(OTHER_EMAIL);
+    expect(account).not.toBeNull();
+    if (!account) return;
+    const meta = { userAgent: null, ip: null };
+    try {
+      // A login already read and verified this hash when another browser
+      // changes the password. Neither its session nor its legacy rehash may
+      // commit afterward using the stale credentials.
+      await store.changePassword(account.id, "replacement-password-hash");
+      expect(await store.finishPasswordLogin(account, null, meta, null)).toBeNull();
+      expect(await store.finishPasswordLogin(account, "rehash-of-old-password", meta, null)).toBeNull();
+      expect(await store.findPasswordHash(account.id)).toBe("replacement-password-hash");
+      expect((await admin.query("SELECT 1 FROM auth.sessions WHERE account_id = $1", [account.id])).rows).toHaveLength(0);
+
+      // The opposite order also preserves revocation: a completed login's
+      // session must be removed by the following password change.
+      const current = await store.findAccountForLogin(OTHER_EMAIL);
+      const token = await store.finishPasswordLogin(current!, "upgraded-password-hash", meta, null);
+      expect(await session.findSession(token)).not.toBeNull();
+      await store.changePassword(account.id, account.passwordHash);
+      expect(await session.findSession(token)).toBeNull();
+    } finally {
+      await store.changePassword(account.id, account.passwordHash);
+    }
+  });
+
   it("accepts an invite: creates the account and signs the browser in", async () => {
     const short = await inviteRoute.POST(post("/api/auth/invite", { token: inviteToken, password: "short", confirm: "short" }, { ip: "198.51.100.10" }));
     expect(short.headers.get("location")).toBe(`/invite/${inviteToken}?error=short`);

@@ -103,8 +103,8 @@ targets:
         # upload whose build number it has already accepted. The store holds
         # 1.6 (19); see docs/appstore/README.md § Release record, and bump
         # both here before every archive.
-        CURRENT_PROJECT_VERSION: 19
-        MARKETING_VERSION: 1.6
+        CURRENT_PROJECT_VERSION: 20
+        MARKETING_VERSION: 2.0
         # The tint every control takes (Assets.xcassets/AccentColor): the blue
         # of the logo's pulse line, a shade lighter in dark mode.
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

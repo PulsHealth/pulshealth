@@ -16,7 +16,8 @@ private actor RequestDeliverySpy {
         try Data("synthetic test data".utf8).write(to: file)
         return ExportResult(format: .csv, directory: directory, files: [file], manifestURL: nil,
             rowCounts: [.samples: 1], notRepresented: [:], unmappableSamples: [:],
-            failures: partial ? [.init(message: "One type unavailable")] : [], warnings: [], totalBytes: 19, duration: 0)
+            failures: (partial ? [.init(message: "One type unavailable")] : [])
+                + (request.dataRequest?.completionIssues() ?? []), warnings: [], totalBytes: 19, duration: 0)
     }
     func send(_ file: URL, _ request: DataRequest, _ id: UUID) throws -> RequestUploader.Receipt {
         ids.append(id)
@@ -83,6 +84,25 @@ final class DataRequestModelTests: XCTestCase {
         let after = await spy.ids
         XCTAssertEqual(after.count, 1); XCTAssertNotNil(partial.receipt)
         partial.close()
+    }
+    func testCurrentDayAggregateRequiresExplicitSend() async throws {
+        let spy = RequestDeliverySpy(), subject = model(spy)
+        var today = request()
+        today.endDay = DataRequest.day(Date())
+        today.metrics = [.init(type: "HKQuantityTypeIdentifierStepCount", function: .sum)]
+        subject.open(try today.link().absoluteString)
+        subject.start(configuration: SyncConfiguration()) { _ in }
+        try await finish(subject)
+        let before = await spy.ids
+        XCTAssertTrue(before.isEmpty)
+        XCTAssertFalse(try XCTUnwrap(subject.result).isComplete)
+        XCTAssertTrue(subject.result?.failures.first?.message.contains("Today's aggregate") == true)
+        subject.retrySend()
+        try await finish(subject)
+        let after = await spy.ids
+        XCTAssertEqual(after.count, 1)
+        XCTAssertNotNil(subject.receipt)
+        subject.close()
     }
     func testRetryKeepsSubmissionAndFile() async throws {
         let spy = RequestDeliverySpy(failFirst: true)

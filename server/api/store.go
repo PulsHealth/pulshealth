@@ -17,10 +17,8 @@ type Store struct {
 	// argument, settled per request by the scopeUser middleware in main.go
 	// (the ?user= parameter, else PULS_USER_ID). One Store serves everyone
 	// the database holds.
-	// The calendar zone the daily endpoints bucket in (PULS_TIME_ZONE, loaded
-	// once at startup in main.go). It must match the phone's zone and the
-	// database's puls.time_zone setting, which metric_daily uses for the same
-	// day boundaries.
+	// Deployment fallback retained for startup and legacy configuration.
+	// Calendar reads resolve the selected account through UserLocation.
 	loc *time.Location
 	// The clock the summary's "today" is read from; time.Now outside tests.
 	now func() time.Time
@@ -36,6 +34,7 @@ func NewStore(pool *pgxpool.Pool, loc *time.Location) *Store {
 func (st *Store) Ping(ctx context.Context) error { return st.pool.Ping(ctx) }
 
 type Profile struct {
+	TimeZone      string  `json:"timeZone"`
 	UserID        string  `json:"userID"`
 	Name          *string `json:"name"`
 	Email         *string `json:"email"`
@@ -141,7 +140,7 @@ func (st *Store) Profile(ctx context.Context, userID string) (*Profile, error) {
 	row := st.pool.QueryRow(ctx, `
 		SELECT id::text, name, email,
 		       (extract(epoch FROM (dob::timestamp AT TIME ZONE 'UTC')) * 1000)::bigint,
-		       biological_sex
+		       biological_sex, puls_user_time_zone(id)
 		FROM users
 		WHERE id = $1`, userID)
 
@@ -152,6 +151,7 @@ func (st *Store) Profile(ctx context.Context, userID string) (*Profile, error) {
 		&profile.Email,
 		&profile.DateOfBirth,
 		&profile.BiologicalSex,
+		&profile.TimeZone,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -303,7 +303,11 @@ func (st *Store) LatestMetrics(ctx context.Context, userID string, types []strin
 }
 
 func (st *Store) DailyMetrics(ctx context.Context, userID string, f DailyFilters) ([]DailyMetric, error) {
-	startDay, endDay, err := localDayRange(f.Start, f.End, st.loc)
+	loc, err := st.UserLocation(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	startDay, endDay, err := localDayRange(f.Start, f.End, loc)
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +364,11 @@ func (st *Store) DailyMetrics(ctx context.Context, userID string, f DailyFilters
 }
 
 func (st *Store) ActivitySummary(ctx context.Context, userID string, start, end time.Time) ([]ActivityDay, error) {
-	startDay, endDay, err := localDayRange(start, end, st.loc)
+	loc, err := st.UserLocation(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	startDay, endDay, err := localDayRange(start, end, loc)
 	if err != nil {
 		return nil, err
 	}

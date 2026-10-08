@@ -41,11 +41,18 @@ Inside the compose stack the `web` service gets `DATABASE_URL` built from
 `GRAFANA_DB_PASSWORD` automatically (see `../server/docker-compose.yml`).
 
 `PULS_USER_ID` is the user shown until one is chosen (see "Choosing a user"
-below); it defaults to the seeded app user. `PULS_TIME_ZONE` controls Today, greetings, chart buckets,
+below); it defaults to the seeded app user. In Basic/open mode, `PULS_TIME_ZONE` controls Today, greetings, chart buckets,
 and day boundaries; it defaults to `UTC` and must match the server stack's
 `PULS_TIME_ZONE` (the database exposes its own as `puls_time_zone()`; on a
 mismatch the viewer logs a warning and stops using `metric_daily`). The status
 dot shows **Live data** (green), **Demo data** (amber), or **Database unavailable**.
+In accounts mode, each person has a **Reporting time zone** setting on `/account`.
+It controls raw calendar buckets and all date displays, consistently on the server
+and in the browser. New hosted accounts initialize it from the first uploading
+phone; traveling never changes it automatically. Existing accounts fall back to
+the stack zone until explicitly changed. Daily phone aggregates and activity rings
+retain their recorded phone calendar dates, even when the reporting zone changes.
+
 A page that cannot read its data — no database, an unreachable one, or one
 read that failed or timed out — shows **Database unavailable** in place of
 its content (with Try again), never empty charts that would read as "no
@@ -296,17 +303,27 @@ phone can send anything. In order:
    hash. Phones connect to `WEB_INGEST_URL` (ingest's public HTTPS address;
    Compose defaults it to `PULS_PUBLIC_URL`). The account page lists the
    person's iPhones with a **Disconnect** for each.
-4. **Delete my account** disables the account, ends its sessions and revokes
-   its tokens at once, and tells the operator, who purges the data from
-   `/admin`. An administrator can also **Disable** such an account (which
-   disconnects its iPhones) and, once disabled, **Purge** everything stored
-   for that user, the hourly rollups included, and blank the names of
-   devices and apps no one else's records use. An account whose owner asked
-   to be deleted cannot be enabled again. No administrator's account — your
-   own included — can be disabled or enabled here; manage those from the
-   server. Purge runs with a 30-minute
-   timeout of its own, since it unpacks the compressed history the user's
-   rows share with others; if the page times out first, it carries on.
+4. **Delete my account and data** records a durable deletion request, disables
+   the account, ends its sessions, and revokes its tokens. A private receipt
+   link is returned before lengthy erasure starts. The viewer then attempts
+   full removal; the database worker retries interrupted or failed requests
+   every minute. The receipt reports pending or completed, and remains for
+   30 days after completion. Removal includes health records, hourly rollups,
+   account/profile data and device names no other person's records use.
+   Administrators can still disable eligible accounts and purge disabled
+   personal users. A deletion request cannot be quietly re-enabled. Each
+   immediate purge permits up to 30 minutes for compressed history; browser
+   disconnects do not discard the durable request.
+
+Deletion requires `PULS_DELETION_LEDGER_DIR` on an independent persistent
+volume shared with backup tooling. Before accepting a request, the viewer
+writes and fsyncs a private `<user UUID>.json` restore-suppression record
+containing only its format version, user UUID and request timestamp. A
+missing/unwritable ledger fails closed without disabling the account. Keep
+these minimal records permanently unless every recoverable historical copy
+has been destroyed. Restores must recover and replay that independent ledger
+before services start; an old database snapshot alone cannot know about later
+deletions. See `server/README.md`, "Backups", for the restore requirements.
 
 **Every enabled personal account can connect and disconnect its own iPhones**,
 including an administrator or an account created with `make web-invite`.
@@ -316,20 +333,25 @@ and returns the `puls://pair` callback directly to the app. The app reviews
 and tests the connection; **Save & Apply** starts syncing. For older app versions, `/account` also returns directly on an iPhone;
 on a desktop it provides the pairing link and QR code.
 
-Account deletion, administrator disabling and purge still apply only to
-**self-service** users created by approved requests (`auth.self_service_users`).
-Household users and administrator accounts are managed from the server for
-those actions. The public demo cannot connect, list or disconnect iPhones:
-the viewer rejects its session, and the database's operator-owned
-`auth.device_pairing_policy` excludes `WEB_DEMO_USER` too. `022_device_pairing_policy.sh`
-updates that policy on every migrate run; keep the migrate service's
-`WEB_DEMO_USER` in step with the viewer's. Deploy migration 021 and run 022
-before deploying a viewer that offers pairing to invited accounts.
+Account deletion and purge cover approved sign-up users
+(`auth.self_service_users`) and explicitly classified invited personal users
+(`auth.personal_users`). Put existing invited personal user UUIDs in the
+operator-only `WEB_PERSONAL_USERS` comma-separated setting and run the migrate
+service. Its `027_deletion_policy.sh` reconciles the allowlist. The default
+user (`PULS_USER_ID`, and the original seeded default), administrator accounts,
+and public demo are always protected, even if accidentally listed. Do not
+classify household/shared data as a personal account. The web role cannot
+change this policy; protected accounts display operator/support guidance at
+the app's deletion link. Administrator disabling retains its existing
+self-service-only restriction.
 
+The public demo cannot connect, list or disconnect iPhones: the viewer
+rejects its session and the operator-owned `auth.device_pairing_policy`
+excludes `WEB_DEMO_USER` too. Keep migrate and viewer settings consistent.
 The privileged steps — creating a user, minting or revoking a token,
 declining, disabling, deleting, purging — are `SECURITY DEFINER` functions in
 schema `auth` (`server/db/migrations/016_web_signups.sql`, replaced or added
-to by `018_web_accounts_hardening.sql`). `web_app` may run exactly
+to by later account migrations, including `027_account_deletion.sql`). `web_app` may run exactly
 those and still cannot write `users`, `device_tokens` or
 `auth.self_service_users` itself. Each takes the caller's session as
 `auth.sessions` stores it (the cookie's SHA-256; the plaintext never reaches
@@ -340,8 +362,9 @@ which writes `auth.sessions` to sign people in and so can forge a session.
 Device pairing acts for the session's own user for every personal account.
 Since SQL as `web_app` can forge a session, a compromised viewer can mint or
 revoke tokens for any personal account; it still cannot pair the configured
-public demo, or disable/delete/purge household health data. The self-service
-list remains the boundary for data deletion, separate from phone pairing. It can change their *viewer* accounts, as it always could,
+public demo, or disable/delete/purge protected household health data. The
+operator-owned personal and self-service lists remain the deletion boundary,
+separate from phone pairing. It can change their *viewer* accounts, as it always could,
 since it writes `auth.accounts` to sign people in.
 
 **Email** goes through Amazon SES's API (`lib/email.ts`, signed by hand, no
@@ -496,7 +519,7 @@ detection, revocation and the prune against a real database as `web_app`.
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
 | `/settings` | Whose data is on screen and its profile (age, sex, heart-rate figures behind the zones); display preferences, saved in this browser |
-| `/account` | Accounts mode: connect or disconnect your iPhones, the AI assistants connected over OAuth (with Revoke), change the password, the browsers signed in, delete the account. The demo account sees only what it is |
+| `/account` | Accounts mode: connect or disconnect your iPhones, the AI assistants connected over OAuth (with Revoke), change the reporting time zone or password, the browsers signed in, delete the account. The demo account sees only what it is |
 | `/oauth/authorize` | Accounts mode with OAuth on: the consent page an AI assistant sends you to |
 | `/admin` | Accounts mode, administrators: approve or decline access requests (one, the ticked ones, or all shown); disable non-administrator accounts, purge a disabled user's data |
 | `/signup`, `/login`, `/invite/[token]` | Accounts mode: ask for access (with `WEB_SIGNUPS`), sign in, accept an invite |
@@ -533,12 +556,13 @@ rather than going through the product API: `quantity_samples` /
 scoped to the user being shown (`scoped()` in `lib/db.ts`: the session's user
 in accounts mode, else the `puls-user` cookie or `PULS_USER_ID` — see
 "Choosing a user"), with calendar
-boundaries in `PULS_TIME_ZONE`. Sleep and mindful sessions are durations, Stand
+boundaries in the account reporting zone (Basic/open: `PULS_TIME_ZONE`). Sleep and mindful sessions are durations, Stand
 Hours count only stood records, and other categories are occurrence counts.
 Cumulative raw samples total each source separately and choose the highest source
-per bucket to avoid overlapping phone/Watch double counts; when the viewer's
-`PULS_TIME_ZONE` equals the database's `puls_time_zone()`, daily canonical values
-come from `metric_daily`; otherwise they come from raw local buckets. Today's
+per bucket to avoid overlapping phone/Watch double counts. Accounts read daily
+canonical values from the per-user `metric_daily` view. Basic/open mode uses it
+when `PULS_TIME_ZONE` matches the database's `puls_time_zone()`; otherwise it
+reads raw local buckets. Today's
 totals always use current raw local-day values, so the live headline does not
 depend on aggregate refresh or bucket-settlement timing.
 Instantaneous types average with a min–max band. Activity rings require the selected
@@ -579,7 +603,7 @@ weekly for 6M and Y, two-weekly for 2Y, calendar months for 5Y — and ALL start
 at the type's earliest sample (from the per-user stats the page loads anyway)
 and sizes its bucket to that span, from days up to calendar quarters, so a
 chart stays at roughly 30–90 points. Every bucket boundary is a local one in
-`PULS_TIME_ZONE`, and day-or-coarser buckets of a covered type read
+the reporting zone, and day-or-coarser buckets of a covered type read
 `metric_daily` (the hourly `quantity_rollups` underneath it) rather than raw
 samples; the rest read `quantity_samples`, as before, so a 5Y or ALL chart of
 a type without a daily aggregate is a scan of that type's whole history.
@@ -638,3 +662,25 @@ under `pulshealth.com`. The iOS app checks that domain before naming the
 connection PulsHealth; an address outside it is treated as Your Own Database.
 Use a public ingest hostname routed to the ingest service, independently of
 the viewer hostname. Keep the previous sync address serving existing phones.
+
+### Password recovery
+
+`/forgot-password` sends a one-use, 30-minute reset link through the existing
+SES configuration (`WEB_PUBLIC_URL` and the `WEB_SES_*` / `WEB_MAIL_FROM`
+settings above). Its response is identical for unknown, disabled, demo and
+active accounts; account lookup and email delivery run after the response.
+The login page links to recovery. When email is not configured or delivery
+fails, the recovery page gives the administrator/support fallback.
+
+Migration 028 stores only token digests and credential snapshots. Resetting
+locks the account, consumes the token once, changes the password and revokes
+all sessions and OAuth grants atomically. Previously issued recovery links
+stop working after any password change. iPhone sync credentials remain
+unchanged; already-issued assistant access tokens expire within 30 minutes.
+No automatic login follows recovery: sign in with the new password.
+
+Requests are limited across replicas/restarts by database counters: 3 per
+email, 10 per IP and 500 total per hour. Keys are SHA-256 digests; expired
+counters and tokens are removed by an hourly job. These budgets are separate
+from sign-in attempts. The global counter bounds storage during email/IP
+spraying. SES delivery failures never log the link or its token.

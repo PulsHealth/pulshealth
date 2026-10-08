@@ -125,6 +125,14 @@ public struct DataRequest: Codable, Sendable, Equatable, Identifiable {
             })
     }
 
+    /// Daily aggregates contain complete local days only. A request through today
+    /// therefore omits a requested bucket even when every HealthKit query succeeds.
+    public func completionIssues(now: Date = Date(), timeZone: TimeZone = .current) -> [ExportIssue] {
+        let today = Self.day(now, timeZone: timeZone)
+        guard metrics.contains(where: { $0.function != nil }), startDay <= today, endDay >= today else { return [] }
+        return [ExportIssue(message: "Daily aggregates include completed days only. Today's aggregate is not included; generate again after the day ends to include it.")]
+    }
+
     /// Bounded so the actual QR can be rendered and untrusted input cannot allocate without limit.
     public static let maximumLinkBytes = 2_800
     public func link(now: Date = Date()) throws -> URL {

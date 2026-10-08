@@ -41,38 +41,36 @@ Limit 170. Editable without a new build, so this is the line to change when
 something ships.
 
 ```
-Explore and export Apple Health, and sync it to your own database: full history first, then live updates. No account, no analytics, and nothing goes to the developer.
+Explore and export Apple Health. Sync to your own database or apply for a PulsHealth account. Share selected data with one-time requests. No ads or tracking.
 ```
 
-`[166/170]`
+`[157/170]`
 
 ## Description
 
-Limit 4000. Opens by saying where the data goes, because that is the one thing
-a reader has to understand before installing. The count under the block is
-characters; budget for App Store Connect counting each of its 36 line breaks
-as two (3,997 today), as the review notes do.
+Limit 4000. This draft describes the next submission, including accounts and
+Data Requests; it is not a record of live App Store copy.
 
 ```
 PulsHealth lets you explore your iPhone's health data, export it to files, and sync it to a database: one you run yourself, or the PulsHealth database, with an account.
 
 Regular sync uploads to the database you set up. A one-time Data Request can send a ZIP to a separate HTTPS destination you explicitly approve. Run your own and the developer never receives your data. Choose the PulsHealth database, with a PulsHealth account, and the developer holds it for you alone.
 
-Your own database takes one Docker command: the open-source PulsHealth stack sets up PostgreSQL, Grafana, a web viewer, an API and an MCP server for AI assistants. Or use one you already run, through the open sync protocol.
+Run your own database with the open-source PulsHealth stack: PostgreSQL, Grafana, a web viewer, an API and an MCP server. Or connect a compatible receiver through the open sync protocol.
 
-No database yet? Explore shows what is in Apple Health, type by type, and Export writes it to CSV or JSONL files on your iPhone, on demand, to save or send wherever you like. Connect one from the Sync tab whenever you want continuous sync.
+No database yet? Explore shows what is in Apple Health, and Export writes CSV or JSONL files on demand to save or share. Connect a database from Sync whenever you want continuous sync.
 
 WHAT IT DOES
 
-• Full history first. The initial backfill exports everything from the start date you choose, and saves its place after every batch so it is safe to interrupt.
+• Full history, recent data first. Sync starts with recent records, then fills in history from your chosen start date. Progress is saved after each batch so it is safe to interrupt.
 • Then it keeps up. New samples follow automatically — in the foreground whenever you open the app, and in the background when iOS allows it.
 • You pick the data. Around 80 HealthKit types grouped the way Apple Health groups them: activity, heart, body, respiratory, sleep, nutrition, vitals, workouts and more. Turn on a starter set in one tap, or choose type by type.
 • See what you have. Explore lists every type by category. Open one to see its past year: how many samples, from which apps and devices, how the values are spread and how much arrives each day, plus a line on what the type measures. Summaries only; no samples are kept.
 • More than raw numbers. Workouts carry their GPS route and per-second sensor series; activity rings come across as daily summaries; and any quantity type can also be sent as on-device aggregates (hourly sums, daily averages) instead of, or alongside, raw samples.
 • Data Requests. Create a link or QR code in Settings specifying data and dates. Participants review it, then Generate & Share or Generate & Send to an approved compatible HTTPS receiver. No ongoing sync or study enrollment.
 • Export to files. With or without a database, build each export on its own: the types and series you want, for the last 30 days, 90 days, a year, all time, or a date range you choose, to CSV (one file per kind of data, for spreadsheets) or JSONL (complete, and replayable into your database later), then save to Files or share.
-• Set up in a minute. Sign in to your PulsHealth account from the Sync tab, or scan the pairing QR code your own stack prints, with its URL, token and user ID — or type them in by hand.
-• Nothing is hidden. A live event log, per-type counters, a background-activity screen showing every wake iOS granted, and an export of it all for offline analysis.
+• Choose your database. Sign in with an approved PulsHealth account (new accounts require approval), or scan your own server’s pairing code or enter its details.
+• Follow progress with per-type counters, an event log and background-activity diagnostics.
 
 PRIVACY
 
@@ -87,14 +85,14 @@ Privacy policy: pulshealth.com/privacy
 
 OPEN SOURCE
 
-PulsHealth is Apache-2.0 licensed. The app, the sync library, the wire protocol with its JSON Schema, the self-hosted stack, and the Grafana dashboards are all in one public repository, github.com/PulsHealth/pulshealth. Connecting a database of your own? The protocol is specified, with a fixture corpus to test against.
+PulsHealth is Apache-2.0 licensed. App, sync library, protocol and backend: github.com/PulsHealth/pulshealth.
 
 REQUIREMENTS
 
-iPhone running iOS 17 or later. Syncing needs a database you can reach: your own, or a PulsHealth account. Exploring and exporting need neither. Apple Watch data arrives once iOS syncs it to the phone.
+iPhone or iPad running iOS 17 or later. Syncing needs a reachable database: your own, or an approved PulsHealth account. Exploring and exporting need neither. Watch data must first reach Apple Health.
 ```
 
-`[3961/4000]`
+`[3868/4000; 3905 with CRLF line endings]`
 
 ## Keywords
 
@@ -140,7 +138,10 @@ a sync tool, and Utilities catches the people who are.
 
 ## Age rating
 
-Answer every content question **None / No**. The result is **4+**.
+The recorded rating is **4+**. Re-answer the current App Store Connect
+questionnaire against this build, including medical/wellness topics and
+request text; do not copy an older questionnaire mechanically. Apple calculates
+the global and regional ratings. See [current definitions](https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/).
 
 | Question | Answer | Why |
 |---|---|---|
@@ -151,27 +152,34 @@ Answer every content question **None / No**. The result is **4+**.
 | Mature or suggestive themes | None | — |
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
-| Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. A Type page also shows one line on what the type measures and, behind the value histogram, the typical range from the project's knowledge base — general reference, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. **If App Review disagrees**, the correct fallback is "Infrequent/Mild", which still yields 12+; do not argue the point at the cost of a rejection. |
+| Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. A Type page also shows one line on what the type measures and, behind the value histogram, the typical range from the project's knowledge base — general reference, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. Re-evaluate this answer against Apple’s current medical/wellness definitions before submission; select the frequency that accurately describes the shipped content and accept the calculated rating. |
 | Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth (or Create Account) opens `app.pulshealth.com/connect/iphone` (or `/signup`) in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the account flow on that site (sign in or create an account, then Connect this iPhone), and closes when that page hands back the pairing code or the person closes it. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/#ways), and the PulsHealth database's What the Developer Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth Account (app.pulshealth.com, pulshealth.com/privacy and pulshealth.com/docs/ai/). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It receives `puls://request?data=…` links that show a one-time request for review, and a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
-| User-generated content, chat or messaging | No | Nothing a user types (their own name, e-mail, database URL, token) is shared with any other user or with the developer. |
+| User-generated content, chat or messaging | No | No public feed, chat or messaging. Account signup sends details to the developer; request links contain creator-supplied text that recipients review. |
 | Gambling and contests | No | — |
 | In-app purchases | No | StoreKit is used only for native rating/review requests. |
 | Advertising | No | No ad SDK, no ad network. |
 
 ## App Privacy — "Data Linked to You"
 
-Since 2026-10-02 App Store Connect's App Privacy declares six data types,
-each **used for App Functionality only, linked to the user's identity, and
-not used for tracking**:
+On 2026-10-08, the App Store Connect privacy label was updated and published
+with these eleven data types. All are **used for App Functionality only,
+linked to the user's identity, and not used for tracking**. The app's prepared
+2.0 privacy manifest matches this declaration. The prior label declared six
+types from 2026-10-02; the label is app-wide and can change before a new binary.
 
 | Category | Data type | What it is in PulsHealth |
 |---|---|---|
 | Contact Info | Name | The optional name field the app uploads with the identity snapshot |
 | Contact Info | Email Address | The optional email field, the same way |
 | Health & Fitness | Health | Synced HealthKit samples, plus date of birth and sex from the identity snapshot |
-| Health & Fitness | Fitness | Workouts, routes and activity rings |
+| Health & Fitness | Fitness | Workouts and activity rings |
+| Location | Precise Location | GPS coordinates in workout routes, when enabled |
 | Identifiers | User ID | The user UUID sent with every upload (`X-User-ID`) |
 | Identifiers | Device ID | The per-install UUID the app generates for itself (`deviceID`) |
+| User Content | Other User Content | Optional free-text note in the in-app hosted signup flow |
+| Sensitive Info | Sensitive Info | Optional biological-sex field in the synced health profile; conservatively disclosed in addition to Health |
+| Usage Data | Product Interaction | Foreground and manual sync trigger recorded with an upload |
+| Diagnostics | Other Diagnostic Data | Upload metadata, wake correlation and authenticated ingestion failure diagnostics |
 
 Before that date the answer was **"No, we do not collect data from this
 app"**, and for anyone using their own database it still describes what
@@ -197,7 +205,7 @@ developer's own database:
    reach that database only through the pairing code the account page
    shows, like anyone's database.) The source is public, so this is
    checkable rather than a promise. **For the people who choose it, it is
-   collection by the developer,** which is what the six types above
+   collection by the developer,** which is what the eleven types above
    declare. The privacy policy's "If you use the developer's viewer" section
    says what happens to that data. Connecting an AI assistant to that
    database (the viewer's OAuth consent, since 2026-10-04) changes none of
@@ -226,13 +234,34 @@ developer's own database:
    `deviceID` that rides an upload is a UUID the app generates for itself.
 
 The app's privacy manifest (`PulsHealth/PrivacyInfo.xcprivacy`) lists the
-same six types in `NSPrivacyCollectedDataTypes`, linked, not tracking, for
+same eleven types in `NSPrivacyCollectedDataTypes`, linked, not tracking, for
 App Functionality, from the first build after 1.6 (19). The `PulsHealthSync`
 package's own manifest keeps that list empty: the library sends data only
 where its host app points it, so what counts as collection is the app's to
 declare. Both declare no tracking and no tracking domains, and one
 required-reason API, `NSPrivacyAccessedAPICategoryUserDefaults` with reason
 `CA92.1`, for the app's own flags.
+
+Apple explicitly assigns generic free-text fields to Other User Content and
+requires disclosure for collection in embedded account web flows. The signup
+note supports the hosted account feature, so this submission declares it rather
+than relying on the optional-disclosure exception. Retained GPS routes are
+Precise Location. The optional biological-sex profile field is health data;
+this submission additionally declares Sensitive Info conservatively. Apple's
+examples do not specifically name biological sex, and this is not a claim that
+sex and sexual orientation are the same category. All eleven types are linked,
+used only for App Functionality and not tracking. Hashed emails/IPs used for
+account recovery and security remain within the declared contact/identifier
+collection; they are not used to infer location or track advertising.
+Foreground/manual sync triggers disclose app interaction even though their
+purpose is diagnosing sync, so Product Interaction is declared alongside Other
+Diagnostic Data for retained upload/rejection metadata. This is App Functionality,
+not audience or advertising analytics. Server-generated parsing/insertion times
+are operational diagnostics; the app does not transmit client launch/hang/energy
+measurements. The reporting time-zone preference is used for calendar grouping,
+not to infer location. The live App Store Connect label was published separately from the manifest
+on 2026-10-08; the page confirmed all eleven types with no unfinished setup.
+[Apple App Privacy details](https://developer.apple.com/app-store/app-privacy-details/).
 
 ## Other App Store Connect answers
 
@@ -253,7 +282,7 @@ required-reason API, `NSPrivacyAccessedAPICategoryUserDefaults` with reason
 |---|---|
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
 | Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
-| Version / build | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in `PulsHealth/project.yml`. The store holds 1.6 (19); bump both before the next archive — see the [Release record](README.md#release-record) |
+| Version / build | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in `PulsHealth/project.yml`. Prepared candidate: 2.0 (20), not yet shipped. Latest accepted upload verified 2026-10-08: 1.6 (19). Recheck build uniqueness before upload — see the [Release record](README.md#release-record) |
 | Minimum iOS | 17.0 in `project.yml` |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
@@ -261,6 +290,14 @@ required-reason API, `NSPrivacyAccessedAPICategoryUserDefaults` with reason
 for someone who has the current version, and delete it once that version is
 live — App Store Connect keeps the history.
 
+> PulsHealth accounts: apply for an account and, once approved, sign in from
+> the app to sync to the PulsHealth database. You can still use your own
+> database, and Explore and Export work without an account.
+>
+> Data Requests: create and open links or QR codes for selected data and dates.
+> Review each request, then share a ZIP or send it to the HTTPS destination you
+> approve. Requests do not enable ongoing sync.
+>
 > Recovery HRV: on iOS 27, PulsHealth can now sync the RMSSD heart rate
 > variability your Apple Watch records on watchOS 27, next to the HRV it
 > already sends. Turn it on in Sync → Raw Samples → Heart.

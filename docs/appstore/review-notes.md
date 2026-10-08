@@ -36,12 +36,10 @@ the throwaway review backend of [`review-backend.md`](review-backend.md).
 Not standing up the review instance? Delete the YOUR OWN DATABASE block
 before pasting; nothing else refers to it.
 
-The field's limit is 4,000 characters. The block below is 3,837 with the
-placeholders and about 3,890 filled in (a 64-character token, a
-24-character password) — about 3,950 if each of its 57 line breaks
-counts as two, which is the reading to budget for. Any addition needs a
-matching cut; measure the filled copy before pasting, and drop the optional
-block if it does not fit.
+The field's limit is 4,000 characters. Measure the filled copy, including
+line breaks. The optional backend block can be removed to leave more room.
+Before submission, verify the deployed deletion and backup checks in README.md.
+The notes describe the prepared 2.0 behavior, not a claim that it is live.
 
 Do not paste a QR image into the notes — the reviewer cannot scan a picture on
 the same screen they are reading. The typed path below is the one they will
@@ -54,47 +52,47 @@ use; the QR scanner is offered for completeness.
 ```
 WHAT THIS APP IS
 
-PulsHealth copies the user's Apple Health data to a database the user runs, or to the PulsHealth database, which the developer hosts for people with a PulsHealth account (new accounts are let in by hand, so use the demo account below). It also works with no database (WITHOUT A DATABASE, below).
+PulsHealth explores and exports Apple Health and syncs it to the user's database or the developer-hosted PulsHealth database. New accounts need approval; use the approved account below. Explore, Export and Data Requests need no account.
 
 DEMO ACCOUNT (PulsHealth database)
 
   Email:    <<<DEMO_ACCOUNT_EMAIL>>>
   Password: <<<DEMO_ACCOUNT_PASSWORD>>>
 
-An approved account like any user's. It holds no real person's data and is deleted, with its data, after review.
+This approved account holds no real person’s data. Its records will be purged after review.
 
 HOW TO EXERCISE THE APP (about 5 minutes)
 
-1. Launch the app. A four-page introduction starts; swipe left to turn pages.
-2. On page 2, tap "Continue" (a swipe left does the same). iOS shows its permission sheet: tap "Turn On All", then "Allow" (iOS 27: "Select All", "Continue", then "All Recorded Data and Future Data", "Allow"). The app requests READ access only. Page 3 follows.
+1. Launch the app. Swipe through the four-page introduction.
+2. On page 2, Continue opens Health permissions. Allow read access (iOS 27 also asks which history to share; any choice works).
 3. Swipe to page 4 and tap "Start Exploring". The Explore tab appears.
-4. Open the Sync tab, tap "Sign In or Create Account" on the PulsHealth Database card, then "Sign In to PulsHealth". iOS asks to use app.pulshealth.com to sign in: tap "Continue".
+4. Sync > Sign In or Create Account > Sign In to PulsHealth. Continue to app.pulshealth.com.
 5. Sign in with the review account and tap "Connect this iPhone". The sheet returns directly to the app, which tests the connection.
 6. Tap "Save & Apply". The Sync tab shows "PulsHealth Database" with the database's address, and the upload begins.
 
-ACCOUNT DELETION (5.1.1(v)): Settings > Privacy & Data > "Delete PulsHealth Account" opens the account page, whose "Delete my account" deletes it and its data.
+ACCOUNT DELETION: Settings > Privacy & Data > "Delete PulsHealth Account" > "Delete my account and data". Access stops immediately; records are erased automatically, with retry if interrupted. A private status link confirms completion. No support request is needed.
 
 WHAT YOU SHOULD SEE
 
-The Sync tab's "Samples sent" counter rises if the device has Health data. On an empty device, add a Weight entry in Apple Health (+, Add Data), then pull down on the Sync tab: the counter rises within seconds.
+On an empty device, add a Weight entry in Apple Health, then pull down on Sync. Samples sent rises once uploaded.
 
 YOUR OWN DATABASE (optional)
 
-The other choice, a database the user runs, pairs by QR code or by typing. To try it: Sync > Database > "Your Own Database", type Database URL <<<REVIEW_SERVER_URL>>> and Token <<<REVIEW_TOKEN>>>, then "Test Connection" and "Save & Apply".
+Sync > Database > "Your Own Database": enter Database URL <<<REVIEW_SERVER_URL>>> and Token <<<REVIEW_TOKEN>>>, then "Test Connection" and "Save & Apply".
 
 WITHOUT A DATABASE
 
-The Export tab writes the selected Health data to CSV or JSONL files on the device; "Share or Save to Files" opens the iOS share sheet. No network request is made. From a fresh install: do steps 1-3 above and open Export. The files are deleted once shared, and at every launch.
+After steps 1-3, open Export to create CSV or JSONL files. Share or Save to Files opens the share sheet. No network request is made; temporary files are deleted after sharing and at launch.
 
 WHY WE DECLARE NSAllowsLocalNetworking
 
-A user's own database often runs on their home network, where a public TLS certificate is impractical. The exception permits plain HTTP to local-network hosts ONLY, and the app enforces the same rule (localhost, *.local, unqualified hostnames, private IP ranges). No NSAllowsArbitraryLoads. The PulsHealth database is HTTPS.
+HTTP is allowed only for local-network databases (localhost, *.local, unqualified names, private IPs), enforced in app validation. No NSAllowsArbitraryLoads. Public databases and the PulsHealth database require HTTPS.
 
 HEALTHKIT (Guideline 5.1.3)
 
 - Read-only. The app never calls a HealthKit write API.
 - Health data is not used for advertising, marketing or data mining, and is not sold. It leaves the app as sync to the configured database, exports the user shares, or one-time request delivery explicitly approved by the user.
-- Never written to iCloud. The app keeps none, except an export the user asked for, in its temporary directory (never backed up) until shared.
+- Health samples are staged only for requested exports, in temporary storage excluded from backup. Analysis summaries stay on-device and are also backup-excluded.
 
 CAMERA
 
@@ -102,7 +100,11 @@ Used to read database pairing and Data Request QR codes. No frame is stored or s
 
 URL SCHEME (puls://)
 
-One custom scheme also accepts puls://request?data=... links, which show data, dates, purpose and recipient before Generate & Share or Generate & Send. Opening alone authorizes nothing. The same scheme handles pairing links (puls://pair?...), the text a pairing QR code encodes. A link configures nothing by itself: the app asks the user to confirm its host, and accepting only fills in the fields on Sync > Database. The sign-in sheet returns the same kind of link. Either way only "Save & Apply" applies it.
+puls://pair links ask for host confirmation and fill database fields; only Save & Apply applies them. The sign-in sheet returns a pairing link. puls://request links show data, dates, purpose and recipient before any read or delivery.
+
+DATA REQUESTS
+
+Settings > Create Request: choose types and dates, leave direct delivery off, create a link, then open it via Settings > Open or Scan Request. Review and tap Generate & Share for a ZIP. HTTPS delivery uses Generate & Send to the displayed receiver; partial exports require Send Available Data. There is no ongoing sync, study enrollment or research consent process.
 
 BACKGROUND MODES
 
@@ -155,11 +157,17 @@ receives is the pairing code the connection page makes for this iPhone. There
 is no third-party or social login, so Sign in with Apple is not required
 (4.8). Creating an account happens in the same sheet (Create Account), not in
 Safari. Deletion (5.1.1(v)): Delete PulsHealth Account under Settings → Privacy &
-Data, whether or not the iPhone is connected, opens the account page's Delete my account section directly
-(`/account#delete-account`). There, Delete my account signs the
-person out, disconnects their iPhones at once and has the developer purge
-every row stored under their user ID (`docs/privacy-policy.md`, "If you use
-the developer's viewer"). Disconnect in the app only stops syncing.
+Data, whether or not the iPhone is connected, opens the account page's deletion
+section directly (`/account#delete-account`). Delete my account and data signs
+the person out and disconnects their iPhones, then automatically erases the
+account and records, with retry if interrupted. A private receipt page distinguishes
+pending from completed removal. Approved signups and operator-designated invited
+personal accounts use this flow. No support email or manual approval is needed.
+The minimal UUID/date restore-suppression ledger is retained indefinitely;
+receipt hashes expire 30 days after completion. Older backups are subject to
+retention and must have deletions replayed before being reopened. Confirm the
+hosted retention configuration before submission. Disconnect in the app only
+stops syncing.
 
 ### "Where do exported files go, and what is in them?"
 

@@ -4,7 +4,7 @@
     "title": "PulsHealth Product API",
     "version": "1.0.0",
     "summary": "Read-only HTTP API over the health data a PulsHealth server holds.",
-    "description": "Read-only JSON API over the HealthKit data your iPhone synced into your own PulsHealth server: daily metrics, activity rings, workouts and their streams, sleep, raw samples, State of Mind, a chat-ready summary and bulk export.\n\nEvery data route needs `Authorization: Bearer <PULS_API_TOKEN>` and answers for one user. Timestamps are epoch milliseconds, ranges are half-open `[start, end)`, and day-grained answers use the server's `PULS_TIME_ZONE` calendar. Errors are `{\"error\": \"...\"}` with a conventional status code.\n\nGuide: https://pulshealth.com/docs/api/",
+    "description": "Read-only JSON API over the HealthKit data your iPhone synced into your own PulsHealth server: daily metrics, activity rings, workouts and their streams, sleep, raw samples, State of Mind, a chat-ready summary and bulk export.\n\nEvery data route needs `Authorization: Bearer <PULS_API_TOKEN>` and answers for one user. Timestamps are epoch milliseconds, ranges are half-open `[start, end)`, and day-grained answers use the selected account's reporting calendar (falling back to `PULS_TIME_ZONE`). Errors are `{\"error\": \"...\"}` with a conventional status code.\n\nGuide: https://pulshealth.com/docs/api/",
     "contact": {
       "name": "PulsHealth",
       "url": "https://github.com/PulsHealth/pulshealth/issues"
@@ -185,7 +185,7 @@
           "Users"
         ],
         "summary": "List users",
-        "description": "Every user with the gate on (`PULS_MULTI_USER=true`); only the default user with it off. `default` is the user served when a request names none (`PULS_USER_ID`); `multiUser` says whether ?user= may name anyone else. `timeZone` is the zone every local day in this API's answers is cut in.",
+        "description": "Every user with the gate on (`PULS_MULTI_USER=true`); only the default user with it off. `default` is the user served when a request names none (`PULS_USER_ID`); `multiUser` says whether ?user= may name anyone else. `timeZone` is the selected account's reporting zone; each user also carries its own `timeZone`. Raw daily grouping uses this zone; uploaded ring and aggregate local dates are preserved.",
         "responses": {
           "200": {
             "description": "Users.",
@@ -388,7 +388,7 @@
           "Metrics"
         ],
         "summary": "Get daily series",
-        "description": "One value per local calendar day (in the server's `PULS_TIME_ZONE`) for each requested type, every day overlapping `[start, end)`. Paged in days across the requested types: `limit` and `offset` count day rows, not metrics, in the order the response nests them (the requested types in request order, each ascending by day); `nextOffset` is `offset` plus the rows on the page and a page shorter than `limit` is the last. The default page holds a year of 27 types.",
+        "description": "One value per local calendar day (in the selected account's reporting zone) for each requested type, every day overlapping `[start, end)`. Paged in days across the requested types: `limit` and `offset` count day rows, not metrics, in the order the response nests them (the requested types in request order, each ascending by day); `nextOffset` is `offset` plus the rows on the page and a page shorter than `limit` is the last. The default page holds a year of 27 types.",
         "parameters": [
           {
             "$ref": "#/components/parameters/User"
@@ -1002,7 +1002,7 @@
           "Summary"
         ],
         "summary": "Get a recent summary",
-        "description": "The last range calendar days (7d by default; ending today in the server's `PULS_TIME_ZONE`) as one markdown page of under sixty lines, meant to be pasted into a chat that has no MCP connection: a header naming the user, the days and the zone, then a section for each kind of data that exists — activity (steps, active energy, exercise minutes, stand hours as daily means and totals), heart (resting heart rate, HRV), sleep (time asleep per night), workouts (count, total time, distance, most frequent activities), body (newest weight and body fat) — and a coverage line (last sync, days with data, and the reminder that daily figures are already deduplicated across devices). Every figure comes from the daily surfaces the other endpoints serve, never from raw samples. `format=json` returns the same numbers as a Summary object.",
+        "description": "The last range calendar days (7d by default; ending today in the selected account's reporting zone) as one markdown page of under sixty lines, meant to be pasted into a chat that has no MCP connection: a header naming the user, the days and the zone, then a section for each kind of data that exists \u2014 activity (steps, active energy, exercise minutes, stand hours as daily means and totals), heart (resting heart rate, HRV), sleep (time asleep per night), workouts (count, total time, distance, most frequent activities), body (newest weight and body fat) \u2014 and a coverage line (last sync, days with data, and the reminder that daily figures are already deduplicated across devices). Every figure comes from the daily surfaces the other endpoints serve, never from raw samples. `format=json` returns the same numbers as a Summary object.",
         "parameters": [
           {
             "$ref": "#/components/parameters/User"
@@ -1089,7 +1089,7 @@
           "Export"
         ],
         "summary": "Export a dataset",
-        "description": "Streams a whole range as a file (`Transfer-Encoding: chunked`, `Content-Disposition: attachment`) instead of a JSON document. CSV opens the file with a header row; JSONL writes one JSON object per line whose keys are the same column names. Field names match the JSON endpoints; where an endpoint nests (a metric's days, a night's stages) the export flattens, repeating the identifying fields on every row and naming a nested field by its path. Ranges are capped at 31 days for samples (as `/v1/samples` is) and 366 days for every other dataset — the same cap `/v1/sleep/daily` and `/v1/state-of-mind` apply, and deliberately stricter than `/v1/metrics/daily` and `/v1/workouts`, which are bounded by a page size rather than by their range, and `/v1/activity/summary`, which is one small row per day. The `daily_metrics` and workouts datasets return the whole range (workouts newest first); `limit` and `offset` are not used here. At most 2 exports run at once, because each holds a database connection for the length of the download; over that is a 503 with `Retry-After`. An export ends after 30 minutes, and one whose client stops reading for a minute is dropped; either way the connection is aborted, so the file is a visibly failed download rather than a short one. The 30-second query limit of the other routes does not apply.",
+        "description": "Streams a whole range as a file (`Transfer-Encoding: chunked`, `Content-Disposition: attachment`) instead of a JSON document. CSV opens the file with a header row; JSONL writes one JSON object per line whose keys are the same column names. Field names match the JSON endpoints; where an endpoint nests (a metric's days, a night's stages) the export flattens, repeating the identifying fields on every row and naming a nested field by its path. Ranges are capped at 31 days for samples (as `/v1/samples` is) and 366 days for every other dataset \u2014 the same cap `/v1/sleep/daily` and `/v1/state-of-mind` apply, and deliberately stricter than `/v1/metrics/daily` and `/v1/workouts`, which are bounded by a page size rather than by their range, and `/v1/activity/summary`, which is one small row per day. The `daily_metrics` and workouts datasets return the whole range (workouts newest first); `limit` and `offset` are not used here. At most 2 exports run at once, because each holds a database connection for the length of the download; over that is a 503 with `Retry-After`. An export ends after 30 minutes, and one whose client stops reading for a minute is dropped; either way the connection is aborted, so the file is a visibly failed download rather than a short one. The 30-second query limit of the other routes does not apply.",
         "parameters": [
           {
             "$ref": "#/components/parameters/User"
@@ -1419,6 +1419,11 @@
             "examples": [
               "female"
             ]
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "The account reporting IANA time zone, falling back to PULS_TIME_ZONE for accounts without a preference. Calendar ranges and raw daily grouping use this zone; uploaded ring and aggregate dates retain their recorded local day.",
+            "example": "America/New_York"
           }
         },
         "description": "The HealthKit characteristics the phone last uploaded. Fields the person never filled in are null."
@@ -1480,6 +1485,11 @@
             "examples": [
               2391044
             ]
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "The account reporting IANA time zone, falling back to PULS_TIME_ZONE for accounts without a preference. Calendar ranges and raw daily grouping use this zone; uploaded ring and aggregate dates retain their recorded local day.",
+            "example": "America/New_York"
           }
         }
       },
@@ -1620,7 +1630,7 @@
                 "date": {
                   "type": "string",
                   "format": "date",
-                  "description": "Local calendar day (`PULS_TIME_ZONE`)."
+                  "description": "Local calendar day in the account reporting zone; uploaded aggregate dates preserve their recorded day."
                 },
                 "value": {
                   "type": [
@@ -2311,7 +2321,7 @@
           },
           "timeZone": {
             "type": "string",
-            "description": "The IANA zone (`PULS_TIME_ZONE`) whose calendar cut the days."
+            "description": "The selected account reporting IANA zone, falling back to PULS_TIME_ZONE."
           },
           "activity": {
             "type": "object",
@@ -2598,7 +2608,7 @@
           },
           "timeZone": {
             "type": "string",
-            "description": "The IANA zone (`PULS_TIME_ZONE`) every local calendar day this API answers with is cut in; `UTC` when unset. The API refuses to start when it disagrees with the database's zone.",
+            "description": "Reporting IANA time zone of the selected user (?user=, otherwise the default). Each users entry also exposes its own reporting zone.",
             "examples": [
               "Europe/Berlin"
             ]

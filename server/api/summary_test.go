@@ -108,7 +108,7 @@ func TestRenderSummaryMarkdown_EmptyRendersHeaderAndCoverageOnly(t *testing.T) {
 	}
 	got := renderSummaryMarkdown(emptySummary(), berlin)
 	want := "# Health summary — last 7 days\n\n" +
-		"2026-09-10 to 2026-09-16, 7 calendar days in Europe/Berlin (the server's time zone). Generated 2026-09-16 14:03.\n" +
+		"2026-09-10 to 2026-09-16, 7 calendar days in Europe/Berlin (the account's reporting time zone). Generated 2026-09-16 14:03.\n" +
 		"\n## Coverage\n" +
 		"- No data in this range. Last sync: never.\n"
 	if got != want {

@@ -54,6 +54,18 @@ psql -q -v ON_ERROR_STOP=1 \
      --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
 BEGIN;
 
+-- Replayed 009/023 can replace the daily view during baseline/restore.
+-- Restore 026's account calendars and full-day recording-quality filter for
+-- every deployment, including self-hosted stacks with accounts disabled.
+DO $$
+BEGIN
+  IF to_regprocedure('public.puls_create_metric_daily()') IS NOT NULL THEN
+    REVOKE EXECUTE ON FUNCTION public.puls_create_metric_daily() FROM PUBLIC;
+    PERFORM public.puls_create_metric_daily();
+  END IF;
+END
+$$;
+
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grafana') THEN
@@ -775,7 +787,9 @@ if [[ "$(psql -X -q -tA --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
           -c "SELECT to_regprocedure('puls_create_web_views()') IS NOT NULL
                  AND to_regprocedure('auth.purge_user(bytea,uuid)') IS NOT NULL
                  AND to_regprocedure('auth.decline_signups(bytea,uuid[])') IS NOT NULL
-                 AND to_regclass('auth.oauth_grants') IS NOT NULL")" != t ]]; then
+                 AND to_regclass('auth.oauth_grants') IS NOT NULL
+                 AND to_regclass('auth.account_deletions') IS NOT NULL
+                 AND to_regclass('auth.password_resets') IS NOT NULL")" != t ]]; then
   echo "099_read_roles: 015_web_accounts.sql, 016_web_signups.sql, 018_web_accounts_hardening.sql or 019_oauth.sql is not applied yet; skipping the web_app role."
   exit 0
 fi
@@ -835,6 +849,10 @@ END
 $$;
 
 DROP OWNED BY web_app;
+-- pg_restore --no-privileges restores function bodies without their REVOKE
+-- ACLs. Reconstruct this boundary before granting the exact public API:
+-- internal purge/replay/queue helpers must never inherit PUBLIC EXECUTE.
+REVOKE EXECUTE ON ALL ROUTINES IN SCHEMA auth FROM PUBLIC;
 ALTER ROLE web_app
   LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION
   NOBYPASSRLS CONNECTION LIMIT -1 VALID UNTIL 'infinity'
@@ -890,7 +908,9 @@ TO web_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   auth.oauth_clients,
   auth.oauth_grants,
-  auth.oauth_codes
+  auth.oauth_codes,
+  auth.password_resets,
+  auth.password_reset_limits
 TO web_app;
 
 -- The privileged steps of sign-up and self-service (016_web_signups.sql,
@@ -906,7 +926,12 @@ GRANT EXECUTE ON FUNCTION
   auth.my_devices(bytea),
   auth.revoke_my_device(bytea, bigint),
   auth.delete_my_account(bytea),
-  auth.decline_signups(bytea, uuid[])
+  auth.decline_signups(bytea, uuid[]),
+  auth.set_my_time_zone(bytea, text),
+  auth.can_delete_account(bytea),
+  auth.request_account_deletion(bytea, bytea),
+  auth.complete_account_deletion(uuid),
+  auth.deletion_status(bytea)
 TO web_app;
 
 -- Which users those functions may act on (written only by approve_signup).
@@ -996,6 +1021,14 @@ BEGIN
       ('auth', 'oauth_codes', 'INSERT', false),
       ('auth', 'oauth_codes', 'UPDATE', false),
       ('auth', 'oauth_codes', 'DELETE', false),
+      ('auth', 'password_resets', 'SELECT', false),
+      ('auth', 'password_resets', 'INSERT', false),
+      ('auth', 'password_resets', 'UPDATE', false),
+      ('auth', 'password_resets', 'DELETE', false),
+      ('auth', 'password_reset_limits', 'SELECT', false),
+      ('auth', 'password_reset_limits', 'INSERT', false),
+      ('auth', 'password_reset_limits', 'UPDATE', false),
+      ('auth', 'password_reset_limits', 'DELETE', false),
       ('auth', 'self_service_users', 'SELECT', false)
     ), actual AS (
       SELECT n.nspname::text, c.relname::text, acl.privilege_type, acl.is_grantable
@@ -1080,7 +1113,12 @@ BEGIN
       ('auth.my_devices(bytea)'),
       ('auth.revoke_my_device(bytea,bigint)'),
       ('auth.delete_my_account(bytea)'),
-      ('auth.decline_signups(bytea,uuid[])')
+      ('auth.decline_signups(bytea,uuid[])'),
+      ('auth.set_my_time_zone(bytea,text)'),
+      ('auth.can_delete_account(bytea)'),
+      ('auth.request_account_deletion(bytea,bytea)'),
+      ('auth.complete_account_deletion(uuid)'),
+      ('auth.deletion_status(bytea)')
     ), granted AS (
       SELECT p.oid::regprocedure::text AS signature
       FROM pg_proc p
@@ -1143,7 +1181,9 @@ BEGIN
     JOIN pg_namespace n ON n.oid = c.relnamespace
     WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
       AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-      AND (n.nspname <> 'auth' OR c.oid IN ('auth.self_service_users'::regclass, 'auth.device_pairing_policy'::regclass))
+      AND (n.nspname <> 'auth' OR c.oid IN ('auth.self_service_users'::regclass, 'auth.device_pairing_policy'::regclass,
+        'auth.personal_users'::regclass, 'auth.deletion_policy'::regclass,
+        'auth.account_deletions'::regclass, 'auth.deletion_tombstones'::regclass))
       AND CASE WHEN c.relkind = 'S' THEN
             has_sequence_privilege(web_oid, c.oid, 'UPDATE')
             OR has_sequence_privilege(web_oid, c.oid, 'USAGE')

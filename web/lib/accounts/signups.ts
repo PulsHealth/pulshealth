@@ -10,6 +10,7 @@ import { isIP } from "node:net";
 
 import { longStatement, query, transaction } from "../db";
 import { newToken, tokenHash } from "./session";
+import { writeDeletionLedger } from "./deletionLedger";
 
 /** How long an approval's invite link works. */
 export const APPROVAL_INVITE_DAYS = 7;
@@ -330,6 +331,7 @@ export async function purgeUser(session: Buffer, userId: string): Promise<Record
     "SELECT auth.purge_user($1, $2::uuid) AS counts",
     [session, userId],
     PURGE_MINUTES,
+    () => writeDeletionLedger(userId),
   );
   return row.counts;
 }

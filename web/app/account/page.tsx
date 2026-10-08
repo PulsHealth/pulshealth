@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 
+import { ReportingTimeZone } from "@/components/ReportingTimeZone";
+import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import { ConnectIphone } from "@/components/ConnectIphone";
 import { PageHeader } from "@/components/PageHeader";
 import { errorMessage, noticeMessage, param } from "@/lib/accounts/messages";
@@ -32,6 +34,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
   const search = await searchParams;
   const returnToApp = /iPhone|iPad|iPod/.test((await headers()).get("user-agent") ?? "");
   if (session.demo) return <DemoAccount error={errorMessage(param(search.error))} />;
+  const timeZone = await reportingTimeZone(session.userId);
   const [sessions, devices, assistants] = await Promise.all([
     listSessions(session.accountId, session.id),
     myDevices(session.id),
@@ -70,8 +73,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
                     {!d.active && <span className="chip" style={{ marginLeft: 8 }}>Disconnected</span>}
                   </div>
                   <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>
-                    Connected {formatFull(d.createdAt)}
-                    {d.lastSeenAt ? ` · last upload ${formatFull(d.lastSeenAt)}` : " · no upload yet"}
+                    Connected {formatFull(d.createdAt, timeZone)}
+                    {d.lastSeenAt ? ` · last upload ${formatFull(d.lastSeenAt, timeZone)}` : " · no upload yet"}
                   </div>
                 </div>
                 {d.active && (
@@ -85,6 +88,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           </div>
         )}
       </section>
+
+      <ReportingTimeZone timeZone={timeZone} />
 
       {showAssistants && (
         <section className="rise" style={{ marginTop: 28 }}>
@@ -104,7 +109,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
                     <span style={{ color: "var(--muted)", fontSize: 12, fontWeight: 400 }}>(self-reported name)</span>
                   </div>
                   <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>
-                    Connected {formatFull(a.createdAt)} · last used {formatFull(a.lastUsedAt)} · reads all your data, read-only
+                    Connected {formatFull(a.createdAt, timeZone)} · last used {formatFull(a.lastUsedAt, timeZone)} · reads all your data, read-only
                   </div>
                 </div>
                 <form method="post" action="/api/auth/assistants">
@@ -160,7 +165,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
                   {s.current && <span className="chip" style={{ marginLeft: 8 }}>This browser</span>}
                 </div>
                 <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>
-                  Last active {formatFull(s.lastSeenAt)} · signed in {formatFull(s.createdAt)}
+                  Last active {formatFull(s.lastSeenAt, timeZone)} · signed in {formatFull(s.createdAt, timeZone)}
                   {s.ip ? ` · ${s.ip}` : ""}
                 </div>
               </div>
@@ -179,7 +184,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
         )}
       </section>
 
-      {session.selfService && !session.isAdmin && (
+      {session.canDelete && !session.isAdmin ? (
         // The anchor is the app's Delete PulsHealth Account link
         // (PulsHealthDatabase.deleteAccountURL): App Review wants a link
         // straight to account deletion. Keep the id.
@@ -187,15 +192,24 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           <div className="eyebrow" style={{ marginBottom: 12 }}>Delete account</div>
           <form method="post" action="/api/auth/delete-account" className="panel" style={{ padding: 20, maxWidth: 560 }}>
             <p style={{ margin: "0 0 12px", fontSize: 14, lineHeight: 1.5 }}>
-              Deleting your account signs you out everywhere and disconnects your iPhones at once, so nothing more is
-              uploaded. The operator is told to delete everything stored for you. To keep your data, export it from the
-              PulsHealth app first.
+              Requesting deletion disables your account, signs you out everywhere and disconnects your iPhones at once.
+              It then permanently removes your account and health records from this database. If removal is interrupted,
+              it retries automatically. You receive a private link to check completion. Export anything you want to keep
+              from the PulsHealth app first.
             </p>
             <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, marginBottom: 14 }}>
               <input type="checkbox" name="confirm" value="yes" required /> Delete my account and my data
             </label>
-            <button type="submit" className="btn" style={{ color: "#ff7b72" }}>Delete my account</button>
+            <button type="submit" className="btn" style={{ color: "#ff7b72" }}>Delete my account and data</button>
           </form>
+        </section>
+      ) : (
+        <section id="delete-account" className="rise" style={{ marginTop: 28, scrollMarginTop: 24 }}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>Account deletion</div>
+          <p style={{ fontSize: 14, lineHeight: 1.6 }}>
+            This is an operator-managed account. Contact the server operator to remove it.
+            If this is your personal PulsHealth-hosted account, <a href="mailto:support@pulshealth.com">contact PulsHealth support</a> to correct its account classification.
+          </p>
         </section>
       )}
     </>

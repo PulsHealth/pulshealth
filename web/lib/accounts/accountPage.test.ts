@@ -7,6 +7,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/reportingTimeZone", () => ({ reportingTimeZone: async () => "Pacific/Auckland" }));
 const viewer = vi.hoisted(() => ({ currentSession: vi.fn() }));
 const client = vi.hoisted(() => ({ userAgent: "" }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ "user-agent": client.userAgent }) }));
@@ -85,7 +86,7 @@ describe("the account page for a demo session", () => {
 
 describe("personal phone pairing", () => {
   it.each([false, true])("offers pairing regardless of signup origin (selfService=%s)", async (selfService) => {
-    viewer.currentSession.mockResolvedValue({ ...DEMO, demo: false, selfService });
+    viewer.currentSession.mockResolvedValue({ ...DEMO, demo: false, selfService, canDelete: selfService });
     lookups.listSessions.mockResolvedValue([]);
     lookups.myDevices.mockResolvedValue([]);
     lookups.listConnectedApps.mockResolvedValue([]);

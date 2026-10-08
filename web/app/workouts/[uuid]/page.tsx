@@ -1,3 +1,4 @@
+import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
@@ -19,6 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ uuid: str
 export default async function WorkoutDetailPage({ params }: { params: Promise<{ uuid: string }> }) {
   const { uuid } = await params;
   const user = await viewerUser();
+  const timeZone = await reportingTimeZone(user);
   const w = await getWorkoutDetail(user, uuid);
   if (!w) notFound();
 
@@ -37,7 +39,7 @@ export default async function WorkoutDetailPage({ params }: { params: Promise<{ 
 
       <PageHeader
         title={title}
-        subtitle={`${formatFull(w.start)} – ${formatTime(w.end)}`}
+        subtitle={`${formatFull(w.start, timeZone)} – ${formatTime(w.end, timeZone)}`}
       />
 
       <WorkoutDetailView w={w} series={series} profile={profile} />

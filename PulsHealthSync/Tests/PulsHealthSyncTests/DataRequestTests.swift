@@ -29,6 +29,18 @@ struct DataRequestTests {
         r.startDay = "2026-02-30"
         #expect(throws: (any Error).self) { try r.bounds() }
     }
+    @Test func unfinishedDailyAggregateRequiresPartialReviewInParticipantTimeZone() {
+        let utc = TimeZone(secondsFromGMT: 0)!
+        let losAngeles = TimeZone(identifier: "America/Los_Angeles")!
+        // 2026-09-30 01:00 UTC is still September 29 in Los Angeles.
+        let instant = Date(timeIntervalSince1970: 1_790_730_000)
+        var r = request()
+        r.endDay = "2026-09-29"
+        #expect(r.completionIssues(now: instant, timeZone: utc).isEmpty)
+        #expect(r.completionIssues(now: instant, timeZone: losAngeles).count == 1)
+        r.metrics = [.init(type: "HKQuantityTypeIdentifierStepCount")]
+        #expect(r.completionIssues(now: instant, timeZone: losAngeles).isEmpty)
+    }
     @Test func rejectsExpiredFutureUnsupportedAndOversizedRequests() throws {
         var r = request(); r.expiresAt = now
         #expect(throws: (any Error).self) { try r.validate(now: now) }

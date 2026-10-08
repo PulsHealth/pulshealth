@@ -333,12 +333,31 @@ opens the form), or the developer invites you. What happens to your data:
   gives it — in this case the developer's — and to nowhere else.
 - **The developer holds your data.** Everything the app uploads (the health
   data you chose to sync, and the identity fields if you filled them in) is
-  stored in the developer's database under your own user ID. The developer,
+  stored in the developer's database under your own user ID. This includes
+  precise GPS coordinates in workout routes if you enable route syncing. The developer,
   as the person who runs that database, can access it. It is used for one
   thing: showing it back to you — in the viewer, and to an AI assistant you
   connect yourself (below). It is not sold, shared or analysed, and no
   one else who uses the viewer can see it — the database itself limits each
   signed-in person to their own records.
+- **Sync diagnostics.** Alongside health records, the database retains an
+  operational record of each upload: device/user and batch identifiers, types
+  and counts, byte size, export/receipt times, and whether sync was triggered
+  by foreground use, a manual action or background delivery. Wake identifiers
+  correlate related uploads; the server also records processing timings.
+  Authenticated uploads that fail retain status, failure stage and a bounded
+  diagnostic message, without the health-data request body, for 90 days.
+  These records diagnose missing or delayed sync and support the service;
+  they are not used for advertising or audience analytics. Deleting your
+  account removes its upload and rejection records too.
+- **Reporting time zone.** The syncing phone sends its current time-zone
+  identifier with uploads. For a newly approved hosted account, its first
+  upload initializes the account's reporting time zone. You can change that
+  setting on the account page; travel does not silently change it. Older
+  accounts use the server's default until you choose a setting. It determines
+  how raw samples are grouped into days and displayed. Activity rings and
+  phone-computed aggregates retain the calendar in which the phone recorded
+  them, so changing this setting does not rewrite those records.
 - **Your viewer account.** Signing in stores your email address, a one-way
   hash of your password (never the password), and, for each browser you sign
   in from, when it signed in and was last used, its browser and system name,
@@ -386,10 +405,18 @@ opens the form), or the developer invites you. What happens to your data:
   signed, not stored. Deleting your account deletes your connections;
   expired codes and dead connections are deleted automatically, as is a
   registration no connection has used for 30 days.
-- **Email.** Messages about your account — the link to choose a
-  password — are sent through Amazon Simple Email Service from
-  `noreply@pulshealth.com`. Nothing else is emailed to you, and there is no
-  mailing list.
+- **Password recovery.** Forgot password sends a single-use link to the
+  account's email address. It expires after 30 minutes. The database keeps
+  only the link's hash and a snapshot of the account's password hash and
+  password-change time to reject stale links; successful reset removes all
+  recovery links for that account. Expired records are cleaned up hourly.
+  Short-lived counters keyed by hashed email and IP address limit abuse and
+  are also cleaned up hourly. A completed reset signs out browsers and
+  revokes connected assistants (their already-issued access expires within
+  30 minutes); it does not disconnect your iPhone's sync token.
+- **Email.** Messages about your account — invitations and password-recovery
+  links — are sent through Amazon Simple Email Service from
+  `noreply@pulshealth.com`. There is no account mailing list.
 - **Cloudflare carries the hosted database's traffic.** `app.pulshealth.com`,
   the sync receiver at `ingest.pulshealth.com`, and `mcp.pulshealth.com` that
   a connected AI assistant reads from are reached through Cloudflare, which
@@ -400,15 +427,34 @@ opens the form), or the developer invites you. What happens to your data:
   directly from the provider named on the map (Esri, OpenStreetMap or
   OpenTopoMap). Those requests carry no health data, but they do reveal to
   that provider which area the map shows, and the viewer's address.
-- **Leaving.** If you asked for access, **Delete my account** on the
-  account page (the app's Delete PulsHealth Account, under Settings → Privacy
-  & Data, opens it) signs you out, disconnects your
-  iPhones at once so nothing
-  more is uploaded, revokes every AI assistant you connected, and asks the developer to delete every row stored under
-  your user ID, which they do, along with the names of your devices. Family members ask the developer, who does
-  the same.
-  Tap Disconnect under Sync → Database (or delete the app) to stop it
-  trying.
+- **Leaving.** **Delete my account and data** on the account page (the app's
+  Delete PulsHealth Account, under Settings → Privacy & Data, opens it)
+  disables your account, signs out browsers, disconnects iPhone uploads and
+  revokes connected assistants. The service immediately attempts to remove
+  your account, profile and stored health records, including derived database
+  summaries and device names no other account uses. If interrupted, removal
+  retries automatically; no email or operator approval is needed to finish it.
+  A private status link tells you whether removal is pending or complete.
+  Removing a large history can take time, so the request alone is not a
+  completion confirmation. Tap Disconnect under Sync → Database (or delete
+  the app) to stop it trying to sync.
+  This flow is available to approved signups and invited personal accounts
+  designated by the operator. Administrator, shared demo and protected
+  operator-managed accounts are not personal signups and are managed by the
+  operator. If your personal hosted account is classified incorrectly, contact
+  support@pulshealth.com to correct it.
+- **Deletion records and backups.** The private completion receipt is stored
+  as a hash with request/completion dates and status. It no longer refers to
+  an account after removal and is cleared 30 days after completion by the
+  cleanup worker. A minimal deletion record containing only the old internal
+  user UUID and request date is retained indefinitely, including in a separate
+  restore-protection ledger. It contains no name, email or health records;
+  its purpose is to prevent an older database backup from restoring deleted
+  data into service. A backup made before deletion can still contain the old
+  data until that archive expires. Restoring such an archive requires replaying
+  the current deletion ledger before the restored service is opened. Copies
+  you exported, or sent to another recipient or assistant, remain with those
+  recipients and are not removed by deleting your PulsHealth account.
 
 ## The website
 

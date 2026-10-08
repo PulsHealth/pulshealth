@@ -5,6 +5,7 @@
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./password";
 
 const ERRORS: Record<string, string> = {
+  time_zone: "Choose a valid IANA time zone, such as America/Los_Angeles.",
   invalid: "That email and password do not match an account.",
   throttled: "Too many attempts. Wait a minute, then try again.",
   unavailable: "Something went wrong on the server. Try again in a moment.",
@@ -30,7 +31,9 @@ const ERRORS: Record<string, string> = {
 };
 
 const NOTICES: Record<string, string> = {
+  time_zone: "Reporting time zone saved.",
   "signed-out": "You are signed out.",
+  recovered: "Password reset. Sign in with your new password. All previous browser sessions have been signed out.",
   password: "Password changed. Every other browser signed in to this account has been signed out.",
   sessions: "Signed out.",
   received: "Thanks for signing up. We're at capacity right now, so you're on the waitlist. We'll email you when your spot opens.",
@@ -41,7 +44,7 @@ const NOTICES: Record<string, string> = {
   purged: "Everything stored for that user was deleted.",
   device_revoked: "That iPhone is disconnected and can no longer upload.",
   assistant_revoked: "Revoked. The assistant can no longer refresh its access, and what it holds expires within 30 minutes.",
-  deleted: "Your account is deleted, and nothing more will be uploaded. The operator has been asked to remove your stored data.",
+  deleted: "Your account and health records have been removed from the live database.",
 };
 
 /** The OAuth consent page's answer to a demo session (no assistant connects to the demo). */

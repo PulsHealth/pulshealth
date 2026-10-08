@@ -162,6 +162,7 @@ extension HealthSyncEngine {
         reason: SyncReason,
         queueResyncWhenActive: Bool = true
     ) async {
+        guard !configurationMutationInProgress else { return }
         let key = "workout-enrich:\(kind.rawValue)"
         guard !activeSyncs.contains(key) else {
             // Ordinary observer/manual requests coalesce in memory. Forced

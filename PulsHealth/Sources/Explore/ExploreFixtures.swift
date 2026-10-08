@@ -15,6 +15,19 @@ enum ExploreFixtures {
         [sleep, heartRate, steps, cyclingDistance, workouts]
     }
 
+    /// The same synthetic population backs the catalog's filters. Without
+    /// these facts, a simulator's denied reads leave all other types unknown
+    /// and Hide Types Without Data cannot show the five sample profiles alone.
+    static func quickFacts(for identifiers: [String]) -> [String: TypeQuickFacts] {
+        let population = Dictionary(uniqueKeysWithValues: profiles.map { ($0.typeIdentifier, $0) })
+        return Dictionary(uniqueKeysWithValues: identifiers.map { id in
+            let profile = population[id]
+            return (id, TypeQuickFacts(
+                typeIdentifier: id, earliestStart: profile?.earliestStart,
+                latestStart: profile?.latestStart, sourceNames: profile?.sources.map(\.name) ?? []))
+        })
+    }
+
     private static let calendar = Calendar.current
     private static let now = Date()
     private static func daysAgo(_ days: Int) -> Date {

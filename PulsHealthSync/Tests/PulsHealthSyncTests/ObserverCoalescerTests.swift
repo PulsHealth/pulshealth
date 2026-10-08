@@ -187,11 +187,13 @@ import Testing
     @Test func expiryAcknowledgesAtOnceAndOnlyOnce() async {
         let time = FakeBackgroundTime()
         let engine = await makeEngine(window: 0, enabled: ["a"], time: time)
-        _ = await engine.claimTypes(["a"])
         let deliveries = [Delivery(), Delivery()]
 
-        // Two deliveries in one burst.
+        // Configure before claiming: settings are deliberately refused while
+        // a run holds the current destination.
         await engine.useObserverWindow(60)
+        _ = await engine.claimTypes(["a"])
+        // Two deliveries in one burst.
         await engine.enqueueObserverUpdate(types: ["a"], completion: deliveries[0].completion)
         await engine.enqueueObserverUpdate(types: ["a"], completion: deliveries[1].completion)
         // Flushed by hand rather than by the armed 60 s timer, which then

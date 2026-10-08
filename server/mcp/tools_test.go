@@ -723,7 +723,7 @@ func TestListUsers(t *testing.T) {
 	if len(pinnedOut.Users) != 1 || pinnedOut.Users[0].UserID != otherUserID {
 		t.Errorf("a pinned instance listed %+v, want only %s", pinnedOut.Users, otherUserID)
 	}
-	if q := f.lastQuery(t, "/v1/users"); q.Has("user") {
+	if q := f.lastQuery(t, "/v1/users"); q.Get("user") != otherUserID {
 		t.Errorf("/v1/users carried user=%q from the pin", q.Get("user"))
 	}
 
@@ -930,7 +930,7 @@ func resultText(t *testing.T, res *mcp.CallToolResult, err error) string {
 }
 
 const fixtureSummary = "# Health summary for Test Person — last 7 days\n\n" +
-	"2026-09-01 to 2026-09-07, 7 calendar days in Europe/Berlin (the server's time zone). Generated 2026-09-07 10:00.\n\n" +
+	"2026-09-01 to 2026-09-07, 7 calendar days in Europe/Berlin (the account's reporting time zone). Generated 2026-09-07 10:00.\n\n" +
 	"## Activity\n- Steps: 8,412 per day on average (58,884 in total; 7 days with data)\n\n" +
 	"## Coverage\n- Last sync: 2026-09-07 09:58. 7 of 7 days have data.\n"
 

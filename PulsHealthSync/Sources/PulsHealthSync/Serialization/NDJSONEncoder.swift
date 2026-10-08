@@ -20,6 +20,7 @@ enum BatchSerializer {
         var schemaVersion: Int
         /// "<marketing version> (<build>)" of the producing app, or "unknown".
         var clientVersion: String
+        var timeZoneID: String?
         var batchID: UUID
         var deviceID: String
         var type: String
@@ -40,6 +41,7 @@ enum BatchSerializer {
             let c = try decoder.container(keyedBy: CodingKeys.self)
             schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 0
             clientVersion = try c.decodeIfPresent(String.self, forKey: .clientVersion) ?? "unknown"
+            timeZoneID = try c.decodeIfPresent(String.self, forKey: .timeZoneID)
             batchID = try c.decode(UUID.self, forKey: .batchID)
             deviceID = try c.decode(String.self, forKey: .deviceID)
             type = try c.decode(String.self, forKey: .type)
@@ -56,6 +58,7 @@ enum BatchSerializer {
 
         init(
             schemaVersion: Int = PulsProtocol.version, clientVersion: String,
+            timeZoneID: String? = TimeZone.current.identifier,
             batchID: UUID, deviceID: String, type: String, reason: SyncReason,
             exportedAt: Date, sampleCount: Int, deletionCount: Int,
             routeCount: Int, aggregateCount: Int, seriesCount: Int,
@@ -63,6 +66,7 @@ enum BatchSerializer {
         ) {
             self.schemaVersion = schemaVersion
             self.clientVersion = clientVersion
+            self.timeZoneID = timeZoneID
             self.batchID = batchID
             self.deviceID = deviceID
             self.type = type

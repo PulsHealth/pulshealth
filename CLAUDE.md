@@ -226,11 +226,16 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   scheduled path runs from the `BGProcessingTask` while the device is locked.
   Store the local `date` straight through, never UTC-shifted (the PK is a
   plain `date`), or a day splits across two rows.
-- **`PULS_TIME_ZONE` must match the phone's zone.** Aggregate day buckets and
-  ring dates are the phone's calendar days; the server's day boundary for
-  `metric_daily` and every server-side daily query is `PULS_TIME_ZONE` (stored
-  by `db/migrations/013_time_zone.sh`, exposed as `puls_time_zone()`, default
-  UTC).
+- **Account calendars and recorded phone days are distinct.** `users.time_zone`
+  is the reporting calendar for server-side raw-day queries; NULL falls back
+  to `PULS_TIME_ZONE` via `puls_user_time_zone(user_id)`. Only newly approved
+  hosted users initialize it from their first phone header; travel never
+  silently changes it. The Account page can change it explicitly. Daily
+  aggregate buckets retain their recorded temporal-context local date;
+  contextless legacy buckets use the reporting zone. Rings retain their date.
+  `metric_daily` splits hourly raw rollups at fractional-offset midnight using
+  the underlying samples, never proportional allocation. API/MCP/viewer must
+  resolve a user's zone per request, never mutate shared global state.
 - **A locked device means HealthKit is unreadable.** Every query fails with
   `errorDatabaseInaccessible`, and iOS runs `BGProcessingTask` when the device
   is idle — overnight, locked. Check `ProtectedData.isAvailable` (or
@@ -616,9 +621,9 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   annotated read-only. Its tool descriptions and embedded `guide.md` spell out
   units, the time-zone rule and the double-counting rule for the model — update
   them with any change to the API's shapes. Its zone comes from the API's
-  `GET /v1/users` (`timeZone`) unless `PULS_TIME_ZONE` is set, which only
-  warns when the two differ; the API itself refuses to start when its zone
-  and `puls_time_zone()` disagree. In stdio mode stdout is the
+  `GET /v1/users?user=...` (each user's `timeZone`); `PULS_TIME_ZONE` is only
+  a legacy fallback when an older API lacks per-user settings. The API checks
+  its deployment fallback against `puls_time_zone()` at startup. In stdio mode stdout is the
   transport: never print to it; logs go to stderr.
 - Grafana datasource UID `puls-tsdb` is hardcoded in dashboard JSON — keep it stable.
 - Debounces are intentional: state persist 250 ms, event-log save 1 s. Edits

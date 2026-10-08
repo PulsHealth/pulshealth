@@ -1736,3 +1736,25 @@ func TestServerVersion(t *testing.T) {
 		t.Errorf("serverVersion() = %q, want the build commit", got)
 	}
 }
+
+func TestBatchHeaderTimeZone(t *testing.T) {
+	for _, zone := range []string{"", "UTC", "America/Los_Angeles", "Asia/Kolkata", "Local", "Unknown/Nowhere", strings.Repeat("x", 101)} {
+		t.Run(zone, func(t *testing.T) {
+			body := ndjson(t, 0, 0)
+			encoded, _ := json.Marshal(zone)
+			body = strings.Replace(body, "{", `{"timeZoneID":`+string(encoded)+`,`, 1)
+			batch, err := ParseBatch(strings.NewReader(body))
+			valid := zone == "" || zone == "UTC" || zone == "America/Los_Angeles" || zone == "Asia/Kolkata"
+			if valid {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if batch.Header.TimeZoneID != zone {
+					t.Fatalf("zone = %q", batch.Header.TimeZoneID)
+				}
+			} else if err == nil {
+				t.Fatal("invalid zone accepted")
+			}
+		})
+	}
+}

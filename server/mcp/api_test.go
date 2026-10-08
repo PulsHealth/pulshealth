@@ -390,7 +390,7 @@ func TestAPIClient_SendsUserWhenPinned(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if q := f.lastQuery(t, "/v1/users"); q.Has("user") {
+	if q := f.lastQuery(t, "/v1/users"); q.Get("user") != otherUserID {
 		t.Errorf("/v1/users carried user=%q", q.Get("user"))
 	}
 	if len(users.Users) != 2 || users.Default != defaultUserID || users.MultiUser {

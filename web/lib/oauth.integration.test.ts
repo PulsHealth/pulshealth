@@ -177,6 +177,20 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("OAuth for AI assistants (integration)",
     expect((await oauth.refreshGrant({ refreshToken: grant.refreshToken, clientId, scope: null })).ok).toBe(true);
   });
 
+  it("does not revoke a rotated token's grant when another client replays it", async () => {
+    const other = await oauth.registerClient({ name: "Other app", redirectUris: [REDIRECT], authMethod: "none", grantTypes: ["authorization_code", "refresh_token"] });
+    clients.push(other.id);
+    const grant = await newGrant();
+    const rotated = await oauth.refreshGrant({ refreshToken: grant.refreshToken, clientId, scope: null });
+    expect(rotated.ok).toBe(true);
+    if (!rotated.ok) return;
+
+    expect(await oauth.refreshGrant({ refreshToken: grant.refreshToken, clientId: other.id, scope: null }))
+      .toEqual({ ok: false, error: "invalid_grant", reused: false });
+    expect((await grantRow(grant.grantId)).revoked).toBe(false);
+    expect((await oauth.refreshGrant({ refreshToken: rotated.grant.refreshToken, clientId, scope: null })).ok).toBe(true);
+  });
+
   it("refreshes nothing for a disabled account or one without a password", async () => {
     const grant = await newGrant(otherAccountId);
     await admin.query("UPDATE auth.accounts SET disabled_at = now() WHERE id = $1", [otherAccountId]);

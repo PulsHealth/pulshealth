@@ -1,6 +1,8 @@
 // When charts may read metric_daily, the database's canonical daily view,
 // instead of rolling raw samples up themselves.
 
+import { viewerMode } from "../mode";
+import { reportingTimeZone } from "../reportingTimeZone";
 import { query } from "../db";
 import { configuredTimeZone } from "../config";
 import { warnOnce } from "./source";
@@ -52,7 +54,12 @@ async function databaseTimeZone(): Promise<string | null> {
  * relabeling those canonical dates. Reads through query(), so callers decide
  * this BEFORE opening their scoped transaction.
  */
-export async function metricDailyUsable(): Promise<boolean> {
+export async function metricDailyUsable(userId?: string): Promise<boolean> {
+  // Migration 026 computes raw daily rows per account and retains phone dates.
+  if (viewerMode() === "accounts" && userId) {
+    await reportingTimeZone(userId);
+    return true;
+  }
   const viewerZone = configuredTimeZone();
   const dbZone = await databaseTimeZone();
   if (dbZone === viewerZone) return true;

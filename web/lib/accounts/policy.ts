@@ -26,10 +26,10 @@ export type RouteClass =
  * /demo is a route handler that signs into the demo account, or answers 404
  * when there is none (app/demo/route.ts).
  */
-export const PUBLIC_PAGES = ["/login", "/signup", "/demo"] as const;
+export const PUBLIC_PAGES = ["/login", "/signup", "/demo", "/forgot-password"] as const;
 // Sign-out too: leaving a session that already expired should not be an
 // error. Every POST, these included, still has to pass the origin check.
-export const PUBLIC_API = ["/api/auth/login", "/api/auth/invite", "/api/auth/logout", "/api/auth/signup"] as const;
+export const PUBLIC_API = ["/api/auth/login", "/api/auth/invite", "/api/auth/logout", "/api/auth/signup", "/api/auth/forgot-password", "/api/auth/reset-password"] as const;
 
 export function classifyPath(pathname: string, development = false): RouteClass {
   if (pathname === "/api/healthz") return "health";
@@ -47,7 +47,7 @@ export function classifyPath(pathname: string, development = false): RouteClass 
   if ((PUBLIC_PAGES as readonly string[]).includes(pathname)) return "public";
   if ((PUBLIC_API as readonly string[]).includes(pathname)) return "public";
   // /invite/<token>: exactly one segment, the token.
-  if (/^\/invite\/[^/]+$/.test(pathname)) return "public";
+  if (/^\/(invite|reset-password|deletion)\/[^/]+$/.test(pathname)) return "public";
   return "protected";
 }
 

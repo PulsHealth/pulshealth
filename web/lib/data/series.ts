@@ -16,7 +16,7 @@
 
 import { scoped, type QueryFn } from "../db";
 import { typeByIdentifier } from "../catalog";
-import { configuredTimeZone } from "../config";
+import { reportingTimeZone } from "../reportingTimeZone";
 import { defaultAgg, RANGES, resolvePresetWindow } from "../metrics";
 import { demoLatest, demoSeries, demoTodaySum } from "../demo";
 import type { Latest, RangeKey, Series, SeriesPoint } from "../types";
@@ -89,10 +89,10 @@ export async function getSeries(userId: string, identifier: string, range: Range
     const window = resolvePresetWindow(range, new Date(), earliest);
     if (!window) return empty; // All Time with no samples at all
     const { start: from, bucket, bucketMs } = window;
-    const timeZone = configuredTimeZone();
+    const timeZone = await reportingTimeZone(userId);
     // Decided before the transaction: it reads the database's zone through
     // query(), which must not run inside a scoped callback.
-    const dailyUsable = type?.kind !== "category" && (await metricDailyUsable());
+    const dailyUsable = type?.kind !== "category" && (await metricDailyUsable(userId));
 
     return await scoped(userId, async (q) => {
       if (type?.kind === "category") {
@@ -304,7 +304,7 @@ export async function getTodayTotals(userId: string, identifiers: string[]): Pro
   if (!identifiers.length) return out;
   return liveRead("getTodayTotals", () => new Map(identifiers.map((id) => [id, demoTodaySum(id)])), async () => {
     for (const id of identifiers) out.set(id, 0);
-    const timeZone = configuredTimeZone();
+    const timeZone = await reportingTimeZone(userId);
 
     // Read Today directly from raw local-day samples so the live headline does
     // not depend on aggregate refresh or bucket-settlement timing. Choose one
@@ -344,9 +344,9 @@ export async function getDailySparklines(userId: string, identifiers: string[], 
   return liveRead("getDailySparklines", () => new Map(identifiers.map((id) => [id, demoSparkline(id, days)])), async () => {
     const byId = new Map<string, number[]>();
     // Decided before the transaction (it reads through query()).
-    const dailyUsable = await metricDailyUsable();
+    const dailyUsable = await metricDailyUsable(userId);
+    const timeZone = await reportingTimeZone(userId);
     return await scoped(userId, async (q) => {
-      const timeZone = configuredTimeZone();
 
       // Covered types: daily best-guess-of-truth. A type metric_daily has no
       // rows for (not covered, or nothing in the window) reads raw samples.

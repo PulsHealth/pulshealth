@@ -1,14 +1,10 @@
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 
 import { accountsOnly, refuseDemo, clearSessionCookie, field, readForm, requestSession, seeOther } from "@/lib/accounts/http";
-import { notifyDeletion } from "@/lib/accounts/mail";
-import { deleteMyAccount } from "@/lib/accounts/signups";
+import { completeDeletion, requestDeletion } from "@/lib/accounts/deletion";
 
-// "Delete my account": the account is disabled, its sessions end and its
-// iPhones are disconnected at once (in the database, one transaction), and
-// the operator is told to purge the stored data from /admin. Needs the box
-// ticked; only for self-service accounts (household accounts are the
-// operator's to remove), never administrators.
+// Revoke access and durably queue erasure, then try to finish it now. The
+// database worker retries automatically if this request cannot finish.
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
@@ -18,13 +14,22 @@ export async function POST(request: NextRequest) {
   if (!session) return seeOther("/login?next=%2Faccount");
   const demo = refuseDemo(session);
   if (demo) return demo;
-  if (session.isAdmin || !session.selfService) return seeOther("/account?error=forbidden");
+  if (session.isAdmin || !session.canDelete) return seeOther("/account?error=forbidden");
   const form = await readForm(request);
   if (field(form, "confirm") !== "yes") return seeOther("/account?error=failed");
   try {
-    const userId = await deleteMyAccount(session.id);
-    await notifyDeletion({ email: session.email, userId });
-    return clearSessionCookie(seeOther("/login?notice=deleted"));
+    const { userId, receipt } = await requestDeletion(session.id);
+    // Deliver the private status link before lengthy compressed-data erasure
+    // can hit a browser/proxy timeout. The durable worker is the fallback if
+    // this process exits before the after-response attempt finishes.
+    after(async () => {
+      try {
+        await completeDeletion(userId);
+      } catch (e) {
+        console.error("[puls-web] deletion queued for retry", { code: (e as { code?: string }).code ?? "unknown" });
+      }
+    });
+    return clearSessionCookie(seeOther(`/deletion/${receipt}`));
   } catch (e) {
     console.error("[puls-web] account deletion failed:", e instanceof Error ? e.message : e);
     return seeOther("/account?error=failed");

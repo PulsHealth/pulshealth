@@ -1,5 +1,7 @@
 "use client";
 
+import { useTimeZone } from "./TimeZoneProvider";
+
 // The metric detail chart: a hand-drawn SVG line (with a min–max band) or bar
 // series that the reader can inspect and zoom without a chart library.
 //
@@ -67,6 +69,7 @@ export function TrendChart({
   height?: number;
   name?: string;
 }) {
+  const timeZone = useTimeZone();
   const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [w, setW] = useState(720);
@@ -402,7 +405,7 @@ export function TrendChart({
   // Flip the tooltip inward near the edges rather than letting it overflow.
   const tipShift = ax < w * 0.22 ? "-8%" : ax > w * 0.78 ? "-92%" : "-50%";
 
-  const windowText = formatWindow(domain.start, domain.end, bucketMs);
+  const windowText = formatWindow(domain.start, domain.end, bucketMs, timeZone);
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
@@ -410,7 +413,7 @@ export function TrendChart({
         <div id={readoutId} aria-live="polite" aria-atomic="true" className="tabular" style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {active ? (
             <>
-              <span>{formatBucket(active.t, bucketMs)}</span>
+              <span>{formatBucket(active.t, bucketMs, timeZone)}</span>
               <span style={{ color: "var(--fg)", fontWeight: 600, marginLeft: 10 }}>
                 {formatValue(active.value)}
                 {unit && ` ${unit}`}
@@ -491,7 +494,7 @@ export function TrendChart({
           {/* x labels */}
           {xlabels.map((d) => (
             <text key={d.i} x={d.x} y={height - 9} textAnchor="middle" fontSize="10.5" fill="var(--faint)" className="mono">
-              {tickLabel(d.t, bucketMs)}
+              {tickLabel(d.t, bucketMs, timeZone)}
             </text>
           ))}
 
@@ -549,7 +552,7 @@ export function TrendChart({
               transform: `translate(${tipShift}, -120%)`,
             }}
           >
-            <div style={{ color: "var(--muted)", fontSize: 11, marginBottom: 2 }}>{formatBucket(active.t, bucketMs)}</div>
+            <div style={{ color: "var(--muted)", fontSize: 11, marginBottom: 2 }}>{formatBucket(active.t, bucketMs, timeZone)}</div>
             <div style={{ fontWeight: 600 }}>
               {formatValue(active.value)}
               {unit && <span style={{ color: "var(--muted)", fontWeight: 400 }}> {unit}</span>}

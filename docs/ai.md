@@ -99,8 +99,9 @@ The rest of this page is for people running their own PulsHealth database.
 | Logged moods and emotions | `get_state_of_mind` |
 
 Daily values are the deduplicated ones (no iPhone + Watch double counting),
-every value carries its unit, and dates are calendar days in your
-`PULS_TIME_ZONE`. Sleep follows Apple Health: a night is dated by the day you
+every value carries its unit, and requested dates use the selected account's
+reporting time zone. Phone aggregates and rings retain recorded phone calendar
+dates, which can differ from raw reporting dates during travel. Sleep follows Apple Health: a night is dated by the day you
 wake up, and where several devices recorded the same night nothing is summed
 across them. `get_samples` is the one tool that returns undeduplicated
 records; that is what makes it useful for looking at particular readings and
@@ -173,10 +174,10 @@ Go 1.26 or newer. Check it with `PULS_API_TOKEN=x pulshealth-mcp --version`.
 
 Every stdio snippet below uses the same two variables: `PULS_API_URL`
 (the product API) and `PULS_API_TOKEN` (from `server/.env`). The calendar
-zone needs no setting: the MCP server asks the API for it (`GET /v1/users`
-reports the stack's `PULS_TIME_ZONE`, which the API checks against the
-database when it starts). Setting `PULS_TIME_ZONE` here overrides that, and a
-value that differs from the API's is logged as a warning.
+zone needs no setting: the MCP server asks `GET /v1/users?user=...` for the
+selected account's `timeZone`. Its account setting takes precedence over
+`PULS_TIME_ZONE`; that environment variable is only a legacy fallback for
+older APIs without per-account zones.
 
 ### Claude Desktop
 

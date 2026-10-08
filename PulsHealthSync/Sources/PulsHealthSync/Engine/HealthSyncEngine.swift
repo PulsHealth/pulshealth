@@ -47,6 +47,8 @@ public actor HealthSyncEngine {
     /// Types (and "agg:<uuid>" aggregate-config keys) with a sync currently
     /// running (prevents overlapping runs per type/config).
     var activeSyncs: Set<String> = []
+    // Held across store awaits: no run may capture a half-applied destination.
+    var configurationMutationInProgress = false
     /// Keys asked to sync while a run was active — re-run when the active one finishes.
     var pendingResync: Set<String> = []
     // Internal (not private) so the ActivitySummarySync extension can mark the
@@ -182,32 +184,65 @@ public actor HealthSyncEngine {
     /// beforehand) or keep progress, and then with `confirmServerIdentity`
     /// so the store records the new identity as the one its progress belongs to.
     ///
+    /// Returns false without changing anything while a sync is in flight.
+    /// Captured transports must finish before credentials or destination change.
     /// A nil `authToken` keeps the stored token for the same database and
     /// user (`SyncStateStore.setConfiguration`); `clearAuthToken()` deletes it.
-    public func configure(_ config: SyncConfiguration, confirmServerIdentity: Bool = false) async {
+    @discardableResult
+    public func configure(
+        _ config: SyncConfiguration, confirmServerIdentity: Bool = false, clearAuthToken: Bool = false
+    ) async -> Bool {
+        guard activeSyncs.isEmpty, !configurationMutationInProgress else { return false }
+        configurationMutationInProgress = true
+        defer { configurationMutationInProgress = false }
+        // Reset a reidentified series under the same exclusion as configure;
+        // otherwise an old in-flight pass can restore its previous watermark.
+        let previous = await store.configuration
+        for aggregate in config.aggregates {
+            guard let old = previous.aggregates.first(where: { $0.id == aggregate.id }) else { continue }
+            if old.seriesIdentity != aggregate.seriesIdentity || old.startDate != aggregate.startDate {
+                await store.resetAggregate(configID: aggregate.id)
+                await eventLog.log(.warn, type: aggregate.typeIdentifier,
+                    "Aggregate changed — the next sync computes it from the start")
+            }
+        }
         await store.setConfiguration(config, confirmServerIdentity: confirmServerIdentity)
+        if clearAuthToken { await store.clearAuthToken() }
         await store.pruneAggregateStates(keeping: Set(config.aggregates.map(\.id)))
         observerCoalesceWindow = max(0, config.observerCoalesceWindow)
         // From the store, not `config`: the token the store kept is the one
         // to sync with.
         buildTransport(from: await store.configuration)
         notifyChanged()
+        return true
     }
 
     /// Replace the bearer token alone (`SyncStateStore.setAuthToken`).
-    public func setAuthToken(_ token: String) async {
+    /// Returns false while a sync or configuration change is in flight.
+    @discardableResult
+    public func setAuthToken(_ token: String) async -> Bool {
+        guard activeSyncs.isEmpty, !configurationMutationInProgress else { return false }
+        configurationMutationInProgress = true
+        defer { configurationMutationInProgress = false }
         await store.setAuthToken(token)
         buildTransport(from: await store.configuration)
         notifyChanged()
+        return true
     }
 
     /// Delete the bearer token (`SyncStateStore.clearAuthToken`): the user
     /// emptied the token field or disconnected the database. Syncing stops
-    /// until a token is applied again.
-    public func clearAuthToken() async {
+    /// until a token is applied again. Returns false while a sync or
+    /// configuration change is in flight; a caller must retry after it finishes.
+    @discardableResult
+    public func clearAuthToken() async -> Bool {
+        guard activeSyncs.isEmpty, !configurationMutationInProgress else { return false }
+        configurationMutationInProgress = true
+        defer { configurationMutationInProgress = false }
         await store.clearAuthToken()
         buildTransport(from: await store.configuration)
         notifyChanged()
+        return true
     }
 
     /// Whether HealthKit can be read right now. False means the device is
@@ -232,6 +267,8 @@ public actor HealthSyncEngine {
     /// in the state store — rebuild it on demand so cold launches (background
     /// task wake-ups especially) can sync without waiting for `configure`.
     func ensureTransport() async {
+        guard let configurationUse = beginConfigurationUse() else { return }
+        defer { activeSyncs.remove(configurationUse) }
         // Never clobber a transport injected via `setTransport` (tests/benchmark).
         guard transport == nil else { return }
         buildTransport(from: await store.configuration)
@@ -379,6 +416,16 @@ public actor HealthSyncEngine {
 
     // MARK: - Status for the app
 
+    /// A pass may snapshot settings before it claims individual types, or
+    /// release all children between phases. Keep its destination stable for
+    /// that entire lifetime, not just while an individual upload is active.
+    func beginConfigurationUse() -> String? {
+        guard !configurationMutationInProgress else { return nil }
+        let key = "configuration-use:\(UUID())"
+        activeSyncs.insert(key)
+        return key
+    }
+
     /// Whether a run is in flight for `key`: a raw type identifier, the rings
     /// key, `"agg:<uuid>"`, or `"workout-enrich:<kind>"`.
     public func isSyncing(_ key: String) -> Bool { activeSyncs.contains(key) }
@@ -394,7 +441,7 @@ public actor HealthSyncEngine {
     public func resetType(_ identifier: String) async -> Bool {
         let isRings = HealthTypeCatalog.isActivitySummary(identifier)
         let key = isRings ? "activitySummary" : identifier
-        guard !activeSyncs.contains(key) else { return false }
+        guard !configurationMutationInProgress, !activeSyncs.contains(key) else { return false }
         activeSyncs.insert(key)
         defer { activeSyncs.remove(key) }
         if isRings {
@@ -413,7 +460,7 @@ public actor HealthSyncEngine {
     @discardableResult
     public func resetAggregate(configID: UUID) async -> Bool {
         let key = "agg:\(configID.uuidString)"
-        guard !activeSyncs.contains(key) else { return false }
+        guard !configurationMutationInProgress, !activeSyncs.contains(key) else { return false }
         activeSyncs.insert(key)
         defer { activeSyncs.remove(key) }
         await store.resetAggregate(configID: configID)
@@ -424,7 +471,9 @@ public actor HealthSyncEngine {
     /// Reset every anchor and watermark. Refused while anything is running.
     @discardableResult
     public func resetAll() async -> Bool {
-        guard activeSyncs.isEmpty else { return false }
+        guard activeSyncs.isEmpty, !configurationMutationInProgress else { return false }
+        configurationMutationInProgress = true
+        defer { configurationMutationInProgress = false }
         await store.resetAll()
         notifyChanged()
         return true
@@ -552,6 +601,8 @@ public actor HealthSyncEngine {
     /// The first two phases are there because a first backfill is long and the
     /// things worth looking at soonest are the cheapest to produce.
     public func syncAllEnabled(reason: SyncReason = .backfill) async {
+        guard let configurationUse = beginConfigurationUse() else { return }
+        defer { activeSyncs.remove(configurationUse) }
         let config = await store.configuration
         // Activity summaries aren't anchored/sample-based — they ride their own
         // HKActivitySummaryQuery path, so keep them out of syncTypes.
@@ -646,6 +697,8 @@ public actor HealthSyncEngine {
     /// is on the server within the opening minutes. The types are independent,
     /// so this only changes what finishes when.
     public func syncTypes(_ ids: [String], reason: SyncReason = .backfill) async {
+        guard let configurationUse = beginConfigurationUse() else { return }
+        defer { activeSyncs.remove(configurationUse) }
         guard !ids.isEmpty else { return }
         if reason == .incremental {
             await eventLog.log(.info, "Starting incremental sync of \(ids.count) types (merged batches)")
@@ -669,6 +722,7 @@ public actor HealthSyncEngine {
     /// merged pass that came along meanwhile — an observer wake, above all —
     /// and the slot then found its type taken and skipped it.
     func claimTypes(_ ids: [String]) -> [String] {
+        guard !configurationMutationInProgress else { return [] }
         var claimed: [String] = []
         for id in ids {
             if activeSyncs.contains(id) {
@@ -728,6 +782,8 @@ public actor HealthSyncEngine {
 
     /// Sync one type: anchored-query pages until drained, uploading each page.
     public func sync(type identifier: String, reason: SyncReason = .incremental) async {
+        guard let configurationUse = beginConfigurationUse() else { return }
+        defer { activeSyncs.remove(configurationUse) }
         await refreshReadableHistory()
         guard claimTypes([identifier]) == [identifier] else { return }
         await sendRecentWindows([identifier], reason: reason)
@@ -750,6 +806,10 @@ public actor HealthSyncEngine {
     /// independent of HealthKit sample availability and should take effect when
     /// the user taps Save & Apply.
     public func syncProfile(reason: SyncReason = .manual) async throws {
+        let key = "profile:\(UUID())"
+        guard !configurationMutationInProgress else { throw SyncError.configurationBusy }
+        activeSyncs.insert(key)
+        defer { activeSyncs.remove(key) }
         await ensureTransport()
         guard let transport else { throw TransportError.notConfigured }
         let config = await store.configuration
@@ -1139,6 +1199,10 @@ public actor HealthSyncEngine {
     /// a run that found nothing anywhere throws `reconciliationUnreadable`
     /// rather than record itself as in sync.
     public func reconcile(type identifier: String) async throws -> ReconciliationReport {
+        let key = "reconcile:\(UUID())"
+        guard !configurationMutationInProgress else { throw SyncError.configurationBusy }
+        activeSyncs.insert(key)
+        defer { activeSyncs.remove(key) }
         guard let descriptor = HealthTypeCatalog.descriptor(for: identifier),
               let sampleType = descriptor.sampleType else {
             throw SyncError.unknownType(identifier)
@@ -1510,6 +1574,8 @@ public actor HealthSyncEngine {
     }
 
     private func runObserverWake(types: Set<String>, deliveries: Int) async {
+        guard let configurationUse = beginConfigurationUse() else { return }
+        defer { activeSyncs.remove(configurationUse) }
         let sorted = types.sorted()
 
         // A locked device means HealthKit is unreadable: each type would fail
@@ -1662,6 +1728,7 @@ enum PassFailure {
 }
 
 public enum SyncError: Error, LocalizedError {
+    case configurationBusy
     case healthDataUnavailable
     case authorizationNotDetermined
     case unknownType(String)
@@ -1679,6 +1746,8 @@ public enum SyncError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
+        case .configurationBusy:
+            return "Database settings are being applied. Try again in a moment."
         case .healthDataUnavailable:
             return "HealthKit is not available on this device"
         case .authorizationNotDetermined:

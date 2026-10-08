@@ -3,8 +3,8 @@ import type { NextRequest } from "next/server";
 import { accountsOnly, field, readForm, requestIp, seeOther, setSessionCookie } from "@/lib/accounts/http";
 import { burnPasswordCheck, hashPassword, needsRehash, PASSWORD_MAX_LENGTH, verifyPassword } from "@/lib/accounts/password";
 import { authFailures, checkAll, failureKeys, refundAll, takeAll } from "@/lib/accounts/ratelimit";
-import { createSession, deleteSession, SESSION_COOKIE, signedInFrom, tokenHash } from "@/lib/accounts/session";
-import { findAccountForLogin, normalizeEmail, replacePasswordHash } from "@/lib/accounts/store";
+import { SESSION_COOKIE, signedInFrom, tokenHash } from "@/lib/accounts/session";
+import { findAccountForLogin, finishPasswordLogin, normalizeEmail } from "@/lib/accounts/store";
 import { safeReturnPath } from "@/lib/viewer";
 
 // The sign-in form posts here (accounts mode). proxy.ts has already refused
@@ -50,17 +50,17 @@ export async function POST(request: NextRequest) {
       return back("invalid");
     }
     if (!(await verifyPassword(password, account.passwordHash))) return back("invalid");
-    refundAll(authFailures, keys);
-    if (needsRehash(account.passwordHash)) await replacePasswordHash(account.id, await hashPassword(password));
+    const replacementHash = needsRehash(account.passwordHash) ? await hashPassword(password) : null;
 
     // A new session id on every sign-in; the one this browser held, if any,
     // is retired so a planted cookie cannot ride into the signed-in session.
     const previous = tokenHash(request.cookies.get(SESSION_COOKIE)?.value);
-    if (previous) await deleteSession(previous);
-    const token = await createSession(account.id, {
+    const token = await finishPasswordLogin(account, replacementHash, {
       userAgent: request.headers.get("user-agent"),
       ip,
-    });
+    }, previous);
+    if (!token) return back("invalid");
+    refundAll(authFailures, keys);
     return setSessionCookie(seeOther(next), token);
   } catch (e) {
     // The server's fault, not a wrong guess.

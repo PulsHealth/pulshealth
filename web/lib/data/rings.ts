@@ -1,7 +1,7 @@
 // Today's activity rings (HKActivitySummary), one row per local day.
 
 import { scoped } from "../db";
-import { configuredTimeZone } from "../config";
+import { reportingTimeZone } from "../reportingTimeZone";
 import { demoActivityRings } from "../demo";
 import type { ActivityRingsData } from "../types";
 import { liveRead } from "./source";
@@ -17,6 +17,7 @@ export async function getActivityRings(userId: string): Promise<ActivityRingsDat
     hasData: false,
   };
   return liveRead("getActivityRings", demoActivityRings, async () => {
+    const timeZone = await reportingTimeZone(userId);
     const rows = await scoped(userId, (q) => q<{
       date: string;
       move_kcal: number | null;
@@ -38,7 +39,7 @@ export async function getActivityRings(userId: string): Promise<ActivityRingsDat
         WHERE user_id = $1::uuid
           AND date = (now() AT TIME ZONE $2::text)::date
         LIMIT 1`,
-      [userId, configuredTimeZone()],
+      [userId, timeZone],
     ));
     if (!rows.length) return fallback;
     const r = rows[0];

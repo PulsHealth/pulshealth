@@ -17,7 +17,7 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { isIP } from "node:net";
-import { query } from "../db";
+import { query, type QueryFn } from "../db";
 import { demoUserId } from "../mode";
 
 export const SESSION_COOKIE = "__Host-puls-session";
@@ -67,6 +67,8 @@ export interface Session {
   isAdmin: boolean;
   /** Made by an approved sign-up: may delete itself here. */
   selfService: boolean;
+  /** Database-authorized erasure: approved sign-up or operator-marked personal account. */
+  canDelete?: boolean;
   /**
    * The shared demo account's (WEB_DEMO_USER): view-only. Every route and
    * action that changes anything refuses it (lib/accounts/http.ts
@@ -93,10 +95,12 @@ export async function findSession(token: string | null | undefined, touch = fals
     email: string;
     is_admin: boolean;
     self_service: boolean;
+    can_delete: boolean;
     stale: boolean;
   }>(
     `SELECT s.account_id::text, a.user_id::text, a.email, a.is_admin,
             EXISTS (SELECT 1 FROM auth.self_service_users ss WHERE ss.user_id = a.user_id) AS self_service,
+            auth.can_delete_account(s.id) AS can_delete,
             s.last_seen_at < now() - interval '1 hour' AS stale
        FROM auth.sessions s
        JOIN auth.accounts a ON a.id = s.account_id
@@ -128,6 +132,7 @@ export async function findSession(token: string | null | undefined, touch = fals
     email: row.email,
     isAdmin: row.is_admin && !demo,
     selfService: row.self_service && !demo,
+    canDelete: row.can_delete && !demo,
     demo,
     refreshed,
   };
@@ -140,9 +145,9 @@ export interface SessionMeta {
 }
 
 /** Starts a session for `accountId`; returns the cookie's token. */
-export async function createSession(accountId: string, meta: SessionMeta): Promise<string> {
+export async function createSession(accountId: string, meta: SessionMeta, q: QueryFn = query): Promise<string> {
   const token = newToken();
-  await query(
+  await q(
     `INSERT INTO auth.sessions (id, account_id, expires_at, user_agent, ip)
      VALUES ($1, $2, now() + make_interval(days => $3), $4, $5)`,
     [tokenHash(token), accountId, SESSION_DAYS, meta.userAgent?.slice(0, 300) ?? null, meta.ip && isIP(meta.ip) ? meta.ip : null],

@@ -171,4 +171,29 @@ final class DatabaseSetupTests: XCTestCase {
         XCTAssertFalse(PulsHealthDatabase.isSignedIn(legacy))
         XCTAssertEqual(DatabaseSetup(applied: legacy).destination, .own)
     }
+    func testEditingConnectionFieldsRejectsAnInflightResultEvenAfterReverting() {
+        let original = ServerFieldsDraft(urlText: mine.absoluteString, tokenText: "old-token")
+        var state = DatabaseConnectionTest()
+        let oldRun = state.begin(for: original)
+        var edited = original
+        edited.tokenText = "new-token"
+        state.invalidate(for: edited)
+        XCTAssertFalse(state.running)
+        state.invalidate(for: original)
+        state.finish(.okNoCapabilities, run: oldRun)
+        XCTAssertNil(state.result, "an old request cannot certify edited fields")
+
+        let currentRun = state.begin(for: edited)
+        state.invalidate(for: edited) // Programmatic pairing's onChange is harmless.
+        XCTAssertTrue(state.running)
+        state.finish(.tokenRejected, run: oldRun)
+        XCTAssertTrue(state.running, "a superseded request cannot finish the current one")
+        state.finish(.okNoCapabilities, run: currentRun)
+        XCTAssertEqual(state.result, .okNoCapabilities)
+        XCTAssertFalse(state.running)
+        edited.urlText = "https://another.example.test"
+        state.invalidate(for: edited)
+        XCTAssertNil(state.result)
+    }
+
 }

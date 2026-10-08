@@ -79,7 +79,7 @@ subsystem. The list, so you know when to go and read it:
   server first.
 - **Aggregates overwrite; raw samples never do.**
 - **Activity rings upsert by date and are not samples.**
-- **`PULS_TIME_ZONE` must match the phone's zone.**
+- **Account reporting calendars and recorded phone days are distinct.**
 - **A locked device means HealthKit is unreadable** — background paths check
   and skip cleanly rather than report failure.
 - **Limited history access (iOS 27)** — never overwrite history HealthKit

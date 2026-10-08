@@ -187,6 +187,7 @@ public final class HealthExporter: Sendable {
             let outcome = await Self.outcome(of: engine, config: config)
             var failures = aligned.issues
                 + ExportPlan.failures(config: config, outcome: outcome, events: events)
+                + (request.dataRequest?.completionIssues(now: createdAt) ?? [])
             let unmappable = await engine.unmappableSampleCounts
             let tally = await transport.tally
             let written = try await transport.finish()

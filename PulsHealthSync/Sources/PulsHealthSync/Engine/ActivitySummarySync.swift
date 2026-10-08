@@ -21,6 +21,7 @@ import HealthKit
 extension HealthSyncEngine {
     /// Export activity summaries. Overlap-guarded like `sync(type:)`.
     public func syncActivitySummary(reason: SyncReason = .incremental) async {
+        guard !configurationMutationInProgress else { return }
         let key = "activitySummary"
         guard !activeSyncs.contains(key) else {
             pendingResync.insert(key)
@@ -51,6 +52,8 @@ extension HealthSyncEngine {
     /// mutates all day, and without it a burst of wakes would re-upload the
     /// same day over and over.
     func refreshActivitySummaryIfStale(minimumInterval: TimeInterval = 3600) async {
+        guard let configurationUse = beginConfigurationUse() else { return }
+        defer { activeSyncs.remove(configurationUse) }
         let config = await store.configuration
         guard config.enabledTypes.contains(HealthTypeCatalog.activitySummaryIdentifier) else { return }
         let state = await store.activitySummaryState

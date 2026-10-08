@@ -110,9 +110,9 @@ export async function sendApproval(r: { name: string; email: string; inviteToken
 export async function notifyDeletion(r: { email: string; userId: string }, base = publicBase()): Promise<boolean> {
   return noticeToAdmin(
     deletionNotices,
-    `PulsHealth: ${r.email} deleted their account`,
+    `PulsHealth: ${r.email} requested account deletion`,
     [
-      `${r.email} (user ${r.userId}) deleted their account on your viewer.`,
+      `${r.email} (user ${r.userId}) requested account deletion on your viewer.`,
       "",
       "It is disabled and its sync tokens are revoked, so nothing more arrives.",
       `Their data is still stored until you purge it: ${adminLink(base)}`,

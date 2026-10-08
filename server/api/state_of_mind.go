@@ -33,7 +33,11 @@ type StateOfMindEntry struct {
 // StateOfMind returns the entries whose instant falls on a local calendar
 // day overlapping [start, end), ordered by time.
 func (st *Store) StateOfMind(ctx context.Context, userID string, start, end time.Time) ([]StateOfMindEntry, error) {
-	firstDay, afterLastDay, err := localDayBounds(start, end, st.loc)
+	loc, err := st.UserLocation(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	firstDay, afterLastDay, err := localDayBounds(start, end, loc)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +67,7 @@ func (st *Store) StateOfMind(ctx context.Context, userID string, start, end time
 		if err := rows.Scan(&e.UUID, &ts, &e.Kind, &e.Valence, &e.ValenceClassification, &e.Labels, &e.Associations); err != nil {
 			return nil, err
 		}
-		e.Date = ts.In(st.loc).Format("2006-01-02")
+		e.Date = ts.In(loc).Format("2006-01-02")
 		e.Timestamp = ts.UTC().UnixMilli()
 		out = append(out, e)
 	}

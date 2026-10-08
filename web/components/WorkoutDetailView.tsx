@@ -1,5 +1,7 @@
 "use client";
 
+import { useTimeZone } from "./TimeZoneProvider";
+
 // Everything below the page header on a workout detail page. Client-side so the
 // metric/imperial unit toggle re-renders live; all values arrive canonical
 // (metric) and are formatted per the viewer's preference.
@@ -51,6 +53,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function WorkoutDetailView({ w, series, profile }: { w: WorkoutDetail; series: WorkoutSeries[]; profile: Profile }) {
   const { system } = useUnits();
+  const timeZone = useTimeZone();
   const color = GROUP_COLOR.workouts;
   const summary = routeSummary(w.route);
   const profilePts = routeProfile(w.route);
@@ -178,8 +181,8 @@ export function WorkoutDetailView({ w, series, profile }: { w: WorkoutDetail; se
 
       <Section title="Details">
         <div className="panel" style={{ overflow: "hidden" }}>
-          <DetailRow label="Started" value={formatFull(w.start)} first />
-          <DetailRow label="Ended" value={formatFull(w.end)} />
+          <DetailRow label="Started" value={formatFull(w.start, timeZone)} first />
+          <DetailRow label="Ended" value={formatFull(w.end, timeZone)} />
           {w.source && <DetailRow label="Source" value={w.source} />}
           {hasRoute && <DetailRow label="Route points" value={w.route.length.toLocaleString()} />}
           {hrSeries && <DetailRow label="HR samples" value={hrSeries.points.length.toLocaleString()} />}

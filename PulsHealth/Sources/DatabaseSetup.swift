@@ -138,3 +138,38 @@ struct DatabaseSetup: Equatable {
         self.signedIn = nil
     }
 }
+
+/// A test result belongs to the exact fields tested. Editing them invalidates
+/// both a displayed result and a still-running request, including edit/revert.
+struct DatabaseConnectionTest {
+    private(set) var result: ConnectionTestResult?
+    private(set) var running = false
+    private var fields: ServerFieldsDraft?
+    private var generation = 0
+
+    mutating func begin(for fields: ServerFieldsDraft) -> Int {
+        generation += 1
+        self.fields = fields
+        result = nil
+        running = true
+        return generation
+    }
+
+    mutating func invalidate(for fields: ServerFieldsDraft?) {
+        guard self.fields != fields else { return }
+        cancel()
+    }
+
+    mutating func cancel() {
+        generation += 1
+        fields = nil
+        result = nil
+        running = false
+    }
+
+    mutating func finish(_ result: ConnectionTestResult, run: Int) {
+        guard generation == run else { return }
+        self.result = result
+        running = false
+    }
+}

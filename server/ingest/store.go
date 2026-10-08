@@ -204,10 +204,23 @@ func (st *Store) insertBatchOnce(ctx context.Context, b *Batch, bodyBytes int64)
 	if userID == "" {
 		userID = defaultUserID
 	}
-	// batches.user_id references users on migrated databases. Creating the FK
-	// target is the only allowed mutation before the reservation; it is itself
-	// idempotent and carries no health data.
-	if err := ensureUser(ctx, tx, userID); err != nil {
+	if b.Header.DeviceTokenID != 0 {
+		// Prevent account deletion during authenticated writes without serializing
+		// concurrent uploads or ordinary profile updates. Never create
+		// a missing device-token owner: authentication may have happened before
+		// deletion committed while the request body was still uploading.
+		var owner string
+		if err := tx.QueryRow(ctx, `SELECT id::text FROM users WHERE id = $1 FOR KEY SHARE`, userID).Scan(&owner); err != nil {
+			return res, fmt.Errorf("lock authenticated user: %w", err)
+		}
+		var tokenID int64
+		if err := tx.QueryRow(ctx, `SELECT id FROM device_tokens
+			WHERE id = $1 AND user_id = $2 AND status = 'active' FOR SHARE`,
+			b.Header.DeviceTokenID, userID).Scan(&tokenID); err != nil {
+			return res, fmt.Errorf("revalidate device token: %w", err)
+		}
+	} else if err := ensureUser(ctx, tx, userID); err != nil {
+		// Self-hosted shared tokens retain their legacy create-on-first-upload behavior.
 		return res, fmt.Errorf("ensure user: %w", err)
 	}
 	var wakeID, trigger, deviceTokenID any
@@ -241,6 +254,20 @@ func (st *Store) insertBatchOnce(ctx context.Context, b *Batch, bodyBytes int64)
 			return res, fmt.Errorf("commit duplicate batch: %w", err)
 		}
 		return res, nil
+	}
+
+	// Initialize only newly approved hosted accounts. PostgreSQL and the phone
+	// may have different tzdb releases; an unknown zone leaves initialization
+	// pending instead of rejecting otherwise healthy data. Later uploads (for
+	// example while traveling) never move an established account calendar.
+	if b.Header.TimeZoneID != "" {
+		if _, err := tx.Exec(ctx, `UPDATE users
+			SET time_zone = $2, time_zone_auto_initialize = false
+			WHERE id = $1 AND time_zone IS NULL AND time_zone_auto_initialize
+			AND EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = $2)`,
+			userID, b.Header.TimeZoneID); err != nil {
+			return res, fmt.Errorf("initialize account time zone: %w", err)
+		}
 	}
 
 	insertStart := time.Now()

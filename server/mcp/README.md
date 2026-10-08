@@ -44,7 +44,7 @@ instance is pinned. Every tool is annotated read-only and idempotent.
 product API renders the page and the tool passes it on verbatim.
 
 Tool inputs and outputs use `YYYY-MM-DD` calendar days and ISO 8601 instants
-in the server's time zone. The server translates them to the product API's
+in the selected person's reporting time zone. The server translates them to the product API's
 epoch-millisecond, half-open ranges: an inclusive `start_date`…`end_date`
 becomes `[start of start_date, start of the day after end_date)` in that
 zone, DST included. API errors surface as tool errors carrying the HTTP
@@ -82,7 +82,7 @@ mode, pointed at `http://api:8081` over the internal network.
 | `PULS_MCP_OAUTH_SECRET` | OAuth (below): the HMAC-SHA256 key the web viewer signs access tokens with. At least 32 characters, never `change-me`. |
 | `PULS_MCP_URL` | OAuth: this server's public URL, path included (`https://mcp.example.com/mcp`) — the resource identifier, and the only `aud` a token may carry. https, or http for a loopback host. |
 | `PULS_MCP_OAUTH_ISSUER` | OAuth: the authorization server's issuer, the viewer's public origin (its `WEB_PUBLIC_URL`; Compose passes that). OAuth is on when the secret or the URL is set, and then all three are required — a partial setting stops startup. The issuer alone leaves OAuth off. |
-| `PULS_TIME_ZONE` | Optional. IANA zone every date is expressed in. Leave it unset: the server then uses the zone the product API reports on `GET /v1/users` (the stack's `PULS_TIME_ZONE`, which the API checks against the database at startup), learned before the first tool call. Set, it wins, and a value that differs from the API's is logged as a warning — dates would then be cut on different days than the API's daily answers. Against an API too old to report its zone, unset means UTC. |
+| `PULS_TIME_ZONE` | Legacy fallback IANA zone. A selected user's `timeZone` from `GET /v1/users?user=...` takes precedence, including for OAuth callers. The selected user’s zone is refreshed for every incoming tool, resource, or prompt request and reused only within that request. For older APIs without per-user zones, an explicit setting wins; otherwise the API's top-level `timeZone` is used, falling back to UTC when absent. |
 | `TRUST_PROXY_HEADERS` | `--http` mode: whether the auth-failure limiter keys on the **last** `X-Forwarded-For` entry (the one a trusted proxy appended) instead of the TCP peer. Same switch, default (`false`) and spelling rule as ingest's and the API's: `true/false`, `1/0`, `yes/no`, `on/off`, any case; anything else stops startup. |
 | `PULS_USER_ID` | Optional. Pins this instance to one person: every API request names that user, and a tool call naming anyone else is refused without asking the API. Empty (the default) leaves the choice to each call, falling back to the API's own default user. Compose sets it from `PULS_MCP_USER_ID`. It binds stdio and the static token only: an OAuth access token is always pinned to its own `sub`. |
 

@@ -16,7 +16,7 @@ const signups = vi.hoisted(() => ({
   accountExists: vi.fn(),
 }));
 const sessions = vi.hoisted(() => ({ findSession: vi.fn(), signedInFrom: vi.fn(), createSession: vi.fn(), deleteSession: vi.fn() }));
-const store = vi.hoisted(() => ({ findAccountForLogin: vi.fn(), replacePasswordHash: vi.fn() }));
+const store = vi.hoisted(() => ({ findAccountForLogin: vi.fn(), finishPasswordLogin: vi.fn() }));
 const mail = vi.hoisted(() => ({ notifyNewRequest: vi.fn() }));
 
 vi.mock("./signups", async (importOriginal) => ({ ...(await importOriginal<typeof import("./signups")>()), ...signups }));
@@ -142,10 +142,18 @@ describe("/api/auth/login", async () => {
   const login = (email: string, password: string, ip: string) =>
     POST(post("/api/auth/login", [["email", email], ["password", password]], ip));
 
+  it("does not set a session when credentials changed during password verification", async () => {
+    store.findAccountForLogin.mockResolvedValue({ id: OTHER, userId: OTHER, passwordHash: "old" });
+    store.finishPasswordLogin.mockResolvedValue(null);
+    const response = await login("changed@example.com", "the right passphrase", "198.51.100.101");
+    expect(location(response)).toBe("/login?error=invalid");
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
   it("lets the owner in from an address they signed in from while strangers hold the email bucket empty", async () => {
     const email = "owner@example.com";
     store.findAccountForLogin.mockResolvedValue({ id: OTHER, userId: OTHER, passwordHash: "x" });
-    sessions.createSession.mockResolvedValue("t".repeat(43));
+    store.finishPasswordLogin.mockResolvedValue("t".repeat(43));
     sessions.signedInFrom.mockImplementation(async (_email: string, ip: string) => ip === "198.51.100.77");
 
     // While the email's bucket has room nobody asks the database about the address.

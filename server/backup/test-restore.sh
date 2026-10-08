@@ -209,4 +209,6 @@ restore "$dump"
 check_restored "restore into a wiped volume"
 endgroup
 
-echo "restore drill: both restores reproduced the dump exactly"
+"$server_dir/backup/test-restore-ledger.sh" --scratch
+
+echo "restore drill: both restores reproduced the dump exactly; independent deletion receipts replayed safely"

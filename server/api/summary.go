@@ -177,8 +177,13 @@ func (st *Store) Summary(ctx context.Context, userID string, days int) (*Summary
 	if days < 1 {
 		return nil, badRequestf("range must cover at least one day")
 	}
-	now := st.now().In(st.loc)
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, st.loc)
+	loc, err := st.UserLocation(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	ctx = context.WithValue(ctx, userLocationKey{}, userLocation{userID, loc})
+	now := st.now().In(loc)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
 	start := today.AddDate(0, 0, -(days - 1))
 	end := today.AddDate(0, 0, 1)
 
@@ -189,7 +194,7 @@ func (st *Store) Summary(ctx context.Context, userID string, days int) (*Summary
 		StartDate:   start.Format("2006-01-02"),
 		EndDate:     today.Format("2006-01-02"),
 		GeneratedAt: now.UnixMilli(),
-		TimeZone:    st.loc.String(),
+		TimeZone:    loc.String(),
 	}
 	// Every day at least one section has a value on, for the coverage line.
 	covered := map[string]struct{}{}
@@ -297,7 +302,7 @@ func (st *Store) Summary(ctx context.Context, userID string, days int) (*Summary
 			distance += *w.DistanceM
 			hasDistance = true
 		}
-		cover(time.UnixMilli(w.Start).In(st.loc).Format("2006-01-02"))
+		cover(time.UnixMilli(w.Start).In(loc).Format("2006-01-02"))
 		return nil
 	})
 	if err != nil {
@@ -429,7 +434,7 @@ func renderSummaryMarkdown(data SummaryData, loc *time.Location) string {
 		title = fmt.Sprintf("# Health summary for %s — last %d days", strings.TrimSpace(*data.Name), data.Days)
 	}
 	b.WriteString(title + "\n\n")
-	fmt.Fprintf(&b, "%s to %s, %d calendar days in %s (the server's time zone). Generated %s.\n",
+	fmt.Fprintf(&b, "%s to %s, %d calendar days in %s (the account's reporting time zone). Generated %s.\n",
 		data.StartDate, data.EndDate, data.Days, data.TimeZone,
 		time.UnixMilli(data.GeneratedAt).In(loc).Format("2006-01-02 15:04"))
 
@@ -610,5 +615,5 @@ func (s *Server) handleSummary(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(renderSummaryMarkdown(*data, s.location())))
+	_, _ = w.Write([]byte(renderSummaryMarkdown(*data, summaryLocation(data.TimeZone, s.location()))))
 }
