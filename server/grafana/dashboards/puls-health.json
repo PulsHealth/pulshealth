@@ -315,7 +315,7 @@
           },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT b.bucket_start AS time, replace(t.identifier, 'HKQuantityTypeIdentifier', '') || ' · ' || s.agg_func || ' · ' || s.interval_value || ' ' || s.interval_unit || ' · ' || s.device_filter AS metric, b.value AS value FROM aggregate_samples b JOIN aggregate_series s USING (series_id) JOIN sample_types t USING (type_id) WHERE b.user_id = '${user}'::uuid AND s.series_id IN ($agg_series) AND $__timeFilter(b.bucket_start) ORDER BY 1",
+          "rawSql": "SELECT b.bucket_start AS time, replace(t.identifier, 'HKQuantityTypeIdentifier', '') || ' \u00b7 ' || s.agg_func || ' \u00b7 ' || s.interval_value || ' ' || s.interval_unit || ' \u00b7 ' || s.device_filter AS metric, b.value AS value FROM aggregate_samples b JOIN aggregate_series s USING (series_id) JOIN sample_types t USING (type_id) WHERE b.user_id = '${user}'::uuid AND s.series_id IN ($agg_series) AND $__timeFilter(b.bucket_start) ORDER BY 1",
           "refId": "A"
         }
       ],
@@ -410,7 +410,7 @@
           "refId": "A"
         }
       ],
-      "title": "Metric Explorer — $metric",
+      "title": "Metric Explorer \u2014 $metric",
       "type": "timeseries",
       "description": "Any synced quantity type from the hourly rollup; sum is additive, avg is sample-count weighted when re-bucketing to days."
     },
@@ -663,7 +663,7 @@
           "refId": "A"
         }
       ],
-      "title": "Resting Heart Rate — 7-day trend",
+      "title": "Resting Heart Rate \u2014 7-day trend",
       "type": "timeseries",
       "description": "7-day average is computed over the visible range; the first week is partial."
     },
@@ -754,7 +754,7 @@
           "refId": "A"
         }
       ],
-      "title": "HRV (SDNN) — 7-day trend",
+      "title": "HRV (SDNN) \u2014 7-day trend",
       "type": "timeseries",
       "description": "7-day average is computed over the visible range; the first week is partial."
     },
@@ -1038,7 +1038,7 @@
       ],
       "title": "State of Mind (valence)",
       "type": "timeseries",
-      "description": "HKStateOfMind valence: −1 (very unpleasant) to +1 (very pleasant), one series per kind (momentary emotion / daily mood)."
+      "description": "HKStateOfMind valence: \u22121 (very unpleasant) to +1 (very pleasant), one series per kind (momentary emotion / daily mood)."
     },
     {
       "datasource": {
@@ -1120,14 +1120,14 @@
           "type": "postgres",
           "uid": "puls-tsdb"
         },
-        "definition": "SELECT puls_time_zone()",
-        "hide": 2,
+        "definition": "SELECT coalesce(nullif(name, ''), nullif(email, ''), id::text) AS __text, id::text AS __value FROM users ORDER BY 1, 2",
+        "hide": 0,
         "includeAll": false,
-        "label": "Time zone",
+        "label": "User",
         "multi": false,
-        "name": "tz",
+        "name": "user",
         "options": [],
-        "query": "SELECT puls_time_zone()",
+        "query": "SELECT coalesce(nullif(name, ''), nullif(email, ''), id::text) AS __text, id::text AS __value FROM users ORDER BY 1, 2",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -1140,14 +1140,14 @@
           "type": "postgres",
           "uid": "puls-tsdb"
         },
-        "definition": "SELECT coalesce(nullif(name, ''), nullif(email, ''), id::text) AS __text, id::text AS __value FROM users ORDER BY 1, 2",
-        "hide": 0,
+        "definition": "SELECT puls_user_time_zone('${user}'::uuid)",
+        "hide": 2,
         "includeAll": false,
-        "label": "User",
+        "label": "Time zone",
         "multi": false,
-        "name": "user",
+        "name": "tz",
         "options": [],
-        "query": "SELECT coalesce(nullif(name, ''), nullif(email, ''), id::text) AS __text, id::text AS __value FROM users ORDER BY 1, 2",
+        "query": "SELECT puls_user_time_zone('${user}'::uuid)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -1215,14 +1215,14 @@
           "type": "postgres",
           "uid": "puls-tsdb"
         },
-        "definition": "SELECT replace(t.identifier, 'HKQuantityTypeIdentifier', '') || ' · ' || s.agg_func || ' · ' || s.interval_value || ' ' || s.interval_unit || ' · ' || s.device_filter AS __text, s.series_id AS __value FROM aggregate_series s JOIN sample_types t USING (type_id) WHERE EXISTS (SELECT 1 FROM aggregate_samples b WHERE b.series_id = s.series_id AND b.user_id = '${user}'::uuid) ORDER BY 1",
+        "definition": "SELECT replace(t.identifier, 'HKQuantityTypeIdentifier', '') || ' \u00b7 ' || s.agg_func || ' \u00b7 ' || s.interval_value || ' ' || s.interval_unit || ' \u00b7 ' || s.device_filter AS __text, s.series_id AS __value FROM aggregate_series s JOIN sample_types t USING (type_id) WHERE EXISTS (SELECT 1 FROM aggregate_samples b WHERE b.series_id = s.series_id AND b.user_id = '${user}'::uuid) ORDER BY 1",
         "hide": 0,
         "includeAll": true,
         "label": "Aggregate series",
         "multi": true,
         "name": "agg_series",
         "options": [],
-        "query": "SELECT replace(t.identifier, 'HKQuantityTypeIdentifier', '') || ' · ' || s.agg_func || ' · ' || s.interval_value || ' ' || s.interval_unit || ' · ' || s.device_filter AS __text, s.series_id AS __value FROM aggregate_series s JOIN sample_types t USING (type_id) WHERE EXISTS (SELECT 1 FROM aggregate_samples b WHERE b.series_id = s.series_id AND b.user_id = '${user}'::uuid) ORDER BY 1",
+        "query": "SELECT replace(t.identifier, 'HKQuantityTypeIdentifier', '') || ' \u00b7 ' || s.agg_func || ' \u00b7 ' || s.interval_value || ' ' || s.interval_unit || ' \u00b7 ' || s.device_filter AS __text, s.series_id AS __value FROM aggregate_series s JOIN sample_types t USING (type_id) WHERE EXISTS (SELECT 1 FROM aggregate_samples b WHERE b.series_id = s.series_id AND b.user_id = '${user}'::uuid) ORDER BY 1",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -1238,14 +1238,14 @@
           "type": "postgres",
           "uid": "puls-tsdb"
         },
-        "definition": "SELECT to_char(w.start_ts AT TIME ZONE '${tz}', 'YYYY-MM-DD HH24:MI') || ' · ' || w.activity_type AS __text, w.uuid::text AS __value FROM workouts w WHERE w.user_id = '${user}'::uuid AND EXISTS (SELECT 1 FROM workout_route_points p WHERE p.workout_uuid = w.uuid AND p.user_id = w.user_id) ORDER BY w.start_ts DESC LIMIT 100",
+        "definition": "SELECT to_char(w.start_ts AT TIME ZONE '${tz}', 'YYYY-MM-DD HH24:MI') || ' \u00b7 ' || w.activity_type AS __text, w.uuid::text AS __value FROM workouts w WHERE w.user_id = '${user}'::uuid AND EXISTS (SELECT 1 FROM workout_route_points p WHERE p.workout_uuid = w.uuid AND p.user_id = w.user_id) ORDER BY w.start_ts DESC LIMIT 100",
         "hide": 0,
         "includeAll": false,
         "label": "Route",
         "multi": false,
         "name": "workout",
         "options": [],
-        "query": "SELECT to_char(w.start_ts AT TIME ZONE '${tz}', 'YYYY-MM-DD HH24:MI') || ' · ' || w.activity_type AS __text, w.uuid::text AS __value FROM workouts w WHERE w.user_id = '${user}'::uuid AND EXISTS (SELECT 1 FROM workout_route_points p WHERE p.workout_uuid = w.uuid AND p.user_id = w.user_id) ORDER BY w.start_ts DESC LIMIT 100",
+        "query": "SELECT to_char(w.start_ts AT TIME ZONE '${tz}', 'YYYY-MM-DD HH24:MI') || ' \u00b7 ' || w.activity_type AS __text, w.uuid::text AS __value FROM workouts w WHERE w.user_id = '${user}'::uuid AND EXISTS (SELECT 1 FROM workout_route_points p WHERE p.workout_uuid = w.uuid AND p.user_id = w.user_id) ORDER BY w.start_ts DESC LIMIT 100",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,

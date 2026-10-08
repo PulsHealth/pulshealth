@@ -155,7 +155,8 @@ this one says how each piece holds up.
   `PULS_MCP_OAUTH_SECRET` mints access tokens for any user, reading what the
   MCP server reads, until it is rotated; a
   compromised viewer container in accounts mode reads every user's records
-  and can act on self-service users only (below); a compromised server host,
+  and can act destructively on self-service or explicitly allowlisted personal
+  users only (below); a compromised server host,
   everything.
 
 ## Things to know about the current design
@@ -248,7 +249,15 @@ for judging what is.
   address and per email, and reset when the container restarts; behind a
   proxy the address is `WEB_CLIENT_IP_HEADER`'s last entry
   (`cf-connecting-ip` behind Cloudflare), never a client-chosen first one.
-  A forgotten password is a new invite from the operator.
+  Password recovery uses an emailed, single-use 30-minute token stored only
+  as SHA-256 (`025_password_recovery.sql`). Unknown, disabled and demo accounts
+  receive the same public response. Durable hashed-IP/email counters survive
+  restarts; a password credential snapshot invalidates stale links. Completing
+  a reset locks the account, consumes its recovery links, replaces the password,
+  removes browser sessions and revokes OAuth grants atomically. Existing OAuth
+  access tokens expire within 30 minutes; iPhone sync tokens are unchanged.
+  Expired links and counters are pruned hourly. The operator's invite remains
+  a fallback when recovery email is unavailable.
 - **Accounts mode's privileged steps are database functions.** Approving a
   request (which creates a user), minting or revoking a sync token,
   disabling an account, deleting your own, and purging a user are
@@ -260,12 +269,14 @@ for judging what is.
   barrier against a compromised viewer: `web_app` writes `auth.sessions` to
   sign people in, so it can forge a session for any account. The barrier is
   that destructive functions act only on **self-service** users, those an
-  approved request created (`auth.self_service_users`). Phone pairing works
-  for every enabled personal account's own user, including invited users
-  and administrators (021_personal_device_pairing.sql). Consequently SQL as
-  `web_app` can mint/revoke sync tokens for personal accounts as well as
-  modify viewer accounts; it still cannot disable/delete/purge household
-  health data. The configured public demo cannot issue/list/revoke tokens,
+  approved request created (`auth.self_service_users`), or invited personal
+  users explicitly enrolled by the operator through `WEB_PERSONAL_USERS`
+  (`auth.personal_users`). The allowlist is not writable by `web_app`.
+  Default-user, administrator and configured demo records remain protected.
+  Phone pairing works for every enabled personal account's own user, including
+  invited users and administrators (021_personal_device_pairing.sql). SQL as
+  `web_app` can therefore mint/revoke their sync tokens and modify viewer
+  accounts, but cannot erase protected household health data. The configured public demo cannot issue/list/revoke tokens,
   even through forged sessions: `auth.device_pairing_policy`, writable only
   by the operator and set by 022 from `WEB_DEMO_USER`, excludes it. Existing
   data reads remain scoped through the security-barrier views. The viewer shows a
@@ -273,6 +284,22 @@ for judging what is.
   form creates nothing but a request and emails only the operator, so it
   cannot open the database to anyone or be used to mail a stranger; no
   address it handles is written to the log.
+- **Account deletion and restored backups.** `024_account_deletion.sql`
+  accepts only an eligible account's session. The web handler writes an atomic,
+  fsynced UUID/request-date file on the independent deletion-ledger volume
+  before committing revocation and the erasure queue; failure aborts the
+  request. It tries the purge immediately, and a TimescaleDB worker retries
+  pending removals every minute. Purge removes raw samples, routes/series,
+  aggregates/rollups, profile, device tokens, accounts and their cascading
+  sessions/invites/OAuth/recovery records, and scrubs unused source names.
+  A random 32-byte receipt gives only pending/completed status; its hash and
+  status record expire 30 days after completion. A minimal UUID/date tombstone
+  and independent filesystem record remain indefinitely to suppress restores.
+  The general purge function is not callable by `web_app`; authorized wrappers
+  enforce eligibility. A compromised viewer can forge sessions for accounts
+  within that boundary, as described above. Never restore or roll back the
+  ledger alongside an older health snapshot. Hosted restore requires a
+  current ledger and replays deletions after migrations before services reopen.
 - **The public demo.** With `WEB_DEMO_USER` set, `/demo` signs anyone into
   one operator-made account holding sample data, with no password
   (`web/README.md`, "Demo account"). It is view-only by refusal in every
@@ -315,7 +342,16 @@ for judging what is.
   `INGEST_DB_USER=postgres` to fall back to the superuser. Backups are opt-in
   and off by default: enable the `backup` Compose profile, and run the restore
   drill in `server/README.md` yourself, because nothing else verifies that
-  your dumps restore.
+  your dumps restore. A hosted retention commitment requires
+  `PULS_BACKUP_STRICT_RETENTION=true` and a positive `PULS_BACKUP_KEEP_DAYS`:
+  strict mode expires even the newest dump and checks at least hourly between
+  dump runs, including after failed dumps. Active dumps, an unavailable service
+  or storage failure can delay cleanup; monitor the oldest archive and apply
+  the same policy to offsite copies. Do not infer a deployed retention period
+  from defaults. Hosted restore requires `--deletion-ledger-ready`, validates
+  the current independent ledger before destructive restore, applies migrations
+  and replays deletion records before services reopen. See `server/README.md`
+  for the operational sequence.
 
 ## One-time Data Requests
 

@@ -97,6 +97,12 @@ final class ExploreModel {
     /// Returns false when the device was locked and nothing could be read.
     @discardableResult
     func refreshQuickFacts(for identifiers: [String]) async -> Bool {
+        #if DEBUG
+        if ExploreFixtures.isEnabled {
+            quickFacts.merge(ExploreFixtures.quickFacts(for: identifiers)) { _, fixture in fixture }
+            return true
+        }
+        #endif
         guard await engine.isHealthDataAccessible() else { return false }
         let explorer = explorer
         for chunk in identifiers.chunked(into: 4) {

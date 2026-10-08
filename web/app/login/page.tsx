@@ -48,13 +48,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
       </form>
       {signupsOpen() ? (
         <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>
-          New here? <a href="/signup" style={{ textDecoration: "underline" }}>Sign up</a>. Forgotten your password? Ask
-          the person who runs this viewer for a new invite link.
+          New here? <a href="/signup" style={{ textDecoration: "underline" }}>Sign up</a>. Forgotten your password? <a href="/forgot-password">Reset it by email</a>.
         </p>
       ) : (
         <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>
-          Accounts are by invitation. To join, or if you have forgotten your password, ask the person who runs
-          this viewer for an invite link.
+          Accounts are by invitation. To join, ask the person who runs this viewer for an invite link. Forgotten your password? <a href="/forgot-password">Reset it by email</a>.
         </p>
       )}
       {demoUserId() && !session && (

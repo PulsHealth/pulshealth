@@ -33,15 +33,22 @@ them is checkable against the source in this repository.
 
 ## Submission checklist
 
+Before a broad hosted rollout, deploy and verify per-account reporting time
+zones as described in [the release review](../release-readiness-2026-10-08.md).
+Verify a newly approved account in a different phone time zone, an existing
+account’s explicit zone setting, and the distinction between raw daily grouping
+and activity rings/aggregates recorded in the phone’s calendar.
+
 Work top to bottom. Items marked **maintainer only** need the Apple Developer
 account, the signing team, a real device or personal contact details.
 
 ### Build and upload
 
-- [ ] Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in
-      `PulsHealth/project.yml`. The store holds 1.6 (19), so the next upload
-      needs a version above 1.6 and build 20 or higher: App Store Connect
-      refuses a build number it has already accepted.
+- [x] Prepare `MARKETING_VERSION` 2.0 and `CURRENT_PROJECT_VERSION` 20 in
+      `PulsHealth/project.yml`. App Store Connect's latest upload was verified
+      as 1.6 (19) on 2026-10-08. Version 2.0 (20) is a local release candidate,
+      not a shipped release. Recheck accepted builds before uploading; never
+      reuse a build number App Store Connect has accepted.
 - [ ] `cd PulsHealth && xcodegen` — the Xcode project is generated and
       untracked — with `DEVELOPMENT_TEAM` in `Config/Local.xcconfig`.
 - [ ] **maintainer only** — Archive and upload with the signed-in Xcode:
@@ -59,7 +66,7 @@ account, the signing team, a real device or personal contact details.
       questionnaire.
 - [ ] Check the processed build's privacy report: the app and the
       `PulsHealthSync` package each ship a `PrivacyInfo.xcprivacy` declaring no
-      tracking and `UserDefaults` / `CA92.1`. The app's lists the six collected
+      tracking and `UserDefaults` / `CA92.1`. The app's lists the eleven collected
       data types of `listing.md` § App Privacy; the package's lists none.
 - [ ] **maintainer only** — Run the TestFlight build on a real device,
       installed over the store version, for a few days. Background delivery,
@@ -77,15 +84,17 @@ account, the signing team, a real device or personal contact details.
       promotional text, keywords, What's New — check the bracketed counts, and
       paste.
 - [ ] Age rating and App Privacy are answered as tabulated in `listing.md`
-      (4+, Data Linked to You: six types, App Functionality, not tracking).
-      App Privacy is per app, not per version, so it is already live; revisit
-      it only if something it asks about changed.
+      (recorded 4+; verify the current questionnaire; eleven declared data types,
+      App Functionality, not tracking).
+      App Privacy is per app, not per version. All eleven types were published
+      in App Store Connect on 2026-10-08; the local manifest alone does not
+      update the live label. Recheck only if the data collection changes.
 - [ ] **The first release with the PulsHealth database option** (Sync →
       Database → PulsHealth Database, the in-app sign-in) contradicts copy
       that was deliberately left alone, so nothing advertised the option
       before the store had it:
-      - **At submission:** the promotional text in `listing.md` ("No
-        account … nothing goes to the developer"). It is live while the
+      - **At submission:** replace the old live promotional text with the prepared
+        accounts-aware draft in `listing.md`. It is live while the
         build is reviewed, and a listing that contradicts the build under
         review is a 2.3 rejection.
       - **Once approved:** the marketing pages `site/src/app/about/page.tsx`,
@@ -122,6 +131,45 @@ account, the signing team, a real device or personal contact details.
       copy out of the repository — it holds a live password and token.
 - [ ] **maintainer only** — App Review contact details (name, phone, e-mail)
       are personal and deliberately absent from this repository.
+
+### Release gates for accounts and Data Requests
+
+See [the release-readiness report](../release-readiness-2026-10-08.md) for
+verification evidence and remaining findings. These are pending checks, not
+completed release evidence:
+
+- [ ] Verify the deployed automatic account deletion end to end with a disposable
+      approved account and an invited personal account. Confirm access stops,
+      the private receipt reaches completed, and no health/profile/account rows
+      remain. Verify the independent deletion ledger survives database restore
+      and prevents deleted users from reappearing. Protected default/admin/demo
+      users must remain protected. Check the hosted backup-retention setting,
+      oldest archive and offsite copies before publishing a retention deadline.
+      Apple requires whole-account deletion and clear disclosure if completion
+      takes time: [account deletion guidance](https://developer.apple.com/help/app-review/guideline-reference/5-1-1-account-deletion).
+- [x] Publish the eleven-type App Privacy declaration in `listing.md`, including
+      Precise Location, Other User Content, the conservative Sensitive Info
+      disclosure, Product Interaction and Other Diagnostic Data. App Store Connect
+      confirmed publication on 2026-10-08, with all eleven types linked and used
+      only for App Functionality, not tracking.
+- [ ] Verify the processed archive privacy report against the published label;
+      the published label does not replace this binary check.
+- [ ] Verify the hosted signup, approval email, password setup/reset, in-app
+      pairing, sync, account management and deletion on the release build.
+      Confirm production migrations and server versions support that build.
+- [ ] Fill approved reviewer credentials and verify them from an off-network
+      device; exercise an empty Health library and a small synthetic fixture.
+- [ ] Exercise Data Requests end to end: link/QR, review, share, compatible
+      HTTPS delivery, partial export, timeout/manual retry and cancellation.
+      Supply a disposable receiver and instructions if direct delivery is
+      included in the review walkthrough. Do not frame this as an approved
+      research enrollment or consent workflow.
+- [ ] Verify live support/privacy/account URLs and deploy the updated privacy
+      policy before review. Recheck screenshot accuracy on iPhone and iPad.
+- [ ] Measure the final pasted description and reviewer notes after replacing
+      placeholders; each must fit 4,000 characters.
+- [ ] Record TestFlight upgrade/device/background checks and the exact archive
+      version/build before selecting it in App Store Connect.
 
 ### Submit
 
@@ -169,7 +217,7 @@ only are noted under the release that superseded them.
 | Bundle ID | `com.pulsHealth.PulsHealth` |
 | Category / rating / price | Health & Fitness (secondary: Utilities) · 4+ · Free |
 | First released | 2026-01-21 |
-| App Privacy | "Data Linked to You" since 2026-10-02 (Name, Email Address, Health, Fitness, User ID, Device ID; App Functionality; not tracking), changed in App Store Connect without a new build. "Data Not Collected" before. |
+| App Privacy | "Data Linked to You" since 2026-10-02. Published update verified 2026-10-08: eleven types (Name, Email Address, Health, Fitness, User ID, Device ID, Precise Location, Sensitive Info, Other User Content, Product Interaction, Other Diagnostic Data), all App Functionality, linked, not tracking; changed without submitting a new binary. "Data Not Collected" before 2026-10-02. |
 
 | Version | Released | Notes |
 |---|---|---|

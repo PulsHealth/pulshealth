@@ -235,7 +235,12 @@ export async function refreshGrant(input: { refreshToken: string; clientId: stri
     );
     const grant = rows[0];
     if (!grant) {
-      const reused = await q("UPDATE auth.oauth_grants SET revoked_at = now() WHERE previous_refresh_hash = $1 AND revoked_at IS NULL RETURNING 1", [hash]);
+      // A token belonging to another client must not let this client revoke
+      // its grant, whether the token is current or has just been rotated.
+      const reused = await q(
+        "UPDATE auth.oauth_grants SET revoked_at = now() WHERE previous_refresh_hash = $1 AND client_id = $2 AND revoked_at IS NULL RETURNING 1",
+        [hash, input.clientId],
+      );
       return { ok: false, error: "invalid_grant", reused: reused.length > 0 } as const;
     }
     if (grant.client_id !== input.clientId || !grant.live || !grant.account_ok) {

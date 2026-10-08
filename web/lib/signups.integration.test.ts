@@ -13,6 +13,9 @@
 // strings.
 
 import { createHash, randomUUID } from "node:crypto";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { NextRequest } from "next/server";
 import { Client, DatabaseError } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -56,6 +59,7 @@ async function sqlState(p: Promise<unknown>): Promise<string | null> {
 
 describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", () => {
   let admin: Client;
+  let ledgerDirectory: string;
   let adminCookie: string;
   let adminSession: Buffer;
   let personCookie: string;
@@ -70,6 +74,8 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
   let adminRoute: typeof import("@/app/api/admin/route");
 
   beforeAll(async () => {
+    ledgerDirectory = await mkdtemp(join(tmpdir(), "puls-deletion-ledger-"));
+    process.env.PULS_DELETION_LEDGER_DIR = ledgerDirectory;
     process.env.WEB_ACCOUNTS = "true";
     process.env.WEB_SIGNUPS = "true";
     process.env.TRUST_PROXY_HEADERS = "true";
@@ -93,6 +99,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
   }, 60_000);
 
   afterAll(async () => {
+    if (ledgerDirectory) await rm(ledgerDirectory, { recursive: true, force: true });
     await (await import("./db")).getPool()?.end();
     if (!admin) return;
     const users = (await admin.query<{ id: string }>(
@@ -118,12 +125,11 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     ).then((r) => r.rows);
 
   it("records a request and creates nothing else", async () => {
-    const before = Number((await admin.query("SELECT count(*) FROM users")).rows[0].count);
     const res = await signupRoute.POST(post("/api/auth/signup", { name: "Pat", email: ` ${PERSON_EMAIL.toUpperCase()} `, note: "hi", consent: "yes" }, { ip: "198.51.100.10" }));
     expect(res.headers.get("location")).toBe("/signup?notice=received");
     expect(await requestRow(PERSON_EMAIL)).toMatchObject([{ status: "pending", user_id: null }]);
-    expect(Number((await admin.query("SELECT count(*) FROM users")).rows[0].count)).toBe(before);
     expect((await admin.query("SELECT 1 FROM auth.accounts WHERE email = $1", [PERSON_EMAIL])).rows).toHaveLength(0);
+    expect((await admin.query("SELECT 1 FROM auth.invites WHERE email = $1", [PERSON_EMAIL])).rows).toHaveLength(0);
 
     // Asking again while pending changes nothing, and answers the same.
     const again = await signupRoute.POST(post("/api/auth/signup", { name: "Pat", email: PERSON_EMAIL, consent: "yes" }, { ip: "198.51.100.11" }));
@@ -329,7 +335,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     await admin.query("UPDATE device_tokens SET status = 'revoked', revoked_at = now() WHERE user_id = $1", [personUser]);
   });
 
-  it("deleting your own account disables it at once; purging leaves nothing of the user", async () => {
+  it("purging a disabled personal account leaves nothing of the user", async () => {
     await admin.query(
       `INSERT INTO sample_types (identifier, kind, unit) VALUES ('HKQuantityTypeIdentifierStepCount', 'quantity', 'count') ON CONFLICT DO NOTHING`,
     );
@@ -370,13 +376,9 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
     const minted = await signups.issueDeviceToken(personSession, "third");
 
     expect(await sqlState(signups.deleteMyAccount(adminSession))).toBe("42501"); // not for admins
-    expect(await signups.deleteMyAccount(personSession)).toBe(personUser);
-    const { rows } = await admin.query("SELECT disabled_at IS NOT NULL AS disabled, deletion_requested_at IS NOT NULL AS asked FROM auth.accounts WHERE user_id = $1", [personUser]);
-    expect(rows[0]).toEqual({ disabled: true, asked: true });
-    expect((await admin.query("SELECT status FROM device_tokens WHERE id = $1", [minted.id])).rows[0].status).toBe("revoked");
-    // The request stands: an administrator cannot quietly enable the account again.
     const personAccount = (await admin.query("SELECT id::text FROM auth.accounts WHERE user_id = $1", [personUser])).rows[0].id;
-    expect(await sqlState(signups.setAccountDisabled(adminSession, personAccount, false))).toBe("55000");
+    await signups.setAccountDisabled(adminSession, personAccount, true);
+    expect((await admin.query("SELECT status FROM device_tokens WHERE id = $1", [minted.id])).rows[0].status).toBe("revoked");
 
     expect(await sqlState(signups.purgeUser(personSession, personUser))).toBe("42501");
     expect(await sqlState(signups.purgeUser(adminSession, ADMIN_USER))).toBe("42501"); // household

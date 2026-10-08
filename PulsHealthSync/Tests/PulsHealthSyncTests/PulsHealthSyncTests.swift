@@ -303,6 +303,7 @@ import Testing
         let header = try JSONDecoder.puls.decode(
             BatchSerializer.Header.self, from: Data(lines[0].utf8))
         #expect(header.schemaVersion == PulsProtocol.version)
+        #expect(header.timeZoneID == TimeZone.current.identifier)
         #expect(header.clientVersion == "1.2.3 (45)")
         #expect(header.sampleCount == 10)
         #expect(header.deletionCount == 1)
@@ -1088,6 +1089,7 @@ import Testing
         #expect(header.profileCount == 0)
         // Pre-versioning headers: schema 0, unknown client.
         #expect(header.schemaVersion == 0)
+        #expect(header.timeZoneID == nil)
         #expect(header.clientVersion == "unknown")
     }
 }

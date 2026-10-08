@@ -1,3 +1,4 @@
+import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -30,6 +31,7 @@ type Search = Promise<Record<string, string | string[] | undefined>>;
 export default async function AdminPage({ searchParams }: { searchParams: Search }) {
   const admin = await currentAdmin();
   if (!admin) notFound();
+  const timeZone = await reportingTimeZone(admin.userId);
   const search = await searchParams;
   const [requests, accounts, unused, waiting, today] = await Promise.all([
     listSignupRequests(),
@@ -94,7 +96,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 <div style={{ fontSize: 13.5, color: "var(--fg-soft)", marginTop: 2 }}>{r.email}</div>
                 {r.note && <div style={{ fontSize: 13.5, marginTop: 8, whiteSpace: "pre-wrap", lineHeight: 1.45 }}>{r.note}</div>}
                 <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 8 }}>
-                  Joined {formatFull(r.createdAt)}
+                  Joined {formatFull(r.createdAt, timeZone)}
                   {r.ip ? ` · ${r.ip}` : ""}
                   {r.userAgent ? ` · ${r.userAgent.slice(0, 80)}` : ""}
                 </div>
@@ -143,8 +145,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                   {a.disabledAt && !a.deletionRequestedAt && <span className="chip" style={{ marginLeft: 8 }}>Disabled</span>}
                 </div>
                 <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>
-                  User {a.userId} · since {formatFull(a.createdAt)}
-                  {a.lastSeenAt ? ` · last active ${formatFull(a.lastSeenAt)}` : ""}
+                  User {a.userId} · since {formatFull(a.createdAt, timeZone)}
+                  {a.lastSeenAt ? ` · last active ${formatFull(a.lastSeenAt, timeZone)}` : ""}
                 </div>
               </div>
               {a.selfService && !a.isAdmin && (
@@ -190,7 +192,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 <div style={{ minWidth: 0, flex: "1 1 320px" }}>
                   <div style={{ fontSize: 14.5, fontWeight: 550 }}>{u.name || u.email}</div>
                   <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>
-                    {u.email} · last invited {formatFull(u.invitedAt)}
+                    {u.email} · last invited {formatFull(u.invitedAt, timeZone)}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -219,7 +221,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
                 <div style={{ fontSize: 13.5 }}>
                   {r.name ? `${r.name} · ` : ""}{r.email}
                 </div>
-                <span className="chip">Approved{r.decidedAt ? ` ${formatFull(r.decidedAt)}` : ""}</span>
+                <span className="chip">Approved{r.decidedAt ? ` ${formatFull(r.decidedAt, timeZone)}` : ""}</span>
               </div>
             ))}
           </div>

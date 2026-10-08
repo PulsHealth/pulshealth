@@ -51,6 +51,8 @@ type BatchHeader struct {
 	// ClientVersion is free text identifying the sender, e.g. "0.1.0 (1)".
 	// Optional; logged per batch, never stored.
 	ClientVersion string `json:"clientVersion"`
+	// Optional current device zone; used only to initialize new hosted accounts.
+	TimeZoneID string `json:"timeZoneID"`
 }
 
 type TemporalContext struct {
@@ -544,6 +546,14 @@ func ParseBatch(r io.Reader) (*Batch, error) {
 	}
 	if !isUUID(b.Header.BatchID) {
 		return nil, parseErrf("invalid batch header: batchID %q is not a UUID", b.Header.BatchID)
+	}
+	if zone := b.Header.TimeZoneID; zone != "" {
+		if len(zone) > 100 || zone == "Local" {
+			return nil, parseErrf("invalid batch header: invalid timeZoneID")
+		}
+		if _, err := time.LoadLocation(zone); err != nil {
+			return nil, parseErrf("invalid batch header: invalid timeZoneID")
+		}
 	}
 	if b.Header.Type == "" {
 		return nil, parseErrf("invalid batch header: missing type")

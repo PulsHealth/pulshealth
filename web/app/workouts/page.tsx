@@ -1,3 +1,4 @@
+import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { Distance } from "@/components/Distance";
@@ -13,7 +14,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Workouts — PulsHealth" };
 
 export default async function WorkoutsPage() {
-  const workouts = await getWorkouts(await viewerUser(), 120);
+  const user = await viewerUser();
+  const timeZone = await reportingTimeZone(user);
+  const workouts = await getWorkouts(user, 120);
   const color = GROUP_COLOR.workouts;
 
   const totalDur = workouts.reduce((s, w) => s + w.durationS, 0);
@@ -66,7 +69,7 @@ export default async function WorkoutsPage() {
             </span>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontWeight: 550 }}>{formatActivity(w.activityType)}</div>
-              <div style={{ fontSize: 12, color: "var(--faint)", marginTop: 2 }}>{formatFull(w.start)}</div>
+              <div style={{ fontSize: 12, color: "var(--faint)", marginTop: 2 }}>{formatFull(w.start, timeZone)}</div>
             </div>
             <div className="mono tabular" style={{ display: "flex", gap: 22, color: "var(--fg-soft)", fontSize: 13, flexWrap: "wrap", justifyContent: "flex-end" }}>
               <span style={{ minWidth: 64, textAlign: "right" }}>{formatDuration(w.durationS)}</span>

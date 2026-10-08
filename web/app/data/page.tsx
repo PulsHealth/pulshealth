@@ -1,3 +1,4 @@
+import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { ChevronRight, GroupIcon } from "@/components/Icons";
@@ -12,7 +13,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "All Data — PulsHealth" };
 
 export default async function DataPage() {
-  const stats = await getStats(await viewerUser());
+  const user = await viewerUser();
+  const timeZone = await reportingTimeZone(user);
+  const stats = await getStats(user);
   const totalRows = BROWSABLE_CATALOG.reduce((s, t) => s + (stats.get(t.identifier)?.rows ?? 0), 0);
   const withData = BROWSABLE_CATALOG.filter((t) => (stats.get(t.identifier)?.rows ?? 0) > 0).length;
 
@@ -72,7 +75,7 @@ export default async function DataPage() {
                       <div className="mono tabular" style={{ fontSize: 12.5, color: "var(--fg-soft)", minWidth: 86, textAlign: "right" }}>
                         {rows > 0 ? formatCompact(rows) : "—"}
                       </div>
-                      <div className="mono" style={{ fontSize: 11.5, color: "var(--faint)", minWidth: 96, textAlign: "right" }} title={st?.latest ? formatFull(st.latest) : ""}>
+                      <div className="mono" style={{ fontSize: 11.5, color: "var(--faint)", minWidth: 96, textAlign: "right" }} title={st?.latest ? formatFull(st.latest, timeZone) : ""}>
                         {st?.latest ? relativeTime(st.latest) : "no data"}
                       </div>
                       <ChevronRight size={15} style={{ color: "var(--faint)" }} />

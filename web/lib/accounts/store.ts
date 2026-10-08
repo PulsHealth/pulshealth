@@ -4,7 +4,7 @@
 
 import { query, transaction } from "../db";
 import { revokeAllGrants } from "../oauth/store";
-import { tokenHash } from "./session";
+import { createSession, SESSION_ABSOLUTE_DAYS, tokenHash, type SessionMeta } from "./session";
 
 /**
  * The stored form of an email address: trimmed and lower-cased (the table's
@@ -84,9 +84,30 @@ export async function findPasswordHash(accountId: string): Promise<string | null
   return rows[0]?.password_hash ?? null;
 }
 
-/** Stores a re-hash with current parameters (same password, no sign-out). */
-export async function replacePasswordHash(accountId: string, hash: string): Promise<void> {
-  await query("UPDATE auth.accounts SET password_hash = $2 WHERE id = $1", [accountId, hash]);
+/**
+ * Finishes a password login only while the verified credentials are still
+ * current. The account lock serializes this with password changes, invite
+ * resets and disabling: they either invalidate this attempt, or revoke the
+ * session it creates. A legacy rehash cannot restore a replaced password.
+ */
+export async function finishPasswordLogin(
+  account: LoginAccount,
+  replacementHash: string | null,
+  meta: SessionMeta,
+  previousSession: Buffer | null,
+): Promise<string | null> {
+  return transaction(async (q) => {
+    const rows = await q(
+      "SELECT 1 FROM auth.accounts WHERE id = $1 AND password_hash = $2 AND disabled_at IS NULL FOR UPDATE",
+      [account.id, account.passwordHash],
+    );
+    if (!rows.length) return null;
+    if (replacementHash) {
+      await q("UPDATE auth.accounts SET password_hash = $2 WHERE id = $1", [account.id, replacementHash]);
+    }
+    if (previousSession) await q("DELETE FROM auth.sessions WHERE id = $1", [previousSession]);
+    return createSession(account.id, meta, q);
+  });
 }
 
 /**
@@ -100,6 +121,36 @@ export async function changePassword(accountId: string, hash: string): Promise<v
     await q("UPDATE auth.accounts SET password_hash = $2, password_changed_at = now() WHERE id = $1", [accountId, hash]);
     await q("DELETE FROM auth.sessions WHERE account_id = $1", [accountId]);
     await revokeAllGrants(q, accountId);
+  });
+}
+
+/** Rechecks the authorizing password and session, changes it and signs in atomically. */
+export async function changePasswordAndSession(
+  accountId: string,
+  verifiedHash: string,
+  sessionId: Buffer,
+  newHash: string,
+  meta: SessionMeta,
+): Promise<string | null> {
+  return transaction(async (q) => {
+    const account = await q(
+      "SELECT 1 FROM auth.accounts WHERE id = $1 AND password_hash = $2 AND disabled_at IS NULL FOR UPDATE",
+      [accountId, verifiedHash],
+    );
+    if (!account.length) return null;
+    // Check after acquiring the account lock: a reset that preceded this
+    // request may have revoked its session even when the password is equal.
+    const session = await q(
+      `SELECT 1 FROM auth.sessions WHERE id = $1 AND account_id = $2
+         AND expires_at > now() AND created_at > now() - make_interval(days => $3)
+       FOR UPDATE`,
+      [sessionId, accountId, SESSION_ABSOLUTE_DAYS],
+    );
+    if (!session.length) return null;
+    await q("UPDATE auth.accounts SET password_hash = $2, password_changed_at = now() WHERE id = $1", [accountId, newHash]);
+    await q("DELETE FROM auth.sessions WHERE account_id = $1", [accountId]);
+    await revokeAllGrants(q, accountId);
+    return createSession(accountId, meta, q);
   });
 }
 
@@ -126,7 +177,7 @@ export async function findInvite(token: string): Promise<PendingInvite | null> {
   return row ? { email: row.email, resetsExisting: row.existing, expiresAt: row.expires_at.getTime() } : null;
 }
 
-export type AcceptInviteResult = { ok: true; accountId: string } | { ok: false; reason: "invalid" | "email_taken" };
+export type AcceptInviteResult = { ok: true; accountId: string; sessionToken: string } | { ok: false; reason: "invalid" | "email_taken" };
 
 /**
  * Uses an invite: creates the user's account with this password or, when the
@@ -137,9 +188,11 @@ export type AcceptInviteResult = { ok: true; accountId: string } | { ok: false; 
  * `UPDATE auth.accounts SET disabled_at = now()`) must not be undone by a
  * link that was already out. The invite is spent, and any other outstanding
  * invite for the same user is withdrawn. One transaction; the invite row is
- * locked, so a link pressed twice is used once.
+ * locked, so a link pressed twice is used once. The replacement browser
+ * session is created before that transaction commits, so later credential
+ * changes cannot miss it when revoking sessions.
  */
-export async function acceptInvite(token: string, passwordHash: string): Promise<AcceptInviteResult> {
+export async function acceptInvite(token: string, passwordHash: string, meta: SessionMeta, previousSession: Buffer | null): Promise<AcceptInviteResult> {
   const hash = tokenHash(token);
   if (!hash) return { ok: false, reason: "invalid" };
   return transaction(async (q) => {
@@ -192,6 +245,10 @@ export async function acceptInvite(token: string, passwordHash: string): Promise
         WHERE user_id = $1 AND accepted_at IS NULL AND id <> $2 AND expires_at > now()`,
       [invite.user_id, invite.id],
     );
-    return { ok: true, accountId } as const;
+    if (previousSession) await q("DELETE FROM auth.sessions WHERE id = $1", [previousSession]);
+    // Keep the account lock until its replacement session exists. A later
+    // password change or disable must revoke this session as well.
+    const sessionToken = await createSession(accountId, meta, q);
+    return { ok: true, accountId, sessionToken } as const;
   });
 }

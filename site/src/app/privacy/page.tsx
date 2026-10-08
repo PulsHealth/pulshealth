@@ -16,7 +16,7 @@ const claims = [
   },
   {
     title: "Your database, or ours: your choice",
-    body: "Regular sync uploads to the database you set up. One-time requests can send a ZIP to a separate HTTPS destination you approve. Run your own and the developer never sees your data. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is never sold or shared, and deleting your account deletes it.",
+    body: "Regular sync uploads to the database you set up. One-time requests can send a ZIP to a separate HTTPS destination you approve. Run your own and the developer never sees your data. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is not sold. Account deletion disconnects access and automatically removes your account and stored records; a private status link confirms completion. A minimal deletion record prevents older backups from restoring deleted data.",
     check: { label: "Transport/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Transport` },
   },
   {
@@ -66,7 +66,7 @@ export default function PrivacyPage() {
           <CardContent>
             <ul className="list-disc pl-6 space-y-2">
               <li>Exporting from the app, or syncing to a database you run yourself, gives the developer no data.</li>
-              <li>If you create a PulsHealth account and sync to the PulsHealth database (with its viewer at app.pulshealth.com), your data is stored there, under your account, for you alone; deleting your account deletes it. Nothing in the app sends data to the developer unless you choose that database and sign in.</li>
+              <li>If you create a PulsHealth account and sync to the PulsHealth database (with its viewer at app.pulshealth.com), your data is stored there, under your account, for you alone. Account deletion disconnects access and automatically removes your account and stored records; a private status link confirms completion. A minimal deletion record prevents older backups from restoring deleted data. Creating an account also sends the signup details described below.</li>
               <li>With the PulsHealth database you can connect an AI assistant, such as Claude, to your records by signing in and approving it. It gets read-only access to your health data and profile until you revoke it on your account page (its current access then runs out within 30 minutes), and its provider receives what it reads under the provider&rsquo;s own terms. The app is not involved, and the developer sends your data to no AI provider on its own.</li>
               <li>You choose each way health data leaves the phone: sync to your configured database, exports you share yourself, or one-time ZIP delivery to a request destination you review and approve. Opening a request alone sends nothing.</li>
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>

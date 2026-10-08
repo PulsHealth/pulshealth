@@ -260,10 +260,19 @@ the token inline is migrated the same way. Pass an `InMemoryTokenStore` to
 A configuration applied with a nil `authToken` **keeps** the stored token as
 long as it names the same database URL and user ID, so a caller that rebuilds
 a configuration without the token cannot delete the credential by accident.
-Deleting it is explicit: `clearAuthToken()` (the app calls it for an emptied
-token field and for Disconnect). A configuration for a different database or
+Deleting it is explicit: `clearAuthToken()`, or
+`configure(_:confirmServerIdentity:clearAuthToken:)` with `clearAuthToken: true`
+(the app uses the latter to apply an emptied token field or Disconnect atomically). A configuration for a different database or
 user without a token still drops the old one; a token is never sent to a
 database that did not issue it. `setAuthToken(_:)` replaces the token alone.
+
+`configure`, `setAuthToken`, and `clearAuthToken` return `Bool`: `false` means
+an active sync or configuration change prevented the update; nothing changed.
+Callers must keep the existing applied settings and ask the user to retry once
+the sync finishes. Parent passes hold this exclusion between phases too, so
+an upload to the old destination cannot advance the new destination's anchors.
+Changed aggregate series reset their watermarks inside the same configuration
+commit. A nil token still preserves the credential unless explicitly cleared.
 
 `sync-state.json`, `event-log.json`, `wake-log.json` and any quarantined copy are
 written with `FileProtectionType.completeUntilFirstUserAuthentication` and

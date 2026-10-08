@@ -112,7 +112,11 @@ type sleepSample struct {
 // zone) falls on a local calendar day overlapping [start, end), ordered by
 // date then start.
 func (st *Store) SleepDaily(ctx context.Context, userID string, start, end time.Time) ([]SleepNight, error) {
-	firstDay, afterLastDay, err := localDayBounds(start, end, st.loc)
+	loc, err := st.UserLocation(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	firstDay, afterLastDay, err := localDayBounds(start, end, loc)
 	if err != nil {
 		return nil, err
 	}
@@ -154,8 +158,8 @@ func (st *Store) SleepDaily(ctx context.Context, userID string, start, end time.
 	}
 
 	out := make([]SleepNight, 0)
-	for _, night := range segmentNights(samples, st.loc) {
-		wake := time.UnixMilli(night.End).In(st.loc)
+	for _, night := range segmentNights(samples, loc) {
+		wake := time.UnixMilli(night.End).In(loc)
 		if wake.Before(firstDay) || !wake.Before(afterLastDay) {
 			continue
 		}

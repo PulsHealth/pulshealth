@@ -73,12 +73,13 @@ instead of the published images (see "Images and versions").
 Everything is read from `.env`; `.env.example` lists every variable with
 comments. Beyond the passwords and tokens:
 
-- **`PULS_TIME_ZONE`** — the IANA zone your phone lives in (e.g.
-  `Europe/Berlin`); default `UTC`. Every daily view buckets by it
-  (`metric_daily`, Grafana's daily panels, the product API, the web viewer),
-  and it must match the phone: the daily aggregates HealthKit computes are
-  already in the phone's calendar, and a mismatch splits days between two
-  rows. On every start `db/migrations/013_time_zone.sh` validates it against
+- **`PULS_TIME_ZONE`** — the deployment's fallback IANA reporting zone
+  (e.g. `Europe/Berlin`); default `UTC`. Accounts may set `users.time_zone`
+  independently. Existing users retain the fallback; newly approved hosted
+  users initialize once from their first phone upload. Travel does not
+  silently change the account setting. Daily phone aggregates retain their
+  recorded local date, rings retain their supplied date, and raw daily queries
+  use the account reporting zone. On every start `db/migrations/013_time_zone.sh` validates it against
   `pg_timezone_names` (an unknown name stops the stack) and stores it with
   `ALTER DATABASE … SET puls.time_zone`, read by `puls_time_zone()`. Compose
   also hands it to `api` and `web`. The API refuses an invalid name, and
@@ -86,10 +87,9 @@ comments. Beyond the passwords and tokens:
   database whose migrate has not re-run since `.env` changed, or a zone set
   by hand) stops it with a log line naming both, since its days would
   otherwise disagree with `metric_daily` silently; a database without the
-  function is logged and accepted. The API reports the zone as `timeZone`
-  on `GET /v1/users`, and the MCP server adopts it from there (set
-  `PULS_TIME_ZONE` on the MCP only to override it; see
-  `server/mcp/README.md`). To change it, edit `.env` and:
+  function is logged and accepted. The API reports each selected user's zone as `timeZone`
+  on `GET /v1/users`, and the MCP server adopts it from there. Its
+  `PULS_TIME_ZONE` setting is only a legacy fallback; see `server/mcp/README.md`. To change it, edit `.env` and:
 
   ```bash
   docker compose up -d     # migrate re-stores it; api/web are recreated, mcp restarts with api
@@ -1038,7 +1038,8 @@ dumps; these are full dumps, and they restore.
 | `.env` | Default | What |
 |---|---|---|
 | `PULS_BACKUP_INTERVAL` | `24h` | Between scheduled dumps. `24h`, `90m`, `3600s`, or bare seconds; minimum 60s. |
-| `PULS_BACKUP_KEEP_DAYS` | `14` | Delete dumps older than this. `0` keeps everything. |
+| `PULS_BACKUP_KEEP_DAYS` | `14` | Delete dumps older than this. `0` keeps everything unless strict retention is enabled. |
+| `PULS_BACKUP_STRICT_RETENTION` | `false` | Expire even the newest dump, including on dump failure. Requires a positive retention period. |
 | `PULS_BACKUP_DIR` | (the `backups` volume) | Where dumps go. Set it to a path and they land there instead. |
 
 **Point `PULS_BACKUP_DIR` at something that is not this disk.** The default
@@ -1054,6 +1055,44 @@ dump time. For a fixed time, leave the profile off and run `make backup`
 from the host's cron or systemd timer. `docker compose stop backup` returns
 at once rather than waiting out the kill timeout.
 
+### Hosted retention and deletion receipts
+
+For a hosted deployment with a bounded backup-retention policy, enable
+`PULS_BACKUP_STRICT_RETENTION=true`. Unlike the self-hosted default, this can
+remove the last recovery copy. Strict expiry uses minute-granularity file
+ages; the running loop checks at least hourly between dumps, even when a dump
+fails. A running dump, stopped service, inaccessible storage, or failing
+filesystem can delay expiry. Monitor backup success, oldest archive age and
+service health; do not promise a deadline from configuration alone. Apply the
+same policy to offsite copies. `backup/test-retention.sh` exercises boundary,
+failed-dump, newest-copy and configuration behavior on a temporary directory
+using GNU tools (or inside the pinned backup image).
+
+Hosted account deletion also requires `PULS_DELETION_LEDGER_DIR=/deletion-ledger`
+in the web service. The separate `deletion_ledger` volume is writable only by
+the web service and mounted read-only in backup operations. Set
+`PULS_DELETION_LEDGER_VOLUME` to an independently protected host directory if
+needed, with ownership matching the web container. A receipt contains only
+version, internal user UUID and request timestamp, without email or health
+data. Keep these receipts permanently to prevent old snapshots resurrecting
+removed accounts. Protect and replicate this volume independently of database
+backups; **never roll it back with a health snapshot**. `docker compose down -v`
+also removes this volume and must not be used on the hosted installation.
+
+A restore in strict-retention mode or with a configured deletion ledger
+requires `--deletion-ledger-ready`, an operator attestation that the complete,
+current independent ledger is present. This matters because Docker can create
+an empty replacement volume after storage loss: emptiness alone cannot prove
+no deletions happened. The script stops writers, snapshots and validates all
+receipts before dropping schemas, restores the dump, runs migrations, then
+replays each deletion before reopening services. The isolated synthetic drill
+`server/backup/test-restore-ledger.sh --scratch` exercises the actual restore
+script with a pre-deletion dump, invalid receipts and protected accounts; it
+creates its own project and volumes, with no host ports. Any validation, migration or
+purge error leaves services stopped. The same replay occurs with `--no-start`.
+If the current ledger is lost, do not reopen an older backup as hosted service
+until deletion requests have been reconciled from an independent source.
+
 ### Restoring
 
 `server/backup/restore.sh` (`make restore FILE=…`) **replaces the contents of
@@ -1065,6 +1104,7 @@ throwaway container, never staged in a temporary file). Flags go through
 
 | Flag | What |
 |---|---|
+| `--deletion-ledger-ready` | Attest the independent deletion ledger is complete and current; required for hosted restores. |
 | `--yes` | Skip the "type restore to continue" prompt. For scripted drills. |
 | `--build` | Bring the stack back up from this checkout (`compose.build.yml`) rather than the published images. `PULS_BOOTSTRAP_BUILD=1` sets it too. |
 | `--no-start` | Leave the app services stopped afterwards; `docker compose up -d` when you are ready. |
@@ -1176,3 +1216,14 @@ own device tokens, independently of signup origin. Account deletion, disable
 and purge permissions are unchanged. `022_device_pairing_policy.sh` runs on
 every migration and excludes the configured `WEB_DEMO_USER` from phone pairing
 in the database; Compose passes that value to both migrate and web.
+
+### Account reporting calendars (023)
+
+Run the migrate service before deploying the updated ingest/API/viewer.
+`023_account_time_zones.sql` adds account reporting zones and the account
+setting function. The optional protocol-v1 `timeZoneID` header initializes
+only newly approved hosted accounts, once; legacy and self-hosted users keep
+the deployment fallback until they choose a zone. No raw instants are rewritten.
+`099_read_roles.sh` restores the account-aware daily view after rerunning older
+rollup migrations, including baseline upgrades. Fractional-offset day boundaries,
+DST and recorded travel-day aggregates are covered by `server/db/test-migrate.sh`.

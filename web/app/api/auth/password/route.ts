@@ -3,8 +3,7 @@ import type { NextRequest } from "next/server";
 import { accountsOnly, refuseDemo, field, readForm, requestIp, requestSession, seeOther, setSessionCookie } from "@/lib/accounts/http";
 import { hashPassword, newPasswordProblem, verifyPassword } from "@/lib/accounts/password";
 import { authFailures, failureKeys, refundAll, takeAll } from "@/lib/accounts/ratelimit";
-import { createSession } from "@/lib/accounts/session";
-import { changePassword, findPasswordHash } from "@/lib/accounts/store";
+import { changePasswordAndSession, findPasswordHash } from "@/lib/accounts/store";
 
 // The account page's "Change password" form. It needs the current password
 // as well as the session — a borrowed, unlocked browser should not be enough
@@ -32,12 +31,12 @@ export async function POST(request: NextRequest) {
   try {
     const current = await findPasswordHash(session.accountId);
     if (!current || !(await verifyPassword(field(form, "current"), current))) return seeOther("/account?error=current");
-    refundAll(authFailures, keys);
-    await changePassword(session.accountId, await hashPassword(password));
-    const token = await createSession(session.accountId, {
+    const token = await changePasswordAndSession(session.accountId, current, session.id, await hashPassword(password), {
       userAgent: request.headers.get("user-agent"),
       ip: requestIp(request),
     });
+    if (!token) return seeOther("/account?error=current");
+    refundAll(authFailures, keys);
     return setSessionCookie(seeOther("/account?notice=password"), token);
   } catch (e) {
     refundAll(authFailures, keys);

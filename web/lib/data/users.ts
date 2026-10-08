@@ -2,6 +2,7 @@
 // row, and the profile behind the heart-rate zones.
 
 import { query, scoped } from "../db";
+import { reportingTimeZone } from "../reportingTimeZone";
 import { configuredTimeZone } from "../config";
 import { demoProfile, demoUsers } from "../demo";
 import type { Profile, User } from "../types";
@@ -52,6 +53,7 @@ export const DEFAULT_MAX_HR = 190;
 export async function getProfile(userId: string): Promise<Profile> {
   const fallback: Profile = { dob: null, biologicalSex: null, age: null, maxHr: DEFAULT_MAX_HR, restingHr: null };
   return liveRead("getProfile", demoProfile, async () => {
+    const timeZone = await reportingTimeZone(userId);
     const rows = await scoped(userId, (q) => q<{ dob: string | null; biological_sex: string | null; resting_hr: number | null }>(
       `SELECT (extract(epoch from (u.dob::timestamp AT TIME ZONE $2::text)) * 1000)::bigint AS dob,
               u.biological_sex,
@@ -67,7 +69,7 @@ export async function getProfile(userId: string): Promise<Profile> {
             LIMIT 1
          ) r ON true
         WHERE u.id = $1::uuid`,
-      [userId, configuredTimeZone()],
+      [userId, timeZone],
     ));
     const r = rows[0];
     if (!r) return fallback;
@@ -76,6 +78,7 @@ export async function getProfile(userId: string): Promise<Profile> {
       r.dob == null ? null : Number(r.dob),
       r.biological_sex,
       restingHr,
+      timeZone,
     );
   });
 }
@@ -84,11 +87,12 @@ export function profileFromStoredValues(
   dobMs: number | null,
   sex: string | null,
   restingHr: number | null,
+  timeZone = configuredTimeZone(),
 ): Profile {
   if (dobMs == null) {
     return { dob: null, biologicalSex: sex, age: null, maxHr: DEFAULT_MAX_HR, restingHr };
   }
-  return profileFromDob(dobMs, sex, restingHr);
+  return profileFromDob(dobMs, sex, restingHr, new Date(), timeZone);
 }
 
 // Build a Profile from an epoch-ms DOB: age today, max HR = 220 − age.

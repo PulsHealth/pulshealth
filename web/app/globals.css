@@ -585,6 +585,7 @@ button {
   padding: 40px 16px;
 }
 .auth-card {
+  min-width: 0;
   width: 100%;
   max-width: 400px;
   padding: 28px 26px 24px;
@@ -600,6 +601,7 @@ button {
   color: var(--fg-soft);
 }
 .form-field input {
+  min-width: 0;
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
@@ -607,7 +609,8 @@ button {
   background: var(--bg-elevated);
   color: var(--fg);
   font: inherit;
-  font-size: 15px;
+  /* iOS Safari zooms focused controls below 16px, clipping the sign-in sheet. */
+  font-size: 16px;
 }
 .form-field input:focus-visible {
   outline: 2px solid var(--accent);

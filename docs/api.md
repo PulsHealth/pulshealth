@@ -145,8 +145,9 @@ exactly one user:
   quiet answer for the default user.
 - `GET /v1/users` lists the users this deployment answers for (only the
   default user while multi-user reads are off), with their last sync time
-  and upload counts. It also reports `timeZone`, the server's
-  `PULS_TIME_ZONE` (see [Conventions](#conventions)).
+  and upload counts. Each user includes their reporting `timeZone`; the
+  response's top-level `timeZone` belongs to the selected user. `/v1/profile`
+  also returns that zone (see [Conventions](#conventions)).
 
 ```bash
 curl -s -H "Authorization: Bearer $PULS_API_TOKEN" "$PULS_API_BASE_URL/v1/users"
@@ -165,14 +166,15 @@ with no data.
   (9999-12-31). Anything else is a `400`.
 - **Ranges** are half-open, `[start, end)`, and `end` must be after `start`.
   Raw-record endpoints filter on each record's start time.
-- **Calendar days** follow the server's `PULS_TIME_ZONE`, which must match
-  the phone's zone. A day-grained endpoint (`/v1/metrics/daily`,
-  `/v1/activity/summary`, `/v1/sleep/daily`, `/v1/state-of-mind`) returns
-  every local day that `[start, end)` touches, so a range that grazes one
-  minute of a day returns that whole day. `date` fields are `YYYY-MM-DD`.
-  `GET /v1/users` reports the zone as `timeZone` (`UTC` when unset), and the
-  service refuses to start when `PULS_TIME_ZONE` disagrees with the zone
-  stored in the database.
+- **Calendar days** for raw grouping and request ranges follow the selected
+  account's reporting `timeZone`, exposed by `/v1/users` and `/v1/profile`.
+  A day-grained endpoint returns every reporting-calendar day `[start, end)`
+  touches. `date` fields are `YYYY-MM-DD`. Phone aggregate buckets preserve
+  their recorded local date and rings preserve their supplied date; those
+  dates can differ from raw reporting dates during travel. Legacy aggregates
+  without temporal context use the reporting zone. Existing users with no
+  explicit setting fall back to `PULS_TIME_ZONE` (`UTC` when unset); startup
+  verifies this deployment fallback against the database.
 - **Units** are canonical per type and never the device's own: `count/min`
   for heart rate, `kcal` for energy, `m` for distance, `%` as a fraction
   (blood oxygen `0.97`). Each answer names its `unit`. The full table is the

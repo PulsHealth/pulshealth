@@ -7,6 +7,8 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { UnitsProvider } from "@/components/UnitsProvider";
 import { getDataSource, getUsers } from "@/lib/queries";
+import { TimeZoneProvider } from "@/components/TimeZoneProvider";
+import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import { configuredTimeZone } from "@/lib/config";
 import { signupsOpen, viewerMode } from "@/lib/mode";
 import { currentSession, viewerUser } from "@/lib/viewer";
@@ -37,7 +39,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // script here must carry it or the browser refuses to run it.
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
-  const timeZone = configuredTimeZone();
+  const session = await currentSession().catch(() => null);
+  const timeZone = session ? await reportingTimeZone(session.userId) : configuredTimeZone();
   const runtimeScript = `window.__PULS_TIME_ZONE__=${JSON.stringify(timeZone).replace(/</g, "\\u003c")};${themeScript}`;
   return (
     <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
@@ -47,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <div className="app-bg" />
         <div className="grain" />
-        <UnitsProvider>{await shell(children, requestHeaders.get(PATH_HEADER))}</UnitsProvider>
+        <TimeZoneProvider timeZone={timeZone}><UnitsProvider>{await shell(children, requestHeaders.get(PATH_HEADER))}</UnitsProvider></TimeZoneProvider>
       </body>
     </html>
   );

@@ -259,9 +259,11 @@ per bucket, GPS fix, stream datapoint or dose. How the two sides differ:
   to `daily_metrics` is `aggregates`, the statistics HealthKit itself computes
   for whatever aggregate series are configured; sleep stages are rows of
   `samples`.
-- **Local days are the phone's.** `activity.date` and `state_of_mind.date` are
-  computed in the phone's time zone, which is what the server's
-  `PULS_TIME_ZONE` is required to match anyway.
+- **On-device local days are the phone's.** `activity.date` and
+  `state_of_mind.date` use the phone's time zone. The server preserves ring
+  dates and recorded daily aggregate dates; raw records and mood entries are
+  grouped in the account reporting zone. Travel can therefore produce different
+  local-day labels between an on-device export and a server raw-data export.
 - **What CSV leaves out.** Metadata, device, source bundle and version, the
   per-sample time-zone context, and a workout's statistics, events and
   sub-activities have no column. ECG voltage traces, beat-to-beat heartbeat

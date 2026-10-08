@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { accountsOnly, field, readForm, requestIp, seeOther, setSessionCookie } from "@/lib/accounts/http";
 import { hashPassword, newPasswordProblem } from "@/lib/accounts/password";
 import { authFailures, failureKeys, refundAll, takeAll } from "@/lib/accounts/ratelimit";
-import { createSession, deleteSession, SESSION_COOKIE, tokenHash } from "@/lib/accounts/session";
+import { SESSION_COOKIE, tokenHash } from "@/lib/accounts/session";
 import { acceptInvite, findInvite } from "@/lib/accounts/store";
 
 // An invite link's form posts here: the token, and the new password twice.
@@ -36,20 +36,17 @@ export async function POST(request: NextRequest) {
       return seeOther(`${page}?error=${problem}`);
     }
 
-    const result = await acceptInvite(token, await hashPassword(field(form, "password")));
+    const previous = tokenHash(request.cookies.get(SESSION_COOKIE)?.value);
+    const result = await acceptInvite(token, await hashPassword(field(form, "password")), {
+      userAgent: request.headers.get("user-agent"),
+      ip: requestIp(request),
+    }, previous);
     if (!result.ok) {
       if (result.reason !== "invalid") refundAll(authFailures, keys);
       return seeOther(`${page}?error=${result.reason}`);
     }
     refundAll(authFailures, keys);
-    // Whatever session this browser held — someone else's, even — ends here.
-    const previous = tokenHash(request.cookies.get(SESSION_COOKIE)?.value);
-    if (previous) await deleteSession(previous);
-    const session = await createSession(result.accountId, {
-      userAgent: request.headers.get("user-agent"),
-      ip: requestIp(request),
-    });
-    return setSessionCookie(seeOther("/?notice=welcome"), session);
+    return setSessionCookie(seeOther("/?notice=welcome"), result.sessionToken);
   } catch (e) {
     refundAll(authFailures, keys);
     console.error("[puls-web] invite failed:", e instanceof Error ? e.message : e);

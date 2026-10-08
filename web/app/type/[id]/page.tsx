@@ -1,3 +1,4 @@
+import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -27,11 +28,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 // read after a restart takes seconds, so this tile streams in after the page.
 async function AllTimeSamples({ user, id }: { user: string; id: string }) {
   const stat = (await getStats(user)).get(id);
+  const timeZone = await reportingTimeZone(user);
   return (
     <Stat
       label="All-time samples"
       value={stat ? formatCompact(stat.rows) : "—"}
-      sub={stat?.earliest ? `since ${formatFull(stat.earliest)}` : undefined}
+      sub={stat?.earliest ? `since ${formatFull(stat.earliest, timeZone)}` : undefined}
     />
   );
 }
@@ -64,6 +66,7 @@ export default async function TypePage({
   const cumulative = isCumulative(id);
 
   const user = await viewerUser();
+  const timeZone = await reportingTimeZone(user);
   const [series, latestMap, todays] = await Promise.all([
     getSeries(user, id, range),
     getLatestMany(user, [id]),
@@ -120,7 +123,7 @@ export default async function TypePage({
           {latest && (
             <div style={{ marginLeft: "auto", textAlign: "right", color: "var(--muted)", fontSize: 13 }}>
               <div>Last reading {relativeTime(latest.t)}</div>
-              <div className="mono" style={{ fontSize: 12, color: "var(--faint)", marginTop: 2 }}>{formatFull(latest.t)}</div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--faint)", marginTop: 2 }}>{formatFull(latest.t, timeZone)}</div>
             </div>
           )}
         </div>

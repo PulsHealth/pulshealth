@@ -64,8 +64,8 @@ final class AppModel {
     private(set) var serverStatsError: String?
     private(set) var reconciling: Set<String> = []
     /// What the configured server advertised on its last successful
-    /// `GET /v1/capabilities` — in memory only, refreshed after a successful
-    /// connection test and on every foreground while a server is configured.
+    /// `GET /v1/capabilities` — in memory only, refreshed after applying a
+    /// configuration and on every foreground while a server is configured.
     /// Nil means unknown (never fetched, or the server has no such endpoint),
     /// and unknown hides the feature-gated UI: reconciliation needs `digest`
     /// + `uuids`, the per-type server rows need `stats`.
@@ -693,7 +693,8 @@ final class AppModel {
     /// opposed to a type or two added in the Raw Samples picker.
     @discardableResult
     func applyConfiguration(
-        syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false
+        syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false,
+        clearAuthToken: Bool = false
     ) async -> Bool {
         // Nothing applied now would be saved (the store is read-only this
         // process), and the empty configuration on screen is not the real one.
@@ -707,9 +708,16 @@ final class AppModel {
             return false
         }
         let previousProfile = await engine.store.configuration.userProfilePayload
-        await resetReidentifiedAggregates()
-        await engine.configure(config, confirmServerIdentity: serverChangeConfirmed)
+        guard await engine.configure(config, confirmServerIdentity: serverChangeConfirmed, clearAuthToken: clearAuthToken) else {
+            lastErrorMessage = "A sync is in progress. Wait for it to finish, then save again."
+            return false
+        }
+        if appliedConfig.serverURL != config.serverURL || appliedConfig.authToken != config.authToken
+            || appliedConfig.userID != config.userID {
+            serverCapabilities = nil
+        }
         appliedConfig = config
+        Task { await refreshServerCapabilities() }
         // User identity is independent of workout availability. Send it as its
         // own tiny batch so Save & Apply updates the server immediately even when
         // there are no new workouts to carry a profile line — unless there is
@@ -819,6 +827,15 @@ final class AppModel {
             await engine.finishWake(wake, outcome: finished ? .completed : .expired)
         }
         return true
+    }
+
+    /// Pairing a database after onboarding must start its first backfill now,
+    /// with continued processing on supported iOS versions.
+    @discardableResult
+    func applyDatabaseConfiguration() async -> Bool {
+        let firstConnection = appliedConfig.serverURL == nil && config.serverURL != nil
+        return await applyConfiguration(
+            syncNewTypes: firstConnection, wholeHistory: firstConnection, clearAuthToken: config.authToken == nil)
     }
 
     // MARK: - Server / user change
@@ -1050,24 +1067,6 @@ final class AppModel {
     nonisolated static func normalizedUserID(_ text: String) -> String? {
         UUID(uuidString: text.trimmingCharacters(in: .whitespacesAndNewlines))
             .map { $0.uuidString.lowercased() }
-    }
-
-    /// Before applying, reset the watermark of any aggregate whose server
-    /// identity or start date changed in the draft: that describes a different
-    /// series, so the next sync must recompute it from scratch (the server
-    /// upserts, so re-sending is safe). New configs have no watermark yet, so
-    /// they're skipped — `applyConfiguration` backfills them instead.
-    private func resetReidentifiedAggregates() async {
-        let applied = Dictionary(uniqueKeysWithValues: appliedConfig.aggregates.map { ($0.id, $0) })
-        for agg in config.aggregates {
-            guard let old = applied[agg.id] else { continue }
-            if old.seriesIdentity != agg.seriesIdentity || old.startDate != agg.startDate {
-                await engine.store.resetAggregate(configID: agg.id)
-                await engine.eventLog.log(
-                    .warn, type: agg.typeIdentifier,
-                    "Aggregate changed to \(agg.label.lowercasedFirst) — the next sync computes it from the start")
-            }
-        }
     }
 
     /// Reverts the staged draft back to what's currently applied.
@@ -1343,37 +1342,41 @@ final class AppModel {
     /// last answer; a transient failure (offline, 5xx) keeps it, so a flaky
     /// network does not make the reconciliation controls flicker.
     func refreshServerCapabilities() async {
-        guard config.serverURL != nil, config.authToken != nil else {
+        let target = appliedConfig
+        guard target.serverURL != nil, target.authToken != nil else {
             serverCapabilities = nil
             return
         }
+        let capabilities: ServerCapabilities?
         do {
-            serverCapabilities = try await engine.serverCapabilities()
+            capabilities = try await engine.serverCapabilities()
         } catch TransportError.serverError(let status, _) where status == 404 || status == 405 {
-            serverCapabilities = nil
+            capabilities = nil
         } catch is DecodingError {
-            serverCapabilities = nil
+            capabilities = nil
         } catch {
             // Transient: keep the last known capabilities.
+            return
         }
+        guard appliedConfig.serverURL == target.serverURL,
+              appliedConfig.authToken == target.authToken,
+              appliedConfig.userID == target.userID else { return }
+        serverCapabilities = capabilities
     }
 
     /// Tests a server URL + token *without saving them* — the Settings screen
     /// calls this with the entered, not-yet-applied values. Nothing is
-    /// persisted; a successful answer only refreshes the in-memory
-    /// capabilities so the feature gates reflect the server just tested.
+    /// persisted, and capabilities of an unapplied destination never affect
+    /// the feature gates for the database that is actually syncing.
     ///
     /// `userID` is the one the entered values would sync as — the draft's,
     /// unless a pairing code staged a different one alongside them
     /// (`ServerFieldsDraft.connectionTestUserID`).
-    func testConnection(url: URL, token: String, userID: String? = nil) async -> ConnectionTestResult {
+    func testConnection(url: URL, token: String, userID: String? = nil, session: URLSession? = nil) async -> ConnectionTestResult {
         let deviceID = await engine.store.deviceID
         let tester = ConnectionTester(
-            baseURL: url, authToken: token, userID: userID ?? config.userID, deviceID: deviceID)
+            baseURL: url, authToken: token, userID: userID ?? config.userID, deviceID: deviceID, session: session)
         let result = await tester.run()
-        if case .ok(let capabilities) = result {
-            serverCapabilities = capabilities
-        }
         lastConnectionTest = ConnectionTestRecord(url: url, result: result, at: Date())
         return result
     }

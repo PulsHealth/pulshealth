@@ -82,12 +82,13 @@ export async function scoped<T>(userId: string, fn: (q: QueryFn) => Promise<T>):
  * compressed batches), in its own transaction with the server's and the
  * client's timeouts raised to `minutes` for it alone.
  */
-export async function longStatement<T = Record<string, unknown>>(text: string, params: unknown[], minutes: number): Promise<T[]> {
+export async function longStatement<T = Record<string, unknown>>(text: string, params: unknown[], minutes: number, beforeCommit?: () => Promise<void>): Promise<T[]> {
   const ms = Math.round(minutes * 60_000);
   return inTransaction("BEGIN", [[`SET LOCAL statement_timeout = ${ms}`, []]], async (_q, client) => {
     // node-postgres reads a per-query query_timeout (client.js); its types omit it.
     const config: QueryConfig<unknown[]> & { query_timeout: number } = { text, values: params, query_timeout: ms + 5_000 };
     const res = await client.query(config);
+    if (beforeCommit) await beforeCommit();
     return res.rows as T[];
   });
 }

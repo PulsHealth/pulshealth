@@ -174,9 +174,9 @@ most sleep.
 
 ## The time-zone rule
 
-Every date in this server is a calendar day in the server's configured time
-zone (`time_zone` in `list_available_types` and `get_profile`), which is set
-to match the phone's zone. Inclusive `start_date`/`end_date` ranges return
+Every date is a calendar day in the selected person's reporting time zone
+(`time_zone` in `list_available_types` and `get_profile`), configured to
+match the phone's zone. Inclusive `start_date`/`end_date` ranges return
 exactly those days. Instants (`timestamp`, `start`, `end`, `latest`) are ISO
 8601 with the zone's UTC offset. If the person travelled, days are still cut
 in the configured zone.

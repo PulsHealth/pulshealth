@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -12,22 +15,9 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// The server's calendar zone.
-//
-// Every YYYY-MM-DD a tool takes or returns is a day in the stack's
-// PULS_TIME_ZONE, and the product API cuts its days in the same zone (it
-// refuses to start when that disagrees with the database). The API reports it
-// on GET /v1/users, so this server adopts it: PULS_TIME_ZONE need not be set
-// here at all, and a laptop's stdio instance no longer silently answers in
-// UTC. Set, it wins, and a disagreement with the API is logged loudly.
-//
-// The API is asked lazily, before the first tool call, resource read or
-// prompt — not at startup — so a client that launches this binary before
-// the network (or the server) is up still gets a working instance once it
-// is. Until the zone is known no date is computed: the call fails with an
-// error saying why, and the next one asks again. A learned zone is asked
-// again after zoneRefreshEvery, so a long-lived instance follows the stack
-// when its PULS_TIME_ZONE changes; a failed re-ask keeps the known zone.
+// Calendar zones are refreshed through the selected API client for each
+// request. Request-local service copies keep simultaneous accounts independent.
+// The legacy single-zone helpers below remain for startup compatibility checks.
 
 const (
 	zoneLookupTimeout = 10 * time.Second
@@ -35,6 +25,7 @@ const (
 )
 
 type serverZone struct {
+	explicit bool
 	// mu serialises the lookup, so concurrent first calls ask once.
 	mu sync.Mutex
 	// settled: a zone is known (PULS_TIME_ZONE was set, or the API
@@ -47,18 +38,96 @@ type serverZone struct {
 	loc atomic.Pointer[time.Location]
 }
 
-// zoneMiddleware makes sure the zone is known before any request that
-// computes a date: tool calls, resource reads and prompts.
+type requestZoneKey struct{}
+
+// forContext copies the service, never mutating a zone used by another caller.
+func (s *service) forContext(ctx context.Context) *service {
+	if loc, ok := ctx.Value(requestZoneKey{}).(*time.Location); ok {
+		local := *s
+		local.zone = &serverZone{settled: true}
+		local.zone.loc.Store(loc)
+		return &local
+	}
+	return s
+}
+
 func (s *service) zoneMiddleware(next mcp.MethodHandler) mcp.MethodHandler {
 	return func(ctx context.Context, method string, req mcp.Request) (mcp.Result, error) {
-		switch method {
-		case "tools/call", "resources/read", "prompts/get":
-			if err := s.ensureZone(ctx); err != nil {
-				return nil, err
+		var api *APIClient
+		var err error
+		switch r := req.(type) {
+		case *mcp.CallToolRequest:
+			var in userInput
+			if r.Params != nil && len(r.Params.Arguments) > 0 {
+				if err := json.Unmarshal(r.Params.Arguments, &in); err != nil {
+					return next(ctx, method, req)
+				}
 			}
+			api, _, err = s.scope(r, in.User)
+		case *mcp.ReadResourceRequest:
+			api, _, err = s.callerAPI(r.Extra)
+		case *mcp.GetPromptRequest:
+			api, _, err = s.callerAPI(r.Extra)
+		default:
+			return next(ctx, method, req)
 		}
-		return next(ctx, method, req)
+		if err != nil {
+			if _, ok := req.(*mcp.CallToolRequest); ok {
+				return next(ctx, method, req)
+			}
+			return nil, err
+		}
+		loc, err := s.selectedZone(ctx, api)
+		if err != nil {
+			return nil, err
+		}
+		return next(context.WithValue(ctx, requestZoneKey{}, loc), method, req)
 	}
+}
+
+// Fetch fresh metadata for each request so account setting changes apply on
+// the next call. Only the request context reuses this resolved zone. An account
+// zone takes precedence over the legacy environment override.
+func (s *service) selectedZone(ctx context.Context, api *APIClient) (*time.Location, error) {
+	z := s.zone
+	key := api.User()
+	ctx, cancel := context.WithTimeout(ctx, zoneLookupTimeout)
+	defer cancel()
+	resp, err := api.Users(ctx)
+	if err != nil {
+		// Explicit zones remain usable against legacy APIs without /v1/users.
+		var apiErr *APIError
+		if z.explicit && errors.As(err, &apiErr) && apiErr.Status == http.StatusNotFound {
+			return z.loc.Load(), nil
+		}
+		return nil, fmt.Errorf("could not learn the selected user's time zone: %w", err)
+	}
+	selected := key
+	if selected == "" {
+		selected = resp.Default
+	}
+	name := ""
+	for _, user := range resp.Users {
+		if strings.EqualFold(user.UserID, selected) {
+			name = strings.TrimSpace(user.TimeZone)
+			break
+		}
+	}
+	if name == "" {
+		if z.explicit {
+			name = z.loc.Load().String()
+		} else {
+			name = strings.TrimSpace(resp.TimeZone)
+		}
+	}
+	if name == "" {
+		name = "UTC"
+	}
+	loc, err := loadTimeZone(name)
+	if err != nil {
+		return nil, fmt.Errorf("invalid selected user's time zone: %w", err)
+	}
+	return loc, nil
 }
 
 // ensureZone learns the product API's zone once, unless PULS_TIME_ZONE

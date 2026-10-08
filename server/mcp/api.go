@@ -224,6 +224,7 @@ type StateOfMindEntry struct {
 // User is one entry of GET /v1/users. createdAt and lastSync are epoch
 // milliseconds; lastSync is nil for a user that never synced.
 type User struct {
+	TimeZone        string  `json:"timeZone"`
 	UserID          string  `json:"userID"`
 	Name            *string `json:"name"`
 	Email           *string `json:"email"`
@@ -609,12 +610,11 @@ func (c *APIClient) Summary(ctx context.Context, rng string) (string, error) {
 	return string(body), nil
 }
 
-// Users is GET /v1/users. It is a listing, not a per-user read, so the
-// client's user is deliberately not sent: a pinned instance can still learn
-// who the API's default is and whether multi-user reads are on.
+// Users is GET /v1/users. Preserve the selected user so the API reports
+// that person's reporting time zone and applies its authorization boundary.
 func (c *APIClient) Users(ctx context.Context) (*UsersResponse, error) {
 	var out UsersResponse
-	if err := c.ForUser("").get(ctx, "/v1/users", nil, &out); err != nil {
+	if err := c.get(ctx, "/v1/users", nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

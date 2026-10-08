@@ -166,6 +166,7 @@ Schema: [`schema/header.schema.json`](schema/header.schema.json).
 |---|---|---|---|
 | `schemaVersion` | integer | v1 clients | Protocol version, `1`. Absent (or `null` on the reference server) means a client that predates versioning; read it as 1. An unsupported value is refused with the fixed body in [7.3](#73-unsupported-protocol-version), checked before any other header field. When both `X-Puls-Protocol` and `schemaVersion` are present they MUST agree. |
 | `clientVersion` | string | v1 clients | Free text identifying the sender, e.g. `0.1.0 (57)`. Diagnostic only; log it, do not parse it. |
+| `timeZoneID` | string | optional | Current device IANA zone (for example `America/Los_Angeles`), at most 100 characters. Absent or empty preserves legacy behavior. The reference server validates nonempty names and refuses `Local`; it initializes the calendar zone only for newly approved hosted accounts, never overwriting an established zone on travel or later uploads. Receivers may ignore it. |
 | `batchID` | UUID | yes | Stable across retries of the same upload. A receiver MAY key replay detection on it ([6.1](#61-batch-replay)). |
 | `deviceID` | string | yes | Opaque, stable per app install. |
 | `type` | string | yes | A label: the type identifier that contributed the most samples, or, for the connection probe ([8.3](#83-connection-probe)), the literal string `probe`, which is not a type identifier. Any non-empty string is valid. Receivers MUST NOT derive the types of the lines from it; every line names its own type. |

@@ -1,3 +1,4 @@
+import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ActivityRings, type RingDatum } from "@/components/ActivityRings";
@@ -40,6 +41,7 @@ const RING_TYPES = [
 export default async function Dashboard() {
   const now = new Date();
   const user = await viewerUser();
+  const timeZone = await reportingTimeZone(user);
   // All at once: none of these needs another's answer. The per-type sample
   // counts in Browse are the exception, streamed in below.
   const [latest, todays, workouts, activity, seriesList] = await Promise.all([
@@ -82,7 +84,7 @@ export default async function Dashboard() {
   return (
     <>
       <PageHeader
-        title={greetingAt(now)}
+        title={greetingAt(now, timeZone)}
         subtitle="Your health data, synced from Apple Health to your own server — and finally easy to look at."
       />
 
@@ -152,7 +154,7 @@ export default async function Dashboard() {
                   {w.energyKcal != null && <span>{formatCompact(w.energyKcal)} Cal</span>}
                   {w.distanceM != null && <span><Distance meters={w.distanceM} /></span>}
                 </div>
-                <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 8 }}>{formatFull(w.start)}</div>
+                <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 8 }}>{formatFull(w.start, timeZone)}</div>
               </Link>
             ))}
           </div>

@@ -73,8 +73,8 @@ func assertDashboardQueryScoped(t *testing.T, label, query string) {
 // The dashboard ships with no install-specific values baked in. The user
 // variable is a query over `users` resolved on dashboard load (Grafana picks
 // the first row, i.e. the seeded default on a fresh install) and the hidden
-// tz variable reads the database's puls.time_zone setting (puls_time_zone(),
-// written from PULS_TIME_ZONE by 013_time_zone.sh). Both used to be pinned
+// tz variable reads the selected account's reporting zone (with the
+// PULS_TIME_ZONE database fallback for users without a setting). Both used to be pinned
 // constants: one person's UUID and one person's zone.
 func TestHealthDashboardVariablesAreNotPinned(t *testing.T) {
 	dashboard := loadHealthDashboard(t)
@@ -94,8 +94,8 @@ func TestHealthDashboardVariablesAreNotPinned(t *testing.T) {
 			}
 		case "tz":
 			found["tz"] = true
-			if variable.Type != "query" || !strings.Contains(variable.Query, "puls_time_zone()") {
-				t.Fatalf("tz variable must query puls_time_zone(), got type %q query %q", variable.Type, variable.Query)
+			if variable.Type != "query" || !strings.Contains(variable.Query, "puls_user_time_zone('${user}'::uuid)") {
+				t.Fatalf("tz variable must query the selected user reporting zone, got type %q query %q", variable.Type, variable.Query)
 			}
 			if variable.Hide != 2 { // 2 = hidden from the dashboard header
 				t.Fatalf("tz variable hide = %d, want 2 (hidden)", variable.Hide)

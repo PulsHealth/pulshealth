@@ -106,6 +106,9 @@ services:
       WEB_DB_PASSWORD: ${WEB_DB_PASSWORD:-}
       # 022 keeps public-demo phone pairing disabled in the database.
       WEB_DEMO_USER: ${WEB_DEMO_USER:-}
+      WEB_PERSONAL_USERS: ${WEB_PERSONAL_USERS:-}
+      # Protect the configured legacy/default owner from account deletion.
+      PULS_USER_ID: ${PULS_USER_ID:-5ea4d000-0000-4000-8000-000000000001}
       # Calendar zone for every daily view (metric_daily, Grafana daily
       # panels, the api's local-day ranges). Must match the phone's zone.
       # 013_time_zone.sh validates it and stores it on the database
@@ -336,6 +339,11 @@ services:
       # service gets). Unset, every OAuth path is a 404. See docs/ai.md.
       PULS_MCP_OAUTH_SECRET: ${PULS_MCP_OAUTH_SECRET:-}
       PULS_MCP_URL: ${PULS_MCP_URL:-}
+      # Hosted deletion receipts survive database restores; configure this
+      # path only once its independent volume is backed up and monitored.
+      PULS_DELETION_LEDGER_DIR: ${PULS_DELETION_LEDGER_DIR:-}
+    volumes:
+      - ${PULS_DELETION_LEDGER_VOLUME:-deletion_ledger}:/deletion-ledger
     ports:
       # 3000 is Grafana. Default to loopback; to reach the viewer from other
       # machines set WEB_BIND_ADDR to a private interface, e.g. the host's
@@ -469,8 +477,11 @@ services:
       # Dumps older than this are deleted after each run; 0 keeps everything.
       # The newest dump is never deleted, however old it is.
       PULS_BACKUP_KEEP_DAYS: ${PULS_BACKUP_KEEP_DAYS:-14}
+      PULS_BACKUP_STRICT_RETENTION: ${PULS_BACKUP_STRICT_RETENTION:-false}
     volumes:
       - ./backup/backup.sh:/puls/backup.sh:ro
+      - ./backup/deletion-ledger.sh:/puls/deletion-ledger.sh:ro
+      - ${PULS_DELETION_LEDGER_VOLUME:-deletion_ledger}:/deletion-ledger:ro
       # PULS_BACKUP_DIR unset (the default) leaves this as the `backups` named
       # volume below. Set it to a path — an external disk, a NAS mount, an
       # absolute or ./relative directory — and dumps land there instead, which
@@ -485,3 +496,5 @@ volumes:
   grafana_data:
   # Only created when the `backup` profile is used and PULS_BACKUP_DIR is unset.
   backups:
+  # Never restore this ledger from a health-data snapshot or expire receipts.
+  deletion_ledger:

@@ -13,7 +13,7 @@
 # Each run writes /backups/puls-<UTC timestamp>.dump with `pg_dump --format=custom`
 # (compressed, and the only format `pg_restore` can be selective about), verifies
 # the archive is readable, then deletes dumps older than PULS_BACKUP_KEEP_DAYS —
-# never the newest one, however old it is, because "the schedule stopped six
+# by default never the newest one, however old it is, because "the schedule stopped six
 # weeks ago" must not also mean "and then it deleted your last copy".
 #
 # Scheduling is a sleep loop, not cron. The image ships no cron daemon and does
@@ -31,6 +31,7 @@
 #   BACKUP_DIR              where dumps go inside the container (default /backups)
 #   PULS_BACKUP_INTERVAL    between dumps: 24h, 90m, 3600s, or bare seconds (default 24h)
 #   PULS_BACKUP_KEEP_DAYS   delete dumps older than this many days; 0 keeps everything (default 14)
+#   PULS_BACKUP_STRICT_RETENTION true removes even the newest expired dump (default false)
 #
 # Restoring is server/backup/restore.sh, run from the host. Read it before you
 # need it: TimescaleDB restores have rules ordinary Postgres dumps do not.
@@ -40,6 +41,19 @@ set -euo pipefail
 backup_dir=${BACKUP_DIR:-/backups}
 keep_days=${PULS_BACKUP_KEEP_DAYS:-14}
 interval_spec=${PULS_BACKUP_INTERVAL:-24h}
+strict_retention=${PULS_BACKUP_STRICT_RETENTION:-false}
+case $strict_retention in
+  true|false) ;;
+  *) echo "PULS_BACKUP_STRICT_RETENTION must be true or false" >&2; exit 1 ;;
+esac
+case $keep_days in
+  ''|*[!0-9]*) echo "PULS_BACKUP_KEEP_DAYS must be a whole number" >&2; exit 1 ;;
+esac
+keep_days=$((10#$keep_days))
+if [[ $strict_retention == true && $keep_days -eq 0 ]]; then
+  echo "strict retention requires positive PULS_BACKUP_KEEP_DAYS" >&2
+  exit 1
+fi
 prefix=puls-
 
 log() {
@@ -137,19 +151,25 @@ prune() {
   if [[ $keep_days -eq 0 ]]; then
     return
   fi
+  [[ -d $backup_dir ]] || return 0
   local newest
   newest=$(find "$backup_dir" -maxdepth 1 -type f -name "${prefix}*.dump" -printf '%T@\t%p\n' 2>/dev/null \
     | sort -rn | head -n 1 | cut -f2- || true)
-  local file
+  local file candidates
+  if [[ $strict_retention == true ]]; then
+    candidates=$(find "$backup_dir" -maxdepth 1 -type f \( -name "${prefix}*.dump" -o -name "${prefix}*.dump.part" \) -mmin +"$((keep_days * 1440))") || return 1
+  else
+    candidates=$(find "$backup_dir" -maxdepth 1 -type f -name "${prefix}*.dump" -mtime +"$keep_days") || return 1
+  fi
   while IFS= read -r file; do
     [[ -n $file ]] || continue
-    if [[ $file == "$newest" ]]; then
+    if [[ $strict_retention != true && $file == "$newest" ]]; then
       log "keeping $(basename "$file") despite its age: it is the only/newest dump"
       continue
     fi
     rm -f -- "$file"
     log "pruned $(basename "$file") (older than $keep_days days)"
-  done < <(find "$backup_dir" -maxdepth 1 -type f -name "${prefix}*.dump" -mtime +"$keep_days" 2>/dev/null)
+  done <<< "$candidates"
 }
 
 list_dumps() {
@@ -181,18 +201,23 @@ run_loop() {
   trap 'log "stopping"; [[ -n ${sleep_pid:-} ]] && kill "$sleep_pid" 2>/dev/null; exit 0' TERM INT
 
   log "scheduled dumps every $interval_spec into $backup_dir, keeping $keep_days days"
+  local next_dump=0 delay
   while :; do
-    # A failed dump is logged and retried at the next interval rather than
-    # killing the container: `restart: unless-stopped` would otherwise turn a
-    # database that is momentarily down into a restart loop, and pruning is
-    # skipped so a run that produced nothing cannot age anything out.
-    if take_dump; then
-      prune
-    else
-      warn "dump failed; retrying at the next interval"
+    # Hosted expiry runs independently of successful dumps. Never enable this
+    # mode without monitoring: it intentionally expires the last recovery copy.
+    if [[ $strict_retention == true ]]; then prune; fi
+    if (( SECONDS >= next_dump )); then
+      if take_dump; then
+        prune
+      else
+        warn "dump failed; retrying at the next interval"
+      fi
+      next_dump=$((SECONDS + interval))
     fi
-    log "next dump in $interval_spec"
-    sleep "$interval" &
+    delay=$((next_dump - SECONDS))
+    if [[ $strict_retention == true && $delay -gt 3600 ]]; then delay=3600; fi
+    (( delay > 0 )) || delay=1
+    sleep "$delay" &
     sleep_pid=$!
     wait "$sleep_pid" || true
   done
@@ -200,7 +225,10 @@ run_loop() {
 
 case ${1:-loop} in
   loop) run_loop ;;
-  once) take_dump || exit 1; prune ;;
+  once)
+    if [[ $strict_retention == true ]]; then prune; fi
+    take_dump || exit 1
+    prune ;;
   list) list_dumps ;;
   prune) prune ;;
   cat) shift; cat_dump "$@" ;;

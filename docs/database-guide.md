@@ -709,11 +709,17 @@ ORDER BY wake_started_at DESC;
 - Raw cumulative samples can double-count across sources. Prefer
   `metric_daily` or `aggregate_samples` for daily cumulative truth.
 - `activity_summaries.date` is a local calendar date, not a UTC instant.
-- Server-side day boundaries (`metric_daily` and every other daily view or
-  query bucketed on the server) follow `puls_time_zone()`, which returns the
-  stack's `PULS_TIME_ZONE` setting (UTC when unset). It must match the phone's
-  zone, or server-computed days disagree with the on-device daily aggregates
-  and activity rings.
+- Raw server-side day boundaries follow `puls_user_time_zone(user_id)`:
+  `users.time_zone`, or the stack's `PULS_TIME_ZONE` when NULL. Existing users
+  retain that fallback; newly approved hosted accounts initialize once from
+  the first syncing phone and can change it explicitly in Account.
+- Daily phone aggregates use their recorded temporal-context offset to retain
+  the phone's calendar date, including travel; legacy contextless aggregates
+  use the account reporting zone. Rings retain their stored local date.
+  Thus a raw reporting day and a phone's recorded day can differ while traveling.
+- `metric_daily` normally uses hourly quantity rollups for its raw fallback.
+  Where fractional-offset midnight splits an hour (for example Kathmandu),
+  it reads that hour's raw samples to assign each sample to the correct day.
 - Raw samples are immutable facts; aggregate buckets and activity summaries are
   recomputed and upserted.
 - `quantity_samples` and workout point tables are Timescale hypertables. Old

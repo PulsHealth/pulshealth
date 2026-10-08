@@ -185,6 +185,8 @@ extension HealthSyncEngine {
     /// Called after the raw sweep by `syncAllEnabled`, and directly by the app.
     /// `syncRecentAggregates` is the sibling that runs *before* it.
     public func syncAllAggregates(reason: SyncReason = .incremental) async {
+        guard let configurationUse = beginConfigurationUse() else { return }
+        defer { activeSyncs.remove(configurationUse) }
         await fanOutAggregates(
             await store.configuration.aggregates.filter(\.enabled),
             reason: reason, pass: .scheduled)
@@ -206,6 +208,8 @@ extension HealthSyncEngine {
     /// window on each run until the full pass makes its first acked progress,
     /// which is the behaviour we want while there is nothing else to show.
     public func syncRecentAggregates(reason: SyncReason = .backfill) async {
+        guard let configurationUse = beginConfigurationUse() else { return }
+        defer { activeSyncs.remove(configurationUse) }
         var pending: [AggregateConfig] = []
         for agg in await store.configuration.aggregates where agg.enabled {
             if await store.aggregateState(for: agg.id).computedThrough == nil {
@@ -243,6 +247,8 @@ extension HealthSyncEngine {
 
     /// Every enabled aggregate config for one type — what an observer fire runs.
     public func syncAggregates(forType identifier: String, reason: SyncReason = .incremental) async {
+        guard let configurationUse = beginConfigurationUse() else { return }
+        defer { activeSyncs.remove(configurationUse) }
         let configs = await store.configuration.aggregates
             .filter { $0.enabled && $0.typeIdentifier == identifier }
         for config in configs {
@@ -256,6 +262,7 @@ extension HealthSyncEngine {
     }
 
     func syncAggregate(configID: UUID, reason: SyncReason, pass: AggregatePass) async {
+        guard !configurationMutationInProgress else { return }
         let key = "agg:\(configID.uuidString)"
         guard !activeSyncs.contains(key) else {
             pendingResync.insert(key)

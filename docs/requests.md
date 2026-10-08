@@ -15,7 +15,11 @@ file. No data is sent just by opening a link. Requests wait through onboarding.
 Defaults: CSV in a ZIP, last 30 days through today, 30-day link expiry, no selected
 metrics, no destination, no workout routes or extra streams. Dates resolve in the
 participant's time zone, including daylight saving changes. Today is necessarily
-partial. HealthKit may return no records for denied access; completeness describes
+partial. Daily aggregates include completed days only: a request through today
+omits today’s aggregate, records that limitation in the ZIP summary, and requires
+**Send Available Data** before uploading. Medication Doses needs its separate
+permission picker, currently available after Apply under Sync → Raw Samples;
+the request review screen explains this setup requirement. HealthKit may return no records for denied access; completeness describes
 extraction, not proof of available permissions or expected records.
 
 ## Link format

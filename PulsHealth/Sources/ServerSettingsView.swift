@@ -33,11 +33,9 @@ struct ServerSettingsView: View {
     @State private var signInElsewhere: String?
     @State private var confirmDisconnect = false
     @State private var loaded = false
-    @State private var testingConnection = false
     /// Outcome of the last Test Connection for the values currently entered;
     /// cleared whenever they change.
-    @State private var connectionTest: ConnectionTestResult?
-    @State private var connectionTestRun = 0
+    @State private var connectionTest = DatabaseConnectionTest()
     @State private var showScanner = false
 
     var body: some View {
@@ -71,10 +69,10 @@ struct ServerSettingsView: View {
             if let payload = setup.own.pairingCodeInURLField {
                 applyPairing(payload)
             } else {
-                connectionTest = nil
+                connectionTest.invalidate(for: setup.fieldsForChoice)
             }
         }
-        .onChange(of: setup.own.tokenText) { connectionTest = nil }
+        .onChange(of: setup.own.tokenText) { connectionTest.invalidate(for: setup.fieldsForChoice) }
         // The confirmation for an incoming link is an alert on RootView, and
         // it cannot come up over this sheet.
         .onChange(of: model.pairingLinkPrompt) { _, prompt in
@@ -166,7 +164,7 @@ struct ServerSettingsView: View {
                 if let label = setup.signedInDatabaseLabel {
                     LabeledContent("Database", value: label)
                 }
-                if testingConnection {
+                if connectionTest.running {
                     HStack {
                         Text("Testing Connection…")
                         Spacer()
@@ -303,14 +301,14 @@ struct ServerSettingsView: View {
                 runConnectionTest()
             } label: {
                 HStack {
-                    Text(testingConnection ? "Testing Connection…" : "Test Connection")
-                    if testingConnection {
+                    Text(connectionTest.running ? "Testing Connection…" : "Test Connection")
+                    if connectionTest.running {
                         Spacer()
                         ProgressView()
                     }
                 }
             }
-            .disabled(testingConnection || !setup.own.isTestable)
+            .disabled(connectionTest.running || !setup.own.isTestable)
             if let pairedUserID = setup.own.pairedUserID {
                 // The third value of a pairing code has no field on this
                 // screen (it lives under Settings → User → Advanced), so
@@ -343,7 +341,7 @@ struct ServerSettingsView: View {
         disabled: Bool, @ViewBuilder footer: () -> Footer
     ) -> some View {
         Section {
-            if let result = connectionTest {
+            if let result = connectionTest.result {
                 ConnectionTestResultRow(result: result)
             }
             Button {
@@ -368,9 +366,7 @@ struct ServerSettingsView: View {
     private func choose(_ choice: DatabaseDestination) {
         guard setup.choose(choice) else { return }
         // A result shown for the other choice's values says nothing here.
-        connectionTestRun += 1
-        connectionTest = nil
-        testingConnection = false
+        connectionTest.cancel()
     }
 
     /// The one place a pairing code lands for your own database, whatever
@@ -459,17 +455,13 @@ struct ServerSettingsView: View {
         let token = draft.token
         guard !token.isEmpty else { return }
         let userID = draft.connectionTestUserID(fallback: model.config.userID)
-        testingConnection = true
-        connectionTest = nil
         // A pairing code can arrive while an earlier test is still out; only
         // the latest run may report, or the row could describe old values.
-        connectionTestRun += 1
-        let run = connectionTestRun
+        let run = connectionTest.begin(for: draft)
         Task {
             let result = await model.testConnection(url: url, token: token, userID: userID)
-            guard run == connectionTestRun else { return }
-            connectionTest = result
-            testingConnection = false
+            connectionTest.invalidate(for: setup.fieldsForChoice)
+            connectionTest.finish(result, run: run)
         }
     }
 
@@ -481,11 +473,7 @@ struct ServerSettingsView: View {
         // Deferred to the server-change prompt instead: stay, so the fields
         // are still here to adjust if the user cancels it (and if they
         // confirm it, `settle(applied:)` notices).
-        if await model.applyConfiguration() {
-            // An emptied token field means delete the token. The engine keeps
-            // the stored one when a configuration for the same database
-            // carries none, so the deletion is asked for here, explicitly.
-            if model.config.authToken == nil { await model.engine.clearAuthToken() }
+        if await model.applyDatabaseConfiguration() {
             setup.settle(applied: model.appliedConfig)
             dismiss()
         }
@@ -497,9 +485,7 @@ struct ServerSettingsView: View {
     /// account page's to delete.
     private func disconnect() async {
         ServerFieldsDraft().commit(to: &model.config)
-        if await model.applyConfiguration() {
-            // Explicit: a configuration without a token no longer deletes it.
-            await model.engine.clearAuthToken()
+        if await model.applyDatabaseConfiguration() {
             dismiss()
         }
     }

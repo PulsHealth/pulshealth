@@ -45,9 +45,10 @@ func (s *service) addResources(server *mcp.Server) {
 		Title:    "Available data types",
 		MIMEType: "application/json",
 		Description: "The live catalog: every HealthKit type the server's default person has data for, with its unit, row counts and " +
-			"earliest/latest timestamps, plus today's date and the server's time zone (the same answer as list_available_types " +
+			"earliest/latest timestamps, plus today's date and the selected person's time zone (the same answer as list_available_types " +
 			"without a user; for another person call the tool).",
 	}, func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+		s := s.forContext(ctx)
 		var extra *mcp.RequestExtra
 		if req != nil {
 			extra = req.Extra
@@ -75,7 +76,7 @@ func (s *service) addResources(server *mcp.Server) {
 // Prompts are ready-made requests that spell out which tools to call. They
 // are optional sugar: a client that ignores prompts loses nothing.
 
-const weeklySummaryPrompt = `Summarise my health for the week %s to %s (both inclusive; dates are calendar days in the server's time zone).
+const weeklySummaryPrompt = `Summarise my health for the week %s to %s (both inclusive; dates are calendar days in the selected person's time zone).
 
 Do it in this order, and skip a step if list_available_types shows there is no data for it:
 1. Call list_available_types once, to see which metrics exist and how current the data is.
@@ -87,7 +88,7 @@ Do it in this order, and skip a step if list_available_types shows there is no d
 
 Then write a short summary: how many days closed each ring, the average daily steps with the best and worst day, workouts (count, total time, total distance, the longest one), average time asleep in hours with the best and worst night and the usual deep/REM share, resting heart rate and HRV compared with the previous week if you fetched it, and weight if present. Name the days that have no data rather than treating them as zero, and quote units. Keep it under 250 words.`
 
-const compareWorkoutsPrompt = `Compare my %s workouts in %s with those in %s (calendar months in the server's time zone; today is %s).
+const compareWorkoutsPrompt = `Compare my %s workouts in %s with those in %s (calendar months in the selected person's time zone; today is %s).
 
 1. Call list_workouts with activity_type "%s" for each month (start_date the first of the month, end_date the last; page with offset if next_offset is returned).
 2. For each month compute: number of workouts, total and average duration (duration_s), total and average distance (distance_m, report in km and mi), total energy (energy_kcal), and average pace (duration divided by distance) where distance exists.
@@ -102,9 +103,10 @@ func (s *service) addPrompts(server *mcp.Server) {
 		Description: "Summarise the last seven days of rings, steps, workouts and key metrics, ending on a given day (default today).",
 		Arguments: []*mcp.PromptArgument{{
 			Name:        "week_ending",
-			Description: "Last day of the week to summarise, YYYY-MM-DD in the server's time zone; defaults to today",
+			Description: "Last day of the week to summarise, YYYY-MM-DD in the selected person's time zone; defaults to today",
 		}},
-	}, func(_ context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+	}, func(ctx context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+		s := s.forContext(ctx)
 		end := s.localNow()
 		if v := req.Params.Arguments["week_ending"]; v != "" {
 			t, err := parseDate(v, "week_ending", s.location())
@@ -129,7 +131,8 @@ func (s *service) addPrompts(server *mcp.Server) {
 			Name:        "activity_type",
 			Description: "snake_case activity name as synced, e.g. running, cycling, walking; defaults to running",
 		}},
-	}, func(_ context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+	}, func(ctx context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+		s := s.forContext(ctx)
 		activity := req.Params.Arguments["activity_type"]
 		if activity == "" {
 			activity = "running"

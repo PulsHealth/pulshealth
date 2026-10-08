@@ -73,6 +73,8 @@ interface Session {
 }
 
 const ROUTES: Record<string, { methods: Method[]; guard: Guard }> = {
+  "/api/auth/forgot-password": { methods: ["POST"], guard: { kind: "public", why: "Generic response; bounded email recovery requests." } },
+  "/api/auth/reset-password": { methods: ["POST"], guard: { kind: "public", why: "Requires expiring one-use recovery token." } },
   "/api/admin": {
     methods: ["POST"],
     guard: {
@@ -95,6 +97,10 @@ const ROUTES: Record<string, { methods: Method[]; guard: Guard }> = {
         { session: { isAdmin: false, selfService: false }, location: "/account?error=forbidden" },
       ],
     },
+  },
+  "/api/auth/time-zone": {
+    methods: ["POST"],
+    guard: { kind: "session", noSession: "/login?next=%2Faccount" },
   },
   "/api/auth/devices": {
     methods: ["POST"],

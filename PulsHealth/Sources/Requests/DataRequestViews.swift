@@ -34,7 +34,7 @@ struct CreateDataRequestView: View {
                     Text("CSV").tag(ExportFormat.csv)
                     Text("JSONL").tag(ExportFormat.jsonl)
                 }
-                Text("Both dates included, in the participant’s time zone. One ZIP includes the data and export summary. Workout routes and extra streams are not requested.").font(.footnote).foregroundStyle(.secondary)
+                Text("Both dates included, in the participant’s time zone. Daily aggregates include completed days only; today’s aggregate is omitted until tomorrow. One ZIP includes the data and export summary. Workout routes and extra streams are not requested.").font(.footnote).foregroundStyle(.secondary)
             }
             Section {
                 Toggle("Send to a destination", isOn: $sends)
@@ -234,6 +234,14 @@ struct FulfillDataRequestView: View {
                     LabeledContent("Through", value: request.endDay)
                     LabeledContent("Time zone", value: TimeZone.current.identifier)
                     LabeledContent("ZIP contents", value: request.format.rawValue.uppercased())
+                    if request.metrics.contains(where: { $0.function != nil }) {
+                        Text("Daily aggregates include completed days only. Today's aggregate is not included until tomorrow.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                    if request.metrics.contains(where: { $0.type == HealthTypeCatalog.medicationDoseIdentifier }) {
+                        Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Raw Samples. Until that has been answered this export contains no doses.")
+                            .font(.footnote).foregroundStyle(.orange)
+                    }
                 }
                 Section("Delivery") {
                     if let destination = request.destination {

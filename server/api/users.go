@@ -14,6 +14,7 @@ import (
 // says about its uploads. The counts come from batches alone — one row per
 // upload, cheap to aggregate — never from the sample hypertables.
 type User struct {
+	TimeZone  string  `json:"timeZone"`
 	UserID    string  `json:"userID"`
 	Name      *string `json:"name"`
 	Email     *string `json:"email"`
@@ -34,10 +35,7 @@ type UsersResponse struct {
 	Default string `json:"default"`
 	// Whether ?user= may name anyone else (PULS_MULTI_USER).
 	MultiUser bool `json:"multiUser"`
-	// The IANA zone every local day this API answers with is cut in
-	// (PULS_TIME_ZONE, checked against the database's puls_time_zone() at
-	// startup). A client that speaks in dates — the MCP server — adopts it
-	// instead of having to be told the same value separately.
+	// The selected account reporting zone; each listed user carries its own.
 	TimeZone string `json:"timeZone"`
 }
 
@@ -48,7 +46,7 @@ func (st *Store) Users(ctx context.Context) ([]User, error) {
 		       (extract(epoch FROM u.created_at) * 1000)::bigint,
 		       (extract(epoch FROM b.last_sync) * 1000)::bigint,
 		       COALESCE(b.batches, 0)::bigint,
-		       COALESCE(b.samples, 0)::bigint
+		       COALESCE(b.samples, 0)::bigint, puls_user_time_zone(u.id)
 		FROM users u
 		LEFT JOIN (
 			SELECT user_id,
@@ -75,6 +73,7 @@ func (st *Store) Users(ctx context.Context) ([]User, error) {
 			&u.LastSync,
 			&u.Batches,
 			&u.UploadedSamples,
+			&u.TimeZone,
 		); err != nil {
 			return nil, err
 		}
@@ -102,10 +101,16 @@ func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 		}
 		users = kept
 	}
+	zone := s.location().String()
+	for _, u := range users {
+		if sameUser(u.UserID, s.requestUser(r)) && u.TimeZone != "" {
+			zone = u.TimeZone
+		}
+	}
 	writeJSON(w, http.StatusOK, UsersResponse{
 		Users:     users,
 		Default:   def,
 		MultiUser: s.multiUser,
-		TimeZone:  s.location().String(),
+		TimeZone:  zone,
 	})
 }
