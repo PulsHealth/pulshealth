@@ -35,6 +35,9 @@ export function AuthCard({
         </div>
       )}
       {children}
+      <p className="form-hint" style={{ margin: "20px 0 0" }}>
+        <a href="https://pulshealth.com/" style={{ textDecoration: "underline" }}>Back to pulshealth.com</a>
+      </p>
     </div>
   );
 }

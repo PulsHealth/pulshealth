@@ -143,6 +143,10 @@ export function Sidebar({
         <div className="sidebar-spacer" />
 
         <div className="nav-section" style={{ marginTop: 0 }}>
+          <a href="https://pulshealth.com/" className="nav-link">
+            <HomeIcon className="nav-icon" />
+            <span>Back to pulshealth.com</span>
+          </a>
           {showSwitcher && <UserSwitcher users={users} currentUserId={currentUserId} />}
           {account && (
             <Link
