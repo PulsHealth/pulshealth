@@ -37,3 +37,6 @@ ExportOptions.plist
 # Python virtual environments and test caches (notebooks/, tests/).
 .venv/
 .pytest_cache/
+
+# JavaScript dependencies and runner caches at any workspace level.
+node_modules/
