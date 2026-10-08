@@ -337,7 +337,7 @@ Account deletion and purge cover approved sign-up users
 (`auth.self_service_users`) and explicitly classified invited personal users
 (`auth.personal_users`). Put existing invited personal user UUIDs in the
 operator-only `WEB_PERSONAL_USERS` comma-separated setting and run the migrate
-service. Its `024_deletion_policy.sh` reconciles the allowlist. The default
+service. Its `027_deletion_policy.sh` reconciles the allowlist. The default
 user (`PULS_USER_ID`, and the original seeded default), administrator accounts,
 and public demo are always protected, even if accidentally listed. Do not
 classify household/shared data as a personal account. The web role cannot
@@ -351,7 +351,7 @@ excludes `WEB_DEMO_USER` too. Keep migrate and viewer settings consistent.
 The privileged steps — creating a user, minting or revoking a token,
 declining, disabling, deleting, purging — are `SECURITY DEFINER` functions in
 schema `auth` (`server/db/migrations/016_web_signups.sql`, replaced or added
-to by later account migrations, including `024_account_deletion.sql`). `web_app` may run exactly
+to by later account migrations, including `027_account_deletion.sql`). `web_app` may run exactly
 those and still cannot write `users`, `device_tokens` or
 `auth.self_service_users` itself. Each takes the caller's session as
 `auth.sessions` stores it (the cookie's SHA-256; the plaintext never reaches
@@ -672,7 +672,7 @@ active accounts; account lookup and email delivery run after the response.
 The login page links to recovery. When email is not configured or delivery
 fails, the recovery page gives the administrator/support fallback.
 
-Migration 025 stores only token digests and credential snapshots. Resetting
+Migration 028 stores only token digests and credential snapshots. Resetting
 locks the account, consumes the token once, changes the password and revokes
 all sessions and OAuth grants atomically. Previously issued recovery links
 stop working after any password change. iPhone sync credentials remain

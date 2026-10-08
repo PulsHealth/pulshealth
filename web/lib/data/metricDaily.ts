@@ -55,7 +55,7 @@ async function databaseTimeZone(): Promise<string | null> {
  * this BEFORE opening their scoped transaction.
  */
 export async function metricDailyUsable(userId?: string): Promise<boolean> {
-  // Migration 023 computes raw daily rows per account and retains phone dates.
+  // Migration 026 computes raw daily rows per account and retains phone dates.
   if (viewerMode() === "accounts" && userId) {
     await reportingTimeZone(userId);
     return true;

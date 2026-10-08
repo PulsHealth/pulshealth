@@ -1217,10 +1217,10 @@ and purge permissions are unchanged. `022_device_pairing_policy.sh` runs on
 every migration and excludes the configured `WEB_DEMO_USER` from phone pairing
 in the database; Compose passes that value to both migrate and web.
 
-### Account reporting calendars (023)
+### Account reporting calendars (026)
 
 Run the migrate service before deploying the updated ingest/API/viewer.
-`023_account_time_zones.sql` adds account reporting zones and the account
+`026_account_time_zones.sql` adds account reporting zones and the account
 setting function. The optional protocol-v1 `timeZoneID` header initializes
 only newly approved hosted accounts, once; legacy and self-hosted users keep
 the deployment fallback until they choose a zone. No raw instants are rewritten.

@@ -80,7 +80,7 @@ END
 $$;
 REVOKE ALL ON FUNCTION auth.approve_signup(bytea, uuid) FROM PUBLIC;
 
--- 009 and 008 are intentionally re-runnable. 099 calls this function before
+-- 009, 008 and 023_recording_quality are intentionally re-runnable. 099 calls this function before
 -- restoring web views/grants so a baseline or rollup rebuild cannot regress
 -- the daily calendar to the old shared-zone view. No new stored health data.
 CREATE FUNCTION public.puls_create_metric_daily() RETURNS void
@@ -99,10 +99,7 @@ WITH type_semantics AS (
 ),
 candidates AS (
   SELECT t.identifier, s.type_id, b.user_id,
-         CASE WHEN tc.temporal_context_id IS NOT NULL
-              THEN ((b.bucket_start AT TIME ZONE 'UTC') + make_interval(secs => tc.utc_offset_seconds))::date
-              ELSE (b.bucket_start AT TIME ZONE coalesce(u.time_zone, public.puls_time_zone()))::date
-          END AS day,
+         calendar.local_start::date AS day,
          b.value,
          1 AS tier, b.updated_at, b.bucket_start
   FROM public.aggregate_samples b
@@ -111,10 +108,33 @@ candidates AS (
   JOIN public.sample_types t ON t.type_id = s.type_id
   JOIN public.users u ON u.id = b.user_id
   LEFT JOIN public.temporal_contexts tc ON tc.temporal_context_id = b.bucket_start_temporal_context_id
+  LEFT JOIN public.temporal_contexts ec ON ec.temporal_context_id = b.bucket_end_temporal_context_id
+  CROSS JOIN LATERAL (
+    SELECT
+      CASE WHEN tc.temporal_context_id IS NOT NULL
+           THEN (b.bucket_start AT TIME ZONE 'UTC') + make_interval(secs => tc.utc_offset_seconds)
+           ELSE b.bucket_start AT TIME ZONE coalesce(u.time_zone, public.puls_time_zone()) END AS local_start,
+      CASE WHEN ec.temporal_context_id IS NOT NULL
+           THEN (b.bucket_end AT TIME ZONE 'UTC') + make_interval(secs => ec.utc_offset_seconds)
+           WHEN tc.temporal_context_id IS NOT NULL THEN
+             CASE WHEN EXISTS (SELECT 1 FROM pg_catalog.pg_timezone_names WHERE name = tc.time_zone_id)
+                  THEN b.bucket_end AT TIME ZONE tc.time_zone_id
+                  ELSE (b.bucket_end AT TIME ZONE 'UTC') + make_interval(secs => tc.utc_offset_seconds) END
+           ELSE b.bucket_end AT TIME ZONE coalesce(u.time_zone, public.puls_time_zone()) END AS local_end
+  ) calendar
   WHERE b.value IS NOT NULL
     AND s.interval_value = 1
     AND s.interval_unit = 'day'
     AND s.device_filter = 'all'
+    -- Preserve deployed 023's recording-quality rule: a one-day series may
+    -- retain clipped/misaligned buckets from an older anchor. Only complete
+    -- local midnight-to-midnight days enter the headline, using recorded
+    -- phone context for travel and the account zone for legacy buckets.
+    -- Separate boundary offsets preserve 23/25-hour (and half-hour) DST days.
+    AND calendar.local_start = calendar.local_start::date::timestamp
+    AND calendar.local_end = (calendar.local_start::date + 1)::timestamp
+    AND (tc.temporal_context_id IS NULL OR ec.temporal_context_id IS NULL
+         OR tc.time_zone_id = ec.time_zone_id)
     AND ((ts.semantic = 'cumulative' AND s.agg_func = 'sum')
       OR (ts.semantic = 'discrete' AND s.agg_func = 'average'))
   UNION ALL

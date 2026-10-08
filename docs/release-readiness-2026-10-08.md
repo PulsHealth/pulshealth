@@ -35,13 +35,13 @@ submitted for review.
 
 The earlier code blockers have been implemented:
 
-- **Account calendars:** migration 023 adds a per-user reporting zone; only newly
+- **Account calendars:** migration 026 adds a per-user reporting zone; only newly
   approved hosted accounts initialize it from their first phone upload. Existing
   self-hosted defaults remain unchanged. Users can explicitly change their zone;
   API, MCP, viewer and Grafana agree. Phone aggregate/ring dates retain their
   recorded calendar meaning during travel. DST and fractional-offset midnight
   have database regressions.
-- **Deletion:** migration 024 adds durable requests, automatic fair retries and
+- **Deletion:** migration 027 adds durable requests, automatic fair retries and
   private status receipts. Sessions, sync tokens and OAuth grants are revoked
   at acceptance; already-issued OAuth access tokens expire within 30 minutes.
   Eligible personal accounts are fully purged, including compressed samples and
@@ -53,7 +53,7 @@ The earlier code blockers have been implemented:
   ledger and replays deletions before any application service can restart;
   invalid receipts fail before dropping the database. Restored function ACLs
   are rebuilt and checked explicitly.
-- **Recovery:** migration 025 adds generic-response, rate-limited recovery,
+- **Recovery:** migration 028 adds generic-response, rate-limited recovery,
   hashed expiring single-use reset tokens and atomic credential/session changes.
   Email delivery occurs after the response. Auth inputs avoid iPhone focus zoom.
 - **Privacy:** local manifest and submission guidance now declare eleven types,

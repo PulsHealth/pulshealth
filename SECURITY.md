@@ -250,7 +250,7 @@ for judging what is.
   proxy the address is `WEB_CLIENT_IP_HEADER`'s last entry
   (`cf-connecting-ip` behind Cloudflare), never a client-chosen first one.
   Password recovery uses an emailed, single-use 30-minute token stored only
-  as SHA-256 (`025_password_recovery.sql`). Unknown, disabled and demo accounts
+  as SHA-256 (`028_password_recovery.sql`). Unknown, disabled and demo accounts
   receive the same public response. Durable hashed-IP/email counters survive
   restarts; a password credential snapshot invalidates stale links. Completing
   a reset locks the account, consumes its recovery links, replaces the password,
@@ -284,7 +284,7 @@ for judging what is.
   form creates nothing but a request and emails only the operator, so it
   cannot open the database to anyone or be used to mail a stranger; no
   address it handles is written to the log.
-- **Account deletion and restored backups.** `024_account_deletion.sql`
+- **Account deletion and restored backups.** `027_account_deletion.sql`
   accepts only an eligible account's session. The web handler writes an atomic,
   fsynced UUID/request-date file on the independent deletion-ledger volume
   before committing revocation and the erasure queue; failure aborts the
