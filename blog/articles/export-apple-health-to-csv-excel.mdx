@@ -16,6 +16,22 @@ The important decision comes before the download: **do you want every recorded m
 
 I build PulsHealth, so this guide includes its on-device export alongside Apple's built-in option. You do not need to sync to a PulsHealth database to export a file.
 
+<BlogFlow
+  title="Choose the row before you make the chart"
+  caption="Export decision map. Both paths can produce CSV, but a row means something different in each."
+>
+  <FlowRow
+    label="How many steps each day?"
+    steps="Daily aggregate | One selected daily series | Daily column chart"
+    note="Keep the type, function, interval, and device filter consistent."
+  />
+  <FlowRow
+    label="When was this measurement taken?"
+    steps="Raw samples | Timestamp + value + source | Individual observations"
+    note="Preserve the records. Adding overlapping sources does not recreate a daily Health total."
+  />
+</BlogFlow>
+
 ## Choose the export that fits your question
 
 | Your goal | Start with | Why |

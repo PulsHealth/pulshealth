@@ -50,6 +50,22 @@ For the hosted Claude connection, add `https://mcp.pulshealth.com/mcp` as a cust
 
 This gives access to the data stored under your account, including the uploaded profile. A request to discuss only sleep does not narrow the connection's authorization to sleep. Choose a selected file instead if you need a smaller disclosure boundary.
 
+<BlogFlow
+  title="Make the answer traceable"
+  caption="Analysis workflow, not a transcript. A connection provides records; the checks establish what a result actually describes."
+>
+  <FlowRow
+    label="Supply evidence"
+    steps="Native connection, file, or MCP | Assistant provider receives data | Analysis"
+    note="Choose the route and sharing scope deliberately. Read-only access still transfers information."
+  />
+  <FlowRow
+    label="Check the answer"
+    steps="Dates + units + time zone | Included and missing records | Reproduce the calculation"
+    note="Save the supporting table with the answer so you can revisit how it was calculated."
+  />
+</BlogFlow>
+
 ## Three questions worth asking first
 
 The following are prompt templates, not transcripts or claimed results. Replace the dates with periods you have recorded. Run one, examine its table, and only then ask for interpretation.
