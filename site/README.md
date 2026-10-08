@@ -11,6 +11,11 @@ Blog remains linked from the footer.
 
 Page heroes begin with the title and description, without a page-label pill.
 
+The main site is always dark and has no theme selector. Blog articles retain
+a light/dark toggle, default to dark, and save their choice separately in
+`pulshealth-blog-theme`; neither follows the system theme. The app's theme
+controls are independent.
+
 It reads content from the **repository around it**, by relative path, so
 `site/` and the things it reads must stay where they are:
 
