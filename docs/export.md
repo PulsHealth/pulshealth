@@ -306,3 +306,11 @@ let the phone's next sync recompute them.
   which trap each dataset avoids.
 - [`docs/ai.md`](ai.md) — the same data through an MCP client or a ChatGPT
   Action.
+
+## One-time requests
+
+The app can also generate a ZIP from a reviewed Data Request. These exports use
+an isolated engine, fresh random user and device IDs, and no configured identity
+profile. Their manifest additionally includes `dataRequest` and `submissionID`.
+They can be handed to the share sheet or sent directly to an explicitly approved
+HTTPS receiver. See [Data Requests](requests.md). Normal exports are unchanged.

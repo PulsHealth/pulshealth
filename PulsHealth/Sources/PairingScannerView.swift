@@ -138,7 +138,7 @@ private struct SessionBox: @unchecked Sendable {
     let session: AVCaptureSession
 }
 
-private struct CameraPreview: UIViewControllerRepresentable {
+struct CameraPreview: UIViewControllerRepresentable {
     let onCode: (String) -> Void
     let onFailure: (String) -> Void
 
@@ -155,7 +155,7 @@ private struct CameraPreview: UIViewControllerRepresentable {
     }
 }
 
-private final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     var onCode: ((String) -> Void)?
     var onFailure: ((String) -> Void)?
 

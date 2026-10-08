@@ -27,6 +27,7 @@ final class AppModel {
     /// The Export tab: the server-less way out. A model of its own so a run
     /// outlives the screen that started it (`ExportModel`).
     let export = ExportModel()
+    let dataRequests = DataRequestModel()
     /// Shared on-device review timing, independent of sync and export state.
     let reviews: ReviewRequests
     /// The Explore tab: what HealthKit holds per type, and the analyses
@@ -225,7 +226,7 @@ final class AppModel {
     }
 
     var reviewRequestsBlocked: Bool {
-        showsOnboarding || pendingServerChange != nil || pairingLinkPrompt != nil
+        showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
             || pairingAwaitsSyncTab || lastErrorMessage != nil || stateFileUnreadable
             || needsAuthorization || isSyncingAll || backfillActive || export.isRunning
             || statuses.contains(where: { $0.activity == .syncing })
@@ -504,7 +505,7 @@ final class AppModel {
     }
 
     func startExport() {
-        guard !exportBlockedByBackfill, !exportSelection.isEmpty else { return }
+        guard !exportBlockedByBackfill, !dataRequests.isBusy, !exportSelection.isEmpty else { return }
         export.start(configuration: appliedConfig, engine: engine) { [weak self] in
             await self?.requestHealthAccessForExport()
         }
@@ -525,8 +526,8 @@ final class AppModel {
     ///
     /// It does not touch `authorizationRequested`: that flag gates observer
     /// registration and background scheduling, which are the sync's business.
-    private func requestHealthAccessForExport() async {
-        let selection = export.draft.selection()
+    func requestHealthAccessForExport(selection requested: ExportSelection? = nil) async {
+        let selection = requested ?? export.draft.selection()
         let selected = selection.types
             .union(selection.aggregates.map(\.typeIdentifier))
             .sorted()
@@ -879,6 +880,10 @@ final class AppModel {
     /// values go nowhere until the user accepts, and then only as far as a scan
     /// would take them: into the server fields, tested, not applied.
     func handleIncomingURL(_ url: URL) {
+        if url.scheme == "puls", url.host == "request" {
+            dataRequests.open(url.absoluteString)
+            return
+        }
         guard url.scheme?.lowercased() == PairingPayload.scheme else { return }
         Task {
             // A link can be what launches the app. Both things the prompt
@@ -1104,6 +1109,7 @@ final class AppModel {
     }
 
     func startBackfill() async {
+        guard !dataRequests.isBusy else { return }
         guard !isSyncingAll else { return }
         // A continued backfill submitted or running already sweeps every type;
         // a second one would run alongside it (the button is disabled on

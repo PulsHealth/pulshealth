@@ -11,12 +11,12 @@ const BLOB = `${GITHUB}/blob/main`;
 const claims = [
   {
     title: "Your exports go where you choose",
-    body: "Exploring and exporting need no account and make no health-data upload. An export goes wherever you send it from the share sheet. Apple handles any App Store rating or review you choose to submit; review timing counters stay on your device.",
+    body: "Exploring and exporting need no account. An export goes where you choose in the share sheet, or to a request destination you review and approve with Generate & Send. Apple handles any App Store rating or review you choose to submit; review timing counters stay on your device.",
     check: { label: "Export/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Export` },
   },
   {
     title: "Your database, or ours: your choice",
-    body: "The app uploads only to the database you set up. Run your own and the developer never sees your data. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is never sold or shared, and deleting your account deletes it.",
+    body: "Regular sync uploads to the database you set up. One-time requests can send a ZIP to a separate HTTPS destination you approve. Run your own and the developer never sees your data. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is never sold or shared, and deleting your account deletes it.",
     check: { label: "Transport/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Transport` },
   },
   {
@@ -34,7 +34,7 @@ const claims = [
 export const metadata = {
   title: "Privacy Policy - PulsHealth",
   description:
-    "Where your health data goes and where it does not. The app posts read-only Apple Health data to the one database address you configure; the developer receives none unless you use their own viewer. The website loads no analytics.",
+    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve. The website loads no analytics.",
   alternates: {
     canonical: "/privacy/",
   },
@@ -68,10 +68,10 @@ export default function PrivacyPage() {
               <li>Exporting from the app, or syncing to a database you run yourself, gives the developer no data.</li>
               <li>If you create a PulsHealth account and sync to the PulsHealth database (with its viewer at app.pulshealth.com), your data is stored there, under your account, for you alone; deleting your account deletes it. Nothing in the app sends data to the developer unless you choose that database and sign in.</li>
               <li>With the PulsHealth database you can connect an AI assistant, such as Claude, to your records by signing in and approving it. It gets read-only access to your health data and profile until you revoke it on your account page (its current access then runs out within 30 minutes), and its provider receives what it reads under the provider&rsquo;s own terms. The app is not involved, and the developer sends your data to no AI provider on its own.</li>
-              <li>Your health data leaves the phone only two ways, both yours: uploads to the database you set up, one you run or the PulsHealth database, and files you export and share yourself.</li>
+              <li>You choose each way health data leaves the phone: sync to your configured database, exports you share yourself, or one-time ZIP delivery to a request destination you review and approve. Opening a request alone sends nothing.</li>
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>
               <li>No analytics, advertising, tracking or third-party SDKs in the app.</li>
-              <li>The bearer token normally lives in the iOS Keychain. The app keeps no health samples: an export you ask for is staged in temporary storage until you share it, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
+              <li>The bearer token normally lives in the iOS Keychain. The app keeps no health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
               <li>This website loads no analytics and sets no cookies. Its two forms send only what you type.</li>
             </ul>
           </CardContent>

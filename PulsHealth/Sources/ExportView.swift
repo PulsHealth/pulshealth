@@ -576,7 +576,7 @@ private struct IssueRow: View {
 /// share sheet inside a SwiftUI sheet is a sheet in a sheet, and on iPad —
 /// which the app ships for — it must be a popover with a source view, or UIKit
 /// raises an exception. The anchor supplies that view.
-private struct ActivitySheet: UIViewControllerRepresentable {
+struct ActivitySheet: UIViewControllerRepresentable {
     @Binding var isPresented: Bool
     let items: [URL]
     let onFinish: (_ completed: Bool) -> Void

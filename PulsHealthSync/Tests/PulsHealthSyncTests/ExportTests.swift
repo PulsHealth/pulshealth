@@ -737,7 +737,7 @@ private final class ProgressBox: @unchecked Sendable {
     @Test func manifestRecordsWhoWhenAndWhatIsMissing() throws {
         let dir = try Fixture.tempDirectory()
         let url = dir.appendingPathComponent("t-manifest.json")
-        let manifest = ExportManifest(
+        var manifest = ExportManifest(
             format: .csv, schemaVersion: PulsProtocol.version, clientVersion: "1.5 (16)",
             createdAt: Fixture.date(1_750_000_000_000), startDate: nil, endDate: nil,
             userID: PulsDefaultUser.id, deviceID: "real-device", timeZone: "America/Denver",
@@ -761,6 +761,18 @@ private final class ProgressBox: @unchecked Sendable {
         #expect(object["schemaVersion"] as? Int == PulsProtocol.version)
         #expect((object["notRepresented"] as? [String: Int]) == ["ecg": 1])
         #expect(try JSONDecoder.puls.decode(ExportManifest.self, from: data) == manifest)
+        #expect(object["dataRequest"] == nil)
+        #expect(object["submissionID"] == nil)
+        manifest.dataRequest = DataRequest(title: "Test", requester: "Team", purpose: "Test manifest",
+            contact: "test@example.org", startDay: "2026-01-01", endDay: "2026-01-02",
+            metrics: [.init(type: Fixture.heartRate)])
+        manifest.submissionID = UUID()
+        manifest.requestWarnings = [.init(message: "A synthetic warning")]
+        let requestData = try JSONEncoder.puls.encode(manifest)
+        let decoded = try JSONDecoder.puls.decode(ExportManifest.self, from: requestData)
+        #expect(decoded.submissionID == manifest.submissionID)
+        #expect(decoded.dataRequest?.id == manifest.dataRequest?.id)
+        #expect(decoded.requestWarnings == manifest.requestWarnings)
     }
 
     @Test func fileNamesCarryALocalSortableTimestamp() throws {

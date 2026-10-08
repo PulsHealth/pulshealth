@@ -95,6 +95,8 @@ public struct ExportRequest: Sendable {
     /// fraction of the size. The loose files are deleted once it is written.
     /// See `ExportResult.archive`.
     public var zipped: Bool
+    public var dataRequest: DataRequest? = nil
+    public var submissionID: UUID? = nil
 
     public init(
         selection: ExportSelection,

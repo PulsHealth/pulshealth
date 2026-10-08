@@ -57,9 +57,15 @@ struct ExportManifest: Codable, Sendable, Equatable {
     /// they hold before it is in no file — and the files cannot show that.
     var limitedHistory: [String: Date] = [:]
     var failures: [ExportIssue]
+    var requestWarnings: [ExportIssue]? = nil
+    var dataRequest: DataRequest? = nil
+    var submissionID: UUID? = nil
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(requestWarnings, forKey: .requestWarnings)
+        try c.encodeIfPresent(dataRequest, forKey: .dataRequest)
+        try c.encodeIfPresent(submissionID, forKey: .submissionID)
         try c.encode(format, forKey: .format)
         try c.encode(schemaVersion, forKey: .schemaVersion)
         try c.encode(clientVersion, forKey: .clientVersion)

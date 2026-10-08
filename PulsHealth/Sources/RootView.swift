@@ -34,6 +34,7 @@ struct RootView: View {
 
     var body: some View {
         @Bindable var model = model
+        @Bindable var requests = model.dataRequests
         TabView(selection: $selection) {
             NavigationStack(path: $explorePath) {
                 ExploreView().reviewRequestOpportunity(.explore, blocked: !explorePath.isEmpty)
@@ -54,7 +55,19 @@ struct RootView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
         }
+        .sheet(isPresented: $requests.presented, onDismiss: { model.dataRequests.close() }) {
+            NavigationStack { FulfillDataRequestView() }.environment(model)
+        }
+        .onChange(of: model.dataRequests.pending) { _, _ in presentDataRequest() }
+        .onChange(of: model.showsOnboarding) { _, _ in presentDataRequest() }
+        .alert("Request Could Not Be Opened", isPresented: Binding(
+            get: { model.dataRequests.pending == nil && model.dataRequests.error != nil && !model.showsOnboarding },
+            set: { if !$0 { model.dataRequests.error = nil } }
+        )) { Button("OK") { model.dataRequests.error = nil } } message: {
+            Text(model.dataRequests.error ?? "")
+        }
         .task {
+            presentDataRequest()
             if scenePhase == .active { model.reviews.beginSession() }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -114,6 +127,12 @@ struct RootView: View {
         // install (see AppModel).
         .fullScreenCover(isPresented: $model.showsOnboarding) {
             OnboardingView().environment(model)
+        }
+    }
+    private func presentDataRequest() {
+        if !model.showsOnboarding, model.dataRequests.pending != nil {
+            model.reviews.cancelPending()
+            model.dataRequests.presented = true
         }
     }
 }

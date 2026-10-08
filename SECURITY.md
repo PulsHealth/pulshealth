@@ -211,7 +211,7 @@ for judging what is.
   exclusion as the sync state. A summary file that carried an individual
   sample, a value paired with its timestamp, a sample identifier or any
   metadata would be a bug in scope here.
-- **An export is a plain file, and it is yours once shared.** The app can
+- **An ordinary export is a plain file, and it is yours once shared.** The app can
   write the selected health data to JSONL or CSV without a server
   (`PulsHealthSync/Sources/PulsHealthSync/Export/`). The files are staged in
   the app's temporary directory — never backed up — and deleted at the next
@@ -316,3 +316,21 @@ for judging what is.
   and off by default: enable the `backup` Compose profile, and run the restore
   drill in `server/README.md` yourself, because nothing else verifies that
   your dumps restore.
+
+## One-time Data Requests
+
+Request links are untrusted, self-contained instructions, not signed invitations
+or study consent. The app bounds and validates the payload, supports fixed past
+dates, and shows the full recipient before Generate & Send. Opening never reads
+health data. Request generation uses an isolated export engine and fresh user
+and device IDs; source/sample metadata can still identify a person. The manifest
+includes the request. No configured credentials or profile are included.
+
+Delivery accepts HTTPS only, without URL credentials, query parameters, cookies
+or redirects. Responses are limited to 16 KiB and must acknowledge the submission
+ID and ZIP checksum. The receipt proves only that this endpoint acknowledged the
+file. Retry preserves the submission ID; receivers must enforce idempotency.
+Request IDs and links are not authentication. Receiver operators must implement
+access controls, storage protection, retention and any study consent themselves.
+The reference sync ingest endpoint is not a request ZIP receiver. See
+[the request contract](docs/requests.md).

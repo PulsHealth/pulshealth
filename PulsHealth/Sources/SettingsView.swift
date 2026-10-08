@@ -33,6 +33,11 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Data Requests") {
+                NavigationLink { CreateDataRequestView() } label: { Label("Create Request", systemImage: "qrcode") }
+                NavigationLink { OpenDataRequestView() } label: { Label("Open or Scan Request", systemImage: "qrcode.viewfinder") }
+            }
+
             // Keyed on the *applied* server, like the Sync tab's first-time screen:
             // without one there is nothing for a start date, a backfill or
             // an anchor to act on.

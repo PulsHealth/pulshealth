@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-07**
+**Last updated: 2026-10-08**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
@@ -8,7 +8,7 @@ developer's own (the PulsHealth database) — or, if you have
 no database, writes it to files you then save or send yourself. This policy
 describes what the app does with your data. It is short because the app does
 very little: it reads Apple Health, it uploads to the one database you set
-up, it exports a file when you ask for one, and that is the whole of it.
+up, it exports a file when you ask for one, and it can send a one-time export to a request destination you approve.
 
 ## The short version
 
@@ -22,7 +22,7 @@ up, it exports a file when you ask for one, and that is the whole of it.
   viewer at `app.pulshealth.com`; the health data you choose to sync is kept
   in it under your account (see
   [If you use the developer's viewer](#if-you-use-the-developers-viewer)).
-  The app sends your data only to the database you set up. The developer's addresses in it are web pages it
+  Regular sync sends your data only to the database you set up. A one-time request can send an export to a separate destination you approve. The developer's addresses in it are web pages it
   opens when you tap a link or button: on `pulshealth.com` (the
   documentation and this policy) and, in versions that offer the PulsHealth
   database, on `app.pulshealth.com` (signing in, creating an account, managing
@@ -36,19 +36,15 @@ up, it exports a file when you ask for one, and that is the whole of it.
   Its provider then receives what the assistant reads, under the
   provider's own terms. The app is not involved, and the developer sends
   your data to no AI provider on its own.
-- **Your health data leaves the phone in two ways, and both are yours.** The
-  app uploads only to the database you set up in it — typed, taken from
-  your database's pairing code (scanned, pasted, or opened as a link you
-  confirm), or, for the PulsHealth database, handed to the app by its
-  account page after you sign in — and it has no other upload destination
-  compiled into it. No health data is uploaded until you tap Save & Apply;
-  before that, the app only tests the connection. And when
-  you ask for an export, it writes files and hands them to the iOS share sheet;
-  where they go from there is the choice you make in that sheet. An export
-  involves no network request by the app at all.
+- **You choose each way health data leaves the phone.** Regular sync uploads
+  to the database you configure and apply. The Export tab writes files for the
+  iOS share sheet. A one-time Data Request writes a ZIP and either opens that
+  share sheet or, after you review the destination and tap **Generate & Send**,
+  uploads it directly to that HTTPS destination. Opening or scanning a request
+  alone reads and sends no health data.
 - **No analytics, no advertising, no tracking, no third-party SDKs.** The app
   and its `PulsHealthSync` library have zero third-party dependencies. Nothing
-  profiles you, and no identifier is shared with anyone.
+  profiles you for advertising. Exports and sync contain the identifiers described below.
 - **HealthKit access is read-only.** PulsHealth asks Apple Health for read
   permission and never writes, edits, or deletes anything in Apple Health.
 - **You choose what is read.** Nothing is read until you pick the data types
@@ -93,9 +89,7 @@ export you make yourself.
 
 To the database you configure — the PulsHealth backend you run, a receiver
 you built from the protocol, or the PulsHealth database if you chose it and
-signed in — over HTTPS, authenticated with a bearer token. That is the only
-destination for your data. (An export is not a network destination: see
-[Exports](#exports) below.)
+signed in — over HTTPS, authenticated with a bearer token. One-time requests can send a ZIP to a separate HTTPS destination you explicitly approve; ordinary exports go through the share sheet. See [Data Requests](#data-requests).
 
 **Signing in to the PulsHealth database.** Sync → Database → PulsHealth
 Database → Sign In to PulsHealth opens the phone connection page at
@@ -225,28 +219,59 @@ background.
   ordinary, unencrypted file: it is only as private as the place you put it,
   the app can no longer delete it, and the developer never sees it.
 
+## Data Requests
+
+Settings → Create Request makes a self-contained link and QR code describing
+requested data types, fixed inclusive dates, format, purpose, contact and an
+optional HTTPS upload destination. It contains no health data or app sync
+credentials. Anyone with the link can read and edit its details; requester
+identity is not verified. Links expire after 30 days by default, can be reused
+by multiple people, and cannot be remotely revoked. Request details appear in
+the export manifest, so do not put participant secrets in them.
+
+Opening a request shows its details before any health read. **Generate & Share**
+creates a ZIP and opens the share sheet. **Generate & Send** creates that ZIP
+and uploads it directly to the displayed destination in one action. A partial
+extraction stops for a separate **Send Available Data** choice. Apple Health
+can return no records when permission is denied; empty data does not prove
+that access was granted. There is no study enrollment, participant account,
+ongoing synchronization, or research consent process in this feature.
+
+Request exports use fresh random export user and device IDs and exclude your
+configured profile and sync credentials. Health records still contain source
+names, sample identifiers and other potentially identifying information; the
+files are not anonymized. Temporary files use the export protections described
+above and are removed after confirmed delivery, successful share handoff,
+deleting or closing the request, or the next app launch. A failed upload keeps
+the file only for retry in the current request session. Nothing is saved as a
+scheduled job or a persistent request history.
+
+Direct delivery uses HTTPS, with no app account cookie or bearer token and no
+redirects. The endpoint receives the ZIP, request ID, random submission ID,
+SHA-256 checksum and normal network information such as the IP address.
+PulsHealth confirms delivery only when the endpoint returns a matching receipt;
+this is not verification of the recipient's identity, retention practices, or
+study participation. Retry reuses the same submission ID and file. Cancel stops
+further work but cannot recall a copy already received. Manage received copies
+with the recipient under their own policies.
+
 ## Camera
 
-The app can read a pairing QR code printed by your database's backend so you do
-not have to type a URL, a token and a UUID by hand. That is the **only** use of the camera.
-The camera runs only while the scanning screen is open, no photo or video frame
-is recorded, stored, or transmitted, and nothing but the text of the scanned
-code leaves the scanner. Declining camera access is fully supported: the same
-screen offers to let you type the details instead, and the app works exactly the
-same way. The same code also works without the camera: pasted with the system
-Paste button (the app reads the clipboard only on that tap), or opened as a
-`puls://` link, which the app asks you to confirm — naming the address it points
-to — before it fills anything in.
+The app uses the camera to read database pairing and Data Request QR codes.
+The camera runs only while the scanning screen is open. No photo or video frame
+is recorded, stored, or transmitted. Only the decoded text leaves the scanner.
+If you decline camera access you can enter or paste a link instead. A pairing
+link asks for confirmation before filling database fields; a request link shows
+its data, dates and destination before you choose to generate or send anything.
 
 ## Health data and Apple's rules
 
 PulsHealth does not use HealthKit data for advertising, marketing, or
-data-mining purposes, and does not disclose HealthKit data to any third party.
-It is not shared with, or sold to, anyone. The only recipient of an upload is
+data-mining purposes, and does not sell HealthKit data. Uploads go to
 the database you set up — your own, or the PulsHealth database if you chose
 it, where the developer holds it for you as described
 [below](#if-you-use-the-developers-viewer) — and an exported file goes only
-where you send it. Likewise, the only AI assistant that reads data from the
+where you send it, including a request destination you approve. Likewise, the only AI assistant that reads data from the
 PulsHealth database is one you connected and approved yourself, and it can
 be revoked at any time.
 

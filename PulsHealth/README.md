@@ -524,3 +524,11 @@ not show the native prompt.
 Only day/session counters, the latest recorded successful-upload date, and
 request-attempt metadata persist in the app's own UserDefaults. No health
 values or type identifiers are stored there, and nothing is sent to analytics.
+
+## Data Requests
+
+Settings → Create Request selects data, dates and delivery, then shares a link
+or QR code. Settings → Open or Scan Request and `puls://request` links open a
+review screen. Generate & Share opens the share sheet; Generate & Send creates
+and delivers the ZIP in one action. Partial extractions require an explicit
+Send Available Data choice. See [the request format](../docs/requests.md).
