@@ -2,6 +2,7 @@ import React from "react";
 import { type MDXComponents } from "mdx/types";
 import Link from "next/link";
 import Image from "next/image";
+import { BlogFlow, FlowRow } from "@/components/blog-flow";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, AlertTriangle, CheckCircle, Lightbulb, ExternalLink } from "lucide-react";
 
@@ -128,6 +129,8 @@ function KeyTakeaways({
 }
 
 export const mdxComponents: MDXComponents = {
+  BlogFlow,
+  FlowRow,
   Callout,
   DataTypeLink,
   BlogImage,

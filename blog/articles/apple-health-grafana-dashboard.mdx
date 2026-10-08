@@ -16,6 +16,27 @@ The downloadable dashboard has four panels: daily steps, individual workout dura
 
 *Current revision: October 8, 2026. The template targets the current PulsHealth database and provisioned Grafana datasource. Queries were checked against synthetic PostgreSQL fixtures and a private owner-scoped production database; see the download README for validation scope.*
 
+<BlogFlow
+  title="Four panels, four different questions"
+  caption="Panel reading guide for the downloadable dashboard. This is a schematic, not a Grafana screenshot or measured result."
+>
+  <FlowRow
+    label="Daily steps + provenance"
+    steps="Daily summary | Value and calculation source | Compare a known day"
+    note="Keep aggregate versus rollup visible beside the daily value."
+  />
+  <FlowRow
+    label="Recorded workout duration"
+    steps="One workout record | Duration in minutes | One plotted point"
+    note="A record is a session, not a continuous exercise signal."
+  />
+  <FlowRow
+    label="Upload freshness"
+    steps="Latest received batch | Hours since receipt | Check the target metric too"
+    note="A fresh upload can contain old measurements. Receipt age is not a completeness score."
+  />
+</BlogFlow>
+
 ## Start with a working private stack
 
 Follow the maintained [server setup guide](/docs/server/) for installation, phone pairing, credentials, and network configuration. Let the phone sync some records before designing panels. Grafana cannot discover information that has not reached the database.

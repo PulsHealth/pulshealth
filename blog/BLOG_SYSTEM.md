@@ -140,6 +140,7 @@ optional components are defined in `site/src/components/mdx-components.tsx`:
 - `<Definition term="Heart Rate Variability">…</Definition>`: visible inline definition, readable on touch screens and with a keyboard.
 - `<DataTypeLink identifier="HKQuantityTypeIdentifierHeartRateVariabilitySDNN">HRV</DataTypeLink>`: link to the knowledge-base type page. Child text is optional.
 - `<BlogImage src="/blog/my-post/figure.webp" alt="…" caption="…" width={1920} height={1080} priority />`: captioned figure. Use the actual pixel dimensions; `priority` only on the first image above the fold.
+- `<BlogFlow title="…" caption="Workflow diagram."><FlowRow label="Export" steps="Phone | CSV | Spreadsheet" note="Refresh the file for newer data." /></BlogFlow>`: a text-based figure for routes, choices, or checkpoints. Rows read left to right on desktop and top to bottom on mobile, with selectable text and both article themes supported. Label schematics clearly; do not present them as measured results or product screenshots.
 
 Add new components to the implementation and this list together.
 
