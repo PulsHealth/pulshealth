@@ -19,7 +19,7 @@ func TestQuantityRollupsExposeSumValue(t *testing.T) {
 }
 
 func TestMetricDailyUsesOnlyCanonicalDailyAggregates(t *testing.T) {
-	sql := readSQL(t, "../db/migrations/009_metric_daily.sql")
+	sql := readSQL(t, "../db/migrations/023_recording_quality.sql")
 	for _, want := range []string{
 		"s.interval_value = 1",
 		"s.interval_unit = 'day'",
@@ -45,7 +45,7 @@ func TestMetricDailyEnablesCurrentRollupData(t *testing.T) {
 }
 
 func TestMetricDailyFallbackSemanticsAreExplicit(t *testing.T) {
-	sql := readSQL(t, "../db/migrations/009_metric_daily.sql")
+	sql := readSQL(t, "../db/migrations/023_recording_quality.sql")
 	if !strings.Contains(sql, "sum(r.sum_value)") {
 		t.Fatalf("metric_daily does not use quantity_rollups.sum_value for cumulative fallback")
 	}

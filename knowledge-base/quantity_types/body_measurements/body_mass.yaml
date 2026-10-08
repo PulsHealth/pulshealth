@@ -206,4 +206,26 @@ references:
   - title: "Physiology, Body Mass Index - StatPearls NCBI"
     url: "https://www.ncbi.nlm.nih.gov/books/NBK535456/"
     type: "research"
-last_updated: "2026-01-27"
+last_updated: "2026-10-08"
+
+# Recording and interpretation guidance; personal observations are kept separately.
+recording_behavior:
+  reviewed_on: '2026-10-08'
+  shape: Body mass is a discrete measurement. Point timestamps identify observations; they do not imply that
+    the value was continuously measured until the next record.
+  cadence: Recording depends on weigh-ins, imports and the source app. Report observed days and inter-record
+    gaps rather than imposing a daily schedule.
+  context: Compare units, source, measurement timing and user-entered metadata where available. Repeated readings
+    on one day are observations, not automatically duplicates.
+  coverage: An unrecorded day has no observed value. Do not fill it with zero; if a chart carries a value forward,
+    mark it as carried forward and retain the age of the last observation.
+  aggregation: Choose and label the daily summary, such as most recent or average. Preserve within-day readings
+    when studying variability and distinguish a personal baseline from a clinical reference range.
+  metadata: Sync identifiers and external identifiers can help trace imports, but their values may identify
+    a person or account. Keep them out of public examples and do not infer automatic recording from the source
+    name alone.
+  references:
+  - title: 'Apple: body mass'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/bodymass
+  - title: 'Apple: samples and sources'
+    url: https://developer.apple.com/documentation/healthkit/about-the-healthkit-framework

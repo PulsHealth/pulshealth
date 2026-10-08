@@ -80,7 +80,9 @@ jobs:
         # checked in (the app has no YAML parser). Fails when the YAML or
         # the generator changed without the JSON being regenerated.
         run: |
-          python3 -m pip install --quiet pyyaml
+          python3 -m pip install --quiet pyyaml jsonschema
+          python3 knowledge-base/validate.py
+          python3 -m unittest discover -s knowledge-base/tests
           scripts/check-knowledge-json.sh
 
       - name: Validate Compose, workflows and shell scripts

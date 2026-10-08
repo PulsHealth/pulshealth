@@ -155,4 +155,26 @@ references:
   - title: "National Sleep Foundation Sleep Duration Recommendations"
     url: "https://www.sleepfoundation.org/how-sleep-works/how-much-sleep-do-we-really-need"
     type: "medical"
-last_updated: "2026-01-27"
+last_updated: "2026-10-08"
+
+# Recording and interpretation guidance; personal observations are kept separately.
+recording_behavior:
+  reviewed_on: '2026-10-08'
+  shape: A category value describes a sleep state over an interval. Multiple intervals can form one sleep episode,
+    so row count measures segmentation rather than number of nights.
+  cadence: Intervals follow recorded states, not a fixed sampling schedule. Changes in stage segmentation or
+    source behavior can change row counts without changing time asleep.
+  context: Keep In Bed and Awake separate from asleep categories. Group intervals into episodes with an explicit
+    rule for naps, gaps and the date assigned to an overnight episode.
+  coverage: Count covered episodes or nights separately from calendar dates with interval starts. A night can
+    cross midnight and the study boundary; missing stages are not evidence that a stage never occurred.
+  aggregation: Merge overlapping intervals within the chosen asleep categories before calculating total asleep
+    time. Do not add In Bed to stage durations. Conflicting stages or sources require an explicit selection
+    policy; a union alone does not resolve stage labels.
+  metadata: Use timezone metadata when available and record the timezone used for night assignment. Source
+    identity and software version help distinguish changes in recording from changes in sleep.
+  references:
+  - title: 'Apple: sleep-analysis categories and overlapping intervals'
+    url: https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis
+  - title: 'Apple: HealthKit sample time semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples

@@ -34,6 +34,13 @@ export const DOC_GROUPS: DocGroup[] = ["Getting started", "Reference", "Project"
 
 export const DOCS: DocEntry[] = [
   {
+    slug: "recording-behavior",
+    title: "Understand how health data is recorded",
+    repoPath: "docs/recording-behavior.md",
+    description: "Recording frequency, coverage, sources, context and the difference between raw records and daily summaries.",
+    group: "Reference",
+  },
+  {
     slug: "server",
     title: "Server setup and operations",
     repoPath: "server/README.md",

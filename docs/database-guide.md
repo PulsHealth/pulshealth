@@ -504,7 +504,10 @@ Resolution order:
    `interval_value = 1`, `interval_unit = 'day'`, and `device_filter = 'all'`.
    HealthKit handles cross-source deduplication for that series. Other
    functions, intervals, and device-specific series never compete for the
-   daily value.
+   daily value. Both bucket boundaries must be consecutive local midnights in
+   `puls_time_zone()`. Shifted or partial buckets remain stored but do not
+   compete, even when uploaded more recently; a valid DST day may be 23 or
+   25 hours long.
 2. Fall back to `quantity_rollups` when no canonical daily bucket exists.
    Cumulative types use the highest single-source daily sum to avoid overlap;
    discrete types use a sample-count-weighted cross-source average.
@@ -730,6 +733,47 @@ ORDER BY wake_started_at DESC;
   HealthKit event times.
 - Deletion tombstones are best-effort HealthKit data. If HealthKit purges a
   tombstone before sync sees it, reconciliation is needed.
+
+## Recording Behavior and Historical Metadata
+
+Use the [recording guide](recording-behavior.md) for cadence, coverage, source
+identity and context. Record counts describe the stored representation, not a
+sensor sampling rate or a guarantee of complete monitoring.
+
+Migration `023_recording_quality.sql` adds a read-time decoder for historical
+heart-rate motion metadata. Older client code could bridge numeric 0/1 to JSON
+booleans; the current Swift mapper preserves numeric enums. The decoder is
+narrowly scoped to `HKMetadataKeyHeartRateMotionContext`: false/true decode as
+0/1, numeric 0/1/2 retain their meanings, and missing or invalid values return
+NULL. Other boolean metadata is never converted. Code 0 means *context not
+set*, not sedentary; code 2 includes movement **or working out** and is not a
+workout identifier. Raw records remain unchanged so their provenance survives.
+
+```sql
+-- psql variables: user_id, start_ts and end_ts. The range is [start, end).
+SELECT q.start_ts,
+       q.metadata -> 'HKMetadataKeyHeartRateMotionContext' AS stored_context,
+       jsonb_typeof(q.metadata -> 'HKMetadataKeyHeartRateMotionContext') AS stored_kind,
+       puls_heart_rate_motion_context(q.metadata) AS motion_context
+FROM quantity_samples q
+WHERE q.user_id = :'user_id'::uuid
+  AND q.type_id = (SELECT type_id FROM sample_types
+                  WHERE identifier = 'HKQuantityTypeIdentifierHeartRate')
+  AND q.start_ts >= :'start_ts'::timestamptz
+  AND q.start_ts < :'end_ts'::timestamptz
+ORDER BY q.start_ts;
+```
+
+Use this decoder explicitly in SQL analyses that consume this metadata. It does
+not rewrite exports or claim that arbitrary third-party boolean fields are enums.
+The product API currently does not expose quantity-sample metadata.
+
+Daily analytics now reject buckets whose actual boundaries do not fit the
+configured local calendar. Do not delete all non-midnight buckets: they can
+represent a different historical timezone or anchor. The stored bucket remains
+evidence; `metric_daily` uses an aligned canonical bucket or its existing raw
+rollup fallback. If neither exists, there is no daily row. The fallback remains
+an approximation, not a recreation of HealthKit's source-resolution algorithm.
 
 ## Appendix: Minimal Connection Notes
 

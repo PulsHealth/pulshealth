@@ -167,4 +167,27 @@ references:
   - title: "Validation of Apple Watch VO2max Estimation"
     url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8227157/"
     type: "research"
-last_updated: "2026-01-27"
+last_updated: "2026-10-08"
+
+# Recording and interpretation guidance; personal observations are kept separately.
+recording_behavior:
+  reviewed_on: '2026-10-08'
+  shape: A VO2 max sample is an estimate or measurement expressed relative to body mass. It is not a continuous
+    oxygen-consumption stream.
+  cadence: Apple Watch estimates are associated with supported outdoor walking, running and hiking workouts.
+    Do not assume that every workout produces a value or that estimates occur on a fixed daily schedule.
+  context: 'Keep the estimate timestamp distinct from workout start/end. A timestamp-only association is an
+    inference: document the proximity window, handle multiple candidate workouts and allow unmatched estimates.'
+  coverage: Report estimate count and days observed. Missing dates are not zero fitness and do not establish
+    that no qualifying activity took place.
+  aggregation: Preserve individual estimates and source/test context when comparing trends. A daily average
+    can hide multiple estimates; personal observations do not establish population reference ranges.
+  metadata: Inspect VO2 max test-type and source metadata when available to distinguish estimation methods.
+    Do not equate a device estimate with a laboratory measurement solely because the unit matches.
+  references:
+  - title: 'Apple: cardio-fitness estimates'
+    url: https://support.apple.com/en-us/108790
+  - title: 'Apple: VO2 max type'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/vo2max
+  - title: 'Apple: VO2 max test metadata'
+    url: https://developer.apple.com/documentation/healthkit/hkmetadatakeyvo2maxtesttype

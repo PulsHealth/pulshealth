@@ -163,6 +163,9 @@ eq "$(sql postgres "SELECT string_agg(rolname, ',' ORDER BY rolname) FROM pg_rol
 # web/lib/webapp.integration.test.ts in db-integration.
 eq "$(sql postgres "SELECT rolcanlogin::text || ' ' || array_to_string(rolconfig, ';') FROM pg_roles WHERE rolname = 'web_app'")" \
   "true search_path=web, public" "web_app role"
+docker exec -i "$db" psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 \
+  < "$here/tests/recording_quality.sql" >/dev/null
+echo "recording quality: enum decoding, calendar boundaries, DST and user scope passed"
 endgroup
 
 # --- order: lexical order, checksums, scripts every run ----------------------
