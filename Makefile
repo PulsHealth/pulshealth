@@ -9,7 +9,7 @@ COMPOSE_BUILD := $(COMPOSE) -f server/compose.build.yml
 ARGS          ?=
 
 .PHONY: help bootstrap up down pull logs ps migrate baseline pairing issue-device devices web-invite web-demo dev-up \
-        backup backup-list restore site-dev site-build site-lint deploy-site
+        backup backup-list restore site-dev site-build site-lint blog-check deploy-site
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{ printf "  %-12s %s\n", $$1, $$2 }'
@@ -96,6 +96,9 @@ site-build: ## Static export of the marketing site to site/out
 
 site-lint: ## ESLint the marketing site
 	cd site && bun install && bun run lint
+
+blog-check: ## Validate blog metadata, drafts, links and production export
+	cd site && bun install --frozen-lockfile && bun run blog:check
 
 deploy-site: ## Build the marketing site and publish it to S3 + CloudFront (ARGS=--dry-run)
 	scripts/deploy-site.sh $(ARGS)

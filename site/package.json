@@ -3,15 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "copy-blog-images": "mkdir -p public/blog && cp -r ../blog/images/. public/blog/",
+    "copy-blog-images": "bun scripts/blog-images.ts",
     "gen-llms-txt": "bun scripts/gen-llms-txt.ts",
     "gen-openapi": "bun scripts/gen-openapi.ts",
-    "predev": "bun run copy-blog-images && bun run gen-llms-txt && bun run gen-openapi",
-    "dev": "next dev",
+    "predev": "bun run gen-llms-txt && bun run gen-openapi",
+    "dev": "bun scripts/dev.ts",
     "prebuild": "bun run copy-blog-images && bun run gen-llms-txt && bun run gen-openapi",
-    "build": "next build",
+    "build": "next build && bun run check:export",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "bun test tests",
+    "check:export": "bun scripts/check-export.ts",
+    "blog:check": "bun run lint && bun run test && bun run build"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

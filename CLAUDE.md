@@ -362,11 +362,13 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   source for the site): twelve Markdown files and the product API's
   `server/api/openapi.json`, which renders as the API reference
   (`format: "openapi"`) and which `site/scripts/gen-openapi.ts` publishes at
-  `/openapi.json`. Move or rename any of them and the build **still
-  succeeds** with fewer pages, so the `site` CI job asserts the counts: one
-  type page per tracked YAML file (178), one per `blog/articles/*.mdx`, one per
-  manifest entry (`manifest=13` in `ci.yml` moves with the manifest). Keep that
-  check honest; don't loosen it.
+  `/openapi.json`. Keep the sibling paths intact. Blog metadata is validated
+  strictly with filenames; `draft: true` is local preview only, never production
+  content or images. `site/scripts/check-export.ts` checks exact published blog
+  routes, discovery entries, draft exclusion, article links/images, tracked
+  knowledge-base sources and the `DOCS` manifest after every build, in CI and
+  before deployment. Keep these checks honest; don't loosen them. Run
+  `make blog-check` for blog changes; `blog/BLOG_SYSTEM.md` is the writing guide.
 - **The app is shipped software, not a source drop.** It is on the App Store as
   [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354), so the
   privacy policy, listing copy and entitlements describe a binary people run.

@@ -1,4 +1,4 @@
-import { getAllPosts } from "@/lib/blog";
+import { getPublishedPosts } from "@/lib/blog";
 
 // Rendered once at build time into out/feed.xml (the site is a static export).
 export const dynamic = "force-static";
@@ -14,7 +14,7 @@ function escape(text: string): string {
 }
 
 export async function GET() {
-  const posts = await getAllPosts(); // newest first
+  const posts = await getPublishedPosts(); // newest first
 
   const items = posts
     .map((post) => {
@@ -30,7 +30,7 @@ ${post.tags.map((tag) => `      <category>${escape(tag)}</category>`).join("\n")
     })
     .join("\n");
 
-  const lastBuildDate = posts[0] ? new Date(posts[0].date).toUTCString() : new Date().toUTCString();
+  const lastBuildDate = posts.length ? new Date(posts.map(post => post.updated || post.date).sort().at(-1)!).toUTCString() : new Date().toUTCString();
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">

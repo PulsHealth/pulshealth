@@ -101,28 +101,9 @@ function BlogImage({
   );
 }
 
-// Inline term with its definition in a hover tooltip.
-function Definition({
-  term,
-  children,
-}: {
-  term: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <span className="relative inline-block group">
-      <span className="border-b border-dotted border-muted-foreground/60 cursor-help hover:border-brand dark:border-muted-foreground/40 dark:hover:border-brand transition-colors duration-150">
-        {term}
-      </span>
-      <span
-        className="invisible group-hover:visible opacity-0 group-hover:opacity-100 absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-sm leading-relaxed bg-popover text-popover-foreground border border-border rounded-md shadow-md min-w-[200px] max-w-[300px] w-max transition-opacity duration-150 before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-transparent before:border-t-border after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-[7px] after:border-transparent after:border-t-popover"
-        role="tooltip"
-      >
-        <span className="font-medium text-foreground">{term}:</span>{" "}
-        <span className="text-muted-foreground">{children}</span>
-      </span>
-    </span>
-  );
+// Visible definitions also work on touch screens and with a keyboard.
+function Definition({ term, children }: { term: string; children: React.ReactNode }) {
+  return <span><strong>{term}:</strong> {children}</span>;
 }
 
 // Summary box; children are a Markdown bullet list.

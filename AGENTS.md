@@ -165,10 +165,12 @@ cd web && npm ci && npm run check:catalog && npm run lint && \
 ```
 
 **Marketing site** (bun, not npm). CI also asserts the export's page counts
-against their sources, so a content file that goes missing fails the build:
+against their sources using the shared export checker, also run before
+deployment. Draft articles and their images are excluded. `make blog-check`
+runs the full authoring check; see `blog/BLOG_SYSTEM.md`:
 
 ```bash
-cd site && bun install && bun run lint && bun run build
+cd site && bun install && bun run lint && bun run test && bun run build
 ```
 
 **Swift package** (macOS with Xcode 26.5 or later):

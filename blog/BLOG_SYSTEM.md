@@ -1,52 +1,120 @@
-# Adding a post
+# Writing and publishing
 
-Posts are MDX files in `blog/articles/`; the site lists them at
-[pulshealth.com/blog](https://pulshealth.com/blog/) and in `/feed.xml`. The
-file name is the URL: `blog/articles/my-post.mdx` → `/blog/my-post/`.
+Keep ideas in [`ideas.md`](ideas.md). Posts are Markdown or MDX files in
+`blog/articles/`; the filename is the permanent URL:
+`my-post.mdx` → `/blog/my-post/`. Use lowercase names with hyphens.
 
-## Frontmatter
+## Start a draft
+
+From the repository root:
+
+```bash
+cp blog/templates/post.mdx blog/articles/my-post.mdx
+make site-dev
+```
+
+Open `http://localhost:3000/blog/`. Drafts appear first with a preview label.
+Article and image edits refresh the preview without restarting the server.
+Plain Markdown is enough; add components only when they help the explanation.
+
+`draft: true` is available only in local development. Production excludes the
+post, its image folder, and its search, feed and sitemap entries. Even local
+search and feeds include only published posts. Draft files remain public in
+this open-source repository: use a private location for confidential notes.
+A draft needs a title; date and excerpt can wait. Metadata still has to parse.
+
+## Metadata
 
 ```yaml
 ---
-title: "Apple Watch HRV: What It Means and How It's Measured"
-date: "2026-02-03"                       # ISO date; the list is sorted by it, newest first
-tags: ["hrv", "apple-watch"]             # shown as badges, fed to search and the RSS feed
-excerpt: "One or two sentences."         # list page, <meta description>, feed, Open Graph
-author: "Sean Wade"                      # optional; shown on the post and in JSON-LD
-featured_image: "https://pulshealth.com/blog/my-post/hero.webp"  # optional; absolute URL, 1200×600, Open Graph card
+title: "A useful, specific title"
+draft: true
+# Set these when ready to publish:
+# date: "2026-10-07"
+# excerpt: "One or two sentences describing what the reader will learn."
+tags: ["apple-health", "self-hosting"]
+author: "Sean Wade"
+# updated: "2026-10-08"
+# featured_image: "/blog/my-post/hero.webp"
 ---
 ```
 
-`title` is required (a file without one is skipped). Reading time is computed
-from the body at 220 words per minute.
+Published posts require a nonempty title, explicit quoted `YYYY-MM-DD` date,
+excerpt and body. Dates must be real calendar dates; future dates are rejected
+for published posts. There is no scheduled publishing: keep a future post as
+a draft and publish it deliberately when ready. Missing dates never become
+"today" automatically.
+
+`tags` is an optional array of strings. `author` and `featured_image` are
+optional. An image can use a site-relative path or absolute HTTP(S) URL.
+Unknown fields, invalid types and duplicate slugs fail with the filename.
+Both `.md` and `.mdx` are supported, but cannot share the same slug.
+Reading time is computed at 220 words per minute.
+
+For a material revision, set `updated` to its date, on or after the original
+publication date. The original date and list order stay intact. The update
+appears on the index and article, in social/structured metadata, the sitemap,
+and the feed's build date. Explain substantial changes in the article too.
+
+## A small writing routine
+
+1. Capture the reader's question, your observation and supporting links in
+   `ideas.md`. Work on one article at a time.
+2. Draft the answer in your own words. An outline, figure or worked example
+   can help; a fixed article structure is optional.
+3. Link factual claims to supporting sources near the claim. Metrics articles
+   need sources for numerical ranges, device behavior and health claims.
+   Prefer original research and official documentation. A Sources section is
+   optional; a generic disclaimer does not replace evidence.
+4. For engineering posts, run the examples and link to the authoritative
+   `/docs/` page for setup and reference material that changes over time.
+5. Preview on desktop and mobile. Check tables, images, definitions and links.
+   AI can help outline, edit and identify unsupported claims; review the prose,
+   sources and results yourself before publication.
+6. Add date and excerpt, remove `draft: true` (or set it to `false`), and run
+   `make blog-check`. Use a focused, signed-off content commit/PR.
+7. Deploy with `make deploy-site`. Verify the live article, image, `/feed.xml`
+   and search entry. Deployment is a separate action from validation.
 
 ## Components
 
-Besides plain Markdown (GFM tables, fenced code with syntax highlighting),
-these are available in every post. They are defined in
-`site/src/components/mdx-components.tsx`; add one there and here together.
+Markdown supports GFM tables and fenced code with syntax highlighting. These
+optional components are defined in `site/src/components/mdx-components.tsx`:
 
-- `<Callout type="info|warning|success|tip" title="…" icon={true}>`: highlighted aside. `type` defaults to `info`.
-- `<KeyTakeaways title="Key Takeaways">`: summary box; put a Markdown bullet list inside, with a blank line after the opening tag.
-- `<Definition term="Heart Rate Variability">…</Definition>`: inline term with the definition in a hover tooltip.
-- `<DataTypeLink identifier="HKQuantityTypeIdentifierHeartRateVariabilitySDNN">Heart Rate Variability</DataTypeLink>`: link to a knowledge-base type page; the child text is optional (defaults to the identifier minus its `HK…TypeIdentifier` prefix).
-- `<BlogImage src="/blog/my-post/figure.webp" alt="…" caption="…" width={1920} height={1080} priority />`: figure with caption. `width`/`height` are the file's pixel size (default 800×600); `priority` only on the first image above the fold.
+- `<Callout type="info|warning|success|tip" title="…" icon={true}>`: highlighted aside; defaults to `info`.
+- `<KeyTakeaways title="Key Takeaways">`: summary box. Use a blank line before a Markdown bullet list inside.
+- `<Definition term="Heart Rate Variability">…</Definition>`: visible inline definition, readable on touch screens and with a keyboard.
+- `<DataTypeLink identifier="HKQuantityTypeIdentifierHeartRateVariabilitySDNN">HRV</DataTypeLink>`: link to the knowledge-base type page. Child text is optional.
+- `<BlogImage src="/blog/my-post/figure.webp" alt="…" caption="…" width={1920} height={1080} priority />`: captioned figure. Use the actual pixel dimensions; `priority` only on the first image above the fold.
+
+Add new components to the implementation and this list together.
 
 ## Images
 
-Put them in `blog/images/<slug>/` and reference them as
-`/blog/<slug>/file.webp`. `site/package.json`'s `copy-blog-images` script
-copies that directory into `site/public/blog/` before `dev` and `build`.
-Prefer WebP, no wider than 1920 px.
+Put images in `blog/images/<slug>/` and reference them as
+`/blog/<slug>/figure.webp`. Prefer WebP, no wider than 1920 px. A hero image is
+optional; social sharing uses the default site image when none is specified.
+Use roughly 1200×630 for a custom social card.
 
-## Checking it
+`site/public/blog/` is generated. Each build recreates it from published
+posts' folders, removing stale files and omitting drafts and orphan folders.
+The preview includes draft images and watches edits, additions and deletions.
+Do not store other files in the generated directory. Keep shared site assets
+outside `/blog/`; an article's image folder should belong to that article.
+
+## Checks
 
 ```bash
-cd site && bun install && bun run lint && bun run build
+make blog-check    # lint, regression tests, compile MDX and check the export
 ```
 
-The build exports one directory per article under `site/out/blog/`, and CI
-asserts that count equals the number of tracked `blog/articles/*.mdx` files.
-Both files are read by relative path from `site/` (`../blog/articles`,
-`../blog/images`), so moving `blog/` silently exports fewer pages; the count
-check is what catches it.
+Every `bun run build` also runs the shared export checker. It checks exact
+published article pages, RSS/search/sitemap entries, draft exclusion,
+article links/images (including local fragments), knowledge-base pages,
+documentation pages and required generated assets. It does not fetch external
+links or assess the truth of claims; source review remains part of writing.
+
+CI uses the same tests and build. Deployment runs the same checker before S3
+sync, including with `--skip-build`. `site/` must stay beside `blog/` and
+`knowledge-base/`: loaders read them by relative path. Missing or malformed
+blog content stops the build instead of silently exporting fewer articles.

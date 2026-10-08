@@ -128,20 +128,22 @@ npm run dev                     # demo data when DATABASE_URL is unset
 
 Built with **bun**, not npm, and distinct from `web/`. It reads
 `knowledge-base/`, `blog/`, twelve repository Markdown files and the product
-API's OpenAPI document by relative path, so a moved file makes the build emit
-fewer pages instead of failing. CI
-compares the built knowledge-base, blog and docs pages with their sources
-(`site/README.md` has the details).
+API's OpenAPI document by relative path. Blog metadata is validated strictly;
+a shared checker
+compares exported pages with their sources after every build and before
+deployment (`site/README.md` has the details). Drafts are local-only.
 
 ```bash
 cd site
 bun install
-bun run lint && bun run build      # static export to site/out
+bun run lint && bun run test && bun run build # validated static export
 bun run dev                        # localhost:3000
 ```
 
 `make site-lint`, `make site-build` and `make site-dev` run the same things
-from the repository root. If you edited `knowledge-base/`, validate it:
+from the repository root. `make blog-check` runs lint, blog tests and the
+validated build; `blog/BLOG_SYSTEM.md` describes the writing workflow. If you
+edited `knowledge-base/`, validate it:
 
 ```bash
 cd knowledge-base && python3 validate.py    # needs PyYAML and jsonschema
