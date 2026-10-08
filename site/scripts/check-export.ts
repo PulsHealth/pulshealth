@@ -93,6 +93,14 @@ export function checkExport(siteDir = process.cwd()): void {
   const identifiers = sources.map(file => {
     const identifier = /^identifier:\s*["']?([A-Za-z0-9]+)["']?\s*$/m.exec(requireFile(file))?.[1];
     if (!identifier) throw new Error(`Missing knowledge-base identifier: ${file}`);
+    const html = requireFile(path.join(outDir, "knowledge-base/types", identifier, "index.html"));
+    if (!html.includes('href="/docs/recording-behavior/"')) {
+      throw new Error(`Recording guide link missing from ${identifier}`);
+    }
+    if (/^recording_behavior:/m.test(requireFile(file)) &&
+        (!html.includes('id="recording-behavior"') || !html.includes("Recording guidance reviewed"))) {
+      throw new Error(`Recording guidance missing from ${identifier}`);
+    }
     return identifier;
   });
   sameSet(filesIn(path.join(outDir, "knowledge-base/types")).filter(file => file.endsWith(`${path.sep}index.html`)).map(file => path.basename(path.dirname(file))), identifiers, "Knowledge-base pages");

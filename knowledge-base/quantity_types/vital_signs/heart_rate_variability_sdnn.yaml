@@ -115,12 +115,12 @@ description: |
   - Uses optical PPG sensor to detect pulse peaks
   - Calculates inter-beat intervals from pulse waveform
   - Typically measures during rest periods or dedicated sessions (Breathe app)
-  - Records short-term SDNN (usually 1-5 minutes of data)
+  - Inspect each record's time span; do not infer a universal measurement window or recording schedule
   - Often measured overnight or during periods of detected inactivity
 
   **Important: Recording Duration Matters**
   - Clinical 24-hour SDNN values (from Holter monitors) are NOT comparable to short-term measurements
-  - Apple Watch SDNN values are typically 20-60% of what 24-hour SDNN would show
+  - Do not apply a fixed conversion ratio between short-term and 24-hour SDNN
   - Always compare like to like: short-term to short-term, within-person trends
 
   ## Health Significance
@@ -318,7 +318,7 @@ references:
     type: "medical"
 
 # --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-10-02"
+last_updated: "2026-10-08"
 research_notes: |
   - iOS 11.0/watchOS 4.0 introduction confirmed via Apple documentation timeline
   - Clinical thresholds from 1996 ESC/NASPE Task Force guidelines and subsequent validation studies
@@ -326,3 +326,26 @@ research_notes: |
   - Short-term vs. 24-hour SDNN differences well-documented in HRV literature
   - Age-related decline rates from multiple population studies
   - Important to note: Apple Watch SDNN values are NOT equivalent to 24-hour Holter SDNN
+
+# Recording and interpretation guidance; personal observations are kept separately.
+recording_behavior:
+  reviewed_on: '2026-10-08'
+  shape: Each value is an SDNN estimate in time units, not a sequence of individual beat intervals. Inspect
+    the sample start/end span separately from its numeric SDNN value.
+  cadence: Apple Watch records SDNN samples automatically. The type does not promise a universal interval between
+    records; summarize actual start-to-start gaps by source and observation window.
+  context: Compare like measurement contexts and durations. Joining an estimate to sleep or a workout requires
+    a stated overlap or proximity rule, not an assumption based only on the type name.
+  coverage: Report days with records, records per day and gaps separately. An empty period does not establish
+    absent heart-rate variability or a physiological change.
+  aggregation: Keep SDNN separate from RMSSD and from beat-level series. A daily average summarizes the available
+    estimates; it does not reconstruct continuous or full-day HRV.
+  metadata: Retain the algorithm-version metadata when present and compare versions separately before attributing
+    a change to physiology. The presence of a version key does not describe the algorithm itself.
+  references:
+  - title: 'Apple: SDNN heart-rate variability'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/heartratevariabilitysdnn
+  - title: 'Apple: algorithm-version metadata'
+    url: https://developer.apple.com/documentation/healthkit/hkmetadatakeyalgorithmversion
+  - title: 'Apple: HealthKit sample time semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples

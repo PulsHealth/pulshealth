@@ -89,6 +89,41 @@ export default async function TypeDetailPage({ params }: PageProps) {
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-8 min-w-0">
 
+          <section aria-labelledby="recording-behavior" className="rounded-xl border bg-card p-6 space-y-5">
+            <div>
+              <h2 id="recording-behavior" className="text-xl font-semibold">Understanding your records</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Recording frequency, source and coverage affect what you can conclude from this data.
+                {" "}<Link href="/docs/recording-behavior/" className="text-brand underline underline-offset-4">Read the recording guide</Link>.
+              </p>
+            </div>
+            {data.recording_behavior && <>
+              <dl className="space-y-4 text-sm">
+                {([
+                  ["One record", data.recording_behavior.shape],
+                  ["Frequency", data.recording_behavior.cadence],
+                  ["Context", data.recording_behavior.context],
+                  ["Coverage and gaps", data.recording_behavior.coverage],
+                  ["Summaries", data.recording_behavior.aggregation],
+                  ["Metadata", data.recording_behavior.metadata],
+                ] as const).map(([label, text]) => (
+                  <div key={label}>
+                    <dt className="font-medium">{label}</dt>
+                    <dd className="mt-1 leading-relaxed text-muted-foreground">{text}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="border-t pt-4 text-xs text-muted-foreground">
+                <p>Recording guidance reviewed {data.recording_behavior.reviewed_on}</p>
+                <ul className="mt-2 space-y-1">
+                  {data.recording_behavior.references.map((ref) => (
+                    <li key={ref.url}><a href={ref.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{ref.title}</a></li>
+                  ))}
+                </ul>
+              </div>
+            </>}
+          </section>
+
           {/* Clinical Ranges Section */}
           {data.clinical_ranges && data.clinical_ranges.length > 0 && (
             <ClinicalRangesTable ranges={data.clinical_ranges} />

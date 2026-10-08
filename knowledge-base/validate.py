@@ -25,6 +25,34 @@ except ImportError:
     sys.exit(1)
 
 
+class UniqueKeyLoader(yaml.SafeLoader):
+    """Reject duplicate mapping keys instead of silently discarding content."""
+
+
+def unique_mapping(loader, node, deep=False):
+    loader.flatten_mapping(node)
+    result = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in result:
+            raise yaml.constructor.ConstructorError(
+                "while constructing a mapping", node.start_mark,
+                f"duplicate key: {key}", key_node.start_mark,
+            )
+        result[key] = loader.construct_object(value_node, deep=deep)
+    return result
+
+
+UniqueKeyLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, unique_mapping
+)
+
+
+def load_entry(path: Path):
+    with path.open(encoding="utf-8") as f:
+        return yaml.load(f, Loader=UniqueKeyLoader)
+
+
 def load_schema():
     """Load the JSON schema for validation."""
     schema_path = Path(__file__).parent / "schema.json"
@@ -44,13 +72,12 @@ def validate_file(yaml_path: Path, schema: dict, verbose: bool = False) -> tuple
         tuple of (is_valid, error_message)
     """
     try:
-        with open(yaml_path) as f:
-            data = yaml.safe_load(f)
+        data = load_entry(yaml_path)
 
         if data is None:
             return False, "Empty file"
 
-        jsonschema.validate(data, schema)
+        jsonschema.Draft7Validator(schema, format_checker=jsonschema.FormatChecker()).validate(data)
 
         # Additional custom validations
         errors = []
@@ -66,6 +93,14 @@ def validate_file(yaml_path: Path, schema: dict, verbose: bool = False) -> tuple
         # Check that HKCategoryType has category_values
         if data.get("type") == "HKCategoryType" and not data.get("category_values"):
             errors.append("HKCategoryType should have category_values defined")
+
+        values = [item["value"] for item in data.get("category_values") or []]
+        if len(values) != len(set(values)):
+            errors.append("category_values contains duplicate numeric values")
+
+        for ref in data.get("references", []):
+            if not ref["url"].startswith(("https://", "http://")):
+                errors.append("references must use an absolute HTTP(S) URL")
 
         if errors:
             return False, "; ".join(errors)
@@ -124,9 +159,18 @@ def main():
     valid_count = 0
     error_count = 0
     errors = []
+    identifiers = {}
 
     for yaml_file in yaml_files:
         is_valid, error_msg = validate_file(yaml_file, schema, verbose)
+
+        if is_valid:
+            identifier = load_entry(yaml_file)["identifier"]
+            if identifier in identifiers:
+                is_valid = False
+                error_msg = f"Duplicate identifier {identifier}; also in {identifiers[identifier]}"
+            else:
+                identifiers[identifier] = yaml_file
 
         relative_path = yaml_file.relative_to(base_path) if yaml_file.is_relative_to(base_path) else yaml_file
 

@@ -80,6 +80,16 @@ export interface HealthKitType {
   }> | null;
   statistics_options?: string[] | null;
   research_notes?: string | null;
+  recording_behavior?: {
+    reviewed_on: string;
+    shape: string;
+    cadence: string;
+    context: string;
+    coverage: string;
+    aggregation: string;
+    metadata: string;
+    references: Array<{ title: string; url: string }>;
+  };
   // Computed fields (not in schema, added by api.ts)
   slug: string;
   path: string;

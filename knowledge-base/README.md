@@ -1,6 +1,6 @@
 # HealthKit Data Knowledge Base
 
-A comprehensive, structured knowledge base of Apple HealthKit data types designed for **AI agents, health developers, clinicians, and researchers**. This resource focuses on clinical interpretation, health significance, and practical understanding rather than code implementation.
+A structured knowledge base of Apple HealthKit data types designed for **AI agents, health developers, clinicians, and researchers**. This resource focuses on clinical interpretation, health significance, and practical understanding rather than code implementation.
 
 ## Directory Structure
 
@@ -35,7 +35,7 @@ knowledge-base/
 | HKCategoryType | 59 | Categorical/enum values |
 | HKCharacteristicType | 6 | Static user characteristics |
 | HKCorrelationType | 2 | Grouped related samples |
-| **Total** | **178** | All HealthKit data types |
+| **Total** | **178** | Documented type entries |
 
 One page per file is exported by `site/` to
 `https://pulshealth.com/knowledge-base/types/<identifier>/`, and CI asserts
@@ -156,8 +156,8 @@ This ensures all files conform to the required schema.
 This knowledge base is designed to be consumed by AI agents building health products. Key data for AI integration:
 
 - **Metric Context**: Every data type includes clinical significance, typical ranges, and interpretation guidelines that give AI agents the context needed to reason about health data accurately.
-- **Cross-Device Comparisons**: How the same metric (e.g., heart rate, step count, VO2 Max) differs across Apple Watch, Fitbit, Garmin, Oura, and other devices — sensor placement, sampling rates, algorithm differences.
-- **Compaction Policies**: How HealthKit compacts historical data over time, affecting data availability and granularity for long-term analysis.
+- **Recording behavior**: The [recording guide](../docs/recording-behavior.md) explains cadence, interval duration, context, source identity and coverage across types. Six pilot entries have structured, sourced `recording_behavior` sections; other entries link to the shared guide on the site.
+- **Historical resolution**: Inspect the actual stored intervals and source history. This corpus does not establish a universal HealthKit compaction schedule.
 - **Clinical Grounding**: Each metric includes clinical ranges, red flags, and limitations that help AI agents avoid hallucinating health information and provide accurate, grounded responses.
 
 Nothing in this repository reads these files as model context yet; the MCP server answers from the database instead. They are written to be usable that way, and to be read directly by anyone building on health data.
@@ -168,6 +168,14 @@ Nothing in this repository reads these files as model context yet; the MCP serve
 - [Apple Health App Support](https://support.apple.com/guide/iphone/health-iph47e6eacee/ios)
 - [HealthKit WWDC Sessions](https://developer.apple.com/videos/frameworks/healthkit)
 
+## Recording guidance and review scope
+
+`recording_behavior` is optional; when present, all fields in `schema.json` are required, including primary-source links and a `reviewed_on` date. This date applies to recording guidance, not an independent clinical review of the whole article. Keep source-specific observed rates, personal names and health measurements in private profiles, not public YAML. Do not derive population thresholds from one user's observations.
+
+The site renders the full recording guidance. The app's generated resource intentionally remains its documented compact slice; these additions do not silently expand the app's data model. Validate all entries and regenerate/check the slice after edits.
+
+Validation rejects duplicate YAML keys, duplicate identifiers/category values and malformed dates or reference URLs. Run `python -m unittest discover -s knowledge-base/tests` for the validator regression tests.
+
 ## Last Updated
 
-2026-01-27
+2026-10-08
