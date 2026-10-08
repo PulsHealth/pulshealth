@@ -564,6 +564,8 @@ header keeps the page in view and **Menu** opens the scrollable navigation,
 including categories and account controls. Choosing a link, tapping outside,
 or pressing Escape closes it; Escape returns focus to the Menu button.
 The shared demo keeps a visible **Demo** badge even with the menu closed.
+A **Back to pulshealth.com** link appears in the navigation and on sign-in,
+sign-up and invite cards.
 
 ## The trend chart
 
