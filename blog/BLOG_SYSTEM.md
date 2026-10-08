@@ -75,6 +75,60 @@ and the feed's build date. Explain substantial changes in the article too.
    `make blog-check`. Use a focused, signed-off content commit/PR.
 7. Deploy with `make deploy-site`. Verify the live article, image, `/feed.xml`
    and search entry. Deployment is a separate action from validation.
+8. Complete the search discovery checks below and record the results in the
+   release notes. Do not equate a successful deploy with Google indexing.
+
+## Search discovery and indexing
+
+Publishing automatically adds every non-draft article to `/blog/`,
+`/sitemap.xml`, `/feed.xml` and site search. `robots.txt` advertises the sitemap.
+The article template supplies canonical URLs and article metadata; the export
+checker verifies published sitemap entries before deployment. No per-post
+submission code or search-engine account belongs in the content files.
+
+After each deployment:
+
+1. Check each new or revised article at its public, trailing-slash URL after
+   CDN invalidation completes: HTTP 200, a matching canonical, no unintended
+   `noindex` in HTML or `X-Robots-Tag`, and no Googlebot block in `robots.txt`.
+   Confirm it is linked from `/blog/` and present in the live sitemap and feed.
+2. Check sitemap `lastmod` against the article's actual material revision date
+   (`updated`, falling back to `date`). Preserve original publication dates on
+   revisions; do not refresh dates just to suggest freshness. Older editorial
+   dates do not mean Google discovered the page at that time.
+3. Open the `pulshealth.com` property in
+   [Google Search Console](https://search.google.com/search-console).
+   Under **Sitemaps**, confirm `https://pulshealth.com/sitemap.xml` is registered
+   and has no fetch/parse errors. Submit it if missing. An existing successful
+   submission does not need resubmitting for each post: its URL stays fixed
+   while the build updates its contents. Last-read and discovered-page counts
+   can lag the deployment; record them as observed rather than declaring the
+   new posts indexed.
+4. For a few priority articles, use **URL inspection** to check Google's
+   recorded status. If useful, run **Test live URL** and **Request indexing**
+   once after the page passes. Use the sitemap for a batch; repeated requests
+   do not speed crawling and are quota-limited. A successful live test or
+   accepted request is not confirmation that the page is indexed.
+5. Review **Page indexing** and **Performance**, filtered to `/blog/`, after
+   one to two weeks and during subsequent editorial reviews. Record indexing
+   status, impressions, queries and clicks. Investigate blocked, missing or
+   incorrectly canonicalized pages. Treat “Discovered/Crawled - currently not
+   indexed” as a status to investigate, not proof of a deployment defect.
+   Improve usefulness and internal links where warranted; do not repeatedly
+   resubmit unchanged pages.
+
+Release notes should distinguish **live and discoverable**, **sitemap accepted**,
+**indexing requested**, and **indexed**. If account access is unavailable, report
+that limitation separately from the public URL checks. For Bing Webmaster
+Tools, register the same sitemap when that property is configured; no separate
+blog sitemap is needed. Do not add Google's deprecated sitemap-ping endpoint
+or its restricted Indexing API to the blog deployment script.
+
+Google says crawling can take days to weeks, and requests do not guarantee
+indexing or rankings. See its official guidance on
+[building and submitting sitemaps](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap),
+[requesting recrawls](https://developers.google.com/search/docs/crawling-indexing/ask-google-to-recrawl),
+and [the retired sitemap ping](https://developers.google.com/search/blog/2023/06/sitemaps-lastmod-ping).
 
 ## Components
 
