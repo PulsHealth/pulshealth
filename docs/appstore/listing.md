@@ -138,21 +138,25 @@ a sync tool, and Utilities catches the people who are.
 
 ## Age rating
 
-The recorded rating is **4+**. Re-answer the current App Store Connect
-questionnaire against this build, including medical/wellness topics and
-request text; do not copy an older questionnaire mechanically. Apple calculates
-the global and regional ratings. See [current definitions](https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/).
+The 2.0 questionnaire was completed in App Store Connect on 2026-10-08.
+Apple calculates **13+** (regional exceptions apply), and **12+** on operating
+systems earlier than version 26. No override was selected. The answers below
+reflect the short descriptions, category definitions and numeric reference ranges
+actually shown by the app, not the full website knowledge-base articles.
+See [current definitions](https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/).
 
 | Question | Answer | Why |
 |---|---|---|
 | Cartoon or fantasy violence, realistic violence, prolonged graphic violence | None | No such content. |
 | Sexual content or nudity | None | — |
 | Profanity or crude humour | None | — |
-| Alcohol, tobacco or drug use or references | None | The app can sync HealthKit medication-dose records if the user turns that type on. It displays no drug information of its own, names no substance, and encourages nothing. |
+| Alcohol, tobacco or drug use or references | Infrequent | A small number of type descriptions reference alcoholic drinks and intoxication. This is educational health reference content, not encouragement. |
 | Mature or suggestive themes | None | — |
 | Horror or fear themes | None | — |
 | Simulated gambling, contests | None | — |
-| Medical or treatment information | None | The app shows the user their own HealthKit data, summaries of it, and its sync status. A Type page also shows one line on what the type measures and, behind the value histogram, the typical range from the project's knowledge base — general reference, not advice: the app offers no diagnosis, interpretation of the user's own values, dosage, recommendation, or treatment information. Re-evaluate this answer against Apple’s current medical/wellness definitions before submission; select the frequency that accurately describes the shipped content and accept the calculated rating. |
+| Medical or treatment information | Infrequent | A few category definitions contain guidance: pregnancy-test confirmation by a healthcare provider and lower-back-pain descriptions mentioning medication or intervention. These are occasional reference descriptions among 178 types, not personalized diagnosis. |
+| Health or wellness topics | Yes | Hearing-exposure category descriptions provide safe-listening thresholds, and the app presents health reference ranges. |
+| Social media, social media disabled under 13, parental controls, age assurance | No | The app has none of these features. No broad social feed or public discovery. |
 | Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth (or Create Account) opens `app.pulshealth.com/connect/iphone` (or `/signup`) in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the account flow on that site (sign in or create an account, then Connect this iPhone), and closes when that page hands back the pairing code or the person closes it. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/#ways), and the PulsHealth database's What the Developer Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth Account (app.pulshealth.com, pulshealth.com/privacy and pulshealth.com/docs/ai/). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It receives `puls://request?data=…` links that show a one-time request for review, and a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
 | User-generated content, chat or messaging | No | No public feed, chat or messaging. Account signup sends details to the developer; request links contain creator-supplied text that recipients review. |
 | Gambling and contests | No | — |
@@ -282,7 +286,7 @@ on 2026-10-08; the page confirmed all eleven types with no unfinished setup.
 |---|---|
 | App Store | [id6757657354](https://apps.apple.com/us/app/pulshealth/id6757657354) |
 | Bundle ID | `com.pulsHealth.PulsHealth` — the identifier on the store record, and what `PulsHealth/project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) produces |
-| Version / build | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in `PulsHealth/project.yml`. Prepared candidate: 2.0 (20), not yet shipped. Latest accepted upload verified 2026-10-08: 1.6 (19). Recheck build uniqueness before upload — see the [Release record](README.md#release-record) |
+| Version / build | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in `PulsHealth/project.yml`. Prepared candidate: 2.0 (20), not yet shipped. Accepted upload verified 2026-10-08: 2.0 (20), selected in the draft and Testing in the existing internal TestFlight group. Recheck build uniqueness before another upload — see the [Release record](README.md#release-record) |
 | Minimum iOS | 17.0 in `project.yml` |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 

@@ -58,10 +58,10 @@ columns are in [`docs/export.md`](docs/export.md#on-device-export-no-server).
   <img src="docs/images/app/unlock.png" alt="First run: Unlock your Health Data, with Explore, Export and Sync" width="200">
   <img src="docs/images/app/explore.png" alt="Explore tab: Apple Health types by category, each with its sample count over the past year" width="200">
   <img src="docs/images/app/type-page.png" alt="Heart Rate's Type page: description, analysis, sample counts, sources and the start of the value histogram" width="200">
-  <img src="docs/images/app/export.png" alt="Export tab: the builder with data types, aggregate series, a date range, CSV or JSONL and a zip option" width="200">
+  <img src="docs/images/app/export.png" alt="Export tab: the builder with raw samples, aggregated types, a date range, CSV or JSONL and a zip option" width="200">
 </p>
 
-The iOS app 1.6: the first run, Explore, a Type page and the Export builder,
+The iOS app 2.0: the first run, Explore, a Type page and the Export builder,
 taken in the simulator with the app's built-in demo data (nobody's real health
 data).
 

@@ -5,7 +5,7 @@ can be assembled from this directory without inventing facts about the app.
 
 The app is **live on the App Store**:
 [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) (free,
-Health & Fitness, 4+, bundle ID `com.pulsHealth.PulsHealth`). What shipped,
+Health & Fitness, bundle ID `com.pulsHealth.PulsHealth`). What shipped,
 and when, is the [Release record](#release-record) at the bottom.
 
 | Document | What it is |
@@ -45,13 +45,13 @@ account, the signing team, a real device or personal contact details.
 ### Build and upload
 
 - [x] Prepare `MARKETING_VERSION` 2.0 and `CURRENT_PROJECT_VERSION` 20 in
-      `PulsHealth/project.yml`. App Store Connect's latest upload was verified
-      as 1.6 (19) on 2026-10-08. Version 2.0 (20) is a local release candidate,
-      not a shipped release. Recheck accepted builds before uploading; never
+      `PulsHealth/project.yml`. App Store Connect accepted 2.0 (20) on 2026-10-08; it is selected in the
+      submission draft and available to the existing internal TestFlight group,
+      not yet shipped on the App Store. Recheck accepted builds before uploading; never
       reuse a build number App Store Connect has accepted.
-- [ ] `cd PulsHealth && xcodegen` — the Xcode project is generated and
+- [x] `cd PulsHealth && xcodegen` — the Xcode project is generated and
       untracked — with `DEVELOPMENT_TEAM` in `Config/Local.xcconfig`.
-- [ ] **maintainer only** — Archive and upload with the signed-in Xcode:
+- [x] **maintainer only** — Archive and upload with the signed-in Xcode:
       ```bash
       xcodebuild archive -project PulsHealth.xcodeproj -scheme PulsHealth \
         -destination 'generic/platform=iOS' \
@@ -64,27 +64,27 @@ account, the signing team, a real device or personal contact details.
       ID, so it never goes in the repository. `ITSAppUsesNonExemptEncryption`
       is `false` in `Info.plist`, so there is no export-compliance
       questionnaire.
-- [ ] Check the processed build's privacy report: the app and the
+- [x] Generate and verify Xcode Organizer’s aggregate archive privacy report: the app and the
       `PulsHealthSync` package each ship a `PrivacyInfo.xcprivacy` declaring no
       tracking and `UserDefaults` / `CA92.1`. The app's lists the eleven collected
       data types of `listing.md` § App Privacy; the package's lists none.
 - [ ] **maintainer only** — Run the TestFlight build on a real device,
       installed over the store version, for a few days. Background delivery,
       continued processing and an upgrade's first sync only show up there.
-- [ ] Add the build to the [Release record](#release-record).
+- [x] Add the build to the [Release record](#release-record).
 
 ### Listing and privacy policy
 
-- [ ] Re-read [`../privacy-policy.md`](../privacy-policy.md) against the
+- [x] Re-read [`../privacy-policy.md`](../privacy-policy.md) against the
       build. It is a factual claim about the binary: any change to where data
       goes, what is stored or what is read lands there too, and the site is
       deployed (`scripts/deploy-site.sh`) before submitting, because App Review
       reads the live `/privacy`.
-- [ ] Update [`listing.md`](listing.md) for what changed — description,
+- [x] Update [`listing.md`](listing.md) for what changed — description,
       promotional text, keywords, What's New — check the bracketed counts, and
       paste.
-- [ ] Age rating and App Privacy are answered as tabulated in `listing.md`
-      (recorded 4+; verify the current questionnaire; eleven declared data types,
+- [x] Age rating and App Privacy are answered as tabulated in `listing.md`
+      (calculated 13+, or 12+ before OS 26, with regional exceptions; eleven data types,
       App Functionality, not tracking).
       App Privacy is per app, not per version. All eleven types were published
       in App Store Connect on 2026-10-08; the local manifest alone does not
@@ -104,17 +104,17 @@ account, the signing team, a real device or personal contact details.
 
 ### Screenshots
 
-- [ ] Retake the set if the screens changed, in the order
+- [x] Retake the set if the screens changed, in the order
       [`listing.md`](listing.md) § Screenshots gives. Never ship simulator
       shots of Explore, a Type page, Sync or background activity **without the
       demo fixtures**: with no Health data behind them every count is zero,
       which misrepresents the app.
-- [ ] Keep the four images in the root `README.md` (`docs/images/app/`,
-      600 px wide) in step with the store set.
+- [x] Keep the four images in the root `README.md` (`docs/images/app/`,
+      native captures displayed at 200 px) in step with the store set.
 
 ### Review backend
 
-- [ ] **maintainer only** — Create the demo account on the PulsHealth
+- [x] **maintainer only** — Create the demo account on the PulsHealth
       database as a self-service account (Create Account on `/signup`,
       approve it on `/admin`, choose its password from the invite). It must
       be pre-approved: a new sign-up lands on the waitlist, so a reviewer
@@ -127,16 +127,15 @@ account, the signing team, a real device or personal contact details.
       Without it, delete that block from the notes.
 - [ ] Walk the whole of [`review-notes.md`](review-notes.md) on a spare device
       (or an erased simulator), exactly as written.
-- [ ] Fill the placeholders and paste the notes block. Keep the filled-in
+- [x] Fill the placeholders and paste the notes block. Keep the filled-in
       copy out of the repository — it holds a live password and token.
-- [ ] **maintainer only** — App Review contact details (name, phone, e-mail)
+- [x] **maintainer only** — App Review contact details (name, phone, e-mail)
       are personal and deliberately absent from this repository.
 
 ### Release gates for accounts and Data Requests
 
 See [the release-readiness report](../release-readiness-2026-10-08.md) for
-verification evidence and remaining findings. These are pending checks, not
-completed release evidence:
+verification evidence and remaining findings. Checked items have recorded evidence; remaining device/email checks are pending:
 
 - [ ] Verify the deployed automatic account deletion end to end with a disposable
       approved account and an invited personal account. Confirm access stops,
@@ -152,7 +151,7 @@ completed release evidence:
       disclosure, Product Interaction and Other Diagnostic Data. App Store Connect
       confirmed publication on 2026-10-08, with all eleven types linked and used
       only for App Functionality, not tracking.
-- [ ] Verify the processed archive privacy report against the published label;
+- [x] Verify Xcode’s aggregate archive privacy report against the published label;
       the published label does not replace this binary check.
 - [ ] Verify the hosted signup, approval email, password setup/reset, in-app
       pairing, sync, account management and deletion on the release build.
@@ -164,9 +163,9 @@ completed release evidence:
       Supply a disposable receiver and instructions if direct delivery is
       included in the review walkthrough. Do not frame this as an approved
       research enrollment or consent workflow.
-- [ ] Verify live support/privacy/account URLs and deploy the updated privacy
+- [x] Verify live support/privacy/account URLs and deploy the updated privacy
       policy before review. Recheck screenshot accuracy on iPhone and iPad.
-- [ ] Measure the final pasted description and reviewer notes after replacing
+- [x] Measure the final pasted description and reviewer notes after replacing
       placeholders; each must fit 4,000 characters.
 - [ ] Record TestFlight upgrade/device/background checks and the exact archive
       version/build before selecting it in App Store Connect.
@@ -207,6 +206,31 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.0 preparation evidence (2026-10-08)
+
+- Build **2.0 (20)** processed successfully, is selected in the 2.0 draft,
+  and is **Testing** in the existing internal TestFlight group. Physical-device
+  acceptance remains pending. No App Store review submission was made.
+- Seven refreshed screenshots were uploaded for each device family: iPhone
+  Dynamic Island large display (1320 × 2868) and iPad 13-inch (2064 × 2752).
+  The required medium iPhone slot inherits the large assets. Both sets replace
+  the inherited 1.6 images and use synthetic simulator fixtures only.
+- The current age questionnaire is completed: medical/treatment information
+  **Infrequent**, health/wellness topics **Yes**, alcohol/drug references
+  **Infrequent**. Apple calculates **13+**, with regional exceptions, and
+  **12+** on operating systems earlier than version 26. No age override.
+  Only app-visible content was counted: brief category descriptions include
+  healthcare confirmation and intervention guidance; alcohol types describe
+  drinking/intoxication, and hearing types describe safe-listening thresholds.
+  Full website knowledge-base articles are not shown by the app and were not
+  counted. See Apple's [rating definitions](https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/).
+- An external beta group and the requested tester are prepared. Build 20 needs
+  Beta App Review and complete test information/reviewer access before that
+  tester can install it. This is separate from App Store review; neither review
+  submission has been made. Tester identities and credentials stay out of this
+  repository.
+
+
 What is actually on the store, so the next submission starts from a record
 rather than from memory. Add a row per release; builds that went to TestFlight
 only are noted under the release that superseded them.
@@ -224,3 +248,22 @@ only are noted under the release that superseded them.
 | 1.6 (19) | 2026-10-01 | Current version on the store. Explore, Export, Sync and Settings tabs; Explore analyses of a type's past year, with summaries kept on the device; an Export builder that needs no database (CSV or JSONL, optionally zipped); iOS 27 limited Health history handled without overwriting what the app cannot read; a four-page first run whose Health page cannot be skipped, calling the sync destination "your database". Also carries 1.5's pairing from a link, the Camera app or the clipboard, and recent-data-first background sync. Built with Xcode 27.0 (iOS 27.0 SDK). Submitted 2026-09-30, approved and released automatically 2026-10-01. Screenshots from the simulator with the demo fixtures (`listing.md` § Screenshots). The review instance received no uploads. 1.5 (16) and 1.6 (17, 18) went to TestFlight only. |
 | 1.4 (15) | 2026-09-19 | Self-hosted sync: first-run onboarding with QR pairing, Keychain token, per-server sync state, capabilities-gated UI, published type vocabulary. Build 14 was rejected under 5.2.5 ("Apple" in the subtitle) and 5.1.1(iv) (a skippable pre-permission screen); build 15 fixed both. Reviewed on an iPad Air 11-inch (M3). |
 | 1.3 | 2026-01-24 | CSV/JSON export app with QR data requests. |
+
+### Deployed candidate evidence — 2026-10-08
+
+Release fixes merged in PR #173 as `d8dcfbd` after all 13 CI checks passed,
+including Xcode 26.5 and 27.0. Production runs that revision; migrations 026–028,
+strict seven-day backup retention and the independent deletion ledger are
+verified. Disposable live account tests covered login, pairing, tenant isolation,
+reporting dates, ingestion and completed deletion with revoked access.
+
+The App Store draft holds the approved review account and final 3,488-character
+notes; the existing contact details remain unchanged. A separate beta review
+account prevents beta deletion testing from invalidating App Store access.
+Xcode’s generated aggregate privacy report confirms all eleven declared types.
+No Apple-server privacy-report claim is inferred from that local report.
+
+Physical TestFlight acceptance and actual signup/recovery email delivery are
+pending. The external tester is added, but no external build is available until
+Beta App Review; the prepared beta form still needs contact email and phone.
+App Store review has not been submitted.
