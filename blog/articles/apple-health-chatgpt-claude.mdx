@@ -1,0 +1,89 @@
+---
+title: "Using Apple Health with ChatGPT or Claude: A Practical Guide"
+date: "2026-07-16"
+updated: "2026-10-08"
+excerpt: "Compare native Apple Health connections, selected file uploads, and PulsHealth MCP, then ask questions you can check against the underlying records."
+tags: ["apple-health", "ai", "privacy", "guides"]
+author: "Sean Wade"
+draft: false
+---
+
+You can use ChatGPT or Claude to explore Apple Health data without building a database. Both providers now offer native Apple Health connections. A selected file upload is another option, and a PulsHealth connection makes sense when you already sync your data and want repeatable queries over that collection.
+
+The more important decision comes after connecting: what should you ask, and how will you know the answer is right? A useful first conversation compares two periods, names the records it used, and shows the arithmetic. It should leave you with something you can check.
+
+*Revised October 8, 2026: connection options and privacy references below reflect the current documentation, including changes announced after this article's editorial date.*
+
+## Choose how the assistant gets your data
+
+| Method | Useful when | What to check first |
+|---|---|---|
+| Native Apple Health connection | You want the simplest supported route from your iPhone | Availability for your account, permitted categories, and provider controls |
+| Selected CSV or summary upload | You want one bounded analysis | Dates, units, included identifiers, and the destination chat's data policy |
+| PulsHealth MCP connection | You already sync records and want recurring questions | Sync coverage, account access scope, and which tools serve the requested data |
+
+These are different ways to supply evidence. None guarantees that the assistant will choose the right calculation.
+
+### Native ChatGPT and Claude connections
+
+OpenAI announced ChatGPT Health on January 7, 2026, with an Apple Health connection. Its July 23 update expanded the launch to U.S. adults on web and iOS. The original announcement is useful history, but its initial waitlist and interface descriptions should not be treated as today's setup instructions. [OpenAI's announcement and update](https://openai.com/index/introducing-chatgpt-health/)
+
+As checked on October 8, OpenAI's help page still describes an account-dependent rollout. On the current iOS app, start in **Health**, follow the connection flow, and choose the categories you want to share. Later, the Health menu provides Apple Health settings. If Health is absent, consult that page rather than assuming a broken phone permission. [Current ChatGPT Health instructions](https://help.openai.com/en/articles/20001036-health-in-chatgpt)
+
+Anthropic announced its Apple Health beta in January 2026. Its current iOS guide explains the supported health integration and permissions; follow those instructions in the Claude iPhone app. Availability and plan conditions can change, so the current guide is the authority for your account. [Anthropic's launch announcement](https://www.anthropic.com/news/healthcare-life-sciences), [Claude's iOS guide](https://support.claude.com/en/articles/11869619-use-claude-with-ios-apps)
+
+Start with one category you recognize. Ask for yesterday's recorded activity or a particular workout and compare the answer with your phone before requesting a long-term interpretation.
+
+### A file for a single question
+
+A small export is often enough. Select the relevant types and dates, inspect the file, and attach it with a short description of its columns. A table of nightly sleep duration is easier to audit than years of unrelated measurements.
+
+PulsHealth's Export tab creates CSV or JSONL on the phone without a database. The files go wherever you choose in the share sheet. They can contain source-device names and other metadata, so inspect both the data and the accompanying manifest before sharing. The app's local export behavior does not determine how an AI provider handles the copy you upload. [PulsHealth export reference](/docs/export/), [privacy policy](/privacy/)
+
+Include the time zone and explain whether rows are individual samples or already-computed daily values. Ask the assistant to identify missing columns before calculating anything. Do not let it silently substitute a different metric because a requested one is absent.
+
+### PulsHealth for recurring questions
+
+PulsHealth exposes read-only tools through the Model Context Protocol, or MCP. The hosted connection requires a PulsHealth account with synced data. Claude is the documented, tested hosted client; another client needs compatible remote MCP authorization. General MCP support alone is not proof that a particular app's connection will work. [Connection guide](/docs/ai/)
+
+For the hosted Claude connection, add `https://mcp.pulshealth.com/mcp` as a custom connector, connect, and review the PulsHealth sign-in and consent screen. Self-hosters have separate setup options in the guide.
+
+This gives access to the data stored under your account, including the uploaded profile. A request to discuss only sleep does not narrow the connection's authorization to sleep. Choose a selected file instead if you need a smaller disclosure boundary.
+
+## Three questions worth asking first
+
+The following are prompt templates, not transcripts or claimed results. Replace the dates with periods you have recorded. Run one, examine its table, and only then ask for interpretation.
+
+### 1. Did my recorded sleep duration change?
+
+> Compare my recorded time asleep for September 1–14 and September 15–28, 2026. Date each night by its wake-up day. Show every included night, duration in minutes, source if available, and missing nights. Compute the median for each period using only recorded nights. Keep time in bed separate. Describe the difference without assigning a medical cause.
+
+For PulsHealth, `get_sleep` serves nightly summaries. Check a few nights against Health, including one near the beginning of the range. Confirm that a night spanning midnight appears once and that missing nights were not counted as zero minutes.
+
+A difference in medians answers a narrow question about the recorded nights. It does not establish that the unrecorded nights followed the same pattern, or explain why sleep changed.
+
+### 2. Was my workout routine more consistent?
+
+> List my workouts for September 2026. Group them into Monday-to-Sunday weeks in the data's calendar time zone. Show workout dates, activity types, durations, and the number of distinct days with a recorded workout. Flag partial weeks. Do not interpret a day without a workout record as proof that I was inactive.
+
+The distinct-day count matters: two workouts on Saturday represent one training day, not two days of consistency. In PulsHealth, begin with `list_workouts`, then use `get_workout` if a session needs inspection. Verify that all result pages were retrieved before accepting monthly totals.
+
+Keep comparisons like-for-like. A strength session and a run can both count toward recorded workout days, while pace comparisons need a narrower set of workouts.
+
+### 3. How did my daily activity differ between periods?
+
+> Compare my daily steps for the first and second halves of September 2026. Use deduplicated daily values, not a sum of raw phone and Watch samples. Show the daily table, missing dates, number of included days, and arithmetic mean for each period. State the time zone and whether the last day is complete.
+
+PulsHealth's `get_daily_metrics` returns daily metrics; `get_samples` returns raw records and is unsuitable for simply summing overlapping step sources. That distinction is documented in the [AI data guide](/docs/ai/).
+
+Check the denominator yourself: a total divided by 13 recorded days is a different statistic from that total divided by all 15 calendar days. Neither should be mislabeled. If the requested period is incomplete, say so in the chart and answer.
+
+## Read-only access still sends information to a provider
+
+Read-only describes what a connection can change. It does not mean analysis remains on your phone or server. When a cloud assistant requests PulsHealth records, its provider receives the returned information. Self-hosting the database does not change that part of the path.
+
+OpenAI's current policy says connected Health information and conversations using it are excluded from foundation-model training and advertising targeting. That statement should not be extended automatically to an ordinary file upload or a different connector. Anthropic also makes specific commitments for its native health integrations; check the terms for the actual route you choose. [OpenAI Health controls](https://help.openai.com/en/articles/20001036-health-in-chatgpt), [Anthropic health commitments](https://www.anthropic.com/news/healthcare-life-sciences)
+
+For hosted PulsHealth, revoking a connection stops renewal; existing access expires within 30 minutes. Revocation does not erase information already received by the assistant's provider. Review chat retention and deletion there separately. [PulsHealth's access and privacy details](/privacy/)
+
+A good final answer has dates, units, coverage, and a calculation you can reproduce. Save that table alongside the prose. It is much easier to revisit a clear observation than a confident paragraph whose evidence has disappeared.

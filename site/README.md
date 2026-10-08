@@ -32,7 +32,7 @@ content fails with its filename. The shared `scripts/check-export.ts` runs
 after every build, in CI, and before deployment (even with `--skip-build`).
 It checks exact published blog/knowledge-base/docs pages, draft exclusion,
 RSS/search/sitemap entries, article links/images and required generated assets.
-A full build currently exports **215** static pages, 178 of them under
+A full build currently exports **225** static pages, 178 of them under
 `knowledge-base/types/` and 13 under `docs/`; published posts add pages.
 
 Two of those pages are not PulsHealth: `/fun100/` and `/fun100/privacy/` are
@@ -52,7 +52,7 @@ bun run dev        # localhost:3000
 ## Build and lint
 
 ```bash
-bun run build      # static export to site/out/ (215 pages)
+bun run build      # static export to site/out/ (225 pages)
 bun run lint       # ESLint, no warnings or errors
 bun run test       # blog regression tests
 bun run blog:check # lint, tests, build and export checks

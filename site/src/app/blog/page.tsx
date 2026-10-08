@@ -9,7 +9,7 @@ import { FollowProject } from "@/components/follow-project";
 export const metadata = {
   title: "Blog - PulsHealth",
   description:
-    "Occasional, long-form notes from the PulsHealth project: what the health metrics mean, and the engineering of moving them around.",
+    "Practical guides to exporting, understanding, and using your Apple Health data, with worked examples and original analysis from PulsHealth.",
   alternates: {
     canonical: "/blog/",
     types: {
@@ -35,7 +35,7 @@ export default async function BlogPage() {
       <PageHero
         size="compact"
         title="The PulsHealth blog"
-        lede="Posts about health metrics and the engineering of syncing them."
+        lede="Export, understand, and use your Apple Health data. Practical guides, worked examples, and a closer look at what the numbers mean."
       />
 
       <div className="container mx-auto w-full max-w-3xl px-4 py-12 md:py-16">

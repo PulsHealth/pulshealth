@@ -1,0 +1,100 @@
+---
+title: "Why Apple Health Isn't Syncing to Your Other Apps"
+date: "2026-10-08"
+draft: false
+author: "Sean Wade"
+tags: ["apple-health", "sync", "troubleshooting", "healthkit"]
+excerpt: "Trace missing health data from your Watch to Health, the receiving app, and its server. Check permissions, locked-device delays, and freshness in the right order."
+---
+
+A workout appears on your Watch, but not in a dashboard. Yesterday's sleep is visible in Health, but another app shows a blank night. Or an app says it synced successfully while a particular metric is still several days behind.
+
+**The fastest useful check is whether the missing record exists in Apple Health on the iPhone that runs the receiving app.** That separates a device-to-Health problem from a Health-to-app problem. They need different fixes.
+
+Think of the route as four checkpoints:
+
+**Watch or source app → Health on iPhone → receiving app → server or dashboard**
+
+A file export stops before the server step. A local analysis app may never upload anything. Follow only the checkpoints that apply to your setup.
+
+## 1. Pick one missing record
+
+Choose something specific: a completed workout, a recent weight measurement, or a sleep interval from last night. Record its approximate time and the device or app that created it. Avoid using today's changing step total as the first test; a total can differ because of calculation rules even when every record is present.
+
+Then open the relevant category in Health and inspect the underlying entries. Apple provides **Show All Data** for a category and **Data Sources & Access** to identify contributors. Menu placement may vary with your OS version. [Apple's Health data guide](https://support.apple.com/en-us/108779)
+
+Use the result to choose the next step:
+
+| What you observe | Investigate next |
+|---|---|
+| Record exists on the Watch, but not in iPhone Health | Watch-to-phone connection or source recording |
+| Record exists in iPhone Health, but not in the app | Read permission, selection, date range, or query |
+| Record exists in the app, but not on its server | Destination, network, authentication, or upload |
+| Server has the record, but chart is blank | Chart filters, aggregation, date boundaries, or refresh |
+
+This gives you a testable statement—“the workout is in Health but the receiving app has not read it”—instead of a vague “sync is broken.”
+
+## 2. If Health does not have it, inspect the source
+
+A receiving app cannot export a record absent from the phone's Health store. Open the source app and check whether it actually recorded the item and supports writing that category to Health.
+
+For a Watch, check whether it is connected to the paired iPhone. Apple's connection guide explains the disconnected indicators and recommends checking proximity, Airplane Mode, Wi-Fi, and Bluetooth before more disruptive steps. [Apple Watch connection troubleshooting](https://support.apple.com/en-us/108360)
+
+For missing steps, check that Fitness Tracking is enabled for the Watch. For a third-party source, inspect both its own Health-sharing setting and its permission to write the relevant category. [Health source settings](https://support.apple.com/en-us/108779)
+
+Recheck the individual record in Health before moving downstream. Repeatedly refreshing a server dashboard cannot repair a recording that never reached the phone.
+
+## 3. If Health has it, check the receiving app's access
+
+Permission is specific to an app and a data type. Reading workouts does not automatically grant access to sleep or heart rate. Permission to write records is also different from permission to read them. [Apple's authorization documentation](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data)
+
+In Health's profile, find the app under its privacy/app-access settings and inspect the relevant category. Then check the receiving app's own settings: is that metric selected, and does its requested date range include the record?
+
+A reassuring connection indicator is not proof that every category is readable. HealthKit intentionally prevents apps from reliably distinguishing denied read access from an absence of external records. An empty chart can therefore mean missing permission as well as missing measurements. [HealthKit's read-access privacy behavior](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data)
+
+Where the OS offers a limited history window, check that choice as well. Recent data can be available while older records remain outside the app's authorized range. Apple's current developer documentation describes an earliest-authorized-date API; its availability depends on the OS and SDK. Do not infer that old records were deleted merely because an app cannot retrieve them. [Apple's history-access documentation](https://developer.apple.com/documentation/healthkit/hkhealthstore/earliestauthorizedsampledate(for:))
+
+After changing access, reopen the app and use its refresh or backfill action. Granting broader permission and finishing a historical import are separate steps.
+
+## 4. Try an unlocked foreground sync
+
+Unlock the iPhone, keep the receiving app open, and run its manual sync action if available. Check whether the chosen record arrives.
+
+This is a diagnostic test, not a requirement to leave the screen on all day. If foreground syncing works while background syncing lags, the evidence points toward when the app can run or read data.
+
+Apple documents that HealthKit queries can fail with `errorDatabaseInaccessible` while the device is locked. Being able to run briefly in the background does not itself make protected health records readable. [Apple's locked-device error documentation](https://developer.apple.com/documentation/healthkit/hkerror/code/errordatabaseinaccessible)
+
+Background delivery is also not a stopwatch. Apple's API specifies a **maximum** notification frequency; some types have additional limits, including an hourly maximum for step-count background delivery on iOS. That does not promise a completed upload exactly once per hour. [Apple's background-delivery documentation](https://developer.apple.com/documentation/healthkit/hkhealthstore/enablebackgrounddelivery(for:frequency:withcompletion:))
+
+In PulsHealth, a background attempt that encounters locked Health data is recorded as skipped. Opening the app provides another opportunity to catch up. Large historical imports also have more work than an ordinary incremental update; a newly connected dashboard can have recent records before all older history finishes. [Sync engine behavior](/docs/swift-package/)
+
+## 5. If the app reads the record, inspect delivery
+
+For apps that upload to a server, the remaining path has its own settings and failure modes. Confirm the intended destination and account first. Then read the latest upload result rather than relying only on a general “connected” state.
+
+Useful distinctions include:
+
+- **Authentication refusal:** check pairing or credentials for the intended server.
+- **Network or certificate error:** check reachability and the configured URL; do not bypass certificate verification to make the error disappear.
+- **Server rejection:** preserve the status and short error message for investigation.
+- **Successful upload, absent chart:** inspect the server's records and the chart's filter or summary definition.
+
+PulsHealth only advances its record cursor after a server acknowledgement. A failed upload leaves those records eligible for a later attempt; retries are designed to avoid inserting the same raw object twice. That is why a failed request is not, by itself, evidence of lost Health history. [Puls Sync Protocol](/docs/protocol/)
+
+For self-hosted installations, the [server guide](/docs/server/) covers setup. The [database guide](/docs/database/) explains successful batches, rejection records, and timestamps. Use read-only inspection while diagnosing a live installation.
+
+## 6. Distinguish a fresh upload from fresh measurements
+
+An upload received this morning might contain a workout from last year during a backfill. Conversely, an old latest measurement may be normal for an infrequently recorded metric. “Last synced” needs a definition.
+
+In PulsHealth, compare **server receipt time** with the **sample's event time**. Also inspect the target metric itself: an incremental batch can contain several types, while its displayed type label identifies only the largest contributor. That label alone cannot establish freshness for every metric. [Database timestamp and batch semantics](/docs/database/)
+
+If the server has the expected raw records but the daily total differs, check the day boundary and aggregation method. The [step-count mismatch guide](/blog/apple-health-step-counts-dont-match/) explains why source overlap and daily summaries can produce different numbers without a sync failure.
+
+## What to include in a useful support report
+
+Save the app and OS versions, the affected metric, one example time, the last successful upload time, and any error status. State which checkpoint contains the record and which does not. Note whether an unlocked manual sync changed the result.
+
+Share that narrow evidence first. A complete health export, server token, or workout route is usually unnecessary for establishing where delivery stopped.
+
+Once you can name the broken checkpoint, change one relevant setting and repeat the same single-record test. Preserve the original records while you investigate. A successful repair is the expected record reaching the intended destination—not merely an error message going away.
