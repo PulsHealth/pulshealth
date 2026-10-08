@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint --max-warnings=0",
     "test": "vitest run",
-    "test:integration": "vitest run .integration.test.",
+    "test:integration": "vitest run .integration.test. --no-file-parallelism",
     "typecheck": "tsc --noEmit",
     "gen:catalog": "node scripts/gen-catalog.mjs",
     "check:catalog": "node scripts/gen-catalog.mjs --check"

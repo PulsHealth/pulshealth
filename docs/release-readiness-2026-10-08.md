@@ -95,8 +95,9 @@ and [review notes](appstore/review-notes.md) for the concrete submission materia
 
 - All five Go modules: module verification, vet and race-enabled tests passed.
 - Protocol corpus: eight fixtures and Python receiver smoke test passed.
-- Scratch TimescaleDB: final migration chain through 025, migrator contract,
-  scoped-role ingest/API race tests, and time-zone SQL regressions passed.
+- Scratch TimescaleDB: merged chain of 25 SQL migrations and four scripts
+  through 028 passed, including fresh and no-accounts baseline replay, both
+  recording-quality and time-zone regressions, and scoped ingest/API race tests.
 - An actual production backup restored successfully in an isolated scratch
   container; no live database was changed. A separate synthetic restore drill
   proved pre-deletion backups cannot revive erased users, malformed ledger data
@@ -104,6 +105,8 @@ and [review notes](appstore/review-notes.md) for the concrete submission materia
 - Web: final lint, typecheck, catalog check, production build, 434 unit tests
   and 88 database integration tests passed, including concurrent password changes,
   revoked-session refusal and rollback when replacement-session insertion fails.
+  Database integration files run serially because compression fixtures operate
+  on shared hypertables; ordinary unit tests remain parallel.
   Existing instrumentation Edge-runtime warnings remain unchanged.
 - Swift package: 501 tests across 78 suites passed on iOS 27, including
   configuration isolation, request time zones and receipt validation. An earlier
