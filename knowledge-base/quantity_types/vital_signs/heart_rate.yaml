@@ -80,7 +80,7 @@ sensitive_data: false
 # --- DATA SOURCES ---
 devices:
   - name: "Apple Watch"
-    capability: "Continuous optical heart rate monitoring using green LED photoplethysmography (PPG). Measures heart rate during activity and at regular intervals throughout the day."
+    capability: "Optical heart-rate measurement using photoplethysmography (PPG). Recording cadence varies with model, settings, activity and measurement mode."
     series: "All series"
     accuracy: "Within 5 bpm for 98% of resting measurements (Apple internal study). Accuracy varies with activity level and movement."
   - name: "iPhone"
@@ -107,8 +107,8 @@ description: |
   - Algorithms filter motion artifacts and calculate beat-to-beat intervals
 
   **Measurement contexts on Apple Watch:**
-  - Background readings every ~5-10 minutes when sedentary
-  - Continuous monitoring during workouts (every few seconds)
+  - Background recording varies by device model, settings and activity; it has no single universal cadence
+  - Workout recording can be more frequent; inspect stored timestamps rather than assuming a fixed interval
   - On-demand readings when viewing the Heart Rate app
 
   **Accuracy considerations:**
@@ -190,7 +190,7 @@ description: |
 
   ## Additional Notes
 
-  **Metadata context:** Heart rate samples may include HKMetadataKeyHeartRateMotionContext to indicate whether the reading was taken during sedentary, active, or workout states. This context is crucial for proper interpretation.
+  **Metadata context:** Heart rate samples may include HKMetadataKeyHeartRateMotionContext to indicate not-set, sedentary or active context. Active includes working out; this key does not distinguish a workout session from other movement.
 
   **Related notifications:** Apple Watch can generate high heart rate (>120 bpm threshold configurable), low heart rate (<40 bpm threshold configurable), and irregular rhythm notifications, which create corresponding HKCategoryType samples.
 
@@ -209,7 +209,7 @@ metadata_keys:
     values:
       - "notSet (0) - Context not available"
       - "sedentary (1) - User was stationary"
-      - "active (2) - User was in motion but not in a workout"
+      - "active (2) - User was in motion or working out"
   - key: "HKMetadataKeyHeartRateSensorLocation"
     description: "Indicates where on the body the heart rate sensor was placed"
     values:
@@ -256,9 +256,33 @@ references:
     type: "research"
 
 # --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-01-27"
+last_updated: "2026-10-08"
 research_notes: |
   - iOS 8.0 introduction confirmed via Apple Developer Documentation
   - Clinical ranges sourced from Mayo Clinic and AHA guidelines
   - Apple Watch accuracy data from Apple internal study (November 2024) and PMC research articles
   - Metadata keys confirmed via HealthKit framework headers and developer documentation
+
+# Recording and interpretation guidance; personal observations are kept separately.
+recording_behavior:
+  reviewed_on: '2026-10-08'
+  shape: A numeric heart-rate observation can be a point or an interval. The stored timestamp span is not the
+    optical sensor sampling rate.
+  cadence: Recording frequency depends on device model, software, settings, activity and measurement mode.
+    Compare distributions within a source and context; do not assume one fixed background or workout schedule.
+  context: Separate recorded workouts, recorded sleep and other periods using explicit timestamp rules. Motion
+    context active (2) includes movement or working out; it does not identify a workout session by itself.
+  coverage: A day containing readings is not evidence of continuous wear or uninterrupted monitoring. A gap
+    alone does not reveal whether the device was off, unreadable, not worn or simply not recording.
+  aggregation: A mean across records gives densely sampled periods more weight. State whether a summary is
+    sample-weighted, time-weighted or computed by HealthKit; avoid treating these as interchangeable.
+  metadata: 'HKMetadataKeyHeartRateMotionContext is a numeric enum: 0 not set, 1 sedentary, 2 active. Preserve
+    unexpected representations as provenance; a known legacy serialization issue must not become a general
+    boolean-to-number conversion rule.'
+  references:
+  - title: 'Apple: heart-rate measurement modes'
+    url: https://support.apple.com/en-us/120277
+  - title: 'Apple: heart-rate motion context'
+    url: https://developer.apple.com/documentation/healthkit/hkmetadatakeyheartratemotioncontext
+  - title: 'Apple: HealthKit sample time semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples

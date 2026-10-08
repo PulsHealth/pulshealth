@@ -357,9 +357,9 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   opens Sync → Database with it.
 - **`site/` reads its content by relative path:** `knowledge-base/`
   (`site/src/lib/api.ts`), `blog/` (`site/src/lib/blog.ts`, `copy-blog-images`
-  in `site/package.json`) and the thirteen repository files in the
+  in `site/package.json`) and the fourteen repository files in the
   `site/src/lib/docs.ts` manifest (rendered at `/docs/<slug>/`; never edit the
-  source for the site): twelve Markdown files and the product API's
+  source for the site): thirteen Markdown files and the product API's
   `server/api/openapi.json`, which renders as the API reference
   (`format: "openapi"`) and which `site/scripts/gen-openapi.ts` publishes at
   `/openapi.json`. Keep the sibling paths intact. Blog metadata is validated

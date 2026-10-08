@@ -157,3 +157,17 @@ last_updated: "2026-01-27"
 research_notes: |
   Internal notes about sources used, verification status, etc.
   Not displayed to end users.
+
+# Optional, separately reviewed recording guidance. All fields required when present.
+# Keep personal measurements/rates in private observation profiles, not public YAML.
+recording_behavior:
+  reviewed_on: "2026-10-08"
+  shape: "What one stored record represents; distinguish points from intervals."
+  cadence: "How to assess recording frequency without promising a universal schedule."
+  context: "Relevant sources, versions and contextual comparisons."
+  coverage: "What missingness and days with records can and cannot establish."
+  aggregation: "How to summarize records without changing their meaning."
+  metadata: "Useful keys, optionality and interpretation caveats."
+  references:
+    - title: "Apple: HealthKit samples"
+      url: "https://developer.apple.com/documentation/healthkit/samples"

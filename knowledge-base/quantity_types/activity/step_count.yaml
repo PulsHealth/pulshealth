@@ -107,8 +107,8 @@ description: |
 
   **Data Recording:**
   - Steps are recorded as cumulative samples over time intervals
-  - Multiple sources (Watch + iPhone) are intelligently deduplicated
-  - HealthKit automatically prioritizes the most accurate source when overlap occurs
+  - Raw records from Watch, iPhone and other sources may overlap
+  - HealthKit statistics queries merge sources according to their query options; raw record sums are not equivalent to those statistics
 
   ## Health Significance
   Step count serves as an accessible measure of physical activity with well-documented health associations:
@@ -239,10 +239,34 @@ references:
     type: "medical"
 
 # --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-01-27"
+last_updated: "2026-10-08"
 research_notes: |
   - iOS 8.0 introduction confirmed via Apple Developer Documentation
   - 10,000 steps origin: 1965 Yamasa Clock "Manpo-kei" marketing campaign (News Medical, Harvard Health)
   - 7,000-8,000 steps research: 2025 Lancet meta-analysis of 57 studies, 2022 meta-analysis of 15 cohorts
   - Clinical activity classifications based on Tudor-Locke step-defined sedentary lifestyle index
   - CDC and WHO guidelines focus on minutes of activity rather than step counts
+
+# Recording and interpretation guidance; personal observations are kept separately.
+recording_behavior:
+  reviewed_on: '2026-10-08'
+  shape: A cumulative sample contains a number of steps over a time interval. One database row is not one step;
+    interval lengths can vary substantially.
+  cadence: Count records and inspect their duration distribution independently of total steps. Changes in row
+    frequency can reflect recording or representation changes rather than changes in activity.
+  context: Compare sources and workout versus other periods. A source display name is not a unique device identity;
+    retain source identifiers and versions.
+  coverage: A day with step samples is not proof that all movement was recorded. Missing rows, explicit empty
+    aggregate buckets and measured zero totals have different meanings.
+  aggregation: Raw intervals from multiple sources may overlap. Use a suitable HealthKit statistics result
+    for source-merged totals instead of naively summing raw records. Verify function, device filter, timezone
+    and both bucket boundaries before comparing daily totals.
+  metadata: Metadata is optional. Absence of metadata does not invalidate a step sample, and interval overlap
+    alone is not enough to identify exact duplicate steps.
+  references:
+  - title: 'Apple: cumulative quantity samples'
+    url: https://developer.apple.com/documentation/healthkit/hkcumulativequantitysample
+  - title: 'Apple: statistics queries'
+    url: https://developer.apple.com/documentation/healthkit/hkstatisticsquery
+  - title: 'Apple: statistics collection boundaries'
+    url: https://developer.apple.com/documentation/healthkit/hkstatisticscollectionquery
