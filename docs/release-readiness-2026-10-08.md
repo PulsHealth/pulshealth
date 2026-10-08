@@ -146,9 +146,9 @@ HTTPS receiver. The user acknowledged the TestFlight acceptance request; that
 is not a passing result. The external beta tester is added; Beta App Review
 metadata is prepared and awaits the contact email/phone before submission.
 
-## Deployment evidence
+## Initial deployment evidence
 
-- Production is running `d8dcfbd`; all four application image revision labels
+- The initial production deployment ran `d8dcfbd`; all four application image revision labels
   match. Migrations 026–028 applied before service recreation; database, Grafana
   and tunnel services were preserved.
 - Pre-deployment and post-deployment backups completed and passed archive
@@ -168,3 +168,59 @@ metadata is prepared and awaits the contact email/phone before submission.
   signup/login/recovery pages load normally. Generic Python requests encounter
   an existing Cloudflare browser-signature rejection; the application itself
   and Chrome/iPhone Safari requests return 200. Security settings were unchanged.
+
+
+## Hosted privacy and operations follow-up — 2026-10-08
+
+PR [#178](https://github.com/PulsHealth/pulshealth/pull/178) merged as
+`2de0adf2372e26799fb509b79c49394be1904ec4` after all 11 required CI checks
+passed. This follow-up changed no iOS source or uploaded archive.
+
+- **Accurate disclosures:** the live policy identifies the individual operator,
+  US hosting, operator-readable storage, Cloudflare TLS termination, deletion
+  processing and receipt behavior, seven-day backup expiry, manual support-mail
+  cleanup, and size-rotated operational logs. Logs can contain identifiers and
+  health type names; account deletion does not rewrite historical logs. Minimal
+  permanent UUID/date receipts prevent restoration of deleted accounts.
+- **Deletion race fixed:** rejected uploads can no longer recreate per-user
+  database diagnostics after the account is erased. Ingest integration tests
+  verify serialization against account deletion and rejection of orphan writes.
+- **Local verification:** ingest vet and race tests, 88 web database tests,
+  434 web unit tests, web lint/typecheck, site lint/14 tests/build, shellcheck,
+  operations tests and the public-tree gate passed. An isolated synthetic restore
+  drill proved old backups cannot resurrect erased users, protected data survives,
+  and an invalid ledger stops restoration before replacement.
+- **Production deployment:** a fresh pre-deployment backup passed archive checks.
+  Only ingest was rebuilt/recreated; its image revision is `2de0adf` and its live
+  health endpoint reports a reachable database. Other application images remain
+  at the previously verified `d8dcfbd`; their code did not change in this follow-up.
+- **Live deletion acceptance:** before and after deployment, two new synthetic
+  accounts (invited personal and self-service) completed HTTP pairing, ingestion,
+  cross-user rejection and deletion. Receipts completed, sessions and tokens
+  stopped working, and every account/health table was checked for zero remaining
+  fixture rows. The final host check found zero pending deletions and six
+  independent restore-ledger receipts, including the earlier release fixtures.
+- **Site publication:** the merged site was built and published, CDN invalidation
+  completed, and live homepage/privacy HTML matched the generated artifacts.
+- **Monitoring and email:** the operator explicitly authorized one synthetic
+  delivery test and recurring failure alerts. The delivery test arrived in the
+  operator inbox. A five-minute cron check is installed, notification delivery is
+  enabled, cron is active, and the wrapper has completed successfully. It checks
+  service health, account access controls, cleanup/deletion jobs, the independent
+  ledger, and backup freshness/expiry. Notifications contain status only.
+- **Current status:** all operator checks passed after deployment. The database
+  and its backups remain on one host with no external database copies, as the
+  operator confirmed. No real health data was exported for this follow-up.
+
+Follow [the hosted operations runbook](hosted-operations.md) for daily checks,
+failed-deletion response, support-mail erasure, restore drills and incidents.
+Monitoring on the host cannot notify during a complete host or network outage;
+an independently hosted availability alert remains an operational follow-up.
+Same-host backups do not protect against loss of that host. Those limitations
+must remain explicit when deciding whether to open access broadly.
+
+**Remaining submission gates are unchanged:** actual signup/approval and recovery
+email flows, physical-device acceptance of build 20 and request delivery, and
+resolution of Apple's sensitive-information enrollment requirement for an
+individual operator. The successful operations email is not evidence that the
+signup/recovery flows passed. No App Review submission was made by this follow-up.
