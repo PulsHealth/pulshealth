@@ -1,7 +1,7 @@
 # Accounts and Data Requests release review — 2026-10-08
 
 **Status: final candidate validation in progress; not submitted.** This review
-started from `091244a`. The recorded shipping version is 1.6 (19); the prepared
+started from `091244a`. The recorded shipping version is 1.6 (19); the uploaded
 release is 2.0 (20). Deployment and upload evidence must be recorded below
 rather than inferred from local tests.
 
@@ -30,8 +30,10 @@ that all defects have been found.
 Tracking issue: [#172](https://github.com/PulsHealth/pulshealth/issues/172).
 The selected release is **2.0 (20)**. App Store Connect was checked on
 2026-10-08: the latest completed upload was 1.6 (19). A 2.0 draft now exists,
-with accounts/request copy and manual release selected. It has not been
-submitted for review.
+with accounts/request copy and manual release selected. The signed 2.0 (20)
+archive uploaded successfully on 2026-10-08. It has not been submitted for review.
+The merged candidate preserves the concurrently released recording-quality
+changes from main; its compiled app/package inputs are identical to the upload.
 
 The earlier code blockers have been implemented:
 
@@ -71,9 +73,9 @@ These require recorded evidence before calling the release ready:
   accounts, with no personal health data in test artifacts.
 - [x] Published and verified all eleven App Store Connect privacy disclosures.
 - [ ] Verify the current age-rating questionnaire.
-- [ ] Upload the final signed 2.0 (20) archive, inspect its processed privacy
-  report, and select the build. Do not attach an earlier candidate after code
-  changes.
+- [x] Upload the final signed 2.0 (20) archive; verify its signature, eleven
+  privacy categories and compiled-source parity after merging current main.
+- [ ] Inspect the processed build and select it for the 2.0 submission.
 - [ ] Supply an approved disposable personal review account through App Store
   Connect's private fields. The public view-only demo cannot exercise pairing
   or deletion. Keep credentials out of source control.
@@ -109,7 +111,7 @@ and [review notes](appstore/review-notes.md) for the concrete submission materia
   its configuration before claiming work, consistent with the new busy contract.
   Hosted partial-send consent passed in the full iOS 27 app suite.
 - Site: lint, 14 tests, production build and export checks passed (178 knowledge
-  pages, 13 documentation pages and 12 published blog pages).
+  pages, 14 documentation pages and 12 published blog pages; 226 total pages).
 - iOS app: all 50 hosted tests passed on iOS 27, including 378 legal HealthKit
   aggregate combinations. An iOS 26.5 simulator build and 38 focused runtime tests passed. Only Xcode 27
   is installed locally; the older compiler/SDK CI leg remains unverified here.
@@ -122,5 +124,5 @@ and [review notes](appstore/review-notes.md) for the concrete submission materia
 
 Remaining evidence must be collected rather than inferred: App Store Connect
 state, physical HealthKit behavior, reviewer credentials, authenticated live
-flows, and real backup restoration. Local simulator and scratch DB tests do
+flows, and processed-build selection. Local simulator and scratch DB tests do
 not substitute for those checks.

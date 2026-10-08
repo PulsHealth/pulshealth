@@ -54,6 +54,18 @@ psql -q -v ON_ERROR_STOP=1 \
      --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'EOSQL'
 BEGIN;
 
+-- Replayed 009/023 can replace the daily view during baseline/restore.
+-- Restore 026's account calendars and full-day recording-quality filter for
+-- every deployment, including self-hosted stacks with accounts disabled.
+DO $$
+BEGIN
+  IF to_regprocedure('public.puls_create_metric_daily()') IS NOT NULL THEN
+    REVOKE EXECUTE ON FUNCTION public.puls_create_metric_daily() FROM PUBLIC;
+    PERFORM public.puls_create_metric_daily();
+  END IF;
+END
+$$;
+
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grafana') THEN
@@ -841,7 +853,6 @@ DROP OWNED BY web_app;
 -- ACLs. Reconstruct this boundary before granting the exact public API:
 -- internal purge/replay/queue helpers must never inherit PUBLIC EXECUTE.
 REVOKE EXECUTE ON ALL ROUTINES IN SCHEMA auth FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.puls_create_metric_daily() FROM PUBLIC;
 ALTER ROLE web_app
   LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION
   NOBYPASSRLS CONNECTION LIMIT -1 VALID UNTIL 'infinity'
@@ -852,7 +863,6 @@ ALTER ROLE web_app IN DATABASE :"DBNAME" RESET ALL;
 -- CASCADE took with it (rebuilding quantity_rollups drops metric_daily's) or
 -- one a base-table column change left stale comes back here, before the
 -- grants below, instead of failing them.
-SELECT public.puls_create_metric_daily();
 SELECT puls_create_web_views();
 
 -- The viewer's unqualified table names resolve to the per-user views first.

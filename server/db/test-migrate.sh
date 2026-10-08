@@ -82,7 +82,7 @@ migrate() {
     -e PGHOST="$db" -e PGPASSWORD=ci-secret -e MIGRATIONS_DIR=/puls/migrations \
     -e POSTGRES_DB="$database" -e PGOPTIONS="-c client_min_messages=warning" \
     -e GRAFANA_DB_PASSWORD=ci-grafana -e API_DB_PASSWORD=ci-api \
-    -e INGEST_DB_PASSWORD=ci-ingest -e WEB_DB_PASSWORD=ci-web \
+    -e INGEST_DB_PASSWORD=ci-ingest -e WEB_DB_PASSWORD="${TEST_WEB_DB_PASSWORD-ci-web}" \
     -e PULS_TIME_ZONE=Europe/Berlin \
     --entrypoint bash "$DB_IMAGE" /puls/migrate.sh "$@"
 }
@@ -166,6 +166,18 @@ eq "$(sql postgres "SELECT rolcanlogin::text || ' ' || array_to_string(rolconfig
 docker exec -i "$db" psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 \
   < "$here/tests/recording_quality.sql" >/dev/null
 echo "recording quality: enum decoding, calendar boundaries, DST and user scope passed"
+endgroup
+
+# Account-aware dates and recording-quality filtering must survive a
+# baseline replay even when the optional web_app role is disabled.
+group "real: self-hosted replay without accounts"
+newdb c_no_web
+TEST_WEB_DB_PASSWORD='' expect "$sqls applied, 0 rerun, 0 skipped, $shs script(s) ran" c_no_web "$real"
+sql c_no_web "DROP TABLE schema_migrations"
+TEST_WEB_DB_PASSWORD='' expect "baseline complete: $sqls file(s) recorded" c_no_web "$real" baseline
+TEST_WEB_DB_PASSWORD='' expect "0 applied, $reruns rerun, $((sqls - reruns)) skipped, $shs script(s) ran" c_no_web "$real"
+sql c_no_web "$(cat "$here/test-account-time-zones.sql")" >/dev/null
+sql c_no_web "$(cat "$here/tests/recording_quality.sql")" >/dev/null
 endgroup
 
 # --- order: lexical order, checksums, scripts every run ----------------------
