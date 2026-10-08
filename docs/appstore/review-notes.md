@@ -216,3 +216,15 @@ Delete the demo account and everything synced to it: on `/admin`, disable it
 (which revokes its tokens) and **Purge** its data (`web/README.md`, "Access
 requests"). If the review instance was stood up, take it down
 ([`review-backend.md`](review-backend.md) § 6).
+
+### Native App Store review requests (next submission)
+
+Settings → About → Write a Review permanently opens the App Store review
+page. Automatic requests use Apple's native prompt directly after a complete
+shared export, a visible successful upload or a return from a populated
+analysis, once the local usage thresholds are met. Navigation, backgrounding,
+modals and unfinished work suppress requests. Attempts are spaced at least
+120 days apart and occur at most once per app version; Apple controls whether
+a prompt is shown. There is no satisfaction pre-prompt, reward or filtering by
+an expressed rating. The on-device timing counters contain no health values
+and are not sent to the developer. This flow does not appear in TestFlight.

@@ -54,6 +54,16 @@ up, it exports a file when you ask for one, and that is the whole of it.
 - **You choose what is read.** Nothing is read until you pick the data types
   and iOS grants permission, and you can change or revoke that at any time.
 
+## App Store ratings and reviews
+
+The app may ask Apple's StoreKit framework to show its standard review prompt
+at a pause after a completed task. Apple decides whether to show it and
+handles any rating or review you choose to submit under Apple's terms.
+Settings → About → Write a Review opens the App Store review page. Neither
+path sends health data to Apple. StoreKit does not tell the app whether you
+submitted a rating or review; any review you publish is visible on the App
+Store. The timing counters described below remain in the app's own preferences.
+
 ## What the app reads
 
 Only the Apple Health data types you enable in the app, and only for the date
@@ -168,10 +178,14 @@ Transport Security (`NSAllowsLocalNetworking`).
   sheet and deletes them when you leave that screen (and at the next launch,
   if the app was closed first). They hold counts and timings, not health
   values.
-- **App preferences** — four `UserDefaults` flags (whether Health access has
-  been requested, whether medication access has been requested, whether the
-  first-run flow has been completed, and the background-task schedule status).
-  No personal data.
+- **App preferences and review timing** — `UserDefaults` holds Health-access,
+  onboarding and background-scheduling flags, Explore display preferences,
+  and the counters used to space App Store review requests: active days,
+  foreground visits, successful-upload days, the latest counted upload date,
+  and request-attempt dates, versions, sources (Explore, Export or Sync) and
+  count. These contain no health values, type identifiers or account details,
+  and are not sent to the developer or an analytics service. A request attempt
+  does not indicate whether you rated or reviewed the app.
 
 Deleting the app deletes all of this from the phone, a staged export included.
 It does not delete anything already uploaded to your database, or any exported

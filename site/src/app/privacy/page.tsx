@@ -10,8 +10,8 @@ const BLOB = `${GITHUB}/blob/main`;
 /** The claims the policy rests on, each with the code that backs it. */
 const claims = [
   {
-    title: "The app alone sends nothing",
-    body: "Exploring and exporting need no account and make no network request. An export goes wherever you send it from the share sheet.",
+    title: "Your exports go where you choose",
+    body: "Exploring and exporting need no account and make no health-data upload. An export goes wherever you send it from the share sheet. Apple handles any App Store rating or review you choose to submit; review timing counters stay on your device.",
     check: { label: "Export/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Export` },
   },
   {

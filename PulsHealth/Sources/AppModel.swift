@@ -27,6 +27,8 @@ final class AppModel {
     /// The Export tab: the server-less way out. A model of its own so a run
     /// outlives the screen that started it (`ExportModel`).
     let export = ExportModel()
+    /// Shared on-device review timing, independent of sync and export state.
+    let reviews: ReviewRequests
     /// The Explore tab: what HealthKit holds per type, and the analyses
     /// in flight to find out (`ExploreModel`). Read-only over HealthKit.
     let explore: ExploreModel
@@ -194,6 +196,7 @@ final class AppModel {
         self.engine = engine
         self.scheduler = scheduler ?? BackgroundSyncScheduler(engine: engine)
         self.defaults = defaults
+        self.reviews = ReviewRequests(defaults: defaults)
         self.healthAccess = healthAccess ?? engine
         self.explore = ExploreModel(engine: engine)
         // An analysis can show the permission sheet too; what it answered
@@ -219,6 +222,15 @@ final class AppModel {
         // this flow. `startBody` re-checks against the loaded configuration.
         showsOnboarding = !defaults.bool(forKey: Self.onboardingCompletedKey)
             && !defaults.bool(forKey: "authorizationRequested")
+    }
+
+    var reviewRequestsBlocked: Bool {
+        showsOnboarding || pendingServerChange != nil || pairingLinkPrompt != nil
+            || pairingAwaitsSyncTab || lastErrorMessage != nil || stateFileUnreadable
+            || needsAuthorization || isSyncingAll || backfillActive || export.isRunning
+            || statuses.contains(where: { $0.activity == .syncing })
+            || typesFailed > 0 || aggregateStates.values.contains(where: { $0.lastError != nil })
+            || hasPendingChanges || hasPendingSettingsChanges
     }
 
     // MARK: - Lifecycle
