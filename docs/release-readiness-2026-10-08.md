@@ -1,6 +1,6 @@
 # Accounts and Data Requests release review — 2026-10-08
 
-**Status: final candidate validation in progress; not submitted.** This review
+**Status: code merged and deployed, store draft prepared; device/email acceptance pending. Not submitted to App Review.** This review
 started from `091244a`. The recorded shipping version is 1.6 (19); the uploaded
 release is 2.0 (20). Deployment and upload evidence must be recorded below
 rather than inferred from local tests.
@@ -67,20 +67,30 @@ The earlier code blockers have been implemented:
 
 These require recorded evidence before calling the release ready:
 
-- [ ] Commit the final tested candidate, complete CI, deploy migrations before
+- [x] Commit the final tested candidate, complete CI, deploy migrations before
   updated servers, and verify hosted strict-retention/ledger configuration.
-- [ ] Verify live signup/recovery/pairing and deletion using disposable synthetic
-  accounts, with no personal health data in test artifacts.
+- [x] Verify live invite acceptance, login, pairing, reporting calendars,
+  synthetic health ingestion and completed deletion with isolated test accounts.
+- [ ] Complete real signup/approval-email and password-recovery delivery acceptance.
+  The generic recovery response and configuration do not establish delivery.
 - [x] Published and verified all eleven App Store Connect privacy disclosures.
-- [ ] Verify the current age-rating questionnaire.
+- [x] Complete the current age-rating questionnaire: calculated 13+ globally
+  (12+ before OS 26, with regional exceptions), based on occasional medical and
+  alcohol references plus health/wellness content actually shown in the app.
 - [x] Upload the final signed 2.0 (20) archive; verify its signature, eleven
   privacy categories and compiled-source parity after merging current main.
-- [ ] Inspect the processed build and select it for the 2.0 submission.
-- [ ] Supply an approved disposable personal review account through App Store
+- [x] Inspect the processed build and select 2.0 (20) for the submission;
+  confirm Testing status in the existing internal TestFlight group.
+- [x] Supply an approved disposable personal review account through App Store
   Connect's private fields. The public view-only demo cannot exercise pairing
   or deletion. Keep credentials out of source control.
-- [ ] Upload the refreshed iPhone/iPad screenshots made with synthetic fixtures
-  and final reviewer notes. Confirm support/privacy links and reviewer steps.
+- [x] Upload seven refreshed iPhone and seven iPad screenshots made with
+  synthetic fixtures.
+- [x] Save final reviewer notes (3,488 characters), with the optional backend
+  block omitted; verify live support/privacy links and browser auth pages.
+- [x] Generate Xcode Organizer’s aggregate privacy report from the uploaded
+  archive: eleven categories, all linked, no tracking, App Functionality only.
+  Required-reason API evidence comes from the archived manifests (CA92.1).
 - [ ] Complete physical-device acceptance of the actual candidate: upgrade over
   1.6, first hosted pairing, switching/disconnecting during work, locked-device
   interruption, permission denial/history widening, medication permission, QR
@@ -92,6 +102,10 @@ Use [the submission checklist](appstore/README.md), [listing copy](appstore/list
 and [review notes](appstore/review-notes.md) for the concrete submission material.
 
 ## Validation evidence
+
+- Release PR [#173](https://github.com/PulsHealth/pulshealth/pull/173) merged as
+  `d8dcfbd` after all 13 CI checks passed. The merged tree exactly matches tested
+  candidate `1db2cf9`; app/package inputs match uploaded build 20.
 
 - All five Go modules: module verification, vet and race-enabled tests passed.
 - Protocol corpus: eight fixtures and Python receiver smoke test passed.
@@ -117,7 +131,8 @@ and [review notes](appstore/review-notes.md) for the concrete submission materia
   pages, 14 documentation pages and 12 published blog pages; 226 total pages).
 - iOS app: all 50 hosted tests passed on iOS 27, including 378 legal HealthKit
   aggregate combinations. An iOS 26.5 simulator build and 38 focused runtime tests passed. Only Xcode 27
-  is installed locally; the older compiler/SDK CI leg remains unverified here.
+  is installed locally; CI independently passed the complete package and hosted
+  suites on both Xcode 26.5 and 27.0.
 - Public-tree, generated knowledge JSON, mirrored Go-source, shellcheck,
   whitespace, manifest syntax and 15 synthetic demo-data tests passed.
 - Public production smoke checks: privacy/login/signup returned HTTP 200;
@@ -125,7 +140,31 @@ and [review notes](appstore/review-notes.md) for the concrete submission materia
   login with its return path and `no-store`. These checks do not establish an
   authenticated signup/pairing/deletion flow or deployed-source parity.
 
-Remaining evidence must be collected rather than inferred: App Store Connect
-state, physical HealthKit behavior, reviewer credentials, authenticated live
-flows, and processed-build selection. Local simulator and scratch DB tests do
-not substitute for those checks.
+Remaining evidence must be collected rather than inferred: physical HealthKit
+behavior, real email delivery and request delivery/retry against a compatible
+HTTPS receiver. The user acknowledged the TestFlight acceptance request; that
+is not a passing result. The external beta tester is added; Beta App Review
+metadata is prepared and awaits the contact email/phone before submission.
+
+## Deployment evidence
+
+- Production is running `d8dcfbd`; all four application image revision labels
+  match. Migrations 026–028 applied before service recreation; database, Grafana
+  and tunnel services were preserved.
+- Pre-deployment and post-deployment backups completed and passed archive
+  structure checks. Existing seven-day retention is preserved, strict expiration
+  is enabled, and daily backups plus the independent deletion ledger are active.
+- Public authenticated checks passed for invite/password login, pairing, ingest
+  bearer authentication and cross-user rejection, NY/LA reporting dates, and a
+  synthetic 70 bpm sample. Both disposable test users and the health fixture
+  were erased; receipt pages confirmed completion, sessions/device tokens were
+  revoked, and permanent ledger receipts were verified.
+- Separate isolated App Store and TestFlight review accounts remain available;
+  credentials are stored only in private files and Apple's private fields.
+- Deletion retry runs every minute and recovery cleanup hourly; services are
+  healthy with no recent application error patterns.
+- The privacy/support site was published, CDN invalidation completed, and live
+  privacy copy includes automatic deletion and restore protection. Actual Chrome
+  signup/login/recovery pages load normally. Generic Python requests encounter
+  an existing Cloudflare browser-signature rejection; the application itself
+  and Chrome/iPhone Safari requests return 200. Security settings were unchanged.
