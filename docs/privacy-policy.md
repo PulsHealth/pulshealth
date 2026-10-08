@@ -6,16 +6,15 @@ PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
 developer's own (the PulsHealth database) — or, if you have
 no database, writes it to files you then save or send yourself. This policy
-describes what the app does with your data. It is short because the app does
-very little: it reads Apple Health, it uploads to the one database you set
+describes how the app and hosted service handle your data: it reads Apple Health, it uploads to the one database you set
 up, it exports a file when you ask for one, and it can send a one-time export to a request destination you approve.
 
 ## The short version
 
-- **Exporting, or syncing to a database you run, gives the developer no
-  data.** An export goes only where you send it, and a database you set up
-  yourself is yours alone: either way the developer receives nothing from
-  you. There is no telemetry endpoint, and no account is needed to use the
+- **Exploring and self-hosted sync do not send health data to the developer.**
+  An ordinary export goes only where you share it; the developer receives a copy
+  only if you deliberately send it to the developer, for example for support.
+  A database you run is under your control. There is no telemetry endpoint, and no account is needed to use the
   app.
 - **If you create a PulsHealth account and sync to the PulsHealth database,
   your data is stored there.** That is the developer's own database and
@@ -27,7 +26,8 @@ up, it exports a file when you ask for one, and it can send a one-time export to
   documentation and this policy) and, in versions that offer the PulsHealth
   database, on `app.pulshealth.com` (signing in, creating an account, managing
   or deleting your account). They open in Safari or in iOS's sign-in sheet,
-  and the app itself sends them nothing.
+  and handle the information you enter there. Regular health uploads go to the
+  configured sync receiver, not to those account pages.
 - **An AI assistant reads your data only if you connect one, and only
   from the database, never from the app.** If you use the PulsHealth
   database, you can connect an assistant such as Claude to your records by
@@ -73,7 +73,7 @@ iOS grants permission for it. The full catalogue is visible in the app's Data
 Types screen and in [`docs/protocol/catalog.json`](protocol/catalog.json).
 
 If you fill them in, the app also sends the identity fields you typed into it —
-name, email address, date of birth, biological sex — to your own database, so
+name, email address, date of birth, biological sex — to the database you choose, including PulsHealth hosting, so
 your data is stored under a person rather than an anonymous row and so
 heart-rate zones can be computed. Every one of those fields starts unset. You
 type them into Settings → User; the app never reads them from Apple Health or
@@ -81,8 +81,7 @@ anywhere else, and leaving them blank is fully supported.
 
 Each upload also carries a `deviceID` so your database can tell one phone from
 another. It is a random UUID the app generates for itself on first run — not
-the advertising identifier, not `identifierForVendor`, not tied to you or to
-the hardware — and it goes only to your database, and into the files of an
+the advertising identifier, not `identifierForVendor`, not a hardware identifier; on a hosted account it is associated with you — and it goes only to your database, and into the files of an
 export you make yourself.
 
 ## Where it goes
@@ -167,7 +166,7 @@ Transport Security (`NSAllowsLocalNetworking`).
   Delete Analysis removes all of them at once.
 - **Logs and background-activity telemetry** — an in-app event log and a record
   of each background wake (when it ran, how long, how many samples moved). They
-  stay on the device unless *you* share them from the Background Activity
+  stay on the device unless *you* share them from the Activity
   screen, which writes them to the app's temporary directory for the share
   sheet and deletes them when you leave that screen (and at the next launch,
   if the app was closed first). They hold counts and timings, not health
@@ -217,7 +216,7 @@ background.
   AirDrop, another app. The app's Copy action is turned off for exports, so the
   files are not placed on the clipboard. Once a file has left the app it is an
   ordinary, unencrypted file: it is only as private as the place you put it,
-  the app can no longer delete it, and the developer never sees it.
+  the app can no longer delete it, and the developer receives it only if you choose to send it to the developer.
 
 ## Data Requests
 
@@ -277,8 +276,9 @@ be revoked at any time.
 
 ## Children
 
-PulsHealth is not directed at children. Outside the PulsHealth database, it
-collects nothing centrally, so there is no children's data for the developer to hold.
+PulsHealth is not directed at children. Hosted accounts are approved individually.
+Do not submit a child's health records to the hosted service without first
+contacting support@pulshealth.com about eligibility and required consent.
 
 ## What you are responsible for as a self-hoster
 
@@ -315,7 +315,8 @@ provider's responsibility are yours:
 
 ## If you use the developer's viewer
 
-The developer runs one PulsHealth database of their own, with the web viewer
+Sean Wade operates the PulsHealth hosted service as an individual, with its
+primary database and managed backups in the United States and the web viewer
 at `app.pulshealth.com` — the **PulsHealth database** the app offers under
 Sync → Database. You create an account there (the app's Create Account
 opens the form), or the developer invites you. What happens to your data:
@@ -330,16 +331,35 @@ opens the form), or the developer invites you. What happens to your data:
 - **The app still works exactly as described above.** Once your account is
   set up, you sign in from Sync → Database (or open the account page's pairing code on
   the iPhone), and the app uploads only to the database address that code
-  gives it — in this case the developer's — and to nowhere else.
+  gives it — in this case the developer's. A one-time Data Request can separately
+  send an export to a destination you review and approve.
 - **The developer holds your data.** Everything the app uploads (the health
   data you chose to sync, and the identity fields if you filled them in) is
   stored in the developer's database under your own user ID. This includes
-  precise GPS coordinates in workout routes if you enable route syncing. The developer,
-  as the person who runs that database, can access it. It is used for one
-  thing: showing it back to you — in the viewer, and to an AI assistant you
-  connect yourself (below). It is not sold, shared or analysed, and no
-  one else who uses the viewer can see it — the database itself limits each
-  signed-in person to their own records.
+  precise GPS coordinates in workout routes if you enable route syncing. The
+  operator can access it. The service processes records to display your
+  history, calculate charts and summaries, maintain syncing, and answer requests
+  from assistants you authorize. Health data is not sold or used for advertising,
+  marketing, or unrelated profiling. Access is limited to providing, securing and
+  supporting the service, the service providers described below, and recipients
+  you authorize. Each signed-in viewer account is restricted to its own records.
+- **How storage is protected.** Uploads use HTTPS. The database uses separate
+  service credentials and per-account access controls. It stores readable health
+  records so the service can query them; it is **not end-to-end encrypted**, and
+  these controls do not prevent the operator from reading records. The current
+  hosted database and backup files do not have an additional application-level
+  encryption layer. Cloudflare terminates hosted HTTPS connections as described
+  below. Do not treat a user ID, a compressed backup or a password hash as
+  encryption or anonymization of your health records.
+- **How long records stay.** Synced health records, profile information and
+  successful-upload diagnostics stay until you delete your hosted account or
+  applicable records are removed by sync. Disconnecting, disabling a data type,
+  revoking Health access, or uninstalling the app stops future collection as
+  applicable; it does not erase records already received. Account deletion is
+  the way to request removal of all hosted records. Undecided signup requests
+  stay until approved, declined or withdrawn; approved signup requests are
+  removed from the database after 30 days. Account email and support copies are
+  handled separately as described below.
 - **Sync diagnostics.** Alongside health records, the database retains an
   operational record of each upload: device/user and batch identifiers, types
   and counts, byte size, export/receipt times, and whether sync was triggered
@@ -414,9 +434,15 @@ opens the form), or the developer invites you. What happens to your data:
   are also cleaned up hourly. A completed reset signs out browsers and
   revokes connected assistants (their already-issued access expires within
   30 minutes); it does not disconnect your iPhone's sync token.
-- **Email.** Messages about your account — invitations and password-recovery
-  links — are sent through Amazon Simple Email Service from
-  `noreply@pulshealth.com`. There is no account mailing list.
+- **Email and support.** Messages about your account — invitations and password-
+  recovery links — are sent through Amazon Simple Email Service from
+  `noreply@pulshealth.com`. There is no account mailing list. Signup notifications
+  also go to the operator's mailbox. Please do not send health records or
+  credentials to support unless needed to resolve a specific issue. Voluntarily
+  provided support material is used only for that issue. The operator removes
+  resolved support material and signup notification emails within 30 days and
+  checks for these copies when handling a deletion request. Automatic database
+  deletion does not itself erase a mailbox or a copy held by an outside recipient.
 - **Cloudflare carries the hosted database's traffic.** `app.pulshealth.com`,
   the sync receiver at `ingest.pulshealth.com`, and `mcp.pulshealth.com` that
   a connected AI assistant reads from are reached through Cloudflare, which
@@ -435,8 +461,11 @@ opens the form), or the developer invites you. What happens to your data:
   summaries and device names no other account uses. If interrupted, removal
   retries automatically; no email or operator approval is needed to finish it.
   A private status link tells you whether removal is pending or complete.
-  Removing a large history can take time, so the request alone is not a
-  completion confirmation. Tap Disconnect under Sync → Database (or delete
+  Removal normally finishes within minutes, but a large history or service
+  interruption can take longer. The operator checks delayed requests and aims
+  to resolve them within 24 hours; contact support@pulshealth.com if your receipt
+  is still pending then. The request alone is not a completion confirmation.
+  Tap Disconnect under Sync → Database (or delete
   the app) to stop it trying to sync.
   This flow is available to approved signups and invited personal accounts
   designated by the operator. Administrator, shared demo and protected
@@ -451,10 +480,24 @@ opens the form), or the developer invites you. What happens to your data:
   restore-protection ledger. It contains no name, email or health records;
   its purpose is to prevent an older database backup from restoring deleted
   data into service. A backup made before deletion can still contain the old
-  data until that archive expires. Restoring such an archive requires replaying
+  data until that archive expires. Managed database backups are taken daily
+  and expire after seven days, checked at least hourly while the backup service
+  is running. Expiry runs even if a new backup fails. An outage can delay physical
+  removal; overdue copies are removed when the service resumes and are not used
+  to restore deleted accounts. There are currently no additional offsite database
+  copies. Restoring an archive requires replaying
   the current deletion ledger before the restored service is opened. Copies
   you exported, or sent to another recipient or assistant, remain with those
   recipients and are not removed by deleting your PulsHealth account.
+
+- **Operational logs.** Server security and operational logs can include network
+  addresses, request or batch identifiers, status codes and timings. They are
+  restricted to the operator and used for security and troubleshooting, not
+  advertising. They are separate from the account database: account deletion
+  does not selectively rewrite historical log files. Container logs rotate by
+  size (up to five 50 MB files per service), rather than on a fixed age schedule.
+  Do not send health data or credentials in URLs; infrastructure providers may
+  also retain their own operational records under their policies.
 
 ## The website
 
@@ -484,8 +527,10 @@ as commits, so the full history is visible at
 
 ## Contact
 
-- **Questions and general contact:** open an issue at
-  <https://github.com/PulsHealth/pulshealth/issues>.
+- **Privacy, access, deletion and support:** contact Sean Wade, the individual
+  operator, at support@pulshealth.com. Do not post health records, credentials
+  or private account details in public GitHub issues.
+- **General software questions:** <https://github.com/PulsHealth/pulshealth/issues>.
 - **Security problems:** please use GitHub's private vulnerability reporting at
   <https://github.com/PulsHealth/pulshealth/security/advisories/new>, as
   described in [`SECURITY.md`](../SECURITY.md). Do not file a public issue for a

@@ -370,3 +370,7 @@ Request IDs and links are not authentication. Receiver operators must implement
 access controls, storage protection, retention and any study consent themselves.
 The reference sync ingest endpoint is not a request ZIP receiver. See
 [the request contract](docs/requests.md).
+
+## Hosted operating procedures
+
+The [hosted operations runbook](docs/hosted-operations.md) defines operator access, deletion escalation, backup expiry, restore-ledger checks and incident handling. The hosted service is not end-to-end encrypted; database administrators remain trusted. Per-account views protect viewer access, not against a compromised application or operator. Late diagnostic writes hold the user lock and require an existing owner, so they cannot recreate account diagnostics after erasure.

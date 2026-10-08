@@ -143,12 +143,12 @@ const privacy = [
   {
     icon: Lock,
     title: "Only where you send it",
-    body: "Run your own database and we never see your data. On ours it is never sold or shared.",
+    body: "Run your own database, or choose our hosting. Hosted records are accessible to the operator, never sold or used for advertising.",
   },
   {
     icon: EyeOff,
     title: "No tracking",
-    body: "No analytics, ads or third-party code in the app. Exploring and exporting send nothing.",
+    body: "No analytics, ads or third-party code in the app. Exploring stays on your phone; you choose where exports go.",
   },
 ];
 
@@ -295,7 +295,7 @@ export default async function HomePage() {
               </Link>
               .
             </p>
-            <p>Export any types and dates to CSV or JSONL. No account, nothing leaves the phone.</p>
+            <p>Export any types and dates to CSV or JSONL. No account needed; you choose where to share the files.</p>
             <div className="pt-2">
               <AppStoreBadge />
             </div>

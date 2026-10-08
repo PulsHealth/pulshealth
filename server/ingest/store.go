@@ -62,12 +62,22 @@ type IngestRejection struct {
 // health data. Best-effort callers must preserve the original HTTP response if
 // this operational write itself fails.
 func (st *Store) RecordRejection(ctx context.Context, r IngestRejection) error {
+	// A request can finish parsing after its account has been erased. Keep
+	// diagnostics only for an existing owner, and hold the same user lock as
+	// ingestion so a concurrent purge either removes this row or precedes it.
+	// Invalid/unknown identity failures remain in the bounded service log.
+	if !isUUID(r.UserID) {
+		return nil
+	}
 	_, err := st.pool.Exec(ctx, `
+		WITH owner AS MATERIALIZED (
+		    SELECT id FROM users WHERE id = $2::uuid FOR KEY SHARE
+		)
 		INSERT INTO ingest_rejections
 		    (batch_id, user_id, wake_id, trigger, status, stage,
 		     error_message, bytes, content_encoding)
-		VALUES (NULLIF($1, ''), NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''),
-		        $5, $6, $7, $8, NULLIF($9, ''))`,
+		SELECT NULLIF($1, ''), owner.id::text, NULLIF($3, ''), NULLIF($4, ''),
+		       $5, $6, $7, $8, NULLIF($9, '') FROM owner`,
 		r.BatchID, r.UserID, r.WakeID, r.Trigger, r.Status, r.Stage,
 		r.ErrorMessage, r.Bytes, r.ContentEncoding)
 	if err != nil {
