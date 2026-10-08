@@ -58,6 +58,8 @@ HealthKit distinguishes **in bed**, **asleep without a specified stage**, and th
 
 Imagine an illustrative export with one eight-hour in-bed interval and seven hours of stage intervals inside it. Summing every row yields 15 hours. Nothing about the night was 15 hours long: the calculation added two descriptions of overlapping time.
 
+<BlogImage src="/blog/apple-watch-sleep-stages/overnight-overlap.webp" alt="Synthetic 22:30 to 06:30 timeline: an eight-hour in-bed interval overlaps seven hours of Core, Deep, and REM intervals plus one hour awake." caption="Two rows describe the same clock time. Keep in-bed and asleep durations separate; stage ordering and durations here are invented for the example." width="1600" height="864" />
+
 An unspecified asleep interval needs similar care. It does not mean Core. Reclassifying every unspecified row as Core manufactures a stage that the source never supplied.
 
 For analysis, I would first select one source, inspect overlapping intervals, and preserve the category labels. If two asleep intervals overlap, count their shared time once when calculating total sleep. If their stage labels conflict, flag the conflict rather than silently assigning a winner. Source reconciliation is also central to [understanding mismatched step counts](/blog/apple-health-step-counts-dont-match/), although sleep requires interval logic rather than a step-total calculation.
@@ -72,8 +74,8 @@ That returned **886 intervals**: 404 Core, 205 Awake, 160 REM, and 117 Deep. Tho
   src="/blog/apple-watch-sleep-stages/sleep-intervals.webp"
   alt="Counts of 886 personal sleep intervals: 404 Core, 205 Awake, 160 REM, and 117 Deep; these are record counts rather than sleep duration."
   caption="One person's September 2026 records, selected by interval start time in America/Los_Angeles. Counts describe the stored data, not hours asleep or stage percentages."
-  width={1600}
-  height={880}
+  width="1600"
+  height="880"
 />
 
 The records included three source revisions and overlapping intervals. A source revision is not necessarily a separate device. Those findings are why this figure stops at counts: a trustworthy nightly duration needs source and overlap handling first. My archive illustrates a data-model issue; it does not establish normal sleep patterns or validate the watch against a sleep study.

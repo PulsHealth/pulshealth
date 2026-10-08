@@ -76,23 +76,24 @@ function BlogImage({
   src: string;
   alt: string;
   caption?: string;
-  width?: number;
-  height?: number;
+  width?: number | string;
+  height?: number | string;
   priority?: boolean;
 }) {
   return (
     <figure className="my-8 not-prose">
-      <div className="relative overflow-hidden rounded-lg border bg-muted/30">
+      <div className="relative mx-auto overflow-hidden rounded-lg border bg-muted/30" style={Number(height) > Number(width) * 1.5 ? { maxWidth: "24rem" } : undefined}>
         <Image
           src={src}
           alt={alt}
-          width={width}
-          height={height}
+          width={Number(width)}
+          height={Number(height)}
           className="w-full h-auto"
           priority={priority}
           sizes="(max-width: 768px) 100vw, 800px"
         />
       </div>
+      <a href={src} target="_blank" rel="noopener noreferrer" className="mt-2 block text-center text-sm text-brand underline underline-offset-4" aria-label={`Open full-size image: ${alt}`}>Open full-size image</a>
       {caption && (
         <figcaption className="mt-3 text-center text-sm text-muted-foreground">
           {caption}
@@ -139,6 +140,10 @@ export const mdxComponents: MDXComponents = {
 
   // Override default elements with better styling
   a: ({ href, children, ...props }) => {
+    // Downloads are files, not Next.js routes (avoid route prefetch requests).
+    if (href?.startsWith("/downloads/")) {
+      return <a href={href} {...props}>{children}</a>;
+    }
     const isExternal = href?.startsWith("http");
     if (isExternal) {
       return (

@@ -66,6 +66,8 @@ The expected first result is straightforward:
 | Recorded workout duration | One point per workout, in minutes |
 | Daily step provenance | A table containing day, value, and calculation source |
 
+<BlogImage src="/blog/apple-health-grafana-dashboard/starter-dashboard.webp" alt="Real Grafana dashboard with daily steps, receipt age, six workout points, and a provenance table." width="1600" height="802" caption="The exact downloadable dashboard running in Grafana 13.2.3 against synthetic PostgreSQL 17 records, September 1–14 in UTC. The fixture deliberately uses the all-zero UUID. Receipt age reflects fixture creation at capture time; Grafana automatically displays longer workout durations in hours." />
+
 No data is a useful diagnostic result. Check the user, selected dates, sync coverage, and aggregate configuration before changing the query to accept unrelated rows.
 
 ## Use daily summaries for daily steps
@@ -127,6 +129,8 @@ Open Query Inspector on each panel. Confirm that the expanded SQL contains your 
 
 Choose one completed day and compare its step value, provenance, and workout records with the underlying data. Then test a range with no records. An empty chart should remain empty; avoid filling every missing day with zero to make a continuous-looking series.
 
-The download's four queries were executed read-only against synthetic PostgreSQL tables with documented column shapes and explicit macro substitutions. Those checks excluded fixtures belonging to another user and records outside the requested dates. The same four queries also ran successfully in a read-only transaction against one owner’s production database: a seven-day window returned seven daily step rows, ten workout rows, seven provenance rows, and one receipt-age result. Only these counts are published. These checks do not establish how Grafana renders in your installation or how long a larger date range takes. Verify both after import.
+The download's four queries were executed read-only against synthetic PostgreSQL tables with documented column shapes and explicit macro substitutions. Those checks excluded fixtures belonging to another user and records outside the requested dates. The same four queries also ran successfully in a read-only transaction against one owner’s production database: a seven-day window returned seven daily step rows, ten workout rows, seven provenance rows, and one receipt-age result. Only these counts are published. The exact dashboard was also rendered in Grafana 13.2.3 with synthetic PostgreSQL 17 fixtures: 14 daily values, six workouts, and a receipt-age result. Query Inspector confirmed the expanded date and UUID filters and 14 returned step rows. This checks the example's rendering and macro expansion, not production TimescaleDB performance. Compare a known day and check responsiveness in your own installation.
+
+<BlogImage src="/blog/apple-health-grafana-dashboard/query-inspector.webp" alt="Grafana Query Inspector shows 14 returned rows and SQL with the synthetic user UUID and September date boundaries expanded." width="800" height="850" caption="Open the daily-step panel's Inspect → Query tab, then Refresh. Here the macros have become explicit UTC boundaries and the response contains 14 rows. The all-zero user is only the synthetic fixture; use your own UUID after import." />
 
 Once the small dashboard agrees with known records, add panels one question at a time. Keep units in the axis label, provenance available beside summaries, and time bounds on every large data query. A dashboard becomes valuable when you can explain what each number represents—and when it tells you clearly that it has no number to show.
