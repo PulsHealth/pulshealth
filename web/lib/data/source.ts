@@ -11,7 +11,7 @@
 // shows as "Database unavailable" — never an empty chart that would read as
 // "no data". Live mode never fabricates either: an empty result stays empty.
 
-import { query } from "../db";
+import { healthQuery } from "../db";
 import { viewerMode } from "../mode";
 import type { DataSourceInfo } from "../types";
 import { DataUnavailableError } from "./unavailable";
@@ -23,6 +23,8 @@ export const ALLOW_DEMO = process.env.NODE_ENV !== "production";
 let srcCache: { info: DataSourceInfo; at: number } | null = null;
 let srcInFlight: Promise<DataSourceInfo> | null = null;
 const SRC_TTL = 30_000;
+// Recover promptly after a transient outage instead of caching it for 30 s.
+const ERROR_TTL = 1000;
 
 export async function getDataSource(): Promise<DataSourceInfo> {
   if (!process.env.DATABASE_URL) {
@@ -30,7 +32,7 @@ export async function getDataSource(): Promise<DataSourceInfo> {
       ? { source: "demo", detail: "No DATABASE_URL set — showing demo data" }
       : { source: "error", detail: "No DATABASE_URL configured" };
   }
-  if (srcCache && Date.now() - srcCache.at < SRC_TTL) return srcCache.info;
+  if (srcCache && Date.now() - srcCache.at < (srcCache.info.source === "live" ? SRC_TTL : ERROR_TTL)) return srcCache.info;
   if (srcInFlight) return srcInFlight;
   srcInFlight = checkDataSource();
   try {
@@ -51,7 +53,7 @@ async function checkDataSource(): Promise<DataSourceInfo> {
       // role that can read the tables directly (grafana, the superuser), serve
       // nothing: every read throws DataUnavailableError while the source is
       // not live, and /api/healthz reports it.
-      const rows = await query<{ direct: boolean }>(
+      const rows = await healthQuery<{ direct: boolean }>(
         `SELECT has_table_privilege('public.quantity_samples', 'SELECT')
              OR has_table_privilege('public.users', 'SELECT') AS direct`,
       );
@@ -64,7 +66,7 @@ async function checkDataSource(): Promise<DataSourceInfo> {
         return { source: "error", detail: "Accounts mode needs the web_app database role" };
       }
     } else {
-      await query("SELECT 1");
+      await healthQuery("SELECT 1");
     }
     info = { source: "live", detail: "Connected to TimescaleDB" };
   } catch (e) {
@@ -78,8 +80,9 @@ async function checkDataSource(): Promise<DataSourceInfo> {
 
 // A live read failed. Besides logging it, drop the cached check so the next
 // getDataSource() probes again instead of reporting "live" for up to SRC_TTL:
-// a pool timeout or a lost database fails that probe too and becomes the
+// a lost database fails that probe too and becomes the
 // "error" source (the sidebar's "Database unavailable", /api/healthz's 503).
+// The probe has a reserved connection, so chart-pool saturation stays local.
 // A failure confined to one query (a statement timeout on one person's All
 // Time chart) passes the probe, so it does not blank the viewer for
 // everyone — only the page that hit it, through liveRead's throw.

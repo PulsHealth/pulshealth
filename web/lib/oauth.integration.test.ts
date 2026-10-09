@@ -92,6 +92,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("OAuth for AI assistants (integration)",
 
   afterAll(async () => {
     await (await import("./db")).getPool()?.end();
+    await (await import("./db")).getHealthPool()?.end();
     if (!admin) return;
     await admin.query("DELETE FROM auth.oauth_clients WHERE id = ANY($1)", [clients]);
     for (const u of [PERSON, OTHER, ADMIN]) {

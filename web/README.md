@@ -57,14 +57,37 @@ A page that cannot read its data — no database, an unreachable one, or one
 read that failed or timed out — shows **Database unavailable** in place of
 its content (with Try again), never empty charts that would read as "no
 data". A failed read also makes the viewer check the database again at once
-rather than after its usual 30 seconds, so a pool timeout or a lost database
+rather than after its usual 30 seconds, so a lost database
 turns the status dot red from the next page load (and `/api/healthz`
 answers 503), while a single slow query fails only the page that ran it.
+Failed connectivity checks are retried after one second. Probes use one reserved
+connection, so busy chart connections cannot mark the database unreachable.
+The health endpoint tests connectivity and role safety, not chart performance.
 
 `WEB_DB_POOL_SIZE` is how many database connections the viewer holds at most
 (default 4, clamped to 1–50). A type page runs several reads in parallel, so
 a viewer that several people use at once wants more; the database's
 `max_connections`, shared with ingest, the API and Grafana, is the ceiling.
+Allow one additional connection for the reserved health-check pool.
+
+Viewer connections disable PostgreSQL JIT compilation. The expanded daily
+calendar views can generate over a thousand compilation functions; compiling
+those functions can exceed the request timeout before useful work finishes.
+This setting changes execution strategy only, preserving query results and
+per-user access controls. Statement timeouts still bound individual reads.
+
+For a read-only regression check against a populated database, set
+`DATABASE_URL` to the viewer role, `PULS_READ_PERF_USER_ID` to a user with chart
+data, and the normal viewer mode/time-zone variables, then run:
+
+```bash
+PULS_READ_PERF=1 npx vitest run lib/readPerformance.test.ts
+```
+
+This opt-in suite reads real chart data without printing it or changing any
+records. It exercises four concurrent 30-day charts, long ranges, JIT settings,
+and a health probe while all chart connections are occupied. A passing simple
+health probe alone is not sufficient release verification.
 
 ## Choosing a user
 

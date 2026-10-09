@@ -4,6 +4,7 @@ import { isUuid } from "./uuid";
 
 let pool: Pool | null = null;
 let initialized = false;
+let healthPool: Pool | null = null;
 
 const DEFAULT_POOL_SIZE = 4;
 const MAX_POOL_SIZE = 50;
@@ -28,6 +29,11 @@ export function getPool(): Pool | null {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       max: poolSize(),
+      // Expanded Timescale/calendar views can generate thousands of JIT
+      // functions. Compilation alone exceeded the request timeout in production;
+      // these interactive reads are faster interpreted. Set this at startup so
+      // it applies to every connection, including replacements after an error.
+      options: "-c jit=off",
       connectionTimeoutMillis: 4000,
       idleTimeoutMillis: 10_000,
       // Don't let a heavy ad-hoc query wedge a request.
@@ -39,6 +45,32 @@ export function getPool(): Pool | null {
   }
   return pool;
 }
+
+/** A reserved connection: chart saturation must not turn liveness red. */
+export function getHealthPool(): Pool | null {
+  if (!process.env.DATABASE_URL) return null;
+  if (!healthPool) {
+    healthPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 1,
+      options: "-c jit=off",
+      connectionTimeoutMillis: 4000,
+      idleTimeoutMillis: 10_000,
+      statement_timeout: 4000,
+      query_timeout: 5000,
+    });
+    healthPool.on("error", () => {});
+  }
+  return healthPool;
+}
+
+/** Only connectivity and role checks; never health records or page queries. */
+export const healthQuery: QueryFn = async <T = Record<string, unknown>>(text: string, params: unknown[] = []) => {
+  const p = getHealthPool();
+  if (!p) throw new Error("DATABASE_URL not configured");
+  const res = await p.query(text, params);
+  return res.rows as T[];
+};
 
 /** Runs one statement on whichever pooled connection is free. */
 export type QueryFn = <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<T[]>;

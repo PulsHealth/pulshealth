@@ -101,6 +101,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("sign-up with approval (integration)", (
   afterAll(async () => {
     if (ledgerDirectory) await rm(ledgerDirectory, { recursive: true, force: true });
     await (await import("./db")).getPool()?.end();
+    await (await import("./db")).getHealthPool()?.end();
     if (!admin) return;
     const users = (await admin.query<{ id: string }>(
       "SELECT DISTINCT user_id::text AS id FROM auth.signup_requests WHERE email LIKE $1 AND user_id IS NOT NULL", [`%-${tag}@example.com`],

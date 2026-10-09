@@ -178,6 +178,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("web_app role (integration)", () => {
   afterAll(async () => {
     // The viewer's own pool, opened by the tests that drive lib/queries.ts.
     await (await import("./db")).getPool()?.end();
+    await (await import("./db")).getHealthPool()?.end();
     if (admin) {
       const users = [A, B];
       // Compressed chunks: a prunable predicate, and no decompression cap.
