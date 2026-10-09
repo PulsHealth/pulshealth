@@ -36,6 +36,7 @@ describe.skipIf(!webUrl || !adminUrl)("automatic deletion (integration)", () => 
       await admin.end();
     }
     await (await import("./db")).getPool()?.end();
+    await (await import("./db")).getHealthPool()?.end();
     if (directory) await rm(directory, { recursive: true, force: true });
     process.env = saved;
   });
