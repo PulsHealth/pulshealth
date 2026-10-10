@@ -39,7 +39,7 @@ describe("public account-scoped health API", () => {
     expect(query).toHaveBeenCalledWith(expect.any(String), [user, "pc_test", config.resource, grant]);
   });
   it("rejects cross-account, duplicated, unknown, and unbounded queries", async () => {
-    for (const path of [`users?user=${other}`, `users?user=${user}&user=${user}`, "users?debug=true", "workouts?limit=500", "metrics/daily?start=1&end=9999999999999", "sleep/daily", "export"]) {
+    for (const path of [`users?user=${other}`, `users?user=${user}&user=${user}`, "users?debug=true", "workouts?limit=500", "metrics/daily?start=1&end=9999999999999", "sleep/daily", "export", "constructor", "toString", "__proto__"]) {
       expect((await request(path)).status).toBeGreaterThanOrEqual(400);
     }
     expect(query).not.toHaveBeenCalled();

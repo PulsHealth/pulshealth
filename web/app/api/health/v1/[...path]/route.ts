@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ pat
     ? verifyAccessToken(authorization.slice(7), { ...config, resource: healthResource(config) }) : null;
   if (!claims || !isUuid(claims.grant_id)) return answer(401, { error: "invalid_token" });
   const path = (await context.params).path.join("/");
-  const allowed = routes[path];
+  const allowed = Object.hasOwn(routes, path) ? routes[path] : undefined;
   if (!allowed) return answer(404, { error: "not_found" });
   const params = request.nextUrl.searchParams;
   for (const key of params.keys()) {
