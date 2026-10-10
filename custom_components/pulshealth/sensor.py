@@ -1,6 +1,7 @@
 """Bounded health summaries as Home Assistant sensors."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
+from zoneinfo import ZoneInfo
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -146,6 +147,16 @@ class PulsHealthSensor(PulsHealthEntity, SensorEntity):
         if value is not None and self.device_class == SensorDeviceClass.TIMESTAMP:
             return datetime.fromtimestamp(value / 1000, UTC)
         return value
+
+    @property
+    def last_reset(self):
+        """Give daily totals a new statistics period at account midnight."""
+        if self.state_class != SensorStateClass.TOTAL:
+            return None
+        data = self.coordinator.data
+        return datetime.combine(
+            date.fromisoformat(data["date"]), time.min, ZoneInfo(data["time_zone"])
+        )
 
     @property
     def extra_state_attributes(self):

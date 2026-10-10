@@ -1,7 +1,7 @@
 # PulsHealth for Home Assistant
 
 Use the Apple Health data already synced by PulsHealth in Home Assistant
- dashboards and automations. The integration polls the existing read-only
+dashboards and automations. The integration polls the existing read-only
 product API; it needs no changes to the iPhone app, database, or sync protocol.
 
 ## What you can do
@@ -100,12 +100,13 @@ Entity IDs may differ if the display name changes or another entity owns the
 same ID. Discover your actual IDs in the integration's entity list.
 
 Daily sensors use the account's reporting calendar, including 23/25-hour DST
- days, and carry `date` and `time_zone` attributes. A missing day becomes unknown;
+days, and carry `date` and `time_zone` attributes. A missing day becomes unknown;
 yesterday is never reused as today, and missing/null data is never invented as
 zero. Ring closure supports both Move energy and Move time modes. Untracked
 rings or absent/invalid goals produce unknown, rather than a false celebration.
 Daily totals use HA's `total` state class because late sync/recomputation can
-reduce a day's value; they are not an ever-increasing lifetime counter.
+reduce a day's value. Their `last_reset` marks account midnight so a new day
+starts a new statistics period; they are not an ever-increasing lifetime counter.
 
 Sleep is the latest session within the seven-day lookback, not a sum of naps
 and overnight sleep. Workout timestamps and last sync are converted from epoch

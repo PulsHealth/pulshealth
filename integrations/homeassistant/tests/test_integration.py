@@ -86,6 +86,14 @@ async def test_entities_outage_midnight_and_unload(hass):
         coordinator.async_set_updated_data(snapshot())
         await hass.async_block_till_done()
         assert hass.states.get("sensor.fitness_steps_today").state == "unknown"
+        next_day = snapshot()
+        next_day["date"] = "2026-10-10"
+        next_day["values"]["steps"] = 20
+        coordinator.async_set_updated_data(next_day)
+        await hass.async_block_till_done()
+        steps = hass.states.get("sensor.fitness_steps_today")
+        assert steps.state == "20"
+        assert steps.attributes["last_reset"] == "2026-10-10T07:00:00+00:00"
         assert await hass.config_entries.async_unload(entry.entry_id)
         await hass.async_block_till_done()
         assert hass.states.get("sensor.fitness_steps_today").state == "unavailable"
