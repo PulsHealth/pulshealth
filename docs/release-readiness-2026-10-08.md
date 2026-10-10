@@ -285,3 +285,11 @@ verified status is **Waiting for Review**. Automatic release to all users
 is enabled after approval. Approval and actual App Store availability remain
 Apple-controlled states; no claim that 2.0 has shipped is made here. Keep the
 approved reviewer account available until review completes.
+
+The final evidence PR also isolates deletion integration fixtures from the
+scheduled worker. CI exposed a deadlock between that worker and temporary FK
+guard-table teardown. The suite pauses the scheduled deletion job while its
+fixtures exist, exercises the worker explicitly, then restores the prior
+schedule. All 89 database integration tests, lint and type checking passed
+locally, and the deletion job was verified scheduled again after teardown.
+This changes test setup only; the submitted app and production worker are unchanged.
