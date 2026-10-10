@@ -1,0 +1,43 @@
+{
+  "title": "PulsHealth",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect PulsHealth",
+        "description": "Connect to your read-only PulsHealth product API, not the marketing site, viewer, ingest endpoint, or MCP endpoint. Leave Account UUID blank to select and pin the server default account.",
+        "data": {
+          "name": "Account display name",
+          "url": "Product API base URL",
+          "access_token": "Product API token (PULS_API_TOKEN)",
+          "user_id": "Account UUID (optional)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Update PulsHealth token",
+        "description": "Enter the replacement read-only product API token.",
+        "data": {
+          "access_token": "Product API token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to read the selected account. Check the API URL, connectivity, and multi-user access.",
+      "invalid_auth": "The product API rejected the token.",
+      "invalid_input": "Enter a valid HTTP(S) URL and optional account UUID."
+    },
+    "abort": {
+      "already_configured": "This server and account are already configured.",
+      "reauth_successful": "The product API token was updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling cadence",
+        "data": {
+          "scan_interval": "Update interval (seconds, 60\u20133600)"
+        }
+      }
+    }
+  }
+}

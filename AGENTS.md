@@ -37,6 +37,7 @@ the self-hosted backend is pre-release.
 | `knowledge-base/`, `blog/` | The site's content: 178 YAML HealthKit type files and the MDX posts with their images | `knowledge-base/README.md`, `blog/BLOG_SYSTEM.md` |
 | `docs/protocol/` | The Puls Sync Protocol v1 spec, JSON Schemas, fixtures | `docs/protocol/README.md` |
 | `tools/protocol-check/` | Validates a batch against the schemas | `docs/protocol/README.md` |
+| `custom_components/pulshealth/`, `integrations/homeassistant/` | Home Assistant custom integration: read-only API client, UI setup, sensor platforms and runtime tests | `integrations/homeassistant/README.md` |
 | `tools/puls-export/` | CLI for `GET /v1/export` | `docs/export.md` |
 | `examples/receivers/python-sqlite/` | A complete third-party receiver | its `README.md` |
 | `scripts/` | `bootstrap.sh` (first run), `check-public-tree.sh` (the public-tree gate), the knowledge-base JSON generator and its check, `deploy-site.sh` | root `README.md` |
@@ -229,3 +230,12 @@ it too.
 - For anything larger than a bug fix, open an issue first.
   `docs/roadmap.md` is what is still outstanding; `docs/open-source-plan.md` is
   the requirements document behind it.
+
+**Home Assistant** — Python 3.14, no real health database required:
+
+```bash
+python -m pip install -r integrations/homeassistant/requirements-test.txt
+ruff check custom_components/pulshealth integrations/homeassistant
+ruff format --check custom_components/pulshealth integrations/homeassistant
+pytest -q integrations/homeassistant/tests
+```

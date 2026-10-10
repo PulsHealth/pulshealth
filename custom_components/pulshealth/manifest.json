@@ -1,0 +1,14 @@
+{
+  "domain": "pulshealth",
+  "name": "PulsHealth",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/PulsHealth/pulshealth/tree/main/integrations/homeassistant",
+  "issue_tracker": "https://github.com/PulsHealth/pulshealth/issues",
+  "codeowners": [
+    "@smwade"
+  ],
+  "requirements": [],
+  "iot_class": "cloud_polling",
+  "integration_type": "service"
+}

@@ -535,3 +535,10 @@ contributor, and [`llms.txt`](llms.txt) indexes the documentation.
   listing are reserved; forks ship under their own name and bundle
   identifier; "works with PulsHealth" and "implements the Puls Sync
   Protocol" are welcome.
+
+## Home Assistant
+
+The [PulsHealth Home Assistant integration](integrations/homeassistant/README.md)
+turns synced health data into sensors for dashboards and automations: daily
+steps, activity rings, recent sleep, completed workouts, and last sync.
+It reads the existing product API and supports setup through the HA UI.
