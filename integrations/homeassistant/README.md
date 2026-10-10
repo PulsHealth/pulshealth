@@ -4,6 +4,12 @@ Use the Apple Health data already synced by PulsHealth in Home Assistant
 dashboards and automations. The integration polls the existing read-only
 product API; it needs no changes to the iPhone app, database, or sync protocol.
 
+The integration bundles the same blue PulsHealth mark used by the website and
+iPhone app. Home Assistant serves the included `brand/icon.png` (256 px) and
+`brand/icon@2x.png` (512 px) locally, with logo and dark-mode fallbacks. The
+512 px image is copied from `site/public/logo.png`; resize that asset for the
+256 px image when updating the shared branding.
+
 ## What you can do
 
 - Show today's steps, walking/running distance, active energy, and Move,
