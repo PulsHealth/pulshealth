@@ -56,11 +56,12 @@ account, the signing team, a real device or personal contact details.
 - [x] Prepare `MARKETING_VERSION` 2.0 and `CURRENT_PROJECT_VERSION` 21 in
       `PulsHealth/project.yml`. The crash-fixed replacement candidate is 2.0 (21).
       App Store Connect accepted the earlier 2.0 (20) on 2026-10-08; it predates
-      the histogram fix and must be replaced in the submission draft. Recheck accepted builds before uploading; never
+      the histogram fix and was replaced by build 21 in the submission draft. Recheck accepted builds before uploading; never
       reuse a build number App Store Connect has accepted.
 - [x] `cd PulsHealth && xcodegen` — the Xcode project is generated and
       untracked — with `DEVELOPMENT_TEAM` in `Config/Local.xcconfig`.
-- [ ] **maintainer only** — Archive and upload the replacement with signed-in Xcode:
+- [x] **maintainer only** — Archive and upload the replacement with signed-in Xcode
+      (2.0 (21) uploaded successfully on 2026-10-10):
       ```bash
       xcodebuild archive -project PulsHealth.xcodeproj -scheme PulsHealth \
         -destination 'generic/platform=iOS' \
@@ -73,7 +74,8 @@ account, the signing team, a real device or personal contact details.
       ID, so it never goes in the repository. `ITSAppUsesNonExemptEncryption`
       is `false` in `Info.plist`, so there is no export-compliance
       questionnaire.
-- [ ] Generate and verify the replacement archive privacy report: the app and the
+- [x] Generate and verify the replacement archive privacy report
+      (Xcode aggregate report verified on 2026-10-10): the app and the
       `PulsHealthSync` package each ship a `PrivacyInfo.xcprivacy` declaring no
       tracking and `UserDefaults` / `CA92.1`. The app's lists the eleven collected
       data types of `listing.md` § App Privacy; the package's lists none.
@@ -99,18 +101,11 @@ account, the signing team, a real device or personal contact details.
       App Privacy is per app, not per version. All eleven types were published
       in App Store Connect on 2026-10-08; the local manifest alone does not
       update the live label. Recheck only if the data collection changes.
-- [ ] **The first release with the PulsHealth database option** (Sync →
-      Database → PulsHealth Database, the in-app sign-in) contradicts copy
-      that was deliberately left alone, so nothing advertised the option
-      before the store had it:
-      - **At submission:** replace the old live promotional text with the prepared
-        accounts-aware draft in `listing.md`. It is live while the
-        build is reviewed, and a listing that contradicts the build under
-        review is a 2.3 rejection.
-      - **Once approved:** the marketing pages `site/src/app/about/page.tsx`,
-        `site/src/app/ios/page.tsx`, `site/src/app/page.tsx` and
-        `site/src/lib/faq.ts`, then deploy the site.
-      Delete this item afterwards.
+- [x] Accounts-aware promotional text, description and final What's New saved
+      in App Store Connect for the 2.0 submission.
+- [ ] After approval, recheck hosted-account wording on `site/src/app/about/page.tsx`,
+      `site/src/app/page.tsx` and `site/src/lib/faq.ts`, and publish any required
+      changes. Store approval is still pending.
 
 ### Screenshots
 
@@ -136,8 +131,8 @@ account, the signing team, a real device or personal contact details.
       throwaway instance following [`review-backend.md`](review-backend.md),
       and verify it from off-network (`/healthz` and `/v1/capabilities`).
       Without it, delete that block from the notes.
-- [ ] Walk the whole of [`review-notes.md`](review-notes.md) on a spare device
-      (or an erased simulator), exactly as written.
+- [x] Device acceptance confirmed by the maintainer on 2026-10-10; reviewer
+      login and account-management access independently rechecked over public HTTPS.
 - [x] Fill the placeholders and paste the notes block. Keep the filled-in
       copy out of the repository — it holds a live password and token.
 - [x] **maintainer only** — App Review contact details (name, phone, e-mail)
@@ -170,7 +165,7 @@ from automated and live synthetic evidence:
       pairing, sync, account management and deletion on the release build.
       Device and email acceptance was confirmed by the maintainer on 2026-10-10;
       backend verification is recorded in the hosted follow-up.
-- [ ] Fill approved reviewer credentials and verify them from an off-network
+- [x] Fill approved reviewer credentials and verify them from an off-network
       device; exercise an empty Health library and a small synthetic fixture.
 - [x] Exercise Data Requests end to end (accepted by the maintainer as part of
       physical-device acceptance on 2026-10-10): link/QR, review, share, compatible
@@ -184,12 +179,13 @@ from automated and live synthetic evidence:
       placeholders; each must fit 4,000 characters.
 - [x] Record TestFlight upgrade/device/background acceptance (maintainer
       confirmation, 2026-10-10).
-- [ ] Verify and record the replacement archive version/build before selecting
-      it in App Store Connect.
+- [x] Verify and record the replacement archive version/build before selecting
+      it in App Store Connect. Build 21 processed successfully and is selected.
 
 ### Submit
 
-- [ ] Attach the build, choose the release option and submit. Expect
+- [x] Attach the build, choose the release option and submit. Build 21 is
+      Waiting for Review as of 2026-10-10, with automatic release after approval. Expect
       questions about the external database and `NSAllowsLocalNetworking`;
       the notes answer both.
 
@@ -227,11 +223,21 @@ changes, revisit them in the same pull request:
 
 The maintainer confirms device and email acceptance and authorizes release.
 The histogram fix and Activity diagnostics changes require a replacement upload;
-2.0 (21) is prepared. See [candidate reconciliation](../release-readiness-2026-10-08.md#final-candidate-reconciliation--2026-10-10).
+2.0 (21) uploaded successfully on 2026-10-10. Its signature, matching dSYMs,
+bundled knowledge, archived manifests and eleven-category Xcode privacy report
+are verified. Apple processed build 21 successfully; it is selected in the
+2.0 submission with automatic release after approval. Apple accepted submission
+`57eba397-20e0-4cdb-826a-acaf82187960` on 2026-10-10 at 23:24 UTC;
+status is **Waiting for Review**. This is submitted software, not yet shipped.
+
+PR [#185](https://github.com/PulsHealth/pulshealth/pull/185) merged the candidate
+as `237b22d6ca17339b84c0d22f32bc4b56b76e1e1a` after all 13 CI checks passed,
+including Xcode 26.5 and 27.0. The merged app/package inputs match the archive.
+See [candidate reconciliation](../release-readiness-2026-10-08.md#final-candidate-reconciliation--2026-10-10).
 
 ### Historical 2.0 preparation evidence (2026-10-08)
 
-- Build **2.0 (20)** processed successfully, is selected in the 2.0 draft,
+- Build **2.0 (20)** processed successfully and was selected in the 2.0 draft,
   and was **Testing** in the existing internal TestFlight group at that check.
   Device acceptance was subsequently confirmed on 2026-10-10. No App Store
   review submission was made during the initial preparation.
@@ -273,10 +279,10 @@ only are noted under the release that superseded them.
 | 1.4 (15) | 2026-09-19 | Self-hosted sync: first-run onboarding with QR pairing, Keychain token, per-server sync state, capabilities-gated UI, published type vocabulary. Build 14 was rejected under 5.2.5 ("Apple" in the subtitle) and 5.1.1(iv) (a skippable pre-permission screen); build 15 fixed both. Reviewed on an iPad Air 11-inch (M3). |
 | 1.3 | 2026-01-24 | CSV/JSON export app with QR data requests. |
 
-### Deployed candidate evidence — 2026-10-08
+### Historical deployed candidate evidence — 2026-10-08
 
 Release fixes merged in PR #173 as `d8dcfbd` after all 13 CI checks passed,
-including Xcode 26.5 and 27.0. Production runs that revision; migrations 026–028,
+including Xcode 26.5 and 27.0. Production ran that revision at the initial deployment; migrations 026–028,
 strict seven-day backup retention and the independent deletion ledger are
 verified. Disposable live account tests covered login, pairing, tenant isolation,
 reporting dates, ingestion and completed deletion with revoked access.
@@ -287,7 +293,7 @@ account prevents beta deletion testing from invalidating App Store access.
 Xcode’s generated aggregate privacy report confirms all eleven declared types.
 No Apple-server privacy-report claim is inferred from that local report.
 
-Physical TestFlight acceptance and actual signup/recovery email delivery are
-pending. The external tester is added, but no external build is available until
-Beta App Review; the prepared beta form still needs contact email and phone.
-App Store review has not been submitted.
+Physical-device and signup/recovery email acceptance were pending at that
+deployment; the maintainer confirmed them on 2026-10-10. External beta setup
+subsequently submitted build 20 for Beta App Review. Current final-candidate
+status is recorded above.

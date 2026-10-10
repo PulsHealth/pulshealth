@@ -13,17 +13,21 @@ behind them.
 
 ## 1. The next app release
 
-1.6 (19) is on the store. The next upload needs a `MARKETING_VERSION` above
-1.6 and a build above the accepted 2.0 (20); the replacement is prepared as
-2.0 (21) (`PulsHealth/project.yml`).
+1.6 (19) remains on the store. **2.0 (21) is submitted and Waiting for Review**
+as of 2026-10-10, with automatic release after approval. Any subsequent upload
+must exceed accepted build 21.
 
-- **Device and email acceptance:** the maintainer confirmed the prepared 2.0
-  release passed physical-device testing and signup/recovery email flows on
-  2026-10-10. This is maintainer-reported acceptance.
-- **Final candidate:** commit and validate the histogram crash fix and preserved
-  Activity diagnostics changes, upload a new signed build, replace build 20 in
-  the draft, and submit. Track completion in
-  [`release-readiness-2026-10-08.md`](release-readiness-2026-10-08.md).
+- The histogram crash fix and preserved Activity diagnostics changes merged in
+  [#185](https://github.com/PulsHealth/pulshealth/pull/185), with all 13 CI checks
+  passing. The replacement archive is uploaded, processed and selected.
+- The maintainer confirmed physical-device testing and signup/recovery email
+  acceptance on 2026-10-10. The enrollment assumption is recorded at the
+  maintainer's direction.
+- After Apple approval, verify store availability, update the shipped-version
+  record, and retire the disposable review account. Evidence and remaining
+  post-approval actions are in
+  [`release-readiness-2026-10-08.md`](release-readiness-2026-10-08.md) and
+  [`appstore/README.md`](appstore/README.md).
 
 ## 2. Standing maintenance
 

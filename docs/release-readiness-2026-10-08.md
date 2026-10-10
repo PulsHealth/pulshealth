@@ -1,8 +1,8 @@
 # Accounts and Data Requests release review — 2026-10-08
 
-**Status updated 2026-10-10: maintainer confirms physical-device and signup/recovery-email acceptance and authorizes release. Build 20 must be replaced with the crash-fixed candidate; final CI, upload and submission evidence follows below.** This review
+**Status updated 2026-10-10: 2.0 (21) submitted and Waiting for Review, with automatic release after approval. All 13 candidate CI checks passed. Maintainer-confirmed physical-device and email acceptance is recorded below.** This review
 started from `091244a`. The recorded shipping version is 1.6 (19); the uploaded
-release is 2.0 (20). Deployment and upload evidence must be recorded below
+initial upload was 2.0 (20), superseded by 2.0 (21). Deployment and upload evidence must be recorded below
 rather than inferred from local tests.
 
 Five parallel reviews covered iOS account/pairing flows, Data Requests,
@@ -28,12 +28,13 @@ that all defects have been found.
 ## Release preparation progress
 
 Tracking issue: [#172](https://github.com/PulsHealth/pulshealth/issues/172).
-The selected release is **2.0 (20)**. App Store Connect was checked on
+The initial uploaded release was **2.0 (20)**, superseded by the final
+crash-fixed candidate below. App Store Connect was checked on
 2026-10-08: the latest completed upload was 1.6 (19). A 2.0 draft now exists,
 with accounts/request copy and manual release selected. The signed 2.0 (20)
 archive uploaded successfully on 2026-10-08. It has not been submitted for review.
-The merged candidate preserves the concurrently released recording-quality
-changes from main; its compiled app/package inputs are identical to the upload.
+That initial merged candidate preserved the concurrently released recording-quality
+changes from main; its compiled app/package inputs matched the original upload.
 
 The earlier code blockers have been implemented:
 
@@ -63,7 +64,7 @@ The earlier code blockers have been implemented:
   authenticated sync interactions and technical diagnostics. All are linked,
   used only for App Functionality, and not used for tracking.
 
-## Submission gates
+## Initial submission gates (2026-10-08)
 
 These require recorded evidence before calling the release ready:
 
@@ -142,9 +143,9 @@ and [review notes](appstore/review-notes.md) for the concrete submission materia
   login with its return path and `no-store`. These checks do not establish an
   authenticated signup/pairing/deletion flow or deployed-source parity.
 
-Remaining evidence must be collected rather than inferred: physical HealthKit
-behavior, real email delivery and request delivery/retry against a compatible
-HTTPS receiver. The user acknowledged the TestFlight acceptance request; that
+At this initial verification, physical HealthKit behavior, real email delivery
+and request delivery/retry were still awaiting acceptance. The maintainer
+subsequently confirmed physical-device and email acceptance on 2026-10-10. The user acknowledged the TestFlight acceptance request; that
 is not a passing result. The external beta tester is added; Beta App Review
 metadata is prepared and awaits the contact email/phone before submission.
 
@@ -241,9 +242,46 @@ verification. No App Review submission was made by the hosted follow-up.
   overlap, and clipped overlap. The uncommitted Activity diagnostics changes
   are preserved in a separate signed-off commit.
 - Build 20 predates those app changes and must not be submitted as the final
-  candidate. The replacement is prepared as 2.0 (21), subject to checking the
-  latest accepted Apple build before upload. Archive, upload, processing and
+  candidate. The replacement 2.0 (21) was accepted by Apple on 2026-10-10 and
+  selected in the draft. Build 20 was the latest prior accepted build. Archive, upload, processing and
   submission are recorded only after each succeeds.
 - Local Xcode 27 validation passed all 53 app-hosted tests on iOS 27 with zero
   failures or skipped tests. The maintainer's device acceptance concerns the
   prior candidate; it is not a claimed physical-device run of build 21.
+
+
+### Replacement archive and live verification
+
+The signed 2.0 (21) archive was built from `fdd37ae66ba25733a0dbad47e2b434fc3cb9af42`
+and uploaded successfully on 2026-10-10. Signature verification passed; binary
+and dSYM UUIDs match. Archived knowledge and privacy manifests match source.
+Xcode Organizer's aggregate privacy report contains eleven categories, all
+linked, App Functionality only, and no tracking. The original archive remains
+preserved separately. Archive, dSYMs, reports and verification records are held
+outside this public tree.
+
+The public reviewer account login and account-management page were verified
+again successfully. The hosted monitor reports healthy services and access
+controls, no pending deletions, six independent ledger receipts, and passing
+backup freshness/expiry checks. Production is already on the current server
+checkout; the iOS-only candidate needs no server schema or protocol change.
+
+Apple processed build 21 successfully (`bd60ea4b-b819-41dd-9071-05f0312ef5fa`).
+The 2.0 draft now selects that build, includes the histogram fix in What's New,
+and is configured for automatic release to all users after App Review approval.
+
+
+### Final submission
+
+PR [#185](https://github.com/PulsHealth/pulshealth/pull/185) merged the tested
+candidate as `237b22d6ca17339b84c0d22f32bc4b56b76e1e1a`. All 13 checks passed,
+including app/package tests with Xcode 26.5 and 27.0, database integrations,
+migration/protocol checks, production builds, and the stack/restore smoke test.
+The merge changes no app/package inputs from the archived commit.
+
+Apple accepted App Review submission `57eba397-20e0-4cdb-826a-acaf82187960`
+on 2026-10-10 at 23:24 UTC. The submitted item is **2.0 (21)** and its
+verified status is **Waiting for Review**. Automatic release to all users
+is enabled after approval. Approval and actual App Store availability remain
+Apple-controlled states; no claim that 2.0 has shipped is made here. Keep the
+approved reviewer account available until review completes.
