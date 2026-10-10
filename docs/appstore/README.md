@@ -13,6 +13,7 @@ and when, is the [Release record](#release-record) at the bottom.
 | [`listing.md`](listing.md) | The App Store Connect record: name, subtitle, promotional text, description, keywords, URLs, category, age-rating answers, the App Privacy answer ("Data Linked to You" since 2026-10-02) and its reasoning, and what to do about screenshots. |
 | [`review-notes.md`](review-notes.md) | The App Review Information → Notes text, ready to paste once its placeholders are filled in (a demo account on the PulsHealth database, and optionally the review backend), plus prepared answers for the questions this app invites. |
 | [`review-backend.md`](review-backend.md) | How to stand up the throwaway public server for the notes' optional your-own-database block, and how to tear it down afterwards. |
+| [`crash-diagnostics.md`](crash-diagnostics.md) | Find Apple's crash stacks, preserve matching symbols, and verify a crash fix before release. |
 | [`../privacy-policy.md`](../privacy-policy.md) | The privacy policy, served at `https://pulshealth.com/privacy` by `site/`. |
 
 They cover **STORE-1**, **STORE-2**, **STORE-3** and **STORE-5** from
@@ -35,8 +36,9 @@ them is checkable against the source in this repository.
 
 [The hosted operations runbook](../hosted-operations.md) defines the deletion,
 backup, restore and incident process. Hosting retains operator access; do not
-claim end-to-end encryption. Verify individual-versus-organization enrollment
-under Apple guideline 5.1.1(ix) before broad hosted launch.
+claim end-to-end encryption. On 2026-10-10 the maintainer directed release
+to proceed on the assumption that enrollment is appropriate under Apple
+guideline 5.1.1(ix); no independent enrollment verification is recorded.
 
 ## Submission checklist
 
@@ -51,14 +53,14 @@ account, the signing team, a real device or personal contact details.
 
 ### Build and upload
 
-- [x] Prepare `MARKETING_VERSION` 2.0 and `CURRENT_PROJECT_VERSION` 20 in
-      `PulsHealth/project.yml`. App Store Connect accepted 2.0 (20) on 2026-10-08; it is selected in the
-      submission draft and available to the existing internal TestFlight group,
-      not yet shipped on the App Store. Recheck accepted builds before uploading; never
+- [x] Prepare `MARKETING_VERSION` 2.0 and `CURRENT_PROJECT_VERSION` 21 in
+      `PulsHealth/project.yml`. The crash-fixed replacement candidate is 2.0 (21).
+      App Store Connect accepted the earlier 2.0 (20) on 2026-10-08; it predates
+      the histogram fix and must be replaced in the submission draft. Recheck accepted builds before uploading; never
       reuse a build number App Store Connect has accepted.
 - [x] `cd PulsHealth && xcodegen` — the Xcode project is generated and
       untracked — with `DEVELOPMENT_TEAM` in `Config/Local.xcconfig`.
-- [x] **maintainer only** — Archive and upload with the signed-in Xcode:
+- [ ] **maintainer only** — Archive and upload the replacement with signed-in Xcode:
       ```bash
       xcodebuild archive -project PulsHealth.xcodeproj -scheme PulsHealth \
         -destination 'generic/platform=iOS' \
@@ -71,11 +73,12 @@ account, the signing team, a real device or personal contact details.
       ID, so it never goes in the repository. `ITSAppUsesNonExemptEncryption`
       is `false` in `Info.plist`, so there is no export-compliance
       questionnaire.
-- [x] Generate and verify Xcode Organizer’s aggregate archive privacy report: the app and the
+- [ ] Generate and verify the replacement archive privacy report: the app and the
       `PulsHealthSync` package each ship a `PrivacyInfo.xcprivacy` declaring no
       tracking and `UserDefaults` / `CA92.1`. The app's lists the eleven collected
       data types of `listing.md` § App Privacy; the package's lists none.
-- [ ] **maintainer only** — Run the TestFlight build on a real device,
+- [x] **maintainer only** — Run the prepared TestFlight build on a real device
+      (maintainer confirmed physical-device acceptance on 2026-10-10),
       installed over the store version, for a few days. Background delivery,
       continued processing and an upgrade's first sync only show up there.
 - [x] Add the build to the [Release record](#release-record).
@@ -128,7 +131,8 @@ account, the signing team, a real device or personal contact details.
       cannot create a working account. Put
       its email and password in App Store Connect's sign-in fields
       ([`review-notes.md`](review-notes.md) § Before you submit).
-- [ ] Optional, for the notes' YOUR OWN DATABASE block: stand up the
+- [x] Optional backend omitted from the saved reviewer notes; no throwaway
+      instance is required. If adding the YOUR OWN DATABASE block: stand up the
       throwaway instance following [`review-backend.md`](review-backend.md),
       and verify it from off-network (`/healthz` and `/v1/capabilities`).
       Without it, delete that block from the notes.
@@ -142,9 +146,11 @@ account, the signing team, a real device or personal contact details.
 ### Release gates for accounts and Data Requests
 
 See [the release-readiness report](../release-readiness-2026-10-08.md) for
-verification evidence and remaining findings. Checked items have recorded evidence; remaining device/email checks are pending:
+verification evidence and remaining findings. The maintainer confirmed device
+and email acceptance on 2026-10-10. Checked items distinguish that confirmation
+from automated and live synthetic evidence:
 
-- [ ] Verify the deployed automatic account deletion end to end with a disposable
+- [x] Verify the deployed automatic account deletion end to end with a disposable
       approved account and an invited personal account. Confirm access stops,
       the private receipt reaches completed, and no health/profile/account rows
       remain. Verify the independent deletion ledger survives database restore
@@ -160,12 +166,14 @@ verification evidence and remaining findings. Checked items have recorded eviden
       only for App Functionality, not tracking.
 - [x] Verify Xcode’s aggregate archive privacy report against the published label;
       the published label does not replace this binary check.
-- [ ] Verify the hosted signup, approval email, password setup/reset, in-app
+- [x] Verify the hosted signup, approval email, password setup/reset, in-app
       pairing, sync, account management and deletion on the release build.
-      Confirm production migrations and server versions support that build.
+      Device and email acceptance was confirmed by the maintainer on 2026-10-10;
+      backend verification is recorded in the hosted follow-up.
 - [ ] Fill approved reviewer credentials and verify them from an off-network
       device; exercise an empty Health library and a small synthetic fixture.
-- [ ] Exercise Data Requests end to end: link/QR, review, share, compatible
+- [x] Exercise Data Requests end to end (accepted by the maintainer as part of
+      physical-device acceptance on 2026-10-10): link/QR, review, share, compatible
       HTTPS delivery, partial export, timeout/manual retry and cancellation.
       Supply a disposable receiver and instructions if direct delivery is
       included in the review walkthrough. Do not frame this as an approved
@@ -174,8 +182,10 @@ verification evidence and remaining findings. Checked items have recorded eviden
       policy before review. Recheck screenshot accuracy on iPhone and iPad.
 - [x] Measure the final pasted description and reviewer notes after replacing
       placeholders; each must fit 4,000 characters.
-- [ ] Record TestFlight upgrade/device/background checks and the exact archive
-      version/build before selecting it in App Store Connect.
+- [x] Record TestFlight upgrade/device/background acceptance (maintainer
+      confirmation, 2026-10-10).
+- [ ] Verify and record the replacement archive version/build before selecting
+      it in App Store Connect.
 
 ### Submit
 
@@ -213,11 +223,18 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
-### 2.0 preparation evidence (2026-10-08)
+### Final 2.0 candidate (2026-10-10)
+
+The maintainer confirms device and email acceptance and authorizes release.
+The histogram fix and Activity diagnostics changes require a replacement upload;
+2.0 (21) is prepared. See [candidate reconciliation](../release-readiness-2026-10-08.md#final-candidate-reconciliation--2026-10-10).
+
+### Historical 2.0 preparation evidence (2026-10-08)
 
 - Build **2.0 (20)** processed successfully, is selected in the 2.0 draft,
-  and is **Testing** in the existing internal TestFlight group. Physical-device
-  acceptance remains pending. No App Store review submission was made.
+  and was **Testing** in the existing internal TestFlight group at that check.
+  Device acceptance was subsequently confirmed on 2026-10-10. No App Store
+  review submission was made during the initial preparation.
 - Seven refreshed screenshots were uploaded for each device family: iPhone
   Dynamic Island large display (1320 × 2868) and iPad 13-inch (2064 × 2752).
   The required medium iPhone slot inherits the large assets. Both sets replace
@@ -231,11 +248,11 @@ changes, revisit them in the same pull request:
   drinking/intoxication, and hearing types describe safe-listening thresholds.
   Full website knowledge-base articles are not shown by the app and were not
   counted. See Apple's [rating definitions](https://developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/).
-- An external beta group and the requested tester are prepared. Build 20 needs
-  Beta App Review and complete test information/reviewer access before that
-  tester can install it. This is separate from App Store review; neither review
-  submission has been made. Tester identities and credentials stay out of this
-  repository.
+- An external beta group and the requested tester were prepared. A later
+  setup session submitted build 20 for Beta App Review; its last recorded
+  status was Waiting for Review. This is separate from App Store review.
+  Recheck Apple for current beta access; tester identities and credentials
+  stay out of this repository.
 
 
 What is actually on the store, so the next submission starts from a record

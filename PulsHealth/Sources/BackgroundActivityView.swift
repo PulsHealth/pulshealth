@@ -2,11 +2,9 @@ import SwiftUI
 import PulsHealthSync
 
 /// Sync → Activity → Background, the field-study screen: how often the app gets background execution time, when
-/// it wakes, and what work it does — plus a share-sheet export of the raw wake
-/// records (CSV/JSON) and the event log (JSON) for offline analysis.
+/// it wakes, and what work it does. ActivityView supplies the diagnostics export.
 struct BackgroundActivityView: View {
     @Environment(AppModel.self) private var model
-    @State private var exportURLs: [URL] = []
 
     private var stats: WakeStats { WakeStats(model.wakeRecords) }
 
@@ -17,27 +15,7 @@ struct BackgroundActivityView: View {
             triggerBreakdownSection
             recentSection
         }
-        // Title and the Log/Background switch are ActivityView's.
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                if exportURLs.isEmpty {
-                    ProgressView()
-                } else {
-                    ShareLink(items: exportURLs) {
-                        Label("Export", systemImage: "square.and.arrow.up")
-                    }
-                }
-            }
-        }
-        .task(id: model.wakeRecords.count) {
-            exportURLs = await model.writeDiagnosticsBundle()
-        }
-        // The files are only for that Export button; they do not outlive the
-        // screen (and any left by a crash go at the next launch).
-        .onDisappear {
-            exportURLs = []
-            model.removeDiagnosticsBundle()
-        }
+        // Title, the Log/Background switch and export are ActivityView's.
         .refreshable { await model.refresh() }
     }
 

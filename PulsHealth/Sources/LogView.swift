@@ -37,7 +37,7 @@ struct LogView: View {
             .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
         }
         .listStyle(.plain)
-        // Title and the Log/Background switch are ActivityView's; this
+        // Title, the Log/Background switch and export are ActivityView's; this
         // contributes only the filter menu.
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

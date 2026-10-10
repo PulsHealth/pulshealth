@@ -14,16 +14,16 @@ behind them.
 ## 1. The next app release
 
 1.6 (19) is on the store. The next upload needs a `MARKETING_VERSION` above
-1.6 and build 20 or later (`PulsHealth/project.yml`).
+1.6 and a build above the accepted 2.0 (20); the replacement is prepared as
+2.0 (21) (`PulsHealth/project.yml`).
 
-- **Device passes never run on hardware for 1.5 or 1.6:** background sync
-  over several days; the iOS 26 continued-processing first run; leaving the
-  app mid-backfill; an export on a device; and on iOS 27, limiting a type's
-  history, widening it again, and the re-sweep that follows.
-- **Device passes for the October 2026 deep review** (written without a
-  Swift toolchain; CI builds and unit-tests them, nothing has run them on a
-  phone): R8's terminal-error cooldown, R16's stop on a locked device and
-  R17's pending continued backfill (`docs/deep-review-2026-10.md`).
+- **Device and email acceptance:** the maintainer confirmed the prepared 2.0
+  release passed physical-device testing and signup/recovery email flows on
+  2026-10-10. This is maintainer-reported acceptance.
+- **Final candidate:** commit and validate the histogram crash fix and preserved
+  Activity diagnostics changes, upload a new signed build, replace build 20 in
+  the draft, and submit. Track completion in
+  [`release-readiness-2026-10-08.md`](release-readiness-2026-10-08.md).
 
 ## 2. Standing maintenance
 

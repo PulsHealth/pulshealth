@@ -1,6 +1,6 @@
 # Accounts and Data Requests release review — 2026-10-08
 
-**Status: code merged and deployed, store draft prepared; device/email acceptance pending. Not submitted to App Review.** This review
+**Status updated 2026-10-10: maintainer confirms physical-device and signup/recovery-email acceptance and authorizes release. Build 20 must be replaced with the crash-fixed candidate; final CI, upload and submission evidence follows below.** This review
 started from `091244a`. The recorded shipping version is 1.6 (19); the uploaded
 release is 2.0 (20). Deployment and upload evidence must be recorded below
 rather than inferred from local tests.
@@ -71,7 +71,8 @@ These require recorded evidence before calling the release ready:
   updated servers, and verify hosted strict-retention/ledger configuration.
 - [x] Verify live invite acceptance, login, pairing, reporting calendars,
   synthetic health ingestion and completed deletion with isolated test accounts.
-- [ ] Complete real signup/approval-email and password-recovery delivery acceptance.
+- [x] Complete real signup/approval-email and password-recovery delivery acceptance.
+  The maintainer confirmed these flows work on 2026-10-10.
   The generic recovery response and configuration do not establish delivery.
 - [x] Published and verified all eleven App Store Connect privacy disclosures.
 - [x] Complete the current age-rating questionnaire: calculated 13+ globally
@@ -91,7 +92,8 @@ These require recorded evidence before calling the release ready:
 - [x] Generate Xcode Organizer’s aggregate privacy report from the uploaded
   archive: eleven categories, all linked, no tracking, App Functionality only.
   Required-reason API evidence comes from the archived manifests (CA92.1).
-- [ ] Complete physical-device acceptance of the actual candidate: upgrade over
+- [x] Complete physical-device acceptance of the prepared release (maintainer
+  confirmation on 2026-10-10): upgrade over
   1.6, first hosted pairing, switching/disconnecting during work, locked-device
   interruption, permission denial/history widening, medication permission, QR
   scanning, and request upload/retry/cancel to a compatible HTTPS ZIP receiver.
@@ -219,8 +221,29 @@ an independently hosted availability alert remains an operational follow-up.
 Same-host backups do not protect against loss of that host. Those limitations
 must remain explicit when deciding whether to open access broadly.
 
-**Remaining submission gates are unchanged:** actual signup/approval and recovery
-email flows, physical-device acceptance of build 20 and request delivery, and
-resolution of Apple's sensitive-information enrollment requirement for an
-individual operator. The successful operations email is not evidence that the
-signup/recovery flows passed. No App Review submission was made by this follow-up.
+**At the time of this follow-up**, signup/recovery email and physical-device
+acceptance were pending. The maintainer accepted those gates on 2026-10-10
+and directed release to proceed on the assumption that enrollment is appropriate.
+That assumption is a maintainer decision, not an independent enrollment
+verification. No App Review submission was made by the hosted follow-up.
+
+
+## Final candidate reconciliation — 2026-10-10
+
+- The maintainer confirmed physical-device acceptance and successful signup,
+  approval and recovery email flows, and explicitly authorized release.
+- Enrollment is treated as acceptable at the maintainer's direction. This does
+  not record an independent legal or Apple enrollment determination.
+- The release branch incorporates current main, including hosted deletion
+  hardening, viewer query performance fixes, and Home Assistant integration.
+- The histogram crash fix checks reference-band overlap before constructing a
+  range. Three regression tests cover disjoint ranges, missing/zero-width
+  overlap, and clipped overlap. The uncommitted Activity diagnostics changes
+  are preserved in a separate signed-off commit.
+- Build 20 predates those app changes and must not be submitted as the final
+  candidate. The replacement is prepared as 2.0 (21), subject to checking the
+  latest accepted Apple build before upload. Archive, upload, processing and
+  submission are recorded only after each succeeds.
+- Local Xcode 27 validation passed all 53 app-hosted tests on iOS 27 with zero
+  failures or skipped tests. The maintainer's device acceptance concerns the
+  prior candidate; it is not a claimed physical-device run of build 21.
