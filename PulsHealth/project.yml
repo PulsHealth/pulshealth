@@ -101,9 +101,9 @@ targets:
         CODE_SIGN_STYLE: Automatic
         # Must exceed what is on the store — App Store Connect rejects an
         # upload whose build number it has already accepted. The store holds
-        # 1.6 (19); see docs/appstore/README.md § Release record, and bump
+        # 1.6 (19), and 2.0 (20) was accepted for testing; see the release record and bump
         # both here before every archive.
-        CURRENT_PROJECT_VERSION: 20
+        CURRENT_PROJECT_VERSION: 21
         MARKETING_VERSION: 2.0
         # The tint every control takes (Assets.xcassets/AccentColor): the blue
         # of the logo's pulse line, a shade lighter in dark mode.
