@@ -13,6 +13,7 @@ describe.skipIf(!webUrl || !adminUrl)("automatic deletion (integration)", () => 
   let deletion: typeof import("./accounts/deletion");
   let session: typeof import("./accounts/session");
   const users: string[] = [];
+  let deletionJobs: { job_id: number; scheduled: boolean }[] = [];
   const saved = { ...process.env };
 
   beforeAll(async () => {
@@ -22,23 +23,43 @@ describe.skipIf(!webUrl || !adminUrl)("automatic deletion (integration)", () => 
     process.env.PULS_DELETION_LEDGER_DIR = directory;
     admin = new Client({ connectionString: adminUrl });
     await admin.connect();
+    // These tests install FK guard tables and call the worker explicitly.
+    // A scheduled copy can race the assertions or deadlock with guard-table
+    // teardown. Pause only this job while fixtures exist, then restore it.
+    deletionJobs = (await admin.query<{ job_id: number; scheduled: boolean }>(
+      "SELECT job_id, scheduled FROM timescaledb_information.jobs WHERE proc_schema = 'auth' AND proc_name = 'process_account_deletions'",
+    )).rows;
+    for (const job of deletionJobs) {
+      await admin.query("SELECT alter_job($1, scheduled => false)", [job.job_id]);
+    }
     deletion = await import("./accounts/deletion");
     session = await import("./accounts/session");
   });
   afterAll(async () => {
-    if (admin) {
-      for (const user of users) {
-        await admin.query("DELETE FROM auth.account_deletions WHERE user_id = $1", [user]);
-        await admin.query("DELETE FROM auth.accounts WHERE user_id = $1", [user]);
-        await admin.query("DELETE FROM users WHERE id = $1", [user]);
-        await admin.query("DELETE FROM auth.deletion_tombstones WHERE user_id = $1", [user]);
+    try {
+      if (admin) {
+        for (const user of users) {
+          await admin.query("DELETE FROM auth.account_deletions WHERE user_id = $1", [user]);
+          await admin.query("DELETE FROM auth.accounts WHERE user_id = $1", [user]);
+          await admin.query("DELETE FROM users WHERE id = $1", [user]);
+          await admin.query("DELETE FROM auth.deletion_tombstones WHERE user_id = $1", [user]);
+        }
       }
-      await admin.end();
+    } finally {
+      if (admin) {
+        try {
+          for (const job of deletionJobs) {
+            await admin.query("SELECT alter_job($1, scheduled => $2)", [job.job_id, job.scheduled]);
+          }
+        } finally {
+          await admin.end();
+        }
+      }
+      await (await import("./db")).getPool()?.end();
+      await (await import("./db")).getHealthPool()?.end();
+      if (directory) await rm(directory, { recursive: true, force: true });
+      process.env = saved;
     }
-    await (await import("./db")).getPool()?.end();
-    await (await import("./db")).getHealthPool()?.end();
-    if (directory) await rm(directory, { recursive: true, force: true });
-    process.env = saved;
   });
 
   async function person(eligible = true, isAdmin = false) {
