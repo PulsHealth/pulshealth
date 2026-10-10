@@ -190,6 +190,11 @@ function request(path: string, method: Method, headers: Record<string, string>, 
 }
 
 async function proxy(req: NextRequest): Promise<Response> {
+  if (req.nextUrl.pathname.startsWith("/api/health/")) {
+    process.env.WEB_PUBLIC_URL = "https://viewer.example";
+    process.env.PULS_MCP_URL = "https://mcp.example/mcp";
+    process.env.PULS_MCP_OAUTH_SECRET = "s".repeat(64);
+  }
   const { default: run } = await import("@/proxy");
   return run(req);
 }
