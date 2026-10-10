@@ -1,13 +1,17 @@
 import SwiftUI
 
 /// Sync → Activity: the event log and the background-wake study, one segment
-/// each. Both screens keep their own trailing toolbar item (the log's filter
-/// menu, the wake study's diagnostics share) — only one is in the hierarchy
-/// at a time, so they never collide — and this view supplies the title and
-/// the switch in the principal slot.
+/// each. The diagnostics export is shared by both segments; LogView adds its
+/// filter menu. This view owns the files so switching segments keeps them alive.
 struct ActivityView: View {
+    @Environment(AppModel.self) private var model
     private enum Segment: Hashable { case log, background }
+    private struct DiagnosticsRevision: Equatable {
+        var wakeCount: Int
+        var latestEventID: UUID?
+    }
     @State private var segment: Segment = .log
+    @State private var exportURLs: [URL] = []
 
     var body: some View {
         Group {
@@ -27,6 +31,25 @@ struct ActivityView: View {
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 240)
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                if exportURLs.isEmpty {
+                    ProgressView()
+                } else {
+                    ShareLink(items: exportURLs) {
+                        Label("Export", systemImage: "square.and.arrow.up")
+                    }
+                }
+            }
+        }
+        .task(id: DiagnosticsRevision(wakeCount: model.wakeRecords.count,
+                                     latestEventID: model.events.last?.id)) {
+            let urls = await model.writeDiagnosticsBundle()
+            guard !Task.isCancelled else { return }
+            exportURLs = urls
+        }
+        .onDisappear {
+            exportURLs = []
+            model.removeDiagnosticsBundle()
         }
     }
 }

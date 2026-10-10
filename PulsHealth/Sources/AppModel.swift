@@ -212,7 +212,7 @@ final class AppModel {
         // delete a run's directory out from under it; and it is a synchronous
         // unlink, which works on a locked device too (a background launch).
         HealthExporter.removeAllExports()
-        // The Background Activity screen's diagnostics files (wake records and
+        // The Activity screen's diagnostics files (wake records and
         // the event log: no samples, but about health data) go too, with any
         // an earlier build left behind.
         Self.removeDiagnosticsFiles()
@@ -348,12 +348,12 @@ final class AppModel {
 
     /// Write the wake records (CSV + JSON), the event log (JSON) and the
     /// catch-up schedule (JSON) for the share sheet. Returns the files in a
-    /// stable order so the Background Activity screen can offer them via
+    /// stable order so the Activity screen can offer them via
     /// `ShareLink`.
     ///
     /// One fixed set of names in a directory of their own
     /// (`diagnosticsDirectory`), each rewritten atomically: the screen
-    /// rewrites them on every appearance and every finished wake, and that
+    /// rewrites them on every appearance and as wakes and events change, and that
     /// used to leave four new timestamped files in the temporary directory
     /// each time, forever. An atomic replace also never pulls a file out from
     /// under a share sheet that is reading it. The directory goes when the
@@ -382,7 +382,7 @@ final class AppModel {
         return urls
     }
 
-    /// Deletes the diagnostics files: when the Background Activity screen
+    /// Deletes the diagnostics files: when the Activity screen
     /// goes, and at launch.
     func removeDiagnosticsBundle() {
         Self.removeDiagnosticsFiles()
@@ -1001,7 +1001,7 @@ final class AppModel {
     var pairingAwaitsSyncTab: Bool { confirmedPairing != nil && !showsOnboarding }
 
     /// One-shot: the screen that fills its fields from the payload takes it.
-    func takeConfirmedPairing() -> PairingPayload? {
+        func takeConfirmedPairing() -> PairingPayload? {
         defer { confirmedPairing = nil }
         return confirmedPairing
     }

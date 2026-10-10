@@ -204,12 +204,13 @@ Sources/
 │                         link, the sign-in callback scheme, and what a
 │                         sign-in sheet's callback or error means.
 ├── ActivityView.swift    Sync → Activity: segmented Log / Background over
-│                         LogView and BackgroundActivityView.
+│                         LogView and BackgroundActivityView, with a shared
+│                         diagnostics Export button on both segments.
 ├── LogView.swift         Live filterable event stream (level + type filters).
 ├── BackgroundActivityView.swift  Field-study screen: per-wake telemetry from the
 │                         library's WakeLog — wakes/24h & /7d, median background
 │                         gap, expired/interrupted count, per-trigger rollups, a
-│                         recent-wakes list, and a ShareLink that exports wakes
+│                         recent-wakes list. ActivityView exports wakes
 │                         (CSV+JSON) + the event log (JSON) for offline analysis.
 ├── RawSamplesPickerView.swift  Sync → Raw Samples → Edit: ~80 types grouped
 │                         by category, every one a switch (raw samples only;
@@ -495,7 +496,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   "running" at the next launch means the app was killed mid-wake) — about 10k
   wakes, months of them. Each wake's id and trigger ride the upload as
   `X-Wake-ID`/`X-Wake-Trigger` headers, so the server's `batches` rows join
-  back to the device records. **Sync → Activity → Background → Export** shares
+  back to the device records. **Sync → Activity → Log or Background → Export** shares
   the wakes (CSV and JSON) and the event log (JSON).
 
 ## App Store reviews
