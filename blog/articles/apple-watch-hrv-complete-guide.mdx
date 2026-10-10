@@ -20,6 +20,8 @@ Heart rate tells you how many beats occur per minute. HRV describes the spacing 
 
 SDNN is the standard deviation of normal-to-normal heartbeat intervals, expressed in milliseconds. A value of 45 ms is a measure of their spread within a recording; it does not mean your heart rate changed by 45 beats per minute. Apple stores SDNN as individual quantity samples in HealthKit. [HealthKit documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/heartratevariabilitysdnn).
 
+<BlogImage src="/blog/apple-watch-hrv-complete-guide/beat-spacing.webp" alt="Two sequences of four heartbeat intervals have the same 1000 millisecond mean: four equal intervals have zero sample standard deviation, while 850, 1150, 900, and 1100 milliseconds have sample standard deviation 147.2 milliseconds." caption="Synthetic beat markers illustrate variability within a recording. The arithmetic uses sample standard deviation with n minus 1; it does not reproduce the Apple Watch algorithm or define a normal value." width="1600" height="960" />
+
 Other HRV calculations answer different mathematical questions. RMSSD, for example, uses successive differences between intervals. Having the same unit does not make two metrics interchangeable. The measurement standards distinguish these calculations and emphasize the recording conditions. [ESC/EHRA position statement](https://academic.oup.com/europace/article/17/9/1341/627516).
 
 There is another easily missed distinction: **the variation between your daily HRV values is not itself SDNN**. Each stored SDNN value has already summarized a recording. Calculating the standard deviation of a month of those values measures how the summaries vary, not the beat-to-beat variability of that month.
@@ -52,8 +54,8 @@ There were **402 observations across all 30 days**. The daily count ranged from 
   src="/blog/apple-watch-hrv-complete-guide/hrv-observations.webp"
   alt="Two charts showing daily median SDNN and the number of recorded HRV observations per day during September 2026"
   caption="My September 2026 records: 402 SDNN observations across 30 local days. The upper chart summarizes recorded values; the lower chart shows how many observations support each day. This is a descriptive example, not a normal range."
-  width={1600}
-  height={1040}
+  width="1600"
+  height="1040"
 />
 
 The counts are as useful as the line above them. They show that a daily summary comes from a small collection of observations, not continuous measurement of every heartbeat throughout the day. Observations occurred in every hour-of-day bin somewhere across the month; that does not mean every hour was represented on every day.

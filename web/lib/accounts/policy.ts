@@ -43,7 +43,7 @@ export function classifyPath(pathname: string, development = false): RouteClass 
   ) {
     return "asset";
   }
-  if ((OAUTH_MACHINE_PATHS as readonly string[]).includes(pathname)) return "oauth";
+  if (pathname.startsWith("/api/health/") || (OAUTH_MACHINE_PATHS as readonly string[]).includes(pathname)) return "oauth";
   if ((PUBLIC_PAGES as readonly string[]).includes(pathname)) return "public";
   if ((PUBLIC_API as readonly string[]).includes(pathname)) return "public";
   // /invite/<token>: exactly one segment, the token.

@@ -24,7 +24,7 @@ export const faq: FaqItem[] = [
   },
   {
     q: "Where does my data go?",
-    a: "To the one database you set up in the app, and nowhere else. If it is your own, the developer receives nothing. If it is the PulsHealth database, we store your data there under your account, use it only to show it back to you and to the assistants you connect, never sell or share it, and delete it when you delete your account. Exploring and exporting send nothing at all. The app has zero third-party dependencies and no analytics SDK.",
+    a: "Regular sync goes to the database you set up in the app. One-time requests can send an export to another destination you approve. If it is your own, the developer receives nothing. If it is the PulsHealth database, we store your data there under your account, use it only to show it back to you and to the assistants you connect, never sell it or use it for advertising, and remove stored records through account deletion. The operator and disclosed service providers can process hosted data; hosting is not end-to-end encrypted. Exploring stays on your phone; an ordinary export leaves only when you share it. The app has zero third-party dependencies and no analytics SDK.",
     home: true,
   },
   {

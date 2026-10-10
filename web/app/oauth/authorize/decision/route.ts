@@ -1,3 +1,4 @@
+import { oauthResources } from "@/lib/oauth/config";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { field, readForm, requestSession, seeOther } from "@/lib/accounts/http";
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const client = await findClient(params.get("client_id"));
-    const check = checkAuthorizeRequest(params, client, config.resource);
+    const check = checkAuthorizeRequest(params, client, oauthResources(config));
     if (check.kind === "fatal") return text(400, check.message);
     if (check.kind === "error") return seeOther(`/oauth/authorize?${params.toString()}`);
     const req = check.request;

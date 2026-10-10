@@ -79,3 +79,29 @@ The source tables and daily-view resolution order are documented in
 [`docs/database-guide.md`](../../docs/database-guide.md). Charts are descriptive
 of this selected individual and period; they must not be used to infer causes,
 diagnoses, accuracy against clinical equipment, or typical population values.
+
+## Synthetic worked examples (October 8, 2026)
+
+These additions use invented data, independently of the private-record charts:
+
+- `python3 blog/analysis/render_teaching_figures.py` regenerates the HRV beat
+  spacing and overnight overlap figures with matplotlib and Pillow. Four
+  intervals illustrate sample SD, not the Apple Watch algorithm. The sleep
+  timeline illustrates overlap, not a typical watch trace.
+- `grafana-fixture.sql` creates minimal tables, a UTC function, and a read-only
+  role. Run only in an empty disposable PostgreSQL 17 database. Connect Grafana
+  13.2.3 with datasource UID `puls-tsdb`, provision the downloadable dashboard
+  JSON unchanged, and select September 1–14, 2026 in UTC. The all-zero UUID
+  selects synthetic records. Another user's row and an out-of-range row must
+  not appear. Screenshots capture the actual dashboard and Query Inspector.
+  Receipt age changes with elapsed time. This does not test the full schema.
+- `site/public/downloads/apple-health-example.xlsx` uses the adjacent CSV.
+  COUNT, COUNTBLANK, and AVERAGE report 3, 1, and 7303.333333 respectively;
+  the chart preserves missing May 3. Visually checked in Microsoft Excel.
+- `python3 site/public/downloads/apple-health-ai/check_sleep.py` verifies the
+  14-day CSV and weekly medians (425 and 455 minutes). The article's answer
+  is a reference calculation, not an AI transcript.
+
+Viewer screenshots reuse the site's labeled demo snapshots. The export screen
+reuses the published app v1.6 screenshot, captioned with that version. None of
+these additions publishes personal health records.

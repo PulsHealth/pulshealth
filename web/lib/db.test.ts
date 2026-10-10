@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // A stand-in for pg's Pool: one client whose statements are recorded, and a
 // switch to make a given statement fail.
 const fake = vi.hoisted(() => ({
+  configs: [] as Record<string, unknown>[],
   statements: [] as { text: string; params?: unknown[] }[],
   failOn: null as string | null,
   connects: 0,
@@ -11,6 +12,7 @@ const fake = vi.hoisted(() => ({
 
 vi.mock("pg", () => {
   class Pool {
+    constructor(config: Record<string, unknown>) { fake.configs.push(config); }
     on() {}
     async query(text: string, params?: unknown[]) {
       fake.statements.push({ text, params });
@@ -133,5 +135,20 @@ describe("scoped", () => {
     expect(await query("SELECT 1")).toEqual([{ pooled: true }]);
     expect(fake.connects).toBe(0);
     expect(texts()).toEqual(["SELECT 1"]);
+  });
+});
+
+
+describe("interactive connection settings", () => {
+  it("disables JIT on both pools and reserves a distinct connection for probes", async () => {
+    vi.resetModules();
+    fake.configs.length = 0;
+    const { getPool, getHealthPool, healthQuery } = await import("./db");
+    expect(getPool()).not.toBe(getHealthPool());
+    expect(fake.configs).toHaveLength(2);
+    expect(fake.configs[0]).toMatchObject({ options: "-c jit=off", max: 4 });
+    expect(fake.configs[1]).toMatchObject({ options: "-c jit=off", max: 1, statement_timeout: 4000 });
+    await healthQuery("SELECT 1");
+    expect(fake.configs).toHaveLength(2);
   });
 });

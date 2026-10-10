@@ -10,6 +10,7 @@ const scopedStatements = vi.hoisted(() => [] as { userId: string; sql: string }[
 // take a second pooled connection while the first is held (see lib/db.ts).
 const nested = vi.hoisted(() => ({ depth: 0, calls: [] as string[] }));
 vi.mock("./db", () => ({
+  healthQuery: (sql: string, params?: unknown[]) => queryMock(sql, params),
   query: (sql: string, params?: unknown[]) => {
     if (nested.depth > 0) nested.calls.push(sql);
     return queryMock(sql, params);
@@ -413,6 +414,14 @@ describe("a failed read", () => {
       queryMock.mockClear();
       await expect(getWorkouts(USER_ID)).rejects.toThrow("Database unreachable");
       expect(queryMock).not.toHaveBeenCalled();
+      // A transient outage does not poison every page for the live-cache TTL.
+      queryMock.mockResolvedValue([]);
+      const clock = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 1001);
+      try {
+        expect((await getDataSource()).source).toBe("live");
+      } finally {
+        clock.mockRestore();
+      }
     } finally {
       errorSpy.mockRestore();
       vi.unstubAllEnvs();

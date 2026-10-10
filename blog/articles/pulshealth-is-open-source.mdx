@@ -10,6 +10,8 @@ excerpt: "Use Apple Health on your own terms: explore on your iPhone, export fil
 
 Apple Health collects a useful history, but the next step often happens somewhere else: a spreadsheet, a browser dashboard, a Python notebook, or a question you want an assistant to help investigate. PulsHealth gives that history a route out of the phone, with choices about where it goes.
 
+<BlogImage src="/blog/pulshealth-is-open-source/health-data-illustration.webp" alt="Paper-cut illustration of data flowing from a phone into a notebook and an archive box." caption="Your history can become a file, an analysis, or an ongoing collection. AI-generated editorial illustration; no personal health data is depicted." width="1536" height="1024" />
+
 The iPhone app, Swift sync library, reference server, protocol specification, dashboards, and this website are in [one Apache-2.0 repository](https://github.com/PulsHealth/pulshealth). You can inspect them, run the stack yourself, or build a receiver that accepts the documented format.
 
 *Rewritten October 8, 2026: this post now covers Explore and Export, the hosted database's access-request process, and current AI connections. The original publication date is retained.*
@@ -23,6 +25,27 @@ You do not need a server or a PulsHealth account to start. The free [iPhone app]
 **Export** writes selected data to CSV or JSONL files. Choose the types and date range for that export, then save or share the result. This works on demand without configuring sync. CSV is useful for a spreadsheet; JSONL retains the richer structured representation. Their differences are documented in the [export guide](/docs/export/).
 
 The distinction matters when you have a single task. If you want to make one chart from last month's measurements, a file may be all you need. A continuously updated database becomes useful when you want that chart to stay current, query a longer history repeatedly, or connect other tools.
+
+<BlogFlow
+  title="One Health history, several useful destinations"
+  caption="Product map. Explore, Export, and Sync are separate choices; creating a file does not require setting up a database."
+>
+  <FlowRow
+    label="Explore"
+    steps="Apple Health | PulsHealth on iPhone | Inspect types and sources"
+    note="Start on the phone without a server or PulsHealth account."
+  />
+  <FlowRow
+    label="Export"
+    steps="Selected readable records | CSV or JSONL | Your chosen file destination"
+    note="Make an on-demand copy for a spreadsheet or notebook."
+  />
+  <FlowRow
+    label="Sync"
+    steps="Selected readable records | Hosted or self-hosted database | Viewer, SQL, API, or MCP"
+    note="Maintain an external collection for recurring use; access and setup depend on the destination."
+  />
+</BlogFlow>
 
 ## Choose where ongoing sync goes
 

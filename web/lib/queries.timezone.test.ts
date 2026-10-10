@@ -5,6 +5,7 @@ const queryMock = vi.hoisted(() => vi.fn());
 // transaction and user setting are lib/db.ts's business, tested there.
 vi.mock("./db", () => ({
   query: queryMock,
+  healthQuery: queryMock,
   scoped: (_userId: string, fn: (q: typeof queryMock) => Promise<unknown>) => fn(queryMock),
 }));
 

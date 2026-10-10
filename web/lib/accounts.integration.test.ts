@@ -99,6 +99,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
 
   afterAll(async () => {
     await (await import("./db")).getPool()?.end();
+    await (await import("./db")).getHealthPool()?.end();
     if (!admin) return;
     await admin.query("DELETE FROM auth.invites WHERE user_id = ANY($1)", [[A, B]]);
     await admin.query("DELETE FROM auth.sessions WHERE account_id IN (SELECT id FROM auth.accounts WHERE user_id = ANY($1))", [[A, B]]);

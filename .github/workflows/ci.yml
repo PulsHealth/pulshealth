@@ -107,7 +107,7 @@ jobs:
           docker compose -f server/docker-compose.yml -f server/compose.build.yml config --quiet
           docker compose -f server/docker-compose.yml --profile backup config --quiet
           docker compose -f server/docker-compose.yml --profile tunnel config --quiet
-          scripts=(server/db/*.sh server/db/migrations/*.sh server/backup/*.sh scripts/*.sh)
+          scripts=(server/db/*.sh server/db/migrations/*.sh server/backup/*.sh server/ops/*.sh scripts/*.sh)
           for script in "${scripts[@]}"; do
             bash -n "$script"
           done
@@ -248,6 +248,11 @@ jobs:
       # restore.sh over the live database and again into a wiped volume, with
       # every table's row count compared and both services' grants exercised.
       # Last, because it replaces the database the steps above wrote.
+      - name: Verify hosted operations checks
+        run: |
+          python3 -m unittest discover -s server/ops -p 'test_*.py'
+          node --test server/ops/notify.test.mjs
+
       - name: Back up and restore the database (restore drill)
         run: server/backup/test-restore.sh --scratch --build
 

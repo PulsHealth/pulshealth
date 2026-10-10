@@ -16,6 +16,22 @@ The important decision comes before the download: **do you want every recorded m
 
 I build PulsHealth, so this guide includes its on-device export alongside Apple's built-in option. You do not need to sync to a PulsHealth database to export a file.
 
+<BlogFlow
+  title="Choose the row before you make the chart"
+  caption="Export decision map. Both paths can produce CSV, but a row means something different in each."
+>
+  <FlowRow
+    label="How many steps each day?"
+    steps="Daily aggregate | One selected daily series | Daily column chart"
+    note="Keep the type, function, interval, and device filter consistent."
+  />
+  <FlowRow
+    label="When was this measurement taken?"
+    steps="Raw samples | Timestamp + value + source | Individual observations"
+    note="Preserve the records. Adding overlapping sources does not recreate a daily Health total."
+  />
+</BlogFlow>
+
 ## Choose the export that fits your question
 
 | Your goal | Start with | Why |
@@ -56,6 +72,8 @@ Check whether the result is marked incomplete. The accompanying manifest records
 
 Date ranges have an exclusive end. To export all of September, select September 1 through October 1. A daily aggregate that would cross the end is excluded instead of presented as a complete day.
 
+<BlogImage src="/blog/export-apple-health-to-csv-excel/app-export.webp" alt="PulsHealth Export builder with type selection, aggregate series, date range, CSV or JSONL format, and ZIP option." caption="Export builder from the version 1.6 App Store screenshot set. It shows an example selection, not a completed export; labels and layout can differ in newer builds." width="600" height="1304" />
+
 ## Open the right CSV
 
 PulsHealth creates a separate CSV for each dataset containing rows. These files answer different questions:
@@ -83,6 +101,10 @@ Use this [synthetic example CSV](/downloads/apple-health-example.csv) to practic
 In desktop Excel, use **Data → From Text/CSV**, or the equivalent import command for your version. Select comma as the delimiter and inspect the preview. Microsoft recommends this import route when you need control over how text-file columns are interpreted. [Microsoft's CSV guide](https://support.microsoft.com/en-us/excel/get-started/import-or-export-text-txt-or-csv-files)
 
 Import `date` as a date or as text in the displayed `YYYY-MM-DD` format, and `steps` as a number. Select the two columns and insert a column chart. Label it “Daily steps — synthetic example” and leave the missing day blank. Check the chart's empty-cell settings if it displays that day as zero.
+
+<BlogImage src="/blog/export-apple-health-to-csv-excel/workbook-preview.webp" alt="Synthetic daily-step table and column chart: 6420, 8150, missing, and 7340 steps; three recorded days average 7303.3." caption="Preview of the downloadable workbook, also opened and checked in Microsoft Excel. May 3 has no bar because the input is missing." width="1920" height="661" />
+
+Download the [finished Excel workbook](/downloads/apple-health-example.xlsx) to inspect the chart and formulas. Cells A1:B5 match the practice CSV. The supporting chart labels are below the summary; the empty input stays empty.
 
 For the three observed days, `=AVERAGE(B2:B5)` returns approximately **7,303 steps**. Dividing their sum by four returns **5,477.5**, a different result that implicitly treats the missing day as zero. Neither number should be called a four-day measured average without explaining the missing observation.
 

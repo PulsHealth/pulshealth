@@ -18,6 +18,22 @@ You can still use the underlying data on a Mac or PC. The practical routes are t
 
 I build PulsHealth. The examples below explain its local export, hosted database, and self-hosted viewer so you can choose the amount of setup you actually need.
 
+<BlogFlow
+  title="A file for a snapshot. A sync for repeated browsing."
+  caption="Workflow map. Your computer can be the viewing device without being the server."
+>
+  <FlowRow
+    label="Occasional review"
+    steps="iPhone export | Saved CSV | Spreadsheet on Mac / PC"
+    note="Create a new export when you want newer data."
+  />
+  <FlowRow
+    label="Ongoing browsing"
+    steps="Authorized phone app | Hosted or self-hosted database | Browser dashboard"
+    note="The phone must upload new records; refreshing the browser alone does not refresh the dataset."
+  />
+</BlogFlow>
+
 ## Choose the workflow before choosing an app
 
 | You want to… | Useful starting point | What keeps it current? |
@@ -56,6 +72,14 @@ After receiving access, use the pairing instructions supplied with your account.
 Pairing prepares the connection; it is not applied until you save it. The phone's chosen data is then stored in the hosted database. This is different from the Export tab, which creates files without sending them to that database. The [app and backend source documentation](https://github.com/PulsHealth/pulshealth) describes both workflows. Follow the access instructions for the version you actually have.
 
 The viewer brings activity rings, metric trends, and workouts into a browser. Initial history can take time to arrive, especially with years of records. Check that the time range you want has actually synced before interpreting an empty old chart as a period without measurements.
+
+<BlogImage src="/blog/view-apple-health-on-mac-pc/viewer-today.webp" alt="PulsHealth demo viewer with activity rings, metric cards, and recent workouts." caption="The Today view in the existing demo screenshot. The date and values are demonstration content, not a live account or a health target." width="1440" height="900" />
+
+Start with the date above the rings and the timestamps on the metric cards. A filled dashboard still needs a freshness check.
+
+<BlogImage src="/blog/view-apple-health-on-mac-pc/viewer-workouts.webp" alt="PulsHealth demo workout list with session duration, energy, distance, and totals." caption="The demo workout list. The summary explicitly covers the latest 120 listed sessions; it is not a lifetime activity total." width="1440" height="900" />
+
+For a workout review, read the list scope before comparing totals. Open a session when you need its detail, and distinguish recorded sessions from days on which you exercised.
 
 ## For control over storage, self-host the viewer
 

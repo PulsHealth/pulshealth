@@ -32,6 +32,13 @@ that is why App Privacy declares data linked to the user (see `listing.md`).
 Every document here is an application of those facts, and every claim in
 them is checkable against the source in this repository.
 
+## Hosted operating procedures
+
+[The hosted operations runbook](../hosted-operations.md) defines the deletion,
+backup, restore and incident process. Hosting retains operator access; do not
+claim end-to-end encryption. Verify individual-versus-organization enrollment
+under Apple guideline 5.1.1(ix) before broad hosted launch.
+
 ## Submission checklist
 
 Before a broad hosted rollout, deploy and verify per-account reporting time
