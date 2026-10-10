@@ -1,9 +1,9 @@
 # Accounts and Data Requests release review — 2026-10-08
 
 **Status updated 2026-10-10: 2.0 (21) submitted and Waiting for Review, with automatic release after approval. All 13 candidate CI checks passed. Maintainer-confirmed physical-device and email acceptance is recorded below.** This review
-started from `091244a`. The recorded shipping version is 1.6 (19); the uploaded
-initial upload was 2.0 (20), superseded by 2.0 (21). Deployment and upload evidence must be recorded below
-rather than inferred from local tests.
+started from `091244a`. The recorded shipping version is 1.6 (19). The initial
+upload was 2.0 (20), superseded by 2.0 (21). Deployment and upload evidence is
+recorded below rather than inferred from local tests.
 
 Five parallel reviews covered iOS account/pairing flows, Data Requests,
 web authentication and isolation, backend/sync correctness, and submission

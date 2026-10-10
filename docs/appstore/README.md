@@ -222,7 +222,7 @@ changes, revisit them in the same pull request:
 ### Final 2.0 candidate (2026-10-10)
 
 The maintainer confirms device and email acceptance and authorizes release.
-The histogram fix and Activity diagnostics changes require a replacement upload;
+The histogram fix and Activity diagnostics changes required a replacement upload;
 2.0 (21) uploaded successfully on 2026-10-10. Its signature, matching dSYMs,
 bundled knowledge, archived manifests and eleven-category Xcode privacy report
 are verified. Apple processed build 21 successfully; it is selected in the
