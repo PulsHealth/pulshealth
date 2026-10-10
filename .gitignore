@@ -40,3 +40,6 @@ ExportOptions.plist
 
 # JavaScript dependencies and runner caches at any workspace level.
 node_modules/
+
+# Local Home Assistant test environment
+.venv-ha/

@@ -103,6 +103,7 @@ export const OAUTH_DECISION_PATH = "/oauth/authorize/decision";
 export function isOAuthPath(pathname: string): boolean {
   return (
     (OAUTH_MACHINE_PATHS as readonly string[]).includes(pathname) ||
+    pathname.startsWith("/api/health/") ||
     pathname === OAUTH_AUTHORIZE_PATH ||
     pathname === OAUTH_DECISION_PATH
   );
@@ -116,3 +117,12 @@ export const ACCESS_TOKEN_SECONDS = 1800;
 export const REFRESH_TOKEN_DAYS = 60;
 /** An authorization code works once, within this. */
 export const CODE_SECONDS = 300;
+
+/** Separate audience for the public, account-scoped health API. */
+export function healthResource(config: OAuthConfig): string {
+  return `${config.issuer}/api/health`;
+}
+
+export function oauthResources(config: OAuthConfig): string[] {
+  return [config.resource, healthResource(config)];
+}

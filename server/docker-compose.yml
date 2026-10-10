@@ -339,6 +339,9 @@ services:
       # service gets). Unset, every OAuth path is a 404. See docs/ai.md.
       PULS_MCP_OAUTH_SECRET: ${PULS_MCP_OAUTH_SECRET:-}
       PULS_MCP_URL: ${PULS_MCP_URL:-}
+      # Used only inside the authenticated, account-scoped public health gateway.
+      PULS_API_URL: http://api:8081
+      PULS_API_TOKEN: ${PULS_API_TOKEN:?set in .env}
       # Hosted deletion receipts survive database restores; configure this
       # path only once its independent volume is backed up and monitored.
       PULS_DELETION_LEDGER_DIR: ${PULS_DELETION_LEDGER_DIR:-}

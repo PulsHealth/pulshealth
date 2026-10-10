@@ -232,7 +232,7 @@ export type ParamReader = { get(name: string): string | null; getAll(name: strin
  * URL. Bad client or redirect URI → fatal; anything else → an error for the
  * client's redirect URI; else the request, normalised.
  */
-export function checkAuthorizeRequest(params: ParamReader, client: KnownClient | null, resource: string): AuthorizeCheck {
+export function checkAuthorizeRequest(params: ParamReader, client: KnownClient | null, resource: string | string[]): AuthorizeCheck {
   const single = (name: string) => {
     const all = params.getAll(name);
     return all.length > 1 ? undefined : (all[0] ?? null);
@@ -274,8 +274,10 @@ export function checkAuthorizeRequest(params: ParamReader, client: KnownClient |
   if (!scope) return fail("invalid_scope", `the only scope is ${OAUTH_SCOPE}`);
 
   const resources = params.getAll("resource");
-  if (resources.length > 1 || !resourceMatches(resources[0], resource)) {
-    return fail("invalid_target", "resource must be this server's MCP URL");
+  const allowed = typeof resource === "string" ? [resource] : resource;
+  const selected = resources[0] ? allowed.find((r) => resourceMatches(resources[0], r)) : allowed[0];
+  if (resources.length > 1 || !selected) {
+    return fail("invalid_target", "resource must be a supported API URL");
   }
 
   return {
@@ -286,7 +288,7 @@ export function checkAuthorizeRequest(params: ParamReader, client: KnownClient |
       redirectUri,
       codeChallenge: challenge,
       scope,
-      resource: resources[0] ? resource : null,
+      resource: resources[0] ? selected : null,
       state,
     },
   };

@@ -234,7 +234,7 @@ describe("token endpoint", () => {
       redirectUri: exchange.redirect_uri,
       codeVerifier: exchange.code_verifier,
       resource: MCP,
-      configuredResource: MCP,
+      configuredResource: [MCP, `${ISSUER}/api/health`],
     });
   });
 
@@ -301,7 +301,7 @@ describe("token endpoint", () => {
     const { POST } = await import("@/app/oauth/token/route");
     const ok = await POST(tokenReq({ grant_type: "refresh_token", refresh_token: TOKEN, client_id: CLIENT_ID }));
     expect((await ok.json()).refresh_token).toBe("N".repeat(43));
-    expect(store.refreshGrant).toHaveBeenLastCalledWith({ refreshToken: TOKEN, clientId: CLIENT_ID, scope: null });
+    expect(store.refreshGrant).toHaveBeenLastCalledWith({ refreshToken: TOKEN, clientId: CLIENT_ID, scope: null, resource: null, configuredResource: MCP });
     const scoped = await POST(tokenReq({ grant_type: "refresh_token", refresh_token: TOKEN, client_id: CLIENT_ID, scope: "health:write" }));
     expect((await scoped.json()).error).toBe("invalid_scope");
   });

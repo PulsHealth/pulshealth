@@ -64,6 +64,22 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("OAuth for AI assistants (integration)",
     return r.grant;
   };
 
+  it("binds codes and refresh tokens to the consented resource", async () => {
+    const resource = `${ISSUER}/api/health`;
+    const code = await oauth.createCode(accountId, request({ resource }));
+    const resources = [MCP, resource];
+    const wrong = await exchange(code, { resource: MCP, configuredResource: resources });
+    expect(wrong).toEqual({ ok: false, error: "invalid_target" });
+    const issued = await exchange(code, { resource, configuredResource: resources });
+    expect(issued.ok).toBe(true);
+    if (!issued.ok) throw new Error("exchange failed");
+    expect(issued.grant.resource).toBe(resource);
+    const switched = await oauth.refreshGrant({ refreshToken: issued.grant.refreshToken, clientId, scope: null, resource: MCP, configuredResource: MCP });
+    expect(switched).toEqual({ ok: false, error: "invalid_target" });
+    const refreshed = await oauth.refreshGrant({ refreshToken: issued.grant.refreshToken, clientId, scope: null });
+    expect(refreshed.ok && refreshed.grant.resource).toBe(resource);
+  });
+
   beforeAll(async () => {
     process.env.WEB_ACCOUNTS = "true";
     process.env.TRUST_PROXY_HEADERS = "true";
