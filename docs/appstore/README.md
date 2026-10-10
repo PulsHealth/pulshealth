@@ -13,6 +13,7 @@ and when, is the [Release record](#release-record) at the bottom.
 | [`listing.md`](listing.md) | The App Store Connect record: name, subtitle, promotional text, description, keywords, URLs, category, age-rating answers, the App Privacy answer ("Data Linked to You" since 2026-10-02) and its reasoning, and what to do about screenshots. |
 | [`review-notes.md`](review-notes.md) | The App Review Information → Notes text, ready to paste once its placeholders are filled in (a demo account on the PulsHealth database, and optionally the review backend), plus prepared answers for the questions this app invites. |
 | [`review-backend.md`](review-backend.md) | How to stand up the throwaway public server for the notes' optional your-own-database block, and how to tear it down afterwards. |
+| [`crash-diagnostics.md`](crash-diagnostics.md) | Find Apple's crash stacks, preserve matching symbols, and verify a crash fix before release. |
 | [`../privacy-policy.md`](../privacy-policy.md) | The privacy policy, served at `https://pulshealth.com/privacy` by `site/`. |
 
 They cover **STORE-1**, **STORE-2**, **STORE-3** and **STORE-5** from

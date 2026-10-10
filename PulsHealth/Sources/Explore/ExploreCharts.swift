@@ -61,12 +61,24 @@ struct HistogramChart: View {
         return "\(formatValue(bin.lower)) to \(formatValue(bin.upper))\(unitText) · \(bin.count.formatted()) samples"
     }
 
+    /// A disjoint reference range has no band. Check the endpoints before
+    /// constructing a ClosedRange: Swift traps on reversed bounds.
+    nonisolated static func referenceBand(
+        typicalRange: ClosedRange<Double>?, lowerBound: Double, upperBound: Double
+    ) -> ClosedRange<Double>? {
+        guard let typicalRange else { return nil }
+        let lower = max(typicalRange.lowerBound, lowerBound)
+        let upper = min(typicalRange.upperBound, upperBound)
+        guard lower < upper else { return nil }
+        return lower...upper
+    }
+
     var body: some View {
-        let band = typicalRange.map {
-            max($0.lowerBound, histogram.lowerBound)...min($0.upperBound, histogram.upperBound)
-        }
+        let band = Self.referenceBand(
+            typicalRange: typicalRange,
+            lowerBound: histogram.lowerBound, upperBound: histogram.upperBound)
         Chart {
-            if let band, band.lowerBound < band.upperBound {
+            if let band {
                 RectangleMark(xStart: .value("From", band.lowerBound), xEnd: .value("To", band.upperBound))
                     .foregroundStyle(.gray.opacity(0.15))
             }
