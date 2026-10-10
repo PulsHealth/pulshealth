@@ -107,8 +107,9 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Se
           your profile — name, date of birth — until you revoke it. Read-only: it cannot change or delete anything.
         </div>
         <p className="form-hint" style={{ margin: "0 0 18px", lineHeight: 1.5 }}>
-          Revoke it any time under AI assistants on your <a href="/account" style={{ textDecoration: "underline" }}>account
-          page</a>; it loses access within 30 minutes. Only allow an app you just asked to connect.
+          Revoke it any time under Connected apps on your <a href="/account" style={{ textDecoration: "underline" }}>account
+          page</a>. Home Assistant health API access stops immediately; AI assistant access expires within
+          30 minutes. Only allow an app you just asked to connect.
         </p>
         <form method="post" action="/oauth/authorize">
           <input type="hidden" name="client_id" value={req.clientId} />

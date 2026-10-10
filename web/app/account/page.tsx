@@ -93,12 +93,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
 
       {showAssistants && (
         <section className="rise" style={{ marginTop: 28 }}>
-          <div className="eyebrow" style={{ marginBottom: 12 }}>AI assistants</div>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>Connected apps</div>
           <div className="panel" style={{ maxWidth: 720 }}>
             {assistants.length === 0 && (
               <div className="session-row" style={{ fontSize: 13.5, color: "var(--muted)" }}>
-                No assistant is connected. Add this viewer&apos;s MCP server as a connector in Claude to read your data
-                there; you will be asked here first.
+                No app is connected. Add PulsHealth in Home Assistant, or connect an AI assistant,
+                to read your synced data. You will approve access here first.
               </div>
             )}
             {assistants.map((a) => (
@@ -121,8 +121,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Sear
           </div>
           {assistants.length > 0 && (
             <p className="form-hint" style={{ margin: "10px 0 0", maxWidth: 720, lineHeight: 1.5 }}>
-              Revoking stops an assistant at once from renewing its access; the access it already holds expires within
-              30 minutes.
+              Revoking stops Home Assistant health API access immediately. AI assistant access stops renewing
+              immediately; an existing assistant access token expires within 30 minutes.
             </p>
           )}
         </section>

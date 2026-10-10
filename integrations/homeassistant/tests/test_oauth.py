@@ -102,7 +102,16 @@ async def test_refresh_rotates_saved_token_and_maps_revocation(
     app.router.add_get("/api/health/v1/users", users)
     server = await aiohttp_server(app)
     issuer = str(server.make_url("")).rstrip("/")
-    entry = MockConfigEntry(domain=DOMAIN, data={"token": {**TOKEN, "expires_at": 0}})
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "issuer": issuer,
+            "client_id": "pc_installation",
+            "url": f"{issuer}/api/health",
+            "user_id": USER,
+            "token": {**TOKEN, "expires_at": 0},
+        },
+    )
     entry.add_to_hass(hass)
     oauth = OAuth2Session(hass, entry, PulsHealthOAuth(hass, issuer, "pc_installation"))
     client = PulsHealthClient(
@@ -117,8 +126,13 @@ async def test_refresh_rotates_saved_token_and_maps_revocation(
     }
     revoked = True
     hass.config_entries.async_update_entry(
-        entry, data={"token": {**entry.data["token"], "expires_at": time.time() - 100}}
+        entry,
+        data={**entry.data, "token": {**entry.data["token"], "expires_at": time.time() - 100}},
     )
     with pytest.raises(InvalidAuth):
         await client.account()
     assert received[1]["refresh_token"] == "rotated"
+    await hass.async_block_till_done()
+    assert any(
+        f["context"]["source"] == "reauth" for f in hass.config_entries.flow.async_progress()
+    )
