@@ -22,29 +22,49 @@ the completed-workout API cannot tell whether you are currently exercising.
 ## Requirements and authentication
 
 - Home Assistant **2026.10.0 or later** (tested against 2026.10.0).
-- A reachable PulsHealth **product API** serving `/v1/users` and the endpoints
-  in [`docs/api.md`](../../docs/api.md). `pulshealth.com` is the marketing site,
-  and the viewer, phone ingest endpoint, and MCP endpoint are different services.
-- The deployment's `PULS_API_TOKEN`, which is read-only. Do not use the phone's
-  ingest token or an MCP/OAuth assistant credential.
-- The relevant types enabled and synced in the phone app. Daily step, distance,
-  and active-energy sensors require synced daily aggregates (`aggregateRows`
-  in the type catalog); raw samples alone are insufficient.
+- A PulsHealth account at **https://app.pulshealth.com**, with data synced from
+  the iPhone app. Daily step, distance, and active-energy sensors require daily
+  aggregates; raw samples alone are insufficient.
 
-The product API normally binds to `127.0.0.1:8081` on its own host. That address
-inside Home Assistant refers to Home Assistant itself. Use an existing private
-HTTPS proxy or a VPN reachable **from the Home Assistant host**. The HA browser
-being able to reach a host from your laptop is insufficient. Keep the API private;
-this integration does not publish it, open a firewall, or install a VPN.
-TLS certificate verification is enabled; authenticated redirects are rejected.
-Plain HTTP is accepted for a trusted isolated local deployment, but use HTTPS
-for credentials and health data on shared or untrusted networks.
+Choose **Sign in to PulsHealth** during setup. Home Assistant registers its own
+public OAuth client, opens PulsHealth sign-in and consent in your browser, and
+uses PKCE S256 to exchange a single-use code. You authorize access to your own
+account. No server token, developer credentials, VPN, or Tailscale is required.
+The browser returns through `https://my.home-assistant.io/redirect/oauth`; this
+redirect service sends you back to your HA instance. HA makes outbound HTTPS
+requests, so it does not need a publicly reachable inbound port.
 
-The current product API uses a deployment-level static token. Account selection
-is not a narrower credential: with multi-user reads enabled, that token can
-read other accounts too. This first integration targets deployments whose owner
-can supply that token. Hosted customers need a separately designed per-account
-REST credential/OAuth boundary; do not give them the deployment token.
+Access tokens last 30 minutes. Home Assistant refreshes them automatically;
+refresh tokens rotate on every use and expire after 60 inactive days. Revoke the
+Home Assistant connection on PulsHealth's account page to stop access. The
+public API checks the exact grant and active account on every read, so revocation
+and account disablement take effect immediately. Tokens are stored in HA's
+config entry; secure your HA configuration and backups.
+
+### Self-hosted deployments
+
+Choose **Self-hosted product API** for the existing `/v1` API with a deployment
+`PULS_API_TOKEN`. It must be reachable from HA itself, preferably through HTTPS.
+The viewer, ingest, and MCP endpoints are different services. With multi-user
+reads enabled, this owner credential can read other accounts; account selection
+is not a narrower credential. Never distribute the deployment token to hosted
+customers. Self-hosted accounts-mode servers with OAuth enabled can instead use
+**Sign in to PulsHealth** and their public viewer URL.
+
+### Server configuration
+
+The public health gateway lives at `<WEB_PUBLIC_URL>/api/health/v1/…`, behind the
+existing viewer HTTPS ingress. It is enabled only in accounts mode with valid
+`WEB_PUBLIC_URL`, `PULS_MCP_URL`, and `PULS_MCP_OAUTH_SECRET`. The Compose web service
+also receives `PULS_API_URL=http://api:8081` and `PULS_API_TOKEN` internally. The
+underlying owner API keeps its loopback binding and token.
+
+Only GET users, catalog/types, metrics/daily, activity/summary, sleep/daily, and
+workouts are exposed. Every request requires an API-audience bearer token; MCP
+tokens and login cookies cannot authorize reads. The API pins the subject from
+the verified token, filters user discovery to that person, rejects account
+switching, and bounds daily windows to 31 days and workouts to 50. No write,
+export, routes, raw samples, or account administration endpoint is exposed.
 
 ## Install
 
@@ -65,17 +85,17 @@ Do not copy the entire repository or install the test dependencies into HA.
 ### Configure
 
 1. Go to **Settings → Devices & services → Add integration → PulsHealth**.
-2. Enter a display name (the examples below use `Fitness`), your product API
-   base URL, and `PULS_API_TOKEN` directly in the password field.
-3. Leave Account UUID blank to resolve and permanently pin the server default,
-   or enter a UUID from `/v1/users`. Selecting another account requires
-   `PULS_MULTI_USER=true` on the server. Each account can be a separate entry.
+2. Choose **Sign in to PulsHealth**, enter a display name, and leave the server
+   at `https://app.pulshealth.com`.
+3. Sign in and approve Home Assistant's read-only access. Return to HA to finish.
 4. Use the integration's options to change polling between 60 and 3600 seconds.
 
-The identity combines the normalized server URL and selected account UUID.
-A changed server default never silently switches an existing entry's person.
-An authentication failure starts Home Assistant's token replacement flow;
-network errors mark the entities unavailable and retry at the polling cadence.
+For the self-hosted product API option, enter the API base URL and deployment
+read-only token. Leave Account UUID blank to permanently pin the default account,
+or enter an account UUID when multi-user reads are enabled.
+
+Each entry belongs to one server and account. Reauthentication must reconnect
+that same account. Network errors mark entities unavailable and retry later.
 
 ## Values and recording
 

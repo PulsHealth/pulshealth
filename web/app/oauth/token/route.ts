@@ -1,3 +1,4 @@
+import { healthResource, oauthResources } from "@/lib/oauth/config";
 import type { NextRequest } from "next/server";
 
 import { requestIp } from "@/lib/accounts/http";
@@ -82,18 +83,22 @@ export async function POST(request: NextRequest) {
         redirectUri,
         codeVerifier: verifier,
         resource,
-        configuredResource: config.resource,
+        configuredResource: oauthResources(config),
       });
     } else {
       const refreshToken = formParam(form, "refresh_token");
       const scope = formParam(form, "scope");
+      const resource = formParam(form, "resource");
+      if (resource === undefined) return oauthError(400, "invalid_request");
       if (!refreshToken || scope === undefined) return oauthError(400, "invalid_request", "refresh_token is required, once");
-      result = await refreshGrant({ refreshToken, clientId: client.id, scope });
+      result = await refreshGrant({ refreshToken, clientId: client.id, scope, resource, configuredResource: config.resource });
     }
     if (!result.ok) return oauthError(400, result.error);
 
     refundAll(tokenFailures, keys);
-    const access = issueAccessToken(config, result.grant.userId, client.id);
+    const audience = result.grant.resource ?? config.resource;
+    if (!oauthResources(config).includes(audience)) return oauthError(400, "invalid_target");
+    const access = issueAccessToken({ ...config, resource: audience }, result.grant.userId, client.id, undefined, audience === healthResource(config) ? result.grant.grantId : undefined);
     return json(200, {
       access_token: access.token,
       token_type: "Bearer",

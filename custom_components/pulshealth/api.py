@@ -6,6 +6,11 @@ from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import aiohttp
+from homeassistant.helpers.config_entry_oauth2_flow import (
+    OAuth2TokenRequestConnectionError,
+    OAuth2TokenRequestError,
+    OAuth2TokenRequestReauthError,
+)
 
 from .const import DAILY_TYPES
 
@@ -44,8 +49,14 @@ class PulsHealthClient:
     """Keep authorization on the configured origin, including behind a proxy."""
 
     def __init__(
-        self, session: aiohttp.ClientSession, url: str, token: str, user_id: str = ""
+        self,
+        session: aiohttp.ClientSession,
+        url: str,
+        token: str,
+        user_id: str = "",
+        oauth_session=None,
     ) -> None:
+        self.oauth_session = oauth_session
         self.session = session
         self.url = normalize_url(url)
         self._token = token
@@ -53,6 +64,14 @@ class PulsHealthClient:
 
     async def get(self, path: str, **params) -> dict:
         """GET one endpoint. Never follow an authenticated redirect."""
+        if self.oauth_session:
+            try:
+                await self.oauth_session.async_ensure_token_valid()
+                self._token = self.oauth_session.token["access_token"]
+            except OAuth2TokenRequestReauthError as err:
+                raise InvalidAuth("Authorization expired or revoked") from err
+            except (OAuth2TokenRequestError, OAuth2TokenRequestConnectionError) as err:
+                raise PulsHealthError("Unable to refresh authorization") from err
         if self.user_id:
             params["user"] = self.user_id
         try:

@@ -99,6 +99,7 @@ export interface IssuedGrant {
   userId: string;
   scope: string;
   refreshToken: string;
+  resource?: string | null;
 }
 
 export type GrantFailure =
@@ -147,7 +148,7 @@ export async function exchangeCode(input: {
   redirectUri: string;
   codeVerifier: string;
   resource: string | null;
-  configuredResource: string;
+  configuredResource: string | string[];
 }): Promise<GrantResult> {
   const id = tokenHash(input.code);
   if (!id) return { ok: false, error: "invalid_grant" };
@@ -191,7 +192,9 @@ export async function exchangeCode(input: {
     ) {
       return { ok: false, error: "invalid_grant" } as const;
     }
-    if (!resourceMatches(input.resource, input.configuredResource)) {
+    const allowed = typeof input.configuredResource === "string" ? [input.configuredResource] : input.configuredResource;
+    const audience = code.resource ?? allowed[0];
+    if (!allowed.includes(audience) || !resourceMatches(input.resource, audience)) {
       return { ok: false, error: "invalid_target" } as const;
     }
     if (!code.account_ok) return { ok: false, error: "invalid_grant" } as const;
@@ -201,7 +204,7 @@ export async function exchangeCode(input: {
     await q("UPDATE auth.oauth_codes SET grant_id = $2 WHERE id = $1", [id, grant.id]);
     return {
       ok: true,
-      grant: { grantId: grant.id, userId: code.user_id, scope: code.scope, refreshToken: grant.refreshToken },
+      grant: { grantId: grant.id, userId: code.user_id, scope: code.scope, resource: code.resource, refreshToken: grant.refreshToken },
     } as const;
   });
 }
@@ -212,7 +215,7 @@ export async function exchangeCode(input: {
  * away revokes its whole grant: either the client lost track (and must sign
  * in again) or someone else holds a copy.
  */
-export async function refreshGrant(input: { refreshToken: string; clientId: string; scope: string | null }): Promise<GrantResult> {
+export async function refreshGrant(input: { refreshToken: string; clientId: string; scope: string | null; resource?: string | null; configuredResource?: string }): Promise<GrantResult> {
   const hash = tokenHash(input.refreshToken);
   if (!hash) return { ok: false, error: "invalid_grant" };
   return transaction(async (q) => {
@@ -221,10 +224,11 @@ export async function refreshGrant(input: { refreshToken: string; clientId: stri
       client_id: string;
       user_id: string;
       scope: string;
+      resource: string | null;
       live: boolean;
       account_ok: boolean;
     }>(
-      `SELECT g.id::text, g.client_id, a.user_id::text, g.scope,
+      `SELECT g.id::text, g.client_id, a.user_id::text, g.scope, g.resource,
               g.revoked_at IS NULL AND g.refresh_expires_at > now() AS live,
               a.disabled_at IS NULL AND a.password_hash IS NOT NULL AS account_ok
          FROM auth.oauth_grants g
@@ -246,6 +250,9 @@ export async function refreshGrant(input: { refreshToken: string; clientId: stri
     if (grant.client_id !== input.clientId || !grant.live || !grant.account_ok) {
       return { ok: false, error: "invalid_grant" } as const;
     }
+    if (!resourceMatches(input.resource, grant.resource ?? input.configuredResource ?? "")) {
+      return { ok: false, error: "invalid_target" } as const;
+    }
     if (input.scope !== null) {
       const held = new Set(grant.scope.split(" "));
       const asked = input.scope.split(" ").filter(Boolean);
@@ -260,7 +267,7 @@ export async function refreshGrant(input: { refreshToken: string; clientId: stri
       [grant.id, tokenHash(refreshToken), REFRESH_TOKEN_DAYS],
     );
     await q("UPDATE auth.oauth_clients SET last_used_at = now() WHERE id = $1", [grant.client_id]);
-    return { ok: true, grant: { grantId: grant.id, userId: grant.user_id, scope: grant.scope, refreshToken } } as const;
+    return { ok: true, grant: { grantId: grant.id, userId: grant.user_id, scope: grant.scope, resource: grant.resource, refreshToken } } as const;
   });
 }
 

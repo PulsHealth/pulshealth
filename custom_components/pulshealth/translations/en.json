@@ -2,7 +2,14 @@
   "title": "PulsHealth",
   "config": {
     "step": {
-      "user": {
+      "reauth_confirm": {
+        "title": "Update PulsHealth token",
+        "description": "Enter the replacement read-only product API token.",
+        "data": {
+          "access_token": "Product API token"
+        }
+      },
+      "self_hosted": {
         "title": "Connect PulsHealth",
         "description": "Connect to your read-only PulsHealth product API, not the marketing site, viewer, ingest endpoint, or MCP endpoint. Leave Account UUID blank to select and pin the server default account.",
         "data": {
@@ -12,11 +19,19 @@
           "user_id": "Account UUID (optional)"
         }
       },
-      "reauth_confirm": {
-        "title": "Update PulsHealth token",
-        "description": "Enter the replacement read-only product API token.",
+      "user": {
+        "title": "Connect PulsHealth",
+        "menu_options": {
+          "hosted": "Sign in to PulsHealth",
+          "self_hosted": "Self-hosted product API"
+        }
+      },
+      "hosted": {
+        "title": "Sign in to PulsHealth",
+        "description": "Authorize read-only access to your own health data. You will sign in and approve Home Assistant in your browser.",
         "data": {
-          "access_token": "Product API token"
+          "name": "Account display name",
+          "url": "PulsHealth account server"
         }
       }
     },
@@ -27,7 +42,9 @@
     },
     "abort": {
       "already_configured": "This server and account are already configured.",
-      "reauth_successful": "The product API token was updated."
+      "reauth_successful": "The product API token was updated.",
+      "wrong_account": "Sign in to the same PulsHealth account to reconnect.",
+      "cannot_connect": "Unable to read the authorized account."
     }
   },
   "options": {

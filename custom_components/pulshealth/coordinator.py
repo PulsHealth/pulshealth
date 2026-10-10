@@ -26,6 +26,7 @@ class PulsHealthCoordinator(DataUpdateCoordinator):
             ),
             always_update=False,
         )
+        self.options = dict(entry.options)
         self.client = client
 
     async def _async_update_data(self):

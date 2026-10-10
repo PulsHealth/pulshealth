@@ -1,3 +1,4 @@
+import { oauthResources } from "@/lib/oauth/config";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
@@ -61,7 +62,7 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Se
   }
 
   const client = await findClient(params.get("client_id"));
-  const check = checkAuthorizeRequest(params, client, config.resource);
+  const check = checkAuthorizeRequest(params, client, oauthResources(config));
   if (check.kind === "fatal") {
     return (
       <div style={{ display: "grid", placeItems: "center", padding: "32px 0" }}>

@@ -58,6 +58,8 @@ type Guard =
   | { kind: "public"; why: string }
   /** The container health check: no session, any scheme. Returns no personal data. */
   | { kind: "health" }
+  /** HTTPS machine endpoint; bearer authorization is enforced by its handler. */
+  | { kind: "oauth" }
   /** Does not exist in accounts mode: the handler answers 404 (and the proxy wants a session first). */
   | { kind: "absent" };
 
@@ -73,6 +75,7 @@ interface Session {
 }
 
 const ROUTES: Record<string, { methods: Method[]; guard: Guard }> = {
+  "/api/health/v1/[...path]": { methods: ["GET"], guard: { kind: "oauth" } },
   "/api/auth/forgot-password": { methods: ["POST"], guard: { kind: "public", why: "Generic response; bounded email recovery requests." } },
   "/api/auth/reset-password": { methods: ["POST"], guard: { kind: "public", why: "Requires expiring one-use recovery token." } },
   "/api/admin": {
