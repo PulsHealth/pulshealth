@@ -106,7 +106,11 @@ closure in test code, obsolete singleton-credential expectations, and a real
 cooldown regression: unchanged configuration must retain an existing cooldown.
 The hosted state-machine harness now records Apply's HealthKit work through
 the same engine protocol used in production, avoiding permission-dependent
-observer and query waits in tests.
+observer and query waits in tests. GitHub Xcode 26.5 exposed a semaphore
+blocking URLProtocol's shared loading thread in the parallel GET ownership test.
+An asynchronous response gate now waits for the request deterministically
+without blocking other requests; both stats/capabilities ownership cases remain
+covered.
 
 Storage fixtures model termination after a first-pair credential write and
 after credential removal before JSON commit. Stable credential IDs permit

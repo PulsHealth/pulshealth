@@ -194,12 +194,60 @@ extension ConfigurationIsolationTests {
     }
 }
 
-/// Blocks only the mock URLProtocol's loading thread. The engine actor remains
-/// free to receive switch/unpair requests while the server response is pending.
-private final class DelayedReadGate: @unchecked Sendable {
-    private let response = DispatchSemaphore(value: 0)
-    func wait() { response.wait() }
-    func release() { response.signal() }
+/// Holds the response without blocking URLProtocol's shared loading thread.
+private actor DelayedReadGate {
+    private var requested = false
+    private var waiter: CheckedContinuation<Void, Never>?
+    private var response: (@Sendable () -> Void)?
+
+    func receive(_ response: @escaping @Sendable () -> Void) {
+        self.response = response
+        requested = true
+        waiter?.resume()
+        waiter = nil
+    }
+    func waitUntilRequested() async {
+        if requested { return }
+        await withCheckedContinuation { waiter = $0 }
+    }
+    func release() { response?(); response = nil }
+}
+
+private final class DelayedReadURLProtocol: URLProtocol, @unchecked Sendable {
+    private struct Entry: Sendable {
+        let gate: DelayedReadGate
+        let requests: RequestRecorder
+        let data: Data
+    }
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var entries: [String: Entry] = [:]
+
+    static func session(host: String, gate: DelayedReadGate,
+                        requests: RequestRecorder, data: Data) -> URLSession {
+        lock.withLock { entries[host] = Entry(gate: gate, requests: requests, data: data) }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [DelayedReadURLProtocol.self]
+        return URLSession(configuration: config)
+    }
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        guard let entry = Self.lock.withLock({ Self.entries[request.url?.host ?? ""] }) else {
+            client?.urlProtocol(self, didFailWithError: URLError(.cannotFindHost))
+            return
+        }
+        entry.requests.append(.init(request: request, body: Data()))
+        Task { @Sendable [self] in
+            await entry.gate.receive { [self] in
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200,
+                    httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "application/json"])!
+                client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+                client?.urlProtocol(self, didLoad: entry.data)
+                client?.urlProtocolDidFinishLoading(self)
+            }
+        }
+    }
+    override func stopLoading() {}
 }
 
 extension ConfigurationIsolationTests {
@@ -215,22 +263,16 @@ extension ConfigurationIsolationTests {
         let aID = try #require(await engine.store.activeDestinationID)
         let requests = RequestRecorder()
         let gate = DelayedReadGate()
-        defer { gate.release() }
-        MockURLProtocol.register(host: aHost) { request in
-            requests.append(request)
-            gate.wait()
-            return .http(200, Data((capabilities ? #"{"protocolVersions":[1]}"# : "[]").utf8))
-        }
+        defer { Task { await gate.release() } }
+        let session = DelayedReadURLProtocol.session(host: aHost, gate: gate, requests: requests,
+            data: Data((capabilities ? #"{"protocolVersions":[1]}"# : "[]").utf8))
         await engine.setTestReadClient(ServerAPIClient(baseURL: a.serverURL!, authToken: "alpha",
-                                                       session: MockURLProtocol.session()))
+                                                       session: session))
         let read = Task {
             if capabilities { _ = try await engine.serverCapabilities() }
             else { _ = try await engine.serverStats() }
         }
-        let deadline = ContinuousClock.now + .seconds(5)
-        while requests.all.isEmpty, ContinuousClock.now < deadline {
-            try await Task.sleep(for: .milliseconds(10))
-        }
+        await gate.waitUntilRequested()
         #expect(!requests.all.isEmpty, "The mock receiver must observe the GET")
         do { try await engine.switchDestination(id: bID); Issue.record("Expected busy while GET is pending") }
         catch SavedDestinationError.busy { }
@@ -240,7 +282,7 @@ extension ConfigurationIsolationTests {
         #expect(requests.all.first?.request.httpMethod == "GET")
         #expect(requests.all.first?.request.url?.path == (capabilities ? "/v1/capabilities" : "/v1/stats"))
         #expect(requests.all.first?.request.value(forHTTPHeaderField: "Authorization") == "Bearer alpha")
-        gate.release()
+        await gate.release()
         try await read.value
         try await engine.switchDestination(id: bID)
         #expect(await engine.store.activeDestinationID == bID)
