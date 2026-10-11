@@ -94,9 +94,11 @@ Xcode 27.0 (27A266a) compiled the package and generated app with Swift 6
 concurrency checking. Both iOS 26.5 and 27 simulator package runs passed:
 521 tests in 79 suites. The older runtime skips three catalog checks for
 types only present in the newer runtime; those checks run on iOS 27.
-The iOS 27 app-hosted run passed 61 tests with one explicit skip: its unsigned
-simulator host cannot access the real Keychain. The aggregate-function matrix
-passed. The marketing privacy page passed lint, 14 tests, production static
+The iOS 27 iPhone and iPad app-hosted runs each passed 61 tests with one
+explicit skip: their unsigned simulator hosts cannot access the real Keychain.
+The aggregate-function matrix passed. The real Database screen was rendered
+at phone and tablet sizes and visually inspected; its capture test asserts
+nonblank content. The marketing privacy page passed lint, 14 tests, production static
 generation and the export checker (178 type pages, 14 documentation pages).
 
 Repairs found by Apple validation included missing actor awaits and a sending
