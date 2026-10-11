@@ -74,9 +74,15 @@ cause. No reset or deletion of backfill progress is required to investigate.
    with working Keychain access. Pass means two unique fixture credentials can
    be saved, a fresh store reads each correctly, removing A leaves B readable,
    A is absent and the obsolete singleton is absent. A skip is not a pass.
-   This is the only outstanding feature-specific acceptance gate: production
-   now uses per-destination Keychain accounts, while the unsigned simulator
-   could only exercise in-memory stores and protected-file fallback.
+   **Satisfied on Tama, 2026-10-11:** Xcode 27.0/iOS 27 iPhone simulator,
+   existing generated host with `CODE_SIGNING_ALLOWED=YES`, ad-hoc
+   `CODE_SIGN_IDENTITY=-` (Sign to Run Locally) and manual simulator signing.
+   The focused test executed once, passed with zero skips and zero failures,
+   and its existing defer cleanup removed the isolated fixture items.
+   Production now uses per-destination Keychain accounts; this provides the
+   actual Keychain evidence missing from the unsigned-host suites. No
+   certificate, provisioning profile, account/security setting or entitlement
+   was created or changed; no receiver traffic or HealthKit query was needed.
 
 Use a signed simulator if it can access the production Keychain API; otherwise
 use one signed iPhone or iPad test host. The existing test uses an isolated
@@ -187,7 +193,12 @@ Aggregate matrices probed 372/378 combinations. Both package runs recorded
 one existing known simulator backup-exclusion readback issue. All 13 PR checks,
 including [aggregate CI](https://github.com/PulsHealth/pulshealth/actions/runs/38164550838),
 passed. Local iPhone/iPad validation remains evidence for the production
-view layout; real Keychain access is the one outstanding acceptance item above.
+view layout. The focused ad-hoc signed simulator test subsequently passed
+`testScopedKeychainCredentialsSurviveReopenAndUnpairIndividually`: one executed,
+zero skipped, zero failures. Evidence is `keychain-signed-simulator.xcresult`
+and its log in the Tama task workspace. Both necessary acceptance items are
+satisfied at the tested source head; retain required CI on subsequent release
+heads. No outstanding feature-specific gate requires Sean's physical device.
 No archive, upload, submission, merge or deployment was made.
 
 ## Simultaneous syncing feasibility
