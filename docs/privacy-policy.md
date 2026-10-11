@@ -127,7 +127,13 @@ Transport Security (`NSAllowsLocalNetworking`).
 
 ## What stays on the device
 
-- **The bearer token** is stored in the iOS **Keychain**
+Sync → Database lists saved databases and identifies the active one. Switching
+resumes that database’s own progress. Unpairing removes its saved connection,
+credential and sync progress from this phone; it does not delete already
+uploaded server data or revoke credentials on the server.
+
+- **Saved database credentials.** Each paired database/user has its own bearer
+  token in the iOS **Keychain**
   (`kSecClassGenericPassword`, accessibility
   `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` — readable after the first
   unlock following a restart so background syncs can run, and bound to this
@@ -140,10 +146,13 @@ Transport Security (`NSAllowsLocalNetworking`).
   data: unreadable until the first unlock after a restart, and excluded from
   device and iCloud backups, so a parked token is never carried off the phone.
 - **Sync state** — one file, `sync-state.json`, in the app's private container,
-  holding your configuration (database URL, chosen types, start date, the
+  holding your saved database configurations and their separate sync progress.
+  Only the selected active database receives automatic uploads. Each saved
+  configuration includes its database URL, chosen types, start date, the
   identity fields if you filled them in, and — if you signed in to the
   PulsHealth database — the database address that sign-in delivered, so the
-  app can tell that database from one you run), the opaque HealthKit query anchors,
+  app can tell that database from one you run. The state also includes opaque
+  HealthKit query anchors,
   per-type counters, and progress watermarks. It is written atomically with
   iOS file protection and is excluded from device backups. It holds **no health
   samples** — a sync streams those to your database and keeps none of them in

@@ -601,7 +601,13 @@ import Testing
                 identifier: "HKQuantityTypeIdentifierStepCount", newAnchorData: anchor, samples: 1,
                 deletions: 0, bytes: 1, sampleDateRange: nil, duration: 0, latency: nil)
             await previous.persistNow()
-            original = try Data(contentsOf: previousDir.appendingPathComponent("sync-state.json"))
+            // This fixture represents the pre-registry file whose token is
+            // still in the singleton account, before the upgrade can read it.
+            let bytes = try Data(contentsOf: previousDir.appendingPathComponent("sync-state.json"))
+            var legacy = try #require(JSONSerialization.jsonObject(with: bytes) as? [String: Any])
+            legacy.removeValue(forKey: "destinations")
+            legacy.removeValue(forKey: "activeDestinationID")
+            original = try JSONSerialization.data(withJSONObject: legacy)
         }
 
         let dir = FileManager.default.temporaryDirectory

@@ -1,5 +1,7 @@
 import Foundation
 import XCTest
+import SwiftUI
+import Security
 import PulsHealthSync
 @testable import PulsHealth
 
@@ -25,8 +27,18 @@ final class AppModelTests: XCTestCase {
         private(set) var determined: Set<String> = []
         private(set) var requests: [[String]] = []
         private(set) var medicationRequests = 0
+        private(set) var syncedTypes: [String] = []
         var answer: HealthAccessRequestOutcome = .answered
         var unlisted: Set<String> = []
+        private var pauseNext = false
+        private var pausedRequest: CheckedContinuation<Void, Never>?
+        var hasPausedRequest: Bool { pausedRequest != nil }
+
+        func pauseNextRequest() { pauseNext = true }
+        func resumeRequest() {
+            pausedRequest?.resume()
+            pausedRequest = nil
+        }
 
         func set(answer: HealthAccessRequestOutcome) { self.answer = answer }
         func set(unlisted: Set<String>) { self.unlisted = unlisted }
@@ -35,13 +47,30 @@ final class AppModelTests: XCTestCase {
             !Set(identifiers).isSubset(of: determined)
         }
 
-        func requestAuthorization(for identifiers: [String]) -> HealthAccessRequestOutcome {
+        func requestAuthorization(for identifiers: [String]) async -> HealthAccessRequestOutcome {
             requests.append(identifiers)
+            if pauseNext {
+                pauseNext = false
+                await withCheckedContinuation { pausedRequest = $0 }
+            }
             if answer == .answered { determined.formUnion(Set(identifiers).subtracting(unlisted)) }
             return answer
         }
 
         func requestMedicationAuthorization() { medicationRequests += 1 }
+        func startObserving() {}
+        func refreshReadableHistory(force: Bool) -> [String: Date] { [:] }
+        func syncTypes(_ identifiers: [String], reason: SyncReason) { syncedTypes += identifiers }
+        func syncAggregate(configID: UUID, reason: SyncReason) {}
+        func syncActivitySummary(reason: SyncReason) {}
+    }
+
+    /// Configuration tests never make a real capability request or acquire an
+    /// engine request lease just because Apply refreshes its feature gates.
+    private struct NoCapabilities: ServerCapabilitiesReading {
+        func serverCapabilities() async throws -> ServerCapabilities {
+            throw TransportError.notConfigured
+        }
     }
 
     private let user = "5ea4d000-0000-4000-8000-0000000000aa"
@@ -78,19 +107,19 @@ final class AppModelTests: XCTestCase {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("puls-appmodel-\(UUID())", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let tokens = InMemoryTokenStore(token: stored?.authToken)
         if unreadable {
             // A directory where the file should be: exists, cannot be read.
             try FileManager.default.createDirectory(
                 at: dir.appendingPathComponent("sync-state.json"), withIntermediateDirectories: true)
         } else if stored != nil || progress {
-            let previous = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+            let previous = SyncStateStore(directory: dir, tokenStore: tokens)
             if let stored { await previous.setConfiguration(stored) }
             if progress {
                 await previous.update(steps) { $0.totalSamplesExported = 10 }
             }
             await previous.persistNow()
         }
-        let tokens = InMemoryTokenStore(token: stored?.authToken)
         let engine = HealthSyncEngine(
             store: SyncStateStore(directory: dir, tokenStore: tokens),
             eventLog: SyncEventLog(directory: dir),
@@ -105,7 +134,8 @@ final class AppModelTests: XCTestCase {
                 catchupTaskIdentifier: "org.example.appmodeltests.catchup",
                 backfillTaskIdentifier: "org.example.appmodeltests.backfill"),
             defaults: defaults,
-            healthAccess: access)
+            healthAccess: access,
+            capabilitiesReader: NoCapabilities())
         cleanups.append {
             await engine.stopObserving()
             defaults.removePersistentDomain(forName: suite)
@@ -293,8 +323,8 @@ final class AppModelTests: XCTestCase {
     /// start backfilling at once. The same draft applied without it (as a
     /// Settings-only save does) starts nothing.
     func testFinishingStartsTheBackfillThatAPlainApplyDoesNot() async throws {
-        // Nothing listens here: the backfill fails fast, which is fine — that
-        // it starts is what is under test.
+        // The fake records the backfill request without querying HealthKit or
+        // connecting to a receiver; starting the correct work is the contract.
         let dead = URL(string: "http://127.0.0.1:9")!
 
         let plain = try await makeModel(flags: ["onboardingCompleted": true])
@@ -319,6 +349,8 @@ final class AppModelTests: XCTestCase {
         // directory goes.
         let settled = await eventually { !h.model.isSyncingAll }
         XCTAssertTrue(settled)
+        let synced = await h.access.syncedTypes
+        XCTAssertTrue(synced.contains(steps))
         let wakes = await h.engine.wakeLog.recent(limit: 50)
         XCTAssertTrue(
             h.model.continuedBackfillPending
@@ -490,6 +522,281 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(engineConfig.serverURL, mine)
     }
 
+    // MARK: - Saved databases
+
+    func testScopedKeychainCredentialsSurviveReopenAndUnpairIndividually() throws {
+        let service = "PulsHealthSavedDestinationTests.\(UUID())"
+        let tokens = KeychainTokenStore(service: service)
+        let a = UUID(), b = UUID()
+        defer {
+            try? tokens.setToken(nil, for: a)
+            try? tokens.setToken(nil, for: b)
+        }
+        do { try tokens.setToken("fixture-alpha", for: a) }
+        catch KeychainTokenStore.Failure.status(let status)
+            where status == errSecMissingEntitlement || status == errSecInteractionNotAllowed {
+            throw XCTSkip("This simulator host has no Keychain access; device acceptance remains required")
+        }
+        try tokens.setToken("fixture-beta", for: b)
+        let reopened = KeychainTokenStore(service: service)
+        XCTAssertEqual(try reopened.token(for: a), "fixture-alpha")
+        XCTAssertEqual(try reopened.token(for: b), "fixture-beta")
+        try reopened.setToken(nil, for: a)
+        XCTAssertNil(try reopened.token(for: a))
+        XCTAssertEqual(try reopened.token(for: b), "fixture-beta")
+        XCTAssertNil(try reopened.token())
+    }
+
+    func testSavedDatabaseScreenRendersOnPhoneAndPadAfterSwitchAndUnpair() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.config.serverURL = mine
+        h.model.config.authToken = "fixture-alpha"
+        let firstApplied = await h.model.applyConfiguration()
+        XCTAssertTrue(firstApplied)
+        let firstID = try XCTUnwrap(h.model.activeDestinationID)
+        h.model.config.serverURL = URL(string: "https://second.example.test")!
+        h.model.config.authToken = "fixture-beta"
+        let secondApplied = await h.model.applyConfiguration(serverChangeConfirmed: true)
+        XCTAssertTrue(secondApplied)
+
+        // Render the real screen over isolated state; no health samples, sockets
+        // or production credentials enter this layout smoke test.
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        for size in [CGSize(width: 393, height: 852), CGSize(width: 1024, height: 1366)] {
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(origin: .zero, size: size)
+            let controller = UIHostingController(rootView:
+                NavigationStack { ServerSettingsView(scanOnArrival: false) }.environment(h.model))
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.frame = window.bounds
+            window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(150))
+            let image = UIGraphicsImageRenderer(size: size).image { context in
+                controller.view.layer.render(in: context.cgContext)
+            }
+            let pixels = try XCTUnwrap(image.cgImage?.dataProvider?.data)
+            let data = pixels as Data
+            let colors = Set(stride(from: 0, to: data.count - 4, by: 400).map {
+                data.subdata(in: $0..<($0 + 4))
+            })
+            XCTAssertGreaterThan(colors.count, 4, "The screen must render content, not a blank attachment")
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "Saved databases \(Int(size.width))"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            XCTAssertEqual(h.model.savedDestinations.count, 2)
+            window.isHidden = true
+        }
+        let switched = await h.model.switchDestination(id: firstID)
+        XCTAssertTrue(switched)
+        let unpaired = await h.model.unpairDestination(id: firstID)
+        XCTAssertTrue(unpaired)
+        XCTAssertNil(h.model.activeDestinationID)
+        XCTAssertEqual(h.model.savedDestinations.count, 1)
+    }
+
+    func testSavedDatabaseSwitchRestoresItsProgressWithoutMigrationPrompt() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.config.serverURL = mine
+        h.model.config.authToken = "first-test-token"
+        h.model.config.userID = user
+        let firstApplied = await h.model.applyConfiguration()
+        XCTAssertTrue(firstApplied)
+        let firstID = try XCTUnwrap(h.model.activeDestinationID)
+        await h.engine.store.update(steps) { $0.totalSamplesExported = 11 }
+
+        h.model.config.serverURL = URL(string: "https://other.example.test")!
+        h.model.config.authToken = "second-test-token"
+        let secondApplied = await h.model.applyConfiguration(serverChangeConfirmed: true)
+        XCTAssertTrue(secondApplied)
+        let secondID = try XCTUnwrap(h.model.activeDestinationID)
+        XCTAssertNotEqual(firstID, secondID)
+        XCTAssertEqual(h.model.savedDestinations.count, 2)
+        let fresh = await h.engine.store.state(for: steps)
+        XCTAssertEqual(fresh.totalSamplesExported, 0)
+        await h.engine.store.update(steps) { $0.totalSamplesExported = 22 }
+
+        // A staged edit never leaks into a saved destination's configuration.
+        h.model.config.userID = "unapplied-user"
+        let switched = await h.model.switchDestination(id: firstID)
+        XCTAssertTrue(switched)
+        XCTAssertEqual(h.model.activeDestinationID, firstID)
+        XCTAssertEqual(h.model.appliedConfig.serverURL, mine)
+        XCTAssertEqual(h.model.config.userID, user)
+        XCTAssertEqual(h.model.appliedConfig.authToken, "first-test-token")
+        XCTAssertNil(h.model.pendingServerChange)
+        let restored = await h.engine.store.state(for: steps)
+        XCTAssertEqual(restored.totalSamplesExported, 11)
+
+        let switchedBack = await h.model.switchDestination(id: secondID)
+        XCTAssertTrue(switchedBack)
+        let secondProgress = await h.engine.store.state(for: steps)
+        XCTAssertEqual(secondProgress.totalSamplesExported, 22)
+    }
+
+    func testSavedAccountsAtTheSameURLKeepDistinctCredentialsAndPairingProvenance() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.config.serverURL = mine
+        h.model.config.signedInDatabaseURL = mine
+        h.model.config.userID = user
+        h.model.config.authToken = "first-account-token"
+        let firstApplied = await h.model.applyConfiguration()
+        XCTAssertTrue(firstApplied)
+        let firstID = try XCTUnwrap(h.model.activeDestinationID)
+
+        h.model.config.userID = "5ea4d000-0000-4000-8000-0000000000bb"
+        h.model.config.authToken = "second-account-token"
+        h.model.config.signedInDatabaseURL = nil
+        let secondApplied = await h.model.applyConfiguration(serverChangeConfirmed: true)
+        XCTAssertTrue(secondApplied)
+        XCTAssertEqual(h.model.savedDestinations.count, 2)
+        XCTAssertEqual(Set(h.model.savedDestinations.map(\.serverURL)), [mine])
+        XCTAssertEqual(Set(h.model.savedDestinations.map(\.userID)).count, 2)
+        XCTAssertFalse(h.model.appliedConfig.isSignedInDatabase)
+
+        let switched = await h.model.switchDestination(id: firstID)
+        XCTAssertTrue(switched)
+        XCTAssertEqual(h.model.appliedConfig.userID, user)
+        XCTAssertEqual(h.model.appliedConfig.authToken, "first-account-token")
+        XCTAssertTrue(h.model.appliedConfig.isSignedInDatabase)
+    }
+
+    func testUnpairInactivePreservesActiveAndUnpairActiveDisconnects() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.config.serverURL = mine
+        h.model.config.authToken = "first-test-token"
+        let firstApplied = await h.model.applyConfiguration()
+        XCTAssertTrue(firstApplied)
+        let firstID = try XCTUnwrap(h.model.activeDestinationID)
+        h.model.config.serverURL = URL(string: "https://other.example.test")!
+        h.model.config.authToken = "second-test-token"
+        let secondApplied = await h.model.applyConfiguration(serverChangeConfirmed: true)
+        XCTAssertTrue(secondApplied)
+        let secondID = try XCTUnwrap(h.model.activeDestinationID)
+        let before = h.model.appliedConfig
+        h.model.config.userName = "Unsaved draft"
+
+        let removedInactive = await h.model.unpairDestination(id: firstID)
+        XCTAssertTrue(removedInactive)
+        XCTAssertEqual(h.model.activeDestinationID, secondID)
+        XCTAssertEqual(h.model.appliedConfig, before)
+        XCTAssertEqual(h.model.config.userName, "Unsaved draft")
+        XCTAssertEqual(h.model.savedDestinations.map(\.id), [secondID])
+
+        let removedActive = await h.model.unpairDestination(id: secondID)
+        XCTAssertTrue(removedActive)
+        XCTAssertNil(h.model.activeDestinationID)
+        XCTAssertNil(h.model.appliedConfig.serverURL)
+        XCTAssertNil(h.model.appliedConfig.authToken)
+        XCTAssertTrue(h.model.savedDestinations.isEmpty)
+    }
+
+    func testRepeatedConnectionActionsAreBlockedWhileApplyAwaitsHealthAccess() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.config.serverURL = mine
+        h.model.config.authToken = "test-token"
+        let applied = await h.model.applyConfiguration()
+        XCTAssertTrue(applied)
+        let activeID = try XCTUnwrap(h.model.activeDestinationID)
+
+        await h.access.pauseNextRequest()
+        h.model.config.enabledTypes = [steps]
+        let applying = Task { await h.model.applyConfiguration() }
+        let paused = await eventually { await h.access.hasPausedRequest }
+        XCTAssertTrue(paused)
+        XCTAssertTrue(h.model.isUpdatingConnection)
+        let repeatedApply = await h.model.applyConfiguration()
+        let repeatedSwitch = await h.model.switchDestination(id: UUID())
+        let repeatedUnpair = await h.model.unpairDestination(id: activeID)
+        XCTAssertFalse(repeatedApply)
+        XCTAssertFalse(repeatedSwitch)
+        XCTAssertFalse(repeatedUnpair)
+        let refusedTest = await h.model.testConnection(url: mine, token: "test-token")
+        if case .unreachable = refusedTest {} else { XCTFail("tests cannot start during a connection change") }
+        XCTAssertEqual(h.model.activeConnectionTests, 0)
+        XCTAssertEqual(h.model.activeDestinationID, activeID)
+        await h.access.resumeRequest()
+        let finished = await applying.value
+        XCTAssertTrue(finished)
+        XCTAssertFalse(h.model.isUpdatingConnection)
+    }
+
+    func testConnectionProbeBlocksSwitchAndUnpairUntilTheWholeTestFinishes() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.config.serverURL = mine
+        h.model.config.authToken = "first-token"
+        let firstApplied = await h.model.applyConfiguration()
+        XCTAssertTrue(firstApplied)
+        let firstID = try XCTUnwrap(h.model.activeDestinationID)
+        h.model.config.serverURL = URL(string: "https://other.example.test")!
+        h.model.config.authToken = "second-token"
+        let secondApplied = await h.model.applyConfiguration(serverChangeConfirmed: true)
+        XCTAssertTrue(secondApplied)
+        let secondID = try XCTUnwrap(h.model.activeDestinationID)
+
+        await PausedConnectionTestProtocol.gate.reset()
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [PausedConnectionTestProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let testing = Task {
+            await h.model.testConnection(url: mine, token: "first-token", session: session)
+        }
+        let gotCapabilities = await eventually {
+            await PausedConnectionTestProtocol.gate.hasSeen("GET")
+        }
+        XCTAssertTrue(gotCapabilities)
+        XCTAssertEqual(h.model.activeConnectionTests, 1)
+        let blockedSwitch = await h.model.switchDestination(id: firstID)
+        let blockedUnpair = await h.model.unpairDestination(id: secondID)
+        XCTAssertFalse(blockedSwitch)
+        XCTAssertFalse(blockedUnpair)
+        XCTAssertEqual(h.model.activeDestinationID, secondID)
+
+        // A 404 starts the POST probe; the lease must cover that phase too.
+        await PausedConnectionTestProtocol.gate.release("GET")
+        let gotProbe = await eventually {
+            await PausedConnectionTestProtocol.gate.hasSeen("POST")
+        }
+        XCTAssertTrue(gotProbe)
+        let blockedDuringProbe = await h.model.switchDestination(id: firstID)
+        XCTAssertFalse(blockedDuringProbe)
+        XCTAssertEqual(h.model.activeConnectionTests, 1)
+        await PausedConnectionTestProtocol.gate.release("POST")
+        let result = await testing.value
+        XCTAssertEqual(result, .okNoCapabilities)
+        XCTAssertEqual(h.model.activeConnectionTests, 0)
+
+        let switched = await h.model.switchDestination(id: firstID)
+        XCTAssertTrue(switched)
+        XCTAssertEqual(h.model.activeDestinationID, firstID)
+        XCTAssertNil(h.model.lastConnectionTest, "the old test cannot repaint after switching")
+    }
+
+    func testMissingSavedDatabaseDoesNotChangeActiveConnection() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.config.serverURL = mine
+        h.model.config.authToken = "test-token"
+        let applied = await h.model.applyConfiguration()
+        XCTAssertTrue(applied)
+        let before = h.model.appliedConfig
+        let activeID = h.model.activeDestinationID
+        let switched = await h.model.switchDestination(id: UUID())
+        XCTAssertFalse(switched)
+        XCTAssertEqual(h.model.appliedConfig, before)
+        XCTAssertEqual(h.model.activeDestinationID, activeID)
+        XCTAssertNotNil(h.model.lastErrorMessage)
+        XCTAssertFalse(h.model.isUpdatingConnection)
+    }
+
     // MARK: - Pairing links
 
     /// First one wins: a second link while the first awaits an answer is
@@ -579,6 +886,45 @@ private final class CapabilityTestProtocol: URLProtocol, @unchecked Sendable {
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: Data(#"{"protocolVersions":[1],"features":["stats","digest","uuids"]}"#.utf8))
         client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+
+/// Pauses both phases independently without sleeps, real sockets or DNS.
+private final class PausedConnectionTestProtocol: URLProtocol, @unchecked Sendable {
+    actor Gate {
+        private var seen: Set<String> = []
+        private var released: Set<String> = []
+        private var pending: [String: CheckedContinuation<Void, Never>] = [:]
+
+        func reset() {
+            seen = []
+            released = []
+        }
+        func hasSeen(_ method: String) -> Bool { seen.contains(method) }
+        func wait(_ method: String) async {
+            seen.insert(method)
+            guard !released.contains(method) else { return }
+            await withCheckedContinuation { pending[method] = $0 }
+        }
+        func release(_ method: String) {
+            released.insert(method)
+            pending.removeValue(forKey: method)?.resume()
+        }
+    }
+    static let gate = Gate()
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let method = request.httpMethod ?? "GET"
+        Task { @Sendable [self, method] in
+            await Self.gate.wait(method)
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: method == "GET" ? 404 : 204,
+                httpVersion: nil, headerFields: nil)!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocolDidFinishLoading(self)
+        }
     }
     override func stopLoading() {}
 }

@@ -42,7 +42,8 @@ public actor HealthSyncEngine {
     let healthStore = HKHealthStore()
     var transport: SyncTransport?
     /// Read-side client for /v1/stats and the reconciliation endpoints.
-    private var apiClient: ServerAPIClient?
+    // Internal so isolated-session tests can exercise the complete GET lifetime.
+    var apiClient: ServerAPIClient?
     private var observerQuery: HKObserverQuery?
     /// Types (and "agg:<uuid>" aggregate-config keys) with a sync currently
     /// running (prevents overlapping runs per type/config).
@@ -178,16 +179,11 @@ public actor HealthSyncEngine {
 
     // MARK: - Configuration
 
-    /// Apply a configuration. Check `serverIdentityChange(applying:)` first: a
-    /// configuration that points at a different server or user should be
-    /// applied only after the user has chosen to start fresh (`resetAll()`
-    /// beforehand) or keep progress, and then with `confirmServerIdentity`
-    /// so the store records the new identity as the one its progress belongs to.
-    ///
-    /// Returns false without changing anything while a sync is in flight.
-    /// Captured transports must finish before credentials or destination change.
-    /// A nil `authToken` keeps the stored token for the same database and
-    /// user (`SyncStateStore.setConfiguration`); `clearAuthToken()` deletes it.
+    /// Apply settings and pair the receiver, retaining a separate complete
+    /// progress snapshot for each server/user identity. A new identity starts
+    /// fresh; a saved identity resumes its own progress. The confirmation flag
+    /// remains source-compatible but never permits copying another receiver's
+    /// anchors. Returns false if a run is active or persistence fails.
     @discardableResult
     public func configure(
         _ config: SyncConfiguration, confirmServerIdentity: Bool = false, clearAuthToken: Bool = false
@@ -195,25 +191,13 @@ public actor HealthSyncEngine {
         guard activeSyncs.isEmpty, !configurationMutationInProgress else { return false }
         configurationMutationInProgress = true
         defer { configurationMutationInProgress = false }
-        // Reset a reidentified series under the same exclusion as configure;
-        // otherwise an old in-flight pass can restore its previous watermark.
-        let previous = await store.configuration
-        for aggregate in config.aggregates {
-            guard let old = previous.aggregates.first(where: { $0.id == aggregate.id }) else { continue }
-            if old.seriesIdentity != aggregate.seriesIdentity || old.startDate != aggregate.startDate {
-                await store.resetAggregate(configID: aggregate.id)
-                await eventLog.log(.warn, type: aggregate.typeIdentifier,
-                    "Aggregate changed — the next sync computes it from the start")
-            }
+        do {
+            try await store.applySavedConfiguration(config, clearAuthToken: clearAuthToken)
+        } catch {
+            await eventLog.log(.error, "Database settings could not be saved: \(error.localizedDescription)")
+            return false
         }
-        await store.setConfiguration(config, confirmServerIdentity: confirmServerIdentity)
-        if clearAuthToken { await store.clearAuthToken() }
-        await store.pruneAggregateStates(keeping: Set(config.aggregates.map(\.id)))
-        observerCoalesceWindow = max(0, config.observerCoalesceWindow)
-        // From the store, not `config`: the token the store kept is the one
-        // to sync with.
-        buildTransport(from: await store.configuration)
-        notifyChanged()
+        await destinationDidChange()
         return true
     }
 
@@ -224,7 +208,10 @@ public actor HealthSyncEngine {
         guard activeSyncs.isEmpty, !configurationMutationInProgress else { return false }
         configurationMutationInProgress = true
         defer { configurationMutationInProgress = false }
-        await store.setAuthToken(token)
+        var config = await store.configuration
+        config.authToken = token
+        do { try await store.applySavedConfiguration(config) }
+        catch { return false }
         buildTransport(from: await store.configuration)
         notifyChanged()
         return true
@@ -239,10 +226,44 @@ public actor HealthSyncEngine {
         guard activeSyncs.isEmpty, !configurationMutationInProgress else { return false }
         configurationMutationInProgress = true
         defer { configurationMutationInProgress = false }
-        await store.clearAuthToken()
+        let config = await store.configuration
+        do { try await store.applySavedConfiguration(config, clearAuthToken: true) }
+        catch { return false }
         buildTransport(from: await store.configuration)
         notifyChanged()
         return true
+    }
+
+    /// Switches progress, configuration and credentials together. No captured
+    /// old transport can still upload once this method succeeds.
+    public func switchDestination(id: UUID) async throws {
+        guard activeSyncs.isEmpty, !configurationMutationInProgress else { throw SavedDestinationError.busy }
+        configurationMutationInProgress = true
+        defer { configurationMutationInProgress = false }
+        try await store.switchDestination(id: id)
+        await destinationDidChange()
+    }
+
+    /// Forgets local progress and credentials only; never deletes server data.
+    public func unpairDestination(id: UUID) async throws {
+        guard activeSyncs.isEmpty, !configurationMutationInProgress else { throw SavedDestinationError.busy }
+        configurationMutationInProgress = true
+        defer { configurationMutationInProgress = false }
+        try await store.unpairDestination(id: id)
+        await destinationDidChange()
+    }
+
+    private func destinationDidChange() async {
+        let config = await store.configuration
+        observerCoalesceWindow = max(0, config.observerCoalesceWindow)
+        activities.removeAll()
+        backfillRuns.removeAll()
+        pendingResync.removeAll()
+        backfillExpectedUntil = nil
+        readableHistory.removeAll()
+        readableHistoryCheckedAt = nil
+        buildTransport(from: config)
+        notifyChanged()
     }
 
     /// Whether HealthKit can be read right now. False means the device is
@@ -276,6 +297,8 @@ public actor HealthSyncEngine {
 
     /// Server-side per-type aggregates, for comparing against device counters.
     public func serverStats() async throws -> [TypeServerStats] {
+        guard let configurationUse = beginConfigurationUse() else { throw SyncError.configurationBusy }
+        defer { activeSyncs.remove(configurationUse) }
         await ensureTransport()
         guard let apiClient else { throw TransportError.notConfigured }
         return try await apiClient.stats()
@@ -285,6 +308,8 @@ public actor HealthSyncEngine {
     /// server without the endpoint throws `TransportError.serverError` 404/405;
     /// callers treat that as "no features" (see `ConnectionTester`).
     public func serverCapabilities() async throws -> ServerCapabilities {
+        guard let configurationUse = beginConfigurationUse() else { throw SyncError.configurationBusy }
+        defer { activeSyncs.remove(configurationUse) }
         await ensureTransport()
         guard let apiClient else { throw TransportError.notConfigured }
         return try await apiClient.capabilities()

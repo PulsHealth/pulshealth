@@ -31,7 +31,8 @@ struct ServerSettingsView: View {
     /// The host of a code the sign-in sheet handed back for a database outside
     /// the viewer's domain, now filled in under your own database instead.
     @State private var signInElsewhere: String?
-    @State private var confirmDisconnect = false
+    @State private var destinationToSwitch: SavedSyncDestination?
+    @State private var destinationToUnpair: SavedSyncDestination?
     @State private var loaded = false
     /// Outcome of the last Test Connection for the values currently entered;
     /// cleared whenever they change.
@@ -40,6 +41,13 @@ struct ServerSettingsView: View {
 
     var body: some View {
         Form {
+            savedDestinationsSection
+            if let message = model.lastErrorMessage {
+                Section {
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                }
+            }
             destinationSection
             switch setup.destination {
             case .pulsHealth: pulsHealthSections
@@ -47,6 +55,7 @@ struct ServerSettingsView: View {
             case nil: EmptyView()
             }
         }
+        .disabled(model.isUpdatingConnection)
         .navigationTitle("Database")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -82,16 +91,94 @@ struct ServerSettingsView: View {
             PairingScannerView { applyPairing($0) }
         }
         .confirmationDialog(
-            "Disconnect from the PulsHealth database?",
-            isPresented: $confirmDisconnect,
-            titleVisibility: .visible
-        ) {
-            Button("Disconnect", role: .destructive) {
-                Task { await disconnect() }
+            "Switch active database?",
+            isPresented: Binding(get: { destinationToSwitch != nil }, set: { if !$0 { destinationToSwitch = nil } }),
+            titleVisibility: .visible,
+            presenting: destinationToSwitch
+        ) { destination in
+            Button("Switch Database") {
+                destinationToSwitch = nil
+                Task {
+                    if await model.switchDestination(id: destination.id) { resetSetup() }
+                }
             }
-        } message: {
-            Text("Syncing stops. What was already sent stays in the PulsHealth database until you delete your account.")
+        } message: { destination in
+            Text("Sync to \(databaseAddress(destination)) as user \(destination.userID), resuming its saved progress. The previous database stops receiving uploads after the switch succeeds. Unapplied edits will be discarded.")
         }
+        .confirmationDialog(
+            "Unpair database?",
+            isPresented: Binding(get: { destinationToUnpair != nil }, set: { if !$0 { destinationToUnpair = nil } }),
+            titleVisibility: .visible,
+            presenting: destinationToUnpair
+        ) { destination in
+            Button("Unpair", role: .destructive) {
+                destinationToUnpair = nil
+                Task {
+                    let wasActive = model.activeDestinationID == destination.id
+                    if await model.unpairDestination(id: destination.id), wasActive { resetSetup() }
+                }
+            }
+        } message: { destination in
+            Text("Remove \(databaseAddress(destination)), user \(destination.userID), and its saved credentials and sync progress from this iPhone. If active, syncing stops. Already uploaded data remains on the server. Pair again to reconnect.")
+        }
+    }
+
+    @ViewBuilder private var savedDestinationsSection: some View {
+        if !model.savedDestinations.isEmpty {
+            Section {
+                ForEach(model.savedDestinations) { destination in
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Database")
+                                .font(.headline)
+                            Spacer()
+                            if destination.id == model.activeDestinationID {
+                                Label("Active", systemImage: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            }
+                        }
+                        Text(databaseAddress(destination))
+                            .textSelection(.enabled)
+                        Text("User ID: \(destination.userID)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                        HStack {
+                            if destination.id != model.activeDestinationID {
+                                Button("Switch to This Database") { destinationToSwitch = destination }
+                                    .buttonStyle(.borderless)
+                            }
+                            Spacer()
+                            Button("Unpair", role: .destructive) { destinationToUnpair = destination }
+                                .buttonStyle(.borderless)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                if model.isUpdatingConnection {
+                    ProgressView("Updating connection…")
+                }
+            } header: {
+                Text("Saved Databases")
+            } footer: {
+                Text("Only the active database receives synced Health data. Each database and user ID keeps its own sync progress.")
+            }
+        }
+    }
+
+    /// Keep the transport scheme visible without exposing URL credentials,
+    /// queries or fragments (a pasted URL may contain secrets there).
+    private func databaseAddress(_ destination: SavedSyncDestination) -> String {
+        let scheme = destination.serverURL.scheme.map { "\($0)://" } ?? ""
+        return scheme + destination.identity.serverLabel
+    }
+
+    private func resetSetup() {
+        connectionTest.cancel()
+        signInProblem = nil
+        signInElsewhere = nil
+        setup = DatabaseSetup(applied: model.appliedConfig)
     }
 
     // MARK: - The choice
@@ -107,7 +194,7 @@ struct ServerSettingsView: View {
                 detail: "One you run yourself, connected with its pairing code.",
                 symbol: "externaldrive.connected.to.line.below")
         } header: {
-            Text("Sync To")
+            Text(model.savedDestinations.isEmpty ? "Sync To" : "Add or Edit a Database")
         } footer: {
             if setup.destination == nil {
                 Text("Choose where PulsHealth keeps a live copy of your Health data. You can change it later.")
@@ -206,11 +293,7 @@ struct ServerSettingsView: View {
             } footer: {
                 Text("Sign in from Claude or another assistant and ask it about your Health data.")
             }
-            Section {
-                Button("Disconnect", role: .destructive) { confirmDisconnect = true }
-            } footer: {
-                Text("Syncing stops. What was already sent stays in the PulsHealth database until you delete your account.")
-            }
+
         } else {
             Section {
                 Text("Keep a live copy of your Health data, see it on the web at app.pulshealth.com, and connect Claude or another AI assistant to it.")
@@ -479,14 +562,4 @@ struct ServerSettingsView: View {
         }
     }
 
-    /// Disconnect from the PulsHealth database: the same path as emptying
-    /// your own database's URL — no database, no token, so syncing stops and
-    /// the Export tab keeps working. The account and what it holds are the
-    /// account page's to delete.
-    private func disconnect() async {
-        ServerFieldsDraft().commit(to: &model.config)
-        if await model.applyDatabaseConfiguration() {
-            dismiss()
-        }
-    }
 }

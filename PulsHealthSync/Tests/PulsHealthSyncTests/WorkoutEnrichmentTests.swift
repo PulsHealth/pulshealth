@@ -149,7 +149,7 @@ actor FlakyTransport: SyncTransport {
 
     @Test func recordBatchAdvancesCountersButNotWatermark() async {
         for kind in WorkoutEnrichmentKind.allCases {
-            let store = SyncStateStore(directory: makeDir())
+            let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
             // A batch upload records bytes/payloads/batches but must NOT advance the
             // watermark — that only moves once a whole workout's chunks are acked.
             await store.recordWorkoutEnrichmentBatch(kind, payloads: 5, bytes: 512)
@@ -171,7 +171,7 @@ actor FlakyTransport: SyncTransport {
     }
 
     @Test func watermarkAdvancesOnlyForward() async {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         let mark = Date(timeIntervalSince1970: 2_000_000)
         await store.advanceWorkoutEnrichmentWatermark(.routes, to: mark)
         #expect(await store.workoutEnrichmentState(.routes).computedThrough == mark)
@@ -182,7 +182,7 @@ actor FlakyTransport: SyncTransport {
     }
 
     @Test func routesAndStreamsWatermarksAreIndependent() async {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         let routeMark = Date(timeIntervalSince1970: 1_000_000)
         await store.advanceWorkoutEnrichmentWatermark(.routes, to: routeMark)
         #expect(await store.workoutEnrichmentState(.routes).computedThrough == routeMark)
@@ -191,7 +191,7 @@ actor FlakyTransport: SyncTransport {
     }
 
     @Test func errorsRecordedAndClearedOnNextSuccess() async {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         struct Boom: Error {}
         await store.recordWorkoutEnrichmentError(.streams, error: Boom())
         #expect(await store.workoutEnrichmentState(.streams).lastError != nil)
@@ -200,7 +200,7 @@ actor FlakyTransport: SyncTransport {
     }
 
     @Test func resetClearsWatermarkAndCounters() async {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         await store.recordWorkoutEnrichmentBatch(.routes, payloads: 3, bytes: 100)
         await store.advanceWorkoutEnrichmentWatermark(.routes, to: Date(), workouts: 1)
         await store.markWorkoutEnrichmentFullRecompute(.routes)
@@ -213,7 +213,7 @@ actor FlakyTransport: SyncTransport {
     }
 
     @Test func resetAllClearsEnrichmentWatermarks() async {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         await store.advanceWorkoutEnrichmentWatermark(.routes, to: Date())
         await store.advanceWorkoutEnrichmentWatermark(.streams, to: Date())
         await store.resetAll()
@@ -319,7 +319,7 @@ actor FlakyTransport: SyncTransport {
     }
 
     @Test func forcedRequestDuringActivePassCoalescesAndRestartsAtNextBoundary() async {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         let firstStart = Date(timeIntervalSince1970: 1_700_000_000)
         let cursor = firstStart.addingTimeInterval(10 * 86_400)
         await store.beginWorkoutEnrichmentFullRecompute(.routes, at: firstStart)
@@ -444,7 +444,7 @@ actor FlakyTransport: SyncTransport {
     /// All of a workout's chunks ack → the watermark advances exactly once, to the
     /// workout's endDate, and every chunk was recorded.
     @Test func watermarkAdvancesAfterAllChunksAck() async throws {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         let engine = HealthSyncEngine(store: store)
         let transport = RecordingTransport()
         let end = Date(timeIntervalSince1970: 5_000_000)
@@ -464,7 +464,7 @@ actor FlakyTransport: SyncTransport {
     /// The watermark must NOT advance (so the next run retries the SAME small
     /// chunks rather than wedging), and only the chunks that actually acked count.
     @Test func watermarkDoesNotAdvanceWhenAChunkFails() async {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         let engine = HealthSyncEngine(store: store)
         let transport = FlakyTransport(failAfter: 2) // accepts 2, then times out
         let end = Date(timeIntervalSince1970: 5_000_000)
@@ -490,7 +490,7 @@ actor FlakyTransport: SyncTransport {
     }
 
     private func engine(routes: Bool, enhanced: Bool) async -> (HealthSyncEngine, SyncStateStore, RecordingTransport) {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         await store.setConfiguration(SyncConfiguration(
             enabledTypes: [HealthTypeCatalog.workoutIdentifier],
             serverURL: URL(string: "https://example.test")!, authToken: "t",
@@ -578,7 +578,7 @@ actor FlakyTransport: SyncTransport {
     }
 
     @Test func profileUploadsWithoutSamplesOrWorkouts() async throws {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         await store.setConfiguration(SyncConfiguration(
             serverURL: URL(string: "https://example.test")!,
             authToken: "token",
@@ -605,7 +605,7 @@ actor FlakyTransport: SyncTransport {
     }
 
     @Test func completelyEmptyProfileUploadsAReplacement() async throws {
-        let store = SyncStateStore(directory: makeDir())
+        let store = SyncStateStore(directory: makeDir(), tokenStore: InMemoryTokenStore())
         await store.setConfiguration(SyncConfiguration(
             serverURL: URL(string: "https://example.test")!,
             authToken: "token",

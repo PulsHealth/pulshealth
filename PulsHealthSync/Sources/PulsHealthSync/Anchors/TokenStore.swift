@@ -11,6 +11,20 @@ public protocol TokenStore: Sendable {
     func token() throws -> String?
     /// Replace the stored token. Passing nil removes it.
     func setToken(_ token: String?) throws
+    func token(for destinationID: UUID) throws -> String?
+    func setToken(_ token: String?, for destinationID: UUID) throws
+}
+
+public extension TokenStore {
+    // Legacy custom stores have no scoped items; writes use the protected
+    // fallback until the embedding app implements destination-aware storage.
+    func token(for destinationID: UUID) throws -> String? { nil }
+    func setToken(_ token: String?, for destinationID: UUID) throws {
+        // Legacy stores cannot hold scoped credentials, so deleting one is
+        // already satisfied. Non-nil writes retain the protected-file fallback.
+        guard token != nil else { return }
+        throw SavedDestinationError.credential
+    }
 }
 
 /// The production `TokenStore`: one `kSecClassGenericPassword` item in the app's
@@ -47,6 +61,14 @@ public struct KeychainTokenStore: TokenStore {
     public init(service: String? = nil, account: String = "sync-token") {
         self.service = service ?? Self.defaultService
         self.account = account
+    }
+
+    public func token(for destinationID: UUID) throws -> String? {
+        try KeychainTokenStore(service: service, account: account + ".destination-" + destinationID.uuidString).token()
+    }
+
+    public func setToken(_ token: String?, for destinationID: UUID) throws {
+        try KeychainTokenStore(service: service, account: account + ".destination-" + destinationID.uuidString).setToken(token)
     }
 
     private var baseQuery: [String: Any] {
@@ -104,6 +126,15 @@ public struct KeychainTokenStore: TokenStore {
 /// throwaway engines (`BenchmarkView`) that must never touch the real Keychain.
 public final class InMemoryTokenStore: TokenStore, Sendable {
     private let storage: OSAllocatedUnfairLock<String?>
+    private let destinations = OSAllocatedUnfairLock(initialState: [UUID: String]())
+
+    public func token(for destinationID: UUID) throws -> String? {
+        destinations.withLock { $0[destinationID] }
+    }
+
+    public func setToken(_ token: String?, for destinationID: UUID) throws {
+        destinations.withLock { $0[destinationID] = token }
+    }
 
     public init(token: String? = nil) {
         storage = OSAllocatedUnfairLock(initialState: token)

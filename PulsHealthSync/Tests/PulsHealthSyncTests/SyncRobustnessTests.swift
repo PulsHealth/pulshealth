@@ -468,7 +468,8 @@ private final class SleepRecorder: @unchecked Sendable {
         var rebuilt = SyncConfiguration(enabledTypes: [steps], serverURL: url)
         rebuilt.authToken = nil
         await store.setConfiguration(rebuilt)
-        #expect(try tokens.token() == "t1")
+        let id = try #require(await store.activeDestinationID)
+        #expect(try tokens.token(for: id) == "t1")
         #expect(await store.configuration.authToken == "t1")
         #expect(await store.configuration.enabledTypes == [steps])
     }
@@ -497,7 +498,8 @@ private final class SleepRecorder: @unchecked Sendable {
         let tokens = InMemoryTokenStore()
         let store = await configured(tokens)
         await store.setAuthToken("t2")
-        #expect(try tokens.token() == "t2")
+        let id = try #require(await store.activeDestinationID)
+        #expect(try tokens.token(for: id) == "t2")
         #expect(await store.configuration.authToken == "t2")
         #expect(await store.configuration.serverURL == url)
 

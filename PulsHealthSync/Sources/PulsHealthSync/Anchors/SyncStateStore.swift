@@ -277,6 +277,11 @@ public actor SyncStateStore {
     /// Stable per-install ID sent with every batch.
     public let deviceID: String
 
+    private var destinations: [SavedDestinationState] = []
+    private var destinationRegistryInitialized = false
+    public private(set) var activeDestinationID: UUID?
+    public var savedDestinations: [SavedSyncDestination] { destinations.map(\.destination) }
+
     private let fileURL: URL
     private let tokenStore: TokenStore
     /// True when `sync-state.json` existed at init but could not be read (see
@@ -289,6 +294,7 @@ public actor SyncStateStore {
     /// Set when the last hand-off to the token store failed, so the next
     /// configuration write retries instead of assuming the token is safe.
     private var tokenStoreDirty = false
+    private var legacyCredentialUnavailable = false
     private let logger = Logger(subsystem: PulsLog.subsystem, category: "state")
     private var saveTask: Task<Void, Never>?
 
@@ -309,6 +315,8 @@ public actor SyncStateStore {
         /// field existed, did not deliver: the first `persist()` of the session
         /// rewrote the file without the token and it existed only in memory.
         var fallbackAuthToken: String?
+        var destinations: [SavedDestinationState]?
+        var activeDestinationID: UUID?
 
         init(
             configuration: SyncConfiguration,
@@ -319,8 +327,12 @@ public actor SyncStateStore {
             workoutRoutesState: WorkoutEnrichmentState,
             workoutStreamsState: WorkoutEnrichmentState,
             serverIdentity: ServerIdentity?,
-            fallbackAuthToken: String? = nil
+            fallbackAuthToken: String? = nil,
+            destinations: [SavedDestinationState]? = nil,
+            activeDestinationID: UUID? = nil
         ) {
+            self.destinations = destinations
+            self.activeDestinationID = activeDestinationID
             self.fallbackAuthToken = fallbackAuthToken
             self.configuration = configuration
             self.typeStates = typeStates
@@ -350,6 +362,8 @@ public actor SyncStateStore {
                 WorkoutEnrichmentState.self, forKey: .workoutStreamsState) ?? WorkoutEnrichmentState()
             serverIdentity = try c.decodeIfPresent(ServerIdentity.self, forKey: .serverIdentity)
             fallbackAuthToken = try c.decodeIfPresent(String.self, forKey: .fallbackAuthToken)
+            destinations = try c.decodeIfPresent([SavedDestinationState].self, forKey: .destinations)
+            activeDestinationID = try c.decodeIfPresent(UUID.self, forKey: .activeDestinationID)
         }
     }
 
@@ -402,7 +416,29 @@ public actor SyncStateStore {
         self.isReadOnly = unreadable
         if var decoded = loaded {
             var rewrite = false
-            if let legacyToken = decoded.configuration.authToken {
+            if var saved = decoded.destinations {
+                for index in saved.indices {
+                    if let fallback = saved[index].fallbackAuthToken {
+                        do {
+                            try tokenStore.setToken(fallback, for: saved[index].destination.id)
+                            saved[index].fallbackAuthToken = nil
+                            rewrite = true
+                        } catch {
+                            // Keep the protected fallback and retry next launch.
+                        }
+                    }
+                }
+                decoded.destinations = saved
+                self.destinations = saved
+                self.destinationRegistryInitialized = true
+                self.activeDestinationID = decoded.activeDestinationID
+                if let active = saved.first(where: { $0.destination.id == decoded.activeDestinationID }) {
+                    decoded.configuration.authToken = active.fallbackAuthToken
+                        ?? ((try? tokenStore.token(for: active.destination.id)) ?? nil)
+                } else {
+                    decoded.configuration.authToken = nil
+                }
+            } else if let legacyToken = decoded.configuration.authToken {
                 // One-time migration: builds before the Keychain store kept the
                 // token in this file. Move it out and rewrite the file without
                 // it. If the Keychain refuses, the file keeps the token for now
@@ -433,7 +469,13 @@ public actor SyncStateStore {
             } else {
                 do {
                     decoded.configuration.authToken = try tokenStore.token()
+                    if decoded.configuration.authToken == nil,
+                       let identity = ServerIdentity(configuration: decoded.configuration) {
+                        let id = SavedSyncDestination.identifier(identity: identity, deviceID: decoded.deviceID)
+                        decoded.configuration.authToken = try tokenStore.token(for: id)
+                    }
                 } catch {
+                    legacyCredentialUnavailable = true
                     logger.error("Could not read the bearer token from the token store: \(error)")
                 }
             }
@@ -442,6 +484,29 @@ public actor SyncStateStore {
                 // A state file from before identities were recorded: whatever
                 // progress it holds was earned against the server it names.
                 decoded.serverIdentity = adopted
+                rewrite = true
+            }
+            // Adopt the single-server file without dropping any cursor. A legacy
+            // unconfirmed identity edit keeps its old progress labelled with the
+            // old identity; it must not be attributed to the edited endpoint.
+            if decoded.destinations == nil, !legacyCredentialUnavailable,
+               let identity = decoded.serverIdentity,
+               identity == ServerIdentity(configuration: decoded.configuration),
+               let url = decoded.configuration.serverURL {
+                let id = SavedSyncDestination.identifier(identity: identity, deviceID: decoded.deviceID)
+                var saved = SavedDestinationState(
+                    destination: SavedSyncDestination(id: id, identity: identity, serverURL: url,
+                        userID: decoded.configuration.userID),
+                    configuration: decoded.configuration, typeStates: decoded.typeStates,
+                    aggregateStates: decoded.aggregateStates, activitySummaryState: decoded.activitySummaryState,
+                    workoutRoutesState: decoded.workoutRoutesState, workoutStreamsState: decoded.workoutStreamsState)
+                do { try tokenStore.setToken(decoded.configuration.authToken, for: id) }
+                catch { saved.fallbackAuthToken = decoded.configuration.authToken }
+                decoded.destinations = [saved]
+                decoded.activeDestinationID = id
+                self.destinations = [saved]
+                self.destinationRegistryInitialized = true
+                self.activeDestinationID = id
                 rewrite = true
             }
             self.configuration = decoded.configuration
@@ -475,6 +540,239 @@ public actor SyncStateStore {
             // old file-based token would have survived a state reset. (Read
             // only: a read-only store never writes it back or clears it.)
             self.configuration.authToken = (try? tokenStore.token()) ?? nil
+        }
+    }
+
+    // MARK: - Paired destinations
+
+    private func currentDestinationState(id: UUID) -> SavedDestinationState? {
+        guard let identity = serverIdentity ?? ServerIdentity(configuration: configuration),
+              var url = configuration.serverURL else { return nil }
+        var savedConfiguration = configuration
+        if identity != ServerIdentity(configuration: configuration) {
+            // Pre-registry unconfirmed URL edits left the old anchors labelled
+            // with serverIdentity. Retain those anchors under that identity.
+            var components = URLComponents()
+            components.scheme = url.scheme ?? "https"
+            components.host = identity.host
+            components.port = identity.port
+            components.path = identity.path
+            guard let restored = components.url else { return nil }
+            url = restored
+            savedConfiguration.serverURL = restored
+            savedConfiguration.userID = identity.userID
+            savedConfiguration.authToken = nil
+        }
+        return SavedDestinationState(
+            destination: SavedSyncDestination(id: id, identity: identity, serverURL: url, userID: savedConfiguration.userID),
+            configuration: savedConfiguration, typeStates: typeStates, aggregateStates: aggregateStates,
+            activitySummaryState: activitySummaryState, workoutRoutesState: workoutRoutesState,
+            workoutStreamsState: workoutStreamsState)
+    }
+
+    private func refreshActiveSnapshot() {
+        guard let id = activeDestinationID,
+              let index = destinations.firstIndex(where: { $0.destination.id == id }),
+              var state = currentDestinationState(id: id) else { return }
+        state.fallbackAuthToken = destinations[index].fallbackAuthToken
+        destinations[index] = state
+    }
+
+    /// Builds a registry without mutating live state. Legacy progress is adopted
+    /// exactly once by its existing receiver, never by a newly entered URL.
+    private func registrySnapshot() throws -> [SavedDestinationState] {
+        var result = destinations
+        let identity = serverIdentity ?? ServerIdentity(configuration: configuration)
+        let id = activeDestinationID ?? identity.map {
+            SavedSyncDestination.identifier(identity: $0, deviceID: deviceID)
+        } ?? UUID()
+        if var current = currentDestinationState(id: id) {
+            if let index = result.firstIndex(where: { $0.destination.id == id }) {
+                current.fallbackAuthToken = result[index].fallbackAuthToken
+                result[index] = current
+            } else {
+                do { try tokenStore.setToken(current.configuration.authToken, for: id) }
+                catch { current.fallbackAuthToken = current.configuration.authToken }
+                result.append(current)
+            }
+        }
+        return result
+    }
+
+    private func commitDestination(
+        _ target: SavedDestinationState?, configuration newConfiguration: SyncConfiguration,
+        registry: [SavedDestinationState]
+    ) throws {
+        guard !isReadOnly else { throw SavedDestinationError.readOnly }
+        let snapshot = PersistedState(
+            configuration: newConfiguration, typeStates: target?.typeStates ?? [:], deviceID: deviceID,
+            aggregateStates: target?.aggregateStates ?? [:],
+            activitySummaryState: target?.activitySummaryState ?? ActivitySummaryState(),
+            workoutRoutesState: target?.workoutRoutesState ?? WorkoutEnrichmentState(),
+            workoutStreamsState: target?.workoutStreamsState ?? WorkoutEnrichmentState(),
+            serverIdentity: target?.destination.identity, destinations: registry,
+            activeDestinationID: target?.destination.id)
+        do { try ProtectedStateFile.write(JSONEncoder.puls.encode(snapshot), to: fileURL) }
+        catch { throw SavedDestinationError.persistence }
+        configuration = newConfiguration
+        typeStates = snapshot.typeStates
+        aggregateStates = snapshot.aggregateStates
+        activitySummaryState = snapshot.activitySummaryState
+        workoutRoutesState = snapshot.workoutRoutesState
+        workoutStreamsState = snapshot.workoutStreamsState
+        serverIdentity = snapshot.serverIdentity
+        destinations = registry
+        destinationRegistryInitialized = true
+        activeDestinationID = snapshot.activeDestinationID
+        tokenStoreDirty = false
+    }
+
+    /// Called only under the engine's configuration exclusion guard.
+    func applySavedConfiguration(_ requested: SyncConfiguration, clearAuthToken: Bool = false) throws {
+        guard !isReadOnly else { throw SavedDestinationError.readOnly }
+        guard !legacyCredentialUnavailable else { throw SavedDestinationError.credential }
+        if !FileManager.default.fileExists(atPath: fileURL.path) {
+            let checkpoint = PersistedState(
+                configuration: configuration, typeStates: typeStates, deviceID: deviceID,
+                aggregateStates: aggregateStates, activitySummaryState: activitySummaryState,
+                workoutRoutesState: workoutRoutesState, workoutStreamsState: workoutStreamsState,
+                serverIdentity: serverIdentity, fallbackAuthToken: tokenStoreDirty ? configuration.authToken : nil)
+            do { try ProtectedStateFile.write(JSONEncoder.puls.encode(checkpoint), to: fileURL) }
+            catch { throw SavedDestinationError.persistence }
+        }
+        var registry = try registrySnapshot()
+        var config = requested
+        guard let identity = ServerIdentity(configuration: config), let url = config.serverURL else {
+            config.authToken = nil
+            try commitDestination(nil, configuration: config, registry: registry)
+            return
+        }
+        let existing = registry.first { $0.destination.identity == identity }
+        if config.authToken == nil, !clearAuthToken, let existing {
+            do { config.authToken = try existing.fallbackAuthToken ?? tokenStore.token(for: existing.destination.id) }
+            catch { throw SavedDestinationError.credential }
+        }
+        if clearAuthToken { config.authToken = nil }
+        let id = existing?.destination.id ?? SavedSyncDestination.identifier(identity: identity, deviceID: deviceID)
+        var target = SavedDestinationState(
+            destination: SavedSyncDestination(id: id, identity: identity, serverURL: url, userID: config.userID),
+            configuration: config, typeStates: existing?.typeStates ?? [:],
+            aggregateStates: existing?.aggregateStates ?? [:],
+            activitySummaryState: existing?.activitySummaryState ?? ActivitySummaryState(),
+            workoutRoutesState: existing?.workoutRoutesState ?? WorkoutEnrichmentState(),
+            workoutStreamsState: existing?.workoutStreamsState ?? WorkoutEnrichmentState())
+        // Edits to one aggregate invalidate only that receiver's series.
+        for aggregate in config.aggregates {
+            if let old = existing?.configuration.aggregates.first(where: { $0.id == aggregate.id }),
+               old.seriesIdentity != aggregate.seriesIdentity || old.startDate != aggregate.startDate {
+                target.aggregateStates[aggregate.id.uuidString] = AggregateSyncState(configID: aggregate.id)
+            }
+        }
+        let keep = Set(config.aggregates.map { $0.id.uuidString })
+        target.aggregateStates = target.aggregateStates.filter { keep.contains($0.key) }
+        if config != existing?.configuration {
+            for key in target.typeStates.keys { target.typeStates[key]?.clearCooldown() }
+        }
+        let previousToken: String?
+        do {
+            previousToken = try existing?.fallbackAuthToken ?? existing?.configuration.authToken
+                ?? tokenStore.token(for: id)
+        } catch { throw SavedDestinationError.credential }
+        let legacyToken: String?
+        do { legacyToken = try tokenStore.token() }
+        catch { throw SavedDestinationError.credential }
+        var changedCredential = false
+        do {
+            try tokenStore.setToken(config.authToken, for: id)
+            changedCredential = true
+        } catch {
+            // A failed deletion cannot safely forget a still-live credential.
+            if clearAuthToken {
+                throw SavedDestinationError.credential
+            }
+            target.fallbackAuthToken = config.authToken
+        }
+        registry.removeAll { $0.destination.id == id }
+        registry.append(target)
+        // Retire the obsolete singleton before exposing a different top-level
+        // receiver, so an older app cannot send that old secret to this URL.
+        do { if legacyToken != nil { try tokenStore.setToken(nil) } }
+        catch {
+            if changedCredential { try? tokenStore.setToken(previousToken, for: id) }
+            throw SavedDestinationError.credential
+        }
+        do { try commitDestination(target, configuration: config, registry: registry) }
+        catch {
+            if changedCredential {
+                do {
+                    try tokenStore.setToken(previousToken, for: id)
+                    if legacyToken != nil { try tokenStore.setToken(legacyToken) }
+                } catch { throw SavedDestinationError.credential }
+            } else {
+                do { if legacyToken != nil { try tokenStore.setToken(legacyToken) } }
+                catch { throw SavedDestinationError.credential }
+            }
+            throw error
+        }
+    }
+
+    func switchDestination(id: UUID) throws {
+        guard !isReadOnly else { throw SavedDestinationError.readOnly }
+        let registry = try registrySnapshot()
+        guard let target = registry.first(where: { $0.destination.id == id }) else { throw SavedDestinationError.notFound }
+        var config = target.configuration
+        do { config.authToken = try target.fallbackAuthToken ?? tokenStore.token(for: id) }
+        catch { throw SavedDestinationError.credential }
+        guard config.authToken != nil else { throw SavedDestinationError.credential }
+        let legacyToken: String?
+        do {
+            legacyToken = try tokenStore.token()
+            if legacyToken != nil { try tokenStore.setToken(nil) }
+        } catch { throw SavedDestinationError.credential }
+        do { try commitDestination(target, configuration: config, registry: registry) }
+        catch {
+            do { if legacyToken != nil { try tokenStore.setToken(legacyToken) } }
+            catch { throw SavedDestinationError.credential }
+            throw error
+        }
+    }
+
+    func unpairDestination(id: UUID) throws {
+        guard !isReadOnly else { throw SavedDestinationError.readOnly }
+        var registry = try registrySnapshot()
+        guard let removed = registry.first(where: { $0.destination.id == id }) else { throw SavedDestinationError.notFound }
+        let previousToken: String?
+        let legacyToken: String?
+        do {
+            previousToken = try removed.fallbackAuthToken ?? tokenStore.token(for: id)
+            legacyToken = try tokenStore.token()
+        } catch { throw SavedDestinationError.credential }
+        do {
+            try tokenStore.setToken(nil, for: id)
+            // Every remaining receiver has its own credential now. The legacy
+            // singleton may contain an older rotated token, so remove it too.
+            if legacyToken != nil { try tokenStore.setToken(nil) }
+        } catch {
+            try? tokenStore.setToken(previousToken, for: id)
+            throw SavedDestinationError.credential
+        }
+        registry.removeAll { $0.destination.id == id }
+        do {
+            if id == activeDestinationID {
+                var config = configuration
+                config.serverURL = nil
+                config.authToken = nil
+                try commitDestination(nil, configuration: config, registry: registry)
+            } else {
+                let target = registry.first { $0.destination.id == activeDestinationID }
+                try commitDestination(target, configuration: configuration, registry: registry)
+            }
+        } catch {
+            do {
+                try tokenStore.setToken(previousToken, for: id)
+                if legacyToken != nil { try tokenStore.setToken(legacyToken) }
+            } catch { throw SavedDestinationError.credential }
+            throw error
         }
     }
 
@@ -512,6 +810,11 @@ public actor SyncStateStore {
     /// identity stays put, so a launch after an interrupted change still sees
     /// the mismatch and can ask again.
     public func setConfiguration(_ config: SyncConfiguration, confirmServerIdentity: Bool = false) {
+        if destinationRegistryInitialized || config.serverURL != nil || configuration.serverURL != nil {
+            do { try applySavedConfiguration(config) }
+            catch { logger.error("Could not save database settings: \(error.localizedDescription)") }
+            return
+        }
         var config = config
         if config.authToken == nil, Self.tokenCarriesOver(from: configuration, to: config) {
             config.authToken = configuration.authToken
@@ -540,6 +843,13 @@ public actor SyncStateStore {
     /// is. Same token-store hand-off (and the same parking in the state file
     /// when the store refuses it) as `setConfiguration`.
     public func setAuthToken(_ token: String) {
+        if destinationRegistryInitialized {
+            var config = configuration
+            config.authToken = token
+            do { try applySavedConfiguration(config) }
+            catch { logger.error("Could not save database credential: \(error.localizedDescription)") }
+            return
+        }
         guard token != configuration.authToken || tokenStoreDirty else { return }
         storeToken(token)
         configuration.authToken = token
@@ -551,6 +861,11 @@ public actor SyncStateStore {
     /// one way to do so now that `setConfiguration` keeps it on nil. For a
     /// user who emptied the token field or disconnected the database.
     public func clearAuthToken() {
+        if destinationRegistryInitialized {
+            do { try applySavedConfiguration(configuration, clearAuthToken: true) }
+            catch { logger.error("Could not clear database credential: \(error.localizedDescription)") }
+            return
+        }
         // Unconditionally: an in-memory nil can also mean the token store
         // could not be read at launch, and the user asked for the item gone.
         storeToken(nil)
@@ -575,9 +890,18 @@ public actor SyncStateStore {
         }
         do {
             try tokenStore.setToken(token)
+            if let id = activeDestinationID {
+                try tokenStore.setToken(token, for: id)
+                if let index = destinations.firstIndex(where: { $0.destination.id == id }) {
+                    destinations[index].fallbackAuthToken = nil
+                }
+            }
             tokenStoreDirty = false
         } catch {
             tokenStoreDirty = true
+            if let index = destinations.firstIndex(where: { $0.destination.id == activeDestinationID }) {
+                destinations[index].fallbackAuthToken = token
+            }
             logger.error("Could not write the bearer token to the token store: \(error)")
         }
     }
@@ -1141,11 +1465,14 @@ public actor SyncStateStore {
             logger.error("Sync state not persisted: the store is read-only because its file could not be read at launch")
             return
         }
+        refreshActiveSnapshot()
         let snapshot = PersistedState(
             configuration: configuration, typeStates: typeStates, deviceID: deviceID,
             aggregateStates: aggregateStates, activitySummaryState: activitySummaryState,
             workoutRoutesState: workoutRoutesState, workoutStreamsState: workoutStreamsState,
-            serverIdentity: serverIdentity
+            serverIdentity: serverIdentity,
+            destinations: destinationRegistryInitialized ? destinations : nil,
+            activeDestinationID: activeDestinationID
         )
         Self.writeSnapshot(
             snapshot, to: fileURL, logger: logger,
