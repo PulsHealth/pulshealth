@@ -61,10 +61,14 @@ stacks, never production data.
 PRs avoid unrelated backend builds, database tests and restore drills. Shared
 contracts, scripts, workflow changes and unknown paths run the full suite.
 The public-tree gate and check-selection tests always run. Pushes to `main`
-and image-release calls run the full backend/site suite. The iOS workflow reports on every PR and main push, selecting its tests
-inside the workflow. Shared selector changes and generated catalog/knowledge
-inputs select iOS checks. Home Assistant has independent CI and releases in
+and image-release calls run the full backend/site suite. The iOS workflow
+reports on every PR and main push, selecting its tests inside the workflow.
+Shared selector changes and generated catalog/knowledge inputs select iOS
+checks. Home Assistant has independent CI and releases in
 [PulsHealth/home-assistant](https://github.com/PulsHealth/home-assistant).
+iOS CI creates its own simulator for each pinned SDK/runtime and downloads
+the runtime only when missing, rather than depending on pre-created runner
+devices. Both SDK matrix entries must pass when iOS tests are selected.
 
 `main` requires PRs and these two GitHub Actions summary checks:
 `CI result` and `iOS result`. Each summary verifies
