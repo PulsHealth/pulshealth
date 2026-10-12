@@ -7,6 +7,7 @@ import { SearchDialogLoader } from "@/components/search-dialog-loader";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { getRepoStats } from "@/lib/github";
+import { SiteAnalytics } from "@/components/site-analytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,7 +22,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://pulshealth.com'),
   title: "PulsHealth - Your Apple Health Data, Ready for You and Your AI",
-  description: "A free, open-source iPhone app that keeps your whole Apple Health history in a database, hosted for you or run by you, so you and your AI can work from your real numbers. No tracking, Apache-2.0.",
+  description: "A free, open-source iPhone app that keeps your whole Apple Health history in a database, hosted for you or run by you, so you and your AI can work from your real numbers. No tracking in the app, Apache-2.0.",
   alternates: {
     canonical: '/',
     types: {
@@ -84,6 +85,7 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
         />
+        <SiteAnalytics />
         <ThemeProvider>
           <SearchProvider>
             <SiteHeader stars={stars} />
