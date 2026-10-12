@@ -96,31 +96,6 @@ export function SiteFooter() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">
-          <p className="text-sm text-muted-foreground">
-            PulsHealth is a one-maintainer open-source project. Not a medical device.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Released under the{" "}
-            <a
-              href={`${GITHUB_URL}/blob/main/LICENSE`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-4 transition-colors hover:text-foreground"
-            >
-              Apache License 2.0
-            </a>
-            {" "}&middot;{" "}
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-xs underline underline-offset-4 transition-colors hover:text-foreground"
-            >
-              github.com/PulsHealth/pulshealth
-            </a>
-          </p>
-        </div>
       </div>
     </footer>
   )
