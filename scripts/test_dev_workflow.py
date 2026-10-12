@@ -170,10 +170,34 @@ class SimulatorTests(unittest.TestCase):
 
     def test_boot_retry_only_removes_owned_devices(self):
         runner = ios.Runner(Path('.'), Path('.'))
-        with patch.object(ios.subprocess, 'check_output', side_effect=['own-1', 'own-2']), patch.object(ios.subprocess, 'run') as cleanup, patch.object(runner, 'command', side_effect=[RuntimeError('boot unavailable'), None, None]):
+        with patch.object(ios.subprocess, 'check_output', side_effect=['own-1', 'own-2']), patch.object(ios.subprocess, 'run', return_value=SimpleNamespace(returncode=0)) as cleanup, patch.object(runner, 'command', side_effect=[RuntimeError('boot unavailable'), None, None]):
             runner.prepare('pinned-runtime')
         self.assertEqual(runner.device, 'own-2')
         self.assertEqual([c.args[0] for c in cleanup.call_args_list], [['xcrun', 'simctl', 'shutdown', 'own-1'], ['xcrun', 'simctl', 'delete', 'own-1']])
+
+    def test_cleanup_timeout_does_not_block_setup_retry(self):
+        runner = ios.Runner(Path('.'), Path('.'))
+        cleanup_results = [subprocess.TimeoutExpired('shutdown', 30),
+                           SimpleNamespace(returncode=1),
+                           SimpleNamespace(returncode=0), SimpleNamespace(returncode=0)]
+        with patch.object(ios.subprocess, 'check_output', side_effect=['own-1', 'own-2']), patch.object(ios.subprocess, 'run', side_effect=cleanup_results) as cleanup, patch.object(runner, 'command', side_effect=[RuntimeError('boot timed out'), None, None]):
+            runner.prepare('pinned-runtime')
+            self.assertEqual(runner.device, 'own-2')
+            runner.remove_device()
+        self.assertEqual(runner.setup_errors, ['boot timed out'])
+        self.assertEqual(len(runner.cleanup_errors), 2)
+        self.assertEqual(runner.owned_devices, {'own-1'})
+        self.assertEqual([c.args[0][-1] for c in cleanup.call_args_list], ['own-1', 'own-1', 'own-2', 'own-2'])
+        self.assertTrue(all(c.kwargs['timeout'] == 30 for c in cleanup.call_args_list))
+
+    def test_final_boot_error_is_not_masked_by_cleanup_failure(self):
+        runner = ios.Runner(Path('.'), Path('.'))
+        with patch.object(ios.subprocess, 'check_output', side_effect=['own-1', 'own-2']), patch.object(ios.subprocess, 'run', side_effect=subprocess.TimeoutExpired('cleanup', 30)), patch.object(runner, 'command', side_effect=[RuntimeError('first boot failed'), RuntimeError('final boot failed')]):
+            with self.assertRaisesRegex(RuntimeError, 'final boot failed'):
+                runner.prepare('pinned-runtime')
+        self.assertEqual(runner.setup_errors, ['first boot failed', 'final boot failed'])
+        self.assertEqual(runner.owned_devices, {'own-1', 'own-2'})
+        self.assertIsNone(runner.device)
 
     def test_test_failure_is_not_retried_and_project_is_regenerated(self):
         runner = ios.Runner(Path('.'), Path('.'))
