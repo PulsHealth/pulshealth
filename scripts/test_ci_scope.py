@@ -7,7 +7,7 @@ from ci_scope import component_scopes, scopes
 
 class ScopeTests(unittest.TestCase):
     def test_component_only_changes(self):
-        for path in ("PulsHealth/Sources/AppModel.swift", "custom_components/pulshealth/sensor.py", "integrations/homeassistant/tests/test_sensor.py", "hacs.json", ".github/PULL_REQUEST_TEMPLATE.md"):
+        for path in ("PulsHealth/Sources/AppModel.swift", ".github/PULL_REQUEST_TEMPLATE.md"):
             with self.subTest(path=path):
                 self.assertEqual(scopes([path]), {"backend": False, "site": False})
 
@@ -29,7 +29,7 @@ class ComponentScopeTests(unittest.TestCase):
     def test_unrelated_changes_skip_component_tests(self):
         self.assertEqual(
             component_scopes(["site/src/app/page.tsx", "CONTRIBUTING.md", "server/api/main.go"]),
-            {"ios": False, "ha": False},
+            {"ios": False},
         )
 
     def test_ios_code_and_generated_inputs(self):
@@ -43,26 +43,16 @@ class ComponentScopeTests(unittest.TestCase):
             ".github/workflows/ios-ci.yml",
         ):
             with self.subTest(path=path):
-                self.assertEqual(component_scopes([path]), {"ios": True, "ha": False})
-
-    def test_home_assistant_inputs(self):
-        for path in (
-            "custom_components/pulshealth/sensor.py",
-            "integrations/homeassistant/tests/test_sensor.py",
-            "hacs.json",
-            ".github/workflows/home-assistant.yml",
-        ):
-            with self.subTest(path=path):
-                self.assertEqual(component_scopes([path]), {"ios": False, "ha": True})
+                self.assertEqual(component_scopes([path]), {"ios": True})
 
     def test_shared_selector_and_mixed_changes(self):
         for paths in (
             ["scripts/ci_scope.py"],
             ["scripts/test_ci_scope.py"],
-            ["PulsHealth/Sources/AppModel.swift", "hacs.json"],
+            ["PulsHealth/Sources/AppModel.swift", "site/src/app/page.tsx"],
         ):
             with self.subTest(paths=paths):
-                self.assertEqual(component_scopes(paths), {"ios": True, "ha": True})
+                self.assertEqual(component_scopes(paths), {"ios": True})
 
 
 if __name__ == "__main__":

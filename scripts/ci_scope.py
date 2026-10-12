@@ -7,8 +7,8 @@ import sys
 def scopes(paths: list[str]) -> dict[str, bool]:
     backend = site = False
     for path in paths:
-        if path.startswith(("PulsHealth/", "custom_components/pulshealth/", "integrations/homeassistant/")) or path == "hacs.json":
-            # These components have their own PR workflows.
+        if path.startswith("PulsHealth/"):
+            # The app has its own PR workflow.
             continue
         if path == ".github/PULL_REQUEST_TEMPLATE.md":
             continue
@@ -32,24 +32,19 @@ def component_scopes(paths: list[str]) -> dict[str, bool]:
         "scripts/gen-knowledge-json.py",
         "scripts/check-knowledge-json.sh",
     }
-    ha_inputs = shared | {".github/workflows/home-assistant.yml", "hacs.json"}
     return {
         "ios": any(
             path.startswith(("PulsHealth/", "PulsHealthSync/", "knowledge-base/"))
             or path in ios_inputs
             for path in paths
         ),
-        "ha": any(
-            path.startswith(("custom_components/pulshealth/", "integrations/homeassistant/"))
-            or path in ha_inputs
-            for path in paths
-        ),
+
     }
 
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        selected = {"backend": True, "site": True, "ios": True, "ha": True}
+        selected = {"backend": True, "site": True, "ios": True}
     else:
         base, head = sys.argv[1:]
         changed = subprocess.check_output(
