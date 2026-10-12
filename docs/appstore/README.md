@@ -40,6 +40,20 @@ claim end-to-end encryption. On 2026-10-10 the maintainer directed release
 to proceed on the assumption that enrollment is appropriate under Apple
 guideline 5.1.1(ix); no independent enrollment verification is recorded.
 
+## Candidate evidence
+
+The checked items below are the historical 2.0 (21) submission record, not
+acceptance for a later build. Start each new candidate with the
+[release-evidence workflow](../../CONTRIBUTING.md#task-status-and-release-evidence).
+Record its source, version/build, exported IPA hash, matching dSYMs and test
+references in one private candidate record. Recheck App Store Connect for
+accepted build numbers before choosing the next one.
+
+Keep automated, signed-simulator, physical-device and maintainer-confirmed
+results separate. Device acceptance applies to the named artifact and checks;
+it does not certify untested recovery, receiver compatibility or restore paths.
+Record upload, submission and Apple release separately, with their own evidence.
+
 ## Submission checklist
 
 Before a broad hosted rollout, deploy and verify per-account reporting time

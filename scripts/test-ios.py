@@ -81,7 +81,7 @@ class Runner:
         self.command(command, component + "-tests", self.root / directory, timeout=1200)
         summary = json.loads(subprocess.check_output([
             "xcrun", "xcresulttool", "get", "test-results", "summary", "--path",
-            str(self.artifacts / (component + ".xcresult")), "--format", "json",
+            str(self.artifacts / (component + ".xcresult")),
         ], timeout=60))
         write_json(self.artifacts / (component + "-summary.json"), summary)
         require_executed_tests(summary, focused=bool(only))
