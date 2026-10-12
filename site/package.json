@@ -9,12 +9,13 @@
     "predev": "bun run gen-llms-txt && bun run gen-openapi",
     "dev": "bun scripts/dev.ts",
     "prebuild": "bun run copy-blog-images && bun run gen-llms-txt && bun run gen-openapi",
-    "build": "next build && bun run check:export",
+    "build": "python3 ../scripts/site-artifact.py build",
     "start": "next start",
     "lint": "eslint",
     "test": "bun test tests",
     "check:export": "bun scripts/check-export.ts",
-    "blog:check": "bun run lint && bun run test && bun run build"
+    "blog:check": "bun run lint && bun run test && bun run build",
+    "build:export": "next build && bun run check:export"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

@@ -29,7 +29,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Verify check selection
-        run: python3 -m unittest discover -s scripts -p 'test_ci_scope.py'
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Select PR checks (full suite on main and release calls)
         id: scope
         env:
@@ -286,6 +286,14 @@ jobs:
         run: |
           python3 -m unittest discover -s server/ops -p 'test_*.py'
           node --test server/ops/notify.test.mjs
+
+      - name: Verify deployed chart reads against the scratch stack
+        env:
+          PULS_SCRATCH_STACK: "1"
+          PULS_READ_PERF_USER_ID: "11111111-1111-4111-8111-111111111111"
+        run: |
+          python3 server/ops/seed-read-check.py
+          python3 server/ops/verify-release.py --expected-sha "$(git rev-parse HEAD)" --service web
 
       - name: Back up and restore the database (restore drill)
         run: server/backup/test-restore.sh --scratch --build

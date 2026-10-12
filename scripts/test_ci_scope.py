@@ -41,6 +41,9 @@ class ComponentScopeTests(unittest.TestCase):
             "scripts/gen-knowledge-json.py",
             "scripts/check-knowledge-json.sh",
             ".github/workflows/ios-ci.yml",
+            "scripts/test-ios.py",
+            "scripts/dev_evidence.py",
+            "scripts/test_dev_workflow.py",
         ):
             with self.subTest(path=path):
                 self.assertEqual(component_scopes([path]), {"ios": True})

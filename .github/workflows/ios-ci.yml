@@ -49,7 +49,7 @@ jobs:
     if: needs.changes.outputs.selected == 'true'
     name: Build and test iOS (Xcode ${{ matrix.xcode }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -71,47 +71,26 @@ jobs:
       - name: Select Xcode ${{ matrix.xcode }}
         run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
 
-      - name: Prepare the pinned iOS simulator
-        id: simulator
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Test using an owned simulator
         env:
           IOS_VERSION: ${{ matrix.os }}
-        run: |
-          set -euo pipefail
-          runtime="com.apple.CoreSimulator.SimRuntime.iOS-${IOS_VERSION//./-}"
-          if ! xcrun simctl list runtimes -j | python3 -c 'import json,sys; sys.exit(not any(r["identifier"] == sys.argv[1] and r.get("isAvailable", False) for r in json.load(sys.stdin)["runtimes"]))' "$runtime"; then
-            xcodebuild -downloadPlatform iOS -buildVersion "$IOS_VERSION"
-          fi
-          udid=$(xcrun simctl create "PulsHealth CI" com.apple.CoreSimulator.SimDeviceType.iPhone-17 "$runtime")
-          xcrun simctl boot "$udid"
-          xcrun simctl bootstatus "$udid" -b
-          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          ARTIFACTS: ${{ runner.temp }}/ios-results
+        run: python3 scripts/test-ios.py --ios "$IOS_VERSION" --download-runtime --artifacts "$ARTIFACTS"
 
-      - name: Test sync package
-        working-directory: PulsHealthSync
-        run: |
-          xcodebuild test \
-            -scheme PulsHealthSync \
-            -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}' \
-            CODE_SIGNING_ALLOWED=NO
-
-      - name: Generate the Xcode project
-        # PulsHealth.xcodeproj is generated and gitignored: XcodeGen copies
-        # DEVELOPMENT_TEAM from Config/Local.xcconfig into the pbxproj, so a
-        # tracked project would leak the maintainer's Team ID on every
-        # regeneration. project.yml's preGenCommand seeds Local.xcconfig from
-        # the tracked example; the empty template is enough for the simulator.
-        working-directory: PulsHealth
-        run: |
-          brew install xcodegen
-          xcodegen generate
-
-      - name: Build and run app-hosted tests
-        working-directory: PulsHealth
-        run: |
-          xcodebuild test \
-            -scheme PulsHealth \
-            -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}' \
-            CODE_SIGNING_ALLOWED=NO
+      - name: Preserve simulator diagnostics and test evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ios-evidence-${{ matrix.xcode }}
+          path: |
+            ${{ runner.temp }}/ios-results/*.log
+            ${{ runner.temp }}/ios-results/*.json
+            ${{ runner.temp }}/ios-results/*.xcresult
+          retention-days: 14
+          if-no-files-found: warn
 
   result:
     name: iOS result

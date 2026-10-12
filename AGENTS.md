@@ -105,6 +105,20 @@ subsystem. The list, so you know when to go and read it:
   outbound request, permission or on-disk store changes the privacy documents
   in the same pull request.
 
+
+## Task start and finish
+
+- Inspect `python3 scripts/task-status.py --github` and fetch before relying on
+  remote refs. Claim only your task checkout with `--claim <session-or-task>`;
+  unknown ownership is not permission to clean up someone else's work.
+- Use the relevant check entry points below; preserve evidence for unchanged
+  inputs instead of repeating passing suites. Diagnose failures before retrying.
+- At completion, verify committed/pushed/merged state separately from deployed,
+  submitted and released state. A passing test or queued invalidation is not a
+  release. Follow CONTRIBUTING.md for receipts and candidate evidence.
+- Remove only your completed task worktree after preserving local configuration
+  and uncommitted/untracked work. Never clean up an active or unknown owner.
+
 ## Running the tests
 
 Run checks for the affected components and their dependencies, not every suite
@@ -177,19 +191,19 @@ runs the full authoring check; see `blog/BLOG_SYSTEM.md`:
 cd site && bun install && bun run lint && bun run test && bun run build
 ```
 
-**Swift package** (macOS with Xcode 26.5 or later):
+**iOS** (macOS with the selected Xcode SDK):
 
 ```bash
-cd PulsHealthSync && xcodebuild test -scheme PulsHealthSync \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+# DEVELOPER_DIR selects Xcode without changing another session's global setting.
+python3 scripts/test-ios.py --ios 27.0       # package + regenerated app
+python3 scripts/test-ios.py --ios 26.5 --suite package
 ```
 
-**iOS app** — `xcodegen` first, always, because the project file is generated:
-
-```bash
-cd PulsHealth && xcodegen && xcodebuild test -scheme PulsHealth \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
-```
+The runner creates and removes only its own simulator, waits for boot, and
+retains logs, result bundles and a receipt outside the source tree. Missing
+runtimes fail clearly; `--download-runtime` explicitly permits installation.
+Use `--suite app --only-testing <identifier>` for focused checks. Assertion
+failures are never retried automatically. See CONTRIBUTING.md for signing.
 
 **Compose, shell, the bundled knowledge base and the public-tree gate:**
 

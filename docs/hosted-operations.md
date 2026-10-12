@@ -212,3 +212,28 @@ pass. Before opening hosted access broadly, confirm:
 
 Apple's sensitive-information enrollment rule needs a separate decision when the
 operator is enrolled as an individual. Technical checks do not resolve it.
+
+## Verify a backend or viewer deployment
+
+Health endpoints alone do not establish chart availability. After the upgrade
+and migration steps, use a clean checkout of the deployed full source SHA.
+Set `PULS_READ_PERF_USER_ID` privately for a populated acceptance account.
+The verifier builds the opt-in read-check image with pinned test dependencies,
+then runs it in the deployed viewer’s network namespace with that container’s
+actual database, role, pool size, mode and time-zone settings. Caller database
+overrides are ignored. A private temporary environment file is deleted on exit.
+
+```bash
+python3 server/ops/verify-release.py --expected-sha <full-source-SHA>
+# A viewer-only deployment may have deliberately older backend images:
+python3 server/ops/verify-release.py --expected-sha <full-source-SHA> --service web
+```
+
+Run on the Docker host. This uses
+read-only chart queries: eight concurrent 30-day charts, long ranges, JIT settings
+and a health probe under pool saturation. It checks actual container revisions
+and health before and after, rejects skipped checks, and writes a private receipt
+with image IDs and timing under Git's state directory. No health values or user
+IDs enter that receipt. Detailed test failure logs remain private alongside it.
+A failed check blocks the claim of verified deployment; diagnose it before retrying.
+This check does not replace backup/restore, account-isolation or device acceptance.
