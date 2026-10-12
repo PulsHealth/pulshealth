@@ -2,7 +2,7 @@
 
 import unittest
 
-from ci_scope import scopes
+from ci_scope import component_scopes, scopes
 
 
 class ScopeTests(unittest.TestCase):
@@ -23,6 +23,36 @@ class ScopeTests(unittest.TestCase):
 
     def test_mixed_changes_keep_shared_checks(self):
         self.assertEqual(scopes(["site/src/app/page.tsx", "server/api/main.go"]), {"backend": True, "site": True})
+
+
+class ComponentScopeTests(unittest.TestCase):
+    def test_unrelated_changes_skip_component_tests(self):
+        self.assertEqual(
+            component_scopes(["site/src/app/page.tsx", "CONTRIBUTING.md", "server/api/main.go"]),
+            {"ios": False},
+        )
+
+    def test_ios_code_and_generated_inputs(self):
+        for path in (
+            "PulsHealth/Sources/AppModel.swift",
+            "PulsHealthSync/Sources/Models.swift",
+            "docs/protocol/catalog.json",
+            "knowledge-base/type.yaml",
+            "scripts/gen-knowledge-json.py",
+            "scripts/check-knowledge-json.sh",
+            ".github/workflows/ios-ci.yml",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(component_scopes([path]), {"ios": True})
+
+    def test_shared_selector_and_mixed_changes(self):
+        for paths in (
+            ["scripts/ci_scope.py"],
+            ["scripts/test_ci_scope.py"],
+            ["PulsHealth/Sources/AppModel.swift", "site/src/app/page.tsx"],
+        ):
+            with self.subTest(paths=paths):
+                self.assertEqual(component_scopes(paths), {"ios": True})
 
 
 if __name__ == "__main__":

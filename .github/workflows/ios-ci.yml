@@ -1,20 +1,10 @@
 name: Validate PulsHealth iOS
 
+# Always report stable required checks; select expensive tests inside the workflow.
 on:
   push:
     branches: [main]
-    paths:
-      - "PulsHealth/**"
-      - "PulsHealthSync/**"
-      # The package tests compare this file byte for byte with the catalog.
-      - "docs/protocol/catalog.json"
-      - ".github/workflows/ios-ci.yml"
   pull_request:
-    paths:
-      - "PulsHealth/**"
-      - "PulsHealthSync/**"
-      - "docs/protocol/catalog.json"
-      - ".github/workflows/ios-ci.yml"
 
 permissions:
   contents: read
@@ -24,7 +14,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Select ios checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      selected: ${{ steps.scope.outputs.ios }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Verify check selection
+        run: python3 -m unittest discover -s scripts -p 'test_ci_scope.py'
+      - name: Select component checks
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          base="$PUSH_BASE"
+          if [ "$EVENT" = pull_request ]; then
+            base="$PR_BASE"
+          fi
+          if [ -z "$base" ] || [[ "$base" =~ ^0+$ ]]; then
+            python3 scripts/ci_scope.py >> "$GITHUB_OUTPUT"
+          else
+            python3 scripts/ci_scope.py "$base" HEAD >> "$GITHUB_OUTPUT"
+          fi
+
   test:
+    needs: changes
+    if: needs.changes.outputs.selected == 'true'
     name: Build and test iOS (Xcode ${{ matrix.xcode }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -49,12 +71,27 @@ jobs:
       - name: Select Xcode ${{ matrix.xcode }}
         run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
 
+      - name: Prepare the pinned iOS simulator
+        id: simulator
+        env:
+          IOS_VERSION: ${{ matrix.os }}
+        run: |
+          set -euo pipefail
+          runtime="com.apple.CoreSimulator.SimRuntime.iOS-${IOS_VERSION//./-}"
+          if ! xcrun simctl list runtimes -j | python3 -c 'import json,sys; sys.exit(not any(r["identifier"] == sys.argv[1] and r.get("isAvailable", False) for r in json.load(sys.stdin)["runtimes"]))' "$runtime"; then
+            xcodebuild -downloadPlatform iOS -buildVersion "$IOS_VERSION"
+          fi
+          udid=$(xcrun simctl create "PulsHealth CI" com.apple.CoreSimulator.SimDeviceType.iPhone-17 "$runtime")
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
       - name: Test sync package
         working-directory: PulsHealthSync
         run: |
           xcodebuild test \
             -scheme PulsHealthSync \
-            -destination 'platform=iOS Simulator,OS=${{ matrix.os }},name=iPhone 17' \
+            -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}' \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Generate the Xcode project
@@ -73,5 +110,27 @@ jobs:
         run: |
           xcodebuild test \
             -scheme PulsHealth \
-            -destination 'platform=iOS Simulator,OS=${{ matrix.os }},name=iPhone 17' \
+            -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}' \
             CODE_SIGNING_ALLOWED=NO
+
+  result:
+    name: iOS result
+    if: always()
+    needs: [changes, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require selected component tests to pass
+        env:
+          SELECTION: ${{ needs.changes.result }}
+          SELECTED: ${{ needs.changes.outputs.selected }}
+          TEST_RESULT: ${{ needs.test.result }}
+        run: |
+          set -euo pipefail
+          test "$SELECTION" = success
+          if [ "$SELECTED" = true ]; then
+            test "$TEST_RESULT" = success
+          else
+            test "$SELECTED" = false
+            test "$TEST_RESULT" = skipped
+          fi

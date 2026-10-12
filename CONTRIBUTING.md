@@ -61,17 +61,19 @@ stacks, never production data.
 PRs avoid unrelated backend builds, database tests and restore drills. Shared
 contracts, scripts, workflow changes and unknown paths run the full suite.
 The public-tree gate and check-selection tests always run. Pushes to `main`
-and image-release calls run the full backend/site suite. iOS has its own PR workflow. Home Assistant lives in
+and image-release calls run the full backend/site suite. The iOS workflow reports on every PR and main push, selecting its tests
+inside the workflow. Shared selector changes and generated catalog/knowledge
+inputs select iOS checks. Home Assistant has independent CI and releases in
 [PulsHealth/home-assistant](https://github.com/PulsHealth/home-assistant).
 
-`CI result` summarizes the selected jobs in `ci.yml`; it does **not** include
-the separate iOS workflow. All applicable checks must pass.
-When configuring branch protection, require PRs, block force pushes/deletion,
-and use an always-reporting gate for required checks. Do not blindly require
-workflow-level path-filtered checks: unrelated PRs may wait forever for a
-check that never starts. Dependency advisories are tracked separately and
-are not required merge checks. A solo maintainer does not need a second
-human's mandatory approval or a merge queue.
+`main` requires PRs and these two GitHub Actions summary checks:
+`CI result` and `iOS result`. Each summary verifies
+its selection job and all selected tests; unrelated component tests skip
+without leaving a missing required check. Branches must be up to date before
+merging. Force pushes and branch deletion are blocked, and admins follow the
+same rules. There is no required human approval, code-owner approval or merge
+queue. Dependency advisories remain separate and non-blocking. Repository
+settings are configured in GitHub; these workflow files supply the checks.
 
 ### Releases and urgent fixes
 
@@ -96,8 +98,8 @@ If `main` cannot safely ship an urgent fix, branch from the shipped revision
 and reconcile the fix with `main`. The current backend publisher refuses
 release tags whose commits are not contained in `main`; publishing a divergent
 backend maintenance branch needs an explicit workflow change first. iOS
-push workflows currently target `main`, so candidate fixes need PR checks or
-explicit local release validation rather than assuming a branch push ran CI.
+push workflows target `main`, so candidate fixes need PR checks or explicit
+local release validation rather than assuming a branch push ran CI.
 
 Deploy compatible server/schema support before clients that need it. Keep old
 clients working and prefer additive migrations; a Git merge does not make
