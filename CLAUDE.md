@@ -383,9 +383,11 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   record's bundle ID `com.pulsHealth.PulsHealth` is immutable, so
   `project.yml`'s `bundleIdPrefix` (`com.pulsHealth`) is fixed: only an archive
   carrying it updates the listing. `MARKETING_VERSION` /
-  `CURRENT_PROJECT_VERSION` stay ahead of every upload: 1.6 (19) is on the
-  store (released 2026-10-01), so the next upload needs build 20 and a version
-  above 1.6.
+  `CURRENT_PROJECT_VERSION` must be selected from current App Store Connect
+  state before each upload, not from an old checklist. Use a build number
+  higher than every prior upload and a marketing version appropriate to the
+  current release; never reuse an accepted build. Record the exact source SHA
+  and archive version/build in `docs/appstore/README.md`'s Release record.
 - **The published privacy claims are load-bearing.** `docs/privacy-policy.md`,
   `docs/appstore/` and the site's `/privacy` page state as fact that the app
   has zero third-party dependencies, sends data only to the configured server,
