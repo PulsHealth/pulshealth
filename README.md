@@ -538,7 +538,7 @@ contributor, and [`llms.txt`](llms.txt) indexes the documentation.
 
 ## Home Assistant
 
-The [PulsHealth Home Assistant integration](integrations/homeassistant/README.md)
+The [PulsHealth Home Assistant integration](https://github.com/PulsHealth/home-assistant)
 turns synced health data into sensors for dashboards and automations: daily
 steps, activity rings, recent sleep, completed workouts, and last sync.
 It reads the existing product API and supports setup through the HA UI.

@@ -7,7 +7,7 @@ from ci_scope import scopes
 
 class ScopeTests(unittest.TestCase):
     def test_component_only_changes(self):
-        for path in ("PulsHealth/Sources/AppModel.swift", "custom_components/pulshealth/sensor.py", "integrations/homeassistant/tests/test_sensor.py", "hacs.json", ".github/PULL_REQUEST_TEMPLATE.md"):
+        for path in ("PulsHealth/Sources/AppModel.swift", ".github/PULL_REQUEST_TEMPLATE.md"):
             with self.subTest(path=path):
                 self.assertEqual(scopes([path]), {"backend": False, "site": False})
 

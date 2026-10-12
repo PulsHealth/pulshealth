@@ -57,15 +57,15 @@ published content is affected. Integration and restore tests use scratch
 stacks, never production data.
 
 `ci.yml` conservatively scopes backend and site jobs on PRs using
-`scripts/ci_scope.py`. Site/prose-only, iOS-app-only and Home Assistant-only
+`scripts/ci_scope.py`. Site/prose-only and iOS-app-only
 PRs avoid unrelated backend builds, database tests and restore drills. Shared
 contracts, scripts, workflow changes and unknown paths run the full suite.
 The public-tree gate and check-selection tests always run. Pushes to `main`
-and image-release calls run the full backend/site suite. iOS and Home
-Assistant have their own path-filtered PR workflows.
+and image-release calls run the full backend/site suite. iOS has its own PR workflow. Home Assistant lives in
+[PulsHealth/home-assistant](https://github.com/PulsHealth/home-assistant).
 
 `CI result` summarizes the selected jobs in `ci.yml`; it does **not** include
-those separate iOS/Home Assistant workflows. All applicable checks must pass.
+the separate iOS workflow. All applicable checks must pass.
 When configuring branch protection, require PRs, block force pushes/deletion,
 and use an always-reporting gate for required checks. Do not blindly require
 workflow-level path-filtered checks: unrelated PRs may wait forever for a
@@ -95,7 +95,7 @@ retiring the branch; do not squash-merge a backport-only branch into `main`.
 If `main` cannot safely ship an urgent fix, branch from the shipped revision
 and reconcile the fix with `main`. The current backend publisher refuses
 release tags whose commits are not contained in `main`; publishing a divergent
-backend maintenance branch needs an explicit workflow change first. iOS/HA
+backend maintenance branch needs an explicit workflow change first. iOS
 push workflows currently target `main`, so candidate fixes need PR checks or
 explicit local release validation rather than assuming a branch push ran CI.
 

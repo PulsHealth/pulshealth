@@ -7,8 +7,8 @@ import sys
 def scopes(paths: list[str]) -> dict[str, bool]:
     backend = site = False
     for path in paths:
-        if path.startswith(("PulsHealth/", "custom_components/pulshealth/", "integrations/homeassistant/")) or path == "hacs.json":
-            # These components have their own PR workflows.
+        if path.startswith("PulsHealth/"):
+            # The app has its own PR workflow.
             continue
         if path == ".github/PULL_REQUEST_TEMPLATE.md":
             continue
