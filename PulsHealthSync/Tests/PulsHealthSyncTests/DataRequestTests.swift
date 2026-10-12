@@ -10,6 +10,17 @@ struct DataRequestTests {
             metrics: [.init(type: "HKCategoryTypeIdentifierSleepAnalysis"),
                       .init(type: "HKQuantityTypeIdentifierStepCount", function: .sum)], now: now)
     }
+    @Test(arguments: [ExportFormat.json, .jsonl])
+    func detailedFormatsRoundTripAndPermitECG(_ format: ExportFormat) throws {
+        var r = request()
+        r.format = format
+        r.metrics = [.init(type: HealthTypeCatalog.electrocardiogramIdentifier)]
+        try r.validate(now: now)
+        let parsed = try DataRequest.parse(r.link(now: now).absoluteString, now: now)
+        #expect(parsed.format == format)
+        #expect(parsed.metrics == r.metrics)
+    }
+
     @Test func linkRoundTripAndScope() throws {
         let original = request(), parsed = try DataRequest.parse(original.link(now: now).absoluteString, now: now)
         #expect(parsed == original)

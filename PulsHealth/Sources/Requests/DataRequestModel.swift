@@ -87,6 +87,7 @@ final class DataRequestModel {
                 var export = ExportRequest(selection: request.selection(), configuration: isolated,
                     startDate: range.start, endDate: range.end, format: request.format,
                     zipped: true, outputDirectory: output)
+                export.categoryLabels = TypeKnowledge.exportCategoryLabels
                 export.dataRequest = request
                 export.submissionID = submissionID
                 let (updates, continuation) = AsyncStream.makeStream(of: ExportProgress.self, bufferingPolicy: .bufferingNewest(1))

@@ -35,6 +35,13 @@ RSS/search/sitemap entries, article links/images and required generated assets.
 A full build currently exports **226** static pages, 178 of them under
 `knowledge-base/types/` and 13 under `docs/`; published posts add pages.
 
+The export gate also checks every public sitemap entry for a matching canonical,
+unique title, indexable HTML, an incoming internal link and working local links.
+The retired Toothbrushing identifier redirects to the current ToothbrushingEvent
+page and stays outside the sitemap. Search Console can retain old exclusions
+until Google recrawls; passing these checks makes pages eligible, but does not
+guarantee Google will index them.
+
 Two of those pages are not PulsHealth: `/fun100/` and `/fun100/privacy/` are
 the App Store support and privacy-policy URLs for Fun100, a separate app by
 the same developer. They are unlisted (not in the navigation, search or
@@ -84,12 +91,19 @@ of the sitemap; Search Console exclusions for these stubs and the private
 Related metrics on a type page link only to types with a knowledge-base
 page; other related concepts remain visible as text cards.
 
-`.env.production` carries the one public build-time value, the endpoint the
-two forms post to, and is tracked, since a static export bakes it into the
-HTML anyway. `.env.example` documents it for a local `.env.local`. The site
-loads no analytics and sets no cookies; `docs/privacy-policy.md` says so in
-its website section, and `/privacy` renders that file, so keep the two true
-together.
+`.env.production` carries public build-time values for the form endpoint and
+optional self-hosted Umami collector URL/site ID. They are tracked because
+the static export publishes them; never put analytics API keys here.
+`.env.example` documents local configuration. Unset both analytics values
+to disable collection. The tracker runs only on the production marketing
+hostname, respects Do Not Track/Global Privacy Control, excludes URL query
+strings/fragments, referrer paths, titles, form values and identity data,
+and collects pageviews, fixed conversion-action names and browser Web Vitals.
+`form-dialog` distinguishes attempts, success and errors without sending
+the contents. App Store clicks indicate intent, not installations. No
+analytics cookies, replay, heatmaps or health-viewer tracking are enabled.
+Keep this aligned with the website section of `docs/privacy-policy.md` and
+the `/privacy` summary. The native app's analytics-free claims still apply.
 
 Every HealthKit type page links to the recording guide. Six pilot entries render
 their optional structured `recording_behavior` guidance with a separate review

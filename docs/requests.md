@@ -2,7 +2,7 @@
 
 One-time, participant-reviewed exports. Create requests in **Settings → Create
 Request**. Specify the title, requester, purpose, contact, inclusive dates, data
-types and CSV or JSONL. Select individual records or an allowed daily aggregate
+types and CSV, JSON or JSONL. Select individual records or an allowed daily aggregate
 for each type. Delivery defaults to the iOS share sheet. Optionally supply a named
 compatible HTTPS receiver. Create Link & QR Code shares either representation.
 
@@ -54,7 +54,8 @@ records. The Swift catalog defines types and legal functions. Version 1 allows
 1–30 unique types, validates support on the participant's OS, and rejects ECG
 and heartbeat series in CSV. Text is bounded; a request with many long type
 names may reach the QR size limit before 30 types. Expired, future-dated,
-unsupported or malformed requests are rejected before any health read.
+unsupported or malformed requests are rejected before any health read. JSON
+requests require a build with JSON export support; older builds reject that format.
 
 Links are reusable templates, not single-use enrollment credentials. Anyone
 with a link can read or alter it. Names are not verified. There is no hosted

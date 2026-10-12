@@ -34,7 +34,7 @@ const claims = [
 export const metadata = {
   title: "Privacy Policy - PulsHealth",
   description:
-    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve. The website loads no analytics.",
+    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve. The public website uses cookie-free, self-hosted analytics.",
   alternates: {
     canonical: "/privacy/",
   },
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>
               <li>No analytics, advertising, tracking or third-party SDKs in the app.</li>
               <li>Each saved database’s bearer token normally lives in its own iOS Keychain item. Only the active database receives sync uploads. Unpairing removes its local connection and progress; data already uploaded remains on the server. The app does not retain synced health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
-              <li>This website loads no analytics and sets no cookies. Its two forms send only what you type.</li>
+              <li>This public website uses cookie-free, self-hosted analytics for pageviews, fixed action counts and browser performance. Form contents and health data are excluded.</li>
             </ul>
           </CardContent>
         </Card>

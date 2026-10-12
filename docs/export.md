@@ -170,8 +170,8 @@ app's temporary directory for the share sheet.
 samples), the aggregated types — the same Aggregates picker and type pages as
 Sync: each type starts with its daily total or average, and its page adds
 hourly, weekly, monthly or per-device values — a time range (last 30 days,
-90 days, a year, all time, or your own start and end date), CSV or JSONL,
-and whether to zip it. The draft starts from what Sync sends, as applied —
+90 days, a year, all time, or your own start and end date), CSV, JSON or JSONL,
+a CSV layout, and whether to zip it. The draft starts from what Sync sends, as applied —
 the same raw types, aggregates and workout route/stream switches. What you change in it is
 this export's alone, never the sync's, and the sync start date in Settings
 plays no part.
@@ -200,9 +200,10 @@ each sample's time-zone context and source), written in 5–7 seconds on a
 simulator. A phone is slower, and years of Apple Watch heart rate run to
 millions of samples.
 
-It offers the same two formats, and they are not symmetrical:
+The app offers CSV, JSON and JSONL. The server API above still offers CSV
+and JSONL. The detailed formats and CSV are not symmetrical:
 
-**JSONL is the complete one, and it is replayable.** The file
+**JSONL preserves full details and is directly replayable.** The file
 (`puls-export-<yyyyMMdd-HHmmss>.jsonl`) is a concatenation of
 [Puls Sync Protocol](protocol/README.md) batches exactly as they would have
 gone over the wire, uncompressed: each batch's header line, then its sample,
@@ -226,10 +227,36 @@ know:
 [`tools/protocol-check`](../tools/protocol-check) validates one batch per file,
 so split an export the same way before checking it.
 
-**CSV is a flattened view**, one file per dataset that has rows
+**JSON is one complete document with the same detailed data as JSONL.**
+`puls-export-<yyyyMMdd-HHmmss>.json` is an array containing the exact JSONL
+objects in the same order: batch header, records, next batch header, records.
+It includes raw samples, aggregates, routes, streams, ECG traces, heartbeat
+series, deletion tombstones and time-zone/source/metadata fields when available.
+It omits the configured identity profile, like JSONL. The exporter writes it
+incrementally and closes the array only after the data is written; failed or
+cancelled exports are removed. The whole export is not buffered in memory.
+
+For example, simplified record excerpts inside an array look like:
+
+```json
+[
+  {"batchID": "11111111-1111-4111-8111-111111111111", "sampleCount": 1},
+  {"type": "HKQuantityTypeIdentifierHeartRate", "kind": "quantity", "value": 62, "unit": "count/min"},
+  {"batchID": "22222222-2222-4222-8222-222222222222", "aggregateCount": 1},
+  {"aggregate": {"type": "HKQuantityTypeIdentifierStepCount", "func": "sum", "value": 8421, "unit": "count"}}
+]
+```
+
+The actual objects contain the full protocol fields. For receiver replay,
+iterate the array, write each object as one JSONL line, then split into batches
+at header objects exactly as described above. JSON is not posted directly to
+`/v1/batches`. Both detailed formats include a separate JSON manifest and can
+be packaged into a ZIP. CSV layout and detail controls apply only to CSV.
+
+**CSV is a flattened view**. Its default layout writes one file per dataset that has rows
 (`puls-export-<yyyyMMdd-HHmmss>-<dataset>.csv`; a dataset with no rows gets no
-file). Where a dataset also exists on the server the file is the same file:
-same header row, same order, epoch-millisecond instants, `YYYY-MM-DD` local
+file). In the default layout without optional detail columns, datasets shared
+with the server use the same header row and order, epoch-millisecond instants, `YYYY-MM-DD` local
 days, canonical units, a null as an empty cell, a list comma-joined inside its
 quoted cell, lowercase UUIDs, floats without an exponent — and the same
 spreadsheet-formula caveat, because cells are written verbatim here too.
@@ -245,14 +272,66 @@ spreadsheet-formula caveat, because cells are written verbatim here too.
 | `workout_series` | no — device only | `workoutUUID`, `type`, `unit`, `t`, `value` |
 | `medication_doses` | no — device only | `uuid`, `start`, `end`, `medication`, `status`, `scheduledAt`, `doseQuantity`, `doseUnit`, `source` |
 
+### CSV layouts and optional details
+
+The Export tab's **Layout** picker appears only for CSV:
+
+| Layout | Files and rows |
+|---|---|
+| Separate datasets (default) | The dataset tables above; all selected quantity and category types share `samples.csv`. |
+| One file per data type | One `…-type-<HealthKit identifier>.csv` per type, containing its raw samples, aggregates and workout stream points. A `dataset` column distinguishes records; inapplicable cells are empty. Workout route points share the workout file. Activity rings, mood and medication doses each have their own type file. |
+| One combined table | One `…-records.csv`, with a `dataset` column followed by the union of CSV columns. Each source row remains one row; columns that do not apply are empty. This does not join, sum or deduplicate records. Use `dataset` and `type` when filtering; raw samples and aggregate values must not be added together. |
+| Daily summary | One `…-daily-summary.csv` with `date,timeZone,bucketStart,bucketEnd`, then one column per aggregate series. Requires at least one aggregate, all at a 1-day interval. Selected raw data and other datasets still get their ordinary dataset files. |
+
+Summary column names preserve the full series identity and unit, for example
+`HKQuantityTypeIdentifierHeartRate|average|1|day|watch|count/min`.
+Rows preserve exact bucket boundaries: series with different boundaries are not
+merged just because they share a date label. Missing values are empty, zero is
+`0`, and completed buckets are ordered by start time. The summary does not
+compute new totals from raw samples. It pivots the same HealthKit aggregates.
+A summary is bounded to one million series/bucket entries; a larger
+selection is rejected with a suggestion to shorten the range or use dataset files.
+
+**More options** is collapsed by default. Source and device details add
+`sourceBundleID,sourceVersion,device` to samples, workouts, mood entries and
+medication doses. Sample metadata adds a `metadata` column containing JSON
+(`null` when absent), with normal CSV quoting. Basic sample and medication
+source-name columns stay as before. These options do not change the JSONL
+protocol or include identity profile fields.
+
+**Split large tables** is off by default. Choose 100,000 or 1,000,000 data rows
+per file. CSV files gain `-part-0001`, `-part-0002`, etc.; every part repeats its
+header. Splitting counts complete records, including a cell with quoted
+newlines as one record. It applies to every CSV layout, including summaries.
+It does not split JSON or JSONL. ZIP remains independent of layout and splitting.
+
+Illustrative CSV records (epoch milliseconds, UTC bucket):
+
+```csv
+type,unit,uuid,start,end,value,label,source
+HKCategoryTypeIdentifierSleepAnalysis,,11111111-1111-4111-8111-111111111111,1767225600000,1767229200000,3,asleepCore,Apple Watch
+```
+
+```csv
+type,func,intervalValue,intervalUnit,deviceFilter,bucketStart,bucketEnd,value,unit
+HKQuantityTypeIdentifierStepCount,sum,1,day,all,1767225600000,1767312000000,8421,count
+```
+
+JSONL is a sequence of independent JSON objects, one per line, whereas a JSON
+file is one complete JSON document (often an array). The on-device JSONL is
+also framed as protocol batches, with headers between groups of records; it
+is not a single JSON array. JSONL supports streaming without loading the whole
+export. The manifest is an ordinary JSON document in either format.
+
 The device-only files use the wire format's own keys, in wire order, one row
 per bucket, GPS fix, stream datapoint or dose. How the two sides differ:
 
 - **`samples` holds every selected quantity and category type in one file**,
-  where the server exports one type per request. `label` — the server's name
-  for a category value, joined from its `category_labels` table — is always
-  empty: the app has no such table, and the column is kept so the header
-  matches. A category sample's `value` is HealthKit's raw integer on both sides.
+  in the default layout, where the server exports one type per request.
+  The app fills `label` with the bundled knowledge base's category enum name
+  when known (for example `asleepCore`); unknown values leave it empty. The
+  server obtains its labels from `category_labels`. A category sample's
+  `value` is always HealthKit's raw integer on both sides.
 - **`daily_metrics` and `sleep` do not exist on the device.** Both are views the
   server computes over what it has stored (per-day totals deduplicated across
   devices; nights assembled from sleep-stage samples). The device's counterpart
@@ -264,18 +343,24 @@ per bucket, GPS fix, stream datapoint or dose. How the two sides differ:
   dates and recorded daily aggregate dates; raw records and mood entries are
   grouped in the account reporting zone. Travel can therefore produce different
   local-day labels between an on-device export and a server raw-data export.
-- **What CSV leaves out.** Metadata, device, source bundle and version, the
-  per-sample time-zone context, and a workout's statistics, events and
-  sub-activities have no column. ECG voltage traces, beat-to-beat heartbeat
+- **What CSV leaves out.** Unless enabled under More options, metadata,
+  device, source bundle and version. Per-sample time-zone context and a
+  workout's statistics, events and sub-activities have no column. ECG voltage traces, beat-to-beat heartbeat
   series and deletion tombstones have no file at all; the result the package
-  returns counts them so the app can say so and suggest JSONL.
+  returns counts them so the app can say so and suggest JSON or JSONL.
 
-Both formats come with `puls-export-<yyyyMMdd-HHmmss>-manifest.json`: the user
+All three formats come with `puls-export-<yyyyMMdd-HHmmss>-manifest.json`: the user
 ID, the device ID, the requested range (`startDate`, `null` = all time;
 `endDate`, `null` = now), the format, the protocol `schemaVersion` and the app
 version, the time zone local days were computed in, the exported `types` and
 `aggregates` (each series as `type|func|intervalValue|intervalUnit|deviceFilter`),
-and per-file and per-dataset row counts. Its main job is `"complete": false`
+and per-file and per-dataset row counts. `csvOptions` records the CSV layout,
+detail switches and split limit. Per-file `rows` counts actual data rows in that
+file or part; per-type files also record their `type`. Dataset counts retain the original record/bucket counts (a summary
+row can contain several aggregate buckets). `warnings` records extraction caveats
+for ordinary exports as well as requests. `complete` describes extraction; check
+`notRepresented` for CSV omissions and `warnings` for missing optional details,
+even when extraction completed. Its main job is `"complete": false`
 with a `failures` list whenever a selected type could not be read to the end
 (access never granted for it, the phone locked part-way through) or a sample
 could not be converted to its canonical unit. A file that stops short looks

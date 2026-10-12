@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-08**
+**Last updated: 2026-10-12**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
@@ -196,7 +196,7 @@ file you saved or sent somewhere else — those are yours to manage.
 ## Exports
 
 The Export tab writes the data types and series you choose for it, for the
-time range you pick, to files on the phone: CSV, or JSONL (the same format the app
+time range you pick, to files on the phone: CSV, JSON, or JSONL (the same format the app
 uploads), zipped into one file if you ask for that. It works with no database
 configured and makes no network request. It
 runs only when you tap Export; nothing exports on a schedule or in the
@@ -213,7 +213,10 @@ background.
   nothing.
 - **What is in them.** The health data you selected, as Apple Health holds it —
   which includes the name of the app or device that recorded each sample (for
-  example the name you gave your Apple Watch). A manifest file beside the data
+  example the name you gave your Apple Watch). CSV can include source/device
+  details and sample metadata when you enable those options; JSON and JSONL include them
+  when available. CSV layout and splitting change how files are organized, not
+  which health data you selected. A manifest file beside the data
   records your user ID, the app's random `deviceID`, the phone's time zone, the
   app version, the time range and the row counts — and, when Health access is
   limited to recent history (iOS 27), the date each limited type could be read
@@ -515,8 +518,23 @@ Everything above is about the app and, in the section just before this one,
 the developer's own viewer. This section is about pulshealth.com,
 which is a separate thing.
 
-The site is a set of static files. It loads no analytics, sets no cookies,
-and includes no tracking scripts or third-party embeds. No health data ever
+The site is a set of static files. It uses self-hosted Umami analytics,
+without analytics cookies, advertising identifiers, session recordings or
+cross-site user identification. The operator collects page paths, referrer
+domains, coarse browser/device information, anonymous visit estimates,
+fixed action counts (such as App Store link clicks and successful form
+submissions), and browser loading/interaction/layout performance. An App
+Store click is not evidence of an installation. IP addresses are used
+transiently to derive anonymous identifiers that rotate daily; raw IP
+addresses are not stored in the analytics database. Operational network
+providers may process request addresses under their own policies.
+
+The browser and collection gateway discard URL query strings and fragments,
+referrer paths, page titles, form contents and user identifiers. Collection
+respects Do Not Track and Global Privacy Control. Website analytics are
+separate from the iPhone app and the hosted health viewer. Authorized AI
+assistants may read aggregate website statistics to help the operator
+understand and monitor the site. No health data ever
 passes through it: the app does not talk to it, and there is nothing to sign
 in to on it. Its "Sign in" link leads to the developer's invite-only viewer
 at `app.pulshealth.com`, a separate site described in the section above.
@@ -525,8 +543,8 @@ Two forms on the site — "Sign up for updates" and the consulting contact
 form — send exactly what you type into them (a name, an email address, and
 for the consulting form an optional organisation and a message) to a form
 endpoint the maintainer runs on Amazon Web Services, tagged with which form it
-came from. That is the only thing the site sends anywhere, and it happens only
-when you press the button. The updates list is used for the occasional
+came from. Form contents are sent only when you press the button and are
+never included in analytics. The updates list is used for the occasional
 project announcement and nothing else.
 
 ## Changes to this policy

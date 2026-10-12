@@ -82,7 +82,7 @@ Sync > Database > "Your Own Database": enter Database URL <<<REVIEW_SERVER_URL>>
 
 WITHOUT A DATABASE
 
-After steps 1-3, open Export to create CSV or JSONL files. Share or Save to Files opens the share sheet. No network request is made; temporary files are deleted after sharing and at launch.
+After steps 1-3, open Export to create CSV, JSON or JSONL files. Share or Save to Files opens the share sheet. No network request is made; temporary files are deleted after sharing and at launch.
 
 WHY WE DECLARE NSAllowsLocalNetworking
 
@@ -121,7 +121,7 @@ Privacy policy: https://pulshealth.com/privacy
 ### "Why does the app need an external database at all?"
 
 It does not, for a one-off: the Export tab writes the selected Health
-data to CSV or JSONL files on the device and hands them to the share sheet,
+data to CSV, JSON or JSONL files on the device and hands them to the share sheet,
 with no database and no network request, and the Explore tab shows what Apple
 Health holds without either. The database is for the thing a file
 cannot do — *continuous* sync into a database the user controls, so they can
@@ -177,7 +177,10 @@ Delete Export, when another export starts, and at every launch. The files hold
 the selected health data plus a manifest with the user ID, the app's random
 device ID, the time zone and row counts — no token, no database URL, and none of
 the name/e-mail/date-of-birth fields from Settings → User. The share sheet's
-Copy action is excluded. `docs/privacy-policy.md` § Exports is the public
+Copy action is excluded. CSV offers dataset, per-type, combined and daily-summary
+layouts, category labels, and collapsed optional source/device, metadata and
+row-splitting controls. These do not change JSONL or where data is sent.
+`docs/privacy-policy.md` § Exports is the public
 statement of all this.
 
 ### "The permission sheet asked how much data to share"
@@ -240,7 +243,7 @@ and are not sent to the developer. This flow does not appear in TestFlight.
 ### Data Requests (next release)
 
 Settings → Create Request builds a self-contained link and QR code without a
-HealthKit read. Choose data types, past dates and CSV or JSONL. Leave delivery
+HealthKit read. Choose data types, past dates and CSV, JSON or JSONL. Leave delivery
 off to test Generate & Share without a receiver. Open the link or use Settings
 → Open or Scan Request. Review the request, then generate. Requests with a
 compatible HTTPS endpoint combine generation and sending in one explicit action.

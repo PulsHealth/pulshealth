@@ -763,6 +763,14 @@ private final class ProgressBox: @unchecked Sendable {
         #expect(try JSONDecoder.puls.decode(ExportManifest.self, from: data) == manifest)
         #expect(object["dataRequest"] == nil)
         #expect(object["submissionID"] == nil)
+        var csvOptions = ExportCSVOptions()
+        csvOptions.layout = .combined; csvOptions.includeMetadata = true; csvOptions.rowsPerFile = 100_000
+        manifest.csvOptions = csvOptions
+        manifest.warnings = [.init(message: "Route not readable")]
+        let optionsData = try JSONEncoder.puls.encode(manifest)
+        let decodedOptions = try JSONDecoder.puls.decode(ExportManifest.self, from: optionsData)
+        #expect(decodedOptions.csvOptions == csvOptions)
+        #expect(decodedOptions.warnings == manifest.warnings)
         manifest.dataRequest = DataRequest(title: "Test", requester: "Team", purpose: "Test manifest",
             contact: "test@example.org", startDay: "2026-01-01", endDay: "2026-01-02",
             metrics: [.init(type: Fixture.heartRate)])
@@ -897,5 +905,281 @@ private enum ZipReader {
         default:
             throw Malformed()
         }
+    }
+}
+
+@Suite struct ExportCSVLayoutTests {
+    private func csv(_ url: URL) throws -> [[String]] {
+        // Parse logical records, including doubled quotes and embedded newlines.
+        let chars = Array(try String(contentsOf: url, encoding: .utf8))
+        var rows: [[String]] = [], row: [String] = [], cell = "", quoted = false, i = 0
+        while i < chars.count {
+            let c = chars[i]
+            if c == "\"" {
+                if quoted && i + 1 < chars.count && chars[i + 1] == "\"" {
+                    cell.append("\""); i += 1
+                } else { quoted.toggle() }
+            } else if c == "," && !quoted { row.append(cell); cell = "" }
+            else if c == "\n" && !quoted { row.append(cell); rows.append(row); row = []; cell = "" }
+            else { cell.append(c) }
+            i += 1
+        }
+        return rows
+    }
+
+    private func bucket(_ type: String = Fixture.heartRate, value: Double? = 72,
+                        device: AggregateDeviceFilter = .all, day: Double = 1_767_225_600_000) -> AggregateSampleRow {
+        AggregateSampleRow(type: type, function: .average, intervalValue: 1, intervalUnit: .day,
+            deviceFilter: device, bucketStart: Fixture.date(day), bucketEnd: Fixture.date(day + 86_400_000),
+            value: value, unit: "count/min")
+    }
+
+    @Test func perTypeCombinesRawAndAggregatesWithoutMixingHealthTypes() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var options = ExportCSVOptions(); options.layout = .dataTypes
+        let writer = CSVExportWriter(directory: dir, baseName: "t", options: options,
+            categoryLabels: [Fixture.sleep: [3: "asleepCore"]])
+        _ = try writer.write(Fixture.batch(samples: [Fixture.quantity(1), Fixture.category(2, value: 3)],
+            aggregates: [bucket()]))
+        _ = try writer.write(Fixture.batch(samples: [Fixture.quantity(3)]))
+        let files = try writer.finish()
+        #expect(files.count == 2)
+        let heart = try #require(files.first { $0.url.lastPathComponent == "t-type-\(Fixture.heartRate).csv" })
+        #expect(heart.rows == 3)
+        #expect(heart.type == Fixture.heartRate)
+        let heartRows = try csv(heart.url)
+        #expect(heartRows.allSatisfy { $0.count == heartRows[0].count })
+        #expect(heartRows.dropFirst().allSatisfy { $0[1] == Fixture.heartRate })
+        #expect(Set(heartRows.dropFirst().map { $0[0] }) == ["samples", "aggregates"])
+        let sleep = try #require(files.first { $0.type == Fixture.sleep })
+        let records = try csv(sleep.url)
+        let value = try #require(records[0].firstIndex(of: "value"))
+        let label = try #require(records[0].firstIndex(of: "label"))
+        #expect(records[1][value] == "3")
+        #expect(records[1][label] == "asleepCore")
+    }
+
+    @Test func perTypeKeepsRoutesWithWorkoutsAndStreamsWithTheirMetricType() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var options = ExportCSVOptions(); options.layout = .dataTypes
+        let writer = CSVExportWriter(directory: dir, baseName: "t", options: options)
+        _ = try writer.write(Fixture.batch(samples: [Fixture.workout(Fixture.workoutA)],
+            routes: [RoutePayload(workoutUUID: Fixture.workoutA,
+                points: [RoutePoint(t: Fixture.date(1_767_225_600_000), lat: 1, lon: 2)])],
+            series: [WorkoutSeriesPayload(workoutUUID: Fixture.workoutA, type: Fixture.heartRate,
+                unit: "count/min", points: [SeriesPoint(t: Fixture.date(1_767_225_600_000), value: 123)])]))
+        let files = try writer.finish()
+        #expect(files.count == 2)
+        let workout = try #require(files.first { $0.type == HealthTypeCatalog.workoutIdentifier })
+        let rows = try csv(workout.url)
+        #expect(rows.allSatisfy { $0.count == rows[0].count })
+        #expect(Set(rows.dropFirst().map { $0[0] }) == ["workouts", "workout_routes"])
+        let hasRoute = try #require(rows[0].firstIndex(of: "hasRoute"))
+        #expect(rows.first { $0[0] == "workouts" }?[hasRoute] == "true")
+        let stream = try #require(files.first { $0.type == Fixture.heartRate })
+        #expect(try csv(stream.url)[1][0] == "workout_series")
+    }
+
+    @Test func unknownCategoryValuesRemainNumeric() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        let writer = CSVExportWriter(directory: dir, baseName: "t", categoryLabels: [Fixture.sleep: [3: "asleepCore"]])
+        _ = try writer.write(Fixture.batch(samples: [Fixture.category(1, value: 999)]))
+        let row = try csv(try #require(writer.finish().first).url)[1]
+        #expect(row[5] == "999")
+        #expect(row[6].isEmpty)
+    }
+
+    @Test func combinedDistinguishesRawAggregatesAndRoutesWithoutJoiningThem() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var options = ExportCSVOptions(); options.layout = .combined
+        let writer = CSVExportWriter(directory: dir, baseName: "t", options: options)
+        _ = try writer.write(Fixture.batch(samples: [Fixture.quantity(1)],
+            routes: [RoutePayload(workoutUUID: Fixture.workoutA,
+                points: [RoutePoint(t: Fixture.date(1_767_225_600_000), lat: 1, lon: 2)])],
+            aggregates: [bucket(value: nil)]))
+        let files = try writer.finish()
+        #expect(files.count == 1)
+        #expect(files[0].rows == 3)
+        #expect(files[0].dataset == nil)
+        let records = try csv(files[0].url), header = records[0]
+        #expect(records.allSatisfy { $0.count == header.count })
+        #expect(Set(records.dropFirst().map { $0[0] }) == ["samples", "workout_routes", "aggregates"])
+        let value = try #require(header.firstIndex(of: "value"))
+        let raw = try #require(records.first { $0[0] == "samples" })
+        #expect(raw[value] == "72")
+        let aggregate = try #require(records.first { $0[0] == "aggregates" })
+        #expect(aggregate[value].isEmpty)
+    }
+
+    @Test func detailsAreOptInAndMetadataRoundTripsThroughCSV() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var sample = Fixture.quantity(1, source: "Writer, Inc.\nDevice")
+        sample.device = "Watch \"Series\""; sample.sourceBundleID = "org.example.writer"; sample.sourceVersion = "2"
+        sample.metadata = ["note": .string("commas, quotes \" and newlines\n")]
+        var options = ExportCSVOptions(); options.includeSourceDetails = true; options.includeMetadata = true
+        let writer = CSVExportWriter(directory: dir, baseName: "details", options: options)
+        _ = try writer.write(Fixture.batch(samples: [sample]))
+        let data = try csv(try #require(writer.finish().first).url)
+        #expect(data[0].suffix(4) == ["sourceBundleID", "sourceVersion", "device", "metadata"])
+        #expect(data[1][7] == sample.sourceName)
+        #expect(data[1][10] == sample.device)
+        let metadata = try JSONDecoder().decode([String: MetadataValue].self, from: Data(data[1][11].utf8))
+        #expect(metadata == sample.metadata)
+        let basic = CSVExportWriter(directory: dir, baseName: "basic")
+        _ = try basic.write(Fixture.batch(samples: [sample]))
+        #expect(try csv(try #require(basic.finish().first).url)[0].count == 8)
+    }
+
+    @Test func splittingCountsRecordsNotEmbeddedNewlinesAndRepeatsHeaders() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var options = ExportCSVOptions(); options.rowsPerFile = 2
+        let writer = CSVExportWriter(directory: dir, baseName: "t", options: options)
+        _ = try writer.write(Fixture.batch(samples: (1...3).map { Fixture.quantity($0, source: "a,b\nc") }))
+        _ = try writer.write(Fixture.batch(samples: [Fixture.quantity(4), Fixture.quantity(5)]))
+        let files = try writer.finish()
+        #expect(files.map(\.rows) == [2, 2, 1])
+        #expect(files.map { $0.url.lastPathComponent } == ["t-samples-part-0001.csv", "t-samples-part-0002.csv", "t-samples-part-0003.csv"])
+        let records = try files.map { try csv($0.url) }
+        #expect(records.map { $0.count } == [3, 3, 2])
+        #expect(records.allSatisfy { $0[0] == records[0][0] })
+        #expect(records[0][1][7] == "a,b\nc")
+        #expect(try files.allSatisfy { $0.bytes == Int64(try Data(contentsOf: $0.url).count) })
+    }
+
+    @Test func summaryKeepsSeriesIdentityMissingValuesChronologyAndRawData() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var options = ExportCSVOptions(); options.layout = .dailySummary
+        let writer = CSVExportWriter(directory: dir, baseName: "t", timeZone: TimeZone(secondsFromGMT: 0)!, options: options)
+        _ = try writer.write(Fixture.batch(samples: [Fixture.quantity(1)], aggregates: [
+            bucket(value: 80, day: 1_767_312_000_000), bucket(value: 0), bucket(value: nil, device: .watch)]))
+        let files = try writer.finish()
+        #expect(files.count == 2)
+        let summary = try #require(files.first { $0.url.lastPathComponent == "t-daily-summary.csv" })
+        #expect(summary.rows == 2)
+        let records = try csv(summary.url)
+        #expect(records[1][0] == "2026-01-01")
+        #expect(records[2][0] == "2026-01-02")
+        #expect(records[0][4].contains("|all|count/min"))
+        #expect(records[0][5].contains("|watch|count/min"))
+        #expect(records[1][4] == "0")
+        #expect(records[1][5].isEmpty)
+        #expect(records[2][4] == "80")
+        #expect(files.contains { $0.dataset == .samples })
+    }
+
+    @Test func bufferedWritesAppendWithoutTruncatingEarlierRecords() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        let writer = CSVExportWriter(directory: dir, baseName: "t")
+        for chunk in 0..<3 {
+            _ = try writer.write(Fixture.batch(samples: (1...1_000).map {
+                Fixture.quantity(chunk * 1_000 + $0, source: String(repeating: "w", count: 100))
+            }))
+        }
+        let file = try #require(writer.finish().first)
+        let records = try csv(file.url)
+        #expect(records.count == 3_001)
+        #expect(Set(records.dropFirst().map { $0[2] }).count == 3_000)
+        #expect(file.rows == 3_000)
+        #expect(file.bytes == Int64(try Data(contentsOf: file.url).count))
+    }
+
+    @Test func abortRemovesAlreadyRotatedPartsAndCurrentPart() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var options = ExportCSVOptions(); options.rowsPerFile = 1
+        let writer = CSVExportWriter(directory: dir, baseName: "t", options: options)
+        _ = try writer.write(Fixture.batch(samples: [Fixture.quantity(1), Fixture.quantity(2)]))
+        writer.abort()
+        #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path).isEmpty)
+    }
+}
+
+@Suite struct ExportCSVOptionValidationTests {
+    @Test func dailySummaryRejectsMissingAndNonDailyAggregatesBeforeExtraction() {
+        var options = ExportCSVOptions(); options.layout = .dailySummary
+        #expect(options.validationIssue(for: ExportSelection(types: [Fixture.heartRate])) != nil)
+        var aggregate = AggregateConfig(typeIdentifier: Fixture.heartRate, function: .average,
+                                        intervalValue: 1, intervalUnit: .day)
+        #expect(options.validationIssue(for: ExportSelection(types: [], aggregates: [aggregate])) == nil)
+        aggregate.intervalUnit = .hour
+        #expect(options.validationIssue(for: ExportSelection(types: [], aggregates: [aggregate])) != nil)
+        aggregate.intervalUnit = .day; aggregate.intervalValue = 2
+        #expect(options.validationIssue(for: ExportSelection(types: [], aggregates: [aggregate])) != nil)
+        options.layout = .datasets; options.rowsPerFile = 0
+        #expect(options.validationIssue(for: ExportSelection(types: [Fixture.heartRate])) != nil)
+    }
+
+    @Test func jsonlIgnoresCSVLayoutDetailsAndSplitting() async throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var options = ExportCSVOptions(); options.layout = .combined
+        options.includeSourceDetails = true; options.includeMetadata = true; options.rowsPerFile = 1
+        let transport = ExportFileTransport(format: .jsonl, directory: dir, baseName: "t", csvOptions: options)
+        let batch = Fixture.batch(samples: [Fixture.quantity(1), Fixture.quantity(2)])
+        _ = try await transport.upload(batch)
+        let files = try await transport.finish()
+        #expect(files.count == 1)
+        #expect(files[0].url.lastPathComponent == "t.jsonl")
+        let expected = try String(decoding: BatchSerializer.ndjson(for: batch), as: UTF8.self)
+            .split(separator: "\n").map { try Fixture.object(String($0)) as NSDictionary }
+        let actual = try Fixture.lines(of: files[0].url).map { try Fixture.object($0) as NSDictionary }
+        #expect(actual == expected)
+    }
+}
+
+@Suite struct JSONExportWriterTests {
+    @Test func completeDocumentPreservesProtocolObjectsAcrossBatches() async throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var options = ExportCSVOptions(); options.layout = .dailySummary; options.rowsPerFile = 1
+        let transport = ExportFileTransport(format: .json, directory: dir, baseName: "t",
+            deviceID: "real-device", csvOptions: options)
+        var sample = Fixture.quantity(1, source: "Writer \"quoted\", unicode 🫀\nnext line")
+        sample.metadata = ["note": .string("line one\nline two, \"quoted\"")]
+        let ecg = SyncSample(uuid: UUID(), type: HealthTypeCatalog.electrocardiogramIdentifier, kind: .ecg,
+            start: Fixture.date(1_000), end: Fixture.date(31_000),
+            ecg: ECGDetail(classification: "sinusRhythm", symptomsStatus: "none", voltagesUV: [1, 2, 3]))
+        let beats = SyncSample(uuid: UUID(), type: HealthTypeCatalog.heartbeatSeriesIdentifier, kind: .heartbeatSeries,
+            start: Fixture.date(1_000), end: Fixture.date(61_000),
+            heartbeats: [Heartbeat(timeSinceSeriesStart: 0.8, precededByGap: false)])
+        let batches = [
+            Fixture.batch(samples: [sample, Fixture.category(2, value: 3), ecg, beats],
+                deletions: [SyncDeletion(uuid: UUID(), type: Fixture.heartRate)]),
+            Fixture.batch(samples: [Fixture.workout(Fixture.workoutA)],
+                routes: [RoutePayload(workoutUUID: Fixture.workoutA,
+                    points: [RoutePoint(t: Fixture.date(1_000), lat: 1, lon: 2)])],
+                series: [WorkoutSeriesPayload(workoutUUID: Fixture.workoutA, type: Fixture.heartRate,
+                    unit: "count/min", points: [SeriesPoint(t: Fixture.date(1_000), value: 120)])],
+                aggregates: [AggregateSampleRow(type: Fixture.heartRate, function: .average,
+                    intervalValue: 1, intervalUnit: .day, deviceFilter: .all,
+                    bucketStart: Fixture.date(1_000), bucketEnd: Fixture.date(86_401_000), value: nil, unit: "count/min")],
+                activitySummaries: [ActivitySummaryRow(date: Fixture.date(1_000), localDate: "1970-01-01", moveKcal: 0)]),
+        ]
+        var expected: [NSDictionary] = []
+        for var batch in batches {
+            _ = try await transport.upload(batch)
+            batch.deviceID = "real-device"
+            let lines = try String(decoding: BatchSerializer.ndjson(for: batch), as: UTF8.self).split(separator: "\n")
+            expected += try lines.map { try Fixture.object(String($0)) as NSDictionary }
+        }
+        let files = try await transport.finish()
+        #expect(files.count == 1)
+        #expect(files[0].url.lastPathComponent == "t.json")
+        let data = try Data(contentsOf: files[0].url)
+        let actual = try #require(try JSONSerialization.jsonObject(with: data) as? [NSDictionary])
+        #expect(actual == expected)
+        #expect(actual.filter { $0["batchID"] != nil }.count == 2)
+        #expect(files[0].bytes == Int64(data.count))
+        let tally = await transport.tally
+        #expect(tally.notRepresented(in: .json).isEmpty)
+        #expect(tally.written(in: .json) == tally.rows)
+        #expect(tally.rows[.ecg] == 1 && tally.rows[.heartbeatSeries] == 1 && tally.rows[.deletions] == 1)
+    }
+
+    @Test func noBatchesCreateNoFileAndAbortRemovesAnUnfinishedDocument() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        let empty = JSONExportWriter(directory: dir, baseName: "empty")
+        #expect(try empty.finish().isEmpty)
+        let writer = JSONExportWriter(directory: dir, baseName: "t")
+        _ = try writer.write(Fixture.batch(samples: [Fixture.quantity(1)]))
+        writer.abort()
+        #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path).isEmpty)
     }
 }

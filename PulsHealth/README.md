@@ -140,7 +140,7 @@ Sources/
 │                         a picker of its own), Aggregates (Aggregated types:
 │                         Sync's Aggregates picker over the draft), a range (30
 │                         days / 90 days / a year / all time, or a start and
-│                         end date), CSV or JSONL, zipped or not, then
+│                         end date), CSV, JSON or JSONL, zipped or not, then
 │                         running → result (totals, per-dataset rows, an
 │                         "incomplete" section, what CSV left out) → a
 │                         UIActivityViewController share sheet, whose
@@ -419,7 +419,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   and whether to zip it —
   seeded once from the applied sync selection and edited on the tab, never
   written back to it (an aggregate added here is the export's alone). It goes to
-  CSV or JSONL through the package's `HealthExporter`, which runs on a
+  CSV, JSON or JSONL through the package's `HealthExporter`, which runs on a
   throwaway engine and never touches the app's sync state (root `CLAUDE.md`,
   "Export never shares sync state"). Before a run the app requests Health
   access for any type in the draft iOS still reports as undetermined — the
@@ -441,6 +441,12 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   A dismissed sheet deletes nothing. Copy is excluded from the sheet: it would
   report success for a file that is then deleted, and it is the one activity
   that would put health data on a shared clipboard.
+  CSV's Layout picker offers dataset files (default), files per health type,
+  one combined table, or a daily aggregate summary (raw selections remain separate).
+  A collapsed More options section adds source/device details, sample metadata,
+  and optional 100k/1m-row file splitting. Category enum labels come from the bundled
+  knowledge base; unknown values stay numeric. JSONL stays the protocol format.
+
 - The most reliable sync trigger iOS offers is app-open: every foregrounding runs a
   full incremental pass, and re-reads the server's `GET /v1/capabilities` (kept
   in memory only) to decide which server-dependent controls to show.
