@@ -35,6 +35,13 @@ RSS/search/sitemap entries, article links/images and required generated assets.
 A full build currently exports **226** static pages, 178 of them under
 `knowledge-base/types/` and 13 under `docs/`; published posts add pages.
 
+The export gate also checks every public sitemap entry for a matching canonical,
+unique title, indexable HTML, an incoming internal link and working local links.
+The retired Toothbrushing identifier redirects to the current ToothbrushingEvent
+page and stays outside the sitemap. Search Console can retain old exclusions
+until Google recrawls; passing these checks makes pages eligible, but does not
+guarantee Google will index them.
+
 Two of those pages are not PulsHealth: `/fun100/` and `/fun100/privacy/` are
 the App Store support and privacy-policy URLs for Fun100, a separate app by
 the same developer. They are unlisted (not in the navigation, search or

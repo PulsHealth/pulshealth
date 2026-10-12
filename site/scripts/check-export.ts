@@ -3,6 +3,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadPosts } from "../src/lib/blog";
 import { DOCS } from "../src/lib/docs";
+import { STATIC_PAGES } from "../src/lib/pages";
 import type { BlogPost } from "../src/lib/types";
 
 export function filesIn(directory: string): string[] {
@@ -29,6 +30,41 @@ function decode(value: string): string {
     if (names[entity]) return names[entity];
     return String.fromCodePoint(parseInt(entity.slice(entity.startsWith("&#x") ? 3 : 2, -1), entity.startsWith("&#x") ? 16 : 10));
   });
+}
+
+/** Fail deployment when a public sitemap page cannot be indexed or discovered. */
+export function checkIndexableExport(outDir: string, expectedUrls: string[]): void {
+  const urls = [...requireFile(path.join(outDir, "sitemap.xml")).matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => decode(match[1]));
+  sameSet(urls, expectedUrls, "Public sitemap entries");
+  const titles = new Set<string>();
+  const linked = new Set<string>();
+  for (const url of urls) {
+    const pathname = new URL(url).pathname;
+    const html = requireFile(path.join(outDir, pathname, "index.html"));
+    const markup = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "");
+    const canonicals: string[] = [];
+    for (const tag of markup.match(/<[a-z][^>]*>/gi) ?? []) {
+      const attributes = Object.fromEntries([...tag.matchAll(/\b([\w-]+)\s*=\s*["']([^"']*)["']/g)].map(match => [match[1].toLowerCase(), decode(match[2])]));
+      if (/^<link\b/i.test(tag) && attributes.rel === "canonical") canonicals.push(attributes.href);
+      if (/^<meta\b/i.test(tag) && /^(robots|googlebot)$/i.test(attributes.name ?? "") && /\b(noindex|none)\b/i.test(attributes.content ?? "")) {
+        throw new Error(`${url}: sitemap page blocks indexing`);
+      }
+      if (/^<meta\b/i.test(tag) && attributes["http-equiv"]?.toLowerCase() === "refresh") throw new Error(`${url}: redirect in sitemap`);
+      if (/^<a\b/i.test(tag) && attributes.href) {
+        const target = new URL(attributes.href, url);
+        if (target.origin === "https://pulshealth.com" && target.pathname !== pathname) linked.add(target.pathname.replace(/\/$/, ""));
+      }
+    }
+    sameSet(canonicals, [url], `${url}: canonical`);
+    const title = /<title>([^<]+)<\/title>/i.exec(markup)?.[1];
+    if (!title || titles.has(title)) throw new Error(`${url}: missing or duplicate title`);
+    titles.add(title);
+    checkLocalLinks(html, pathname, outDir);
+  }
+  for (const url of urls) {
+    if (!linked.has(new URL(url).pathname.replace(/\/$/, ""))) throw new Error(`${url}: no incoming public page link`);
+  }
+  console.log(`discovery: ${urls.length} sitemap pages, canonicals, indexability and internal links checked`);
 }
 
 /** Check generated HTML, so MDX components and Markdown reference links are covered too. */
@@ -103,13 +139,24 @@ export function checkExport(siteDir = process.cwd()): void {
     }
     return identifier;
   });
-  sameSet(filesIn(path.join(outDir, "knowledge-base/types")).filter(file => file.endsWith(`${path.sep}index.html`)).map(file => path.basename(path.dirname(file))), identifiers, "Knowledge-base pages");
+  const legacyType = "HKCategoryTypeIdentifierToothbrushing";
+  const legacyHtml = requireFile(path.join(outDir, "knowledge-base/types", legacyType, "index.html"));
+  if (!legacyHtml.includes('content="0;url=/knowledge-base/types/HKCategoryTypeIdentifierToothbrushingEvent/"')) throw new Error("Missing legacy Toothbrushing redirect");
+  checkLocalLinks(legacyHtml, `/knowledge-base/types/${legacyType}/`, outDir);
+  sameSet(filesIn(path.join(outDir, "knowledge-base/types")).filter(file => file.endsWith(`${path.sep}index.html`)).map(file => path.basename(path.dirname(file))).filter(identifier => identifier !== legacyType), identifiers, "Knowledge-base pages");
   const docs = filesIn(path.join(outDir, "docs")).filter(file => file.endsWith(`${path.sep}index.html`)).map(file => path.relative(path.join(outDir, "docs"), path.dirname(file))).filter(slug => slug !== "" && slug !== "self-hosting");
   sameSet(docs, DOCS.map(doc => doc.slug), "Documentation pages");
   for (const doc of DOCS) requireFile(path.join(root, doc.repoPath));
   for (const file of ["index.html", "docs/index.html", "docs/self-hosting/index.html", "openapi.json"]) requireFile(path.join(outDir, file));
   if (!requireFile(path.join(outDir, "llms.txt")).includes("https://pulshealth.com/docs/protocol/")) throw new Error("Exported llms.txt missing protocol link");
   if (!requireFile(path.join(outDir, "docs/api-reference/index.html")).includes('id="getDailyMetrics"')) throw new Error("API reference missing endpoint");
+  const withSlash = (href: string) => href.endsWith("/") ? href : `${href}/`;
+  checkIndexableExport(outDir, [
+    ...STATIC_PAGES.filter(page => !page.href.startsWith("/docs/")).map(page => `https://pulshealth.com${withSlash(page.href)}`),
+    ...DOCS.map(doc => `https://pulshealth.com/docs/${doc.slug}/`),
+    ...posts.filter(post => !post.draft).map(post => `https://pulshealth.com/blog/${post.slug}/`),
+    ...identifiers.map(identifier => `https://pulshealth.com/knowledge-base/types/${identifier}/`),
+  ]);
   console.log(`export: ${identifiers.length} knowledge-base pages and ${DOCS.length} documentation pages checked`);
 }
 
