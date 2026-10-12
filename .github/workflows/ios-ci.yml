@@ -1,20 +1,10 @@
 name: Validate PulsHealth iOS
 
+# Always report stable required checks; select expensive tests inside the workflow.
 on:
   push:
     branches: [main]
-    paths:
-      - "PulsHealth/**"
-      - "PulsHealthSync/**"
-      # The package tests compare this file byte for byte with the catalog.
-      - "docs/protocol/catalog.json"
-      - ".github/workflows/ios-ci.yml"
   pull_request:
-    paths:
-      - "PulsHealth/**"
-      - "PulsHealthSync/**"
-      - "docs/protocol/catalog.json"
-      - ".github/workflows/ios-ci.yml"
 
 permissions:
   contents: read
@@ -24,7 +14,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Select ios checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      selected: ${{ steps.scope.outputs.ios }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Verify check selection
+        run: python3 -m unittest discover -s scripts -p 'test_ci_scope.py'
+      - name: Select component checks
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          base="$PUSH_BASE"
+          if [ "$EVENT" = pull_request ]; then
+            base="$PR_BASE"
+          fi
+          if [ -z "$base" ] || [[ "$base" =~ ^0+$ ]]; then
+            python3 scripts/ci_scope.py >> "$GITHUB_OUTPUT"
+          else
+            python3 scripts/ci_scope.py "$base" HEAD >> "$GITHUB_OUTPUT"
+          fi
+
   test:
+    needs: changes
+    if: needs.changes.outputs.selected == 'true'
     name: Build and test iOS (Xcode ${{ matrix.xcode }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -75,3 +97,25 @@ jobs:
             -scheme PulsHealth \
             -destination 'platform=iOS Simulator,OS=${{ matrix.os }},name=iPhone 17' \
             CODE_SIGNING_ALLOWED=NO
+
+  result:
+    name: iOS result
+    if: always()
+    needs: [changes, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require selected component tests to pass
+        env:
+          SELECTION: ${{ needs.changes.result }}
+          SELECTED: ${{ needs.changes.outputs.selected }}
+          TEST_RESULT: ${{ needs.test.result }}
+        run: |
+          set -euo pipefail
+          test "$SELECTION" = success
+          if [ "$SELECTED" = true ]; then
+            test "$TEST_RESULT" = success
+          else
+            test "$SELECTED" = false
+            test "$TEST_RESULT" = skipped
+          fi
