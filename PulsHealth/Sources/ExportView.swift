@@ -95,8 +95,6 @@ struct ExportView: View {
             }
         } header: {
             Text("Aggregates")
-        } footer: {
-            Text("Raw samples and aggregates start from what Sync sends. Changes here are this export’s only.")
         }
     }
 
@@ -171,14 +169,14 @@ struct ExportView: View {
         } header: {
             Text("Files")
         } footer: {
-            Text(formatExplanation)
+            if let formatExplanation { Text(formatExplanation) }
         }
     }
 
-    private var formatExplanation: String {
+    private var formatExplanation: String? {
         switch model.export.draft.format {
         case .csv:
-            "CSV includes category labels when known and keeps their numeric values. Every export includes a manifest. ZIP packages all files into one attachment."
+            nil
         case .json:
             "JSON is one complete document. It preserves detailed health records, including source, device and metadata when available. One data file plus a manifest; ZIP packages both into one attachment."
         case .jsonl:
