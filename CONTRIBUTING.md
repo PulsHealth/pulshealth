@@ -46,8 +46,10 @@ production release. Do not bypass a failing check to finish a task.
 
 ### Check only what the change needs
 
-Run fast, relevant checks while developing, then the affected component's
-full checks before merging. Check dependencies too: a catalog or protocol
+Run fast, relevant checks while developing, then ensure the affected
+component's full checks pass locally or in CI before merging. Slow database
+or platform suites may run in CI; record where they ran instead of requiring
+a duplicate local run. Check dependencies too: a catalog or protocol
 change reaches several components. Do not re-run unchanged passing suites
 without a new change or unresolved concern. Pure documentation fixes need
 link/content review and the public-tree gate; run the site build when its
