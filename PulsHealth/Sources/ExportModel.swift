@@ -210,7 +210,7 @@ final class ExportModel {
         let outcome: Result<ExportResult, Error>
         do {
             try Task.checkCancellation()
-            let request = ExportRequest(
+            var request = ExportRequest(
                 selection: selection,
                 configuration: configuration,
                 startDate: dates.start,
@@ -218,6 +218,8 @@ final class ExportModel {
                 format: format,
                 zipped: zipped,
                 deviceID: await engine.store.deviceID)
+            request.csvOptions = draft.csvOptions
+            request.categoryLabels = TypeKnowledge.exportCategoryLabels
             outcome = .success(try await HealthExporter().run(request) { continuation.yield($0) })
         } catch {
             outcome = .failure(error)
@@ -318,6 +320,7 @@ struct ExportDraft: Equatable {
     /// Exclusive end. The screen shows and edits the last *inclusive* day
     /// (`lastCustomDay`), which is the local day before this instant.
     var customEnd: Date
+    var csvOptions = ExportCSVOptions()
     var format: ExportFormat = .csv
     /// Hand over one `.zip` instead of the loose files (`ExportRequest.zipped`).
     var zipped = false

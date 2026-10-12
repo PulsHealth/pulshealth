@@ -87,14 +87,16 @@ actor ExportFileTransport: SyncTransport {
     ///     its real one so a replayed export is attributed to this install.
     init(
         format: ExportFormat, directory: URL, baseName: String,
-        deviceID: String? = nil, progress: ExportProgressHandler? = nil
+        deviceID: String? = nil, progress: ExportProgressHandler? = nil,
+        csvOptions: ExportCSVOptions = .init(), categoryLabels: [String: [Int: String]] = [:]
     ) {
         self.format = format
         self.deviceID = deviceID
         self.progress = progress
         switch format {
         case .jsonl: writer = JSONLExportWriter(directory: directory, baseName: baseName)
-        case .csv: writer = CSVExportWriter(directory: directory, baseName: baseName)
+        case .csv: writer = CSVExportWriter(directory: directory, baseName: baseName,
+                                             options: csvOptions, categoryLabels: categoryLabels)
         }
     }
 

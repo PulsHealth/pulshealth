@@ -152,7 +152,7 @@ Sources/PulsHealthSync/
 │   ├── ExportFileTransport.swift    Actor SyncTransport that appends batches to
 │   │                                files and tallies rows per dataset.
 │   ├── ExportWriters.swift          JSONL (wire-format batches, concatenated) and
-│   │                                CSV (one file per dataset) writers; ExportFile.
+│   │                                CSV (selectable layouts) writers; ExportFile.
 │   ├── ExportManifest.swift         The …-manifest.json sidecar.
 │   ├── ExportArchive.swift          ExportArchive and ExportZipper: an optional
 │   │                                .zip of the finished files via NSFileCoordinator,
@@ -687,10 +687,17 @@ let result = try await HealthExporter().run(request) { progress in
 where `HTTPSyncTransport` would and appends each batch instead of POSTing it.
 JSONL is therefore the wire format itself (uncompressed batches, concatenated —
 replayable into `/v1/batches`), and CSV is a per-dataset flattening of the same
-batches whose shared datasets match the product API's export byte for byte.
-Output is streamed through a `FileHandle` one batch at a time, so memory is
-bounded by `batchSize` whatever the export's size; only workout rows wait in
-memory, because their `hasRoute`/`availableMetrics` columns describe route and
+batches. The default dataset layout keeps the product API's shared column lists;
+category labels can be supplied from the caller's vocabulary. `request.csvOptions`
+selects dataset, per-type, combined or daily-summary tables, optional source/device
+and metadata columns, and an optional data-row limit per CSV part. Defaults preserve
+the existing columns and filenames. JSONL ignores CSV options. Daily summary requires
+1-day aggregates and preserves raw selections in their separate tables. See
+`docs/export.md` for column identity, missing values, splitting and summary bounds.
+Records are buffered into `FileHandle` writes, with CSV rotation only between
+complete records. Raw-data memory is bounded by `batchSize`; the optional daily
+summary also keeps a bounded pivot (at most one million series/bucket entries).
+Workout rows wait in memory because their `hasRoute`/`availableMetrics` columns describe route and
 stream batches that arrive two phases later.
 
 **It never shares sync state — the one rule that must not bend.** Anchors and

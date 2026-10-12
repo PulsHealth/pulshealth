@@ -433,6 +433,12 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   A dismissed sheet deletes nothing. Copy is excluded from the sheet: it would
   report success for a file that is then deleted, and it is the one activity
   that would put health data on a shared clipboard.
+  CSV's Layout picker offers dataset files (default), files per health type,
+  one combined table, or a daily aggregate summary (raw selections remain separate).
+  A collapsed More options section adds source/device details, sample metadata,
+  and optional 100k/1m-row file splitting. Category enum labels come from the bundled
+  knowledge base; unknown values stay numeric. JSONL stays the protocol format.
+
 - The most reliable sync trigger iOS offers is app-open: every foregrounding runs a
   full incremental pass, and re-reads the server's `GET /v1/capabilities` (kept
   in memory only) to decide which server-dependent controls to show.

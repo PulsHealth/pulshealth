@@ -72,6 +72,17 @@ extension TypeKnowledge.CategoryValue {
 }
 
 extension TypeKnowledge {
+    /// Reuse the bundled category vocabulary for CSV; keep unknown values numeric.
+    static var exportCategoryLabels: [String: [Int: String]] {
+        articles.mapValues { article in
+            var labels: [Int: String] = [:]
+            for entry in article.categoryValues ?? [] {
+                if let value = entry.value, let name = entry.name { labels[value] = name }
+            }
+            return labels
+        }
+    }
+
     // MARK: - Lookup
 
     /// The article for a catalog identifier, or nil when the knowledge base

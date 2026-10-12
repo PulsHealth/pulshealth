@@ -147,14 +147,40 @@ struct ExportView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+            if export.draft.format == .csv {
+                Picker("Layout", selection: $export.draft.csvOptions.layout) {
+                    ForEach(ExportCSVLayout.allCases) { layout in
+                        Text(layout.title).tag(layout)
+                    }
+                }
+                Text(export.draft.csvOptions.layout.explanation)
+                    .font(.caption).foregroundStyle(.secondary)
+                DisclosureGroup("More options") {
+                    Toggle("Source and device details", isOn: $export.draft.csvOptions.includeSourceDetails)
+                    Toggle("Sample metadata", isOn: $export.draft.csvOptions.includeMetadata)
+                    Picker("Split large tables", selection: $export.draft.csvOptions.rowsPerFile) {
+                        Text("Off").tag(Int?.none)
+                        Text("100,000 rows per file").tag(Int?.some(100_000))
+                        Text("1,000,000 rows per file").tag(Int?.some(1_000_000))
+                    }
+                    Text("Details add columns to sample tables. Splitting repeats the header in each numbered file and keeps every record intact.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Toggle("Zip into one file", isOn: $export.draft.zipped)
         } header: {
-            Text("Format")
+            Text("Files")
         } footer: {
             Text(export.draft.format == .csv
-                ? "CSV writes one file per kind of data, plus a manifest. Zipped, they travel as one smaller file."
-                : "JSONL writes one file, plus a manifest. Zipped, they travel as one much smaller file.")
+                 ? "CSV includes category labels when known and keeps their numeric values. Every export includes a manifest. ZIP packages all files into one attachment."
+                 : "JSONL preserves detailed health records, including source, device and metadata when available. One data file plus a manifest; ZIP packages both into one attachment.")
         }
+    }
+
+    private var layoutIssue: String? {
+        guard model.export.draft.format == .csv,
+              model.export.draft.csvOptions.layout == .dailySummary else { return nil }
+        return model.export.draft.csvOptions.validationIssue(for: model.export.draft.selection())
     }
 
     private var exportButtonSection: some View {
@@ -169,7 +195,7 @@ struct ExportView: View {
             .controlSize(.large)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-            .disabled(selection.isEmpty || model.exportBlockedByBackfill)
+            .disabled(selection.isEmpty || model.exportBlockedByBackfill || layoutIssue != nil)
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
                 if selection.isEmpty {
@@ -177,6 +203,7 @@ struct ExportView: View {
                 } else if model.exportBlockedByBackfill {
                     Text("A backfill is running. It reads the same Health data, and the two would slow each other to a crawl. Export once it has finished.")
                 }
+                if let layoutIssue { Text(layoutIssue).foregroundStyle(.orange) }
                 if model.exportLacksMedicationAccess {
                     Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Raw Samples. Until that has been answered this export contains no doses.")
                         .foregroundStyle(.orange)
@@ -291,7 +318,8 @@ struct ExportView: View {
                 fraction: nil,
                 onCancel: { model.export.cancel() })
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                StatTile(label: "Rows written", value: progress.rowsWritten.formatted())
+                StatTile(label: model.export.draft.format == .csv && model.export.draft.csvOptions.layout == .dailySummary
+                         ? "Records processed" : "Rows written", value: progress.rowsWritten.formatted())
                 StatTile(label: "Size so far", value: Int(progress.bytesWritten).byteString)
             }
             Text("Keep PulsHealth open and the iPhone unlocked until this finishes. Health data is unreadable while the iPhone is locked, so an export that runs into a lock comes out incomplete. The screen stays awake while it runs. Cancelling keeps nothing.")
@@ -307,14 +335,17 @@ struct ExportView: View {
         let selection = finished.draft.selection()
 
         CardSection(
-            result.isComplete ? "Export complete" : "Export incomplete",
+            result.isComplete
+                ? (result.notRepresented.isEmpty && result.warnings.isEmpty ? "Export complete" : "Exported with omissions")
+                : "Export incomplete",
             subtitle: result.isComplete
                 ? nil
                 : "Some of the selection could not be read, so these files are not all of your data. What is missing is listed below and recorded in the manifest file."
         ) {
-            Image(systemName: result.isComplete ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+            Image(systemName: result.isComplete && result.notRepresented.isEmpty && result.warnings.isEmpty
+                  ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                 .font(.title2)
-                .foregroundStyle(result.isComplete ? Color.green : .orange)
+                .foregroundStyle(result.isComplete && result.notRepresented.isEmpty && result.warnings.isEmpty ? Color.green : .orange)
                 .accessibilityHidden(true)
         } content: {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -332,6 +363,7 @@ struct ExportView: View {
             }
             VStack(alignment: .leading, spacing: 6) {
                 detailRow("Range", finished.rangeLabel)
+                if result.format == .csv { detailRow("Layout", finished.draft.csvOptions.layout.title) }
                 detailRow("Data types", "\(selection.types.count)")
                 if !selection.aggregates.isEmpty {
                     detailRow("Aggregates", "\(selection.aggregates.count)")

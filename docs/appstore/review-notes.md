@@ -177,7 +177,10 @@ Delete Export, when another export starts, and at every launch. The files hold
 the selected health data plus a manifest with the user ID, the app's random
 device ID, the time zone and row counts — no token, no database URL, and none of
 the name/e-mail/date-of-birth fields from Settings → User. The share sheet's
-Copy action is excluded. `docs/privacy-policy.md` § Exports is the public
+Copy action is excluded. CSV offers dataset, per-type, combined and daily-summary
+layouts, category labels, and collapsed optional source/device, metadata and
+row-splitting controls. These do not change JSONL or where data is sent.
+`docs/privacy-policy.md` § Exports is the public
 statement of all this.
 
 ### "The permission sheet asked how much data to share"

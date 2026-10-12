@@ -18,6 +18,7 @@ struct ExportManifest: Codable, Sendable, Equatable {
         var dataset: String?
         var rows: Int?
         var bytes: Int64
+        var type: String? = nil
     }
 
     var format: ExportFormat
@@ -57,12 +58,16 @@ struct ExportManifest: Codable, Sendable, Equatable {
     /// they hold before it is in no file — and the files cannot show that.
     var limitedHistory: [String: Date] = [:]
     var failures: [ExportIssue]
+    var csvOptions: ExportCSVOptions? = nil
+    var warnings: [ExportIssue]? = nil
     var requestWarnings: [ExportIssue]? = nil
     var dataRequest: DataRequest? = nil
     var submissionID: UUID? = nil
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(csvOptions, forKey: .csvOptions)
+        try c.encodeIfPresent(warnings, forKey: .warnings)
         try c.encodeIfPresent(requestWarnings, forKey: .requestWarnings)
         try c.encodeIfPresent(dataRequest, forKey: .dataRequest)
         try c.encodeIfPresent(submissionID, forKey: .submissionID)

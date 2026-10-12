@@ -202,6 +202,8 @@ public struct ExportFailureCopy: Sendable, Equatable {
                     + "under Settings → Privacy & Security → Health → PulsHealth.",
                 suggestion: .healthAccess,
                 issues: issues)
+        case .invalidOptions(let reason):
+            self.init(title: "Check Export Options", message: reason)
         case .writeFailed(let reason):
             self.init(
                 title: "The Files Couldn't Be Written",
@@ -222,7 +224,7 @@ public extension ExportResult {
         rowCounts.filter { notRepresented[$0.key] == nil }
     }
 
-    var writtenRows: Int { writtenRowCounts.values.reduce(0, +) }
+    var writtenRows: Int { csvFileRows ?? writtenRowCounts.values.reduce(0, +) }
 }
 
 public extension ExportIssue {

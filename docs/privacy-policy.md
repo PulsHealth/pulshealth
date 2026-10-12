@@ -204,7 +204,10 @@ background.
   nothing.
 - **What is in them.** The health data you selected, as Apple Health holds it —
   which includes the name of the app or device that recorded each sample (for
-  example the name you gave your Apple Watch). A manifest file beside the data
+  example the name you gave your Apple Watch). CSV can include source/device
+  details and sample metadata when you enable those options; JSONL includes them
+  when available. CSV layout and splitting change how files are organized, not
+  which health data you selected. A manifest file beside the data
   records your user ID, the app's random `deviceID`, the phone's time zone, the
   app version, the time range and the row counts — and, when Health access is
   limited to recent history (iOS 27), the date each limited type could be read
