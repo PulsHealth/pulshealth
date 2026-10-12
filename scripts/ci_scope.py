@@ -28,6 +28,9 @@ def component_scopes(paths: list[str]) -> dict[str, bool]:
     shared = {"scripts/ci_scope.py", "scripts/test_ci_scope.py"}
     ios_inputs = shared | {
         ".github/workflows/ios-ci.yml",
+        "scripts/test-ios.py",
+        "scripts/dev_evidence.py",
+        "scripts/test_dev_workflow.py",
         "docs/protocol/catalog.json",
         "scripts/gen-knowledge-json.py",
         "scripts/check-knowledge-json.sh",
