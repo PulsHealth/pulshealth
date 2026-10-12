@@ -1,6 +1,6 @@
 import Foundation
 
-/// `…-manifest.json`, written beside the data files of both formats.
+/// `…-manifest.json`, written beside the data files of every format.
 ///
 /// It exists for what the data files cannot say. On the wire the user is an
 /// HTTP header (`X-User-ID`), not part of the NDJSON body, so a JSONL export
@@ -49,7 +49,7 @@ struct ExportManifest: Codable, Sendable, Equatable {
     var files: [File]
     /// Rows per dataset, written or not.
     var rows: [String: Int]
-    /// JSONL: how many batches (header lines) the file holds.
+    /// JSON and JSONL: how many batches (header objects) the file holds.
     var batches: Int
     var notRepresented: [String: Int]
     var unmappableSamples: [String: Int]

@@ -65,6 +65,7 @@ public extension ExportFormat {
         switch self {
         case .csv: "CSV"
         case .jsonl: "JSONL"
+        case .json: "JSON"
         }
     }
 }

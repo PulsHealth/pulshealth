@@ -1,11 +1,14 @@
 import Foundation
 
-/// The two file formats an on-device export can produce. See `HealthExporter`.
+/// The file formats an on-device export can produce. See `HealthExporter`.
 public enum ExportFormat: String, Sendable, Codable, CaseIterable {
     /// One `.jsonl` file: a concatenation of Puls Sync Protocol batches exactly
     /// as they would go over the wire, uncompressed. Complete — every field of
     /// every kind — and replayable into a server later.
     case jsonl
+    /// One JSON array containing the same header and record objects as JSONL.
+    /// Written incrementally; contains every supported field and dataset.
+    case json
     /// Spreadsheet tables. Defaults to one file per dataset; `csvOptions`
     /// chooses other layouts, details and optional splitting.
     case csv
@@ -201,11 +204,11 @@ public enum ExportDataset: String, Sendable, Codable, CaseIterable, Hashable {
     /// Intra-workout stream datapoints, one row per point.
     case workoutSeries = "workout_series"
     case medicationDoses = "medication_doses"
-    /// Electrocardiograms. JSONL only: the row is a voltage trace.
+    /// Electrocardiograms. JSON and JSONL only: the row is a voltage trace.
     case ecg
-    /// Beat-to-beat series. JSONL only: the row is a list of beat offsets.
+    /// Beat-to-beat series. JSON and JSONL only: the row is a list of beat offsets.
     case heartbeatSeries = "heartbeat_series"
-    /// HealthKit deletion tombstones. JSONL only: a deletion is an instruction
+    /// HealthKit deletion tombstones. JSON and JSONL only: a deletion is an instruction
     /// to a receiver, not a row of data.
     case deletions
 
@@ -325,7 +328,7 @@ public struct ExportResult: Sendable {
     public var rowCounts: [ExportDataset: Int]
     /// CSV only: rows HealthKit returned that the format has no file for —
     /// ECG traces, heartbeat series, deletion tombstones. Always empty for
-    /// JSONL, which carries everything. Offer JSONL when this is non-empty.
+    /// JSON and JSONL, which carries everything. Offer JSONL when this is non-empty.
     public var notRepresented: [ExportDataset: Int]
     /// Samples HealthKit returned that could not be converted to the type's
     /// canonical unit, per type identifier. Non-empty means a catalog bug

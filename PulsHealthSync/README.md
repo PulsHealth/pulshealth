@@ -673,7 +673,7 @@ let request = ExportRequest(
     configuration: config,            // batch size, concurrency, user ID, grid anchor
     startDate: nil,                   // nil = all time
     endDate: nil,                     // nil = now; exclusive
-    format: .jsonl,                   // or .csv
+    format: .jsonl,                   // or .json / .csv
     zipped: false,                    // true = one .zip in result.files
     deviceID: engine.store.deviceID)  // attribute a replay to this install
 let result = try await HealthExporter().run(request) { progress in
@@ -691,7 +691,9 @@ batches. The default dataset layout keeps the product API's shared column lists;
 category labels can be supplied from the caller's vocabulary. `request.csvOptions`
 selects dataset, per-type, combined or daily-summary tables, optional source/device
 and metadata columns, and an optional data-row limit per CSV part. Defaults preserve
-the existing columns and filenames. JSONL ignores CSV options. Daily summary requires
+the existing columns and filenames. JSON and JSONL ignore CSV options. JSON
+is a single array of the same header and record objects as JSONL, streamed one
+batch at a time and closed on successful completion. Daily summary requires
 1-day aggregates and preserves raw selections in their separate tables. See
 `docs/export.md` for column identity, missing values, splitting and summary bounds.
 Records are buffered into `FileHandle` writes, with CSV rotation only between

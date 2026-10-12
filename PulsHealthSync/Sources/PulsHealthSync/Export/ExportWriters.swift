@@ -114,6 +114,52 @@ final class JSONLExportWriter: ExportWriter {
     }
 }
 
+// MARK: - JSON
+
+/// One ordinary JSON document: an array of the exact objects emitted by the
+/// protocol serializer. Only one batch is buffered, regardless of export size.
+/// JSONL is still the directly replayable protocol representation.
+final class JSONExportWriter: ExportWriter {
+    private let url: URL
+    private var file: ExportFile?
+    private var hasRecords = false
+
+    init(directory: URL, baseName: String) {
+        url = directory.appendingPathComponent("\(baseName).json")
+    }
+
+    func write(_ batch: SyncBatch) throws -> Int {
+        let ndjson = try BatchSerializer.ndjson(for: batch)
+        var output = Data()
+        if file == nil {
+            file = try ExportFile(url: url)
+            output.append(Data("[\n".utf8))
+        }
+        // The serializer emits compact JSON. Embedded newlines are escaped,
+        // so an LF byte separates objects rather than splitting a string.
+        for record in ndjson.split(separator: 0x0A) {
+            if hasRecords { output.append(Data(",\n".utf8)) }
+            output.append(contentsOf: record)
+            hasRecords = true
+        }
+        try file?.append(output)
+        return output.count
+    }
+
+    func finish() throws -> [ExportedFile] {
+        guard let file else { return [] }
+        try file.append(Data("\n]\n".utf8))
+        try file.close()
+        return [ExportedFile(url: file.url, dataset: nil, bytes: file.bytesWritten)]
+    }
+
+    func abort() {
+        file?.delete()
+        file = nil
+        hasRecords = false
+    }
+}
+
 // MARK: - CSV
 
 /// Writes one CSV file per dataset, header first, rows appended as batches

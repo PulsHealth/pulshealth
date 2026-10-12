@@ -32,6 +32,7 @@ struct CreateDataRequestView: View {
                 DatePicker("Through", selection: $end, in: ...Date(), displayedComponents: .date)
                 Picker("Format", selection: $format) {
                     Text("CSV").tag(ExportFormat.csv)
+                    Text("JSON").tag(ExportFormat.json)
                     Text("JSONL").tag(ExportFormat.jsonl)
                 }
                 Text("Both dates included, in the participant’s time zone. Daily aggregates include completed days only; today’s aggregate is omitted until tomorrow. One ZIP includes the data and export summary. Workout routes and extra streams are not requested.").font(.footnote).foregroundStyle(.secondary)

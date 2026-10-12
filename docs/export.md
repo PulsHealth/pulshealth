@@ -170,7 +170,7 @@ app's temporary directory for the share sheet.
 samples), the aggregated types — the same Aggregates picker and type pages as
 Sync: each type starts with its daily total or average, and its page adds
 hourly, weekly, monthly or per-device values — a time range (last 30 days,
-90 days, a year, all time, or your own start and end date), CSV or JSONL,
+90 days, a year, all time, or your own start and end date), CSV, JSON or JSONL,
 a CSV layout, and whether to zip it. The draft starts from what Sync sends, as applied —
 the same raw types, aggregates and workout route/stream switches. What you change in it is
 this export's alone, never the sync's, and the sync start date in Settings
@@ -200,9 +200,10 @@ each sample's time-zone context and source), written in 5–7 seconds on a
 simulator. A phone is slower, and years of Apple Watch heart rate run to
 millions of samples.
 
-It offers the same two formats, and they are not symmetrical:
+The app offers CSV, JSON and JSONL. The server API above still offers CSV
+and JSONL. The detailed formats and CSV are not symmetrical:
 
-**JSONL is the complete one, and it is replayable.** The file
+**JSONL preserves full details and is directly replayable.** The file
 (`puls-export-<yyyyMMdd-HHmmss>.jsonl`) is a concatenation of
 [Puls Sync Protocol](protocol/README.md) batches exactly as they would have
 gone over the wire, uncompressed: each batch's header line, then its sample,
@@ -225,6 +226,32 @@ know:
 
 [`tools/protocol-check`](../tools/protocol-check) validates one batch per file,
 so split an export the same way before checking it.
+
+**JSON is one complete document with the same detailed data as JSONL.**
+`puls-export-<yyyyMMdd-HHmmss>.json` is an array containing the exact JSONL
+objects in the same order: batch header, records, next batch header, records.
+It includes raw samples, aggregates, routes, streams, ECG traces, heartbeat
+series, deletion tombstones and time-zone/source/metadata fields when available.
+It omits the configured identity profile, like JSONL. The exporter writes it
+incrementally and closes the array only after the data is written; failed or
+cancelled exports are removed. The whole export is not buffered in memory.
+
+For example, simplified record excerpts inside an array look like:
+
+```json
+[
+  {"batchID": "11111111-1111-4111-8111-111111111111", "sampleCount": 1},
+  {"type": "HKQuantityTypeIdentifierHeartRate", "kind": "quantity", "value": 62, "unit": "count/min"},
+  {"batchID": "22222222-2222-4222-8222-222222222222", "aggregateCount": 1},
+  {"aggregate": {"type": "HKQuantityTypeIdentifierStepCount", "func": "sum", "value": 8421, "unit": "count"}}
+]
+```
+
+The actual objects contain the full protocol fields. For receiver replay,
+iterate the array, write each object as one JSONL line, then split into batches
+at header objects exactly as described above. JSON is not posted directly to
+`/v1/batches`. Both detailed formats include a separate JSON manifest and can
+be packaged into a ZIP. CSV layout and detail controls apply only to CSV.
 
 **CSV is a flattened view**. Its default layout writes one file per dataset that has rows
 (`puls-export-<yyyyMMdd-HHmmss>-<dataset>.csv`; a dataset with no rows gets no
@@ -276,7 +303,7 @@ protocol or include identity profile fields.
 per file. CSV files gain `-part-0001`, `-part-0002`, etc.; every part repeats its
 header. Splitting counts complete records, including a cell with quoted
 newlines as one record. It applies to every CSV layout, including summaries.
-It does not split JSONL. ZIP remains independent of layout and splitting.
+It does not split JSON or JSONL. ZIP remains independent of layout and splitting.
 
 Illustrative CSV records (epoch milliseconds, UTC bucket):
 
@@ -320,9 +347,9 @@ per bucket, GPS fix, stream datapoint or dose. How the two sides differ:
   device, source bundle and version. Per-sample time-zone context and a
   workout's statistics, events and sub-activities have no column. ECG voltage traces, beat-to-beat heartbeat
   series and deletion tombstones have no file at all; the result the package
-  returns counts them so the app can say so and suggest JSONL.
+  returns counts them so the app can say so and suggest JSON or JSONL.
 
-Both formats come with `puls-export-<yyyyMMdd-HHmmss>-manifest.json`: the user
+All three formats come with `puls-export-<yyyyMMdd-HHmmss>-manifest.json`: the user
 ID, the device ID, the requested range (`startDate`, `null` = all time;
 `endDate`, `null` = now), the format, the protocol `schemaVersion` and the app
 version, the time zone local days were computed in, the exported `types` and

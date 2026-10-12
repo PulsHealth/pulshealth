@@ -44,12 +44,12 @@ struct ExportTally: Sendable, Equatable {
 
     /// Rows the format actually put in a file.
     func written(in format: ExportFormat) -> [ExportDataset: Int] {
-        format == .jsonl ? rows : rows.filter { $0.key.isWrittenToCSV }
+        format == .csv ? rows.filter { $0.key.isWrittenToCSV } : rows
     }
 
-    /// Rows the format had no file for. Empty for JSONL.
+    /// Rows the format had no file for. Empty for JSON and JSONL.
     func notRepresented(in format: ExportFormat) -> [ExportDataset: Int] {
-        format == .jsonl ? [:] : rows.filter { !$0.key.isWrittenToCSV }
+        format == .csv ? rows.filter { !$0.key.isWrittenToCSV } : [:]
     }
 }
 
@@ -94,6 +94,7 @@ actor ExportFileTransport: SyncTransport {
         self.deviceID = deviceID
         self.progress = progress
         switch format {
+        case .json: writer = JSONExportWriter(directory: directory, baseName: baseName)
         case .jsonl: writer = JSONLExportWriter(directory: directory, baseName: baseName)
         case .csv: writer = CSVExportWriter(directory: directory, baseName: baseName,
                                              options: csvOptions, categoryLabels: categoryLabels)

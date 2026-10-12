@@ -158,7 +158,7 @@ struct OnboardingView: View {
                         "See what Apple Health holds, how much, and where it came from.")
                     feature(
                         "square.and.arrow.up", "Export",
-                        "Save any of it to CSV or JSONL files.")
+                        "Save any of it to CSV, JSON or JSONL files.")
                     feature(
                         "arrow.triangle.2.circlepath", "Sync",
                         "Keep a live, always up-to-date copy in a database.")
@@ -201,7 +201,7 @@ struct OnboardingView: View {
             VStack(spacing: 24) {
                 pageIcon("square.and.arrow.up", color: .accentColor)
                 pageTitle("Export your data")
-                bodyText("Make a one-time export of any of your Health data, as CSV or JSONL files.")
+                bodyText("Make a one-time export of any of your Health data, as CSV, JSON or JSONL files.")
                 VStack(alignment: .leading, spacing: 18) {
                     feature(
                         "list.bullet.rectangle", "Raw samples",

@@ -141,7 +141,7 @@ struct ExportView: View {
         @Bindable var export = model.export
         return Section {
             Picker("Format", selection: $export.draft.format) {
-                ForEach([ExportFormat.csv, .jsonl], id: \.self) { format in
+                ForEach([ExportFormat.csv, .json, .jsonl], id: \.self) { format in
                     Text(format.title).tag(format)
                 }
             }
@@ -171,9 +171,18 @@ struct ExportView: View {
         } header: {
             Text("Files")
         } footer: {
-            Text(export.draft.format == .csv
-                 ? "CSV includes category labels when known and keeps their numeric values. Every export includes a manifest. ZIP packages all files into one attachment."
-                 : "JSONL preserves detailed health records, including source, device and metadata when available. One data file plus a manifest; ZIP packages both into one attachment.")
+            Text(formatExplanation)
+        }
+    }
+
+    private var formatExplanation: String {
+        switch model.export.draft.format {
+        case .csv:
+            "CSV includes category labels when known and keeps their numeric values. Every export includes a manifest. ZIP packages all files into one attachment."
+        case .json:
+            "JSON is one complete document. It preserves detailed health records, including source, device and metadata when available. One data file plus a manifest; ZIP packages both into one attachment."
+        case .jsonl:
+            "JSONL has one JSON object per line, useful for processing large exports. It preserves the same detailed data as JSON. One data file plus a manifest; ZIP packages both into one attachment."
         }
     }
 
@@ -434,7 +443,7 @@ struct ExportView: View {
         if !left.isEmpty {
             CardSection(
                 "Not in a CSV export",
-                subtitle: "These have no spreadsheet shape, so CSV leaves them out. Export as JSONL to include them."
+                subtitle: "These have no spreadsheet shape, so CSV leaves them out. Export as JSON or JSONL to include them."
             ) {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(left, id: \.self) { dataset in

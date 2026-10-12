@@ -1124,3 +1124,62 @@ private enum ZipReader {
         #expect(actual == expected)
     }
 }
+
+@Suite struct JSONExportWriterTests {
+    @Test func completeDocumentPreservesProtocolObjectsAcrossBatches() async throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        var options = ExportCSVOptions(); options.layout = .dailySummary; options.rowsPerFile = 1
+        let transport = ExportFileTransport(format: .json, directory: dir, baseName: "t",
+            deviceID: "real-device", csvOptions: options)
+        var sample = Fixture.quantity(1, source: "Writer \"quoted\", unicode 🫀\nnext line")
+        sample.metadata = ["note": .string("line one\nline two, \"quoted\"")]
+        let ecg = SyncSample(uuid: UUID(), type: HealthTypeCatalog.electrocardiogramIdentifier, kind: .ecg,
+            start: Fixture.date(1_000), end: Fixture.date(31_000),
+            ecg: ECGDetail(classification: "sinusRhythm", symptomsStatus: "none", voltagesUV: [1, 2, 3]))
+        let beats = SyncSample(uuid: UUID(), type: HealthTypeCatalog.heartbeatSeriesIdentifier, kind: .heartbeatSeries,
+            start: Fixture.date(1_000), end: Fixture.date(61_000),
+            heartbeats: [Heartbeat(timeSinceSeriesStart: 0.8, precededByGap: false)])
+        let batches = [
+            Fixture.batch(samples: [sample, Fixture.category(2, value: 3), ecg, beats],
+                deletions: [SyncDeletion(uuid: UUID(), type: Fixture.heartRate)]),
+            Fixture.batch(samples: [Fixture.workout(Fixture.workoutA)],
+                routes: [RoutePayload(workoutUUID: Fixture.workoutA,
+                    points: [RoutePoint(t: Fixture.date(1_000), lat: 1, lon: 2)])],
+                series: [WorkoutSeriesPayload(workoutUUID: Fixture.workoutA, type: Fixture.heartRate,
+                    unit: "count/min", points: [SeriesPoint(t: Fixture.date(1_000), value: 120)])],
+                aggregates: [AggregateSampleRow(type: Fixture.heartRate, function: .average,
+                    intervalValue: 1, intervalUnit: .day, deviceFilter: .all,
+                    bucketStart: Fixture.date(1_000), bucketEnd: Fixture.date(86_401_000), value: nil, unit: "count/min")],
+                activitySummaries: [ActivitySummaryRow(date: Fixture.date(1_000), localDate: "1970-01-01", moveKcal: 0)]),
+        ]
+        var expected: [NSDictionary] = []
+        for var batch in batches {
+            _ = try await transport.upload(batch)
+            batch.deviceID = "real-device"
+            let lines = try String(decoding: BatchSerializer.ndjson(for: batch), as: UTF8.self).split(separator: "\n")
+            expected += try lines.map { try Fixture.object(String($0)) as NSDictionary }
+        }
+        let files = try await transport.finish()
+        #expect(files.count == 1)
+        #expect(files[0].url.lastPathComponent == "t.json")
+        let data = try Data(contentsOf: files[0].url)
+        let actual = try #require(try JSONSerialization.jsonObject(with: data) as? [NSDictionary])
+        #expect(actual == expected)
+        #expect(actual.filter { $0["batchID"] != nil }.count == 2)
+        #expect(files[0].bytes == Int64(data.count))
+        let tally = await transport.tally
+        #expect(tally.notRepresented(in: .json).isEmpty)
+        #expect(tally.written(in: .json) == tally.rows)
+        #expect(tally.rows[.ecg] == 1 && tally.rows[.heartbeatSeries] == 1 && tally.rows[.deletions] == 1)
+    }
+
+    @Test func noBatchesCreateNoFileAndAbortRemovesAnUnfinishedDocument() throws {
+        let dir = try Fixture.tempDirectory(); defer { try? FileManager.default.removeItem(at: dir) }
+        let empty = JSONExportWriter(directory: dir, baseName: "empty")
+        #expect(try empty.finish().isEmpty)
+        let writer = JSONExportWriter(directory: dir, baseName: "t")
+        _ = try writer.write(Fixture.batch(samples: [Fixture.quantity(1)]))
+        writer.abort()
+        #expect(try FileManager.default.contentsOfDirectory(atPath: dir.path).isEmpty)
+    }
+}
