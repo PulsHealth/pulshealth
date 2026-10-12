@@ -9,6 +9,13 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+# Explicit opt-in verification image. Production still ends at the runner stage.
+# Uses pinned test dependencies and the same source as the deployed revision.
+FROM deps AS read-check
+COPY . .
+ENV NODE_ENV=production
+CMD ["npm", "exec", "--no", "--", "vitest", "run", "lib/readPerformance.test.ts", "--reporter=json", "--outputFile=/evidence/tests.json"]
+
 FROM node:26-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules

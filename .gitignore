@@ -43,3 +43,6 @@ node_modules/
 
 # Local Home Assistant test environment
 .venv-ha/
+
+# Site build provenance and local development evidence
+site/.puls-build.json

@@ -102,3 +102,14 @@ blog-check: ## Validate blog metadata, drafts, links and production export
 
 deploy-site: ## Build the marketing site and publish it to S3 + CloudFront (ARGS=--dry-run)
 	scripts/deploy-site.sh $(ARGS)
+
+.PHONY: task-status ios-test verify-backend
+
+task-status: ## Read-only worktree ownership, Git and PR status
+	python3 scripts/task-status.py --github
+
+ios-test: ## Test on an owned simulator; ARGS='--ios 26.5 --suite package'
+	python3 scripts/test-ios.py $(ARGS)
+
+verify-backend: ## Verify deployed revisions and real chart reads (ARGS='--expected-sha <SHA>')
+	python3 server/ops/verify-release.py $(ARGS)

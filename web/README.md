@@ -85,7 +85,7 @@ PULS_READ_PERF=1 npx vitest run lib/readPerformance.test.ts
 ```
 
 This opt-in suite reads real chart data without printing it or changing any
-records. It exercises four concurrent 30-day charts, long ranges, JIT settings,
+records. It exercises eight concurrent 30-day charts, long ranges, JIT settings,
 and a health probe while all chart connections are occupied. A passing simple
 health probe alone is not sufficient release verification.
 
@@ -707,3 +707,7 @@ email, 10 per IP and 500 total per hour. Keys are SHA-256 digests; expired
 counters and tokens are removed by an hourly job. These budgets are separate
 from sign-in attempts. The global counter bounds storage during email/IP
 spraying. SES delivery failures never log the link or its token.
+
+For deployment verification, use `server/ops/verify-release.py` from the repository
+root as described in the [hosted runbook](../docs/hosted-operations.md#verify-a-backend-or-viewer-deployment).
+It binds these checks to the deployed container revisions and saves a private receipt.

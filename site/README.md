@@ -110,3 +110,14 @@ their optional structured `recording_behavior` guidance with a separate review
 date and primary-source links. Content validation runs in CI independently of
 the app's compact generated resource; a recording review is not a clinical
 review of every other field.
+
+### Build provenance and deployment completion
+
+`bun run build` binds the export to its source inputs and hashes every output
+file in the ignored `.puls-build.json`. The deployment helper requires a clean
+checkout and rejects missing/stale manifests and modified output, including with
+`--skip-build`. It waits for CDN invalidation and compares live pages/assets with
+the build. Add `--verify-path blog/<slug>/index.html` for changed routes.
+A private receipt records the source, build fingerprint, invalidation and checked
+files. `--no-invalidation` deliberately leaves status `uploaded-unverified`.
+See [CONTRIBUTING.md](../CONTRIBUTING.md#task-status-and-release-evidence).

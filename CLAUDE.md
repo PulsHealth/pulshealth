@@ -27,9 +27,9 @@ restating them — keep it that way. What is still outstanding is
 ## Build & test
 
 ```bash
-# Library tests (Swift Testing)
-cd PulsHealthSync && xcodebuild test -scheme PulsHealthSync \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+# Owned simulator, boot preflight, logs and result bundles (package + app).
+# Set DEVELOPER_DIR to select Xcode without changing the global selection.
+python3 scripts/test-ios.py --ios 27.0
 # After editing HealthTypeCatalog, regenerate docs/protocol/catalog.json, then
 # web/lib/catalog.generated.ts (the comparison checks fail until you do):
 cd PulsHealthSync && TEST_RUNNER_PULS_WRITE_CATALOG=1 xcodebuild test \
@@ -37,14 +37,8 @@ cd PulsHealthSync && TEST_RUNNER_PULS_WRITE_CATALOG=1 xcodebuild test \
   -only-testing:PulsHealthSyncTests/CatalogVocabularyTests
 cd web && npm run gen:catalog
 
-# App: run `xcodegen` (brew install xcodegen) before the first build and after
-# adding/removing/renaming files. PulsHealth.xcodeproj is gitignored: it
-# carries DEVELOPMENT_TEAM from Config/Local.xcconfig, which xcodegen seeds.
-cd PulsHealth && xcodegen && xcodebuild build -scheme PulsHealth \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
-# App-hosted XCTest (HealthKit entitlement): the 378-combo aggregate matrix
-cd PulsHealth && xcodebuild test -scheme PulsHealth \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+# App-only tests always regenerate the Xcode project.
+python3 scripts/test-ios.py --ios 27.0 --suite app
 
 # The whole stack from this checkout (docker-compose.yml alone pulls the
 # published images). bootstrap.sh writes server/.env and prints the pairing
@@ -651,7 +645,9 @@ Follow [CONTRIBUTING.md](CONTRIBUTING.md#daily-workflow-including-ai-contributor
 for branches, AI worktree ownership, review and check selection. Ordinary task
 PRs target `main`; release branches are temporary candidate freezes. A merge,
 an image publication, a deployment and an App Store submission are separate
-outcomes and must be reported separately.
+outcomes and must be reported separately. Use `scripts/task-status.py` for
+checkout ownership/state and the candidate/deployment receipts described in
+CONTRIBUTING.md; do not reconstruct or duplicate evidence from chat summaries.
 
 ## Deployment
 

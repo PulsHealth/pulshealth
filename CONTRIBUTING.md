@@ -111,6 +111,50 @@ multi-component deployment atomic. Record the source revision and artifacts
 actually shipped, and verify live behavior. Database rollback may need a
 forward fix or restore rather than merely reverting a Git commit.
 
+## Task status and release evidence
+
+`python3 scripts/task-status.py --github` reports worktrees, recorded ownership,
+dirty state, local ahead/behind counts and PRs without changing them. Run it
+from your task checkout. `--claim <session-or-task>` explicitly records ownership
+in private Git metadata and refuses to overwrite another owner. Unknown ownership
+requires investigation; it never authorizes deletion. Remote counts are a local
+snapshot until you fetch.
+
+Use one candidate record rather than reconstructing evidence in each chat:
+
+```bash
+python3 scripts/release-record.py create /path/outside/repo/candidate.json --component ios --version <version> --build <unused-build>
+python3 scripts/release-record.py record /path/outside/repo/candidate.json --name package-tests --status passed --method automated --reference <CI-run-URL>
+python3 scripts/release-record.py verify /path/outside/repo/candidate.json
+```
+
+Creation requires a clean commit. The record binds evidence to component input
+hashes; unrelated prose changes need not invalidate iOS evidence. Changed
+component inputs require a new candidate and reassessment. Attach an exported
+IPA hash with `--artifact`. Record automated, signed-simulator, physical-device
+and maintainer-confirmed evidence distinctly; skipped, waived and unverified
+are not passes. Preserve source/build, archive and matching dSYMs privately;
+put a concise sanitized release entry in `docs/appstore/README.md`. Never infer
+submission or release from tests, an archive upload or a Git merge.
+
+For **site releases**, `bun run build` writes a local source/output manifest.
+`deploy-site.sh --skip-build` refuses stale inputs or modified output; it then
+waits for CloudFront completion and compares live page/asset bytes. Supply
+`--verify-path <exported-file>` for each changed route, in addition to default
+home/privacy/discovery/JS/CSS probes. Receipts live under Git's private
+`pulshealth/deployments/` directory. `--dry-run` performs no cloud writes;
+`--no-invalidation` records **uploaded-unverified**, never verified completion.
+The public source tree and deployment checkout must be clean. Site deployment
+is still an explicit shipping action, separate from a merge.
+
+For **backend/viewer releases**, follow `docs/hosted-operations.md`, then run
+`server/ops/verify-release.py --expected-sha <full-SHA>` from that clean source
+checkout on the Docker host, with `PULS_READ_PERF_USER_ID` supplied privately.
+The command verifies container health/revisions, runs the existing populated
+read/performance suite, rechecks revisions and saves a private receipt. For a
+viewer-only deploy select `--service web`. Do not call a release verified from
+health probes alone. Migration, backup and restore procedures remain required.
+
 ## Developer Certificate of Origin
 
 Every commit must be signed off. Signing off is how you certify the
@@ -144,9 +188,7 @@ short version. Everything runs from a checkout of this repository.
 iOS 17+, Swift 6 strict concurrency, no dependencies. Tests are Swift Testing.
 
 ```bash
-cd PulsHealthSync
-xcodebuild test -scheme PulsHealthSync \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+python3 scripts/test-ios.py --ios 27.0 --suite package
 ```
 
 ### `PulsHealth` (iOS app)
@@ -174,10 +216,20 @@ The app-hosted tests need the HealthKit entitlement (they execute every
 aggregate function × type combination against HealthKit) and are XCTest:
 
 ```bash
-cd PulsHealth
-xcodebuild test -scheme PulsHealth \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+python3 scripts/test-ios.py --ios 27.0 --suite app
 ```
+
+Set `DEVELOPER_DIR` to the intended Xcode installation; the wrapper never
+changes global Xcode selection. It always regenerates the app project, creates
+an isolated simulator, waits for boot, and saves logs/xcresult/receipt under
+Git's private state directory. CI explicitly permits a missing pinned runtime
+to be downloaded. Only simulator setup gets one fresh-device retry; test
+failures remain failures. Inspect the retained evidence before retrying a job.
+For scoped Keychain acceptance, use `--signed --suite app --only-testing
+PulsHealthHostedTests/AppModelTests/testScopedKeychainCredentialsSurviveReopenAndUnpairIndividually`
+with the test identifier reported by Xcode. A skipped test is not acceptance.
+Signed simulator evidence does not establish physical HealthKit/background behavior.
+
 
 ### Go: `server/ingest`, `server/api`, `server/mcp`, `tools/`
 
@@ -266,8 +318,8 @@ The `site` job in `ci.yml` builds the marketing site on its own — it is the
 one thing here built with bun, and an unrelated site change must not gate the
 server.
 
-CI also builds the four app images for `linux/amd64` on every pull request
-(`images` job), so a Dockerfile change is checked before it is merged.
+When backend checks are selected, CI builds the four app images for
+`linux/amd64` (`images` job), so a Dockerfile change is checked before it is merged.
 `.github/workflows/release.yml` publishes them to `ghcr.io/pulshealth` on
 `v*` tags and on manual runs; the image matrix there, the `images` job in
 `ci.yml` and `server/compose.build.yml` must agree on contexts and build args.

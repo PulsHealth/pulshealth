@@ -29,7 +29,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Verify check selection
-        run: python3 -m unittest discover -s scripts -p 'test_ci_scope.py'
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Select PR checks (full suite on main and release calls)
         id: scope
         env:
