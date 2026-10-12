@@ -187,7 +187,7 @@ file you saved or sent somewhere else — those are yours to manage.
 ## Exports
 
 The Export tab writes the data types and series you choose for it, for the
-time range you pick, to files on the phone: CSV, or JSONL (the same format the app
+time range you pick, to files on the phone: CSV, JSON, or JSONL (the same format the app
 uploads), zipped into one file if you ask for that. It works with no database
 configured and makes no network request. It
 runs only when you tap Export; nothing exports on a schedule or in the
@@ -204,7 +204,10 @@ background.
   nothing.
 - **What is in them.** The health data you selected, as Apple Health holds it —
   which includes the name of the app or device that recorded each sample (for
-  example the name you gave your Apple Watch). A manifest file beside the data
+  example the name you gave your Apple Watch). CSV can include source/device
+  details and sample metadata when you enable those options; JSON and JSONL include them
+  when available. CSV layout and splitting change how files are organized, not
+  which health data you selected. A manifest file beside the data
   records your user ID, the app's random `deviceID`, the phone's time zone, the
   app version, the time range and the row counts — and, when Health access is
   limited to recent history (iOS 27), the date each limited type could be read

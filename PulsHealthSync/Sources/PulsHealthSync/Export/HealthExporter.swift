@@ -109,6 +109,9 @@ public final class HealthExporter: Sendable {
         guard ExportPlan.hasAnythingToExport(request.selection) else {
             throw HealthExportError.nothingSelected
         }
+        if request.format == .csv, let issue = request.csvOptions.validationIssue(for: request.selection) {
+            throw HealthExportError.invalidOptions(issue)
+        }
         progress?(ExportProgress(phase: .preparing))
 
         // The throwaway engine. Everything it persists goes here and is
@@ -173,7 +176,8 @@ public final class HealthExporter: Sendable {
 
         let transport = ExportFileTransport(
             format: request.format, directory: contentDirectory, baseName: baseName,
-            deviceID: request.deviceID, progress: progress)
+            deviceID: request.deviceID, progress: progress,
+            csvOptions: request.csvOptions, categoryLabels: request.categoryLabels)
         await engine.setTransport(transport)
         let collector = await ExportEventCollector.start(on: engine.eventLog)
 
@@ -202,7 +206,7 @@ public final class HealthExporter: Sendable {
 
             let rowCounts = tally.rows
             let manifestURL = contentDirectory.appendingPathComponent("\(baseName)-manifest.json")
-            let manifest = ExportManifest(
+            var manifest = ExportManifest(
                 format: request.format,
                 schemaVersion: PulsProtocol.version,
                 clientVersion: PulsProtocol.clientVersion,
@@ -218,7 +222,7 @@ public final class HealthExporter: Sendable {
                 files: written.map { file in
                     ExportManifest.File(
                         name: file.url.lastPathComponent, dataset: file.dataset?.rawValue,
-                        rows: file.dataset.map { rowCounts[$0] ?? 0 }, bytes: file.bytes)
+                        rows: file.rows ?? file.dataset.map { rowCounts[$0] ?? 0 }, bytes: file.bytes, type: file.type)
                 },
                 rows: Self.named(rowCounts),
                 batches: tally.batches,
@@ -228,6 +232,8 @@ public final class HealthExporter: Sendable {
                 failures: failures,
                 requestWarnings: request.dataRequest == nil ? nil : ExportPlan.warnings(from: events, excluding: failures),
                 dataRequest: request.dataRequest, submissionID: request.submissionID)
+            manifest.csvOptions = request.format == .csv ? request.csvOptions : nil
+            manifest.warnings = ExportPlan.warnings(from: events, excluding: failures)
             let manifestBytes: Int64
             do {
                 manifestBytes = try manifest.write(to: manifestURL)
@@ -262,6 +268,7 @@ public final class HealthExporter: Sendable {
                 files: files,
                 archive: archive,
                 manifestURL: request.zipped ? nil : manifestURL,
+                csvFileRows: request.format == .csv ? written.reduce(0) { $0 + ($1.rows ?? 0) } : nil,
                 rowCounts: rowCounts,
                 notRepresented: tally.notRepresented(in: request.format),
                 unmappableSamples: unmappable,

@@ -1,6 +1,6 @@
 import Foundation
 
-/// `…-manifest.json`, written beside the data files of both formats.
+/// `…-manifest.json`, written beside the data files of every format.
 ///
 /// It exists for what the data files cannot say. On the wire the user is an
 /// HTTP header (`X-User-ID`), not part of the NDJSON body, so a JSONL export
@@ -18,6 +18,7 @@ struct ExportManifest: Codable, Sendable, Equatable {
         var dataset: String?
         var rows: Int?
         var bytes: Int64
+        var type: String? = nil
     }
 
     var format: ExportFormat
@@ -48,7 +49,7 @@ struct ExportManifest: Codable, Sendable, Equatable {
     var files: [File]
     /// Rows per dataset, written or not.
     var rows: [String: Int]
-    /// JSONL: how many batches (header lines) the file holds.
+    /// JSON and JSONL: how many batches (header objects) the file holds.
     var batches: Int
     var notRepresented: [String: Int]
     var unmappableSamples: [String: Int]
@@ -57,12 +58,16 @@ struct ExportManifest: Codable, Sendable, Equatable {
     /// they hold before it is in no file — and the files cannot show that.
     var limitedHistory: [String: Date] = [:]
     var failures: [ExportIssue]
+    var csvOptions: ExportCSVOptions? = nil
+    var warnings: [ExportIssue]? = nil
     var requestWarnings: [ExportIssue]? = nil
     var dataRequest: DataRequest? = nil
     var submissionID: UUID? = nil
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(csvOptions, forKey: .csvOptions)
+        try c.encodeIfPresent(warnings, forKey: .warnings)
         try c.encodeIfPresent(requestWarnings, forKey: .requestWarnings)
         try c.encodeIfPresent(dataRequest, forKey: .dataRequest)
         try c.encodeIfPresent(submissionID, forKey: .submissionID)

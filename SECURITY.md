@@ -213,7 +213,7 @@ for judging what is.
   sample, a value paired with its timestamp, a sample identifier or any
   metadata would be a bug in scope here.
 - **An ordinary export is a plain file, and it is yours once shared.** The app can
-  write the selected health data to JSONL or CSV without a server
+  write the selected health data to CSV, JSON or JSONL without a server
   (`PulsHealthSync/Sources/PulsHealthSync/Export/`). The files are staged in
   the app's temporary directory — never backed up — and deleted at the next
   launch and once the share sheet is done with them; they carry no token, no

@@ -1,14 +1,61 @@
 import Foundation
 
-/// The two file formats an on-device export can produce. See `HealthExporter`.
+/// The file formats an on-device export can produce. See `HealthExporter`.
 public enum ExportFormat: String, Sendable, Codable, CaseIterable {
     /// One `.jsonl` file: a concatenation of Puls Sync Protocol batches exactly
     /// as they would go over the wire, uncompressed. Complete — every field of
     /// every kind — and replayable into a server later.
     case jsonl
-    /// One `.csv` file per dataset. A flattened view: the columns a spreadsheet
-    /// wants, mirroring the product API's `/v1/export` where the two overlap.
+    /// One JSON array containing the same header and record objects as JSONL.
+    /// Written incrementally; contains every supported field and dataset.
+    case json
+    /// Spreadsheet tables. Defaults to one file per dataset; `csvOptions`
+    /// chooses other layouts, details and optional splitting.
     case csv
+}
+
+/// CSV organization, independent of data selection and ZIP packaging.
+public enum ExportCSVLayout: String, Codable, Sendable, CaseIterable, Identifiable {
+    case datasets, dataTypes, combined, dailySummary
+    public var id: String { rawValue }
+    public var title: String {
+        switch self {
+        case .datasets: "Separate datasets"
+        case .dataTypes: "One file per data type"
+        case .combined: "One combined table"
+        case .dailySummary: "Daily summary"
+        }
+    }
+    public var explanation: String {
+        switch self {
+        case .datasets: "Separate tables for samples, aggregates, workouts and other data."
+        case .dataTypes: "One table for each health type. A dataset column distinguishes raw samples, aggregates and workout streams. Workout routes stay with workouts."
+        case .combined: "All CSV-supported records in one table. The dataset column distinguishes raw records from aggregates; unused cells are blank."
+        case .dailySummary: "One row per completed daily aggregate bucket, with a column for each series. Selected raw data stays in separate tables. Requires daily aggregates."
+        }
+    }
+}
+
+/// Optional CSV details. Defaults preserve the existing dataset columns.
+public struct ExportCSVOptions: Codable, Sendable, Equatable {
+    public var layout: ExportCSVLayout = .datasets
+    public var includeSourceDetails = false
+    public var includeMetadata = false
+    /// Data rows per part (headers do not count). Nil disables splitting.
+    public var rowsPerFile: Int? = nil
+    public init() {}
+
+    /// Shared by the builder and exporter: reject invalid layouts before reading HealthKit.
+    public func validationIssue(for selection: ExportSelection) -> String? {
+        if let limit = rowsPerFile, limit < 1 { return "Rows per file must be greater than zero." }
+        if layout == .dailySummary {
+            if selection.aggregates.isEmpty { return "Choose daily aggregates to make a daily summary." }
+            if selection.aggregates.contains(where: { $0.intervalUnit != .day || $0.intervalValue != 1 }) {
+                return "Daily summary needs every aggregate to use a 1-day interval. Change the intervals or choose another layout."
+            }
+        }
+        return nil
+    }
 }
 
 /// What one export covers, chosen for that export. Independent of the applied
@@ -95,6 +142,9 @@ public struct ExportRequest: Sendable {
     /// fraction of the size. The loose files are deleted once it is written.
     /// See `ExportResult.archive`.
     public var zipped: Bool
+    public var csvOptions = ExportCSVOptions()
+    /// Category enum names from the caller's authoritative category vocabulary.
+    public var categoryLabels: [String: [Int: String]] = [:]
     public var dataRequest: DataRequest? = nil
     public var submissionID: UUID? = nil
 
@@ -154,11 +204,11 @@ public enum ExportDataset: String, Sendable, Codable, CaseIterable, Hashable {
     /// Intra-workout stream datapoints, one row per point.
     case workoutSeries = "workout_series"
     case medicationDoses = "medication_doses"
-    /// Electrocardiograms. JSONL only: the row is a voltage trace.
+    /// Electrocardiograms. JSON and JSONL only: the row is a voltage trace.
     case ecg
-    /// Beat-to-beat series. JSONL only: the row is a list of beat offsets.
+    /// Beat-to-beat series. JSON and JSONL only: the row is a list of beat offsets.
     case heartbeatSeries = "heartbeat_series"
-    /// HealthKit deletion tombstones. JSONL only: a deletion is an instruction
+    /// HealthKit deletion tombstones. JSON and JSONL only: a deletion is an instruction
     /// to a receiver, not a row of data.
     case deletions
 
@@ -271,12 +321,14 @@ public struct ExportResult: Sendable {
     /// counts, and every failure below. Also the last element of `files`.
     /// Nil for a zipped export, whose manifest is the archive's last entry.
     public var manifestURL: URL?
+    /// Actual CSV data rows across files; a summary row can hold multiple buckets.
+    public var csvFileRows: Int? = nil
     /// Rows exported per dataset (route and series datasets count points).
     /// Datasets with no rows are absent.
     public var rowCounts: [ExportDataset: Int]
     /// CSV only: rows HealthKit returned that the format has no file for —
     /// ECG traces, heartbeat series, deletion tombstones. Always empty for
-    /// JSONL, which carries everything. Offer JSONL when this is non-empty.
+    /// JSON and JSONL, which carries everything. Offer JSONL when this is non-empty.
     public var notRepresented: [ExportDataset: Int]
     /// Samples HealthKit returned that could not be converted to the type's
     /// canonical unit, per type identifier. Non-empty means a catalog bug
@@ -327,6 +379,7 @@ public enum HealthExportError: Error, LocalizedError, Sendable, Equatable {
     /// A file could not be created or written (out of space, most likely).
     /// The partial files were removed.
     case writeFailed(String)
+    case invalidOptions(String)
 
     public var errorDescription: String? {
         switch self {
@@ -341,6 +394,8 @@ public enum HealthExportError: Error, LocalizedError, Sendable, Equatable {
         case .failed(let issues):
             let first = issues.first.map { ": \($0.message)" } ?? ""
             return "Nothing could be exported\(first)"
+        case .invalidOptions(let reason):
+            return reason
         case .writeFailed(let reason):
             return "The export could not be written: \(reason)"
         }
