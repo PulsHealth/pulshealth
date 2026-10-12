@@ -118,6 +118,8 @@ file in the ignored `.puls-build.json`. The deployment helper requires a clean
 checkout and rejects missing/stale manifests and modified output, including with
 `--skip-build`. It waits for CDN invalidation and compares live pages/assets with
 the build. Add `--verify-path blog/<slug>/index.html` for changed routes.
+Use the same `NEXT_PUBLIC_*` environment overrides when building and deploying;
+explicit `bun --env-file` injection must also be reproduced for validation.
 A private receipt records the source, build fingerprint, invalidation and checked
 files. `--no-invalidation` deliberately leaves status `uploaded-unverified`.
 See [CONTRIBUTING.md](../CONTRIBUTING.md#task-status-and-release-evidence).
