@@ -5,6 +5,7 @@ import { Check, Link2, Share2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { trackSiteEvent } from "@/lib/site-analytics";
 
 const noopSubscribe = () => () => {};
 
@@ -17,8 +18,8 @@ interface ShareButtonsProps {
 
 /**
  * Copy the link, or hand it to the OS share sheet where one exists. No
- * network-specific buttons: they add third-party requests for a page that
- * makes none, and a share sheet already knows where the reader posts.
+ * network-specific buttons: they add social-network requests, and a share
+ * sheet already knows where the reader posts. Analytics counts only the action.
  */
 export function ShareButtons({ url, title, description, className }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
@@ -40,6 +41,7 @@ export function ShareButtons({ url, title, description, className }: ShareButton
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      trackSiteEvent("article_share");
     } catch {
       // Clipboard access refused (insecure context or permission); the
       // address bar still has the URL, so there is nothing to show.
@@ -49,6 +51,7 @@ export function ShareButtons({ url, title, description, className }: ShareButton
   const share = async () => {
     try {
       await navigator.share({ title, text: description, url });
+      trackSiteEvent("article_share");
     } catch {
       // The reader dismissed the sheet.
     }

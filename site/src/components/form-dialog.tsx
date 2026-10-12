@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { trackSiteEvent } from "@/lib/site-analytics";
 
 export interface FormField {
   id: string;
@@ -73,11 +74,14 @@ export function FormDialog({ children, config }: FormDialogProps) {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
+    const analyticsForm = config.hiddenFields?.source === "consulting" ? "consulting" : "updates";
+    trackSiteEvent(`${analyticsForm}_submit`);
 
     const endpoint = process.env.NEXT_PUBLIC_FORM_ENDPOINT;
     if (!endpoint) {
       setError("This form is not configured on this build. Email support@pulshealth.com instead.");
       setIsSubmitting(false);
+      trackSiteEvent(`${analyticsForm}_error`);
       return;
     }
 
@@ -90,11 +94,14 @@ export function FormDialog({ children, config }: FormDialogProps) {
 
       if (response.ok) {
         setIsSubmitted(true);
+        trackSiteEvent(`${analyticsForm}_success`);
       } else {
         setError("Failed to send. Please try again.");
+        trackSiteEvent(`${analyticsForm}_error`);
       }
     } catch {
       setError("Failed to send. Please try again.");
+      trackSiteEvent(`${analyticsForm}_error`);
     } finally {
       setIsSubmitting(false);
     }
