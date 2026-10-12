@@ -82,7 +82,9 @@ private func writeLegacyState(_ json: String, in dir: URL) throws {
         await store.setConfiguration(config)
         await store.persistNow()
 
-        #expect(try tokens.token() == "secret-token")
+        let destinationID = try #require(await store.activeDestinationID)
+        #expect(try tokens.token(for: destinationID) == "secret-token")
+        #expect(try tokens.token() == nil)
         let raw = try String(contentsOf: dir.appendingPathComponent("sync-state.json"), encoding: .utf8)
         #expect(!raw.contains("secret-token"))
         #expect(!raw.contains("authToken"))
@@ -114,6 +116,36 @@ private func writeLegacyState(_ json: String, in dir: URL) throws {
         #expect(await store.configuration.authToken == nil)
     }
 
+    @Test func clearingSavedDestinationTokenDoesNotAffectAnotherDestination() async throws {
+        let dir = makeDir()
+        let tokens = InMemoryTokenStore()
+        let store = SyncStateStore(directory: dir, tokenStore: tokens)
+        var config = SyncConfiguration(serverURL: URL(string: "https://a.test"), authToken: "a-token")
+        await store.setConfiguration(config)
+        let aID = try #require(await store.activeDestinationID)
+        config.serverURL = URL(string: "https://b.test")
+        config.authToken = "b-token"
+        await store.setConfiguration(config)
+        let bID = try #require(await store.activeDestinationID)
+
+        // A missing token in a reconstructed configuration preserves this
+        // destination's credential; only the explicit clearing API removes it.
+        config.authToken = nil
+        await store.setConfiguration(config)
+        #expect(await store.configuration.authToken == "b-token")
+        #expect(try tokens.token(for: bID) == "b-token")
+        await store.clearAuthToken()
+        #expect(await store.configuration.authToken == nil)
+        #expect(try tokens.token(for: bID) == nil)
+        #expect(try tokens.token(for: aID) == "a-token")
+        await store.persistNow()
+        let reloaded = SyncStateStore(directory: dir, tokenStore: tokens)
+        #expect(await reloaded.activeDestinationID == bID)
+        #expect(await reloaded.configuration.authToken == nil)
+        try await reloaded.switchDestination(id: aID)
+        #expect(await reloaded.configuration.authToken == "a-token")
+    }
+
     @Test func legacyFileTokenMigratesIntoTheStoreAndOutOfTheFile() async throws {
         let dir = makeDir()
         try writeLegacyState(#"""
@@ -126,7 +158,8 @@ private func writeLegacyState(_ json: String, in dir: URL) throws {
 
         let tokens = InMemoryTokenStore()
         let store = SyncStateStore(directory: dir, tokenStore: tokens)
-        #expect(try tokens.token() == "legacy-secret")
+        let destinationID = try #require(await store.activeDestinationID)
+        #expect(try tokens.token(for: destinationID) == "legacy-secret")
         #expect(await store.configuration.authToken == "legacy-secret")
         // Anchors survived the migration.
         #expect(await store.state(for: "type-a").totalSamplesExported == 5)
@@ -137,8 +170,9 @@ private func writeLegacyState(_ json: String, in dir: URL) throws {
         #expect(!raw.contains("legacy-secret"))
         #expect(!raw.contains("authToken"))
 
-        // Loading again finds the token in the store, not the file.
+        // Loading again finds the destination-scoped token, not the file.
         let reloaded = SyncStateStore(directory: dir, tokenStore: tokens)
+        #expect(await reloaded.activeDestinationID == destinationID)
         #expect(await reloaded.configuration.authToken == "legacy-secret")
     }
 

@@ -333,8 +333,7 @@ struct ServerChangePrompt: ViewModifier {
                 set: { _ in }
             )
         ) {
-            Button("Start Fresh (Recommended)") { model.confirmServerChange(startFresh: true) }
-            Button("Keep Progress") { model.confirmServerChange(startFresh: false) }
+            Button("Add and Switch") { model.confirmServerChange() }
             Button("Cancel", role: .cancel) { model.cancelServerChange() }
         } message: {
             Text(Self.message(for: model.pendingServerChange))
@@ -352,9 +351,9 @@ struct ServerChangePrompt: ViewModifier {
         return """
         \(what) (\(change.summary)) — \(target).
 
-        Start fresh re-syncs all history from the start date (recommended). \
-        Keep progress sends only new data from here on, and the new target \
-        never receives anything older.
+        This destination starts its own sync history from your start date. \
+        Your previous database stays saved with its own progress, and receives \
+        no further uploads after the switch succeeds.
         """
     }
 }

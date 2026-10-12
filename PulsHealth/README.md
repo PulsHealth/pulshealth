@@ -181,7 +181,7 @@ Sources/
 │                         sheet), then the returned code — its database named
 │                         — tested above Save & Apply; once applied, Manage
 │                         Account, Connect an AI Assistant (docs, in
-│                         Safari) and Disconnect. Account deletion stays
+│                         Safari). Saved Databases offers Switch and Unpair. Account deletion stays
 │                         under Settings → Privacy & Data. Your own: the Database
 │                         URL and Token fields (validated: https, or http for
 │                         local-network hosts only; held in a
@@ -328,7 +328,12 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
                           Start Exploring, Apply gating, pairing links) over
                           AppModel's init(engine:scheduler:defaults:healthAccess:)
                           seam — a temporary engine, a defaults suite and a
-                          stand-in for the permission sheets.
+                          stand-in for permission sheets, observers, readable
+                          history and Apply's backfill work. Saved-destination
+                          tests exercise switching/unpairing, repeated actions,
+                          connection probes and real-screen layout with synthetic
+                          state; scoped Keychain checks explicitly skip hosts
+                          without the required access.
 ```
 
 ## Behavior notes
@@ -395,8 +400,11 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   and the Database screen show its host beside the name. A code opened from the account page in
   Safari (the invite email leads there) is an ordinary incoming link instead:
   confirmed, filled into Your Own Database and, to the app, any database —
-  the safety rule is that only the sheet can mark one. Disconnect is the
-  empty-URL path. Delete PulsHealth Account (App Review 5.1.1(v)) opens the
+  the safety rule is that only the sheet can mark one. Saved Databases lists
+  each paired receiver/user, marks one active and offers Switch and Unpair.
+  Switching restores that receiver’s own progress; unpairing deletes only its
+  local connection, credential and progress. Already uploaded data remains on
+  the server. Emptying the URL disconnects without selecting another receiver. Delete PulsHealth Account (App Review 5.1.1(v)) opens the
   account page's `#delete-account` section from Settings → Privacy & Data, whose Delete my account does the
   rest. It remains under Settings → Privacy & Data whether or not this iPhone
   is connected, since an iPhone
@@ -455,7 +463,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   recent buckets are recomputed each run, so late Watch data self-corrects.
 - Backfill on iOS 26 runs as a `BGContinuedProcessingTask` (system progress UI,
   survives backgrounding): Start Initial Backfill, and a whole-history Apply
-  (the first Save & Apply after pairing, and a start-fresh server change).
+  (the first Save & Apply after pairing, and adding a new destination).
   Adding a type in either picker backfills inline; earlier iOS keeps backfill
   foreground-resumable. From submission until the task shows up (a type
   backfilling, or its wake ending) `AppModel.continuedBackfillPending` counts

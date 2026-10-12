@@ -96,8 +96,8 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   confirms the upload (`HealthSyncEngine` → `recordUploadedBatch`). Persisting earlier
   loses data on crash. Re-sending the same page is safe: every insert is
   `ON CONFLICT DO NOTHING` on sample UUID, so the pipeline is idempotent end-to-end.
-- **Export never shares sync state.** Anchors and watermarks are keyed per type
-  with **no destination dimension** and advance whenever the transport returns
+- **Export never shares sync state.** Anchors and watermarks are keyed per type within the active saved destination
+  and advance whenever the transport returns
   normally, so an export through the app's engine (or `ExportFileTransport`
   given to it) would silently record every exported sample as delivered.
   `HealthExporter.run` builds a throwaway `HealthSyncEngine` per run — its own

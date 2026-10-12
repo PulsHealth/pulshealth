@@ -199,7 +199,10 @@ for judging what is.
   refuse to start on a token of `change-me`, and the migrate service refuses
   a database role password of `change-me`, so the `.env.example`
   placeholders cannot become live secrets.
-- **The token lives on the phone.** It is held in the Keychain, accessible
+- **Tokens live on the phone.** Each saved receiver/user has a separate
+  Keychain item; only the active receiver is used for sync. Unpairing removes
+  the local credential and progress, not remote data or server-side token
+  authorization. Tokens are accessible
   after the first unlock so background syncs still run, and the sync-state and
   log files carry file protection and are excluded from device backups. If a
   Keychain write fails the app parks the token in that protected state file

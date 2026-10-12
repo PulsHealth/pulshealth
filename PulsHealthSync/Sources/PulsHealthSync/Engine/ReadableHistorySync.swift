@@ -119,6 +119,8 @@ extension HealthSyncEngine {
     /// `force`; call it before claiming types. Does nothing before iOS 27.
     @discardableResult
     public func refreshReadableHistory(force: Bool = false) async -> [String: Date] {
+        guard let configurationUse = beginConfigurationUse() else { return readableHistory }
+        defer { activeSyncs.remove(configurationUse) }
         guard ReadableHistory.isSupported else { return [:] }
         if !force, let checkedAt = readableHistoryCheckedAt,
            ContinuousClock.now - checkedAt < Self.readableHistoryInterval {

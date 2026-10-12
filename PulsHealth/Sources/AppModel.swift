@@ -2,17 +2,26 @@ import Foundation
 import Observation
 import PulsHealthSync
 
-/// The HealthKit permission calls `AppModel` makes: the engine in the app.
+/// The HealthKit work Apply requests: the engine in the app.
 /// A seam so the hosted tests can walk onboarding and Apply without iOS's
-/// sheet coming up over the test host (`AppModelTests`).
+/// sheets, observer delivery or data queries reaching the test host.
 protocol HealthAccessRequesting: Sendable {
     func authorizationNeeded(for identifiers: [String]) async -> Bool
     func requestAuthorization(for identifiers: [String]) async throws -> HealthAccessRequestOutcome
     @available(iOS 26.0, *)
     func requestMedicationAuthorization() async throws
+    func startObserving() async
+    func refreshReadableHistory(force: Bool) async -> [String: Date]
+    func syncTypes(_ identifiers: [String], reason: SyncReason) async
+    func syncAggregate(configID: UUID, reason: SyncReason) async
+    func syncActivitySummary(reason: SyncReason) async
 }
 
-extension HealthSyncEngine: HealthAccessRequesting {}
+protocol ServerCapabilitiesReading: Sendable {
+    func serverCapabilities() async throws -> ServerCapabilities
+}
+
+extension HealthSyncEngine: HealthAccessRequesting, ServerCapabilitiesReading {}
 
 @MainActor
 @Observable
@@ -24,6 +33,7 @@ final class AppModel {
     @ObservationIgnored private let defaults: UserDefaults
     /// HealthKit's permission state and sheets: the engine in the app.
     @ObservationIgnored private let healthAccess: any HealthAccessRequesting
+    @ObservationIgnored private let capabilitiesReader: any ServerCapabilitiesReading
     /// The Export tab: the server-less way out. A model of its own so a run
     /// outlives the screen that started it (`ExportModel`).
     let export = ExportModel()
@@ -81,6 +91,14 @@ final class AppModel {
     /// pickers edit `config` freely; changes only reach the engine (and start
     /// backfilling) when `applyChanges()` advances this to match.
     private(set) var appliedConfig = SyncConfiguration()
+    private(set) var savedDestinations: [SavedSyncDestination] = []
+    private(set) var activeDestinationID: UUID?
+    /// Serializes connection edits across actor suspension points and repeated taps.
+    private(set) var isUpdatingConnection = false
+    @ObservationIgnored private var connectionGeneration = 0
+    /// Includes the complete capabilities → optional probe chain. Changing
+    /// destinations waits until none can issue another request to its old URL.
+    private(set) var activeConnectionTests = 0
     var authorizationRequested = false
     /// True while some catalog type's read authorization is still undetermined —
     /// queries against those types fail until the user grants access.
@@ -140,11 +158,9 @@ final class AppModel {
     private(set) var onboardingIsRerun = false
     /// A Save & Apply that would point the sync at a different server or user
     /// ID. Held here — nothing applied yet — until the user chooses between
-    /// starting fresh and keeping progress (`confirmServerChange`); RootView
+    /// adding the new destination and cancelling (`confirmServerChange`); RootView
     /// presents the prompt wherever the apply came from.
     private(set) var pendingServerChange: ServerIdentityChange?
-    /// Whether the deferred apply asked to backfill newly enabled types.
-    @ObservationIgnored private var pendingServerChangeWantsNewTypeSync = false
 
     /// What an incoming `puls://` link is waiting to show: the confirmation for
     /// a valid pairing link, or the reason an unusable one was dropped.
@@ -192,13 +208,15 @@ final class AppModel {
         engine: HealthSyncEngine = HealthSyncEngine(),
         scheduler: BackgroundSyncScheduler? = nil,
         defaults: UserDefaults = .standard,
-        healthAccess: (any HealthAccessRequesting)? = nil
+        healthAccess: (any HealthAccessRequesting)? = nil,
+        capabilitiesReader: (any ServerCapabilitiesReading)? = nil
     ) {
         self.engine = engine
         self.scheduler = scheduler ?? BackgroundSyncScheduler(engine: engine)
         self.defaults = defaults
         self.reviews = ReviewRequests(defaults: defaults)
         self.healthAccess = healthAccess ?? engine
+        self.capabilitiesReader = capabilitiesReader ?? engine
         self.explore = ExploreModel(engine: engine)
         // An analysis can show the permission sheet too; what it answered
         // for history (iOS 27) is recorded the same way as after Apply's.
@@ -321,19 +339,38 @@ final class AppModel {
         events = await engine.eventLog.recent(limit: 500)
         await ensureBackgroundCatchupScheduled()
         await refresh()
+        // The old single-server retry flag belongs only to the server loaded
+        // on upgrade. Never carry it to a newly paired account.
+        if !stateFileUnreadable, defaults.bool(forKey: Self.profileClearPendingKey) {
+            if let id = activeDestinationID {
+                defaults.set(true, forKey: Self.profileClearKey(id))
+            }
+            // An unbound legacy retry cannot safely clear a future account.
+            defaults.removeObject(forKey: Self.profileClearPendingKey)
+        }
 
         if authorizationRequested {
-            await engine.startObserving()
+            await healthAccess.startObserving()
         }
     }
 
     func refresh() async {
-        statuses = await engine.snapshot()
+        let generation = connectionGeneration
+        let saved = await engine.store.savedDestinations
+        let activeID = await engine.store.activeDestinationID
+        let snapshot = await engine.snapshot()
         let rawStates = await engine.store.aggregateStates
+        let wakes = await engine.wakeLog.recent(limit: 1_000)
+        // Every read above suspends. A completed switch must not let an
+        // earlier refresh repaint the old server's badge or progress.
+        guard generation == connectionGeneration else { return }
+        savedDestinations = saved
+        activeDestinationID = activeID
+        statuses = snapshot
         aggregateStates = Dictionary(uniqueKeysWithValues: rawStates.compactMap { key, value in
             UUID(uuidString: key).map { ($0, value) }
         })
-        wakeRecords = await engine.wakeLog.recent(limit: 1_000)
+        wakeRecords = wakes
         backgroundScheduleStatus = scheduler.scheduleStatus()
         settleContinuedBackfillPending(launchTimedOut: false)
     }
@@ -411,6 +448,9 @@ final class AppModel {
     private static let onboardingCompletedKey = "onboardingCompleted"
     /// An emptied profile whose clearing upload failed (`ProfilePayload.shouldUpload`).
     private static let profileClearPendingKey = "profileClearPending"
+    private static func profileClearKey(_ id: UUID) -> String {
+        "profileClearPending.\(id.uuidString)"
+    }
 
     /// Marks the first run done and leaves the flow. Durable, so the flow is
     /// shown exactly once per install; Settings → Diagnostics can replay it.
@@ -577,7 +617,7 @@ final class AppModel {
     /// in Settings, and after a permission sheet.
     func refreshReadableHistory() async {
         let observed = appliedConfig.observedTypeIdentifiers
-        readableHistory = await engine.refreshReadableHistory(force: true)
+        readableHistory = await healthAccess.refreshReadableHistory(force: true)
             .filter { observed.contains($0.key) }
     }
 
@@ -696,27 +736,41 @@ final class AppModel {
         syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false,
         clearAuthToken: Bool = false
     ) async -> Bool {
+        guard connectionEditCanStart() else { return false }
+        let submitted = config
+        isUpdatingConnection = true
+        defer { isUpdatingConnection = false }
         // Nothing applied now would be saved (the store is read-only this
         // process), and the empty configuration on screen is not the real one.
         guard !stateFileUnreadable else {
             lastErrorMessage = StateUnreadableNotice.message
             return false
         }
-        if !serverChangeConfirmed, let change = await engine.serverIdentityChange(applying: config) {
+        let destinationIdentity = ServerIdentity(configuration: submitted)
+        let saved = await engine.store.savedDestinations
+        let returningToSaved = saved.contains { $0.identity == destinationIdentity }
+        if !serverChangeConfirmed, !returningToSaved,
+           let change = await engine.serverIdentityChange(applying: submitted) {
             pendingServerChange = change
-            pendingServerChangeWantsNewTypeSync = syncNewTypes
             return false
         }
+        let sameDestination = ServerIdentity(configuration: appliedConfig) == destinationIdentity
         let previousProfile = await engine.store.configuration.userProfilePayload
-        guard await engine.configure(config, confirmServerIdentity: serverChangeConfirmed, clearAuthToken: clearAuthToken) else {
-            lastErrorMessage = "A sync is in progress. Wait for it to finish, then save again."
+        guard await engine.configure(submitted, confirmServerIdentity: serverChangeConfirmed, clearAuthToken: clearAuthToken) else {
+            lastErrorMessage = "The connection could not be saved. Wait for any sync or connection request to finish, then try again."
+            await engine.eventLog.log(.warn, "Database connection change was not applied")
             return false
         }
-        if appliedConfig.serverURL != config.serverURL || appliedConfig.authToken != config.authToken
-            || appliedConfig.userID != config.userID {
-            serverCapabilities = nil
+        if appliedConfig.serverURL != submitted.serverURL || appliedConfig.authToken != submitted.authToken
+            || appliedConfig.userID != submitted.userID {
+            clearDestinationStatus()
+        } else {
+            connectionGeneration += 1
         }
-        appliedConfig = config
+        appliedConfig = await engine.store.configuration
+        config = appliedConfig
+        lastErrorMessage = nil
+        await engine.eventLog.log(.info, "Database configuration applied")
         Task { await refreshServerCapabilities() }
         // User identity is independent of workout availability. Send it as its
         // own tiny batch so Save & Apply updates the server immediately even when
@@ -725,17 +779,20 @@ final class AppModel {
         // pairing with its old server, above all) must not clear the one the
         // server already holds (`ProfilePayload.shouldUpload`).
         let profile = config.userProfilePayload
-        let clearPending = defaults.bool(forKey: Self.profileClearPendingKey)
+        let destinationID = await engine.store.activeDestinationID
+        let clearKey = destinationID.map(Self.profileClearKey)
+        let clearPending = clearKey.map { defaults.bool(forKey: $0) } ?? false
         if config.serverURL != nil, config.authToken != nil,
+           sameDestination || !profile.isEmpty,
            ProfilePayload.shouldUpload(profile, replacing: previousProfile, clearPending: clearPending) {
             do {
                 try await engine.syncProfile(reason: .manual)
-                defaults.set(false, forKey: Self.profileClearPendingKey)
+                if let clearKey { defaults.set(false, forKey: clearKey) }
             } catch {
                 // A clear that did not arrive is remembered for the next Apply;
                 // a filled profile needs no flag, it is always sent.
-                if profile.isEmpty {
-                    defaults.set(true, forKey: Self.profileClearPendingKey)
+                if profile.isEmpty, let clearKey {
+                    defaults.set(true, forKey: clearKey)
                 }
                 lastErrorMessage = error.localizedDescription
             }
@@ -756,7 +813,7 @@ final class AppModel {
         let backfillWillRun = syncNewTypes && configured && config.authToken != nil
             && !isSyncingAll && !continuedBackfillPending
         if backfillWillRun, wholeHistory { await engine.expectBackfill() }
-        await engine.startObserving()
+        await healthAccess.startObserving()
         await refresh()
 
         guard syncNewTypes, configured, config.authToken != nil else { return true }
@@ -805,21 +862,21 @@ final class AppModel {
         Task {
             defer { isSyncingAll = false }
             let wake = await engine.beginWake(.manual, detail: "apply: backfill newly enabled types")
-            let finished = await BackgroundExecution.run("PulsHealth backfill") { [engine] in
+            let finished = await BackgroundExecution.run("PulsHealth backfill") { [healthAccess] in
                 await WakeScope.$current.withValue(wake) {
                     await withTaskGroup(of: Void.self) { group in
                         if !newTypes.isEmpty {
-                            group.addTask { await engine.syncTypes(newTypes, reason: .backfill) }
+                            group.addTask { await healthAccess.syncTypes(newTypes, reason: .backfill) }
                         }
                         if !newAggregates.isEmpty {
                             group.addTask {
                                 for id in newAggregates {
-                                    await engine.syncAggregate(configID: id, reason: .backfill)
+                                    await healthAccess.syncAggregate(configID: id, reason: .backfill)
                                 }
                             }
                         }
                         if newRings {
-                            group.addTask { await engine.syncActivitySummary(reason: .backfill) }
+                            group.addTask { await healthAccess.syncActivitySummary(reason: .backfill) }
                         }
                     }
                 }
@@ -840,49 +897,106 @@ final class AppModel {
 
     // MARK: - Server / user change
 
-    /// Resolve a deferred apply. "Start fresh" runs the existing full reset —
-    /// every anchor and watermark — so the new server receives all history
-    /// from the start date; "keep progress" leaves them, so only data newer
-    /// than the old high-water mark reaches it. Either way the identity is
-    /// recorded only now, with the choice, never before it.
-    ///
-    /// Synchronous on purpose: the alert button's action and the dismissal of
-    /// its `isPresented` binding land in the same turn, so the choice is
-    /// captured here, before any await, and the work continues in a task.
-    func confirmServerChange(startFresh: Bool) {
-        guard let change = pendingServerChange else { return }
+    /// A new destination starts its own progress. Never reset the outgoing
+    /// server: switching back must resume exactly where that server left off.
+    func confirmServerChange() {
+        guard pendingServerChange != nil else { return }
         pendingServerChange = nil
-        let wantsNewTypeSync = pendingServerChangeWantsNewTypeSync
-        pendingServerChangeWantsNewTypeSync = false
         Task {
-            await resolveServerChange(change, startFresh: startFresh, wantsNewTypeSync: wantsNewTypeSync)
+            await applyConfiguration(
+                syncNewTypes: true, serverChangeConfirmed: true, wholeHistory: true)
         }
     }
 
-    private func resolveServerChange(
-        _ change: ServerIdentityChange, startFresh: Bool, wantsNewTypeSync: Bool
-    ) async {
-        if startFresh {
-            guard await engine.resetAll() else {
-                lastErrorMessage = "A sync is in progress. Wait for it to finish, then save again."
-                return
-            }
-            await engine.eventLog.log(
-                .warn, "Sync target changed (\(change.summary)) — all anchors and watermarks reset; re-syncing history")
-        } else {
-            await engine.eventLog.log(
-                .warn, "Sync target changed (\(change.summary)) — progress kept; only new data will reach it")
+    @discardableResult
+    func switchDestination(id: UUID) async -> Bool {
+        guard connectionEditCanStart() else { return false }
+        guard !stateFileUnreadable else {
+            lastErrorMessage = StateUnreadableNotice.message
+            return false
         }
-        await applyConfiguration(
-            syncNewTypes: startFresh || wantsNewTypeSync, serverChangeConfirmed: true,
-            wholeHistory: startFresh)
+        guard id != activeDestinationID else { return true }
+        isUpdatingConnection = true
+        defer { isUpdatingConnection = false }
+        do {
+            try await engine.switchDestination(id: id)
+            await reloadDestination()
+            await engine.eventLog.log(.info, "Saved database switch applied; previous destination is inactive")
+            return true
+        } catch {
+            lastErrorMessage = error.localizedDescription
+            await engine.eventLog.log(.warn, "Saved database change was not applied")
+            return false
+        }
+    }
+
+    @discardableResult
+    func unpairDestination(id: UUID) async -> Bool {
+        guard connectionEditCanStart() else { return false }
+        guard !stateFileUnreadable else {
+            lastErrorMessage = StateUnreadableNotice.message
+            return false
+        }
+        isUpdatingConnection = true
+        defer { isUpdatingConnection = false }
+        do {
+            let wasActive = activeDestinationID == id
+            try await engine.unpairDestination(id: id)
+            defaults.removeObject(forKey: Self.profileClearKey(id))
+            if wasActive {
+                await reloadDestination()
+            } else {
+                connectionGeneration += 1
+                await refresh()
+                lastErrorMessage = nil
+            }
+            await engine.eventLog.log(.info, "Saved database unpaired locally; uploaded data unchanged")
+            return true
+        } catch {
+            lastErrorMessage = error.localizedDescription
+            await engine.eventLog.log(.warn, "Saved database change was not applied")
+            return false
+        }
+    }
+
+    private func connectionEditCanStart() -> Bool {
+        guard !isUpdatingConnection else { return false }
+        guard activeConnectionTests == 0 else {
+            lastErrorMessage = "A connection test is running. Nothing changed. Wait for it to finish, then try again."
+            return false
+        }
+        guard !isSyncingAll, !continuedBackfillPending else {
+            lastErrorMessage = "A sync is running or waiting to start. Wait for it to finish, then try again."
+            return false
+        }
+        return true
+    }
+
+    private func reloadDestination() async {
+        config = await engine.store.configuration
+        appliedConfig = config
+        pendingServerChange = nil
+        clearDestinationStatus()
+        lastErrorMessage = nil
+        await requestAccessForEnabledTypesIfNeeded()
+        await refreshReadableHistory()
+        if authorizationRequested { await healthAccess.startObserving() }
+        await refresh()
+        Task { await refreshServerCapabilities() }
+    }
+
+    private func clearDestinationStatus() {
+        connectionGeneration += 1
+        serverCapabilities = nil
+        serverStats = [:]
+        serverStatsError = nil
+        lastConnectionTest = nil
     }
 
     /// Dismiss the prompt without applying. The draft keeps what was typed so
     /// the user can adjust it; nothing has reached the engine.
     func cancelServerChange() {
         pendingServerChange = nil
-        pendingServerChangeWantsNewTypeSync = false
     }
 
     // MARK: - Pairing links
@@ -1089,7 +1203,7 @@ final class AppModel {
         // observedTypeIdentifiers: an aggregate-only setup (no raw types) still syncs.
         // Not while a continued backfill is submitted but not yet running:
         // it is about to sweep every type itself.
-        guard !isSyncingAll, !continuedBackfillPending, config.serverURL != nil,
+        guard !isUpdatingConnection, !isSyncingAll, !continuedBackfillPending, config.serverURL != nil,
               !config.observedTypeIdentifiers.isEmpty else { return }
         isSyncingAll = true
         defer { isSyncingAll = false }
@@ -1108,7 +1222,7 @@ final class AppModel {
     }
 
     func startBackfill() async {
-        guard !dataRequests.isBusy else { return }
+        guard !isUpdatingConnection, !dataRequests.isBusy else { return }
         guard !isSyncingAll else { return }
         // A continued backfill submitted or running already sweeps every type;
         // a second one would run alongside it (the button is disabled on
@@ -1135,6 +1249,7 @@ final class AppModel {
     }
 
     func syncOne(_ identifier: String) async {
+        guard !isUpdatingConnection else { return }
         if HealthTypeCatalog.isActivitySummary(identifier) {
             await engine.syncActivitySummary(reason: .manual)
         } else {
@@ -1144,18 +1259,21 @@ final class AppModel {
 
     /// Pull /v1/stats so type detail screens can confirm device and server agree.
     func refreshServerStats() async {
+        let generation = connectionGeneration
         do {
             let stats = try await engine.serverStats()
+            guard generation == connectionGeneration else { return }
             serverStats = Dictionary(
                 stats.map { ($0.type, $0) }, uniquingKeysWith: { a, _ in a })
             serverStatsError = nil
         } catch {
+            guard generation == connectionGeneration else { return }
             serverStatsError = error.localizedDescription
         }
     }
 
     func reconcile(_ identifier: String) async {
-        guard !reconciling.contains(identifier) else { return }
+        guard !isUpdatingConnection, !reconciling.contains(identifier) else { return }
         reconciling.insert(identifier)
         defer { reconciling.remove(identifier) }
         do {
@@ -1342,6 +1460,7 @@ final class AppModel {
     /// last answer; a transient failure (offline, 5xx) keeps it, so a flaky
     /// network does not make the reconciliation controls flicker.
     func refreshServerCapabilities() async {
+        let generation = connectionGeneration
         let target = appliedConfig
         guard target.serverURL != nil, target.authToken != nil else {
             serverCapabilities = nil
@@ -1349,7 +1468,7 @@ final class AppModel {
         }
         let capabilities: ServerCapabilities?
         do {
-            capabilities = try await engine.serverCapabilities()
+            capabilities = try await capabilitiesReader.serverCapabilities()
         } catch TransportError.serverError(let status, _) where status == 404 || status == 405 {
             capabilities = nil
         } catch is DecodingError {
@@ -1358,7 +1477,8 @@ final class AppModel {
             // Transient: keep the last known capabilities.
             return
         }
-        guard appliedConfig.serverURL == target.serverURL,
+        guard generation == connectionGeneration,
+              appliedConfig.serverURL == target.serverURL,
               appliedConfig.authToken == target.authToken,
               appliedConfig.userID == target.userID else { return }
         serverCapabilities = capabilities
@@ -1373,11 +1493,20 @@ final class AppModel {
     /// unless a pairing code staged a different one alongside them
     /// (`ServerFieldsDraft.connectionTestUserID`).
     func testConnection(url: URL, token: String, userID: String? = nil, session: URLSession? = nil) async -> ConnectionTestResult {
+        guard !isUpdatingConnection else {
+            return .unreachable("The database connection is changing. Wait for it to finish, then test again.")
+        }
+        activeConnectionTests += 1
+        defer { activeConnectionTests -= 1 }
+        let generation = connectionGeneration
+        let testedUserID = userID ?? config.userID
         let deviceID = await engine.store.deviceID
         let tester = ConnectionTester(
-            baseURL: url, authToken: token, userID: userID ?? config.userID, deviceID: deviceID, session: session)
+            baseURL: url, authToken: token, userID: testedUserID, deviceID: deviceID, session: session)
         let result = await tester.run()
-        lastConnectionTest = ConnectionTestRecord(url: url, result: result, at: Date())
+        if generation == connectionGeneration {
+            lastConnectionTest = ConnectionTestRecord(url: url, result: result, at: Date())
+        }
         return result
     }
 

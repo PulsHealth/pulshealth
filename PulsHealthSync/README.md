@@ -267,7 +267,8 @@ user without a token still drops the old one; a token is never sent to a
 database that did not issue it. `setAuthToken(_:)` replaces the token alone.
 
 `configure`, `setAuthToken`, and `clearAuthToken` return `Bool`: `false` means
-an active sync or configuration change prevented the update; nothing changed.
+the update was not applied (an active sync, overlapping change, unreadable state,
+credential problem or failed persistence).
 Callers must keep the existing applied settings and ask the user to retry once
 the sync finishes. Parent passes hold this exclusion between phases too, so
 an upload to the old destination cannot advance the new destination's anchors.
@@ -288,14 +289,19 @@ never inspected: that type's stream starts over — both anchors cleared and the
 backfill reopened for the main anchor, the recent-window anchor alone for that
 stream — and the event log says so. The server ignores what it already has.
 
-Persisted progress is tied to a `ServerIdentity` (normalized host, port, path and
-user ID). `SyncStateStore.serverIdentityChange(applying:)` is non-nil when a new
-configuration would point that progress at a different server or user while
-there is progress to strand; the app then asks whether to start fresh
-(`resetAll()`, then `configure(_:confirmServerIdentity: true)`) or keep going
-(confirm without the reset). The identity is recorded only with that
-confirmation, so a launch after an interrupted change finds the mismatch again
-(`pendingServerIdentityChange()`).
+Persisted progress is isolated per saved `ServerIdentity` (normalized host,
+port, path and user ID). Each destination retains its configuration, raw and
+recent anchors, aggregates, rings and workout-enrichment state. A new receiver
+starts without another receiver's progress; switching back restores its own.
+`switchDestination(id:)` and `unpairDestination(id:)` run under the same
+configuration exclusion as uploads and throw when the transition cannot be
+applied. Unpairing is local only: it does not delete data or revoke tokens on
+the remote server. There is never more than one active destination.
+
+The app shows saved receivers in Sync → Database. Normal credentials use
+separate destination-scoped Keychain items. Write-failure fallbacks retain the
+same protected-file and backup-exclusion rules described above. An upgrade
+adopts the previous receiver and its progress without starting over.
 
 Error text that is persisted or logged goes through `ErrorScrubber`: bearer and
 basic credentials, URL query strings and the configured token are redacted,
