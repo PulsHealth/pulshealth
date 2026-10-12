@@ -31,6 +31,9 @@ class Runner:
     def __init__(self, root, artifacts):
         self.root, self.artifacts = root, artifacts
         self.device = None
+        self.owned_devices = set()
+        self.setup_errors = []
+        self.cleanup_errors = []
 
     def command(self, args, name, cwd=None, timeout=180):
         print(name, flush=True)
@@ -40,10 +43,21 @@ class Runner:
             raise RuntimeError(f"{name} failed (exit {result.returncode}); inspect {name}.log")
 
     def remove_device(self):
-        if self.device:
-            subprocess.run(["xcrun", "simctl", "shutdown", self.device], capture_output=True, timeout=60)
-            subprocess.run(["xcrun", "simctl", "delete", self.device], capture_output=True, timeout=60)
-            self.device = None
+        # Cleanup must not replace a boot/test error or prevent the setup retry.
+        # Try deletion even if shutdown hangs; retain IDs that could not be removed.
+        device, self.device = self.device, None
+        if not device:
+            return
+        for operation in ("shutdown", "delete"):
+            command = ["xcrun", "simctl", operation, device]
+            try:
+                result = subprocess.run(command, capture_output=True, text=True, timeout=30)
+                if result.returncode:
+                    self.cleanup_errors.append(f"{operation} {device}: exit {result.returncode}")
+                elif operation == "delete":
+                    self.owned_devices.discard(device)
+            except (OSError, subprocess.SubprocessError) as error:
+                self.cleanup_errors.append(f"{operation} {device}: {error}")
 
     def prepare(self, runtime):
         # Retry only setup, before any test executes. Never reset shared devices
@@ -54,10 +68,12 @@ class Runner:
                     "xcrun", "simctl", "create", "PulsHealth-" + uuid.uuid4().hex[:10],
                     "com.apple.CoreSimulator.SimDeviceType.iPhone-17", runtime,
                 ], text=True, timeout=60).strip()
+                self.owned_devices.add(self.device)
                 self.command(["xcrun", "simctl", "boot", self.device], f"boot-{attempt}")
                 self.command(["xcrun", "simctl", "bootstatus", self.device, "-b"], f"bootstatus-{attempt}")
                 return
-            except (RuntimeError, subprocess.SubprocessError):
+            except (RuntimeError, subprocess.SubprocessError) as error:
+                self.setup_errors.append(str(error))
                 self.remove_device()
                 if attempt:
                     raise
@@ -136,10 +152,10 @@ def main():
         receipt["error"] = str(error)
         print(error, file=sys.stderr)
     finally:
-        try:
-            runner.remove_device()
-        except (OSError, subprocess.SubprocessError):
-            receipt["cleanup"] = "Failed to remove owned simulator; see simulator inventory"
+        runner.remove_device()
+        receipt["setup_errors"] = runner.setup_errors
+        receipt["cleanup_errors"] = runner.cleanup_errors
+        receipt["leftover_owned_devices"] = sorted(runner.owned_devices)
         receipt["finished_at"] = timestamp()
         write_json(artifacts / "receipt.json", receipt)
         print(f"iOS evidence: {artifacts}")

@@ -58,6 +58,9 @@ bun run dev        # localhost:3000
 
 ## Build and lint
 
+Build verification requires `python3` (3.9 or later) and Git as well as Bun.
+Build from a Git checkout so the export can be tied to its source inputs.
+
 ```bash
 bun run build      # static export to site/out/ (226 pages)
 bun run lint       # ESLint, no warnings or errors
