@@ -24,14 +24,38 @@ def scopes(paths: list[str]) -> dict[str, bool]:
     return {"backend": backend, "site": site}
 
 
+def component_scopes(paths: list[str]) -> dict[str, bool]:
+    shared = {"scripts/ci_scope.py", "scripts/test_ci_scope.py"}
+    ios_inputs = shared | {
+        ".github/workflows/ios-ci.yml",
+        "docs/protocol/catalog.json",
+        "scripts/gen-knowledge-json.py",
+        "scripts/check-knowledge-json.sh",
+    }
+    ha_inputs = shared | {".github/workflows/home-assistant.yml", "hacs.json"}
+    return {
+        "ios": any(
+            path.startswith(("PulsHealth/", "PulsHealthSync/", "knowledge-base/"))
+            or path in ios_inputs
+            for path in paths
+        ),
+        "ha": any(
+            path.startswith(("custom_components/pulshealth/", "integrations/homeassistant/"))
+            or path in ha_inputs
+            for path in paths
+        ),
+    }
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        selected = {"backend": True, "site": True}
+        selected = {"backend": True, "site": True, "ios": True, "ha": True}
     else:
         base, head = sys.argv[1:]
         changed = subprocess.check_output(
             ["git", "diff", "--no-renames", "--name-only", "-z", base, head]
         ).decode().split("\0")
-        selected = scopes([path for path in changed if path])
+        paths = [path for path in changed if path]
+        selected = scopes(paths) | component_scopes(paths)
     for name, enabled in selected.items():
         print(f"{name}={str(enabled).lower()}")
