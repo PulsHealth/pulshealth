@@ -65,6 +65,9 @@ and image-release calls run the full backend/site suite. iOS and Home
 Assistant workflows report on every PR and main push, selecting their tests
 inside the workflow. Shared selector changes test both components; generated
 catalog and knowledge inputs also select iOS checks.
+iOS CI creates its own simulator for each pinned SDK/runtime and downloads
+the runtime only when missing, rather than depending on pre-created runner
+devices. Both SDK matrix entries must pass when iOS tests are selected.
 
 `main` requires PRs and these three GitHub Actions summary checks:
 `CI result`, `iOS result`, and `Home Assistant result`. Each summary verifies
