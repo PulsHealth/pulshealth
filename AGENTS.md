@@ -9,7 +9,9 @@ suite. It does not restate the rules it points at — read the file it names.
 invariants in full, and the accumulated gotchas (HealthKit crashes, iOS
 permission bugs, TimescaleDB compression traps). Read it before changing code.
 **[`CONTRIBUTING.md`](CONTRIBUTING.md) is the process**: sign-off, style, what
-a pull request has to carry.
+a pull request has to carry. Its "Daily workflow" section defines task branches,
+AI worktree ownership, scoped checks and temporary release branches. Follow it;
+ordinary tasks target `main`, and merging does not itself ship a release.
 
 ## What this is
 
@@ -106,6 +108,8 @@ subsystem. The list, so you know when to go and read it:
 
 ## Running the tests
 
+Run checks for the affected components and their dependencies, not every suite
+for every edit; see `CONTRIBUTING.md` for selection and release gates.
 Every command is run from the repository root unless a `cd` is shown.
 `.github/workflows/ci.yml` is the authority; this is the same set.
 

@@ -643,6 +643,14 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   (the container sets `production`), so an unset or unreachable DB shows the
   `"error"` source ("Database unavailable"), never demo data.
 
+## Contributor workflow
+
+Follow [CONTRIBUTING.md](CONTRIBUTING.md#daily-workflow-including-ai-contributors)
+for branches, AI worktree ownership, review and check selection. Ordinary task
+PRs target `main`; release branches are temporary candidate freezes. A merge,
+an image publication, a deployment and an App Store submission are separate
+outcomes and must be reported separately.
+
 ## Deployment
 
 The reference stack (`server/docker-compose.yml`) runs on any Docker host;

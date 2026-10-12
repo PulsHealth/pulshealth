@@ -9,6 +9,100 @@ the self-hosted backend is pre-release (0.x). `docs/roadmap.md` lists what is
 still outstanding. For anything bigger than a bug fix, open an issue first so
 the design can be agreed before the code exists.
 
+## Daily workflow (including AI contributors)
+
+Use **task branch → pull request → `main`**. `main` is the authoritative,
+buildable development branch; production is an explicitly selected revision.
+There is no permanent `develop` branch and ordinary features do not pass
+through a release branch. Components share a history, but may ship separately.
+
+1. Define the expected behavior and acceptance checks. For a change larger
+   than a bug fix, link an issue; keep it brief and use its checklist instead
+   of creating another planning document.
+2. Start one task branch from current `origin/main`, named for the component
+   and task (for example, `app/saved-databases`). Keep the primary checkout on
+   clean `main`; give each concurrent AI session its own branch and worktree.
+   Never reset, rebase or remove a checkout another session is using.
+3. Make small signed-off commits. A PR should solve one coherent problem;
+   split larger work into independently safe increments. Client, receiver,
+   schema and fixtures that must agree belong together in one PR.
+4. Run the relevant local checks below and open a PR. For behavior changes,
+   use a separate AI review of the actual diff and acceptance criteria; a
+   trivial prose fix does not need a separate review session. Review findings
+   are evidence to assess, not proof that tests or device checks passed.
+5. Merge through GitHub after all applicable PR checks pass. Refresh the
+   branch and re-run affected checks if `main` changes underneath it. Prefer
+   squash merging task PRs, with a component-prefixed subject and DCO sign-off
+   on the resulting commit. Merge overlapping PRs sequentially.
+6. Verify the merged commit and post-merge CI. Delete the task branch/worktree
+   only after preserving remaining local configuration and uncommitted work.
+   Report the commit, checks and any remaining acceptance gates; say separately
+   whether it was deployed, submitted to Apple, or actually released.
+
+An AI can complete an authorized task through PR and merge without asking
+for permission at each step. Shipping follows the maintainer's deployment or
+submission instructions; a request to change code does not itself request a
+production release. Do not bypass a failing check to finish a task.
+
+### Check only what the change needs
+
+Run fast, relevant checks while developing, then the affected component's
+full checks before merging. Check dependencies too: a catalog or protocol
+change reaches several components. Do not re-run unchanged passing suites
+without a new change or unresolved concern. Pure documentation fixes need
+link/content review and the public-tree gate; run the site build when its
+published content is affected. Integration and restore tests use scratch
+stacks, never production data.
+
+`ci.yml` conservatively scopes backend and site jobs on PRs using
+`scripts/ci_scope.py`. Site/prose-only, iOS-app-only and Home Assistant-only
+PRs avoid unrelated backend builds, database tests and restore drills. Shared
+contracts, scripts, workflow changes and unknown paths run the full suite.
+The public-tree gate and check-selection tests always run. Pushes to `main`
+and image-release calls run the full backend/site suite. iOS and Home
+Assistant have their own path-filtered PR workflows.
+
+`CI result` summarizes the selected jobs in `ci.yml`; it does **not** include
+those separate iOS/Home Assistant workflows. All applicable checks must pass.
+When configuring branch protection, require PRs, block force pushes/deletion,
+and use an always-reporting gate for required checks. Do not blindly require
+workflow-level path-filtered checks: unrelated PRs may wait forever for a
+check that never starts. Dependency advisories are tracked separately and
+are not required merge checks. A solo maintainer does not need a second
+human's mandatory approval or a merge queue.
+
+### Releases and urgent fixes
+
+- **Site:** deploy an explicitly tested commit and verify the live pages.
+- **Backend/viewer:** tag a tested commit contained in `main`. The existing
+  `v*` tag namespace publishes all four backend images; it is not an iOS-only
+  release tag. Pin the deployment to a version/digest, with the matching
+  Compose files and migrations. Image publication does not deploy the stack.
+- **iOS:** archive an exact clean commit, record the app version/build and
+  source SHA, and validate that archive on TestFlight/device as appropriate.
+  App Store submission and approval are separate from code merge.
+
+Create a temporary `release/<version>` branch only when a frozen candidate
+needs selected fixes while `main` moves on. New features still target `main`.
+Normally fix on `main`, then cherry-pick the fix into the candidate through a
+PR and validate it there. Do not pull all of newer `main` into a frozen
+candidate. If an urgent or version-specific fix starts on the release branch,
+carry its equivalent into `main` promptly. Keep a tag/release record before
+retiring the branch; do not squash-merge a backport-only branch into `main`.
+
+If `main` cannot safely ship an urgent fix, branch from the shipped revision
+and reconcile the fix with `main`. The current backend publisher refuses
+release tags whose commits are not contained in `main`; publishing a divergent
+backend maintenance branch needs an explicit workflow change first. iOS/HA
+push workflows currently target `main`, so candidate fixes need PR checks or
+explicit local release validation rather than assuming a branch push ran CI.
+
+Deploy compatible server/schema support before clients that need it. Keep old
+clients working and prefer additive migrations; a Git merge does not make
+multi-component deployment atomic. Record the source revision and artifacts
+actually shipped, and verify live behavior. Database rollback may need a
+forward fix or restore rather than merely reverting a Git commit.
+
 ## Developer Certificate of Origin
 
 Every commit must be signed off. Signing off is how you certify the
@@ -218,7 +312,7 @@ there).
 
 ## Before you open a pull request
 
-- Run the checks for every component you touched (commands above). CI runs
+- Run the applicable checks for every component you touched (commands above). CI runs
   the Go, web, site, Compose, shell, and workflow checks on Ubuntu and the
   Swift package and app tests on macOS.
 - If you changed `PulsHealth/project.yml`, re-run `xcodegen` and make sure
