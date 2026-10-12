@@ -1,17 +1,20 @@
-## What
+## What and why
 
-<!-- One or two sentences: what changes, in which component. -->
+<!-- Problem and resulting behavior, in one or two sentences. Link the issue for work larger than a bug fix. -->
 
-## Why
+## Validation
 
-<!-- The problem this solves, and a link to the issue or plan item if there is one. -->
+<!-- Checks actually run and their results. Mention AI review for behavior changes and any remaining device/live acceptance gates. Do not call skipped checks passing. -->
 
 ## Checklist
 
-- [ ] Every commit is signed off (`git commit -s`) — see the DCO section of `CONTRIBUTING.md`.
-- [ ] Wire format **unchanged**, or changed on **both sides** in this PR: client models + NDJSON encoder, server parser + store, schema file, `parse_test.go` fixtures, the `server/README.md` curl example, and the protocol spec, schemas and fixture corpus under `docs/protocol/` — and the description says the server ships first.
-- [ ] Checks pass locally for every component touched (`go vet` + `go test`, `npm run lint`/`typecheck`/`test`/`build`, `xcodebuild test`).
-- [ ] `PulsHealth/project.yml` changed → `xcodegen` re-run and the generated project builds (the `.xcodeproj` itself is gitignored, never committed).
-- [ ] New DDL is a new `NNN_name.sql` under `server/db/migrations/` (never an edit to an applied file; `-- puls:rerun` only for CREATE OR REPLACE files), and `server/README.md` says when it must be applied relative to the ingest build.
-- [ ] `scripts/check-public-tree.sh` passes.
-- [ ] Docs updated where behaviour changed (component README, root README, `CLAUDE.md` invariants).
+- [ ] Commits are signed off (`git commit -s`); preserve the sign-off when squash merging.
+- [ ] Applicable checks pass; `scripts/check-public-tree.sh` passes.
+- [ ] Documentation matches any behavior change.
+
+<!-- Complete only the applicable items below; delete the others. -->
+
+- [ ] Wire-format change: client + receiver + protocol schemas/fixtures agree; required migrations included; server ships first (see CONTRIBUTING.md).
+- [ ] Schema change: new numbered migration; applied files unchanged; deployment order stated.
+- [ ] Generated inputs changed: regenerate the outputs (including XcodeGen for app file/project changes).
+- [ ] Release/deployment work: exact source revision/artifacts and acceptance evidence recorded; remaining gates stated.

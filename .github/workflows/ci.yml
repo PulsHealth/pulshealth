@@ -17,7 +17,35 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    name: Select checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.scope.outputs.backend }}
+      site: ${{ steps.scope.outputs.site }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Verify check selection
+        run: python3 -m unittest discover -s scripts -p 'test_ci_scope.py'
+      - name: Select PR checks (full suite on main and release calls)
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = pull_request ]; then
+            python3 scripts/ci_scope.py "$BASE_SHA" HEAD >> "$GITHUB_OUTPUT"
+          else
+            python3 scripts/ci_scope.py >> "$GITHUB_OUTPUT"
+          fi
+
   validate:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     name: Validate server and web
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -132,6 +160,8 @@ jobs:
   # it is the one thing here built with bun, and because it must not gate the
   # server on an unrelated site change.
   site:
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
     name: Marketing site
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -158,6 +188,8 @@ jobs:
   # contexts and build args as .github/workflows/release.yml and
   # server/compose.build.yml — keep the three in step.
   images:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     name: Build ${{ matrix.image }} image
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -199,6 +231,8 @@ jobs:
   # product API. The other jobs test each piece; this is the only one that
   # proves the built images start, find each other and agree on the schema.
   stack-smoke:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     name: Stack smoke test (bootstrap, corpus, API read-back, restore)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -265,6 +299,8 @@ jobs:
   # receiver must accept the corpus with the expected counts. Both fail when
   # the wire format changes on one side only.
   protocol:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     name: Protocol schemas, fixtures and reference receiver
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -308,6 +344,8 @@ jobs:
   # `-- puls:no-transaction`, baseline's refusals and the advisory lock that
   # serialises concurrent runs.
   db-migrate:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     name: Schema migrations
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -333,6 +371,8 @@ jobs:
   # the superuser instead would pass while a real deployment 500s on a
   # missing grant.
   db-integration:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     name: Database integration tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -482,3 +522,31 @@ jobs:
 
       - name: Scan tracked files for private content
         run: scripts/check-public-tree.sh
+
+  result:
+    name: CI result
+    if: always()
+    needs: [changes, validate, site, images, stack-smoke, protocol, db-migrate, db-integration, public-tree]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every selected check to pass
+        env:
+          SELECTION: ${{ needs.changes.result }}
+          PUBLIC_TREE: ${{ needs.public-tree.result }}
+          BACKEND: ${{ needs.changes.outputs.backend }}
+          SITE: ${{ needs.changes.outputs.site }}
+          SITE_RESULT: ${{ needs.site.result }}
+          BACKEND_RESULTS: ${{ needs.validate.result }} ${{ needs.images.result }} ${{ needs.stack-smoke.result }} ${{ needs.protocol.result }} ${{ needs.db-migrate.result }} ${{ needs.db-integration.result }}
+        run: |
+          set -euo pipefail
+          test "$SELECTION" = success
+          test "$PUBLIC_TREE" = success
+          if [ "$SITE" = true ]; then
+            test "$SITE_RESULT" = success
+          fi
+          if [ "$BACKEND" = true ]; then
+            for result in $BACKEND_RESULTS; do
+              test "$result" = success
+            done
+          fi
