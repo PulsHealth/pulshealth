@@ -149,14 +149,22 @@ export function Sidebar({
             </span>
           </div>
         </div>
-        <nav className="mobile-site-resources nav-section" aria-label="Website resources">
-          <div className="eyebrow" style={{ padding: "0 10px 8px" }}>Resources</div>
-          <a className="nav-link" href="https://pulshealth.com/">PulsHealth website</a>
-          <a className="nav-link" href="https://pulshealth.com/knowledge-base/">Knowledge Base</a>
-          <a className="nav-link" href="https://pulshealth.com/docs/">Docs</a>
-          <a className="nav-link" href="https://pulshealth.com/consulting/">Consulting</a>
-          <a className="nav-link" href="https://github.com/PulsHealth/pulshealth" target="_blank" rel="noopener noreferrer">GitHub</a>
-        </nav>
+        <div className="mobile-site-resources nav-section">
+          <nav className="site-public-menu" aria-label="Website resources">
+            <div className="site-menu-heading">PulsHealth</div>
+            <Link href="/" aria-current="location">Dashboard</Link>
+            <a href="https://pulshealth.com/knowledge-base/">Knowledge Base</a>
+            <a href="https://pulshealth.com/docs/">Docs</a>
+            <a href="https://pulshealth.com/consulting/">Consulting</a>
+            <div className="site-menu-heading">More</div>
+            <a href="https://pulshealth.com/server/">Self-hosting</a>
+            <a href="https://pulshealth.com/support/">Support &amp; FAQ</a>
+            <a href="https://pulshealth.com/about/">About</a>
+            <a href="https://pulshealth.com/privacy/">Privacy</a>
+            <a href="https://github.com/PulsHealth/pulshealth" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href={account ? "/login" : "https://app.pulshealth.com/login"}>Sign in</a>
+          </nav>
+        </div>
       </div>
     </aside>
   );

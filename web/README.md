@@ -7,7 +7,7 @@ activity rings, range-banded trend lines and bar series, with per-category
 accent colors.
 
 Dashboard pages keep the public site's top navigation: PulsHealth, Dashboard,
-Knowledge Base, Docs, and Consulting, with GitHub and account/settings controls.
+Knowledge Base, Docs, and Consulting, with GitHub, public-site search and sign-in controls. Account/settings controls remain in the health navigation.
 The brand and public resource links go to pulshealth.com; Dashboard stays on the
 current viewer. The sidebar contains health-data navigation and viewer controls,
 without a separate return-to-site link. On mobile, one 56 px brand header opens a combined menu: health navigation
@@ -615,13 +615,14 @@ merged catalog to the JSON.
 
 ## Navigation
 
-Desktop shows a persistent sidebar. At widths of 880 px and below, a compact
+Desktop shows a persistent sidebar. At widths of 1023 px and below, a compact
 brand header keeps the page in view and its menu button opens the scrollable
 navigation, including categories, account controls and website resources. Choosing a link, tapping outside,
 or pressing Escape closes it; Escape returns focus to the header menu button.
 The shared demo keeps a visible **Demo** badge even with the menu closed.
-A **PulsHealth website** link appears in the mobile menu; sign-in, sign-up and
-invite cards also link back to the public site.
+The mobile menu puts health navigation above the same public resource links used
+on pulshealth.com. Both headers use full-width 56 px rows, 16 px edge padding,
+and the same 1024 px desktop breakpoint.
 
 Page headers begin with the title and description, without a page label above
 them. Demo and live data indicators remain visible in the navigation.

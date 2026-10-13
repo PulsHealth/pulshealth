@@ -1,9 +1,9 @@
 "use client";
 
-import type { RefObject } from "react";
+import { useEffect, type RefObject } from "react";
 import Link from "next/link";
 import { BrandMark } from "./BrandMark";
-import { MenuIcon } from "./Icons";
+import { GitHubIcon } from "./GitHubIcon";
 
 // Match the public site's primary navigation. The viewer is a separately
 // deployed app: only Dashboard and account controls use this origin.
@@ -22,6 +22,16 @@ export function SiteHeader({ accounts = false, demo = false, open, toggleMenu, h
   headerRef: RefObject<HTMLElement | null>;
   toggleRef: RefObject<HTMLButtonElement | null>;
 }) {
+  useEffect(() => {
+    const search = (event: KeyboardEvent) => {
+      if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        window.location.assign("https://pulshealth.com/#search");
+      }
+    };
+    document.addEventListener("keydown", search);
+    return () => document.removeEventListener("keydown", search);
+  }, []);
   return (
     <header className="site-header" ref={headerRef}>
       <div className="site-header-inner">
@@ -35,9 +45,13 @@ export function SiteHeader({ accounts = false, demo = false, open, toggleMenu, h
           ))}
         </nav>
         <div className="site-header-actions">
-          <a href="https://github.com/PulsHealth/pulshealth" className="site-github" target="_blank" rel="noopener noreferrer">GitHub</a>
-          <Link href={accounts ? "/account" : "/settings"} className="site-nav-link site-account">{accounts ? "Account" : "Settings"}</Link>
-          <button ref={toggleRef} type="button" className="site-menu-toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="sidebar-navigation" onClick={toggleMenu}><MenuIcon size={22} /></button>
+          <a href="https://pulshealth.com/#search" className="site-action site-outline site-search" aria-label="Search PulsHealth website">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+            <span>Search</span><kbd><span>⌘</span>K</kbd>
+          </a>
+          <a href="https://github.com/PulsHealth/pulshealth" className="site-action site-outline site-github" target="_blank" rel="noopener noreferrer" aria-label="PulsHealth on GitHub"><GitHubIcon /><span>GitHub</span></a>
+          <a href={accounts ? "/login" : "https://app.pulshealth.com/login"} className="site-action site-signin">Sign in</a>
+          <button ref={toggleRef} type="button" className="site-action site-menu-toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="sidebar-navigation" onClick={toggleMenu}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button>
         </div>
       </div>
     </header>

@@ -30,7 +30,7 @@ export function AppNavigation({ children, ...sidebar }: Props) {
       }
     };
     // A mobile menu should not reopen after visiting the desktop layout.
-    const desktop = window.matchMedia("(min-width: 881px)");
+    const desktop = window.matchMedia("(min-width: 1024px)");
     const resize = () => { if (desktop.matches) close(); };
     document.addEventListener("pointerdown", dismiss);
     document.addEventListener("keydown", escape);
