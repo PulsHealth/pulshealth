@@ -7,6 +7,7 @@ reads your own Postgres.
 
 The desktop and mobile navigation list Dashboard (the hosted viewer at
 app.pulshealth.com), Knowledge Base, Docs, and Consulting in that order.
+Sign-in lives in the dashboard demo banner rather than the public navigation.
 Blog remains linked from the footer. The navbar spans the viewport with a 56 px
 row and 32 px desktop / 24 px mobile edge padding (20 px on narrow phones), matching the dashboard. Both switch to a dropdown
 below 1024 px; the dashboard adds its health/account options above the public links.

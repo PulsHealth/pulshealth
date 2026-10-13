@@ -22,7 +22,6 @@ const secondary = [
   { title: "About", href: "/about/" },
   { title: "Privacy", href: "/privacy/" },
   { title: "GitHub", href: "https://github.com/PulsHealth/pulshealth" },
-  { title: "Sign in", href: "https://app.pulshealth.com/login" },
 ]
 
 export function SiteHeader() {
@@ -66,7 +65,6 @@ export function SiteHeader() {
       <div className="site-header-actions">
         <SearchTrigger />
         <a href="https://github.com/PulsHealth/pulshealth" className="site-action site-outline site-github" target="_blank" rel="noopener noreferrer" aria-label="PulsHealth on GitHub"><GitHubIcon /><span>GitHub</span></a>
-        <a href="https://app.pulshealth.com/login" className="site-action site-signin">Sign in</a>
         <ModeToggle />
         <button ref={toggle} type="button" className="site-action site-menu-toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="site-mobile-navigation" onClick={() => setMenu({ pathname, open: !open })}><Menu aria-hidden /></button>
       </div>

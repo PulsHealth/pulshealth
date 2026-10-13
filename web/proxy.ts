@@ -5,7 +5,7 @@ import { isSameOriginRequest, isSecureRequest, publicOrigin } from "@/lib/accoun
 import { findSession, SESSION_COOKIE, sessionCookieAttributes } from "@/lib/accounts/session";
 import { AUTH_REALM, authorize } from "@/lib/auth";
 import { isUuid } from "@/lib/uuid";
-import { trustProxyHeaders, viewerMode } from "@/lib/mode";
+import { demoUserId, trustProxyHeaders, viewerMode } from "@/lib/mode";
 import { isOAuthPath, OAUTH_AUTHORIZE_PATH, OAUTH_DECISION_PATH, oauthConfig } from "@/lib/oauth/config";
 import { redirectOrigin } from "@/lib/oauth/validate";
 import { contentSecurityPolicy, newNonce } from "@/lib/securityHeaders";
@@ -147,7 +147,9 @@ async function accountsGate(request: NextRequest, nonce: string, csp: string, de
   if (!session) {
     const response =
       unauthenticatedAnswer(request.method, url.pathname) === "redirect"
-        ? signInRedirect(request, trust)
+        ? (url.pathname === "/" && demoUserId()
+            ? new NextResponse(null, { status: 303, headers: { Location: new URL("/demo", publicOrigin(url, request.headers, trust, process.env.WEB_PUBLIC_URL)).toString(), "Cache-Control": "no-store" } })
+            : signInRedirect(request, trust))
         : text(401, "Sign in required.");
     // A cookie that names no live session is dead weight; drop it.
     if (token !== undefined) response.cookies.set(SESSION_COOKIE, "", sessionCookieAttributes(0));

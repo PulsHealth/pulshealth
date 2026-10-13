@@ -15,7 +15,6 @@ export function Sidebar({
   users,
   currentUserId,
   account = null,
-  signupsOpen = false,
   menuOpen,
   sidebarRef,
   closeMenu,
@@ -60,19 +59,6 @@ export function Sidebar({
           if (event.target instanceof Element && event.target.closest("a")) closeMenu();
         }}
       >
-        {account?.demo && (
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", padding: "0 8px 12px" }}>
-            <span className="chip" title="A shared demo account with de-identified sample data. Nothing here can be changed.">
-              <span className="dot" style={{ background: "#ff9f0a" }} />
-              <span style={{ fontSize: 12 }}>Demo · sample data</span>
-            </span>
-            {signupsOpen && (
-              <a href="/signup" style={{ fontSize: 12.5, color: "var(--fg-soft)", textDecoration: "underline" }}>
-                Create your account
-              </a>
-            )}
-          </div>
-        )}
 
         <nav aria-label="Main navigation">
           {primary.map((item) => {
@@ -142,10 +128,10 @@ export function Sidebar({
           <div className="chip" style={{ marginTop: 10, width: "100%", justifyContent: "flex-start" }} title={source.detail}>
             <span
               className="dot"
-              style={{ background: source.source === "live" ? "#30d158" : source.source === "demo" ? "#ff9f0a" : "#ff453a" }}
+              style={{ background: account?.demo ? "#ff9f0a" : source.source === "live" ? "#30d158" : source.source === "demo" ? "#ff9f0a" : "#ff453a" }}
             />
             <span style={{ fontSize: 12 }}>
-              {source.source === "live" ? "Live data" : source.source === "demo" ? "Demo data" : "Database unavailable"}
+              {account?.demo ? "Demo data" : source.source === "live" ? "Live data" : source.source === "demo" ? "Demo data" : "Database unavailable"}
             </span>
           </div>
         </div>
@@ -162,7 +148,6 @@ export function Sidebar({
             <a href="https://pulshealth.com/about/">About</a>
             <a href="https://pulshealth.com/privacy/">Privacy</a>
             <a href="https://github.com/PulsHealth/pulshealth" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href={account ? "/login" : "https://app.pulshealth.com/login"}>Sign in</a>
           </nav>
         </div>
       </div>
