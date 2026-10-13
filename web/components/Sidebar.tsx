@@ -7,7 +7,6 @@ import { GROUPS, GROUP_LABELS } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
 import type { DataSourceInfo, User } from "@/lib/types";
 import { GridIcon, GroupIcon, HomeIcon, MenuIcon, SettingsIcon, SignOutIcon, UserIcon, WorkoutIcon } from "./Icons";
-import { BrandMark } from "./BrandMark";
 import { ThemeToggle } from "./ThemeToggle";
 import { UserSwitcher } from "./UserSwitcher";
 
@@ -69,12 +68,7 @@ export function Sidebar({
         <span className="mobile-menu-fallback" hidden />
       </noscript>
       <div className="sidebar-header">
-        <Link href="/" className="brand" onClick={() => setMenu({ path, open: false })}>
-          <span className="brand-mark">
-            <BrandMark />
-          </span>
-          <span className="brand-name">PulsHealth</span>
-        </Link>
+        <span className="sidebar-title">Dashboard</span>
 
         {account?.demo && <span className="mobile-demo" title="Shared, view-only demo with sample data">Demo</span>}
         <button
@@ -83,6 +77,7 @@ export function Sidebar({
           className="mobile-menu-toggle"
           aria-expanded={menuOpen}
           aria-controls="sidebar-navigation"
+          aria-label={menuOpen ? "Close dashboard menu" : "Open dashboard menu"}
           onClick={() => setMenu({ path, open: !menuOpen })}
         >
           <MenuIcon size={18} />
@@ -143,10 +138,6 @@ export function Sidebar({
         <div className="sidebar-spacer" />
 
         <div className="nav-section" style={{ marginTop: 0 }}>
-          <a href="https://pulshealth.com/" className="nav-link">
-            <HomeIcon className="nav-icon" />
-            <span>Back to pulshealth.com</span>
-          </a>
           {showSwitcher && <UserSwitcher users={users} currentUserId={currentUserId} />}
           {account && (
             <Link
