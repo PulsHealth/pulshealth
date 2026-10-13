@@ -235,6 +235,42 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.1 (22) submission (2026-10-12)
+
+Build **2.1 (22)** was archived from clean source
+`0075669f9747efde025a4079a295b9a04f712116`, with iOS inputs identical to
+`b5c396f`. The [iOS 26.5 and 27 CI run](https://github.com/PulsHealth/pulshealth/actions/runs/38324962495)
+passed for those inputs. The signed archive and matching arm64 dSYM UUID
+`C6EC4D64-C749-37EE-A04E-CF4D4AA4C8A0` were verified. The local App Store IPA
+exported from that archive has SHA-256
+`2948eca3349694669625238d94772c77ff8cef57c3ed75c2b4212929ebf80af1`; the archive, dSYMs, upload log and candidate evidence
+are retained privately. Apple processed uploaded build
+`ba3fb9b3-cd3c-4731-8829-1929c0b1188a` successfully.
+
+[Submission](https://appstoreconnect.apple.com/apps/6757657354/distribution/reviewsubmissions/details/49dfb242-1ebb-49e1-8769-85e16e35d525)
+`49dfb242-1ebb-49e1-8769-85e16e35d525` was submitted on **2026-10-13 at
+01:04 UTC** (October 12, 18:04 PDT) and visibly reports **Waiting for Review**.
+Automatic release after approval, to all users immediately, is selected.
+**Approval and public release remain pending.** Existing ratings are preserved.
+
+The submission includes the approved subtitle, promotional text, description,
+94-character keywords and version-specific release notes from `listing.md`.
+Style A has no top wordmark and its export illustration reads JSON. Five fresh
+synthetic iPhone cards (1320 × 2868) and five iPad cards (2064 × 2752) were
+visually inspected, dimension-checked and uploaded in campaign order. Their
+JPEG hashes and source captures are retained with the private candidate.
+App Privacy is unchanged; the archive still declares eleven collected types
+and no tracking. The existing review account signed in successfully through
+the hosted viewer and was signed out after verification. Review notes describe
+the new saved-database and export options.
+
+The maintainer explicitly authorized submission and automatic release.
+**Physical-device/TestFlight installation acceptance for build 22 is
+unverified**; CI and synthetic simulator captures are not device acceptance.
+No backend or marketing-site deployment was performed as part of this
+App Store submission.
+
+
 ### Final 2.0 candidate (2026-10-10)
 
 The maintainer confirms device and email acceptance and authorizes release.
