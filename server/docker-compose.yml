@@ -384,7 +384,7 @@ services:
     # internet. To keep it on across `docker compose up -d` and `make dev-up`,
     # put COMPOSE_PROFILES=tunnel in .env. See server/README.md, "Exposing the
     # server", and web/README.md, "Access control".
-    image: cloudflare/cloudflared:2026.9.3
+    image: cloudflare/cloudflared:2026.10.0
     profiles: ["tunnel"]
     restart: unless-stopped
     logging: *app-logging
