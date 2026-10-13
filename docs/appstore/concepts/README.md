@@ -30,9 +30,29 @@ The sync concept currently uses the real Explore screen as source imagery;
 replace it with a fresh Sync capture when the direction is selected. The
 aggregation graphic is an advertising illustration, not a replacement app UI.
 
-The cards use the 1320:2868 portrait proportion. Final production still needs
-fresh captures, selected-direction refinement, pixel exports, and iPad layouts.
-Nothing here has been uploaded to App Store Connect.
+## Selected production direction
+
+Style A was selected for 2.1. Its top wordmark is removed and its file graphic
+reads **JSON**. Production uses fresh 2.1 synthetic iPhone and iPad captures,
+including the actual Sync and new Export screens. The portable gallery keeps
+its existing embedded concept sources; production captures remain outside Git.
+
+Build a private production page from `iphone/` and `ipad/` directories, each
+containing `explore.png`, `sync.png`, `export.png`, and `type.png`:
+
+```sh
+python3 docs/appstore/concepts/build-review.py \
+  --captures "$CAPTURES" --output "$ARTIFACTS/production.html"
+```
+
+Serve the output locally. `?capture=1` through `?capture=5` render only one
+Style A card; append `&device=ipad` for tablet composition and source captures.
+Capture Chrome at exactly 1320 × 2868 for iPhone and 2064 × 2752 for iPad.
+Verify actual output dimensions, inspect every card, and retain SHA-256 hashes
+with the private release artifacts. These are JPEG screenshots of HTML/SVG
+compositions with embedded genuine app captures, not generated app UI.
+
+See the [release record](../README.md#release-record) for delivery status.
 
 ## Editing and rebuilding
 

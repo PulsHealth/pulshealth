@@ -23,92 +23,72 @@ PulsHealth
 
 ## Subtitle
 
-Limit 30.
+Limit 30. Approved for the 2.1 submission.
 
 ```
-Health data, your own database
+Unlock your health data
 ```
 
-`[30/30]`
-
-> Never put "Apple" in the name or subtitle: App Review treats the subtitle as
-> part of the name (guideline 5.2.5). "Apple Health" in the description and
-> promotional text is fine.
+`[23/30]`
 
 ## Promotional text
 
-Limit 170. Editable without a new build, so this is the line to change when
-something ships.
+Limit 170. Approved for the 2.1 submission.
 
 ```
-Explore and export Apple Health. Sync to your own database or apply for a PulsHealth account. Share selected data with one-time requests. No ads or tracking.
+Sync, export, and control your health data. Automatic background sync, flexible exports, and connections to compatible AI tools. Your data. Your choice.
 ```
 
-`[157/170]`
+`[152/170]`
 
 ## Description
 
-Limit 4000. This draft describes the next submission, including accounts and
-Data Requests; it is not a record of live App Store copy.
+Limit 4000. Approved for the 2.1 submission.
 
 ```
-PulsHealth lets you explore your iPhone's health data, export it to files, and sync it to a database: one you run yourself, or the PulsHealth database, with an account.
+Sync, export, and control your health data.
 
-Regular sync uploads to the database you set up. A one-time Data Request can send a ZIP to a separate HTTPS destination you explicitly approve. Run your own and the developer never receives your data. Choose the PulsHealth database, with a PulsHealth account, and the developer holds it for you alone.
+Unlock the possibilities in Apple Health. PulsHealth brings your health data into the files, databases, and AI tools you choose. Build a personal archive, create your own dashboards, or explore your habits in a whole new way.
 
-Run your own database with the open-source PulsHealth stack: PostgreSQL, Grafana, a web viewer, an API and an MCP server. Or connect a compatible receiver through the open sync protocol.
+Your database. Your AI tools. Your choice.
 
-No database yet? Explore shows what is in Apple Health, and Export writes CSV or JSONL files on demand to save or share. Connect a database from Sync whenever you want continuous sync.
+KEEP YOUR DATABASE IN SYNC
 
-WHAT IT DOES
+Bring your history and keep new data flowing with automatic background sync. Connect your own PulsHealth server, use a compatible receiver, or sign in with an approved PulsHealth account.
 
-• Full history, recent data first. Sync starts with recent records, then fills in history from your chosen start date. Progress is saved after each batch so it is safe to interrupt.
-• Then it keeps up. New samples follow automatically — in the foreground whenever you open the app, and in the background when iOS allows it.
-• You pick the data. Around 80 HealthKit types grouped the way Apple Health groups them: activity, heart, body, respiratory, sleep, nutrition, vitals, workouts and more. Turn on a starter set in one tap, or choose type by type.
-• See what you have. Explore lists every type by category. Open one to see its past year: how many samples, from which apps and devices, how the values are spread and how much arrives each day, plus a line on what the type measures. Summaries only; no samples are kept.
-• More than raw numbers. Workouts carry their GPS route and per-second sensor series; activity rings come across as daily summaries; and any quantity type can also be sent as on-device aggregates (hourly sums, daily averages) instead of, or alongside, raw samples.
-• Data Requests. Create a link or QR code in Settings specifying data and dates. Participants review it, then Generate & Share or Generate & Send to an approved compatible HTTPS receiver. No ongoing sync or study enrollment.
-• Export to files. With or without a database, build each export on its own: the types and series you want, for the last 30 days, 90 days, a year, all time, or a date range you choose, to CSV (one file per kind of data, for spreadsheets) or JSONL (complete, and replayable into your database later), then save to Files or share.
-• Choose your database. Sign in with an approved PulsHealth account (new accounts require approval), or scan your own server’s pairing code or enter its details.
-• Follow progress with per-type counters, an event log and background-activity diagnostics.
+EXPORT WHAT MATTERS
 
-PRIVACY
+Choose your measurements, dates, and format. Export CSV for spreadsheets or JSON and JSONL for your own tools and projects. Save your files or share them wherever you choose. No account or database required.
 
-• Read-only. PulsHealth reads from Apple Health and never writes, changes or deletes anything there.
-• Sync goes to your configured database. Request delivery goes only to the HTTPS destination you review and approve.
-• An ordinary export makes no network request. The files are staged in temporary storage, handed to the iOS share sheet, and deleted from the app once shared.
-• No analytics, no advertising, no tracking, no third-party SDKs — the app and its sync library have zero third-party dependencies.
-• Your bearer token lives in the iOS Keychain, bound to this device.
-• The camera reads database pairing and Data Request QR codes. No image is stored or sent; declining it simply means typing the details instead.
+YOUR HEALTH, IN EVERY DETAIL
 
-Privacy policy: pulshealth.com/privacy
+Explore sleep, heart rate, activity, workouts, nutrition, and more. Choose individual readings or build custom aggregations—from hourly averages to daily totals. Keep the detail you need and create summaries that work for you.
 
-OPEN SOURCE
+BRING YOUR HEALTH DATA TO AI
 
-PulsHealth is Apache-2.0 licensed. App, sync library, protocol and backend: github.com/PulsHealth/pulshealth.
+Connect compatible AI assistants through your database and ask questions about your data. Explore how your sleep has changed, compare workouts, or look at activity trends over time.
 
-REQUIREMENTS
+BUILT FOR CONTROL
 
-iPhone or iPad running iOS 17 or later. Syncing needs a reachable database: your own, or an approved PulsHealth account. Exploring and exporting need neither. Watch data must first reach Apple Health.
+Choose what to export, what to sync, and where it goes. PulsHealth reads Apple Health without changing your records. No ads. No tracking. Open source.
+
+Exploring and exporting work without an account. Database sync requires a compatible server or an approved PulsHealth account. AI connections are configured through your database.
+
+Learn more: pulshealth.com
+Privacy: pulshealth.com/privacy
 ```
 
-`[3868/4000; 3905 with CRLF line endings]`
+`[1644/4000]`
 
 ## Keywords
 
-Limit 100 characters, comma-separated, no spaces after commas (a space costs a
-character). Singular forms only — the App Store matches plurals itself — and
-the words already in the name and subtitle are omitted, because those are
-indexed anyway.
+Limit 100. Health and data are already in the subtitle.
 
 ```
-healthkit,sync,export,self-hosted,backup,postgres,grafana,quantified,csv,privacy,open source,sql
+apple,healthkit,export,csv,json,sync,database,ai,backup,sql,postgres,sleep,workout,self-hosted
 ```
 
-`[96/100]`
-
-> "database" and "data" are in the subtitle, so they are indexed already and
-> left out here; "sql" takes the place "data" had.
+`[94/100]`
 
 ## URLs
 
@@ -290,32 +270,18 @@ on 2026-10-08; the page confirmed all eleven types with no unfinished setup.
 | Minimum iOS | 17.0 in `project.yml` |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`). The store record has been universal since 1.3, and App Store Connect refuses an update that drops a device family the previous version supported ([QA1623](https://developer.apple.com/library/ios/#qa/qa1623/_index.html)); the listing carries an iPad screenshot for the same reason |
 
-"What's New in This Version": draft the next submission's text here, written
-for someone who has the current version, and delete it once that version is
-live — App Store Connect keeps the history.
+"What's New in This Version" — 2.1:
 
-> PulsHealth accounts: apply for an account and, once approved, sign in from
-> the app to sync to the PulsHealth database. You can still use your own
-> database, and Explore and Export work without an account.
->
-> Data Requests: create and open links or QR codes for selected data and dates.
-> Review each request, then share a ZIP or send it to the HTTPS destination you
-> approve. Requests do not enable ongoing sync.
->
-> Recovery HRV: on iOS 27, PulsHealth can now sync the RMSSD heart rate
-> variability your Apple Watch records on watchOS 27, next to the HRV it
-> already sends. Turn it on in Sync → Raw Samples → Heart.
->
-> Aggregates, simpler: the Sync tab now has two sections, Raw Samples and
-> Aggregates, each with its own list. Add a measurement to Aggregates and it
-> sends a daily total or average, which your database's daily charts and AI
-> assistants use; Match Raw Samples does it for everything you sync. Add
-> hourly, weekly or per-device ones on the type's page, with a preview.
-> Export uses the same lists.
->
-> Fixes an Explore histogram crash when values fall outside the reference range.
-> Activity diagnostics can now be exported from either the Log or Background
-> segment.
+```
+Save your databases
+Keep multiple database connections and switch between them. Each database keeps its own sync progress.
+
+More ways to export
+Export your health data as CSV, JSON, or JSONL. Choose separate datasets, one file per data type, a combined table, or daily summaries.
+
+Make exports your own
+Include source and device details, add sample metadata, and split large CSV tables into smaller files. Clearer category labels make your data easier to work with.
+```
 
 ## Screenshots
 
@@ -351,8 +317,9 @@ browser needs:
 6. **Background Activity** — the wake log after a few days of real background
    delivery. Device only, and it needs the days.
 
-Do not paste marketing text over them, and do not use another person's health
-data.
+For 2.1, use the approved Style A advertising compositions in
+[`concepts/README.md`](concepts/README.md), with synthetic app captures.
+Never use another person's health data.
 
 **The current store set** (1.6, all dark mode, demo fixtures): 6.9" slot
 (1320 × 2868, iPhone 17 Pro Max simulator on iOS 26.5, status bar at 9:41) —
