@@ -3,10 +3,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   ArrowRight, Bot, Database, FileJson, Heart, Lock, Moon,
-  Footprints, Activity, Utensils, EyeOff, SlidersHorizontal,
+  Footprints, Activity, Utensils, EyeOff, SlidersHorizontal, LayoutDashboard, Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
+import { WebAppPreview } from "@/components/web-app-preview";
 import { AiChatPreview } from "@/components/ai-chat-preview";
 import { FaqList } from "@/components/faq-list";
 import { getAllTypes } from "@/lib/api";
@@ -33,7 +34,7 @@ const appJsonLd = {
 };
 
 const destinations = [
-  { icon: Database, title: "Your database", detail: "Automatic sync" },
+  { icon: LayoutDashboard, title: "Your web app", detail: "Dashboards & trends" },
   { icon: FileJson, title: "Your files", detail: "CSV · JSON" },
   { icon: Bot, title: "Your AI tools", detail: "Connected through your database" },
 ];
@@ -82,16 +83,16 @@ export default async function HomePage() {
               Sync, export, and control your Apple Health data.
             </p>
             <p className="mt-4 max-w-md text-lg leading-relaxed text-muted-foreground text-pretty">
-              Keep your database in sync. Export what matters. Put your data to work with the tools and AI you choose.
+              Explore your health in the PulsHealth web app. Keep your database in sync, export what matters, and connect the AI tools you choose.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <AppStoreBadge className="[&_img]:h-12" />
               <Button asChild variant="outline" size="lg" className="h-12">
-                <a href="#sync">See how it works <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></a>
+                <a href={DEMO_URL}>Try the web app <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></a>
               </Button>
             </div>
             <p className="mt-5 text-sm text-muted-foreground">
-              Free app. No account needed to explore or export.
+              Free iPhone app. No account needed to explore or export.
             </p>
           </div>
           <div className={styles.heroVisual}>
@@ -111,6 +112,7 @@ export default async function HomePage() {
           </div>
         </div>
         <nav aria-label="Explore PulsHealth features" className="container mx-auto flex max-w-7xl flex-wrap justify-between gap-4 border-t px-5 py-6 text-base font-medium md:text-lg">
+          <a href="#web-app" className={styles.featureLink}>Explore the web app <ArrowRight aria-hidden /></a>
           <a href="#sync" className={styles.featureLink}>Keep it in sync <ArrowRight aria-hidden /></a>
           <a href="#export" className={styles.featureLink}>Make it portable <ArrowRight aria-hidden /></a>
           <a href="#ai" className={styles.featureLink}>Put it to work <ArrowRight aria-hidden /></a>
@@ -118,21 +120,43 @@ export default async function HomePage() {
       </section>
 
       <div id="how-it-works" className="container mx-auto max-w-7xl scroll-mt-24 space-y-24 px-5 py-20 md:space-y-32 md:py-28">
-        <Feature id="sync" title="Keep your database in sync." intro="Your history, with new data flowing in." visual={
-          <figure className={styles.syncVisual}>
-            <div className="flex items-center gap-3 px-6 pb-6 pt-7">
-              <Database className="h-7 w-7" aria-hidden />
-              <div><p className="text-xl font-semibold">Automatic background sync</p><p className="mt-1 text-base">From Apple Health to your database.</p></div>
+        <section id="web-app" className="scroll-mt-24">
+          <div className="mb-10 grid items-end gap-6 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
+            <div>
+              <h2 className="max-w-2xl text-4xl font-semibold leading-[1.08] tracking-tight text-balance md:text-6xl">Your health, with room to explore.</h2>
+              <p className="mt-5 max-w-2xl text-xl leading-relaxed text-muted-foreground">The PulsHealth web app turns your synced data into a place to see your day, explore your history, and look closer at every workout.</p>
             </div>
-            <a href={DEMO_URL} className="block px-5 pb-5" aria-label="Try the PulsHealth web viewer demo">
-              <Image src="/screenshots/viewer-today.webp" alt="PulsHealth web viewer with activity rings, sleep, heart rate, workouts, and trends" width={1440} height={900} className="rounded-xl border border-black/10 shadow-lg" />
-            </a>
-          </figure>
+            <div className="flex flex-wrap gap-3 lg:justify-end">
+              <Button asChild size="lg"><a href={DEMO_URL}>Try the web app <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></a></Button>
+              <Button asChild size="lg" variant="outline"><a href={SIGNUP_URL}>Request an account</a></Button>
+            </div>
+          </div>
+          <WebAppPreview />
+          <div className="mt-9 grid gap-8 md:grid-cols-3">
+            <div><h3 className="text-xl font-semibold">Your day, at a glance</h3><p className="mt-2 leading-relaxed text-muted-foreground">Activity rings, sleep, heart rate, and your latest readings together in one dashboard.</p></div>
+            <div><h3 className="text-xl font-semibold">See the bigger picture</h3><p className="mt-2 leading-relaxed text-muted-foreground">Explore interactive charts across days, months, or years. Zoom in on the details that interest you.</p></div>
+            <div><h3 className="text-xl font-semibold">Go deeper into workouts</h3><p className="mt-2 leading-relaxed text-muted-foreground">Browse your sessions, then explore routes, heart rate zones, splits, and more.</p></div>
+          </div>
+          <p className="mt-8 text-base text-muted-foreground">Use the web app with an approved PulsHealth account, or <Link href="/server" className="text-brand hover:underline">run it with your own database</Link>.</p>
+        </section>
+
+        <Feature id="sync" title="Keep your database in sync." intro="Your history, with new data flowing in." visual={
+          <div className={styles.syncVisual}>
+            <p className="text-2xl font-semibold tracking-tight">Automatic background sync</p>
+            <div className="my-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
+              <div><Smartphone className="mx-auto mb-4 h-14 w-14" strokeWidth={1.5} aria-hidden /><p className="text-lg font-semibold">Apple Health</p></div>
+              <ArrowRight className="h-8 w-8" aria-hidden />
+              <div><Database className="mx-auto mb-4 h-14 w-14" strokeWidth={1.5} aria-hidden /><p className="text-lg font-semibold">Your database</p></div>
+            </div>
+            <div className="space-y-3 border-t border-current/15 pt-6 text-lg">
+              {["Your health history", "New readings", "Custom summaries"].map(label => <p key={label} className="flex items-center justify-between gap-4">{label}<ArrowRight className="h-5 w-5" aria-hidden /></p>)}
+            </div>
+          </div>
         }>
           <p>Build a personal health archive that keeps growing. Sync your Apple Health history, then keep it up to date with automatic background sync.</p>
-          <p>Browse your trends in the web viewer, build your own dashboards, or query your data directly.</p>
-          <a href={DEMO_URL} className={textLink}>Try the web viewer demo <ArrowRight className="h-4 w-4" aria-hidden /></a>
+          <p>Your database powers the web app and your connected AI tools. You can also build your own dashboards or query your data directly.</p>
           <p className="text-base">Connect your own PulsHealth server or a compatible receiver. Prefer hosting? <a href={SIGNUP_URL} className="text-brand underline-offset-4 hover:underline">Request a PulsHealth account</a>.</p>
+          <Link href="/server" className={textLink}>Explore self-hosting <ArrowRight className="h-4 w-4" aria-hidden /></Link>
         </Feature>
 
         <Feature id="export" title="Export what matters." intro="Your data, dates, and format." flip visual={

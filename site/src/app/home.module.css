@@ -34,7 +34,7 @@
 .featureLink { display: inline-flex; align-items: center; gap: 1rem; }
 .featureLink > svg { width: 1.1rem; height: 1.1rem; color: var(--brand); }
 .featureLink:hover { color: var(--brand); }
-.syncVisual { overflow: hidden; border-radius: 1.5rem; background: var(--blue-paper); color: var(--ink); }
+.syncVisual { overflow: hidden; border-radius: 1.5rem; background: var(--blue-paper); color: var(--ink); padding: clamp(1.5rem, 4vw, 3rem); }
 .exportVisual, .detailVisual { position: relative; overflow: hidden; min-height: 490px; border-radius: 1.5rem; color: var(--ink); }
 .exportVisual { background: var(--mint-paper); display: grid; grid-template-columns: 1fr 1.15fr; gap: 1rem; align-items: center; padding: 2rem 1.75rem 0; }
 .exportVisual > .phone { align-self: start; margin-bottom: -5rem; transform: translateY(2rem) rotate(5deg); }

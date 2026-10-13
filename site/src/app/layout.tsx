@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://pulshealth.com'),
   title: "PulsHealth - Sync, Export, and Control Your Health Data",
-  description: "Unlock your Apple Health data. Sync to your database, export CSV and JSON, and connect compatible AI tools. Free, open source, and built for control.",
+  description: "Unlock your Apple Health data. Explore it in the PulsHealth web app, sync to your database, export CSV and JSON, and connect your AI tools.",
   alternates: {
     canonical: '/',
     types: {

@@ -39,7 +39,7 @@ const APP_URL = "https://app.pulshealth.com/"
  * footer until there is more content.
  */
 const primary: NavItem[] = [
-  { title: "App", href: APP_URL, description: "Open your health dashboard", icon: LogIn, external: true },
+  { title: "Web app", href: APP_URL, description: "Open your health dashboard", icon: LogIn, external: true },
   { title: "Knowledge Base", href: "/knowledge-base", description: "What each Apple Health type measures", icon: BookOpen },
   { title: "Docs", href: "/docs", description: "Self-hosting, protocol, database, AI", icon: FileText, also: ["/server"] },
   { title: "Consulting", href: "/consulting", description: "Help with health data and AI", icon: Briefcase },
