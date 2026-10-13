@@ -17,6 +17,14 @@ under `/docs/` (the file on GitHub where there is none), so an assistant can
 follow them from either copy. [`AGENTS.md`](../AGENTS.md) is the companion
 for an assistant contributing to the code.
 
+## Choose your connection
+
+For a **self-managed database**, start with [connection options](#two-ways-to-connect):
+run the MCP binary locally or expose your Compose MCP service over HTTPS.
+The database powers your assistant; the iOS app does not connect directly to AI.
+
+PulsHealth also offers **hosted accounts**, with the connection steps below.
+
 ## Connect an AI assistant to your PulsHealth account
 
 If your iPhone syncs to the PulsHealth database (you signed in on

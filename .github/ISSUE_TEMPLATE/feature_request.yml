@@ -7,7 +7,8 @@ body:
       value: |
         Check `docs/roadmap.md` and `docs/open-source-plan.md` first: the roadmap lists what is already
         planned, and the plan records what has been decided and what is deliberately out of scope (a
-        hosted service, Android, writing to HealthKit, native non-HTTP sinks in the app). A request that
+        Android, writing to HealthKit, native non-HTTP sinks in the app). PulsHealth also offers
+        hosted accounts; this repository includes the stack you can run yourself. A request that
         overlaps either is still welcome — say which item it relates to.
   - type: dropdown
     id: area

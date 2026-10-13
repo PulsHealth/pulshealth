@@ -86,7 +86,7 @@ export const DOCS: DocEntry[] = [
     title: "Bulk export",
     repoPath: "docs/export.md",
     description:
-      "The product API's streaming export endpoint, CSV for a spreadsheet or JSONL for a notebook, and the puls-export command-line client for it.",
+      "Export CSV, JSON or JSONL from the app without a database, with custom summaries and CSV layouts; or stream CSV or JSONL from the product API and CLI.",
     group: "Reference",
   },
   {
@@ -94,7 +94,7 @@ export const DOCS: DocEntry[] = [
     title: "Use it with AI",
     repoPath: "docs/ai.md",
     description:
-      "Connect any AI assistant that speaks MCP, such as Claude, ChatGPT, Cursor or Qwen: sign in on the PulsHealth database, or run the read-only MCP server on your own.",
+      "Connect compatible AI assistants to your self-managed database through the read-only MCP server, or sign in with a hosted PulsHealth account.",
     group: "Getting started",
   },
   {
@@ -199,6 +199,14 @@ export const GUIDES: DocGuide[] = [
     indexOnly: true,
   },
   {
+    title: "Self-hosting",
+    href: "/server/",
+    description:
+      "Run the open-source PulsHealth database on a machine you own: one script brings it up and prints the code that pairs the app.",
+    group: "Getting started",
+    label: "Set it up",
+  },
+  {
     title: "The PulsHealth database",
     href: SIGNUP_URL,
     description:
@@ -206,14 +214,6 @@ export const GUIDES: DocGuide[] = [
     group: "Getting started",
     label: "Get started",
     indexOnly: true,
-  },
-  {
-    title: "Self-hosting",
-    href: "/server/",
-    description:
-      "Run the open-source PulsHealth database on a machine you own: one script brings it up and prints the code that pairs the app.",
-    group: "Getting started",
-    label: "Set it up",
   },
 ];
 
