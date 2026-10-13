@@ -6,6 +6,14 @@ from the same **TimescaleDB** that Grafana uses and draws its own SVG charts:
 activity rings, range-banded trend lines and bar series, with per-category
 accent colors.
 
+Dashboard pages keep the public site's top navigation: PulsHealth, Dashboard,
+Knowledge Base, Docs, and Consulting, with GitHub and account/settings controls.
+The brand and public resource links go to pulshealth.com; Dashboard stays on the
+current viewer. The sidebar contains health-data navigation and viewer controls,
+without a separate return-to-site link. On mobile, the site menu and dashboard
+menu have distinct labels and close on Escape or an outside click. Authentication,
+OAuth, and phone-pairing pages retain their focused layouts.
+
 > **Local demo mode.** Outside production, an unset or unreachable `DATABASE_URL`
 > serves generated demo data. Production never fabricates health data: a page
 > whose data cannot be read shows **Database unavailable** instead of its

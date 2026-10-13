@@ -5,6 +5,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
+import { SiteHeader } from "@/components/SiteHeader";
 import { UnitsProvider } from "@/components/UnitsProvider";
 import { getDataSource, getUsers } from "@/lib/queries";
 import { TimeZoneProvider } from "@/components/TimeZoneProvider";
@@ -70,6 +71,8 @@ async function shell(children: React.ReactNode, pathname: string | null) {
     if (!session) return <main className="auth-shell">{children}</main>;
     const source = await getDataSource();
     return (
+      <>
+      <SiteHeader accounts />
       <div className="shell">
         <Sidebar
           source={source}
@@ -80,13 +83,17 @@ async function shell(children: React.ReactNode, pathname: string | null) {
         />
         <main className="content">{children}</main>
       </div>
+      </>
     );
   }
   const [source, users, currentUserId] = await Promise.all([getDataSource(), getUsers(), viewerUser()]);
   return (
+    <>
+    <SiteHeader />
     <div className="shell">
       <Sidebar source={source} users={users} currentUserId={currentUserId} />
       <main className="content">{children}</main>
     </div>
+    </>
   );
 }

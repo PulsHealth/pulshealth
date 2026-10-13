@@ -5,11 +5,25 @@ pages, the blog, and the HealthKit knowledge-base viewer. It is a separate
 thing from [`web/`](../web/README.md), which is the self-hosted viewer that
 reads your own Postgres.
 
-The desktop and mobile navigation list App (the hosted viewer at
+The desktop and mobile navigation list Dashboard (the hosted viewer at
 app.pulshealth.com), Knowledge Base, Docs, and Consulting in that order.
 Blog remains linked from the footer.
 
 Page heroes begin with the title and description, without a page-label pill.
+
+The homepage leads with “Unlock your health data” and explains the promise as
+“Sync, export, and control your Apple Health data.” Its feature sequence is
+the web app, sync, export, data types/custom summaries, AI, then control.
+The web app has a prominent demo action and an accessible screenshot switcher
+for the Today dashboard and workout history. Keep this vocabulary
+consistent with the App Store copy in `docs/appstore/2.1-copy.md`, the About page,
+footer, and search metadata. Local exploration and exports need no account;
+database sync needs a compatible destination; AI tools connect through the
+database. Hosted account calls to action say “Request” because access requires
+approval. The pale blue, mint, and lilac product illustrations echo the approved
+Style A campaign while preserving the site's dark shell. Regenerate the tracked
+social sharing card with `cd site && bun scripts/gen-social-card.tsx` when that
+message changes.
 
 The main site is always dark and has no theme selector. Blog articles retain
 a light/dark toggle, default to dark, and save their choice separately in

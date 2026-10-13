@@ -244,7 +244,7 @@ a.card:hover {
   z-index: 2;
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
-  min-height: 100vh;
+  min-height: calc(100vh - 56px);
 }
 @media (max-width: 880px) {
   .shell {
@@ -270,9 +270,9 @@ button {
 /* ── sidebar ───────────────────────────────────────────────────────────── */
 .sidebar {
   position: sticky;
-  top: 0;
+  top: 56px;
   align-self: start;
-  height: 100vh;
+  height: calc(100dvh - 56px);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -284,6 +284,13 @@ button {
 .sidebar-header {
   display: flex;
   align-items: center;
+}
+.sidebar-title {
+  margin-right: auto;
+  padding: 4px 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg-soft);
 }
 .sidebar-navigation {
   display: flex;
@@ -312,13 +319,8 @@ button {
     gap: 10px;
     min-height: 44px;
   }
-  .sidebar .brand {
-    margin-right: auto;
+  .sidebar-title {
     padding: 0;
-    gap: 8px;
-  }
-  .sidebar .brand-name {
-    font-size: 14px;
   }
   .mobile-menu-toggle {
     display: inline-flex;
@@ -355,7 +357,7 @@ button {
     top: 100%;
     left: 0;
     right: 0;
-    max-height: calc(100dvh - 65px);
+    max-height: calc(100dvh - 121px);
     padding: 12px 16px 20px;
     border-bottom: 1px solid var(--border);
     background: var(--bg-elevated);
@@ -687,4 +689,52 @@ html[data-theme="light"] .form-message.notice {
 }
 .session-row + .session-row {
   border-top: 1px solid var(--border);
+}
+
+
+/* Shared visual navigation with pulshealth.com; keep it dark in either viewer theme. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  color: #fafafa;
+  background: rgba(10, 10, 10, .94);
+  border-bottom: 1px solid #ffffff1a;
+  backdrop-filter: blur(12px);
+  color-scheme: dark;
+}
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+.site-brand { display: inline-flex; align-items: center; flex-shrink: 0; gap: 6px; margin-right: 16px; font-size: 16px; font-weight: 600; }
+.site-primary { display: flex; align-items: center; gap: 4px; }
+.site-nav-link { display: inline-flex; padding: 8px 12px; border-radius: 6px; color: #aaa; font-size: 14px; font-weight: 500; white-space: nowrap; }
+.site-nav-link:hover, .site-nav-link[aria-current] { background: #ffffff10; color: #fafafa; }
+.site-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.site-github { border: 1px solid #ffffff26; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 500; }
+.site-header a:focus-visible, .site-header button:focus-visible { outline: 2px solid #68baff; outline-offset: 3px; }
+.site-menu-toggle { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #fafafa; cursor: pointer; }
+.site-mobile-nav { display: none; }
+.site-nav-fallback { display: none; }
+.site-header:has(.site-nav-fallback) { position: relative; }
+.site-header:has(.site-nav-fallback) + .shell .sidebar { top: 0; height: 100dvh; }
+.site-header:has(.site-nav-fallback) .site-menu-toggle { display: none; }
+@media (max-width: 1023px) {
+  .site-primary, .site-github, .site-account { display: none; }
+  .site-nav-fallback { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 16px; }
+  .site-menu-toggle { display: inline-flex; }
+  .site-mobile-nav.is-open { display: flex; }
+  .site-mobile-nav { position: absolute; top: 56px; left: 0; right: 0; flex-direction: column; max-height: calc(100dvh - 56px); overflow-y: auto; padding: 12px 16px; border-bottom: 1px solid #ffffff26; background: #0a0a0a; box-shadow: 0 16px 32px #0004; }
+  .site-mobile-nav a { padding: 14px 12px; border-radius: 6px; font-size: 14px; color: #c8c8cf; }
+  .site-mobile-nav a:hover, .site-mobile-nav a[aria-current] { background: #ffffff10; color: #fafafa; }
+}
+
+@media (max-width: 880px) {
+  .site-header:has(.site-nav-fallback) + .shell .sidebar { height: auto; }
 }

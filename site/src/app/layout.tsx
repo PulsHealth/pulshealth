@@ -21,8 +21,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pulshealth.com'),
-  title: "PulsHealth - Your Apple Health Data, Ready for You and Your AI",
-  description: "A free, open-source iPhone app that keeps your whole Apple Health history in a database, hosted for you or run by you, so you and your AI can work from your real numbers. No tracking in the app, Apache-2.0.",
+  title: "PulsHealth - Sync, Export, and Control Your Health Data",
+  description: "Unlock your Apple Health data. Explore it in the PulsHealth web app, sync to your database, export CSV and JSON, and connect your AI tools.",
   alternates: {
     canonical: '/',
     types: {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     siteName: "PulsHealth",
-    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'PulsHealth: your Apple Health data, ready for you and your AI.' }],
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'PulsHealth: Unlock your health data. Sync, export, and control your Apple Health data.' }],
   },
   twitter: {
     card: 'summary_large_image',
