@@ -303,52 +303,29 @@ button {
 .sidebar-spacer {
   flex: 1;
 }
-.mobile-menu-toggle,
+.mobile-site-resources,
 .mobile-demo {
   display: none;
 }
 @media (max-width: 880px) {
   .sidebar {
-    height: auto;
-    padding: 10px 16px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+    height: 0;
+    padding: 0;
+    border: none;
     background: var(--bg-elevated);
   }
   .sidebar-header {
-    gap: 10px;
-    min-height: 44px;
+    display: none;
   }
-  .sidebar-title {
-    padding: 0;
-  }
-  .mobile-menu-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 44px;
-    padding: 0 10px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--panel);
-    color: var(--fg);
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .mobile-menu-toggle:hover {
-    background: var(--panel-strong);
-  }
-  .mobile-menu-toggle:focus-visible {
-    outline: 2px solid var(--fg);
-    outline-offset: 3px;
+  .mobile-site-resources {
+    display: block;
   }
   .mobile-demo {
     display: inline-flex;
     padding: 3px 7px;
     border-radius: 6px;
-    background: var(--panel-strong);
-    color: var(--fg-soft);
+    background: #ffffff14;
+    color: #c8c8cf;
     font-size: 11px;
   }
   .sidebar-navigation {
@@ -357,7 +334,7 @@ button {
     top: 100%;
     left: 0;
     right: 0;
-    max-height: calc(100dvh - 121px);
+    max-height: calc(100dvh - 56px);
     padding: 12px 16px 20px;
     border-bottom: 1px solid var(--border);
     background: var(--bg-elevated);
@@ -374,7 +351,11 @@ button {
     border: none;
     box-shadow: none;
   }
-  .sidebar:has(.mobile-menu-fallback) .mobile-menu-toggle {
+  .sidebar:has(.mobile-menu-fallback) {
+    position: static;
+    height: auto;
+  }
+  body:has(.mobile-menu-fallback) .site-menu-toggle {
     display: none;
   }
   .sidebar-navigation .nav-link {
@@ -718,23 +699,14 @@ html[data-theme="light"] .form-message.notice {
 .site-nav-link:hover, .site-nav-link[aria-current] { background: #ffffff10; color: #fafafa; }
 .site-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .site-github { border: 1px solid #ffffff26; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 500; }
-.site-header a:focus-visible, .site-header button:focus-visible { outline: 2px solid #68baff; outline-offset: 3px; }
-.site-menu-toggle { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; border-radius: 6px; background: transparent; color: #fafafa; cursor: pointer; }
-.site-mobile-nav { display: none; }
-.site-nav-fallback { display: none; }
-.site-header:has(.site-nav-fallback) { position: relative; }
-.site-header:has(.site-nav-fallback) + .shell .sidebar { top: 0; height: 100dvh; }
-.site-header:has(.site-nav-fallback) .site-menu-toggle { display: none; }
-@media (max-width: 1023px) {
-  .site-primary, .site-github, .site-account { display: none; }
-  .site-nav-fallback { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 16px; }
-  .site-menu-toggle { display: inline-flex; }
-  .site-mobile-nav.is-open { display: flex; }
-  .site-mobile-nav { position: absolute; top: 56px; left: 0; right: 0; flex-direction: column; max-height: calc(100dvh - 56px); overflow-y: auto; padding: 12px 16px; border-bottom: 1px solid #ffffff26; background: #0a0a0a; box-shadow: 0 16px 32px #0004; }
-  .site-mobile-nav a { padding: 14px 12px; border-radius: 6px; font-size: 14px; color: #c8c8cf; }
-  .site-mobile-nav a:hover, .site-mobile-nav a[aria-current] { background: #ffffff10; color: #fafafa; }
+.site-header a:focus-visible, .site-header button:focus-visible { outline: 2px solid #68baff; outline-offset: 3px; }.site-menu-toggle { display: none; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: #fafafa; cursor: pointer; }
+@media (min-width: 881px) and (max-width: 1023px) {
+  .site-brand { margin-right: 4px; }
+  .site-nav-link { padding-inline: 8px; }
+  .site-github { display: none; }
+  .mobile-site-resources { display: block; }
 }
-
 @media (max-width: 880px) {
-  .site-header:has(.site-nav-fallback) + .shell .sidebar { height: auto; }
+  .site-primary, .site-github, .site-account { display: none; }
+  .site-menu-toggle { display: inline-flex; }
 }

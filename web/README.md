@@ -10,8 +10,9 @@ Dashboard pages keep the public site's top navigation: PulsHealth, Dashboard,
 Knowledge Base, Docs, and Consulting, with GitHub and account/settings controls.
 The brand and public resource links go to pulshealth.com; Dashboard stays on the
 current viewer. The sidebar contains health-data navigation and viewer controls,
-without a separate return-to-site link. On mobile, the site menu and dashboard
-menu have distinct labels and close on Escape or an outside click. Authentication,
+without a separate return-to-site link. On mobile, one 56 px brand header opens a combined menu: health navigation
+first, then account controls and website resources. It closes on Escape, an
+outside click, or choosing a link. Authentication,
 OAuth, and phone-pairing pages retain their focused layouts.
 
 > **Local demo mode.** Outside production, an unset or unreachable `DATABASE_URL`
@@ -615,12 +616,12 @@ merged catalog to the JSON.
 ## Navigation
 
 Desktop shows a persistent sidebar. At widths of 880 px and below, a compact
-header keeps the page in view and **Menu** opens the scrollable navigation,
-including categories and account controls. Choosing a link, tapping outside,
-or pressing Escape closes it; Escape returns focus to the Menu button.
+brand header keeps the page in view and its menu button opens the scrollable
+navigation, including categories, account controls and website resources. Choosing a link, tapping outside,
+or pressing Escape closes it; Escape returns focus to the header menu button.
 The shared demo keeps a visible **Demo** badge even with the menu closed.
-A **Back to pulshealth.com** link appears in the navigation and on sign-in,
-sign-up and invite cards.
+A **PulsHealth website** link appears in the mobile menu; sign-in, sign-up and
+invite cards also link back to the public site.
 
 Page headers begin with the title and description, without a page label above
 them. Demo and live data indicators remain visible in the navigation.
