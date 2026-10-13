@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GROUPS, GROUP_LABELS } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
 import type { DataSourceInfo, User } from "@/lib/types";
-import { GridIcon, GroupIcon, HomeIcon, MenuIcon, SettingsIcon, SignOutIcon, UserIcon, WorkoutIcon } from "./Icons";
+import { GridIcon, GroupIcon, HomeIcon, SettingsIcon, SignOutIcon, UserIcon, WorkoutIcon } from "./Icons";
 import { ThemeToggle } from "./ThemeToggle";
 import { UserSwitcher } from "./UserSwitcher";
 
@@ -16,6 +16,9 @@ export function Sidebar({
   currentUserId,
   account = null,
   signupsOpen = false,
+  menuOpen,
+  sidebarRef,
+  closeMenu,
 }: {
   source: DataSourceInfo;
   users: User[];
@@ -24,33 +27,11 @@ export function Sidebar({
   account?: { email: string; isAdmin: boolean; demo?: boolean } | null;
   /** Whether /signup takes requests (lib/mode.ts signupsOpen), for the demo's "Create your account". */
   signupsOpen?: boolean;
+  menuOpen: boolean;
+  sidebarRef: RefObject<HTMLElement | null>;
+  closeMenu: () => void;
 }) {
   const path = usePathname();
-  const [menu, setMenu] = useState({ path, open: false });
-  const menuOpen = menu.path === path && menu.open;
-  const sidebarRef = useRef<HTMLElement>(null);
-  const toggleRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    function dismiss(event: PointerEvent) {
-      if (event.target instanceof Node && !sidebarRef.current?.contains(event.target)) {
-        setMenu({ path, open: false });
-      }
-    }
-    function escape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMenu({ path, open: false });
-        toggleRef.current?.focus();
-      }
-    }
-    document.addEventListener("pointerdown", dismiss);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("pointerdown", dismiss);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [menuOpen, path]);
   // A choice is only worth offering when there is one — or when the current
   // user (from a stale cookie or a bad ?user= link) is not in the list at
   // all, so the way back to a real user is one click away.
@@ -69,20 +50,6 @@ export function Sidebar({
       </noscript>
       <div className="sidebar-header">
         <span className="sidebar-title">Dashboard</span>
-
-        {account?.demo && <span className="mobile-demo" title="Shared, view-only demo with sample data">Demo</span>}
-        <button
-          ref={toggleRef}
-          type="button"
-          className="mobile-menu-toggle"
-          aria-expanded={menuOpen}
-          aria-controls="sidebar-navigation"
-          aria-label={menuOpen ? "Close dashboard menu" : "Open dashboard menu"}
-          onClick={() => setMenu({ path, open: !menuOpen })}
-        >
-          <MenuIcon size={18} />
-          <span>{menuOpen ? "Close" : "Menu"}</span>
-        </button>
       </div>
 
       <div
@@ -90,7 +57,7 @@ export function Sidebar({
         className={`sidebar-navigation${menuOpen ? " is-open" : ""}`}
         onClick={(event) => {
           // Also close when the current page's link is chosen again.
-          if (event.target instanceof Element && event.target.closest("a")) setMenu({ path, open: false });
+          if (event.target instanceof Element && event.target.closest("a")) closeMenu();
         }}
       >
         {account?.demo && (
@@ -182,6 +149,14 @@ export function Sidebar({
             </span>
           </div>
         </div>
+        <nav className="mobile-site-resources nav-section" aria-label="Website resources">
+          <div className="eyebrow" style={{ padding: "0 10px 8px" }}>Resources</div>
+          <a className="nav-link" href="https://pulshealth.com/">PulsHealth website</a>
+          <a className="nav-link" href="https://pulshealth.com/knowledge-base/">Knowledge Base</a>
+          <a className="nav-link" href="https://pulshealth.com/docs/">Docs</a>
+          <a className="nav-link" href="https://pulshealth.com/consulting/">Consulting</a>
+          <a className="nav-link" href="https://github.com/PulsHealth/pulshealth" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
       </div>
     </aside>
   );
