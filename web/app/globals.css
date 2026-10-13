@@ -689,8 +689,6 @@ html[data-theme="light"] .form-message.notice {
   align-items: center;
   gap: 8px;
   height: 56px;
-  max-width: 1280px;
-  margin-inline: auto;
   padding-inline: 16px;
 }
 .site-brand { display: inline-flex; align-items: center; flex-shrink: 0; gap: 6px; margin-right: 16px; font-size: 16px; font-weight: 600; }
@@ -699,7 +697,8 @@ html[data-theme="light"] .form-message.notice {
 .site-nav-link:hover, .site-nav-link[aria-current] { background: #ffffff10; color: #fafafa; }
 .site-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .site-github { border: 1px solid #ffffff26; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 500; }
-.site-header a:focus-visible, .site-header button:focus-visible { outline: 2px solid #68baff; outline-offset: 3px; }.site-menu-toggle { display: none; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: #fafafa; cursor: pointer; }
+.site-header a:focus-visible, .site-header button:focus-visible { outline: 2px solid #68baff; outline-offset: 3px; }
+.site-menu-toggle { display: none; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: #fafafa; cursor: pointer; }
 @media (min-width: 881px) and (max-width: 1023px) {
   .site-brand { margin-right: 4px; }
   .site-nav-link { padding-inline: 8px; }
