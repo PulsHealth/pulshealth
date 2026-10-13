@@ -28,7 +28,8 @@ import { safeReturnPath, USER_COOKIE, userCookieOptions } from "@/lib/viewer";
 //           request must come from this origin, and everything but the
 //           sign-in and invite pages, their two POST endpoints, build assets
 //           and /api/healthz needs a live session — pages redirect to
-//           /login, the rest answer 401. The session is checked against the
+//           /login (the dashboard opens /demo when configured), the rest
+//           answer 401. The session is checked against the
 //           database here; pages check it again when they ask for the user
 //           (lib/viewer.ts), so a page is never served on the strength of
 //           this function alone. `?user=` and the user cookie mean nothing.
