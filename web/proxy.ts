@@ -5,7 +5,7 @@ import { isSameOriginRequest, isSecureRequest, publicOrigin } from "@/lib/accoun
 import { findSession, SESSION_COOKIE, sessionCookieAttributes } from "@/lib/accounts/session";
 import { AUTH_REALM, authorize } from "@/lib/auth";
 import { isUuid } from "@/lib/uuid";
-import { trustProxyHeaders, viewerMode } from "@/lib/mode";
+import { demoUserId, trustProxyHeaders, viewerMode } from "@/lib/mode";
 import { isOAuthPath, OAUTH_AUTHORIZE_PATH, OAUTH_DECISION_PATH, oauthConfig } from "@/lib/oauth/config";
 import { redirectOrigin } from "@/lib/oauth/validate";
 import { contentSecurityPolicy, newNonce } from "@/lib/securityHeaders";
@@ -28,7 +28,8 @@ import { safeReturnPath, USER_COOKIE, userCookieOptions } from "@/lib/viewer";
 //           request must come from this origin, and everything but the
 //           sign-in and invite pages, their two POST endpoints, build assets
 //           and /api/healthz needs a live session — pages redirect to
-//           /login, the rest answer 401. The session is checked against the
+//           /login (the dashboard opens /demo when configured), the rest
+//           answer 401. The session is checked against the
 //           database here; pages check it again when they ask for the user
 //           (lib/viewer.ts), so a page is never served on the strength of
 //           this function alone. `?user=` and the user cookie mean nothing.
@@ -147,7 +148,9 @@ async function accountsGate(request: NextRequest, nonce: string, csp: string, de
   if (!session) {
     const response =
       unauthenticatedAnswer(request.method, url.pathname) === "redirect"
-        ? signInRedirect(request, trust)
+        ? (url.pathname === "/" && demoUserId()
+            ? new NextResponse(null, { status: 303, headers: { Location: new URL("/demo", publicOrigin(url, request.headers, trust, process.env.WEB_PUBLIC_URL)).toString(), "Cache-Control": "no-store" } })
+            : signInRedirect(request, trust))
         : text(401, "Sign in required.");
     // A cookie that names no live session is dead weight; drop it.
     if (token !== undefined) response.cookies.set(SESSION_COOKIE, "", sessionCookieAttributes(0));

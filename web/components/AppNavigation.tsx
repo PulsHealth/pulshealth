@@ -44,10 +44,25 @@ export function AppNavigation({ children, ...sidebar }: Props) {
 
   return (
     <>
-      <SiteHeader accounts={!!sidebar.account} demo={sidebar.account?.demo} open={open} toggleMenu={() => setMenu({ pathname, open: !open })} headerRef={headerRef} toggleRef={toggleRef} />
+      <SiteHeader demo={sidebar.account?.demo} open={open} toggleMenu={() => setMenu({ pathname, open: !open })} headerRef={headerRef} toggleRef={toggleRef} />
       <div className="shell">
         <Sidebar {...sidebar} menuOpen={open} sidebarRef={sidebarRef} closeMenu={() => setMenu({ pathname, open: false })} />
-        <main className="content">{children}</main>
+        <main className="content">
+          {sidebar.account?.demo && (
+            <section className="demo-banner" aria-label="Demo dashboard">
+              <div>
+                <span className="demo-banner-label">DEMO DASHBOARD</span>
+                <p>Explore what your health data can look like.</p>
+                <span className="demo-banner-detail">You’re viewing sample data. Sign in to see your own.</span>
+              </div>
+              <div className="demo-banner-actions">
+                <a href="/login" className="btn">Sign in</a>
+                {sidebar.signupsOpen && <a href="/signup" className="demo-banner-request">Request an account <span aria-hidden="true">→</span></a>}
+              </div>
+            </section>
+          )}
+          {children}
+        </main>
       </div>
     </>
   );

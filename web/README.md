@@ -615,6 +615,13 @@ merged catalog to the JSON.
 
 ## Navigation
 
+In accounts mode with `WEB_DEMO_USER` configured, signed-out visitors to `/`
+are redirected through `/demo` into the existing view-only sample account.
+Signed-in visitors keep their own session. Other protected pages and APIs
+still require authentication. A banner above demo pages labels the sample
+data and offers sign-in and, when sign-ups are open, an account request.
+These actions stay visible when the mobile menu is closed.
+
 Desktop shows a persistent sidebar. At widths of 1023 px and below, a compact
 brand header keeps the page in view and its menu button opens the scrollable
 navigation, including categories, account controls and website resources. Choosing a link, tapping outside,

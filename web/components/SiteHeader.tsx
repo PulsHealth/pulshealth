@@ -14,8 +14,7 @@ const links = [
   { label: "Consulting", href: "https://pulshealth.com/consulting/" },
 ];
 
-export function SiteHeader({ accounts = false, demo = false, open, toggleMenu, headerRef, toggleRef }: {
-  accounts?: boolean;
+export function SiteHeader({ demo = false, open, toggleMenu, headerRef, toggleRef }: {
   demo?: boolean;
   open: boolean;
   toggleMenu: () => void;
@@ -50,7 +49,6 @@ export function SiteHeader({ accounts = false, demo = false, open, toggleMenu, h
             <span>Search</span><kbd><span>⌘</span>K</kbd>
           </a>
           <a href="https://github.com/PulsHealth/pulshealth" className="site-action site-outline site-github" target="_blank" rel="noopener noreferrer" aria-label="PulsHealth on GitHub"><GitHubIcon /><span>GitHub</span></a>
-          <a href={accounts ? "/login" : "https://app.pulshealth.com/login"} className="site-action site-signin">Sign in</a>
           <button ref={toggleRef} type="button" className="site-action site-menu-toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="sidebar-navigation" onClick={toggleMenu}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button>
         </div>
       </div>

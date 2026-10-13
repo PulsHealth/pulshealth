@@ -677,3 +677,26 @@ html[data-theme="light"] .form-message.notice {
 .sidebar .site-public-menu a:hover,
 .sidebar .site-public-menu a[aria-current] { color: var(--fg); background: var(--panel-strong); }
 .sidebar .site-public-menu .site-menu-heading { color: var(--muted); }
+
+/* Keep the demo invitation visible outside the collapsed mobile navigation. */
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 22px 24px;
+  margin-bottom: 28px;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--bg-elevated);
+}
+.demo-banner-label { color: var(--fg-soft); font-size: 11px; font-weight: 600; letter-spacing: .12em; }
+.demo-banner p { margin: 6px 0; font-size: 18px; font-weight: 600; }
+.demo-banner-detail { color: var(--fg-soft); font-size: 13px; }
+.demo-banner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.demo-banner-request { font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 600px) {
+  .demo-banner { padding: 18px; gap: 16px; }
+  .demo-banner p { font-size: 16px; }
+}
