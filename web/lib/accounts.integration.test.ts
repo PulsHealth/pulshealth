@@ -10,7 +10,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 import { Client } from "pg";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { newInviteToken } from "../scripts/invite.mjs";
 import { requireIntegrationDatabases } from "./integrationEnv";
@@ -47,6 +47,18 @@ function post(path: string, fields: Record<string, string>, opts: { cookie?: str
 function sessionCookie(res: Response): string | undefined {
   const match = /__Host-puls-session=([^;]*)/.exec(res.headers.get("set-cookie") ?? "");
   return match?.[1] || undefined;
+}
+
+// Token-bucket assertions must not depend on password hashing or CI speed.
+// Fix Date.now only; database I/O and timers remain real. Refill behavior is
+// covered with explicit timestamps in accounts/ratelimit.test.ts.
+async function withFixedTime(run: () => Promise<void>): Promise<void> {
+  const clock = vi.spyOn(Date, "now").mockReturnValue(Date.now());
+  try {
+    await run();
+  } finally {
+    clock.mockRestore();
+  }
 }
 
 describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
@@ -333,7 +345,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     expect(res.headers.get("set-cookie")).toMatch(/Max-Age=0/i);
   });
 
-  it("lets no more guesses through a parallel burst than the bucket holds", async () => {
+  it("lets no more guesses through a parallel burst than the bucket holds", () => withFixedTime(async () => {
     // All in flight at once, from one address, at one account: only as many
     // as the bucket holds may reach the password check — the right password
     // among them included, whatever its place.
@@ -344,7 +356,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     const evaluated = outcomes.filter((l) => l !== "/login?error=throttled");
     expect(evaluated.length).toBeLessThanOrEqual(10);
     expect(outcomes.filter((l) => l === "/login?error=throttled").length).toBeGreaterThanOrEqual(20);
-  });
+  }));
 
   it("charges nothing for a successful sign-in", async () => {
     // Twenty in a row from one address: none is a failure, so none is refused.
@@ -398,7 +410,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     expect(await session.findSession(held)).toBeNull();
   });
 
-  it("throttles one address, and one account from many addresses, before checking the password", async () => {
+  it("throttles one address, and one account from many addresses, before checking the password", () => withFixedTime(async () => {
     for (let i = 0; i < 10; i++) {
       await loginRoute.POST(post("/api/auth/login", { email: `nobody${i}@example.com`, password: "x".repeat(12) }, { ip: "198.51.100.40" }));
     }
@@ -410,12 +422,13 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     }
     const right = await loginRoute.POST(post("/api/auth/login", { email: EMAIL, password: "another long passphrase" }, { ip: "203.0.113.99" }));
     expect(right.headers.get("location")).toBe("/login?error=throttled");
-  });
+  }));
 
-  it("still lets the owner in from an address one of their live sessions signed in from", async () => {
-    // The test above left EMAIL's bucket empty: strangers can keep it so.
-    // An address the account has a live session from answers only to its
-    // own bucket (lib/accounts/ratelimit.ts), so they cannot lock its owner out.
+  it("still lets the owner in from an address one of their live sessions signed in from", () => withFixedTime(async () => {
+    // Establish this test's exhausted email bucket independently. A live
+    // session's address still answers only to its own address bucket.
+    const { AUTH_FAILURE_BURST, authFailures } = await import("./accounts/ratelimit");
+    for (let i = 0; i < AUTH_FAILURE_BURST; i++) authFailures.fail(`email:${EMAIL}`);
     const accountId = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [EMAIL])).rows[0].id;
     await admin.query(
       "INSERT INTO auth.sessions (id, account_id, expires_at, ip) VALUES ($1, $2, now() + interval '1 day', '198.51.100.90')",
@@ -432,7 +445,7 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("accounts mode (integration)", () => {
     const owner = await login("198.51.100.90");
     expect(owner.headers.get("location")).toBe("/");
     expect(sessionCookie(owner)).toBeTruthy();
-  });
+  }));
 
   it("leaves expired sessions to the database's hourly job, which removes them", async () => {
     const accountId = (await admin.query("SELECT id::text FROM auth.accounts WHERE email = $1", [OTHER_EMAIL])).rows[0].id;

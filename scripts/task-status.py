@@ -41,7 +41,10 @@ def inspect(root, github=False):
         record = owner_file(path)
         result["ownership"] = json.loads(record.read_text()) if record.exists() else {"owner": "unknown"}
         upstream = subprocess.run(["git", "-C", str(path), "rev-parse", "--abbrev-ref", "@{upstream}"], capture_output=True, text=True)
-        result["upstream"] = upstream.stdout.strip() or None
+        # rev-parse can echo an unresolved expression on stdout while failing.
+        # A pruned merged branch is normal, and must not abort the inventory.
+        result["upstream"] = (upstream.stdout.strip() or None) if upstream.returncode == 0 else None
+        result["upstream_status"] = "available" if result["upstream"] else "unavailable"
         if result["upstream"]:
             ahead, behind = git(path, "rev-list", "--left-right", "--count", "HEAD...@{upstream}").split()
             result.update(ahead=int(ahead), behind=int(behind))
