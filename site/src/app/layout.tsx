@@ -6,7 +6,6 @@ import { SearchProvider } from "@/components/search-context";
 import { SearchDialogLoader } from "@/components/search-dialog-loader";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { getRepoStats } from "@/lib/github";
 import { SiteAnalytics } from "@/components/site-analytics";
 
 const geistSans = Geist({
@@ -74,7 +73,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { stars } = await getRepoStats();
 
   return (
     <html lang="en" className="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
@@ -88,7 +86,7 @@ export default async function RootLayout({
         <SiteAnalytics />
         <ThemeProvider>
           <SearchProvider>
-            <SiteHeader stars={stars} />
+            <SiteHeader />
             {children}
             <SiteFooter />
             <SearchDialogLoader />

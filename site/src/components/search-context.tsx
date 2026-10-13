@@ -26,8 +26,12 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    // The separately hosted dashboard links directly to public-site search.
+    const hashSearch = () => { if (window.location.hash === "#search") setOpen(true); };
+    hashSearch();
+    window.addEventListener("hashchange", hashSearch);
     document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    return () => { document.removeEventListener("keydown", down); window.removeEventListener("hashchange", hashSearch); };
   }, []);
 
   return (

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
+import "@/components/navigation.css";
 import { AppNavigation } from "@/components/AppNavigation";
 import { UnitsProvider } from "@/components/UnitsProvider";
 import { getDataSource, getUsers } from "@/lib/queries";

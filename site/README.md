@@ -7,7 +7,9 @@ reads your own Postgres.
 
 The desktop and mobile navigation list Dashboard (the hosted viewer at
 app.pulshealth.com), Knowledge Base, Docs, and Consulting in that order.
-Blog remains linked from the footer.
+Blog remains linked from the footer. The navbar spans the viewport with a 56 px
+row and 16 px edge padding, matching the dashboard. Both switch to a dropdown
+below 1024 px; the dashboard adds its health/account options above the public links.
 
 Page heroes begin with the title and description, without a page-label pill.
 
