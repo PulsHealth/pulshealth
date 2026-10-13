@@ -34,7 +34,7 @@ const appJsonLd = {
 };
 
 const destinations = [
-  { icon: LayoutDashboard, title: "Your web app", detail: "Dashboards & trends" },
+  { icon: LayoutDashboard, title: "Your dashboard", detail: "Daily metrics & trends" },
   { icon: FileJson, title: "Your files", detail: "CSV · JSON" },
   { icon: Bot, title: "Your AI tools", detail: "Connected through your database" },
 ];
@@ -88,11 +88,15 @@ export default async function HomePage() {
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <AppStoreBadge className="[&_img]:h-12" />
               <Button asChild variant="outline" size="lg" className="h-12">
-                <a href={DEMO_URL}>Try the web app <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></a>
+                <a href={DEMO_URL}>Try the dashboard <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></a>
               </Button>
             </div>
-            <p className="mt-5 text-sm text-muted-foreground">
-              Free iPhone app. No account needed to explore or export.
+            <p className="mt-5 text-base font-medium leading-relaxed text-foreground/85 sm:text-lg">
+              <span className="whitespace-nowrap">Free</span>{" "}
+              <span aria-hidden="true">·</span>{" "}
+              <span className="whitespace-nowrap">Open Source</span>{" "}
+              <span aria-hidden="true">·</span>{" "}
+              <span className="whitespace-nowrap">No Account Required</span>
             </p>
           </div>
           <div className={styles.heroVisual}>
@@ -112,7 +116,7 @@ export default async function HomePage() {
           </div>
         </div>
         <nav aria-label="Explore PulsHealth features" className="container mx-auto flex max-w-7xl flex-wrap justify-between gap-4 border-t px-5 py-6 text-base font-medium md:text-lg">
-          <a href="#web-app" className={styles.featureLink}>Explore the web app <ArrowRight aria-hidden /></a>
+          <a href="#web-app" className={styles.featureLink}>Explore the dashboard <ArrowRight aria-hidden /></a>
           <a href="#sync" className={styles.featureLink}>Keep it in sync <ArrowRight aria-hidden /></a>
           <a href="#export" className={styles.featureLink}>Make it portable <ArrowRight aria-hidden /></a>
           <a href="#ai" className={styles.featureLink}>Put it to work <ArrowRight aria-hidden /></a>
@@ -127,7 +131,7 @@ export default async function HomePage() {
               <p className="mt-5 max-w-2xl text-xl leading-relaxed text-muted-foreground">The PulsHealth web app turns your synced data into a place to see your day, explore your history, and look closer at every workout.</p>
             </div>
             <div className="flex flex-wrap gap-3 lg:justify-end">
-              <Button asChild size="lg"><a href={DEMO_URL}>Try the web app <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></a></Button>
+              <Button asChild size="lg"><a href={DEMO_URL}>Try the dashboard <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></a></Button>
               <Button asChild size="lg" variant="outline"><a href={SIGNUP_URL}>Request an account</a></Button>
             </div>
           </div>
