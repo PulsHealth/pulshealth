@@ -11,6 +11,18 @@ Blog remains linked from the footer.
 
 Page heroes begin with the title and description, without a page-label pill.
 
+The homepage leads with “Unlock your health data” and explains the promise as
+“Sync, export, and control your Apple Health data.” Its feature sequence is
+sync, export, data types/custom summaries, AI, then control. Keep this vocabulary
+consistent with the App Store copy in `docs/appstore/2.1-copy.md`, the About page,
+footer, and search metadata. Local exploration and exports need no account;
+database sync needs a compatible destination; AI tools connect through the
+database. Hosted account calls to action say “Request” because access requires
+approval. The pale blue, mint, and lilac product illustrations echo the approved
+Style A campaign while preserving the site's dark shell. Regenerate the tracked
+social sharing card with `cd site && bun scripts/gen-social-card.tsx` when that
+message changes.
+
 The main site is always dark and has no theme selector. Blog articles retain
 a light/dark toggle, default to dark, and save their choice separately in
 `pulshealth-blog-theme`; neither follows the system theme. The app's theme

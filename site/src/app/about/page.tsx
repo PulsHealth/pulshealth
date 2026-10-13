@@ -18,7 +18,7 @@ const points = [
   {
     icon: Lightbulb,
     title: "Why it exists",
-    body: "Apple Health keeps years of your data where only apps on your phone can read it, and its export is a zip of XML. I wanted my own history somewhere I could query, chart and hand to an AI, without giving it to anyone else.",
+    body: "Your health data should be useful beyond your phone. PulsHealth makes it easier to build a personal archive, create your own dashboards, and explore your history with AI, while choosing what you store and where it goes.",
   },
   {
     icon: User,
@@ -56,7 +56,7 @@ export default function AboutPage() {
       <PageHero
         size="compact"
         title="Your health data, yours to use"
-        lede="PulsHealth gets your Apple Health history off the iPhone and into a database you and your AI can use."
+        lede="Sync, export, and control your Apple Health data. Bring it into the files, databases, and AI tools you choose."
       />
 
       <section className="container mx-auto max-w-6xl px-4 py-20">

@@ -78,7 +78,7 @@ export function SiteFooter() {
               <span className="font-semibold">PulsHealth</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
-              Your Apple Health data, ready for you and your AI. Free, open-source app; hosted or self-hosted database.
+              Sync, export, and control your Apple Health data. Your database. Your AI tools. Your choice.
             </p>
           </div>
 
