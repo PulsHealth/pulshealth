@@ -5,6 +5,10 @@ package; this app is configuration, visibility, and lifecycle wiring. See
 [`PulsHealthSync/README.md`](../PulsHealthSync/README.md) for the engine and
 `CLAUDE.md` for the invariants.
 
+Sync, export, and control Apple Health data: explore on the phone, export CSV,
+JSON or JSONL without an account, and sync to a self-managed database or a
+compatible receiver. PulsHealth also offers hosted accounts.
+
 Published as
 [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) on the App
 Store (free). The listing material and the record of what shipped are in

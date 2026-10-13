@@ -199,22 +199,15 @@ and so are the ones decided against (its "Not planned").
 | App Review pushes back on the local-network ATS exception or on needing a server. | A review backend with credentials in the notes, and a plain description (`docs/appstore/`). |
 | The ingest attack surface is public. | `SECURITY.md`, auth-failure rate limiting, the scoped database role, per-device tokens. |
 
+PulsHealth also offers hosted accounts. The open-source stack remains available
+for a self-managed database, dashboard, and AI connection. Current hosted
+privacy and operating commitments are documented in
+[the privacy policy](privacy-policy.md) and
+[the hosted operations runbook](hosted-operations.md).
+
 ## 5. Out of scope
 
 - Android / Health Connect. The protocol is platform-neutral in shape, but
   the v1 type vocabulary is HealthKit identifiers.
-- A hosted PulsHealth service open to anyone without review. The
-  maintainer's instance takes access requests from anyone
-  (`WEB_SIGNUPS`, decided 2026-10-02) but creates nothing until the
-  maintainer approves each one, so it stays a personal install shared by
-  choice. Approving people the maintainer does not know makes them a holder
-  of strangers' health records: in the US the FTC Health Breach
-  Notification Rule likely applies (a breach must be notified), the App
-  Store privacy answer declares their data (changed to "Data Linked to You"
-  on 2026-10-02, `docs/appstore/listing.md`), and the instance owes them
-  deletion, which
-  it has (Delete my account, and purge on /admin). Password reset by email
-  and email verification are not built: a forgotten password is a new
-  invite, and approval is the verification.
 - Writing data back into HealthKit.
 - Native non-HTTP sinks in the app (see D3).

@@ -5,7 +5,7 @@ export const STATIC_PAGES: SearchItem[] = [
     id: 'page-home',
     type: 'page',
     title: 'Home',
-    description: 'The free iPhone app to explore, export and sync Apple Health to a database, hosted for you or self-hosted, and connect any AI agent over MCP. Open source, Apache-2.0',
+    description: 'Sync, export, and control Apple Health data. Explore the dashboard, export CSV and JSON, and connect compatible AI tools. Self-managed databases or hosted accounts. Free and open source.',
     href: '/',
     icon: 'Home',
   },

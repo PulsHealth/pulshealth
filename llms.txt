@@ -1,12 +1,12 @@
 # PulsHealth
 
-> Get Apple Health data out of the iPhone and use it with your own tools and AI assistants. A free iOS app explores and exports HealthKit data on the phone (no account), and syncs every sample — through the Swift package under it, as gzip NDJSON — to one database: the PulsHealth database, hosted by the developer at https://app.pulshealth.com (Claude connects to it over MCP with a sign-in), or a backend you run yourself. The repository ships that backend (PostgreSQL 17 + TimescaleDB, a Go ingest server, a read-only Go product API with OpenAPI, Grafana dashboards, a Next.js viewer and an MCP server) and the open sync protocol, so anyone can write their own receiver. Apache-2.0. The iOS app is free on the App Store (https://apps.apple.com/us/app/pulshealth/id6757657354); the self-hosted backend is pre-release. Site: https://pulshealth.com. Source: https://github.com/PulsHealth/pulshealth
+> Sync, export, and control your Apple Health data. Build a personal health database you manage, explore it with dashboards, and connect your own AI tools. The free iPhone and iPad app explores and exports HealthKit data without an account or database, and syncs to your self-managed backend or a compatible receiver. PulsHealth also offers hosted accounts at https://app.pulshealth.com. The repository includes the Swift sync package, PostgreSQL 17 + TimescaleDB, a Go ingest server, a read-only product API, Grafana, a Next.js dashboard, an MCP server, and the open Puls Sync Protocol v1. Apache-2.0. The app is free on the App Store (https://apps.apple.com/us/app/pulshealth/id6757657354); the self-hosted backend is pre-release. Site: https://pulshealth.com. Source: https://github.com/PulsHealth/pulshealth
 
 Dates on the wire are epoch milliseconds; every quantity type has one canonical unit; daily values are deduplicated across an iPhone and an Apple Watch, raw samples deliberately are not. Read `docs/database-guide.md` before drawing a conclusion from the data.
 
 ## Get it
 
-- The iOS app: https://apps.apple.com/us/app/pulshealth/id6757657354 — free, iPhone. Exploring and exporting need nothing else. To sync, sign up for the hosted PulsHealth database at https://app.pulshealth.com/signup, or bring up your own backend with one command (`README.md`).
+- The iOS app: https://apps.apple.com/us/app/pulshealth/id6757657354 — free, iPhone and iPad. Exploring and exporting need no account or database. To sync, set up your own backend (`README.md`), use a compatible receiver, or create a hosted account at https://app.pulshealth.com/signup.
 - The website: https://pulshealth.com — what the app does, the HealthKit knowledge base, the blog, and the project documentation rendered from this repository at https://pulshealth.com/docs/. Its source is `site/` in this repository.
 
 ## Start here
@@ -26,13 +26,13 @@ Dates on the wire are epoch milliseconds; every quantity type has one canonical 
 ## The data
 
 - [docs/database-guide.md](docs/database-guide.md): the authoritative guide to the schema — every table family, what each column means, which table answers which question, and the traps (device double counting above all). Rendered at https://pulshealth.com/docs/database/.
-- [docs/export.md](docs/export.md): bulk export of a whole range as streamed CSV or JSONL, over `GET /v1/export` or the `puls-export` CLI — and, with no server at all, from the app's Export tab. Rendered at https://pulshealth.com/docs/export/.
+- [docs/export.md](docs/export.md): on-device CSV, JSON and JSONL exports, custom aggregations and CSV layouts without a server; plus streamed CSV or JSONL over `GET /v1/export` and the `puls-export` CLI. Rendered at https://pulshealth.com/docs/export/.
 - [docs/api.md](docs/api.md): the product API, the read-only HTTP API over the data — quickstart, authentication, choosing the user, conventions, paging, errors and rate limits. Rendered at https://pulshealth.com/docs/api/.
 - [server/README.md](server/README.md): running the reference backend — Compose services, environment, schema migrations, the ingest wire format and the product API. Rendered at https://pulshealth.com/docs/server/.
 
 ## AI assistants
 
-- [docs/ai.md](docs/ai.md): connecting Claude (the Claude app, claude.ai, Claude Code) to the hosted PulsHealth database with a sign-in, or Claude Desktop, Claude Code, Cursor or a ChatGPT Action to your own server, and what each tool answers. Rendered at https://pulshealth.com/docs/ai/.
+- [docs/ai.md](docs/ai.md): connecting compatible AI assistants to your self-managed database over MCP or the product API, or to a hosted PulsHealth account with a sign-in, and what each tool answers. Rendered at https://pulshealth.com/docs/ai/.
 - [server/mcp/README.md](server/mcp/README.md): the MCP server itself — transports, configuration and its security model.
 
 ## Optional
