@@ -621,7 +621,7 @@ navigation, including categories, account controls and website resources. Choosi
 or pressing Escape closes it; Escape returns focus to the header menu button.
 The shared demo keeps a visible **Demo** badge even with the menu closed.
 The mobile menu puts health navigation above the same public resource links used
-on pulshealth.com. Both headers use full-width 56 px rows, 16 px edge padding,
+on pulshealth.com. Both headers use full-width 56 px rows, 32 px desktop / 24 px mobile edge padding (20 px on narrow phones),
 and the same 1024 px desktop breakpoint.
 
 Page headers begin with the title and description, without a page label above
