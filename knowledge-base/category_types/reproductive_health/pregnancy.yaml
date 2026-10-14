@@ -76,9 +76,6 @@ description: '## Overview
 
   Heart rate, body mass, sleep and activity can be compared within a recorded pregnancy interval when corresponding
   observations exist. Show source coverage and time trends rather than assuming a change is caused by pregnancy.
-  A wide interval may overlap many workouts and nights; those overlaps mark context, not a pregnancy measurement
-  during every overlapping sample.
-
 
   A separate pregnancy-test entry can document a saved test result. Temporal proximity does not establish that it
   created this pregnancy interval or that both records describe the same episode.

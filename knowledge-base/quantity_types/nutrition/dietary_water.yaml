@@ -74,13 +74,12 @@ description: '## What does Apple Health water intake measure?
   a gap as time between drinks.
 
 
-  ## What can workout and sleep context tell me?
+  ## Can a water log establish hydration needs?
 
 
-  A timestamp can be compared with a recorded workout or sleep interval, but that match does not establish ingestion
-  time. Workout duration alone cannot calculate sweat losses or a fluid prescription. A nighttime entry may reflect
-  delayed logging rather than drinking during sleep. Compare activity and water only on days with meaningful logging
-  coverage.
+  A logged timestamp does not establish ingestion time. Workout duration alone cannot calculate sweat losses or a
+  fluid prescription. Delayed logging can also shift entries to another reporting day. Compare activity and water
+  only on days with meaningful logging coverage.
 
 
   ## What did the database investigation support?

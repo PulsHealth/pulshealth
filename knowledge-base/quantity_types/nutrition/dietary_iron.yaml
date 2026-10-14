@@ -76,12 +76,11 @@ description: '## What does Apple Health iron intake record?
   without entries is missing coverage, not zero intake.
 
 
-  ## How do vitamin C, workouts and menstrual records help?
+  ## How do vitamin C and menstrual records provide context?
 
 
   Vitamin C can affect nonheme iron absorption, but co-logged quantities do not measure the amount absorbed. Menstrual
-  records describe separately recorded context; they do not quantify iron loss. Workout timing cannot show that
-  an iron entry improved performance. Comparisons require actual iron rows and appropriately aligned context, not
+  records describe separately recorded context; they do not quantify iron loss. Comparisons require actual iron rows and appropriately aligned context, not
   just the presence of these related types.
 
 
@@ -89,7 +88,7 @@ description: '## What does Apple Health iron intake record?
 
 
   The researched **365-day reporting window** contained no raw iron samples and no stored iron aggregates. Recorded
-  value ranges, unusually large entries, source-specific daily totals, logging gaps and workout or sleep comparisons
+  value ranges, unusually large entries, source-specific daily totals and logging gaps
   could not be measured. No empirical graph or nutrient-status conclusion is presented. Related measurements cannot
   supply an intake relationship without iron observations.
 

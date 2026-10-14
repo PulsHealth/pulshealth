@@ -96,8 +96,8 @@ description: '## What does a Walking Steadiness notification mean?
   neighbor; without explicit linkage it cannot be assumed to be the exact score that triggered the notification.
 
 
-  An event timestamp overlapping a workout or sleep interval does not establish that a fall or a new gait impairment
-  occurred then. Similarly, its stored start-to-end span should not be treated as the duration of a balance problem.
+  An event timestamp does not establish when walking quality changed. Its stored start-to-end span should not be
+  treated as the duration of a balance problem.
   The event is a summary notification about classification history.
 
 

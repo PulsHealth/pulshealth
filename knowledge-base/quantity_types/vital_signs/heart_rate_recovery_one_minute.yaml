@@ -125,11 +125,10 @@ description: '## What does one-minute heart rate recovery mean?
   categories to a wearable estimate without a matching validated protocol.
 
 
-  ## How does recovery relate to sleep and other metrics?
+  ## Which other fitness measurements add context?
 
 
-  No focus recovery point overlapped recorded sleep. Sleep may be relevant to recovery, but this type does not measure
-  recovery during sleep, and no sleep effect was established here. The research investigated same-source daily comparisons
+  The research investigated same-source daily comparisons
   with [resting heart rate](/knowledge-base/types/HKQuantityTypeIdentifierRestingHeartRate/), [HRV SDNN](/knowledge-base/types/HKQuantityTypeIdentifierHeartRateVariabilitySDNN/)
   and [VO2 max](/knowledge-base/types/HKQuantityTypeIdentifierVO2Max/). Sparse workout-selected dates and confounding
   make those associations exploratory.

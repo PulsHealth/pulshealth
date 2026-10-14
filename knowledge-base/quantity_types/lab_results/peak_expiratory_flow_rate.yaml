@@ -1,44 +1,27 @@
-identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Lab and Test Results"
-human_readable_name: "Peak Expiratory Flow Rate"
-short_description: "Maximum speed of exhalation measuring airway patency, essential for asthma self-monitoring and action plan guidance"
-icon: "lungs.fill"
-color: "#5AC8FA"
-default_unit: "L/min"
+identifier: HKQuantityTypeIdentifierPeakExpiratoryFlowRate
+source: HealthKit
+type: HKQuantityType
+category: Lab and Test Results
+human_readable_name: Peak Expiratory Flow Rate
+short_description: Maximum airflow during a forceful exhalation, recorded as a volume-per-time rate.
+icon: lungs.fill
+color: '#5AC8FA'
+default_unit: L/min
 supported_units:
-  - "L/min"
-  - "L/s"
-  - "mL/s"
-unit_description: "Liters per minute (L/min) measures the maximum airflow velocity during forced exhalation"
-aggregation_type: "discrete"
+- L/min
+- L/s
+unit_description: Liters per minute (L/min) measures the maximum airflow velocity during forced exhalation
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-  - "mostRecent"
-typical_range:
-  min: 200
-  max: 700
-  unit: "L/min"
-  notes: "Highly variable by age, sex, and height; personal best is the key reference value"
-clinical_ranges:
-  - population: "Adult Males"
-    normal: "400-700 L/min; varies significantly with height and age"
-  - population: "Adult Females"
-    normal: "300-500 L/min; varies significantly with height and age"
-  - population: "Green Zone (Asthma Action Plan)"
-    normal: "80-100% of personal best - indicates good control"
-  - population: "Yellow Zone (Asthma Action Plan)"
-    normal: "50-79% of personal best - indicates caution, increase medication"
-  - population: "Red Zone (Asthma Action Plan)"
-    normal: "<50% of personal best - medical emergency, seek immediate care"
+- discreteAverage
+- discreteMin
+- discreteMax
+- mostRecent
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -46,112 +29,122 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Personal Peak Flow Meters"
-    capability: "Simple mechanical measurement of peak expiratory flow"
-    examples:
-      - "Vitalograph asma-1"
-      - "Clement Clarke Mini-Wright"
-      - "Philips Personal Best"
-  - name: "Digital Peak Flow Meters"
-    capability: "Electronic PEF measurement with smartphone connectivity"
-    examples:
-      - "Smart Peak Flow"
-      - "MIR Smart One"
-      - "Nuvoair Air Next"
-  - name: "Combination Spirometry Devices"
-    capability: "Full spirometry including PEF measurement"
-    examples:
-      - "Propeller Health Peak Flow"
-      - "Cohero Health HeroTracker"
-primary_source: "Peak flow meters"
-description: |
-  ## Overview
-  Peak Expiratory Flow Rate (PEFR or PEF) measures the maximum speed at which air can be forcefully exhaled from the lungs. It provides a simple, accessible assessment of large airway patency and is a cornerstone of asthma self-management. Regular PEF monitoring helps patients recognize early signs of airway narrowing before symptoms become severe.
+- name: Authorized logging apps
+  capability: Can save this quantity with user permission; device support depends on the writing app.
+primary_source: Source-provided measurements or logs
+description: '## What does peak expiratory flow measure?
 
-  ## How It's Measured
-  PEFR measurement requires proper technique for reliable results:
-  - Patient stands upright (or sits if unable to stand)
-  - Takes a maximal deep breath to total lung capacity
-  - Places lips tightly around the mouthpiece
-  - Exhales as hard and fast as possible in a short, sharp burst
-  - Records the highest reading from three attempts
-  - Best performed at the same time daily (typically morning before bronchodilator)
-  - Personal best established during a period of good control guides interpretation
 
-  ## Health Significance
-  PEFR monitoring serves multiple clinical purposes:
-  - **Asthma action plan guidance**: Objective trigger for medication adjustments
-  - **Early warning system**: Detects airway narrowing before symptoms appear
-  - **Treatment response assessment**: Monitors effectiveness of medication changes
-  - **Trigger identification**: Correlates environmental exposures with airway changes
-  - **Diurnal variation assessment**: Morning dip >20% suggests poor control
-  - **Exercise-induced bronchoconstriction**: Pre/post exercise measurements diagnostic
+  Peak expiratory flow is the highest flow reached during a forceful exhalation. HealthKit stores a discrete volume-per-time
+  quantity, commonly displayed in liters per minute. Unlike [FEV1](/knowledge-base/types/HKQuantityTypeIdentifierForcedExpiratoryVolume1/),
+  it is a flow rate rather than the total volume exhaled over a fixed interval.
 
-  ## Clinical Interpretation Guidelines
-  When using PEFR for clinical management:
-  1. **Establish personal best**:
-     - Measure twice daily for 2-3 weeks when asthma is well-controlled
-     - Personal best is the highest reading achieved during this period
-     - Recalculate personal best after growth (children) or significant treatment changes
-  2. **Asthma Action Plan zones**:
-     - **Green (80-100% personal best)**: Maintain current treatment
-     - **Yellow (50-79% personal best)**: Increase controller medication per plan
-     - **Red (<50% personal best)**: Medical emergency; use rescue medication and seek immediate care
-  3. **Variability assessment**:
-     - Calculate diurnal variability: (Evening PEF - Morning PEF) / Average PEF x 100
-     - >20% variability suggests inadequate asthma control
-     - Day-to-day variability >10% also indicates suboptimal control
-  4. **Response to bronchodilator**:
-     - >15% improvement after beta-agonist suggests reversible airflow obstruction
-     - Document pre- and post-bronchodilator values
-  5. **Trend analysis**:
-     - Gradual decline over days may predict exacerbation 2-3 days in advance
-     - Look for patterns correlating with seasons, activities, or exposures
-  6. **Age-appropriate expectations**:
-     - Children's values increase with growth; update personal best regularly
-     - Elderly patients may have lower absolute values
 
-  ## Caveats & Limitations
-  - **Effort-dependent**: Poor technique yields falsely low values
-  - **Large airway focus**: May be normal despite significant small airway disease
-  - **Not interchangeable with FEV1**: PEFR and FEV1 measure different aspects of lung function
-  - **Device variability**: Different peak flow meters may yield different absolute values
-  - **Learning curve**: Patients need training for consistent technique
-  - **Limited in severe obstruction**: Very low values may be difficult to interpret
-  - **Not useful for all patients**: Some patients poorly perceive airway changes regardless of PEF
-  - **Personal best requirement**: Population-based predictions less useful than individual baseline
+  ## What is a useful comparison range?
 
-  ## Additional Notes
-  PEFR monitoring is most valuable when integrated into a written asthma action plan developed collaboratively with the patient. For digital health applications, trend visualization and automatic zone classification enhance patient engagement. Consider that some modern guidelines emphasize symptom-based management over PEFR monitoring, but PEF remains valuable for poor perceivers, severe asthma, and exercise-induced symptoms. Encourage patients to keep their peak flow meter in a consistent location to promote adherence to monitoring routines.
-metadata_keys:
-  - key: "HKMetadataKeyDeviceName"
-    description: "Name of the peak flow meter device"
-  - key: "HKMetadataKeyWasTakenInLab"
-    description: "Indicates if measurement was performed in a clinical setting"
-  - key: "HKMetadataKeyPersonalBestPEF"
-    description: "Patient's established personal best PEFR value for comparison"
+
+  A generic adult range can be misleading. Technique, equipment and individual characteristics matter, and an asthma
+  action plan may use a personal baseline and agreed zones. [NHLBI recommends keeping peak-flow results](https://www.nhlbi.nih.gov/health/asthma/living-with)
+  to compare them over time with the care plan. A missing measurement is not evidence that airflow was normal.
+
+
+  | Context | Why it matters |
+
+  |---|---|
+
+  | L/min versus L/s | Multiply L/s by 60 to express the same flow in L/min. |
+
+  | Same device and technique | A different method can disrupt comparisons. |
+
+  | Individual attempts versus selected result | Several blows may represent one test session. |
+
+  | Time and medication context | Measurements under different conditions may not be directly comparable. |
+
+
+  ## Why might several readings occur close together?
+
+
+  A measurement routine may include repeated blows and a selected result. The writing app can preserve the attempts
+  or only that result; rows therefore do not establish session count. Follow the measurement instructions agreed
+  with the provider and inspect source context before combining imports or calculating trends.
+
+
+  ## How does peak flow relate to symptoms and inhaler use?
+
+
+  [Inhaler logs](/knowledge-base/types/HKQuantityTypeIdentifierInhalerUsage/) and breathing symptoms can help describe
+  the circumstances around readings. A nearby count does not establish medication identity, dose or a treatment
+  effect. Comparisons need compatible testing conditions and known timing, rather than automatic pairing of the
+  nearest samples.
+
+
+  Peak flow is one part of an individual [asthma action plan](https://www.nhlbi.nih.gov/health/asthma/treatment-action-plan).
+  The graph alone cannot diagnose asthma or set treatment changes.
+
+
+  ## Does PulsHealth currently collect this type?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. Its presence in this reference does
+  not promise collection. Database absence does not establish absence in Apple Health.
+
+  '
 related_types:
-  - identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
-    relationship: "FEV1 provides more comprehensive assessment of airflow limitation than PEFR alone"
-  - identifier: "HKQuantityTypeIdentifierForcedVitalCapacity"
-    relationship: "FVC complements PEFR by measuring total lung capacity available for exhalation"
-  - identifier: "HKQuantityTypeIdentifierInhalerUsage"
-    relationship: "Inhaler use patterns help contextualize PEFR values and treatment burden"
-  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
-    relationship: "Severe PEFR reduction may be accompanied by decreased oxygen saturation"
-  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
-    relationship: "Increased respiratory rate may accompany low PEFR values during exacerbations"
+- identifier: HKQuantityTypeIdentifierForcedExpiratoryVolume1
+  relationship: A same-session result under the same testing condition can support FEV1/FVC interpretation; timestamps
+    alone do not identify a test session.
+- identifier: HKQuantityTypeIdentifierForcedVitalCapacity
+  relationship: A same-session result under the same testing condition can support FEV1/FVC interpretation; timestamps
+    alone do not identify a test session.
+- identifier: HKQuantityTypeIdentifierInhalerUsage
+  relationship: Logged puffs may supply context only when medication identity and timing are known; count alone
+    does not establish bronchodilator response.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierpeakexpiratoryflowrate"
-    type: "official"
-  - title: "GINA 2023 - Global Strategy for Asthma Management"
-    url: "https://ginasthma.org/gina-reports/"
-    type: "medical"
-  - title: "National Asthma Education and Prevention Program Guidelines"
-    url: "https://www.nhlbi.nih.gov/health-topics/asthma-management-guidelines"
-    type: "medical"
-  - title: "Peak Expiratory Flow Monitoring in Asthma Management"
-    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2679800/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: Peak Expiratory Flow Rate'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/peakexpiratoryflowrate
+  type: official
+- title: 'NHLBI: Managing asthma'
+  url: https://www.nhlbi.nih.gov/health/asthma/living-with
+  type: medical
+- title: 'NHLBI: Treatment and action plan'
+  url: https://www.nhlbi.nih.gov/health/asthma/treatment-action-plan
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Peak Flow: L/min, Personal Baselines & Recording'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Discrete deliberate-test result; repeated attempts may belong to one measurement session.
+  cadence: Source-specific testing or logging cadence; row count need not equal event or test-session count.
+  context: Preserve testing conditions or reliable medication context; timestamps alone cannot establish a physiological
+    response.
+  coverage: No observations in the reviewed database window; this does not establish absence in Apple Health or
+    normal physiology.
+  aggregation: Keep units and test sessions compatible. Selected session results differ from averages of individual
+    attempts.
+  metadata: No sample metadata available to inspect. Raw values cannot establish test quality or medication identity.
+  references:
+  - title: 'Apple: Peak Expiratory Flow Rate'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/peakexpiratoryflowrate
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: peak-expiratory-flow-rate
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  review_basis: coverage_and_sources
+  limitations: 'Verified 365-day snapshot had no observations for this identifier across raw, aggregate and workout-series
+    tables. Empirical ranges, outliers, cadence and relationships were unavailable; no measured figure is presented.
+    Current PulsHealth sync catalog does not include this type. Database absence does not establish absence in Apple
+    Health. Standard workout/sleep facets were assessed for applicability: deliberate test or medication context
+    is needed; continuous within-workout or within-sleep physiology comparisons are inappropriate for these records.'

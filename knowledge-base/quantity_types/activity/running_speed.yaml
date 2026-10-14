@@ -82,7 +82,7 @@ description: '## What does running speed measure?
   is also different from running cadence in steps per minute.
 
 
-  ## How does it change during a workout or sleep?
+  ## How does it change through a run?
 
 
   Speed decreased by a median **0.26 m/s** from the first to last elapsed-time third across 13 runs. The calculation
@@ -92,7 +92,7 @@ description: '## What does running speed measure?
 
 
   Every quarter reading overlapped a recorded workout; none overlapped a recorded asleep interval. The example therefore
-  supports running comparisons, but does not supply a sleep baseline. A day without readings means no stored observation
+  supports comparisons within and between runs. A day without readings means no stored observation
   of this type, rather than a physiological zero.
 
 

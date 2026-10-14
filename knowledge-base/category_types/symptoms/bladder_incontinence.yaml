@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierBladderIncontinence"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Bladder Incontinence"
-short_description: "Tracks episodes of involuntary urine leakage."
-icon: "drop.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierBladderIncontinence
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Bladder Incontinence
+short_description: 'Bladder Incontinence in Apple Health: saved category values, useful reporting context and
+  limits of symptom histories.'
+icon: drop.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent.
+- value: 2
+  name: mild
+  description: Subjectively mild severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate severity.
+- value: 4
+  name: severe
+  description: Subjectively severe severity.
 ios_introduced:
-  version: "13.6"
+  version: '14.0'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,80 +42,106 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Bladder incontinence (urinary incontinence) refers to the involuntary leakage of urine. This HealthKit category type allows users to track incontinence episodes and their severity, providing valuable data for diagnosing the type of incontinence and monitoring treatment effectiveness.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; available logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Urinary incontinence affects millions of people and can significantly impact quality of life. Tracking frequency and severity helps clinicians differentiate between types of incontinence and guide appropriate treatment strategies.
 
-  Types of urinary incontinence include:
-  - **Stress incontinence**: Leakage during activities that increase abdominal pressure (coughing, sneezing, exercise)
-  - **Urge incontinence**: Sudden, intense urge followed by involuntary leakage (overactive bladder)
-  - **Mixed incontinence**: Combination of stress and urge incontinence
-  - **Overflow incontinence**: Frequent or constant dribbling due to incomplete bladder emptying
-  - **Functional incontinence**: Physical or cognitive limitations preventing timely bathroom access
+  Bladder Incontinence records a reported urinary leakage symptom and its subjective severity. It does not
+  measure urine volume or encode a clinical incontinence subtype.
 
-  Common associated conditions:
-  - Pelvic floor dysfunction
-  - Pregnancy and postpartum changes
-  - Menopause and estrogen deficiency
-  - Prostate enlargement or surgery
-  - Neurological conditions (multiple sclerosis, Parkinson's, stroke)
-  - Urinary tract infections
-  - Diabetes mellitus
-  - Obesity
-  - Chronic constipation
 
-  ## When to Seek Medical Attention
-  Users should consult a healthcare provider when:
-  - Incontinence is new or worsening
-  - Episodes significantly affect quality of life or daily activities
-  - Incontinence is accompanied by pain, blood in urine, or fever
-  - There is difficulty emptying the bladder completely
-  - Neurological symptoms are present (numbness, weakness)
-  - Incontinence occurs after surgery or trauma
-  - Conservative measures (pelvic floor exercises) are ineffective
+  ## What do the saved values mean?
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Triggers (exercise, caffeine, alcohol, certain activities)
-  - Time of day patterns (nocturnal vs. daytime)
-  - Correlation with fluid intake
-  - Treatment response to pelvic floor therapy or medications
-  - Progression or improvement over time
-  - Postpartum recovery trajectory
 
-  ## Caveats & Limitations
-  - Does not distinguish between types of incontinence (stress vs. urge)
-  - Volume of leakage is not captured
-  - Cannot assess underlying cause without additional evaluation
-  - Sensitive data that users may underreport due to embarrassment
-  - Does not capture associated urgency or frequency
-  - Pad usage and impact on daily life not recorded
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | Code | Label | Meaning |
+
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Subjectively mild severity |
+
+  | 3 | moderate | Subjectively moderate severity |
+
+  | 4 | severe | Subjectively severe severity |
+
+
+  Unspecified is not notPresent. The mild, moderate and severe labels reflect the report; their integer codes
+  are not a calibrated clinical scale and should not be averaged as measurements.
+
+
+  ## Does one entry represent one leakage episode?
+
+
+  Not necessarily. A source may save a point observation or an interval summarizing a period. Counting saved
+  records therefore counts reports, not reliably the number of leakage episodes. The severity code also does
+  not specify how often leakage happened or how much urine was lost.
+
+
+  A separate bladder diary can preserve timing, bathroom visits and circumstances that the category omits.
+  In particular, the value does not distinguish leakage with coughing or exertion from leakage associated with
+  urgency. NIDDK recommends discussing bladder control problems with a health professional; an Apple Health
+  label cannot determine the cause or treatment.
+
+
+  ## How should a recorded history be read?
+
+
+  Entries follow the source’s logging behavior, with no fixed sensor sampling interval. Missing dates mean
+  no available report, rather than an explicit negative observation. A saved interval need not describe a continuous
+  episode, and overlapping records from different sources should be reviewed before counting reports or days.
+
+
+  ## Is this type available in PulsHealth?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. The selected database review contained
+  no corresponding records; that does not establish whether entries exist in Apple Health. No example distribution
+  or logging cadence could be measured.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierConstipation"
-    relationship: "Chronic constipation can contribute to incontinence"
-  - identifier: "HKQuantityTypeIdentifierNumberOfTimesFallen"
-    relationship: "Falls may indicate functional incontinence in elderly"
-  - identifier: "HKCategoryTypeIdentifierPregnancyTestResult"
-    relationship: "Pregnancy significantly affects bladder function"
-  - identifier: "HKQuantityTypeIdentifierBodyMass"
-    relationship: "Obesity is a risk factor for urinary incontinence"
+- identifier: HKCategoryTypeIdentifierPelvicPain
+  relationship: Separate pelvic symptom that can be recorded for a clinical history.
+- identifier: HKCategoryTypeIdentifierCoughing
+  relationship: Circumstances may be relevant to a diary, but coinciding reports do not classify incontinence.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierBladderIncontinence"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierbladderincontinence"
-    type: "official"
-  - title: "Urinary Incontinence in Women - ACOG"
-    url: "https://www.acog.org/womens-health/faqs/urinary-incontinence"
-    type: "medical"
-  - title: "Urinary Incontinence - NIDDK"
-    url: "https://www.niddk.nih.gov/health-information/urologic-diseases/bladder-control-problems"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Bladder Incontinence — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/bladderincontinence
+  type: official
+- title: Symptom severity values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Bladder control problems — NIDDK
+  url: https://www.niddk.nih.gov/health-information/urologic-diseases/bladder-control-problems
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Bladder Incontinence in Apple Health: what severity records'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: bladder-incontinence
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified no observations across bounded quantity, category, aggregate and workout-series inventories;
+    this identifier is not listed in the current sync catalog. Apple Health absence cannot be inferred. No
+    empirical frequencies, source differences, cadence, outliers or related-type comparisons are available.
+    Category codes are labels, not measurements; recorded intervals do not establish clinical episode duration.
+    Generic workout or sleep comparisons are not applicable to this review.

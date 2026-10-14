@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierAcne"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Acne"
-short_description: "Tracks acne breakouts and their severity."
-icon: "face.smiling"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierAcne
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Acne
+short_description: 'Acne in Apple Health: saved category values, useful reporting context and limits of symptom
+  histories.'
+icon: face.smiling
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent.
+- value: 2
+  name: mild
+  description: Subjectively mild severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate severity.
+- value: 4
+  name: severe
+  description: Subjectively severe severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,71 +42,102 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Acne is a common skin condition involving inflammation of hair follicles and sebaceous glands, resulting in pimples, blackheads, whiteheads, and sometimes deeper cysts or nodules. This HealthKit category type enables users to log acne breakouts and their severity, helping identify triggers and treatment effectiveness over time.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; available logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  While often considered a cosmetic concern, acne can significantly impact quality of life and may indicate underlying hormonal or systemic conditions. Tracking acne patterns provides valuable clinical insights for dermatological care and hormonal assessment.
 
-  Common associated conditions include:
-  - Hormonal fluctuations (menstrual cycle, puberty, menopause)
-  - Polycystic ovary syndrome (PCOS)
-  - Cushing's syndrome
-  - Medication side effects (corticosteroids, lithium, androgens)
-  - Dietary sensitivities (high-glycemic foods, dairy)
-  - Stress-related exacerbations
-  - Contact or cosmetic reactions
+  Acne is a reported symptom in Apple Health. Each entry records a subjective severity category, rather than
+  a lesion count or a dermatologist’s assessment.
 
-  ## When to Seek Medical Attention
-  Users should consult a healthcare provider when acne:
-  - Is severe, widespread, or cystic
-  - Leaves scarring
-  - Does not respond to over-the-counter treatments after 2-3 months
-  - Appears suddenly in adulthood with other symptoms (hirsutism, irregular periods)
-  - Is associated with signs of systemic illness
-  - Causes significant psychological distress
-  - Occurs with rapid weight changes or menstrual irregularities
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Menstrual cycle correlations (hormonal acne typically worsens premenstrually)
-  - Dietary triggers
-  - Stress-related flares
-  - Treatment response over time
-  - Seasonal variations
-  - Medication-induced changes
+  ## What do the saved values mean?
 
-  ## Caveats & Limitations
-  - Severity assessment is subjective and may vary between users
-  - Does not capture acne type (comedonal, inflammatory, cystic)
-  - Location of breakouts is not recorded
-  - Cannot assess scarring risk
-  - Limited value without photographic documentation
-  - Self-reported data may not align with clinical grading scales
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+
+  | Code | Label | Meaning |
+
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Subjectively mild severity |
+
+  | 3 | moderate | Subjectively moderate severity |
+
+  | 4 | severe | Subjectively severe severity |
+
+
+  Unspecified is not notPresent. The mild, moderate and severe labels reflect the report; their integer codes
+  are not a calibrated clinical scale and should not be averaged as measurements.
+
+
+  ## What can a breakout history tell you?
+
+
+  Keep the meaning of each severity label consistent when looking at a history. The category alone does not
+  describe where a breakout appeared, which lesions were present or whether it left scars. Those details require
+  a separate note or clinical assessment.
+
+
+  A calendar of reports can help organize a conversation about recurring breakouts. If [Menstrual Flow](/knowledge-base/types/HKCategoryTypeIdentifierMenstrualFlow/)
+  was also recorded, dates can be viewed together; coinciding reports do not identify a hormonal cause. A change
+  in logging frequency can resemble a change in symptoms.
+
+
+  ## How should a recorded history be read?
+
+
+  Entries follow the source’s logging behavior, with no fixed sensor sampling interval. Missing dates mean
+  no available report, rather than an explicit negative observation. A saved interval need not describe a continuous
+  episode, and overlapping records from different sources should be reviewed before counting reports or days.
+
+
+  ## Is this type available in PulsHealth?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. The selected database review contained
+  no corresponding records; that does not establish whether entries exist in Apple Health. No example distribution
+  or logging cadence could be measured.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Hormonal acne often correlates with menstrual cycle phase"
-  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
-    relationship: "Hormonal changes during ovulation may affect acne"
-  - identifier: "HKCategoryTypeIdentifierMoodChanges"
-    relationship: "Stress and mood can influence acne severity"
-  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
-    relationship: "Poor sleep quality may exacerbate acne"
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separate cycle dates can contextualize recurring reports without identifying a cause.
+- identifier: HKCategoryTypeIdentifierDrySkin
+  relationship: A separate skin symptom; does not establish that the same area is affected.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierAcne"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifieracne"
-    type: "official"
-  - title: "Acne - American Academy of Dermatology"
-    url: "https://www.aad.org/public/diseases/acne"
-    type: "medical"
-  - title: "Acne Vulgaris - JAMA Patient Page"
-    url: "https://jamanetwork.com/journals/jama/fullarticle/2767070"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Acne — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/acne
+  type: official
+- title: Symptom severity values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Acne in Apple Health: severity and breakout history'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: acne
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified no observations across bounded quantity, category, aggregate and workout-series inventories;
+    this identifier is not listed in the current sync catalog. Apple Health absence cannot be inferred. No
+    empirical frequencies, source differences, cadence, outliers or related-type comparisons are available.
+    Category codes are labels, not measurements; recorded intervals do not establish clinical episode duration.
+    Generic workout or sleep comparisons are not applicable to this review.

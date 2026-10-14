@@ -85,12 +85,10 @@ description: '## What does Apple Health record?
   intake change through a different food database or export policy.
 
 
-  ## Can workouts, sleep or other nutrients explain a change?
+  ## How can related nutrient logs be compared?
 
 
-  A sample timestamp inside a workout or sleep interval is time assigned by the source; it does not establish
-  when the record was saved, verify ingestion or demonstrate a physiological response. Without focal nutrient
-  records, this review could not estimate workout, sleep or nutrient relationships.
+  Without records for this nutrient, the review could not estimate relationships with other nutrient logs.
 
 
   When records are available, compare compatible sources and days with adequate logging. Similar timestamps

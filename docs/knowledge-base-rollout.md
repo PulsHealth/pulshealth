@@ -52,13 +52,35 @@ Completion now covers **130 of 178 entries**, leaving the **48 Batch 4 entries**
 Source YAML metadata remains the completion authority.
 See [issue #239](https://github.com/PulsHealth/pulshealth/issues/239).
 
+## Batch 4 completion
+
+All 48 remaining symptom, specialist-measurement and characteristic entries
+completed coverage and primary-source review on 2026-10-14. Fresh bounded
+inventories verified no observations for the 42 sample types. Four characteristic
+properties lack matching storage; two have current PulsHealth profile fields
+available. These profile fields come from app configuration, and their presence
+does not verify a HealthKit characteristic getter or provide revision history.
+No personal profile values were exported, and no artificial time-series analysis
+or measured figures were created.
+
+Each entry has a private source review, coverage report, final-article hash and
+completion metadata. Seven assigned types are in the current sync catalog;
+unsupported collection and unknown phone coverage remain explicit limitations.
+The public-question audit also reviewed all 130 earlier entries, updating 97
+descriptions to remove irrelevant workout, sleep and range questions. The eleven
+research facets remain a private applicability checklist.
+
+Completion now covers **all 178 entries**. Source YAML metadata remains the
+completion authority. See [issue #241](https://github.com/PulsHealth/pulshealth/issues/241).
+Merge and deployment receipts separately establish which revision is published.
+
 ## Priority
 
 Order batches by likely reader usefulness: common health interpretation first, then detailed activity and everyday tracking, nutrition/reproductive detail, and specialist/manual/reference entries. This is editorial judgment, not measured search-volume ranking. The traffic connector was unavailable while planning. Before starting a batch, compare recent knowledge-base landing-page traffic and Search Console clicks/impressions where accessible; promote high-demand entries while preserving exactly one assignment per entry. Missing user data must not be interpreted as low audience demand.
 
 Apple highlights overnight heart rate, respiratory rate, wrist temperature, blood oxygen and sleep in its [Vitals guide](https://support.apple.com/guide/watch/vitals-apd15aa7ed96/26/watchos/26), and heart, activity and related trends in its [Health overview](https://support.apple.com/en-ie/guide/iphone/iphbb8259c61/ios). Those product surfaces support the core-health priority; they do not establish search popularity. The existing pilots already cover heart rate and sleep.
 
-| Batch | Focus | Remaining entries |
+| Batch | Focus | Assigned entries |
 |---|---|---:|
 | 1 | Core health and everyday questions | 36 |
 | 2 | Fitness, mobility and everyday tracking | 39 |
@@ -70,12 +92,12 @@ The larger later batches can share more methods; core entries need more individu
 ## Workflow for every entry
 
 1. **Research first.** Query actual selected-user database data read-only across the relevant tables, with a bounded reporting window and source-aware counts. The pilot snapshot contains selected quantities only: absence from it cannot prove a new type has no database records. Persist a fresh immutable snapshot or verified per-table zero-row/unsupported-storage evidence. Do not query other users to fill gaps.
-2. **Execute and save a notebook before rewriting.** Use the existing eleven facets: provenance, coverage, sources, values, outliers, cadence, workout context, sleep context, time patterns, related types and type-specific questions. Record each result privately as measured, sparse, absent, unsupported or not applicable, with the reason and denominator. Shared extraction/context helpers are appropriate; retain an executed report and conclusions for each entry.
+2. **Save applicable research before rewriting.** Execute a notebook when observations support analysis; for verified absence or unsupported storage, preserve a coverage/source review without an empty notebook. Profile characteristics need current-field availability and provenance rather than time-series analysis. Use the existing eleven private review facets: provenance, coverage, sources, values, outliers, cadence, workout context, sleep context, time patterns, related types and type-specific questions. Record each result privately as measured, sparse, absent, unsupported or not applicable, with the reason and denominator. Shared extraction/context helpers are appropriate; retain the applicable report and conclusions for each entry. Mark irrelevant facets as not applicable rather than inventing questions.
 3. **Adapt to the type.** Continuous quantities need source-aware distributions and interval checks; cumulative records need duration, overlap and rate analysis; categories need allowed values, recorded severity/frequency and episode rules; events need recording/notification opportunities; correlations need paired components and units; characteristics need availability/provenance rather than artificial time-series statistics. Unsupported storage is distinct from an observed zero-row result.
 4. **Use evidence honestly.** Sparse records may support a small annotated example but not stable percentiles, trends or correlations. With absent data, publish sourced recording guidance and document the unavailable empirical facets. Never fabricate measured charts, infer zero symptoms from missing logs, or label observed distributions as clinical reference intervals. AI illustrations may explain a concept and must be identified as illustrations.
-5. **Rewrite for readers.** Keep question-led sections, short connected prose, compact comparison tables, useful figures beside the relevant section, captions/methods and related-type links. Use example/user data wording. Retain the approved header treatment: no summary lede, no explorer research list. Technical detail can remain in disclosure sections; the main explanation stays readable.
-6. **Preserve SEO.** Keep identifiers, URLs and canonical links; maintain descriptive titles, metadata and structured data. Answer the main intent early (meaning, recording frequency, workout/sleep behavior, interpretation and missing data). Use precise internal links and meaningful figure alt text. Link primary Apple documentation and appropriate clinical/research sources for their specific claims. Do not publish generic symptom advice merely to target broad medical keywords.
-7. **Track real completion.** Set `data_research.status: complete`, `reviewed_on`, `workflow_version`, all eleven `facets`, artifact key and truthful `limitations` only after the database investigation, executed notebook and article review are finished. Completion means the workflow was completed; it does not imply all measurements exist. Keep unavailable evidence explicit in the private report and metadata limitations. No public completion list is needed.
+5. **Rewrite for readers.** Choose questions that make sense for the measurement; the private research checklist is not a required public heading template. Omit irrelevant workout, sleep, range or relationship sections. Keep short connected prose, compact comparison tables, useful figures beside the relevant section, captions/methods and related-type links. Use example/user data wording. Retain the approved header treatment: no summary lede, no explorer research list. Technical detail can remain in disclosure sections; the main explanation stays readable.
+6. **Preserve SEO.** Keep identifiers, URLs and canonical links; maintain descriptive titles, metadata and structured data. Answer the main intent early (meaning, relevant recording behavior, interpretation and missing data). Use precise internal links and meaningful figure alt text. Link primary Apple documentation and appropriate clinical/research sources for their specific claims. Do not publish generic symptom advice merely to target broad medical keywords.
+7. **Track real completion.** Set `data_research.status: complete`, `reviewed_on`, `workflow_version`, all eleven `facets`, artifact key and truthful `limitations` only after the database investigation, applicable persisted research and article review are finished. Completion means the workflow was completed; it does not imply all measurements exist. Keep unavailable evidence explicit in the private report and metadata limitations. No public completion list is needed.
 8. **Validate and review.** Use a research agent and editorial agent with separate reviewer coverage; reuse agents across related families. Independently check calculations, sample/source selection, claims and chart labels. Validate YAML, generated app content, site lint/tests/build and export/public-tree gates. Review the local preview before merge. Deployment remains a separate action.
 
 Use multiple agents within each batch, split by coherent families and file ownership. Serialize shared renderer/schema changes. Preserve raw exports, executed notebooks and detailed reports privately; commit reusable methods, entry prose and approved deidentified figures. Close a batch only when every assigned entry has a reviewed article and persisted evidence, including documented missing-data outcomes.

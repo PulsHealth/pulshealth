@@ -1,37 +1,23 @@
-identifier: "HKQuantityTypeIdentifierInhalerUsage"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Lab and Test Results"
-human_readable_name: "Inhaler Usage"
-short_description: "Count of inhaler actuations for asthma and COPD management tracking"
-icon: "lungs.fill"
-color: "#5AC8FA"
-default_unit: "count"
+identifier: HKQuantityTypeIdentifierInhalerUsage
+source: HealthKit
+type: HKQuantityType
+category: Lab and Test Results
+human_readable_name: Inhaler Usage
+short_description: Recorded number of inhaler puffs; medication identity and technique need separate context.
+icon: lungs.fill
+color: '#5AC8FA'
+default_unit: count
 supported_units:
-  - "count"
-unit_description: "Count represents the number of inhaler actuations (puffs) delivered"
-aggregation_type: "cumulative"
+- count
+unit_description: Recorded number of inhaler puffs; count is not a drug mass or an absorbed dose.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-typical_range:
-  min: 0
-  max: 12
-  unit: "count"
-  notes: "Per day; rescue inhaler use >2 times/week (excluding pre-exercise use) suggests suboptimal asthma control"
-clinical_ranges:
-  - population: "Well-Controlled Asthma"
-    normal: "Rescue inhaler: 0-2 uses per week, maintenance inhaler: as prescribed (typically 1-2 times daily)"
-  - population: "Partially Controlled Asthma"
-    normal: "Rescue inhaler: 3-4 uses per week"
-  - population: "Uncontrolled Asthma"
-    normal: "Rescue inhaler: daily use or >2 canisters per year"
-  - population: "COPD Maintenance"
-    normal: "1-4 puffs of maintenance inhaler per day as prescribed"
+- cumulativeSum
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -39,110 +25,122 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Smart Inhalers"
-    capability: "Automatic tracking of inhaler actuations with timestamp and optional technique feedback"
-    examples:
-      - "Propeller Health Sensor"
-      - "Adherium Hailie"
-      - "Teva Digihaler"
-  - name: "Connected Inhaler Add-ons"
-    capability: "Clip-on sensors that attach to existing inhalers"
-    examples:
-      - "FindAir ONE"
-      - "Cohero Health HeroTracker"
-  - name: "Integrated Smart Inhalers"
-    capability: "Built-in sensors with technique assessment"
-    examples:
-      - "Teva ProAir Digihaler"
-      - "Teva AirDuo Digihaler"
-      - "Teva ArmonAir Digihaler"
-primary_source: "Smart inhaler devices and connected sensors"
-description: |
-  ## Overview
-  Inhaler Usage tracks the number of actuations (puffs) from inhalers used in asthma and COPD management. This data enables objective assessment of medication adherence, rescue medication reliance, and overall respiratory disease control. The metric distinguishes between maintenance therapy compliance and breakthrough symptom management.
+- name: Authorized logging apps
+  capability: Can save this quantity with user permission; device support depends on the writing app.
+primary_source: Source-provided measurements or logs
+description: '## What does an inhaler usage count mean?
 
-  ## How It's Measured
-  Inhaler usage is captured through various smart device technologies:
-  - **Sensor-equipped inhalers**: Built-in electronics detect canister actuation
-  - **Add-on sensors**: Attachable devices that clip onto standard inhalers
-  - **Manual logging**: Patient self-reported entries in health apps
-  - Data captured includes timestamp, number of actuations, and sometimes GPS location
-  - Advanced devices may assess inhalation technique (flow rate, duration, synchronization)
-  - Data syncs to smartphone apps and integrates with HealthKit
 
-  ## Health Significance
-  Inhaler usage data provides critical insights for respiratory disease management:
-  - **Asthma control assessment**: Rescue inhaler frequency indicates symptom burden
-  - **Adherence monitoring**: Maintenance inhaler use patterns reveal medication compliance
-  - **Exacerbation prediction**: Increasing rescue use may predict impending exacerbations
-  - **Treatment optimization**: Identifies need for step-up therapy or medication changes
-  - **Trigger identification**: Location and time patterns may reveal environmental triggers
-  - **Cost management**: Over-reliance on rescue inhalers indicates suboptimal control
+  HealthKit''s Inhaler Usage type records the number of puffs taken from an inhaler. It is cumulative count data:
+  a record can represent one puff or several. The quantity alone does not identify the medicine, its strength, an
+  inhaled dose in milligrams, or whether technique was effective.
 
-  ## Clinical Interpretation Guidelines
-  When reviewing inhaler usage data for clinical decisions:
-  1. **Distinguish inhaler types**:
-     - Rescue/reliever (SABA): Beta-agonists like albuterol for acute symptoms
-     - Controller/maintenance: ICS, LABA, or combination products for prevention
-     - Monitor both patterns separately for complete picture
-  2. **Asthma control indicators** (per GINA guidelines):
-     - Well-controlled: Rescue use ≤2 times/week
-     - Not well-controlled: Rescue use >2 times/week
-     - Very poorly controlled: Rescue use daily or multiple times daily
-  3. **Adherence assessment**:
-     - Maintenance inhaler: <80% of prescribed doses suggests poor adherence
-     - Look for patterns: weekend drops, evening doses missed, vacation gaps
-  4. **Red flags requiring intervention**:
-     - Rescue inhaler use >2 canisters per year
-     - Increasing frequency trend over weeks
-     - Nighttime rescue use (indicates nocturnal symptoms)
-  5. **COPD considerations**:
-     - Increased reliever use may indicate exacerbation onset
-     - Triple therapy adherence critical for severe COPD
 
-  ## Caveats & Limitations
-  - **Does not confirm drug delivery**: Actuation recorded even if technique is poor
-  - **Inhaler type ambiguity**: HealthKit may not distinguish between different inhalers
-  - **Manual entry reliability**: Self-reported data subject to recall bias
-  - **Device compatibility**: Not all inhalers have smart sensor options
-  - **Battery and connectivity issues**: May cause gaps in automated tracking
-  - **Over-reliance on counting**: Does not capture inhaler technique quality
-  - **Priming doses**: Device may count priming actuations as therapeutic uses
-  - **Shared inhalers**: Data may not reflect single-patient use
+  ## Can puff counts distinguish reliever and controller treatment?
 
-  ## Additional Notes
-  Inhaler usage data is most valuable when combined with symptom diaries, peak flow measurements, and spirometry results. For clinical consultations, review usage trends over weeks to months rather than individual days. Smart inhaler programs have demonstrated improved adherence and reduced exacerbations when combined with patient education and feedback. Consider integrating inhaler data with environmental monitoring (pollen counts, air quality) to identify trigger patterns.
-metadata_keys:
-  - key: "HKMetadataKeyDeviceName"
-    description: "Name of the smart inhaler or sensor device"
-  - key: "HKMetadataKeyInhalerType"
-    description: "Type of inhaler: rescue/reliever vs. maintenance/controller"
-  - key: "HKMetadataKeyMedicationName"
-    description: "Name of the medication in the inhaler"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier for syncing data across devices"
+
+  Only with separate, reliable medication context. A total count cannot tell whether use was scheduled, symptom-driven
+  or part of an agreed plan before exercise. It also cannot establish adherence without the prescribed schedule
+  and complete logging coverage. [NHLBI''s asthma guidance](https://www.nhlbi.nih.gov/health/asthma/treatment-action-plan)
+  centers these decisions on an individual action plan.
+
+
+  | Recorded information | What it does not establish |
+
+  |---|---|
+
+  | Puff count | Drug name, strength or amount reaching the lungs |
+
+  | Sample timestamp | That a late or imported log was saved at the moment of use |
+
+  | Daily total | Treatment adherence or asthma control by itself |
+
+  | No records | No medication use |
+
+
+  ## How should daily totals and logging gaps be read?
+
+
+  Sum compatible, nonduplicated count contributions for the reporting day after reviewing sources. An app can save
+  one record per event or a summary, so the number of rows is different from the number of puffs. Overlapping manual
+  and imported logs can inflate totals; a change in logging app can change coverage.
+
+
+  There is no universal normal daily puff count across medicines and treatment plans. Compare recorded use with
+  the actual prescription and known coverage rather than applying a generic threshold or changing treatment from
+  the graph alone.
+
+
+  ## What other information makes the log useful?
+
+
+  An identified medicine, prescribed schedule, symptoms and [peak flow readings](/knowledge-base/types/HKQuantityTypeIdentifierPeakExpiratoryFlowRate/)
+  can make a review more informative. Their timing can describe context, but it does not prove a trigger or medication
+  response. Follow the agreed action plan when symptoms worsen; the count record is not a replacement for it.
+
+
+  ## Does PulsHealth currently collect this type?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. Its presence in this reference does
+  not promise collection. Database absence does not establish absence in Apple Health.
+
+  '
 related_types:
-  - identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
-    relationship: "FEV1 provides objective measure of airflow; contextualizes inhaler usage patterns"
-  - identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
-    relationship: "PEFR tracking complements inhaler data for comprehensive asthma monitoring"
-  - identifier: "HKQuantityTypeIdentifierForcedVitalCapacity"
-    relationship: "FVC helps assess overall lung function in context of inhaler requirements"
-  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
-    relationship: "SpO2 may drop during episodes requiring rescue inhaler use"
-  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
-    relationship: "Elevated respiratory rate may accompany need for rescue inhaler"
+- identifier: HKQuantityTypeIdentifierForcedExpiratoryVolume1
+  relationship: A same-session result under the same testing condition can support FEV1/FVC interpretation; timestamps
+    alone do not identify a test session.
+- identifier: HKQuantityTypeIdentifierPeakExpiratoryFlowRate
+  relationship: A related airflow measurement with different units and measurement semantics; compare compatible
+    testing contexts.
+- identifier: HKQuantityTypeIdentifierForcedVitalCapacity
+  relationship: A same-session result under the same testing condition can support FEV1/FVC interpretation; timestamps
+    alone do not identify a test session.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierInhalerUsage"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierinhalerusage"
-    type: "official"
-  - title: "GINA 2023 - Global Strategy for Asthma Management and Prevention"
-    url: "https://ginasthma.org/gina-reports/"
-    type: "medical"
-  - title: "Digital Health Technologies in Asthma Management"
-    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7463268/"
-    type: "research"
-  - title: "Smart Inhaler Technology Review"
-    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6702421/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: Inhaler Usage'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/inhalerusage
+  type: official
+- title: 'NHLBI: Managing asthma'
+  url: https://www.nhlbi.nih.gov/health/asthma/living-with
+  type: medical
+- title: 'NHLBI: Treatment and action plan'
+  url: https://www.nhlbi.nih.gov/health/asthma/treatment-action-plan
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Inhaler Usage: Puff Counts, Logging & Medication Context'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative recorded puff count; event or summary shape depends on the writing app.
+  cadence: Source-specific testing or logging cadence; row count need not equal event or test-session count.
+  context: Preserve testing conditions or reliable medication context; timestamps alone cannot establish a physiological
+    response.
+  coverage: No observations in the reviewed database window; this does not establish absence in Apple Health or
+    normal physiology.
+  aggregation: Sum compatible, nonduplicated puff counts; do not infer dose or adherence.
+  metadata: No sample metadata available to inspect. Raw values cannot establish test quality or medication identity.
+  references:
+  - title: 'Apple: Inhaler Usage'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/inhalerusage
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: inhaler-usage
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  review_basis: coverage_and_sources
+  limitations: 'Verified 365-day snapshot had no observations for this identifier across raw, aggregate and workout-series
+    tables. Empirical ranges, outliers, cadence and relationships were unavailable; no measured figure is presented.
+    Current PulsHealth sync catalog does not include this type. Database absence does not establish absence in Apple
+    Health. Standard workout/sleep facets were assessed for applicability: deliberate test or medication context
+    is needed; continuous within-workout or within-sleep physiology comparisons are inappropriate for these records.'

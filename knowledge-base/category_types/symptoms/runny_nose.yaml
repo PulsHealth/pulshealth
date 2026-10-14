@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierRunnyNose"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Runny Nose"
-short_description: "Tracks episodes and severity of nasal discharge"
-icon: "drop.fill"
-color: "#5AC8FA"
+identifier: HKCategoryTypeIdentifierRunnyNose
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Runny Nose
+short_description: 'Runny Nose in Apple Health: understand severity labels, logging intervals and the difference
+  between reported symptoms and measurements.'
+icon: drop.fill
+color: '#5AC8FA'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No runny nose or nasal discharge"
-  - value: 1
-    name: "present"
-    description: "Mild runny nose - occasional drip, minimal tissue use"
-  - value: 2
-    name: "moderate"
-    description: "Moderate runny nose - frequent discharge, regular tissue use"
-  - value: 3
-    name: "severe"
-    description: "Severe runny nose - constant dripping, significantly bothersome"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not a negative observation.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,101 +42,119 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging with severity"
-  - name: "Apple Watch"
-    capability: "Quick symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Runny nose (rhinorrhea) is the discharge of fluid from the nasal passages.
-  It can be watery, thick, clear, colored, or bloody depending on the underlying
-  cause. This data type enables tracking of nasal symptoms for pattern
-  identification and illness monitoring.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  - **Infection Monitoring**: Common symptom of viral upper respiratory infections
-  - **Allergy Tracking**: Key symptom of allergic rhinitis; tracking reveals
-    seasonal or trigger patterns
-  - **Cold/Flu Differentiation**: Pattern helps distinguish viral illnesses
-  - **Treatment Response**: Monitor effectiveness of antihistamines,
-    decongestants, or nasal steroids
-  - **Environmental Health**: May indicate air quality or irritant exposure issues
 
-  ## Clinical Context
-  **Common Causes:**
-  - Viral upper respiratory infection (common cold)
-  - Allergic rhinitis (hay fever)
-  - Non-allergic rhinitis (vasomotor rhinitis)
-  - Sinusitis
-  - Cold air or irritant exposure
-  - Spicy foods (gustatory rhinitis)
-  - Medication side effects
+  Runny Nose in Apple Health records a reported nasal symptom and its severity. The category does not measure
+  nasal discharge volume or identify its cause.
 
-  **Less Common Causes:**
-  - CSF leak (clear, watery discharge, especially after trauma)
-  - Foreign body (especially in children; often unilateral)
-  - Nasal polyps
-  - Deviated septum
 
-  ## When to Seek Medical Attention
-  - Clear, watery discharge after head injury (possible CSF leak)
-  - Unilateral discharge, especially if foul-smelling
-  - Persistent symptoms more than 10 days
-  - High fever with nasal symptoms
-  - Blood-tinged discharge without obvious cause
-  - Symptoms not responding to OTC treatments
-  - Chronic rhinitis affecting quality of life
-  - Symptoms suggesting bacterial sinusitis (facial pain, tooth pain,
-    purulent discharge, fever)
+  ## What do the saved values mean?
 
-  ## Pattern Recognition
-  Tracking runny nose can reveal:
-  - Seasonal patterns (allergic rhinitis)
-  - Correlation with specific environments (dust, pets, mold)
-  - Duration of illness episodes
-  - Response to antihistamines or other treatments
-  - Relationship to weather changes
-  - Morning vs. evening patterns
-  - Association with other symptoms (sneezing, congestion)
-  - Recurrent patterns suggesting chronic rhinitis
 
-  ## Caveats & Limitations
-  - Does not capture discharge characteristics (color, consistency)
-  - Subjective severity varies between individuals
-  - Cannot distinguish between causes (infectious vs. allergic)
-  - Does not capture associated symptoms in same entry
-  - Brief symptom episodes may not be logged
-  - Environmental context not captured
-  - Cannot differentiate anterior vs. posterior drainage
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External identifier for cross-referencing symptom entries"
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where symptom was logged"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+  | Code | Label | Interpretation |
+
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Reported mild severity |
+
+  | 3 | moderate | Reported moderate severity |
+
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified is not the same as notPresent, and a missing
+  record is neither. The integers identify labels; numerical averages and physiological reference ranges do
+  not apply.
+
+
+  ## How is runny nose different from congestion?
+
+
+  [Sinus Congestion](/knowledge-base/types/HKCategoryTypeIdentifierSinusCongestion/) is a separate category. A user
+  can log either or both, with independent severity labels. A runny-nose record should not be copied into the
+  congestion history simply because the symptoms concern the same area.
+
+
+  The label does not distinguish allergies from an infection, specify discharge characteristics or confirm
+  that a symptom was continuous throughout the saved interval. Those details need additional observations or
+  source notes.
+
+
+  ## What can a recurring pattern tell you?
+
+
+  A timeline can show when runny-nose observations were recorded and whether reported severity changed. Compare
+  periods with similar logging habits before describing a recurring pattern. More entries may reflect more
+  frequent logging rather than more severe symptoms.
+
+
+  Separately saved [Coughing](/knowledge-base/types/HKCategoryTypeIdentifierCoughing/) or [Sore Throat](/knowledge-base/types/HKCategoryTypeIdentifierSoreThroat/)
+  reports can add context. Co-recorded symptoms do not establish a diagnosis, shared cause or precise onset
+  time.
+
+
+  ## How should recording intervals be interpreted?
+
+
+  This is a logged symptom, with no fixed sensor sampling schedule. Start-to-start gaps describe when observations
+  were saved. A sample’s start and end times describe the interval supplied by its source; their difference
+  does not establish the full duration of a clinical episode. Repeated or overlapping records need review before
+  counting episodes.
+
+
+  This category is not currently listed in the PulsHealth sync catalog. No observations were present in the
+  reviewed user data, so recorded severity frequencies, source differences and logging intervals could not
+  be measured. That database coverage does not establish whether entries exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierSinusCongestion"
-    relationship: "Often co-occur; nasal congestion and discharge together"
-  - identifier: "HKCategoryTypeIdentifierSoreThroat"
-    relationship: "Post-nasal drip can cause sore throat"
-  - identifier: "HKCategoryTypeIdentifierCoughing"
-    relationship: "Post-nasal drip triggers cough"
-  - identifier: "HKCategoryTypeIdentifierHeadache"
-    relationship: "May indicate sinus involvement"
-  - identifier: "HKCategoryTypeIdentifierFever"
-    relationship: "Suggests infectious cause"
-  - identifier: "HKCategoryTypeIdentifierSneezing"
-    relationship: "Common co-occurring symptom, especially in allergies"
+- identifier: HKCategoryTypeIdentifierSinusCongestion
+  relationship: Distinct nasal symptom; record its severity independently.
+- identifier: HKCategoryTypeIdentifierCoughing
+  relationship: Separately logged symptom that can provide context without diagnosing a cause.
+- identifier: HKCategoryTypeIdentifierSoreThroat
+  relationship: Separate report; matching dates does not establish one episode.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierRunnyNose"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierrunnynose"
-    type: "official"
-  - title: "Allergic Rhinitis - ACAAI"
-    url: "https://acaai.org/allergies/allergic-conditions/allergic-rhinitis/"
-    type: "medical"
-  - title: "Common Cold - CDC"
-    url: "https://www.cdc.gov/common-cold/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Runny Nose — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/runnynose
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Category samples — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorysample
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Runny Nose in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: runny-nose
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: No focal observations in the verified database snapshot; empirical label frequencies, sources,
+    cadence and relationships are unavailable. Type is not in the current sync catalog; database absence does
+    not establish Apple Health absence. Category codes are subjective labels, not physiological measurements.
+    Source intervals are not verified clinical episodes. Workout and sleep facets have no measured comparison;
+    public discussion is included only where specifically useful.

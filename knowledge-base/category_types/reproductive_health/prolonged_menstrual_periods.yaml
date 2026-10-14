@@ -69,7 +69,7 @@ description: '## What does a prolonged-period assessment describe?
   reconstructing duration. The saved deviation interval itself is not a substitute for that bleeding history.
 
 
-  ## What do the category code and cadence mean?
+  ## Is the assessment code a duration measurement?
 
 
   The category uses **0, notApplicable**, a generic marker rather than a duration, severity or negative result.
@@ -77,8 +77,7 @@ description: '## What does a prolonged-period assessment describe?
 
 
   Start-to-start gaps between saved assessments describe recording spacing, not period frequency. Interval
-  timestamps do not establish when the notification or confirmation occurred. Overlap with workouts or sleep
-  identifies timeline context, not repeated measurements of bleeding duration during those activities.
+  timestamps do not establish when the notification or confirmation occurred. The interval is an assessment span, not repeated measurements of bleeding duration.
 
 
   ## What did the example data show?

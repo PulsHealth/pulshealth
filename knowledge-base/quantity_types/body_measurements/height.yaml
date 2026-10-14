@@ -71,10 +71,6 @@ description: |
 
   There is no universal healthy height interval. Population percentiles describe a reference distribution, while growth assessment requires age-appropriate charts and repeated measurements. A broad number range should not be treated as a diagnostic boundary or a rule for discarding data.
 
-  ## What happens during workouts or sleep?
-  Height is not ordinarily a continuously sensed workout or sleep quantity. A timestamp overlap would show when an entry occurred rather than establish how stature changed during the episode. No such comparison was possible with the absent observations here.
-
-  For repeated measurement research, use a consistent method and time of day, retain measurement uncertainty, and review actual paired records rather than assigning changes to recorded workout or sleep intervals.
 
   ## What other types depend on height?
   [BMI](/knowledge-base/types/HKQuantityTypeIdentifierBodyMassIndex/) uses height squared with [weight](/knowledge-base/types/HKQuantityTypeIdentifierBodyMass/). Body-composition producers may also use profile inputs in their own models. Those dependencies do not establish that HealthKit has a contemporaneous height observation or that the input has been recently verified.

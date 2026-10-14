@@ -1,44 +1,28 @@
-identifier: "HKQuantityTypeIdentifierForcedVitalCapacity"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Lab and Test Results"
-human_readable_name: "Forced Vital Capacity"
-short_description: "Total volume of air forcefully exhaled after maximum inhalation, essential for assessing lung capacity and restrictive diseases"
-icon: "lungs.fill"
-color: "#5AC8FA"
-default_unit: "L"
+identifier: HKQuantityTypeIdentifierForcedVitalCapacity
+source: HealthKit
+type: HKQuantityType
+category: Lab and Test Results
+human_readable_name: Forced Vital Capacity
+short_description: Total air volume exhaled during a forced breathing test after a full inhalation.
+icon: lungs.fill
+color: '#5AC8FA'
+default_unit: L
 supported_units:
-  - "L"
-  - "mL"
-  - "fl_oz_us"
-unit_description: "Liters (L) or milliliters (mL) representing the total volume of air that can be forcefully expelled from the lungs"
-aggregation_type: "discrete"
+- L
+- mL
+unit_description: Liters (L) or milliliters (mL) representing the total volume of air that can be forcefully expelled
+  from the lungs
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-  - "mostRecent"
-typical_range:
-  min: 2.0
-  max: 7.0
-  unit: "L"
-  notes: "Varies significantly with age, sex, height, and ethnicity; interpret using percent predicted values"
-clinical_ranges:
-  - population: "Healthy Adult Males"
-    normal: "4.0-6.0 L absolute; >80% predicted considered normal"
-  - population: "Healthy Adult Females"
-    normal: "3.0-4.5 L absolute; >80% predicted considered normal"
-  - population: "Mild Restriction"
-    normal: "70-79% predicted"
-  - population: "Moderate Restriction"
-    normal: "50-69% predicted"
-  - population: "Severe Restriction"
-    normal: "<50% predicted"
+- discreteAverage
+- discreteMin
+- discreteMax
+- mostRecent
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -46,104 +30,122 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Personal Spirometers"
-    capability: "Home spirometry for FVC measurement and lung function tracking"
-    examples:
-      - "Nuvoair Air Next"
-      - "MIR Smart One"
-      - "Propeller Health Sensor"
-  - name: "Clinical Spirometers"
-    capability: "Comprehensive pulmonary function testing with high accuracy"
-    examples:
-      - "Vitalograph"
-      - "CareFusion MasterScreen"
-      - "NDD EasyOne"
-  - name: "Portable Diagnostic Spirometers"
-    capability: "Office-based spirometry with full diagnostic capability"
-    examples:
-      - "Vyaire Micro Direct"
-      - "MIR Spirobank II"
-primary_source: "Spirometry devices"
-description: |
-  ## Overview
-  Forced Vital Capacity (FVC) represents the total volume of air that can be forcefully exhaled after taking the deepest possible breath. It is a fundamental measurement in pulmonary function testing, essential for evaluating lung capacity and identifying restrictive lung diseases that limit lung expansion.
+- name: Authorized logging apps
+  capability: Can save this quantity with user permission; device support depends on the writing app.
+primary_source: Source-provided measurements or logs
+description: '## What does forced vital capacity measure?
 
-  ## How It's Measured
-  FVC is measured during spirometry alongside FEV1:
-  - Patient inhales maximally to total lung capacity (TLC)
-  - Performs a forced, complete exhalation until no more air can be expelled
-  - Exhalation should continue for at least 6 seconds (adults) or 3 seconds (children)
-  - The spirometer records the total volume expelled during the maneuver
-  - Multiple attempts required; best result from technically acceptable maneuvers is recorded
-  - Quality criteria include consistent results (within 150 mL between best two attempts)
 
-  ## Health Significance
-  FVC is critical for multiple clinical assessments:
-  - **Restrictive disease diagnosis**: Reduced FVC with normal or elevated FEV1/FVC ratio suggests restriction
-  - **Interstitial lung disease monitoring**: Progressive FVC decline indicates disease worsening
-  - **Neuromuscular disease assessment**: FVC tracks respiratory muscle weakness progression
-  - **Surgical candidacy**: Preoperative pulmonary risk assessment
-  - **Pulmonary fibrosis prognosis**: Rate of FVC decline predicts outcomes
-  - **Obesity hypoventilation**: Assesses impact of body habitus on lung mechanics
+  FVC is the total volume exhaled during a forced breathing test after a full inhalation. HealthKit represents it
+  as a discrete volume, usually displayed in liters. It differs from [FEV1](/knowledge-base/types/HKQuantityTypeIdentifierForcedExpiratoryVolume1/),
+  the portion exhaled in the first second, and from total lung capacity, which includes air remaining in the lungs.
 
-  ## Clinical Interpretation Guidelines
-  When interpreting FVC in clinical practice:
-  1. **Percent predicted calculation**: Convert absolute FVC to percent of predicted using validated equations (GLI-2012)
-  2. **FEV1/FVC ratio analysis**:
-     - Normal or high ratio (>0.70) with low FVC suggests restrictive pattern
-     - Low ratio (<0.70 or below LLN) with low FVC suggests mixed pattern
-     - Confirmatory lung volume testing (TLC) needed for definitive restriction diagnosis
-  3. **Pattern recognition**:
-     - Obstructive: FEV1 reduced, FVC relatively preserved, low ratio
-     - Restrictive: Both reduced proportionally, normal or high ratio
-     - Mixed: Elements of both patterns
-  4. **Trend monitoring in disease**:
-     - IPF: >5% annual decline associated with increased mortality
-     - ALS: FVC <50% predicted indicates need for ventilatory support discussion
-  5. **Bronchodilator response**: FVC increase >200 mL suggests air trapping component
-  6. **Effort assessment**: Submaximal effort produces artificially low FVC
 
-  ## Caveats & Limitations
-  - **Effort and technique dependent**: Incomplete exhalation falsely lowers FVC
-  - **Cannot confirm restriction alone**: Requires total lung capacity measurement for definitive diagnosis
-  - **Posture effects**: Supine FVC lower than upright; significant difference suggests diaphragm weakness
-  - **Obesity considerations**: Obesity reduces FVC; may overestimate restrictive disease
-  - **Reference equation variability**: Different equations yield different predicted values
-  - **Home device limitations**: Consumer spirometers may not ensure adequate exhalation time
-  - **Reproducibility challenges**: Requires patient coaching for reliable results
-  - **Air trapping**: In obstructive disease, slow vital capacity may exceed FVC
+  ## Does a low FVC establish restrictive lung disease?
 
-  ## Additional Notes
-  For patients with chronic respiratory conditions, longitudinal FVC tracking is valuable for assessing disease progression and treatment response. Home spirometry data should be interpreted with awareness of potential technique variations. Significant changes (>10% from baseline) warrant clinical evaluation. In neuromuscular diseases like ALS, supine FVC provides additional information about diaphragm function that upright measurements may miss.
-metadata_keys:
-  - key: "HKMetadataKeyDeviceName"
-    description: "Name of the spirometry device used for measurement"
-  - key: "HKMetadataKeyWasTakenInLab"
-    description: "Indicates if measurement was performed in a clinical laboratory setting"
-  - key: "HKMetadataKeyReferenceRangeLowerLimit"
-    description: "Lower limit of normal range for the measurement"
-  - key: "HKMetadataKeyReferenceRangeUpperLimit"
-    description: "Upper limit of normal range for the measurement"
+
+  No. A reduced value can reflect several physiological or testing factors. [Assessment of restriction](https://erj.ersjournals.com/content/erj/60/1/2101499.full.pdf)
+  requires additional lung-volume testing and clinical interpretation. A generic liter cutoff or a raw HealthKit
+  value cannot establish a diagnosis.
+
+
+  | Context to retain | What it helps explain |
+
+  |---|---|
+
+  | Full inhalation and complete expiration | Technique can affect the measured volume. |
+
+  | Test quality and selected result | Individual attempts are different from a session''s reported result. |
+
+  | Before or after bronchodilator | Keep distinct testing conditions separate. |
+
+  | Reference equation and units | Compare measured volumes separately from derived reference scores. |
+
+
+  ## How should FVC be compared with FEV1?
+
+
+  Use values from the same test session and pre- or post-bronchodilator condition. The reported maximum FVC and
+  FEV1 may come from different acceptable maneuvers in that session under [ATS/ERS standards](https://pmc.ncbi.nlm.nih.gov/articles/PMC6794117/).
+  Do not divide unrelated averages or assume that timestamps identify a session.
+
+
+  Reference interpretation depends on more than absolute volume. The [ATS recommends a race-neutral approach](https://site.thoracic.org/about-us/news/ats-publishes-official-statement-on-race-ethnicity-and-pulmonary-function-test-interpretation),
+  so preserve the reference equation used instead of treating an older ethnicity adjustment as required. A low FVC
+  with a preserved ratio still needs the broader test report.
+
+
+  ## Why can values change between tests?
+
+
+  Technique, test conditions and equipment can differ, alongside changes in lung function. Compare compatible sessions
+  and retain quality information when available. A source may save every attempt or just one selected result; HealthKit
+  row counts therefore do not prove testing frequency. Missing entries do not establish normal values.
+
+
+  ## Does PulsHealth currently collect this type?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. Its presence in this reference does
+  not promise collection. Database absence does not establish absence in Apple Health.
+
+  '
 related_types:
-  - identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
-    relationship: "FEV1 is measured simultaneously; FEV1/FVC ratio distinguishes obstructive from restrictive patterns"
-  - identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
-    relationship: "PEFR assesses airflow; combined with FVC provides comprehensive pulmonary assessment"
-  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
-    relationship: "Respiratory rate may increase as compensation when FVC is significantly reduced"
-  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
-    relationship: "Severe FVC reduction may result in hypoxemia detectable by pulse oximetry"
+- identifier: HKQuantityTypeIdentifierForcedExpiratoryVolume1
+  relationship: A same-session result under the same testing condition can support FEV1/FVC interpretation; timestamps
+    alone do not identify a test session.
+- identifier: HKQuantityTypeIdentifierPeakExpiratoryFlowRate
+  relationship: A related airflow measurement with different units and measurement semantics; compare compatible
+    testing contexts.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierForcedVitalCapacity"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierforcedvitalcapacity"
-    type: "official"
-  - title: "ATS/ERS Standardization of Spirometry"
-    url: "https://www.thoracic.org/statements/resources/pft/spirometry.pdf"
-    type: "medical"
-  - title: "Interpretation of Pulmonary Function Tests - ATS/ERS Task Force"
-    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5548412/"
-    type: "medical"
-  - title: "Global Lung Function Initiative (GLI) Reference Equations"
-    url: "https://www.ers-education.org/guidelines/global-lung-function-initiative/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: Forced Vital Capacity'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/forcedvitalcapacity
+  type: official
+- title: 'ATS/ERS: Standardization of Spirometry 2019'
+  url: https://pmc.ncbi.nlm.nih.gov/articles/PMC6794117/
+  type: medical
+- title: 'ATS: Race-neutral spirometry interpretation'
+  url: https://site.thoracic.org/about-us/news/ats-publishes-official-statement-on-race-ethnicity-and-pulmonary-function-test-interpretation
+  type: medical
+- title: 'ERS/ATS: Interpreting lung function tests'
+  url: https://erj.ersjournals.com/content/erj/60/1/2101499.full.pdf
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Apple Health FVC: Lung Volume, Test Quality & FEV1/FVC'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Discrete deliberate-test result; repeated attempts may belong to one measurement session.
+  cadence: Source-specific testing or logging cadence; row count need not equal event or test-session count.
+  context: Preserve testing conditions or reliable medication context; timestamps alone cannot establish a physiological
+    response.
+  coverage: No observations in the reviewed database window; this does not establish absence in Apple Health or
+    normal physiology.
+  aggregation: Keep units and test sessions compatible. Selected session results differ from averages of individual
+    attempts.
+  metadata: No sample metadata available to inspect. Raw values cannot establish test quality or medication identity.
+  references:
+  - title: 'Apple: Forced Vital Capacity'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/forcedvitalcapacity
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: forced-vital-capacity
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  review_basis: coverage_and_sources
+  limitations: 'Verified 365-day snapshot had no observations for this identifier across raw, aggregate and workout-series
+    tables. Empirical ranges, outliers, cadence and relationships were unavailable; no measured figure is presented.
+    Current PulsHealth sync catalog does not include this type. Database absence does not establish absence in Apple
+    Health. Standard workout/sleep facets were assessed for applicability: deliberate test or medication context
+    is needed; continuous within-workout or within-sleep physiology comparisons are inappropriate for these records.'

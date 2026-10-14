@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierLowerBackPain"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Lower Back Pain"
-short_description: "Tracks episodes and severity of lower back pain"
-icon: "figure.stand"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierLowerBackPain
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Lower Back Pain
+short_description: 'Understand lower back pain in Apple Health: severity labels, useful symptom history and
+  recording limitations.'
+icon: figure.stand
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No lower back pain experienced"
-  - value: 1
-    name: "present"
-    description: "Mild pain - noticeable but does not limit activities"
-  - value: 2
-    name: "moderate"
-    description: "Moderate pain - limits some activities, may require medication"
-  - value: 3
-    name: "severe"
-    description: "Severe pain - significantly limits activities, requires intervention"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not an absent report.
+- value: 1
+  name: notPresent
+  description: Symptom explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Subjectively mild symptom severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate symptom severity.
+- value: 4
+  name: severe
+  description: Subjectively severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,96 +42,124 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging with severity"
-  - name: "Apple Watch"
-    capability: "Quick symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Lower back pain (lumbago) is one of the most common medical complaints worldwide,
-  affecting up to 80% of adults at some point. This data type allows tracking of
-  pain episodes, severity patterns, and response to treatment, supporting both
-  self-management and clinical consultation.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging interfaces depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  - **Prevalence**: Leading cause of disability worldwide
-  - **Chronicity Risk**: 5-10% of acute episodes become chronic (lasting >3 months)
-  - **Functional Impact**: Affects work capacity, mobility, and quality of life
-  - **Healthcare Utilization**: Tracking can support appropriate care-seeking
-  - **Treatment Response**: Enables monitoring of intervention effectiveness
 
-  ## Clinical Categories
-  Lower back pain is typically classified as:
-  - **Acute**: Less than 6 weeks duration
-  - **Subacute**: 6-12 weeks duration
-  - **Chronic**: Greater than 12 weeks duration
+  Lower Back Pain records a reported symptom at the lower back, using subjective severity labels. It does not
+  measure spine structure, nerve function or the cause of pain.
 
-  Most cases (85-90%) are "nonspecific" without identifiable structural cause.
 
-  ## When to Seek Medical Attention
-  **Red Flags Requiring Immediate Evaluation:**
-  - Loss of bladder or bowel control (cauda equina syndrome)
-  - Progressive leg weakness or numbness
-  - Pain after significant trauma
-  - Unexplained weight loss with back pain
-  - Fever with back pain
-  - History of cancer with new back pain
-  - Pain that wakes from sleep consistently
-  - Pain worsening despite rest
+  ## What do the severity labels mean?
 
-  **Other Reasons to Consult:**
-  - Pain lasting more than 6 weeks without improvement
-  - Pain radiating below the knee
-  - Significant functional limitation
-  - Need for work restrictions or disability documentation
 
-  ## Pattern Recognition
-  Tracking lower back pain can reveal:
-  - Relationship to specific activities (lifting, sitting, standing)
-  - Positional patterns (better/worse lying down, walking)
-  - Morning stiffness patterns (inflammatory vs. mechanical)
-  - Correlation with exercise or movement
-  - Response to rest, medication, or other interventions
-  - Cyclical patterns (menstrual, occupational, seasonal)
-  - Progressive vs. episodic nature
+  | Code | Label | Interpretation |
 
-  ## Caveats & Limitations
-  - Severity is subjective and varies between individuals
-  - Does not capture pain quality (sharp, dull, burning, aching)
-  - Cannot distinguish between different causes of back pain
-  - Does not record radiation pattern or neurological symptoms
-  - No standardized pain scale integration (e.g., 0-10 numeric)
-  - Cannot track functional disability separately from pain intensity
-  - Does not capture medication usage in same entry
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External identifier for cross-referencing symptom entries"
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where symptom was logged"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Explicitly reported absent |
+
+  | 2 | mild | Subjectively mild |
+
+  | 3 | moderate | Subjectively moderate |
+
+  | 4 | severe | Subjectively severe |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified and notPresent mean different things. The codes
+  identify labels; an average such as 2.5 is not a symptom measurement or a validated clinical score. Missing
+  entries are unknown, not automatically notPresent.
+
+
+  ## What makes a lower-back-pain history useful?
+
+
+  Notes about onset, location, radiation into a leg, functional limitations and changes over time add information
+  the category lacks. A severe entry is a reported experience, not a diagnosis of a slipped disc or proof of
+  an injury. Lower-back pain also differs from the separate Generalized Body Ache category.
+
+
+  If a source records activity around an episode, describe the timing and what the user reported. Calories,
+  steps or heart rate cannot establish which movement caused pain. The category itself does not specify whether
+  symptoms were brought on by lifting, sitting or another activity, and a long saved interval may summarize
+  a report rather than continuous pain.
+
+
+  ## How should repeated entries be read?
+
+
+  This is a logged observation, with no guaranteed recording frequency. Gaps between start times describe the
+  saved logging history, not symptom-free intervals. Source changes, retrospective entry and overlapping records
+  can change the apparent pattern. A sample''s start and end describe the interval the source saved; they do
+  not establish a distinct clinical episode or continuous symptom duration.
+
+
+  When summarizing a history, keep the category labels, reporting dates and source visible. Count explicitly
+  absent observations separately from missing days. Review unexpected labels or repeated overlapping records
+  before treating them as changes in health.
+
+
+  ## When does this need medical attention?
+
+
+  Seek emergency care for back pain with new bladder or bowel changes, loss of feeling around the genitals
+  or anus, or weakness or numbness in both legs. Sudden severe or rapidly worsening pain needs urgent advice.
+  Persistent pain or pain interfering with daily activities warrants medical review.
+
+
+  ## What can the available example establish?
+
+
+  No records of this type were found in the database research window, so severity frequencies, source differences
+  and logging patterns could not be measured. This HealthKit type is not listed in the current PulsHealth sync
+  catalog. Database coverage therefore cannot establish whether corresponding records exist in Apple Health,
+  and an empty timeline does not establish symptom absence.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierPelvicPain"
-    relationship: "Pain regions may overlap; gynecological causes can present as low back pain"
-  - identifier: "HKCategoryTypeIdentifierGeneralizedBodyAche"
-    relationship: "Systemic conditions may present with both"
-  - identifier: "HKQuantityTypeIdentifierStepCount"
-    relationship: "Activity levels may correlate with pain patterns"
-  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
-    relationship: "Mobility impairment indicator"
-  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
-    relationship: "Gait changes may indicate pain-related compensation"
-  - identifier: "HKWorkoutType"
-    relationship: "Exercise may trigger, exacerbate, or relieve symptoms"
+- identifier: HKCategoryTypeIdentifierGeneralizedBodyAche
+  relationship: Generalized aching is distinct from pain at the lower back.
+- identifier: HKCategoryTypeIdentifierPelvicPain
+  relationship: Different anatomical symptom report; retain its own label.
+- identifier: HKCategoryTypeIdentifierBladderIncontinence
+  relationship: New bladder changes with back pain need clinical assessment, not automated correlation.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierLowerBackPain"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierlowerbackpain"
-    type: "official"
-  - title: "Low Back Pain Clinical Guidelines - American College of Physicians"
-    url: "https://www.acponline.org/clinical-information/guidelines"
-    type: "medical"
-  - title: "Low Back Pain Fact Sheet - NINDS"
-    url: "https://www.ninds.nih.gov/health-information/disorders/back-pain"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Lower Back Pain — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/lowerbackpain
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Back pain and warning symptoms — NHS
+  url: https://www.nhs.uk/conditions/back-pain/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Lower Back Pain in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: lower-back-pain
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; empirical analysis skipped because no focal records were
+    present in the bounded database inventory. Type is not listed in the current sync catalog; database absence
+    cannot establish phone or symptom absence. Severity codes are labels, not numeric clinical measurements.
+    Cadence, source comparisons and related-type associations remain unmeasured; saved intervals do not establish
+    clinical episodes.

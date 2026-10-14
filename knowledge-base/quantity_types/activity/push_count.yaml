@@ -67,14 +67,14 @@ description: '## What is a wheelchair push count?
 
 
   The database check found **no push-count samples, daily aggregates or workout-series points** in the selected
-  reporting year. It therefore cannot supply measured push ranges, outliers, interval cadence or workout and sleep
+  reporting year. It therefore cannot supply measured push ranges, outliers, interval cadence or workout
   comparisons. No figure is invented for missing data, and missing rows are not zero pushes or evidence about wheelchair
   use.
 
 
   If records become available, examine source-specific interval amounts, durations, duplicate candidates and overlaps
-  before reporting daily sums. Compare recording density during workouts, and investigate sleep overlap for intervals
-  that cross context boundaries. Preserve original records while assessing unusual counts.
+  before reporting daily sums. Compare recording density during workouts and keep interval boundaries visible.
+  Preserve original records while assessing unusual counts.
 
 
   ## How does Push Count relate to wheelchair distance?

@@ -67,8 +67,6 @@ description: |
 
   All values were finite and positive. Within-source descriptive IQR checks flagged no records, but that does not independently validate scale accuracy. Keep unusual observations and check the original source, units and nearby readings before dismissing them.
 
-  ## Does weight change during workouts or sleep?
-  None of these weigh-ins overlapped a recorded workout or asleep interval. That provides no basis for estimating workout-related or overnight weight change. A weigh-in before and after an activity would require deliberate timing and comparable measurement conditions; sparse scale records cannot reconstruct a continuous curve.
 
   ## How does weight relate to BMI and body composition?
   [Body Mass Index](/knowledge-base/types/HKQuantityTypeIdentifierBodyMassIndex/) combines weight with height. All 218 main-source weight records matched BMI at an identical timestamp and source group. Their ratios were consistent with a fixed height, but no independently recorded [Height](/knowledge-base/types/HKQuantityTypeIdentifierHeight/) was available in the study window. Agreement therefore supports a consistency check, not verified height or proof of a particular producer algorithm.

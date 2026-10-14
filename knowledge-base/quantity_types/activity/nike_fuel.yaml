@@ -1,246 +1,152 @@
-# ============================================
-# HEALTHKIT DATA TYPE: Nike Fuel
-# ============================================
-
-# --- CORE IDENTIFICATION ---
-identifier: "HKQuantityTypeIdentifierNikeFuel"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Activity"
-human_readable_name: "Nike Fuel"
-short_description: "A proprietary Nike activity metric that quantifies overall physical activity into a single numeric score (largely deprecated)."
-
-# --- APPLE HEALTH UI ---
-icon: "flame.fill"
-color: "#FF9500"
-
-# --- UNITS & MEASUREMENT ---
-default_unit: "count"
+identifier: HKQuantityTypeIdentifierNikeFuel
+source: HealthKit
+type: HKQuantityType
+category: Activity
+human_readable_name: Nike Fuel
+short_description: NikeFuel activity points in Apple Health, with cumulative totals, historical records and source
+  limitations.
+icon: flame.fill
+color: '#FF9500'
+default_unit: count
 supported_units:
-  - "count"
-unit_description: "NikeFuel points - a proprietary unit developed by Nike that normalizes activity across different exercise types into a universal activity score. One NikeFuel point represents a standardized unit of physical activity."
-
-# --- STATISTICS ---
-aggregation_type: "cumulative"
+- count
+unit_description: Count of NikeFuel points earned; not steps, calories or minutes.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-
-# --- TYPICAL VALUES ---
-typical_range:
-  min: 0
-  max: 5000
-  unit: "count/day"
-  notes: "Daily NikeFuel targets varied by user; 2000-3000 NikeFuel was considered a moderate daily goal during the metric's active period. Elite athletes could exceed 5000 NikeFuel daily."
-
-clinical_ranges:
-  - population: "General users (historical)"
-    sedentary: "<1000 NikeFuel/day"
-    low_active: "1000-2000 NikeFuel/day"
-    active: "2000-3000 NikeFuel/day"
-    highly_active: ">3000 NikeFuel/day"
-
-# --- PLATFORM & AVAILABILITY ---
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
-  notes: "Available since initial HealthKit release as part of Nike partnership integration"
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
-  notes: "Supported on Apple Watch when paired with Nike+ Running app"
-deprecated: true
-deprecated_in: "Effectively deprecated by Nike circa 2018. Nike FuelBand hardware discontinued in 2014, NikeFuel tracking removed from most Nike apps by 2018."
-
-# --- PERMISSIONS & ACCESS ---
+deprecated: false
+deprecated_in: null
 writable: true
 requires_authorization: true
 sensitive_data: false
-
-# --- DATA SOURCES ---
 devices:
-  - name: "Nike FuelBand"
-    capability: "Primary device for NikeFuel tracking (2012-2014). Accelerometer-based wrist-worn tracker that calculated NikeFuel from arm movement patterns."
-    examples: ["Nike FuelBand", "Nike FuelBand SE"]
-  - name: "Nike+ SportWatch GPS"
-    capability: "GPS running watch that tracked NikeFuel during workouts."
-    examples: ["Nike+ SportWatch GPS"]
-  - name: "iPhone with Nike apps"
-    capability: "Nike+ Running and Nike+ Training apps calculated NikeFuel from phone accelerometer and workout data."
-    examples: ["Nike Run Club (formerly Nike+ Running)", "Nike Training Club"]
-  - name: "Apple Watch Nike+"
-    capability: "Early Apple Watch Nike+ editions supported NikeFuel tracking through companion apps."
-    examples: ["Apple Watch Nike+ Series 2", "Apple Watch Nike+ Series 3"]
-primary_source: "Nike FuelBand (historical) / Nike apps"
+- name: Authorized source apps
+  capability: Apps that write NikeFuel quantities with Health permission; current availability depends on the source.
+primary_source: Authorized source apps
+description: '## What are NikeFuel points in Apple Health?
 
-# --- DETAILED DESCRIPTION ---
-description: |
-  ## Overview
-  NikeFuel was a proprietary activity metric developed by Nike that aimed to provide a universal measure of physical activity regardless of exercise type. Launched in 2012 with the Nike FuelBand wearable, NikeFuel attempted to solve the problem of comparing different activities (running vs. swimming vs. basketball) by converting all movement into a single, dimensionless score.
 
-  The metric gained significant popularity between 2012-2016 but has since been largely abandoned by Nike. Understanding NikeFuel is primarily relevant for health consultants working with historical health data or clients who may have legacy NikeFuel records in their Apple Health database.
+  NikeFuel records the number of activity points earned under a source''s NikeFuel system. Apple defines it as a
+  **cumulative count quantity**, rather than a physical measurement. A point is not a step, calorie or exercise
+  minute, and HealthKit does not specify a conversion between them. [Apple documents the quantity](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/nikefuel).
 
-  ## Historical Context
 
-  **Timeline:**
-  - **2012:** Nike FuelBand launched alongside the NikeFuel metric
-  - **2014:** Nike discontinued FuelBand hardware; HealthKit integration added for iOS 8
-  - **2016:** Nike pivoted to focus on software (Nike Run Club, Nike Training Club)
-  - **2018:** NikeFuel tracking removed from most Nike apps
-  - **Present:** Metric remains in HealthKit for backward compatibility but no major apps actively write NikeFuel data
+  ## Is the HealthKit type deprecated?
 
-  **Market Impact:**
-  At its peak, NikeFuel was one of the most recognized fitness metrics, with over 20 million Nike FuelBand units sold. The concept of a universal activity score influenced subsequent developments in fitness tracking, though the proprietary nature of NikeFuel ultimately limited its long-term viability.
 
-  ## How It Was Measured
+  The identifier remains in the current HealthKit SDK without an API deprecation annotation. That does not establish
+  whether an older device, account or app still produces new points. Existing historical records and a currently
+  active data source are different questions. Review the contributing app and the dates of its last entries before
+  expecting a continuing series.
 
-  NikeFuel calculation was never fully disclosed by Nike, but was known to incorporate:
 
-  **Accelerometer Data:**
-  - Wrist-worn accelerometer captured movement intensity and duration
-  - Arm movement patterns classified into activity types
-  - More vigorous movement generated more NikeFuel per minute
+  ## How should totals and gaps be read?
 
-  **Activity Normalization:**
-  - Nike's algorithm attempted to equalize effort across activities
-  - Running generated roughly similar NikeFuel as basketball for equivalent effort
-  - Designed so that an "average" person doing an "average" activity would earn 1 NikeFuel per minute of activity
 
-  **User Profile Factors:**
-  - Basic personalization based on height and weight
-  - Did NOT adjust for age, sex, or fitness level (unlike calorie calculations)
-  - This "one size fits all" approach was both a feature (universal comparison) and limitation
+  | Record detail | Useful interpretation |
 
-  **Calculation Opacity:**
-  Nike never published the exact NikeFuel algorithm, making it impossible for third parties to validate or reproduce the metric independently.
+  | --- | --- |
 
-  ## Health Significance
+  | Point count | Amount credited by its source |
 
-  NikeFuel served as an early motivational and gamification tool for physical activity:
+  | Sample interval | Period represented by that contribution |
 
-  **Gamification Pioneer:**
-  - Daily NikeFuel goals provided simple targets
-  - "Fuelie" achievements and social sharing drove engagement
-  - Competitive leaderboards with friends
+  | Daily summary | Review before combining with shorter contributions |
 
-  **Activity Encouragement:**
-  - Universal metric made it easy to set and track goals
-  - Cross-activity tracking encouraged varied exercise
-  - Simple numeric goal was accessible to fitness beginners
+  | Missing day | Unknown coverage, not proof of inactivity |
 
-  **Limitations for Health Assessment:**
-  - Proprietary nature prevented clinical validation
-  - No established correlation with health outcomes
-  - Cannot be converted to standard activity metrics (calories, MET-minutes)
-  - Algorithm changes over time made longitudinal comparison unreliable
 
-  ## Clinical Interpretation Guidelines
+  Sum compatible contributions within a source and a reporting window. If two apps import the same activity, adding
+  both can double count it. A large record might be a daily summary rather than an unusual workout; inspect duration
+  and source before treating it as an outlier. Irregular entries can reflect imports or synchronization, so entry
+  spacing does not establish movement cadence.
 
-  ### Working with Historical NikeFuel Data
 
-  For clients with legacy NikeFuel data in Apple Health:
+  ## Can NikeFuel be compared with other activity measures?
 
-  **Limited Clinical Utility:**
-  - NikeFuel values cannot be meaningfully converted to standard metrics
-  - Historical data primarily useful for observing relative activity patterns
-  - Absolute values should not be used for clinical assessment
 
-  **Pattern Recognition:**
-  - Consistent daily NikeFuel totals indicate regular activity habits
-  - Trends (increasing or decreasing) may reflect lifestyle changes
-  - Compare to concurrent step count or active energy data if available
+  [Steps](/knowledge-base/types/HKQuantityTypeIdentifierStepCount/) and [active energy](/knowledge-base/types/HKQuantityTypeIdentifierActiveEnergyBurned/)
+  can describe activity alongside points when dates and coverage match. Their different definitions prevent a universal
+  conversion or a shared normal range. A source-specific trend can be more useful than a target copied from a different
+  scoring system.
 
-  **Contextual Assessment:**
-  - Ask when client used Nike devices/apps
-  - Determine if NikeFuel data represents complete activity picture
-  - Cross-reference with other metrics from same period
 
-  ### Why NikeFuel Should Not Be Used Clinically
+  ## What did the coverage review find?
 
-  1. **No validated relationship to health outcomes**
-  2. **Proprietary, undisclosed algorithm**
-  3. **No longer actively collected by any major platform**
-  4. **Cannot be compared to established activity guidelines**
-  5. **Algorithm may have changed over time without documentation**
 
-  ## Caveats & Limitations
+  The reviewed 365-day example-data window contained no samples, stored aggregates or workout-series points for
+  this type. Value distributions, unusual readings, recording cadence and related-data comparisons could not be
+  measured. No empirical figure is presented; missing database rows do not establish missing records on the phone.
 
-  ### Fundamental Limitations
-  - **Proprietary metric:** Cannot be validated or reproduced independently
-  - **No clinical validation:** No peer-reviewed studies correlating NikeFuel with health outcomes
-  - **Discontinued:** No major apps or devices currently write NikeFuel data
-  - **Non-standard unit:** Cannot be converted to calories, MET-minutes, or other standard metrics
 
-  ### Historical Data Quality Issues
-  - **Algorithm changes:** Nike may have modified NikeFuel calculation over time
-  - **Device variation:** Different Nike devices may have calculated NikeFuel differently
-  - **Incomplete capture:** Primarily captured arm movement; leg-dominant activities (cycling) underrepresented
+  ## Does PulsHealth collect this type?
 
-  ### What NikeFuel Cannot Tell You
-  - Actual energy expenditure (calories)
-  - Exercise intensity relative to individual capacity
-  - Whether physical activity guidelines are met
-  - Specific activity types or durations
-  - Any clinically meaningful health information
 
-  ## Additional Notes
+  This identifier is part of HealthKit, but is not listed in the current PulsHealth sync catalog. The units above
+  describe HealthKit measurement semantics rather than a promised sync format. Database coverage and Apple Health
+  availability are separate questions.
 
-  **Legacy Data Considerations:**
-  - Historical NikeFuel data may persist in Apple Health indefinitely
-  - Some clients may still reference NikeFuel from their fitness history
-  - Data cannot be deleted without user action
-
-  **Transition Recommendations:**
-  For clients with historical NikeFuel data:
-  1. Focus on current metrics (Active Energy, Exercise Minutes) for ongoing tracking
-  2. Use NikeFuel data only for historical context of activity habits
-  3. Do not attempt to compare NikeFuel to current activity metrics
-  4. Explain that NikeFuel is an obsolete metric with no clinical meaning
-
-  **For Health Consultants:**
-  1. Recognize NikeFuel as a legacy, deprecated metric
-  2. Do not use NikeFuel values for clinical assessment or recommendations
-  3. When encountering NikeFuel data, focus on more clinically relevant concurrent metrics
-  4. Understand the historical context to address client questions about their legacy data
-  5. Use the opportunity to educate clients on more meaningful activity metrics
-
-# --- METADATA KEYS ---
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the sample was entered manually by the user rather than automatically recorded"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier for the sample from the originating Nike app or device"
-
-# --- RELATED TYPES ---
+  '
+metadata_keys: null
 related_types:
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "Alternative - Standard calorie-based activity metric that replaced NikeFuel for most users"
-  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
-    relationship: "Alternative - Time-based activity metric providing clinically meaningful exercise duration"
-  - identifier: "HKQuantityTypeIdentifierStepCount"
-    relationship: "Alternative - Universal step metric available across all platforms"
-  - identifier: "HKWorkoutType"
-    relationship: "Related - NikeFuel could be associated with workouts during the metric's active period"
-
-# --- REFERENCES ---
+- identifier: HKQuantityTypeIdentifierStepCount
+  relationship: Separate activity count; no fixed conversion from NikeFuel points.
+- identifier: HKQuantityTypeIdentifierActiveEnergyBurned
+  relationship: Separate energy estimate; NikeFuel points are not kilocalories.
 references:
-  - title: "Apple Developer Documentation - nikeFuel"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/nikefuel"
-    type: "official"
-  - title: "Nike FuelBand - Wikipedia"
-    url: "https://en.wikipedia.org/wiki/Nike%2B_FuelBand"
-    type: "research"
-  - title: "Nike Kills Off FuelBand Hardware - CNET"
-    url: "https://www.cnet.com/tech/mobile/nike-fires-fuelband-engineers-exits-wearables-fitness-market/"
-    type: "research"
-
-# --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-01-27"
-research_notes: |
-  - iOS 8.0 introduction confirmed via Apple Developer Documentation
-  - Nike FuelBand hardware discontinued April 2014
-  - NikeFuel metric effectively deprecated by 2018 when removed from Nike apps
-  - No clinical validation studies exist for NikeFuel
-  - Proprietary algorithm never publicly disclosed
-  - Over 20 million FuelBand units sold at peak (per industry estimates)
-  - NikeFuel remains in HealthKit API for backward compatibility
+- title: 'Apple: NikeFuel'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/nikefuel
+  type: official
+- title: 'Apple: Cumulative quantities'
+  url: https://developer.apple.com/documentation/healthkit/hkquantityaggregationstyle/cumulative
+  type: official
+- title: 'Apple: Manage Health sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health NikeFuel: Points, Legacy Logs & Totals'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Count of NikeFuel points earned; not steps, calories or minutes.
+  cadence: Source-dependent contributions, spot readings or recorded intervals; no empirical cadence was available.
+  context: Interpret timing and source method for the specific measurement; timestamp overlap does not establish
+    shared session identity.
+  coverage: No observations in the reviewed reporting window; database absence is not a zero reading or proof of
+    absence on the phone.
+  aggregation: Sum compatible point contributions within a source.
+  metadata: Optional source metadata does not establish complete measurement method or context; no records were
+    available to inspect.
+  references:
+  - title: 'Apple: NikeFuel'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/nikefuel
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: nike-fuel
+  review_basis: coverage_and_sources
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified 365-day inventory contained no samples, aggregates or workout-series points for this type;
+    empirical values, outliers, cadence, context and relationships were unavailable. No measured figure. This identifier
+    is part of HealthKit, but is not listed in the current PulsHealth sync catalog. The units above describe HealthKit
+    measurement semantics rather than a promised sync format. Fixed America/Los_Angeles reporting calendar.

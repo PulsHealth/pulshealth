@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierConstipation"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Constipation"
-short_description: "Tracks episodes of constipation and difficulty passing stool."
-icon: "circle.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierConstipation
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Constipation
+short_description: 'Understand constipation in Apple Health: severity labels, useful symptom history and recording
+  limitations.'
+icon: circle.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not an absent report.
+- value: 1
+  name: notPresent
+  description: Symptom explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Subjectively mild symptom severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate symptom severity.
+- value: 4
+  name: severe
+  description: Subjectively severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,88 +42,124 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Constipation is characterized by infrequent bowel movements (fewer than three per week), difficulty passing stool, hard or lumpy stools, and a sensation of incomplete evacuation. This HealthKit category type allows users to track constipation episodes, providing valuable data for identifying causes and monitoring treatment effectiveness.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging interfaces depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Constipation is one of the most common gastrointestinal complaints, affecting approximately 16% of adults globally. While usually benign, it can significantly impact quality of life and may indicate underlying conditions requiring treatment.
 
-  Common causes include:
-  - Inadequate fiber intake
-  - Insufficient fluid consumption
-  - Sedentary lifestyle
-  - Ignoring urge to defecate
-  - Medication side effects (opioids, anticholinergics, calcium channel blockers, iron supplements)
-  - Irritable bowel syndrome with constipation (IBS-C)
-  - Hypothyroidism
-  - Diabetes mellitus
-  - Neurological conditions (Parkinson's disease, multiple sclerosis)
-  - Pelvic floor dysfunction
-  - Pregnancy
+  Constipation records a reported difficulty with bowel movements, graded by subjective severity. It does not
+  count bowel movements or measure stool consistency.
 
-  Concerning causes requiring investigation:
-  - Colorectal cancer
-  - Bowel obstruction
-  - Strictures
-  - Hirschsprung disease
 
-  ## When to Seek Medical Attention
-  Users should consult a healthcare provider when constipation:
-  - Is new and persistent (lasting more than 3 weeks)
-  - Alternates with diarrhea
-  - Is accompanied by blood in stool or rectal bleeding
-  - Is associated with unexplained weight loss
-  - Is accompanied by severe abdominal pain
-  - Does not respond to dietary changes and over-the-counter treatments
-  - Is associated with fever or vomiting
-  - Includes narrow, ribbon-like stools
-  - Occurs in individuals over 50 without recent colonoscopy
-  - Is accompanied by family history of colorectal cancer
+  ## What do the severity labels mean?
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Correlation with dietary changes or fiber intake
-  - Medication-related constipation
-  - Travel-related patterns
-  - Stress and anxiety associations
-  - Menstrual cycle patterns
-  - Response to treatments (fiber, laxatives, lifestyle changes)
-  - Progressive worsening suggesting organic pathology
 
-  ## Caveats & Limitations
-  - Does not capture bowel movement frequency directly
-  - Stool consistency (Bristol Stool Scale) is not recorded
-  - Straining and incomplete evacuation sensations not differentiated
-  - Cannot assess for fecal impaction or obstruction
-  - Dietary context not captured
-  - Does not record specific symptoms (bloating, abdominal pain) that often co-occur
-  - Subjective severity may not correlate with objective measures
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | Code | Label | Interpretation |
+
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Explicitly reported absent |
+
+  | 2 | mild | Subjectively mild |
+
+  | 3 | moderate | Subjectively moderate |
+
+  | 4 | severe | Subjectively severe |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified and notPresent mean different things. The codes
+  identify labels; an average such as 2.5 is not a symptom measurement or a validated clinical score. Missing
+  entries are unknown, not automatically notPresent.
+
+
+  ## What details does a constipation entry leave out?
+
+
+  A category entry does not tell you how many bowel movements occurred, whether stool was hard, or whether
+  there was straining or incomplete emptying. Those details need a separate diary or source notes. Counting
+  three saved observations means three records, not three bowel movements or three independent episodes.
+
+
+  Changes in routine, diet and medicines can be useful history to discuss with a clinician. Separately logged
+  Fiber, Dietary Water, Bloating and Abdominal Cramps can provide context when their dates are reliable. A
+  food log can be incomplete, and dietary water entries do not establish hydration status. Alternating constipation
+  and diarrhea does not diagnose irritable bowel syndrome.
+
+
+  ## How should repeated entries be read?
+
+
+  This is a logged observation, with no guaranteed recording frequency. Gaps between start times describe the
+  saved logging history, not symptom-free intervals. Source changes, retrospective entry and overlapping records
+  can change the apparent pattern. A sample''s start and end describe the interval the source saved; they do
+  not establish a distinct clinical episode or continuous symptom duration.
+
+
+  When summarizing a history, keep the category labels, reporting dates and source visible. Count explicitly
+  absent observations separately from missing days. Review unexpected labels or repeated overlapping records
+  before treating them as changes in health.
+
+
+  ## When does this need medical attention?
+
+
+  Get prompt medical advice for constipation with blood in stool, ongoing abdominal pain, inability to pass
+  gas, vomiting or unexplained weight loss. Persistent symptoms also deserve clinical review; do not use the
+  saved severity code to rule out a problem.
+
+
+  ## What can the available example establish?
+
+
+  No records of this type were found in the database research window, so severity frequencies, source differences
+  and logging patterns could not be measured. This HealthKit type is not listed in the current PulsHealth sync
+  catalog. Database coverage therefore cannot establish whether corresponding records exist in Apple Health,
+  and an empty timeline does not establish symptom absence.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
-    relationship: "Constipation often causes abdominal cramping"
-  - identifier: "HKCategoryTypeIdentifierBloating"
-    relationship: "Bloating commonly accompanies constipation"
-  - identifier: "HKCategoryTypeIdentifierDiarrhea"
-    relationship: "Alternating constipation and diarrhea suggests IBS"
-  - identifier: "HKCategoryTypeIdentifierBladderIncontinence"
-    relationship: "Chronic constipation can contribute to bladder dysfunction"
-  - identifier: "HKQuantityTypeIdentifierDietaryFiber"
-    relationship: "Fiber intake directly affects bowel regularity"
+- identifier: HKQuantityTypeIdentifierDietaryFiber
+  relationship: Separately logged intake context; completeness and timing matter.
+- identifier: HKCategoryTypeIdentifierBloating
+  relationship: Distinct symptom observations; simultaneous entries do not identify a cause.
+- identifier: HKCategoryTypeIdentifierAbdominalCramps
+  relationship: Separate pain context, not a component of the constipation value.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierConstipation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierconstipation"
-    type: "official"
-  - title: "Constipation - NIDDK"
-    url: "https://www.niddk.nih.gov/health-information/digestive-diseases/constipation"
-    type: "medical"
-  - title: "Chronic Constipation - ACG Clinical Guidelines"
-    url: "https://gi.org/topics/constipation-and-defection-problems/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Constipation — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/constipation
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Constipation symptoms and causes — NIDDK
+  url: https://www.niddk.nih.gov/health-information/digestive-diseases/constipation/symptoms-causes
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Constipation in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: constipation
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; empirical analysis skipped because no focal records were
+    present in the bounded database inventory. Type is not listed in the current sync catalog; database absence
+    cannot establish phone or symptom absence. Severity codes are labels, not numeric clinical measurements.
+    Cadence, source comparisons and related-type associations remain unmeasured; saved intervals do not establish
+    clinical episodes.

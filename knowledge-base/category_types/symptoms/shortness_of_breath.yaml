@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Shortness of Breath"
-short_description: "Tracks episodes of dyspnea or breathing difficulty"
-icon: "lungs.fill"
-color: "#5AC8FA"
+identifier: HKCategoryTypeIdentifierShortnessOfBreath
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Shortness of Breath
+short_description: Read shortness-of-breath reports in Apple Health, interpret subjective severity and separate
+  breathlessness from respiratory and oxygen measurements.
+icon: lungs.fill
+color: '#5AC8FA'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No shortness of breath experienced"
-  - value: 1
-    name: "present"
-    description: "Mild shortness of breath - slight awareness, able to complete activities"
-  - value: 2
-    name: "moderate"
-    description: "Moderate shortness of breath - noticeable difficulty, limits some activities"
-  - value: 3
-    name: "severe"
-    description: "Severe shortness of breath - significant distress, markedly limits activities"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not an absence report.
+- value: 1
+  name: notPresent
+  description: The symptom was explicitly reported absent.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,140 +42,119 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging with severity"
-  - name: "Apple Watch"
-    capability: "Quick symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Shortness of breath (dyspnea) is the subjective sensation of breathing
-  discomfort or air hunger. It is a critical symptom that can indicate
-  conditions ranging from anxiety to life-threatening cardiac or pulmonary
-  emergencies. This data type enables tracking for pattern identification
-  and clinical correlation.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; the logging workflow depends on the source app.
+primary_source: Reported symptom observations
+description: '## Overview
 
-  ## Health Significance
-  - **Cardiac Function**: Key symptom of heart failure, coronary artery disease,
-    and arrhythmias
-  - **Pulmonary Health**: Indicator of asthma, COPD, pulmonary embolism,
-    pneumonia, and other lung conditions
-  - **Exercise Capacity**: Tracks functional status and disease progression
-  - **Treatment Monitoring**: Essential for evaluating response to cardiac or
-    pulmonary medications
-  - **Early Warning**: New or worsening dyspnea often precedes clinical
-    deterioration
 
-  ## CRITICAL: Red Flags Requiring Immediate Evaluation
+  Shortness of Breath records reported breathlessness. It is a subjective symptom category, not a breathing-rate
+  measurement, oxygen saturation value or lung-function test.
 
-  **Call 911 immediately if shortness of breath occurs with:**
-  - Chest pain or pressure
-  - Sudden onset at rest
-  - Altered consciousness or confusion
-  - Bluish discoloration of lips or fingers (cyanosis)
-  - Inability to speak in full sentences
-  - Severe wheezing or stridor
-  - Coughing up blood
-  - Recent surgery, travel, or immobilization (PE risk)
-  - Swelling in legs with new dyspnea (possible PE or heart failure)
-  - High fever with breathing difficulty
 
-  ## Clinical Context
-  **Cardiac Causes:**
-  - Heart failure (acute or chronic)
-  - Coronary artery disease / angina
-  - Arrhythmias
-  - Valvular heart disease
-  - Cardiomyopathy
-  - Pericardial effusion
+  ## What do the severity labels mean?
 
-  **Pulmonary Causes:**
-  - Asthma
-  - COPD/emphysema
-  - Pneumonia
-  - Pulmonary embolism
-  - Pulmonary fibrosis
-  - Pleural effusion
-  - Pneumothorax
 
-  **Other Causes:**
-  - Anemia
-  - Anxiety/panic attacks
-  - Deconditioning/obesity
-  - Neuromuscular disorders
-  - Thyroid disorders
+  | Code | Label | Interpretation |
 
-  ## When to Seek Medical Attention
-  **Urgent Evaluation (same day):**
-  - New shortness of breath without obvious cause
-  - Worsening of chronic dyspnea
-  - Dyspnea at rest
-  - Dyspnea limiting usual activities
-  - Associated leg swelling or weight gain
-  - Orthopnea (difficulty breathing lying flat)
-  - Paroxysmal nocturnal dyspnea (waking up short of breath)
+  | --- | --- | --- |
 
-  ## Pattern Recognition
-  Tracking shortness of breath can reveal:
-  - Exertional vs. rest dyspnea patterns
-  - Progressive worsening over time (concerning)
-  - Triggers (exertion, allergens, cold air, emotions)
-  - Time of day patterns (morning = asthma, night = heart failure)
-  - Positional component (orthopnea, platypnea)
-  - Response to rescue inhalers or other treatments
-  - Correlation with oxygen saturation readings
-  - Relationship to palpitations or chest pain
+  | 0 | unspecified | Severity was not supplied |
 
-  ## Functional Classification Correlation
-  Severity often aligns with NYHA heart failure classification:
-  - Class I: No limitation during ordinary activity
-  - Class II: Slight limitation; comfortable at rest
-  - Class III: Marked limitation; comfortable only at rest
-  - Class IV: Unable to carry out any activity without discomfort
+  | 1 | notPresent | Explicitly reported absent |
 
-  ## Caveats & Limitations
-  - Subjective perception varies significantly between individuals
-  - Cannot differentiate between cardiac and pulmonary causes
-  - Does not capture oxygen saturation data
-  - Anxiety-related dyspnea may be indistinguishable
-  - Does not record breathing rate or pattern
-  - Activity context during symptom not captured
-  - Requires correlation with objective testing (spirometry, imaging, ECG)
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External identifier for cross-referencing symptom entries"
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where symptom was logged"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+  | 2 | mild | Reported mild severity |
+
+  | 3 | moderate | Reported moderate severity |
+
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. These are subjective labels, not a calibrated clinical scale.
+  Unspecified is not the same as notPresent, and an unrecorded day is unknown. Do not average the integer codes
+  or interpret their spacing as equal changes in symptom intensity.
+
+
+  ## What can related measurements tell you?
+
+
+  Respiratory Rate and Oxygen Saturation describe different measurements. If they were recorded near a symptom report,
+  show their times and sources separately. The severity label cannot be calculated from either measurement, and
+  a reassuring reading does not explain breathlessness or replace assessment of concerning symptoms.
+
+
+  Whether breathlessness occurred at rest, during a usual activity or when lying down can make a history more informative.
+  That setting must be separately reported; a saved interval overlapping a workout or a night does not supply it.
+  The category does not identify a respiratory or cardiac cause.
+
+
+  ## When is breathlessness urgent?
+
+
+  Call local emergency services for severe breathing difficulty, inability to speak because of breathlessness, a
+  tight or heavy chest, blue or gray lips or skin, or sudden confusion. Seek prompt medical advice for new or worsening
+  breathlessness, including symptoms during normal activities or when lying down. The NHS advises against self-diagnosing
+  its cause. Do not wait for a severe entry or an oxygen alert to act on these symptoms.
+
+
+  ## What does recording frequency tell you?
+
+
+  These are logged observations, not sensor samples on a fixed schedule. Compare explicit reported labels within
+  a consistent logging routine and keep missing days separate from notPresent reports. Saved intervals and overlapping
+  entries describe the source’s records; they do not establish continuous symptom duration or an exact number of
+  episodes.
+
+
+  ## Is this type available in PulsHealth data?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. No corresponding records were found
+  in the selected database research window, so severity frequencies, logging intervals and relationships with other
+  measurements could not be calculated. That database coverage does not establish whether the symptom was experienced
+  or whether reports exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat"
-    relationship: "Co-occurring cardiac symptoms"
-  - identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
-    relationship: "Critical co-symptom for cardiac evaluation"
-  - identifier: "HKCategoryTypeIdentifierWheezing"
-    relationship: "Suggests airway component"
-  - identifier: "HKCategoryTypeIdentifierCoughing"
-    relationship: "Often co-occurs in pulmonary conditions"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Common in heart failure and pulmonary disease"
-  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
-    relationship: "Objective oxygenation data"
-  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
-    relationship: "Objective respiratory rate data"
-  - identifier: "HKQuantityTypeIdentifierVO2Max"
-    relationship: "Cardiopulmonary fitness indicator"
+- identifier: HKQuantityTypeIdentifierRespiratoryRate
+  relationship: A separate breathing-rate measurement; it does not directly encode perceived breathlessness.
+- identifier: HKQuantityTypeIdentifierOxygenSaturation
+  relationship: A separate oxygen estimate; a normal reading does not establish the cause or safety of breathlessness.
+- identifier: HKCategoryTypeIdentifierChestTightnessOrPain
+  relationship: An accompanying symptom can be reported separately; a co-recorded entry does not determine a diagnosis.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierShortnessOfBreath"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiershortnessofbreath"
-    type: "official"
-  - title: "Dyspnea Evaluation - American Thoracic Society"
-    url: "https://www.thoracic.org/patients/patient-resources/"
-    type: "medical"
-  - title: "Heart Failure Symptoms - American Heart Association"
-    url: "https://www.heart.org/en/health-topics/heart-failure/warning-signs-of-heart-failure"
-    type: "medical"
-  - title: "Pulmonary Embolism Signs - CDC"
-    url: "https://www.cdc.gov/blood-clots/signs-symptoms/index.html"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Shortness of Breath — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/shortnessofbreath
+  type: official
+- title: Symptom severity values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Shortness of breath — NHS
+  url: https://www.nhs.uk/symptoms/shortness-of-breath/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Shortness of breath in Apple Health: reports and context'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: shortness-of-breath
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; no focal records in the selected database reporting year,
+    so empirical analysis was skipped. This type is not listed in the current sync catalog; coverage cannot establish
+    phone data or symptom absence. Severity codes are subjective labels, not numeric measurements. Source intervals,
+    retrospective logging and overlap do not establish clinical episodes or causes. No measured workout or sleep
+    comparisons are available.
