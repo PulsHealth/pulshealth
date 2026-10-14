@@ -34,8 +34,14 @@ def literal(value):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ('host', 'container', 'owner-name', 'start', 'end', 'output'):
+    for name in ('host', 'container', 'start', 'end', 'output'):
         parser.add_argument('--' + name, required=True)
+    owner = parser.add_mutually_exclusive_group(required=True)
+    owner.add_argument('--owner-name')
+    owner.add_argument('--owner-file', type=Path, help='Existing private owner.csv containing exactly one id')
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--identifiers', type=Path, help='JSON list of full identifiers or newline-delimited identifiers')
+    selection.add_argument('--all-types', action='store_true', help='Export every observed quantity type')
     parser.add_argument('--timezone', default='America/Los_Angeles')
     args = parser.parse_args()
     if not re.fullmatch(r'[A-Za-z0-9_.-]+', args.host + args.container):
@@ -53,6 +59,7 @@ def main():
     if (out == root or root in out.parents) and private_git not in out.parents:
         parser.error('private snapshot must be outside the source checkout or inside private Git metadata')
     out.mkdir(parents=True, exist_ok=True)
+    out.chmod(0o700)
     if any(out.iterdir()):
         parser.error('snapshot output must be empty; preserve existing evidence and choose a new directory')
     remote = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', args.host,
@@ -68,8 +75,16 @@ def main():
             raise RuntimeError(result.stderr.decode())
 
     owner_file = out / 'owner.csv'
-    psql("COPY (SELECT id FROM users WHERE lower(name) LIKE " + literal('%' + args.owner_name.lower() + '%')
-         + ") TO STDOUT WITH CSV HEADER;", owner_file)
+    if args.owner_file:
+        with args.owner_file.open() as stream:
+            selected_owners = list(csv.DictReader(stream))
+        if len(selected_owners) != 1 or not re.fullmatch(r'[0-9a-fA-F-]{36}', selected_owners[0].get('id', '')):
+            parser.error('owner file must contain exactly one UUID id')
+        psql('COPY (SELECT id FROM users WHERE id=' + literal(selected_owners[0]['id'])
+             + '::uuid) TO STDOUT WITH CSV HEADER;', owner_file)
+    else:
+        psql("COPY (SELECT id FROM users WHERE lower(name) LIKE " + literal('%' + args.owner_name.lower() + '%')
+             + ") TO STDOUT WITH CSV HEADER;", owner_file)
     with owner_file.open() as stream:
         owners = list(csv.DictReader(stream))
     if len(owners) != 1:
@@ -80,21 +95,45 @@ def main():
     def where(alias, column='start_ts'):
         return f'{alias}.user_id={user} AND {alias}.{column}' + bounds.format(alias=alias, column=column)
 
-    ids = ','.join(literal('HKQuantityTypeIdentifier' + name) for name in QUANTITIES)
+    identifiers = ['HKQuantityTypeIdentifier' + name for name in QUANTITIES]
+    if args.identifiers:
+        source = args.identifiers.read_text()
+        identifiers = json.loads(source) if source.lstrip().startswith('[') else source.splitlines()
+        identifiers = sorted(set(item.strip() for item in identifiers if item.strip()))
+        if not identifiers or any(not re.fullmatch(r'HK[A-Za-z0-9]+', item) for item in identifiers):
+            parser.error('identifiers must be a nonempty list of full HealthKit identifiers')
+    ids = ','.join(literal(item) for item in identifiers)
+    type_filter = '' if args.all_types else f' AND t.identifier IN ({ids})'
     qselect = "q.uuid,t.identifier,t.unit,q.start_ts,q.end_ts,q.value,q.source_id,q.metadata,s.name AS source_name,s.bundle_id,s.version AS source_version,tc.time_zone_id AS start_timezone"
     queries = {
-        'quantity': f'SELECT {qselect} FROM quantity_samples q JOIN sample_types t USING(type_id) LEFT JOIN sources s USING(source_id) LEFT JOIN temporal_contexts tc ON tc.temporal_context_id=q.start_temporal_context_id WHERE {where("q")} AND t.identifier IN ({ids}) ORDER BY q.start_ts,q.uuid',
+        'quantity': f'SELECT {qselect} FROM quantity_samples q JOIN sample_types t USING(type_id) LEFT JOIN sources s USING(source_id) LEFT JOIN temporal_contexts tc ON tc.temporal_context_id=q.start_temporal_context_id WHERE {where("q")}{type_filter} ORDER BY q.start_ts,q.uuid',
+        'category': f'SELECT c.uuid,t.identifier,c.start_ts,c.end_ts,c.value,c.source_id,c.metadata,s.name AS source_name,s.bundle_id,s.version AS source_version,tc.time_zone_id AS start_timezone FROM category_samples c JOIN sample_types t USING(type_id) LEFT JOIN sources s USING(source_id) LEFT JOIN temporal_contexts tc ON tc.temporal_context_id=c.start_temporal_context_id WHERE {where("c")} ORDER BY c.start_ts,c.uuid',
         'sleep': f"SELECT c.uuid,t.identifier,c.start_ts,c.end_ts,c.value,c.source_id,c.metadata,s.name AS source_name,s.bundle_id,s.version AS source_version,tc.time_zone_id AS start_timezone FROM category_samples c JOIN sample_types t USING(type_id) LEFT JOIN sources s USING(source_id) LEFT JOIN temporal_contexts tc ON tc.temporal_context_id=c.start_temporal_context_id WHERE {where('c')} AND t.identifier='HKCategoryTypeIdentifierSleepAnalysis' ORDER BY c.start_ts,c.uuid",
         'mindful': f"SELECT c.uuid,t.identifier,c.start_ts,c.end_ts,c.value,c.source_id,c.metadata,s.name AS source_name,s.bundle_id,s.version AS source_version FROM category_samples c JOIN sample_types t USING(type_id) LEFT JOIN sources s USING(source_id) WHERE {where('c')} AND t.identifier='HKCategoryTypeIdentifierMindfulSession' ORDER BY c.start_ts,c.uuid",
         'workouts': f'SELECT w.uuid,w.start_ts,w.end_ts,w.activity_type,w.duration_s,w.distance_m,w.energy_kcal,w.source_id,w.metadata,w.stats_detail,w.events,w.activities,s.name AS source_name,s.bundle_id,s.version AS source_version FROM workouts w LEFT JOIN sources s USING(source_id) WHERE {where("w")} ORDER BY w.start_ts,w.uuid',
-        'aggregates': f'SELECT t.identifier,a.series_id,s.agg_func,s.interval_value,s.interval_unit,s.device_filter,s.unit,a.bucket_start,a.bucket_end,a.value FROM aggregate_samples a JOIN aggregate_series s USING(series_id) JOIN sample_types t ON t.type_id=s.type_id WHERE {where("a", "bucket_start")} AND t.identifier IN ({ids}) ORDER BY a.bucket_start,a.series_id',
-        'workout_series': f'SELECT p.workout_uuid,t.identifier,t.unit,p.ts,p.value FROM workout_series_points p JOIN sample_types t USING(type_id) WHERE {where("p", "ts")} AND t.identifier IN ({ids}) ORDER BY p.ts,p.workout_uuid',
+        'aggregates': f'SELECT t.identifier,a.series_id,s.agg_func,s.interval_value,s.interval_unit,s.device_filter,s.unit,a.bucket_start,a.bucket_end,a.value FROM aggregate_samples a JOIN aggregate_series s USING(series_id) JOIN sample_types t ON t.type_id=s.type_id WHERE {where("a", "bucket_start")}{type_filter} ORDER BY a.bucket_start,a.series_id',
+        'workout_series': f'SELECT p.workout_uuid,t.identifier,t.unit,p.ts,p.value FROM workout_series_points p JOIN sample_types t USING(type_id) WHERE {where("p", "ts")}{type_filter} ORDER BY p.ts,p.workout_uuid',
+        'activity_summaries': f'SELECT date,move_kcal,move_goal_kcal,exercise_min,exercise_goal_min,stand_hours,stand_goal_hours,move_mode,move_time_min,move_time_goal_min FROM activity_summaries WHERE user_id={user} AND date>={literal(args.start)}::date AND date<{literal(args.end)}::date ORDER BY date',
+        'sample_types': 'SELECT identifier,kind,unit FROM sample_types ORDER BY identifier',
+        'category_labels': 'SELECT type_identifier,value,label,enum_name FROM category_labels ORDER BY type_identifier,value',
+        'schema_columns': "SELECT table_name,column_name,data_type FROM information_schema.columns WHERE table_schema='public' ORDER BY table_name,ordinal_position",
     }
+    for table, stamp in [('quantity_samples', 'start_ts'), ('category_samples', 'start_ts'),
+                         ('aggregate_samples', 'bucket_start'), ('workout_series_points', 'ts')]:
+        join = 'JOIN sample_types t USING(type_id)'
+        if table == 'aggregate_samples':
+            join = 'JOIN aggregate_series s USING(series_id) JOIN sample_types t ON t.type_id=s.type_id'
+        queries['coverage_' + table] = (f'SELECT t.identifier,t.unit,count(*) AS records,min(d.{stamp}) AS first_ts,max(d.{stamp}) AS last_ts '
+            f'FROM {table} d {join} WHERE {where("d", stamp)} GROUP BY t.identifier,t.unit ORDER BY t.identifier')
+    for table in ('heartbeat_series', 'ecg_samples'):
+        queries[table] = f'SELECT d.* FROM {table} d WHERE {where("d")} ORDER BY d.start_ts,d.uuid'
     manifest = {'workflow_version': '1', 'extracted_at': datetime.now(timezone.utc).isoformat(),
                 'start': start.isoformat(), 'end_exclusive': end.isoformat(), 'timezone': args.timezone,
                 'owner_profiles_matched': len(owners), 'files': {},
+                'quantity_selection': 'all-types' if args.all_types else identifiers,
+                'coverage_scope': 'All observed types for the selected profile in bounded quantity/category/aggregate/workout-series tables, independent of export selection.',
                 'consistency': 'Each immutable-past export uses its own repeatable-read, read-only transaction; not a single cross-table transaction.',
-                'boundary_note': 'Selection is by start timestamp inside the window; boundary-spanning intervals starting earlier are not included.'}
+        'boundary_note': 'Selection is by start timestamp inside the window; boundary-spanning intervals starting earlier are not included.'}
     for name, query in queries.items():
         (out / (name + '.sql')).write_text(query + ';\n')
         output = out / (name + '.csv')
@@ -104,7 +143,43 @@ def main():
         manifest['files'][output.name] = {'rows': rows, 'bytes': output.stat().st_size,
                                          'sha256': hashlib.sha256(output.read_bytes()).hexdigest()}
         print(f'{name}: {rows} records saved privately', flush=True)
+    coverage = {}
+    for table in ('quantity_samples', 'category_samples', 'aggregate_samples', 'workout_series_points'):
+        with (out / ('coverage_' + table + '.csv')).open() as stream:
+            coverage[table] = {row['identifier']: row for row in csv.DictReader(stream)}
+    with (out / 'schema_columns.csv').open() as stream:
+        correlation_tables = sorted({row['table_name'] for row in csv.DictReader(stream)
+                                     if 'correlation' in row['table_name']})
+    if args.all_types:
+        identifiers = sorted({identifier for rows in coverage.values() for identifier in rows})
+    entries = []
+    for identifier in identifiers:
+        kind = ('category' if identifier.startswith('HKCategory') else
+                'correlation' if identifier.startswith('HKCorrelation') else 'quantity')
+        entry = {'identifier': identifier, 'kind': kind, 'tables': {}}
+        for table, rows in coverage.items():
+            row = rows.get(identifier, {})
+            entry['tables'][table] = {'records': int(row.get('records', 0)),
+                'first_ts': row.get('first_ts'), 'last_ts': row.get('last_ts')}
+        observed = any(row['records'] for row in entry['tables'].values())
+        entry['status'] = 'observed' if observed else 'no_observations_in_snapshot'
+        if kind == 'correlation' and not correlation_tables:
+            entry['status'] = 'unsupported_storage'
+            entry['storage_note'] = ('No correlation object table exists in the live schema. '
+                'Component quantities are inventoried separately; timestamp matching cannot '
+                'establish original correlation membership.')
+        entries.append(entry)
+    (out / 'coverage.json').write_text(json.dumps({'start': start.isoformat(),
+        'end_exclusive': end.isoformat(), 'timezone': args.timezone,
+        'scope': manifest['coverage_scope'], 'correlation_tables': correlation_tables,
+        'entries': entries}, indent=2) + '\n')
+    # Include query evidence and private owner selection in the integrity receipt.
+    for output in out.iterdir():
+        manifest['files'].setdefault(output.name, {'bytes': output.stat().st_size,
+            'sha256': hashlib.sha256(output.read_bytes()).hexdigest()})
     (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    for output in out.iterdir():
+        output.chmod(0o600)
 
 
 if __name__ == '__main__':

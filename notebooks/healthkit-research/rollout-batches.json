@@ -5,7 +5,6 @@
   "priority_basis": "Editorial judgment about Apple Health use and recurring interpretation questions; not verified search-volume ranking. Traffic analytics connector unavailable at planning time.",
   "completion_source": "Read each entry data_research.status; this manifest assigns batches and does not duplicate completion flags.",
   "total_entries": 178,
-  "remaining_entries": 173,
   "completed_pilots": [
     {
       "identifier": "HKCategoryTypeIdentifierSleepAnalysis",
@@ -1105,5 +1104,6 @@
       ],
       "count": 48
     }
-  ]
+  ],
+  "entries_assigned_to_batches": 173
 }

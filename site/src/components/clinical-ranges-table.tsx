@@ -1,6 +1,7 @@
 import { Ruler } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { clinicalRangeDataKeys } from "@/lib/type-article";
 
 interface ClinicalRange {
   population: string;
@@ -29,9 +30,7 @@ export function ClinicalRangesTable({ ranges }: ClinicalRangesTableProps) {
   if (!ranges || ranges.length === 0) return null;
 
   // Every column any range has, apart from population and notes.
-  const dataKeys = Array.from(new Set(ranges.flatMap((r) => Object.keys(r)))).filter(
-    (key) => key !== "population" && key !== "notes" && ranges.some((r) => r[key]),
-  );
+  const dataKeys = clinicalRangeDataKeys(ranges);
 
   if (dataKeys.length === 0) return null;
 

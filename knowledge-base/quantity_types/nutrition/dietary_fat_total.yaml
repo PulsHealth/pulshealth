@@ -1,46 +1,29 @@
-identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Fat (Total)"
-short_description: "Total fat intake from all dietary sources"
-icon: "drop.fill"
-color: "#FFCC00"
-default_unit: "g"
+identifier: HKQuantityTypeIdentifierDietaryFatTotal
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Fat (Total)
+short_description: Total fat intake from all dietary sources
+icon: drop.fill
+color: '#FFCC00'
+default_unit: g
 supported_units:
-  - "g"
-  - "mg"
-  - "oz"
-unit_description: "Grams (g) of total fat. Fat provides 9 kcal/g, more than double the energy density of protein or carbohydrates."
-aggregation_type: "cumulative"
+- g
+- mg
+- oz
+unit_description: Grams (g) of total fat. Fat provides 9 kcal/g, more than double the energy density of protein
+  or carbohydrates.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-typical_range:
-  min: 30
-  max: 200
-  unit: "g"
-  notes: "On a 2000 kcal diet, 44-78g represents 20-35% of calories. Ketogenic diets may reach 150-200g/day."
-clinical_ranges:
-  - population: "Adults (AMDR)"
-    rda: "20-35% of total calories (44-78g on 2000 kcal diet)"
-  - population: "Children (1-3 years)"
-    rda: "30-40% of calories"
-  - population: "Children (4-18 years)"
-    rda: "25-35% of calories"
-  - population: "Low-Fat Diet"
-    rda: "20-25% of calories"
-  - population: "Mediterranean Diet"
-    rda: "35-40% of calories (emphasis on unsaturated fats)"
-  - population: "Ketogenic Diet"
-    rda: "70-80% of calories (150-175g on 2000 kcal)"
-  - population: "Cardiovascular Disease Prevention"
-    rda: "Replace saturated with unsaturated; total fat less important"
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -48,117 +31,163 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Fat tracking with breakdown by type in comprehensive apps"
-    examples:
-      - "MyFitnessPal"
-      - "Cronometer"
-      - "MacroFactor"
-      - "Carb Manager"
-  - name: "Keto-focused apps"
-    capability: "Detailed fat tracking with emphasis on fat subtypes"
-    examples:
-      - "Carb Manager"
-      - "KetoDiet"
-      - "Senza"
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Dietary Fat (Total) represents the combined intake of all fat types: saturated, monounsaturated, polyunsaturated, and trans fats. Fat is essential for hormone production, cell membrane integrity, absorption of fat-soluble vitamins (A, D, E, K), and provides concentrated energy. Modern understanding emphasizes fat quality over quantity, shifting focus from total fat reduction to optimizing fat subtypes.
+- name: Manual entry
+  capability: User-entered intake records saved to Apple Health.
+- name: Authorized logging apps
+  capability: Food, beverage or supplement amounts shared with HealthKit when the app supports the type and has
+    write authorization.
+primary_source: Manual records or authorized apps that write the specific dietary quantity to HealthKit.
+description: '## What does total dietary fat measure?
 
-  The FDA Daily Value for total fat is 78g based on a 2,000 calorie diet (updated 2020). This represents 35% of calories, at the upper end of the Acceptable Macronutrient Distribution Range (AMDR). The emphasis has shifted from limiting total fat to focusing on the type of fat consumed.
 
-  ## Health Significance
-  Dietary fat impacts:
-  - **Energy Provision**: Most calorie-dense macronutrient at 9 kcal/g; efficient energy storage
-  - **Hormone Production**: Cholesterol (from fat metabolism) is precursor to steroid hormones
-  - **Cell Structure**: Phospholipids form cell membranes; fatty acid composition affects membrane fluidity
-  - **Vitamin Absorption**: Fat-soluble vitamins require dietary fat for absorption
-  - **Satiety**: Fat slows gastric emptying; contributes to meal satisfaction
-  - **Brain Health**: Brain is ~60% fat; essential fatty acids critical for cognitive function
-  - **Inflammation**: Different fat types have pro- or anti-inflammatory effects
-  - **Cardiovascular Health**: Fat type significantly affects lipid profiles and CV risk
+  Dietary Fat Total records fat intake logged from food. HealthKit defines a cumulative mass quantity; PulsHealth
+  stores it in **g**. It is distinct from Body Fat Percentage and blood lipid measurements. See [Apple''s definition](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfattotal).
 
-  ## Clinical Interpretation Guidelines
-  When assessing total fat intake:
-  1. **Calculate Percentage of Calories**: g fat x 9 / total calories x 100; compare to 20-35% range
-  2. **Assess Fat Subtypes**: Total fat without subtype breakdown provides incomplete picture
-  3. **Evaluate Fat Sources**: Whole food fats (nuts, avocado, fish) vs. processed (fried foods, baked goods)
-  4. **Check Essential Fatty Acid Adequacy**: Omega-3 and omega-6 intake often imbalanced
-  5. **Consider Dietary Pattern**: Mediterranean high-fat differs from Western high-fat
-  6. **Review Lipid Panels**: Correlate fat intake patterns with lipid profiles
-  7. **Assess Absorption Issues**: Fat malabsorption conditions require modified fat intake
 
-  ## Deficiency Symptoms
-  Fat deficiency (rare except in malabsorption or extreme restriction) causes:
-  - Dry, scaly skin and dermatitis
-  - Hair loss
-  - Poor wound healing
-  - Fat-soluble vitamin deficiencies (A, D, E, K)
-  - Hormonal disruption (low testosterone, amenorrhea)
-  - Depression and cognitive impairment
-  - Essential fatty acid deficiency symptoms
-  - Growth retardation in children
-  - Night blindness (vitamin A deficiency)
+  ## Should I add saturated and unsaturated fat to the total?
 
-  ## Excess/Toxicity
-  High total fat intake concerns:
-  - **Caloric Excess**: Energy-dense; easy to overconsume calories
-  - **Weight Gain**: If caloric surplus results from high fat intake
-  - **GI Distress**: High fat meals cause nausea, bloating in some individuals
-  - **Gallbladder Issues**: High fat can trigger gallbladder attacks in susceptible individuals
-  - **Steatorrhea**: In malabsorption conditions, excess dietary fat worsens symptoms
-  - **Cardiovascular Risk**: Depends heavily on fat type; saturated and trans fats most concerning
-  - **Pancreatitis**: High fat contraindicated; exacerbates inflammation
 
-  ## Special Populations
-  - **Cardiovascular Disease**: Emphasize unsaturated fats; Mediterranean pattern beneficial
-  - **Diabetes**: Fat quality affects insulin sensitivity; moderate fat intake often appropriate
-  - **Ketogenic Therapy**: 70-90% fat for epilepsy management; medical supervision required
-  - **Athletes**: Fat provides endurance fuel; 20-35% calories typically adequate
-  - **Gallbladder Disease**: Low-fat diet post-cholecystectomy; gradual increase over time
-  - **Pancreatic Insufficiency**: Enzyme replacement with fat intake; may require MCT oil
-  - **Malabsorption (Crohn's, Celiac)**: May need fat restriction or MCT supplementation
-  - **Cystic Fibrosis**: High fat, high calorie diet with enzyme replacement
-  - **NAFLD**: Moderate fat; emphasize unsaturated over saturated
+  No. Total fat already includes its components. Apple represents saturated, monounsaturated and polyunsaturated
+  fat as nutritional detail beneath total fat. Adding them again double counts the contribution. An app can log
+  selected nutrients, so absent subtype records do not establish that those fats were absent from the food. See
+  [Apple''s nutrition hierarchy](https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers).
 
-  ## Caveats & Limitations
-  - **Total Fat Limitations**: Without subtype data, clinical utility is reduced
-  - **Quality vs. Quantity**: Modern evidence prioritizes fat type over total amount
-  - **Hidden Fats**: Processed foods contain fats not easily tracked
-  - **Cooking Method Effects**: Frying adds fat not accounted for in raw food databases
-  - **Trans Fat Underreporting**: Partially hydrogenated oils being phased out but still present
-  - **Individual Response**: Lipid response to dietary fat varies significantly by genetics (APOE status)
-  - **Database Accuracy**: Fat content varies by animal diet, processing, preparation
+
+  | Before using a fat total | Check |
+
+  | --- | --- |
+
+  | Sample versus daily total | Whether it is a serving, meal or whole-day contribution |
+
+  | Grams versus percent | Grams eaten are not body-fat percentage or calorie percentage |
+
+  | Oil or recipe entries | Actual portion and recipe serving count |
+
+  | Multiple contributing apps | Whether the same food was imported twice |
+
+
+  ## What is a meaningful fat range?
+
+
+  The quantity of one food sample is not a daily dietary target. A recorded daily sum requires reasonably complete
+  logging before it can be compared with an individualized plan. Large entries may reflect serving estimates or
+  an imported daily summary, while a missing day does not mean zero fat intake. [FDA''s Nutrition Facts guide](https://www.fda.gov/food/nutrition-facts-label/whats-nutrition-facts-label)
+  explains portions and serving-based amounts.
+
+
+  ## Should fat grams match food calories?
+
+
+  Nine kcal per gram is a useful rough energy contribution. A full macro check also needs carbohydrate and protein
+  amounts for the same foods and source. Label calculations can use specific factors and rounding, so exact agreement
+  is not required. [The FDA labeling regulation](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101/subpart-A/section-101.9)
+  describes accepted calculations. Neither the fat record nor a macro formula proves how the source app generated
+  its calorie value.
+
+
+  ## How often is fat recorded, and does workout or sleep timing matter?
+
+
+  Cadence follows food entries or source syncing. A sample interval is not a digestion interval. A record may be
+  saved long after the meal, and a midnight entry may be a daily total. Matching timestamps to a workout or recorded
+  sleep is a logging-context check; it cannot establish absorption, exercise response or fat use. Daily comparisons
+  should state the number of days with usable logs.
+
+
+  ## What did the database investigation support?
+
+
+  The researched **365-day reporting window** contained no raw total-fat samples or stored total-fat aggregates.
+  Recorded ranges, extreme portions, cadence, macro-energy reconciliation and workout or sleep comparisons were
+  unavailable. No measured distribution or health outcome association is presented.
+
+
+  ## How can I make a fat log easier to read?
+
+
+  Check recipe portions and cooking-oil estimates, then use consistent source-specific daily sums. Keep total fat
+  separate from its subclasses. Review [Health''s data-source controls](https://support.apple.com/en-us/108779)
+  when connecting another app. A food-log trend should not be presented as a trend in body fat or blood cholesterol.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "String identifier for the fat source (e.g., 'olive oil', 'butter', 'avocado')"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Boolean indicating manual entry versus automatic capture"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from source app for synchronization"
+- key: HKMetadataKeyFoodType
+  description: 'Optional if provided by the source: String identifier for the fat source (e.g., ''olive oil'', ''butter'',
+    ''avocado'')'
+- key: HKMetadataKeyWasUserEntered
+  description: 'Optional if provided: indicates that the user entered the sample. Absence of this key does not prove
+    automatic measurement.'
+- key: HKMetadataKeyExternalUUID
+  description: 'Optional if provided by the source: Unique identifier from source app for synchronization'
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
-    relationship: "Saturated fat is a component of total fat"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated"
-    relationship: "Monounsaturated fat is a component of total fat"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
-    relationship: "Polyunsaturated fat is a component of total fat"
-  - identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
-    relationship: "Dietary cholesterol often accompanies saturated fat in animal foods"
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "Fat contributes to total caloric intake at 9 kcal/g"
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Related food-energy logs require matching source and logged-day coverage.
+- identifier: HKQuantityTypeIdentifierDietaryProtein
+  relationship: A nutrient component may be logged without other nutrients.
+- identifier: HKQuantityTypeIdentifierDietaryCarbohydrates
+  relationship: Carbohydrate totals and components have distinct semantics.
+- identifier: HKQuantityTypeIdentifierDietaryWater
+  relationship: Recorded water volume is not a measurement of hydration.
+- identifier: HKQuantityTypeIdentifierDietaryCaffeine
+  relationship: Caffeine dose is distinct from beverage volume.
+- identifier: HKQuantityTypeIdentifierBodyMass
+  relationship: Body-mass comparisons require compatible timing and do not establish dietary causality.
+- identifier: HKQuantityTypeIdentifierBodyFatPercentage
+  relationship: Body-fat percentage is a separate body-composition measurement; food-fat grams do not directly measure
+    or predict it.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFatTotal"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfattotal"
-    type: "official"
-  - title: "Dietary Reference Intakes for Fat - National Academies"
-    url: "https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids"
-    type: "research"
-  - title: "Dietary Fats and Cardiovascular Disease: AHA Presidential Advisory"
-    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000510"
-    type: "medical"
-  - title: "Dietary Guidelines for Americans 2020-2025: Fats"
-    url: "https://www.dietaryguidelines.gov/"
-    type: "official"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryFatTotal'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfattotal
+  type: official
+- title: 'Apple: Nutrition type identifiers'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+- title: 'FDA: Nutrition Facts label'
+  url: https://www.fda.gov/food/nutrition-facts-label/whats-nutrition-facts-label
+  type: official
+- title: 'FDA regulation: Calorie calculations'
+  url: https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101/subpart-A/section-101.9
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Fat Intake: Total Fat, Serving Logs & Calories'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative recorded intake amount; sample size is not necessarily a serving or a daily total.
+  cadence: Source-specific logging or synchronization cadence, not continuous sensing or a validated ingestion schedule.
+  context: Timestamp overlap with workouts or recorded sleep describes logging context; consumption time and physiological
+    response remain unverified.
+  coverage: Missing logs do not establish zero intake. A source can contribute only selected nutrients or drinks.
+  aggregation: Sum compatible recorded contributions within a source and reporting window after checking units,
+    serving semantics and duplicate imports. State logged-day coverage.
+  references:
+  - title: 'Apple: Nutrition types'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'Apple: Sample time semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples
+  metadata: Food descriptions and user-entered indicators can aid serving review when present; missing metadata
+    does not identify an automatic record or a complete diet. Food correlation linkage cannot be recovered from
+    temporal coincidence alone.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-fat-total
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Fresh 365-day example snapshot contained no raw samples or stored aggregates for this type. Values,
+    outliers, cadence, source distributions, workout/sleep comparisons and empirical relationships were unavailable.
+    Source guidance is documented instead of measured charts. Missing records do not establish zero intake; logging
+    timestamps need not be ingestion times. Fixed America/Los_Angeles reporting calendar.
