@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierInfrequentMenstrualCycles"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Infrequent Menstrual Cycles"
-short_description: "System-generated notification indicating menstrual cycles are occurring less frequently than typical, potentially signaling oligomenorrhea."
-icon: "calendar"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierInfrequentMenstrualCycles
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Infrequent Menstrual Cycles
+short_description: 'Understand infrequent periods in Apple Health: verified cycle-history assessments, recording
+  intervals and interpretation limits.'
+icon: calendar
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,14 +15,15 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "notApplicable"
-    description: "Infrequent menstrual cycles have been detected. This is a system notification indicating the user's cycle data shows fewer than expected periods over a defined tracking period."
+- value: 0
+  name: notApplicable
+  description: Generic marker for a saved Cycle Deviation assessment after history verification; not a negative
+    result or severity.
 ios_introduced:
-  version: "16.0"
+  version: '16.0'
   year: 2022
 watchos_introduced:
-  version: "9.0"
+  version: '9.0'
   year: 2022
 deprecated: false
 deprecated_in: null
@@ -29,89 +31,141 @@ writable: false
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Automatic detection through Cycle Tracking analysis when sufficient period data is logged"
-  - name: "Apple Watch"
-    capability: "Supports cycle tracking data collection for deviation detection"
-primary_source: "System-generated"
-description: |
-  ## Overview
-  Infrequent Menstrual Cycles is a system-generated notification (not user-logged data) that alerts users when their tracked menstrual cycles are occurring less often than typical. This feature, introduced in iOS 16, analyzes period data logged over multiple months to identify patterns of oligomenorrhea - cycles longer than 35-38 days occurring consistently.
+- name: iPhone / HealthKit
+  capability: On-device analysis of logged cycle history; the user verifies history before a deviation sample
+    is saved.
+primary_source: HealthKit Cycle Deviation analysis of verified logged history
+description: '## What does an infrequent-cycle record mean?
 
-  The notification is triggered when Apple's Cycle Tracking algorithm detects that the user has had fewer than the expected number of periods over a 6-month tracking period, based on logged menstrual flow data. This serves as an early warning system to prompt users to discuss cycle irregularities with their healthcare provider.
 
-  ## Health Significance
-  Infrequent menstrual cycles (oligomenorrhea) may indicate underlying health conditions requiring evaluation:
-  - **Polycystic ovary syndrome (PCOS)**: The most common cause of oligomenorrhea, associated with hormonal imbalances, insulin resistance, and fertility challenges
-  - **Thyroid dysfunction**: Both hypothyroidism and hyperthyroidism can cause cycle irregularities
-  - **Hyperprolactinemia**: Elevated prolactin levels suppress normal menstrual cycling
-  - **Hypothalamic amenorrhea**: Stress, excessive exercise, or low body weight can disrupt the hormonal axis
-  - **Perimenopause**: Cycle irregularity often marks the transition to menopause
-  - **Primary ovarian insufficiency**: Early decline in ovarian function causes cycle changes
-  - **Eating disorders**: Restrictive eating patterns affect menstrual regularity
+  Infrequent Menstrual Cycles is a saved Cycle Deviation assessment. It describes a pattern in logged period
+  history, rather than a single late period or a manually entered symptom.
 
-  Early detection of infrequent cycles enables timely evaluation and intervention for underlying conditions.
 
-  ## Clinical Interpretation Guidelines
-  When a patient presents with this notification:
-  - **Review cycle history**: Examine logged period data to confirm pattern (cycles > 35 days consistently)
-  - **Normal cycle range**: Cycles between 21-35 days are considered normal; > 35 days is clinically significant
-  - **Pattern assessment**:
-    - Occasional long cycle: May be stress-related or physiological
-    - Consistent oligomenorrhea (> 35 days between periods): Warrants evaluation
-    - Fewer than 4-6 periods per year: Consider more severe oligomenorrhea/amenorrhea
-  - **Clinical workup considerations**:
-    - Pregnancy test (always first step)
-    - TSH for thyroid function
-    - Prolactin level
-    - FSH, LH, estradiol for ovarian function
-    - Testosterone, DHEA-S if PCOS suspected
-    - Pelvic ultrasound for ovarian morphology
-  - **Lifestyle factors to assess**:
-    - Recent weight changes (gain or loss)
-    - Exercise patterns (excessive training)
-    - Stress levels
-    - Eating habits
-    - Recent contraceptive changes
+  Apple''s [HealthKit definition](https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/infrequentmenstrualcycles)
+  is one or two periods in the preceding six months. This is the definition for this Apple category, not a
+  universal clinical cutoff for a long cycle. Apple saves a deviation sample after the user confirms that the
+  flagged history is accurate.
 
-  ## Caveats & Limitations
-  - Read-only system notification; users cannot manually create this sample
-  - Requires consistent period logging over multiple months for accurate detection
-  - Algorithm specifics (exact thresholds, minimum data requirements) are not publicly disclosed
-  - Does not identify cause of infrequency; clinical evaluation required
-  - Users with naturally long but regular cycles may trigger notification
-  - Hormonal contraceptive use (especially methods causing amenorrhea) may affect detection
-  - Postpartum and breastfeeding periods create expected cycle infrequency
-  - Perimenopause naturally causes cycle irregularity
-  - Recent hormonal contraceptive discontinuation may cause temporary irregularity
-  - Notification does not appear immediately; requires longitudinal pattern recognition
-metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+
+  ## How is it different from menstrual flow?
+
+
+  | Record | What it describes | What it cannot establish |
+
+  | --- | --- | --- |
+
+  | Menstrual Flow | A logged bleeding interval and flow category | Complete period counts without reviewing
+  logging and cycle starts |
+
+  | Infrequent Menstrual Cycles | A verified history pattern of infrequent periods | Hormone concentrations,
+  ovulation or an underlying diagnosis |
+
+  | Irregular Menstrual Cycles | Variation between cycle lengths | The same pattern as low period frequency
+  |
+
+
+  A flow row is not necessarily an entire period: multiple entries can describe changes during the same period.
+  Counting those rows as separate periods creates an artificial frequency. Cycle-start metadata, duplicate
+  entries and missing logging need review before reconstructing a history.
+
+
+  ## What does the value and timing tell you?
+
+
+  The category uses code **0, notApplicable**. That marker means no more specific value is defined. It does
+  not mean that the deviation is absent, and it carries no severity or days-between-periods measurement.
+
+
+  Start-to-start gaps between saved assessments are not menstrual-cycle lengths. The interval timestamps alone
+  do not establish when a notification appeared or when history was confirmed. A saved assessment may overlap
+  several nights and workouts without measuring a cycle change during each one.
+
+
+  ## What did the example data show?
+
+
+  No records for this category were available in the researched reporting year. A measured distribution, notification
+  cadence and sleep or workout comparison could not be produced. Related bleeding history could not be paired
+  with an absent primary category, so no chart or reconstructed cycle frequency is presented. An empty result
+  cannot establish regular cycles or exclude a reproductive condition.
+
+
+  ## What should you check before interpreting it?
+
+
+  Review whether the period history is complete and correct. [Apple Support](https://support.apple.com/en-us/120356)
+  explains that recent or ongoing logged cycle factors disable deviation detection. A missing assessment therefore
+  does not prove that the history was evaluated. Share an accurate history with a healthcare professional when
+  discussing a persistent change; this category cannot identify its cause.
+
+
+  ## Is this type collected by PulsHealth?
+
+
+  This identifier is documented here but is absent from PulsHealth’s current sync catalog. An empty database
+  result cannot establish whether the phone contains this assessment.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Source data analyzed to detect infrequent cycle patterns"
-  - identifier: "HKCategoryTypeIdentifierIrregularMenstrualCycles"
-    relationship: "Related deviation detection for cycle length variability"
-  - identifier: "HKCategoryTypeIdentifierProlongedMenstrualPeriods"
-    relationship: "Related deviation detection for extended bleeding duration"
-  - identifier: "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding"
-    relationship: "Related deviation detection for bleeding between periods"
-  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
-    relationship: "May help identify ovulatory vs anovulatory cycles"
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierIntermenstrualBleeding
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierPregnancy
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierLactation
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierContraceptive
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierIrregularMenstrualCycles
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierPersistentIntermenstrualBleeding
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierProlongedMenstrualPeriods
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
 references:
-  - title: "HKCategoryTypeIdentifierInfrequentMenstrualCycles - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierinfrequentmenstrualcycles"
-    type: "official"
-  - title: "Cycle Tracking in iOS 16 - Apple"
-    url: "https://www.apple.com/newsroom/2022/06/apple-previews-ios-16/"
-    type: "official"
-  - title: "Oligomenorrhea - ACOG"
-    url: "https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2015/01/menstruation-in-girls-and-adolescents-using-the-menstrual-cycle-as-a-vital-sign"
-    type: "medical"
-  - title: "Evaluation of Menstrual Irregularities - AAFP"
-    url: "https://www.aafp.org/pubs/afp/issues/2019/0301/p295.html"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Infrequent periods — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/infrequentmenstrualcycles
+  type: official
+- title: Cycle Tracking and cycle deviations — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+- title: Generic category marker — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalue/notapplicable
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Infrequent periods in Apple Health: cycle deviation meaning'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: infrequent-menstrual-cycles
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; empirical analysis was skipped because there are no primary
+    category records in the selected reporting year. Measured code frequencies, source differences, saved interval
+    spans, cadence and workout/sleep or related-type comparisons are unavailable. A missing assessment does
+    not establish normal cycles or absence of bleeding. Category codes are nominal, and interval timestamps
+    do not identify notification/verification time. Detection settings, logging completeness and confirmed
+    underlying history are unavailable.

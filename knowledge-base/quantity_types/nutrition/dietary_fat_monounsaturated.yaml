@@ -1,42 +1,30 @@
-identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Monounsaturated Fat"
-short_description: "Monounsaturated fatty acid intake, primarily from olive oil, nuts, and avocados"
-icon: "drop.fill"
-color: "#34C759"
-default_unit: "g"
+identifier: HKQuantityTypeIdentifierDietaryFatMonounsaturated
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Monounsaturated Fat
+short_description: Understand monounsaturated fat grams, incomplete subtype logs and comparisons with total
+  fat.
+icon: drop.fill
+color: '#34C759'
+default_unit: g
 supported_units:
-  - "g"
-  - "mg"
-  - "oz"
-unit_description: "Grams (g) of monounsaturated fatty acids (MUFA). MUFAs have one double bond in their carbon chain and are typically liquid at room temperature."
-aggregation_type: "cumulative"
+- g
+- mg
+- oz
+unit_description: g of logged fat (monounsaturated); display unit for this HealthKit concept; absent from the
+  current PulsHealth collection catalog.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-typical_range:
-  min: 10
-  max: 80
-  unit: "g"
-  notes: "Mediterranean diet provides 15-20% of calories from MUFA. Average American intake is ~11-12% of calories."
-clinical_ranges:
-  - population: "Adults (general)"
-    rda: "No specific RDA; part of total fat AMDR (20-35% of calories)"
-  - population: "Mediterranean Diet Pattern"
-    rda: "15-20% of total calories from MUFA"
-  - population: "Cardiovascular Disease Prevention"
-    rda: "Replace saturated fat with MUFA for LDL reduction"
-  - population: "Diabetes/Metabolic Syndrome"
-    rda: "Emphasize MUFA over saturated fat for insulin sensitivity"
-  - population: "Elevated LDL Cholesterol"
-    rda: "Substitute for saturated fat sources"
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -44,99 +32,169 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "MUFA tracking as component of detailed fat breakdown"
-    examples:
-      - "Cronometer"
-      - "MyFitnessPal"
-      - "MacroFactor"
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Dietary Monounsaturated Fat (MUFA) represents intake of fatty acids with a single double bond in their carbon chain. The predominant dietary MUFA is oleic acid (18:1), abundant in olive oil, avocados, nuts (almonds, pecans, macadamia), and some animal fats. MUFAs are a cornerstone of the Mediterranean diet and are associated with cardiovascular benefit, particularly when replacing saturated fat.
+- name: Manual entry
+  capability: User-entered amounts saved to Apple Health.
+- name: Authorized nutrition apps
+  capability: Food contributions shared with HealthKit when the source supports this specific type and has
+    write authorization.
+primary_source: Manual records or authorized nutrition apps; the source determines food composition and serving
+  semantics.
+description: '## What is monounsaturated fat in Apple Health?
 
-  There is no established FDA Daily Value for monounsaturated fat specifically. Nutrition labels are not required to list MUFA content, though some products voluntarily include it. The focus for labeling and guidelines is on limiting saturated fat and trans fat rather than targeting specific MUFA intake levels.
 
-  ## Health Significance
-  Monounsaturated fat intake supports:
-  - **Cardiovascular Health**: Replaces saturated fat to lower LDL without reducing HDL
-  - **Insulin Sensitivity**: High-MUFA diets improve glycemic control in type 2 diabetes
-  - **Inflammation Reduction**: Oleic acid has anti-inflammatory properties
-  - **Endothelial Function**: Extra virgin olive oil improves blood vessel function
-  - **Blood Pressure**: Part of DASH and Mediterranean patterns that lower BP
-  - **Body Composition**: May promote favorable fat distribution vs. saturated fat
-  - **Cognitive Health**: Mediterranean diet (high MUFA) associated with reduced dementia risk
-  - **Antioxidant Vehicle**: Olive oil contains polyphenols with additional benefits
+  This type records the amount of monounsaturated fat consumed as logged in **g**. [Apple defines a cumulative
+  mass quantity](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfatmonounsaturated).
+  It describes a food component, rather than a measurement of body fat or a blood lipid result.
 
-  ## Clinical Interpretation Guidelines
-  When assessing MUFA intake:
-  1. **Evaluate Source Quality**: Extra virgin olive oil provides polyphenols; refined oils do not
-  2. **Compare to Saturated Fat**: Ratio of MUFA:SFA is more informative than absolute MUFA
-  3. **Assess as Part of Pattern**: MUFA intake meaningful in context of overall diet quality
-  4. **Check Total Fat Balance**: MUFA + PUFA should exceed saturated fat intake
-  5. **Review Food Sources**: Nuts and avocados provide fiber/nutrients vs. pure oils
-  6. **Consider Mediterranean Adherence**: MUFA is one component of beneficial dietary pattern
-  7. **Correlate with Lipid Panel**: High MUFA diets may improve HDL:LDL ratio
 
-  ## Deficiency Symptoms
-  MUFA is not an essential nutrient; no deficiency syndrome exists:
-  - Body can synthesize monounsaturated fatty acids (via stearoyl-CoA desaturase)
-  - No recommended minimum intake established
-  - Low MUFA intake is suboptimal but not deficiency
-  - Health effects relate to what MUFA replaces in the diet
+  ## How does it fit within total fat?
 
-  ## Excess/Toxicity
-  High MUFA intake has minimal adverse effects:
-  - **Caloric Excess**: As with all fats, overconsumption leads to caloric surplus
-  - **GI Distress**: Very high olive oil intake may cause mild GI upset in some
-  - **Weight Gain**: If total calories exceed expenditure, regardless of fat type
-  - **No Established Upper Limit**: Studies with up to 25% of calories from MUFA show no harm
-  - **Processing Concerns**: Some MUFA oils (high-oleic sunflower) are highly processed
 
-  ## Special Populations
-  - **Cardiovascular Disease**: Extra virgin olive oil (EVOO) specifically studied; 4+ tbsp/day in PREDIMED
-  - **Type 2 Diabetes**: High-MUFA diets may improve HbA1c and reduce medication needs
-  - **Metabolic Syndrome**: Mediterranean pattern with high MUFA improves all syndrome components
-  - **NAFLD**: MUFA-rich diet may reduce hepatic fat content
-  - **Elevated Triglycerides**: Replacing carbohydrates with MUFA lowers triglycerides
-  - **Elderly**: Cognitive benefits of Mediterranean diet include MUFA component
-  - **Athletes**: Adequate fat including MUFA supports hormone production; not performance-limiting
+  Monounsaturated fat is a component of total fat. [Apple''s nutrition hierarchy](https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers)
+  allows detailed subtype records alongside a total; the subtype should not be added again to that total. A
+  source can omit subtype detail, so missing MUFA records do not establish that the foods contained no monounsaturated
+  fat.
 
-  ## Caveats & Limitations
-  - **Source Matters**: EVOO differs from refined olive oil or high-oleic vegetable oils
-  - **Polyphenols Confounding**: Olive oil benefits may be partly from polyphenols, not just MUFA
-  - **Food Matrix Effects**: Nuts provide fiber, minerals, phytosterols beyond MUFA
-  - **Database Limitations**: MUFA content varies by olive variety, ripeness, processing
-  - **Cooking Stability**: MUFA more stable than PUFA for cooking but less than saturated fat
-  - **Mediterranean Diet Complexity**: MUFA is one component; isolating its effect is difficult
-  - **Industry Influence**: Olive oil industry funding of some research creates potential bias
+
+  | Quantity | Keep separate from |
+
+  | --- | --- |
+
+  | MUFA grams | Total fat grams already including that component |
+
+  | Cooking-oil volume | Nutrient mass; oil volume is not MUFA grams |
+
+  | Recipe fat estimate | The actual portion consumed |
+
+  | Body-fat percentage | A separate body-composition measurement |
+
+
+  ## Why might MUFA totals look unexpectedly small or large?
+
+
+  Some food databases provide total fat but incomplete subtype composition. Recipe serving counts, cooking-oil
+  estimates and duplicate imports can also change the recorded amount. Compare same-source logged days and
+  inspect portions before interpreting a distribution or flagging unusually large contributions.
+
+
+  ## Is there a universal normal range for each entry?
+
+
+  A single food portion has no general normal MUFA range. A dietary plan concerns the broader eating pattern
+  and requires adequate logging. [FDA''s current label references](https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels)
+  include total and saturated fat; this page does not substitute those values as MUFA targets. Do not infer
+  a missing fat subtype by subtracting incomplete logs from total fat.
+
+
+  ## Can PulsHealth collect this type?
+
+
+  This HealthKit concept is documented in the knowledge base, but it is absent from the current PulsHealth
+  collection catalog. Automatic sync is not provided for this type by that catalog. Its absence from the database
+  does not establish that Apple Health contains no records.
+
+
+  ## When are entries recorded, and what does context mean?
+
+
+  Cadence follows food logging or source synchronization, not continuous sensing. A record whose timestamp
+  overlaps a workout or recorded sleep may describe an earlier meal or a daily summary. Review start times,
+  durations and source history before discussing meal timing. Missing days remain unlogged rather than zero
+  intake. [Health''s source controls](https://support.apple.com/en-us/108779) help when reviewing overlapping
+  apps.
+
+
+  ## What did the database investigation establish?
+
+
+  The researched **365-day reporting window** contained no raw samples or stored aggregates for this nutrient.
+  Recorded ranges, unusual portions, source overlap, recording intervals and workout or sleep comparisons were
+  unavailable. Related nutrient comparisons were unavailable because there were no records for this type. No
+  empirical nutrient association or measured chart is supported. These missing records do not establish zero
+  consumption or a deficient diet.
+
+
+  ## How can I make the log easier to interpret?
+
+
+  Check the represented serving, preserve source-specific daily totals and state how many days have usable
+  logs. Review duplicate food imports before summing sources. Food descriptions may clarify portions when supplied,
+  but absent metadata does not prove automatic measurement or complete recording.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "String identifier for the MUFA source (e.g., 'olive oil', 'almonds', 'avocado')"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Boolean indicating manual entry versus automatic capture"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from source app for synchronization"
+- key: HKMetadataKeyFoodType
+  description: Optional food description if supplied; it does not establish portion size or complete composition.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional indication of user entry; absence does not establish automatic measurement.
+- key: HKMetadataKeyExternalUUID
+  description: Optional source external identifier; not a universal food identifier or guaranteed cross-app
+    duplicate key.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
-    relationship: "MUFA is a component of total fat"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
-    relationship: "MUFA should preferentially replace saturated fat for cardiovascular benefit"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
-    relationship: "Both are unsaturated fats; MUFA more oxidatively stable"
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "MUFA contributes to total caloric intake at 9 kcal/g"
+- identifier: HKQuantityTypeIdentifierDietaryFatTotal
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryFatPolyunsaturated
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryFatSaturated
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFatMonounsaturated"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfatmonounsaturated"
-    type: "official"
-  - title: "PREDIMED Trial: Primary Prevention of Cardiovascular Disease with a Mediterranean Diet"
-    url: "https://www.nejm.org/doi/full/10.1056/NEJMoa1800389"
-    type: "research"
-  - title: "Monounsaturated Fatty Acids and Risk of Cardiovascular Disease: Circulation"
-    url: "https://www.ahajournals.org/doi/10.1161/CIRCULATIONAHA.114.010867"
-    type: "research"
-  - title: "Olive Oil and Health: Summary of the II International Conference"
-    url: "https://pubmed.ncbi.nlm.nih.gov/20442390/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryFatMonounsaturated'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfatmonounsaturated
+  type: official
+- title: 'Apple: Nutrition type hierarchy'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'FDA: Current label Daily Values'
+  url: https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Monounsaturated Fat: MUFA Logs & Total Fat'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative logged nutrient amount; a sample may represent a food, meal or imported daily contribution.
+  cadence: Source-specific food logging or synchronization, not continuous nutrient sensing.
+  context: Workout and sleep overlap describe record timestamps; ingestion time, absorption and physiological
+    response remain unverified.
+  coverage: Missing entries are unlogged, not zero intake; sources can provide only selected nutrients.
+  aggregation: Sum compatible contributions within a source after checking serving semantics and duplicate
+    imports; report logged-day coverage.
+  metadata: Food descriptions and entry indicators are optional; temporal coincidence does not recover explicit
+    food-correlation membership.
+  references:
+  - title: 'Apple: Nutrition type identifiers'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'Apple: Sample semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-fat-monounsaturated
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified 365-day selected-user window contained no raw samples or stored aggregates for this
+    type. Coverage and primary sources were reviewed; empirical analysis was skipped because this type had
+    no observations. Value distributions, outliers, cadence, source overlap, workout/sleep comparisons and
+    empirical related-type associations were unavailable. Source guidance is presented without a measured figure.
+    Missing logs do not establish zero intake. Fixed America/Los_Angeles reporting calendar; logging timestamps
+    need not be eating times. Database absence does not establish absence in Apple Health on the phone.

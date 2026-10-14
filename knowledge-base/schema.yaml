@@ -182,12 +182,13 @@ recording_behavior:
 # A facet with no available evidence is still investigated; explain it in limitations.
 # data_research:
 #   status: "complete"
+#   review_basis: "coverage_and_sources"  # Optional: data_analysis when measured data are analyzed
 #   reviewed_on: "2026-10-14"
 #   workflow_version: "1"
 #   artifact_key: "example-metric"
 #   facets: [provenance, coverage, sources, values, outliers, cadence,
 #            workout_context, sleep_context, time_patterns, related_types, type_specific]
-#   limitations: "State unavailable measurements and inferred context; one person's observations are not reference ranges."
+#   limitations: "State unavailable measurements, collection constraints and inferred context; example observations are not reference ranges."
 
 # Optional published figures: same-origin files only, with captions and methods.
 # figures:

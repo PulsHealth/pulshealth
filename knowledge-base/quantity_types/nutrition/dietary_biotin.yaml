@@ -1,219 +1,190 @@
-identifier: "HKQuantityTypeIdentifierDietaryBiotin"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Biotin (Vitamin B7)"
-short_description: "Records dietary intake of biotin (vitamin B7), essential for carboxylase enzymes in fatty acid, amino acid, and glucose metabolism."
-
-# --- APPLE HEALTH UI ---
-icon: "pills.fill"
-color: "#FFCC00"
-
-default_unit: "mcg"
-supported_units: ["mcg", "mg"]
-aggregation_type: "cumulative"
-statistics_options: ["cumulativeSum", "separateBySource"]
-typical_range:
-  min: 10
-  max: 100
-  unit: "mcg"
-clinical_ranges:
-  - population: "Adult men (19+ years)"
-    ai: "30 mcg/day"
-  - population: "Adult women (19+ years)"
-    ai: "30 mcg/day"
-  - population: "Pregnancy"
-    ai: "30 mcg/day"
-  - population: "Lactation"
-    ai: "35 mcg/day"
-  - population: "Infants (0-6 months)"
-    ai: "5 mcg/day"
-  - population: "Infants (7-12 months)"
-    ai: "6 mcg/day"
-  - population: "Children (1-3 years)"
-    ai: "8 mcg/day"
-  - population: "Children (4-8 years)"
-    ai: "12 mcg/day"
-  - population: "Children (9-13 years)"
-    ai: "20 mcg/day"
-  - population: "Adolescents (14-18 years)"
-    ai: "25 mcg/day"
+identifier: HKQuantityTypeIdentifierDietaryBiotin
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Biotin (Vitamin B7)
+short_description: Understand Apple Health biotin (B7) intake logs, mcg units, source coverage and daily totals.
+icon: pills.fill
+color: '#FFCC00'
+default_unit: mcg
+supported_units:
+- mcg
+- mg
+- g
+aggregation_type: cumulative
+statistics_options:
+- cumulativeSum
+- separateBySource
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Manual logging and barcode scanning of food items with biotin content"
-    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
-  - name: "Nutrition coaching platforms"
-    capability: "Meal planning with micronutrient tracking"
-    examples: ["Noom", "PlateJoy"]
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Biotin (vitamin B7, formerly vitamin H) is a water-soluble vitamin that serves as a covalently
-  bound prosthetic group for five carboxylase enzymes in humans. These biotin-dependent
-  carboxylases are essential for fatty acid synthesis, amino acid catabolism, and gluconeogenesis.
-  Biotin is widely available in foods and is also synthesized by intestinal bacteria, making
-  frank deficiency rare in healthy individuals. However, certain genetic conditions, medications,
-  and dietary factors can precipitate deficiency.
+- name: Nutrition data source
+  capability: User-entered or imported food and supplement composition estimates; no direct nutrient sensing.
+primary_source: Nutrition logging sources
+description: '## What does Apple Health record?
 
-  ## Biological Functions
-  - **Acetyl-CoA carboxylase (ACC)**: Rate-limiting step in fatty acid synthesis; converts
-    acetyl-CoA to malonyl-CoA
-  - **Pyruvate carboxylase (PC)**: Key enzyme in gluconeogenesis; converts pyruvate to
-    oxaloacetate
-  - **Propionyl-CoA carboxylase (PCC)**: Catabolism of odd-chain fatty acids and certain
-    amino acids (isoleucine, valine, methionine, threonine)
-  - **3-Methylcrotonyl-CoA carboxylase (MCC)**: Leucine catabolism
-  - **Gene expression**: Histones can be biotinylated, potentially affecting gene regulation
-  - **Cell signaling**: Emerging evidence for non-carboxylase functions
 
-  ## Health Significance
-  Biotin has gained significant consumer attention for its purported benefits for hair, skin,
-  and nail health. While biotin deficiency clearly causes hair loss and dermatitis, evidence
-  that supplementation improves these conditions in biotin-replete individuals is limited.
-  Clinically, biotin is most relevant in the context of inherited metabolic disorders affecting
-  carboxylase function, certain medications, and a critical laboratory interference issue
-  where high-dose biotin supplementation can cause erroneous results in immunoassays.
+  Biotin supports enzymes involved in nutrient metabolism. A dietary biotin entry records an estimated amount
+  consumed; it cannot measure enzyme activity, absorption or biotin status. [Apple defines this type as cumulative
+  intake in mass units](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarybiotin).
+  It is entered or imported through a source that supplies nutrition data. An Apple Watch does not sense the
+  nutrient amount in a meal.
 
-  ## Clinical Interpretation Guidelines
-  - **Adequate Intake (AI)**: Only AI values exist (no RDA) due to insufficient data
-  - **Daily monitoring**: Compare cumulative intake against AI values
-  - **Trend analysis**: Assess 7-14 day averages
-  - **Supplement awareness**: High-dose biotin supplements (common for hair/nail claims)
-    rarely captured in food logs
-  - **Laboratory interference**: CRITICAL - biotin can interfere with immunoassays
-    (troponin, thyroid tests, hormone panels)
-  - **Urinary 3-hydroxyisovaleric acid**: Elevated levels suggest marginal biotin deficiency
 
-  ## Deficiency
-  **Primary deficiency** is rare but recognized causes include:
+  ## Why can a biotin supplement matter to a blood test?
 
-  **Genetic disorders**:
-  - Biotinidase deficiency: Inability to recycle biotin from biocytin; screened at birth
-  - Holocarboxylase synthetase deficiency: Impaired attachment of biotin to carboxylases
 
-  **Acquired deficiency** symptoms:
-  - **Dermatologic**: Periorificial (around eyes, nose, mouth) scaly, erythematous dermatitis;
-    seborrheic-like rash
-  - **Hair**: Alopecia (hair loss), loss of hair color
-  - **Neurological**: Lethargy, hypotonia, developmental delay (infants); depression,
-    paresthesias, hallucinations (adults)
-  - **Metabolic**: Lactic acidosis, organic aciduria
-  - **Immune**: Increased susceptibility to infections (Candida)
+  Biotin supplements can interfere with some laboratory assays, causing misleading results. Tell the clinician
+  or laboratory which product you take; an Apple Health total cannot determine whether a particular test is
+  affected or when to pause a product. [NIH Office of Dietary Supplements](https://ods.od.nih.gov/factsheets/Biotin-HealthProfessional/)
+  explains the nutrient background and distinctions.
 
-  **At-risk populations**:
-  - Raw egg white consumption (avidin binds biotin and prevents absorption)
-  - Parenteral nutrition without biotin supplementation
-  - Chronic anticonvulsant therapy (especially valproic acid, carbamazepine, phenytoin)
-  - Chronic alcohol use
-  - Pregnancy (marginal biotin deficiency is common)
-  - Inflammatory bowel disease
-  - Biotinidase deficiency carriers (heterozygotes may have reduced activity)
 
-  ## Toxicity/Excess
-  No Tolerable Upper Intake Level (UL) has been established for biotin. Even at very high
-  supplemental doses (up to 200 mg/day in some studies), no adverse effects have been
-  consistently reported.
+  | What to check | Why it changes interpretation |
 
-  **CRITICAL LABORATORY INTERFERENCE**:
-  High-dose biotin supplementation (commonly 5,000-10,000 mcg/day for hair/nails) can cause
-  significant interference with immunoassays that use biotin-streptavidin technology:
+  | --- | --- |
 
-  - **Troponin**: False decreases can mask myocardial infarction
-  - **Thyroid function tests (TSH, T4, T3)**: Results may appear hyperthyroid (low TSH,
-    elevated T3/T4) or hypothyroid depending on assay design
-  - **Parathyroid hormone**: Falsely elevated or decreased
-  - **Reproductive hormones (FSH, LH, estradiol, testosterone)**: Variable interference
-  - **Tumor markers (PSA, CA-125)**: False results possible
-  - **BNP/NT-proBNP**: May affect heart failure assessment
+  | mcg versus mg | A 1 mg amount is 1,000 mcg. Check both the product label and the export unit before interpreting
+  a large entry. |
 
-  FDA has issued warnings. Patients should be advised to discontinue biotin supplements
-  2-7 days before laboratory testing depending on dose.
+  | Food versus supplement | A supplement amount may be far larger than a food composition estimate; size alone
+  does not establish a duplicate. |
 
-  ## Food Sources
-  - **Excellent sources (>10 mcg/serving)**: Beef liver, egg yolk (cooked), salmon, pork
-  - **Good sources (5-10 mcg/serving)**: Sunflower seeds, sweet potato, almonds, spinach,
-    broccoli
-  - **Moderate sources (<5 mcg/serving)**: Cheese, milk, whole wheat bread, banana,
-    mushrooms, cauliflower
+  | Blood-test context | Laboratory assay method and supplement timing are outside this intake field. |
 
-  Note: Egg whites contain avidin, which tightly binds biotin and prevents absorption.
-  Cooking denatures avidin and eliminates this effect. Chronic consumption of raw egg whites
-  can cause deficiency.
 
-  ## Special Populations
-  - **Pregnancy**: Marginal biotin deficiency is common (up to 50% of pregnant women);
-    may affect fetal development; teratogenic in animal studies at deficient states
-  - **Infants on formula**: Ensure formula contains adequate biotin
-  - **Biotinidase deficiency patients**: Require lifelong biotin supplementation (5-20 mg/day)
-  - **Patients on anticonvulsants**: Valproic acid, carbamazepine, phenytoin, and
-    phenobarbital may deplete biotin; monitor and consider supplementation
-  - **Long-term parenteral nutrition**: Requires biotin in TPN formulation
-  - **Chronic alcohol users**: May have impaired biotin status
-  - **Smokers**: Some evidence of lower biotin status
-  - **Patients taking high-dose biotin supplements**: Counsel regarding laboratory interference
+  ## Why is the chart empty or missing some days?
 
-  ## Drug Interactions
-  - **Anticonvulsants (valproic acid, carbamazepine, phenytoin, phenobarbital, primidone)**:
-    Accelerate biotin catabolism and may cause deficiency with long-term use
-  - **Antibiotics (long-term)**: May reduce intestinal bacterial biotin synthesis
-  - **Isotretinoin**: May affect biotin metabolism
-  - **Alpha-lipoic acid**: Competes for cellular uptake via same transporter
-  - **Pantothenic acid (high doses)**: May compete for intestinal absorption
-  - **Raw egg whites**: Avidin protein binds biotin irreversibly
 
-  **Note on laboratory tests**: While not a drug interaction per se, biotin supplementation
-  interferes with streptavidin-biotin immunoassays, affecting numerous clinical tests.
+  The reviewed example data contained no raw samples or stored aggregates for this type in the 365-day window
+  from October 2025 through September 2026. There is no measured range, recording cadence, outlier distribution
+  or daily trend to plot. Missing records do not establish zero intake, deficiency or absence of supplement
+  use.
 
-  ## Caveats & Limitations
-  - **Adequate Intake only**: No RDA established; AI based on limited data
-  - **Self-reported intake**: Accuracy depends on user diligence and food database quality
-  - **Supplement use underreported**: High-dose biotin supplements common but often not logged
-  - **Bacterial contribution**: Intestinal synthesis not reflected in dietary intake data
-  - **Bioavailability**: Varies by food source; protein-bound biotin requires biotinidase
-  - **No direct measurement**: HealthKit data reflects intake estimates, not serum levels
-  - **Laboratory interference critical**: Healthcare providers must ask about biotin supplements
-  - **Limited evidence for cosmetic benefits**: Hair/skin/nail claims largely unsubstantiated
-    in biotin-replete individuals
+
+  This HealthKit type is not in the current PulsHealth sync catalog. An empty database result therefore does
+  not establish that Apple Health on the phone has no entries.
+
+
+  A nutrition source can export only selected nutrients. Check the source app, its Health permissions and whether
+  the food entry contains this nutrient before treating an empty chart as a dietary finding.
+
+
+  ## How should entries become daily totals?
+
+
+  Keep units visible: 1 mg equals 1,000 mcg, and 1 g equals 1,000 mg. Here mcg is the presentation unit; inspect
+  the unit supplied in an export before adding values. Sum compatible contributions from a source after checking
+  serving size, repeated imports and whether each entry is a serving, meal or already a daily total.
+
+
+  Report both the total and how many days contain logs. An average over logged days differs from an average
+  over all calendar days; filling gaps with zero changes the question. A source switch can create an apparent
+  intake change through a different food database or export policy.
+
+
+  ## Can workouts, sleep or other nutrients explain a change?
+
+
+  A sample timestamp inside a workout or sleep interval is time assigned by the source; it does not establish
+  when the record was saved, verify ingestion or demonstrate a physiological response. Without focal nutrient
+  records, this review could not estimate workout, sleep or nutrient relationships.
+
+
+  When records are available, compare compatible sources and days with adequate logging. Similar timestamps
+  for B vitamins may indicate a shared food or supplement entry, but explicit meal membership requires a stored
+  link. Related intake types provide bookkeeping context rather than a test of absorption or health status.
+
+
+  ## What should I check before interpreting an extreme value?
+
+
+  Review the unit, serving count, source revision and duplicate candidates before drawing a health conclusion.
+  Preserve the original record while investigating it. The nutrition log can help organize a conversation about
+  food or products; its amounts are not blood-test reference ranges or individualized supplement instructions.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "The type of food or meal providing the biotin intake"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier used to sync data across multiple devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for synced nutrition data"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External unique identifier from the source app"
+- key: HKMetadataKeyFoodType
+  description: Optional food description supplied by the source; it does not establish complete meal composition.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryPantothenicAcid"
-    relationship: "Related B-vitamin that may compete for absorption at high doses"
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminB12"
-    relationship: "B-vitamin involved in related metabolic pathways"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
-    relationship: "Biotin-dependent acetyl-CoA carboxylase is essential for fatty acid synthesis"
-  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
-    relationship: "Biotin-dependent pyruvate carboxylase is key enzyme in gluconeogenesis"
+- identifier: HKQuantityTypeIdentifierDietaryFolate
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryNiacin
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryPantothenicAcid
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryRiboflavin
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryThiamin
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryVitaminB12
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryVitaminB6
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryBiotin"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarybiotin"
-    type: "official"
-  - title: "NIH Office of Dietary Supplements - Biotin Fact Sheet for Health Professionals"
-    url: "https://ods.od.nih.gov/factsheets/Biotin-HealthProfessional/"
-    type: "medical"
-  - title: "FDA Safety Communication - Biotin Interference with Lab Tests"
-    url: "https://www.fda.gov/medical-devices/safety-communications/update-fda-warns-biotin-may-interfere-lab-tests-fda-safety-communication"
-    type: "official"
-  - title: "Institute of Medicine - Dietary Reference Intakes for Thiamin, Riboflavin, Niacin, Vitamin B6, Folate, Vitamin B12, Pantothenic Acid, Biotin, and Choline"
-    url: "https://nap.nationalacademies.org/catalog/6015/dietary-reference-intakes-for-thiamin-riboflavin-niacin-vitamin-b6-folate-vitamin-b12-pantothenic-acid-biotin-and-choline"
-    type: "research"
-  - title: "Biotinidase Deficiency - GeneReviews NCBI Bookshelf"
-    url: "https://www.ncbi.nlm.nih.gov/books/NBK1322/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: 'Apple: Biotin (B7) intake'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarybiotin
+  type: official
+- title: 'Apple: Nutrition type identifiers'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'NIH ODS: Biotin (B7) fact sheet'
+  url: https://ods.od.nih.gov/factsheets/Biotin-HealthProfessional/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Biotin (B7): Intake Logs, Units & Daily Totals'
+unit_description: mcg is a readable intake-mass unit; inspect the exported unit and source nutrient convention
+  before converting or summing.
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative recorded nutrient mass; a sample may represent a serving, meal or source-defined contribution.
+  cadence: Source-specific logging and import cadence, not continuous nutrient sensing. No intervals were observed
+    in the reviewed data.
+  context: Workout and sleep overlap describes recorded timestamps; ingestion time and absorption remain unverified.
+  coverage: No samples or aggregates in the reviewed window. Missing entries are unavailable coverage, not
+    zero intake.
+  aggregation: Sum compatible source contributions after unit, serving and duplicate review; retain logged-day
+    counts and source nutrient conventions.
+  metadata: Optional food context cannot identify every nutrient form, ingestion time or explicit meal membership.
+  references:
+  - title: 'Apple: Biotin (B7) intake'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarybiotin
+  - title: 'Apple: Nutrition type identifiers'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'NIH ODS: Biotin (B7) fact sheet'
+    url: https://ods.od.nih.gov/factsheets/Biotin-HealthProfessional/
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  review_basis: coverage_and_sources
+  artifact_key: dietary-biotin
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Fresh 365-day database coverage and primary sources reviewed; no empirical analysis was performed
+    because no raw samples or aggregates were available for this type. Values, outliers, cadence, source patterns,
+    workout/sleep context and empirical nutrient relationships were unavailable. Missing logs do not establish
+    zero intake. Biotin supplement logs need product amount and units; laboratory-assay interference cannot
+    be inferred from a dietary record.

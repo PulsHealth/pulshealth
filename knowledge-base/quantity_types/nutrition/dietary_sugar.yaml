@@ -1,44 +1,28 @@
-identifier: "HKQuantityTypeIdentifierDietarySugar"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Sugar"
-short_description: "Total sugar intake including natural and added sugars"
-icon: "cube.fill"
-color: "#FF2D55"
-default_unit: "g"
+identifier: HKQuantityTypeIdentifierDietarySugar
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Sugar
+short_description: Read sugar logs without confusing total sugar with added sugar, free sugar or blood glucose.
+icon: cube.fill
+color: '#FF2D55'
+default_unit: g
 supported_units:
-  - "g"
-  - "mg"
-  - "oz"
-unit_description: "Grams (g) of total sugars. Includes monosaccharides (glucose, fructose, galactose) and disaccharides (sucrose, lactose, maltose). Provides 4 kcal/g."
-aggregation_type: "cumulative"
+- g
+- mg
+- oz
+unit_description: g of logged sugar; PulsHealth canonical sync unit.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-typical_range:
-  min: 10
-  max: 150
-  unit: "g"
-  notes: "Average American consumes 60-80g/day of added sugars alone. WHO recommends limiting added sugars to <25g/day."
-clinical_ranges:
-  - population: "Adults (WHO recommendation - added sugars)"
-    rda: "<25g/day (6 teaspoons) strongly recommended"
-  - population: "Adults (AHA recommendation - added sugars)"
-    rda: "Women: <25g/day; Men: <36g/day"
-  - population: "Children (2-18 years, AHA)"
-    rda: "<25g/day added sugars"
-  - population: "Diabetes"
-    rda: "Minimize added sugars; total carbs more important than sugar specifically"
-  - population: "Cardiovascular Disease Risk"
-    rda: "<5% of calories from added sugars optimal"
-  - population: "NAFLD/Metabolic Syndrome"
-    rda: "Minimize fructose and added sugars"
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -46,113 +30,172 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Sugar tracking with some apps differentiating added vs. natural sugars"
-    examples:
-      - "MyFitnessPal"
-      - "Cronometer"
-      - "LoseIt"
-      - "Yazio"
-  - name: "CGM companion apps"
-    capability: "Correlate sugar intake with glucose response"
-    examples:
-      - "Levels"
-      - "Signos"
-      - "Nutrisense"
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Dietary Sugar represents total sugar intake from all sources, including both naturally occurring sugars (in fruits, vegetables, dairy) and added sugars (sweeteners added during processing or preparation). While HealthKit tracks total sugars, clinically the distinction between natural and added sugars is critical, as added sugar intake is strongly associated with metabolic disease risk.
+- name: Manual entry
+  capability: User-entered amounts saved to Apple Health.
+- name: Authorized nutrition apps
+  capability: Food contributions shared with HealthKit when the source supports this specific type and has
+    write authorization.
+primary_source: Manual records or authorized nutrition apps; the source determines food composition and serving
+  semantics.
+description: '## Does Apple Health sugar mean added sugar?
 
-  The FDA Daily Value for total sugars is 50g based on a 2,000 calorie diet (updated 2020). However, this represents a limit rather than a target, and for added sugars specifically, the FDA Daily Value is also 50g (10% of calories), which aligns with the upper limit of most health organization recommendations. Lower intakes of added sugars are consistently associated with better health outcomes.
 
-  ## Health Significance
-  Sugar intake impacts:
-  - **Glycemic Control**: Direct, rapid effect on blood glucose levels
-  - **Metabolic Health**: Excess added sugar linked to insulin resistance, metabolic syndrome
-  - **Cardiovascular Disease**: High sugar intake increases CVD risk independent of weight
-  - **Hepatic Health**: Fructose (half of sucrose) metabolized primarily in liver; excess linked to NAFLD
-  - **Dental Health**: Primary dietary cause of dental caries
-  - **Weight Management**: Liquid sugars particularly problematic; low satiety, high palatability
-  - **Inflammation**: High sugar intake associated with elevated inflammatory markers
-  - **Mood and Energy**: Blood sugar swings affect energy levels and mood stability
+  [Dietary Sugar is a cumulative sugar amount](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarysugar),
+  displayed here in **g**. The type alone does not classify a food''s sugar as added, naturally occurring or
+  free sugar. Check the source''s definition and food details before comparing it with a dietary recommendation.
 
-  ## Clinical Interpretation Guidelines
-  When assessing sugar intake:
-  1. **Differentiate Sugar Sources**: Fruit sugar with fiber differs from added sugars in soft drinks
-  2. **Calculate Added Sugar**: If total sugar tracked, estimate added sugars (often 60-70% of total in Western diets)
-  3. **Compare to Guidelines**: WHO <25g added sugars; AHA <25g women, <36g men
-  4. **Identify Hidden Sugars**: Review sources for hidden added sugars (sauces, condiments, "healthy" foods)
-  5. **Assess Sugar-Sweetened Beverage Intake**: Single largest source of added sugars; liquid calories not compensated
-  6. **Correlate with CGM Data**: If available, review glucose responses to high-sugar meals
-  7. **Consider Timing**: Post-exercise sugar is metabolically different from sedentary sugar consumption
 
-  ## Deficiency Symptoms
-  There is no sugar deficiency as sugar is not an essential nutrient:
-  - Body can produce glucose from other carbohydrates, protein, and fat
-  - No recommended minimum intake for added sugars
-  - Natural sugars from whole foods provide other nutrients; zero added sugar is optimal
-  - Very low total carbohydrate intake may cause ketosis but not sugar "deficiency"
+  ## What is the difference between total, added and free sugar?
 
-  ## Excess/Toxicity
-  High sugar intake is associated with:
-  - **Obesity**: High palatability and low satiety promote overconsumption
-  - **Type 2 Diabetes**: Chronic high sugar intake impairs insulin sensitivity
-  - **Cardiovascular Disease**: Increased CVD mortality with >10% calories from added sugar
-  - **Non-Alcoholic Fatty Liver Disease**: Fructose particularly hepatotoxic in excess
-  - **Dental Caries**: Fermented by oral bacteria producing enamel-eroding acids
-  - **Dyslipidemia**: Elevated triglycerides, reduced HDL cholesterol
-  - **Hyperuricemia/Gout**: Fructose increases uric acid production
-  - **Cognitive Decline**: Emerging evidence linking high sugar to dementia risk
-  - **Cancer**: Obesity-mediated cancer risk; some direct associations studied
 
-  ## Special Populations
-  - **Diabetes**: Carbohydrate counting more important than sugar avoidance per se; glycemic index matters
-  - **Gestational Diabetes**: Strict sugar limitation; avoid sugar-sweetened beverages completely
-  - **NAFLD**: Eliminate fructose-containing added sugars; limit fruit juice
-  - **Athletes**: Strategic sugar use peri-workout acceptable; rapid glucose availability benefits performance
-  - **Children**: Developing taste preferences; early sugar restriction may prevent lifelong overconsumption
-  - **Eating Disorders**: Complete sugar restriction may trigger binge behaviors; moderation approach often preferred
-  - **Reactive Hypoglycemia**: Avoid high-sugar foods that cause glucose spikes followed by crashes
-  - **PCOS**: Sugar reduction improves insulin sensitivity and hormonal profiles
+  These terms answer different questions. [FDA''s label guide](https://www.fda.gov/food/nutrition-facts-label/added-sugars-nutrition-facts-label)
+  distinguishes total and added sugars. [WHO''s free-sugars definition](https://www.who.int/news/item/04-03-2015-who-calls-on-countries-to-reduce-sugars-intake-among-adults-and-children)
+  also includes sugars in honey, syrups and fruit juices, as well as sugars added to foods and drinks.
 
-  ## Caveats & Limitations
-  - **Total vs. Added Sugars**: Most food databases and HealthKit track total sugars; added sugar often estimated
-  - **Natural Sugar Context**: 20g sugar from an apple (with fiber, nutrients) differs from 20g in soda
-  - **Sugar Alcohols**: Not included in sugar totals but may affect glucose (varies by type)
-  - **Database Inconsistencies**: Sugar content for same foods varies across databases
-  - **Hidden Sugars**: Many names for added sugars (56+ identified) complicate identification
-  - **Glycemic Response Variation**: Individual glucose responses to same sugar load vary significantly
-  - **Fructose vs. Glucose**: Metabolized differently; fructose uniquely processed by liver
+
+  | Term | What must be known |
+
+  | --- | --- |
+
+  | Logged sugar grams | Amount and serving represented by the source |
+
+  | Added sugar | Whether sugars were added during preparation or manufacture |
+
+  | Free sugar | Food context, including juice, honey and syrup |
+
+  | Blood glucose | A separate physiological measurement |
+
+
+  ## Can I compare this with a sugar limit?
+
+
+  A total-sugar sample cannot be substituted for an added-sugar or free-sugar total. FDA''s added-sugar Daily
+  Value and WHO''s free-sugar guidance address specific definitions; they are not upper bounds for every recorded
+  Dietary Sugar value. First establish the definition, day coverage and compatible food-energy denominator.
+
+
+  ## Should sugar and carbohydrate grams be summed?
+
+
+  No. Sugar is detail within total carbohydrate in [Apple''s hierarchy](https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers).
+  Adding both double counts. A logged sugar amount also cannot explain a blood-glucose response without actual
+  eating time, food context and suitable glucose measurements; a shared timestamp is insufficient.
+
+
+  ## Can PulsHealth collect this type?
+
+
+  This type is included in the current PulsHealth collection catalog. Database coverage still depends on records
+  being present and readable in HealthKit.
+
+
+  ## When are entries recorded, and what does context mean?
+
+
+  Cadence follows food logging or source synchronization, not continuous sensing. A record whose timestamp
+  overlaps a workout or recorded sleep may describe an earlier meal or a daily summary. Review start times,
+  durations and source history before discussing meal timing. Missing days remain unlogged rather than zero
+  intake. [Health''s source controls](https://support.apple.com/en-us/108779) help when reviewing overlapping
+  apps.
+
+
+  ## What did the database investigation establish?
+
+
+  The researched **365-day reporting window** contained no raw samples or stored aggregates for this nutrient.
+  Recorded ranges, unusual portions, source overlap, recording intervals and workout or sleep comparisons were
+  unavailable. Related nutrient comparisons were unavailable because there were no records for this type. No
+  empirical nutrient association or measured chart is supported. These missing records do not establish zero
+  consumption or a deficient diet.
+
+
+  ## How can I make the log easier to interpret?
+
+
+  Check the represented serving, preserve source-specific daily totals and state how many days have usable
+  logs. Review duplicate food imports before summing sources. Food descriptions may clarify portions when supplied,
+  but absent metadata does not prove automatic measurement or complete recording.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "String identifier for the sugar source (e.g., 'candy', 'fruit', 'soft drink')"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Boolean indicating manual entry versus automatic capture"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from source app for synchronization"
+- key: HKMetadataKeyFoodType
+  description: Optional food description if supplied; it does not establish portion size or complete composition.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional indication of user entry; absence does not establish automatic measurement.
+- key: HKMetadataKeyExternalUUID
+  description: Optional source external identifier; not a universal food identifier or guaranteed cross-app
+    duplicate key.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
-    relationship: "Sugar is a subcategory of total carbohydrates"
-  - identifier: "HKQuantityTypeIdentifierDietaryFiber"
-    relationship: "Fiber slows sugar absorption; presence differentiates whole foods from refined"
-  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
-    relationship: "Sugar intake directly and rapidly affects blood glucose levels"
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "Sugar contributes to total caloric intake at 4 kcal/g"
-  - identifier: "HKQuantityTypeIdentifierInsulinDelivery"
-    relationship: "Sugar intake affects insulin requirements in diabetes management"
+- identifier: HKQuantityTypeIdentifierDietaryCarbohydrates
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierBloodGlucose
+  relationship: Separate physiological measurement; glucose response cannot be inferred from logged sugar amount
+    or shared timestamps.
+- identifier: HKQuantityTypeIdentifierDietaryFiber
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietarySugar"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarysugar"
-    type: "official"
-  - title: "WHO Guideline: Sugars Intake for Adults and Children"
-    url: "https://www.who.int/publications/i/item/9789241549028"
-    type: "official"
-  - title: "AHA Scientific Statement: Added Sugars and Cardiovascular Disease Risk in Children"
-    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000439"
-    type: "medical"
-  - title: "Dietary Sugars and Health: Umbrella Review of Meta-Analyses"
-    url: "https://www.bmj.com/content/381/bmj-2022-071609"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: DietarySugar'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarysugar
+  type: official
+- title: 'Apple: Nutrition type hierarchy'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'FDA: Current label Daily Values'
+  url: https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+- title: 'WHO: Dietary guidance'
+  url: https://www.who.int/news/item/04-03-2015-who-calls-on-countries-to-reduce-sugars-intake-among-adults-and-children
+  type: official
+- title: 'FDA: Total and added sugars'
+  url: https://www.fda.gov/food/nutrition-facts-label/added-sugars-nutrition-facts-label
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Dietary Sugar: Total, Added & Free Sugar Explained'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative logged nutrient amount; a sample may represent a food, meal or imported daily contribution.
+  cadence: Source-specific food logging or synchronization, not continuous nutrient sensing.
+  context: Workout and sleep overlap describe record timestamps; ingestion time, absorption and physiological
+    response remain unverified.
+  coverage: Missing entries are unlogged, not zero intake; sources can provide only selected nutrients.
+  aggregation: Sum compatible contributions within a source after checking serving semantics and duplicate
+    imports; report logged-day coverage.
+  metadata: Food descriptions and entry indicators are optional; temporal coincidence does not recover explicit
+    food-correlation membership.
+  references:
+  - title: 'Apple: Nutrition type identifiers'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'Apple: Sample semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-sugar
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified 365-day selected-user window contained no raw samples or stored aggregates for this
+    type. Coverage and primary sources were reviewed; empirical analysis was skipped because this type had
+    no observations. Value distributions, outliers, cadence, source overlap, workout/sleep comparisons and
+    empirical related-type associations were unavailable. Source guidance is presented without a measured figure.
+    Missing logs do not establish zero intake. Fixed America/Los_Angeles reporting calendar; logging timestamps
+    need not be eating times. Database absence does not establish absence in Apple Health on the phone.

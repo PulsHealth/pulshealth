@@ -2,30 +2,35 @@
   "HKCategoryTypeIdentifierAbdominalCramps": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Abdominal Cramps",
     "identifier": "HKCategoryTypeIdentifierAbdominalCramps",
-    "short_description": "Tracks episodes of cramping pain in the abdominal region.",
+    "short_description": "Understand abdominal cramps in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierAcne": {
@@ -180,30 +185,35 @@
   "HKCategoryTypeIdentifierBloating": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Bloating",
     "identifier": "HKCategoryTypeIdentifierBloating",
-    "short_description": "Tracks episodes of abdominal bloating and distension.",
+    "short_description": "Understand bloating in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierCervicalMucusQuality": {
@@ -330,37 +340,37 @@
   "HKCategoryTypeIdentifierContraceptive": {
     "category_values": [
       {
-        "description": "Contraceptive use occurred but the specific type was not specified.",
+        "description": "Recorded contraceptive method is unspecified.",
         "name": "unspecified",
         "value": 1
       },
       {
-        "description": "Subdermal contraceptive implant (e.g., Nexplanon), a long-acting reversible contraceptive inserted under the skin of the upper arm.",
+        "description": "Recorded implant use; brand and dose are not encoded.",
         "name": "implant",
         "value": 2
       },
       {
-        "description": "Injectable contraceptive (e.g., Depo-Provera), typically administered every 3 months.",
+        "description": "Recorded injectable contraceptive use; schedule is not encoded.",
         "name": "injection",
         "value": 3
       },
       {
-        "description": "Intrauterine device (IUD), either hormonal (e.g., Mirena, Kyleena) or copper (Paragard), providing long-term contraception.",
+        "description": "Recorded IUD use; hormonal versus copper is not distinguished.",
         "name": "intrauterineDevice",
         "value": 4
       },
       {
-        "description": "Vaginal ring (e.g., NuvaRing), a flexible ring inserted monthly that releases hormones.",
+        "description": "Recorded vaginal ring use.",
         "name": "intravaginalRing",
         "value": 5
       },
       {
-        "description": "Oral contraceptive pills, including combination pills and progestin-only pills, taken daily.",
+        "description": "Recorded oral contraceptive use; not confirmation of each dose.",
         "name": "oral",
         "value": 6
       },
       {
-        "description": "Transdermal contraceptive patch (e.g., Xulane), worn on the skin and changed weekly.",
+        "description": "Recorded contraceptive patch use.",
         "name": "patch",
         "value": 7
       }
@@ -368,7 +378,7 @@
     "default_unit": null,
     "human_readable_name": "Contraceptive",
     "identifier": "HKCategoryTypeIdentifierContraceptive",
-    "short_description": "Tracks contraceptive methods used, including hormonal, barrier, and other birth control types.",
+    "short_description": "Understand contraceptive method codes, start and end dates, and what Apple Health records cannot show about adherence or effectiveness.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierCoughing": {
@@ -490,30 +500,35 @@
   "HKCategoryTypeIdentifierFatigue": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Fatigue",
     "identifier": "HKCategoryTypeIdentifierFatigue",
-    "short_description": "Tracks episodes of fatigue, tiredness, or exhaustion.",
+    "short_description": "Understand fatigue in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierFever": {
@@ -625,30 +640,35 @@
   "HKCategoryTypeIdentifierHeadache": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Headache",
     "identifier": "HKCategoryTypeIdentifierHeadache",
-    "short_description": "Tracks headache episodes and their severity.",
+    "short_description": "Understand headache in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent": {
@@ -711,58 +731,63 @@
   "HKCategoryTypeIdentifierHotFlashes": {
     "category_values": [
       {
-        "description": "No hot flash episodes experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild hot flash - brief warmth, minimal disruption",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate hot flash - noticeable flushing and sweating",
-        "name": "moderate",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe hot flash - intense heat, profuse sweating, significant distress",
-        "name": "severe",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Hot Flashes",
     "identifier": "HKCategoryTypeIdentifierHotFlashes",
-    "short_description": "Tracks episodes of sudden warmth and flushing, commonly associated with menopause",
+    "short_description": "Understand hot flashes in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierInfrequentMenstrualCycles": {
     "category_values": [
       {
-        "description": "Infrequent menstrual cycles have been detected. This is a system notification indicating the user's cycle data shows fewer than expected periods over a defined tracking period.",
+        "description": "Generic marker for a saved Cycle Deviation assessment after history verification; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Infrequent Menstrual Cycles",
     "identifier": "HKCategoryTypeIdentifierInfrequentMenstrualCycles",
-    "short_description": "System-generated notification indicating menstrual cycles are occurring less frequently than typical, potentially signaling oligomenorrhea.",
+    "short_description": "Understand infrequent periods in Apple Health: verified cycle-history assessments, recording intervals and interpretation limits.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierIntermenstrualBleeding": {
     "category_values": [
       {
-        "description": "The only value for this category type, indicating that intermenstrual bleeding occurred on this day.",
+        "description": "Generic category marker for logged spotting; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Intermenstrual Bleeding",
     "identifier": "HKCategoryTypeIdentifierIntermenstrualBleeding",
-    "short_description": "Records spotting or bleeding that occurs between menstrual periods.",
+    "short_description": "Read Apple Health spotting records, distinguish them from menstrual flow and persistent-spotting notifications, and understand logging gaps.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierIrregularHeartRhythmEvent": {
@@ -782,29 +807,29 @@
   "HKCategoryTypeIdentifierIrregularMenstrualCycles": {
     "category_values": [
       {
-        "description": "Irregular menstrual cycles have been detected. This is a system notification indicating significant cycle-to-cycle length variability in the user's logged period data.",
+        "description": "Generic marker for a saved Cycle Deviation assessment after history verification; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Irregular Menstrual Cycles",
     "identifier": "HKCategoryTypeIdentifierIrregularMenstrualCycles",
-    "short_description": "System-generated notification indicating significant variability in menstrual cycle length from month to month.",
+    "short_description": "Understand irregular cycles in Apple Health: verified cycle-history assessments, recording intervals and interpretation limits.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierLactation": {
     "category_values": [
       {
-        "description": "Lactation event occurred. This is the only category value; additional details like duration or breast side may be stored in metadata or sample duration.",
+        "description": "Generic marker for recorded lactation context; no feeding quantity or negative result is encoded.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Lactation",
     "identifier": "HKCategoryTypeIdentifierLactation",
-    "short_description": "Tracks breastfeeding and pumping sessions for postpartum mothers.",
+    "short_description": "Understand lactation records in Apple Health, factor start and end dates, source-specific session logging, and the limits of duration data.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierLowCardioFitnessEvent": {
@@ -915,30 +940,20 @@
   "HKCategoryTypeIdentifierMoodChanges": {
     "category_values": [
       {
-        "description": "No notable mood changes; stable emotional state",
-        "name": "notPresent",
+        "description": "Symptom change reported present.",
+        "name": "present",
         "value": 0
       },
       {
-        "description": "Mild mood changes - slight emotional variability",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
-      },
-      {
-        "description": "Moderate mood changes - noticeable emotional shifts affecting daily life",
-        "name": "moderate",
-        "value": 2
-      },
-      {
-        "description": "Severe mood changes - significant emotional instability, difficult to manage",
-        "name": "severe",
-        "value": 3
       }
     ],
     "default_unit": null,
     "human_readable_name": "Mood Changes",
     "identifier": "HKCategoryTypeIdentifierMoodChanges",
-    "short_description": "Tracks changes in emotional state or mood stability",
+    "short_description": "Understand mood changes in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierNausea": {
@@ -1060,15 +1075,15 @@
   "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding": {
     "category_values": [
       {
-        "description": "Persistent intermenstrual bleeding has been detected. This is a system notification indicating the user has logged spotting between periods in multiple consecutive cycles.",
+        "description": "Generic marker for a saved Cycle Deviation assessment after history verification; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Persistent Intermenstrual Bleeding",
     "identifier": "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding",
-    "short_description": "System-generated notification indicating spotting or bleeding between periods has occurred repeatedly across multiple menstrual cycles.",
+    "short_description": "Understand persistent spotting in Apple Health: verified cycle-history assessments, recording intervals and interpretation limits.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierPregnancy": {
@@ -1112,17 +1127,17 @@
   "HKCategoryTypeIdentifierProgesteroneTestResult": {
     "category_values": [
       {
-        "description": "Low progesterone levels detected, indicating ovulation has not occurred or the luteal phase is inadequate.",
+        "description": "The home test returned a negative result; no concentration or diagnosis is encoded.",
         "name": "negative",
         "value": 1
       },
       {
-        "description": "Elevated progesterone levels detected, confirming ovulation has occurred and the corpus luteum is producing progesterone.",
+        "description": "The home test returned a positive result; no exact ovulation date or luteal assessment is encoded.",
         "name": "positive",
         "value": 2
       },
       {
-        "description": "Test result is unclear or progesterone levels are borderline, making interpretation uncertain.",
+        "description": "The home test returned an inconclusive result.",
         "name": "indeterminate",
         "value": 3
       }
@@ -1130,21 +1145,21 @@
     "default_unit": null,
     "human_readable_name": "Progesterone Test Result",
     "identifier": "HKCategoryTypeIdentifierProgesteroneTestResult",
-    "short_description": "Records results from progesterone tests used to confirm ovulation and assess luteal phase function.",
+    "short_description": "Understand qualitative home progesterone test results in Apple Health, PDG versus serum measurements, and the limits of result timing.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierProlongedMenstrualPeriods": {
     "category_values": [
       {
-        "description": "Prolonged menstrual periods have been detected. This is a system notification indicating the user's logged period duration consistently exceeds typical ranges.",
+        "description": "Generic marker for a saved Cycle Deviation assessment after history verification; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Prolonged Menstrual Periods",
     "identifier": "HKCategoryTypeIdentifierProlongedMenstrualPeriods",
-    "short_description": "System-generated notification indicating menstrual bleeding is lasting longer than typical, potentially signaling menorrhagia.",
+    "short_description": "Understand prolonged periods in Apple Health: verified cycle-history assessments, recording intervals and interpretation limits.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat": {
@@ -1348,30 +1363,20 @@
   "HKCategoryTypeIdentifierSleepChanges": {
     "category_values": [
       {
-        "description": "No notable changes in sleep patterns",
-        "name": "notPresent",
+        "description": "Symptom change reported present.",
+        "name": "present",
         "value": 0
       },
       {
-        "description": "Mild sleep changes - slight variation from normal",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
-      },
-      {
-        "description": "Moderate sleep changes - noticeable impact on rest quality",
-        "name": "moderate",
-        "value": 2
-      },
-      {
-        "description": "Severe sleep changes - significant disruption to sleep patterns",
-        "name": "severe",
-        "value": 3
       }
     ],
     "default_unit": null,
     "human_readable_name": "Sleep Changes",
     "identifier": "HKCategoryTypeIdentifierSleepChanges",
-    "short_description": "Tracks changes in sleep patterns or quality",
+    "short_description": "Understand sleep changes in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierSoreThroat": {
@@ -1676,11 +1681,11 @@
     "default_unit": null,
     "human_readable_name": "Food",
     "identifier": "HKCorrelationTypeIdentifierFood",
-    "short_description": "A correlation grouping nutritional data from a single food item or meal, including calories and nutrients.",
+    "short_description": "A HealthKit food object groups related nutrition samples; explicit membership preserves their shared food context.",
     "typical_range": {
       "max": null,
       "min": null,
-      "notes": "Varies widely based on food item size and type",
+      "notes": "A grouped food object has no single numeric range. Each nutrient component has its own unit and interpretation.",
       "unit": null
     }
   },
@@ -1887,13 +1892,8 @@
     "default_unit": "mcg",
     "human_readable_name": "Dietary Biotin (Vitamin B7)",
     "identifier": "HKQuantityTypeIdentifierDietaryBiotin",
-    "short_description": "Records dietary intake of biotin (vitamin B7), essential for carboxylase enzymes in fatty acid, amino acid, and glucose metabolism.",
-    "typical_range": {
-      "max": 100,
-      "min": 10,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health biotin (B7) intake logs, mcg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryCaffeine": {
     "category_values": null,
@@ -1908,13 +1908,8 @@
     "default_unit": "mg",
     "human_readable_name": "Dietary Calcium",
     "identifier": "HKQuantityTypeIdentifierDietaryCalcium",
-    "short_description": "Calcium intake from food and supplements, essential for bone health and muscle function.",
-    "typical_range": {
-      "max": 2500,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Calcium intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryCarbohydrates": {
     "category_values": null,
@@ -1929,52 +1924,32 @@
     "default_unit": "mg",
     "human_readable_name": "Dietary Chloride",
     "identifier": "HKQuantityTypeIdentifierDietaryChloride",
-    "short_description": "Chloride intake from food and supplements, essential for fluid balance, gastric acid production, and nerve transmission.",
-    "typical_range": {
-      "max": 5000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Chloride intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryCholesterol": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Cholesterol",
     "identifier": "HKQuantityTypeIdentifierDietaryCholesterol",
-    "short_description": "Cholesterol intake from animal-based foods",
-    "typical_range": {
-      "max": 600,
-      "min": 0,
-      "notes": "Vegans consume 0mg; average American intake is 250-350mg/day. Single egg yolk contains ~186mg.",
-      "unit": "mg"
-    }
+    "short_description": "Logged cholesterol intake, its units and daily coverage; distinct from blood cholesterol and LDL.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryChromium": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Chromium",
     "identifier": "HKQuantityTypeIdentifierDietaryChromium",
-    "short_description": "Chromium intake from food and supplements, involved in insulin signaling and macronutrient metabolism.",
-    "typical_range": {
-      "max": 200,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded chromium intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryCopper": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Copper",
     "identifier": "HKQuantityTypeIdentifierDietaryCopper",
-    "short_description": "Copper intake from food and supplements, essential for iron metabolism, connective tissue, and nervous system function.",
-    "typical_range": {
-      "max": 10000,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded copper intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryEnergyConsumed": {
     "category_values": null,
@@ -1989,39 +1964,24 @@
     "default_unit": "g",
     "human_readable_name": "Monounsaturated Fat",
     "identifier": "HKQuantityTypeIdentifierDietaryFatMonounsaturated",
-    "short_description": "Monounsaturated fatty acid intake, primarily from olive oil, nuts, and avocados",
-    "typical_range": {
-      "max": 80,
-      "min": 10,
-      "notes": "Mediterranean diet provides 15-20% of calories from MUFA. Average American intake is ~11-12% of calories.",
-      "unit": "g"
-    }
+    "short_description": "Understand monounsaturated fat grams, incomplete subtype logs and comparisons with total fat.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFatPolyunsaturated": {
     "category_values": null,
     "default_unit": "g",
     "human_readable_name": "Polyunsaturated Fat",
     "identifier": "HKQuantityTypeIdentifierDietaryFatPolyunsaturated",
-    "short_description": "Polyunsaturated fatty acid intake including omega-3 and omega-6 essential fatty acids",
-    "typical_range": {
-      "max": 40,
-      "min": 5,
-      "notes": "Average intake is 5-10% of calories. Western diets are often imbalanced with omega-6:omega-3 ratios of 15-20:1 (optimal: 4:1 or lower).",
-      "unit": "g"
-    }
+    "short_description": "Read polyunsaturated fat logs and understand why PUFA totals cannot resolve omega-3, omega-6, EPA or DHA.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFatSaturated": {
     "category_values": null,
     "default_unit": "g",
     "human_readable_name": "Saturated Fat",
     "identifier": "HKQuantityTypeIdentifierDietaryFatSaturated",
-    "short_description": "Saturated fatty acid intake from animal and tropical plant sources",
-    "typical_range": {
-      "max": 60,
-      "min": 5,
-      "notes": "Average American intake is 11-12% of calories (~25-30g). Recommendations target <10% of calories (<22g on 2000 kcal).",
-      "unit": "g"
-    }
+    "short_description": "Read saturated-fat intake records, source coverage and the difference between grams and percent of energy.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFatTotal": {
     "category_values": null,
@@ -2036,143 +1996,88 @@
     "default_unit": "g",
     "human_readable_name": "Dietary Fiber",
     "identifier": "HKQuantityTypeIdentifierDietaryFiber",
-    "short_description": "Total fiber intake from plant-based foods and supplements",
-    "typical_range": {
-      "max": 50,
-      "min": 5,
-      "notes": "Most Americans consume only 10-15g/day, well below recommendations. High-fiber diets may exceed 40g/day.",
-      "unit": "g"
-    }
+    "short_description": "Understand fiber grams, partial food logs and the difference between total fiber and carbohydrate detail.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFolate": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Folate (Vitamin B9)",
     "identifier": "HKQuantityTypeIdentifierDietaryFolate",
-    "short_description": "Records dietary intake of folate (vitamin B9), essential for DNA synthesis, cell division, and neural tube development.",
-    "typical_range": {
-      "max": 1000,
-      "min": 100,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health folate (B9) intake logs, mcg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryIodine": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Iodine",
     "identifier": "HKQuantityTypeIdentifierDietaryIodine",
-    "short_description": "Iodine intake from food and supplements, essential for thyroid hormone synthesis and metabolic regulation.",
-    "typical_range": {
-      "max": 1100,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded iodine intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryIron": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Iron",
     "identifier": "HKQuantityTypeIdentifierDietaryIron",
-    "short_description": "Iron intake from food and supplements, essential for oxygen transport and energy metabolism.",
-    "typical_range": {
-      "max": 45,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Iron intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryMagnesium": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Magnesium",
     "identifier": "HKQuantityTypeIdentifierDietaryMagnesium",
-    "short_description": "Magnesium intake from food and supplements, essential for energy metabolism, muscle function, and bone health.",
-    "typical_range": {
-      "max": 600,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Magnesium intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryManganese": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Manganese",
     "identifier": "HKQuantityTypeIdentifierDietaryManganese",
-    "short_description": "Manganese intake from food and supplements, essential for bone formation, metabolism, and antioxidant defense.",
-    "typical_range": {
-      "max": 11,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Recorded manganese intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryMolybdenum": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Molybdenum",
     "identifier": "HKQuantityTypeIdentifierDietaryMolybdenum",
-    "short_description": "Molybdenum intake from food and supplements, essential as a cofactor for enzymes involved in sulfur metabolism.",
-    "typical_range": {
-      "max": 2000,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded molybdenum intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryNiacin": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Niacin (Vitamin B3)",
     "identifier": "HKQuantityTypeIdentifierDietaryNiacin",
-    "short_description": "Records dietary intake of niacin (vitamin B3), essential for energy metabolism, DNA repair, and cellular signaling.",
-    "typical_range": {
-      "max": 40.0,
-      "min": 5.0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health niacin (B3) intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryPantothenicAcid": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Pantothenic Acid (Vitamin B5)",
     "identifier": "HKQuantityTypeIdentifierDietaryPantothenicAcid",
-    "short_description": "Records dietary intake of pantothenic acid (vitamin B5), essential for coenzyme A synthesis and acyl carrier protein function.",
-    "typical_range": {
-      "max": 15.0,
-      "min": 2.0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health pantothenic acid (B5) intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryPhosphorus": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Phosphorus",
     "identifier": "HKQuantityTypeIdentifierDietaryPhosphorus",
-    "short_description": "Phosphorus intake from food and supplements, essential for bone structure, energy metabolism, and cellular function.",
-    "typical_range": {
-      "max": 4000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Phosphorus intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryPotassium": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Potassium",
     "identifier": "HKQuantityTypeIdentifierDietaryPotassium",
-    "short_description": "Potassium intake from food and supplements, essential for fluid balance, nerve transmission, and muscle contraction.",
-    "typical_range": {
-      "max": 6000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Potassium intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryProtein": {
     "category_values": null,
@@ -2187,156 +2092,96 @@
     "default_unit": "mg",
     "human_readable_name": "Dietary Riboflavin (Vitamin B2)",
     "identifier": "HKQuantityTypeIdentifierDietaryRiboflavin",
-    "short_description": "Records dietary intake of riboflavin (vitamin B2), essential for energy production and antioxidant function.",
-    "typical_range": {
-      "max": 4.0,
-      "min": 0.5,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health riboflavin (B2) intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietarySelenium": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Selenium",
     "identifier": "HKQuantityTypeIdentifierDietarySelenium",
-    "short_description": "Selenium intake from food and supplements, essential for antioxidant defense, thyroid function, and immune health.",
-    "typical_range": {
-      "max": 400,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded selenium intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietarySodium": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Sodium",
     "identifier": "HKQuantityTypeIdentifierDietarySodium",
-    "short_description": "Sodium intake from food, beverages, and table salt",
-    "typical_range": {
-      "max": 6000,
-      "min": 500,
-      "notes": "Average American intake is 3400mg/day, well above the 2300mg guideline. Processed foods contribute 70%+ of intake.",
-      "unit": "mg"
-    }
+    "short_description": "Sodium intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietarySugar": {
     "category_values": null,
     "default_unit": "g",
     "human_readable_name": "Dietary Sugar",
     "identifier": "HKQuantityTypeIdentifierDietarySugar",
-    "short_description": "Total sugar intake including natural and added sugars",
-    "typical_range": {
-      "max": 150,
-      "min": 10,
-      "notes": "Average American consumes 60-80g/day of added sugars alone. WHO recommends limiting added sugars to <25g/day.",
-      "unit": "g"
-    }
+    "short_description": "Read sugar logs without confusing total sugar with added sugar, free sugar or blood glucose.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryThiamin": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Thiamin (Vitamin B1)",
     "identifier": "HKQuantityTypeIdentifierDietaryThiamin",
-    "short_description": "Records dietary intake of thiamin (vitamin B1), essential for carbohydrate metabolism and neurological function.",
-    "typical_range": {
-      "max": 3.0,
-      "min": 0.5,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health thiamin (B1) intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminA": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Vitamin A",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminA",
-    "short_description": "Fat-soluble vitamin essential for vision, immune function, and cellular growth",
-    "typical_range": {
-      "max": 3000,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health vitamin A intake, micrograms versus RAE, food and supplement forms, and the limits of incomplete logs.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminB12": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Vitamin B12",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminB12",
-    "short_description": "Water-soluble vitamin essential for DNA synthesis, neurological function, and red blood cell formation",
-    "typical_range": {
-      "max": 100,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health vitamin B12 intake logs, mcg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminB6": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Vitamin B6",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminB6",
-    "short_description": "Water-soluble vitamin essential for amino acid metabolism, neurotransmitter synthesis, and hemoglobin formation",
-    "typical_range": {
-      "max": 100,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health vitamin B6 intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminC": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Vitamin C",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminC",
-    "short_description": "Water-soluble antioxidant essential for collagen synthesis, immune function, and iron absorption",
-    "typical_range": {
-      "max": 2000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Read Apple Health vitamin C intake in milligrams, compare logged portions, and distinguish dietary records from blood levels or iron absorption.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminD": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Vitamin D",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminD",
-    "short_description": "Fat-soluble vitamin essential for calcium absorption, bone health, immune function, and cellular regulation",
-    "typical_range": {
-      "max": 100,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Interpret Apple Health dietary vitamin D, micrograms and IU, D2 and D3 labels, and why daylight or intake cannot determine blood vitamin D.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminE": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Vitamin E",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminE",
-    "short_description": "Fat-soluble antioxidant protecting cell membranes from oxidative damage",
-    "typical_range": {
-      "max": 1000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health vitamin E intake, alpha-tocopherol and IU label differences, supplement logging, and why intake is not an oxidative-stress reading.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminK": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Vitamin K",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminK",
-    "short_description": "Fat-soluble vitamin essential for blood clotting and bone metabolism",
-    "typical_range": {
-      "max": 500,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health vitamin K intake, K1 and K2 form limits, food logging, and why dietary records cannot predict INR or clotting function.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryWater": {
     "category_values": null,
@@ -2351,13 +2196,8 @@
     "default_unit": "mg",
     "human_readable_name": "Dietary Zinc",
     "identifier": "HKQuantityTypeIdentifierDietaryZinc",
-    "short_description": "Zinc intake from food and supplements, essential for immune function, wound healing, and protein synthesis.",
-    "typical_range": {
-      "max": 50,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Recorded zinc intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDistanceCycling": {
     "category_values": null,
@@ -2582,12 +2422,12 @@
     "default_unit": "count",
     "human_readable_name": "Alcoholic Beverages",
     "identifier": "HKQuantityTypeIdentifierNumberOfAlcoholicBeverages",
-    "short_description": "Count of standard alcoholic drinks consumed, used to track alcohol intake for health monitoring.",
+    "short_description": "Recorded standard-drink equivalents in Apple Health, with source-dependent serving normalization and logging coverage.",
     "typical_range": {
-      "max": 10,
-      "min": 0,
-      "notes": null,
-      "unit": "count"
+      "max": null,
+      "min": null,
+      "notes": "Recorded standard-drink counts have no universal healthy range. Missing logs do not establish zero consumption.",
+      "unit": null
     }
   },
   "HKQuantityTypeIdentifierNumberOfTimesFallen": {

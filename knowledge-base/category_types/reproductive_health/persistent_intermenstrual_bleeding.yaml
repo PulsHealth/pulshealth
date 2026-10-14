@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Persistent Intermenstrual Bleeding"
-short_description: "System-generated notification indicating spotting or bleeding between periods has occurred repeatedly across multiple menstrual cycles."
-icon: "drop.fill"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierPersistentIntermenstrualBleeding
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Persistent Intermenstrual Bleeding
+short_description: 'Understand persistent spotting in Apple Health: verified cycle-history assessments, recording
+  intervals and interpretation limits.'
+icon: drop.fill
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,14 +15,15 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "notApplicable"
-    description: "Persistent intermenstrual bleeding has been detected. This is a system notification indicating the user has logged spotting between periods in multiple consecutive cycles."
+- value: 0
+  name: notApplicable
+  description: Generic marker for a saved Cycle Deviation assessment after history verification; not a negative
+    result or severity.
 ios_introduced:
-  version: "16.0"
+  version: '16.0'
   year: 2022
 watchos_introduced:
-  version: "9.0"
+  version: '9.0'
   year: 2022
 deprecated: false
 deprecated_in: null
@@ -29,98 +31,140 @@ writable: false
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Automatic detection through Cycle Tracking analysis when intermenstrual bleeding is logged across multiple cycles"
-  - name: "Apple Watch"
-    capability: "Supports cycle tracking data collection for deviation detection"
-primary_source: "System-generated"
-description: |
-  ## Overview
-  Persistent Intermenstrual Bleeding is a system-generated notification that alerts users when spotting or bleeding between periods has been logged repeatedly across multiple menstrual cycles. While occasional spotting can be normal (such as ovulation spotting), persistent or recurrent intermenstrual bleeding may indicate underlying conditions requiring medical evaluation.
+- name: iPhone / HealthKit
+  capability: On-device analysis of logged cycle history; the user verifies history before a deviation sample
+    is saved.
+primary_source: HealthKit Cycle Deviation analysis of verified logged history
+description: '## What does persistent spotting mean in Apple Health?
 
-  This notification is triggered when the Cycle Tracking algorithm detects a pattern of intermenstrual bleeding logged in multiple cycles over the tracking period. It serves as an early warning to prompt users to discuss this pattern with their healthcare provider.
 
-  ## Health Significance
-  Persistent intermenstrual bleeding requires clinical attention as it may indicate:
-  - **Cervical pathology**: Cervical polyps, ectropion, or dysplasia can cause recurrent spotting
-  - **Endometrial abnormalities**: Polyps, hyperplasia, or (rarely) malignancy
-  - **Uterine fibroids**: Submucosal fibroids particularly cause abnormal bleeding
-  - **Infections**: Chronic cervicitis, STIs, or pelvic inflammatory disease
-  - **Hormonal contraceptive effects**: Breakthrough bleeding with pills, IUD, or implant (especially in first 3-6 months)
-  - **Thyroid dysfunction**: Can cause various abnormal bleeding patterns
-  - **Coagulation disorders**: May manifest as persistent abnormal bleeding
-  - **Malignancy**: Cervical or endometrial cancer (particularly concerning in older women or postmenopausal)
+  Persistent Intermenstrual Bleeding is a saved Cycle Deviation assessment of recurring spotting between periods.
+  It is separate from an Intermenstrual Bleeding entry, which logs bleeding itself.
 
-  Recurrent pattern across multiple cycles increases clinical significance compared to isolated spotting.
 
-  ## Clinical Interpretation Guidelines
-  When evaluating persistent intermenstrual bleeding notifications:
-  - **Pattern characterization**:
-    - Frequency: How many cycles have included spotting?
-    - Timing: Is spotting mid-cycle (possibly ovulatory) or random?
-    - Relation to intercourse: Post-coital bleeding suggests cervical cause
-    - Amount: Spotting vs. heavier bleeding between periods
-  - **Age-based considerations**:
-    - Reproductive age: More likely benign causes (hormonal, structural)
-    - Perimenopause: Hormonal fluctuation common but evaluation still warranted
-    - Postmenopause: ANY bleeding requires prompt evaluation for malignancy
-  - **Clinical workup**:
-    - Pelvic examination with cervical visualization
-    - Cervical cancer screening (Pap test, HPV test) if not current
-    - STI testing if risk factors present
-    - Pelvic ultrasound (transvaginal preferred) to assess uterus and endometrium
-    - Endometrial biopsy if indicated by age, risk factors, or ultrasound findings
-    - Consider hysteroscopy for direct visualization
-  - **Contraceptive correlation**:
-    - Hormonal IUD: Spotting common for first 3-6 months
-    - Progestin-only methods: Irregular bleeding is a known side effect
-    - Combined oral contraceptives: Breakthrough bleeding may indicate need for different formulation
-  - **Red flags requiring urgent evaluation**:
-    - Postmenopausal bleeding
-    - Associated pelvic pain or pressure
-    - Constitutional symptoms (weight loss, fatigue)
-    - Abnormal cervical appearance on exam
+  Apple''s [HealthKit definition](https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/persistentintermenstrualbleeding)
+  is spotting in at least two cycles in the preceding six months. The cycles do not have to be described as
+  consecutive in this definition. After potential deviation detection, HealthKit saves the assessment when
+  the user confirms the logged history.
 
-  ## Caveats & Limitations
-  - Read-only system notification; users cannot manually create this sample
-  - Depends on user logging intermenstrual bleeding samples consistently
-  - Algorithm specifics (number of cycles, frequency threshold) are not publicly disclosed
-  - Does not distinguish between spotting amount or bleeding severity
-  - Cannot differentiate between cervical, uterine, or vaginal bleeding sources
-  - Ovulation spotting logged repeatedly may trigger notification despite being physiological
-  - Hormonal contraceptive-related bleeding is common and may trigger notification appropriately
-  - Notification does not indicate cause; clinical evaluation is required
-  - May not account for known benign causes already under medical management
-  - Postpartum spotting patterns during cycle normalization may trigger notification
-metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+
+  ## Which record should you use for which question?
+
+
+  | Question | Relevant evidence | Limit |
+
+  | --- | --- | --- |
+
+  | Was spotting logged on a date? | Intermenstrual Bleeding entries | A missing log is unknown |
+
+  | Did a verified recurring pattern get saved? | Persistent Intermenstrual Bleeding category | The category
+  does not list each bleeding day |
+
+  | Was bleeding between periods? | Spotting history plus resolved period boundaries | Timing alone does not
+  identify its cause |
+
+
+  Several spotting entries within one cycle are not automatically several affected cycles. Review period boundaries,
+  logging gaps and overlapping sources before counting cycles with spotting. Same-day sexual-activity records,
+  if available, are descriptive context and do not prove postcoital bleeding or establish a cause.
+
+
+  ## Does the value describe bleeding amount?
+
+
+  Code **0, notApplicable** marks the saved assessment. It is not a flow amount, severity scale, negative result
+  or numeric outlier. Neither its category value nor its interval duration measures blood loss.
+
+
+  Spacing between assessment intervals is not spacing between spotting episodes. The exported timestamps do
+  not independently establish notification or verification time. Sleep and workout overlap cannot show that
+  bleeding began during either activity, so context comparisons require the underlying logged observations.
+
+
+  ## What did the example data show?
+
+
+  This category had no records in the research window. Frequencies, interval durations, source revisions and
+  saved assessment cadence could not be measured. Without primary records, associations with period boundaries,
+  activity or related bleeding types were unavailable. No chart is presented, and the empty result does not
+  establish an absence of spotting.
+
+
+  ## What should be reviewed next?
+
+
+  Check the accuracy of the underlying cycle history and share recurring unexpected bleeding with a healthcare
+  professional. [Apple Support](https://support.apple.com/en-us/120356) states that detection is disabled with
+  recent or ongoing logged cycle factors. A saved assessment prompts review; it does not diagnose infection,
+  a structural cause or a hormonal condition, and should not be used to infer fertility.
+
+
+  ## Is this type collected by PulsHealth?
+
+
+  This identifier is documented here but is absent from PulsHealth’s current sync catalog. An empty database
+  result cannot establish whether the phone contains this assessment.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierIntermenstrualBleeding"
-    relationship: "Source data analyzed to detect persistent spotting patterns"
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Period tracking provides cycle context for identifying between-period bleeding"
-  - identifier: "HKCategoryTypeIdentifierIrregularMenstrualCycles"
-    relationship: "Related deviation detection for cycle length variability"
-  - identifier: "HKCategoryTypeIdentifierInfrequentMenstrualCycles"
-    relationship: "Related deviation detection for cycles occurring less frequently"
-  - identifier: "HKCategoryTypeIdentifierContraceptive"
-    relationship: "Contraceptive use context is important for interpreting breakthrough bleeding"
-  - identifier: "HKCategoryTypeIdentifierSexualActivity"
-    relationship: "Correlation can identify post-coital bleeding patterns"
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierIntermenstrualBleeding
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierPregnancy
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierLactation
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierContraceptive
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierInfrequentMenstrualCycles
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierIrregularMenstrualCycles
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierProlongedMenstrualPeriods
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
 references:
-  - title: "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierpersistentintermenstrualbleeding"
-    type: "official"
-  - title: "Cycle Tracking Notifications - Apple Support"
-    url: "https://support.apple.com/en-us/HT212899"
-    type: "official"
-  - title: "Intermenstrual and Postcoital Bleeding - AAFP"
-    url: "https://www.aafp.org/pubs/afp/issues/2019/0401/p435.html"
-    type: "medical"
-  - title: "Abnormal Uterine Bleeding - ACOG Practice Bulletin"
-    url: "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2021/03/abnormal-uterine-bleeding"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Persistent spotting — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/persistentintermenstrualbleeding
+  type: official
+- title: Cycle Tracking and cycle deviations — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+- title: Generic category marker — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalue/notapplicable
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Persistent spotting in Apple Health: cycle deviation meaning'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: persistent-intermenstrual-bleeding
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; empirical analysis was skipped because there are no primary
+    category records in the selected reporting year. Measured code frequencies, source differences, saved interval
+    spans, cadence and workout/sleep or related-type comparisons are unavailable. A missing assessment does
+    not establish normal cycles or absence of bleeding. Category codes are nominal, and interval timestamps
+    do not identify notification/verification time. Detection settings, logging completeness and confirmed
+    underlying history are unavailable.

@@ -33,6 +33,25 @@ both completed batches; batches 3–4 contain the remaining **98 entries**.
 Each YAML entry's `data_research` remains the completion authority.
 See [issue #235](https://github.com/PulsHealth/pulshealth/issues/235).
 
+## Batch 3 completion
+
+All 50 nutrition, reproductive-detail and symptom entries completed coverage and
+primary-source review on 2026-10-14. Fresh bounded inventories verified no
+observations for 49 types; Food correlation objects are unsupported by the
+database schema. With no focal measurements to analyze, these entries skip
+empirical analysis and measured figures. Each records
+`data_research.review_basis: coverage_and_sources` and explicit limitations.
+
+The current sync catalog includes only three of the assigned types. Database
+absence therefore cannot establish whether a type has records in Apple Health,
+and it never means zero intake or no symptoms. Private per-entry reviews bind
+coverage, primary references, catalog support and final article hashes; the
+source and editorial reviews are preserved alongside them.
+
+Completion now covers **130 of 178 entries**, leaving the **48 Batch 4 entries**.
+Source YAML metadata remains the completion authority.
+See [issue #239](https://github.com/PulsHealth/pulshealth/issues/239).
+
 ## Priority
 
 Order batches by likely reader usefulness: common health interpretation first, then detailed activity and everyday tracking, nutrition/reproductive detail, and specialist/manual/reference entries. This is editorial judgment, not measured search-volume ranking. The traffic connector was unavailable while planning. Before starting a batch, compare recent knowledge-base landing-page traffic and Search Console clicks/impressions where accessible; promote high-demand entries while preserving exactly one assignment per entry. Missing user data must not be interpreted as low audience demand.
