@@ -213,7 +213,7 @@ def run(input_dir, output_dir, figure_dir=None):
         ax.broken_barh(list(zip(xs,durations)), (i-.24,.48), facecolors=colors[i%len(colors)], alpha=.68)
     ax.set(yticks=range(len(groups)), yticklabels=[labels[g] for g in groups], xlabel="Hours after local midnight", xlim=(0,24),
            title="Step records can cover the same time twice")
-    ax.text(.01,-.24,"One person's real data • One selected day • Each bar is a stored count interval",transform=ax.transAxes,fontsize=10)
+    ax.text(.01,-.24,"Example step data • One selected day • Each bar is a stored count interval",transform=ax.transAxes,fontsize=10)
     paths = []
     for suffix in ("svg", "png"):
         path=figure_dir/f"source-overlap.{suffix}"; fig.savefig(path,dpi=180); paths.append(str(path))
@@ -240,7 +240,7 @@ def run(input_dir, output_dir, figure_dir=None):
             axes[1].scatter(group.duration_min,group.interval_rate,s=7,alpha=.12,color=colors[i%len(colors)],rasterized=True,label=labels[g])
         axes[0].set(xscale="log",xlabel="Stored interval duration (minutes, log scale)",ylabel="Records",title="A step record has no fixed duration"); axes[0].legend()
         axes[1].set(xscale="log",yscale="log",xlabel="Stored interval duration (minutes, log scale)",ylabel="Steps / full interval minute (log scale)",title="Interval average is not walking cadence")
-    fig.suptitle("One person's real step records • Three-month case window",fontsize=12)
+    fig.suptitle("Example step records • Three-month data window",fontsize=12)
     for suffix in ("svg", "png"):
         path=figure_dir/f"intervals-and-rate.{suffix}"; fig.savefig(path,dpi=180); paths.append(str(path))
     plt.close(fig)

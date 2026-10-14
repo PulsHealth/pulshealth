@@ -176,8 +176,8 @@ def analyze(input_dir, output_dir):
     if not focus.empty:
         fig,ax=plt.subplots(figsize=(9,4.8))
         ax.hist(focus.value.dropna(),bins=35,color='#19816f',edgecolor='white')
-        ax.set(xlabel='Vertical oscillation (cm)',ylabel='Stored observations',title='Running bounce varies within one person’s data')
-        fig.text(.12,.015,'One person · July–September 2026 · sample counts, not steps or clinical thresholds',fontsize=9,color='#555')
+        ax.set(xlabel='Vertical oscillation (cm)',ylabel='Stored observations',title='Running bounce varies in example data')
+        fig.text(.12,.015,'Example data · July–September 2026 · sample counts, not steps or clinical thresholds',fontsize=9,color='#555')
         fig.tight_layout(rect=(0,.05,1,1)); path=output_dir/'distribution.png';fig.savefig(path,dpi=170);plt.close(fig);figures.append(path)
     if not speed.empty:
         # One representative session: most paired records, tie broken lexically.

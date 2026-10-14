@@ -93,12 +93,12 @@ description: '## What does Apple Health Sleep Analysis record?
 
   ## What does a real recorded night look like?
 
-  The figure below shows actual intervals from one person''s database, with dates and device identity removed. The
+  The figure below shows actual intervals from example user data, with dates and device identity removed. The
   horizontal axis measures elapsed hours rather than wall-clock time. Long bars are sustained recorded states; short
   bars are brief segments.
 
 
-  There were **no In Bed rows** in this person''s year-long snapshot. The empty lane makes that absence visible.
+  There were **no In Bed rows** in the example year-long snapshot. The empty lane makes that absence visible.
   It means time in bed cannot be calculated from these records; it does not mean the person never spent time in
   bed. Apple notes that Watch Awake samples occur between sleep samples, so their total can also omit wakefulness
   at the beginning and end of a session.
@@ -131,14 +131,14 @@ description: '## What does Apple Health Sleep Analysis record?
   policy.
 
 
-  The next figure compares all-row duration totals with asleep-only totals and the asleep union. In this person''s
+  The next figure compares all-row duration totals with asleep-only totals and the asleep union. In the example
   records, asleep row sums and the union agreed to within tiny timestamp-boundary differences. The substantial excess
   came from adding Awake, not from duplicate asleep sources. Across the 92-night focus window, that mistake added
   a median of about 24 minutes per reporting night.
 
 
   For this case, median asleep union time was about 7.6 hours in the focus window, with the middle 90% of recorded
-  nights spanning about 5.6–8.9 hours. This is a personal observed distribution, not a clinical normal range. In
+  nights spanning about 5.6–8.9 hours. This is an observed example distribution, not a clinical normal range. In
   Bed was unavailable, so sleep efficiency and time-to-fall-asleep were not calculated.
 
 
@@ -173,7 +173,7 @@ description: '## What does Apple Health Sleep Analysis record?
   The analysis also compared respiratory-rate medians within asleep intervals, and matched workouts from the noon-to-noon
   window immediately before the sleep reporting bin. That workout window ends at noon before the night, so it excludes
   exercise later that afternoon or evening. Night-level sleep duration showed little linear association with the
-  physiological medians in this one-person case. This is a description of the selected records, not evidence that
+  physiological medians in this example. This is a description of the selected records, not evidence that
   sleep cannot affect these metrics. Exercise, illness, timing, device behavior and recording density can confound
   comparisons; a workout record''s absence does not establish inactivity.
 
@@ -247,7 +247,7 @@ figures:
   alt: A real night of Core, Deep, REM and Awake intervals over elapsed hours, with an empty In Bed lane because
     no In Bed records were available.
   title: 'One recorded night: sleep stages are intervals'
-  caption: Actual records from one person. In Bed was not recorded; stage bars show intervals rather than fixed-frequency
+  caption: Example Apple Health records. In Bed was not recorded; stage bars show intervals rather than fixed-frequency
     measurements. Dates and device identity are omitted.
   methods: A recorded night close to the dataset median, excluding reporting boundaries and detailed-stage conflicts.
     Noon-to-noon bin; elapsed hours from first interval. All available categories retained; no synthetic In Bed
@@ -259,7 +259,7 @@ figures:
   alt: Comparison across 92 observed nights of all-row duration sums, asleep-only sums and asleep interval unions;
     adding Awake inflates totals.
   title: Why row totals and time asleep can differ
-  caption: One person, 92 recorded reporting nights. Asleep sums and union nearly coincide; adding Awake increases
+  caption: Example data, 92 recorded reporting nights. Asleep sums and union nearly coincide; adding Awake increases
     the apparent sleep total. These are observed values, not population norms.
   methods: Noon-to-noon reporting bins in a declared timezone; intervals split at noon and measured in UTC elapsed
     time. Asleep union uses values 1, 3, 4 and 5. Awake is excluded; In Bed was absent. Actual dates and source
@@ -284,7 +284,7 @@ data_research:
   - time_patterns
   - related_types
   - type_specific
-  limitations: One-person observational case; personal distributions are not clinical ranges. No In Bed rows or
+  limitations: Example observational data; observed distributions are not clinical ranges. No In Bed rows or
     dedicated summary aggregate; sleep efficiency unavailable. Truncated boundary bins excluded; fixed reporting
     timezone may differ from travel-local days. Stage overlaps below a millisecond retained as timestamp precision
     artifacts; no substantive conflict in this case. Noon bins and 90-minute episode gaps are explicit analyst rules,
