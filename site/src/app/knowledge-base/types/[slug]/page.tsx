@@ -104,7 +104,6 @@ export default async function TypeDetailPage({ params }: PageProps) {
             {data.human_readable_name}
           </>
         }
-        lede={data.short_description}
       >
         <ul className="flex flex-wrap justify-center gap-2 text-sm">
           {facts.map((fact) => (
