@@ -11,9 +11,46 @@ entries have executed private notebooks and source completion metadata. The
 fresh snapshot supported observed analyses for 19 entries, verified no
 observations for 16, and documented unsupported correlation storage for one.
 Eighteen distinct measured figures accompany the articles where supported.
-Batches 2–4 contain the remaining 137 entries. This is a dated workflow receipt;
+At Batch 1 completion, batches 2–4 contained the remaining 137 entries. This is a dated workflow receipt;
 each YAML entry’s `data_research` remains the current completion authority.
 See [issue #233](https://github.com/PulsHealth/pulshealth/issues/233).
+
+## Batch 2 completion
+
+Batch 2 research and editorial work completed on 2026-10-14: all 39 assigned
+entries have executed private notebooks and completion metadata. Sixteen
+measured figures explain supported ranges, recording intervals, workout context
+and relationships. Eighteen types have stored rows in the verified window;
+Cycling Speed's rows are empty summary buckets, not measured speeds. Twenty-one
+types have no observations. Missing records are not interpreted as zero values.
+
+Fresh catalog-wide coverage was compared with the immutable prior inputs, and
+omitted observed types were fetched before analysis. Private compressed snapshots,
+executed notebooks, HTML reports and integrity receipts retain the evidence.
+Independent quantitative and editorial review cover the articles and figures.
+There are now **80 completed entries of 178**, including the five pilots and
+both completed batches; batches 3–4 contain the remaining **98 entries**.
+Each YAML entry's `data_research` remains the completion authority.
+See [issue #235](https://github.com/PulsHealth/pulshealth/issues/235).
+
+## Batch 3 completion
+
+All 50 nutrition, reproductive-detail and symptom entries completed coverage and
+primary-source review on 2026-10-14. Fresh bounded inventories verified no
+observations for 49 types; Food correlation objects are unsupported by the
+database schema. With no focal measurements to analyze, these entries skip
+empirical analysis and measured figures. Each records
+`data_research.review_basis: coverage_and_sources` and explicit limitations.
+
+The current sync catalog includes only three of the assigned types. Database
+absence therefore cannot establish whether a type has records in Apple Health,
+and it never means zero intake or no symptoms. Private per-entry reviews bind
+coverage, primary references, catalog support and final article hashes; the
+source and editorial reviews are preserved alongside them.
+
+Completion now covers **130 of 178 entries**, leaving the **48 Batch 4 entries**.
+Source YAML metadata remains the completion authority.
+See [issue #239](https://github.com/PulsHealth/pulshealth/issues/239).
 
 ## Priority
 

@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierLactation"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Lactation"
-short_description: "Tracks breastfeeding and pumping sessions for postpartum mothers."
-icon: "figure.and.child.holdinghands"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierLactation
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Lactation
+short_description: Understand lactation records in Apple Health, factor start and end dates, source-specific session
+  logging, and the limits of duration data.
+icon: figure.and.child.holdinghands
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,14 +15,14 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "notApplicable"
-    description: "Lactation event occurred. This is the only category value; additional details like duration or breast side may be stored in metadata or sample duration."
+- value: 0
+  name: notApplicable
+  description: Generic marker for recorded lactation context; no feeding quantity or negative result is encoded.
 ios_introduced:
-  version: "14.3"
+  version: '14.3'
   year: 2020
 watchos_introduced:
-  version: "7.2"
+  version: '7.2'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -29,92 +30,116 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Manual logging through Health app or breastfeeding tracking apps"
-  - name: "Apple Watch"
-    capability: "Manual logging through Cycle Tracking app"
-  - name: "Smart breast pumps"
-    capability: "Connected breast pumps like Willow or Elvie can automatically log pumping sessions"
-  - name: "Third-party apps"
-    capability: "Breastfeeding and baby care apps with lactation tracking features"
-primary_source: "User-reported or Connected Device"
-description: |
-  ## Overview
-  Lactation tracking records breastfeeding and breast pumping sessions for postpartum mothers. Each logged event captures the occurrence and duration of feeding or pumping, helping mothers monitor feeding patterns and milk production. This data is valuable for establishing feeding routines, ensuring adequate infant nutrition, and tracking the breastfeeding journey over time.
+- name: Manual entry or authorized source app
+  capability: Logged category observations or factor intervals; writing and metadata support depend on the source.
+primary_source: Logged lactation context or a documented source-specific workflow
+description: '## Overview
 
-  The sample duration indicates the length of the feeding or pumping session. Some apps and devices provide additional details such as breast side (left/right), milk volume pumped, or feeding type (direct nursing vs. pumping), though these details may be stored in app-specific metadata or separate data types.
 
-  ## Health Significance
-  Lactation tracking serves multiple health purposes for both mother and infant:
-  - **Infant nutrition monitoring**: Tracking feeding frequency and duration helps ensure adequate infant nutrition, especially in the early weeks
-  - **Milk supply management**: Frequent nursing/pumping maintains prolactin levels and supports milk production
-  - **Feeding pattern establishment**: Identifying patterns helps establish predictable feeding routines
-  - **Return of fertility awareness**: Lactational amenorrhea method (LAM) effectiveness depends on exclusive breastfeeding patterns
-  - **Weaning transition**: Gradual reduction in feeding frequency supports comfortable weaning
-  - **Mastitis prevention**: Regular nursing/pumping helps prevent engorgement and blocked ducts
-  - **Postpartum mental health**: Breastfeeding challenges can impact maternal wellbeing; tracking documents the experience
+  Lactation in Apple Health records lactation context. Apple''s Cycle Tracking interface offers lactation as a factor
+  with a start date and an optional ended date. A saved interval can therefore span an extended period of lactation;
+  it must not automatically be treated as one breastfeeding or pumping session.
 
-  ## Clinical Interpretation Guidelines
-  When reviewing lactation data in clinical context:
-  - **Newborn feeding frequency**:
-    - Healthy newborns typically nurse 8-12 times per 24 hours in first weeks
-    - Feeding intervals should not exceed 4 hours initially
-    - Very frequent feeding (every hour) may indicate ineffective milk transfer or low supply
-  - **Session duration considerations**:
-    - Typical nursing sessions last 10-20 minutes per breast
-    - Very short (< 5 min) or very long (> 45 min) sessions may warrant evaluation
-    - Duration alone does not indicate milk volume consumed
-  - **Supply assessment**:
-    - Pumping output provides measurable supply data (though pumping is not equivalent to nursing)
-    - Regular pumping sessions maintain supply when direct nursing is not possible
-  - **Lactational amenorrhea method (LAM)**:
-    - Effective contraception requires: exclusive/nearly exclusive breastfeeding, amenorrhea, and infant < 6 months
-    - Tracked feeding patterns help assess LAM criteria
-  - **Weaning patterns**:
-    - Gradual reduction (dropping one session every few days) minimizes engorgement and hormonal shifts
-    - Abrupt cessation increases mastitis risk and hormonal fluctuation symptoms
-  - **Warning signs to assess**:
-    - Sudden decrease in feeding frequency without intentional weaning
-    - Painful feeding sessions suggesting infection or latch issues
-    - Infant weight concerns despite frequent tracked feedings
 
-  ## Caveats & Limitations
-  - Does not capture milk volume transferred during nursing (only pumping can be measured)
-  - Session duration does not correlate directly with milk consumption
-  - Does not distinguish between direct breastfeeding and pumping unless metadata specifies
-  - Breast side tracking may not be captured in standard category value
-  - Does not assess latch quality or feeding effectiveness
-  - Supplemental feeding with formula or expressed milk is not tracked in this type
-  - Exclusive breastfeeding status for LAM assessment requires considering all infant feeding sources
-  - Smart pump data may not sync in real-time, creating logging delays
-  - Manual logging may be inconsistent during demanding newborn period
+  ## What does the record actually contain?
+
+
+  | Field | Meaning | What it cannot establish |
+
+  | --- | --- | --- |
+
+  | Code 0, notApplicable | Generic marker for recorded lactation context | Feeding type, amount or effectiveness
+  |
+
+  | Start and end dates | The interval chosen by the recording source | Milk volume or infant intake |
+
+  | Source and metadata | Provenance and any documented source-specific details | A universal feeding-session format
+  |
+
+
+  Code 0 is an undefined-value marker, not a negative result. This category has no numerical milk-volume measurement.
+  Breast side, pumping versus nursing, and volume should be used only when the source actually supplies and documents
+  those details; they cannot be reconstructed from the marker.
+
+
+  ## Can you count feeding sessions from these intervals?
+
+
+  First establish how the source uses the type. Counting long-running Cycle Tracking factors as feeds would produce
+  a misleading session count and duration chart. If a source explicitly records individual sessions, examine its
+  interval semantics and duplicate handling before reporting session frequency.
+
+
+  For factor coverage, reconcile overlapping intervals and revisions rather than simply adding every row''s duration.
+  Gaps in the saved history describe missing recorded context, not necessarily cessation of lactation. A source
+  change can also change interval shapes without reflecting a change in feeding behavior.
+
+
+  ## How can lactation provide context for other data?
+
+
+  A verified factor interval can provide context for separately recorded menstrual flow, sleep or activity. A broad
+  interval may overlap many nights and workouts; those overlaps do not identify night feeds or measure their effect
+  on sleep. The data also cannot establish exclusive breastfeeding, infant nutritional adequacy or lactational contraceptive
+  effectiveness.
+
+
+  ## What was available for this review?
+
+
+  The selected database window contained no lactation records. Factor lengths, source differences and feeding-session
+  cadence could not be measured. Lactation is absent from the current PulsHealth sync catalog, so database absence
+  says nothing definitive about what is stored in Apple Health on the phone. This source-based review includes no
+  milk-output or feeding-frequency chart.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+- key: HKMetadataKeySyncIdentifier
+  description: Optional writing-app-controlled identifier used with sync version to recognize revisions; not a globally
+    unique sample identity or permanent device identifier.
+- key: HKMetadataKeySyncVersion
+  description: Optional writing-app revision number associated with its sync identifier; use in example data was
+    not verified because no records were available.
 related_types:
-  - identifier: "HKCategoryTypeIdentifierPregnancy"
-    relationship: "Lactation typically follows pregnancy and childbirth"
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Exclusive breastfeeding may delay return of menstruation (lactational amenorrhea)"
-  - identifier: "HKCategoryTypeIdentifierContraceptive"
-    relationship: "Lactational amenorrhea provides natural contraception under specific conditions"
-  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
-    relationship: "Nighttime feeding sessions correlate with maternal sleep patterns"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Breastfeeding demands can contribute to postpartum fatigue"
+- identifier: HKCategoryTypeIdentifierPregnancy
+  relationship: Separate recorded pregnancy context; dates do not establish birth outcome or a linked episode.
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separately logged cycle history can be reviewed within recorded lactation intervals.
+- identifier: HKCategoryTypeIdentifierContraceptive
+  relationship: Separate method-use records; lactation records do not establish contraceptive protection.
+- identifier: HKCategoryTypeIdentifierSleepAnalysis
+  relationship: Recorded sleep can provide context; broad lactation factors cannot identify individual night feeds.
 references:
-  - title: "HKCategoryTypeIdentifierLactation - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierlactation"
-    type: "official"
-  - title: "Breastfeeding and Lactation - ACOG"
-    url: "https://www.acog.org/womens-health/faqs/breastfeeding-your-baby"
-    type: "medical"
-  - title: "Breastfeeding Guidelines - AAP"
-    url: "https://publications.aap.org/pediatrics/article/150/1/e2022057988/188347/Breastfeeding-and-the-Use-of-Human-Milk"
-    type: "medical"
-  - title: "Lactational Amenorrhea Method - WHO"
-    url: "https://www.who.int/teams/sexual-and-reproductive-health-and-research/key-areas-of-work/contraception/lam"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Lactation type — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/lactation
+  type: official
+- title: Generic category marker — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalue/notapplicable
+  type: official
+- title: Adding and ending cycle factors — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Lactation in Apple Health: cycle factors and interval meaning'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  review_basis: coverage_and_sources
+  artifact_key: lactation
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified zero database records in the selected reporting window; current PulsHealth sync catalog
+    does not include this identifier. Coverage and primary sources were reviewed; no empirical value, cadence, source,
+    workout, sleep or relationship analysis was performed. Database absence does not establish absence in Apple
+    Health on the phone. Category codes are not physiological quantities.

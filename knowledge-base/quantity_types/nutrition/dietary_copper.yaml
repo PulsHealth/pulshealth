@@ -1,238 +1,180 @@
-identifier: "HKQuantityTypeIdentifierDietaryCopper"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Copper"
-short_description: "Copper intake from food and supplements, essential for iron metabolism, connective tissue, and nervous system function."
-
-# --- APPLE HEALTH UI ---
-icon: "pills.fill"
-color: "#B87333"
-
-default_unit: "mcg"
-supported_units: ["mcg", "mg"]
-aggregation_type: "cumulative"
-statistics_options: ["cumulativeSum", "separateBySource"]
-typical_range:
-  min: 0
-  max: 10000
-  unit: "mcg"
-clinical_ranges:
-  - population: "Infants 0-6 months"
-    rda: "200 mcg/day (AI)"
-  - population: "Infants 7-12 months"
-    rda: "220 mcg/day (AI)"
-  - population: "Children 1-3 years"
-    rda: "340 mcg/day"
-  - population: "Children 4-8 years"
-    rda: "440 mcg/day"
-  - population: "Children 9-13 years"
-    rda: "700 mcg/day"
-  - population: "Adolescents 14-18 years"
-    rda: "890 mcg/day"
-  - population: "Adults 19+ years"
-    rda: "900 mcg/day"
-  - population: "Pregnant women"
-    rda: "1000 mcg/day"
-  - population: "Lactating women"
-    rda: "1300 mcg/day"
-  - population: "Adults"
-    upper_limit: "10000 mcg/day (10 mg)"
+identifier: HKQuantityTypeIdentifierDietaryCopper
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Copper
+short_description: Recorded copper intake from food and supplement logs, with mass units, source coverage and interpretation
+  limits.
+icon: pills.fill
+color: '#B87333'
+default_unit: mcg
+supported_units:
+- mcg
+- mg
+aggregation_type: cumulative
+statistics_options:
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Log dietary copper from foods and supplements"
-    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
-  - name: "Nutrition coaching platforms"
-    capability: "Track copper intake against personalized targets"
-    examples: ["Noom", "Nutritionix"]
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Copper is an essential trace mineral that serves as a cofactor for numerous enzymes involved in energy production, iron metabolism, neurotransmitter synthesis, and connective tissue formation. The body contains approximately 75-150 mg of copper, primarily in liver, brain, heart, and kidneys. Copper deficiency is relatively rare but can occur with excessive zinc supplementation, malabsorption, or prolonged enteral/parenteral nutrition without adequate copper. Copper toxicity is primarily a concern in Wilson's disease.
+- name: Manual entries or authorized nutrition apps
+  capability: Record consumed copper amounts when the source supports this specific HealthKit type and has write
+    authorization.
+primary_source: User-entered intake or authorized apps writing the copper quantity; app support varies by nutrient.
+description: '## What does Apple Health dietary copper measure?
 
-  ## Biological Functions
-  - **Iron metabolism**: Ceruloplasmin (copper-containing) oxidizes Fe2+ to Fe3+ for transferrin binding; essential for iron transport
-  - **Energy production**: Cytochrome c oxidase (copper enzyme) is the terminal electron acceptor in mitochondrial respiratory chain
-  - **Connective tissue**: Lysyl oxidase (copper enzyme) cross-links collagen and elastin
-  - **Antioxidant defense**: Cu/Zn superoxide dismutase (SOD1) neutralizes superoxide radicals
-  - **Neurotransmitter synthesis**: Dopamine beta-hydroxylase converts dopamine to norepinephrine
-  - **Melanin synthesis**: Tyrosinase requires copper for melanin production
-  - **Neuropeptide processing**: Peptidylglycine alpha-amidating monooxygenase requires copper
-  - **Immune function**: Required for neutrophil function and various immune processes
 
-  ## Health Significance
-  Copper's role in iron metabolism means that copper deficiency can cause anemia that doesn't respond to iron supplementation. Its role in connective tissue affects bone health, vascular integrity, and wound healing. Neurological symptoms from copper deficiency can mimic B12 deficiency (subacute combined degeneration). The copper-zinc balance is clinically important, as excessive zinc intake is the most common cause of acquired copper deficiency.
+  Dietary Copper stores the amount of copper recorded as consumed from food or supplements. Each entry contributes
+  to a cumulative intake total. [Apple''s type definition](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarycopper)
+  uses mass units. This page''s display unit is **mcg**; a nutrient amount is distinct from the weight of the food
+  or tablet. It is not a blood concentration or a measurement of body stores.
 
-  ## Clinical Interpretation Guidelines
-  When reviewing copper intake data:
-  - **Recognize that deficiency is rare from diet alone**: Usually secondary to malabsorption or zinc excess
-  - **Assess zinc intake simultaneously**: High zinc (>50 mg/day from supplements) can cause copper deficiency
-  - **Consider high-risk patients**: Bariatric surgery, prolonged TPN, premature infants
-  - **Evaluate unexplained anemia**: Copper deficiency causes anemia unresponsive to iron
-  - **Review neurological symptoms**: Myelopathy similar to B12 deficiency can occur
-  - **Note vegetarian advantage**: Plant foods are generally good copper sources
 
-  ## Deficiency
-  **Causes of copper deficiency**:
-  - Excessive zinc supplementation (most common acquired cause)
-  - Bariatric surgery (especially gastric bypass)
-  - Malabsorption syndromes (celiac, IBD, short bowel)
-  - Long-term TPN without copper
-  - Premature infants (low stores, rapid growth)
-  - Menkes disease (genetic copper transport disorder)
-  - High-dose antacid use
+  ## Why compare copper with zinc?
 
-  **Manifestations**:
-  - **Hematologic**:
-    - Anemia (microcytic or normocytic, iron-refractory)
-    - Neutropenia (most sensitive indicator)
-    - Bone marrow changes mimicking myelodysplasia
-  - **Neurologic** (copper myelopathy):
-    - Sensory ataxia
-    - Spastic gait
-    - Peripheral neuropathy
-    - Resembles subacute combined degeneration of B12 deficiency
-  - **Skeletal**:
-    - Osteoporosis
-    - Fractures
-    - Bone abnormalities in children
-  - **Other**:
-    - Impaired wound healing
-    - Hypopigmentation (gray hair, pale skin)
-    - Increased infections
 
-  **Menkes disease** (X-linked genetic):
-  - Severe copper deficiency from birth
-  - Kinky/sparse hair, seizures, developmental delay
-  - Fatal without early treatment
+  Copper supports enzyme functions, including iron metabolism. High zinc supplement intake can interfere with copper
+  absorption, but a logged zinc-to-copper ratio is not a measurement of either mineral''s status. [NIH''s copper
+  review](https://ods.od.nih.gov/factsheets/Copper-HealthProfessional/) discusses this interaction and the limits
+  of status assessment.
 
-  ## Toxicity/Excess
-  **Acute copper toxicity** (rare, usually from contaminated water/beverages):
-  - Nausea, vomiting, abdominal pain
-  - Diarrhea (often green-colored)
-  - Metallic taste
-  - Hepatotoxicity
-  - Hemolysis
 
-  **Chronic copper excess**:
-  - Hepatic damage (cirrhosis)
-  - Neurologic: Kayser-Fleischer rings, neuropsychiatric symptoms (Wilson's disease)
-  - Hemolytic anemia
+  ## What should I check before adding the entries?
 
-  **Wilson's disease** (genetic copper overload):
-  - Impaired biliary copper excretion
-  - Hepatic, neurologic, and psychiatric manifestations
-  - Kayser-Fleischer corneal rings (pathognomonic)
-  - Requires lifelong copper restriction and chelation therapy
 
-  **Upper limit**: 10 mg/day based on liver damage as critical endpoint
+  | Question | What to inspect |
 
-  ## Food Sources
-  **Very high copper** (>0.5 mg per serving):
-  - Beef liver: 4 mg per oz (highest food source)
-  - Oysters: 5.7 mg per 3 oz
-  - Lobster, crab: 1-2 mg per 3 oz
-  - Dark chocolate: 0.5 mg per oz
+  | --- | --- |
 
-  **High copper** (0.2-0.5 mg per serving):
-  - Cashews: 0.6 mg per oz
-  - Sunflower seeds: 0.5 mg per oz
-  - Shiitake mushrooms: 0.65 mg per 1/2 cup
-  - Chickpeas: 0.3 mg per 1/2 cup
-  - Tofu: 0.4 mg per 1/2 cup
+  | Copper alongside zinc? | Keep supplement source and serving information; an intake ratio cannot quantify intestinal
+  absorption.
 
-  **Moderate sources** (0.1-0.2 mg per serving):
-  - Potatoes
-  - Whole grains
-  - Most nuts
-  - Avocado
-  - Dried fruits
+  | Could the unit explain a large value? | 1 mg equals 1,000 mcg; check the source value before conversion. |
 
-  **Copper in water**: Can be significant source if plumbing contains copper pipes, especially with acidic water.
+  | Can two apps be combined? | Look for the same food or supplement imported twice; preserve provenance. |
 
-  ## Absorption Factors
-  **Absorption efficiency**: 30-40% of dietary copper is absorbed; inversely related to intake.
+  | Does a missing day mean no intake? | No. Food may have been consumed without a record, or the nutrient field
+  may be unavailable. |
 
-  **Enhancers**:
-  - Adequate protein intake (amino acids aid absorption)
-  - Acidic environment (improite dissolution)
-  - Histidine, methionine (form absorbable complexes)
 
-  **Inhibitors**:
-  - **Zinc**: Most significant inhibitor; induces metallothionein which binds copper in enterocytes and prevents absorption. This is the mechanism of zinc-induced copper deficiency.
-  - Phytates: Bind copper, reducing absorption
-  - Fiber: High fiber diets may reduce absorption
-  - Iron: High-dose iron supplements may compete
-  - Vitamin C: Very high doses may reduce copper absorption
-  - Molybdenum: Forms complexes with copper (thiomolybdates)
-  - Cadmium: Competes for absorption
+  A source-specific daily sum answers how much was **recorded** on that reporting day. It does not establish a complete
+  diet. Keep the number of logged days visible and leave unrecorded days missing rather than filling them with zero.
+  A population intake recommendation is a daily dietary planning value, not a normal range for a single sample.
 
-  **Homeostatic regulation**: Absorption increases with deficiency; biliary excretion is primary elimination route.
 
-  ## Special Populations
-  - **Bariatric surgery patients**: High risk; especially gastric bypass which bypasses duodenum (primary absorption site)
-  - **Premature infants**: Low copper stores; need supplementation
-  - **TPN patients**: Must include copper in formulation; deficiency develops within weeks
-  - **Wilson's disease patients**: Require copper restriction and chelation; avoid copper-rich foods
-  - **High-zinc supplement users**: Risk of copper deficiency; monitor if taking >50 mg zinc daily
-  - **Vegetarians/vegans**: Generally adequate intake; plant foods are good sources
-  - **Celiac disease/IBD**: Malabsorption risk
-  - **Those with unexplained anemia**: Consider copper deficiency, especially if neutropenic
-  - **Patients with myelopathy**: Include copper status in workup
+  ## How often are records created?
 
-  ## Drug Interactions
-  - **Zinc supplements**: High-dose zinc induces copper deficiency; used therapeutically in Wilson's disease
-  - **Penicillamine**: Copper chelator; used in Wilson's disease; can cause copper deficiency
-  - **Trientine**: Another copper chelator for Wilson's disease
-  - **Antacids and H2 blockers**: May reduce copper absorption
-  - **Proton pump inhibitors**: Long-term use may affect copper status
-  - **Oral contraceptives**: May increase serum copper levels
-  - **NSAIDs**: May alter copper distribution
-  - **Allopurinol**: May affect copper metabolism
 
-  ## Caveats & Limitations
-  - HealthKit data represents intake, not copper status
-  - Serum copper and ceruloplasmin are standard markers but can be affected by inflammation, pregnancy, and estrogen
-  - 24-hour urine copper used in Wilson's disease diagnosis
-  - Hepatic copper content (biopsy) is gold standard but invasive
-  - Food copper content varies with soil and water supply
-  - Copper from plumbing (first-draw water) not captured in food logging
-  - Wilson's disease patients must strictly limit copper; food tracking critical but databases may be imprecise
-  - Zinc-copper balance more important than absolute copper intake for some patients
-  - Mild deficiency symptoms are nonspecific; often overlooked until hematologic or neurologic signs develop
+  Recording cadence follows the contributing app or manual log. Entries can represent servings, retrospective meals
+  or an imported daily total. Several records saved together need not mean several doses were consumed simultaneously.
+  Sample start and end times describe the source''s interval; they do not independently verify ingestion time.
+
+
+  Workout and sleep overlap can identify timestamps for review, but cannot show nutrient loss, absorption or a sleep
+  effect. A late-night entry may simply be delayed logging. Investigate source behavior before comparing intervals
+  or assigning a physiological explanation.
+
+
+  ## Is example data available?
+
+
+  The **365-day reporting window** contained no raw copper samples, stored aggregates or workout-series observations
+  for this type. Ranges, outliers, logging intervals, workout and sleep comparisons, and empirical relationships
+  were therefore unavailable. No measured distribution or graph is presented. Missing records do not establish zero
+  intake or deficiency.
+
+
+  The current PulsHealth sync catalog does not include this identifier. A knowledge-base page documents a HealthKit
+  type; it does not establish that the current app synchronizes it. This coverage limitation is separate from what
+  may exist in Apple Health or another food app.
+
+
+  ## How should I relate this to other health data?
+
+
+  Compare copper and zinc only on days with sufficiently complete records from identified sources. A supplement
+  can be recorded without foods, or one mineral can be shared while the other is omitted. Do not convert this partial
+  ratio into a deficiency diagnosis or a target supplement balance.
+
+
+  ## How can I make future records more useful?
+
+
+  Check that the app actually writes this nutrient to Apple Health, then inspect a known food or supplement entry.
+  Retain serving counts, units and source information. Optional food metadata can help identify a contribution,
+  but does not guarantee a complete meal or identify supplement chemistry. [Apple''s data-source controls](https://support.apple.com/en-us/108779)
+  explain how to review contributing apps. If an intake comparison raises a concern, establish logging completeness
+  before interpreting it clinically.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "Type of food or supplement providing copper"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates if value was manually entered by user"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Identifier from external nutrition tracking service"
+- key: HKMetadataKeyFoodType
+  description: Optional food description supplied by a source; does not guarantee serving size, copper content accuracy
+    or supplement chemical form.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional user-entry indicator; absence does not prove automatic measurement.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
-    relationship: "High zinc intake causes copper deficiency; balance is clinically critical"
-  - identifier: "HKQuantityTypeIdentifierDietaryIron"
-    relationship: "Copper required for iron metabolism (ceruloplasmin); copper deficiency causes iron-refractory anemia"
-  - identifier: "HKQuantityTypeIdentifierDietaryMolybdenum"
-    relationship: "Molybdenum can form complexes with copper affecting absorption"
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
-    relationship: "High-dose vitamin C may affect copper absorption and status"
+- identifier: HKQuantityTypeIdentifierDietaryZinc
+  relationship: Compare copper and zinc only on days with sufficiently complete records from identified sources.
+    A supplement can be recorded without foods, or one mineral can be shared while the other is omitted. Do not
+    convert this partial ratio into a deficiency diagnosis or a target supplement balance.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Food-energy entries can describe separate logging coverage; they do not establish complete mineral
+    composition data.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryCopper"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarycopper"
-    type: "official"
-  - title: "NIH Office of Dietary Supplements - Copper Fact Sheet for Health Professionals"
-    url: "https://ods.od.nih.gov/factsheets/Copper-HealthProfessional/"
-    type: "medical"
-  - title: "American Journal of Clinical Nutrition - Copper Deficiency"
-    url: "https://academic.oup.com/ajcn/article/88/3/855S/4649177"
-    type: "research"
-  - title: "AASLD Practice Guidelines - Wilson Disease"
-    url: "https://www.aasld.org/practice-guidelines/wilson-disease"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: 'Apple: Dietary Copper'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarycopper
+  type: official
+- title: 'NIH Office of Dietary Supplements: Copper'
+  url: https://ods.od.nih.gov/factsheets/Copper-HealthProfessional/
+  type: medical
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Copper: Intake Logs, Units & Interpretation'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative recorded nutrient amount in compatible mass units; not a blood concentration or absorbed dose.
+  cadence: Source logging or import intervals; ingestion cadence is unverified.
+  coverage: Nutrient availability varies by source food database and export support. No records does not establish
+    zero intake.
+  context: Workout and sleep timestamp overlap is logging context, not evidence of consumption or physiological
+    response.
+  aggregation: Sum compatible contributions by source and reporting day after checking servings, units and duplicate
+    imports; report logged-day coverage.
+  metadata: Optional food descriptions cannot recover missing serving details, chemical forms, fortification or
+    absorption.
+  references:
+  - title: 'Apple: Dietary Copper'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarycopper
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-copper
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Fresh 365-day snapshot contained no raw samples, aggregates or workout-series observations for this
+    type. Empirical ranges, outliers, cadence, context and associations were unavailable. The current authoritative
+    sync catalog omits this identifier; absence cannot establish what exists in the source Apple Health store. No
+    measured figure is presented. Missing records do not establish zero intake or deficiency. Fixed America/Los_Angeles
+    reporting calendar.
+  review_basis: coverage_and_sources

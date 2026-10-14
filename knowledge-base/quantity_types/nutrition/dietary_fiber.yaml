@@ -1,48 +1,29 @@
-identifier: "HKQuantityTypeIdentifierDietaryFiber"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Fiber"
-short_description: "Total fiber intake from plant-based foods and supplements"
-icon: "leaf.fill"
-color: "#34C759"
-default_unit: "g"
+identifier: HKQuantityTypeIdentifierDietaryFiber
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Fiber
+short_description: Understand fiber grams, partial food logs and the difference between total fiber and carbohydrate
+  detail.
+icon: leaf.fill
+color: '#34C759'
+default_unit: g
 supported_units:
-  - "g"
-  - "mg"
-  - "oz"
-unit_description: "Grams (g) of dietary fiber. Fiber is a non-digestible carbohydrate that provides 0-2 kcal/g depending on fermentability and type."
-aggregation_type: "cumulative"
+- g
+- mg
+- oz
+unit_description: g of logged fiber; PulsHealth canonical sync unit.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-typical_range:
-  min: 5
-  max: 50
-  unit: "g"
-  notes: "Most Americans consume only 10-15g/day, well below recommendations. High-fiber diets may exceed 40g/day."
-clinical_ranges:
-  - population: "Adult Women (19-50)"
-    rda: "25g/day"
-  - population: "Adult Women (51+)"
-    rda: "21g/day"
-  - population: "Adult Men (19-50)"
-    rda: "38g/day"
-  - population: "Adult Men (51+)"
-    rda: "30g/day"
-  - population: "Children (1-3 years)"
-    rda: "19g/day"
-  - population: "Children (4-8 years)"
-    rda: "25g/day"
-  - population: "Pregnancy"
-    rda: "28g/day"
-  - population: "General Guideline"
-    rda: "14g per 1000 kcal consumed"
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -50,113 +31,168 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Fiber tracking with soluble/insoluble breakdown in comprehensive apps"
-    examples:
-      - "Cronometer"
-      - "MyFitnessPal"
-      - "Lose It"
-      - "Yazio"
-  - name: "Gut health apps"
-    capability: "Fiber tracking with microbiome considerations"
-    examples:
-      - "ZOE"
-      - "Viome"
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Dietary Fiber represents the total intake of non-digestible carbohydrates from plant-based foods. Fiber includes soluble fiber (dissolves in water, forms gel, fermented by gut bacteria) and insoluble fiber (does not dissolve, adds bulk to stool). Despite being non-digestible by human enzymes, fiber profoundly impacts metabolic health, gut function, and disease risk.
+- name: Manual entry
+  capability: User-entered amounts saved to Apple Health.
+- name: Authorized nutrition apps
+  capability: Food contributions shared with HealthKit when the source supports this specific type and has
+    write authorization.
+primary_source: Manual records or authorized nutrition apps; the source determines food composition and serving
+  semantics.
+description: '## What does a dietary fiber record contain?
 
-  The FDA Daily Value for dietary fiber is 28g based on a 2,000 calorie diet (updated 2020). This aligns with the recommendation of 14g per 1,000 calories consumed. Most Americans fall significantly short, consuming only 10-15g daily.
 
-  ## Health Significance
-  Adequate fiber intake provides:
-  - **Gut Health**: Feeds beneficial gut bacteria (prebiotic effect); produces short-chain fatty acids (SCFAs)
-  - **Glycemic Control**: Slows carbohydrate absorption; reduces postprandial glucose spikes
-  - **Cardiovascular Health**: Lowers LDL cholesterol (soluble fiber); reduces CV mortality risk
-  - **Weight Management**: Increases satiety; displaces calorie-dense foods
-  - **Bowel Regularity**: Prevents constipation; maintains healthy stool bulk and transit time
-  - **Cancer Prevention**: Associated with reduced colorectal cancer risk
-  - **Blood Pressure**: High-fiber diets associated with lower blood pressure
-  - **Inflammation**: SCFAs from fiber fermentation have anti-inflammatory effects
+  Dietary Fiber stores a logged amount of fiber in **g**. [Apple treats it as a cumulative mass quantity](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfiber),
+  rather than a continuous measurement of digestion or bowel function. A food source may write fiber without
+  writing every other nutrient.
 
-  ## Clinical Interpretation Guidelines
-  When assessing fiber intake:
-  1. **Compare to Recommendations**: Most individuals fall significantly short; even 50% of goal is beneficial
-  2. **Assess Fiber Sources**: Whole foods (vegetables, fruits, legumes, whole grains) vs. supplements
-  3. **Consider Soluble vs. Insoluble**: Soluble for cholesterol/glucose; insoluble for bowel regularity
-  4. **Evaluate Fluid Intake**: Adequate hydration essential for fiber to function properly
-  5. **Review Rate of Increase**: Rapid fiber increases cause GI distress; increase by 5g/week
-  6. **Check for Contraindications**: Some GI conditions require fiber modification
-  7. **Correlate with GI Symptoms**: Bloating may indicate too-rapid increase or FODMAP sensitivity
 
-  ## Deficiency Symptoms
-  Low fiber intake is associated with:
-  - Constipation and irregular bowel movements
-  - Increased hemorrhoid and diverticular disease risk
-  - Elevated LDL cholesterol
-  - Greater postprandial glucose variability
-  - Increased hunger and reduced satiety
-  - Gut microbiome dysbiosis
-  - Higher colorectal cancer risk over time
-  - Increased cardiovascular disease risk
+  ## Should fiber be added to carbohydrate totals?
 
-  ## Excess/Toxicity
-  Very high fiber intake may cause:
-  - **GI Distress**: Bloating, gas, cramping, especially with rapid increases
-  - **Mineral Binding**: Phytates in high-fiber foods can reduce mineral absorption (iron, zinc, calcium)
-  - **Bowel Obstruction**: Rare; risk with inadequate fluid or GI anatomical abnormalities
-  - **Medication Interference**: May affect absorption of some medications
-  - **Caloric Displacement**: In undernourished individuals, high fiber may reduce energy intake
-  - **FODMAP Overload**: Fermentable fibers may worsen IBS symptoms in sensitive individuals
 
-  ## Special Populations
-  - **IBS**: Low-FODMAP diet temporarily restricts certain fermentable fibers; gradually reintroduce
-  - **IBD (Crohn's, UC)**: During flares, low-residue diet may be needed; adequate fiber in remission
-  - **Diverticulitis**: High fiber recommended for prevention; low fiber during acute episodes
-  - **Diabetes**: Soluble fiber particularly beneficial for glycemic control; psyllium, beta-glucan studied
-  - **Cardiovascular Disease**: 5-10g/day soluble fiber can reduce LDL by 5-10%
-  - **Weight Loss**: High-fiber foods increase satiety; associated with greater weight loss success
-  - **Elderly**: Often reduced intake due to dental issues, appetite; important for bowel regularity
-  - **Post-Bariatric Surgery**: Gradual fiber introduction; focus on soluble fiber initially
+  Fiber is detail within total carbohydrate in [Apple''s nutrition hierarchy](https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers).
+  Adding it again to a total-carbohydrate sample double counts that contribution. Compare compatible portions
+  from the same source; differences can reflect partial logs, label rounding or source definitions.
 
-  ## Caveats & Limitations
-  - **Database Variability**: Fiber content varies by database and analytical method used
-  - **Soluble/Insoluble Distinction**: Not all tracking apps differentiate; total fiber reported
-  - **Functional vs. Intact Fiber**: Added fibers (inulin, chicory root) may not have same benefits as intact food fiber
-  - **Individual Tolerance**: Gut microbiome composition affects fiber tolerance and fermentation
-  - **Processing Effects**: Food processing can alter fiber content and characteristics
-  - **Net Carb Calculations**: Fiber subtraction from total carbs assumes complete non-absorption, which varies
-  - **Supplement Quality**: Fiber supplements vary in efficacy; whole food sources generally preferred
+
+  | Question | What the record can tell you |
+
+  | --- | --- |
+
+  | Total fiber eaten | A recorded contribution, subject to logging coverage |
+
+  | Soluble versus insoluble fiber | Not resolved by this single quantity |
+
+  | Net carbohydrates | Requires the source''s calculation and ingredient information |
+
+  | Digestive response | Not measured by fiber grams or sample duration |
+
+
+  ## How do labels and daily goals differ?
+
+
+  [FDA''s label Daily Value is 28 g](https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels).
+  It is a label reference, not a normal interval for each food entry. Comparisons need reasonably complete
+  days. [FDA''s fiber definition](https://www.fda.gov/food/nutrition-food-labeling-and-critical-foods/questions-and-answers-dietary-fiber)
+  includes qualifying naturally occurring and isolated or synthetic nondigestible carbohydrates; ingredient
+  descriptions can matter when comparing different food databases.
+
+
+  ## Can I infer symptoms or calories from fiber grams?
+
+
+  This total does not identify fiber composition, fermentation or an individual''s tolerance. It cannot diagnose
+  constipation, establish a deficiency or predict symptoms. Avoid reconstructing exact food calories with a
+  single assumed fiber factor; retain the source''s energy amount and review its labeling method.
+
+
+  ## Can PulsHealth collect this type?
+
+
+  This type is included in the current PulsHealth collection catalog. Database coverage still depends on records
+  being present and readable in HealthKit.
+
+
+  ## When are entries recorded, and what does context mean?
+
+
+  Cadence follows food logging or source synchronization, not continuous sensing. A record whose timestamp
+  overlaps a workout or recorded sleep may describe an earlier meal or a daily summary. Review start times,
+  durations and source history before discussing meal timing. Missing days remain unlogged rather than zero
+  intake. [Health''s source controls](https://support.apple.com/en-us/108779) help when reviewing overlapping
+  apps.
+
+
+  ## What did the database investigation establish?
+
+
+  The researched **365-day reporting window** contained no raw samples or stored aggregates for this nutrient.
+  Recorded ranges, unusual portions, source overlap, recording intervals and workout or sleep comparisons were
+  unavailable. Related nutrient comparisons were unavailable because there were no records for this type. No
+  empirical nutrient association or measured chart is supported. These missing records do not establish zero
+  consumption or a deficient diet.
+
+
+  ## How can I make the log easier to interpret?
+
+
+  Check the represented serving, preserve source-specific daily totals and state how many days have usable
+  logs. Review duplicate food imports before summing sources. Food descriptions may clarify portions when supplied,
+  but absent metadata does not prove automatic measurement or complete recording.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "String identifier for the fiber source (e.g., 'oatmeal', 'beans', 'psyllium')"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Boolean indicating manual entry versus automatic capture"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from source app for synchronization"
+- key: HKMetadataKeyFoodType
+  description: Optional food description if supplied; it does not establish portion size or complete composition.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional indication of user entry; absence does not establish automatic measurement.
+- key: HKMetadataKeyExternalUUID
+  description: Optional source external identifier; not a universal food identifier or guaranteed cross-app
+    duplicate key.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
-    relationship: "Fiber is a subcategory of total carbohydrates"
-  - identifier: "HKQuantityTypeIdentifierDietarySugar"
-    relationship: "Both are carbohydrate subcategories; fiber often displaces sugar in diet"
-  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
-    relationship: "Fiber slows glucose absorption and reduces postprandial spikes"
-  - identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
-    relationship: "Soluble fiber reduces dietary cholesterol absorption"
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "Fiber contributes minimal calories (0-2 kcal/g)"
+- identifier: HKQuantityTypeIdentifierDietaryCarbohydrates
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietarySugar
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFiber"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfiber"
-    type: "official"
-  - title: "Dietary Reference Intakes for Fiber - National Academies"
-    url: "https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids"
-    type: "research"
-  - title: "Health Benefits of Dietary Fiber - Nutrition Reviews"
-    url: "https://academic.oup.com/nutritionreviews/article/67/4/188/1901012"
-    type: "research"
-  - title: "Fiber and Prebiotics: Mechanisms and Health Benefits - Nutrients"
-    url: "https://www.mdpi.com/2072-6643/5/4/1417"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryFiber'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfiber
+  type: official
+- title: 'Apple: Nutrition type hierarchy'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'FDA: Current label Daily Values'
+  url: https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+- title: 'FDA: Fiber definitions'
+  url: https://www.fda.gov/food/nutrition-food-labeling-and-critical-foods/questions-and-answers-dietary-fiber
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Dietary Fiber: Daily Logs, Carbohydrates & Label Values'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative logged nutrient amount; a sample may represent a food, meal or imported daily contribution.
+  cadence: Source-specific food logging or synchronization, not continuous nutrient sensing.
+  context: Workout and sleep overlap describe record timestamps; ingestion time, absorption and physiological
+    response remain unverified.
+  coverage: Missing entries are unlogged, not zero intake; sources can provide only selected nutrients.
+  aggregation: Sum compatible contributions within a source after checking serving semantics and duplicate
+    imports; report logged-day coverage.
+  metadata: Food descriptions and entry indicators are optional; temporal coincidence does not recover explicit
+    food-correlation membership.
+  references:
+  - title: 'Apple: Nutrition type identifiers'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'Apple: Sample semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-fiber
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified 365-day selected-user window contained no raw samples or stored aggregates for this
+    type. Coverage and primary sources were reviewed; empirical analysis was skipped because this type had
+    no observations. Value distributions, outliers, cadence, source overlap, workout/sleep comparisons and
+    empirical related-type associations were unavailable. Source guidance is presented without a measured figure.
+    Missing logs do not establish zero intake. Fixed America/Los_Angeles reporting calendar; logging timestamps
+    need not be eating times. Database absence does not establish absence in Apple Health on the phone.

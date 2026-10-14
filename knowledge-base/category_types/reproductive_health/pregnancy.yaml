@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierPregnancy"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Pregnancy"
-short_description: "Records pregnancy status to provide context for other health metrics during gestation."
-icon: "figure.and.child.holdinghands"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierPregnancy
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Pregnancy
+short_description: Understand pregnancy intervals in Apple Health, source revisions and the limits of gestational
+  dating from category records.
+icon: figure.and.child.holdinghands
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,14 +15,14 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "notApplicable"
-    description: "User is currently pregnant. This is the only category value; the sample start and end dates indicate the pregnancy duration."
+- value: 0
+  name: notApplicable
+  description: Generic category marker for a recorded pregnancy interval; not a negative result.
 ios_introduced:
-  version: "14.3"
+  version: '14.3'
   year: 2020
 watchos_introduced:
-  version: "7.2"
+  version: '7.2'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -29,93 +30,124 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Manual logging through Health app or Cycle Tracking app"
-  - name: "Apple Watch"
-    capability: "Manual logging through Cycle Tracking app"
-  - name: "Third-party apps"
-    capability: "Pregnancy tracking apps like Ovia, What to Expect, or The Bump"
-primary_source: "User-reported"
-description: |
-  ## Overview
-  Pregnancy tracking records the user's pregnancy status as a time-bounded sample, with start and end dates indicating the pregnancy period. This contextual information is critical for interpreting other health data during pregnancy, as many physiological parameters change significantly during gestation. When pregnancy is logged, the Health app and Cycle Tracking can adjust predictions and interpretations accordingly.
+- name: Manual entry or authorized source app
+  capability: Stores logged observations or results; supported writing workflows depend on the source app.
+primary_source: Logged observations or test results
+description: '## Overview
 
-  The sample represents an ongoing pregnancy state rather than a discrete event. Users typically log pregnancy after confirmation (positive pregnancy test, clinical confirmation) and the sample may be updated as the estimated due date is refined through clinical dating.
+  Pregnancy in Apple Health is recorded as a category interval. It adds pregnancy context to a health history; it
+  is distinct from a home pregnancy-test result, a due date or a clinical record of gestational age.
 
-  ## Health Significance
-  Pregnancy status profoundly affects health data interpretation:
-  - **Vital sign context**: Resting heart rate increases 10-20 bpm during pregnancy; blood pressure patterns change across trimesters
-  - **Weight tracking**: Expected weight gain varies by trimester and pre-pregnancy BMI; tracking monitors healthy progression
-  - **Activity adjustments**: Exercise recommendations differ during pregnancy; heart rate zones and exertion targets should be adjusted
-  - **Sleep pattern changes**: Sleep disturbances, position changes, and duration needs evolve throughout pregnancy
-  - **Symptom normalization**: Many symptoms (nausea, fatigue, heartburn) are expected during pregnancy
-  - **Medication safety**: Critical context for medication decisions and teratogenic risk assessment
-  - **Mental health monitoring**: Prenatal anxiety and depression screening is enhanced by baseline mood data
-  - **Fertility tracking cessation**: Menstrual cycle predictions and ovulation tracking pause during pregnancy
 
-  ## Clinical Interpretation Guidelines
-  When reviewing health data with pregnancy context:
-  - **Gestational dating**:
-    - Pregnancy weeks counted from last menstrual period (LMP), not conception
-    - Due date calculation: LMP + 280 days (40 weeks)
-    - Clinical dating ultrasound may adjust estimated due date
-  - **Trimester-specific considerations**:
-    - **First trimester (weeks 1-12)**: Fatigue, nausea common; miscarriage risk highest; weight gain minimal
-    - **Second trimester (weeks 13-26)**: Energy often improves; weight gain accelerates; fetal movement begins
-    - **Third trimester (weeks 27-40)**: Fatigue returns; sleep disruption increases; weight gain continues
-  - **Vital sign expectations**:
-    - Heart rate: Increases progressively, peaks around 32 weeks
-    - Blood pressure: Typically decreases mid-pregnancy, rises toward baseline in third trimester
-    - Respiratory rate: May increase slightly
-  - **Activity data interpretation**:
-    - Step counts and activity may naturally decrease as pregnancy progresses
-    - Exercise tolerance varies; some reduction is physiologically normal
-  - **Weight monitoring**:
-    - First trimester: 1-4 lbs typical gain
-    - Second and third trimester: ~1 lb/week typical for normal BMI
-    - Total recommended gain varies by pre-pregnancy BMI (25-35 lbs for normal BMI)
+  ## What does the category value represent?
 
-  ## Caveats & Limitations
-  - Does not capture pregnancy-specific clinical data (ultrasound findings, lab results, complications)
-  - Gestational age and due date may not be stored in sample; requires external reference
-  - Multiple pregnancies (twins, etc.) are not differentiated from singleton
-  - Pregnancy loss or termination requires manual sample end date adjustment
-  - Does not track pregnancy complications (gestational diabetes, preeclampsia, etc.)
-  - Trimester stage is calculated, not explicitly stored
-  - Postpartum period is not explicitly tracked after pregnancy sample ends
-  - Users may not update end date promptly after delivery or loss
-  - Does not capture mode of delivery or birth outcomes
+  | Field | Meaning | Limit |
+
+  | --- | --- | --- |
+
+  | Code 0, notApplicable | The pregnancy category uses an undefined-value marker | It is not a severity, trimester
+  or negative result |
+
+  | Start and end dates | The interval the source records for pregnancy context | The dates do not independently
+  establish conception, delivery or outcome |
+
+  | Source and revisions | Provenance for the saved interval | Multiple or edited rows need reconciliation before
+  counting episodes |
+
+
+  The name notApplicable refers to the lack of a more specific category value. It does not mean the person is not
+  pregnant. The presence of a record labels pregnancy context; absence of a record establishes nothing about pregnancy
+  status.
+
+
+  ## How should you read its cadence?
+
+  An interval may span a long time and later be edited. That makes start-to-start gaps very different from a regularly
+  sampled vital sign. Before counting pregnancies or days of pregnancy, inspect overlapping intervals, repeated
+  content and source revisions. Add the union of resolved intervals rather than their durations when overlap exists.
+
+
+  The exported interval alone is not a reliable clock for gestational weeks. Clinical dating, last menstrual period,
+  due date and pregnancy outcome require their own evidence. Do not calculate a trimester from an arbitrary start
+  date and present it as a documented clinical fact.
+
+
+  ## How can it provide context for other measurements?
+
+  Heart rate, body mass, sleep and activity can be compared within a recorded pregnancy interval when corresponding
+  observations exist. Show source coverage and time trends rather than assuming a change is caused by pregnancy.
+  A wide interval may overlap many workouts and nights; those overlaps mark context, not a pregnancy measurement
+  during every overlapping sample.
+
+
+  A separate pregnancy-test entry can document a saved test result. Temporal proximity does not establish that it
+  created this pregnancy interval or that both records describe the same episode.
+
+
+  ## What did the example data show?
+
+  There were no pregnancy-category records in the research window. Interval lengths, revisions, episode counts and
+  pregnancy-context relationships were therefore unavailable. No gestational-age chart or outcome is inferred.
+
+
+  ## Where are its boundaries?
+
+  This category does not encode a diagnosis, ultrasound findings, singleton versus multiple pregnancy, complications
+  or birth outcome. Apple lets users record pregnancy as a Cycle Tracking factor; source-specific updates still
+  determine the saved history. An ended interval can reflect a correction or changed logging context and should
+  not be labeled a delivery without supporting information.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+- key: HKMetadataKeySyncIdentifier
+  description: Unique identifier used to sync samples across devices
+- key: HKMetadataKeySyncVersion
+  description: Version number for sync conflict resolution
 related_types:
-  - identifier: "HKCategoryTypeIdentifierPregnancyTestResult"
-    relationship: "Positive pregnancy test typically precedes logging pregnancy status"
-  - identifier: "HKCategoryTypeIdentifierLactation"
-    relationship: "Lactation tracking typically follows pregnancy and childbirth"
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Menstrual tracking pauses during pregnancy and resumes postpartum"
-  - identifier: "HKQuantityTypeIdentifierBodyMass"
-    relationship: "Weight tracking during pregnancy monitors healthy gestational weight gain"
-  - identifier: "HKQuantityTypeIdentifierHeartRate"
-    relationship: "Resting heart rate elevation is expected during pregnancy"
-  - identifier: "HKCategoryTypeIdentifierNausea"
-    relationship: "Nausea is a common pregnancy symptom, especially in first trimester"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Fatigue is common in first and third trimesters"
+- identifier: HKCategoryTypeIdentifierPregnancyTestResult
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierLactation
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKQuantityTypeIdentifierBodyMass
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKQuantityTypeIdentifierHeartRate
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierNausea
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierFatigue
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
 references:
-  - title: "HKCategoryTypeIdentifierPregnancy - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierpregnancy"
-    type: "official"
-  - title: "Prenatal Care - ACOG"
-    url: "https://www.acog.org/womens-health/faqs/prenatal-care"
-    type: "medical"
-  - title: "Weight Gain During Pregnancy - ACOG"
-    url: "https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2013/01/weight-gain-during-pregnancy"
-    type: "medical"
-  - title: "Physiologic Changes During Pregnancy - UpToDate"
-    url: "https://www.uptodate.com/contents/maternal-adaptations-to-pregnancy-physiologic-respiratory-tract-changes-and-dyspnea"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Pregnancy — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/pregnancy
+  type: official
+- title: Cycle Tracking — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+- title: Generic category marker — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalue/notapplicable
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Pregnancy in Apple Health: values and recording'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: pregnancy
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: 'No records in the selected reporting year: measured category frequencies, cadence, source differences,
+    workout or sleep comparisons and related-type associations are unavailable. Missing records do not establish
+    absence of events or negative results. Category codes are not physiological measurements. Start-selected bounds
+    may omit an interval beginning before the window.'

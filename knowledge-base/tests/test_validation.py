@@ -47,6 +47,9 @@ class ValidationTests(unittest.TestCase):
         entry = copy.deepcopy(self.entry)
         entry["data_research"] = self.research()
         self.assertTrue(self.validate(entry)[0])
+        for basis in ("data_analysis", "coverage_and_sources"):
+            entry["data_research"]["review_basis"] = basis
+            self.assertTrue(self.validate(entry)[0])
         changes = [
             {"reviewed_on": "2026-02-30"}, {"status": "pending"},
             {"workflow_version": "unknown"}, {"artifact_key": "../private"},
@@ -54,6 +57,7 @@ class ValidationTests(unittest.TestCase):
             {"facets": self.research()["facets"][:-1] + ["coverage"]},
             {"facets": self.research()["facets"] + ["unsupported"]},
             {"limitations": ""},
+            {"review_basis": "assumed_no_data"},
         ]
         for change in changes:
             with self.subTest(change=change):

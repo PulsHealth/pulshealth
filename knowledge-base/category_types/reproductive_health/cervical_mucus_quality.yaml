@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Cervical Mucus Quality"
-short_description: "Tracks cervical mucus characteristics to identify fertile windows through natural family planning methods."
-icon: "drop.fill"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierCervicalMucusQuality
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Cervical Mucus Quality
+short_description: Understand Apple Health cervical mucus categories, observation gaps and their limits for cycle
+  interpretation.
+icon: drop.fill
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,26 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "dry"
-    description: "No noticeable cervical mucus; vaginal area feels dry. Typically indicates low fertility, occurring immediately after menstruation and before the next period."
-  - value: 2
-    name: "sticky"
-    description: "Thick, tacky mucus that holds its shape when touched. Low to moderate fertility; sperm survival is limited in this environment."
-  - value: 3
-    name: "creamy"
-    description: "Smooth, lotion-like mucus that is white or yellowish. Moderate fertility; indicates approaching ovulation but not peak fertility."
-  - value: 4
-    name: "watery"
-    description: "Thin, clear, watery mucus that feels slippery. High fertility; often occurs 1-2 days before the most fertile period."
-  - value: 5
-    name: "eggWhite"
-    description: "Clear, stretchy mucus resembling raw egg whites that can stretch between fingers. Peak fertility; optimal environment for sperm survival and transport, indicating ovulation is imminent or occurring."
+- value: 1
+  name: dry
+  description: Little or no mucus observed.
+- value: 2
+  name: sticky
+  description: Sticky mucus observed.
+- value: 3
+  name: creamy
+  description: Creamy mucus observed.
+- value: 4
+  name: watery
+  description: Watery mucus observed.
+- value: 5
+  name: eggWhite
+  description: Egg-white-like mucus observed.
 ios_introduced:
-  version: "9.0"
+  version: '9.0'
   year: 2015
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -41,78 +42,121 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Manual logging through Health app or Cycle Tracking app"
-  - name: "Apple Watch"
-    capability: "Manual logging through Cycle Tracking app"
-  - name: "Third-party apps"
-    capability: "Fertility awareness apps like Natural Cycles, Kindara, or Flo"
-primary_source: "User-reported"
-description: |
-  ## Overview
-  Cervical mucus quality tracking is a cornerstone of fertility awareness-based methods (FABMs) of family planning. Cervical mucus changes throughout the menstrual cycle in response to estrogen and progesterone levels, providing observable signs of fertility status. The Billings Ovulation Method and Creighton Model specifically rely on mucus observations, while symptothermal methods combine mucus tracking with basal body temperature.
+- name: Manual entry or authorized source app
+  capability: Stores logged observations or results; supported writing workflows depend on the source app.
+primary_source: Logged observations or test results
+description: '## Overview
 
-  The progression from dry to sticky to creamy to watery to egg-white mucus indicates rising estrogen levels and approaching ovulation. After ovulation, progesterone causes mucus to thicken and become less hospitable to sperm. This predictable pattern enables users to identify their fertile window for conception or contraception purposes.
+  Cervical mucus quality in Apple Health records an observation such as dry, sticky or watery. It is a category
+  selected when an observation is logged, rather than a sensor measurement or hormone concentration. Its useful
+  detail comes from the sequence of observations and their timing.
 
-  ## Health Significance
-  Cervical mucus observations provide valuable clinical information beyond fertility:
-  - **Hormonal health**: Consistent mucus patterns indicate normal hormonal cycling; absent or minimal mucus may suggest low estrogen
-  - **Ovulation confirmation**: Peak-type mucus (egg white) confirms approaching ovulation when correlated with other signs
-  - **Fertility assessment**: Quality and quantity of fertile mucus can indicate reproductive potential
-  - **Cycle irregularities**: Abnormal patterns may reveal anovulatory cycles or hormonal imbalances
-  - **Infection indicators**: Unusual color, odor, or consistency may indicate infection requiring evaluation
 
-  For couples trying to conceive, timing intercourse with egg-white mucus maximizes conception chances. For those avoiding pregnancy, abstaining during fertile mucus days (when used correctly) can be an effective natural method.
+  ## What do the five categories mean?
 
-  ## Clinical Interpretation Guidelines
-  When interpreting cervical mucus data:
-  - **Fertile window identification**: Fertility begins with any mucus that is not dry and continues until 3-4 days after peak mucus
-  - **Peak day recognition**: The last day of egg-white or most fertile mucus is considered "peak day"; ovulation typically occurs on peak day or within 24 hours
-  - **Cycle phase patterns**:
-    - Post-menstrual dry days: Low fertility
-    - Sticky/creamy days: Rising fertility, approach ovulation
-    - Watery/egg-white days: Peak fertility window
-    - Post-ovulatory dry days: Luteal phase, low fertility
-  - **Medication effects**: Antihistamines, decongestants, and some fertility drugs affect mucus production
-  - **Hydration impact**: Adequate hydration supports healthy mucus production
-  - **Infection differentiation**: Fertile mucus is clear and odorless; colored, odorous, or irritating discharge suggests infection
+  | Code | Category | Recorded observation |
 
-  ## Caveats & Limitations
-  - Subjective assessment requires proper instruction for accurate observation
-  - Semen, arousal fluid, lubricants, and spermicides can be confused with cervical mucus
-  - Vaginal infections alter mucus appearance and may mask fertility signs
-  - Some women produce minimal observable mucus despite normal fertility
-  - Breastfeeding, perimenopause, and hormonal contraceptives alter typical patterns
-  - Learning curve of 3-6 cycles typically required for reliable self-assessment
-  - Not all women experience the classic five-stage progression
-  - Stress, travel, and illness can affect mucus patterns temporarily
+  | --- | --- | --- |
+
+  | 1 | Dry | Little or no noticeable mucus |
+
+  | 2 | Sticky | A sticky consistency |
+
+  | 3 | Creamy | A creamy consistency |
+
+  | 4 | Watery | A watery consistency |
+
+  | 5 | Egg white | An egg-white-like appearance and consistency |
+
+
+  Apple orders these descriptions from less to more fertile mucus characteristics. That ordering is not a calibrated
+  fertility probability, a diagnosis or an equally spaced measurement scale. An average code of 3.4 has no useful
+  physical unit.
+
+
+  ## How often is it recorded?
+
+  There is no automatic sampling schedule. Intervals between records describe observation and logging habits. Several
+  observations on a day can provide detail; a gap can mean an observation was not made, not saved or not shared
+  with the source being reviewed.
+
+
+  A readable chart would place categories on separate rows against local calendar days, leave unrecorded days blank
+  and distinguish sources. Connecting every point through a long gap would imply an observed change that the records
+  cannot establish.
+
+
+  ## What can other cycle data add?
+
+  Menstrual flow can anchor recorded period starts, while ovulation-test results and basal temperature offer different
+  kinds of context. Compare dates and completeness before assigning cycle phases. A same-day mucus observation and
+  hormone-test result are separate entries, not an explicit HealthKit association or confirmation of egg release.
+
+
+  Sleep or workout overlap describes when an entry falls relative to recorded activity. It does not show that the
+  activity changed mucus quality. Manual logging timestamps may be less precise than the observation itself.
+
+
+  ## What did the example data show?
+
+  The research window contained no cervical-mucus entries. Value frequencies, observation cadence, source differences
+  and cycle-linked relationships therefore could not be measured. No empirical chart or normal range is inferred
+  from that absence.
+
+
+  ## What should you be careful about?
+
+  These are subjective descriptions, and consistency of observation matters when reviewing a sequence. Missing entries
+  are unknown, not dry observations. Apple says Cycle Tracking should not be used as birth control; a categorical
+  timeline should not be converted into contraceptive advice.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+- key: HKMetadataKeySyncIdentifier
+  description: Unique identifier used to sync samples across devices
+- key: HKMetadataKeySyncVersion
+  description: Version number for sync conflict resolution
 related_types:
-  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
-    relationship: "LH surge detection confirms ovulation timing alongside mucus observations"
-  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
-    relationship: "Temperature rise after ovulation confirms mucus-based predictions; used together in symptothermal method"
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Cycle tracking provides context for mucus pattern interpretation"
-  - identifier: "HKCategoryTypeIdentifierSexualActivity"
-    relationship: "Timing intercourse with fertile mucus maximizes conception; avoiding intercourse during fertile mucus prevents pregnancy"
-  - identifier: "HKCategoryTypeIdentifierProgesteroneTestResult"
-    relationship: "Confirms ovulation occurred, which should correlate with post-peak mucus changes"
+- identifier: HKCategoryTypeIdentifierOvulationTestResult
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKQuantityTypeIdentifierBasalBodyTemperature
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierSexualActivity
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierProgesteroneTestResult
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
 references:
-  - title: "HKCategoryTypeIdentifierCervicalMucusQuality - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiercervicalmucusquality"
-    type: "official"
-  - title: "Fertility Awareness-Based Methods - ACOG"
-    url: "https://www.acog.org/womens-health/faqs/fertility-awareness-based-methods-of-family-planning"
-    type: "medical"
-  - title: "Cervical Mucus Monitoring - Reproductive Biology and Endocrinology"
-    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5372266/"
-    type: "research"
-  - title: "The Billings Ovulation Method"
-    url: "https://www.woomb.org/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Cervical Mucus Quality — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/cervicalmucusquality
+  type: official
+- title: Category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvaluecervicalmucusquality
+  type: official
+- title: Cycle Tracking — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Cervical Mucus Quality in Apple Health: values and recording'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: cervical-mucus-quality
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: 'No records in the selected reporting year: measured category frequencies, cadence, source differences,
+    workout or sleep comparisons and related-type associations are unavailable. Missing records do not establish
+    absence of events or negative results. Category codes are not physiological measurements. Start-selected bounds
+    may omit an interval beginning before the window.'

@@ -2,30 +2,35 @@
   "HKCategoryTypeIdentifierAbdominalCramps": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Abdominal Cramps",
     "identifier": "HKCategoryTypeIdentifierAbdominalCramps",
-    "short_description": "Tracks episodes of cramping pain in the abdominal region.",
+    "short_description": "Understand abdominal cramps in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierAcne": {
@@ -108,22 +113,22 @@
   "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent": {
     "category_values": [
       {
-        "description": "Walking Steadiness has been classified as Low for the first time. This indicates significant concern for fall risk and warrants attention.",
+        "description": "Initial Low classification notification.",
         "name": "initialLow",
         "value": 1
       },
       {
-        "description": "Walking Steadiness has been classified as Very Low for the first time. This indicates critical fall risk requiring immediate attention and likely clinical evaluation.",
+        "description": "Initial Very Low classification notification.",
         "name": "initialVeryLow",
         "value": 2
       },
       {
-        "description": "Walking Steadiness remains classified as Low on subsequent measurement. Persistent low steadiness indicates ongoing fall risk.",
+        "description": "Reminder while a Low classification persists.",
         "name": "repeatLow",
         "value": 3
       },
       {
-        "description": "Walking Steadiness remains classified as Very Low on subsequent measurement. Persistent very low steadiness indicates critical ongoing fall risk.",
+        "description": "Reminder while a Very Low classification persists.",
         "name": "repeatVeryLow",
         "value": 4
       }
@@ -131,13 +136,13 @@
     "default_unit": null,
     "human_readable_name": "Apple Walking Steadiness Event",
     "identifier": "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent",
-    "short_description": "Records events when walking steadiness measurements indicate increased fall risk, categorized by severity.",
+    "short_description": "Apple Health Walking Steadiness notifications: initial and repeat Low or Very Low events, recording cadence and differences from fall detection.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierAudioExposureEvent": {
     "category_values": [
       {
-        "description": "Environmental sound level exceeded the WHO-recommended threshold for hearing damage risk. Event indicates sustained exposure to loud ambient noise.",
+        "description": "Named exposure notification; numeric code is not a level or severity score.",
         "name": "loudEnvironment",
         "value": 1
       }
@@ -145,7 +150,7 @@
     "default_unit": null,
     "human_readable_name": "Audio Exposure Event",
     "identifier": "HKCategoryTypeIdentifierAudioExposureEvent",
-    "short_description": "Records events when environmental sound levels reach potentially harmful thresholds for hearing health.",
+    "short_description": "Legacy category for a loud-environment notification, superseded by Environmental Audio Exposure Event.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierBladderIncontinence": {
@@ -180,56 +185,61 @@
   "HKCategoryTypeIdentifierBloating": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Bloating",
     "identifier": "HKCategoryTypeIdentifierBloating",
-    "short_description": "Tracks episodes of abdominal bloating and distension.",
+    "short_description": "Understand bloating in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierCervicalMucusQuality": {
     "category_values": [
       {
-        "description": "No noticeable cervical mucus; vaginal area feels dry. Typically indicates low fertility, occurring immediately after menstruation and before the next period.",
+        "description": "Little or no mucus observed.",
         "name": "dry",
         "value": 1
       },
       {
-        "description": "Thick, tacky mucus that holds its shape when touched. Low to moderate fertility; sperm survival is limited in this environment.",
+        "description": "Sticky mucus observed.",
         "name": "sticky",
         "value": 2
       },
       {
-        "description": "Smooth, lotion-like mucus that is white or yellowish. Moderate fertility; indicates approaching ovulation but not peak fertility.",
+        "description": "Creamy mucus observed.",
         "name": "creamy",
         "value": 3
       },
       {
-        "description": "Thin, clear, watery mucus that feels slippery. High fertility; often occurs 1-2 days before the most fertile period.",
+        "description": "Watery mucus observed.",
         "name": "watery",
         "value": 4
       },
       {
-        "description": "Clear, stretchy mucus resembling raw egg whites that can stretch between fingers. Peak fertility; optimal environment for sperm survival and transport, indicating ovulation is imminent or occurring.",
+        "description": "Egg-white-like mucus observed.",
         "name": "eggWhite",
         "value": 5
       }
@@ -237,7 +247,7 @@
     "default_unit": null,
     "human_readable_name": "Cervical Mucus Quality",
     "identifier": "HKCategoryTypeIdentifierCervicalMucusQuality",
-    "short_description": "Tracks cervical mucus characteristics to identify fertile windows through natural family planning methods.",
+    "short_description": "Understand Apple Health cervical mucus categories, observation gaps and their limits for cycle interpretation.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierChestTightnessOrPain": {
@@ -330,37 +340,37 @@
   "HKCategoryTypeIdentifierContraceptive": {
     "category_values": [
       {
-        "description": "Contraceptive use occurred but the specific type was not specified.",
+        "description": "Recorded contraceptive method is unspecified.",
         "name": "unspecified",
         "value": 1
       },
       {
-        "description": "Subdermal contraceptive implant (e.g., Nexplanon), a long-acting reversible contraceptive inserted under the skin of the upper arm.",
+        "description": "Recorded implant use; brand and dose are not encoded.",
         "name": "implant",
         "value": 2
       },
       {
-        "description": "Injectable contraceptive (e.g., Depo-Provera), typically administered every 3 months.",
+        "description": "Recorded injectable contraceptive use; schedule is not encoded.",
         "name": "injection",
         "value": 3
       },
       {
-        "description": "Intrauterine device (IUD), either hormonal (e.g., Mirena, Kyleena) or copper (Paragard), providing long-term contraception.",
+        "description": "Recorded IUD use; hormonal versus copper is not distinguished.",
         "name": "intrauterineDevice",
         "value": 4
       },
       {
-        "description": "Vaginal ring (e.g., NuvaRing), a flexible ring inserted monthly that releases hormones.",
+        "description": "Recorded vaginal ring use.",
         "name": "intravaginalRing",
         "value": 5
       },
       {
-        "description": "Oral contraceptive pills, including combination pills and progestin-only pills, taken daily.",
+        "description": "Recorded oral contraceptive use; not confirmation of each dose.",
         "name": "oral",
         "value": 6
       },
       {
-        "description": "Transdermal contraceptive patch (e.g., Xulane), worn on the skin and changed weekly.",
+        "description": "Recorded contraceptive patch use.",
         "name": "patch",
         "value": 7
       }
@@ -368,7 +378,7 @@
     "default_unit": null,
     "human_readable_name": "Contraceptive",
     "identifier": "HKCategoryTypeIdentifierContraceptive",
-    "short_description": "Tracks contraceptive methods used, including hormonal, barrier, and other birth control types.",
+    "short_description": "Understand contraceptive method codes, start and end dates, and what Apple Health records cannot show about adherence or effectiveness.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierCoughing": {
@@ -490,30 +500,35 @@
   "HKCategoryTypeIdentifierFatigue": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Fatigue",
     "identifier": "HKCategoryTypeIdentifierFatigue",
-    "short_description": "Tracks episodes of fatigue, tiredness, or exhaustion.",
+    "short_description": "Understand fatigue in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierFever": {
@@ -625,44 +640,49 @@
   "HKCategoryTypeIdentifierHeadache": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Headache",
     "identifier": "HKCategoryTypeIdentifierHeadache",
-    "short_description": "Tracks headache episodes and their severity.",
+    "short_description": "Understand headache in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent": {
     "category_values": [
       {
-        "description": "Headphone audio exposure over the past 7 days has exceeded the WHO-recommended safe limit of 80 decibels averaged over 40 hours per week.",
+        "description": "Named exposure notification; numeric code is not a level or severity score.",
         "name": "sevenDayLimit",
-        "value": 3
+        "value": 1
       }
     ],
     "default_unit": null,
     "human_readable_name": "Headphone Audio Exposure Event",
     "identifier": "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent",
-    "short_description": "Records events when headphone audio levels exceed safe listening thresholds, risking hearing damage.",
+    "short_description": "Category recording a seven-day headphone exposure notification.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierHeartburn": {
@@ -711,58 +731,63 @@
   "HKCategoryTypeIdentifierHotFlashes": {
     "category_values": [
       {
-        "description": "No hot flash episodes experienced",
-        "name": "notPresent",
+        "description": "Severity unspecified, not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild hot flash - brief warmth, minimal disruption",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate hot flash - noticeable flushing and sweating",
-        "name": "moderate",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe hot flash - intense heat, profuse sweating, significant distress",
-        "name": "severe",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Hot Flashes",
     "identifier": "HKCategoryTypeIdentifierHotFlashes",
-    "short_description": "Tracks episodes of sudden warmth and flushing, commonly associated with menopause",
+    "short_description": "Understand hot flashes in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierInfrequentMenstrualCycles": {
     "category_values": [
       {
-        "description": "Infrequent menstrual cycles have been detected. This is a system notification indicating the user's cycle data shows fewer than expected periods over a defined tracking period.",
+        "description": "Generic marker for a saved Cycle Deviation assessment after history verification; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Infrequent Menstrual Cycles",
     "identifier": "HKCategoryTypeIdentifierInfrequentMenstrualCycles",
-    "short_description": "System-generated notification indicating menstrual cycles are occurring less frequently than typical, potentially signaling oligomenorrhea.",
+    "short_description": "Understand infrequent periods in Apple Health: verified cycle-history assessments, recording intervals and interpretation limits.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierIntermenstrualBleeding": {
     "category_values": [
       {
-        "description": "The only value for this category type, indicating that intermenstrual bleeding occurred on this day.",
+        "description": "Generic category marker for logged spotting; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Intermenstrual Bleeding",
     "identifier": "HKCategoryTypeIdentifierIntermenstrualBleeding",
-    "short_description": "Records spotting or bleeding that occurs between menstrual periods.",
+    "short_description": "Read Apple Health spotting records, distinguish them from menstrual flow and persistent-spotting notifications, and understand logging gaps.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierIrregularHeartRhythmEvent": {
@@ -782,29 +807,29 @@
   "HKCategoryTypeIdentifierIrregularMenstrualCycles": {
     "category_values": [
       {
-        "description": "Irregular menstrual cycles have been detected. This is a system notification indicating significant cycle-to-cycle length variability in the user's logged period data.",
+        "description": "Generic marker for a saved Cycle Deviation assessment after history verification; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Irregular Menstrual Cycles",
     "identifier": "HKCategoryTypeIdentifierIrregularMenstrualCycles",
-    "short_description": "System-generated notification indicating significant variability in menstrual cycle length from month to month.",
+    "short_description": "Understand irregular cycles in Apple Health: verified cycle-history assessments, recording intervals and interpretation limits.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierLactation": {
     "category_values": [
       {
-        "description": "Lactation event occurred. This is the only category value; additional details like duration or breast side may be stored in metadata or sample duration.",
+        "description": "Generic marker for recorded lactation context; no feeding quantity or negative result is encoded.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Lactation",
     "identifier": "HKCategoryTypeIdentifierLactation",
-    "short_description": "Tracks breastfeeding and pumping sessions for postpartum mothers.",
+    "short_description": "Understand lactation records in Apple Health, factor start and end dates, source-specific session logging, and the limits of duration data.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierLowCardioFitnessEvent": {
@@ -867,41 +892,41 @@
   "HKCategoryTypeIdentifierMenstrualFlow": {
     "category_values": [
       {
-        "description": "Menstrual flow occurred but intensity was not specified by the user.",
+        "description": "Flow intensity was unspecified.",
         "name": "unspecified",
         "value": 1
       },
       {
-        "description": "No menstrual flow on this day, typically used to mark the end of a period or spotting-free days during expected menstruation.",
-        "name": "none",
+        "description": "Light flow was recorded.",
+        "name": "light",
         "value": 2
       },
       {
-        "description": "Light menstrual flow, typically requiring only panty liners or light absorbency products.",
-        "name": "light",
+        "description": "Medium flow was recorded.",
+        "name": "medium",
         "value": 3
       },
       {
-        "description": "Moderate menstrual flow, typically requiring regular absorbency tampons or pads changed every 3-4 hours.",
-        "name": "medium",
+        "description": "Heavy flow was recorded.",
+        "name": "heavy",
         "value": 4
       },
       {
-        "description": "Heavy menstrual flow, requiring high-absorbency products and frequent changes, potentially every 1-2 hours.",
-        "name": "heavy",
+        "description": "No flow was explicitly recorded.",
+        "name": "none",
         "value": 5
       }
     ],
     "default_unit": null,
     "human_readable_name": "Menstrual Flow",
     "identifier": "HKCategoryTypeIdentifierMenstrualFlow",
-    "short_description": "Tracks menstrual bleeding intensity during a period, ranging from none to heavy flow.",
+    "short_description": "Understand Apple Health menstrual flow values, period intervals and cycle-start markers without confusing missing days with no bleeding.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierMindfulSession": {
     "category_values": [
       {
-        "description": "The only value for mindful sessions. The presence of a sample indicates a mindfulness session occurred; duration is captured via start and end timestamps.",
+        "description": "Code 0 is notApplicable. Recorded duration is derived from start and end timestamps; the code does not measure engagement.",
         "name": "notApplicable",
         "value": 0
       }
@@ -909,36 +934,26 @@
     "default_unit": null,
     "human_readable_name": "Mindful Session",
     "identifier": "HKCategoryTypeIdentifierMindfulSession",
-    "short_description": "Records mindfulness or meditation sessions, tracking time spent in intentional mental health practice.",
+    "short_description": "Apple Health mindful sessions: recorded duration, app sources, overlapping entries and careful comparisons with heart rate and HRV.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierMoodChanges": {
     "category_values": [
       {
-        "description": "No notable mood changes; stable emotional state",
-        "name": "notPresent",
+        "description": "Symptom change reported present.",
+        "name": "present",
         "value": 0
       },
       {
-        "description": "Mild mood changes - slight emotional variability",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
-      },
-      {
-        "description": "Moderate mood changes - noticeable emotional shifts affecting daily life",
-        "name": "moderate",
-        "value": 2
-      },
-      {
-        "description": "Severe mood changes - significant emotional instability, difficult to manage",
-        "name": "severe",
-        "value": 3
       }
     ],
     "default_unit": null,
     "human_readable_name": "Mood Changes",
     "identifier": "HKCategoryTypeIdentifierMoodChanges",
-    "short_description": "Tracks changes in emotional state or mood stability",
+    "short_description": "Understand mood changes in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierNausea": {
@@ -1002,22 +1017,22 @@
   "HKCategoryTypeIdentifierOvulationTestResult": {
     "category_values": [
       {
-        "description": "Test line is lighter than control line, indicating LH levels have not yet surged. Ovulation is not imminent.",
+        "description": "A negative result was recorded.",
         "name": "negative",
         "value": 1
       },
       {
-        "description": "Test line is equal to or darker than control line, indicating the LH surge has been detected. Ovulation typically occurs within 24-36 hours.",
+        "description": "An LH surge was recorded; deprecated positive is an alias for this value.",
         "name": "luteinizingHormoneSurge",
         "value": 2
       },
       {
-        "description": "Test result is unclear or invalid, possibly due to testing error, diluted urine, or faulty test strip.",
+        "description": "An inconclusive result was recorded.",
         "name": "indeterminate",
         "value": 3
       },
       {
-        "description": "For advanced digital OPKs that detect estrogen rise before LH surge, indicating high fertility is approaching but peak has not yet been reached.",
+        "description": "An estrogen surge was recorded.",
         "name": "estrogenSurge",
         "value": 4
       }
@@ -1025,7 +1040,7 @@
     "default_unit": null,
     "human_readable_name": "Ovulation Test Result",
     "identifier": "HKCategoryTypeIdentifierOvulationTestResult",
-    "short_description": "Records results from ovulation predictor kit (OPK) tests that detect the LH surge preceding ovulation.",
+    "short_description": "Understand Apple Health LH and estrogen surge results, recorded testing cadence and limits of ovulation inference.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierPelvicPain": {
@@ -1060,45 +1075,45 @@
   "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding": {
     "category_values": [
       {
-        "description": "Persistent intermenstrual bleeding has been detected. This is a system notification indicating the user has logged spotting between periods in multiple consecutive cycles.",
+        "description": "Generic marker for a saved Cycle Deviation assessment after history verification; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Persistent Intermenstrual Bleeding",
     "identifier": "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding",
-    "short_description": "System-generated notification indicating spotting or bleeding between periods has occurred repeatedly across multiple menstrual cycles.",
+    "short_description": "Understand persistent spotting in Apple Health: verified cycle-history assessments, recording intervals and interpretation limits.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierPregnancy": {
     "category_values": [
       {
-        "description": "User is currently pregnant. This is the only category value; the sample start and end dates indicate the pregnancy duration.",
+        "description": "Generic category marker for a recorded pregnancy interval; not a negative result.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Pregnancy",
     "identifier": "HKCategoryTypeIdentifierPregnancy",
-    "short_description": "Records pregnancy status to provide context for other health metrics during gestation.",
+    "short_description": "Understand pregnancy intervals in Apple Health, source revisions and the limits of gestational dating from category records.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierPregnancyTestResult": {
     "category_values": [
       {
-        "description": "Pregnancy test did not detect hCG above threshold level, indicating pregnancy is unlikely. However, testing too early may produce false negatives.",
+        "description": "A negative home test result was recorded.",
         "name": "negative",
         "value": 1
       },
       {
-        "description": "Pregnancy test detected hCG, indicating pregnancy. Confirmation with healthcare provider is recommended.",
+        "description": "A positive home test result was recorded.",
         "name": "positive",
         "value": 2
       },
       {
-        "description": "Test result is unclear, possibly due to faint line, testing error, or early pregnancy with borderline hCG levels.",
+        "description": "An inconclusive home test result was recorded.",
         "name": "indeterminate",
         "value": 3
       }
@@ -1106,23 +1121,23 @@
     "default_unit": null,
     "human_readable_name": "Pregnancy Test Result",
     "identifier": "HKCategoryTypeIdentifierPregnancyTestResult",
-    "short_description": "Records results from home pregnancy tests that detect human chorionic gonadotropin (hCG).",
+    "short_description": "Understand Apple Health pregnancy-test categories, repeat-test timing and why results are not hCG measurements.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierProgesteroneTestResult": {
     "category_values": [
       {
-        "description": "Low progesterone levels detected, indicating ovulation has not occurred or the luteal phase is inadequate.",
+        "description": "The home test returned a negative result; no concentration or diagnosis is encoded.",
         "name": "negative",
         "value": 1
       },
       {
-        "description": "Elevated progesterone levels detected, confirming ovulation has occurred and the corpus luteum is producing progesterone.",
+        "description": "The home test returned a positive result; no exact ovulation date or luteal assessment is encoded.",
         "name": "positive",
         "value": 2
       },
       {
-        "description": "Test result is unclear or progesterone levels are borderline, making interpretation uncertain.",
+        "description": "The home test returned an inconclusive result.",
         "name": "indeterminate",
         "value": 3
       }
@@ -1130,21 +1145,21 @@
     "default_unit": null,
     "human_readable_name": "Progesterone Test Result",
     "identifier": "HKCategoryTypeIdentifierProgesteroneTestResult",
-    "short_description": "Records results from progesterone tests used to confirm ovulation and assess luteal phase function.",
+    "short_description": "Understand qualitative home progesterone test results in Apple Health, PDG versus serum measurements, and the limits of result timing.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierProlongedMenstrualPeriods": {
     "category_values": [
       {
-        "description": "Prolonged menstrual periods have been detected. This is a system notification indicating the user's logged period duration consistently exceeds typical ranges.",
+        "description": "Generic marker for a saved Cycle Deviation assessment after history verification; not a negative result or severity.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Prolonged Menstrual Periods",
     "identifier": "HKCategoryTypeIdentifierProlongedMenstrualPeriods",
-    "short_description": "System-generated notification indicating menstrual bleeding is lasting longer than typical, potentially signaling menorrhagia.",
+    "short_description": "Understand prolonged periods in Apple Health: verified cycle-history assessments, recording intervals and interpretation limits.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat": {
@@ -1208,15 +1223,15 @@
   "HKCategoryTypeIdentifierSexualActivity": {
     "category_values": [
       {
-        "description": "Sexual activity occurred. This is the only category value; additional context about protection use is stored in metadata.",
+        "description": "Generic category marker for recorded sexual activity; protection metadata is optional.",
         "name": "notApplicable",
-        "value": 1
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Sexual Activity",
     "identifier": "HKCategoryTypeIdentifierSexualActivity",
-    "short_description": "Logs sexual activity events with optional indication of protection use for fertility and reproductive health tracking.",
+    "short_description": "Understand Apple Health sexual-activity entries, optional protection metadata and the difference between unknown and false.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierShortnessOfBreath": {
@@ -1348,30 +1363,20 @@
   "HKCategoryTypeIdentifierSleepChanges": {
     "category_values": [
       {
-        "description": "No notable changes in sleep patterns",
-        "name": "notPresent",
+        "description": "Symptom change reported present.",
+        "name": "present",
         "value": 0
       },
       {
-        "description": "Mild sleep changes - slight variation from normal",
-        "name": "present",
+        "description": "Explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
-      },
-      {
-        "description": "Moderate sleep changes - noticeable impact on rest quality",
-        "name": "moderate",
-        "value": 2
-      },
-      {
-        "description": "Severe sleep changes - significant disruption to sleep patterns",
-        "name": "severe",
-        "value": 3
       }
     ],
     "default_unit": null,
     "human_readable_name": "Sleep Changes",
     "identifier": "HKCategoryTypeIdentifierSleepChanges",
-    "short_description": "Tracks changes in sleep patterns or quality",
+    "short_description": "Understand sleep changes in Apple Health: category labels, logging cadence, source intervals and limits of contextual comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierSoreThroat": {
@@ -1676,11 +1681,11 @@
     "default_unit": null,
     "human_readable_name": "Food",
     "identifier": "HKCorrelationTypeIdentifierFood",
-    "short_description": "A correlation grouping nutritional data from a single food item or meal, including calories and nutrients.",
+    "short_description": "A HealthKit food object groups related nutrition samples; explicit membership preserves their shared food context.",
     "typical_range": {
       "max": null,
       "min": null,
-      "notes": "Varies widely based on food item size and type",
+      "notes": "A grouped food object has no single numeric range. Each nutrient component has its own unit and interpretation.",
       "unit": null
     }
   },
@@ -1705,13 +1710,8 @@
     "default_unit": "min",
     "human_readable_name": "Apple Move Time",
     "identifier": "HKQuantityTypeIdentifierAppleMoveTime",
-    "short_description": "Measures the amount of time the user has spent performing activities involving full-body movements, primarily designed for wheelchair users.",
-    "typical_range": {
-      "max": 480,
-      "min": 0,
-      "notes": "Values depend on mobility level and activity patterns. Wheelchair users with active lifestyles may accumulate 120-300+ minutes daily. Sedentary periods will show lower values.",
-      "unit": "min"
-    }
+    "short_description": "Full active movement minutes used by minute-based Move rings for younger Apple Watch users.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierAppleSleepingWristTemperature": {
     "category_values": null,
@@ -1734,13 +1734,8 @@
     "default_unit": "%",
     "human_readable_name": "Apple Walking Steadiness",
     "identifier": "HKQuantityTypeIdentifierAppleWalkingSteadiness",
-    "short_description": "Composite measure of walking stability and balance, used to estimate fall risk.",
-    "typical_range": {
-      "max": 100,
-      "min": 0,
-      "notes": "Scores are classified as OK (high steadiness), Low, or Very Low (highest fall risk).",
-      "unit": "%"
-    }
+    "short_description": "A weekly iPhone estimate of walking quality and mobility-related fall risk.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierAtrialFibrillationBurden": {
     "category_values": null,
@@ -1865,65 +1860,40 @@
     "default_unit": "count/min",
     "human_readable_name": "Cycling Cadence",
     "identifier": "HKQuantityTypeIdentifierCyclingCadence",
-    "short_description": "Measures pedal revolutions per minute (RPM) during cycling.",
-    "typical_range": {
-      "max": 130,
-      "min": 40,
-      "notes": "Most cyclists naturally pedal between 60-100 RPM. Trained cyclists typically maintain 85-100 RPM. Professional cyclists may sustain 100-110 RPM. Sprints can briefly exceed 120-150 RPM. Low cadence (<60) common during climbing or heavy resistance.",
-      "unit": "count/min"
-    }
+    "short_description": "Pedal rotation rate in Apple Health, measured in revolutions per minute.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower": {
     "category_values": null,
     "default_unit": "W",
     "human_readable_name": "Cycling Functional Threshold Power",
     "identifier": "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower",
-    "short_description": "Represents the maximum power a cyclist can sustain for approximately one hour.",
-    "typical_range": {
-      "max": 500,
-      "min": 100,
-      "notes": "FTP varies dramatically by fitness, training, and body size. Untrained individuals may have FTP of 100-150W. Recreational cyclists typically 150-250W. Well-trained amateurs 250-350W. Elite professionals can exceed 400-450W. Female values typically 10-15% lower at same training level.",
-      "unit": "W"
-    }
+    "short_description": "An estimate of the maximum average cycling power sustainable for 60 minutes.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierCyclingPower": {
     "category_values": null,
     "default_unit": "W",
     "human_readable_name": "Cycling Power",
     "identifier": "HKQuantityTypeIdentifierCyclingPower",
-    "short_description": "Measures the instantaneous power output during cycling in watts.",
-    "typical_range": {
-      "max": 2000,
-      "min": 50,
-      "notes": "Highly variable by fitness, effort level, and duration. Recreational cyclists may average 100-150W on easy rides. Trained amateurs average 200-300W. Elite professionals can sustain 400+ watts and sprint to 1500-2000W.",
-      "unit": "W"
-    }
+    "short_description": "Cycling power in watts, recorded separately from speed, heart rate and FTP estimates.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierCyclingSpeed": {
     "category_values": null,
     "default_unit": "m/s",
     "human_readable_name": "Cycling Speed",
     "identifier": "HKQuantityTypeIdentifierCyclingSpeed",
-    "short_description": "Measures the instantaneous speed during cycling activities.",
-    "typical_range": {
-      "max": 25,
-      "min": 0,
-      "notes": "Equivalent to 0-90 km/h (0-56 mph). Recreational cyclists typically average 15-25 km/h (4-7 m/s). Trained cyclists average 25-35 km/h (7-10 m/s). Professional sprints can exceed 70 km/h (19 m/s). Descents may reach 80-100+ km/h.",
-      "unit": "m/s"
-    }
+    "short_description": "Cycling travel speed in Apple Health, with distinctions between samples and empty summary buckets.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryBiotin": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Biotin (Vitamin B7)",
     "identifier": "HKQuantityTypeIdentifierDietaryBiotin",
-    "short_description": "Records dietary intake of biotin (vitamin B7), essential for carboxylase enzymes in fatty acid, amino acid, and glucose metabolism.",
-    "typical_range": {
-      "max": 100,
-      "min": 10,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health biotin (B7) intake logs, mcg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryCaffeine": {
     "category_values": null,
@@ -1938,13 +1908,8 @@
     "default_unit": "mg",
     "human_readable_name": "Dietary Calcium",
     "identifier": "HKQuantityTypeIdentifierDietaryCalcium",
-    "short_description": "Calcium intake from food and supplements, essential for bone health and muscle function.",
-    "typical_range": {
-      "max": 2500,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Calcium intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryCarbohydrates": {
     "category_values": null,
@@ -1959,52 +1924,32 @@
     "default_unit": "mg",
     "human_readable_name": "Dietary Chloride",
     "identifier": "HKQuantityTypeIdentifierDietaryChloride",
-    "short_description": "Chloride intake from food and supplements, essential for fluid balance, gastric acid production, and nerve transmission.",
-    "typical_range": {
-      "max": 5000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Chloride intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryCholesterol": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Cholesterol",
     "identifier": "HKQuantityTypeIdentifierDietaryCholesterol",
-    "short_description": "Cholesterol intake from animal-based foods",
-    "typical_range": {
-      "max": 600,
-      "min": 0,
-      "notes": "Vegans consume 0mg; average American intake is 250-350mg/day. Single egg yolk contains ~186mg.",
-      "unit": "mg"
-    }
+    "short_description": "Logged cholesterol intake, its units and daily coverage; distinct from blood cholesterol and LDL.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryChromium": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Chromium",
     "identifier": "HKQuantityTypeIdentifierDietaryChromium",
-    "short_description": "Chromium intake from food and supplements, involved in insulin signaling and macronutrient metabolism.",
-    "typical_range": {
-      "max": 200,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded chromium intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryCopper": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Copper",
     "identifier": "HKQuantityTypeIdentifierDietaryCopper",
-    "short_description": "Copper intake from food and supplements, essential for iron metabolism, connective tissue, and nervous system function.",
-    "typical_range": {
-      "max": 10000,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded copper intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryEnergyConsumed": {
     "category_values": null,
@@ -2019,39 +1964,24 @@
     "default_unit": "g",
     "human_readable_name": "Monounsaturated Fat",
     "identifier": "HKQuantityTypeIdentifierDietaryFatMonounsaturated",
-    "short_description": "Monounsaturated fatty acid intake, primarily from olive oil, nuts, and avocados",
-    "typical_range": {
-      "max": 80,
-      "min": 10,
-      "notes": "Mediterranean diet provides 15-20% of calories from MUFA. Average American intake is ~11-12% of calories.",
-      "unit": "g"
-    }
+    "short_description": "Understand monounsaturated fat grams, incomplete subtype logs and comparisons with total fat.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFatPolyunsaturated": {
     "category_values": null,
     "default_unit": "g",
     "human_readable_name": "Polyunsaturated Fat",
     "identifier": "HKQuantityTypeIdentifierDietaryFatPolyunsaturated",
-    "short_description": "Polyunsaturated fatty acid intake including omega-3 and omega-6 essential fatty acids",
-    "typical_range": {
-      "max": 40,
-      "min": 5,
-      "notes": "Average intake is 5-10% of calories. Western diets are often imbalanced with omega-6:omega-3 ratios of 15-20:1 (optimal: 4:1 or lower).",
-      "unit": "g"
-    }
+    "short_description": "Read polyunsaturated fat logs and understand why PUFA totals cannot resolve omega-3, omega-6, EPA or DHA.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFatSaturated": {
     "category_values": null,
     "default_unit": "g",
     "human_readable_name": "Saturated Fat",
     "identifier": "HKQuantityTypeIdentifierDietaryFatSaturated",
-    "short_description": "Saturated fatty acid intake from animal and tropical plant sources",
-    "typical_range": {
-      "max": 60,
-      "min": 5,
-      "notes": "Average American intake is 11-12% of calories (~25-30g). Recommendations target <10% of calories (<22g on 2000 kcal).",
-      "unit": "g"
-    }
+    "short_description": "Read saturated-fat intake records, source coverage and the difference between grams and percent of energy.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFatTotal": {
     "category_values": null,
@@ -2066,143 +1996,88 @@
     "default_unit": "g",
     "human_readable_name": "Dietary Fiber",
     "identifier": "HKQuantityTypeIdentifierDietaryFiber",
-    "short_description": "Total fiber intake from plant-based foods and supplements",
-    "typical_range": {
-      "max": 50,
-      "min": 5,
-      "notes": "Most Americans consume only 10-15g/day, well below recommendations. High-fiber diets may exceed 40g/day.",
-      "unit": "g"
-    }
+    "short_description": "Understand fiber grams, partial food logs and the difference between total fiber and carbohydrate detail.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFolate": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Folate (Vitamin B9)",
     "identifier": "HKQuantityTypeIdentifierDietaryFolate",
-    "short_description": "Records dietary intake of folate (vitamin B9), essential for DNA synthesis, cell division, and neural tube development.",
-    "typical_range": {
-      "max": 1000,
-      "min": 100,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health folate (B9) intake logs, mcg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryIodine": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Iodine",
     "identifier": "HKQuantityTypeIdentifierDietaryIodine",
-    "short_description": "Iodine intake from food and supplements, essential for thyroid hormone synthesis and metabolic regulation.",
-    "typical_range": {
-      "max": 1100,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded iodine intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryIron": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Iron",
     "identifier": "HKQuantityTypeIdentifierDietaryIron",
-    "short_description": "Iron intake from food and supplements, essential for oxygen transport and energy metabolism.",
-    "typical_range": {
-      "max": 45,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Iron intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryMagnesium": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Magnesium",
     "identifier": "HKQuantityTypeIdentifierDietaryMagnesium",
-    "short_description": "Magnesium intake from food and supplements, essential for energy metabolism, muscle function, and bone health.",
-    "typical_range": {
-      "max": 600,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Magnesium intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryManganese": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Manganese",
     "identifier": "HKQuantityTypeIdentifierDietaryManganese",
-    "short_description": "Manganese intake from food and supplements, essential for bone formation, metabolism, and antioxidant defense.",
-    "typical_range": {
-      "max": 11,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Recorded manganese intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryMolybdenum": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Molybdenum",
     "identifier": "HKQuantityTypeIdentifierDietaryMolybdenum",
-    "short_description": "Molybdenum intake from food and supplements, essential as a cofactor for enzymes involved in sulfur metabolism.",
-    "typical_range": {
-      "max": 2000,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded molybdenum intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryNiacin": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Niacin (Vitamin B3)",
     "identifier": "HKQuantityTypeIdentifierDietaryNiacin",
-    "short_description": "Records dietary intake of niacin (vitamin B3), essential for energy metabolism, DNA repair, and cellular signaling.",
-    "typical_range": {
-      "max": 40.0,
-      "min": 5.0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health niacin (B3) intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryPantothenicAcid": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Pantothenic Acid (Vitamin B5)",
     "identifier": "HKQuantityTypeIdentifierDietaryPantothenicAcid",
-    "short_description": "Records dietary intake of pantothenic acid (vitamin B5), essential for coenzyme A synthesis and acyl carrier protein function.",
-    "typical_range": {
-      "max": 15.0,
-      "min": 2.0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health pantothenic acid (B5) intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryPhosphorus": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Phosphorus",
     "identifier": "HKQuantityTypeIdentifierDietaryPhosphorus",
-    "short_description": "Phosphorus intake from food and supplements, essential for bone structure, energy metabolism, and cellular function.",
-    "typical_range": {
-      "max": 4000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Phosphorus intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryPotassium": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Potassium",
     "identifier": "HKQuantityTypeIdentifierDietaryPotassium",
-    "short_description": "Potassium intake from food and supplements, essential for fluid balance, nerve transmission, and muscle contraction.",
-    "typical_range": {
-      "max": 6000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Potassium intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryProtein": {
     "category_values": null,
@@ -2217,156 +2092,96 @@
     "default_unit": "mg",
     "human_readable_name": "Dietary Riboflavin (Vitamin B2)",
     "identifier": "HKQuantityTypeIdentifierDietaryRiboflavin",
-    "short_description": "Records dietary intake of riboflavin (vitamin B2), essential for energy production and antioxidant function.",
-    "typical_range": {
-      "max": 4.0,
-      "min": 0.5,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health riboflavin (B2) intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietarySelenium": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Selenium",
     "identifier": "HKQuantityTypeIdentifierDietarySelenium",
-    "short_description": "Selenium intake from food and supplements, essential for antioxidant defense, thyroid function, and immune health.",
-    "typical_range": {
-      "max": 400,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Recorded selenium intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietarySodium": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Sodium",
     "identifier": "HKQuantityTypeIdentifierDietarySodium",
-    "short_description": "Sodium intake from food, beverages, and table salt",
-    "typical_range": {
-      "max": 6000,
-      "min": 500,
-      "notes": "Average American intake is 3400mg/day, well above the 2300mg guideline. Processed foods contribute 70%+ of intake.",
-      "unit": "mg"
-    }
+    "short_description": "Sodium intake logged in Apple Health, with units, daily coverage and interpretation guidance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietarySugar": {
     "category_values": null,
     "default_unit": "g",
     "human_readable_name": "Dietary Sugar",
     "identifier": "HKQuantityTypeIdentifierDietarySugar",
-    "short_description": "Total sugar intake including natural and added sugars",
-    "typical_range": {
-      "max": 150,
-      "min": 10,
-      "notes": "Average American consumes 60-80g/day of added sugars alone. WHO recommends limiting added sugars to <25g/day.",
-      "unit": "g"
-    }
+    "short_description": "Read sugar logs without confusing total sugar with added sugar, free sugar or blood glucose.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryThiamin": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Thiamin (Vitamin B1)",
     "identifier": "HKQuantityTypeIdentifierDietaryThiamin",
-    "short_description": "Records dietary intake of thiamin (vitamin B1), essential for carbohydrate metabolism and neurological function.",
-    "typical_range": {
-      "max": 3.0,
-      "min": 0.5,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health thiamin (B1) intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminA": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Vitamin A",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminA",
-    "short_description": "Fat-soluble vitamin essential for vision, immune function, and cellular growth",
-    "typical_range": {
-      "max": 3000,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health vitamin A intake, micrograms versus RAE, food and supplement forms, and the limits of incomplete logs.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminB12": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Vitamin B12",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminB12",
-    "short_description": "Water-soluble vitamin essential for DNA synthesis, neurological function, and red blood cell formation",
-    "typical_range": {
-      "max": 100,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health vitamin B12 intake logs, mcg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminB6": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Vitamin B6",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminB6",
-    "short_description": "Water-soluble vitamin essential for amino acid metabolism, neurotransmitter synthesis, and hemoglobin formation",
-    "typical_range": {
-      "max": 100,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health vitamin B6 intake logs, mg units, source coverage and daily totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminC": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Vitamin C",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminC",
-    "short_description": "Water-soluble antioxidant essential for collagen synthesis, immune function, and iron absorption",
-    "typical_range": {
-      "max": 2000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Read Apple Health vitamin C intake in milligrams, compare logged portions, and distinguish dietary records from blood levels or iron absorption.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminD": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Vitamin D",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminD",
-    "short_description": "Fat-soluble vitamin essential for calcium absorption, bone health, immune function, and cellular regulation",
-    "typical_range": {
-      "max": 100,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Interpret Apple Health dietary vitamin D, micrograms and IU, D2 and D3 labels, and why daylight or intake cannot determine blood vitamin D.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminE": {
     "category_values": null,
     "default_unit": "mg",
     "human_readable_name": "Dietary Vitamin E",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminE",
-    "short_description": "Fat-soluble antioxidant protecting cell membranes from oxidative damage",
-    "typical_range": {
-      "max": 1000,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Understand Apple Health vitamin E intake, alpha-tocopherol and IU label differences, supplement logging, and why intake is not an oxidative-stress reading.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryVitaminK": {
     "category_values": null,
     "default_unit": "mcg",
     "human_readable_name": "Dietary Vitamin K",
     "identifier": "HKQuantityTypeIdentifierDietaryVitaminK",
-    "short_description": "Fat-soluble vitamin essential for blood clotting and bone metabolism",
-    "typical_range": {
-      "max": 500,
-      "min": 0,
-      "notes": null,
-      "unit": "mcg"
-    }
+    "short_description": "Understand Apple Health vitamin K intake, K1 and K2 form limits, food logging, and why dietary records cannot predict INR or clotting function.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryWater": {
     "category_values": null,
@@ -2381,52 +2196,32 @@
     "default_unit": "mg",
     "human_readable_name": "Dietary Zinc",
     "identifier": "HKQuantityTypeIdentifierDietaryZinc",
-    "short_description": "Zinc intake from food and supplements, essential for immune function, wound healing, and protein synthesis.",
-    "typical_range": {
-      "max": 50,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "short_description": "Recorded zinc intake from food and supplement logs, with mass units, source coverage and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDistanceCycling": {
     "category_values": null,
     "default_unit": "m",
     "human_readable_name": "Cycling Distance",
     "identifier": "HKQuantityTypeIdentifierDistanceCycling",
-    "short_description": "Measures the distance the user has moved by cycling.",
-    "typical_range": {
-      "max": 300000,
-      "min": 0,
-      "notes": "Daily values vary widely from 0 for non-cyclists to 50+ km for commuters and recreational riders. Competitive cyclists may log 100-200+ km in training rides. Century rides (160 km/100 mi) represent common endurance goals.",
-      "unit": "m"
-    }
+    "short_description": "Cycling distance in Apple Health: cumulative intervals, source-aware totals and real recording examples.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDistanceDownhillSnowSports": {
     "category_values": null,
     "default_unit": "m",
     "human_readable_name": "Downhill Snow Sports Distance",
     "identifier": "HKQuantityTypeIdentifierDistanceDownhillSnowSports",
-    "short_description": "Measures the distance traveled while skiing or snowboarding downhill.",
-    "typical_range": {
-      "max": 100000,
-      "min": 0,
-      "notes": "Single-day values vary enormously based on terrain, conditions, and skier/snowboarder ability. Recreational skiers might cover 15-30 km per day; avid skiers can exceed 50 km on a full day.",
-      "unit": "m"
-    }
+    "short_description": "Distance recorded during downhill skiing or snowboarding, with run boundaries, source differences and lift context.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDistanceSwimming": {
     "category_values": null,
     "default_unit": "m",
     "human_readable_name": "Swimming Distance",
     "identifier": "HKQuantityTypeIdentifierDistanceSwimming",
-    "short_description": "Measures the distance the user has moved by swimming.",
-    "typical_range": {
-      "max": 10000,
-      "min": 0,
-      "notes": "Single session values typically range from 500m for casual swimmers to 4000m+ for competitive training. Open water swims can extend to marathon distances (10km+). Daily totals vary widely based on swim frequency.",
-      "unit": "m"
-    }
+    "short_description": "Understand swimming distance in Apple Health, pool length, interval recording and an example swim.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDistanceWalkingRunning": {
     "category_values": null,
@@ -2442,12 +2237,7 @@
     "human_readable_name": "Wheelchair Distance",
     "identifier": "HKQuantityTypeIdentifierDistanceWheelchair",
     "short_description": "Measures the distance the user has moved using a wheelchair.",
-    "typical_range": {
-      "max": 30000,
-      "min": 0,
-      "notes": "Daily values vary widely based on mobility level, activity type, and environment accessibility. Active wheelchair users may travel 2-10 km daily. Wheelchair athletes in training may exceed 20 km.",
-      "unit": "m"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierElectrodermalActivity": {
     "category_values": null,
@@ -2464,29 +2254,19 @@
   },
   "HKQuantityTypeIdentifierEnvironmentalAudioExposure": {
     "category_values": null,
-    "default_unit": "dB(A)",
+    "default_unit": "dBASPL",
     "human_readable_name": "Environmental Audio Exposure",
     "identifier": "HKQuantityTypeIdentifierEnvironmentalAudioExposure",
-    "short_description": "Ambient sound level exposure measured in A-weighted decibels (dB(A)), indicating potential hearing damage risk from environmental noise.",
-    "typical_range": {
-      "max": 110,
-      "min": 30,
-      "notes": null,
-      "unit": "dB(A)"
-    }
+    "short_description": "Equivalent sound-level intervals describing surrounding noise in A-weighted decibels.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierEnvironmentalSoundReduction": {
     "category_values": null,
-    "default_unit": "dB",
+    "default_unit": "dBASPL",
     "human_readable_name": "Environmental Sound Reduction",
     "identifier": "HKQuantityTypeIdentifierEnvironmentalSoundReduction",
-    "short_description": "Amount of environmental noise reduced by active noise cancellation in compatible earbuds, measured in decibels (dB).",
-    "typical_range": {
-      "max": 30,
-      "min": 0,
-      "notes": null,
-      "unit": "dB"
-    }
+    "short_description": "Estimated attenuation of environmental sound while wearing supported headphones.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierFlightsClimbed": {
     "category_values": null,
@@ -2524,16 +2304,11 @@
   },
   "HKQuantityTypeIdentifierHeadphoneAudioExposure": {
     "category_values": null,
-    "default_unit": "dB(A)",
+    "default_unit": "dBASPL",
     "human_readable_name": "Headphone Audio Exposure",
     "identifier": "HKQuantityTypeIdentifierHeadphoneAudioExposure",
-    "short_description": "Audio level exposure from headphones and earbuds measured in A-weighted decibels (dB(A)), tracking personal listening habits for hearing protection.",
-    "typical_range": {
-      "max": 100,
-      "min": 40,
-      "notes": null,
-      "unit": "dB(A)"
-    }
+    "short_description": "Equivalent sound-level intervals describing headphone playback exposure.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierHeartRate": {
     "category_values": null,
@@ -2647,12 +2422,12 @@
     "default_unit": "count",
     "human_readable_name": "Alcoholic Beverages",
     "identifier": "HKQuantityTypeIdentifierNumberOfAlcoholicBeverages",
-    "short_description": "Count of standard alcoholic drinks consumed, used to track alcohol intake for health monitoring.",
+    "short_description": "Recorded standard-drink equivalents in Apple Health, with source-dependent serving normalization and logging coverage.",
     "typical_range": {
-      "max": 10,
-      "min": 0,
-      "notes": null,
-      "unit": "count"
+      "max": null,
+      "min": null,
+      "notes": "Recorded standard-drink counts have no universal healthy range. Missing logs do not establish zero consumption.",
+      "unit": null
     }
   },
   "HKQuantityTypeIdentifierNumberOfTimesFallen": {
@@ -2712,13 +2487,8 @@
     "default_unit": "kcal/(kg*hr)",
     "human_readable_name": "Physical Effort",
     "identifier": "HKQuantityTypeIdentifierPhysicalEffort",
-    "short_description": "Measures the perceived intensity of physical activity on a standardized effort scale.",
-    "typical_range": {
-      "max": 20,
-      "min": 1,
-      "notes": "Values roughly correspond to MET values. Resting is ~1.0, walking ~3-4, running ~8-12, and maximum effort activities can reach 15-20 for elite athletes.",
-      "unit": "kcal/(kg*hr)"
-    }
+    "short_description": "Estimated task metabolic intensity in METs, recorded as a discrete quantity rather than a perceived effort score.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierPushCount": {
     "category_values": null,
@@ -2726,12 +2496,7 @@
     "human_readable_name": "Wheelchair Push Count",
     "identifier": "HKQuantityTypeIdentifierPushCount",
     "short_description": "Measures the number of wheelchair pushes performed by the user for mobility and exercise.",
-    "typical_range": {
-      "max": 15000,
-      "min": 0,
-      "notes": "Daily push counts vary significantly based on activity level, wheelchair type, and environmental factors. Active wheelchair users typically perform 3,000-8,000 pushes per day. Wheelchair athletes in training may exceed 10,000 pushes daily.",
-      "unit": "count/day"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierRespiratoryRate": {
     "category_values": null,
@@ -2764,52 +2529,32 @@
     "default_unit": "ms",
     "human_readable_name": "Running Ground Contact Time",
     "identifier": "HKQuantityTypeIdentifierRunningGroundContactTime",
-    "short_description": "The duration each foot spends in contact with the ground during a running stride.",
-    "typical_range": {
-      "max": 320,
-      "min": 160,
-      "notes": "Elite sprinters show 160-180 ms; elite distance runners 180-220 ms; recreational runners 220-280 ms; slower joggers 260-320+ ms. Ground contact time decreases as running speed increases.",
-      "unit": "ms"
-    }
+    "short_description": "Understand Apple Watch ground contact time, example millisecond ranges, recording intervals and pace context.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierRunningPower": {
     "category_values": null,
     "default_unit": "W",
     "human_readable_name": "Running Power",
     "identifier": "HKQuantityTypeIdentifierRunningPower",
-    "short_description": "The rate of mechanical work performed during running, measured in watts.",
-    "typical_range": {
-      "max": 450,
-      "min": 150,
-      "notes": "Highly dependent on body weight, running speed, and terrain. Recreational runners typically see 200-300W at easy pace; elite runners may sustain 350-450W during races.",
-      "unit": "W"
-    }
+    "short_description": "Understand Apple Watch running power in watts, example ranges, workout trends and the relationship with pace and heart rate.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierRunningSpeed": {
     "category_values": null,
     "default_unit": "m/s",
     "human_readable_name": "Running Speed",
     "identifier": "HKQuantityTypeIdentifierRunningSpeed",
-    "short_description": "The rate of travel during running activities, typically measured in meters per second or minutes per mile/kilometer.",
-    "typical_range": {
-      "max": 6.5,
-      "min": 2.0,
-      "notes": "2.0 m/s = 13:24 min/mile (slow jog); 4.0 m/s = 6:42 min/mile (moderate run); 6.5 m/s = 4:07 min/mile (elite pace). Walking is typically 1.0-1.8 m/s.",
-      "unit": "m/s"
-    }
+    "short_description": "Understand Apple Health running speed, convert metres per second to pace and interpret real workout recording intervals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierRunningStrideLength": {
     "category_values": null,
     "default_unit": "m",
     "human_readable_name": "Running Stride Length",
     "identifier": "HKQuantityTypeIdentifierRunningStrideLength",
-    "short_description": "The distance covered in a single running stride, measured from one foot contact to the next contact of the same foot.",
-    "typical_range": {
-      "max": 2.8,
-      "min": 1.2,
-      "notes": "Stride length varies significantly with running speed, height, and running form. Jogging typically produces 1.2-1.6m strides; moderate running 1.6-2.0m; fast running 2.0-2.8m. Elite sprinters can exceed 3m.",
-      "unit": "m"
-    }
+    "short_description": "Understand Apple Watch running stride length per single step, with example metre ranges and speed context.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierRunningVerticalOscillation": {
     "category_values": null,
@@ -2824,39 +2569,24 @@
     "default_unit": "m",
     "human_readable_name": "Six-Minute Walk Test Distance",
     "identifier": "HKQuantityTypeIdentifierSixMinuteWalkTestDistance",
-    "short_description": "Total distance walked during a standardized six-minute walk test, a validated measure of functional capacity.",
-    "typical_range": {
-      "max": 700,
-      "min": 200,
-      "notes": "Healthy adults typically achieve 400-700 m; cardiac/pulmonary patients often 200-400 m.",
-      "unit": "m"
-    }
+    "short_description": "A distance from a six-minute walk test or an Apple Watch estimate of expected test performance.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierStairAscentSpeed": {
     "category_values": null,
     "default_unit": "m/s",
     "human_readable_name": "Stair Ascent Speed",
     "identifier": "HKQuantityTypeIdentifierStairAscentSpeed",
-    "short_description": "Speed of climbing stairs, measuring vertical velocity during stair ascent.",
-    "typical_range": {
-      "max": 0.8,
-      "min": 0.2,
-      "notes": "Healthy adults typically achieve 0.4-0.6 m/s; values <0.3 m/s indicate functional limitation.",
-      "unit": "m/s"
-    }
+    "short_description": "Average speed during a recorded stair-ascent interval in Apple Health.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierStairDescentSpeed": {
     "category_values": null,
     "default_unit": "m/s",
     "human_readable_name": "Stair Descent Speed",
     "identifier": "HKQuantityTypeIdentifierStairDescentSpeed",
-    "short_description": "Speed of descending stairs, measuring vertical velocity during stair descent.",
-    "typical_range": {
-      "max": 1.0,
-      "min": 0.3,
-      "notes": "Healthy adults typically achieve 0.5-0.8 m/s; descent is usually faster than ascent in healthy individuals.",
-      "unit": "m/s"
-    }
+    "short_description": "Average speed during a recorded stair-descent interval in Apple Health.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierStepCount": {
     "category_values": null,
@@ -2871,26 +2601,16 @@
     "default_unit": "count",
     "human_readable_name": "Swimming Stroke Count",
     "identifier": "HKQuantityTypeIdentifierSwimmingStrokeCount",
-    "short_description": "Measures the number of strokes performed while swimming.",
-    "typical_range": {
-      "max": 5000,
-      "min": 0,
-      "notes": "Single workout values depend heavily on distance and stroke efficiency. A typical 1500m workout might involve 900-1500 strokes depending on swimmer skill level. Competitive swimmers are more efficient (fewer strokes per lap) than recreational swimmers.",
-      "unit": "count"
-    }
+    "short_description": "Read swimming stroke counts in Apple Health, interval cadence, distance pairing and limits of efficiency comparisons.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierTimeInDaylight": {
     "category_values": null,
     "default_unit": "min",
     "human_readable_name": "Time in Daylight",
     "identifier": "HKQuantityTypeIdentifierTimeInDaylight",
-    "short_description": "Duration of exposure to outdoor daylight conditions, measured in minutes, relevant for circadian rhythm regulation, mental health, and eye health.",
-    "typical_range": {
-      "max": 480,
-      "min": 0,
-      "notes": null,
-      "unit": "min"
-    }
+    "short_description": "Cumulative minutes of estimated outdoor daylight recorded by Apple Watch.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierUVExposure": {
     "category_values": null,
@@ -2936,39 +2656,24 @@
     "default_unit": "cm",
     "human_readable_name": "Waist Circumference",
     "identifier": "HKQuantityTypeIdentifierWaistCircumference",
-    "short_description": "A measurement of the circumference of the waist at the level of the umbilicus or narrowest point, a key indicator of central adiposity and cardiometabolic risk.",
-    "typical_range": {
-      "max": 180,
-      "min": 40,
-      "notes": "Range encompasses children through adults with severe obesity. Healthy adult range typically 60-100 cm.",
-      "unit": "cm"
-    }
+    "short_description": "Apple Health waist circumference: consistent measurement technique, length units, recording frequency and waist-to-height interpretation.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierWalkingAsymmetryPercentage": {
     "category_values": null,
     "default_unit": "%",
     "human_readable_name": "Walking Asymmetry Percentage",
     "identifier": "HKQuantityTypeIdentifierWalkingAsymmetryPercentage",
-    "short_description": "Percentage difference in step time between left and right legs during walking.",
-    "typical_range": {
-      "max": 25,
-      "min": 0,
-      "notes": "Healthy adults typically show <10% asymmetry; values >15% warrant clinical evaluation.",
-      "unit": "%"
-    }
+    "short_description": "Walking Asymmetry estimates the proportion of steps with different movement speeds between feet.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage": {
     "category_values": null,
     "default_unit": "%",
     "human_readable_name": "Walking Double Support Percentage",
     "identifier": "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage",
-    "short_description": "Percentage of the gait cycle when both feet are simultaneously in contact with the ground.",
-    "typical_range": {
-      "max": 45,
-      "min": 15,
-      "notes": "Healthy adults typically show 20-30% double support; values above 35% may indicate balance concerns.",
-      "unit": "%"
-    }
+    "short_description": "Walking Double Support measures the fraction of a walking interval spent with both feet on the ground.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierWalkingHeartRateAverage": {
     "category_values": null,
@@ -2988,26 +2693,16 @@
     "default_unit": "m/s",
     "human_readable_name": "Walking Speed",
     "identifier": "HKQuantityTypeIdentifierWalkingSpeed",
-    "short_description": "Average speed during walking, a key indicator of functional mobility and overall health status.",
-    "typical_range": {
-      "max": 1.8,
-      "min": 0.5,
-      "notes": "Healthy adults typically walk 1.2-1.4 m/s; values below 0.8 m/s are clinically significant.",
-      "unit": "m/s"
-    }
+    "short_description": "Walking Speed is the average speed estimated during a recorded interval of steady walking on flat ground.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierWalkingStepLength": {
     "category_values": null,
     "default_unit": "m",
     "human_readable_name": "Walking Step Length",
     "identifier": "HKQuantityTypeIdentifierWalkingStepLength",
-    "short_description": "Average distance covered with each step during walking, a fundamental gait parameter.",
-    "typical_range": {
-      "max": 0.9,
-      "min": 0.4,
-      "notes": "Varies significantly with height; typical range is 65-85 cm for average height adults.",
-      "unit": "m"
-    }
+    "short_description": "Walking Step Length estimates the distance between the front and back feet during steady walking on flat ground.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierWaterTemperature": {
     "category_values": null,

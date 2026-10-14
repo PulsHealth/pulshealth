@@ -43,6 +43,7 @@ export interface HealthKitType {
   seo_title?: string;
   data_research?: {
     status: "complete";
+    review_basis?: "data_analysis" | "coverage_and_sources";
     reviewed_on: string;
     workflow_version: string;
     artifact_key: string;

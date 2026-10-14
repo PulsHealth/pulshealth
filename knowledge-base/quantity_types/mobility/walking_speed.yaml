@@ -1,131 +1,181 @@
-identifier: "HKQuantityTypeIdentifierWalkingSpeed"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Mobility"
-human_readable_name: "Walking Speed"
-short_description: "Average speed during walking, a key indicator of functional mobility and overall health status."
-icon: "figure.walk"
-color: "#FF9500"
-default_unit: "m/s"
+identifier: HKQuantityTypeIdentifierWalkingSpeed
+source: HealthKit
+type: HKQuantityType
+category: Mobility
+human_readable_name: Walking Speed
+short_description: Walking Speed is the average speed estimated during a recorded interval of steady walking on
+  flat ground.
+icon: figure.walk
+color: '#FF9500'
+default_unit: m/s
 supported_units:
-  - "m/s"
-  - "km/hr"
-  - "mi/hr"
-unit_description: "Meters per second (m/s) is the standard unit for gait velocity in clinical settings."
-aggregation_type: "discrete"
+- m/s
+- km/hr
+- mi/hr
+unit_description: 'Meters per second: the average speed over a stored walking interval.'
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-typical_range:
-  min: 0.5
-  max: 1.8
-  unit: "m/s"
-  notes: "Healthy adults typically walk 1.2-1.4 m/s; values below 0.8 m/s are clinically significant."
-clinical_ranges:
-  - population: "Adults 20-40"
-    normal: "1.3-1.5 m/s"
-    concerning: "<1.0 m/s"
-  - population: "Adults 40-60"
-    normal: "1.2-1.4 m/s"
-    concerning: "<0.9 m/s"
-  - population: "Adults 60-70"
-    normal: "1.1-1.3 m/s"
-    concerning: "<0.8 m/s"
-  - population: "Adults 70-80"
-    normal: "1.0-1.2 m/s"
-    concerning: "<0.7 m/s"
-  - population: "Adults 80+"
-    normal: "0.8-1.1 m/s"
-    concerning: "<0.6 m/s"
+- discreteAverage
+- discreteMin
+- discreteMax
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "14.0"
+  version: '14.0'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
-writable: false
+writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone"
-    capability: "Motion sensors during walking bouts"
-  - name: "Apple Watch"
-    capability: "Continuous gait analysis during daily activities"
-primary_source: "Apple Watch or iPhone motion sensors"
-description: |
-  ## Overview
-  Walking speed, also known as gait velocity, is the distance covered per unit time during ambulation. It is widely recognized as a vital sign of functional status and has been termed the "sixth vital sign" in geriatric medicine due to its strong association with morbidity, mortality, and quality of life.
+- name: iPhone
+  capability: iPhone 8 or later automatically estimates this metric during eligible steady walking with the phone
+    carried near the waist.
+primary_source: iPhone motion sensors
+description: '## What does Walking Speed measure?
 
-  ## How It's Measured
-  Apple devices use built-in accelerometers and gyroscopes to analyze gait patterns during natural walking. The iPhone requires the device to be carried on the body (typically in a pocket), while Apple Watch provides more consistent measurements from the wrist. Measurements are taken during walking bouts of sufficient duration and steady-state locomotion to ensure accuracy.
 
-  ## Health Significance
-  Walking speed is one of the most robust predictors of health outcomes in older adults:
-  - **Mortality prediction**: Speeds below 0.8 m/s are associated with significantly increased mortality risk
-  - **Functional independence**: Minimum of 1.0 m/s needed for safe community ambulation (crossing streets)
-  - **Hospitalization risk**: Slower walking speeds predict increased hospital admissions
-  - **Cognitive decline**: Gait velocity decline often precedes or accompanies cognitive impairment
-  - **Frailty indicator**: One of the five Fried frailty criteria
+  Walking Speed is the average speed estimated during a recorded interval of steady walking on flat ground. It is
+  a measure of selected walking bouts, rather than an average over the whole day or a treadmill speed setting. [Apple’s
+  type documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/walkingspeed)
+  defines the measurement and recording conditions.
 
-  ## Clinical Interpretation Guidelines
-  - **>1.0 m/s**: Generally indicates good functional status and life expectancy
-  - **0.8-1.0 m/s**: Warrants attention; may indicate early functional decline
-  - **0.6-0.8 m/s**: Moderate impairment; increased fall and mortality risk
-  - **<0.6 m/s**: Severe impairment; high risk for adverse outcomes
 
-  The "1.0 m/s threshold" is particularly important as it represents the minimum speed needed to safely cross a street at a standard crosswalk timing.
+  ## What do example records look like?
 
-  ## Age-Adjusted Norms
-  Walking speed naturally declines with age at approximately 1-2% per year after age 60. When interpreting values:
-  - Compare to age-matched norms rather than absolute thresholds
-  - Track longitudinal changes; decline >0.1 m/s per year is concerning
-  - Consider baseline function and recent changes in context
 
-  ## Caveats & Limitations
-  - Measurements require consistent device placement and sufficient walking duration
-  - Environmental factors (terrain, footwear, weather) affect measurements
-  - Acute illness, pain, or medication effects can temporarily reduce speed
-  - Self-selected walking speed differs from maximum walking speed
-  - Device algorithms may not account for assistive device use
+  The reporting year contained **12,993 records on 365 of 365 days**. July–September contained **2,871 records on
+  92 of 92 days**, from one source group. Missing days remain missing rather than zero observations.
 
-  ## Additional Notes
-  Walking speed is particularly valuable for:
-  - **Geriatric assessment**: Screening for frailty and functional decline
-  - **Post-surgical recovery**: Tracking rehabilitation progress after joint replacement or cardiac surgery
-  - **Neurological monitoring**: Assessing Parkinson's disease progression, stroke recovery
-  - **Chronic disease management**: COPD, heart failure, and diabetes impact gait velocity
 
-  Consider combining with other mobility metrics (step length, asymmetry) for comprehensive gait assessment.
-metadata_keys:
-  - key: "HKMetadataKeyDevicePlacementSide"
-    description: "Indicates which side of the body the device was placed during measurement"
-  - key: "HKMetadataKeySessionEstimate"
-    description: "Indicates if the value represents an estimate from a workout session"
+  The focus-window median was **1.07 m/s**, with the central 90% between **0.73 and 1.37 m/s**. The full range was
+  **0.45–2.19 m/s**. For familiar units, 1 m/s equals 3.6 km/h. These observations describe example data, not a
+  universal healthy walking speed or a clinical walking-test result.
+
+
+  | Reading question | Useful interpretation |
+
+  | --- | --- |
+
+  | What does one value summarize? | The stored walking interval, not every step that day |
+
+  | What does the range describe? | Recorded observations with each record given equal weight |
+
+  | What does a high or low tail mean? | A reason to inspect context and repeated values |
+
+  | How should a trend be compared? | Similar source, placement and walking conditions |
+
+
+  ## Why are records unevenly spaced?
+
+
+  In the focus window, observed-day recording counts ranged from **1 to 92**, with a median of **29**. Stored intervals
+  had a median duration of **11.0 seconds** and ranged from **1.7 to 300 seconds**. The median positive start-to-start
+  gap was **3.5 minutes**; the largest was **23.4 hours**.
+
+
+  Apple describes roughly 10–30 samples on a typical day. That is a recording description, not a guaranteed sampling
+  schedule. The sensor’s internal measurements are not the same as exported sample timestamps. Each estimate can
+  cover a different duration, so a simple record average and a duration-weighted average answer different questions.
+
+
+  ## How do workouts and sleep change the picture?
+
+
+  Across the reporting year, **511 records overlapped stored workouts**. Their median was **1.22 m/s**, compared
+  with **1.07 m/s** outside recorded workouts and sleep. Within these separate context groups, median positive start-to-start
+  gaps were **3.3 minutes** for workout-overlapping records and **3.2 minutes** for other records.
+
+
+  Those gaps include time between separate walking bouts and workouts; they do not measure a workout sensor frequency.
+  Overlap is temporal, not proof of explicit workout linkage or that the entire walking interval occurred inside
+  the workout. No walking records overlapped available recorded-asleep intervals in this snapshot. Sleep is not
+  an expected recording opportunity for steady-walking estimates.
+
+
+  ## How does this relate to other walking metrics?
+
+
+  Daily walking speed and step length moved together (**Spearman 0.85 across 92 paired days**). Speed also had an
+  inverse association with double support (**−0.71**). These metrics describe related aspects of the selected walking
+  pattern; none by itself establishes fitness, fall risk or a disease.
+
+
+  The analysis kept sources separate and compared reporting-day medians on days containing both types. It also checked
+  unique exact interval matches and excluded ambiguous duplicate interval candidates. These are repeated observations
+  in example user data, not independent participants, and the relationships do not show causation.
+
+
+  [Walking speed](/knowledge-base/types/HKQuantityTypeIdentifierWalkingSpeed/), [step length](/knowledge-base/types/HKQuantityTypeIdentifierWalkingStepLength/),
+  [double support](/knowledge-base/types/HKQuantityTypeIdentifierWalkingDoubleSupportPercentage/) and [asymmetry](/knowledge-base/types/HKQuantityTypeIdentifierWalkingAsymmetryPercentage/)
+  each add a different view of gait. [Walking Steadiness](/knowledge-base/types/HKQuantityTypeIdentifierAppleWalkingSteadiness/)
+  is a separate estimate, not a classification computed here from these charts.
+
+
+  ## What can change or prevent an estimate?
+
+
+  Automatic collection requires iPhone 8 or later, carried near the waist, during steady walking on flat ground.
+  Apple says these samples are not recorded when wheelchair status is enabled. Phone placement and which walking
+  bouts meet the algorithm’s criteria can therefore change the observed distribution without establishing a physiological
+  change.
+
+
+  An up-to-date height in Health is required for accurate estimates. Compare persistent changes under similar conditions
+  with how walking feels and functions. Consumer walking estimates do not replace a supervised gait assessment;
+  a single extreme value should not be assigned a diagnosis.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
-    relationship: "Complementary gait parameter; speed = step length x cadence"
-  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
-    relationship: "Asymmetry can affect and explain speed variations"
-  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
-    relationship: "Increased double support often correlates with decreased speed"
-  - identifier: "HKQuantityTypeIdentifierAppleWalkingSteadiness"
-    relationship: "Both metrics assess fall risk and mobility status"
-  - identifier: "HKQuantityTypeIdentifierSixMinuteWalkTestDistance"
-    relationship: "Formal functional capacity test related to habitual walking speed"
+- identifier: HKQuantityTypeIdentifierWalkingStepLength
+  relationship: Complementary selected-walking estimate; compare source and interval context.
+- identifier: HKQuantityTypeIdentifierWalkingDoubleSupportPercentage
+  relationship: Complementary selected-walking estimate; compare source and interval context.
+- identifier: HKQuantityTypeIdentifierWalkingAsymmetryPercentage
+  relationship: Complementary selected-walking estimate; compare source and interval context.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierWalkingSpeed"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierwalkingspeed"
-    type: "official"
-  - title: "Gait Speed as the Sixth Vital Sign - Journal of the American Geriatrics Society"
-    url: "https://agsjournals.onlinelibrary.wiley.com/doi/10.1111/j.1532-5415.2010.03036.x"
-    type: "research"
-  - title: "Gait Speed and Survival in Older Adults - JAMA"
-    url: "https://jamanetwork.com/journals/jama/fullarticle/644554"
-    type: "research"
-  - title: "Fried Frailty Criteria - Journal of Gerontology"
-    url: "https://academic.oup.com/biomedgerontology/article/56/3/M146/545770"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Apple Developer Documentation — Walking Speed
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/walkingspeed
+  type: official
+- title: Apple — Beyond counting steps (WWDC20)
+  url: https://developer.apple.com/videos/play/wwdc2020/10656/
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Walking Speed in Apple Health: Meaning, Recording and Examples'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: walking-speed
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Selected walking bouts in observational example data, not population norms. Repeated records are
+    not independent participants. Ratios use 0–1 canonical storage. Sources kept separate; daily associations are
+    exploratory. Timestamp overlap does not prove explicit workout linkage. Missing observations are not zero.
+figures:
+- src: /knowledge-base/figures/walking-speed/distribution.png
+  alt: Histogram of recorded walking speed estimates beside a histogram of sample counts per observed day.
+  title: 'Walking Speed: values and daily recording counts'
+  caption: 'Example July–September 2026 data: 2,871 interval observations on 92 observed days. Left: each record
+    has equal weight. Right: each observed day has equal weight; unrecorded days are excluded.'
+  methods: Source group selected by focus-window record count; bundle identifier plus source display name combines
+    revisions. Half-open start-selected reporting window in America/Los_Angeles. All selected records retained;
+    percent ratios multiplied by 100 where applicable. No source names or individual dates shown.
+  section: What do example records look like?
+  width: 1500
+  height: 600

@@ -1,227 +1,187 @@
-identifier: "HKQuantityTypeIdentifierDietaryIron"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Iron"
-short_description: "Iron intake from food and supplements, essential for oxygen transport and energy metabolism."
-
-# --- APPLE HEALTH UI ---
-icon: "pills.fill"
-color: "#8B4513"
-
-default_unit: "mg"
-supported_units: ["mg", "mcg", "g"]
-aggregation_type: "cumulative"
-statistics_options: ["cumulativeSum", "separateBySource"]
-typical_range:
-  min: 0
-  max: 45
-  unit: "mg"
-clinical_ranges:
-  - population: "Infants 7-12 months"
-    rda: "11 mg/day"
-  - population: "Children 1-3 years"
-    rda: "7 mg/day"
-  - population: "Children 4-8 years"
-    rda: "10 mg/day"
-  - population: "Children 9-13 years"
-    rda: "8 mg/day"
-  - population: "Teen boys 14-18 years"
-    rda: "11 mg/day"
-  - population: "Teen girls 14-18 years"
-    rda: "15 mg/day"
-  - population: "Adult men 19+ years"
-    rda: "8 mg/day"
-  - population: "Adult women 19-50 years"
-    rda: "18 mg/day"
-  - population: "Adult women 51+ years"
-    rda: "8 mg/day"
-  - population: "Pregnant women"
-    rda: "27 mg/day"
-  - population: "Lactating women 14-18 years"
-    rda: "10 mg/day"
-  - population: "Lactating women 19+ years"
-    rda: "9 mg/day"
-  - population: "Vegetarians"
-    rda: "1.8x standard RDA (due to lower bioavailability)"
-  - population: "All adults"
-    upper_limit: "45 mg/day"
+identifier: HKQuantityTypeIdentifierDietaryIron
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Iron
+short_description: Iron intake logged in Apple Health, with units, daily coverage and interpretation guidance.
+icon: pills.fill
+color: '#8B4513'
+default_unit: mg
+supported_units:
+- mg
+- g
+- mcg
+aggregation_type: cumulative
+statistics_options:
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Log dietary iron from foods and supplements"
-    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
-  - name: "Nutrition coaching platforms"
-    capability: "Track iron intake with absorption context"
-    examples: ["Noom", "Nutritionix"]
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Iron is an essential trace mineral required for oxygen transport, electron transfer, and numerous enzymatic reactions. The body contains 3-5 grams of iron, with approximately 65% in hemoglobin, 10% in myoglobin, and the remainder in storage (ferritin) and transport (transferrin) forms. Iron deficiency is the most common nutritional deficiency worldwide, while iron overload causes significant organ damage.
+- name: Manual entry
+  capability: User-entered nutrient intake saved to Health.
+- name: Authorized nutrition apps
+  capability: Recorded intake shared when the app supports this nutrient and has write authorization.
+primary_source: Manual records or authorized apps that write this dietary quantity to HealthKit.
+description: '## What does Apple Health iron intake record?
 
-  ## Biological Functions
-  - **Oxygen transport**: Central component of hemoglobin (carries O2 from lungs to tissues) and myoglobin (oxygen storage in muscle)
-  - **Electron transport**: Essential component of cytochromes in mitochondrial ATP production
-  - **DNA synthesis**: Required for ribonucleotide reductase activity
-  - **Enzymatic cofactor**: Necessary for catalase, peroxidases, and cytochrome P450 enzymes
-  - **Immune function**: Required for lymphocyte proliferation and antimicrobial activity
-  - **Neurotransmitter synthesis**: Cofactor for tyrosine hydroxylase (dopamine synthesis) and tryptophan hydroxylase (serotonin)
 
-  ## Health Significance
-  Iron balance is tightly regulated because humans lack an active excretion mechanism. Absorption is adjusted based on body stores and erythropoietic demand. Iron deficiency progresses through stages: depleted stores, iron-deficient erythropoiesis, and finally iron deficiency anemia. Conversely, iron overload (hereditary hemochromatosis or transfusion-related) causes oxidative damage to liver, heart, and endocrine organs.
+  Dietary Iron is a cumulative mass quantity for the iron amount recorded as consumed. Amounts on this page are
+  expressed in **mg**. One sample can represent a food portion, a supplement entry or a source-generated daily total;
+  it is not necessarily a whole day. [Apple defines this quantity](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryiron).
 
-  ## Clinical Interpretation Guidelines
-  When reviewing iron intake data:
-  - **Distinguish iron forms**: Heme iron (animal sources) has 15-35% absorption; non-heme iron (plants, supplements) has 2-20% absorption
-  - **Assess menstrual status**: Premenopausal women lose significant iron monthly; requirements nearly double
-  - **Review dietary patterns**: Vegetarians/vegans need 1.8x RDA due to exclusive non-heme intake
-  - **Consider meal composition**: Vitamin C dramatically enhances non-heme iron absorption
-  - **Evaluate timing**: Iron supplements are best absorbed on empty stomach but cause more GI side effects
-  - **Check for chronic blood loss**: GI bleeding, heavy menses, frequent blood donation increase needs
 
-  ## Deficiency
-  **Iron deficiency stages**:
-  1. Depleted stores: Low ferritin, normal hemoglobin
-  2. Iron-deficient erythropoiesis: Low transferrin saturation, rising TIBC
-  3. Iron deficiency anemia: Low hemoglobin, microcytic hypochromic RBCs
+  ## Can an iron intake log show iron deficiency or anemia?
 
-  **Symptoms**:
-  - Fatigue and weakness (reduced oxygen delivery)
-  - Pallor (decreased hemoglobin)
-  - Dyspnea on exertion
-  - Cognitive impairment and poor concentration
-  - Pica (craving non-food items like ice, dirt)
-  - Restless legs syndrome
-  - Brittle nails (koilonychia/spoon nails in severe cases)
-  - Glossitis and angular cheilitis
-  - Impaired thermoregulation
-  - Reduced immune function
 
-  **High-risk groups**:
-  - Menstruating women (especially heavy flow)
-  - Pregnant women
-  - Infants and young children
-  - Adolescents during growth spurts
-  - Vegetarians/vegans
-  - Frequent blood donors
-  - Chronic disease (CKD, heart failure, IBD)
+  Dietary Iron records an entered intake amount. It does not measure hemoglobin, ferritin, iron stores or anemia.
+  Food type, absorption, losses and clinical context matter, so a low app total is a reason to review logging coverage
+  rather than a diagnosis. [NIH distinguishes iron intake and iron status](https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/).
 
-  ## Toxicity/Excess
-  **Acute iron poisoning** (typically accidental pediatric ingestion):
-  - GI hemorrhage, vomiting, diarrhea
-  - Metabolic acidosis
-  - Liver failure
-  - Cardiovascular collapse
 
-  **Chronic iron overload**:
-  - Liver: Cirrhosis, hepatocellular carcinoma
-  - Heart: Cardiomyopathy, arrhythmias, heart failure
-  - Endocrine: Diabetes (pancreatic damage), hypogonadism, hypothyroidism
-  - Joints: Arthropathy
-  - Skin: Bronze discoloration
+  ## Does Apple Health distinguish heme and nonheme iron?
 
-  **Populations at risk for overload**:
-  - Hereditary hemochromatosis (HFE mutations)
-  - Thalassemia and sickle cell disease (transfusion-dependent)
-  - Chronic liver disease
-  - Those taking unnecessary supplements
 
-  ## Food Sources
-  **Heme iron sources** (animal-derived, 15-35% absorbed):
-  - Organ meats: Liver, kidney (highest concentration)
-  - Red meat: Beef, lamb
-  - Poultry: Dark meat chicken, turkey
-  - Seafood: Oysters, clams, mussels, sardines
+  The numeric total does not carry that distinction by itself. Iron from different foods has different availability,
+  and food descriptions may supply useful context when the source includes them. For supplements, check elemental
+  iron on the label: the iron-containing compound or tablet can weigh more than the iron it provides. Confirm portions
+  and avoid adding a supplement twice through two apps.
 
-  **Non-heme iron sources** (plant-derived, 2-20% absorbed):
-  - Legumes: Lentils, chickpeas, kidney beans, soybeans
-  - Fortified cereals and bread
-  - Dark leafy greens: Spinach, Swiss chard
-  - Tofu and tempeh
-  - Pumpkin seeds, quinoa
-  - Dried fruits: Raisins, apricots
 
-  ## Absorption Factors
-  **Enhancers of non-heme iron absorption**:
-  - Vitamin C (ascorbic acid): Most potent enhancer; 75 mg can triple absorption
-  - MFP factor: Meat, fish, poultry enhance absorption of co-consumed non-heme iron
-  - Organic acids: Citric acid, lactic acid (fermented foods)
-  - Low iron stores: Body upregulates absorption when depleted
+  | What you see | How to read it |
 
-  **Inhibitors**:
-  - Phytates: Whole grains, legumes, nuts (soaking/sprouting reduces)
-  - Polyphenols: Tea, coffee, wine, chocolate (tannins bind iron)
-  - Calcium: Inhibits both heme and non-heme absorption; separate by 2 hours
-  - Oxalates: Spinach, rhubarb
-  - Soy protein: Contains phytate and specific inhibitory factors
-  - Antacids and PPIs: Reduced stomach acid impairs iron solubility
-  - Excess zinc or copper: Compete for absorption
+  | --- | --- |
 
-  ## Special Populations
-  - **Pregnant women**: Plasma volume expansion and fetal demands require 27 mg/day; routine supplementation often recommended
-  - **Menstruating women**: Average monthly loss of 30-40 mg iron; heavy flow increases substantially
-  - **Vegetarians/vegans**: Should aim for 1.8x RDA; focus on vitamin C pairing and avoiding absorption inhibitors at iron-rich meals
-  - **Endurance athletes**: "Sports anemia" may reflect plasma expansion; true deficiency from foot-strike hemolysis, GI bleeding, sweat losses
-  - **Infants**: Iron stores from birth deplete by 4-6 months; fortified formula or iron supplementation needed
-  - **Chronic kidney disease**: Functional iron deficiency common despite adequate stores; IV iron often required
-  - **Inflammatory conditions**: Hepcidin elevation blocks iron absorption and release; may need IV iron
-  - **Bariatric surgery patients**: Bypass of duodenum (primary absorption site) necessitates supplementation
+  | Iron in mg | Logged elemental nutrient amount |
 
-  ## Drug Interactions
-  - **Thyroid hormones (levothyroxine)**: Iron reduces absorption; separate by 4 hours
-  - **Bisphosphonates**: Iron impairs absorption; separate by 2 hours
-  - **Tetracyclines/fluoroquinolones**: Form non-absorbable complexes; separate by 2-4 hours
-  - **Levodopa/carbidopa**: Iron may reduce absorption
-  - **ACE inhibitors**: May increase risk of iron-related adverse effects
-  - **Proton pump inhibitors/H2 blockers**: Reduce iron absorption (need gastric acid)
-  - **Calcium supplements**: Inhibit iron absorption; take at different meals
-  - **Cholestyramine**: May bind iron in gut
+  | Heme or nonheme source | Requires food context; not identified by the number |
 
-  ## Caveats & Limitations
-  - HealthKit data represents intake, not absorption or iron status
-  - Heme vs. non-heme distinction not captured, though absorption differs 5-10x
-  - Meal composition affecting absorption not tracked
-  - Food database accuracy varies; fortification levels differ by brand/region
-  - Supplement iron forms (ferrous sulfate, gluconate, citrate) have different bioavailability
-  - Serum ferritin is the best single marker of iron stores; intake data alone is insufficient for status assessment
-  - Ferritin is an acute phase reactant; inflammation falsely elevates levels
-  - Cooking in cast iron cookware can increase food iron content (not captured)
+  | Compound or tablet mass | Not equivalent to elemental iron |
+
+  | Ferritin or hemoglobin | Clinical measurements, not inferred from intake |
+
+
+  ## How often is iron recorded?
+
+
+  The interval between entries reflects logging or synchronization, not nutrient absorption or a validated meal
+  schedule. A midnight timestamp may be a daily summary, and multiple entries may have been added later. Review
+  source, portion and duration before summing; importing the same meal from two apps can inflate a total. A day
+  without entries is missing coverage, not zero intake.
+
+
+  ## How do vitamin C, workouts and menstrual records help?
+
+
+  Vitamin C can affect nonheme iron absorption, but co-logged quantities do not measure the amount absorbed. Menstrual
+  records describe separately recorded context; they do not quantify iron loss. Workout timing cannot show that
+  an iron entry improved performance. Comparisons require actual iron rows and appropriately aligned context, not
+  just the presence of these related types.
+
+
+  ## What did the example-data investigation find?
+
+
+  The researched **365-day reporting window** contained no raw iron samples and no stored iron aggregates. Recorded
+  value ranges, unusually large entries, source-specific daily totals, logging gaps and workout or sleep comparisons
+  could not be measured. No empirical graph or nutrient-status conclusion is presented. Related measurements cannot
+  supply an intake relationship without iron observations.
+
+
+  ## How can I make the log more useful?
+
+
+  Check nutrient units and serving count: **1 g = 1,000 mg**, while **1 microgram = 0.001 mg**. Keep compatible
+  contributions within a source and state how many days have credible logs. [Apple allows apps to write selected
+  nutrition types](https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers), so another nutrient
+  being present does not establish complete iron coverage. Review [contributing Health sources](https://support.apple.com/en-us/108779)
+  after changing logging apps.
+
+
+  ## Does PulsHealth currently collect this type?
+
+
+  This HealthKit type is documented here but is not in the current PulsHealth sync catalog. The missing database
+  rows therefore cannot establish whether Apple Health on the phone contains entries. Milligrams on this page are
+  an explanatory display unit, not a promise of current sync support.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "Type of food or supplement providing iron"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates if value was manually entered by user"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Identifier from external nutrition tracking service"
+- key: HKMetadataKeyFoodType
+  description: Optional source-provided food description; does not establish portions, absorption or completeness.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional user-entry indicator. Absence does not prove automatic measurement.
+- key: HKMetadataKeyExternalUUID
+  description: Optional external identifier; no records were available to inspect its usage.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
-    relationship: "Vitamin C dramatically enhances non-heme iron absorption"
-  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
-    relationship: "Calcium inhibits iron absorption; timing separation recommended"
-  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
-    relationship: "High-dose zinc supplements can interfere with copper and indirectly iron metabolism"
-  - identifier: "HKQuantityTypeIdentifierDietaryCopper"
-    relationship: "Copper is essential for iron mobilization via ceruloplasmin"
-  - identifier: "HKQuantityTypeIdentifierDietaryFolate"
-    relationship: "Both iron and folate deficiency cause anemia; often co-occur"
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminB12"
-    relationship: "B12 deficiency also causes anemia; differential diagnosis important"
+- identifier: HKQuantityTypeIdentifierDietaryVitaminC
+  relationship: Related recorded context; comparisons require focal intake rows and compatible source, units and
+    reporting-day coverage.
+- identifier: HKQuantityTypeIdentifierDietaryProtein
+  relationship: Related recorded context; comparisons require focal intake rows and compatible source, units and
+    reporting-day coverage.
+- identifier: HKQuantityTypeIdentifierBodyMass
+  relationship: Related recorded context; comparisons require focal intake rows and compatible source, units and
+    reporting-day coverage.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryIron"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryiron"
-    type: "official"
-  - title: "NIH Office of Dietary Supplements - Iron Fact Sheet for Health Professionals"
-    url: "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/"
-    type: "medical"
-  - title: "WHO - Iron Deficiency Anaemia Assessment, Prevention and Control"
-    url: "https://www.who.int/publications/m/item/iron-deficiency-anaemia-assessment-prevention-and-control"
-    type: "research"
-  - title: "American Society of Hematology - Iron Deficiency Anemia"
-    url: "https://www.hematology.org/education/patients/anemia/iron-deficiency"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryIron'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryiron
+  type: official
+- title: 'Apple: Nutrition type identifiers'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+- title: 'NIH Office of Dietary Supplements: Iron'
+  url: https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/
+  type: medical
+last_updated: '2026-10-14'
+unit_description: Milligrams of iron recorded as consumed; not food or compound mass, absorbed amount or blood concentration.
+watchos_introduced:
+  version: '2.0'
+  year: 2015
+deprecated: false
+deprecated_in: null
+seo_title: 'Apple Health Iron Intake: Units, Daily Logs & Coverage'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative mineral mass logged as consumed; sample size can represent a portion or summary.
+  cadence: Source-specific entry or synchronization timing; not ingestion frequency or absorption.
+  context: Workout and sleep overlaps describe timestamps rather than physiological response.
+  coverage: Missing or partial logs do not establish zero intake or nutrient deficiency.
+  aggregation: Sum compatible contributions within a source and reporting window after reviewing units, portions
+    and duplicate imports; report logged-day coverage.
+  metadata: Optional food descriptions may aid review. Numeric amounts alone cannot establish composition, absorption
+    or completeness.
+  references:
+  - title: 'Apple: Nutrition types'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-iron
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified 365-day snapshot contained no raw samples or stored aggregates for this type. Ranges, outliers,
+    cadence, source distributions, workout/sleep comparisons and empirical relationships were unavailable. No measured
+    figure is presented. Missing logs are not zero intake; logging time need not be consumption time. Fixed America/Los_Angeles
+    reporting calendar.
+  review_basis: coverage_and_sources

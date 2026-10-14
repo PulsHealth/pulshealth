@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierAbdominalCramps"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Abdominal Cramps"
-short_description: "Tracks episodes of cramping pain in the abdominal region."
-icon: "bolt.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierAbdominalCramps
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Abdominal Cramps
+short_description: 'Understand abdominal cramps in Apple Health: category labels, logging cadence, source intervals
+  and limits of contextual comparisons.'
+icon: bolt.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity unspecified, not a negative observation.
+- value: 1
+  name: notPresent
+  description: Explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Subjectively mild symptom severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate symptom severity.
+- value: 4
+  name: severe
+  description: Subjectively severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,72 +42,119 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Abdominal cramps are involuntary muscle contractions in the abdominal region that cause sharp, intermittent pain. This HealthKit category type allows users to log the presence and severity of abdominal cramping episodes, providing valuable data for identifying patterns related to diet, menstrual cycles, stress, or underlying gastrointestinal conditions.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; available logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Abdominal cramps can indicate a wide range of conditions from benign causes like menstrual cramps or dietary indiscretion to more serious conditions requiring medical attention. For clinicians, tracking frequency and severity patterns helps differentiate between functional disorders (like IBS) and organic pathology. The data can reveal correlations with food intake, menstrual cycles, medication use, or stress levels.
+  Abdominal cramps in Apple Health are a logged symptom with a subjective severity category. The record describes
+  the reported experience; it does not measure abdominal muscle contractions or identify the source of pain.
 
-  Common associated conditions include:
-  - Irritable bowel syndrome (IBS)
-  - Menstrual dysmenorrhea
-  - Inflammatory bowel disease (IBD)
-  - Food intolerances or allergies
-  - Gastroenteritis
-  - Constipation
-  - Stress-related functional disorders
 
-  ## When to Seek Medical Attention
-  Users should seek medical evaluation when abdominal cramps:
-  - Are severe and sudden in onset
-  - Persist for more than 24-48 hours
-  - Are accompanied by fever, vomiting blood, or bloody stools
-  - Occur with inability to pass gas or stool
-  - Are associated with unexplained weight loss
-  - Significantly interfere with daily activities
-  - Follow abdominal trauma
-  - Occur during pregnancy
+  ## What do its category values mean?
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Cyclic patterns suggesting menstrual-related cramping
-  - Post-meal patterns indicating food sensitivities
-  - Stress-correlated episodes
-  - Medication-related side effects
-  - Progressive worsening suggesting disease progression
+  | Code | Label | Meaning |
 
-  ## Caveats & Limitations
-  - Subjective severity ratings may vary between users
-  - Location of cramps within the abdomen is not captured
-  - Does not distinguish between different types of pain (cramping vs. sharp vs. dull)
-  - Relies on user compliance for accurate tracking
-  - Cannot differentiate between causes without additional context
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Subjectively mild severity |
+
+  | 3 | moderate | Subjectively moderate severity |
+
+  | 4 | severe | Subjectively severe severity |
+
+
+  Unspecified is not the same as notPresent. Mild, moderate and severe are subjective labels; the integer codes
+  are not a clinical measurement or a validated pain scale. These values come from Apple’s HKCategoryValueSeverity
+  enumeration.
+
+
+  ## Can cramps be aligned with a menstrual cycle?
+
+  Menstrual Flow can provide separately recorded dates to compare with cramps. Show which days have both observations
+  and keep days without a cramps entry unknown. A gap between records is not a symptom-free interval, and a
+  same-day match does not establish that menstruation caused the symptom.
+
+
+  For meal-related questions, the same rule applies: a nutrition log gives meal context only when it is sufficiently
+  complete and timed. The cramps category contains no food identity, pain location or clinical cause. These
+  details need separate notes rather than being inferred from severity.
+
+
+  ## What counts as an episode?
+
+  A row may describe a moment or a source-defined interval. Multiple entries can reflect changes in severity,
+  repeated logging or overlapping source records. Reconcile provenance and interval overlap before reporting
+  episode counts; adding row durations can count the same time more than once.
+
+
+  ## What does recording cadence tell you?
+
+  This is a logged observation, rather than a regularly sampled sensor reading. Start-to-start gaps describe
+  the saved history and the source’s logging habits. An interval’s length describes what the source saved;
+  it does not by itself establish the symptom’s continuous duration. Record start and end times, source changes
+  and repeated or overlapping entries before interpreting a timeline.
+
+
+  A record overlapping a workout or a sleep interval supplies time context. It is not evidence that the symptom
+  was continuously measured during that activity, and it does not identify onset or a cause. Numeric averages,
+  physiological reference ranges and numeric outlier thresholds do not apply to the category codes.
+
+
+  ## What did the example data show?
+
+  This HealthKit category is not listed in the current PulsHealth sync catalog. No abdominal cramps records
+  were found in the selected database research window; that coverage cannot establish whether corresponding
+  entries exist in Apple Health. Category frequencies, source differences, logging cadence, interval patterns
+  and relationships with sleep, workouts or other types could not be measured. The absence of records does
+  not establish the absence of the symptom. There is no measured figure or population estimate to infer from
+  this coverage.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierBloating"
-    relationship: "Often co-occurs with abdominal cramps in GI disorders"
-  - identifier: "HKCategoryTypeIdentifierConstipation"
-    relationship: "Constipation frequently causes abdominal cramping"
-  - identifier: "HKCategoryTypeIdentifierDiarrhea"
-    relationship: "Cramps often accompany diarrheal episodes"
-  - identifier: "HKCategoryTypeIdentifierNausea"
-    relationship: "Nausea frequently co-occurs with abdominal pain"
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Menstrual cramps correlate with menstrual flow"
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separately recorded context; date alignment requires focal symptom observations and does not
+    establish cause.
+- identifier: HKCategoryTypeIdentifierBloating
+  relationship: Separately recorded context; date alignment requires focal symptom observations and does not
+    establish cause.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Separately recorded context; date alignment requires focal symptom observations and does not
+    establish cause.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierAbdominalCramps"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierabdominalcramps"
-    type: "official"
-  - title: "Irritable Bowel Syndrome - NIDDK"
-    url: "https://www.niddk.nih.gov/health-information/digestive-diseases/irritable-bowel-syndrome"
-    type: "medical"
-  - title: "Abdominal Pain - Mayo Clinic"
-    url: "https://www.mayoclinic.org/symptoms/abdominal-pain/basics/definition/sym-20050728"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Abdominal Cramps — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/abdominalcramps
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Abdominal Cramps in Apple Health: values and recording'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: abdominal-cramps
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; empirical analysis skipped because there are no focal
+    symptom records in the selected reporting year; category frequencies, cadence, source comparisons and related-type
+    associations are unavailable. Missing entries are unknown. Category codes are not physiological measurements.
+    Source intervals and retrospective entry can differ from clinical episodes; start-selected bounds may omit
+    an interval beginning before the window.
