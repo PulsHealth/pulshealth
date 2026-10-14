@@ -40,6 +40,26 @@ export interface HealthKitType {
     description: string;
     required?: boolean;
   }> | null;
+  seo_title?: string;
+  data_research?: {
+    status: "complete";
+    reviewed_on: string;
+    workflow_version: string;
+    artifact_key: string;
+    facets: string[];
+    limitations: string[];
+  };
+  figures?: Array<{
+    src: string;
+    /** Intrinsic chart dimensions, preserving the source aspect ratio. */
+    width?: number;
+    height?: number;
+    alt: string;
+    title: string;
+    caption: string;
+    methods?: string;
+    section?: string;
+  }>;
   description: string;
   devices: Array<{
     name: string;

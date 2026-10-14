@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierSleepAnalysis"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Activity and Heart"
-human_readable_name: "Sleep Analysis"
-short_description: "Records sleep stages and time spent in bed, including detailed sleep architecture data."
-icon: "bed.double.fill"
-color: "#5856D6"
+identifier: HKCategoryTypeIdentifierSleepAnalysis
+source: HealthKit
+type: HKCategoryType
+category: Activity and Heart
+human_readable_name: Sleep Analysis
+short_description: Understand Apple Health sleep stages, interval timing, missing nights and how to calculate time
+  asleep without double-counting.
+icon: bed.double.fill
+color: '#5856D6'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,29 +15,30 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "inBed"
-    description: "User is in bed but sleep state is undetermined. Represents the total time from getting into bed to getting out, regardless of actual sleep."
-  - value: 1
-    name: "asleepUnspecified"
-    description: "User is asleep but the specific sleep stage cannot be determined. Used when device lacks sleep staging capability or data is insufficient for classification."
-  - value: 2
-    name: "awake"
-    description: "User is awake during a sleep session. Captures periods of wakefulness after initially falling asleep (WASO - Wake After Sleep Onset)."
-  - value: 3
-    name: "asleepCore"
-    description: "User is in core (light) sleep, also known as N1 and N2 NREM sleep stages. Characterized by reduced muscle activity, slower eye movements, and sleep spindles."
-  - value: 4
-    name: "asleepDeep"
-    description: "User is in deep sleep (N3 NREM/slow-wave sleep). Most restorative stage characterized by delta brain waves, growth hormone release, and physical recovery."
-  - value: 5
-    name: "asleepREM"
-    description: "User is in REM (Rapid Eye Movement) sleep. Associated with vivid dreaming, memory consolidation, emotional processing, and temporary muscle paralysis."
+- value: 0
+  name: inBed
+  description: Time recorded in bed; may overlap asleep and awake intervals.
+- value: 1
+  name: asleepUnspecified
+  description: Asleep without a known stage; retain it when calculating total sleep.
+- value: 2
+  name: awake
+  description: Recorded wakefulness; Apple Watch captures Awake between sleep intervals, not necessarily at session
+    edges.
+- value: 3
+  name: asleepCore
+  description: Light or intermediate sleep; Apple maps Core to N2 and some N1.
+- value: 4
+  name: asleepDeep
+  description: Recorded deep-sleep classification; an estimate rather than a clinical measurement.
+- value: 5
+  name: asleepREM
+  description: Recorded REM-sleep classification; an estimate rather than a clinical measurement.
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -44,137 +46,246 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Apple Watch"
-    capability: "Native sleep tracking with motion and heart rate analysis for sleep staging (Series 4+)"
-  - name: "iPhone"
-    capability: "Basic in-bed detection via Bedtime/Sleep Focus features using accelerometer"
-  - name: "Third-party sleep trackers"
-    capability: "Oura Ring, Whoop, Fitbit, and other devices can write sleep data via HealthKit API"
-primary_source: "Apple Watch"
-description: |
-  ## Overview
-  Sleep Analysis is HealthKit's comprehensive sleep tracking data type that captures both time in bed and detailed sleep stage architecture. The data model evolved significantly in iOS 16 (2022) to include granular sleep stages (Core, Deep, REM) alongside the original in-bed and asleep categories.
+- name: Apple Watch
+  capability: Estimates sleep and, for supported sessions, Core, Deep and REM stages; behavior depends on hardware
+    and software.
+- name: Other HealthKit sources
+  capability: Apps and compatible trackers can write category intervals; available states and recording rules vary.
+primary_source: Apple Watch
+description: '## What does Apple Health Sleep Analysis record?
 
-  Each sleep sample is stored as a time interval with start and end times, allowing for reconstruction of complete sleep sessions. Multiple samples can overlap (e.g., an inBed sample containing several sleep stage samples), enabling both simple duration queries and complex sleep architecture analysis.
+  Sleep Analysis is a sequence of **time intervals labeled with a sleep state**. It can answer when sleep was recorded,
+  how much elapsed time was labeled asleep, and how the estimated stages changed. It is not a single sleep-quality
+  score or a diagnosis.
 
-  ## How It's Detected/Measured
-  **Apple Watch Detection Method:**
-  - Wrist motion analysis via accelerometer to detect movement patterns consistent with sleep
-  - Heart rate variability (HRV) patterns that correlate with sleep stages
-  - Respiratory rate estimation for additional sleep quality signals
-  - Machine learning models trained on polysomnography-validated data
 
-  **Sleep Stage Classification (Apple Watch Series 4+):**
-  - Core Sleep: Detected via characteristic sleep spindle-associated HRV patterns and minimal movement
-  - Deep Sleep: Identified by lowest heart rate, highest HRV, and near-complete motion absence
-  - REM Sleep: Characterized by irregular heart rate patterns and occasional small movements
-  - Awake: Brief increases in heart rate and movement within a sleep session
+  Each row has a start, an end and one category value. The number of rows describes how finely the night was segmented,
+  not the number of nights slept. A quiet, continuous block may be one row; a night with many stage changes may
+  contain dozens.
 
-  **Third-Party Devices:**
-  Detection methods vary significantly by manufacturer. Most consumer devices use accelerometry and heart rate, while research-grade devices may include EEG or SpO2.
 
-  ## Health Significance
-  Sleep architecture provides critical insights into overall health status:
+  ## What do Core, Deep, REM and In Bed mean?
 
-  **Deep Sleep (N3):**
-  - Essential for physical recovery, immune function, and growth hormone secretion
-  - Adults typically need 1-2 hours per night; declines naturally with age
-  - Reduced deep sleep correlates with metabolic dysfunction, cognitive decline, and weakened immunity
+  The categories describe different things, so they need different denominators. [Apple''s sleep-category documentation](https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis)
+  explicitly permits In Bed to overlap the detailed sleep stream.
 
-  **REM Sleep:**
-  - Critical for emotional regulation, memory consolidation, and learning
-  - Adults typically need 1.5-2.5 hours per night
-  - Suppressed by alcohol, cannabis, and many medications (SSRIs, benzodiazepines)
-  - Chronic REM deprivation linked to mood disorders and cognitive impairment
 
-  **Sleep Efficiency:**
-  - Calculated as (Total Sleep Time / Time in Bed) x 100
-  - Normal: >85%; Poor: <80%
-  - Low efficiency suggests insomnia, sleep disorders, or environmental disruption
+  | Value | State | Count toward time asleep? |
 
-  **Total Sleep Time:**
-  - Adults: 7-9 hours recommended (National Sleep Foundation)
-  - Chronic short sleep (<6 hours) increases cardiovascular disease risk, obesity, and all-cause mortality
+  | --- | --- | --- |
 
-  ## Clinical Interpretation Guidelines
-  **For Health Consultants:**
+  | 0 | In Bed | No; keep as a separate envelope |
 
-  1. **Assess Sleep Duration Trends:** Look for patterns of insufficient sleep (<7 hours consistently) which warrant lifestyle intervention discussion.
+  | 1 | Asleep unspecified | Yes; the stage is unknown |
 
-  2. **Evaluate Sleep Architecture:**
-     - Deep sleep <1 hour/night may indicate recovery issues, overtraining in athletes, or aging-related changes
-     - REM <1 hour/night may suggest medication effects, alcohol use, or sleep disorder
-     - Excessive awake time (>30 minutes WASO) suggests sleep maintenance insomnia
+  | 2 | Awake | No |
 
-  3. **Consider Source Device:** Apple Watch sleep staging has been validated against polysomnography with moderate-to-good agreement for sleep/wake detection, though stage classification accuracy varies.
+  | 3 | Core | Yes; light or intermediate sleep |
 
-  4. **Week-over-Week Patterns:** Single nights are less meaningful than 7-14 day trends. Look for:
-     - Social jet lag (weekend/weekday timing differences >2 hours)
-     - Progressive sleep debt accumulation
-     - Correlation between poor sleep and symptom reports
+  | 4 | Deep | Yes; estimated deep sleep |
 
-  5. **Red Flags Requiring Medical Referral:**
-     - Severe sleep efficiency <70% despite adequate time in bed
-     - Complete absence of deep or REM sleep over multiple nights
-     - Reports of unrefreshing sleep despite adequate duration
+  | 5 | REM | Yes; estimated REM sleep |
 
-  ## Caveats & Limitations
-  - **Not Diagnostic:** Consumer sleep staging is not equivalent to clinical polysomnography (PSG) and should not be used to diagnose sleep disorders
-  - **Accuracy Variability:** Sleep stage classification accuracy varies by device, individual physiology, and sleep position
-  - **Movement Dependency:** Accelerometer-based detection may misclassify quiet wakefulness as sleep
-  - **Apple Watch Charging:** Watch must be charged at some point, potentially missing sleep data if not worn
-  - **Algorithm Updates:** Apple's sleep algorithms are updated periodically, which may affect longitudinal comparisons
-  - **No Respiratory Events:** HealthKit sleep data does not capture apnea/hypopnea events; cannot screen for sleep apnea
-  - **Multiple Source Conflicts:** When multiple devices record sleep, HealthKit's source prioritization may create confusing overlapping records
+
+  Core includes N2 and some N1 in Apple''s definition. A stage label is a device estimate, not a direct brain-wave
+  measurement. Avoid treating a short Deep segment or an absent REM label as proof of a disorder.
+
+
+  ## What does a real recorded night look like?
+
+  The figure below shows actual intervals from example user data, with dates and device identity removed. The
+  horizontal axis measures elapsed hours rather than wall-clock time. Long bars are sustained recorded states; short
+  bars are brief segments.
+
+
+  There were **no In Bed rows** in the example year-long snapshot. The empty lane makes that absence visible.
+  It means time in bed cannot be calculated from these records; it does not mean the person never spent time in
+  bed. Apple notes that Watch Awake samples occur between sleep samples, so their total can also omit wakefulness
+  at the beginning and end of a session.
+
+
+  ## How often are sleep records created?
+
+  There is no fixed row cadence. Apple describes classification windows in its [sleep-stage validation paper](https://www.apple.com/health/pdf/Estimating_Sleep_Stages_from_Apple_Watch_Oct_2025.pdf),
+  but consecutive classifications can become a longer stored interval. A row boundary is a recorded state transition,
+  not an independent reading every thirty seconds.
+
+
+  In the researched year, 10,941 intervals covered 363 of 364 eligible reporting nights after excluding truncated
+  boundary bins. Median individual segments were about 15 minutes for Core, 8.5 minutes for Deep, 19 minutes for
+  REM and 2 minutes for Awake. Those figures describe this dataset''s segmentation, not expected stage durations
+  per night.
+
+
+  Short daytime episodes need separate attention. The analysis found 18 candidate episodes lasting under three hours;
+  none carried detailed Core, Deep or REM stages. These were identified by time and duration, so calling every one
+  a confirmed nap would overstate the evidence. Apple''s 2025 paper describes version-dependent binary sleep/wake
+  reporting for shorter sessions. Preserve Asleep unspecified rather than dropping it because staging is missing.
+
+
+  ## How do you calculate total time asleep?
+
+  Choose your sources, retain categories 1, 3, 4 and 5, and calculate the **union of their intervals**. Do not add
+  In Bed or Awake. Unioning avoids counting the same elapsed minute twice when sources or stages overlap. It does
+  not decide which conflicting stage label is correct; conflicting detailed labels need a separate source-selection
+  policy.
+
+
+  The next figure compares all-row duration totals with asleep-only totals and the asleep union. In the example
+  records, asleep row sums and the union agreed to within tiny timestamp-boundary differences. The substantial excess
+  came from adding Awake, not from duplicate asleep sources. Across the 92-night focus window, that mistake added
+  a median of about 24 minutes per reporting night.
+
+
+  For this case, median asleep union time was about 7.6 hours in the focus window, with the middle 90% of recorded
+  nights spanning about 5.6–8.9 hours. This is an observed example distribution, not a clinical normal range. In
+  Bed was unavailable, so sleep efficiency and time-to-fall-asleep were not calculated.
+
+
+  ## How should nights, missing data and outliers be handled?
+
+  A night crosses midnight, so grouping by sample start date can split it. This analysis used local **noon-to-noon
+  bins**, labeled by their ending date, in one declared reporting timezone. Intervals crossing a bin boundary were
+  split. Durations used UTC elapsed seconds, avoiding an extra or missing hour during daylight-saving transitions.
+  First and last bins were excluded because the export could truncate their sleep episodes.
+
+
+  Noon bins may combine overnight sleep and daytime sleep. For questions about naps or sleep timing, also reconstruct
+  episodes with an explicit gap rule; our exploratory analysis separated episodes after a gap greater than 90 minutes
+  within a source. This is an analyst rule, not an identifier provided by HealthKit.
+
+
+  There were no zero-length, reversed or unknown-category rows. Statistical duration outliers were retained for
+  review. A short recorded night might represent genuinely short sleep, incomplete capture, or a grouping boundary.
+  Missing nights and gaps cannot establish non-wear, wakefulness or the absence of a physiological stage. Two Watch
+  source groups and their software revisions were audited separately; apparent shifts can reflect a source or algorithm
+  change.
+
+
+  ## How does sleep relate to heart rate, HRV and workouts?
+
+  Align [heart rate](/knowledge-base/types/HKQuantityTypeIdentifierHeartRate/) and [HRV](/knowledge-base/types/HKQuantityTypeIdentifierHeartRateVariabilitySDNN/)
+  observations to actual asleep intervals before comparing nights. In this dataset, a typical recorded night had
+  about 107 heart-rate samples but only four HRV samples overlapping sleep. HRV is a sparse set of observations,
+  so a nightly median does not describe every stage or every minute.
+
+
+  The analysis also compared respiratory-rate medians within asleep intervals, and matched workouts from the noon-to-noon
+  window immediately before the sleep reporting bin. That workout window ends at noon before the night, so it excludes
+  exercise later that afternoon or evening. Night-level sleep duration showed little linear association with the
+  physiological medians in this example. This is a description of the selected records, not evidence that
+  sleep cannot affect these metrics. Exercise, illness, timing, device behavior and recording density can confound
+  comparisons; a workout record''s absence does not establish inactivity.
+
+
+  ## What can these records tell you—and what remains uncertain?
+
+  Use consistent-source trends to explore sleep timing, recorded duration and estimated architecture. Keep personal
+  observations distinct from medical guidance. Apple''s classifier is based on accelerometer-derived signals and
+  validated against polysomnography; its paper describes updates in 2024 and 2025 that can change longitudinal comparisons.
+  The stored sleep intervals do not reveal a proprietary stage-detection rule based on an individual''s HRV or respiratory
+  samples.
+
+
+  If sleep feels unrefreshing, you have persistent difficulty sleeping, or someone notices breathing problems at
+  night, discuss the symptoms with a clinician. A consumer stage chart cannot diagnose a sleep disorder or replace
+  a clinical assessment. Sleep apnea events, where available on compatible systems, are a separate HealthKit concept
+  rather than something inferred from these stage intervals.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where sleep was recorded, important for travelers and circadian rhythm analysis"
-  - key: "HKMetadataKeySleepSchedule"
-    description: "Indicates if the sleep session was part of a scheduled sleep period set in the Health app"
+- key: HKMetadataKeyTimeZone
+  description: Optional timezone context; use it when available and state a fallback reporting calendar.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
-    relationship: "HRV during sleep provides additional recovery and autonomic health insights"
-  - identifier: "HKQuantityTypeIdentifierRespiratoryRate"
-    relationship: "Respiratory rate during sleep can indicate sleep quality and potential respiratory issues"
-  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
-    relationship: "Resting heart rate often measured during sleep; lower values generally indicate better fitness"
-  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
-    relationship: "SpO2 during sleep can help identify potential sleep-disordered breathing"
-  - identifier: "HKCategoryTypeIdentifierAppleStandHour"
-    relationship: "Daytime activity patterns influence sleep quality and circadian rhythm"
+- identifier: HKQuantityTypeIdentifierHeartRate
+  relationship: Align raw readings with asleep intervals; nightly summaries depend on sampling density.
+- identifier: HKQuantityTypeIdentifierHeartRateVariabilitySDNN
+  relationship: Sleep-overlapping HRV observations can be sparse; compare aligned nights without assuming continuous
+    stage coverage.
+- identifier: HKQuantityTypeIdentifierRespiratoryRate
+  relationship: Align readings to recorded sleep; trends provide context rather than a diagnosis.
+- identifier: HKQuantityTypeIdentifierAppleSleepingWristTemperature
+  relationship: Compatible-device overnight temperature can provide context; coverage and baselines differ from
+    sleep-stage records.
 references:
-  - title: "HKCategoryValueSleepAnalysis - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis"
-    type: "official"
-  - title: "Sleep and HealthKit - WWDC 2020"
-    url: "https://developer.apple.com/videos/play/wwdc2020/10184/"
-    type: "official"
-  - title: "Consumer Sleep Tracking Devices: A Review of Validation Studies"
-    url: "https://pubmed.ncbi.nlm.nih.gov/29235907/"
-    type: "research"
-  - title: "National Sleep Foundation Sleep Duration Recommendations"
-    url: "https://www.sleepfoundation.org/how-sleep-works/how-much-sleep-do-we-really-need"
-    type: "medical"
-last_updated: "2026-10-08"
-
-# Recording and interpretation guidance; personal observations are kept separately.
+- title: HealthKit sleep categories, intentional overlaps and Awake limitations
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis
+  type: official
+- title: HealthKit Core sleep definition
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis/asleepcore
+  type: official
+- title: Estimating Sleep Stages from Apple Watch, October 2025
+  url: https://www.apple.com/health/pdf/Estimating_Sleep_Stages_from_Apple_Watch_Oct_2025.pdf
+  type: official
+- title: Track your sleep on Apple Watch and use Sleep on iPhone
+  url: https://support.apple.com/en-us/108906
+  type: official
+last_updated: '2026-10-14'
 recording_behavior:
-  reviewed_on: '2026-10-08'
+  reviewed_on: '2026-10-14'
   shape: A category value describes a sleep state over an interval. Multiple intervals can form one sleep episode,
     so row count measures segmentation rather than number of nights.
-  cadence: Intervals follow recorded states, not a fixed sampling schedule. Changes in stage segmentation or
-    source behavior can change row counts without changing time asleep.
+  cadence: Intervals follow recorded states, not a fixed sampling schedule. Changes in stage segmentation or source
+    behavior can change row counts without changing time asleep.
   context: Keep In Bed and Awake separate from asleep categories. Group intervals into episodes with an explicit
     rule for naps, gaps and the date assigned to an overnight episode.
-  coverage: Count covered episodes or nights separately from calendar dates with interval starts. A night can
-    cross midnight and the study boundary; missing stages are not evidence that a stage never occurred.
-  aggregation: Merge overlapping intervals within the chosen asleep categories before calculating total asleep
-    time. Do not add In Bed to stage durations. Conflicting stages or sources require an explicit selection
-    policy; a union alone does not resolve stage labels.
-  metadata: Use timezone metadata when available and record the timezone used for night assignment. Source
-    identity and software version help distinguish changes in recording from changes in sleep.
+  coverage: Count covered episodes or nights separately from calendar dates with interval starts. A night can cross
+    midnight and the study boundary; missing stages are not evidence that a stage never occurred.
+  aggregation: Merge overlapping intervals within the chosen asleep categories before calculating total asleep time.
+    Do not add In Bed to stage durations. Conflicting stages or sources require an explicit selection policy; a
+    union alone does not resolve stage labels.
+  metadata: Use timezone metadata when available and record the timezone used for night assignment. Source identity
+    and software version help distinguish changes in recording from changes in sleep.
   references:
   - title: 'Apple: sleep-analysis categories and overlapping intervals'
     url: https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis
   - title: 'Apple: HealthKit sample time semantics'
     url: https://developer.apple.com/documentation/healthkit/samples
+seo_title: 'Apple Health Sleep Stages: Intervals, Cadence and Time Asleep'
+figures:
+- src: /knowledge-base/figures/sleep-analysis/stage-timeline.png
+  alt: A real night of Core, Deep, REM and Awake intervals over elapsed hours, with an empty In Bed lane because
+    no In Bed records were available.
+  title: 'One recorded night: sleep stages are intervals'
+  caption: Example Apple Health records. In Bed was not recorded; stage bars show intervals rather than fixed-frequency
+    measurements. Dates and device identity are omitted.
+  methods: A recorded night close to the dataset median, excluding reporting boundaries and detailed-stage conflicts.
+    Noon-to-noon bin; elapsed hours from first interval. All available categories retained; no synthetic In Bed
+    envelope.
+  section: What does a real recorded night look like?
+  width: 1956
+  height: 770
+- src: /knowledge-base/figures/sleep-analysis/nightly-interval-union.png
+  alt: Comparison across 92 observed nights of all-row duration sums, asleep-only sums and asleep interval unions;
+    adding Awake inflates totals.
+  title: Why row totals and time asleep can differ
+  caption: Example data, 92 recorded reporting nights. Asleep sums and union nearly coincide; adding Awake increases
+    the apparent sleep total. These are observed values, not population norms.
+  methods: Noon-to-noon reporting bins in a declared timezone; intervals split at noon and measured in UTC elapsed
+    time. Asleep union uses values 1, 3, 4 and 5. Awake is excluded; In Bed was absent. Actual dates and source
+    identifiers are omitted.
+  section: How do you calculate total time asleep?
+  width: 1957
+  height: 768
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: sleep-analysis
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example observational data; observed distributions are not clinical ranges. No In Bed rows or
+    dedicated summary aggregate; sleep efficiency unavailable. Truncated boundary bins excluded; fixed reporting
+    timezone may differ from travel-local days. Stage overlaps below a millisecond retained as timestamp precision
+    artifacts; no substantive conflict in this case. Noon bins and 90-minute episode gaps are explicit analyst rules,
+    not HealthKit sessions. Sparse HRV and nonrandom physiological sampling limit comparisons.

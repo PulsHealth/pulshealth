@@ -58,6 +58,15 @@ For discrete measurements, densely recorded periods receive more weight in a sam
 
 Type pages contain sourced explanations and separately dated recording guidance. Personal observation profiles should live with the person's data, linked by HealthKit identifier. A profile should record its window, timezone, source/context selection, numerator and denominator, calculation version and refresh time.
 
-Distinguish documented behavior from observed patterns and untested explanations. Public examples should be synthetic; source names, external identifiers and personal statistics belong in private records. A recording-behavior review does not certify every clinical range or platform-availability statement in an older article.
+Distinguish documented behavior from observed patterns and untested explanations. Public examples may be synthetic or, with the data owner's approval, deidentified real case figures. Label their provenance clearly. Real examples describe one person's recording patterns, never a population reference range. Keep raw records, identifying source names and external identifiers private; use anonymous source labels and relative dates when practical. Captions and methods should state selection, denominators, exclusions and context rules. A recording-behavior review does not certify every clinical range or platform-availability statement in an older article.
 
 See the [database guide](database-guide.md) for calendar-aligned daily analytics and decoding legacy motion-context metadata without changing the stored evidence.
+
+
+The [knowledge-base research checklist](../knowledge-base/README.md#empirical-research-and-completion-tracking)
+uses shared facets for coverage, sources, values, outliers, cadence, workouts,
+sleep, time patterns and related types, with additional type-specific checks.
+Persist an executed notebook privately before updating the article. Optional
+`data_research` metadata records completed research and editorial integration;
+its date is separate from the recording-guidance review date and does not
+certify clinical interpretation.

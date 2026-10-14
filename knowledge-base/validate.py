@@ -122,7 +122,7 @@ def find_yaml_files(base_path: Path) -> list[Path]:
     for pattern in ["**/*.yaml", "**/*.yml"]:
         for f in base_path.rglob(pattern.split("/")[-1]):
             # Skip excluded directories
-            if any(excluded in f.parts for excluded in excluded_dirs):
+            if any(excluded in f.relative_to(base_path).parts for excluded in excluded_dirs):
                 continue
             if f.name not in ("schema.yaml", "schema.yml"):
                 yaml_files.append(f)

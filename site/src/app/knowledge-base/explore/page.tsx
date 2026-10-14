@@ -1,6 +1,7 @@
 import { getAllTypes } from "@/lib/api";
 import Link from "next/link";
 import { HealthIcon } from "@/components/health-icon";
+import { Badge } from "@/components/ui/badge";
 import { PageHero } from "@/components/page-hero";
 
 import type { Metadata } from "next";
@@ -88,6 +89,7 @@ export default async function ExplorePage() {
                             <span className="shrink-0 text-[11px] text-muted-foreground">{kindLabel(t.type)}</span>
                           )}
                         </span>
+                        {t.data_research?.status === "complete" && <Badge variant="secondary" className="mt-1 text-[10px]">Real data example</Badge>}
                         <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                           {t.short_description}
                         </span>

@@ -1,186 +1,229 @@
-identifier: "HKQuantityTypeIdentifierRunningVerticalOscillation"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Activity"
-human_readable_name: "Running Vertical Oscillation"
-short_description: "The amount of vertical bounce or up-and-down movement during each running stride."
-icon: "figure.run"
-color: "#30D158"
-default_unit: "cm"
+identifier: HKQuantityTypeIdentifierRunningVerticalOscillation
+source: HealthKit
+type: HKQuantityType
+category: Activity
+human_readable_name: Running Vertical Oscillation
+short_description: How much your body moves up and down while running, with real Apple Health examples of ranges,
+  recording intervals and pace context.
+icon: figure.run
+color: '#30D158'
+default_unit: cm
 supported_units:
-  - "cm"
-  - "m"
-  - "in"
-unit_description: "Centimeters (cm) of vertical displacement. This measures the vertical movement of the torso (approximately at the center of mass) during each stride cycle - from lowest point (mid-stance) to highest point (mid-flight)."
-aggregation_type: "discrete"
+- cm
+- m
+- in
+unit_description: Centimeters of vertical movement during running. HealthKit describes pelvis vertical range of
+  motion; Apple Watch presents the metric as torso movement. Stored samples are discrete length measurements, not
+  a count of steps.
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-typical_range:
-  min: 5
-  max: 14
-  unit: "cm"
-  notes: "Elite runners typically exhibit 6-8 cm; recreational runners commonly show 8-12 cm. Values above 12-14 cm suggest inefficient form. Vertical oscillation tends to increase with speed but efficient runners minimize this increase."
-clinical_ranges:
-  - population: "Elite distance runners"
-    values: "5-7 cm typical; very efficient vertical movement"
-  - population: "Trained competitive runners"
-    values: "7-9 cm typical"
-  - population: "Recreational runners (good form)"
-    values: "8-10 cm typical"
-  - population: "Recreational runners (average form)"
-    values: "9-12 cm typical"
-  - population: "Novice runners / inefficient form"
-    values: "11-14+ cm common; indicates potential for improvement"
-  - population: "Vertical ratio guideline"
-    values: "Vertical oscillation / stride length < 6-8% indicates efficient running"
+- discreteAverage
+- discreteMin
+- discreteMax
 ios_introduced:
-  version: "16.0"
+  version: '16.0'
   year: 2022
 watchos_introduced:
-  version: "9.0"
+  version: '9.0'
   year: 2022
 deprecated: false
 writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Apple Watch"
-    capability: "Estimates vertical oscillation using accelerometer data during running workouts"
-    examples:
-      - "Apple Watch Series 6"
-      - "Apple Watch Series 7"
-      - "Apple Watch Series 8"
-      - "Apple Watch Series 9"
-      - "Apple Watch SE (2nd gen)"
-      - "Apple Watch Ultra"
-      - "Apple Watch Ultra 2"
-  - name: "Third-party running dynamics devices"
-    capability: "Dedicated pods and watches that measure vertical oscillation"
-    examples:
-      - "Garmin Running Dynamics Pod"
-      - "Garmin HRM-Pro"
-      - "COROS POD 2"
-      - "Stryd"
-primary_source: "Apple Watch"
-description: |
-  ## Overview
-  Vertical oscillation measures the vertical displacement of a runner's center of mass during each stride - essentially how much the body bounces up and down while running. Since the goal of running is horizontal movement, excessive vertical motion represents wasted energy.
+- name: Apple Watch
+  capability: Automatically records this metric during outdoor running workouts on Apple Watch SE and Series 6 or
+    later, according to HealthKit documentation.
+- name: Other HealthKit-writing apps or devices
+  capability: May contribute compatible samples; inspect the recorded source before comparing streams.
+primary_source: Apple Watch
+description: '## What does running vertical oscillation measure?
 
-  Vertical oscillation is influenced by:
-  - Running form and technique
-  - Leg stiffness and muscle elasticity
-  - Running speed (tends to increase slightly with speed)
-  - Fatigue state
-  - Surface characteristics
-  - Footwear properties
+  Vertical oscillation describes the up-and-down movement of your body during running. A reading of 11 cm means
+  a vertical movement estimate of that size; it does not tell you how far forward you travelled or how many steps
+  you took. HealthKit defines the type using pelvis movement, while Apple Watch describes it as torso movement.
+  [Apple''s HealthKit reference](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/runningverticaloscillation)
+  documents discrete length samples and automatic collection during outdoor runs on supported watches.
 
-  Lower vertical oscillation (relative to running speed) generally indicates more efficient running, as energy is being directed forward rather than upward.
 
-  ## How It's Measured
-  Apple Watch measures vertical oscillation using its built-in accelerometer:
+  Use it as one part of your running record. Pace, stride length and ground contact time help explain the same number
+  in different situations. There is no universal Apple Health clinical threshold that makes a particular bounce
+  measurement “good form” or “poor form.”
 
-  1. **Accelerometer tracking**: The watch's accelerometer detects vertical acceleration throughout the gait cycle
-  2. **Double integration**: Acceleration data is integrated twice to derive displacement
-  3. **Signal processing**: Algorithms filter out noise and isolate the oscillation pattern
-  4. **Cycle detection**: Each stride cycle is identified to measure peak-to-trough displacement
 
-  The measurement captures the motion of the wrist, which algorithms translate to estimated torso/center of mass movement. Because the watch is worn on the wrist, some arm swing motion is incorporated and filtered.
+  ## What range appeared in real Apple Health data?
 
-  Key measurement considerations:
-  - Values represent average oscillation over sample periods
-  - The watch position (wrist) differs from torso-mounted sensors used in some research
-  - Algorithms account for arm swing, but some variation based on arm carriage may remain
+  In the example July–September 2026 records, 5,729 observations across 13 runs had a median of **11.6 cm**. The
+  middle 90% were **10.2–12.8 cm**; the full retained range was **8.8–14.2 cm**. These are an example of recorded
+  variation, not recommended targets or a population reference interval.
 
-  ## Health Significance
-  Vertical oscillation has several implications for running performance and health:
 
-  - **Running economy**: Lower vertical oscillation correlates with better running economy (oxygen cost at given speed)
-  - **Energy expenditure**: Excessive bouncing wastes metabolic energy on vertical movement
-  - **Impact forces**: Higher oscillation often correlates with higher landing impact forces
-  - **Injury risk**: While not a direct predictor, inefficient form associated with high oscillation may contribute to overuse injuries
-  - **Fatigue indicator**: Vertical oscillation often increases as runners fatigue and form deteriorates
-  - **Training progress**: Decreasing oscillation at similar speeds suggests improved running economy
-  - **Form feedback**: Real-time oscillation data can guide running form improvements
+  | Summary | What it tells you |
 
-  ## Clinical Interpretation Guidelines
-  When analyzing vertical oscillation data:
+  | --- | --- |
 
-  1. **Use vertical ratio, not absolute values**: Divide oscillation by stride length for a speed-independent measure
-     - Vertical Ratio = Vertical Oscillation / Stride Length
-     - Target: <6-8% is efficient; >10% indicates room for improvement
-  2. **Compare at similar speeds**: Absolute oscillation naturally increases with speed; compare values at matched paces
-  3. **Track trends over time**: Gradual reduction suggests improved form/economy
-  4. **Assess fatigue patterns**: Compare oscillation in early vs. late workout phases
-     - Increasing oscillation indicates fatigue-related form breakdown
-  5. **Consider individual factors**:
-     - Shorter runners may have slightly higher oscillation
-     - Running style (bouncy vs. shuffling) varies by individual
-     - Some oscillation is biomechanically necessary
-  6. **Pair with other metrics**: High oscillation combined with low cadence and long ground contact time suggests overstriding pattern
+  | Median: 11.6 cm | The centre of the stored observations |
 
-  Intervention focus when oscillation is high:
-  - Increase cadence (step rate) to reduce time in the air
-  - Strengthen hip extensors and plantar flexors
-  - Focus on "running tall" with slight forward lean
-  - Visualize "skimming" the ground rather than bounding
+  | 5th–95th percentile: 10.2–12.8 cm | The central spread, while keeping extremes visible |
 
-  ## Caveats & Limitations
-  - **Wrist-based measurement**: Apple Watch measures wrist motion, which is influenced by arm swing and may differ from torso-mounted sensors
-  - **Algorithm estimates**: Values are calculated, not directly measured displacement of center of mass
-  - **Individual variability**: "Optimal" oscillation varies by body type, running style, and speed
-  - **Not a standalone metric**: Must be interpreted alongside other running dynamics for meaningful insight
-  - **Training status effects**: Some highly trained runners have naturally lower oscillation due to tissue adaptations, not just form
-  - **Surface effects**: Softer surfaces may increase oscillation; track vs. road vs. trail comparisons are limited
-  - **Speed dependency**: Faster running naturally produces more oscillation; raw values must be contextualized
-  - **Limited injury prediction**: While correlated with efficiency, vertical oscillation alone is not a reliable injury predictor
+  | Minimum–maximum: 8.8–14.2 cm | Every observed value, including tails |
 
-  ## Additional Notes
-  - Elite marathoners often show oscillation of 6-8 cm even at race pace
-  - Usain Bolt, despite his height, showed relatively low oscillation for a sprinter, contributing to his efficiency
-  - Some running coaches use "running quietly" cues - less bouncing typically means less noise
-  - Treadmill running may show different oscillation than overground due to belt movement
-  - Vertical oscillation is part of the broader "running dynamics" or "running metrics" family of measurements
-  - Improvements in oscillation often come alongside improvements in cadence and ground contact time
-  - Very low oscillation may indicate an inefficient shuffling gait, so context matters
-  - Hills naturally affect oscillation - uphill tends to reduce it; downhill may increase it
+  | Individual run medians: 10.9–12.1 cm | Runs differed within the example data |
+
+
+  Longer or more densely recorded runs contribute more samples to the histogram. Giving each run equal weight answers
+  a different question from pooling every stored observation. Across the full year, a descriptive outlier rule flagged
+  24 observations; all were retained. An unusual value is a prompt to inspect its context, not proof of a sensor
+  error or injury.
+
+
+  ## How often does Apple Health record it?
+
+  In this quarter, the median interval between sample starts was about **5.13 seconds**. Every stored sample had
+  the same start and end timestamp. That makes them point observations in the database, not proof that each reading
+  represents exactly one stride or that motion was measured only at that instant.
+
+
+  The earlier months contained fewer, longer intervals. Across the annual extract, 6,366 of 6,529 records were points
+  and 163 covered nonzero intervals. Apple''s documentation says workout data may be condensed or coalesced. The
+  observed change in record shape does not establish which device, sync or HealthKit behaviour caused it. Comparing
+  sample counts across those months as if they measured training volume would be misleading.
+
+
+  Cadence between stored records is also different from **running cadence**, meaning steps per minute. A five-second
+  sample interval cannot tell you your step cadence. Days without this type are gaps in the recording, not zero
+  bounce.
+
+
+  ## How does it change within a run?
+
+  The example figure follows one run using elapsed workout minutes. Bounce and pace vary within the same session;
+  an average hides that variation. Speed samples in this example matched oscillation timestamps exactly. Pace is
+  calculated from metres per second, so a lower minutes-per-kilometre value means faster running.
+
+
+  For comparisons, start with the same person and similar pace, surface and recording source. In the quarter''s
+  observations, median bounce was 11.7 cm at both 5–6 and 6–7 min/km, and 11.3 cm at 7–8 min/km. These groups mix
+  runs and conditions; they do not isolate speed''s effect.
+
+
+  A separate comparison matched first and last workout quarters within the same run and pace band, requiring at
+  least ten observations in each part. Changes went in both directions. A late-run increase alone therefore cannot
+  diagnose fatigue. Grade, pauses, effort and sensor estimation still matter, and the figure uses wall time rather
+  than subtracting pauses.
+
+
+  ## Which other measurements help explain it?
+
+  [Running speed](/knowledge-base/types/HKQuantityTypeIdentifierRunningSpeed/) gives the pace context. [Stride length](/knowledge-base/types/HKQuantityTypeIdentifierRunningStrideLength/)
+  describes forward distance, and [ground contact time](/knowledge-base/types/HKQuantityTypeIdentifierRunningGroundContactTime/)
+  adds information about the time spent on the ground. [Heart rate](/knowledge-base/types/HKQuantityTypeIdentifierHeartRate/)
+  can supply an effort-related signal, although it does not measure running economy.
+
+
+  You can calculate a vertical ratio as **100 × vertical movement ÷ stride length**, after converting both lengths
+  to the same unit. It changes when either input changes and does not remove all speed or body-size differences.
+  This research paired nearby observations within five seconds, within the same uniquely overlapping run and source
+  group. Pairing reduces obvious timing mismatches but does not make correlations causal.
+
+
+  All oscillation sample starts in this annual extract overlapped a recorded running workout. None overlapped recorded
+  asleep intervals. This dataset therefore supports running examples, but supplies no sleep or everyday-activity
+  baseline for the metric.
+
+
+  ## Does less bounce mean better running economy?
+
+  Running economy concerns the energy or oxygen cost of running at a given speed. A [study of 97 endurance runners](https://pubmed.ncbi.nlm.nih.gov/28263283/)
+  examined biomechanics alongside measured energy cost during treadmill running. Its observational findings do not
+  turn a wrist-based reading into an economy test or establish an ideal centimetre threshold for everyone.
+
+
+  Treat trends as questions to investigate. If your values change at similar pace, check the source, interval shape
+  and other running metrics before attributing the change to fitness or technique. This example dataset has
+  no controlled oxygen-consumption measurements, route-grade analysis or injury outcomes to support those conclusions.
+
+
+  ## Technical reference and analysis limits
+
+  `HKQuantityTypeIdentifierRunningVerticalOscillation` is a discrete quantity type. PulsHealth stores its canonical
+  unit as centimetres; use averages or distributions rather than adding samples together. HealthKit may condense
+  workout samples, so inspect both start and end timestamps. The research keeps raw quantities separate from workout-series
+  representations instead of counting both as additional observations.
+
+
+  The example uses a fixed America/Los_Angeles reporting calendar, an annual October 2025–September 2026 extract
+  and a July–September focus. Workout and sleep context are time-overlap checks, not explicit HealthKit sample associations.
+  Context records beginning before the extract boundary are unavailable. Source names and revisions cannot prove
+  persistent device identity. Private notebook outputs retain provenance, validity checks, cadence, source changes
+  and unsupported questions; the figures omit dates, identifiers and routes.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyIndoorWorkout"
-    description: "Boolean indicating if the run was indoors (treadmill); surface and belt effects may influence oscillation."
-  - key: "HKMetadataKeyAverageSpeed"
-    description: "Average running speed; essential for interpreting oscillation in context."
-  - key: "HKMetadataKeyElevationAscended"
-    description: "Total elevation gain; uphill running typically reduces oscillation."
-  - key: "HKMetadataKeyElevationDescended"
-    description: "Total elevation loss; downhill running may increase oscillation."
+- key: HKMetadataKeyIndoorWorkout
+  description: When present on the workout, distinguishes indoor and outdoor context. Do not assume it is attached
+    to every quantity sample.
+- key: HKMetadataKeyElevationAscended
+  description: Workout elevation context, when available; total ascent is not the slope at each sample.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierRunningStrideLength"
-    relationship: "Used together to calculate vertical ratio (oscillation/stride length), a key efficiency metric"
-  - identifier: "HKQuantityTypeIdentifierRunningGroundContactTime"
-    relationship: "Lower ground contact time often correlates with lower vertical oscillation in efficient runners"
-  - identifier: "HKQuantityTypeIdentifierRunningPower"
-    relationship: "Excessive vertical oscillation increases power demand without increasing speed"
-  - identifier: "HKQuantityTypeIdentifierRunningSpeed"
-    relationship: "Speed context is essential for interpreting oscillation; faster running naturally has more oscillation"
-  - identifier: "HKQuantityTypeIdentifierStepCount"
-    relationship: "Higher cadence (step rate) typically reduces vertical oscillation at the same speed"
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "Higher oscillation increases energy expenditure at given speed due to inefficiency"
+- identifier: HKQuantityTypeIdentifierRunningSpeed
+  relationship: Pace context for comparisons within and across runs.
+- identifier: HKQuantityTypeIdentifierRunningStrideLength
+  relationship: Forward-distance context and the denominator for a derived vertical ratio.
+- identifier: HKQuantityTypeIdentifierRunningGroundContactTime
+  relationship: Complementary timing metric; match samples rather than assume an efficiency relationship.
+- identifier: HKQuantityTypeIdentifierHeartRate
+  relationship: Effort-related context during running, with explicit timestamp matching.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierRunningVerticalOscillation"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierrunningverticaloscillation"
-    type: "official"
-  - title: "Apple Support - Running metrics on Apple Watch"
-    url: "https://support.apple.com/en-us/HT212958"
-    type: "official"
-  - title: "Running Dynamics and Economy: A Systematic Review"
-    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5548179/"
-    type: "research"
-  - title: "Vertical Oscillation and Running Economy"
-    url: "https://pubmed.ncbi.nlm.nih.gov/24100022/"
-    type: "research"
-  - title: "Wearable Sensors for Running Gait Analysis"
-    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6566037/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple HealthKit: runningVerticalOscillation'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/runningverticaloscillation
+  type: official
+- title: 'Apple Watch: workout views and running metrics'
+  url: https://support.apple.com/en-ie/guide/watch/apd1f24d4d35/watchos
+  type: official
+- title: 'Folland et al. (2017): Running Technique is an Important Component of Running Economy and Performance'
+  url: https://pubmed.ncbi.nlm.nih.gov/28263283/
+  type: research
+last_updated: '2026-10-14'
+seo_title: 'Running Vertical Oscillation: Apple Watch Data Explained'
+figures:
+- src: /knowledge-base/figures/running-vertical-oscillation/distribution.png
+  width: 1530
+  height: 816
+  alt: Histogram of 5,729 running vertical oscillation observations in the example data, centred near 11.6 centimetres.
+  title: The spread behind a running average
+  caption: Example data, 13 runs in July–September 2026. All observed values are retained; the chart shows sample
+    counts, not steps or recommended ranges.
+  methods: Raw quantity observations in centimetres, selected by start timestamp in America/Los_Angeles. Longer
+    runs contribute more samples.
+  section: What range appeared in real Apple Health data?
+- src: /knowledge-base/figures/running-vertical-oscillation/one-run.png
+  width: 1530
+  height: 1020
+  alt: Two aligned plots showing vertical oscillation in centimetres and pace in minutes per kilometre across about
+    46 elapsed workout minutes.
+  title: A run has more detail than its average
+  caption: 'A single run selected for the most matched observations in the quarter: 534 pairs. Pace and bounce vary
+    during the session; neither plot diagnoses fatigue or efficiency.'
+  methods: Nearest starts within five seconds, same source group and uniquely overlapping run. These speed matches
+    had identical timestamps. Elapsed time includes pauses.
+  section: How does it change within a run?
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: running-vertical-oscillation
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example user data, not population ranges. Context uses time overlap. Historical coalescing limits
+    month-to-month comparisons. No sleep baseline, route-grade control or measured economy outcome.
