@@ -159,7 +159,8 @@ research_notes: |
   Not displayed to end users.
 
 # Optional, separately reviewed recording guidance. All fields required when present.
-# Keep personal measurements/rates in private observation profiles, not public YAML.
+# Keep raw personal records and identifying source names private.
+# User-approved deidentified case figures may summarize observations, never population norms.
 recording_behavior:
   reviewed_on: "2026-10-08"
   shape: "What one stored record represents; distinguish points from intervals."
@@ -171,3 +172,30 @@ recording_behavior:
   references:
     - title: "Apple: HealthKit samples"
       url: "https://developer.apple.com/documentation/healthkit/samples"
+
+# Optional article search title. Preserve the identifier and existing public URL.
+# seo_title: "Example Metric in Apple Health: Values and Recording Cadence"
+
+# Optional completed empirical research. Add only after executing and persisting
+# the notebook and incorporating its relevant findings into the article.
+# The key resolves private artifacts without exposing a filesystem path.
+# A facet with no available evidence is still investigated; explain it in limitations.
+# data_research:
+#   status: "complete"
+#   reviewed_on: "2026-10-14"
+#   workflow_version: "1"
+#   artifact_key: "example-metric"
+#   facets: [provenance, coverage, sources, values, outliers, cadence,
+#            workout_context, sleep_context, time_patterns, related_types, type_specific]
+#   limitations: "State unavailable measurements and inferred context; one person's observations are not reference ranges."
+
+# Optional published figures: same-origin files only, with captions and methods.
+# figures:
+#   - src: "/knowledge-base/figures/example-metric/value-distribution.svg"
+#     alt: "Describe the pattern and axes so the figure remains useful without sight."
+#     width: 1200  # Optional actual image dimensions in pixels
+#     height: 720
+#     section: "Recording cadence"  # Optional exact level-two heading text
+#     title: "Recorded values in one person's data"
+#     caption: "Label the window, unit, source selection and one-person scope."
+#     methods: "Explain the calculation, denominator, exclusions and contextual matching rule."
