@@ -14,13 +14,13 @@ Free includes:
 - Two successful Smart Adds per calendar month. Failed generations and canceled previews do not use an allowance.
 - Two upcoming scheduled sessions at a time. Past or completed sessions free their slots; two dates for the same workout count as two sessions.
 
-Workout to Watch Pro is an auto-renewing monthly subscription, priced at **US $1.99 per month** in the US storefront. The app shows Apple's current localized price and purchase terms before you subscribe. Pro removes those app limits and adds weekly repeat scheduling. You can continue viewing, editing, exporting, and deleting existing workouts after Pro expires.
+Workout to Watch Pro is an auto-renewing monthly subscription, with a planned US launch price of **$1.99 per month**. The app shows Apple's current localized price and purchase terms before you subscribe. Pro removes those app limits and adds weekly repeat scheduling. You can continue viewing, editing, exporting, and deleting existing workouts after Pro expires.
 
 Smart Add requires a supported device with Apple Intelligence and its on-device model available. Pro does not change device compatibility or Apple's Watch scheduling capacity. The optional assistant connector currently requires private enrollment and is not a promised subscription benefit.
 
 ## Restore or cancel
 
-Open Settings in the app, then **Workout to Watch Pro** to restore purchases or manage your subscription. You can also [manage subscriptions with Apple](https://apps.apple.com/account/subscriptions). Canceling stops the next renewal; Pro remains available through the paid subscription period. Deleting the app does not cancel a subscription.
+Open Settings in the app and find the **Workout to Watch Pro** section. Tap **Explore Pro** to open the purchase screen and restore purchases, or **Manage Pro subscription** to manage an active subscription. You can also [manage subscriptions with Apple](https://apps.apple.com/account/subscriptions). Canceling stops the next renewal; Pro remains available through the paid subscription period. Deleting the app does not cancel a subscription.
 
 ## Watch scheduling
 
