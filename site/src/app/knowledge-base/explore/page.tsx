@@ -22,7 +22,6 @@ function kindLabel(type: string) {
 
 export default async function ExplorePage() {
   const allTypes = await getAllTypes();
-  const researchedTypes = allTypes.filter((type) => type.data_research?.status === "complete");
   const categories = Array.from(new Set(allTypes.map((t) => t.category))).sort();
 
   return (
@@ -32,21 +31,6 @@ export default async function ExplorePage() {
         title={<>All {allTypes.length} <span className="text-brand">data types</span></>}
         lede="Every Apple Health type, grouped the way Apple Health groups them."
       />
-
-      {researchedTypes.length > 0 && (
-        <section aria-labelledby="researched-types" className="container mx-auto max-w-6xl px-4 pb-8">
-          <h2 id="researched-types" className="text-lg font-semibold">Researched with real data</h2>
-          <p className="mt-2 text-sm text-muted-foreground">These entries include figures and recording analysis from one person’s Apple Health records.</p>
-          <ul className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-sm">
-            {researchedTypes.map((type) => (
-              <li key={type.identifier}>
-                <Link href={`/knowledge-base/types/${type.identifier}/`} className="font-medium text-brand underline underline-offset-4">{type.human_readable_name}</Link>
-                <span className="ml-2 text-xs text-muted-foreground">Reviewed <time dateTime={type.data_research!.reviewed_on}>{type.data_research!.reviewed_on}</time></span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {/* Jump to a category; sticks under the site header. */}
       <nav aria-label="Categories" className="sticky top-14 z-10 border-b bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">

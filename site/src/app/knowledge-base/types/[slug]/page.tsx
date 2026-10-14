@@ -104,7 +104,6 @@ export default async function TypeDetailPage({ params }: PageProps) {
             {data.human_readable_name}
           </>
         }
-        lede={data.short_description}
       >
         <ul className="flex flex-wrap justify-center gap-2 text-sm">
           {facts.map((fact) => (
@@ -123,7 +122,7 @@ export default async function TypeDetailPage({ params }: PageProps) {
         <article className="min-w-0 space-y-12 lg:col-start-1 lg:row-start-1">
           <div className="border-b pb-5 text-sm text-muted-foreground">
             <p>By PulsHealth. Updated <time dateTime={data.last_updated}>{data.last_updated}</time></p>
-            {data.data_research && <p className="mt-2"><Badge variant="secondary" className="mr-2">Real data example</Badge>Research reviewed <time dateTime={data.data_research.reviewed_on}>{data.data_research.reviewed_on}</time>. Figures describe one person’s records.</p>}
+            {data.data_research && <p className="mt-2"><Badge variant="secondary" className="mr-2">Real data example</Badge>Research reviewed <time dateTime={data.data_research.reviewed_on}>{data.data_research.reviewed_on}</time>. Figures use example Apple Health data.</p>}
           </div>
           <TypeArticle data={data} />
 

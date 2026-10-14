@@ -91,7 +91,7 @@ description: '## What does heart rate in Apple Health mean?
 
   ## What did real Apple Health records show?
 
-  The figures use **one consenting person''s stored Apple Health records**, analyzed over a full reporting year
+  The figures use **example Apple Health records**, analyzed over a full reporting year
   with a 92-day focus. To avoid pooling different source groups, both charts select the source group with the most
   heart-rate records in that focus window. They show observations, not population targets.
 
@@ -108,7 +108,7 @@ description: '## What does heart rate in Apple Health mean?
 
 
   The sleep subset spans only **five observed days**, while workout readings span 48 and other readings span all
-  92. Another source supplied much of the person''s sleep data. The chart therefore illustrates both contextual
+  92. Another source supplied much of the recorded sleep data. The chart therefore illustrates both contextual
   differences and uneven source coverage; it cannot estimate a typical person''s sleeping heart rate.
 
 
@@ -180,7 +180,7 @@ description: '## What does heart rate in Apple Health mean?
 
 
   The research paired daily summaries with these types and compared workout phases and recorded sleep stages. These
-  are exploratory comparisons within one person. Different sampling schedules, medication, illness, movement and
+  are exploratory comparisons within the example data. Different sampling schedules, medication, illness, movement and
   source changes can affect both measures. An association does not establish a mechanism; pooled all-day averages
   are especially vulnerable to recording-density effects.
 
@@ -280,7 +280,7 @@ data_research:
   - time_patterns
   - related_types
   - type_specific
-  limitations: One person; observational records, not population reference ranges. Fixed America/Los_Angeles reporting
+  limitations: Example user data; observational records, not population reference ranges. Fixed America/Los_Angeles reporting
     calendar. Source selection has only five days of recorded sleep in the 92-day focus. Interval overlap does not
     establish workout association. Source grouping is not persistent device identity. Sample-weighted summaries
     are affected by informative recording. First snapshot day excluded from related daily comparisons because context
@@ -290,7 +290,7 @@ figures:
   alt: 'Source-selected heart-rate distributions: recorded sleep readings cluster lower than workout readings, with
     other or unknown readings spread between them.'
   title: Heart rate changes with recorded context
-  caption: Actual records from one consenting person's stored Apple Health data. The selected source contributes
+  caption: Actual records from example Apple Health data. The selected source contributes
     257 sleep-overlap readings across only five days, 32,248 workout-overlap readings across 48 days and 23,002
     other readings across 92 days. These distributions are examples, not healthy target ranges.
   methods: 92-day focus, America/Los_Angeles reporting calendar. Largest heart-rate source group by bundle identifier
