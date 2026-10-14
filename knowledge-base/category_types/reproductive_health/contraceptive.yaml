@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierContraceptive"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Contraceptive"
-short_description: "Tracks contraceptive methods used, including hormonal, barrier, and other birth control types."
-icon: "pills.fill"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierContraceptive
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Contraceptive
+short_description: Understand contraceptive method codes, start and end dates, and what Apple Health records cannot
+  show about adherence or effectiveness.
+icon: pills.fill
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,32 +15,32 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "unspecified"
-    description: "Contraceptive use occurred but the specific type was not specified."
-  - value: 2
-    name: "implant"
-    description: "Subdermal contraceptive implant (e.g., Nexplanon), a long-acting reversible contraceptive inserted under the skin of the upper arm."
-  - value: 3
-    name: "injection"
-    description: "Injectable contraceptive (e.g., Depo-Provera), typically administered every 3 months."
-  - value: 4
-    name: "intrauterineDevice"
-    description: "Intrauterine device (IUD), either hormonal (e.g., Mirena, Kyleena) or copper (Paragard), providing long-term contraception."
-  - value: 5
-    name: "intravaginalRing"
-    description: "Vaginal ring (e.g., NuvaRing), a flexible ring inserted monthly that releases hormones."
-  - value: 6
-    name: "oral"
-    description: "Oral contraceptive pills, including combination pills and progestin-only pills, taken daily."
-  - value: 7
-    name: "patch"
-    description: "Transdermal contraceptive patch (e.g., Xulane), worn on the skin and changed weekly."
+- value: 1
+  name: unspecified
+  description: Recorded contraceptive method is unspecified.
+- value: 2
+  name: implant
+  description: Recorded implant use; brand and dose are not encoded.
+- value: 3
+  name: injection
+  description: Recorded injectable contraceptive use; schedule is not encoded.
+- value: 4
+  name: intrauterineDevice
+  description: Recorded IUD use; hormonal versus copper is not distinguished.
+- value: 5
+  name: intravaginalRing
+  description: Recorded vaginal ring use.
+- value: 6
+  name: oral
+  description: Recorded oral contraceptive use; not confirmation of each dose.
+- value: 7
+  name: patch
+  description: Recorded contraceptive patch use.
 ios_introduced:
-  version: "14.3"
+  version: '14.3'
   year: 2020
 watchos_introduced:
-  version: "7.2"
+  version: '7.2'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -47,79 +48,123 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Manual logging through Health app or Cycle Tracking app"
-  - name: "Apple Watch"
-    capability: "Manual logging through Cycle Tracking app"
-  - name: "Third-party apps"
-    capability: "Period and fertility tracking apps with contraceptive logging features"
-primary_source: "User-reported"
-description: |
-  ## Overview
-  Contraceptive tracking records the use of various birth control methods, providing context for cycle interpretation and reproductive health management. This data type captures both the type of contraceptive used and the timing of use, which is particularly important for methods requiring regular adherence (like daily oral contraceptives) versus long-acting methods (like IUDs or implants).
+- name: Manual entry or authorized source app
+  capability: Logged category observations or factor intervals; writing and metadata support depend on the source.
+primary_source: Logged contraceptive method and cycle factor
+description: '## Overview
 
-  Understanding contraceptive use is essential for interpreting other reproductive health data, as hormonal contraceptives significantly alter menstrual patterns, prevent ovulation, and change cervical mucus characteristics. This context helps clinicians and users accurately interpret cycle data and fertility indicators.
 
-  ## Health Significance
-  Contraceptive tracking serves multiple clinical purposes:
-  - **Cycle interpretation**: Hormonal contraceptives alter natural cycle patterns; knowing the method used is essential for accurate data interpretation
-  - **Adherence monitoring**: Daily methods (pills) require consistent use; tracking can identify missed doses
-  - **Method counseling**: Historical contraceptive data informs discussions about method satisfaction and switching
-  - **Side effect correlation**: Tracking enables correlation of symptoms with specific contraceptive methods
-  - **Fertility planning**: When discontinuing contraception, historical use informs expectations for cycle normalization
-  - **Medication interactions**: Contraceptive type affects interactions with other medications
+  Contraceptive records in Apple Health describe a logged birth-control method. They provide context for cycle history,
+  with a category for the method and dates for its recorded use. The code does not measure contraceptive effectiveness.
 
-  ## Clinical Interpretation Guidelines
-  When reviewing contraceptive data:
-  - **Method-specific effects on cycles**:
-    - **Oral contraceptives**: Withdrawal bleeding during placebo week is not true menstruation; ovulation is typically suppressed
-    - **IUD (hormonal)**: May cause lighter periods or amenorrhea; irregular spotting common initially
-    - **IUD (copper)**: Periods may be heavier and longer; natural cycle and ovulation typically preserved
-    - **Implant**: Irregular bleeding patterns common; many users experience amenorrhea
-    - **Injection**: Menstrual irregularities common; amenorrhea increases with duration of use
-    - **Ring/Patch**: Similar to oral contraceptives; withdrawal bleeding during hormone-free interval
-  - **Transition periods**: After discontinuing hormonal contraception, expect 1-3 months for natural cycle restoration
-  - **Adherence considerations**: Gaps in daily contraceptive logging may indicate missed doses and pregnancy risk
-  - **Breakthrough bleeding**: Common in first 3 months of hormonal method initiation; persistent bleeding warrants evaluation
-  - **Return to fertility**: Most methods allow rapid fertility return; injectable contraceptives may delay return by 6-12 months
 
-  ## Caveats & Limitations
-  - Does not include barrier methods (condoms, diaphragms) which are tracked via sexual activity protection metadata
-  - Does not capture specific brand or dosage of hormonal methods
-  - Pill tracking requires daily logging for meaningful adherence data
-  - Long-acting methods (IUD, implant) only need initial logging but may not be consistently recorded
-  - Does not distinguish between hormonal and copper IUDs, which have different cycle effects
-  - Emergency contraception is not included as a category value
-  - Fertility awareness-based methods are not captured in this type
-  - Sterilization (tubal ligation, vasectomy) is not included
-  - Does not capture when a method was started or discontinued, only daily use
+  ## Which methods do the values describe?
+
+
+  | Code | Method | Detail the code leaves out |
+
+  | --- | --- | --- |
+
+  | 1 | Unspecified | The method is unknown |
+
+  | 2 | Implant | Brand, insertion details and replacement date |
+
+  | 3 | Injection | Product, dose and administration schedule |
+
+  | 4 | Intrauterine device | Hormonal versus copper device |
+
+  | 5 | Intravaginal ring | Product and replacement schedule |
+
+  | 6 | Oral contraceptive | Formulation, dose and whether each pill was taken |
+
+  | 7 | Patch | Product and application schedule |
+
+
+  These are labels, not a numeric scale. An average of the codes has no useful meaning. Barrier methods and emergency
+  contraception have no distinct value in this enumeration; sexual-activity protection metadata is a separate record
+  and does not identify a contraceptive method.
+
+
+  ## Is this a daily adherence log?
+
+
+  Apple''s Cycle Tracking interface lets users add a contraceptive factor with a start date and later enter an end
+  date. A long interval can therefore describe ongoing method use. It should not be expanded into a claim that every
+  scheduled dose was taken, or counted as many separate administrations.
+
+
+  When reviewing a history, examine changes of method, overlapping intervals and source revisions. A gap could reflect
+  incomplete logging; it does not establish discontinuation or missed doses. Source-specific writing workflows may
+  represent dates differently, so check the source before constructing an adherence chart.
+
+
+  ## How does it relate to other cycle data?
+
+
+  Place logged contraceptive intervals beside menstrual flow or spotting to make the recorded context easier to
+  see. The IUD code cannot separate two device classes with different cycle effects, and the oral code cannot separate
+  formulations. A change in recorded bleeding alongside a method change is an observation to discuss, not proof
+  of a cause.
+
+
+  Apple says Cycle Tracking should not be used as birth control. This category also cannot calculate pregnancy risk
+  or establish whether intercourse was protected.
+
+
+  ## What was available for this review?
+
+
+  The selected database window contained no contraceptive records, so method frequencies, interval lengths and relationships
+  could not be measured. This type is absent from the current PulsHealth sync catalog; database absence does not
+  establish whether it is available in Apple Health on the phone. The entry was reviewed against source documentation,
+  with no empirical chart or inferred adherence pattern.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+- key: HKMetadataKeySyncIdentifier
+  description: Optional writing-app-controlled identifier used with sync version to recognize revisions; not a globally
+    unique sample identity or permanent device identifier.
+- key: HKMetadataKeySyncVersion
+  description: Optional writing-app revision number associated with its sync identifier; use in example data was
+    not verified because no records were available.
 related_types:
-  - identifier: "HKCategoryTypeIdentifierSexualActivity"
-    relationship: "Sexual activity tracking includes protection use metadata for barrier methods"
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Contraceptive type significantly affects menstrual patterns"
-  - identifier: "HKCategoryTypeIdentifierIntermenstrualBleeding"
-    relationship: "Breakthrough bleeding is common with hormonal contraceptive initiation"
-  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
-    relationship: "Hormonal contraceptives suppress ovulation; OPK results are not reliable during use"
-  - identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
-    relationship: "Hormonal contraceptives alter cervical mucus, affecting fertility awareness methods"
+- identifier: HKCategoryTypeIdentifierSexualActivity
+  relationship: Optional protection metadata is separate from the recorded contraceptive method.
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Logged method intervals can provide context for separately recorded menstrual flow.
+- identifier: HKCategoryTypeIdentifierIntermenstrualBleeding
+  relationship: Spotting can be reviewed alongside method intervals without inferring a cause.
 references:
-  - title: "HKCategoryTypeIdentifierContraceptive - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiercontraceptive"
-    type: "official"
-  - title: "Contraception - ACOG"
-    url: "https://www.acog.org/womens-health/contraception"
-    type: "medical"
-  - title: "Contraceptive Methods - CDC"
-    url: "https://www.cdc.gov/reproductivehealth/contraception/index.htm"
-    type: "medical"
-  - title: "Long-Acting Reversible Contraception - ACOG Practice Bulletin"
-    url: "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2017/11/long-acting-reversible-contraception-implants-and-intrauterine-devices"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Contraceptive type — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/contraceptive
+  type: official
+- title: Contraceptive method enumeration — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvaluecontraceptive
+  type: official
+- title: Cycle factors and tracking — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Contraceptive methods in Apple Health: codes and cycle factors'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  review_basis: coverage_and_sources
+  artifact_key: contraceptive
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified zero database records in the selected reporting window; current PulsHealth sync catalog
+    does not include this identifier. Coverage and primary sources were reviewed; no empirical value, cadence, source,
+    workout, sleep or relationship analysis was performed. Database absence does not establish absence in Apple
+    Health on the phone. Category codes are not physiological quantities.

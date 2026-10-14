@@ -1,37 +1,29 @@
-identifier: "HKQuantityTypeIdentifierEnvironmentalSoundReduction"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Hearing and Environment"
-human_readable_name: "Environmental Sound Reduction"
-short_description: "Amount of environmental noise reduced by active noise cancellation in compatible earbuds, measured in decibels (dB)."
-icon: "ear.fill"
-color: "#5856D6"
-default_unit: "dB"
+identifier: HKQuantityTypeIdentifierEnvironmentalSoundReduction
+source: HealthKit
+type: HKQuantityType
+category: Hearing and Environment
+human_readable_name: Environmental Sound Reduction
+short_description: Estimated attenuation of environmental sound while wearing supported headphones.
+icon: ear.fill
+color: '#5856D6'
+default_unit: dBASPL
 supported_units:
-  - "dB"
-unit_description: "Decibels (dB) representing the reduction in environmental sound level achieved by active noise cancellation. Higher values indicate greater noise attenuation."
-aggregation_type: "discrete"
+- dBASPL
+unit_description: Canonical dBASPL storage; displayed attenuation difference in dB, not remaining ear-level exposure.
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-  - "mostRecent"
-typical_range:
-  min: 0
-  max: 30
-  unit: "dB"
-clinical_ranges:
-  - population: "General Adult"
-    safe: "Any reduction level; ANC itself does not pose hearing risk"
-    concerning: "N/A - metric measures protection, not exposure"
-  - population: "Noise-Sensitive Individuals"
-    safe: "Higher reduction values (20-30 dB) indicate better protection in noisy environments"
-    concerning: "Low or zero reduction in noisy environments may indicate device issues or improper fit"
+- discreteAverage
+- discreteMin
+- discreteMax
+- mostRecent
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "16.0"
+  version: '16.0'
   year: 2022
 watchos_introduced:
-  version: "9.0"
+  version: '9.0'
   year: 2022
 deprecated: false
 deprecated_in: null
@@ -39,113 +31,111 @@ writable: false
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "AirPods Pro (1st and 2nd generation)"
-    capability: "Active noise cancellation with real-time measurement of noise reduction effectiveness"
-  - name: "AirPods Max"
-    capability: "Over-ear active noise cancellation with environmental sound reduction tracking"
-  - name: "AirPods 4 (ANC model)"
-    capability: "Active noise cancellation with sound reduction measurement"
-primary_source: "AirPods with Active Noise Cancellation"
-description: |
-  ## Overview
-  Environmental Sound Reduction quantifies the effectiveness of active noise cancellation (ANC) technology in reducing ambient environmental noise. This metric represents the difference in decibel level between external environmental sound and what reaches the user's ear with ANC engaged.
+- name: Supported recording devices
+  capability: Source and feature support must be checked; a record does not establish the exact headphone model or configuration.
+primary_source: Supported iPhone or Apple Watch source
+description: '## What does Environmental Sound Reduction mean?
 
-  This measurement is significant for hearing health because effective noise cancellation allows users to listen at lower volumes in noisy environments, reducing their overall audio exposure. It also provides objective data on ANC performance that can vary based on ear tip fit, environmental noise characteristics, and device condition.
+  Environmental Sound Reduction estimates the difference in surrounding sound intensity while wearing supported headphones that reduce environmental sound. [Apple’s documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/environmentalsoundreduction)
+  defines this separate quantity. It describes **attenuation**, not headphone playback volume or the remaining sound reaching the ear.
 
-  ## How It's Measured
-  AirPods with ANC use sophisticated acoustic measurement to determine noise reduction:
 
-  **Active Noise Cancellation Technology:**
-  1. External microphones sample incoming environmental sound
-  2. Internal microphones measure sound inside the ear canal
-  3. The difference between pre-ANC and post-ANC levels represents sound reduction
-  4. Real-time digital signal processing generates anti-phase sound waves to cancel noise
+  The export uses the canonical sound-pressure unit `dBASPL`; the displayed difference is expressed in **dB**. A larger value describes more estimated reduction in the recorded conditions. It does not establish
+  a universally safe environment or a product’s performance in every situation.
 
-  **Measurement Process:**
-  - The metric calculates the attenuation achieved across frequency ranges relevant to hearing protection
-  - Reported as a single dB value representing overall weighted reduction
-  - Measurements occur while ANC is active and environmental noise is present
 
-  **Factors Affecting Reduction:**
-  - Ear tip fit quality (critical for in-ear models)
-  - Frequency content of environmental noise (ANC most effective on low-frequency sounds)
-  - Device battery level and processing capability
-  - Seal integrity and head movement
+  ## What does example sound reduction look like?
 
-  ## Health Significance
-  **Enabling Lower Listening Volumes:**
-  - Primary hearing health benefit is indirect: better ANC allows lower playback volume
-  - Users in noisy environments (public transit, airplanes, offices) often increase volume to overcome background noise
-  - Effective ANC can reduce this compensation behavior by 10-20 dB
+  There were **1,201 records** in the reporting year. The largest July–September source supplied **413 intervals on 72 of 92 days**. Values ranged from **1.0 to 27.5 dB**, with a median of **17.7 dB** and
+  a middle half from **5.5 to 24.7 dB**.
 
-  **Cognitive and Stress Benefits:**
-  - Noise reduction decreases cognitive load in attention-demanding environments
-  - Chronic noise exposure correlates with elevated cortisol and cardiovascular stress
-  - ANC provides auditory respite without complete isolation
 
-  **Occupational and Environmental Protection:**
-  - Consumer ANC devices increasingly used as supplemental hearing protection
-  - Not designed as industrial hearing protection but provides meaningful reduction for everyday environments
-  - Can be part of comprehensive hearing conservation strategy
+  | Question | Example result | What it cannot establish |
 
-  ## Clinical Interpretation Guidelines
-  **For Health Consultants:**
+  | --- | --- | --- |
 
-  1. **Contextual Value:**
-     - This metric is most meaningful when interpreted alongside headphone audio exposure data
-     - Higher sound reduction generally correlates with lower listening volumes in noisy settings
+  | How long is a stored interval? | About 5 seconds to 30 minutes | Constant attenuation throughout that interval |
 
-  2. **Fit Quality Indicator:**
-     - Consistently low reduction values may indicate poor ear tip fit
-     - Encourage users to perform ear tip fit test in AirPods settings
-     - Proper fit can improve reduction by 5-10 dB
+  | Typical interval duration? | Median 10.5 minutes | A fixed sensing schedule |
 
-  3. **Environment Assessment:**
-     - Review reduction values in context of where they were recorded
-     - High noise environments with low reduction suggest fit issues or ANC limitations
-     - Counseling opportunity: recommend ANC for commuters, travelers, open-office workers
+  | Is it present during workouts? | 145 of 413 intervals overlap workouts | Exercise improves attenuation |
 
-  4. **Integration with Exposure Data:**
-     - Compare days with high ANC use vs. low ANC use
-     - Users may show lower headphone exposure on days with active ANC use
-     - This correlation supports recommending ANC for hearing protection
+  | Is it present during sleep? | No sleep overlap in this source | Headphones were never used overnight |
 
-  5. **Device Health Monitoring:**
-     - Sudden decreases in typical reduction levels may indicate device issues
-     - Ear tip degradation, debris in microphones, or hardware problems can reduce effectiveness
 
-  ## Caveats & Limitations
-  - **Limited Device Support:** Only AirPods with ANC capability record this metric; other ANC headphones do not contribute data
-  - **Frequency-Dependent Effectiveness:** ANC is most effective at low frequencies (airplane engines, HVAC); less effective for high-frequency sounds (speech, alarms)
-  - **Not Safety-Rated:** Consumer ANC devices are not certified hearing protection devices and should not replace proper PPE in industrial settings
-  - **Variable by Noise Type:** Sudden impulsive sounds (door slams, shouts) are not effectively cancelled
-  - **Measurement Conditions:** Value represents ANC performance in specific measurement conditions; real-world experience may vary
-  - **No Transparency Mode Data:** When Transparency mode is active, this metric is not applicable
-  - **Individual Ear Canal Variation:** Ear anatomy affects actual delivered attenuation even with good fit
-  - **Battery Dependency:** ANC effectiveness may decrease at low battery levels
-metadata_keys:
-  - key: "HKMetadataKeyAudioExposureDuration"
-    description: "Duration of the active noise cancellation measurement period"
-  - key: "HKMetadataKeyDevicePlacementSide"
-    description: "Indicates which ear (left/right) the measurement was taken from"
+  The second source contributed only **25 intervals on 13 days**, including one sleep overlap. That sparse source cannot support a reliable sleep-versus-workout comparison. Missing days were retained as
+  missing, rather than zero reduction.
+
+
+  ## Can sound reduction be averaged or subtracted from surrounding sound?
+
+  Medians and quantiles describe the distribution of attenuation estimates. They are not equivalent ear-level exposure. An energy average of attenuation numbers alone lacks the incident sound levels needed
+  to estimate total protected exposure; the notebook explicitly marks that reconstruction unsupported.
+
+
+  Subtracting a watch’s environmental level from an unrelated headphone observation is also unreliable. The streams can cover different times and acoustic positions. Here, **44 intervals** began before
+  the preceding running maximum end, including small timestamp overlaps. Resolve coverage, source identity and temporal matching before deriving a combined value.
+
+
+  ## Is this the same as Apple’s Hearing Protection feature?
+
+  The presence of this HealthKit quantity does not confirm that a particular Hearing Protection feature was enabled or appropriate. [Apple’s current Hearing Protection guide](https://support.apple.com/en-us/120850)
+  specifies supported products, configuration and fit requirements, and limitations for impulse sounds and sustained levels above 110 dBA. Avoid interpreting every noise-cancelling headphone as certified
+  protection or treating a reduction value as permission to extend exposure.
+
+
+  ## How does this relate to headphone audio levels?
+
+  [Headphone Audio Exposure](/knowledge-base/types/HKQuantityTypeIdentifierHeadphoneAudioExposure/) measures playback levels; [Environmental Audio Exposure](/knowledge-base/types/HKQuantityTypeIdentifierEnvironmentalAudioExposure/)
+  measures surrounding sound. The research compares their source-specific daily sample summaries only on jointly observed days. These exploratory associations cannot isolate fit, listening mode, volume
+  choices or surroundings.
+
+
+  A change in reduction can prompt a review of device context and repeated comparable observations. The raw quantity alone does not diagnose poor fit, a failing microphone or hearing damage, and there is
+  no clinical normal range for attenuation in this article.'
+metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierEnvironmentalAudioExposure"
-    relationship: "Sound reduction directly impacts environmental audio that reaches the ear; higher reduction means lower effective exposure"
-  - identifier: "HKQuantityTypeIdentifierHeadphoneAudioExposure"
-    relationship: "ANC effectiveness influences user volume choices; better reduction often enables lower listening volumes"
-  - identifier: "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent"
-    relationship: "Users with poor ANC fit may receive more exposure events due to volume compensation"
+- identifier: HKQuantityTypeIdentifierHeadphoneAudioExposure
+  relationship: Playback level quantity; context comparison requires aligned coverage.
+- identifier: HKQuantityTypeIdentifierEnvironmentalAudioExposure
+  relationship: Environmental sound levels; asynchronous samples do not establish combined ear exposure.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierEnvironmentalSoundReduction"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierenvironmentalsoundreduction"
-    type: "official"
-  - title: "Active Noise Cancellation and Hearing Conservation - International Journal of Audiology"
-    url: "https://www.tandfonline.com/toc/iija20/current"
-    type: "research"
-  - title: "Apple AirPods Pro - Active Noise Cancellation"
-    url: "https://support.apple.com/en-us/HT210643"
-    type: "tutorial"
-  - title: "NIOSH - Noise and Hearing Loss Prevention"
-    url: "https://www.cdc.gov/niosh/topics/noise/default.html"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Environmental Sound Reduction type definition
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/environmentalsoundreduction
+  type: official
+- title: Apple Hearing Protection requirements and limitations
+  url: https://support.apple.com/en-us/120850
+  type: official
+last_updated: '2026-10-14'
+research_notes: Executed source-aware eleven-facet notebook before article revision. Primary Apple sources checked; unsupported device, threshold and clinical-range claims removed.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: environmental-sound-reduction
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example observational data; not population reference ranges. Source groups and recording coverage vary. Missing data is unknown, not zero. Temporal overlap is not causation or explicit workout
+    linkage. Levels and attenuation are distinct; no complete hearing dose or protection certification inferred.
+seo_title: 'Environmental Sound Reduction in Apple Health: Meaning and Recording Examples'
+figures:
+- src: /knowledge-base/figures/environmental-sound-reduction/distribution.png
+  alt: Histogram of recorded environmental sound reduction values, separated by workout, recorded sleep and other or unknown context.
+  title: 'Environmental Sound Reduction: observed distribution'
+  caption: Example July–September 2026 records (413 intervals) from the source group with the most observations. Sample-count weighting, not duration-weighted exposure or a hearing dose. Context groups
+    can have very different coverage.
+  methods: Half-open reporting window, intervals selected by start in America/Los_Angeles. Source bundle identifier plus display name, combining revisions; sources kept separate. Overlap with recorded workouts
+    takes precedence over recorded asleep intervals; other records labeled other or unknown. Boundary intervals retained without prorating.
+  section: What does example sound reduction look like?
+  width: 1440
+  height: 768

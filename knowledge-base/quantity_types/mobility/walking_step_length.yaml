@@ -1,153 +1,182 @@
-identifier: "HKQuantityTypeIdentifierWalkingStepLength"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Mobility"
-human_readable_name: "Walking Step Length"
-short_description: "Average distance covered with each step during walking, a fundamental gait parameter."
-icon: "figure.walk"
-color: "#FF9500"
-default_unit: "m"
+identifier: HKQuantityTypeIdentifierWalkingStepLength
+source: HealthKit
+type: HKQuantityType
+category: Mobility
+human_readable_name: Walking Step Length
+short_description: Walking Step Length estimates the distance between the front and back feet during steady walking
+  on flat ground.
+icon: figure.walk
+color: '#FF9500'
+default_unit: m
 supported_units:
-  - "m"
-  - "cm"
-  - "in"
-  - "ft"
-unit_description: "Meters (m) or centimeters (cm) representing the distance from heel strike of one foot to heel strike of the same foot's next step."
-aggregation_type: "discrete"
+- m
+- cm
+- in
+- ft
+unit_description: Meters per step, not meters per stride.
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-typical_range:
-  min: 0.4
-  max: 0.9
-  unit: "m"
-  notes: "Varies significantly with height; typical range is 65-85 cm for average height adults."
-clinical_ranges:
-  - population: "Adults (height-normalized)"
-    normal: "0.40-0.50 x height"
-    concerning: "<0.35 x height"
-  - population: "Adults 20-40"
-    normal: "70-85 cm"
-    concerning: "<60 cm"
-  - population: "Adults 60-70"
-    normal: "60-75 cm"
-    concerning: "<50 cm"
-  - population: "Adults 80+"
-    normal: "50-65 cm"
-    concerning: "<40 cm"
+- discreteAverage
+- discreteMin
+- discreteMax
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "14.0"
+  version: '14.0'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
-writable: false
+writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone"
-    capability: "Motion sensors estimate step length during walking"
-  - name: "Apple Watch"
-    capability: "Continuous step length analysis during daily activities"
-primary_source: "Apple Watch or iPhone motion sensors"
-description: |
-  ## Overview
-  Walking step length is the distance covered from the initial contact of one foot to the initial contact of the same foot on the subsequent step. It represents a stride length divided by two. This fundamental gait parameter, combined with cadence (steps per minute), determines walking speed. Step length reflects lower extremity function, balance confidence, and overall mobility status.
+- name: iPhone
+  capability: iPhone 8 or later automatically estimates this metric during eligible steady walking with the phone
+    carried near the waist.
+primary_source: iPhone motion sensors
+description: '## What does Walking Step Length measure?
 
-  ## How It's Measured
-  Apple devices use accelerometer and gyroscope data to estimate step length through analysis of:
-  - Vertical displacement patterns during gait
-  - Acceleration profiles during each step
-  - Integration with known user height for calibration
 
-  The measurement represents average step length during walking bouts rather than individual step measurements. Accuracy improves with consistent device placement and adequate walking duration.
+  Walking Step Length estimates the distance between the front and back feet during steady walking on flat ground.
+  A step goes from one foot to the other; a stride returns to the same foot. Treating step length as stride length
+  produces a factor-of-two error. [Apple’s type documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/walkingsteplength)
+  defines the measurement and recording conditions.
 
-  ## Health Significance
-  Step length is clinically relevant because:
-  - **Gait efficiency**: Optimal step length maximizes energy efficiency
-  - **Neurological function**: Reduced step length is early sign of Parkinson's, normal pressure hydrocephalus
-  - **Fall risk**: Short, shuffling steps increase stumbling risk
-  - **Functional capacity**: Relates directly to walking speed and independence
-  - **Pain indicator**: Hip, knee, or back pain typically reduces step length
 
-  ## Clinical Interpretation Guidelines
-  Because step length varies with height, normalized interpretation is essential:
-  - **Normal**: Step length approximately 40-50% of body height
-  - **Mild reduction**: 35-40% of body height
-  - **Moderate reduction**: 30-35% of body height
-  - **Severe reduction**: <30% of body height
+  ## What do example records look like?
 
-  Absolute values (for average height ~170 cm):
-  - **>70 cm**: Normal step length
-  - **60-70 cm**: Mildly reduced; monitor for changes
-  - **50-60 cm**: Moderately reduced; likely functional impact
-  - **<50 cm**: Severely reduced; significant gait impairment
 
-  Characteristic patterns:
-  - **Parkinson's disease**: Progressive step length reduction, shuffling gait
-  - **Normal pressure hydrocephalus**: "Magnetic gait" with very short steps
-  - **Hip osteoarthritis**: Reduced step length on affected side
-  - **Peripheral neuropathy**: Cautious, shortened steps due to sensory loss
+  The reporting year contained **12,936 records on 365 of 365 days**. July–September contained **2,868 records on
+  92 of 92 days**, from one source group. Missing days remain missing rather than zero observations.
 
-  ## Age-Adjusted Norms
-  Step length decreases with age, approximately 1-2% per decade after age 50:
-  - Ages 20-40: 75-85 cm (average height)
-  - Ages 40-60: 70-80 cm
-  - Ages 60-70: 65-75 cm
-  - Ages 70-80: 55-70 cm
-  - Ages 80+: 50-65 cm
 
-  Height-normalized values (step length/height ratio):
-  - Ages 20-60: 0.42-0.48
-  - Ages 60-80: 0.38-0.45
-  - Ages 80+: 0.32-0.40
+  The focus-window median was **0.63 m (63 cm)**, with the central 90% between **0.46 and 0.75 m**. The full range
+  was **0.31–1.18 m**. Height, walking pace, shoes and recording conditions matter; these values are not universal
+  targets for a good step length.
 
-  ## Caveats & Limitations
-  - Height must be accurately recorded for proper interpretation
-  - Footwear affects step length (heels, restrictive shoes)
-  - Walking surface influences measurements (stairs, slopes, rough terrain)
-  - Carrying loads or pushing carts shortens steps
-  - Fatigue and time of day affect step length
-  - Intentionally walking fast or slow changes step length
-  - Device algorithms may not distinguish true shuffling from measurement noise
 
-  ## Additional Notes
-  Step length is particularly valuable for:
-  - **Parkinson's disease monitoring**: Track disease progression and medication response
-  - **Normal pressure hydrocephalus**: Evaluate for surgical shunt candidacy
-  - **Hip/knee replacement**: Document post-operative recovery
-  - **Peripheral neuropathy**: Monitor diabetic foot complications
-  - **Frailty assessment**: Contributes to overall functional status
+  | Reading question | Useful interpretation |
 
-  Clinical tip: Walking speed = step length x cadence / 2. If walking speed is reduced, step length helps determine if the limitation is:
-  - Shortened steps (musculoskeletal, neurological)
-  - Reduced cadence (cardiovascular, respiratory)
-  - Both (deconditioning, frailty)
-metadata_keys:
-  - key: "HKMetadataKeyDevicePlacementSide"
-    description: "Indicates which side of the body the device was placed during measurement"
-  - key: "HKMetadataKeySessionEstimate"
-    description: "Indicates if the value represents an estimate from a workout session"
+  | --- | --- |
+
+  | What does one value summarize? | The stored walking interval, not every step that day |
+
+  | What does the range describe? | Recorded observations with each record given equal weight |
+
+  | What does a high or low tail mean? | A reason to inspect context and repeated values |
+
+  | How should a trend be compared? | Similar source, placement and walking conditions |
+
+
+  ## Why are records unevenly spaced?
+
+
+  In the focus window, observed-day recording counts ranged from **1 to 92**, with a median of **29**. Stored intervals
+  had a median duration of **11.0 seconds** and ranged from **1.7 to 300 seconds**. The median positive start-to-start
+  gap was **3.5 minutes**; the largest was **23.4 hours**.
+
+
+  Apple describes roughly 10–30 samples on a typical day. That is a recording description, not a guaranteed sampling
+  schedule. The sensor’s internal measurements are not the same as exported sample timestamps. Each estimate can
+  cover a different duration, so a simple record average and a duration-weighted average answer different questions.
+
+
+  ## How do workouts and sleep change the picture?
+
+
+  Across the reporting year, **511 records overlapped stored workouts**. Their median was **0.7 m**, compared with
+  **0.63 m** outside recorded workouts and sleep. Within these separate context groups, median positive start-to-start
+  gaps were **3.3 minutes** for workout-overlapping records and **3.2 minutes** for other records.
+
+
+  Those gaps include time between separate walking bouts and workouts; they do not measure a workout sensor frequency.
+  Overlap is temporal, not proof of explicit workout linkage or that the entire walking interval occurred inside
+  the workout. No walking records overlapped available recorded-asleep intervals in this snapshot. Sleep is not
+  an expected recording opportunity for steady-walking estimates.
+
+
+  ## How does this relate to other walking metrics?
+
+
+  Daily step length and walking speed were positively associated (**Spearman 0.85 across 92 paired days**). Double
+  support showed a weaker inverse association with step length (**−0.51**). Do not infer cadence by dividing separately
+  recorded averages unless their intervals and weighting are compatible.
+
+
+  The analysis kept sources separate and compared reporting-day medians on days containing both types. It also checked
+  unique exact interval matches and excluded ambiguous duplicate interval candidates. These are repeated observations
+  in example user data, not independent participants, and the relationships do not show causation.
+
+
+  [Walking speed](/knowledge-base/types/HKQuantityTypeIdentifierWalkingSpeed/), [step length](/knowledge-base/types/HKQuantityTypeIdentifierWalkingStepLength/),
+  [double support](/knowledge-base/types/HKQuantityTypeIdentifierWalkingDoubleSupportPercentage/) and [asymmetry](/knowledge-base/types/HKQuantityTypeIdentifierWalkingAsymmetryPercentage/)
+  each add a different view of gait. [Walking Steadiness](/knowledge-base/types/HKQuantityTypeIdentifierAppleWalkingSteadiness/)
+  is a separate estimate, not a classification computed here from these charts.
+
+
+  ## What can change or prevent an estimate?
+
+
+  Automatic collection requires iPhone 8 or later, carried near the waist, during steady walking on flat ground.
+  Apple says these samples are not recorded when wheelchair status is enabled. Phone placement and which walking
+  bouts meet the algorithm’s criteria can therefore change the observed distribution without establishing a physiological
+  change.
+
+
+  An up-to-date height in Health is required for accurate estimates. Compare persistent changes under similar conditions
+  with how walking feels and functions. Consumer walking estimates do not replace a supervised gait assessment;
+  a single extreme value should not be assigned a diagnosis.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
-    relationship: "Step length directly determines walking speed (speed = step length x cadence)"
-  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
-    relationship: "Asymmetric step lengths contribute to walking asymmetry"
-  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
-    relationship: "Shorter steps often correlate with increased double support time"
-  - identifier: "HKQuantityTypeIdentifierHeight"
-    relationship: "Height is essential for normalized interpretation of step length"
+- identifier: HKQuantityTypeIdentifierWalkingSpeed
+  relationship: Complementary selected-walking estimate; compare source and interval context.
+- identifier: HKQuantityTypeIdentifierWalkingDoubleSupportPercentage
+  relationship: Complementary selected-walking estimate; compare source and interval context.
+- identifier: HKQuantityTypeIdentifierWalkingAsymmetryPercentage
+  relationship: Complementary selected-walking estimate; compare source and interval context.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierWalkingStepLength"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierwalkingsteplength"
-    type: "official"
-  - title: "Normative Step Length Data by Age - Gait & Posture"
-    url: "https://www.sciencedirect.com/journal/gait-and-posture"
-    type: "research"
-  - title: "Gait Analysis in Parkinson's Disease - Movement Disorders Journal"
-    url: "https://movementdisorders.onlinelibrary.wiley.com/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Apple Developer Documentation — Walking Step Length
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/walkingsteplength
+  type: official
+- title: Apple — Beyond counting steps (WWDC20)
+  url: https://developer.apple.com/videos/play/wwdc2020/10656/
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Walking Step Length in Apple Health: Meaning, Recording and Examples'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: walking-step-length
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Selected walking bouts in observational example data, not population norms. Repeated records are
+    not independent participants. Ratios use 0–1 canonical storage. Sources kept separate; daily associations are
+    exploratory. Timestamp overlap does not prove explicit workout linkage. Missing observations are not zero.
+figures:
+- src: /knowledge-base/figures/walking-step-length/distribution.png
+  alt: Histogram of recorded walking step length estimates beside a histogram of sample counts per observed day.
+  title: 'Walking Step Length: values and daily recording counts'
+  caption: 'Example July–September 2026 data: 2,868 interval observations on 92 observed days. Left: each record
+    has equal weight. Right: each observed day has equal weight; unrecorded days are excluded.'
+  methods: Source group selected by focus-window record count; bundle identifier plus source display name combines
+    revisions. Half-open start-selected reporting window in America/Los_Angeles. All selected records retained;
+    percent ratios multiplied by 100 where applicable. No source names or individual dates shown.
+  section: What do example records look like?
+  width: 1500
+  height: 600

@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Menstrual Flow"
-short_description: "Tracks menstrual bleeding intensity during a period, ranging from none to heavy flow."
-icon: "drop.fill"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierMenstrualFlow
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Menstrual Flow
+short_description: Understand Apple Health menstrual flow values, period intervals and cycle-start markers without
+  confusing missing days with no bleeding.
+icon: drop.fill
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,26 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "unspecified"
-    description: "Menstrual flow occurred but intensity was not specified by the user."
-  - value: 2
-    name: "none"
-    description: "No menstrual flow on this day, typically used to mark the end of a period or spotting-free days during expected menstruation."
-  - value: 3
-    name: "light"
-    description: "Light menstrual flow, typically requiring only panty liners or light absorbency products."
-  - value: 4
-    name: "medium"
-    description: "Moderate menstrual flow, typically requiring regular absorbency tampons or pads changed every 3-4 hours."
-  - value: 5
-    name: "heavy"
-    description: "Heavy menstrual flow, requiring high-absorbency products and frequent changes, potentially every 1-2 hours."
+- value: 1
+  name: unspecified
+  description: Flow intensity was unspecified.
+- value: 2
+  name: light
+  description: Light flow was recorded.
+- value: 3
+  name: medium
+  description: Medium flow was recorded.
+- value: 4
+  name: heavy
+  description: Heavy flow was recorded.
+- value: 5
+  name: none
+  description: No flow was explicitly recorded.
 ios_introduced:
-  version: "9.0"
+  version: '9.0'
   year: 2015
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -41,68 +42,131 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Manual logging through Health app or Cycle Tracking app"
-  - name: "Apple Watch"
-    capability: "Manual logging through Cycle Tracking app"
-  - name: "Third-party apps"
-    capability: "Period tracking apps like Clue, Flo, or Natural Cycles can write menstrual flow data"
-primary_source: "User-reported"
-description: |
-  ## Overview
-  Menstrual flow tracking records the presence and intensity of menstrual bleeding on each day of a period. This data type is fundamental to cycle tracking, enabling prediction of future periods and identification of patterns over time. Users log flow intensity daily during menstruation, building a historical record that informs cycle predictions and fertility window calculations.
+- name: Manual entry or authorized source app
+  capability: Stores logged observations or results; supported writing workflows depend on the source app.
+primary_source: Logged observations or test results
+description: '## Overview
 
-  ## Health Significance
-  Menstrual flow patterns provide critical insights into reproductive health. Changes in flow intensity, duration, or regularity can indicate hormonal imbalances, thyroid dysfunction, polycystic ovary syndrome (PCOS), uterine fibroids, endometriosis, or perimenopause. Heavy menstrual bleeding (menorrhagia) may lead to iron-deficiency anemia and significantly impact quality of life. Tracking flow over multiple cycles establishes baseline patterns, making deviations clinically meaningful.
+  Menstrual flow in Apple Health records a description of bleeding, together with an interval and a marker for the
+  start of a cycle. It can describe a whole period in one sample or changes across several samples. A row count
+  alone cannot tell you how many periods were recorded.
 
-  ## Clinical Interpretation Guidelines
-  When reviewing menstrual flow data:
-  - **Cycle length**: Normal menstrual cycles range from 21-35 days, with most averaging 28 days
-  - **Bleeding duration**: Typical menstruation lasts 3-7 days; consistently longer periods warrant evaluation
-  - **Flow pattern**: Most women experience heavier flow days 1-2, tapering toward the end
-  - **Heavy bleeding indicators**: Soaking through a pad/tampon hourly for several consecutive hours, passing clots larger than a quarter, or needing to wake at night to change products
-  - **Amenorrhea considerations**: Absence of periods (logged as "none" throughout expected menstruation) requires investigation for pregnancy, hormonal disorders, or primary amenorrhea in adolescents
 
-  Clinicians should correlate flow data with symptoms like pain, fatigue, and mood changes for comprehensive assessment.
+  ## What do the values mean?
 
-  ## Caveats & Limitations
-  - Self-reported data is subjective; perception of "light" vs "heavy" varies between individuals
-  - No standardized quantification (e.g., milliliters of blood loss) is captured
-  - Users may not log every day consistently, creating gaps in data
-  - Hormonal contraceptives significantly alter natural flow patterns
-  - Does not distinguish between menstrual bleeding and other vaginal bleeding causes
-  - Postpartum and perimenopause transitions create expected irregularities that may complicate interpretation
+  | Code | Category | Meaning |
+
+  | --- | --- | --- |
+
+  | 1 | Unspecified | Flow recorded without an intensity |
+
+  | 2 | Light | Light flow |
+
+  | 3 | Medium | Medium flow |
+
+  | 4 | Heavy | Heavy flow |
+
+  | 5 | None | Explicitly recorded absence of flow |
+
+
+  These labels do not measure blood volume or specify a product-change frequency. The code for none is 5, so numeric
+  averages and comparisons such as “higher code means heavier bleeding” would be misleading. The older menstrual-flow
+  enum is deprecated in favor of HKCategoryValueVaginalBleeding from iOS 18 and watchOS 11; the type identifier
+  and these raw values remain applicable.
+
+
+  ## How do you identify period starts and cycle length?
+
+  The required HKMetadataKeyMenstrualCycleStart Boolean marks the first sample of a recorded cycle. For a single
+  interval covering the period it is true; later samples describing that period use false.
+
+
+  Calculate gaps between verified start markers rather than every pair of flow records. First inspect missing markers,
+  duplicated starts, overlapping sources and intervals covering several days. A gap across an unlogged cycle is
+  not evidence that the physiological cycle lasted that long. The interval length can describe logged bleeding duration;
+  it does not independently validate it.
+
+
+  ## What cadence should you expect?
+
+  Cadence follows logging choices, with no continuous sensor stream. A source may save one interval for a period
+  while another saves daily intensities. Separate per-day coverage, interval duration and start-to-start gaps so
+  changes in logging format are not mistaken for a change in bleeding.
+
+
+  ## How does it relate to other health data?
+
+  Cervical mucus, ovulation tests and temperature can be aligned to recorded cycle starts when enough observations
+  exist. Use source-aware dates and retain unknown days. Workout or sleep overlap is contextual only: a multiday
+  period interval can overlap both without showing activity-related changes in flow.
+
+
+  ## What did the example data show?
+
+  No menstrual-flow rows were present in the research window. There were no observed flow proportions, cycle-start
+  markers or between-cycle intervals to graph. Missing rows do not mean no bleeding or no periods.
+
+
+  ## What are the interpretation limits?
+
+  A flow category cannot identify a cause of bleeding, establish fertility or substitute for clinical assessment.
+  Logging an explicit none differs from leaving a date blank. Apple says Cycle Tracking should not be used as birth
+  control. Preserve changes to dates and source provenance when reviewing a revised period history.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyMenstrualCycleStart"
-    description: "Boolean indicating whether this sample marks the start of a new menstrual cycle"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+- key: HKMetadataKeyMenstrualCycleStart
+  description: 'Required Boolean: true marks the first sample of a recorded cycle; false marks later samples.'
+- key: HKMetadataKeySyncIdentifier
+  description: Unique identifier used to sync samples across devices
+- key: HKMetadataKeySyncVersion
+  description: Version number for sync conflict resolution
 related_types:
-  - identifier: "HKCategoryTypeIdentifierIntermenstrualBleeding"
-    relationship: "Tracks bleeding between periods, distinct from menstrual flow"
-  - identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
-    relationship: "Cervical mucus patterns complement flow data for fertility awareness"
-  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
-    relationship: "Ovulation detection helps contextualize cycle phases relative to menstruation"
-  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
-    relationship: "Temperature tracking confirms ovulation and cycle phase"
-  - identifier: "HKCategoryTypeIdentifierProlongedMenstrualPeriods"
-    relationship: "System notification triggered when bleeding duration exceeds normal ranges"
-  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
-    relationship: "Commonly tracked symptom associated with menstruation"
+- identifier: HKCategoryTypeIdentifierIntermenstrualBleeding
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierCervicalMucusQuality
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierOvulationTestResult
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKQuantityTypeIdentifierBasalBodyTemperature
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierProlongedMenstrualPeriods
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierAbdominalCramps
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
 references:
-  - title: "HKCategoryTypeIdentifierMenstrualFlow - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiermenstrualflow"
-    type: "official"
-  - title: "Menstrual Cycle - ACOG"
-    url: "https://www.acog.org/womens-health/faqs/your-menstrual-cycle"
-    type: "medical"
-  - title: "Heavy Menstrual Bleeding - CDC"
-    url: "https://www.cdc.gov/ncbddd/blooddisorders/women/menorrhagia.html"
-    type: "medical"
-  - title: "Menstrual Disorders - Mayo Clinic"
-    url: "https://www.mayoclinic.org/symptoms/menstrual-problems/basics/definition/sym-20050759"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Menstrual Flow — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/menstrualflow
+  type: official
+- title: Category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvaluevaginalbleeding
+  type: official
+- title: Cycle Tracking — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+- title: Cycle-start metadata — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkmetadatakeymenstrualcyclestart
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Menstrual Flow in Apple Health: values and recording'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: menstrual-flow
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: 'No records in the selected reporting year: measured category frequencies, cadence, source differences,
+    workout or sleep comparisons and related-type associations are unavailable. Missing records do not establish
+    absence of events or negative results. Category codes are not physiological measurements. Start-selected bounds
+    may omit an interval beginning before the window.'

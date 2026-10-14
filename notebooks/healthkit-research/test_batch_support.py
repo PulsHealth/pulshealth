@@ -1,5 +1,6 @@
 """Evidence boundaries for quantities, category events and missing storage."""
 import html
+import gzip
 import json
 from pathlib import Path
 import tempfile
@@ -13,6 +14,17 @@ from batch_support import (FACETS, execute_notebooks, persist_research,
 
 
 class BatchEvidenceTests(unittest.TestCase):
+    def test_compressed_export_is_available_for_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            data = self.fixture(directory)
+            plain = Path(directory) / 'quantity.csv'
+            with gzip.open(Path(directory) / 'quantity.csv.gz', 'wt') as handle:
+                handle.write(plain.read_text())
+            plain.unlink()
+            report = research_report(data, 'example', special_analysis={'semantics': 'quantity'})
+            self.assertEqual(report['facets']['values']['status'], 'sparse')
+            self.assertEqual(report['facets']['coverage']['status'], 'sparse')
+
     def fixture(self, directory, kind='quantity'):
         path = Path(directory) / f'{kind}.csv'
         path.write_text('identifier,start_ts,end_ts,value,source_name,bundle_id,unit\n')

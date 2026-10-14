@@ -1,231 +1,180 @@
-identifier: "HKQuantityTypeIdentifierDietaryChromium"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Chromium"
-short_description: "Chromium intake from food and supplements, involved in insulin signaling and macronutrient metabolism."
-
-# --- APPLE HEALTH UI ---
-icon: "pills.fill"
-color: "#C0C0C0"
-
-default_unit: "mcg"
-supported_units: ["mcg", "mg"]
-aggregation_type: "cumulative"
-statistics_options: ["cumulativeSum", "separateBySource"]
-typical_range:
-  min: 0
-  max: 200
-  unit: "mcg"
-clinical_ranges:
-  - population: "Infants 0-6 months"
-    rda: "0.2 mcg/day (AI)"
-  - population: "Infants 7-12 months"
-    rda: "5.5 mcg/day (AI)"
-  - population: "Children 1-3 years"
-    rda: "11 mcg/day (AI)"
-  - population: "Children 4-8 years"
-    rda: "15 mcg/day (AI)"
-  - population: "Boys 9-13 years"
-    rda: "25 mcg/day (AI)"
-  - population: "Girls 9-13 years"
-    rda: "21 mcg/day (AI)"
-  - population: "Boys 14-18 years"
-    rda: "35 mcg/day (AI)"
-  - population: "Girls 14-18 years"
-    rda: "24 mcg/day (AI)"
-  - population: "Adult men 19-50 years"
-    rda: "35 mcg/day (AI)"
-  - population: "Adult men 51+ years"
-    rda: "30 mcg/day (AI)"
-  - population: "Adult women 19-50 years"
-    rda: "25 mcg/day (AI)"
-  - population: "Adult women 51+ years"
-    rda: "20 mcg/day (AI)"
-  - population: "Pregnant women"
-    rda: "30 mcg/day (AI)"
-  - population: "Lactating women"
-    rda: "45 mcg/day (AI)"
-  - population: "Adults"
-    upper_limit: "Not established (no adverse effects from food/supplements documented)"
+identifier: HKQuantityTypeIdentifierDietaryChromium
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Chromium
+short_description: Recorded chromium intake from food and supplement logs, with mass units, source coverage and
+  interpretation limits.
+icon: pills.fill
+color: '#C0C0C0'
+default_unit: mcg
+supported_units:
+- mcg
+- mg
+aggregation_type: cumulative
+statistics_options:
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Log dietary chromium from foods and supplements"
-    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
-  - name: "Nutrition coaching platforms"
-    capability: "Track chromium intake against personalized targets"
-    examples: ["Noom", "Nutritionix"]
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Chromium is a trace mineral that has been proposed to enhance insulin action and glucose metabolism. The body contains approximately 4-6 mg of chromium, with the highest concentrations in liver, spleen, soft tissue, and bone. While chromium has been marketed extensively for diabetes management and weight loss, scientific evidence for benefits in chromium-replete individuals is limited and controversial. The mechanism by which chromium affects insulin action remains incompletely understood.
+- name: Manual entries or authorized nutrition apps
+  capability: Record consumed chromium amounts when the source supports this specific HealthKit type and has write
+    authorization.
+primary_source: User-entered intake or authorized apps writing the chromium quantity; app support varies by nutrient.
+description: '## What does Apple Health dietary chromium measure?
 
-  ## Biological Functions
-  - **Insulin signaling enhancement**: Proposed to potentiate insulin action at the cellular level
-  - **Chromodulin**: An oligopeptide that binds chromium and may amplify insulin receptor kinase activity
-  - **Glucose metabolism**: May improve glucose uptake in insulin-sensitive tissues
-  - **Lipid metabolism**: Some studies suggest effects on cholesterol and triglycerides
-  - **Protein metabolism**: Limited evidence for effects on lean body mass
 
-  **Note**: The essentiality of chromium for humans has been questioned. Some researchers argue that evidence is insufficient to classify chromium as essential, and the European Food Safety Authority has not established dietary reference values.
+  Dietary Chromium stores the amount of chromium recorded as consumed from food or supplements. Each entry contributes
+  to a cumulative intake total. [Apple''s type definition](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarychromium)
+  uses mass units. This page''s display unit is **mcg**; a nutrient amount is distinct from the weight of the food
+  or tablet. It is not a blood concentration or a measurement of body stores.
 
-  ## Health Significance
-  Chromium has been intensively studied for potential benefits in type 2 diabetes, metabolic syndrome, and weight management. Early case reports of chromium deficiency in TPN patients suggested a role in glucose metabolism. However, subsequent research has produced inconsistent results. Current evidence suggests that chromium supplementation may have modest benefits in individuals with documented chromium deficiency or diabetes, but benefits in healthy, chromium-replete individuals are not established.
 
-  ## Clinical Interpretation Guidelines
-  When reviewing chromium intake data:
-  - **Recognize limited evidence base**: Benefits of supplementation in replete individuals are unproven
-  - **Assess diabetes context**: May have modest glucose-lowering effects in some diabetic patients
-  - **Consider placebo effects**: Many reported benefits may be non-specific
-  - **Evaluate supplement marketing claims critically**: Many claims lack robust evidence
-  - **Note occupational exposure risk**: Hexavalent chromium (industrial) is carcinogenic; different from dietary trivalent chromium
-  - **Review TPN patients**: Deficiency documented in long-term TPN without chromium
+  ## Can a chromium log explain blood glucose?
 
-  ## Deficiency
-  **True chromium deficiency** documented only in specific contexts:
-  - Long-term TPN without chromium supplementation
-  - Severe malnutrition
 
-  **Reported deficiency symptoms** (from TPN case reports):
-  - Impaired glucose tolerance
-  - Elevated blood glucose
-  - Peripheral neuropathy
-  - Weight loss
-  - Confusion
-  - Elevated lipids
+  Chromium is often marketed in connection with glucose metabolism. Its nutritional essentiality remains debated,
+  and intake guidance is not a diagnostic range for a HealthKit entry. A chromium log alone cannot establish improved
+  insulin sensitivity, a deficiency or the effect of a supplement. [NIH''s chromium review](https://ods.od.nih.gov/factsheets/Chromium-HealthProfessional/)
+  explains this uncertainty.
 
-  **Clinical uncertainty**: Some researchers question whether these cases truly represent chromium deficiency or other confounding factors. The 2014 IOM review could not confirm that chromium is essential.
 
-  **No clear deficiency syndrome** has been established in individuals consuming normal diets.
+  ## What should I check before adding the entries?
 
-  ## Toxicity/Excess
-  **Dietary chromium (trivalent, Cr3+)**:
-  - No adverse effects documented from food or supplements
-  - No UL established due to lack of adverse effect data
-  - Very low absorption limits potential for toxicity
 
-  **Industrial chromium (hexavalent, Cr6+)**:
-  - Highly toxic and carcinogenic
-  - Causes lung cancer (inhalation)
-  - Skin ulceration
-  - Nasal septum perforation
-  - Kidney damage
-  - This is NOT the form in food or supplements
+  | Question | What to inspect |
 
-  **High-dose supplement concerns** (theoretical):
-  - Case reports of kidney damage with very high doses
-  - DNA damage reported in some cell studies
-  - Interaction with medications possible
+  | --- | --- |
 
-  **Form distinction is critical**: Trivalent chromium (dietary/supplement) vs. hexavalent chromium (industrial) have completely different safety profiles.
+  | Supplement dose or food estimate? | Check serving count and the elemental chromium amount, rather than the mass
+  of the chromium compound.
 
-  ## Food Sources
-  **Higher chromium foods** (variable content):
-  - Broccoli: 11 mcg per 1/2 cup
-  - Grape juice: 8 mcg per cup
-  - Whole wheat bread: 2 mcg per slice
-  - Potatoes: 3 mcg per cup
-  - Garlic: 3 mcg per teaspoon
-  - Basil: 2 mcg per tablespoon
+  | Could the unit explain a large value? | 1 mg equals 1,000 mcg; check the source value before conversion. |
 
-  **Moderate sources**:
-  - Beef: 2 mcg per 3 oz
-  - Orange juice: 2 mcg per cup
-  - Turkey breast: 2 mcg per 3 oz
-  - Red wine: 1-13 mcg per 5 oz (varies widely)
-  - Apple: 1 mcg per medium
+  | Can two apps be combined? | Look for the same food or supplement imported twice; preserve provenance. |
 
-  **Challenges with food chromium data**:
-  - Chromium content in foods is often poorly characterized
-  - Contamination during food processing can add chromium
-  - Stainless steel cookware can leach chromium (especially with acidic foods)
-  - Analytical methods for chromium are difficult; older data may be unreliable
+  | Does a missing day mean no intake? | No. Food may have been consumed without a record, or the nutrient field
+  may be unavailable. |
 
-  ## Absorption Factors
-  **Very low bioavailability**: Only 0.4-2.5% of dietary chromium is absorbed.
 
-  **Enhancers**:
-  - Vitamin C: May enhance chromium absorption
-  - Niacin: Some evidence for improved absorption
-  - Amino acids: Certain amino acids may improve absorption
-  - Oxalate: Paradoxically may enhance chromium absorption
+  A source-specific daily sum answers how much was **recorded** on that reporting day. It does not establish a complete
+  diet. Keep the number of logged days visible and leave unrecorded days missing rather than filling them with zero.
+  A population intake recommendation is a daily dietary planning value, not a normal range for a single sample.
 
-  **Inhibitors**:
-  - Phytates: May reduce absorption
-  - Zinc: High-dose zinc may compete
-  - Iron: May compete for absorption
-  - Antacids: Reduce absorption by altering pH
 
-  **Supplement forms**:
-  - Chromium picolinate: Most studied; better absorbed than other forms
-  - Chromium nicotinate: Good bioavailability
-  - Chromium chloride: Lower bioavailability
-  - High-chromium yeast: Variable chromium content
+  ## How often are records created?
 
-  ## Special Populations
-  - **Type 2 diabetes**: Some meta-analyses show modest glucose reduction with supplementation; individual response varies; not a substitute for standard therapy
-  - **Gestational diabetes**: Limited evidence; some studies show benefit
-  - **Metabolic syndrome**: Mixed results; may improve some parameters
-  - **Polycystic ovary syndrome (PCOS)**: Some studies suggest benefit for insulin resistance
-  - **TPN patients**: Require chromium supplementation to prevent deficiency
-  - **Athletes**: Popular supplement for body composition; evidence weak
-  - **Elderly**: May have lower chromium status; clinical significance uncertain
-  - **Occupational exposure**: Industrial workers with hexavalent chromium exposure need monitoring
 
-  ## Drug Interactions
-  - **Insulin and oral hypoglycemics**: Chromium may enhance glucose-lowering effects; monitor for hypoglycemia
-  - **Metformin**: Potential additive effect on glucose; monitor
-  - **Corticosteroids**: Increase urinary chromium excretion
-  - **Beta-blockers**: May affect chromium metabolism
-  - **NSAIDs**: May affect chromium absorption
-  - **Antacids/H2 blockers/PPIs**: May reduce chromium absorption
-  - **Levothyroxine**: Take separately; chromium may affect absorption
-  - **Ascorbic acid (vitamin C)**: May enhance chromium absorption
+  Recording cadence follows the contributing app or manual log. Entries can represent servings, retrospective meals
+  or an imported daily total. Several records saved together need not mean several doses were consumed simultaneously.
+  Sample start and end times describe the source''s interval; they do not independently verify ingestion time.
 
-  ## Caveats & Limitations
-  - HealthKit captures estimated intake, but chromium status has no reliable biomarker
-  - Blood/urine chromium levels don't reliably reflect body stores or nutritional status
-  - Food composition data for chromium is of poor quality; databases may be unreliable
-  - The essentiality of chromium for humans remains scientifically debated
-  - Most supplementation studies show modest or null effects
-  - AI values are based on estimated average intakes, not requirement data
-  - No UL established, but this reflects lack of data, not proven safety at all doses
-  - Supplement industry marketing often exceeds evidence
-  - Form of supplement (picolinate vs. chloride) affects bioavailability but usually not logged
-  - Hexavalent chromium (industrial carcinogen) is distinct from dietary trivalent chromium
+
+  Workout and sleep overlap can identify timestamps for review, but cannot show nutrient loss, absorption or a sleep
+  effect. A late-night entry may simply be delayed logging. Investigate source behavior before comparing intervals
+  or assigning a physiological explanation.
+
+
+  ## Is example data available?
+
+
+  The **365-day reporting window** contained no raw chromium samples, stored aggregates or workout-series observations
+  for this type. Ranges, outliers, logging intervals, workout and sleep comparisons, and empirical relationships
+  were therefore unavailable. No measured distribution or graph is presented. Missing records do not establish zero
+  intake or deficiency.
+
+
+  The current PulsHealth sync catalog does not include this identifier. A knowledge-base page documents a HealthKit
+  type; it does not establish that the current app synchronizes it. This coverage limitation is separate from what
+  may exist in Apple Health or another food app.
+
+
+  ## How should I relate this to other health data?
+
+
+  Blood glucose can provide separate measurement context, but food timing, medication, activity and measurement
+  coverage also matter. Timestamp coincidence does not isolate a chromium effect. Do not derive supplement advice
+  from a correlation between two app charts.
+
+
+  ## How can I make future records more useful?
+
+
+  Check that the app actually writes this nutrient to Apple Health, then inspect a known food or supplement entry.
+  Retain serving counts, units and source information. Optional food metadata can help identify a contribution,
+  but does not guarantee a complete meal or identify supplement chemistry. [Apple''s data-source controls](https://support.apple.com/en-us/108779)
+  explain how to review contributing apps. If an intake comparison raises a concern, establish logging completeness
+  before interpreting it clinically.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "Type of food or supplement providing chromium"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates if value was manually entered by user"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Identifier from external nutrition tracking service"
+- key: HKMetadataKeyFoodType
+  description: Optional food description supplied by a source; does not guarantee serving size, chromium content
+    accuracy or supplement chemical form.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional user-entry indicator; absence does not prove automatic measurement.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
-    relationship: "Chromium proposed to enhance insulin action and glucose metabolism"
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
-    relationship: "Vitamin C may enhance chromium absorption"
-  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
-    relationship: "High-dose zinc may compete with chromium absorption"
-  - identifier: "HKQuantityTypeIdentifierDietaryIron"
-    relationship: "Iron and chromium may compete for absorption"
+- identifier: HKQuantityTypeIdentifierBloodGlucose
+  relationship: Blood glucose can provide separate measurement context, but food timing, medication, activity and
+    measurement coverage also matter. Timestamp coincidence does not isolate a chromium effect. Do not derive supplement
+    advice from a correlation between two app charts.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Food-energy entries can describe separate logging coverage; they do not establish complete mineral
+    composition data.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryChromium"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarychromium"
-    type: "official"
-  - title: "NIH Office of Dietary Supplements - Chromium Fact Sheet for Health Professionals"
-    url: "https://ods.od.nih.gov/factsheets/Chromium-HealthProfessional/"
-    type: "medical"
-  - title: "Diabetes Care - Chromium Supplementation in Diabetes"
-    url: "https://care.diabetesjournals.org/content/27/11/2741"
-    type: "research"
-  - title: "EFSA Scientific Opinion on Chromium"
-    url: "https://www.efsa.europa.eu/en/efsajournal/pub/3845"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: Dietary Chromium'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarychromium
+  type: official
+- title: 'NIH Office of Dietary Supplements: Chromium'
+  url: https://ods.od.nih.gov/factsheets/Chromium-HealthProfessional/
+  type: medical
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Chromium: Intake Logs, Units & Interpretation'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative recorded nutrient amount in compatible mass units; not a blood concentration or absorbed dose.
+  cadence: Source logging or import intervals; ingestion cadence is unverified.
+  coverage: Nutrient availability varies by source food database and export support. No records does not establish
+    zero intake.
+  context: Workout and sleep timestamp overlap is logging context, not evidence of consumption or physiological
+    response.
+  aggregation: Sum compatible contributions by source and reporting day after checking servings, units and duplicate
+    imports; report logged-day coverage.
+  metadata: Optional food descriptions cannot recover missing serving details, chemical forms, fortification or
+    absorption.
+  references:
+  - title: 'Apple: Dietary Chromium'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarychromium
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-chromium
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Fresh 365-day snapshot contained no raw samples, aggregates or workout-series observations for this
+    type. Empirical ranges, outliers, cadence, context and associations were unavailable. The current authoritative
+    sync catalog omits this identifier; absence cannot establish what exists in the source Apple Health store. No
+    measured figure is presented. Missing records do not establish zero intake or deficiency. Fixed America/Los_Angeles
+    reporting calendar.
+  review_basis: coverage_and_sources

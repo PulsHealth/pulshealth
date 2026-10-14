@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierPregnancyTestResult"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Pregnancy Test Result"
-short_description: "Records results from home pregnancy tests that detect human chorionic gonadotropin (hCG)."
-icon: "testtube.2"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierPregnancyTestResult
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Pregnancy Test Result
+short_description: Understand Apple Health pregnancy-test categories, repeat-test timing and why results are not
+  hCG measurements.
+icon: testtube.2
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,20 +15,20 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "negative"
-    description: "Pregnancy test did not detect hCG above threshold level, indicating pregnancy is unlikely. However, testing too early may produce false negatives."
-  - value: 2
-    name: "positive"
-    description: "Pregnancy test detected hCG, indicating pregnancy. Confirmation with healthcare provider is recommended."
-  - value: 3
-    name: "indeterminate"
-    description: "Test result is unclear, possibly due to faint line, testing error, or early pregnancy with borderline hCG levels."
+- value: 1
+  name: negative
+  description: A negative home test result was recorded.
+- value: 2
+  name: positive
+  description: A positive home test result was recorded.
+- value: 3
+  name: indeterminate
+  description: An inconclusive home test result was recorded.
 ios_introduced:
-  version: "15.0"
+  version: '15.0'
   year: 2021
 watchos_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2021
 deprecated: false
 deprecated_in: null
@@ -35,90 +36,126 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Manual logging through Health app or Cycle Tracking app"
-  - name: "Apple Watch"
-    capability: "Manual logging through Cycle Tracking app"
-  - name: "Connected pregnancy tests"
-    capability: "Smart pregnancy tests like Clearblue Connected can sync results"
-  - name: "Third-party apps"
-    capability: "Fertility and pregnancy tracking apps"
-primary_source: "User-reported or Connected Device"
-description: |
-  ## Overview
-  Pregnancy test tracking records results from home urine pregnancy tests, which detect human chorionic gonadotropin (hCG) produced after embryo implantation. hCG levels typically become detectable 10-14 days after conception, around the time of expected menstruation. Recording test results over time can document the testing journey for users trying to conceive or those monitoring for unexpected pregnancy.
+- name: Manual entry or authorized source app
+  capability: Stores logged observations or results; supported writing workflows depend on the source app.
+primary_source: Logged observations or test results
+description: '## Overview
 
-  Home pregnancy tests vary in sensitivity, with some detecting hCG at levels as low as 10 mIU/mL (early detection tests) while standard tests detect at 25 mIU/mL or higher. False negatives can occur when testing too early; false positives are rare but may indicate chemical pregnancy, ectopic pregnancy, or certain medical conditions.
+  Pregnancy test results in Apple Health record the qualitative outcome of a home urine test for human chorionic
+  gonadotropin, or hCG. The saved value is a result category, not a laboratory hCG concentration or a measure of
+  pregnancy progression.
 
-  ## Health Significance
-  Pregnancy test results are clinically significant for multiple reasons:
-  - **Pregnancy confirmation**: Positive result initiates prenatal care planning and early pregnancy considerations
-  - **Conception timing**: For those actively trying to conceive, tracking test results documents the fertility journey
-  - **Pregnancy loss monitoring**: Serial testing may detect chemical pregnancies (very early pregnancy loss)
-  - **Ectopic pregnancy awareness**: Positive test with pain or unusual bleeding requires immediate evaluation
-  - **Medication safety**: Early pregnancy detection is critical for avoiding teratogenic medications
-  - **Lifestyle modifications**: Positive result prompts alcohol cessation, prenatal vitamin initiation, and dietary changes
 
-  ## Clinical Interpretation Guidelines
-  When reviewing pregnancy test data:
-  - **Testing timing considerations**:
-    - Most accurate results occur on or after the first day of missed period
-    - Testing too early (before implantation) will produce false negatives
-    - First morning urine typically has highest hCG concentration
-  - **Positive result interpretation**:
-    - Any positive result warrants healthcare provider follow-up
-    - Faint positive lines typically indicate early pregnancy with lower hCG levels
-    - Line darkness is not a reliable indicator of pregnancy viability
-    - Quantitative serum hCG testing provides more precise information
-  - **Negative result interpretation**:
-    - True negative if tested after expected period with consistently negative results
-    - Consider repeat testing in 2-3 days if period remains absent
-    - Persistent negative tests with missed periods warrant medical evaluation
-  - **Indeterminate results**:
-    - Often indicates very early pregnancy or evaporation line
-    - Repeat testing in 48-72 hours as hCG doubles approximately every 48 hours in early pregnancy
-  - **Serial testing patterns**:
-    - Multiple positive tests followed by negative may indicate chemical pregnancy
-    - Decreasing line intensity over time may indicate pregnancy loss
+  ## What are the possible results?
 
-  ## Caveats & Limitations
-  - Does not capture quantitative hCG levels; clinical confirmation requires blood testing
-  - Test sensitivity varies by brand; results are not directly comparable across products
-  - Testing too early produces unreliable results regardless of actual pregnancy status
-  - Does not indicate pregnancy location (intrauterine vs. ectopic)
-  - Does not indicate pregnancy viability or development
-  - Evaporation lines can be mistaken for faint positives, especially if read after recommended time window
-  - Certain medications (hCG injections for fertility) can cause false positives
-  - Rarely, certain tumors or medical conditions can produce hCG leading to false positives
-  - User interpretation of faint lines may differ from actual result
-  - Chemical pregnancies (positive test followed by early loss) are common and may be captured
+  | Code | Result | Interpretation of the saved record |
+
+  | --- | --- | --- |
+
+  | 1 | Negative | A negative result was recorded |
+
+  | 2 | Positive | A positive result was recorded |
+
+  | 3 | Indeterminate | An inconclusive result was recorded |
+
+
+  The numbers identify categories. Their average has no clinical meaning, and code 3 is not a stronger result than
+  code 2. A missing row is also different from a recorded negative test.
+
+
+  ## Why can results differ over time?
+
+  The FDA explains that testing too early can produce a negative result despite pregnancy, and following the particular
+  test''s instructions affects accuracy. A saved category does not include all details needed to assess timing,
+  sensitivity or technique. Consult the test instructions and a healthcare professional when results remain uncertain.
+
+
+  Serial entries can show a sequence of recorded outcomes. They cannot quantify changing hCG, determine gestational
+  age, assess viability or identify the location of a pregnancy. An apparent negative-to-positive transition is
+  a change in saved results, not a measured rate of hormone increase.
+
+
+  ## What does recording cadence tell you?
+
+  Spacing reflects the tests and entries that were saved. Multiple results on a date may be separate tests or duplicate
+  imports, so inspect provenance and matching intervals before counting. A period of missing entries does not mean
+  that no testing occurred.
+
+
+  A useful display would plot each category against recorded dates with visible gaps and source labels. It would
+  retain indeterminate results rather than merging them into negatives, and avoid a continuous numeric line through
+  category codes.
+
+
+  ## What can related entries add?
+
+  Menstrual-flow start markers may give a recorded timing reference. A pregnancy interval is separate contextual
+  data and is not automatically created or confirmed by this result. Workout and sleep overlap identifies timing
+  relative to other saved records, without demonstrating an effect on the test.
+
+
+  ## What did the example data show?
+
+  No pregnancy-test rows were present in the research window. Result frequencies, repeat-test cadence and transitions
+  could not be measured. No measured figure or hCG range is presented.
+
+
+  ## What remains unknown?
+
+  Brand, sensitivity, sample technique and clinical confirmation are not defined by the category alone. There is
+  no universal category cutoff in hCG units. Treat personal interpretation and follow-up as dependent on the actual
+  test and clinical context rather than on this export''s numeric code.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+- key: HKMetadataKeySyncIdentifier
+  description: Unique identifier used to sync samples across devices
+- key: HKMetadataKeySyncVersion
+  description: Version number for sync conflict resolution
 related_types:
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Missed period often prompts pregnancy testing"
-  - identifier: "HKCategoryTypeIdentifierPregnancy"
-    relationship: "Positive pregnancy test may lead to logging pregnancy state"
-  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
-    relationship: "Ovulation tracking preceding pregnancy test provides conception timing context"
-  - identifier: "HKCategoryTypeIdentifierSexualActivity"
-    relationship: "Sexual activity timing relative to ovulation provides conception probability context"
-  - identifier: "HKCategoryTypeIdentifierProgesteroneTestResult"
-    relationship: "Progesterone levels support pregnancy maintenance after positive test"
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierPregnancy
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierOvulationTestResult
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierSexualActivity
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierProgesteroneTestResult
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
 references:
-  - title: "HKCategoryTypeIdentifierPregnancyTestResult - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierpregnancytestresult"
-    type: "official"
-  - title: "Home Pregnancy Tests - ACOG"
-    url: "https://www.acog.org/womens-health/faqs/pregnancy-tests"
-    type: "medical"
-  - title: "Early Pregnancy Loss - ACOG"
-    url: "https://www.acog.org/womens-health/faqs/early-pregnancy-loss"
-    type: "medical"
-  - title: "hCG Levels in Early Pregnancy - Human Reproduction"
-    url: "https://academic.oup.com/humrep/article/23/2/271/2914064"
-    type: "research"
-last_updated: "2026-01-27"
+- title: Pregnancy Test Result — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/pregnancytestresult
+  type: official
+- title: Category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvaluepregnancytestresult
+  type: official
+- title: Cycle Tracking — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+- title: Home pregnancy tests — FDA
+  url: https://www.fda.gov/medical-devices/home-use-tests/pregnancy
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Pregnancy Test Result in Apple Health: values and recording'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: pregnancy-test-result
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: 'No records in the selected reporting year: measured category frequencies, cadence, source differences,
+    workout or sleep comparisons and related-type associations are unavailable. Missing records do not establish
+    absence of events or negative results. Category codes are not physiological measurements. Start-selected bounds
+    may omit an interval beginning before the window.'

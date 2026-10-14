@@ -85,6 +85,13 @@ retained extremes and contextual neighbors, persist and execute the notebook,
 review selected figures and source claims, then revise the article and set its
 completion metadata. Never update a completion date before the research finishes.
 
+First verify coverage. If the selected data has no observations, skip empirical
+analysis and empty notebooks; review recording semantics against primary sources
+and preserve the coverage/source audit instead. An unsupported storage kind is
+also explicit. Missing database data does not establish absence in the phone's
+Health store. Check the collection catalog independently of the HealthKit type
+vocabulary. Use `data_research.review_basis: coverage_and_sources` for this path.
+
 ## Remaining-entry rollout
 
 The [four-batch plan](../../docs/knowledge-base-rollout.md) assigns all remaining
@@ -127,3 +134,38 @@ source paths to that private copy, checks the immutable input hashes, and
 persists self-contained HTML with execution and integrity receipts. The notebook
 index and findings remain private. Publication uses only reviewed source prose
 and deidentified figures; source `data_research` remains the completion flag.
+
+## Batch 2 research
+
+The nine `batch2_*.py` family runners cover the 39 fitness, mobility and everyday
+tracking entries. Each entry gets the shared eleven facets and a separate
+measurement-specific investigation before its article is revised. Running and
+walking relationships use source-matched records or workout summaries; swimming
+interval matches are descriptive and do not reconstruct lap membership. Audio
+levels require logarithmic energy calculations, while attenuation is a difference
+in level. Category codes are labels, not continuous measurements.
+
+Snapshot loaders accept `.csv.gz` when the corresponding `.csv` is absent, and
+hash the actual compressed files for integrity. Fresh coverage inventories must
+still match the rows loaded for every requested identifier. A coverage inventory
+can include types omitted from a filtered export: fetch those missing rows before
+researching them. Aggregate rows with empty values are not measured observations.
+Retain the provenance of any reused immutable inputs and freshly fetched types
+in the private snapshot manifest. Archive and re-execute with the command above
+after all family methods and review corrections have settled.
+
+## Batch 3 coverage and source reviews
+
+`coverage_review.py` preserves per-entry coverage, source references, collection
+support, article hashes and integrity receipts without loading analysis kernels.
+It refuses the coverage-only path when observations exist, inventories are
+incomplete, input hashes disagree, or the article claims measured figures.
+
+```sh
+python coverage_review.py --help
+```
+
+Stage 3 has 49 verified absent types and one unsupported Food correlation kind.
+Its 50 entries use this coverage/source review path. Previously created optional
+notebooks remain private; they are not required for absent data. Available-data
+entries continue to require executed analysis before publication.

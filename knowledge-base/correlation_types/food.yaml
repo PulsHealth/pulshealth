@@ -1,84 +1,84 @@
-identifier: "HKCorrelationTypeIdentifierFood"
-source: "HealthKit"
-type: "HKCorrelationType"
-category: "Correlations"
-human_readable_name: "Food"
-short_description: "A correlation grouping nutritional data from a single food item or meal, including calories and nutrients."
-icon: "fork.knife"
-color: "#34C759"
+identifier: HKCorrelationTypeIdentifierFood
+source: HealthKit
+type: HKCorrelationType
+category: Correlations
+human_readable_name: Food
+short_description: A HealthKit food object groups related nutrition samples; explicit membership preserves
+  their shared food context.
+icon: fork.knife
+color: '#34C759'
 default_unit: null
 supported_units: null
-unit_description: "Contains multiple nutritional quantity samples, each with its own unit"
-aggregation_type: "cumulative"
-statistics_options:
-  - "cumulativeSum"
+unit_description: Contains multiple nutritional quantity samples, each with its own unit
+aggregation_type: null
+statistics_options: null
 typical_range:
-  notes: "Varies widely based on food item size and type"
+  notes: A grouped food object has no single numeric range. Each nutrient component has its own unit and interpretation.
 clinical_ranges: null
 category_values: null
 component_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    description: "Total calories/energy from the food item (kcal or kJ)"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
-    description: "Total carbohydrates in grams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
-    description: "Total protein in grams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
-    description: "Total fat in grams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
-    description: "Saturated fat in grams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated"
-    description: "Monounsaturated fat in grams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
-    description: "Polyunsaturated fat in grams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
-    description: "Cholesterol in milligrams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietarySodium"
-    description: "Sodium in milligrams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryFiber"
-    description: "Dietary fiber in grams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietarySugar"
-    description: "Total sugars in grams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
-    description: "Calcium in milligrams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryIron"
-    description: "Iron in milligrams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryPotassium"
-    description: "Potassium in milligrams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminA"
-    description: "Vitamin A in micrograms"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminC"
-    description: "Vitamin C in milligrams"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminD"
-    description: "Vitamin D in micrograms"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryWater"
-    description: "Water content in liters or milliliters"
-    required: false
-  - identifier: "HKQuantityTypeIdentifierDietaryCaffeine"
-    description: "Caffeine in milligrams"
-    required: false
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  description: Total calories/energy from the food item (kcal or kJ)
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryCarbohydrates
+  description: Total carbohydrates in grams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryProtein
+  description: Total protein in grams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryFatTotal
+  description: Total fat in grams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryFatSaturated
+  description: Saturated fat in grams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryFatMonounsaturated
+  description: Monounsaturated fat in grams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryFatPolyunsaturated
+  description: Polyunsaturated fat in grams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryCholesterol
+  description: Cholesterol in milligrams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietarySodium
+  description: Sodium in milligrams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryFiber
+  description: Dietary fiber in grams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietarySugar
+  description: Total sugars in grams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryCalcium
+  description: Calcium in milligrams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryIron
+  description: Iron in milligrams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryPotassium
+  description: Potassium in milligrams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryVitaminA
+  description: Vitamin A in micrograms
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryVitaminC
+  description: Vitamin C in milligrams
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryVitaminD
+  description: Vitamin D in micrograms
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryWater
+  description: Water content in liters or milliliters
+  required: false
+- identifier: HKQuantityTypeIdentifierDietaryCaffeine
+  description: Caffeine in milligrams
+  required: false
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -86,159 +86,115 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone"
-    capability: "Manual entry via Health app or third-party nutrition tracking apps (MyFitnessPal, Lose It!, Cronometer, MacroFactor)"
-  - name: "Apple Watch"
-    capability: "Manual entry via companion apps; water logging via Siri"
-  - name: "iPad"
-    capability: "Manual entry via Health app or third-party apps"
-primary_source: "Third-Party Nutrition Apps"
+- name: Compatible nutrition apps
+  capability: Can save food correlations and nutrient quantities when explicitly implemented; integration support
+    varies by app.
+primary_source: Apps writing HealthKit food correlations
 description: |
-  ## Overview
+  ## What does an Apple Health food record contain?
 
-  HKCorrelationTypeIdentifierFood is a correlation type that groups together multiple nutritional
-  quantity samples from a single food item or meal. Unlike entering individual nutrients separately,
-  the Food correlation maintains the relationship between nutrients that came from the same food
-  source, preserving meal-level context.
+  A food correlation groups related nutritional quantity samples into a single object. An energy sample, a protein sample and a sodium sample can describe the same food while keeping their own units. [Apple documents food correlations](https://developer.apple.com/documentation/healthkit/hkcorrelationtypeidentifier/food) as a way to preserve that grouping.
 
-  A Food correlation can contain any combination of the 80+ dietary quantity types supported by
-  HealthKit, including:
+  A source may save an ingredient, a packaged item or a whole meal. The identifier does not establish a serving size, meal category or complete nutrient panel. The optional [food-type metadata](https://developer.apple.com/documentation/healthkit/hkmetadatakeyfoodtype) is a string, rather than a universal food classification.
 
-  - **Macronutrients**: Energy, carbohydrates, protein, fats (total, saturated, mono/polyunsaturated)
-  - **Micronutrients**: Vitamins (A, B-complex, C, D, E, K), minerals (calcium, iron, zinc, etc.)
-  - **Other components**: Fiber, cholesterol, sodium, water, caffeine, sugars
+  ## How is a food object different from its nutrients?
 
-  Apps typically populate correlations from food database lookups, barcode scanning, or recipe
-  calculations.
+  | Record | What it represents | What to retain |
+  | --- | --- | --- |
+  | Food correlation | A group of related samples | Object identity and explicit member links |
+  | Dietary energy | Recorded food energy | Amount, energy unit and source |
+  | Protein, carbohydrate or fat | Separate recorded nutrient amounts | Component identity and mass unit |
+  | Food description | Optional descriptive context | Original string and writing source |
 
-  ## Health Significance
+  There is no useful single numeric range for a food object. Sum compatible quantities **within the same nutrient type**, after checking source overlap and serving conventions. Adding calories to grams or counting grouped objects as nutritional intake has no coherent meaning. A missing component is unknown, rather than zero.
 
-  Nutritional tracking has broad applications in health management:
+  ## Can the database reconstruct meals?
 
-  - **Weight management**: Caloric intake tracking is fundamental to weight loss, gain, or
-    maintenance programs. Understanding the relationship between intake and energy expenditure
-    enables informed dietary decisions.
+  The reviewed database schema stores nutrient quantities but has no food-correlation object or membership table. The coverage review checked schema support and component availability in the 365-day example window. It cannot recover meal membership, correlation counts, component completeness or meal-level cadence.
 
-  - **Chronic disease management**:
-    - **Diabetes**: Carbohydrate counting for insulin dosing and blood sugar management
-    - **Cardiovascular disease**: Sodium, saturated fat, and cholesterol monitoring
-    - **Kidney disease**: Protein, potassium, phosphorus, and sodium tracking
-    - **Hypertension**: Sodium and potassium intake (DASH diet adherence)
+  Matching timestamps and sources does not restore the missing links: several foods can be logged together, and a source can backdate or batch imports. Keep standalone nutrient analyses separate and describe grouping as unavailable. A nutrition chart would imply evidence that this snapshot cannot provide, so none is shown here.
 
-  - **Nutritional deficiencies**: Tracking micronutrient intake helps identify potential deficiencies
-    before clinical symptoms appear
+  This type is also absent from the reviewed PulsHealth sync catalog. Database availability therefore does not establish what is present in the phone’s HealthKit store.
 
-  - **Athletic performance**: Macronutrient timing and ratios affect training adaptation and recovery
+  ## What can timing tell me about workouts and sleep?
 
-  - **Eating disorder treatment**: Structured meal tracking can support recovery under clinical
-    supervision
+  Food entries follow logging and synchronization behavior. Their start and end times need not mark the beginning and end of eating. Workout or recorded-sleep overlap can describe timestamp context once records exist, but cannot establish meal timing or a response to a particular food.
 
-  - **Food allergies/intolerances**: Logging what was eaten helps identify patterns in symptom triggers
+  A useful meal-level comparison needs verified ingestion times, explicit grouping and adequate recording coverage. Blood glucose, body mass and activity energy also have their own measurement schedules. Nearby values do not prove that a meal caused a change, and activity energy alone is not total energy expenditure.
 
-  ## Clinical Interpretation
+  ## What should a food analysis check first?
 
-  When reviewing Food correlation data, clinicians should consider:
+  Check whether the export retains object identities and member links, then inspect the writing source, serving convention and component units. Compare source-specific recording days and duplicate-import candidates before adding totals. A logged diet can omit meals, beverages or individual nutrients; sparse logging cannot establish dietary deficiency or a complete intake history.
 
-  - **Data completeness**: Most users don't log all foods consistently. Missing meals are common,
-    especially snacks and beverages. Consider logged data as a sample, not complete record.
-
-  - **Accuracy limitations**: Portion size estimation is notoriously inaccurate. Users typically
-    underestimate portions by 20-50%. Database entries may not match actual foods consumed.
-
-  - **Pattern recognition**: Look beyond single days to weekly or monthly patterns:
-    - Total caloric trends
-    - Macronutrient distribution
-    - Sodium spikes (restaurant meals)
-    - Fiber adequacy
-    - Micronutrient gaps
-
-  - **Meal timing**: The timestamp indicates when the food was logged (or consumed, if backdated).
-    Meal timing patterns can reveal eating behaviors relevant to metabolic health.
-
-  - **Correlation context**: The food name/description is stored in metadata, providing context for
-    the nutritional values. Review this for dietary quality assessment beyond just numbers.
-
-  - **Behavioral insights**: Consider:
-    - Weekend vs. weekday patterns
-    - Stress or emotional eating indicators
-    - Social eating occasions
-    - Consistency of meal frequency
-
-  ## Caveats & Limitations
-
-  - **Logging burden**: Consistent food logging requires significant user effort. Compliance typically
-    drops over time or during busy periods.
-
-  - **Database accuracy**: Nutritional databases contain errors. Restaurant and packaged food data
-    may not match actual products. Home-cooked meals require estimation.
-
-  - **Portion estimation**: Users consistently misjudge portions. Even with visual aids, portion
-    accuracy is limited.
-
-  - **Selective logging**: Users may avoid logging "bad" foods or underreport in general, especially
-    if they feel judged. This introduces systematic bias.
-
-  - **Variable components**: Not all nutrients need to be included in a correlation. Some apps only
-    log macros; others include comprehensive micronutrients. Data completeness varies by source app.
-
-  - **No standardized food name**: While there's metadata for food description, there's no
-    standardized food identifier system. The same food from different apps won't be recognized as
-    identical.
-
-  - **Meal vs. food item**: Some apps log individual ingredients; others log composite meals.
-    Aggregation approaches differ, affecting how data should be interpreted.
-
-  - **Not real-time**: Unlike activity data, food logging is always retrospective and manual,
-    introducing delays and potential recall errors.
-
-  - **Eating disorder risk**: For some individuals, detailed food logging can trigger or exacerbate
-    disordered eating behaviors. Clinical judgment is needed about appropriateness.
+  See [Dietary Energy](/knowledge-base/types/HKQuantityTypeIdentifierDietaryEnergyConsumed/), [Carbohydrates](/knowledge-base/types/HKQuantityTypeIdentifierDietaryCarbohydrates/) and [Protein](/knowledge-base/types/HKQuantityTypeIdentifierDietaryProtein/) for quantity-specific interpretation.
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "Classification of the food (e.g., vegetable, grain, protein source)"
-  - key: "HKFoodMealKey"
-    description: "Meal type: breakfast, lunch, dinner, or snack (value 1-4)"
-  - key: "HKFoodBrandNameKey"
-    description: "Brand name of packaged/restaurant food"
-  - key: "HKFoodTypeKey"
-    description: "Description or name of the food item"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Whether the food was manually entered (vs. scanned/imported)"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from the source nutrition app"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+- key: HKMetadataKeyFoodType
+  description: String describing the food represented by the object; not a standardized food-group or meal
+    enum.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional indicator that the sample was entered by the user.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "component_sample"
-  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
-    relationship: "component_sample"
-  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
-    relationship: "component_sample"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
-    relationship: "component_sample"
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "energy_balance_calculation"
-  - identifier: "HKQuantityTypeIdentifierBodyMass"
-    relationship: "weight_management_correlation"
-  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
-    relationship: "glycemic_response_tracking"
-  - identifier: "HKQuantityTypeIdentifierInsulinDelivery"
-    relationship: "diabetes_management"
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Potential nutritional component; explicit membership is required to link it to a food object.
+- identifier: HKQuantityTypeIdentifierDietaryCarbohydrates
+  relationship: Potential nutritional component; explicit membership is required to link it to a food object.
+- identifier: HKQuantityTypeIdentifierDietaryProtein
+  relationship: Potential nutritional component; explicit membership is required to link it to a food object.
+- identifier: HKQuantityTypeIdentifierDietaryFatTotal
+  relationship: Potential nutritional component; explicit membership is required to link it to a food object.
+- identifier: HKQuantityTypeIdentifierDietarySodium
+  relationship: Potential nutritional component; explicit membership is required to link it to a food object.
+- identifier: HKQuantityTypeIdentifierDietaryWater
+  relationship: Potential nutritional component; explicit membership is required to link it to a food object.
+- identifier: HKQuantityTypeIdentifierDietaryCaffeine
+  relationship: Potential nutritional component; explicit membership is required to link it to a food object.
 references:
-  - title: "Apple Developer Documentation - HKCorrelationTypeIdentifierFood"
-    url: "https://developer.apple.com/documentation/healthkit/hkcorrelationtypeidentifierfood"
-    type: "official"
-  - title: "Apple Developer Documentation - HKCorrelation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcorrelation"
-    type: "official"
-  - title: "Apple Developer Documentation - Dietary Quantity Types"
-    url: "https://developer.apple.com/documentation/healthkit/data_types/nutrition_type_identifiers"
-    type: "official"
-  - title: "USDA FoodData Central"
-    url: "https://fdc.nal.usda.gov/"
-    type: "medical"
-  - title: "Dietary Guidelines for Americans"
-    url: "https://www.dietaryguidelines.gov/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: 'Apple: Food correlation'
+  url: https://developer.apple.com/documentation/healthkit/hkcorrelationtypeidentifier/food
+  type: official
+- title: 'Apple: HKCorrelation'
+  url: https://developer.apple.com/documentation/healthkit/hkcorrelation
+  type: official
+- title: 'Apple: Food type metadata'
+  url: https://developer.apple.com/documentation/healthkit/hkmetadatakeyfoodtype
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Food Correlations: Nutrients, Meals & Missing Links'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: A grouped object with explicit nutritional sample membership, not a cumulative quantity.
+  cadence: Source-specific food logging and synchronization; no automatic continuous measurement cadence.
+  context: Recorded timestamps can differ from ingestion time. Workout or sleep overlap does not establish
+    a physiological effect.
+  coverage: Missing observations are unknown, not zero intake or complete capture.
+  aggregation: Query food objects as groups. Sum only compatible component quantities; timestamp coincidence
+    never establishes membership.
+  references:
+  - title: 'Apple: Food correlation'
+    url: https://developer.apple.com/documentation/healthkit/hkcorrelationtypeidentifier/food
+  - title: 'Apple: HKCorrelation'
+    url: https://developer.apple.com/documentation/healthkit/hkcorrelation
+  metadata: Optional food-description and user-entered metadata provide context only when present. Missing
+    metadata does not prove automatic sensing or complete logging.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: food
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage/source review; no empirical range, cadence, outlier or workout/sleep context analysis
+    is possible. Food object and membership storage are unsupported; nutrient timestamps cannot restore links.
+    Not listed in the reviewed PulsHealth sync catalog; phone HealthKit availability is unverified. Fixed America/Los_Angeles
+    reporting calendar.
+  review_basis: coverage_and_sources

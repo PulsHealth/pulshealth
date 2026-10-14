@@ -128,7 +128,8 @@ def research_report(data, identifier, *, kind='quantity', special_analysis=None,
     observed = 'sparse' if 0 < n < 10 else 'measured'
     unsupported = kind not in ('quantity', 'category', 'characteristic')
     table = {'quantity': 'quantity', 'category': 'category', 'characteristic': 'characteristics'}.get(kind)
-    available = table is not None and bool(data.get('_input_dir')) and (Path(data['_input_dir']) / f'{table}.csv').exists()
+    available = table is not None and bool(data.get('_input_dir')) and any(
+        (Path(data['_input_dir']) / f'{table}{suffix}').exists() for suffix in ('.csv', '.csv.gz'))
     absent_status = 'unsupported' if unsupported or not available else 'absent'
     reason = ('No exported storage table supports this kind; component rows do not establish correlation linkage.'
               if unsupported else 'No records in the selected reporting window.' if available
