@@ -1,12 +1,12 @@
-# Workout to Watch Privacy Policy
+# Watch Workout Pro Privacy Policy
 
 **Updated October 14, 2026**
 
-This policy describes Workout to Watch, its workout-sharing service, and its optional AI connector, operated by Sean Wade. Workout to Watch is a separate product, **Powered by Puls**. The relationship does not give it access to a PulsHealth account or health database, or share your permissions between the products.
+This policy describes Watch Workout Pro, its workout-sharing service, and its optional AI connector, operated by Sean Wade. Watch Workout Pro is a separate product, **Powered by Puls**. The relationship does not give it access to a PulsHealth account or health database, or share your permissions between the products.
 
 ## Workouts on your device
 
-Your personal workout library, preferences, dated schedule, and Smart Add usage count are stored locally on your iPhone. Manual creation does not require an account. When you authorize scheduling, selected workout prescriptions and dates are passed to Apple through WorkoutKit for use in Apple Workout on your paired Watch. Workout to Watch does not record your exercise sessions.
+Your personal workout library, preferences, dated schedule, and Smart Add usage count are stored locally on your iPhone. Manual creation does not require an account. When you authorize scheduling, selected workout prescriptions and dates are passed to Apple through WorkoutKit for use in Apple Workout on your paired Watch. Watch Workout Pro does not record your exercise sessions.
 
 ## Smart Add and source files
 
@@ -46,6 +46,6 @@ These support and privacy pages are hosted on the public PulsHealth website. Tha
 
 ## Your choices and contact
 
-You can edit, export, and delete local workouts, manage iCloud collection invitations, revoke Apple scheduling access in system settings, and disconnect assistants. For privacy questions or shared-link removal, email [support@pulshealth.com](mailto:support@pulshealth.com?subject=Workout%20to%20Watch%20privacy) with “Workout to Watch” in the subject. Include only the information needed to identify your request; do not send connection keys or private health records.
+You can edit, export, and delete local workouts, manage iCloud collection invitations, revoke Apple scheduling access in system settings, and disconnect assistants. For privacy questions or shared-link removal, email [support@pulshealth.com](mailto:support@pulshealth.com?subject=Workout%20to%20Watch%20privacy) with “Watch Workout Pro” in the subject. Include only the information needed to identify your request; do not send connection keys or private health records.
 
-[Workout to Watch support](/workout-to-watch/support/)
+[Watch Workout Pro support](/workout-to-watch/support/)
