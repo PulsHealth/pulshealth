@@ -1,19 +1,19 @@
 import { notFound } from "next/navigation";
 import { RepoMarkdown, readRepoFile, stripLeadingH1 } from "@/lib/markdown";
 
-const CONTENT_PATH = "site/content/workout-to-watch/privacy-policy.md";
+const CONTENT_PATH = "site/content/watchworkoutpro/privacy-policy.md";
 const description = "Privacy practices for Watch Workout Pro: on-device workout creation, optional sharing, iCloud collections, and Pro subscriptions.";
 
 export const metadata = {
   title: "Watch Workout Pro Privacy Policy",
   description,
-  alternates: { canonical: "/workout-to-watch/privacy/" },
-  openGraph: { title: "Watch Workout Pro Privacy Policy", description, url: "/workout-to-watch/privacy/" },
+  alternates: { canonical: "/watchworkoutpro/privacy/" },
+  openGraph: { title: "Watch Workout Pro Privacy Policy", description, url: "/watchworkoutpro/privacy/" },
   twitter: { card: "summary", title: "Watch Workout Pro Privacy Policy", description },
 };
 
 // Separate product pages, intentionally unlisted in navigation, search, and sitemap.
-export default function WorkoutToWatchPage() {
+export default function WatchWorkoutProPage() {
   const raw = readRepoFile(CONTENT_PATH);
   if (!raw) notFound();
   const { body } = stripLeadingH1(raw);
