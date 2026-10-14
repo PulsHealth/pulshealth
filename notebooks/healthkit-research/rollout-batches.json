@@ -1,0 +1,1109 @@
+{
+  "version": 1,
+  "planned_on": "2026-10-14",
+  "issue": "https://github.com/PulsHealth/pulshealth/issues/231",
+  "priority_basis": "Editorial judgment about Apple Health use and recurring interpretation questions; not verified search-volume ranking. Traffic analytics connector unavailable at planning time.",
+  "completion_source": "Read each entry data_research.status; this manifest assigns batches and does not duplicate completion flags.",
+  "total_entries": 178,
+  "remaining_entries": 173,
+  "completed_pilots": [
+    {
+      "identifier": "HKCategoryTypeIdentifierSleepAnalysis",
+      "name": "Sleep Analysis",
+      "category": "Activity and Heart",
+      "path": "knowledge-base/category_types/activity_heart/sleep_analysis.yaml"
+    },
+    {
+      "identifier": "HKQuantityTypeIdentifierRunningVerticalOscillation",
+      "name": "Running Vertical Oscillation",
+      "category": "Activity",
+      "path": "knowledge-base/quantity_types/activity/running_vertical_oscillation.yaml"
+    },
+    {
+      "identifier": "HKQuantityTypeIdentifierStepCount",
+      "name": "Step Count",
+      "category": "Activity",
+      "path": "knowledge-base/quantity_types/activity/step_count.yaml"
+    },
+    {
+      "identifier": "HKQuantityTypeIdentifierHeartRate",
+      "name": "Heart Rate",
+      "category": "Vital Signs",
+      "path": "knowledge-base/quantity_types/vital_signs/heart_rate.yaml"
+    },
+    {
+      "identifier": "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+      "name": "Heart Rate Variability (SDNN)",
+      "category": "Vital Signs",
+      "path": "knowledge-base/quantity_types/vital_signs/heart_rate_variability_sdnn.yaml"
+    }
+  ],
+  "batches": [
+    {
+      "batch": 1,
+      "title": "Core health and everyday questions",
+      "entries": [
+        {
+          "identifier": "HKQuantityTypeIdentifierActiveEnergyBurned",
+          "name": "Active Energy Burned",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/active_energy_burned.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierAppleExerciseTime",
+          "name": "Apple Exercise Time",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/apple_exercise_time.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierAppleStandTime",
+          "name": "Apple Stand Time",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/apple_stand_time.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBasalEnergyBurned",
+          "name": "Basal Energy Burned",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/basal_energy_burned.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierFlightsClimbed",
+          "name": "Flights Climbed",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/flights_climbed.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierVO2Max",
+          "name": "VO2 Max",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/vo2_max.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDistanceWalkingRunning",
+          "name": "Walking + Running Distance",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/distance_walking_running.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierAppleStandHour",
+          "name": "Apple Stand Hour",
+          "category": "Activity and Heart",
+          "path": "knowledge-base/category_types/activity_heart/apple_stand_hour.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierHighHeartRateEvent",
+          "name": "High Heart Rate Event",
+          "category": "Activity and Heart",
+          "path": "knowledge-base/category_types/activity_heart/high_heart_rate_event.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierIrregularHeartRhythmEvent",
+          "name": "Irregular Heart Rhythm Event",
+          "category": "Activity and Heart",
+          "path": "knowledge-base/category_types/activity_heart/irregular_heart_rhythm_event.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierLowCardioFitnessEvent",
+          "name": "Low Cardio Fitness Event",
+          "category": "Activity and Heart",
+          "path": "knowledge-base/category_types/activity_heart/low_cardio_fitness_event.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierLowHeartRateEvent",
+          "name": "Low Heart Rate Event",
+          "category": "Activity and Heart",
+          "path": "knowledge-base/category_types/activity_heart/low_heart_rate_event.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBodyFatPercentage",
+          "name": "Body Fat Percentage",
+          "category": "Body Measurements",
+          "path": "knowledge-base/quantity_types/body_measurements/body_fat_percentage.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBodyMass",
+          "name": "Body Mass (Weight)",
+          "category": "Body Measurements",
+          "path": "knowledge-base/quantity_types/body_measurements/body_mass.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBodyMassIndex",
+          "name": "Body Mass Index",
+          "category": "Body Measurements",
+          "path": "knowledge-base/quantity_types/body_measurements/body_mass_index.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierHeight",
+          "name": "Height",
+          "category": "Body Measurements",
+          "path": "knowledge-base/quantity_types/body_measurements/height.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierLeanBodyMass",
+          "name": "Lean Body Mass",
+          "category": "Body Measurements",
+          "path": "knowledge-base/quantity_types/body_measurements/lean_body_mass.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierAppleSleepingWristTemperature",
+          "name": "Sleeping Wrist Temperature",
+          "category": "Body Measurements",
+          "path": "knowledge-base/quantity_types/body_measurements/apple_sleeping_wrist_temperature.yaml"
+        },
+        {
+          "identifier": "HKCorrelationTypeIdentifierBloodPressure",
+          "name": "Blood Pressure",
+          "category": "Correlations",
+          "path": "knowledge-base/correlation_types/blood_pressure.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryCaffeine",
+          "name": "Dietary Caffeine",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_caffeine.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryCarbohydrates",
+          "name": "Dietary Carbohydrates",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_carbohydrates.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryEnergyConsumed",
+          "name": "Dietary Energy Consumed",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_energy_consumed.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryFatTotal",
+          "name": "Dietary Fat (Total)",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_fat_total.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryProtein",
+          "name": "Dietary Protein",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_protein.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryWater",
+          "name": "Dietary Water",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_water.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierAtrialFibrillationBurden",
+          "name": "Atrial Fibrillation Burden",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/atrial_fibrillation_burden.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBloodGlucose",
+          "name": "Blood Glucose",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/blood_glucose.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierOxygenSaturation",
+          "name": "Blood Oxygen Saturation (SpO2)",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/oxygen_saturation.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBloodPressureDiastolic",
+          "name": "Blood Pressure (Diastolic)",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/blood_pressure_diastolic.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBloodPressureSystolic",
+          "name": "Blood Pressure (Systolic)",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/blood_pressure_systolic.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBodyTemperature",
+          "name": "Body Temperature",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/body_temperature.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute",
+          "name": "Heart Rate Recovery (1 Minute)",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/heart_rate_recovery_one_minute.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierHeartRateVariabilityRMSSD",
+          "name": "Heart Rate Variability (RMSSD)",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/heart_rate_variability_rmssd.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierRespiratoryRate",
+          "name": "Respiratory Rate",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/respiratory_rate.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierRestingHeartRate",
+          "name": "Resting Heart Rate",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/resting_heart_rate.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierWalkingHeartRateAverage",
+          "name": "Walking Heart Rate Average",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/walking_heart_rate_average.yaml"
+        }
+      ],
+      "count": 36
+    },
+    {
+      "batch": 2,
+      "title": "Fitness, mobility and everyday tracking",
+      "entries": [
+        {
+          "identifier": "HKQuantityTypeIdentifierAppleMoveTime",
+          "name": "Apple Move Time",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/apple_move_time.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierCyclingCadence",
+          "name": "Cycling Cadence",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/cycling_cadence.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDistanceCycling",
+          "name": "Cycling Distance",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/distance_cycling.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierCyclingFunctionalThresholdPower",
+          "name": "Cycling Functional Threshold Power",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/cycling_functional_threshold_power.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierCyclingPower",
+          "name": "Cycling Power",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/cycling_power.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierCyclingSpeed",
+          "name": "Cycling Speed",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/cycling_speed.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDistanceDownhillSnowSports",
+          "name": "Downhill Snow Sports Distance",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/distance_downhill_snow_sports.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierPhysicalEffort",
+          "name": "Physical Effort",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/physical_effort.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierRunningGroundContactTime",
+          "name": "Running Ground Contact Time",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/running_ground_contact_time.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierRunningPower",
+          "name": "Running Power",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/running_power.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierRunningSpeed",
+          "name": "Running Speed",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/running_speed.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierRunningStrideLength",
+          "name": "Running Stride Length",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/running_stride_length.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDistanceSwimming",
+          "name": "Swimming Distance",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/distance_swimming.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierSwimmingStrokeCount",
+          "name": "Swimming Stroke Count",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/swimming_stroke_count.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDistanceWheelchair",
+          "name": "Wheelchair Distance",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/distance_wheelchair.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierPushCount",
+          "name": "Wheelchair Push Count",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/push_count.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent",
+          "name": "Apple Walking Steadiness Event",
+          "category": "Activity and Heart",
+          "path": "knowledge-base/category_types/activity_heart/apple_walking_steadiness_event.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierAudioExposureEvent",
+          "name": "Audio Exposure Event",
+          "category": "Activity and Heart",
+          "path": "knowledge-base/category_types/activity_heart/audio_exposure_event.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent",
+          "name": "Headphone Audio Exposure Event",
+          "category": "Activity and Heart",
+          "path": "knowledge-base/category_types/activity_heart/headphone_audio_exposure_event.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierMindfulSession",
+          "name": "Mindful Session",
+          "category": "Activity and Heart",
+          "path": "knowledge-base/category_types/activity_heart/mindful_session.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierWaistCircumference",
+          "name": "Waist Circumference",
+          "category": "Body Measurements",
+          "path": "knowledge-base/quantity_types/body_measurements/waist_circumference.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierEnvironmentalAudioExposure",
+          "name": "Environmental Audio Exposure",
+          "category": "Hearing and Environment",
+          "path": "knowledge-base/quantity_types/hearing_environment/environmental_audio_exposure.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierEnvironmentalSoundReduction",
+          "name": "Environmental Sound Reduction",
+          "category": "Hearing and Environment",
+          "path": "knowledge-base/quantity_types/hearing_environment/environmental_sound_reduction.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierHeadphoneAudioExposure",
+          "name": "Headphone Audio Exposure",
+          "category": "Hearing and Environment",
+          "path": "knowledge-base/quantity_types/hearing_environment/headphone_audio_exposure.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierTimeInDaylight",
+          "name": "Time in Daylight",
+          "category": "Hearing and Environment",
+          "path": "knowledge-base/quantity_types/hearing_environment/time_in_daylight.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierAppleWalkingSteadiness",
+          "name": "Apple Walking Steadiness",
+          "category": "Mobility",
+          "path": "knowledge-base/quantity_types/mobility/apple_walking_steadiness.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierSixMinuteWalkTestDistance",
+          "name": "Six-Minute Walk Test Distance",
+          "category": "Mobility",
+          "path": "knowledge-base/quantity_types/mobility/six_minute_walk_test_distance.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierStairAscentSpeed",
+          "name": "Stair Ascent Speed",
+          "category": "Mobility",
+          "path": "knowledge-base/quantity_types/mobility/stair_ascent_speed.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierStairDescentSpeed",
+          "name": "Stair Descent Speed",
+          "category": "Mobility",
+          "path": "knowledge-base/quantity_types/mobility/stair_descent_speed.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierWalkingAsymmetryPercentage",
+          "name": "Walking Asymmetry Percentage",
+          "category": "Mobility",
+          "path": "knowledge-base/quantity_types/mobility/walking_asymmetry_percentage.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage",
+          "name": "Walking Double Support Percentage",
+          "category": "Mobility",
+          "path": "knowledge-base/quantity_types/mobility/walking_double_support_percentage.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierWalkingSpeed",
+          "name": "Walking Speed",
+          "category": "Mobility",
+          "path": "knowledge-base/quantity_types/mobility/walking_speed.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierWalkingStepLength",
+          "name": "Walking Step Length",
+          "category": "Mobility",
+          "path": "knowledge-base/quantity_types/mobility/walking_step_length.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierCervicalMucusQuality",
+          "name": "Cervical Mucus Quality",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/cervical_mucus_quality.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierMenstrualFlow",
+          "name": "Menstrual Flow",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/menstrual_flow.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierOvulationTestResult",
+          "name": "Ovulation Test Result",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/ovulation_test_result.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierPregnancy",
+          "name": "Pregnancy",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/pregnancy.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierPregnancyTestResult",
+          "name": "Pregnancy Test Result",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/pregnancy_test_result.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierSexualActivity",
+          "name": "Sexual Activity",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/sexual_activity.yaml"
+        }
+      ],
+      "count": 39
+    },
+    {
+      "batch": 3,
+      "title": "Nutrition, reproductive detail and common logged symptoms",
+      "entries": [
+        {
+          "identifier": "HKCorrelationTypeIdentifierFood",
+          "name": "Food",
+          "category": "Correlations",
+          "path": "knowledge-base/correlation_types/food.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierNumberOfAlcoholicBeverages",
+          "name": "Alcoholic Beverages",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/number_of_alcoholic_beverages.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryBiotin",
+          "name": "Dietary Biotin (Vitamin B7)",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_biotin.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryCalcium",
+          "name": "Dietary Calcium",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_calcium.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryChloride",
+          "name": "Dietary Chloride",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_chloride.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryCholesterol",
+          "name": "Dietary Cholesterol",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_cholesterol.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryChromium",
+          "name": "Dietary Chromium",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_chromium.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryCopper",
+          "name": "Dietary Copper",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_copper.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryFiber",
+          "name": "Dietary Fiber",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_fiber.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryFolate",
+          "name": "Dietary Folate (Vitamin B9)",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_folate.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryIodine",
+          "name": "Dietary Iodine",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_iodine.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryIron",
+          "name": "Dietary Iron",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_iron.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryMagnesium",
+          "name": "Dietary Magnesium",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_magnesium.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryManganese",
+          "name": "Dietary Manganese",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_manganese.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryMolybdenum",
+          "name": "Dietary Molybdenum",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_molybdenum.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryNiacin",
+          "name": "Dietary Niacin (Vitamin B3)",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_niacin.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryPantothenicAcid",
+          "name": "Dietary Pantothenic Acid (Vitamin B5)",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_pantothenic_acid.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryPhosphorus",
+          "name": "Dietary Phosphorus",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_phosphorus.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryPotassium",
+          "name": "Dietary Potassium",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_potassium.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryRiboflavin",
+          "name": "Dietary Riboflavin (Vitamin B2)",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_riboflavin.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietarySelenium",
+          "name": "Dietary Selenium",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_selenium.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietarySodium",
+          "name": "Dietary Sodium",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_sodium.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietarySugar",
+          "name": "Dietary Sugar",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_sugar.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryThiamin",
+          "name": "Dietary Thiamin (Vitamin B1)",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_thiamin.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryVitaminA",
+          "name": "Dietary Vitamin A",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_vitamin_a.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryVitaminB12",
+          "name": "Dietary Vitamin B12",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_vitamin_b12.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryVitaminB6",
+          "name": "Dietary Vitamin B6",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_vitamin_b6.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryVitaminC",
+          "name": "Dietary Vitamin C",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_vitamin_c.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryVitaminD",
+          "name": "Dietary Vitamin D",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_vitamin_d.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryVitaminE",
+          "name": "Dietary Vitamin E",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_vitamin_e.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryVitaminK",
+          "name": "Dietary Vitamin K",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_vitamin_k.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryZinc",
+          "name": "Dietary Zinc",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_zinc.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryFatMonounsaturated",
+          "name": "Monounsaturated Fat",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_fat_monounsaturated.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryFatPolyunsaturated",
+          "name": "Polyunsaturated Fat",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_fat_polyunsaturated.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierDietaryFatSaturated",
+          "name": "Saturated Fat",
+          "category": "Nutrition",
+          "path": "knowledge-base/quantity_types/nutrition/dietary_fat_saturated.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierContraceptive",
+          "name": "Contraceptive",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/contraceptive.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierInfrequentMenstrualCycles",
+          "name": "Infrequent Menstrual Cycles",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/infrequent_menstrual_cycles.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierIntermenstrualBleeding",
+          "name": "Intermenstrual Bleeding",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/intermenstrual_bleeding.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierIrregularMenstrualCycles",
+          "name": "Irregular Menstrual Cycles",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/irregular_menstrual_cycles.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierLactation",
+          "name": "Lactation",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/lactation.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding",
+          "name": "Persistent Intermenstrual Bleeding",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/persistent_intermenstrual_bleeding.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierProgesteroneTestResult",
+          "name": "Progesterone Test Result",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/progesterone_test_result.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierProlongedMenstrualPeriods",
+          "name": "Prolonged Menstrual Periods",
+          "category": "Reproductive Health",
+          "path": "knowledge-base/category_types/reproductive_health/prolonged_menstrual_periods.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierAbdominalCramps",
+          "name": "Abdominal Cramps",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/abdominal_cramps.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierBloating",
+          "name": "Bloating",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/bloating.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierFatigue",
+          "name": "Fatigue",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/fatigue.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierHeadache",
+          "name": "Headache",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/headache.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierHotFlashes",
+          "name": "Hot Flashes",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/hot_flashes.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierMoodChanges",
+          "name": "Mood Changes",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/mood_changes.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierSleepChanges",
+          "name": "Sleep Changes",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/sleep_changes.yaml"
+        }
+      ],
+      "count": 50
+    },
+    {
+      "batch": 4,
+      "title": "Symptoms, specialist measurements and reference types",
+      "entries": [
+        {
+          "identifier": "HKQuantityTypeIdentifierNikeFuel",
+          "name": "Nike Fuel",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/nike_fuel.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierUnderwaterDepth",
+          "name": "Underwater Depth",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/underwater_depth.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierWaterTemperature",
+          "name": "Water Temperature",
+          "category": "Activity",
+          "path": "knowledge-base/quantity_types/activity/water_temperature.yaml"
+        },
+        {
+          "identifier": "HKCharacteristicTypeIdentifierActivityMoveMode",
+          "name": "Activity Move Mode",
+          "category": "Characteristics",
+          "path": "knowledge-base/characteristic_types/activity_move_mode.yaml"
+        },
+        {
+          "identifier": "HKCharacteristicTypeIdentifierBiologicalSex",
+          "name": "Biological Sex",
+          "category": "Characteristics",
+          "path": "knowledge-base/characteristic_types/biological_sex.yaml"
+        },
+        {
+          "identifier": "HKCharacteristicTypeIdentifierBloodType",
+          "name": "Blood Type",
+          "category": "Characteristics",
+          "path": "knowledge-base/characteristic_types/blood_type.yaml"
+        },
+        {
+          "identifier": "HKCharacteristicTypeIdentifierDateOfBirth",
+          "name": "Date of Birth",
+          "category": "Characteristics",
+          "path": "knowledge-base/characteristic_types/date_of_birth.yaml"
+        },
+        {
+          "identifier": "HKCharacteristicTypeIdentifierFitzpatrickSkinType",
+          "name": "Fitzpatrick Skin Type",
+          "category": "Characteristics",
+          "path": "knowledge-base/characteristic_types/fitzpatrick_skin_type.yaml"
+        },
+        {
+          "identifier": "HKCharacteristicTypeIdentifierWheelchairUse",
+          "name": "Wheelchair Use",
+          "category": "Characteristics",
+          "path": "knowledge-base/characteristic_types/wheelchair_use.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBloodAlcoholContent",
+          "name": "Blood Alcohol Content",
+          "category": "Lab and Test Results",
+          "path": "knowledge-base/quantity_types/lab_results/blood_alcohol_content.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierElectrodermalActivity",
+          "name": "Electrodermal Activity",
+          "category": "Lab and Test Results",
+          "path": "knowledge-base/quantity_types/lab_results/electrodermal_activity.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierForcedExpiratoryVolume1",
+          "name": "Forced Expiratory Volume (FEV1)",
+          "category": "Lab and Test Results",
+          "path": "knowledge-base/quantity_types/lab_results/forced_expiratory_volume_1.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierForcedVitalCapacity",
+          "name": "Forced Vital Capacity",
+          "category": "Lab and Test Results",
+          "path": "knowledge-base/quantity_types/lab_results/forced_vital_capacity.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierInhalerUsage",
+          "name": "Inhaler Usage",
+          "category": "Lab and Test Results",
+          "path": "knowledge-base/quantity_types/lab_results/inhaler_usage.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierInsulinDelivery",
+          "name": "Insulin Delivery",
+          "category": "Lab and Test Results",
+          "path": "knowledge-base/quantity_types/lab_results/insulin_delivery.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierNumberOfTimesFallen",
+          "name": "Number of Times Fallen",
+          "category": "Lab and Test Results",
+          "path": "knowledge-base/quantity_types/lab_results/number_of_times_fallen.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierPeakExpiratoryFlowRate",
+          "name": "Peak Expiratory Flow Rate",
+          "category": "Lab and Test Results",
+          "path": "knowledge-base/quantity_types/lab_results/peak_expiratory_flow_rate.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierUVExposure",
+          "name": "UV Exposure",
+          "category": "Lab and Test Results",
+          "path": "knowledge-base/quantity_types/lab_results/uv_exposure.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierHandwashingEvent",
+          "name": "Handwashing",
+          "category": "Other",
+          "path": "knowledge-base/category_types/other/handwashing.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierToothbrushingEvent",
+          "name": "Toothbrushing",
+          "category": "Other",
+          "path": "knowledge-base/category_types/other/toothbrushing.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierAcne",
+          "name": "Acne",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/acne.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierAppetiteChanges",
+          "name": "Appetite Changes",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/appetite_changes.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierBladderIncontinence",
+          "name": "Bladder Incontinence",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/bladder_incontinence.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierChestTightnessOrPain",
+          "name": "Chest Tightness or Pain",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/chest_tightness_or_pain.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierChills",
+          "name": "Chills",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/chills.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierConstipation",
+          "name": "Constipation",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/constipation.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierCoughing",
+          "name": "Coughing",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/coughing.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierDiarrhea",
+          "name": "Diarrhea",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/diarrhea.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierDizziness",
+          "name": "Dizziness",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/dizziness.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierDrySkin",
+          "name": "Dry Skin",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/dry_skin.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierFever",
+          "name": "Fever",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/fever.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierGeneralizedBodyAche",
+          "name": "Generalized Body Ache",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/generalized_body_ache.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierHairLoss",
+          "name": "Hair Loss",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/hair_loss.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierHeartburn",
+          "name": "Heartburn",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/heartburn.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierLowerBackPain",
+          "name": "Lower Back Pain",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/lower_back_pain.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierNausea",
+          "name": "Nausea",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/nausea.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierNightSweats",
+          "name": "Night Sweats",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/night_sweats.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierPelvicPain",
+          "name": "Pelvic Pain",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/pelvic_pain.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat",
+          "name": "Rapid, Pounding, or Fluttering Heartbeat",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/rapid_pounding_or_fluttering_heartbeat.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierRunnyNose",
+          "name": "Runny Nose",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/runny_nose.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierShortnessOfBreath",
+          "name": "Shortness of Breath",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/shortness_of_breath.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierSinusCongestion",
+          "name": "Sinus Congestion",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/sinus_congestion.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierSkippedHeartbeat",
+          "name": "Skipped Heartbeat",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/skipped_heartbeat.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierSoreThroat",
+          "name": "Sore Throat",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/sore_throat.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierVomiting",
+          "name": "Vomiting",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/vomiting.yaml"
+        },
+        {
+          "identifier": "HKCategoryTypeIdentifierWheezing",
+          "name": "Wheezing",
+          "category": "Symptoms",
+          "path": "knowledge-base/category_types/symptoms/wheezing.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierBasalBodyTemperature",
+          "name": "Basal Body Temperature",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/basal_body_temperature.yaml"
+        },
+        {
+          "identifier": "HKQuantityTypeIdentifierPeripheralPerfusionIndex",
+          "name": "Peripheral Perfusion Index",
+          "category": "Vital Signs",
+          "path": "knowledge-base/quantity_types/vital_signs/peripheral_perfusion_index.yaml"
+        }
+      ],
+      "count": 48
+    }
+  ]
+}

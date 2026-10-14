@@ -84,3 +84,11 @@ For a new entry, run the shared facets, add its type-specific analysis, inspect
 retained extremes and contextual neighbors, persist and execute the notebook,
 review selected figures and source claims, then revise the article and set its
 completion metadata. Never update a completion date before the research finishes.
+
+## Remaining-entry rollout
+
+The [four-batch plan](../../docs/knowledge-base-rollout.md) assigns all remaining
+entries by reader priority. `rollout-batches.json` contains exact identifiers and
+source paths; completion continues to come from each entry’s `data_research`
+metadata. Refresh the catalog-wide coverage inventory before researching a new
+batch; the pilot extract does not include every quantity type.
