@@ -48,4 +48,4 @@ These support and privacy pages are hosted on the public PulsHealth website. Tha
 
 You can edit, export, and delete local workouts, manage iCloud collection invitations, revoke Apple scheduling access in system settings, and disconnect assistants. For privacy questions or shared-link removal, email [support@pulshealth.com](mailto:support@pulshealth.com?subject=Workout%20to%20Watch%20privacy) with “Watch Workout Pro” in the subject. Include only the information needed to identify your request; do not send connection keys or private health records.
 
-[Watch Workout Pro support](/workout-to-watch/support/)
+[Watch Workout Pro support](/watchworkoutpro/support/)

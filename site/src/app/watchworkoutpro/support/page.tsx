@@ -1,19 +1,19 @@
 import { notFound } from "next/navigation";
 import { RepoMarkdown, readRepoFile, stripLeadingH1 } from "@/lib/markdown";
 
-const CONTENT_PATH = "site/content/workout-to-watch/support.md";
+const CONTENT_PATH = "site/content/watchworkoutpro/support.md";
 const description = "Help with Watch Workout Pro, Smart Add, Apple Watch scheduling, sharing, and the Pro monthly subscription.";
 
 export const metadata = {
   title: "Watch Workout Pro Support",
   description,
-  alternates: { canonical: "/workout-to-watch/support/" },
-  openGraph: { title: "Watch Workout Pro Support", description, url: "/workout-to-watch/support/" },
+  alternates: { canonical: "/watchworkoutpro/support/" },
+  openGraph: { title: "Watch Workout Pro Support", description, url: "/watchworkoutpro/support/" },
   twitter: { card: "summary", title: "Watch Workout Pro Support", description },
 };
 
 // Separate product pages, intentionally unlisted in navigation, search, and sitemap.
-export default function WorkoutToWatchPage() {
+export default function WatchWorkoutProPage() {
   const raw = readRepoFile(CONTENT_PATH);
   if (!raw) notFound();
   const { body } = stripLeadingH1(raw);

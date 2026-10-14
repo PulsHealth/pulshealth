@@ -65,6 +65,12 @@ the same developer. They are unlisted (not in the navigation, search or
 sitemap); the policy is `content/fun100/privacy-policy.md`, rendered the same
 way as `/privacy`.
 
+Watch Workout Pro, a separate native app, has unlisted product pages at
+`/watchworkoutpro/support/` and `/watchworkoutpro/privacy/`. The base
+`/watchworkoutpro/` opens support. Legacy `/workout-to-watch/` URLs retain
+`noindex` redirect stubs with destination canonicals so old app and store
+links still work. Product content lives in `content/watchworkoutpro/`.
+
 ## Develop
 
 ```bash
