@@ -238,7 +238,7 @@ Optional `figures` provide same-origin SVG, PNG or WebP assets under
 `/knowledge-base/figures/<artifact-key>/`. Every figure needs a meaningful
 `alt`, `title`, `caption` and `methods`, including denominator, exclusions and
 context rules. Optional `section` matches the exact level-two Markdown heading text; omitted
-figures follow the overview. Label real case figures as one person's data,
+figures follow the overview. Label measured figures as example user data,
 use anonymous source labels and relative dates where practical, and retain
 raw evidence privately. Generated illustrations may explain concepts but
 must never impersonate measured data. `seo_title` can describe the question a

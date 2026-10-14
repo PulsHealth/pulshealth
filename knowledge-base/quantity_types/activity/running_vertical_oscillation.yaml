@@ -53,7 +53,7 @@ description: '## What does running vertical oscillation measure?
 
   ## What range appeared in real Apple Health data?
 
-  In one person''s July–September 2026 records, 5,729 observations across 13 runs had a median of **11.6 cm**. The
+  In the example July–September 2026 records, 5,729 observations across 13 runs had a median of **11.6 cm**. The
   middle 90% were **10.2–12.8 cm**; the full retained range was **8.8–14.2 cm**. These are an example of recorded
   variation, not recommended targets or a population reference interval.
 
@@ -68,7 +68,7 @@ description: '## What does running vertical oscillation measure?
 
   | Minimum–maximum: 8.8–14.2 cm | Every observed value, including tails |
 
-  | Individual run medians: 10.9–12.1 cm | Runs differed even for the same person |
+  | Individual run medians: 10.9–12.1 cm | Runs differed within the example data |
 
 
   Longer or more densely recorded runs contribute more samples to the histogram. Giving each run equal weight answers
@@ -140,7 +140,7 @@ description: '## What does running vertical oscillation measure?
 
 
   Treat trends as questions to investigate. If your values change at similar pace, check the source, interval shape
-  and other running metrics before attributing the change to fitness or technique. This single-person database has
+  and other running metrics before attributing the change to fitness or technique. This example dataset has
   no controlled oxygen-consumption measurements, route-grade analysis or injury outcomes to support those conclusions.
 
 
@@ -190,9 +190,9 @@ figures:
 - src: /knowledge-base/figures/running-vertical-oscillation/distribution.png
   width: 1530
   height: 816
-  alt: Histogram of 5,729 running vertical oscillation observations from one person, centred near 11.6 centimetres.
+  alt: Histogram of 5,729 running vertical oscillation observations in the example data, centred near 11.6 centimetres.
   title: The spread behind a running average
-  caption: One person, 13 runs in July–September 2026. All observed values are retained; the chart shows sample
+  caption: Example data, 13 runs in July–September 2026. All observed values are retained; the chart shows sample
     counts, not steps or recommended ranges.
   methods: Raw quantity observations in centimetres, selected by start timestamp in America/Los_Angeles. Longer
     runs contribute more samples.
@@ -225,5 +225,5 @@ data_research:
   - time_patterns
   - related_types
   - type_specific
-  limitations: Single-person examples, not population ranges. Context uses time overlap. Historical coalescing limits
+  limitations: Example user data, not population ranges. Context uses time overlap. Historical coalescing limits
     month-to-month comparisons. No sleep baseline, route-grade control or measured economy outcome.

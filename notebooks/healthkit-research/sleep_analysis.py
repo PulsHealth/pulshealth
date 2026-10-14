@@ -202,7 +202,7 @@ def make_figures(s,nights,cut,directory):
         for r in g[g.value==value].itertuples():
             ax.broken_barh([((r.start_ts-origin).total_seconds()/3600,(r.end_ts-r.start_ts).total_seconds()/3600)],(value-.32,.64),facecolors=COLORS[value])
     ax.set_yticks([0,1,2,3,4,5],[STAGES[x] + (' (not recorded)' if x==0 and not (g.value==0).any() else '') for x in range(6)]); ax.set_xlabel('Elapsed hours from first recorded interval'); ax.set_title('One recorded night: sleep stages are intervals'); ax.grid(axis='x',alpha=.18)
-    ax.text(0,-.24,'Actual records from one person · no dates or device identity shown',transform=ax.transAxes,color='#586174',fontsize=9)
+    ax.text(0,-.24,'Example sleep data · no dates or device identity shown',transform=ax.transAxes,color='#586174',fontsize=9)
     fig.tight_layout(); p=directory/'stage-timeline.png'; fig.savefig(p,dpi=180,bbox_inches='tight'); plt.close(fig)
     focus=nights[(nights.night>=str(FOCUS_START.date()))&(nights.night<str(YEAR_END.date()))].copy().reset_index(drop=True)
     fig,ax=plt.subplots(figsize=(11,4.5)); x=np.arange(1,len(focus)+1)
@@ -210,7 +210,7 @@ def make_figures(s,nights,cut,directory):
     ax.plot(x,focus.asleep_row_sum_h,color='#aa70bd',lw=1.3,label='Asleep rows added (can include overlaps)')
     ax.plot(x,focus.asleep_union_h,color='#385bad',lw=2,label='Asleep interval union')
     ax.set_xlabel('Observed reporting night in focus window'); ax.set_ylabel('Recorded hours'); ax.set_title('Why row totals and time asleep can differ'); ax.legend(fontsize=9,loc='upper left'); ax.grid(alpha=.18)
-    ax.text(0,-.25,'Noon-to-noon bins · elapsed time · one person · missing nights omitted',transform=ax.transAxes,color='#586174',fontsize=9)
+    ax.text(0,-.25,'Example data · noon-to-noon bins · elapsed time · missing nights omitted',transform=ax.transAxes,color='#586174',fontsize=9)
     fig.tight_layout(); p2=directory/'nightly-interval-union.png'; fig.savefig(p2,dpi=180,bbox_inches='tight'); plt.close(fig)
     return [str(p),str(p2)]
 

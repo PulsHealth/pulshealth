@@ -49,7 +49,7 @@ description: '## Overview
   behind them. [Apple explains how Health collects and prioritizes sources](https://support.apple.com/en-us/108779).
 
 
-  The examples below use one person''s real Apple Health data: a full reporting year, with a 92-day window for closer
+  The examples below use example Apple Health data: a full reporting year, with a 92-day window for closer
   comparisons. They illustrate recording behavior, not population activity targets or clinical reference ranges.
 
 
@@ -94,7 +94,7 @@ description: '## Overview
   buckets remain evidence for another anchor or timezone.
 
 
-  | One-person case measure | Observation in the 92-day window |
+  | Example data measure | Observation in the 92-day window |
 
   | --- | --- |
 
@@ -241,7 +241,7 @@ figures:
 - src: /knowledge-base/figures/step-count/source-overlap.svg
   alt: Three anonymous source rows show overlapping step-count intervals across one local day.
   title: Several sources can cover the same time
-  caption: One person's real records on a selected day. Each bar is a cumulative step-count interval, not an individual
+  caption: Example user records on a selected day. Each bar is a cumulative step-count interval, not an individual
     step; source labels are anonymous.
   methods: Selected the middle day by record count among the 92-day focus window days with at least two source groups.
     All 110 records starting on that day are shown; widths use stored durations and hours since reporting-calendar
@@ -254,7 +254,7 @@ figures:
   alt: Validated HealthKit daily step series beside a scatter plot showing fully contained all-source raw sums generally
     exceed the source-merged totals.
   title: Daily HealthKit sums and raw sums answer different questions
-  caption: One person's 92-day case window. All-source daily totals have 92 validated buckets; watch and iPhone
+  caption: The example 92-day window. All-source daily totals have 92 validated buckets; watch and iPhone
     have 72 each. Missing filtered buckets break the lines. The dashed line marks equal raw and HealthKit totals.
   methods: Keep only sum, one-day buckets whose actual start and end are consecutive America/Los_Angeles midnights,
     accepting 23/25-hour DST days. The full-year audit excludes 1,052 shifted buckets out of 2,107 candidates. The
@@ -281,7 +281,7 @@ data_research:
   - time_patterns
   - related_types
   - type_specific
-  limitations: One-person observational examples are not clinical reference ranges. Contexts are timestamp overlaps,
+  limitations: Observational examples are not clinical reference ranges. Contexts are timestamp overlaps,
     not proof of activity or explicit workout linkage. Overlapping raw records and source revisions remain; the
     raw sum does not reconstruct HealthKit source priority. Daily bucket validity is defined in one reporting calendar;
     recorded travel-local dates may differ. Pre-window crossing intervals may be unavailable because the snapshot

@@ -69,9 +69,9 @@ description: '## What does Apple Watch HRV actually measure?
   ## What does a real SDNN record look like?
 
 
-  In the 92-day example below, one person had **1,236 records across all 92 days**, from two Apple Watch source
+  In the 92-day example below, the data contained **1,236 records across all 92 days**, from two Apple Watch source
   groups. The stored sample span was typically about 59 seconds. Values ranged from 15.1 to 249.2 ms; the median
-  was 52.2 ms and the middle 90% fell between 26.6 and 124.6 ms. These describe this person’s available estimates,
+  was 52.2 ms and the middle 90% fell between 26.6 and 124.6 ms. These describe the available example estimates,
   **not a healthy range or targets for other people**.
 
 
@@ -187,7 +187,7 @@ references:
   url: https://pmc.ncbi.nlm.nih.gov/articles/PMC11539922/
   type: research
 last_updated: '2026-10-14'
-research_notes: Executed full-year and 92-day focus analysis before editorial revision. Public examples are one-person
+research_notes: Executed full-year and 92-day focus analysis before editorial revision. Public examples are example
   observations, not clinical norms. Apple structured documentation confirms SDNN units and automatic recording plus
   separate RMSSD availability; no universal cadence or UI display label is inferred. Replaced unsupported favorable/high
   thresholds and disease lists with contextual interpretation.
@@ -218,7 +218,7 @@ figures:
   alt: SDNN estimates over 92 relative days show wide within-day variation, with sleep-overlapping records colored
     separately and a daily recorded-value median.
   title: Real SDNN estimates vary within a day
-  caption: One person, 1,236 estimates over 92 days. Sleep overlap is temporal context; these values are observations,
+  caption: Example data, 1,236 estimates over 92 days. Sleep overlap is temporal context; these values are observations,
     not population norms. Extremes are retained.
   methods: All raw SDNN records from two Apple Watch source groups in a 92-day account-calendar window. Values in
     ms; daily median of recorded estimates. Any half-open overlap with recorded asleep intervals or workouts labels
@@ -255,7 +255,7 @@ data_research:
   - time_patterns
   - related_types
   - type_specific
-  limitations: One-person full-year snapshot and 92-day focus; context is temporal overlap, not a clinical state
+  limitations: Example full-year snapshot and 92-day focus; context is temporal overlap, not a clinical state
     or explicit workout association. Only one workout-overlapping focus record prevents a meaningful workout comparison.
     No mindful-session or RMSSD records; no underlying beat intervals to validate artifacts or recompute SDNN. Boundary-spanning
     pre-window context can be missing. Source changes, recording opportunity and serial dependence confound correlations.
