@@ -64,10 +64,8 @@ description: |
 
   Weight and BMI records were present, illustrating that a scale app can supply those measurements without body-fat observations being available in the same export. Missing body-fat records mean unavailable evidence; they do not mean zero body fat or prove that the scale lacks a composition feature.
 
-  ## How often is it recorded, and what about exercise or sleep?
-  Recording follows the producing device or app rather than a fixed HealthKit schedule. An occasional scale estimate cannot describe a continuous workout or overnight curve. Exercise timing, hydration and measurement conditions deserve review with the device's instructions because BIA depends on electrical properties, not a direct measurement of fat tissue.
-
-  No workout or sleep comparisons could be measured here. A future comparison needs actual observations, comparable methods and a clear timing rule; missing measurements must remain missing.
+  ## How can I compare repeated estimates?
+  Recording follows the producing device or app rather than a fixed HealthKit schedule. Exercise timing, hydration and measurement conditions deserve review with the device's instructions because BIA depends on electrical properties, not a direct measurement of fat tissue. Compare observations made with the same method and comparable conditions; missing measurements must remain missing.
 
   ## What ranges and related measurements are useful?
   There is no single HealthKit-defined healthy body-fat interval. Reference interpretation depends on the assessment method and relevant population. Generic athlete, fitness and obesity labels should not be assigned to a smart-scale estimate as though they were independently validated diagnoses.

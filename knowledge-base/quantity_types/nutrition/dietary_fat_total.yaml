@@ -85,12 +85,11 @@ description: '## What does total dietary fat measure?
   its calorie value.
 
 
-  ## How often is fat recorded, and does workout or sleep timing matter?
+  ## What does a food-entry timestamp mean?
 
 
   Cadence follows food entries or source syncing. A sample interval is not a digestion interval. A record may be
-  saved long after the meal, and a midnight entry may be a daily total. Matching timestamps to a workout or recorded
-  sleep is a logging-context check; it cannot establish absorption, exercise response or fat use. Daily comparisons
+  saved long after the meal, and a midnight entry may be a daily total. The timestamp cannot establish absorption or fat use. Daily comparisons
   should state the number of days with usable logs.
 
 

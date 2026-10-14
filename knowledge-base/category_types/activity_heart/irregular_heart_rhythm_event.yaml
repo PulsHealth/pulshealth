@@ -74,7 +74,7 @@ description: '## What does an Irregular Heart Rhythm Event mean?
   histories needed to calculate sensitivity or events per monitored hour.
 
 
-  ## What changes during workouts or sleep?
+  ## Why don’t notification counts measure time in AFib?
 
   Stillness favors opportunities to collect the readings used by the feature. Active workouts therefore have a different
   recording opportunity than resting periods, rather than simply a different medical event rate. An alert overlapping

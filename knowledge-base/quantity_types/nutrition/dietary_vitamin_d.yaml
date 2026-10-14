@@ -78,7 +78,7 @@ description: '## What does Apple Health dietary vitamin D measure?
   uncertain.
 
 
-  ## Does recording cadence reveal meals, workouts or sleep?
+  ## Do timestamps identify when a meal was eaten?
 
 
   Gaps between records describe logging or synchronization behavior. They do not establish meal timing, digestion
@@ -86,8 +86,7 @@ description: '## What does Apple Health dietary vitamin D measure?
   summary.
 
 
-  A nutrient record overlapping a workout or sleep interval describes timestamp context. It does not demonstrate
-  consumption during that interval or a physiological response. Comparisons with other nutrient types require
+  Comparisons with other nutrient types require
   compatible sources, portions and reporting-day coverage. Missing records remain unknown intake.
 
 
@@ -95,8 +94,7 @@ description: '## What does Apple Health dietary vitamin D measure?
 
 
   The investigated **365-day reporting window** contained no raw vitamin D samples or stored aggregates for this
-  type. Value ranges, extreme portions, source distributions, interval cadence, time-of-day patterns and workout
-  or sleep comparisons were unavailable. Relationships with other types could not be measured without vitamin
+  type. Value ranges, extreme portions, source distributions, logging intervals and time-of-day patterns were unavailable. Relationships with other types could not be measured without vitamin
   D observations. No measured chart is presented.
 
 

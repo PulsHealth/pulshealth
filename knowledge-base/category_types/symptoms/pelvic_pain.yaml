@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierPelvicPain"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Pelvic Pain"
-short_description: "Tracks episodes and severity of pelvic region pain"
-icon: "bolt.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierPelvicPain
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Pelvic Pain
+short_description: 'Pelvic Pain in Apple Health: saved category values, useful reporting context and limits
+  of symptom histories.'
+icon: bolt.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No pelvic pain experienced"
-  - value: 1
-    name: "present"
-    description: "Mild pelvic pain - slight discomfort, does not limit activities"
-  - value: 2
-    name: "moderate"
-    description: "Moderate pelvic pain - noticeable pain affecting some activities"
-  - value: 3
-    name: "severe"
-    description: "Severe pelvic pain - significant pain limiting daily activities"
+- value: 0
+  name: unspecified
+  description: Severity was not specified.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent.
+- value: 2
+  name: mild
+  description: Subjectively mild severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate severity.
+- value: 4
+  name: severe
+  description: Subjectively severe severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,117 +42,108 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging with severity"
-  - name: "Apple Watch"
-    capability: "Quick symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Pelvic pain refers to discomfort in the lower abdomen and pelvis, below the
-  umbilicus and between the hips. It can be acute or chronic (lasting >6 months)
-  and may originate from reproductive, urinary, gastrointestinal, or
-  musculoskeletal structures. This data type enables pattern tracking for
-  clinical correlation.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; available logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  - **Reproductive Health**: Common symptom in endometriosis, ovarian cysts,
-    fibroids, and pelvic inflammatory disease
-  - **Menstrual Correlation**: Dysmenorrhea is the most common cause of
-    cyclic pelvic pain
-  - **Chronic Pain Conditions**: Chronic pelvic pain affects 15% of women and
-    is a significant source of disability
-  - **Diagnostic Challenge**: Multiple potential organ systems require
-    systematic evaluation
-  - **Quality of Life**: Chronic pelvic pain significantly impacts daily
-    functioning and mental health
 
-  ## Clinical Context
-  **Gynecological Causes:**
-  - Dysmenorrhea (menstrual cramps)
-  - Endometriosis
-  - Ovarian cysts or torsion
-  - Uterine fibroids
-  - Pelvic inflammatory disease
-  - Ectopic pregnancy
-  - Adenomyosis
+  Pelvic Pain records subjective symptom severity. The category can be used for anyone experiencing pelvic
+  pain; it is not restricted to menstrual pain and does not identify a diagnosis.
 
-  **Non-Gynecological Causes:**
-  - Urinary tract infection
-  - Interstitial cystitis
-  - Irritable bowel syndrome
-  - Inflammatory bowel disease
-  - Musculoskeletal disorders
-  - Pelvic floor dysfunction
 
-  ## When to Seek Medical Attention
-  **Emergency Symptoms:**
-  - Sudden, severe pelvic pain
-  - Pelvic pain with fever and chills
-  - Pain with abnormal vaginal bleeding or discharge
-  - Pain with dizziness or fainting
-  - Pain with positive pregnancy test (possible ectopic)
-  - Pain with inability to urinate or have bowel movement
+  ## What do the saved values mean?
 
-  **Schedule Evaluation For:**
-  - Chronic pelvic pain lasting more than 6 months
-  - Pain interfering with daily activities or work
-  - Pain requiring regular medication use
-  - Cyclic pain worsening over time
-  - Pain with intercourse (dyspareunia)
-  - Pain with urination or bowel movements
-  - Pain not responding to standard treatments
 
-  ## Pattern Recognition
-  Tracking pelvic pain can reveal:
-  - Menstrual cycle correlation (suggests endometriosis, dysmenorrhea)
-  - Ovulation-related patterns (mittelschmerz)
-  - Relationship to bowel movements or urination
-  - Correlation with intercourse or physical activity
-  - Progressive worsening over cycles
-  - Response to hormonal treatments
-  - Food triggers (if GI-related)
-  - Stress and tension patterns
+  | Code | Label | Meaning |
 
-  ## Caveats & Limitations
-  - Cannot localize to specific organ system
-  - Subjective severity assessment
-  - Does not capture pain character (cramping, sharp, dull)
-  - Multiple overlapping conditions common
-  - Does not track associated symptoms separately
-  - Chronic nature may lead to logging fatigue
-  - Cannot differentiate acute vs. chronic presentations
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External identifier for cross-referencing symptom entries"
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where symptom was logged"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Subjectively mild severity |
+
+  | 3 | moderate | Subjectively moderate severity |
+
+  | 4 | severe | Subjectively severe severity |
+
+
+  Unspecified is not notPresent. The mild, moderate and severe labels reflect the report; their integer codes
+  are not a calibrated clinical scale and should not be averaged as measurements.
+
+
+  ## Does the category show where or why it hurts?
+
+
+  No. A severity label does not encode the side, exact location, suddenness, duration or circumstances of the
+  pain. Those details matter in a clinical history. [Menstrual Flow](/knowledge-base/types/HKCategoryTypeIdentifierMenstrualFlow/),
+  [Abdominal Cramps](/knowledge-base/types/HKCategoryTypeIdentifierAbdominalCramps/) or [Bladder Incontinence](/knowledge-base/types/HKCategoryTypeIdentifierBladderIncontinence/)
+  may supply separately recorded context, but do not determine the cause.
+
+
+  NHS guidance recommends emergency help for severe or worsening pelvic pain, especially with fainting, breathing
+  difficulty or heavy vaginal bleeding. Pelvic pain during a possible pregnancy also needs urgent medical advice.
+  Recording the symptom should not delay getting help.
+
+
+  ## How should a recorded history be read?
+
+
+  Entries follow the source’s logging behavior, with no fixed sensor sampling interval. Missing dates mean
+  no available report, rather than an explicit negative observation. A saved interval need not describe a continuous
+  episode, and overlapping records from different sources should be reviewed before counting reports or days.
+
+
+  ## Is this type available in PulsHealth?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. The selected database review contained
+  no corresponding records; that does not establish whether entries exist in Apple Health. No example distribution
+  or logging cadence could be measured.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Cycle tracking for pattern identification"
-  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
-    relationship: "Overlapping pain regions; may co-occur"
-  - identifier: "HKCategoryTypeIdentifierLowerBackPain"
-    relationship: "Often radiates to lower back"
-  - identifier: "HKCategoryTypeIdentifierBloating"
-    relationship: "Common co-occurring symptom in GI/GYN conditions"
-  - identifier: "HKCategoryTypeIdentifierConstipation"
-    relationship: "May contribute to or result from pelvic pain"
-  - identifier: "HKCategoryTypeIdentifierSexualActivity"
-    relationship: "Pain timing relative to activity for dyspareunia tracking"
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Cycle dates provide separate context; pelvic pain is not necessarily menstrual.
+- identifier: HKCategoryTypeIdentifierAbdominalCramps
+  relationship: A distinct symptom; overlapping reports are not automatically the same episode.
+- identifier: HKCategoryTypeIdentifierBladderIncontinence
+  relationship: Separate bladder symptom for a history, without an inferred diagnosis.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierPelvicPain"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierpelvicpain"
-    type: "official"
-  - title: "Chronic Pelvic Pain - ACOG"
-    url: "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/03/chronic-pelvic-pain"
-    type: "medical"
-  - title: "Endometriosis Guidelines - ASRM"
-    url: "https://www.asrm.org/practice-guidance/"
-    type: "medical"
-  - title: "Pelvic Pain Evaluation - American Family Physician"
-    url: "https://www.aafp.org/pubs/afp.html"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Pelvic Pain — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/pelvicpain
+  type: official
+- title: Symptom severity values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Pelvic pain — NHS
+  url: https://www.nhs.uk/symptoms/pelvic-pain/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Pelvic Pain in Apple Health: severity and symptom context'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: pelvic-pain
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified no observations across bounded quantity, category, aggregate and workout-series inventories;
+    this identifier is not listed in the current sync catalog. Apple Health absence cannot be inferred. No
+    empirical frequencies, source differences, cadence, outliers or related-type comparisons are available.
+    Category codes are labels, not measurements; recorded intervals do not establish clinical episode duration.
+    Generic workout or sleep comparisons are not applicable to this review.

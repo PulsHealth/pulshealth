@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierHairLoss"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Hair Loss"
-short_description: "Tracks episodes of unusual hair shedding or thinning."
-icon: "person.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierHairLoss
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Hair Loss
+short_description: 'Hair Loss in Apple Health: saved category values, useful reporting context and limits of
+  symptom histories.'
+icon: person.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent.
+- value: 2
+  name: mild
+  description: Subjectively mild severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate severity.
+- value: 4
+  name: severe
+  description: Subjectively severe severity.
 ios_introduced:
-  version: "13.6"
+  version: '14.0'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,88 +42,104 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Hair loss (alopecia) refers to abnormal shedding or thinning of hair from the scalp or other body areas. Normal hair shedding is 50-100 hairs per day; beyond this may indicate pathological hair loss. This HealthKit category type allows users to track hair loss episodes, helping identify patterns related to hormonal changes, nutritional deficiencies, or underlying conditions.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; available logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Hair loss can significantly impact quality of life and self-esteem. While often genetic or age-related, it can also signal underlying medical conditions requiring treatment. Tracking onset and progression provides valuable clinical context.
 
-  Types of hair loss:
-  - **Androgenetic alopecia**: Male/female pattern baldness (genetic)
-  - **Telogen effluvium**: Diffuse shedding after stress, illness, or hormonal changes
-  - **Alopecia areata**: Autoimmune patchy hair loss
-  - **Anagen effluvium**: Sudden loss during active growth (chemotherapy)
-  - **Traction alopecia**: From tight hairstyles
-  - **Cicatricial alopecia**: Scarring hair loss
+  Hair Loss is a reported symptom severity, rather than a hair count, scalp image analysis or measurement of
+  hair growth. The category does not identify the cause of hair loss.
 
-  Common causes include:
-  - Hereditary (androgenetic alopecia)
-  - Hormonal changes (pregnancy, menopause, thyroid disorders)
-  - Nutritional deficiencies (iron, zinc, biotin, protein)
-  - Physical or emotional stress (telogen effluvium)
-  - Autoimmune conditions (alopecia areata, lupus)
-  - Medications (chemotherapy, blood thinners, retinoids, beta-blockers)
-  - Scalp conditions (fungal infections, psoriasis)
-  - Post-COVID-19 hair loss
-  - Rapid weight loss
 
-  ## When to Seek Medical Attention
-  Users should consult a healthcare provider when hair loss:
-  - Is sudden or occurs in clumps
-  - Creates bald patches
-  - Is accompanied by scalp pain, itching, or burning
-  - Occurs with other symptoms (fatigue, weight changes, skin changes)
-  - Follows medication changes
-  - Is accompanied by nail changes
-  - Affects eyebrows, eyelashes, or body hair
-  - Is associated with scarring of the scalp
-  - Causes significant emotional distress
+  ## What do the saved values mean?
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Temporal relationship to stressors (telogen effluvium typically starts 2-3 months after trigger)
-  - Correlation with menstrual cycle or pregnancy
-  - Seasonal shedding patterns
-  - Medication-related onset
-  - Post-illness hair loss (post-COVID)
-  - Response to nutritional supplementation
-  - Treatment effectiveness tracking
 
-  ## Caveats & Limitations
-  - Pattern of hair loss (diffuse vs. patchy) not captured
-  - Location of hair loss not recorded
-  - Cannot quantify amount of hair shed
-  - Does not capture scalp symptoms (itching, pain)
-  - Subjective perception may not match objective assessment
-  - Hair cycle changes are delayed (effects appear months after cause)
-  - Does not differentiate between hair types (scalp, body)
-  - Cannot assess for scarring
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | Code | Label | Meaning |
+
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Subjectively mild severity |
+
+  | 3 | moderate | Subjectively moderate severity |
+
+  | 4 | severe | Subjectively severe severity |
+
+
+  Unspecified is not notPresent. The mild, moderate and severe labels reflect the report; their integer codes
+  are not a calibrated clinical scale and should not be averaged as measurements.
+
+
+  ## Why do longer-term notes matter for hair loss?
+
+
+  The value does not distinguish shedding, a widening part, discrete patches or breakage, and it does not record
+  which body area is affected. Notes or consistently taken photographs kept separately can preserve changes
+  that a severity label cannot express.
+
+
+  Hair changes do not always follow an event immediately. The American Academy of Dermatology describes increased
+  shedding appearing months after childbirth, illness or another stressor. A same-day comparison with another
+  recorded event can miss this timing nuance and would not identify a cause. [Dry Skin](/knowledge-base/types/HKCategoryTypeIdentifierDrySkin/)
+  is a separate symptom, not evidence of a shared condition.
+
+
+  ## How should a recorded history be read?
+
+
+  Entries follow the source’s logging behavior, with no fixed sensor sampling interval. Missing dates mean
+  no available report, rather than an explicit negative observation. A saved interval need not describe a continuous
+  episode, and overlapping records from different sources should be reviewed before counting reports or days.
+
+
+  ## Is this type available in PulsHealth?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. The selected database review contained
+  no corresponding records; that does not establish whether entries exist in Apple Health. No example distribution
+  or logging cadence could be measured.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Fatigue and hair loss may indicate thyroid dysfunction"
-  - identifier: "HKCategoryTypeIdentifierDrySkin"
-    relationship: "Dry skin and hair loss can indicate hypothyroidism"
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Hormonal changes affect both menstruation and hair"
-  - identifier: "HKCategoryTypeIdentifierBrittleNails"
-    relationship: "Nail changes often accompany hair loss in nutritional deficiencies"
-  - identifier: "HKQuantityTypeIdentifierBodyMass"
-    relationship: "Rapid weight loss can trigger telogen effluvium"
+- identifier: HKCategoryTypeIdentifierDrySkin
+  relationship: A separately reported symptom, without an encoded common diagnosis.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierHairLoss"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierhairloss"
-    type: "official"
-  - title: "Hair Loss - American Academy of Dermatology"
-    url: "https://www.aad.org/public/diseases/hair-loss"
-    type: "medical"
-  - title: "Telogen Effluvium - DermNet"
-    url: "https://dermnetnz.org/topics/telogen-effluvium"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Hair Loss — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/hairloss
+  type: official
+- title: Symptom severity values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Hair loss causes — American Academy of Dermatology
+  url: https://www.aad.org/public/diseases/hair-loss/causes/18-causes
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Hair Loss in Apple Health: severity and longer-term history'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: hair-loss
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified no observations across bounded quantity, category, aggregate and workout-series inventories;
+    this identifier is not listed in the current sync catalog. Apple Health absence cannot be inferred. No
+    empirical frequencies, source differences, cadence, outliers or related-type comparisons are available.
+    Category codes are labels, not measurements; recorded intervals do not establish clinical episode duration.
+    Generic workout or sleep comparisons are not applicable to this review.

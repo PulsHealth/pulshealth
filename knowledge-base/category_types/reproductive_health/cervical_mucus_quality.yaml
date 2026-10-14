@@ -93,8 +93,7 @@ description: '## Overview
   hormone-test result are separate entries, not an explicit HealthKit association or confirmation of egg release.
 
 
-  Sleep or workout overlap describes when an entry falls relative to recorded activity. It does not show that the
-  activity changed mucus quality. Manual logging timestamps may be less precise than the observation itself.
+  Manual logging timestamps may be less precise than the observation itself.
 
 
   ## What did the example data show?

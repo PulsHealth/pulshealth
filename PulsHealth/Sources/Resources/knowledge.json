@@ -36,51 +36,56 @@
   "HKCategoryTypeIdentifierAcne": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Acne",
     "identifier": "HKCategoryTypeIdentifierAcne",
-    "short_description": "Tracks acne breakouts and their severity.",
+    "short_description": "Acne in Apple Health: saved category values, useful reporting context and limits of symptom histories.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierAppetiteChanges": {
     "category_values": [
       {
-        "description": "No appetite changes experienced",
-        "name": "notPresent",
+        "description": "Direction was not specified.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Appetite decreased from normal",
-        "name": "decreased",
+        "description": "Appetite was reported unchanged.",
+        "name": "noChange",
         "value": 1
       },
       {
-        "description": "Appetite unchanged",
-        "name": "noChange",
+        "description": "Appetite was reported decreased.",
+        "name": "decreased",
         "value": 2
       },
       {
-        "description": "Appetite increased from normal",
+        "description": "Appetite was reported increased.",
         "name": "increased",
         "value": 3
       }
@@ -88,7 +93,7 @@
     "default_unit": null,
     "human_readable_name": "Appetite Changes",
     "identifier": "HKCategoryTypeIdentifierAppetiteChanges",
-    "short_description": "Tracks changes in appetite including increased or decreased hunger.",
+    "short_description": "Appetite Changes in Apple Health: saved category values, useful reporting context and limits of symptom histories.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierAppleStandHour": {
@@ -156,30 +161,35 @@
   "HKCategoryTypeIdentifierBladderIncontinence": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Bladder Incontinence",
     "identifier": "HKCategoryTypeIdentifierBladderIncontinence",
-    "short_description": "Tracks episodes of involuntary urine leakage.",
+    "short_description": "Bladder Incontinence in Apple Health: saved category values, useful reporting context and limits of symptom histories.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierBloating": {
@@ -253,88 +263,103 @@
   "HKCategoryTypeIdentifierChestTightnessOrPain": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absence report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "The symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Chest Tightness or Pain",
     "identifier": "HKCategoryTypeIdentifierChestTightnessOrPain",
-    "short_description": "Tracks episodes of chest tightness, pressure, or pain.",
+    "short_description": "Read Apple Health chest tightness or pain reports, severity labels, recording intervals and limits of heart-data comparisons.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierChills": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Chills",
     "identifier": "HKCategoryTypeIdentifierChills",
-    "short_description": "Tracks episodes of chills and shivering.",
+    "short_description": "Chills in Apple Health: understand severity labels, logging intervals and the difference between reported symptoms and measurements.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierConstipation": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absent report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Constipation",
     "identifier": "HKCategoryTypeIdentifierConstipation",
-    "short_description": "Tracks episodes of constipation and difficulty passing stool.",
+    "short_description": "Understand constipation in Apple Health: severity labels, useful symptom history and recording limitations.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierContraceptive": {
@@ -384,117 +409,137 @@
   "HKCategoryTypeIdentifierCoughing": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Coughing",
     "identifier": "HKCategoryTypeIdentifierCoughing",
-    "short_description": "Tracks coughing episodes and their severity.",
+    "short_description": "Coughing in Apple Health: understand severity labels, logging intervals and the difference between reported symptoms and measurements.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierDiarrhea": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absent report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Diarrhea",
     "identifier": "HKCategoryTypeIdentifierDiarrhea",
-    "short_description": "Tracks episodes of diarrhea and loose stools.",
+    "short_description": "Understand diarrhea in Apple Health: severity labels, useful symptom history and recording limitations.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierDizziness": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absence report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "The symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Dizziness",
     "identifier": "HKCategoryTypeIdentifierDizziness",
-    "short_description": "Tracks episodes of dizziness, lightheadedness, or vertigo.",
+    "short_description": "Understand dizziness reports in Apple Health, subjective severity, missing entries and the difference between symptoms and measurements.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierDrySkin": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Dry Skin",
     "identifier": "HKCategoryTypeIdentifierDrySkin",
-    "short_description": "Tracks episodes of dry, rough, or flaky skin.",
+    "short_description": "Dry Skin in Apple Health: saved category values, useful reporting context and limits of symptom histories.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierFatigue": {
@@ -534,94 +579,109 @@
   "HKCategoryTypeIdentifierFever": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Fever",
     "identifier": "HKCategoryTypeIdentifierFever",
-    "short_description": "Tracks episodes of fever or elevated body temperature.",
+    "short_description": "Fever in Apple Health: understand severity labels, logging intervals and the difference between reported symptoms and measurements.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierGeneralizedBodyAche": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absent report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Generalized Body Ache",
     "identifier": "HKCategoryTypeIdentifierGeneralizedBodyAche",
-    "short_description": "Tracks episodes of widespread muscle aches and body pain.",
+    "short_description": "Understand generalized body ache in Apple Health: severity labels, useful symptom history and recording limitations.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierHairLoss": {
     "category_values": [
       {
-        "description": "Symptom not experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Symptom present - mild",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Symptom present - moderate",
-        "name": "present",
+        "description": "Subjectively mild severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Symptom present - severe",
-        "name": "present",
+        "description": "Subjectively moderate severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Hair Loss",
     "identifier": "HKCategoryTypeIdentifierHairLoss",
-    "short_description": "Tracks episodes of unusual hair shedding or thinning.",
+    "short_description": "Hair Loss in Apple Health: saved category values, useful reporting context and limits of symptom histories.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierHandwashingEvent": {
     "category_values": [
       {
-        "description": "The only valid value for handwashing events - indicates a washing session occurred",
+        "description": "Valid label for a recorded event; duration comes from start and end dates.",
         "name": "notApplicable",
         "value": 0
       }
@@ -629,13 +689,8 @@
     "default_unit": null,
     "human_readable_name": "Handwashing",
     "identifier": "HKCategoryTypeIdentifierHandwashingEvent",
-    "short_description": "Records handwashing events detected automatically or logged manually, tracking hygiene behavior.",
-    "typical_range": {
-      "max": null,
-      "min": null,
-      "notes": "CDC recommends washing hands for at least 20 seconds\nduration_seconds: 20-40\nfrequency: 6-10+ times daily",
-      "unit": null
-    }
+    "short_description": "Read handwashing event intervals, understand the zero category code and separate logged duration from washing technique.",
+    "typical_range": null
   },
   "HKCategoryTypeIdentifierHeadache": {
     "category_values": [
@@ -688,30 +743,35 @@
   "HKCategoryTypeIdentifierHeartburn": {
     "category_values": [
       {
-        "description": "No heartburn symptoms experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absent report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild heartburn - slight burning sensation, easily tolerable",
-        "name": "present",
+        "description": "Symptom explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate heartburn - noticeable discomfort affecting activities",
-        "name": "moderate",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe heartburn - intense burning, significant distress",
-        "name": "severe",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Heartburn",
     "identifier": "HKCategoryTypeIdentifierHeartburn",
-    "short_description": "Tracks episodes of heartburn or acid reflux symptoms",
+    "short_description": "Understand heartburn in Apple Health: severity labels, useful symptom history and recording limitations.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierHighHeartRateEvent": {
@@ -863,30 +923,35 @@
   "HKCategoryTypeIdentifierLowerBackPain": {
     "category_values": [
       {
-        "description": "No lower back pain experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absent report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild pain - noticeable but does not limit activities",
-        "name": "present",
+        "description": "Symptom explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate pain - limits some activities, may require medication",
-        "name": "moderate",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe pain - significantly limits activities, requires intervention",
-        "name": "severe",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Lower Back Pain",
     "identifier": "HKCategoryTypeIdentifierLowerBackPain",
-    "short_description": "Tracks episodes and severity of lower back pain",
+    "short_description": "Understand lower back pain in Apple Health: severity labels, useful symptom history and recording limitations.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierMenstrualFlow": {
@@ -959,59 +1024,69 @@
   "HKCategoryTypeIdentifierNausea": {
     "category_values": [
       {
-        "description": "No nausea experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absent report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild nausea - slight queasiness, able to eat and function",
-        "name": "present",
+        "description": "Symptom explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate nausea - persistent discomfort, reduced appetite",
-        "name": "moderate",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe nausea - intense, may lead to vomiting, significantly impacts function",
-        "name": "severe",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Nausea",
     "identifier": "HKCategoryTypeIdentifierNausea",
-    "short_description": "Tracks episodes and severity of nausea",
+    "short_description": "Understand nausea in Apple Health: severity labels, useful symptom history and recording limitations.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierNightSweats": {
     "category_values": [
       {
-        "description": "No night sweats experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild night sweats - light sweating, may not require changing clothes",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate night sweats - noticeable sweating, may need to change clothes",
-        "name": "moderate",
+        "description": "Subjectively mild severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe night sweats - drenching sweats requiring bedding/clothing change",
-        "name": "severe",
+        "description": "Subjectively moderate severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Night Sweats",
     "identifier": "HKCategoryTypeIdentifierNightSweats",
-    "short_description": "Tracks episodes of excessive sweating during sleep",
+    "short_description": "Night Sweats in Apple Health: saved category values, useful reporting context and limits of symptom histories.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierOvulationTestResult": {
@@ -1046,30 +1121,35 @@
   "HKCategoryTypeIdentifierPelvicPain": {
     "category_values": [
       {
-        "description": "No pelvic pain experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild pelvic pain - slight discomfort, does not limit activities",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate pelvic pain - noticeable pain affecting some activities",
-        "name": "moderate",
+        "description": "Subjectively mild severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe pelvic pain - significant pain limiting daily activities",
-        "name": "severe",
+        "description": "Subjectively moderate severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Pelvic Pain",
     "identifier": "HKCategoryTypeIdentifierPelvicPain",
-    "short_description": "Tracks episodes and severity of pelvic region pain",
+    "short_description": "Pelvic Pain in Apple Health: saved category values, useful reporting context and limits of symptom histories.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding": {
@@ -1165,59 +1245,69 @@
   "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat": {
     "category_values": [
       {
-        "description": "No palpitations or abnormal heartbeat awareness",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absence report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild palpitations - brief awareness, not distressing",
-        "name": "present",
+        "description": "The symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate palpitations - persistent awareness, somewhat distressing",
-        "name": "moderate",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe palpitations - intense, frightening, or with other symptoms",
-        "name": "severe",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Rapid, Pounding, or Fluttering Heartbeat",
     "identifier": "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat",
-    "short_description": "Tracks episodes of palpitations or awareness of heartbeat",
+    "short_description": "Interpret rapid, pounding or fluttering heartbeat reports in Apple Health and distinguish symptom severity from pulse readings and rhythm alerts.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierRunnyNose": {
     "category_values": [
       {
-        "description": "No runny nose or nasal discharge",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild runny nose - occasional drip, minimal tissue use",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate runny nose - frequent discharge, regular tissue use",
-        "name": "moderate",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe runny nose - constant dripping, significantly bothersome",
-        "name": "severe",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Runny Nose",
     "identifier": "HKCategoryTypeIdentifierRunnyNose",
-    "short_description": "Tracks episodes and severity of nasal discharge",
+    "short_description": "Runny Nose in Apple Health: understand severity labels, logging intervals and the difference between reported symptoms and measurements.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierSexualActivity": {
@@ -1237,88 +1327,103 @@
   "HKCategoryTypeIdentifierShortnessOfBreath": {
     "category_values": [
       {
-        "description": "No shortness of breath experienced",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absence report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild shortness of breath - slight awareness, able to complete activities",
-        "name": "present",
+        "description": "The symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate shortness of breath - noticeable difficulty, limits some activities",
-        "name": "moderate",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe shortness of breath - significant distress, markedly limits activities",
-        "name": "severe",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Shortness of Breath",
     "identifier": "HKCategoryTypeIdentifierShortnessOfBreath",
-    "short_description": "Tracks episodes of dyspnea or breathing difficulty",
+    "short_description": "Read shortness-of-breath reports in Apple Health, interpret subjective severity and separate breathlessness from respiratory and oxygen measurements.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierSinusCongestion": {
     "category_values": [
       {
-        "description": "No sinus congestion; normal nasal breathing",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild congestion - slight stuffiness, can breathe through nose",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate congestion - noticeable obstruction, partial mouth breathing",
-        "name": "moderate",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe congestion - near-complete obstruction, mouth breathing required",
-        "name": "severe",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Sinus Congestion",
     "identifier": "HKCategoryTypeIdentifierSinusCongestion",
-    "short_description": "Tracks episodes and severity of nasal and sinus congestion",
+    "short_description": "Sinus Congestion in Apple Health: understand severity labels, logging intervals and the difference between reported symptoms and measurements.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierSkippedHeartbeat": {
     "category_values": [
       {
-        "description": "No skipped or extra heartbeats noticed",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absence report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild - occasional isolated skipped beats",
-        "name": "present",
+        "description": "The symptom was explicitly reported absent.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate - multiple skipped beats, somewhat bothersome",
-        "name": "moderate",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe - frequent skipped beats, distressing or associated with other symptoms",
-        "name": "severe",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Skipped Heartbeat",
     "identifier": "HKCategoryTypeIdentifierSkippedHeartbeat",
-    "short_description": "Tracks episodes of perceived missed or extra heartbeats",
+    "short_description": "Understand skipped-heartbeat symptom reports in Apple Health, severity labels, overlapping entries and limits of rhythm interpretation.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierSleepAnalysis": {
@@ -1382,36 +1487,41 @@
   "HKCategoryTypeIdentifierSoreThroat": {
     "category_values": [
       {
-        "description": "No sore throat or throat discomfort",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild sore throat - slight scratchiness or irritation",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate sore throat - noticeable pain, uncomfortable swallowing",
-        "name": "moderate",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe sore throat - significant pain, difficulty swallowing",
-        "name": "severe",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Sore Throat",
     "identifier": "HKCategoryTypeIdentifierSoreThroat",
-    "short_description": "Tracks episodes and severity of throat pain or irritation",
+    "short_description": "Sore Throat in Apple Health: understand severity labels, logging intervals and the difference between reported symptoms and measurements.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierToothbrushingEvent": {
     "category_values": [
       {
-        "description": "The only valid value for toothbrushing events - indicates a brushing session occurred",
+        "description": "Valid label for a recorded event; duration comes from start and end dates.",
         "name": "notApplicable",
         "value": 0
       }
@@ -1419,95 +1529,100 @@
     "default_unit": null,
     "human_readable_name": "Toothbrushing",
     "identifier": "HKCategoryTypeIdentifierToothbrushingEvent",
-    "short_description": "Records toothbrushing events with duration and timing information.",
-    "typical_range": {
-      "max": null,
-      "min": null,
-      "notes": "Dental associations recommend brushing for 2 minutes, twice daily\nduration_seconds: 120-180\nfrequency: 2-3 times daily",
-      "unit": null
-    }
+    "short_description": "Understand toothbrushing event timestamps, the notApplicable category and what a recorded brushing history can show.",
+    "typical_range": null
   },
   "HKCategoryTypeIdentifierVomiting": {
     "category_values": [
       {
-        "description": "No vomiting episodes",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not an absent report.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild - isolated episode(s), tolerable",
-        "name": "present",
+        "description": "Symptom explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate - multiple episodes, limited oral intake",
-        "name": "moderate",
+        "description": "Subjectively mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe - frequent episodes, unable to keep fluids down",
-        "name": "severe",
+        "description": "Subjectively moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Subjectively severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Vomiting",
     "identifier": "HKCategoryTypeIdentifierVomiting",
-    "short_description": "Tracks episodes and severity of vomiting",
+    "short_description": "Understand vomiting in Apple Health: severity labels, useful symptom history and recording limitations.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierWheezing": {
     "category_values": [
       {
-        "description": "No wheezing; normal breath sounds",
-        "name": "notPresent",
+        "description": "Severity was not specified; this is not a negative observation.",
+        "name": "unspecified",
         "value": 0
       },
       {
-        "description": "Mild wheezing - audible with effort, minimal distress",
-        "name": "present",
+        "description": "Symptom was explicitly reported absent for this observation.",
+        "name": "notPresent",
         "value": 1
       },
       {
-        "description": "Moderate wheezing - easily audible, some breathing difficulty",
-        "name": "moderate",
+        "description": "Reported mild symptom severity.",
+        "name": "mild",
         "value": 2
       },
       {
-        "description": "Severe wheezing - loud, significant respiratory distress",
-        "name": "severe",
+        "description": "Reported moderate symptom severity.",
+        "name": "moderate",
         "value": 3
+      },
+      {
+        "description": "Reported severe symptom severity.",
+        "name": "severe",
+        "value": 4
       }
     ],
     "default_unit": null,
     "human_readable_name": "Wheezing",
     "identifier": "HKCategoryTypeIdentifierWheezing",
-    "short_description": "Tracks episodes of whistling sounds during breathing",
+    "short_description": "Wheezing in Apple Health: understand severity labels, logging intervals and the difference between reported symptoms and measurements.",
     "typical_range": null
   },
   "HKCharacteristicTypeIdentifierActivityMoveMode": {
     "category_values": [
       {
-        "description": "Move ring tracks Active Energy Burned (calories/kilocalories) - the default mode",
+        "description": "Move ring measures active energy burned.",
         "name": "activeEnergy",
-        "value": 0
+        "value": 1
       },
       {
-        "description": "Move ring tracks Apple Move Time (exercise minutes) instead of active calories",
+        "description": "Move ring measures Apple Move Time, distinct from Exercise Time.",
         "name": "appleMoveTime",
-        "value": 1
+        "value": 2
       }
     ],
     "default_unit": null,
     "human_readable_name": "Activity Move Mode",
     "identifier": "HKCharacteristicTypeIdentifierActivityMoveMode",
-    "short_description": "Specifies whether the Activity ring tracks Active Calories or Exercise Minutes as the Move goal.",
+    "short_description": "The current setting that determines whether the Move ring measures active energy or Apple Move Time.",
     "typical_range": null
   },
   "HKCharacteristicTypeIdentifierBiologicalSex": {
     "category_values": [
       {
-        "description": "The user has not specified their biological sex in Health settings",
+        "description": "The field is unset or unavailable because read permission was denied.",
         "name": "notSet",
         "value": 0
       },
@@ -1522,7 +1637,7 @@
         "value": 2
       },
       {
-        "description": "Other or not exclusively male or female",
+        "description": "Otherwise not categorized as male or female.",
         "name": "other",
         "value": 3
       }
@@ -1530,13 +1645,13 @@
     "default_unit": null,
     "human_readable_name": "Biological Sex",
     "identifier": "HKCharacteristicTypeIdentifierBiologicalSex",
-    "short_description": "The user's biological sex as set in their Health profile, used for health calculations and reference ranges.",
+    "short_description": "A user-controlled Health profile characteristic with female, male, other and unavailable states.",
     "typical_range": null
   },
   "HKCharacteristicTypeIdentifierBloodType": {
     "category_values": [
       {
-        "description": "The user has not specified their blood type",
+        "description": "The field is unset or unavailable because read permission was denied.",
         "name": "notSet",
         "value": 0
       },
@@ -1584,7 +1699,7 @@
     "default_unit": null,
     "human_readable_name": "Blood Type",
     "identifier": "HKCharacteristicTypeIdentifierBloodType",
-    "short_description": "The user's ABO blood type and Rh factor as set in their Health profile.",
+    "short_description": "The ABO/Rh blood-group label entered in the user’s Health profile, rather than a verified laboratory result.",
     "typical_range": null
   },
   "HKCharacteristicTypeIdentifierDateOfBirth": {
@@ -1592,13 +1707,13 @@
     "default_unit": null,
     "human_readable_name": "Date of Birth",
     "identifier": "HKCharacteristicTypeIdentifierDateOfBirth",
-    "short_description": "The user's date of birth as set in their Health profile, used for age-based health calculations.",
+    "short_description": "The Gregorian calendar birth date entered in the user’s Health profile, read as date components.",
     "typical_range": null
   },
   "HKCharacteristicTypeIdentifierFitzpatrickSkinType": {
     "category_values": [
       {
-        "description": "The user has not specified their skin type",
+        "description": "The field is unset or unavailable because read permission was denied.",
         "name": "notSet",
         "value": 0
       },
@@ -1636,13 +1751,13 @@
     "default_unit": null,
     "human_readable_name": "Fitzpatrick Skin Type",
     "identifier": "HKCharacteristicTypeIdentifierFitzpatrickSkinType",
-    "short_description": "The user's skin phototype classification used for UV exposure recommendations and skin health guidance.",
+    "short_description": "A Health profile classification based on the skin’s tendency to burn and tan with sun exposure.",
     "typical_range": null
   },
   "HKCharacteristicTypeIdentifierWheelchairUse": {
     "category_values": [
       {
-        "description": "The user has not specified their wheelchair use status",
+        "description": "The field is unset or unavailable because read permission was denied.",
         "name": "notSet",
         "value": 0
       },
@@ -1660,7 +1775,7 @@
     "default_unit": null,
     "human_readable_name": "Wheelchair Use",
     "identifier": "HKCharacteristicTypeIdentifierWheelchairUse",
-    "short_description": "Indicates whether the user uses a wheelchair, enabling appropriate activity tracking and metrics.",
+    "short_description": "A current Health profile setting indicating wheelchair use, with a separate unavailable state.",
     "typical_range": null
   },
   "HKCorrelationTypeIdentifierBloodPressure": {
@@ -1755,13 +1870,8 @@
     "default_unit": "degC",
     "human_readable_name": "Basal Body Temperature",
     "identifier": "HKQuantityTypeIdentifierBasalBodyTemperature",
-    "short_description": "The lowest body temperature attained during rest, typically measured immediately upon waking, used primarily for fertility awareness and ovulation tracking.",
-    "typical_range": {
-      "max": 37.3,
-      "min": 35.5,
-      "notes": "BBT typically ranges from 36.1-36.4 degC (97.0-97.5 degF) in the follicular phase and rises to 36.4-37.0 degC (97.5-98.6 degF) in the luteal phase after ovulation.",
-      "unit": "degC"
-    }
+    "short_description": "Basal body temperature in Apple Health, with waking measurements, cycle context and differences from wrist temperature.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierBasalEnergyBurned": {
     "category_values": null,
@@ -1776,13 +1886,8 @@
     "default_unit": "%",
     "human_readable_name": "Blood Alcohol Content",
     "identifier": "HKQuantityTypeIdentifierBloodAlcoholContent",
-    "short_description": "Concentration of alcohol in blood, indicating intoxication level with legal and health implications",
-    "typical_range": {
-      "max": 0.08,
-      "min": 0.0,
-      "notes": "0.08% is the legal driving limit in most US states; impairment begins at lower levels",
-      "unit": "%"
-    }
+    "short_description": "Read blood alcohol content in Apple Health with the right percent conversion, source method and sampling context.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierBloodGlucose": {
     "category_values": null,
@@ -2244,13 +2349,8 @@
     "default_unit": "mcS",
     "human_readable_name": "Electrodermal Activity",
     "identifier": "HKQuantityTypeIdentifierElectrodermalActivity",
-    "short_description": "Skin conductance measurement indicating sympathetic nervous system arousal and stress response",
-    "typical_range": {
-      "max": 20.0,
-      "min": 0.1,
-      "notes": "Baseline varies significantly between individuals; relative changes are more clinically meaningful than absolute values",
-      "unit": "mcS"
-    }
+    "short_description": "Understand skin conductance units, source-dependent recording and the limits of interpreting electrodermal activity as stress.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierEnvironmentalAudioExposure": {
     "category_values": null,
@@ -2281,26 +2381,16 @@
     "default_unit": "L",
     "human_readable_name": "Forced Expiratory Volume (FEV1)",
     "identifier": "HKQuantityTypeIdentifierForcedExpiratoryVolume1",
-    "short_description": "Volume of air forcefully exhaled in the first second of spirometry, a key indicator of obstructive lung disease",
-    "typical_range": {
-      "max": 6.0,
-      "min": 1.0,
-      "notes": "Highly dependent on age, sex, height, and ethnicity; interpret using percent predicted values",
-      "unit": "L"
-    }
+    "short_description": "Air volume exhaled in the first second of a forced breathing test.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierForcedVitalCapacity": {
     "category_values": null,
     "default_unit": "L",
     "human_readable_name": "Forced Vital Capacity",
     "identifier": "HKQuantityTypeIdentifierForcedVitalCapacity",
-    "short_description": "Total volume of air forcefully exhaled after maximum inhalation, essential for assessing lung capacity and restrictive diseases",
-    "typical_range": {
-      "max": 7.0,
-      "min": 2.0,
-      "notes": "Varies significantly with age, sex, height, and ethnicity; interpret using percent predicted values",
-      "unit": "L"
-    }
+    "short_description": "Total air volume exhaled during a forced breathing test after a full inhalation.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierHeadphoneAudioExposure": {
     "category_values": null,
@@ -2375,26 +2465,16 @@
     "default_unit": "count",
     "human_readable_name": "Inhaler Usage",
     "identifier": "HKQuantityTypeIdentifierInhalerUsage",
-    "short_description": "Count of inhaler actuations for asthma and COPD management tracking",
-    "typical_range": {
-      "max": 12,
-      "min": 0,
-      "notes": "Per day; rescue inhaler use >2 times/week (excluding pre-exercise use) suggests suboptimal asthma control",
-      "unit": "count"
-    }
+    "short_description": "Recorded number of inhaler puffs; medication identity and technique need separate context.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierInsulinDelivery": {
     "category_values": null,
     "default_unit": "IU",
     "human_readable_name": "Insulin Delivery",
     "identifier": "HKQuantityTypeIdentifierInsulinDelivery",
-    "short_description": "Amount of insulin delivered for diabetes management, tracking basal and bolus doses in international units",
-    "typical_range": {
-      "max": 100,
-      "min": 0,
-      "notes": "Total daily dose varies widely; typically 0.5-1.0 IU/kg body weight for Type 1 diabetes",
-      "unit": "IU"
-    }
+    "short_description": "Read insulin delivery amounts in IU, separate basal and bolus metadata, and avoid duplicate or incomplete totals.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierLeanBodyMass": {
     "category_values": null,
@@ -2409,13 +2489,8 @@
     "default_unit": "count",
     "human_readable_name": "Nike Fuel",
     "identifier": "HKQuantityTypeIdentifierNikeFuel",
-    "short_description": "A proprietary Nike activity metric that quantifies overall physical activity into a single numeric score (largely deprecated).",
-    "typical_range": {
-      "max": 5000,
-      "min": 0,
-      "notes": "Daily NikeFuel targets varied by user; 2000-3000 NikeFuel was considered a moderate daily goal during the metric's active period. Elite athletes could exceed 5000 NikeFuel daily.",
-      "unit": "count/day"
-    }
+    "short_description": "NikeFuel activity points in Apple Health, with cumulative totals, historical records and source limitations.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierNumberOfAlcoholicBeverages": {
     "category_values": null,
@@ -2435,13 +2510,8 @@
     "default_unit": "count",
     "human_readable_name": "Number of Times Fallen",
     "identifier": "HKQuantityTypeIdentifierNumberOfTimesFallen",
-    "short_description": "Cumulative count of detected fall events for fall risk assessment and elderly health monitoring",
-    "typical_range": {
-      "max": 2,
-      "min": 0,
-      "notes": "Per year for community-dwelling adults; any fall warrants clinical evaluation in older adults",
-      "unit": "count"
-    }
+    "short_description": "Understand saved fall counts, Apple Watch detection coverage, recording delays and the difference between missing records and zero falls.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierOxygenSaturation": {
     "category_values": null,
@@ -2461,26 +2531,16 @@
     "default_unit": "L/min",
     "human_readable_name": "Peak Expiratory Flow Rate",
     "identifier": "HKQuantityTypeIdentifierPeakExpiratoryFlowRate",
-    "short_description": "Maximum speed of exhalation measuring airway patency, essential for asthma self-monitoring and action plan guidance",
-    "typical_range": {
-      "max": 700,
-      "min": 200,
-      "notes": "Highly variable by age, sex, and height; personal best is the key reference value",
-      "unit": "L/min"
-    }
+    "short_description": "Maximum airflow during a forceful exhalation, recorded as a volume-per-time rate.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierPeripheralPerfusionIndex": {
     "category_values": null,
     "default_unit": "%",
     "human_readable_name": "Peripheral Perfusion Index",
     "identifier": "HKQuantityTypeIdentifierPeripheralPerfusionIndex",
-    "short_description": "A measure of peripheral blood flow derived from pulse oximetry, representing the ratio of pulsatile to non-pulsatile blood components.",
-    "typical_range": {
-      "max": 20,
-      "min": 0.02,
-      "notes": "Normal range typically 0.5-2.0% in healthy adults at rest. Values vary significantly based on measurement site, temperature, and physiological state.",
-      "unit": "%"
-    }
+    "short_description": "Peripheral perfusion index in Apple Health, with percentage encoding, sensor-site context and interpretation limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierPhysicalEffort": {
     "category_values": null,
@@ -2617,26 +2677,16 @@
     "default_unit": "count",
     "human_readable_name": "UV Exposure",
     "identifier": "HKQuantityTypeIdentifierUVExposure",
-    "short_description": "Ultraviolet radiation exposure measurement for skin cancer risk assessment and vitamin D synthesis tracking",
-    "typical_range": {
-      "max": 11,
-      "min": 0,
-      "notes": "UV Index scale: 0-2 Low, 3-5 Moderate, 6-7 High, 8-10 Very High, 11+ Extreme",
-      "unit": "count"
-    }
+    "short_description": "UV index records in Apple Health, explaining sample duration, exposure intensity and differences from daylight time.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierUnderwaterDepth": {
     "category_values": null,
     "default_unit": "m",
     "human_readable_name": "Underwater Depth",
     "identifier": "HKQuantityTypeIdentifierUnderwaterDepth",
-    "short_description": "Measures the user's depth underwater during diving activities.",
-    "typical_range": {
-      "max": 40,
-      "min": 0,
-      "notes": "Apple Watch Ultra rated for recreational diving to 40m (130 ft). Most recreational dives occur between 10-30m. Surface is 0m. Values above 40m exceed device rating and most recreational diving certification limits.",
-      "unit": "m"
-    }
+    "short_description": "Underwater depth in Apple Health, with units, session boundaries, sampling gaps and device limits.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierVO2Max": {
     "category_values": null,
@@ -2709,12 +2759,7 @@
     "default_unit": "degC",
     "human_readable_name": "Water Temperature",
     "identifier": "HKQuantityTypeIdentifierWaterTemperature",
-    "short_description": "Measures the temperature of the water during swimming or diving activities.",
-    "typical_range": {
-      "max": 40,
-      "min": 0,
-      "notes": "Apple Watch Ultra operates in water temperatures from 0°C to 40°C. Typical recreational water temperatures range from 15-30°C. Cold water (<15°C) and very warm water (>35°C) present specific physiological considerations.",
-      "unit": "degC"
-    }
+    "short_description": "Water temperature in Apple Health, with Celsius/Fahrenheit units, session coverage and sampling nuances.",
+    "typical_range": null
   }
 }

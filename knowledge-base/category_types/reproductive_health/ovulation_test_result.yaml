@@ -89,9 +89,7 @@ description: '## Overview
   results are descriptive neighbors, not a HealthKit linkage or independent confirmation of ovulation.
 
 
-  Sleep and workout overlap may reveal logging habits if timestamps are meaningful. They do not show that a workout
-  or sleep stage caused a result. Distinguish when a result was entered from when a test was taken if the source
-  provides that detail.
+  Distinguish when a result was entered from when a test was taken if the source provides that detail.
 
 
   ## What did the example data show?

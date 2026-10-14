@@ -75,7 +75,7 @@ description: '## What does a High Heart Rate Event mean?
   notification enablement or all detection opportunities.
 
 
-  ## What changes during workouts or sleep?
+  ## What limits comparisons between notification counts?
 
   High heart rates during activity do not automatically satisfy this inactivity-based feature''s conditions. During
   sleep, compare the event time with actual recorded sleep intervals; clock time alone cannot establish that you

@@ -79,8 +79,8 @@ description: '## What does downhill snow sports distance measure?
 
 
   The research window, October 2025 through September 2026, contained no raw downhill snow sports distance samples,
-  no matching aggregate or workout-series rows, and no skiing or snowboarding workouts. Recording cadence, distributions,
-  workout-versus-sleep differences and seasonal progression could therefore not be measured. No example distance
+  no matching aggregate or workout-series rows, and no skiing or snowboarding workouts. Recording cadence, distributions
+  and seasonal progression could therefore not be measured. No example distance
   chart is shown.
 
 
@@ -100,8 +100,7 @@ description: '## What does downhill snow sports distance measure?
 
   For an unusually long or short interval, review its timestamps, source, run events and elevation metadata before
   drawing conclusions. Heart rate and active energy can provide exertion context when their coverage overlaps the
-  descent, but cannot be calculated from distance alone. Sleep overlap is a data-quality/context check, not a meaningful
-  way to compare normal skiing performance.
+  descent, but cannot be calculated from distance alone.
 
 
   ## Which technical details matter?

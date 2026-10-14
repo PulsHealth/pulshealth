@@ -169,3 +169,19 @@ Stage 3 has 49 verified absent types and one unsupported Food correlation kind.
 Its 50 entries use this coverage/source review path. Previously created optional
 notebooks remain private; they are not required for absent data. Available-data
 entries continue to require executed analysis before publication.
+
+## Batch 4 coverage, characteristics and question review
+
+The remaining 48 entries use fresh coverage/source reviews: 42 sample types
+have no observations, four characteristic properties lack storage, and two have
+current PulsHealth profile fields present. Profile-field presence is an app
+configuration storage check, not evidence of a HealthKit getter or a sample
+history. The archive gate accepts that limited check only for the explicit
+DOB/biological-sex mapping with one selected profile, no exported personal value,
+no sampled observations and an explicit inapplicability flag for sample analysis.
+
+Keep the eleven facets in private reports and mark irrelevant questions as not
+applicable. Public headings should answer questions that fit the measurement.
+Wording-only edits to earlier articles retain their original empirical evidence;
+a separate change receipt binds the prior and revised article hashes without
+rewriting historical research receipts.

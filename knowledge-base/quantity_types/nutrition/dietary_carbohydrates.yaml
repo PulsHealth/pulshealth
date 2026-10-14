@@ -84,14 +84,13 @@ description: '## What are dietary carbohydrates in Apple Health?
   signal. Start-to-start gaps should be summarized within the source rather than pooled across competing food apps.
 
 
-  ## How do carbohydrates relate to calories, glucose and exercise?
+  ## How do carbohydrates relate to calories and glucose?
 
 
   Four kcal per gram is a rough bookkeeping check; actual label calculations can account for fiber, sugar alcohols,
   specific factors and rounding. See [the labeling regulation](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101/subpart-A/section-101.9).
   To compare with glucose, credible meal time and adequately timed glucose measurements are needed; simultaneous
-  database timestamps alone are insufficient. A carbohydrate entry overlapping exercise or sleep does not establish
-  ingestion during that interval, fuel availability or a response to the nutrient.
+  database timestamps alone are insufficient. A logged entry alone does not establish fuel availability or a glucose response to the nutrient.
 
 
   ## What did the database investigation support?

@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Chest Tightness or Pain"
-short_description: "Tracks episodes of chest tightness, pressure, or pain."
-icon: "heart.fill"
-color: "#FF3B30"
+identifier: HKCategoryTypeIdentifierChestTightnessOrPain
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Chest Tightness or Pain
+short_description: Read Apple Health chest tightness or pain reports, severity labels, recording intervals and limits
+  of heart-data comparisons.
+icon: heart.fill
+color: '#FF3B30'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not an absence report.
+- value: 1
+  name: notPresent
+  description: The symptom was explicitly reported absent.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,103 +42,120 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Chest tightness or pain encompasses a range of sensations including pressure, squeezing, aching, burning, or sharp pain in the chest area. This HealthKit category type allows users to log these episodes, providing critical data for identifying patterns and potential cardiac, pulmonary, or musculoskeletal conditions. Given the potential seriousness of chest symptoms, this data type carries significant clinical importance.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; the logging workflow depends on the source app.
+primary_source: Reported symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Chest pain is one of the most common reasons for emergency department visits and can indicate life-threatening conditions. However, it can also arise from benign causes. Tracking patterns helps clinicians differentiate between cardiac and non-cardiac etiologies.
 
-  Cardiac causes (require urgent evaluation):
-  - Acute coronary syndrome (heart attack, unstable angina)
-  - Stable angina pectoris
-  - Pericarditis
-  - Myocarditis
-  - Aortic dissection
-  - Arrhythmias
+  Chest Tightness or Pain records a reported chest symptom in Apple Health. It does not identify a cause, measure
+  heart function or confirm whether a heart attack occurred.
 
-  Pulmonary causes:
-  - Pulmonary embolism
-  - Pneumonia
-  - Pleuritis
-  - Pneumothorax
-  - Asthma
 
-  Gastrointestinal causes:
-  - Gastroesophageal reflux disease (GERD)
-  - Esophageal spasm
-  - Peptic ulcer disease
+  ## What do the severity labels mean?
 
-  Musculoskeletal causes:
-  - Costochondritis
-  - Muscle strain
-  - Rib fractures
 
-  Other causes:
-  - Anxiety and panic attacks
-  - Herpes zoster (shingles)
+  | Code | Label | Interpretation |
 
-  ## When to Seek Medical Attention
-  EMERGENCY: Call emergency services (911) immediately if chest pain:
-  - Is severe, crushing, or pressure-like
-  - Radiates to arm, jaw, neck, or back
-  - Is accompanied by shortness of breath
-  - Occurs with sweating, nausea, or lightheadedness
-  - Is accompanied by irregular heartbeat or palpitations
-  - Occurs during exertion
-  - Lasts more than a few minutes
+  | --- | --- | --- |
 
-  Seek prompt medical evaluation when:
-  - Pain is new or different from previous episodes
-  - Episodes are increasing in frequency or severity
-  - Pain occurs at rest
-  - There are cardiac risk factors (diabetes, hypertension, smoking, family history)
-  - Pain is associated with fever or cough
-  - Symptoms are recurrent without clear diagnosis
+  | 0 | unspecified | Severity was not supplied |
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Exertional patterns (angina typically occurs with activity)
-  - Postprandial patterns (suggesting GERD)
-  - Anxiety-related episodes (panic attacks)
-  - Position-dependent pain (musculoskeletal or pericarditis)
-  - Response to nitroglycerin or antacids
-  - Correlation with respiratory symptoms
-  - Weather or temperature triggers
+  | 1 | notPresent | Explicitly reported absent |
 
-  ## Caveats & Limitations
-  - This is NOT a substitute for emergency evaluation of acute chest pain
-  - Location, radiation, and quality of pain are not captured
-  - Cannot differentiate between cardiac and non-cardiac causes
-  - Associated symptoms (sweating, nausea, dyspnea) not recorded
-  - May delay care if users rely on logging instead of seeking evaluation
-  - Severity assessment is subjective
-  - Does not capture duration of episodes
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | 2 | mild | Reported mild severity |
+
+  | 3 | moderate | Reported moderate severity |
+
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. These are subjective labels, not a calibrated clinical scale.
+  Unspecified is not the same as notPresent, and an unrecorded day is unknown. Do not average the integer codes
+  or interpret their spacing as equal changes in symptom intensity.
+
+
+  ## What context makes a chest-symptom history useful?
+
+
+  The severity category does not encode where discomfort occurred, what it felt like, whether it spread elsewhere
+  or what someone was doing. Those details can help a clinician interpret a history when they are separately recorded.
+  A time near exercise may be useful context, but a timestamp alone does not establish that exertion triggered the
+  symptom.
+
+
+  Heart Rate and separately reported Shortness of Breath can be viewed alongside the symptom history. A heart-rate
+  reading measures pulse rate; it cannot turn a chest-pain label into a diagnosis or make concerning symptoms safe
+  to ignore.
+
+
+  ## When should logging give way to getting help?
+
+
+  Call local emergency services for chest discomfort lasting more than a few minutes or returning, particularly
+  pressure or squeezing, or discomfort accompanied by breathlessness, cold sweat, nausea or lightheadedness. The
+  American Heart Association advises getting emergency help for heart-attack warning signs even when the cause is
+  uncertain. Do not wait for a watch alert or a severe category entry before seeking help.
+
+
+  ## What does recording frequency tell you?
+
+
+  These are logged observations, not sensor samples on a fixed schedule. Compare explicit reported labels within
+  a consistent logging routine and keep missing days separate from notPresent reports. Saved intervals and overlapping
+  entries describe the source’s records; they do not establish continuous symptom duration or an exact number of
+  episodes.
+
+
+  ## Is this type available in PulsHealth data?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. No corresponding records were found
+  in the selected database research window, so severity frequencies, logging intervals and relationships with other
+  measurements could not be calculated. That database coverage does not establish whether the symptom was experienced
+  or whether reports exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
-    relationship: "Dyspnea often accompanies cardiac and pulmonary chest pain"
-  - identifier: "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat"
-    relationship: "Palpitations may occur with cardiac-related chest symptoms"
-  - identifier: "HKQuantityTypeIdentifierHeartRate"
-    relationship: "Heart rate changes may accompany chest symptoms"
-  - identifier: "HKCategoryTypeIdentifierDizziness"
-    relationship: "Dizziness with chest pain suggests cardiac etiology"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Fatigue may accompany cardiac conditions causing chest pain"
+- identifier: HKCategoryTypeIdentifierShortnessOfBreath
+  relationship: A separately reported accompanying symptom; co-recording does not identify the cause.
+- identifier: HKQuantityTypeIdentifierHeartRate
+  relationship: Pulse-rate measurements provide separate context and cannot rule out a serious cause of chest discomfort.
+- identifier: HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat
+  relationship: A separate report of heartbeat sensations, not a measurement of the cause of chest pain.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierChestTightnessOrPain"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierchesttightnesssorpain"
-    type: "official"
-  - title: "Chest Pain - American Heart Association"
-    url: "https://www.heart.org/en/health-topics/heart-attack/warning-signs-of-a-heart-attack"
-    type: "medical"
-  - title: "Evaluation of Chest Pain - AAFP"
-    url: "https://www.aafp.org/pubs/afp/issues/2017/1001/p430.html"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Chest Tightness or Pain — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/chesttightnessorpain
+  type: official
+- title: Symptom severity values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Heart attack warning signs — American Heart Association
+  url: https://www.heart.org/en/health-topics/heart-attack/warning-signs-of-a-heart-attack
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Chest pain in Apple Health: symptom labels and context'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: chest-tightness-or-pain
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; no focal records in the selected database reporting year,
+    so empirical analysis was skipped. This type is not listed in the current sync catalog; coverage cannot establish
+    phone data or symptom absence. Severity codes are subjective labels, not numeric measurements. Source intervals,
+    retrospective logging and overlap do not establish clinical episodes or causes. No measured workout or sleep
+    comparisons are available.

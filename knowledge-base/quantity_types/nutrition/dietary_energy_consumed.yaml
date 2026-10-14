@@ -86,13 +86,12 @@ description: '## What are dietary calories in Apple Health?
   total together with its component meals can count the same intake twice.
 
 
-  ## Can I subtract exercise calories or compare sleep?
+  ## Can I subtract exercise calories from food intake?
 
 
   Food intake and energy expenditure are separate estimates with different coverage and errors. A food log minus
   active calories alone omits resting expenditure. Even intake minus resting and active estimates should not be
-  presented as a measured energy balance unless boundaries, sources and completeness are understood. Workout or
-  sleep timestamp overlap describes records, not when energy was absorbed or used.
+  presented as a measured energy balance unless boundaries, sources and completeness are understood. Food timestamps describe logged entries, not when energy was absorbed or used.
 
 
   ## What did the database investigation support?

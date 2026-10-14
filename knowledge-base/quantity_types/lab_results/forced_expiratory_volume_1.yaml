@@ -1,44 +1,28 @@
-identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Lab and Test Results"
-human_readable_name: "Forced Expiratory Volume (FEV1)"
-short_description: "Volume of air forcefully exhaled in the first second of spirometry, a key indicator of obstructive lung disease"
-icon: "lungs.fill"
-color: "#5AC8FA"
-default_unit: "L"
+identifier: HKQuantityTypeIdentifierForcedExpiratoryVolume1
+source: HealthKit
+type: HKQuantityType
+category: Lab and Test Results
+human_readable_name: Forced Expiratory Volume (FEV1)
+short_description: Air volume exhaled in the first second of a forced breathing test.
+icon: lungs.fill
+color: '#5AC8FA'
+default_unit: L
 supported_units:
-  - "L"
-  - "mL"
-  - "fl_oz_us"
-unit_description: "Liters (L) or milliliters (mL) represent the volume of air expelled from the lungs during forced exhalation"
-aggregation_type: "discrete"
+- L
+- mL
+unit_description: Liters (L) or milliliters (mL) represent the volume of air expelled from the lungs during forced
+  exhalation
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-  - "mostRecent"
-typical_range:
-  min: 1.0
-  max: 6.0
-  unit: "L"
-  notes: "Highly dependent on age, sex, height, and ethnicity; interpret using percent predicted values"
-clinical_ranges:
-  - population: "Healthy Adult Males"
-    normal: "3.0-5.5 L absolute; >80% predicted considered normal"
-  - population: "Healthy Adult Females"
-    normal: "2.0-4.0 L absolute; >80% predicted considered normal"
-  - population: "Mild Obstruction"
-    normal: "60-79% predicted"
-  - population: "Moderate Obstruction"
-    normal: "40-59% predicted"
-  - population: "Severe Obstruction"
-    normal: "<40% predicted"
+- discreteAverage
+- discreteMin
+- discreteMax
+- mostRecent
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -46,102 +30,121 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Personal Spirometers"
-    capability: "Home spirometry measurement for FEV1 tracking"
-    examples:
-      - "Nuvoair Air Next"
-      - "MIR Smart One"
-      - "Propeller Health Sensor"
-  - name: "Clinical Spirometers"
-    capability: "High-precision pulmonary function testing"
-    examples:
-      - "Vitalograph"
-      - "CareFusion MasterScreen"
-      - "NDD EasyOne"
-  - name: "Connected Inhalers"
-    capability: "Some devices include spirometry capabilities"
-    examples:
-      - "Adherium Smartinhaler"
-      - "Propeller Health"
-primary_source: "Spirometry devices"
-description: |
-  ## Overview
-  Forced Expiratory Volume in 1 second (FEV1) is the volume of air that can be forcefully exhaled in the first second after taking a maximal deep breath. It is the most important single measure of airflow limitation and is essential for diagnosing and monitoring obstructive lung diseases such as asthma and COPD.
+- name: Authorized logging apps
+  capability: Can save this quantity with user permission; device support depends on the writing app.
+primary_source: Source-provided measurements or logs
+description: '## What does FEV1 measure?
 
-  ## How It's Measured
-  FEV1 is measured through spirometry, a standardized pulmonary function test:
-  - Patient takes a maximal inspiration to total lung capacity
-  - Performs a forced, rapid, complete exhalation into a spirometer
-  - The device measures volume over time, capturing the first-second volume
-  - At least three acceptable maneuvers are required; best value is recorded
-  - Results are compared to predicted values based on age, sex, height, and ethnicity
-  - Bronchodilator testing may be performed to assess reversibility
 
-  ## Health Significance
-  FEV1 serves multiple critical clinical purposes:
-  - **COPD diagnosis and staging**: GOLD criteria use FEV1 for severity classification
-  - **Asthma assessment**: Monitors disease control and guides treatment decisions
-  - **Surgical risk assessment**: Low FEV1 indicates increased perioperative pulmonary risk
-  - **Disability evaluation**: Used in occupational and insurance assessments
-  - **Treatment response**: Tracks effectiveness of bronchodilators and anti-inflammatory therapies
-  - **Prognosis**: Lower FEV1 associated with increased mortality in respiratory diseases
+  FEV1 is the air volume exhaled during the first second of a forced breathing test. HealthKit stores a discrete
+  volume, usually displayed in liters. It is different from [peak expiratory flow](/knowledge-base/types/HKQuantityTypeIdentifierPeakExpiratoryFlowRate/),
+  which measures the fastest flow rather than volume.
 
-  ## Clinical Interpretation Guidelines
-  When interpreting FEV1 for clinical decisions:
-  1. **Use percent predicted**: Absolute values must be converted to percent of predicted based on reference equations (GLI-2012 recommended)
-  2. **FEV1/FVC ratio**: Essential for distinguishing obstructive from restrictive patterns
-     - <0.70 indicates obstruction (with clinical correlation)
-     - Lower limit of normal (LLN) preferred over fixed ratio in younger and older adults
-  3. **Bronchodilator response**: >12% and >200 mL improvement suggests reversibility
-  4. **Trend analysis**: A decline >40 mL/year exceeds normal aging decline
-  5. **GOLD staging for COPD**:
-     - GOLD 1 (Mild): FEV1 ≥80% predicted
-     - GOLD 2 (Moderate): 50% ≤ FEV1 < 80% predicted
-     - GOLD 3 (Severe): 30% ≤ FEV1 < 50% predicted
-     - GOLD 4 (Very Severe): FEV1 < 30% predicted
-  6. **Asthma control**: Normal FEV1 between exacerbations suggests good control
 
-  ## Caveats & Limitations
-  - **Effort-dependent**: Poor technique yields unreliable results; coaching is essential
-  - **Reference equation selection**: Different equations yield different percent predicted values
-  - **Age and height accuracy**: Errors in demographic data affect predicted values
-  - **Home spirometry variability**: Consumer devices may be less accurate than clinical spirometers
-  - **Acute conditions**: Respiratory infections temporarily affect readings
-  - **Circadian variation**: FEV1 varies throughout the day; standardize timing
-  - **Bronchodilator timing**: Document time since last bronchodilator use
-  - **Not diagnostic alone**: Clinical correlation required for diagnosis
+  ## How should I read a spirometry result?
 
-  ## Additional Notes
-  Home spirometry is increasingly used for remote monitoring of patients with chronic respiratory conditions. When reviewing patient-generated FEV1 data, establish a personal best baseline and monitor for significant declines (>15-20%) that may indicate exacerbation or disease progression. Integration with inhaler usage data and symptom tracking provides comprehensive respiratory disease management.
-metadata_keys:
-  - key: "HKMetadataKeyDeviceName"
-    description: "Name of the spirometry device used for measurement"
-  - key: "HKMetadataKeyWasTakenInLab"
-    description: "Indicates if measurement was performed in a clinical laboratory setting"
-  - key: "HKMetadataKeyReferenceRangeLowerLimit"
-    description: "Lower limit of normal range for the measurement"
-  - key: "HKMetadataKeyReferenceRangeUpperLimit"
-    description: "Upper limit of normal range for the measurement"
+
+  A raw liter value has no universal adult normal range. Interpretation needs the test report, measurement quality
+  and an appropriate reference equation. Percent predicted and a z-score are derived interpretations, not the raw
+  HealthKit quantity. The [ATS recommends race-neutral reference interpretation](https://site.thoracic.org/about-us/news/ats-publishes-official-statement-on-race-ethnicity-and-pulmonary-function-test-interpretation);
+  the equation used matters when comparing reports.
+
+
+  | Context to retain | Why it matters |
+
+  |---|---|
+
+  | Liters or milliliters | 1 L equals 1,000 mL; unit errors can look like dramatic changes. |
+
+  | Test session and quality | Several attempts may belong to one session; a low-effort attempt differs from a usable
+  result. |
+
+  | Before or after bronchodilator | These are distinct test conditions. |
+
+  | Reference equation | A changed equation can alter percent predicted without changing the measured volume. |
+
+
+  ## Can I calculate FEV1/FVC from HealthKit?
+
+
+  Only when [FEV1 and FVC](/knowledge-base/types/HKQuantityTypeIdentifierForcedVitalCapacity/) can be assigned to
+  the same test session and condition. [Spirometry standards](https://pmc.ncbi.nlm.nih.gov/articles/PMC6794117/)
+  use the largest acceptable FEV1 and FVC for that session; they need not come from the same maneuver. Pairing unrelated
+  daily averages or simply choosing the nearest timestamps can produce a misleading ratio. A matching timestamp
+  alone does not establish a shared test.
+
+
+  ## Why can recordings appear in clusters?
+
+
+  Spirometry is a deliberate test. An app may save each attempt or only the selected result, so row counts need
+  not equal test-session counts. Source app, device and available report context help distinguish repeated attempts,
+  imports and follow-up visits. A gap in HealthKit does not establish a period of normal lung function.
+
+
+  ## Does PulsHealth currently collect this type?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. Its presence in this reference does
+  not promise collection. Database absence does not establish absence in Apple Health.
+
+  '
 related_types:
-  - identifier: "HKQuantityTypeIdentifierForcedVitalCapacity"
-    relationship: "FVC is measured simultaneously; FEV1/FVC ratio is essential for diagnosis"
-  - identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
-    relationship: "PEFR provides complementary airflow assessment; more accessible for daily monitoring"
-  - identifier: "HKQuantityTypeIdentifierInhalerUsage"
-    relationship: "Inhaler frequency contextualizes FEV1 values and treatment burden"
-  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
-    relationship: "Oxygen saturation may decline with severe FEV1 reduction"
+- identifier: HKQuantityTypeIdentifierForcedVitalCapacity
+  relationship: A same-session result under the same testing condition can support FEV1/FVC interpretation; timestamps
+    alone do not identify a test session.
+- identifier: HKQuantityTypeIdentifierPeakExpiratoryFlowRate
+  relationship: A related airflow measurement with different units and measurement semantics; compare compatible
+    testing contexts.
+- identifier: HKQuantityTypeIdentifierInhalerUsage
+  relationship: Logged puffs may supply context only when medication identity and timing are known; count alone
+    does not establish bronchodilator response.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierForcedExpiratoryVolume1"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierforcedexpiratoryvolume1"
-    type: "official"
-  - title: "GOLD 2023 Report - Global Strategy for COPD"
-    url: "https://goldcopd.org/2023-gold-report/"
-    type: "medical"
-  - title: "ATS/ERS Standardization of Spirometry"
-    url: "https://www.thoracic.org/statements/resources/pft/spirometry.pdf"
-    type: "medical"
-  - title: "Global Lung Function Initiative (GLI) Reference Equations"
-    url: "https://www.ers-education.org/guidelines/global-lung-function-initiative/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: Forced Expiratory Volume (FEV1)'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/forcedexpiratoryvolume1
+  type: official
+- title: 'ATS/ERS: Standardization of Spirometry 2019'
+  url: https://pmc.ncbi.nlm.nih.gov/articles/PMC6794117/
+  type: medical
+- title: 'ATS: Race-neutral spirometry interpretation'
+  url: https://site.thoracic.org/about-us/news/ats-publishes-official-statement-on-race-ethnicity-and-pulmonary-function-test-interpretation
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Apple Health FEV1: Spirometry Units, Quality & Test Sessions'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Discrete deliberate-test result; repeated attempts may belong to one measurement session.
+  cadence: Source-specific testing or logging cadence; row count need not equal event or test-session count.
+  context: Preserve testing conditions or reliable medication context; timestamps alone cannot establish a physiological
+    response.
+  coverage: No observations in the reviewed database window; this does not establish absence in Apple Health or
+    normal physiology.
+  aggregation: Keep units and test sessions compatible. Selected session results differ from averages of individual
+    attempts.
+  metadata: No sample metadata available to inspect. Raw values cannot establish test quality or medication identity.
+  references:
+  - title: 'Apple: Forced Expiratory Volume (FEV1)'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/forcedexpiratoryvolume1
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: forced-expiratory-volume-1
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  review_basis: coverage_and_sources
+  limitations: 'Verified 365-day snapshot had no observations for this identifier across raw, aggregate and workout-series
+    tables. Empirical ranges, outliers, cadence and relationships were unavailable; no measured figure is presented.
+    Current PulsHealth sync catalog does not include this type. Database absence does not establish absence in Apple
+    Health. Standard workout/sleep facets were assessed for applicability: deliberate test or medication context
+    is needed; continuous within-workout or within-sleep physiology comparisons are inappropriate for these records.'

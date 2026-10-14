@@ -78,7 +78,7 @@ description: '## What does a Low Cardio Fitness Event mean?
   in the database do not establish notification eligibility, settings or whether a reminder should have been sent.
 
 
-  ## How do workouts and sleep affect the interpretation?
+  ## Which measurements contribute to the fitness estimate?
 
   Apple Watch estimates cardio fitness using eligible outdoor walks, runs and hikes. Indoor workouts do not contribute
   to the estimate in the same way. Apple lists age, sex, weight, height and heart-rate-affecting medications among
@@ -86,8 +86,7 @@ description: '## What does a Low Cardio Fitness Event mean?
 
 
   The notification is a summary of the estimate history, rather than a moment-by-moment response to a workout. A
-  notification timestamp near a workout does not prove that particular workout triggered it. Likewise, an event
-  appearing during a recorded sleep interval does not mean cardio fitness was measured during sleep.
+  notification timestamp near a workout does not prove that particular workout triggered it. The notification time should not be treated as the measurement time for the estimate.
 
 
   ## What should be reviewed alongside it?

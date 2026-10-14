@@ -51,6 +51,46 @@ class CoverageReviewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'incomplete coverage'):
             review_entry(article, coverage, catalog)
 
+    def profile_fixture(self):
+        article, coverage, catalog = self.fixture()
+        identifier = 'HKCharacteristicTypeIdentifierDateOfBirth'
+        article['identifier'] = identifier
+        coverage['entries'][0].update(identifier=identifier, kind='characteristic',
+            status='profile_value_available', profile={'column': 'dob', 'profiles': 1,
+            'values_present': 1, 'value_exported': False,
+            'measured_sample_analysis_applicable': False})
+        return article, coverage, catalog
+
+    def test_current_profile_availability_has_no_time_series_analysis(self):
+        article, coverage, catalog = self.profile_fixture()
+        result = review_entry(article, coverage, catalog)
+        self.assertEqual(result['review_basis'], 'coverage_and_sources')
+        self.assertEqual(result['profile_availability']['status'], 'verified')
+        self.assertEqual(set(result['facets']), set(FACETS))
+        for facet in ('values', 'outliers', 'cadence', 'workout_context', 'sleep_context', 'time_patterns', 'related_types'):
+            self.assertEqual(result['facets'][facet]['status'], 'not_applicable')
+        coverage['entries'][0]['status'] = 'unsupported_storage'
+        self.assertEqual(review_entry(article, coverage, catalog)['facets']['cadence']['status'], 'not_applicable')
+
+    def test_profile_presence_requires_specific_verified_property_evidence(self):
+        article, coverage, catalog = self.profile_fixture()
+        for key, value in (('column', 'blood_type'), ('profiles', 0), ('profiles', True),
+                           ('values_present', 0), ('values_present', True),
+                           ('value_exported', True), ('measured_sample_analysis_applicable', True)):
+            invalid = copy.deepcopy(coverage)
+            invalid['entries'][0]['profile'][key] = value
+            with self.subTest(key=key, value=value), self.assertRaisesRegex(ValueError, 'profile snapshot'):
+                review_entry(article, invalid, catalog)
+        for change in ({'kind': 'quantity'}, {'identifier': 'HKCharacteristicTypeIdentifierBloodType'}, {'profile': {}}):
+            invalid = copy.deepcopy(coverage)
+            invalid['entries'][0].update(change)
+            test_article = dict(article, identifier=invalid['entries'][0]['identifier'])
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'profile snapshot'):
+                review_entry(test_article, invalid, catalog)
+        coverage['entries'][0]['tables']['quantity_samples']['records'] = 1
+        with self.assertRaisesRegex(ValueError, 'requires analysis'):
+            review_entry(article, coverage, catalog)
+
     def test_input_tampering_rejects_completion(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

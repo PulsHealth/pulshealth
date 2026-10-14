@@ -81,7 +81,7 @@ description: '## What does Walking Asymmetry measure?
   cover a different duration, so a simple record average and a duration-weighted average answer different questions.
 
 
-  ## How do workouts and sleep change the picture?
+  ## How do workout records compare with other walking bouts?
 
 
   Across the reporting year, **408 records overlapped stored workouts**. Their median was **0 %**, compared with
@@ -91,8 +91,7 @@ description: '## What does Walking Asymmetry measure?
 
   Those gaps include time between separate walking bouts and workouts; they do not measure a workout sensor frequency.
   Overlap is temporal, not proof of explicit workout linkage or that the entire walking interval occurred inside
-  the workout. No walking records overlapped available recorded-asleep intervals in this snapshot. Sleep is not
-  an expected recording opportunity for steady-walking estimates.
+  the workout. No walking records overlapped available recorded-asleep intervals in this snapshot.
 
 
   ## How does this relate to other walking metrics?

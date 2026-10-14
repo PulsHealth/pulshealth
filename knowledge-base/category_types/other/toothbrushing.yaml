@@ -1,30 +1,28 @@
-identifier: "HKCategoryTypeIdentifierToothbrushingEvent"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Other"
-human_readable_name: "Toothbrushing"
-short_description: "Records toothbrushing events with duration and timing information."
-icon: "mouth.fill"
-color: "#5AC8FA"
+identifier: HKCategoryTypeIdentifierToothbrushingEvent
+source: HealthKit
+type: HKCategoryType
+category: Other
+human_readable_name: Toothbrushing
+short_description: Understand toothbrushing event timestamps, the notApplicable category and what a recorded
+  brushing history can show.
+icon: mouth.fill
+color: '#5AC8FA'
 default_unit: null
 supported_units: null
-unit_description: "Category type - uses time interval (start/end) rather than units"
+unit_description: Elapsed session time comes from sample start and end dates, not the category value.
 aggregation_type: null
 statistics_options: null
-typical_range:
-  frequency: "2-3 times daily"
-  duration_seconds: "120-180"
-  notes: "Dental associations recommend brushing for 2 minutes, twice daily"
+typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notApplicable"
-    description: "The only valid value for toothbrushing events - indicates a brushing session occurred"
+- value: 0
+  name: notApplicable
+  description: Valid label for a recorded event; duration comes from start and end dates.
 ios_introduced:
-  version: "13.0"
+  version: '13.0'
   year: 2019
 watchos_introduced:
-  version: "6.0"
+  version: '6.0'
   year: 2019
 deprecated: false
 deprecated_in: null
@@ -32,87 +30,109 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone"
-    capability: "Manual entry via Health app or third-party apps"
-  - name: "Apple Watch"
-    capability: "Manual entry or automatic detection via motion sensors"
-  - name: "Smart Toothbrush"
-    capability: "Automatic logging via Bluetooth-connected toothbrushes (Oral-B, Philips Sonicare, Colgate)"
-primary_source: "Smart Toothbrush"
-description: |
-  ## Overview
+- name: Authorized toothbrushing source app
+  capability: Logs brushing event intervals with permission; device integration depends on the source app.
+primary_source: Authorized toothbrushing source app
+description: '## Overview
 
-  HKCategoryTypeIdentifierToothbrushingEvent captures discrete toothbrushing events in HealthKit. Each sample
-  represents a single brushing session, recording when the brushing started and ended. The duration is
-  calculated from the sample's start and end dates, providing insight into brushing habits and compliance
-  with dental hygiene recommendations.
 
-  ## Health Significance
+  Toothbrushing records a saved brushing event. Its timestamps can describe the session''s timing and elapsed
+  duration, making the history useful for reviewing logged habits. The record does not measure plaque removal
+  or prove that brushing technique was effective.
 
-  Oral health is increasingly recognized as connected to systemic health. Poor oral hygiene is associated
-  with:
 
-  - **Cardiovascular disease**: Periodontal bacteria may contribute to atherosclerosis
-  - **Diabetes management**: Gum disease can affect blood glucose control
-  - **Respiratory infections**: Oral bacteria can be aspirated into lungs
-  - **Pregnancy outcomes**: Periodontal disease linked to preterm birth
-  - **Cognitive health**: Emerging research links oral health to dementia risk
+  ## What does the category value mean?
 
-  Tracking brushing frequency and duration helps establish baseline hygiene habits and identify patients
-  who may benefit from oral health interventions.
 
-  ## Clinical Interpretation
+  | Field | Meaning |
 
-  When reviewing toothbrushing data, clinicians should consider:
+  | --- | --- |
 
-  - **Frequency**: The American Dental Association recommends brushing twice daily. Less frequent brushing
-    may indicate poor compliance or need for patient education.
+  | Category value 0 | notApplicable; the event has no graded category |
 
-  - **Duration**: Each session should last approximately 2 minutes (120 seconds). Consistently short
-    sessions may result in inadequate plaque removal.
+  | Start and end dates | The recorded session interval |
 
-  - **Timing patterns**: Morning and evening brushing (especially before bed) is most effective. Brushing
-    after meals can help but should wait 30 minutes after acidic foods.
+  | No event | No saved observation; brushing may still have occurred |
 
-  - **Consistency**: Regular daily patterns suggest established habits; sporadic entries may indicate
-    incomplete tracking or inconsistent hygiene practices.
 
-  ## Caveats & Limitations
+  The zero category value does not mean that no brushing occurred. Do not average the codes or add them to
+  count sessions. Use the event records and their intervals, keeping source information available for checking
+  duplicates.
 
-  - **Data completeness**: Users may not consistently log brushing events, especially if manually entered.
-    Smart toothbrush data is more reliable but requires compatible devices.
 
-  - **Quality not captured**: The data records that brushing occurred but not the technique, coverage, or
-    effectiveness. Proper brushing technique matters as much as duration.
+  ## Does Apple Watch automatically track brushing?
 
-  - **Device accuracy**: Motion-based detection (like Apple Watch) may have false positives or miss
-    events. Smart toothbrush data depends on Bluetooth connectivity.
 
-  - **Single value category**: All samples use value 0 (notApplicable) - the meaningful data is in the
-    timestamp and duration, not the category value itself.
+  The HealthKit identifier provides a way for authorized apps to read and write events. It does not by itself
+  establish a built-in Apple Watch brushing detector or guarantee that a particular connected toothbrush writes
+  to Apple Health. Check the source app''s actual behavior before assuming automatic coverage.
 
-  - **Supplementary hygiene not tracked**: Flossing, mouthwash use, and interdental cleaning are not
-    captured by this type.
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from the source device or app"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+
+  Manual logs and device-connected logs can have different timestamp precision and different reasons for missing
+  sessions. A new source may change the visible daily count even when the underlying habit has not changed.
+
+
+  ## What makes a useful brushing history?
+
+
+  Show recorded sessions per day alongside elapsed duration and source coverage. Check duplicate or overlapping
+  imports before counting them as separate sessions. Keep long gaps visible; they may represent unlogged brushing
+  or an interrupted connection rather than a change in behavior.
+
+
+  The American Dental Association recommends brushing twice daily with a soft-bristled brush and fluoride toothpaste.
+  That advice describes a care routine, not a clinical reference range for the number of saved records. A complete-looking
+  timeline still does not verify that all tooth surfaces were cleaned.
+
+
+  ## What cannot be inferred from duration?
+
+
+  Elapsed time does not reveal pressure, coverage, toothpaste use or interdental cleaning. Avoid classifying
+  a session as effective solely because its interval exceeds a threshold. Source-specific feedback can add
+  detail when explicitly available, but it should remain separate from the basic HealthKit event.
+
+
+  ## What data was available for this example?
+
+
+  No toothbrushing records were found in the selected database window. This type is listed in the current PulsHealth
+  sync catalog. Database coverage does not establish whether corresponding entries exist in Apple Health. No
+  measured ranges, recording intervals or source comparisons are available from this example.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierHandwashingEvent"
-    relationship: "related_hygiene_behavior"
-  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
-    relationship: "temporal_correlation"
+- identifier: HKCategoryTypeIdentifierHandwashingEvent
+  relationship: Another self-care event; a separate habit with different recording coverage.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierToothbrushingEvent"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiertoothbrushing"
-    type: "official"
-  - title: "American Dental Association - Brushing Your Teeth"
-    url: "https://www.ada.org/resources/research/science-and-research-institute/oral-health-topics/brushing-your-teeth"
-    type: "medical"
-  - title: "Oral Health and Systemic Disease - Journal of Dental Research"
-    url: "https://journals.sagepub.com/home/jdr"
-    type: "research"
-last_updated: "2026-01-27"
+- title: Toothbrushing events — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/toothbrushingevent
+  type: official
+- title: Brushing your teeth — American Dental Association
+  url: https://www.mouthhealthy.org/all-topics-a-z/brushing-your-teeth
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Toothbrushing in Apple Health: sessions, duration and habit history'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: toothbrushing
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified zero focal records in the selected database window; primary-source review supplies
+    semantics, not measured ranges, outliers, cadence or relationships. Listed in current sync catalog. Workout
+    and sleep facets were assessed for relevance; no forced public context comparisons or empirical findings.
+    Category code is not a quantity or an absence observation.

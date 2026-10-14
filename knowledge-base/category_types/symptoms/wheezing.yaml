@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierWheezing"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Wheezing"
-short_description: "Tracks episodes of whistling sounds during breathing"
-icon: "lungs.fill"
-color: "#5AC8FA"
+identifier: HKCategoryTypeIdentifierWheezing
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Wheezing
+short_description: 'Wheezing in Apple Health: understand severity labels, logging intervals and the difference
+  between reported symptoms and measurements.'
+icon: lungs.fill
+color: '#5AC8FA'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No wheezing; normal breath sounds"
-  - value: 1
-    name: "present"
-    description: "Mild wheezing - audible with effort, minimal distress"
-  - value: 2
-    name: "moderate"
-    description: "Moderate wheezing - easily audible, some breathing difficulty"
-  - value: 3
-    name: "severe"
-    description: "Severe wheezing - loud, significant respiratory distress"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not a negative observation.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,141 +42,125 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging with severity"
-  - name: "Apple Watch"
-    capability: "Quick symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Wheezing is a high-pitched whistling sound made during breathing, typically
-  more prominent during exhalation. It results from narrowed or compressed
-  airways and is a key symptom of asthma, COPD, and other respiratory conditions.
-  This data type enables tracking for disease monitoring and treatment response.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  - **Asthma Control**: Key symptom for assessing asthma control level
-  - **COPD Monitoring**: Indicates exacerbation or worsening obstruction
-  - **Treatment Response**: Track effectiveness of bronchodilators and
-    controller medications
-  - **Trigger Identification**: Helps identify environmental, allergic, or
-    activity triggers
-  - **Action Plan Adherence**: Informs asthma action plan zone determination
 
-  ## CRITICAL: Red Flags Requiring Immediate Care
+  Wheezing in Apple Health records a reported breathing symptom and its severity. It is not an acoustic recording,
+  an airflow measurement or an automatic asthma diagnosis.
 
-  **Call 911 or go to emergency room if wheezing occurs with:**
-  - Severe shortness of breath
-  - Inability to speak in full sentences
-  - Bluish lips or fingernails (cyanosis)
-  - Confusion or altered mental status
-  - Rapid breathing with chest retractions
-  - No improvement with rescue inhaler
-  - Silent chest (no wheezing with severe distress - ominous sign)
 
-  **Severe Asthma Attack Signs:**
-  - Peak flow <50% of personal best
-  - Symptoms not responding to rescue medication
-  - Symptoms worsening rapidly
-  - History of severe attacks or ICU admissions
+  ## What do the saved values mean?
 
-  ## Clinical Context
-  **Common Causes:**
-  - Asthma
-  - COPD/emphysema
-  - Acute bronchitis
-  - Allergic reactions
-  - Respiratory infections
-  - Exercise-induced bronchoconstriction
 
-  **Less Common Causes:**
-  - Anaphylaxis
-  - Heart failure ("cardiac asthma")
-  - Foreign body aspiration
-  - Vocal cord dysfunction
-  - Tumor/airway obstruction
-  - GERD
+  | Code | Label | Interpretation |
 
-  **Wheezing Characteristics:**
-  - Expiratory wheezing: typical of asthma/COPD
-  - Inspiratory wheezing/stridor: suggests upper airway obstruction
-  - Both phases: more severe obstruction
+  | --- | --- | --- |
 
-  ## When to Seek Medical Attention
-  **Urgent/Same Day:**
-  - New onset wheezing without clear cause
-  - Wheezing not responding to usual treatment
-  - Increased frequency of wheezing episodes
-  - Wheezing with fever
-  - Wheezing affecting sleep
-  - Wheezing with any red flag symptoms
+  | 0 | unspecified | Severity was not specified |
 
-  **Schedule Evaluation:**
-  - Needing rescue inhaler more than 2x/week
-  - Nighttime symptoms more than 2x/month
-  - Activity limitations due to wheezing
-  - To review and update asthma action plan
+  | 1 | notPresent | Symptom was explicitly reported absent |
 
-  ## Pattern Recognition
-  Tracking wheezing can reveal:
-  - Seasonal patterns (allergies, viral seasons)
-  - Environmental triggers (dust, pets, mold, smoke)
-  - Exercise-induced patterns
-  - Nighttime predominance (suggests poor control)
-  - Medication response and timing
-  - Trend toward worsening control
-  - Correlation with peak flow readings
-  - Cold air or weather trigger patterns
+  | 2 | mild | Reported mild severity |
 
-  ## Asthma Control Assessment
-  Well-controlled asthma typically means:
-  - Daytime symptoms ≤2 days/week
-  - No nighttime awakenings
-  - Normal activities
-  - Rescue inhaler use ≤2 days/week
-  - No exacerbations
+  | 3 | moderate | Reported moderate severity |
 
-  ## Caveats & Limitations
-  - Subjective; user may not hear subtle wheezing
-  - Cannot distinguish inspiratory from expiratory
-  - Does not capture peak flow or spirometry data
-  - Cannot differentiate between causes
-  - Severe obstruction may have decreased wheezing ("silent chest")
-  - Does not record response to rescue inhaler
-  - Cannot assess oxygen levels during episodes
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External identifier for cross-referencing symptom entries"
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where symptom was logged"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified is not the same as notPresent, and a missing
+  record is neither. The integers identify labels; numerical averages and physiological reference ranges do
+  not apply.
+
+
+  ## How does wheezing relate to breathing measurements?
+
+
+  [Peak Expiratory Flow Rate](/knowledge-base/types/HKQuantityTypeIdentifierPeakExpiratoryFlowRate/) and [Forced
+  Expiratory Volume (FEV1)](/knowledge-base/types/HKQuantityTypeIdentifierForcedExpiratoryVolume1/) are separate
+  measurements. Their values cannot be inferred from mild, moderate or severe wheezing labels. [Inhaler Usage](/knowledge-base/types/HKQuantityTypeIdentifierInhalerUsage/)
+  is also a separate record and does not by itself show why an inhaler was used.
+
+
+  These histories can support a discussion with a clinician when both have been recorded. They should retain
+  their own times, sources and units rather than being collapsed into a symptom score.
+
+
+  ## Is timing around activity or night-time symptoms useful?
+
+
+  It can be, when the user actually reports that context. NHS asthma guidance describes symptoms that may be
+  triggered by exercise or occur at night; wheezing alone still does not establish asthma. A note saying wheezing
+  began during a run or woke the user gives more specific context than a record that merely overlaps a workout
+  or sleep interval.
+
+
+  A saved category sample is not continuous respiratory monitoring. For severe wheezing or substantial breathing
+  difficulty, seek urgent medical help. Use an existing clinician-provided action plan where applicable; the
+  category code cannot determine an inhaler dose.
+
+
+  ## How should recording intervals be interpreted?
+
+
+  This is a logged symptom, with no fixed sensor sampling schedule. Start-to-start gaps describe when observations
+  were saved. A sample’s start and end times describe the interval supplied by its source; their difference
+  does not establish the full duration of a clinical episode. Repeated or overlapping records need review before
+  counting episodes.
+
+
+  This category is not currently listed in the PulsHealth sync catalog. No observations were present in the
+  reviewed user data, so recorded severity frequencies, source differences and logging intervals could not
+  be measured. That database coverage does not establish whether entries exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
-    relationship: "Often co-occurs; indicates severity"
-  - identifier: "HKCategoryTypeIdentifierCoughing"
-    relationship: "Common co-symptom in asthma and respiratory conditions"
-  - identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
-    relationship: "Asthma symptom complex"
-  - identifier: "HKQuantityTypeIdentifierOxygenSaturation"
-    relationship: "Objective oxygenation during episodes"
-  - identifier: "HKQuantityTypeIdentifierPeakExpiratoryFlowRate"
-    relationship: "Objective airflow measurement for asthma"
-  - identifier: "HKQuantityTypeIdentifierForcedExpiratoryVolume1"
-    relationship: "Spirometry for lung function assessment"
-  - identifier: "HKQuantityTypeIdentifierInhalerUsage"
-    relationship: "Rescue medication use correlation"
+- identifier: HKQuantityTypeIdentifierPeakExpiratoryFlowRate
+  relationship: Separate numerical airflow measurement, not encoded by wheezing severity.
+- identifier: HKQuantityTypeIdentifierForcedExpiratoryVolume1
+  relationship: Separate lung-function measurement requiring an actual test result.
+- identifier: HKQuantityTypeIdentifierInhalerUsage
+  relationship: Separately recorded use; timing does not establish treatment response.
+- identifier: HKCategoryTypeIdentifierShortnessOfBreath
+  relationship: Different reported breathing symptom with its own severity.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierWheezing"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierwheezing"
-    type: "official"
-  - title: "Asthma Guidelines - GINA"
-    url: "https://ginasthma.org/gina-reports/"
-    type: "medical"
-  - title: "Asthma Control and Management - NHLBI"
-    url: "https://www.nhlbi.nih.gov/health-topics/asthma-management-guidelines"
-    type: "medical"
-  - title: "COPD Guidelines - GOLD"
-    url: "https://goldcopd.org/gold-reports/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Wheezing — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/wheezing
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Category samples — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorysample
+  type: official
+- title: Asthma symptoms and diagnosis — NHS
+  url: https://www.nhs.uk/conditions/asthma/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Wheezing in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: wheezing
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: No focal observations in the verified database snapshot; empirical label frequencies, sources,
+    cadence and relationships are unavailable. Type is not in the current sync catalog; database absence does
+    not establish Apple Health absence. Category codes are subjective labels, not physiological measurements.
+    Source intervals are not verified clinical episodes. Workout and sleep facets have no measured comparison;
+    public discussion is included only where specifically useful.
