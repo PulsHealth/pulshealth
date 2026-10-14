@@ -1,139 +1,183 @@
-identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Mobility"
-human_readable_name: "Walking Asymmetry Percentage"
-short_description: "Percentage difference in step time between left and right legs during walking."
-icon: "figure.walk"
-color: "#FF9500"
-default_unit: "%"
+identifier: HKQuantityTypeIdentifierWalkingAsymmetryPercentage
+source: HealthKit
+type: HKQuantityType
+category: Mobility
+human_readable_name: Walking Asymmetry Percentage
+short_description: Walking Asymmetry estimates the proportion of steps with different movement speeds between feet.
+icon: figure.walk
+color: '#FF9500'
+default_unit: '%'
 supported_units:
-  - "%"
-unit_description: "Percentage representing the degree of asymmetry between left and right leg gait patterns."
-aggregation_type: "discrete"
+- '%'
+unit_description: HealthKit percent units store a 0–1 ratio; multiply by 100 to display a percentage.
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-typical_range:
-  min: 0
-  max: 25
-  unit: "%"
-  notes: "Healthy adults typically show <10% asymmetry; values >15% warrant clinical evaluation."
-clinical_ranges:
-  - population: "Healthy Adults"
-    normal: "<10%"
-    concerning: ">15%"
-  - population: "Adults 65+"
-    normal: "<12%"
-    concerning: ">18%"
-  - population: "Post-surgical (hip/knee)"
-    normal: "<20% (early recovery)"
-    concerning: ">25% after 3 months"
-  - population: "Neurological conditions"
-    normal: "Variable by condition"
-    concerning: "Progressive increase from baseline"
+- discreteAverage
+- discreteMin
+- discreteMax
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "14.0"
+  version: '14.0'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
-writable: false
+writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone"
-    capability: "Motion sensors detect left-right gait differences"
-  - name: "Apple Watch"
-    capability: "Continuous bilateral gait analysis during daily activities"
-primary_source: "Apple Watch or iPhone motion sensors"
-description: |
-  ## Overview
-  Walking asymmetry percentage quantifies the difference in gait characteristics between the left and right sides during ambulation. It measures the percentage difference in the time each foot spends on the ground during walking. This metric serves as an objective indicator of limping, compensatory gait patterns, and unilateral musculoskeletal or neurological impairments.
+- name: iPhone
+  capability: iPhone 8 or later automatically estimates this metric during eligible steady walking with the phone
+    carried near the waist.
+primary_source: iPhone motion sensors
+description: '## What does Walking Asymmetry measure?
 
-  ## How It's Measured
-  Apple devices analyze motion sensor data to detect the timing characteristics of each step, comparing left and right leg parameters including:
-  - Step time (duration from heel strike to toe-off)
-  - Swing phase duration
-  - Ground contact time
 
-  The asymmetry is calculated as the percentage difference between the two sides, with 0% indicating perfect symmetry. A positive value indicates which side has the longer step time, though HealthKit reports the absolute magnitude.
+  Walking Asymmetry estimates the proportion of steps with different movement speeds between feet. It does not report
+  the percentage difference between left and right step times, which leg is affected, or a diagnosis. [Apple’s type
+  documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/walkingasymmetrypercentage)
+  defines the measurement and recording conditions.
 
-  ## Health Significance
-  Gait asymmetry is clinically significant because:
-  - **Injury detection**: Often the first objective sign of lower extremity injury
-  - **Pain monitoring**: Asymmetry increases with pain, even before conscious awareness
-  - **Neurological assessment**: Stroke, Parkinson's, and MS cause characteristic asymmetries
-  - **Prosthetic/orthotic evaluation**: Objective measure of device fit and function
-  - **Fall risk**: Asymmetric gait increases stumbling and fall risk
 
-  ## Clinical Interpretation Guidelines
-  - **<5%**: Excellent symmetry; normal for healthy adults
-  - **5-10%**: Mild asymmetry; may be normal variant or subclinical issue
-  - **10-15%**: Moderate asymmetry; warrants investigation
-  - **15-25%**: Significant asymmetry; likely symptomatic, requires evaluation
-  - **>25%**: Severe asymmetry; significant gait impairment present
+  ## What do example records look like?
 
-  Key clinical considerations:
-  - **New onset asymmetry**: May indicate acute injury, joint flare, or neurological event
-  - **Progressive increase**: Suggests worsening condition requiring intervention
-  - **Post-treatment decrease**: Objective evidence of therapeutic response
-  - **Persistent asymmetry**: May indicate chronic condition or structural abnormality
 
-  ## Age-Adjusted Norms
-  Gait symmetry is relatively preserved with normal aging compared to other gait parameters:
-  - Ages 20-60: <8% is typical
-  - Ages 60-80: <12% is acceptable
-  - Ages 80+: <15% is acceptable
+  The reporting year contained **5,045 records on 348 of 365 days**. July–September contained **1,216 records on
+  88 of 92 days**, from one source group. Missing days remain missing rather than zero observations.
 
-  Significant asymmetry at any age warrants evaluation, as it more likely reflects pathology than normal aging.
 
-  ## Caveats & Limitations
-  - Device placement affects measurement accuracy (phone in pocket, watch on wrist)
-  - Footwear differences between feet can cause apparent asymmetry
-  - Carrying items (bags, children) on one side affects gait
-  - Environmental factors (uneven ground, slopes) influence measurements
-  - Does not specify which leg has the abnormality (need clinical correlation)
-  - May not detect subtle asymmetries that are clinically apparent
-  - Compensatory patterns may mask true asymmetry
+  The focus-window median was **0%**, and **891 of 1,216 records (73%)** stored zero. The central 90% of observations
+  ranged from **0% to 10%**, but the maximum reached **85%**. A zero estimate describes that recorded walking interval;
+  it does not establish perfect symmetry throughout the day. The high tail warrants checking repeated observations,
+  source, placement and walking conditions before drawing a clinical conclusion.
 
-  ## Additional Notes
-  Walking asymmetry is particularly valuable for:
-  - **Orthopedic rehabilitation**: Tracking recovery after hip/knee replacement, ACL repair
-  - **Sports medicine**: Detecting overuse injuries before symptomatic
-  - **Neurological monitoring**: Stroke recovery, Parkinson's medication timing
-  - **Chronic pain management**: Objective documentation of functional impact
-  - **Workers' compensation**: Objective functional assessment
 
-  Consider the clinical context when interpreting:
-  - Historical leg length discrepancy may cause stable, asymptomatic asymmetry
-  - Recent changes from baseline are more significant than absolute values
-  - Combine with walking speed and double support for comprehensive assessment
+  | Reading question | Useful interpretation |
+
+  | --- | --- |
+
+  | What does one value summarize? | The stored walking interval, not every step that day |
+
+  | What does the range describe? | Recorded observations with each record given equal weight |
+
+  | What does a high or low tail mean? | A reason to inspect context and repeated values |
+
+  | How should a trend be compared? | Similar source, placement and walking conditions |
+
+
+  ## Why are records unevenly spaced?
+
+
+  In the focus window, observed-day recording counts ranged from **1 to 51**, with a median of **13**. Stored intervals
+  had a median duration of **35.4 seconds** and ranged from **10.6 to 300 seconds**. The median positive start-to-start
+  gap was **5.2 minutes**; the largest was **41.9 hours**.
+
+
+  Apple describes roughly 10–30 samples on a typical day. That is a recording description, not a guaranteed sampling
+  schedule. The sensor’s internal measurements are not the same as exported sample timestamps. Each estimate can
+  cover a different duration, so a simple record average and a duration-weighted average answer different questions.
+
+
+  ## How do workouts and sleep change the picture?
+
+
+  Across the reporting year, **408 records overlapped stored workouts**. Their median was **0 %**, compared with
+  **0 %** outside recorded workouts and sleep. Within these separate context groups, median positive start-to-start
+  gaps were **3.8 minutes** for workout-overlapping records and **5.9 minutes** for other records.
+
+
+  Those gaps include time between separate walking bouts and workouts; they do not measure a workout sensor frequency.
+  Overlap is temporal, not proof of explicit workout linkage or that the entire walking interval occurred inside
+  the workout. No walking records overlapped available recorded-asleep intervals in this snapshot. Sleep is not
+  an expected recording opportunity for steady-walking estimates.
+
+
+  ## How does this relate to other walking metrics?
+
+
+  Higher daily asymmetry was weakly associated with slower daily walking speed in this example (**Spearman −0.26
+  across 88 paired days**). The association does not identify an injured leg or explain why a walking pattern changed.
+
+
+  The analysis kept sources separate and compared reporting-day medians on days containing both types. It also checked
+  unique exact interval matches and excluded ambiguous duplicate interval candidates. These are repeated observations
+  in example user data, not independent participants, and the relationships do not show causation.
+
+
+  [Walking speed](/knowledge-base/types/HKQuantityTypeIdentifierWalkingSpeed/), [step length](/knowledge-base/types/HKQuantityTypeIdentifierWalkingStepLength/),
+  [double support](/knowledge-base/types/HKQuantityTypeIdentifierWalkingDoubleSupportPercentage/) and [asymmetry](/knowledge-base/types/HKQuantityTypeIdentifierWalkingAsymmetryPercentage/)
+  each add a different view of gait. [Walking Steadiness](/knowledge-base/types/HKQuantityTypeIdentifierAppleWalkingSteadiness/)
+  is a separate estimate, not a classification computed here from these charts.
+
+
+  ## What can change or prevent an estimate?
+
+
+  Automatic collection requires iPhone 8 or later, carried near the waist, during steady walking on flat ground.
+  Apple says these samples are not recorded when wheelchair status is enabled. Phone placement and which walking
+  bouts meet the algorithm’s criteria can therefore change the observed distribution without establishing a physiological
+  change.
+
+
+  The stored value 0.308 corresponds to 30.8%, not 0.308%. Percent units retain 0–1 ratios in the database. Compare
+  persistent changes under similar conditions with how walking feels and functions. Consumer walking estimates do
+  not replace a supervised gait assessment; a single extreme value should not be assigned a diagnosis.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyDevicePlacementSide"
-    description: "Indicates which side of the body the device was placed during measurement"
-  - key: "HKMetadataKeySessionEstimate"
-    description: "Indicates if the value represents an estimate from a workout session"
+- key: HKMetadataKeyDevicePlacementSide
+  description: Recording-side information, documented for walking asymmetry. It does not identify an impaired leg.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
-    relationship: "Asymmetry often causes compensatory speed reduction"
-  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
-    relationship: "Asymmetry may increase double support on affected side"
-  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
-    relationship: "Asymmetric step lengths contribute to overall asymmetry"
-  - identifier: "HKQuantityTypeIdentifierAppleWalkingSteadiness"
-    relationship: "Asymmetry is a factor in overall steadiness assessment"
+- identifier: HKQuantityTypeIdentifierWalkingSpeed
+  relationship: Complementary selected-walking estimate; compare source and interval context.
+- identifier: HKQuantityTypeIdentifierWalkingStepLength
+  relationship: Complementary selected-walking estimate; compare source and interval context.
+- identifier: HKQuantityTypeIdentifierWalkingDoubleSupportPercentage
+  relationship: Complementary selected-walking estimate; compare source and interval context.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierwalkingasymmetrypercentage"
-    type: "official"
-  - title: "Gait Asymmetry in Clinical Practice - Journal of NeuroEngineering and Rehabilitation"
-    url: "https://jneuroengrehab.biomedcentral.com/"
-    type: "research"
-  - title: "Asymmetric Gait and Fall Risk - Physical Therapy Journal"
-    url: "https://academic.oup.com/ptj"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Apple Developer Documentation — Walking Asymmetry
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/walkingasymmetrypercentage
+  type: official
+- title: Apple — Beyond counting steps (WWDC20)
+  url: https://developer.apple.com/videos/play/wwdc2020/10656/
+  type: official
+- title: Apple HealthKit percent units
+  url: https://developer.apple.com/documentation/healthkit/hkunit/percent()
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Walking Asymmetry in Apple Health: Meaning, Recording and Examples'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: walking-asymmetry-percentage
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Selected walking bouts in observational example data, not population norms. Repeated records are
+    not independent participants. Ratios use 0–1 canonical storage. Sources kept separate; daily associations are
+    exploratory. Timestamp overlap does not prove explicit workout linkage. Missing observations are not zero.
+figures:
+- src: /knowledge-base/figures/walking-asymmetry-percentage/distribution.png
+  alt: Histogram of recorded walking asymmetry estimates beside a histogram of sample counts per observed day.
+  title: 'Walking Asymmetry: values and daily recording counts'
+  caption: 'Example July–September 2026 data: 1,216 interval observations on 88 observed days. Left: each record
+    has equal weight. Right: each observed day has equal weight; unrecorded days are excluded.'
+  methods: Source group selected by focus-window record count; bundle identifier plus source display name combines
+    revisions. Half-open start-selected reporting window in America/Los_Angeles. All selected records retained;
+    percent ratios multiplied by 100 where applicable. No source names or individual dates shown.
+  section: What do example records look like?
+  width: 1500
+  height: 600

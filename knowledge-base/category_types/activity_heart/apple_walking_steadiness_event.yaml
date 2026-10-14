@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Activity and Heart"
-human_readable_name: "Apple Walking Steadiness Event"
-short_description: "Records events when walking steadiness measurements indicate increased fall risk, categorized by severity."
-icon: "figure.walk"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierAppleWalkingSteadinessEvent
+source: HealthKit
+type: HKCategoryType
+category: Activity and Heart
+human_readable_name: Apple Walking Steadiness Event
+short_description: 'Apple Health Walking Steadiness notifications: initial and repeat Low or Very Low events, recording
+  cadence and differences from fall detection.'
+icon: figure.walk
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,23 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "initialLow"
-    description: "Walking Steadiness has been classified as Low for the first time. This indicates significant concern for fall risk and warrants attention."
-  - value: 2
-    name: "initialVeryLow"
-    description: "Walking Steadiness has been classified as Very Low for the first time. This indicates critical fall risk requiring immediate attention and likely clinical evaluation."
-  - value: 3
-    name: "repeatLow"
-    description: "Walking Steadiness remains classified as Low on subsequent measurement. Persistent low steadiness indicates ongoing fall risk."
-  - value: 4
-    name: "repeatVeryLow"
-    description: "Walking Steadiness remains classified as Very Low on subsequent measurement. Persistent very low steadiness indicates critical ongoing fall risk."
+- value: 1
+  name: initialLow
+  description: Initial Low classification notification.
+- value: 2
+  name: initialVeryLow
+  description: Initial Very Low classification notification.
+- value: 3
+  name: repeatLow
+  description: Reminder while a Low classification persists.
+- value: 4
+  name: repeatVeryLow
+  description: Reminder while a Very Low classification persists.
 ios_introduced:
-  version: "15.0"
+  version: '15.0'
   year: 2021
 watchos_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2021
 deprecated: false
 deprecated_in: null
@@ -38,186 +39,140 @@ writable: false
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Primary source - uses accelerometer during walking to assess gait metrics and calculate steadiness score"
-  - name: "Apple Watch"
-    capability: "Contributes motion data when iPhone is not present during walks"
-primary_source: "iPhone"
-description: |
-  ## Overview
-  Apple Walking Steadiness Event records notifications generated when a user's Walking Steadiness score drops to "Low" or "Very Low" categories, indicating increased fall risk. This feature, introduced in iOS 15, represents Apple's first proactive fall risk assessment tool, complementing the reactive Fall Detection feature.
+- name: iPhone
+  capability: Uses eligible phone motion observations during walking; notifications depend on configuration and
+    classification history.
+primary_source: iPhone
+description: '## What does a Walking Steadiness notification mean?
 
-  Walking Steadiness is calculated from gait analysis during daily walks, using the iPhone's accelerometer to measure balance, coordination, and walking patterns. The system requires sufficient walking data (iPhone carried in pocket or bag during walks) to generate reliable assessments.
+  A Walking Steadiness event records a notification associated with a Low or Very Low walking-steadiness classification.
+  It is a category entry, rather than a gait score or a record of a physical fall. The underlying Walking Steadiness
+  quantity is a separate type that provides the score history.
 
-  **Key Distinction:** This tracks prospective fall RISK based on gait instability, not actual fall events (which are tracked separately).
 
-  ## How It's Detected/Measured
-  **Gait Analysis Methodology:**
+  Apple uses motion measurements from an iPhone carried near the waist to assess walking steadiness. Phone carry
+  and sufficient walking observations affect coverage. A notification can be a useful prompt to discuss balance
+  and fall prevention, but the code does not diagnose the cause of unsteadiness or establish that an emergency has
+  occurred.
 
-  *Data Collection:*
-  - iPhone accelerometer captures 3-axis motion during walking
-  - Algorithm identifies walking segments automatically
-  - Requires phone to be carried consistently (pocket, bag, waistband)
-  - Analyzes gait during regular daily activities, not special tests
 
-  *Metrics Analyzed:*
-  - Double support time (time with both feet on ground)
-  - Walking asymmetry (difference between left and right steps)
-  - Step length variability
-  - Walking speed consistency
-  - Gait smoothness and regularity
+  ## How do the four event values differ?
 
-  *Algorithm:*
-  - Machine learning model trained on clinical gait laboratory data
-  - Validated against fall incidence in clinical studies
-  - Produces percentile score (0-100%) indicating where user falls in population distribution
+  | Stored value | Meaning |
 
-  **Classification Categories:**
-  - **OK (Green):** Score suggests typical fall risk for age and demographics
-  - **Low (Yellow):** Score indicates moderately increased fall risk (approximately 2x baseline)
-  - **Very Low (Red):** Score indicates significantly elevated fall risk (approximately 3x+ baseline)
+  | --- | --- |
 
-  **Notification Triggers:**
-  - Initial Low/Very Low: First time steadiness drops to concerning category
-  - Repeat Low/Very Low: Subsequent measurement confirms persistent low steadiness
-  - Notifications are spaced to avoid alarm fatigue (not triggered daily)
+  | 1: `initialLow` | Initial notification for a Low classification |
 
-  **Requirements:**
-  - iPhone 8 or later
-  - iOS 15 or later
-  - Sufficient walking data (typically requires carrying iPhone during walks for at least a week)
-  - User must enable Walking Steadiness Notifications in Health app
+  | 2: `initialVeryLow` | Initial notification for a Very Low classification |
 
-  ## Health Significance
-  **Fall Risk Epidemiology:**
-  - Falls are the leading cause of injury death in adults 65+
-  - One in four older adults falls each year
-  - Falls cause 95% of hip fractures
-  - Annual cost of fall injuries exceeds $50 billion in the US
-  - Many falls are preventable with early intervention
+  | 3: `repeatLow` | Reminder while a Low classification persists |
 
-  **Gait Instability as Predictor:**
-  Clinical research establishes gait metrics as validated fall predictors:
-  - Gait speed decline predicts fall risk
-  - Increased gait variability associated with falls
-  - Walking asymmetry correlates with neurological conditions affecting balance
-  - Dual-task walking difficulties (walking while talking) indicate cognitive-motor interference
+  | 4: `repeatVeryLow` | Reminder while a Very Low classification persists |
 
-  **Conditions Associated with Gait Instability:**
-  - Normal aging (sarcopenia, reduced proprioception)
-  - Neurological diseases (Parkinson's, multiple sclerosis, stroke, neuropathy)
-  - Musculoskeletal conditions (arthritis, hip/knee problems, foot disorders)
-  - Medication effects (sedatives, antihypertensives, multiple medications)
-  - Cardiovascular conditions (orthostatic hypotension, arrhythmias)
-  - Vestibular disorders (inner ear problems affecting balance)
-  - Visual impairment
-  - Cognitive impairment (dementia affects motor planning)
 
-  **Intervention Opportunities:**
-  Early identification of fall risk enables interventions that reduce fall rates by 20-40%:
-  - Physical therapy for strength and balance
-  - Home safety modifications
-  - Medication review and adjustment
-  - Vision and hearing correction
-  - Footwear optimization
-  - Assistive device assessment
+  The numbers identify categories; averaging them or treating 4 as twice the risk of 2 is not meaningful. A repeat
+  notification is not another fall, and an initial notification is not necessarily the first day that walking quality
+  changed.
 
-  ## Clinical Interpretation Guidelines
-  **For Health Consultants:**
 
-  1. **Understand Event Severity:**
-     - Initial Low: First warning; encourage evaluation and preventive measures
-     - Initial Very Low: Significant concern; recommend prompt medical evaluation
-     - Repeat Low/Very Low: Persistent risk; intervention urgently needed
+  ## Why are notifications much less frequent than scores?
 
-  2. **Comprehensive Fall Risk Assessment:**
-     When clients receive notifications, recommend evaluation including:
-     - Complete medication review (especially new medications)
-     - Vision and hearing assessment
-     - Orthostatic blood pressure measurement
-     - Neurological examination
-     - Lower extremity strength and sensation testing
-     - Footwear evaluation
-     - Home safety assessment
+  Apple''s developer presentation describes initial notifications about a month after entering a Low or Very Low
+  classification, with repeat notifications about every three months while the classification persists. This is
+  notification behavior, not a fixed cadence for every exported record. The same presentation describes weekly Walking
+  Steadiness scores.
 
-  3. **Review Contributing Factors:**
-     - Recent illness or hospitalization (deconditioning)
-     - New medications, especially:
-       - Sedatives/hypnotics
-       - Opioids
-       - Antihypertensives
-       - Antidepressants
-       - Antihistamines
-     - Changes in vision or hearing
-     - Foot pain or problems
-     - Alcohol use
 
-  4. **Intervention Recommendations:**
-     - Physical therapy referral for balance and strength training
-     - Tai Chi or similar balance-focused exercise programs
-     - Home safety evaluation (rugs, lighting, grab bars)
-     - Appropriate assistive devices if needed
-     - Vitamin D supplementation if deficient (associated with fall risk)
+  As a result, the time between event entries is not the time between gait measurements. It is also not a measure
+  of how frequently instability occurred. Notification settings, phone carry and unavailable measurements can create
+  gaps. No event entries cannot establish an OK classification or show that a fall will not happen.
 
-  5. **Trend Monitoring:**
-     - Review Walking Steadiness score trend in Health app (not just events)
-     - Improvement with intervention validates approach
-     - Continued decline despite intervention suggests need for additional evaluation
-     - Seasonal patterns (winter ice, darkness) may affect scores
 
-  6. **Age-Specific Considerations:**
-     - Younger adults: Low steadiness is more concerning; investigate underlying cause
-     - Older adults: May have multiple contributing factors; comprehensive approach needed
-     - Very elderly: Balance expectations with quality of life considerations
+  ## How should events be read alongside other mobility data?
 
-  7. **Red Flags Requiring Urgent Referral:**
-     - Sudden decrease in steadiness (suggests acute neurological event)
-     - Associated neurological symptoms (weakness, numbness, vision changes)
-     - History of recent falls
-     - Very Low steadiness in independent community-dwelling adult
+  Review the separate Walking Steadiness score history, source coverage and changes in walking speed or other gait
+  measures. Describe how many measurements were available in the comparison window. A nearby score is a temporal
+  neighbor; without explicit linkage it cannot be assumed to be the exact score that triggered the notification.
 
-  ## Caveats & Limitations
-  - **Phone Carry Requirement:** Accurate only when iPhone carried consistently during walks; watch-only users get limited data
-  - **Algorithm Limitations:** Validated on specific populations; may be less accurate for those with disabilities affecting gait
-  - **Not Diagnostic:** Identifies risk, not underlying cause; medical evaluation needed
-  - **Population-Based:** Percentile scoring compares to population, not individual baseline
-  - **False Positives:** Unusual walking conditions (hiking, snow, carrying objects) may affect scores
-  - **False Negatives:** Normal steadiness doesn't guarantee fall won't occur (environmental factors, acute events)
-  - **Not a Substitute for Clinical Assessment:** Timed Up and Go, Berg Balance Scale, and other clinical tools remain important
-  - **Limited Historical Data:** Feature is relatively new; longitudinal validation ongoing
-  - **Weather/Terrain Effects:** Slippery or uneven surfaces affect walking but may not be distinguished from intrinsic instability
-metadata_keys:
-  - key: "HKMetadataKeyWalkingSteadinessPercentile"
-    description: "The specific percentile score (0-100) associated with the event notification"
-  - key: "HKMetadataKeyWalkingSteadinessClassification"
-    description: "The classification category (OK, Low, Very Low) at the time of notification"
+
+  An event timestamp overlapping a workout or sleep interval does not establish that a fall or a new gait impairment
+  occurred then. Similarly, its stored start-to-end span should not be treated as the duration of a balance problem.
+  The event is a summary notification about classification history.
+
+
+  ## What can the available example data tell us?
+
+  No Walking Steadiness event entries were available in the reviewed reporting-year snapshot. There is therefore
+  no measured notification cadence, category distribution or event-linked mobility comparison to plot here. This
+  says nothing about whether notifications were enabled or whether the underlying score was normal.
+
+
+  <details>
+
+  <summary>Developer and recording details</summary>
+
+
+  This is a read-only category type with four defined values. Request authorization for the event separately from
+  the score quantity. Keep initial and repeat notifications distinct, and retain source and timestamp provenance.
+  The identifier does not promise a percentile, an exact triggering score or type-specific metadata keys. The iPhone-based
+  assessment should not be described as an Apple Watch replacement for missing phone observations.
+
+
+  </details>
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierAppleWalkingSteadiness"
-    relationship: "Continuous walking steadiness percentage scores that underlie these discrete notification events"
-  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
-    relationship: "Walking speed is a component of steadiness assessment and independent fall risk predictor"
-  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
-    relationship: "Step length variability contributes to steadiness calculation"
-  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
-    relationship: "Gait asymmetry is a key component of walking steadiness assessment"
-  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
-    relationship: "Double support time reflects balance confidence and contributes to steadiness score"
-  - identifier: "HKQuantityTypeIdentifierSixMinuteWalkTestDistance"
-    relationship: "Formal walking test that complements passive steadiness monitoring"
+- identifier: HKQuantityTypeIdentifierAppleWalkingSteadiness
+  relationship: Separate score history adds detail; the event does not store a continuous score or prove which observation
+    triggered it.
+- identifier: HKQuantityTypeIdentifierWalkingSpeed
+  relationship: Source-aware gait measurements can provide context without diagnosing the cause of a notification.
 references:
-  - title: "HKCategoryTypeIdentifierAppleWalkingSteadinessEvent - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierapplewalkingsteadinessevent"
-    type: "official"
-  - title: "Walking Steadiness on iPhone - Apple Support"
-    url: "https://support.apple.com/en-us/108765"
-    type: "official"
-  - title: "CDC STEADI (Stopping Elderly Accidents, Deaths & Injuries)"
-    url: "https://www.cdc.gov/steadi/"
-    type: "medical"
-  - title: "Gait Analysis and Fall Prediction: A Systematic Review"
-    url: "https://pubmed.ncbi.nlm.nih.gov/32673232/"
-    type: "research"
-  - title: "Validation of Apple Walking Steadiness Metric"
-    url: "https://pubmed.ncbi.nlm.nih.gov/35856441/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: Apple HealthKit walking-steadiness event definition
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/applewalkingsteadinessevent
+  type: official
+- title: Apple HealthKit walking-steadiness category values
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueapplewalkingsteadinessevent
+  type: official
+- title: Apple developer explanation of scores and notification cadence
+  url: https://developer.apple.com/videos/play/wwdc2021/10287/
+  type: official
+- title: Apple iPhone walking-steadiness guide
+  url: https://support.apple.com/guide/iphone/monitor-your-walking-steadiness-iphff1bf03ed/ios
+  type: official
+last_updated: '2026-10-14'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: A read-only category notification for initial or persistent Low/Very Low classification.
+  cadence: Notification cadence differs from score cadence; Apple documents approximate initial and repeat delays.
+  context: Timestamp overlap does not identify an actual fall or the time of a gait change.
+  coverage: No raw records in the verified reporting-year snapshot; measured distributions and paired relationships
+    are unavailable.
+  aggregation: Count notifications by category; counts have no monitored-time denominator.
+  metadata: Producer-specific metadata requires a documented contract; no type-specific keys are promised here.
+  references:
+  - title: Apple HealthKit walking-steadiness event definition
+    url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/applewalkingsteadinessevent
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: apple-walking-steadiness-event
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: No observations for this type in the verified reporting-year snapshot. No measured ranges, outliers,
+    cadence, workout or sleep comparisons, or related-type estimates are supported. Completion records the investigation,
+    including verified absence; it does not indicate measured examples.
+seo_title: 'Apple Walking Steadiness Notifications: Low and Very Low Events'

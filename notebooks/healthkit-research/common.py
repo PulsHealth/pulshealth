@@ -29,6 +29,8 @@ def load_data(input_dir):
     for name in ("quantity", "sleep", "mindful", "workouts", "aggregates", "workout_series"):
         path = Path(input_dir) / f"{name}.csv"
         if not path.exists():
+            path = Path(input_dir) / f"{name}.csv.gz"
+        if not path.exists():
             result[name] = pd.DataFrame()
             continue
         try:
@@ -224,7 +226,8 @@ def standard_analysis(data, identifier, *, timezone=TIME_ZONE, year_start=YEAR_S
 
 def input_manifest(input_dir):
     result = []
-    for path in sorted(Path(input_dir).glob("*.csv")):
+    paths = list(Path(input_dir).glob("*.csv")) + list(Path(input_dir).glob("*.csv.gz"))
+    for path in sorted(paths):
         digest = hashlib.sha256()
         with path.open("rb") as handle:
             for block in iter(lambda: handle.read(1024 * 1024), b""):

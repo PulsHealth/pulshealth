@@ -1,155 +1,134 @@
-identifier: "HKQuantityTypeIdentifierStairAscentSpeed"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Mobility"
-human_readable_name: "Stair Ascent Speed"
-short_description: "Speed of climbing stairs, measuring vertical velocity during stair ascent."
-icon: "figure.stairs"
-color: "#30D158"
-default_unit: "m/s"
+identifier: HKQuantityTypeIdentifierStairAscentSpeed
+source: HealthKit
+type: HKQuantityType
+category: Mobility
+human_readable_name: Stair Ascent Speed
+icon: figure.stairs
+color: '#30D158'
+short_description: Average speed during a recorded stair-ascent interval in Apple Health.
+default_unit: m/s
 supported_units:
-  - "m/s"
-  - "ft/s"
-unit_description: "Meters per second (m/s) representing vertical velocity while climbing stairs."
-aggregation_type: "discrete"
+- m/s
+- ft/s
+unit_description: Meters per second, representing average ascent speed over the stored interval.
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-typical_range:
-  min: 0.2
-  max: 0.8
-  unit: "m/s"
-  notes: "Healthy adults typically achieve 0.4-0.6 m/s; values <0.3 m/s indicate functional limitation."
-clinical_ranges:
-  - population: "Adults 20-40"
-    normal: "0.5-0.7 m/s"
-    concerning: "<0.4 m/s"
-  - population: "Adults 40-60"
-    normal: "0.4-0.6 m/s"
-    concerning: "<0.35 m/s"
-  - population: "Adults 60-70"
-    normal: "0.35-0.55 m/s"
-    concerning: "<0.3 m/s"
-  - population: "Adults 70-80"
-    normal: "0.25-0.45 m/s"
-    concerning: "<0.2 m/s"
-  - population: "Adults 80+"
-    normal: "0.15-0.35 m/s"
-    concerning: "<0.15 m/s"
+- discreteAverage
+- discreteMin
+- discreteMax
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "14.0"
+  version: '14.0'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
-writable: false
+writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone"
-    capability: "Barometric altimeter and motion sensors detect stair climbing"
-  - name: "Apple Watch"
-    capability: "Continuous stair climbing analysis with altitude tracking"
-primary_source: "Apple Watch or iPhone barometric and motion sensors"
-description: |
-  ## Overview
-  Stair ascent speed measures the vertical velocity during stair climbing, expressed as meters of elevation gained per second. This metric captures lower extremity strength, cardiovascular capacity, and functional mobility in a way that everyday walking cannot. Stair climbing is one of the most demanding activities of daily living and a sensitive indicator of functional decline.
+- name: Apple Watch Series 5 or later
+  capability: Automatically records speed while walking up an eligible flight of stairs.
+primary_source: Apple Watch Series 5 or later
+description: '## What does Stair Ascent Speed describe?
 
-  ## How It's Measured
-  Apple devices use a combination of:
-  - **Barometric altimeter**: Detects elevation changes to identify stair climbing
-  - **Accelerometer**: Analyzes movement patterns to confirm stair climbing (vs. elevator)
-  - **Gyroscope**: Helps distinguish stair ascent from other vertical movements
+  Stair Ascent Speed stores the average speed while walking up stairs during an interval. Its unit is meters per
+  second, and it is a discrete measurement. It is not a count of stair steps or flights and should not be added
+  across a day as if it were distance. [Apple''s type documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/stairascentspeed)
 
-  The metric calculates vertical velocity by dividing elevation gained by time spent climbing. Measurements are collected automatically during daily activities when stair climbing is detected.
 
-  ## Health Significance
-  Stair climbing ability is functionally important because:
-  - **Lower extremity strength**: Requires concentric quadriceps, gluteal, and calf muscle power
-  - **Cardiovascular demand**: 2-3x higher metabolic cost than level walking
-  - **Balance challenge**: Single-leg support on each step with center of mass shifting
-  - **Independence predictor**: Inability to climb stairs limits housing options and community access
-  - **Fall risk indicator**: Slow stair climbing correlates with fall risk
+  ## When does Apple Watch record it?
 
-  Clinical relevance:
-  - Pre-operative fitness indicator for major surgery
-  - Predictor of post-surgical recovery trajectory
-  - Marker for knee/hip osteoarthritis severity
-  - Cardiac and pulmonary functional capacity marker
+  Apple documents automatic collection on Apple Watch Series 5 or later when the wearer walks up a flight approximately
+  10 feet (3 meters) high. Collection is disabled when wheelchair status is enabled. This selects suitable movement
+  bouts rather than continuously sampling every moment of daily activity.
 
-  ## Clinical Interpretation Guidelines
-  - **>0.5 m/s**: Good functional capacity, minimal limitation
-  - **0.4-0.5 m/s**: Adequate function, may have mild limitation
-  - **0.3-0.4 m/s**: Moderate limitation, may need handrail support
-  - **0.2-0.3 m/s**: Significant limitation, likely needs handrails and/or rest stops
-  - **<0.2 m/s**: Severe limitation, stair climbing may be unsafe without assistance
 
-  Contextual interpretation:
-  - **Post-knee replacement**: Track recovery; expect gradual improvement over 6-12 months
-  - **Cardiac conditions**: Limited by cardiovascular reserve more than strength
-  - **COPD**: Often dramatically limited; may indicate need for supplemental O2
-  - **Peripheral arterial disease**: May be limited by claudication
+  Apple gives about 20 daily records as a typical example, with some days exceeding 100 during activities such as
+  a long hike. That is a source illustration, not a guaranteed schedule or an empirical estimate for the dataset
+  researched here. A gap does not demonstrate that stairs were avoided. [Apple''s recording discussion](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/stairascentspeed)
 
-  ## Age-Adjusted Norms
-  Stair ascent speed decreases with age due to:
-  - Sarcopenia (muscle mass loss): 3-8% per decade after 30
-  - Reduced power production: Declines faster than strength
-  - Cardiovascular changes: Reduced maximal heart rate and oxygen uptake
-  - Arthritic changes: Joint pain and stiffness limit performance
 
-  Expected ranges by age:
-  - Ages 30-40: 0.50-0.65 m/s
-  - Ages 40-50: 0.45-0.60 m/s
-  - Ages 50-60: 0.40-0.55 m/s
-  - Ages 60-70: 0.35-0.50 m/s
-  - Ages 70-80: 0.25-0.40 m/s
-  - Ages 80+: 0.15-0.30 m/s
+  | Item in a record | How to interpret it |
 
-  ## Caveats & Limitations
-  - Stair geometry varies (rise/run affects difficulty)
-  - Handrail use affects measurements (support reduces apparent limitation)
-  - Carrying items while climbing affects speed
-  - Number of flights affects sustainable pace
-  - Environmental factors (lighting, familiarity) affect performance
-  - Device positioning may affect detection accuracy
-  - Cannot distinguish healthy slow climbing from cautious climbing due to fear
+  | --- | --- |
 
-  ## Additional Notes
-  Stair ascent speed is particularly valuable for:
-  - **Orthopedic assessment**: Pre- and post-operative functional status after hip/knee surgery
-  - **Cardiac rehabilitation**: Tracking cardiovascular recovery
-  - **Pulmonary rehabilitation**: Monitoring COPD and pulmonary fibrosis
-  - **Geriatric assessment**: Identifying functional decline and fall risk
-  - **Sports medicine**: Return-to-play criteria for lower extremity injuries
+  | Value in m/s | Average speed during that recorded interval. |
 
-  The Stair Climb Power Test is a validated clinical measure; consumer device measurements provide similar longitudinal tracking capability for everyday monitoring.
+  | Start and end | The boundaries of the measurement interval. |
 
-  Consider combining with stair descent speed for comprehensive stair mobility assessment, as ascent and descent test different physical capacities.
-metadata_keys:
-  - key: "HKMetadataKeyDevicePlacementSide"
-    description: "Indicates which side of the body the device was placed during measurement"
+  | Time between records | Time between qualifying stored observations, not the sensor''s internal sampling rate.
+  |
+
+  | Number of records | Recording opportunities captured, not an exact stair or flight count. |
+
+
+  ## What did the example-data investigation find?
+
+  The selected reporting year contained **no Stair Ascent Speed quantity records**. The database coverage check
+  therefore supplies no empirical range, outlier distribution, interval duration, recording cadence, workout comparison
+  or sleep comparison. No graph is fabricated. Other activity data being present does not prove that this particular
+  measurement was collected.
+
+
+  ## How does it relate to flights and the opposite direction?
+
+  Flights Climbed is a separate cumulative count. It cannot be converted directly into ascent speed without information
+  about geometry and timing. A daily flight total and a stair-speed median summarize different things. Compare ascent
+  and descent records as separate types; matching days alone do not establish that they describe the same staircase
+  or trip.
+
+
+  Climbing stairs can involve a different level of effort from level walking. A slower observation may reflect a
+  deliberate pace, carrying objects, fatigue or the route, and does not diagnose reduced strength or cardiovascular
+  capacity.
+
+
+  ## What makes comparisons more useful?
+
+  Keep direction, source and conditions as consistent as possible. Inspect record counts and interval lengths alongside
+  values: a weekly average drawn from a few selected bouts may differ from one drawn from many. Workout or sleep
+  overlap is a timestamp check, not a confirmed HealthKit linkage; a stair-speed record overlapping sleep deserves
+  a timing and source review rather than a claim about movement during sleep.
+
+
+  A sustained change together with new mobility difficulty can be discussed with a healthcare professional. This
+  page does not prescribe universal age-based cutoffs for automatic stair-speed samples; those require validated
+  methods and clinical context.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierStairDescentSpeed"
-    relationship: "Complementary measure of stair mobility; tests different muscle groups"
-  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
-    relationship: "Level walking speed provides baseline mobility comparison"
-  - identifier: "HKQuantityTypeIdentifierFlightsClimbed"
-    relationship: "Volume of stair climbing activity; speed indicates quality"
-  - identifier: "HKQuantityTypeIdentifierAppleWalkingSteadiness"
-    relationship: "Both metrics contribute to fall risk assessment"
-  - identifier: "HKQuantityTypeIdentifierVO2Max"
-    relationship: "Cardiopulmonary fitness affects stair climbing capacity"
+- identifier: HKQuantityTypeIdentifierFlightsClimbed
+  relationship: Cumulative flight count; not a direct speed conversion.
+- identifier: HKQuantityTypeIdentifierStairDescentSpeed
+  relationship: Opposite direction; compare as a separate movement task.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierStairAscentSpeed"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierstairascentspeed"
-    type: "official"
-  - title: "Stair Climb Power Test for Lower Extremity Function"
-    url: "https://www.physio-pedia.com/Stair_Climb_Test"
-    type: "medical"
-  - title: "Stair Climbing as Functional Capacity Measure - Archives of Physical Medicine"
-    url: "https://www.archives-pmr.org/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: Stair Ascent Speed'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/stairascentspeed
+  type: official
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: No quantity records for this type in the selected reporting year. Empirical ranges, outliers, recording
+    cadence, workout or sleep differences and associations cannot be estimated. Documented source behavior is distinct
+    from measured example data.
+  artifact_key: stair-ascent-speed
+seo_title: 'Stair Ascent Speed in Apple Health: Meaning and Recording'
+last_updated: '2026-10-14'

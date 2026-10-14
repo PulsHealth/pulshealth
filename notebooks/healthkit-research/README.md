@@ -127,3 +127,22 @@ source paths to that private copy, checks the immutable input hashes, and
 persists self-contained HTML with execution and integrity receipts. The notebook
 index and findings remain private. Publication uses only reviewed source prose
 and deidentified figures; source `data_research` remains the completion flag.
+
+## Batch 2 research
+
+The nine `batch2_*.py` family runners cover the 39 fitness, mobility and everyday
+tracking entries. Each entry gets the shared eleven facets and a separate
+measurement-specific investigation before its article is revised. Running and
+walking relationships use source-matched records or workout summaries; swimming
+interval matches are descriptive and do not reconstruct lap membership. Audio
+levels require logarithmic energy calculations, while attenuation is a difference
+in level. Category codes are labels, not continuous measurements.
+
+Snapshot loaders accept `.csv.gz` when the corresponding `.csv` is absent, and
+hash the actual compressed files for integrity. Fresh coverage inventories must
+still match the rows loaded for every requested identifier. A coverage inventory
+can include types omitted from a filtered export: fetch those missing rows before
+researching them. Aggregate rows with empty values are not measured observations.
+Retain the provenance of any reused immutable inputs and freshly fetched types
+in the private snapshot manifest. Archive and re-execute with the command above
+after all family methods and review corrections have settled.

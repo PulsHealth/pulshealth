@@ -1,41 +1,30 @@
-identifier: "HKQuantityTypeIdentifierEnvironmentalAudioExposure"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Hearing and Environment"
-human_readable_name: "Environmental Audio Exposure"
-short_description: "Ambient sound level exposure measured in A-weighted decibels (dB(A)), indicating potential hearing damage risk from environmental noise."
-icon: "ear.fill"
-color: "#5856D6"
-default_unit: "dB(A)"
+identifier: HKQuantityTypeIdentifierEnvironmentalAudioExposure
+source: HealthKit
+type: HKQuantityType
+category: Hearing and Environment
+human_readable_name: Environmental Audio Exposure
+short_description: Equivalent sound-level intervals describing surrounding noise in A-weighted decibels.
+icon: ear.fill
+color: '#5856D6'
+default_unit: dBASPL
 supported_units:
-  - "dB(A)"
-  - "dBASPL"
-unit_description: "A-weighted decibels (dB(A)) apply frequency weighting that approximates human hearing sensitivity, giving more weight to frequencies where the ear is most sensitive (1-6 kHz) and less weight to very low and very high frequencies."
-aggregation_type: "discrete"
+- dBASPL
+unit_description: Canonical dBASPL storage; A-weighted sound pressure level displayed as dB(A). Logarithmic levels
+  require energy-aware duration weighting.
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-  - "mostRecent"
-typical_range:
-  min: 30
-  max: 110
-  unit: "dB(A)"
-clinical_ranges:
-  - population: "General Adult"
-    safe: "Below 70 dB(A) for prolonged exposure"
-    concerning: "Above 85 dB(A) for extended periods; immediate concern above 100 dB(A)"
-  - population: "Occupational (NIOSH Guidelines)"
-    safe: "85 dB(A) for up to 8 hours with hearing protection"
-    concerning: "For every 3 dB increase, safe exposure time halves (88 dB = 4 hours, 91 dB = 2 hours)"
-  - population: "WHO Recommendations"
-    safe: "Below 70 dB(A) average over 24 hours; below 85 dB(A) for leisure activities"
-    concerning: "Cumulative weekly exposure exceeding 80 dB(A) averaged over 40 hours"
+- discreteAverage
+- discreteMin
+- discreteMax
+- mostRecent
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "13.0"
+  version: '13.0'
   year: 2019
 watchos_introduced:
-  version: "6.0"
+  version: '6.0'
   year: 2019
 deprecated: false
 deprecated_in: null
@@ -43,96 +32,130 @@ writable: false
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Apple Watch Series 4 and later"
-    capability: "Continuous ambient sound level monitoring via built-in microphone with on-device processing"
-  - name: "Apple Watch SE"
-    capability: "Environmental sound level measurement"
-  - name: "Apple Watch Ultra"
-    capability: "Enhanced environmental audio monitoring"
-primary_source: "Apple Watch"
-description: |
-  ## Overview
-  Environmental Audio Exposure measures the ambient sound levels in a user's surroundings throughout the day. This metric is critical for assessing cumulative noise exposure that can lead to noise-induced hearing loss (NIHL), one of the most common preventable causes of hearing impairment worldwide.
+- name: Apple Watch
+  capability: Can contribute this environmental quantity; availability depends on supported hardware and settings.
+primary_source: Apple Watch
+description: '## What does Environmental Audio Exposure measure?
 
-  The measurement uses A-weighted decibels (dB(A)), which filter sound frequencies to match human hearing sensitivity. This weighting is the standard for occupational and environmental noise assessment, making HealthKit data directly comparable to regulatory guidelines.
+  Environmental Audio Exposure is an estimate of surrounding sound, expressed in A-weighted decibels, **dB(A)**.
+  The stored canonical unit is `dBASPL`. This is a level summarized over an interval, rather than an audio recording
+  or a count of loud sounds. [Apple’s type documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/environmentalaudioexposure)
+  describes equivalent continuous sound-level samples.
 
-  ## How It's Measured
-  Apple Watch performs environmental sound level measurements using its built-in microphone. The device:
 
-  1. Samples ambient audio periodically throughout the day (approximately every few minutes when worn)
-  2. Processes audio entirely on-device to protect privacy - no audio recordings are stored or transmitted
-  3. Calculates the equivalent continuous sound level (Leq) over the sampling period
-  4. Applies A-weighting to produce dB(A) values
+  ## What do example records look like?
 
-  The Apple Watch Noise app provides real-time monitoring and can alert users when sound levels exceed configurable thresholds (default 90 dB). Measurements are only taken when the watch is worn and unlocked.
+  The reporting year contained **18,201 records** across two source groups. The source with the most July–September
+  records contributed **2,411 intervals on all 92 days**. Its median level was **70.0 dB(A)**; the middle half ranged
+  from **61.5 to 74.8**, and the full observed range was **35.1 to 99.6 dB(A)**. These are example sample distributions,
+  not a healthy range or a full-day exposure assessment.
 
-  ## Health Significance
-  **Noise-Induced Hearing Loss (NIHL):**
-  - NIHL is cumulative and irreversible, caused by damage to cochlear hair cells
-  - The WHO estimates 1.1 billion young people are at risk of hearing loss from unsafe listening practices
-  - Occupational noise exposure affects approximately 22 million U.S. workers annually
 
-  **Dose-Response Relationship:**
-  - Sound intensity follows a logarithmic scale - every 3 dB increase doubles sound energy
-  - At 85 dB(A), safe exposure is limited to 8 hours per day (NIOSH standard)
-  - At 100 dB(A), damage can occur in as little as 15 minutes
-  - At 110 dB(A), exposure limit drops to approximately 2 minutes
+  | Feature | Example | Interpretation |
 
-  **Beyond Hearing:**
-  - Chronic noise exposure correlates with cardiovascular stress, elevated blood pressure, and sleep disturbances
-  - Environmental noise is linked to cognitive impairment in children and increased stress hormone levels
+  | --- | --- | --- |
 
-  ## Clinical Interpretation Guidelines
-  **For Health Consultants:**
+  | Stored interval duration | 5 seconds to about 30 minutes | An interval summary can conceal short peaks |
 
-  1. **Review Weekly Averages:** Single high readings are less concerning than sustained elevated exposure. Focus on patterns across days and weeks.
+  | Median interval duration | About 30 minutes | Export cadence differs from microphone sampling |
 
-  2. **Context Matters:** Occupational exposure (construction, manufacturing, music venues) requires different counseling than leisure exposure.
+  | Workout overlap | 225 records | Temporal context, not proven activity-caused noise |
 
-  3. **Cumulative Dose:** Calculate approximate weekly noise dose. WHO recommends limiting cumulative exposure to 80 dB(A) averaged over 40 hours.
+  | Recorded-sleep overlap | 44 records | Does not characterize every night |
 
-  4. **Risk Stratification:**
-     - Low Risk: Average environmental exposure below 70 dB(A)
-     - Moderate Risk: Regular exposure between 70-85 dB(A); counsel on hearing protection
-     - High Risk: Frequent exposure above 85 dB(A); recommend audiological evaluation
 
-  5. **Intervention Triggers:**
-     - Sustained averages above 80 dB(A) warrant hearing protection discussion
-     - Frequent alerts (above 90 dB) suggest environmental modifications or hearing conservation program
+  ## Why is a simple decibel average misleading?
 
-  ## Caveats & Limitations
-  - **Sampling Frequency:** Measurements are periodic, not continuous, so brief loud exposures between samples may be missed
-  - **Watch Wearing Patterns:** Data gaps occur when the watch is not worn or is locked
-  - **Microphone Position:** Wrist-level measurements may differ from ear-level exposure, particularly for directional sound sources
-  - **Indoor/Outdoor Differences:** Environmental acoustics affect measurements; indoor reverberant spaces may read differently than outdoor environments
-  - **No Frequency Detail:** dB(A) is a single-number metric that doesn't capture specific harmful frequencies
-  - **Calibration Variability:** Individual device microphone variations may affect absolute accuracy, though relative trends remain valid
-  - **Context Blindness:** The metric cannot distinguish between harmful industrial noise and acceptable ambient sound at the same level
-metadata_keys:
-  - key: "HKMetadataKeyDevicePlacementSide"
-    description: "Indicates which wrist the Apple Watch was worn on during measurement"
-  - key: "HKMetadataKeyAudioExposureLevel"
-    description: "The measured sound pressure level in dB(A)"
-  - key: "HKMetadataKeyAudioExposureDuration"
-    description: "Duration of the exposure measurement period"
+  Decibels use a logarithmic scale. Combining equivalent sound levels requires converting them to sound energy,
+  weighting by covered duration, then converting back. An arithmetic mean of sample dB values can understate the
+  contribution of louder intervals. Equal weighting also treats a five-second sample like a thirty-minute one.
+
+
+  Even an energy-based calculation needs suitable coverage. The selected source had **1,224 intervals beginning
+  before the preceding running maximum end**, including very small timestamp overlaps. These were retained for investigation
+  rather than counted as independent monitored time. Multiple sources and overlapping summaries cannot simply be
+  added into a daily dose. The research keeps source groups separate and does not publish a reconstructed exposure
+  budget.
+
+
+  ## Does recording change during workouts or sleep?
+
+  The two source groups had strikingly different context coverage: one supplied **1,539 sleep-overlapping records
+  and five workout-overlapping records**, while the other supplied **44 and 225**, respectively. Combining them
+  would hide those differences. A change in apparent sound distribution may reflect when a source is present, rather
+  than a change in the environment.
+
+
+  [Apple’s Noise app guidance](https://support.apple.com/en-us/102315) explains that measurements are periodic while
+  the watch is worn, can be affected by water or wind, and pause during Water Lock or microphone/speaker use. A
+  quiet-looking swimming workout or a long recording gap therefore requires coverage review. Intervals that cross
+  a sleep or workout boundary are assigned by overlap; they are not split into separate sound measurements.
+
+
+  ## How does this relate to headphone sound and noise alerts?
+
+  [Headphone Audio Exposure](/knowledge-base/types/HKQuantityTypeIdentifierHeadphoneAudioExposure/) describes playback
+  exposure, while this stream describes surrounding sound. Asynchronous levels from different positions cannot be
+  summed into total ear exposure. [Audio Exposure Event](/knowledge-base/types/HKCategoryTypeIdentifierAudioExposureEvent/)
+  is a named notification category; its count is neither a noise level nor a dose.
+
+
+  ## What should be checked before interpreting a high value?
+
+  Review duration, source, overlapping records and the recording context. A brief high observation and repeated
+  long intervals answer different questions. Statistical outlier flags identify unusual records within this example;
+  they do not establish hearing injury. There is no hearing test, symptom assessment or complete monitored-time
+  denominator in these records.'
+metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierHeadphoneAudioExposure"
-    relationship: "Complementary metric measuring audio exposure specifically from headphones/earbuds; combined with environmental exposure provides total daily noise dose"
-  - identifier: "HKCategoryTypeIdentifierEnvironmentalAudioExposureEvent"
-    relationship: "Category type that records discrete events when environmental audio exceeds notification threshold"
-  - identifier: "HKCategoryTypeIdentifierAudioExposureEvent"
-    relationship: "Deprecated predecessor category type for audio exposure events"
+- identifier: HKQuantityTypeIdentifierHeadphoneAudioExposure
+  relationship: Playback level quantity; context comparison requires aligned coverage.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierEnvironmentalAudioExposure"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierenvironmentalaudioexposure"
-    type: "official"
-  - title: "WHO - Make Listening Safe"
-    url: "https://www.who.int/activities/making-listening-safe"
-    type: "medical"
-  - title: "NIOSH Criteria for a Recommended Standard: Occupational Noise Exposure"
-    url: "https://www.cdc.gov/niosh/docs/98-126/"
-    type: "research"
-  - title: "Apple Support - Noise App and Hearing Health"
-    url: "https://support.apple.com/en-us/HT209593"
-    type: "tutorial"
-last_updated: "2026-01-27"
+- title: Environmental Audio Exposure type definition
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/environmentalaudioexposure
+  type: official
+- title: Equivalent continuous level aggregation
+  url: https://developer.apple.com/documentation/healthkit/hkquantityaggregationstyle/discreteequivalentcontinuouslevel
+  type: official
+- title: Apple Noise app guidance
+  url: https://support.apple.com/en-us/102315
+  type: official
+last_updated: '2026-10-14'
+research_notes: Executed source-aware eleven-facet notebook before article revision. Primary Apple sources checked;
+  unsupported device, threshold and clinical-range claims removed.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: environmental-audio-exposure
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example observational data; not population reference ranges. Source groups and recording coverage
+    vary. Missing data is unknown, not zero. Temporal overlap is not causation or explicit workout linkage. Levels
+    and attenuation are distinct; no complete hearing dose or protection certification inferred.
+seo_title: 'Environmental Audio Exposure in Apple Health: Meaning and Recording Examples'
+figures:
+- src: /knowledge-base/figures/environmental-audio-exposure/distribution.png
+  alt: Histogram of recorded environmental audio exposure values, separated by workout, recorded sleep and other
+    or unknown context.
+  title: 'Environmental Audio Exposure: observed distribution'
+  caption: Example July–September 2026 records (2,411 intervals) from the source group with the most observations.
+    Sample-count weighting, not duration-weighted exposure or a hearing dose. Context groups can have very different
+    coverage.
+  methods: Half-open reporting window, intervals selected by start in America/Los_Angeles. Source bundle identifier
+    plus display name, combining revisions; sources kept separate. Overlap with recorded workouts takes precedence
+    over recorded asleep intervals; other records labeled other or unknown. Boundary intervals retained without
+    prorating.
+  section: What do example records look like?
+  width: 1440
+  height: 768
