@@ -1,255 +1,184 @@
-# ============================================
-# HEALTHKIT DATA TYPE: Apple Stand Time
-# ============================================
-
-# --- CORE IDENTIFICATION ---
-identifier: "HKQuantityTypeIdentifierAppleStandTime"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Activity"
-human_readable_name: "Apple Stand Time"
-short_description: "Measures the amount of time the user has spent standing throughout the day."
-
-# --- APPLE HEALTH UI ---
-icon: "figure.stand"
-color: "#00D4FF"  # Blue/cyan ring color
-
-# --- UNITS & MEASUREMENT ---
-default_unit: "min"
+identifier: HKQuantityTypeIdentifierAppleStandTime
+source: HealthKit
+type: HKQuantityType
+category: Activity
+human_readable_name: Apple Stand Time
+short_description: Measures the amount of time the user has spent standing throughout the day.
+icon: figure.stand
+color: '#00D4FF'
+default_unit: min
 supported_units:
-  - "min"
-  - "s"
-  - "hr"
-unit_description: "Minutes of standing time - a granular measure of time spent upright and moving, complementing the hourly Stand Hours metric"
-
-# --- STATISTICS ---
-aggregation_type: "cumulative"
+- min
+- s
+- hr
+unit_description: Minutes of standing time - a granular measure of time spent upright and moving, complementing
+  the hourly Stand Hours metric
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-
-# --- TYPICAL VALUES ---
-typical_range:
-  min: 0
-  max: 480
-  unit: "min"
-  notes: "Typical values range from 60-180 minutes for sedentary individuals to 300+ minutes for active individuals. Maximum possible depends on waking hours and activity level."
-
-clinical_ranges:
-  - population: "Adults (Office Workers)"
-    minimum_recommendation: "12 hours with at least 1 minute standing per hour"
-    optimal: "Stand and move for at least 1-2 minutes every hour of waking time"
-    notes: "Primary goal is breaking up prolonged sitting periods rather than total standing time"
-  - population: "Adults (Active Occupations)"
-    minimum_recommendation: "12 stand hours"
-    optimal: "Natural movement throughout work; avoid prolonged static standing"
-    notes: "Excessive static standing can cause its own health issues (varicose veins, back pain)"
-  - population: "Older Adults (65+)"
-    minimum_recommendation: "10-12 stand hours"
-    optimal: "Regular movement breaks; balance standing with seated rest"
-    notes: "Fall risk considerations; emphasize controlled movement over rapid position changes"
-
-# --- PLATFORM & AVAILABILITY ---
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "13.0"
+  version: '13.0'
   year: 2019
-  notes: "Added to provide granular standing duration data alongside the existing Stand Hours category type"
+  notes: Added to provide granular standing duration data alongside the existing Stand Hours category type
 watchos_introduced:
-  version: "6.0"
+  version: '6.0'
   year: 2019
-  notes: "Complements the Stand Hours metric that powers the blue Stand ring"
+  notes: Complements the Stand Hours metric that powers the blue Stand ring
 deprecated: false
 deprecated_in: null
-
-# --- PERMISSIONS & ACCESS ---
 writable: false
 requires_authorization: true
 sensitive_data: false
-
-# --- DATA SOURCES ---
 devices:
-  - name: "Apple Watch"
-    capability: "Detects standing and movement using accelerometer, gyroscope, and barometer. Requires both standing posture AND movement for at least 1 minute to credit a stand hour."
-    series: "All series"
-    accuracy: "Generally accurate for clear standing-and-moving scenarios. May miss brief stands or credit sitting activities with significant arm movement."
-  - name: "iPhone"
-    capability: "Cannot independently detect standing. Displays and aggregates data from Apple Watch."
-  - name: "Third-party apps"
-    capability: "Cannot write to this data type. Stand time is an Apple-only metric calculated exclusively by Apple Watch."
-    examples: ["None - this is an Apple-exclusive metric"]
-primary_source: "Apple Watch"
+- name: Apple Watch
+  capability: Records Apple activity estimates; category success and cumulative duration are distinct.
+primary_source: Apple Watch
+description: '## What does Apple Stand Time measure?
 
-# --- DETAILED DESCRIPTION ---
-description: |
-  ## Overview
-  Apple Stand Time measures the cumulative minutes the user has spent standing and moving throughout the day. This metric provides more granular data than the related Stand Hours metric (HKCategoryTypeIdentifierAppleStandHour), which only tracks whether the user stood for at least 1 minute during each hour. The default Stand ring goal is 12 hours, encouraging users to break up sedentary time by standing and moving at least once per hour during 12 waking hours.
+  Apple Stand Time is a cumulative duration in minutes. It describes recorded standing time, rather than the number
+  of hours credited to the blue Stand ring. Apple documents this as a time quantity; the exact sensing algorithm
+  is not a public specification. [Apple’s type documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/applestandtime)
+  establishes the unit and cumulative semantics.
 
-  ## How It's Measured
-  Apple Watch uses multiple sensors to detect standing and movement:
 
-  **Sensor inputs:**
-  - **Accelerometer**: Detects body position changes and movement patterns
-  - **Gyroscope**: Assists with posture and orientation detection
-  - **Barometer**: May detect altitude changes associated with standing up
+  | Metric | Stored meaning | Useful summary |
 
-  **Detection criteria:**
-  - The user must both **stand up** AND **move around** for at least 1 full minute
-  - Simply standing still does not count - movement is required
-  - The watch detects arm movement patterns consistent with walking or moving while upright
-  - Stand reminders appear 10 minutes before the hour if no stand has been detected
+  | --- | --- | --- |
 
-  **Important distinction:**
-  - **Stand Hours** (HKCategoryTypeIdentifierAppleStandHour): Binary metric counting hours where the stand requirement was met (goal: 12 hours)
-  - **Stand Time** (this metric): Continuous measure of total standing/moving minutes throughout the day
+  | Stand Time | Minutes accumulated within an interval | Source-aware sum of minutes |
 
-  **Wheelchair users:**
-  - When Wheelchair mode is enabled, the Stand ring becomes the Roll ring
-  - The detection shifts to identify periods of rolling/pushing movement
-  - Users are encouraged to roll for at least 1 minute per hour
-  - Stand Time may be replaced by or augmented with Move Time (HKQuantityTypeIdentifierAppleMoveTime)
+  | Stand Hour | Stood or idle category for an hourly interval | Count qualifying hours after handling overlap |
 
-  ## Health Significance
-  Breaking up prolonged sedentary time is increasingly recognized as important for health, independent of total exercise time:
+  | Stand ring | Daily Activity summary | Recorded daily progress and goal |
 
-  **Evidence-based benefits of regular standing/movement breaks:**
-  - Improved insulin sensitivity and glucose metabolism
-  - Better lipid profiles
-  - Reduced risk of cardiovascular disease
-  - Lower all-cause mortality risk
-  - Improved energy levels and alertness
-  - Reduced musculoskeletal discomfort
-  - Better posture maintenance
 
-  **The sedentary health risk:**
-  Research shows that prolonged sitting is an independent risk factor for poor health outcomes:
-  - 112% increased risk of type 2 diabetes with prolonged sitting
-  - 147% increased cardiovascular disease risk
-  - 49% increased all-cause mortality risk
-  - These risks persist even in individuals who exercise regularly
+  Twelve credited stand hours do **not** mean twelve hours spent standing. The ring credits standing and moving
+  for at least a minute within an hour. [Apple’s activity guide](https://support.apple.com/guide/watch/track-daily-activity-apd3bf6d85a6/watchos)
+  explains that behavior; it is a ring rule, not a clinical prescription.
 
-  **Breaking up sitting helps:**
-  Studies show that standing and walking for just 2 minutes every 20 minutes can improve post-meal insulin response by 23% compared to uninterrupted sitting.
 
-  ## Clinical Interpretation Guidelines
+  ## What do example intervals look like?
 
-  ### Target Values
-  - **Stand Hours goal**: 12 hours per day (default Apple Watch goal)
-  - **Per-hour minimum**: At least 1 minute of standing and moving per hour
-  - **Optimal pattern**: Brief movement breaks every 30-60 minutes
-  - **Total stand time**: Variable based on occupation and lifestyle
+  The reporting year contained **23,622 records on all 365 days**. In July–September, the source group with the
+  most records contributed **4,553 entries across 92 days**. Every interval was five minutes long, while the amount
+  inside it ranged from one to five minutes. No selected-source interval contained more recorded stand minutes than
+  its duration.
 
-  ### Interpreting Low Stand Hours (<8 hours/day consistently)
-  Persistently low stand hours may indicate:
-  - Sedentary occupation without break prompts
-  - Mobility limitations or chronic pain
-  - Depression or low motivation
-  - Prolonged commuting while seated
-  - Excessive screen time (work or leisure)
-  - Night shift work (fewer waking hours)
 
-  ### Clinical considerations for high static standing
-  Excessive standing without movement carries its own risks:
-  - Varicose veins and chronic venous insufficiency
-  - Lower back pain
-  - Foot problems and plantar fasciitis
-  - Fatigue and reduced cognitive performance
-  - Balance: Alternating sitting and standing is healthier than prolonged periods of either
+  The selected source’s daily raw sums ranged from **3 to 233 minutes**, with a median of **121.5 minutes**. These
+  are recorded amounts for that source, assigned to the reporting date of the interval’s start. They are examples,
+  not recommended daily targets or complete measurements of posture.
 
-  ### Red Flags for Consultation
-  - Sudden inability to achieve previous stand goals (possible new mobility limitation)
-  - Orthostatic symptoms when standing (dizziness, lightheadedness)
-  - Leg pain or swelling associated with standing
-  - Falls or near-falls when standing from seated position
 
-  ## Caveats & Limitations
+  ## How often are records stored?
 
-  ### Measurement Limitations
-  - **Movement requirement**: Simply standing still does not count; users must move
-  - **Arm movement bias**: Significant arm movement while seated may occasionally trigger false stand credit
-  - **Delayed detection**: The watch may take several seconds to recognize a valid stand
-  - **Wheelchair mode**: Standard stand detection is not meaningful for wheelchair users
-  - **Watch removal**: No detection when watch is not worn or charging
+  Five-minute intervals describe the **storage shape**, not a promise of a record every five minutes. There can
+  be gaps between intervals, and different sources can overlap. A gap does not identify sitting, charging, non-wear
+  or a permission problem by itself.
 
-  ### Interpretation Limitations
-  - Stand time does not indicate standing posture quality
-  - Does not distinguish between beneficial standing/walking and harmful static standing
-  - Cannot measure actual metabolic benefit of standing episodes
-  - Does not account for individual orthostatic tolerance variations
 
-  ### What Stand Time Cannot Tell You
-  - Quality of movement during standing periods
-  - Whether standing is helping or harming (varies by individual conditions)
-  - Lower body muscle engagement or activation
-  - Blood glucose or metabolic response to standing
-  - Risk of falls or balance issues
+  Do not replace an interval’s recorded amount with its full duration. A five-minute interval containing two stand
+  minutes contributes two minutes to a raw sum, not five. Start-assigned daily summaries also need boundary checks:
+  an interval ending at midnight and one crossing midnight require different treatment.
 
-  ## Additional Notes
 
-  **Behavioral intervention context:**
-  The Stand ring and reminders represent one of the most successful mass-scale behavioral interventions for reducing sedentary time. Health consultants can leverage this by:
-  - Reviewing stand hour patterns to identify problematic time periods
-  - Helping clients understand that the goal is movement breaks, not total standing time
-  - Addressing barriers to standing (workspace setup, meeting culture, mobility limitations)
-  - Setting appropriate personalized goals for clients with health conditions
+  ## What changes during workouts and sleep?
 
-  **Relationship to exercise:**
-  Standing and light movement are distinct from exercise. A person can close their Stand ring while failing to close their Exercise ring, and vice versa. Both behaviors contribute independently to health outcomes:
-  - Exercise provides cardiovascular, metabolic, and strength benefits
-  - Standing breaks interrupt the harmful effects of prolonged sitting
+  The year’s source-aware investigation found stand-time intervals overlapping both workouts and recorded sleep.
+  Temporal overlap is a context flag: a five-minute interval touching a sleep episode can include time outside that
+  episode. It does not establish that standing occurred while asleep, or that the sleep classification was wrong.
 
-  **Occupation-specific considerations:**
-  - **Desk workers**: Primary target population; benefit most from stand reminders
-  - **Healthcare workers**: Often achieve high stand hours naturally; may need reminders about seated rest
-  - **Retail/service workers**: May have excessive static standing; focus on movement variety
-  - **Remote workers**: Often have fewer natural standing triggers than office workers
 
-  **Integration with standing desks:**
-  Stand Time can help users optimize standing desk usage by tracking actual standing duration rather than relying on estimates.
+  Compare sources and interval lengths before interpreting workout changes. Continuous movement can produce more
+  recorded minutes within an interval, while a long quiet gap changes the sampling opportunities. Sample averages
+  and daily totals answer different questions.
 
-# --- METADATA KEYS ---
-metadata_keys:
-  - key: "HKMetadataKeyAppleDeviceCalibrated"
-    description: "Indicates whether the device has been calibrated for improved accuracy"
 
-# --- RELATED TYPES ---
+  ## How does this relate to steps and Stand Hours?
+
+  Source-paired daily raw sums were compared with steps and walking/running distance. For the selected source, stand
+  minutes and steps rose together across the 92 observed days (exploratory Spearman correlation **0.71**). This
+  association describes recording patterns; it does not establish benefit, causation or independence from watch
+  wear.
+
+
+  [Stand Hour](/knowledge-base/types/HKCategoryTypeIdentifierAppleStandHour/) preserves the distribution of threshold
+  successes across the day. [Step Count](/knowledge-base/types/HKQuantityTypeIdentifierStepCount/) describes walking
+  volume. Neither can reconstruct all standing duration from the other.
+
+
+  ## How should missing or unusually high values be handled?
+
+  Keep sources separate before adding cumulative amounts. A raw sum across simultaneous streams can count overlapping
+  movement twice, and may differ from the Health app’s chosen-source total. A very high daily value deserves an
+  interval, source and boundary review before an activity interpretation. A low total may reflect incomplete recording;
+  it is not a diagnosis of sedentary behavior.
+
+
+  Stand Time is useful for tracking recorded movement patterns over comparable days. It cannot determine posture
+  quality, sitting duration, metabolic effects or the suitability of a standing desk for an individual.'
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierAppleStandHour"
-    relationship: "Complementary - Stand Hour is the binary hourly metric (stood/didn't stand), while Stand Time is the continuous duration measure"
-  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
-    relationship: "Complementary - Part of the Activity rings trio; Exercise Time tracks moderate+ activity, Stand Time tracks sedentary breaks"
-  - identifier: "HKQuantityTypeIdentifierAppleMoveTime"
-    relationship: "Alternative metric - Move Time serves wheelchair users as the accessibility-focused equivalent to Stand Time"
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "Complementary - Standing and moving contributes to active energy burned, though typically at lower rates than exercise"
-  - identifier: "HKQuantityTypeIdentifierStepCount"
-    relationship: "Related - Steps are often accumulated during stand/move periods, though standing in place does not generate steps"
-
-# --- REFERENCES ---
+- identifier: HKCategoryTypeIdentifierAppleStandHour
+  relationship: Complementary - Stand Hour is the binary hourly metric (stood/didn't stand), while Stand Time is
+    the continuous duration measure
+- identifier: HKQuantityTypeIdentifierAppleExerciseTime
+  relationship: Complementary - Part of the Activity rings trio; Exercise Time tracks moderate+ activity, Stand
+    Time tracks sedentary breaks
+- identifier: HKQuantityTypeIdentifierAppleMoveTime
+  relationship: Alternative metric - Move Time serves wheelchair users as the accessibility-focused equivalent to
+    Stand Time
+- identifier: HKQuantityTypeIdentifierActiveEnergyBurned
+  relationship: Complementary - Standing and moving contributes to active energy burned, though typically at lower
+    rates than exercise
+- identifier: HKQuantityTypeIdentifierStepCount
+  relationship: Complementary movement quantity; source-specific interval and daily comparisons require overlap
+    review.
 references:
-  - title: "Apple Developer Documentation - appleStandTime"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/applestandtime"
-    type: "official"
-  - title: "Track daily activity with Apple Watch - Apple Support"
-    url: "https://support.apple.com/guide/watch/track-daily-activity-apd3bf6d85a6/watchos"
-    type: "official"
-  - title: "Apple Watch - Close Your Rings"
-    url: "https://www.apple.com/watch/close-your-rings/"
-    type: "official"
-  - title: "Sedentary Behaviour and Health - WHO Guidelines"
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7719906/"
-    type: "medical"
-  - title: "Breaking Up Prolonged Sitting and Postprandial Glucose"
-    url: "https://theconversation.com/will-apple-watches-really-make-us-healthier-if-we-stand-up-every-hour-37551"
-    type: "research"
-  - title: "Defining Activity Thresholds Triggering a Stand Hour for Apple Watch Users"
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11196905/"
-    type: "research"
-
-# --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-01-27"
-research_notes: |
-  - iOS 13.0/watchOS 6.0 introduction inferred from API availability patterns
-  - Stand Hour requires both standing AND movement for at least 1 minute per hour
-  - Sedentary health risk statistics from multiple epidemiological studies cited in WHO guidelines
-  - 23% insulin response improvement from breaking up sitting from randomized controlled trial
-  - Stand Time provides granular data complementing the binary Stand Hour category type
+- title: 'Apple: appleStandTime'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/applestandtime
+  type: official
+- title: 'Apple: track daily activity'
+  url: https://support.apple.com/guide/watch/track-daily-activity-apd3bf6d85a6/watchos
+  type: official
+last_updated: '2026-10-14'
+research_notes: Executed private eleven-facet snapshot investigation before rewriting. Apple primary sources checked
+  for units, category semantics and supported sources. Unsupported precise sensing claims and generic clinical targets
+  removed.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: apple-stand-time
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example observational data, not population reference ranges. Source grouping is not persistent device
+    identity. Raw cumulative sums do not reproduce Health source priority. Missing intervals are not zero. Overlap
+    does not prove workout linkage or the timing of activity within an interval. Fixed reporting calendar; boundary
+    intervals and travel-local dates require care.
+figures:
+- src: /knowledge-base/figures/apple-stand-time/intervals.png
+  alt: Histograms show 1–5 recorded stand minutes per interval; all selected-source intervals last five minutes.
+  title: 'Apple Stand Time: amounts and interval shape'
+  caption: Example July–September 2026 data from the source group with the most raw records in the focus window.
+    Counts describe stored observations, not a recording-opportunity denominator or population norms.
+  methods: Source selected by focus-window record count, grouping bundle identifier plus source display name and
+    combining revisions. Half-open reporting window in America/Los_Angeles. Intervals selected by start; all retained
+    observations plotted. Sources kept separate; no dates or source names shown.
+  section: What do example intervals look like?
+  width: 1500
+  height: 600
+seo_title: 'Apple Stand Time in Apple Health: Meaning, Recording and Examples'

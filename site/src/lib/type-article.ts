@@ -32,3 +32,10 @@ export function articleSections(markdown: string): ArticleSection[] {
   flush();
   return sections;
 }
+
+/** Columns that actually render; notes-only entries do not create a table. */
+export function clinicalRangeDataKeys(ranges?: Array<{ [key: string]: string | undefined }> | null): string[] {
+  return Array.from(new Set((ranges ?? []).flatMap((range) => Object.keys(range)))).filter(
+    (key) => key !== "population" && key !== "notes" && ranges?.some((range) => range[key]),
+  );
+}

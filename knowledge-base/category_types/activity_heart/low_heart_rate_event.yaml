@@ -1,11 +1,11 @@
-identifier: "HKCategoryTypeIdentifierLowHeartRateEvent"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Activity and Heart"
-human_readable_name: "Low Heart Rate Event"
-short_description: "Records events when heart rate falls below a user-configured threshold while the user has been inactive."
-icon: "heart.fill"
-color: "#FF2D55"
+identifier: HKCategoryTypeIdentifierLowHeartRateEvent
+source: HealthKit
+type: HKCategoryType
+category: Activity and Heart
+human_readable_name: Low Heart Rate Event
+short_description: Records Apple Watch notifications for heart rate below a chosen threshold during apparent inactivity.
+icon: heart.fill
+color: '#FF2D55'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,14 +14,14 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notApplicable"
-    description: "The only value for low heart rate events. The presence of a sample indicates the threshold was breached. The actual heart rate value is stored in associated metadata."
+- value: 0
+  name: notApplicable
+  description: A recorded notification category; the numeric code is not a physiological value or severity score.
 ios_introduced:
-  version: "12.2"
+  version: '12.2'
   year: 2019
 watchos_introduced:
-  version: "5.2"
+  version: '5.2'
   year: 2019
 deprecated: false
 deprecated_in: null
@@ -29,154 +29,160 @@ writable: false
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "Apple Watch"
-    capability: "Exclusive source - continuously monitors heart rate and detects when rate falls below threshold during inactive periods"
-primary_source: "Apple Watch"
-description: |
-  ## Overview
-  Low Heart Rate Event records instances when the user's heart rate falls below a configurable threshold (40-50 BPM, default 40 BPM) while appearing inactive for at least 10 minutes. This complements the High Heart Rate Event feature as part of Apple Watch's comprehensive heart health monitoring.
+- name: Apple Watch
+  capability: Creates read-only notification events when the supported feature is enabled and its detection conditions
+    are met
+primary_source: Apple Watch
+description: '## What does a Low Heart Rate Event mean?
 
-  Low heart rate (bradycardia) at rest can be completely normal in well-conditioned athletes or may indicate cardiac conduction disorders, medication effects, or other clinical conditions requiring attention. Context is essential for interpretation.
+  A Low Heart Rate Event records a low-rate notification from Apple Watch. It is not the same thing as every low
+  [Heart Rate](../HKQuantityTypeIdentifierHeartRate/) sample. The category value **0 (`notApplicable`)** identifies
+  the event; the configured beats-per-minute threshold appears in separate metadata. [Apple''s HealthKit documentation](https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/lowheartrateevent)
+  describes these samples as read-only.
 
-  ## How It's Detected/Measured
-  **Detection Algorithm:**
-  1. Apple Watch continuously monitors heart rate via photoplethysmography (PPG)
-  2. Accelerometer confirms user has been inactive for approximately 10+ minutes
-  3. If heart rate drops below threshold during sedentary period, an event is recorded
-  4. User receives a notification about the low rate
-  5. Multiple readings confirm sustained bradycardia vs. transient measurement
 
-  **Threshold Configuration:**
-  - Users can set threshold between 40-50 BPM in the Watch app
-  - Default threshold: 40 BPM
-  - Available thresholds: 40, 45, 50 BPM
-  - Feature can be disabled if not desired
+  ## When does the watch record a notification?
 
-  **What's Recorded:**
-  - Timestamp when threshold breach was detected
-  - Duration of low heart rate period
-  - Associated heart rate samples from the event
-  - Device information
+  Apple Watch can notify you when your rate remains below the chosen threshold after at least ten minutes of apparent
+  inactivity. See [Apple''s heart-health guide](https://support.apple.com/guide/watch/monitor-your-heart-health-apde39f5426c/watchos).
+  This setting is not a personalized medical assessment. A rate below a clinical definition of bradycardia does
+  not guarantee a watch notification, and a saved event does not establish a conduction disorder.
 
-  ## Health Significance
-  **Normal Bradycardia:**
-  Athletes and highly fit individuals commonly have resting heart rates of 40-60 BPM or even lower due to:
-  - Increased cardiac stroke volume (more blood pumped per beat)
-  - Enhanced vagal tone from aerobic conditioning
-  - More efficient cardiovascular system
 
-  **Pathological Bradycardia Causes:**
+  Low rates can occur during sleep or in physically trained people. Their significance depends on symptoms, baseline,
+  medications and other clinical context. The [American Heart Association''s bradycardia guidance](https://www.heart.org/en/health-topics/arrhythmia/about-arrhythmia/bradycardia--slow-heart-rate)
+  discusses these differences. Sleep overlap alone cannot certify that an event is harmless.
 
-  *Cardiac Conduction Disorders:*
-  - Sick sinus syndrome (sinus node dysfunction)
-  - Atrioventricular (AV) block (first, second, or third degree)
-  - Bundle branch blocks
-  - Post-cardiac surgery or ablation
 
-  *Medication-Induced:*
-  - Beta-blockers (metoprolol, atenolol, carvedilol)
-  - Calcium channel blockers (diltiazem, verapamil)
-  - Digoxin
-  - Antiarrhythmic drugs (amiodarone, sotalol)
-  - Clonidine
-  - Opioids
+  ## What did the example records show?
 
-  *Metabolic/Systemic:*
-  - Hypothyroidism
-  - Hypothermia
-  - Severe electrolyte imbalances (hyperkalemia)
-  - Increased intracranial pressure (Cushing reflex)
-  - Obstructive sleep apnea (during apneic episodes)
+  The October 2025–September 2026 window contained **three events on three dates**, all from the same source revision.
+  All used category code 0 and stored a **40 bpm threshold**. Each stored interval was exactly **ten minutes**.
+  No events appeared in the July–September focus window.
 
-  *Other:*
-  - Vasovagal response
-  - Carotid sinus hypersensitivity
-  - Advanced age (natural conduction system degeneration)
 
-  **Clinical Significance:**
-  - Asymptomatic bradycardia in healthy individuals often requires no treatment
-  - Symptomatic bradycardia (dizziness, fatigue, syncope) may require pacemaker evaluation
-  - New-onset bradycardia warrants investigation of underlying cause
+  | Event in chronological order | Stored interval | Nearby pulse samples | Nearby pulse range |
 
-  ## Clinical Interpretation Guidelines
-  **For Health Consultants:**
+  |---|---|---|---|
 
-  1. **Assess Fitness Level First:**
-     - Endurance athletes (runners, cyclists, swimmers) commonly have rates 35-50 BPM
-     - Highly trained athletes may see rates as low as 28-35 BPM
-     - If client is athletic and asymptomatic, low rates are likely physiologic
+  | 1 | 10 minutes | 6 | 39–42 bpm |
 
-  2. **Review Medication List:**
-     - Beta-blockers are the most common cause of non-physiologic bradycardia
-     - Check for recent medication changes or additions
-     - Drug interactions can potentiate bradycardic effects
+  | 2 | 10 minutes | 8 | 39–42 bpm |
 
-  3. **Symptom Correlation:**
-     - Asymptomatic bradycardia: Usually benign, monitor
-     - Symptomatic (dizziness, fatigue, near-syncope, syncope): Requires medical evaluation
-     - Symptoms during events vs. at other times
+  | 3 | 10 minutes | 7 | 38–42 bpm |
 
-  4. **Event Patterns:**
-     - Nocturnal events common and often normal (vagal tone increases during sleep)
-     - Daytime events during wakefulness more significant
-     - Frequency and trend over time
 
-  5. **Threshold Selection:**
-     - Athletes: May want to set at 40 BPM to avoid frequent benign alerts
-     - Non-athletes on rate-control medications: 45-50 BPM may be appropriate
-     - History of syncope or falls: Consider lower threshold for sensitivity
+  Nearby samples here start within five minutes before the event start through five minutes after its end. They
+  are a temporal comparison across exported heart-rate sources, not an explicit HealthKit association. The ten-minute
+  record is not evidence that every instant stayed below 40 bpm. Three notifications do not support stable percentiles,
+  a typical event rate or a disease-risk estimate.
 
-  6. **Correlated Data:**
-     - Check if events occur during sleep (normal) vs. wakefulness (more concerning)
-     - Review for high heart rate events as well (tachy-brady syndrome)
-     - HRV patterns around events
-     - ECG recordings if available from same time period
 
-  7. **Red Flags Requiring Immediate Medical Evaluation:**
-     - Syncope or near-syncope episodes
-     - Heart rate below 40 in non-athlete without rate-slowing medications
-     - New bradycardia with chest pain or shortness of breath
-     - Combination with irregular rhythm events (suggests sick sinus syndrome)
-     - Progressive lowering of heart rate over time
+  ## How did the events relate to sleep and workouts?
 
-  ## Caveats & Limitations
-  - **Athletic Context Essential:** Low heart rate in athletes is usually a sign of fitness, not pathology
-  - **PPG Limitations:** Motion, poor fit, or skin pigmentation can affect measurement accuracy
-  - **Nocturnal Normality:** Rates in the 40s during sleep are common and usually benign
-  - **Not Diagnostic:** Events prompt evaluation but don't diagnose conduction disorders
-  - **Medication Confounding:** Many cardiac medications intentionally lower heart rate
-  - **Limited Threshold Range:** 40 BPM minimum threshold may miss significant bradycardia in athletes who normally run lower
-  - **Episodic Events:** Brief pauses or intermittent blocks may be missed if not sustained
-  - **Rhythm Undetermined:** PPG cannot distinguish sinus bradycardia from junctional rhythm or heart block
+  All three event intervals overlapped a recorded asleep interval; none overlapped a recorded workout. That is a
+  description of these examples, not a rule that low notifications only happen during sleep. The stored intervals
+  and nearby readings cannot identify the cause of a low rate.
+
+
+  The long gaps between saved events describe notification timing. They do not show continuous monitoring, uninterrupted
+  normal readings or time without bradycardia. Notification settings and watch-wear opportunities on days without
+  an event were unavailable.
+
+
+  ## Which related measurements help?
+
+  Use raw heart rate to examine the surrounding readings and [Resting Heart Rate](../HKQuantityTypeIdentifierRestingHeartRate/)
+  to follow a different daily summary. [Sleep Analysis](../HKCategoryTypeIdentifierSleepAnalysis/) supplies recorded
+  context. An available ECG may capture electrical rhythm, but a recording at another time cannot explain the event
+  retrospectively.
+
+
+  The database had no AFib-burden records and no VO2-max estimates in these event comparison windows. That does
+  not exclude AFib or establish fitness as the explanation. An irregular-rhythm notification or a high-rate event
+  nearby also does not independently diagnose a rhythm syndrome.
+
+
+  ## What should you do with a concerning notification?
+
+  Discuss new, recurring or symptomatic episodes with a clinician. A sudden unusually slow pulse accompanied by
+  chest pain, breathlessness, dizziness or fainting needs urgent assessment; see the [AHA heart-rate guidance](https://www.heart.org/en/health-topics/high-blood-pressure/the-facts-about-high-blood-pressure/all-about-heart-rate-pulse).
+  Do not change medication or dismiss symptoms based on a sleep label, fitness score or watch threshold alone.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyHeartRateEventThreshold"
-    description: "The BPM threshold that was configured when the event was detected (40-50 BPM)"
-  - key: "HKMetadataKeyAverageHeartRate"
-    description: "The average heart rate measured during the low heart rate event period"
+- key: HKMetadataKeyHeartRateEventThreshold
+  description: Heart-rate threshold configured for the recorded notification; not the measured heart rate.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierHeartRate"
-    relationship: "Individual heart rate samples provide context around low heart rate events"
-  - identifier: "HKCategoryTypeIdentifierHighHeartRateEvent"
-    relationship: "Combined high and low events suggest tachy-brady syndrome or arrhythmia"
-  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
-    relationship: "Irregular rhythm with bradycardia may indicate sick sinus syndrome or AFib with slow ventricular response"
-  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
-    relationship: "Chronic low resting heart rate trend provides context for event interpretation"
-  - identifier: "HKQuantityTypeIdentifierVO2Max"
-    relationship: "High VO2max supports athletic bradycardia interpretation"
-  - identifier: "HKElectrocardiogramType"
-    relationship: "ECG can identify conduction disorders (heart block, sinus pause) when low heart rate events occur"
+- identifier: HKQuantityTypeIdentifierHeartRate
+  relationship: Provides separate measurement or notification context; time overlap does not establish an explicit
+    association or diagnosis.
+- identifier: HKCategoryTypeIdentifierHighHeartRateEvent
+  relationship: Provides separate measurement or notification context; time overlap does not establish an explicit
+    association or diagnosis.
+- identifier: HKCategoryTypeIdentifierIrregularHeartRhythmEvent
+  relationship: Provides separate measurement or notification context; time overlap does not establish an explicit
+    association or diagnosis.
+- identifier: HKQuantityTypeIdentifierRestingHeartRate
+  relationship: Provides separate measurement or notification context; time overlap does not establish an explicit
+    association or diagnosis.
+- identifier: HKQuantityTypeIdentifierVO2Max
+  relationship: Provides separate measurement or notification context; time overlap does not establish an explicit
+    association or diagnosis.
+- identifier: HKElectrocardiogramType
+  relationship: Separate electrical-rhythm recording; temporal proximity does not prove the same episode was captured.
 references:
-  - title: "HKCategoryTypeIdentifierLowHeartRateEvent - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierlowheartratevent"
-    type: "official"
-  - title: "Monitor your heart rate on Apple Watch - Apple Support"
-    url: "https://support.apple.com/en-us/108794"
-    type: "official"
-  - title: "Bradycardia: Evaluation and Management - American Family Physician"
-    url: "https://www.aafp.org/pubs/afp/issues/2021/0901/bradycardia.html"
-    type: "medical"
-  - title: "Athlete's Heart: Bradycardia in Highly Trained Athletes"
-    url: "https://pubmed.ncbi.nlm.nih.gov/30392564/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: Apple HealthKit notification type
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/lowheartrateevent
+  type: official
+- title: Monitor your heart health on Apple Watch
+  url: https://support.apple.com/guide/watch/monitor-your-heart-health-apde39f5426c/watchos
+  type: official
+- title: Heart health notifications on your Apple Watch
+  url: https://support.apple.com/en-us/120276
+  type: official
+- title: All About Heart Rate — American Heart Association
+  url: https://www.heart.org/en/health-topics/high-blood-pressure/the-facts-about-high-blood-pressure/all-about-heart-rate-pulse
+  type: medical
+- title: 'Bradycardia: Slow Heart Rate — American Heart Association'
+  url: https://www.heart.org/en/health-topics/arrhythmia/about-arrhythmia/bradycardia--slow-heart-rate
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Apple Watch Low Heart Rate Events: Sleep, Thresholds and Alerts'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: low-heart-rate-event
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Three recorded events; no stable event-rate or population inference. Zero focus-window events. Stored
+    ten-minute intervals are not validated physiological episode durations. Notification enablement, watch-wear
+    history, detection opportunities and settings outside recorded events are unknown. Category codes are not numeric
+    physiological measurements. Temporal neighbors do not establish explicit association or cause. Fixed reporting
+    calendar; start-selected bounds can omit preceding context.
+figures:
+- src: /knowledge-base/figures/low-heart-rate-event/event-heart-rate.png
+  alt: Three event-relative panels showing nearby pulse samples from 38 to 42 bpm, with stored ten-minute intervals
+    and 40 bpm threshold.
+  title: An event interval is different from continuous pulse data
+  caption: 'Example data: three saved low-rate notifications, each with a 40 bpm threshold and a ten-minute interval.
+    Dots are the 6, 8 and 7 nearby pulse samples. All three intervals overlap recorded sleep; none overlap a recorded
+    workout. These sparse examples do not establish a normal range or cause.'
+  methods: October 2025–September 2026 snapshot. Events ordered by time with dates and source identity removed.
+    All exported heart-rate sources; samples selected by start from five minutes before event start through five
+    minutes after event end. No interpolation. Shading shows stored intervals, not validated bradycardia duration.
+    Temporal proximity is not an explicit HealthKit link.
+  section: What did the example records show?
+  width: 1440
+  height: 1200

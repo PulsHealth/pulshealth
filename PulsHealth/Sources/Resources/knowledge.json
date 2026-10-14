@@ -94,7 +94,7 @@
         "value": 0
       },
       {
-        "description": "User did not stand and move for at least one minute during the hour. The hour is counted as sedentary.",
+        "description": "The standing-and-moving threshold was not met during the recorded interval; this is not a direct sitting-duration measurement.",
         "name": "idle",
         "value": 1
       }
@@ -697,7 +697,7 @@
   "HKCategoryTypeIdentifierHighHeartRateEvent": {
     "category_values": [
       {
-        "description": "The only value for high heart rate events. The presence of a sample indicates the threshold was exceeded while inactive. The actual heart rate value is stored in associated metadata.",
+        "description": "A recorded notification category; the numeric code is not a physiological value or severity score.",
         "name": "notApplicable",
         "value": 0
       }
@@ -705,7 +705,7 @@
     "default_unit": null,
     "human_readable_name": "High Heart Rate Event",
     "identifier": "HKCategoryTypeIdentifierHighHeartRateEvent",
-    "short_description": "Records events when heart rate exceeds a user-configured threshold while the user appears inactive.",
+    "short_description": "Records Apple Watch notifications for heart rate above a chosen threshold during apparent inactivity.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierHotFlashes": {
@@ -768,15 +768,15 @@
   "HKCategoryTypeIdentifierIrregularHeartRhythmEvent": {
     "category_values": [
       {
-        "description": "Algorithm detected irregular rhythm patterns consistent with atrial fibrillation during the monitoring period.",
-        "name": "aFibDetected",
-        "value": 1
+        "description": "A recorded notification category; the numeric code is not a physiological value or severity score.",
+        "name": "notApplicable",
+        "value": 0
       }
     ],
     "default_unit": null,
     "human_readable_name": "Irregular Heart Rhythm Event",
     "identifier": "HKCategoryTypeIdentifierIrregularHeartRhythmEvent",
-    "short_description": "Records events when Apple Watch detects heart rhythm patterns suggestive of atrial fibrillation (AFib).",
+    "short_description": "Records Apple Watch notifications for an irregular pulse pattern that may suggest atrial fibrillation.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierIrregularMenstrualCycles": {
@@ -810,7 +810,7 @@
   "HKCategoryTypeIdentifierLowCardioFitnessEvent": {
     "category_values": [
       {
-        "description": "VO2 max estimate has fallen into the 'Low' fitness category based on age and sex-adjusted clinical thresholds, indicating cardiovascular fitness below healthy ranges.",
+        "description": "A recorded notification category; the numeric code is not a physiological value or severity score.",
         "name": "lowFitness",
         "value": 1
       }
@@ -818,13 +818,13 @@
     "default_unit": null,
     "human_readable_name": "Low Cardio Fitness Event",
     "identifier": "HKCategoryTypeIdentifierLowCardioFitnessEvent",
-    "short_description": "Records events when VO2 max estimates fall below clinically significant thresholds indicating poor cardiorespiratory fitness.",
+    "short_description": "Records notifications when estimated VO2 max consistently falls in the Low cardio-fitness classification.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierLowHeartRateEvent": {
     "category_values": [
       {
-        "description": "The only value for low heart rate events. The presence of a sample indicates the threshold was breached. The actual heart rate value is stored in associated metadata.",
+        "description": "A recorded notification category; the numeric code is not a physiological value or severity score.",
         "name": "notApplicable",
         "value": 0
       }
@@ -832,7 +832,7 @@
     "default_unit": null,
     "human_readable_name": "Low Heart Rate Event",
     "identifier": "HKCategoryTypeIdentifierLowHeartRateEvent",
-    "short_description": "Records events when heart rate falls below a user-configured threshold while the user has been inactive.",
+    "short_description": "Records Apple Watch notifications for heart rate below a chosen threshold during apparent inactivity.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierLowerBackPain": {
@@ -1667,7 +1667,7 @@
     "typical_range": {
       "max": null,
       "min": null,
-      "notes": "Normal blood pressure is typically below 120/80 mmHg\ndiastolic: 60-80 mmHg\nsystolic: 90-120 mmHg",
+      "notes": "Use repeated standardized paired readings and individualized clinical guidance.",
       "unit": null
     }
   },
@@ -1690,12 +1690,7 @@
     "human_readable_name": "Active Energy Burned",
     "identifier": "HKQuantityTypeIdentifierActiveEnergyBurned",
     "short_description": "Measures the energy expended through physical activity and movement above resting metabolic rate.",
-    "typical_range": {
-      "max": 2000,
-      "min": 100,
-      "notes": "Highly variable based on activity level. Sedentary individuals may burn 150-300 kcal/day active; very active individuals can exceed 1500 kcal/day.",
-      "unit": "kcal/day"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierAppleExerciseTime": {
     "category_values": null,
@@ -1703,12 +1698,7 @@
     "human_readable_name": "Apple Exercise Time",
     "identifier": "HKQuantityTypeIdentifierAppleExerciseTime",
     "short_description": "Measures the amount of time the user spent exercising at or above a brisk walk intensity.",
-    "typical_range": {
-      "max": 180,
-      "min": 0,
-      "notes": "Most users accumulate 0-60 minutes daily. Athletes or highly active individuals may exceed 120 minutes. Values above 180 minutes suggest extended training sessions or endurance activities.",
-      "unit": "min"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierAppleMoveTime": {
     "category_values": null,
@@ -1728,13 +1718,8 @@
     "default_unit": "degC",
     "human_readable_name": "Sleeping Wrist Temperature",
     "identifier": "HKQuantityTypeIdentifierAppleSleepingWristTemperature",
-    "short_description": "A relative measurement of wrist skin temperature deviation from a personal baseline, recorded during sleep by Apple Watch, used for menstrual cycle tracking and detecting physiological changes.",
-    "typical_range": {
-      "max": 1.0,
-      "min": -1.0,
-      "notes": "Typical nightly variation from personal baseline. Values represent deviation, not absolute temperature. Larger deviations may indicate illness or hormonal changes.",
-      "unit": "degC"
-    }
+    "short_description": "Absolute wrist skin temperature recorded overnight by Apple Watch; Apple Health displays changes relative to a personal baseline.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierAppleStandTime": {
     "category_values": null,
@@ -1742,12 +1727,7 @@
     "human_readable_name": "Apple Stand Time",
     "identifier": "HKQuantityTypeIdentifierAppleStandTime",
     "short_description": "Measures the amount of time the user has spent standing throughout the day.",
-    "typical_range": {
-      "max": 480,
-      "min": 0,
-      "notes": "Typical values range from 60-180 minutes for sedentary individuals to 300+ minutes for active individuals. Maximum possible depends on waking hours and activity level.",
-      "unit": "min"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierAppleWalkingSteadiness": {
     "category_values": null,
@@ -1769,9 +1749,9 @@
     "identifier": "HKQuantityTypeIdentifierAtrialFibrillationBurden",
     "short_description": "An estimate of the percentage of time a person's heart shows signs of atrial fibrillation over a defined monitoring period.",
     "typical_range": {
-      "max": 100,
-      "min": 0,
-      "notes": "0% indicates no AFib detected; 100% indicates persistent/permanent AFib. Most paroxysmal AFib patients show intermittent burden.",
+      "max": null,
+      "min": null,
+      "notes": "An estimate over monitored time; no universal clinical target. The Health app lower display floor is 2% or less, not 0%.",
       "unit": "%"
     }
   },
@@ -1794,12 +1774,7 @@
     "human_readable_name": "Basal Energy Burned",
     "identifier": "HKQuantityTypeIdentifierBasalEnergyBurned",
     "short_description": "Measures the resting energy expenditure (calories burned at rest) to maintain basic physiological functions.",
-    "typical_range": {
-      "max": 2500,
-      "min": 1000,
-      "notes": "Daily basal energy expenditure varies based on age, sex, height, weight, and body composition. Range represents typical adult values.",
-      "unit": "kcal/day"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierBloodAlcoholContent": {
     "category_values": null,
@@ -1821,9 +1796,9 @@
     "identifier": "HKQuantityTypeIdentifierBloodGlucose",
     "short_description": "The concentration of glucose in the blood, a key indicator for diabetes management and metabolic health.",
     "typical_range": {
-      "max": 140,
-      "min": 70,
-      "notes": "Fasting typically 70-100 mg/dL; post-meal can rise to 140 mg/dL in non-diabetic individuals.",
+      "max": null,
+      "min": null,
+      "notes": "No universal range across fasting laboratory tests, arbitrary meals and CGM observations; use test-specific interpretation and individualized targets.",
       "unit": "mg/dL"
     }
   },
@@ -1834,9 +1809,9 @@
     "identifier": "HKQuantityTypeIdentifierBloodPressureDiastolic",
     "short_description": "The minimum arterial pressure between heartbeats when the heart relaxes, representing the lower number in a blood pressure reading.",
     "typical_range": {
-      "max": 120,
-      "min": 60,
-      "notes": "Normal diastolic pressure ranges from 60-80 mmHg. Values above 120 mmHg indicate hypertensive crisis.",
+      "max": null,
+      "min": null,
+      "notes": "Interpret systolic and diastolic together using repeated standardized readings; no universal healthy interval or individual target.",
       "unit": "mmHg"
     }
   },
@@ -1847,9 +1822,9 @@
     "identifier": "HKQuantityTypeIdentifierBloodPressureSystolic",
     "short_description": "The maximum arterial pressure during heart contraction, representing the upper number in a blood pressure reading.",
     "typical_range": {
-      "max": 180,
-      "min": 90,
-      "notes": "Normal systolic pressure ranges from 90-120 mmHg. Values above 180 mmHg indicate hypertensive crisis.",
+      "max": null,
+      "min": null,
+      "notes": "Interpret systolic and diastolic together using repeated standardized readings; no universal healthy interval or individual target.",
       "unit": "mmHg"
     }
   },
@@ -1859,12 +1834,7 @@
     "human_readable_name": "Body Fat Percentage",
     "identifier": "HKQuantityTypeIdentifierBodyFatPercentage",
     "short_description": "The proportion of total body mass composed of adipose tissue, expressed as a percentage.",
-    "typical_range": {
-      "max": 60,
-      "min": 3,
-      "notes": "Essential fat minimum is approximately 3% for men and 10-12% for women; values above 50% indicate severe obesity.",
-      "unit": "%"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierBodyMass": {
     "category_values": null,
@@ -1872,12 +1842,7 @@
     "human_readable_name": "Body Mass (Weight)",
     "identifier": "HKQuantityTypeIdentifierBodyMass",
     "short_description": "The user's total body weight, typically measured using a scale.",
-    "typical_range": {
-      "max": 300,
-      "min": 20,
-      "notes": "Adult range typically 40-150 kg; extreme values outside 20-300 kg should be validated for data entry errors.",
-      "unit": "kg"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierBodyMassIndex": {
     "category_values": null,
@@ -1885,25 +1850,15 @@
     "human_readable_name": "Body Mass Index",
     "identifier": "HKQuantityTypeIdentifierBodyMassIndex",
     "short_description": "A calculated ratio of weight to height used to classify weight status and assess health risks.",
-    "typical_range": {
-      "max": 60,
-      "min": 10,
-      "notes": "Extreme values outside 10-60 are physiologically implausible for adults; typical adult range is 15-40.",
-      "unit": "kg/m^2"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierBodyTemperature": {
     "category_values": null,
     "default_unit": "degC",
     "human_readable_name": "Body Temperature",
     "identifier": "HKQuantityTypeIdentifierBodyTemperature",
-    "short_description": "A measurement of the body's internal temperature, a fundamental vital sign indicating metabolic and immune system status.",
-    "typical_range": {
-      "max": 37.5,
-      "min": 35.5,
-      "notes": "Normal oral temperature range for healthy adults. Values vary by measurement site and individual baseline.",
-      "unit": "degC"
-    }
+    "short_description": "An absolute temperature reading whose interpretation depends on measurement site, method and source.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierCyclingCadence": {
     "category_values": null,
@@ -1976,12 +1931,7 @@
     "human_readable_name": "Dietary Caffeine",
     "identifier": "HKQuantityTypeIdentifierDietaryCaffeine",
     "short_description": "Total caffeine consumed from beverages, food, and supplements, measured in milligrams.",
-    "typical_range": {
-      "max": 600,
-      "min": 0,
-      "notes": null,
-      "unit": "mg"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryCalcium": {
     "category_values": null,
@@ -2002,12 +1952,7 @@
     "human_readable_name": "Dietary Carbohydrates",
     "identifier": "HKQuantityTypeIdentifierDietaryCarbohydrates",
     "short_description": "Total carbohydrate intake including sugars, starches, and fiber",
-    "typical_range": {
-      "max": 500,
-      "min": 20,
-      "notes": "Highly variable based on dietary approach. Ketogenic diets may target <50g; endurance athletes may exceed 500g on heavy training days.",
-      "unit": "g"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryChloride": {
     "category_values": null,
@@ -2067,12 +2012,7 @@
     "human_readable_name": "Dietary Energy Consumed",
     "identifier": "HKQuantityTypeIdentifierDietaryEnergyConsumed",
     "short_description": "Total caloric energy intake from food and beverages",
-    "typical_range": {
-      "max": 4000,
-      "min": 1200,
-      "notes": "Highly variable based on age, sex, body size, activity level, and metabolic health. Athletes may exceed 5000 kcal/day.",
-      "unit": "kcal"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFatMonounsaturated": {
     "category_values": null,
@@ -2119,12 +2059,7 @@
     "human_readable_name": "Dietary Fat (Total)",
     "identifier": "HKQuantityTypeIdentifierDietaryFatTotal",
     "short_description": "Total fat intake from all dietary sources",
-    "typical_range": {
-      "max": 200,
-      "min": 30,
-      "notes": "On a 2000 kcal diet, 44-78g represents 20-35% of calories. Ketogenic diets may reach 150-200g/day.",
-      "unit": "g"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryFiber": {
     "category_values": null,
@@ -2275,12 +2210,7 @@
     "human_readable_name": "Dietary Protein",
     "identifier": "HKQuantityTypeIdentifierDietaryProtein",
     "short_description": "Total protein intake from food and supplements",
-    "typical_range": {
-      "max": 250,
-      "min": 40,
-      "notes": "Varies significantly by body weight, activity level, and health goals. Athletes and those in caloric deficit may consume 2-3g/kg body weight.",
-      "unit": "g"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryRiboflavin": {
     "category_values": null,
@@ -2443,13 +2373,8 @@
     "default_unit": "mL",
     "human_readable_name": "Dietary Water",
     "identifier": "HKQuantityTypeIdentifierDietaryWater",
-    "short_description": "Total water consumed from beverages and food, measured in milliliters or liters.",
-    "typical_range": {
-      "max": 5000,
-      "min": 0,
-      "notes": null,
-      "unit": "mL"
-    }
+    "short_description": "Recorded water intake from contributing apps or manual entries, stored in milliliters.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDietaryZinc": {
     "category_values": null,
@@ -2509,12 +2434,7 @@
     "human_readable_name": "Walking + Running Distance",
     "identifier": "HKQuantityTypeIdentifierDistanceWalkingRunning",
     "short_description": "Measures the distance the user has moved by walking or running.",
-    "typical_range": {
-      "max": 50000,
-      "min": 0,
-      "notes": "Daily values typically range from 2-10 km for most adults. Values above 20 km/day are uncommon except for runners, hikers, or occupations requiring extensive walking. Marathon distance (42.2 km) represents an upper extreme for single-day values.",
-      "unit": "m"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierDistanceWheelchair": {
     "category_values": null,
@@ -2573,13 +2493,8 @@
     "default_unit": "count",
     "human_readable_name": "Flights Climbed",
     "identifier": "HKQuantityTypeIdentifierFlightsClimbed",
-    "short_description": "Counts the number of flights of stairs climbed, where one flight equals approximately 10 feet (3 meters) of elevation gain.",
-    "typical_range": {
-      "max": 50,
-      "min": 0,
-      "notes": "Highly dependent on living/working environment. Office workers in single-story buildings may record 0-5; those in multi-story buildings or hilly areas can easily exceed 20.",
-      "unit": "flights/day"
-    }
+    "short_description": "Counts recorded stair flights climbed during an interval.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierForcedExpiratoryVolume1": {
     "category_values": null,
@@ -2638,11 +2553,11 @@
     "default_unit": "count/min",
     "human_readable_name": "Heart Rate Recovery (1 Minute)",
     "identifier": "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute",
-    "short_description": "Measures the reduction in heart rate from peak exercise intensity to one minute after exercise cessation, a powerful indicator of cardiovascular fitness and autonomic function.",
+    "short_description": "Heart-rate reduction after exercise, interpreted with the test method, workout conditions and recovery timing.",
     "typical_range": {
       "max": 80,
       "min": 5,
-      "notes": "Range varies by fitness level, exercise intensity, and individual physiology. Very fit individuals may show recovery >50 bpm while those with cardiac conditions may show <12 bpm.",
+      "notes": "Display band only; not a diagnostic reference interval or an observed example-data range.",
       "unit": "count/min"
     }
   },
@@ -2651,11 +2566,11 @@
     "default_unit": "ms",
     "human_readable_name": "Heart Rate Variability (RMSSD)",
     "identifier": "HKQuantityTypeIdentifierHeartRateVariabilityRMSSD",
-    "short_description": "Measures the root mean square of successive differences between normal heartbeat intervals (RMSSD), a short-term heart rate variability metric that mainly reflects vagal (parasympathetic) activity; the Health app calls it Recovery HRV.",
+    "short_description": "Beat-to-beat heart-rate variability in milliseconds, with source and recording-window context for Apple Health Recovery HRV.",
     "typical_range": {
       "max": 100,
       "min": 10,
-      "notes": "Covers most healthy adults at rest in short recordings: 5-minute resting means fall from about 40 ms at 25-34 to about 19 ms at 65-74 (Voss 2015), and pooled studies report a mean of 42 ms (Nunan 2010). Higher values are common in young and endurance-trained people. Values depend heavily on age, posture, time of day and breathing, so compare against the person's own baseline.",
+      "notes": "Display band only; not a diagnostic reference interval or an observed example-data range.",
       "unit": "ms"
     }
   },
@@ -2678,12 +2593,7 @@
     "human_readable_name": "Height",
     "identifier": "HKQuantityTypeIdentifierHeight",
     "short_description": "A measurement of the user's standing height, a fundamental anthropometric parameter used for health assessment, growth monitoring, and clinical calculations.",
-    "typical_range": {
-      "max": 2.5,
-      "min": 0.5,
-      "notes": "Range encompasses newborns through exceptionally tall adults. Adult heights typically fall between 1.50-2.00 m (4'11\" - 6'7\").",
-      "unit": "m"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierInhalerUsage": {
     "category_values": null,
@@ -2717,12 +2627,7 @@
     "human_readable_name": "Lean Body Mass",
     "identifier": "HKQuantityTypeIdentifierLeanBodyMass",
     "short_description": "The total body mass minus all fat tissue, including muscle, bone, organs, and water.",
-    "typical_range": {
-      "max": 120,
-      "min": 25,
-      "notes": "Adult lean body mass typically ranges from 35-80 kg depending on sex, height, and muscularity.",
-      "unit": "kg"
-    }
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierNikeFuel": {
     "category_values": null,
@@ -2772,7 +2677,7 @@
     "typical_range": {
       "max": 100,
       "min": 95,
-      "notes": "For healthy individuals at sea level. Values may be lower at high altitude or in certain medical conditions.",
+      "notes": "Apple describes 95–100% as common wellness readings. Not a diagnostic threshold or treatment target; clinical circumstances and measurement accuracy matter.",
       "unit": "%"
     }
   },
@@ -2835,9 +2740,9 @@
     "identifier": "HKQuantityTypeIdentifierRespiratoryRate",
     "short_description": "The number of breaths taken per minute, typically measured during sleep.",
     "typical_range": {
-      "max": 20,
+      "max": 18,
       "min": 12,
-      "notes": "Range for healthy adults at rest. Values may vary during sleep, exercise, or illness.",
+      "notes": "MedlinePlus resting adult clinical reference; not an overnight Apple Watch target or diagnostic threshold.",
       "unit": "breaths/min"
     }
   },
@@ -2850,7 +2755,7 @@
     "typical_range": {
       "max": 110,
       "min": 35,
-      "notes": "Encompasses athletic bradycardia through elevated resting rates seen in deconditioned or unwell individuals",
+      "notes": "Display band only; not a diagnostic reference interval or an observed example-data range.",
       "unit": "count/min"
     }
   },
@@ -3022,7 +2927,7 @@
     "typical_range": {
       "max": 60,
       "min": 20,
-      "notes": "Wide variation based on age, sex, and fitness level. Elite endurance athletes may exceed 70-80 mL/kg/min. Sedentary adults typically range 25-40 mL/kg/min.",
+      "notes": "Display band only; not a diagnostic reference interval or an observed example-data range.",
       "unit": "mL/kg/min"
     }
   },
@@ -3074,7 +2979,7 @@
     "typical_range": {
       "max": 160,
       "min": 70,
-      "notes": "Range varies significantly based on walking pace, terrain, fitness level, and age. Brisk walking elevates heart rate more than casual walking.",
+      "notes": "Display band only; not a diagnostic reference interval or an observed example-data range.",
       "unit": "count/min"
     }
   },

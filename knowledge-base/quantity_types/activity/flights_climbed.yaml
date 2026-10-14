@@ -1,302 +1,185 @@
-# ============================================
-# HEALTHKIT DATA TYPE: Flights Climbed
-# ============================================
-
-# --- CORE IDENTIFICATION ---
-identifier: "HKQuantityTypeIdentifierFlightsClimbed"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Activity"
-human_readable_name: "Flights Climbed"
-short_description: "Counts the number of flights of stairs climbed, where one flight equals approximately 10 feet (3 meters) of elevation gain."
-
-# --- APPLE HEALTH UI ---
-icon: "figure.stairs"
-color: "#30D158"
-
-# --- UNITS & MEASUREMENT ---
-default_unit: "count"
+identifier: HKQuantityTypeIdentifierFlightsClimbed
+source: HealthKit
+type: HKQuantityType
+category: Activity
+human_readable_name: Flights Climbed
+short_description: Counts recorded stair flights climbed during an interval.
+icon: figure.stairs
+color: '#30D158'
+default_unit: count
 supported_units:
-  - "count"
-unit_description: "Number of flights climbed. One flight is defined as approximately 10 feet (3 meters) of elevation gain, equivalent to roughly 16 steps."
-
-# --- STATISTICS ---
-aggregation_type: "cumulative"
+- count
+unit_description: Cumulative flight count; not an exact measurement of building floors or elevation gain.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-
-# --- TYPICAL VALUES ---
-typical_range:
-  min: 0
-  max: 50
-  unit: "flights/day"
-  notes: "Highly dependent on living/working environment. Office workers in single-story buildings may record 0-5; those in multi-story buildings or hilly areas can easily exceed 20."
-
-clinical_ranges:
-  - population: "Sedentary adults (single-story home/work)"
-    low: "0-2 flights/day"
-    average: "2-5 flights/day"
-    high: ">10 flights/day"
-  - population: "Moderately active adults"
-    low: "<5 flights/day"
-    average: "5-15 flights/day"
-    high: ">20 flights/day"
-  - population: "Active adults (multi-story environment)"
-    low: "<10 flights/day"
-    average: "10-25 flights/day"
-    high: ">30 flights/day"
-  - population: "Stair climbing exercise target"
-    low: "N/A"
-    average: "5-10 flights/day intentional"
-    high: ">20 flights/day for cardiovascular benefit"
-
-# --- PLATFORM & AVAILABILITY ---
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
-  notes: "Available since initial HealthKit release; requires barometric altimeter (iPhone 6 and later)"
+  notes: Available since initial HealthKit release; requires barometric altimeter (iPhone 6 and later)
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
-  notes: "Apple Watch includes barometric altimeter for flight detection"
+  notes: Apple Watch includes barometric altimeter for flight detection
 deprecated: false
 deprecated_in: null
-
-# --- PERMISSIONS & ACCESS ---
 writable: true
 requires_authorization: true
 sensitive_data: false
-
-# --- DATA SOURCES ---
 devices:
-  - name: "Apple Watch"
-    capability: "Uses barometric altimeter to detect elevation changes combined with accelerometer to confirm stair-climbing motion pattern. Requires both elevation gain and stepping motion to count a flight."
-    series: "All series"
-  - name: "iPhone"
-    capability: "Uses barometric altimeter (iPhone 6 and later) combined with motion coprocessor. Device must be carried to detect flights. Same 10-foot elevation gain requirement."
-    models: "iPhone 6 and later"
-  - name: "Third-party fitness trackers"
-    capability: "Devices with barometric altimeters can write flight data to HealthKit."
-    examples: ["Fitbit", "Garmin", "Samsung Galaxy Watch"]
-primary_source: "Apple Watch"
+- name: iPhone
+  capability: Can automatically record this cumulative activity quantity.
+- name: Apple Watch
+  capability: Can automatically record this cumulative activity quantity.
+- name: GymKit
+  capability: Apple Watch connected to a GymKit machine can contribute flights climbed.
+primary_source: Apple Watch
+description: '## What does Flights Climbed count?
 
-# --- DETAILED DESCRIPTION ---
-description: |
-  ## Overview
-  Flights Climbed tracks the number of times a user ascends the equivalent of a flight of stairs. In Apple's definition, one flight equals approximately 10 feet (3 meters) of elevation gain. This metric provides insight into vertical movement patterns and stair-climbing behavior, which is a unique form of physical activity that engages different muscle groups than level walking and provides significant cardiovascular benefits.
+  Flights Climbed is a cumulative count of stair flights recorded during an interval. Apple supports automatic collection
+  from iPhone, Apple Watch and Apple Watch connected to a GymKit machine. [Apple’s type documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/flightsclimbed)
+  defines the count semantics and supported sources.
 
-  Stair climbing is increasingly recognized as a powerful, accessible form of exercise with documented health benefits. Tracking flights climbed helps users and health professionals understand vertical activity patterns that may not be captured by step counts alone.
 
-  ## How It's Measured
+  It is not a count of every individual stair step, a count of building floors, or a direct measurement of total
+  elevation gain. Stair geometry and routes vary. A flight estimate should not be treated as an exact altitude conversion
+  without evidence from the recording source.
 
-  ### Barometric Altimeter
-  The primary sensor is a barometric altimeter, which measures atmospheric pressure changes:
-  - Atmospheric pressure decreases as altitude increases
-  - The altimeter detects pressure drops corresponding to elevation gains
-  - Each 10-foot (3-meter) rise in elevation = 1 flight
 
-  ### Motion Sensor Validation
-  To prevent false positives, Apple devices combine altimeter data with motion detection:
-  - Accelerometer confirms a stepping/climbing motion pattern
-  - Gyroscope helps distinguish stair climbing from other vertical movements
-  - This combination prevents counting elevator rides, escalators, or driving up hills
+  ## What do example records look like?
 
-  ### Flight Detection Algorithm
-  Apple's algorithm requires:
-  1. **Elevation gain:** Approximately 10 feet (3 meters) of vertical rise
-  2. **Climbing motion:** Continuous upward stepping pattern detected
-  3. **Reasonable speed:** Neither too slow (standing still) nor too fast (elevator)
-  4. **Approximately 16 steps:** Corresponding to a typical stair flight
+  The reporting year contained **990 entries on 202 of 365 days**. In July–September, all sources together supplied
+  **304 entries on 56 of 92 days**. Unrecorded days remain missing: they do not establish that no stairs were climbed.
 
-  ### Measurement Limitations
-  - **Descending flights are NOT counted** - only climbing (ascent) registers
-  - **Slow climbs may miss:** Very slow stair climbing might not register if motion pattern is unclear
-  - **Speed matters:** Hiking a long gradual trail typically won't count as flights because the elevation gain per step is too gradual
-  - **Indoor accuracy:** Controlled indoor environments with HVAC systems may have less barometric pressure variation, potentially affecting accuracy
 
-  ## Health Significance
+  The largest focus-window source group contributed **158 records on 51 days**. The median interval contained **one
+  flight** and the largest contained **23 flights**. The selected-source observed-day raw sums ranged from **1 to
+  141 flights**, with a median of **3**. The large daily maximum needs context and source review, rather than a
+  claim about a typical daily target.
 
-  Stair climbing provides substantial health benefits that differ from level walking:
 
-  ### Cardiovascular Benefits
-  Research presented at ESC Preventive Cardiology 2024 and published studies show:
-  - **20% reduced risk** of cardiovascular disease for those climbing 5+ flights daily
-  - **Reduced all-cause mortality** (RR 0.70) in stair climbers vs. non-climbers
-  - **Reduced cardiovascular mortality** (RR 0.65) in regular stair climbers
-  - Climbing stairs daily associated with **32% lower CVD risk** compared to those who stop
+  | Question | Use | Avoid |
 
-  ### Metabolic Impact
-  - Stair climbing burns approximately 0.15 kcal per step (varies by body weight)
-  - 10 flights ≈ 30-50 kcal (depending on individual factors)
-  - Higher caloric expenditure per minute than level walking
-  - Improves insulin sensitivity and glucose metabolism
+  | --- | --- | --- |
 
-  ### Muscular Benefits
-  - Engages quadriceps, hamstrings, glutes, and calves more intensely than walking
-  - Provides eccentric loading (going down) that builds leg strength
-  - Research shows stair climbing builds muscle mass even in cardiac rehabilitation patients
-  - Low-impact compared to running, protecting joint health
+  | How much was recorded in an interval? | Stored count | Counting individual stairs |
 
-  ### Cardiorespiratory Fitness
-  - Stair climbing-based HIIT improves cardiorespiratory fitness in CAD patients
-  - Brief vigorous stair climbing (3x20 seconds) shows fitness improvements comparable to traditional exercise
-  - Accessible form of high-intensity exercise without gym equipment
+  | How much was recorded today? | Source-aware cumulative summary | Summing overlapping devices blindly |
 
-  ### Accessibility and Practicality
-  - "Minimal-equipment, low-cost way to lower cardiovascular risk" - ESC research
-  - Easy to integrate into daily routines (choosing stairs over elevator)
-  - Available in most multi-story buildings
+  | How frequently are records written? | Timestamp gaps and durations | Assuming a scheduled sensor reading |
 
-  ## Clinical Interpretation Guidelines
+  | How much height was gained? | Relevant altitude or route evidence | Exact conversion from flight count |
 
-  ### Assessing Stair Climbing Capacity
 
-  **Limited Capacity (<5 flights/day easily):**
-  - May indicate deconditioning, respiratory limitations, or joint issues
-  - Could suggest cardiovascular concerns if accompanied by dyspnea or chest discomfort
-  - Opportunity for gradual conditioning with supervised progression
+  ## How often are flights recorded?
 
-  **Moderate Capacity (5-15 flights/day):**
-  - Suggests reasonable cardiovascular and musculoskeletal fitness
-  - Meets basic stair climbing recommendations for health benefits
-  - Can encourage increased stair use for additional benefits
+  This is an activity-dependent stream, not a reading expected every minute. In the selected source, stored intervals
+  ranged from approximately **2.57 seconds to 9.92 minutes**, with a median near **2.57 seconds**. The same count
+  can therefore span very different durations.
 
-  **High Capacity (>15 flights/day):**
-  - Indicates good cardiovascular fitness and lower extremity strength
-  - Associated with reduced cardiovascular risk
-  - Common in active individuals or those in multi-story environments
 
-  ### Recommendations Based on Research
+  Dividing flights by interval duration describes a stored interval ratio. It does not prove the actual time spent
+  climbing or a reliable instantaneous stair-climbing speed. Long gaps can mean no exported stair observation, incomplete
+  wear or another recording circumstance; the raw stream alone cannot distinguish those explanations.
 
-  **Minimum for Health Benefits:**
-  - 5+ flights per day associated with 20% reduced CVD risk
-  - ~50 steps of stairs daily (approximately 3 flights)
-  - Can be accumulated throughout the day
 
-  **For Cardiovascular Improvement:**
-  - Brief vigorous stair climbing intervals (3x20 seconds with recovery)
-  - Progressive increase in daily flights
-  - Intensity matters: climbing vigorously provides greater benefit than slow climbing
+  ## How do workouts, sleep and other sources affect interpretation?
 
-  ### Red Flags During Stair Climbing
-  - **Dyspnea (shortness of breath)** disproportionate to effort level
-  - **Chest pain or discomfort** during or after climbing
-  - **Unusual fatigue** after minimal stair climbing
-  - **Leg claudication** (cramping pain in calves during climbing)
-  - **Dizziness or lightheadedness** during ascent
-  - **Need to stop frequently** on previously manageable flights
+  The source-aware year analysis found flights overlapping workouts, with many records outside workouts. No recorded-sleep
+  overlap was found in this snapshot; that is a result of the available sleep and flight records, not a guarantee
+  about all users or an inference about unrecorded nights.
 
-  These symptoms warrant medical evaluation before encouraging increased stair climbing activity.
 
-  ## Caveats & Limitations
+  Temporal overlap does not establish workout linkage or stair geometry. Indoor machine records and outdoor movement
+  need their source context. Multiple devices can register the same activity, and overlapping intervals must be
+  investigated before combining counts.
 
-  ### Measurement Accuracy Issues
 
-  **Indoor Environment Challenges:**
-  - HVAC systems affect barometric pressure, potentially causing under/over-counting
-  - Rapid pressure changes from doors opening/closing may cause errors
-  - Some users report climbing 2 flights but only 1 being counted
+  ## How does Flights Climbed relate to steps and distance?
 
-  **Activity Pattern Requirements:**
-  - Too slow = may not register (algorithm expects active climbing)
-  - Hiking gradual inclines typically doesn't count (not concentrated elevation gain)
-  - Must have sustained upward movement pattern
+  [Steps](/knowledge-base/types/HKQuantityTypeIdentifierStepCount/) capture walking volume, while [walking/running
+  distance](/knowledge-base/types/HKQuantityTypeIdentifierDistanceWalkingRunning/) captures horizontal travel estimates.
+  Neither uniquely determines stair flights. Many steps can occur on flat ground, and a short route can involve
+  substantial ascent.
 
-  **Sensor Calibration:**
-  - Barometric altimeter doesn't require user calibration but may be affected by weather changes
-  - Dramatic weather pressure changes can temporarily affect accuracy
-  - Device software updates may refine detection algorithms
 
-  ### What Flights Climbed Cannot Tell You
+  In the selected source, flight counts and step totals showed only a weak exploratory daily association across
+  the **51 days with flight records** (Spearman correlation **0.20**). Missing flight days were not filled with
+  zero. The association does not isolate stair exercise, terrain or device wear, and does not predict cardiovascular
+  fitness.
 
-  - **Descending activity:** Flights going down are not tracked (though also beneficial for muscle)
-  - **Stair climbing speed or intensity:** Only counts flights, not effort level
-  - **Specific energy expenditure:** Must estimate calories separately
-  - **Stair type:** Doesn't distinguish between standard stairs, steep stairs, or step machines
-  - **Quality of movement:** Form, handrail use, rest breaks not captured
 
-  ### Interpretation Considerations
-  - Zero flights doesn't mean inactive - person may live/work in single-story buildings
-  - High flights may reflect environment more than intentional exercise
-  - Day-to-day variation is normal based on activities and locations visited
-  - Compare to individual's baseline rather than absolute numbers
+  ## What should be checked before interpreting an outlier?
 
-  ## Additional Notes
+  Inspect the contributing intervals, their source and whether they overlap another stream. All observed focus counts
+  were nonnegative integers; descriptive statistical flags were retained for review rather than deleted. A long
+  tail is plausible in a cumulative activity count and is not itself a medical alarm.
 
-  **Elevation Data:**
-  For more detailed vertical movement tracking during workouts, HKMetadataKeyElevationAscended and HKMetadataKeyElevationDescended provide elevation change in meters rather than flight counts.
 
-  **Relationship to Steps:**
-  - One flight ≈ 16 steps (approximately)
-  - 10 flights ≈ 160 stair steps
-  - Stair steps count toward total step count but flights provide separate vertical activity insight
-
-  **For Health Consultants:**
-  1. Use flights climbed as a unique activity indicator complementary to steps and distance
-  2. Consider client's living/working environment when setting realistic targets
-  3. For cardiovascular health improvement, encourage 5+ flights daily as accessible goal
-  4. Screen for cardiac or respiratory symptoms before recommending increased stair climbing
-  5. Recognize stair climbing as time-efficient exercise option for busy clients
-  6. Monitor trends over time rather than daily fluctuations
-  7. For clients unable to climb stairs, identify alternative exercises that provide similar benefits
-  8. Encourage "taking the stairs" behavior change as practical daily activity intervention
-  9. Consider stair climbing intervals for clients seeking efficient cardio options
-
-  **Energy Equivalents:**
-  - 1 flight ≈ 3-5 kcal (varies by body weight)
-  - 10 flights ≈ 30-50 kcal
-  - Climbing burns ~2-3x more calories per minute than level walking
-
-# --- METADATA KEYS ---
+  Use comparable source coverage and repeated patterns for activity tracking. There is no universally healthy daily
+  flight range in this article, and raw counts cannot establish exertion, symptoms or suitability of stair exercise.'
 metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the sample was entered manually by the user rather than automatically recorded"
-
-# --- RELATED TYPES ---
+- key: HKMetadataKeyWasUserEntered
+  description: Indicates whether the sample was entered manually by the user rather than automatically recorded
 related_types:
-  - identifier: "HKQuantityTypeIdentifierStepCount"
-    relationship: "Complementary - Stair steps contribute to total step count; flights provide vertical activity context"
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "Contributes to - Stair climbing energy expenditure included in active energy total"
-  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
-    relationship: "Complementary - Horizontal distance metric; flights capture vertical movement"
-  - identifier: "HKWorkoutType"
-    relationship: "Detailed in - Stair climbing workouts contain elevation metadata"
-  - identifier: "HKMetadataKeyElevationAscended"
-    relationship: "Related metadata - Provides elevation gain in meters during workouts"
-  - identifier: "HKMetadataKeyElevationDescended"
-    relationship: "Related metadata - Provides elevation descent in meters during workouts"
-  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
-    relationship: "Complementary - Vigorous stair climbing contributes to exercise minutes"
-
-# --- REFERENCES ---
+- identifier: HKQuantityTypeIdentifierStepCount
+  relationship: Complementary movement quantity; source-specific interval and daily comparisons require overlap
+    review.
+- identifier: HKQuantityTypeIdentifierActiveEnergyBurned
+  relationship: Contributes to - Stair climbing energy expenditure included in active energy total
+- identifier: HKQuantityTypeIdentifierDistanceWalkingRunning
+  relationship: Complementary - Horizontal distance metric; flights capture vertical movement
+- identifier: HKWorkoutType
+  relationship: Detailed in - Stair climbing workouts contain elevation metadata
+- identifier: HKMetadataKeyElevationAscended
+  relationship: Related metadata - Provides elevation gain in meters during workouts
+- identifier: HKMetadataKeyElevationDescended
+  relationship: Related metadata - Provides elevation descent in meters during workouts
+- identifier: HKQuantityTypeIdentifierAppleExerciseTime
+  relationship: Complementary - Vigorous stair climbing contributes to exercise minutes
 references:
-  - title: "Apple Developer Documentation - flightsClimbed"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/flightsclimbed"
-    type: "official"
-  - title: "Climb stairs to live longer - European Society of Cardiology"
-    url: "https://www.escardio.org/The-ESC/Press-Office/Press-releases/Climb-stairs-to-live-longer"
-    type: "research"
-  - title: "Brief Vigorous Stair Climbing Effectively Improves Cardiorespiratory Fitness in Patients With Coronary Artery Disease"
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7921461/"
-    type: "research"
-  - title: "Climbing stairs linked to lower risk of heart disease - Harvard Health"
-    url: "https://www.health.harvard.edu/heart-health/climbing-stairs-linked-to-lower-risk-of-heart-disease"
-    type: "medical"
-  - title: "Walking more than five flights of stairs a day can cut risk of heart disease by 20% - Tulane University"
-    url: "https://sph.tulane.edu/walking-more-five-flights-stairs-day-can-cut-risk-heart-disease-20-study-says"
-    type: "research"
-  - title: "Stair-climbing interventions on cardio-metabolic outcomes in adults: A scoping review"
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10656261/"
-    type: "research"
-
-# --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-01-27"
-research_notes: |
-  - iOS 8.0 introduction confirmed via Apple Developer Documentation
-  - Flight definition (10 feet/3 meters) confirmed via Apple Health app and community documentation
-  - Barometric altimeter + motion sensor methodology from Apple community discussions and tech analysis
-  - Cardiovascular benefit data from ESC Preventive Cardiology 2024, Harvard Health, and Tulane University research
-  - Stair climbing HIIT research from Frontiers in Sports and Active Living
-  - Accuracy limitations from Apple Community discussions and user reports
+- title: 'Apple: flightsClimbed'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/flightsclimbed
+  type: official
+last_updated: '2026-10-14'
+research_notes: Executed private eleven-facet snapshot investigation before rewriting. Apple primary sources checked
+  for units, category semantics and supported sources. Unsupported precise sensing claims and generic clinical targets
+  removed.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: flights-climbed
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example observational data, not population reference ranges. Source grouping is not persistent device
+    identity. Raw cumulative sums do not reproduce Health source priority. Missing intervals are not zero. Overlap
+    does not prove workout linkage or the timing of activity within an interval. Fixed reporting calendar; boundary
+    intervals and travel-local dates require care.
+figures:
+- src: /knowledge-base/figures/flights-climbed/intervals.png
+  alt: Histograms show flight counts concentrated at one flight with a tail to 23, beside interval durations concentrated
+    near 2.57 seconds.
+  title: 'Flights Climbed: amounts and interval shape'
+  caption: Example July–September 2026 data from the source group with the most raw records in the focus window.
+    Counts describe stored observations, not a recording-opportunity denominator or population norms.
+  methods: Source selected by focus-window record count, grouping bundle identifier plus source display name and
+    combining revisions. Half-open reporting window in America/Los_Angeles. Intervals selected by start; all retained
+    observations plotted. Sources kept separate; no dates or source names shown.
+  section: What do example records look like?
+  width: 1500
+  height: 600
+seo_title: 'Flights Climbed in Apple Health: Meaning, Recording and Examples'
