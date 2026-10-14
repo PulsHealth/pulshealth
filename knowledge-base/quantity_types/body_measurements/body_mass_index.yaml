@@ -1,56 +1,36 @@
-identifier: "HKQuantityTypeIdentifierBodyMassIndex"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Body Measurements"
-human_readable_name: "Body Mass Index"
-short_description: "A calculated ratio of weight to height used to classify weight status and assess health risks."
-icon: "figure.stand"
-color: "#5856D6"
-default_unit: "count"
+identifier: HKQuantityTypeIdentifierBodyMassIndex
+source: HealthKit
+type: HKQuantityType
+category: Body Measurements
+human_readable_name: Body Mass Index
+short_description: A calculated ratio of weight to height used to classify weight status and assess health risks.
+icon: figure.stand
+color: '#5856D6'
+default_unit: count
 supported_units:
-  - "count"
-  - "kg/m^2"
-unit_description: "BMI is expressed as a dimensionless ratio (kg/m^2), stored in HealthKit as a count value representing the numeric BMI value."
-aggregation_type: "discrete"
+- count
+unit_description: HealthKit stores BMI as a numeric count scalar. The familiar BMI expression is kg/m²; count does
+  not imply an event tally or an integer.
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-  - "mostRecent"
-  - "separateBySource"
-typical_range:
-  min: 10
-  max: 60
-  unit: "kg/m^2"
-  notes: "Extreme values outside 10-60 are physiologically implausible for adults; typical adult range is 15-40."
+- discreteAverage
+- discreteMin
+- discreteMax
+- mostRecent
+- separateBySource
+typical_range: null
 clinical_ranges:
-  - population: "Adults (WHO Classification)"
-    normal: "18.5-24.9 kg/m^2"
-    low: "<18.5 kg/m^2 (Underweight)"
-    high: ">=25.0 kg/m^2 (Overweight/Obese)"
-  - population: "Adults - Detailed Categories"
-    underweight_severe: "<16.0 kg/m^2 (Severe thinness)"
-    underweight_moderate: "16.0-16.9 kg/m^2 (Moderate thinness)"
-    underweight_mild: "17.0-18.4 kg/m^2 (Mild thinness)"
-    normal: "18.5-24.9 kg/m^2"
-    overweight: "25.0-29.9 kg/m^2"
-    obese_class_1: "30.0-34.9 kg/m^2"
-    obese_class_2: "35.0-39.9 kg/m^2"
-    obese_class_3: ">=40.0 kg/m^2 (Severe obesity)"
-  - population: "Asian Adults (Modified WHO)"
-    normal: "18.5-22.9 kg/m^2"
-    overweight: "23.0-24.9 kg/m^2"
-    obese_class_1: "25.0-29.9 kg/m^2"
-    obese_class_2: ">=30.0 kg/m^2"
-    notes: "Lower thresholds due to higher metabolic risk at lower BMI in Asian populations"
-  - population: "Elderly Adults (65+)"
-    normal: "23.0-29.9 kg/m^2"
-    notes: "Higher BMI may be protective in elderly; low BMI (<23.0) associated with increased mortality"
+- population: Adults ages 20 and older (CDC screening categories)
+  low: 'Below 18.5: underweight'
+  normal: '18.5 to below 25: healthy weight'
+  high: '25 to below 30: overweight; 30 or higher: obesity'
+  notes: Screening categories, not individual diagnoses. BMI does not distinguish fat from muscle or fat distribution.
+    Children and teens require age- and sex-specific percentiles.
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -58,124 +38,129 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Smart Scales"
-    capability: "Auto-calculate BMI from weight and stored height"
-    examples: ["Withings Body+", "Eufy Smart Scale", "Garmin Index S2", "Renpho Smart Scale"]
-  - name: "Fitness Apps"
-    capability: "Calculate from user-entered weight and height"
-    examples: ["Apple Health", "MyFitnessPal", "Lose It!", "Noom"]
-  - name: "Clinical Devices"
-    capability: "Professional-grade body composition analysis"
-    examples: ["InBody", "Tanita", "seca medical scales"]
-primary_source: "Calculated from body mass and height measurements, either automatically by connected devices or manually entered by users."
+- name: Scale companion or health apps
+  capability: A producer can calculate BMI from weight and a stored height input and write it to HealthKit.
+- name: Manual entry
+  capability: An entered BMI does not disclose which weight or height was used.
+primary_source: A calculated value written by a producer app or entered manually; its input observations may not
+  be separately available.
 description: |
-  ## Overview
-  Body Mass Index (BMI) is a simple, widely-used screening metric calculated by dividing body weight in kilograms by height in meters squared (kg/m^2). While not a direct measure of body fat, BMI provides a standardized classification system for identifying weight categories that may correlate with health risks.
+  ## What is BMI in Apple Health?
+  Body Mass Index relates [weight](/knowledge-base/types/HKQuantityTypeIdentifierBodyMass/) to [height](/knowledge-base/types/HKQuantityTypeIdentifierHeight/): **weight in kilograms ÷ height in meters²**. HealthKit stores the BMI number using [count units](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/bodymassindex); 28.4 is a BMI value, not 28.4 measurements or a percentage.
 
-  ## How It's Measured
-  BMI is calculated using the formula: BMI = weight (kg) / height (m)^2. In HealthKit, BMI values can be:
-  - Automatically calculated by smart scales that know the user's height
-  - Computed by health apps from stored weight and height data
-  - Manually entered by users or healthcare providers
+  A scale app may calculate and write BMI alongside weight. The existence of a BMI record does not reveal which height the app used or establish that a separate height record exists in HealthKit.
 
-  The calculation requires accurate height measurement; outdated height values can significantly skew results.
+  ## What BMI ranges mean
+  BMI is a screening measure. It cannot separate fat from muscle or show fat distribution; interpret it alongside the broader health assessment. [CDC explains these limitations](https://www.cdc.gov/bmi/about/index.html).
 
-  ## Health Significance
-  BMI serves as a population-level screening tool for weight-related health risks. Research consistently shows associations between elevated BMI and increased risk of:
-  - Type 2 diabetes mellitus
-  - Cardiovascular disease (hypertension, coronary artery disease, stroke)
-  - Metabolic syndrome
-  - Certain cancers (colon, breast, kidney)
-  - Sleep apnea and respiratory conditions
-  - Osteoarthritis
-  - Non-alcoholic fatty liver disease (NAFLD)
+  | Adult screening category, ages 20 and older | BMI, kg/m² |
+  |---|---:|
+  | Underweight | Below 18.5 |
+  | Healthy weight | 18.5 to below 25 |
+  | Overweight | 25 to below 30 |
+  | Obesity | 30 or higher |
 
-  Conversely, very low BMI is associated with malnutrition, osteoporosis, anemia, and immune dysfunction.
+  These are [CDC adult categories](https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html), not a diagnosis from a stored reading. Children and teens require age- and sex-specific BMI percentiles rather than this table.
 
-  ## Clinical Interpretation Guidelines
+  ## How often does BMI update?
+  The example has **218 BMI records on 211 of 365 reporting days**, all from one source group. Each is instantaneous. The median positive gap was **1.00 day**, with a 95th percentile of **4.24 days** and a longest gap of **13.05 days**. The schedule matches the main weight source: no new weigh-in generally means no new BMI observation.
 
-  ### WHO BMI Classification (Adults)
-  | Category | BMI Range |
-  |----------|-----------|
-  | Underweight | <18.5 |
-  | Normal weight | 18.5-24.9 |
-  | Overweight | 25.0-29.9 |
-  | Obese Class I | 30.0-34.9 |
-  | Obese Class II | 35.0-39.9 |
-  | Obese Class III | >=40.0 |
+  The figure preserves gaps and shows 30-day-bin medians beside recorded values. It does not draw a daily BMI estimate for days without observations.
 
-  ### Elevated BMI May Indicate
-  - Excess adipose tissue accumulation
-  - Increased cardiometabolic risk
-  - Need for lifestyle intervention or medical evaluation
-  - Potential sleep-disordered breathing
-  - Higher surgical and anesthetic risk
+  ## What did the example values show?
+  The full-year range was **27.17–29.92**, with a median of **28.41**. The 92-day focus window contained 48 records on 47 days, spanning **28.29–29.25**. All year records fell numerically within the adult 25-to-below-30 band, but this does not establish age applicability or an individual diagnosis. These distributions describe user data, not population reference intervals.
 
-  ### Low BMI May Indicate
-  - Malnutrition or inadequate caloric intake
-  - Eating disorders (anorexia nervosa, bulimia)
-  - Chronic illness or malabsorption
-  - Hyperthyroidism
-  - Cancer or cachexia
-  - Sarcopenia (in elderly)
+  No values were zero, negative or non-finite, and the source-level descriptive IQR check flagged none. That check identifies unusual values within this dataset; it cannot verify the height setting, calibration or clinical meaning.
 
-  ### Red Flags for Consultation
-  - BMI <16.0 (severe underweight) - urgent nutritional assessment needed
-  - BMI >=40.0 (severe obesity) - bariatric medicine referral warranted
-  - Rapid BMI changes (>2 kg/m^2 in 3 months) without intentional intervention
-  - BMI discordant with clinical appearance (muscular individuals with elevated BMI)
-  - Pediatric BMI crossing percentile lines significantly
+  ## Can weight and height validate BMI?
+  Every BMI record matched a positive weight observation at exactly the same start time and source group: **218 unique pairs**, with no ambiguous same-source timestamp duplicates. Computing the height implied by each pair produced almost the same result throughout the year, consistent with a fixed denominator.
 
-  ## Caveats & Limitations
-  - **Does not measure body composition**: BMI cannot distinguish between muscle mass, bone density, and fat mass. Athletes and muscular individuals often have elevated BMI despite low body fat.
-  - **Does not indicate fat distribution**: Central/visceral adiposity carries greater health risk than peripheral fat, but BMI does not capture this distinction. Waist circumference is a better predictor of cardiometabolic risk.
-  - **Population-specific limitations**: Standard cut-offs were derived primarily from Caucasian populations. Asian and South Asian populations demonstrate elevated health risks at lower BMI thresholds.
-  - **Age considerations**: In elderly populations (65+), slightly higher BMI (25-30) may be protective, while low BMI is associated with increased mortality.
-  - **Not appropriate for certain populations**: Children, pregnant women, and elite athletes require different assessment tools.
-  - **High specificity, low sensitivity**: BMI reliably identifies obese individuals but frequently misses those with normal weight obesity (excess fat with normal BMI).
+  No raw height records were available within the year. This is a mathematical consistency check rather than a verified measurement of stature or proof of how the source calculated BMI. If BMI changes unexpectedly while weight stays similar, check the source app's height setting, units and dates before attributing the difference to body composition.
 
-  ## Additional Notes
-  - BMI should be used as one component of a comprehensive health assessment, not as a standalone diagnostic criterion.
-  - Consider using alongside waist circumference, body fat percentage, and clinical evaluation.
-  - The Edmonton Obesity Staging System provides a more nuanced assessment of obesity-related health impact.
-  - For clinical decision-making, trends over time are often more valuable than single measurements.
-  - HealthKit stores BMI as a discrete quantity type, appropriate for point-in-time measurements that should be averaged rather than summed.
+  ## What about workouts, sleep and missing records?
+  None of these BMI observations overlapped recorded workouts or asleep intervals. BMI is an occasional calculated measurement, so these records cannot show exercise-phase or sleep-stage behavior. Workout habits may be relevant to a broader assessment, but the timing overlap does not estimate their effect on BMI.
+
+  Missing BMI can coexist with present weight if an app writes only weight or lacks the inputs needed to calculate BMI. Check the producer's settings and Health sharing permission. [Body Fat Percentage](/knowledge-base/types/HKQuantityTypeIdentifierBodyFatPercentage/) supplies a different measurement when available; it cannot be inferred from BMI alone.
 metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the BMI value was manually entered by the user (true) or automatically recorded by a device (false)."
-  - key: "HKMetadataKeyExternalUUID"
-    description: "A unique identifier from an external data source that originally recorded this measurement."
-  - key: "HKMetadataKeyDeviceSerialNumber"
-    description: "Serial number of the smart scale or device that calculated the BMI value."
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier used for syncing this sample across devices and platforms."
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for tracking updates to synced samples."
+- key: HKMetadataKeyWasUserEntered
+  description: Optional producer flag indicating user-entered data; false or absence does not independently verify
+    the measurement method.
+- key: HKMetadataKeyExternalUUID
+  description: Optional identifier supplied by an external producer; not an independent measurement validation.
+- key: HKMetadataKeySyncIdentifier
+  description: Optional producer-defined identifier used with sync version to manage an external sample.
+- key: HKMetadataKeySyncVersion
+  description: Optional producer-defined version for an externally synchronized sample.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierBodyMass"
-    relationship: "BMI is calculated from body mass (weight) divided by height squared."
-  - identifier: "HKQuantityTypeIdentifierHeight"
-    relationship: "Height is required for BMI calculation; outdated height values cause inaccurate BMI."
-  - identifier: "HKQuantityTypeIdentifierBodyFatPercentage"
-    relationship: "Body fat percentage provides direct adiposity measurement that BMI approximates."
-  - identifier: "HKQuantityTypeIdentifierLeanBodyMass"
-    relationship: "Lean body mass helps explain BMI elevations in muscular individuals."
-  - identifier: "HKQuantityTypeIdentifierWaistCircumference"
-    relationship: "Waist circumference combined with BMI improves cardiometabolic risk prediction."
+- identifier: HKQuantityTypeIdentifierBodyMass
+  relationship: Total weight provides the mass input for BMI and composition consistency checks.
+- identifier: HKQuantityTypeIdentifierBodyFatPercentage
+  relationship: Composition estimates can add method-dependent context; they are not direct validation of BMI or
+    lean mass.
+- identifier: HKQuantityTypeIdentifierHeight
+  relationship: Check the height input, units and measurement date when reviewing height-dependent quantities.
+- identifier: HKQuantityTypeIdentifierLeanBodyMass
+  relationship: Lean mass describes more than skeletal muscle; derived outputs may share inputs with weight and
+    body-fat estimates.
 references:
-  - title: "HKQuantityTypeIdentifierBodyMassIndex - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierbodymassindex"
-    type: "official"
-  - title: "Body mass index - BMI - WHO"
-    url: "https://www.who.int/europe/news-room/fact-sheets/item/body-mass-index---bmi"
-    type: "medical"
-  - title: "Adult BMI Categories - CDC"
-    url: "https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html"
-    type: "medical"
-  - title: "Physiology, Body Mass Index - StatPearls NCBI"
-    url: "https://www.ncbi.nlm.nih.gov/books/NBK535456/"
-    type: "research"
-  - title: "Body Mass Index: Obesity, BMI, and Health - A Critical Review"
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC4890841/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: Apple HealthKit reference
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/bodymassindex
+  type: official
+- title: Measurement and interpretation reference
+  url: https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html
+  type: medical
+- title: Measurement and interpretation reference
+  url: https://www.cdc.gov/bmi/about/index.html
+  type: medical
+last_updated: '2026-10-14'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: A discrete body measurement written by the producing app; source and measurement conditions govern interpretation.
+  cadence: Measurement or logging cadence, without a fixed HealthKit-wide schedule. Repeated entries are not necessarily
+    independent measurements.
+  context: Workout and asleep interval overlap identifies recording time only. No continuous exercise or sleep response
+    is measured by occasional body observations.
+  coverage: The year snapshot contains 218 raw records. Missing days or an absent type remain unavailable, not zero
+    measurements.
+  aggregation: Use source-specific trends or a recent observation. Summing a discrete body measurement is not meaningful;
+    sample averages can overweight repeated sessions.
+  metadata: Producer metadata may identify manual entry or import identifiers. Metadata does not independently verify
+    device calibration or the calculation method.
+  references:
+  - title: Apple quantity definition
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/bodymassindex
+seo_title: 'Apple Health BMI: Ranges, Weight and Height, and Recording Frequency'
+figures:
+- src: /knowledge-base/figures/body-mass-index/recording-pattern.svg
+  alt: Scatter plot of 218 actual BMI observations with gaps and median segments across successive 30-day bins.
+  title: Observed measurements leave unmeasured days
+  caption: 'Example data from the main scale-app source: 218 instantaneous records on 211 reporting days. Points
+    retain repeat measurements; median segments describe only observed records in each bin.'
+  methods: Select the highest-record-count source group (bundle plus display name) within the full reporting year.
+    Plot every selected observation against elapsed days since its first start timestamp. Compute medians in non-overlapping
+    30-day elapsed-time bins and draw each segment only between that bin’s first and last observed timestamps. Do
+    not fill missing days or join bins. No source names, absolute dates or record identifiers are shown.
+  section: How often does BMI update?
+  width: 960
+  height: 410
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: body-mass-index
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example observational data are not population reference ranges. Source groups do not verify physical
+    device identity. Instantaneous body records cannot establish within-workout or sleep-stage changes. BMI/weight
+    exact-time source pairs provide mathematical consistency only; no independent height record is available in
+    the year. Missing days remain unmeasured and repeated sessions can bias averages.

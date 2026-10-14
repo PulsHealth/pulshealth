@@ -92,3 +92,38 @@ entries by reader priority. `rollout-batches.json` contains exact identifiers an
 source paths; completion continues to come from each entry’s `data_research`
 metadata. Refresh the catalog-wide coverage inventory before researching a new
 batch; the pilot extract does not include every quantity type.
+
+## Batch 1 research
+
+The eight `batch1_*.py` family runners (nutrition uses
+`newbatch1_nutrition.py`) cover the 36 entries in rollout batch 1. They use
+`batch_support.py` for cached snapshot loading, eleven explicit evidence facets,
+raw-coverage checks, duplicate/interval-overlap candidates, and per-entry
+executed notebooks. Family modules add the measurement-specific questions.
+The current study uses the reporting window and focus constants in `common.py`;
+use matching extraction bounds, and review those constants before a new study.
+
+`extract.py --identifiers <private-identifiers.json>` accepts a JSON list or a
+newline-delimited list of full HealthKit identifiers; `--all-types` exports all
+observed quantities. Fresh coverage inventories are independent of the chosen
+quantity export, so a missing export is distinct from a verified zero-row count.
+`--owner-file <private-owner.csv>` reuses and verifies exactly one privately
+selected profile. Keep all connection, selection and output arguments private.
+
+Per-entry findings distinguish measured, sparse, absent, unsupported and
+not-applicable evidence. Categories use frequencies and interval semantics;
+HealthKit correlation membership is never inferred from component timestamps.
+A missing raw type can still have aggregate evidence, which does not recover
+raw cadence or ranges. Missing entries do not mean zero intake or zero symptoms.
+
+After every family is stable, archive and re-execute all reports efficiently:
+
+```sh
+python archive.py --root <private-batch-directory> --execute --shared-kernel
+```
+
+Archival copies the exact methods and referenced images, redirects notebook
+source paths to that private copy, checks the immutable input hashes, and
+persists self-contained HTML with execution and integrity receipts. The notebook
+index and findings remain private. Publication uses only reviewed source prose
+and deidentified figures; source `data_research` remains the completion flag.

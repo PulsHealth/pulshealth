@@ -1,48 +1,29 @@
-identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Carbohydrates"
-short_description: "Total carbohydrate intake including sugars, starches, and fiber"
-icon: "leaf.fill"
-color: "#FFCC00"
-default_unit: "g"
+identifier: HKQuantityTypeIdentifierDietaryCarbohydrates
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Carbohydrates
+short_description: Total carbohydrate intake including sugars, starches, and fiber
+icon: leaf.fill
+color: '#FFCC00'
+default_unit: g
 supported_units:
-  - "g"
-  - "mg"
-  - "oz"
-unit_description: "Grams (g) of total carbohydrates. Carbohydrates provide 4 kcal/g of metabolizable energy (fiber provides 0-2 kcal/g depending on type)."
-aggregation_type: "cumulative"
+- g
+- mg
+- oz
+unit_description: Grams (g) of total carbohydrates. Carbohydrates provide 4 kcal/g of metabolizable energy (fiber
+  provides 0-2 kcal/g depending on type).
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-typical_range:
-  min: 20
-  max: 500
-  unit: "g"
-  notes: "Highly variable based on dietary approach. Ketogenic diets may target <50g; endurance athletes may exceed 500g on heavy training days."
-clinical_ranges:
-  - population: "Adults (general, AMDR)"
-    rda: "45-65% of total calories (225-325g on 2000 kcal diet)"
-  - population: "Adequate Intake (minimum)"
-    rda: "130g/day based on brain glucose requirements"
-  - population: "Low-Carbohydrate Diet"
-    rda: "50-150g/day"
-  - population: "Ketogenic Diet"
-    rda: "20-50g/day"
-  - population: "Type 1 Diabetes"
-    rda: "Individualized with carb counting for insulin dosing"
-  - population: "Type 2 Diabetes"
-    rda: "Often 45-60g per meal; individualized"
-  - population: "Endurance Athletes"
-    rda: "5-12 g/kg body weight depending on training load"
-  - population: "Pregnancy"
-    rda: "175g/day minimum"
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -50,122 +31,163 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Carbohydrate tracking with glycemic index/load data in some apps"
-    examples:
-      - "MyFitnessPal"
-      - "Cronometer"
-      - "Carb Manager"
-      - "Glucose Buddy"
-  - name: "CGM companion apps"
-    capability: "Meal logging with glucose response correlation"
-    examples:
-      - "Levels"
-      - "Signos"
-      - "Nutrisense"
-      - "Dexcom Clarity"
-  - name: "Diabetes management apps"
-    capability: "Carb counting for insulin dosing calculations"
-    examples:
-      - "mySugr"
-      - "Sugarmate"
-      - "Diabits"
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Dietary Carbohydrates represents total carbohydrate intake including simple sugars (mono- and disaccharides), complex carbohydrates (starches), and fiber. Carbohydrates are the body's preferred and most efficient fuel source, particularly for the brain and high-intensity exercise. This metric is foundational for diabetes management, athletic performance, and various therapeutic dietary approaches.
+- name: Manual entry
+  capability: User-entered intake records saved to Apple Health.
+- name: Authorized logging apps
+  capability: Food, beverage or supplement amounts shared with HealthKit when the app supports the type and has
+    write authorization.
+primary_source: Manual records or authorized apps that write the specific dietary quantity to HealthKit.
+description: '## What are dietary carbohydrates in Apple Health?
 
-  The FDA Daily Value for total carbohydrates is 275g based on a 2,000 calorie diet (updated 2020). This represents approximately 55% of calories from carbohydrates, aligning with the Acceptable Macronutrient Distribution Range (AMDR).
 
-  ## Health Significance
-  Carbohydrate intake impacts:
-  - **Blood Glucose Regulation**: Direct effect on postprandial glucose; critical for diabetes management
-  - **Energy Metabolism**: Primary fuel for brain (requires ~120g glucose/day) and anaerobic exercise
-  - **Athletic Performance**: Glycogen stores limit high-intensity exercise capacity
-  - **Insulin Sensitivity**: Carbohydrate quality and quantity affect metabolic health
-  - **Gut Health**: Fiber (a carbohydrate) feeds beneficial gut bacteria
-  - **Thyroid Function**: Very low carb intake may reduce T3 conversion
-  - **Mood and Cognition**: Carbohydrates influence serotonin production
+  Dietary Carbohydrates records carbohydrate intake logged by a source app or manual entry. HealthKit defines a
+  cumulative mass quantity; PulsHealth stores it in **g**. These records are food-intake estimates, not blood glucose
+  readings. See [Apple''s definition](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarycarbohydrates).
 
-  ## Clinical Interpretation Guidelines
-  When evaluating carbohydrate data:
-  1. **Assess Quality Over Quantity**: Whole grains, fruits, vegetables vs. refined/added sugars
-  2. **Calculate Relative Intake**: g/kg body weight for athletes; percentage of calories for general population
-  3. **Review Fiber Separately**: Target 14g fiber per 1000 kcal; fiber improves carbohydrate quality
-  4. **Consider Glycemic Impact**: High glycemic foods cause rapid glucose spikes
-  5. **Correlate with CGM Data**: If available, review glucose responses to carbohydrate meals
-  6. **Evaluate Timing**: Carbohydrate periodization around exercise for athletes
-  7. **Check Net Carbs**: Total carbs minus fiber for ketogenic diet adherence
 
-  ## Deficiency Symptoms
-  While no true carbohydrate deficiency exists (body can produce glucose via gluconeogenesis), very low intake may cause:
-  - Fatigue and weakness, especially during exercise
-  - Brain fog and difficulty concentrating
-  - Hypoglycemia symptoms in susceptible individuals
-  - Ketosis (may be therapeutic or problematic depending on context)
-  - Constipation if fiber is also restricted
-  - Muscle cramps and electrolyte imbalances
-  - Irritability and mood changes
-  - Decreased athletic performance, especially high-intensity
+  ## Is this total carbohydrate or net carbohydrate?
 
-  ## Excess/Toxicity
-  High carbohydrate intake concerns:
-  - **Hyperglycemia**: Acute high blood sugar, particularly problematic in diabetes
-  - **Insulin Resistance**: Chronic high-glycemic intake may impair insulin sensitivity
-  - **Weight Gain**: Excess carbohydrates stored as glycogen then fat
-  - **Dyslipidemia**: High refined carb intake raises triglycerides, lowers HDL
-  - **Dental Caries**: Fermentable carbohydrates promote tooth decay
-  - **NAFLD**: High fructose and refined carb intake linked to fatty liver
-  - **Inflammation**: High glycemic diets associated with inflammatory markers
 
-  ## Special Populations
-  - **Type 1 Diabetes**: Precise carb counting essential for insulin dosing; 1 unit insulin per 10-15g carbs typical starting ratio
-  - **Type 2 Diabetes**: Carbohydrate restriction often improves glycemic control; Mediterranean or low-carb approaches beneficial
-  - **Gestational Diabetes**: Carb distribution across meals; avoid large carb loads; complex carbs preferred
-  - **Athletes**: Periodized carbohydrate intake; high during heavy training/competition; lower during recovery/off-season
-  - **Ketogenic Therapy**: Epilepsy, some metabolic disorders; requires strict carb limitation (<20-50g)
-  - **PCOS**: Lower glycemic load may improve insulin sensitivity and hormonal profiles
-  - **Elderly**: Adequate carbs prevent muscle protein from being used for energy
+  Check the source''s definition. A marketing term such as “net carbs” can use different subtraction rules and should
+  not be silently treated as an equivalent total. Apple models sugar and fiber as carbohydrate detail. **Do not
+  add sugar or fiber again to an existing carbohydrate total.** [Apple''s nutrition hierarchy](https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers)
+  explains the parent and subcategory relationship.
 
-  ## Caveats & Limitations
-  - **Total vs. Net Carbs**: Fiber subtraction varies by country/label standards
-  - **Glycemic Index Variability**: Individual glucose responses vary significantly for same foods
-  - **Food Combinations**: Fat and protein slow carbohydrate absorption; GI tables don't account for mixed meals
-  - **Processing Effects**: Cooking, ripeness, and processing alter glycemic impact
-  - **Database Inconsistencies**: Carbohydrate values for same foods vary across databases
-  - **Fiber Classification**: Soluble vs. insoluble fiber have different metabolic effects
-  - **Individual Variation**: Gut microbiome, genetics, and metabolic health affect carb tolerance
+
+  | A common source of confusion | What to verify |
+
+  | --- | --- |
+
+  | Total versus net carbohydrate | The source app''s calculation and field |
+
+  | A food label''s amount | Serving size and servings actually eaten |
+
+  | Several entries for a meal | Whether each is a component or an imported total |
+
+  | Few logged days | Whether comparisons use similarly complete logs |
+
+
+  ## What is a meaningful carbohydrate range?
+
+
+  An individual food sample, a meal and a daily sum have different denominators. There is no universal healthy sample
+  size. A zero entry may be a logged zero for one food; a missing day does not establish a low-carbohydrate diet
+  or fasting. Review unusually large values for portions and units before making dietary conclusions. [FDA''s label
+  guide](https://www.fda.gov/food/nutrition-facts-label/whats-nutrition-facts-label) explains serving-based quantities.
+
+
+  ## How often are carbohydrates recorded?
+
+
+  The timing follows logging and syncing. A short interval between samples can reflect several foods in a meal or
+  delayed batch entry. A long interval can reflect missed logs. Neither describes a continuous physiological carbohydrate
+  signal. Start-to-start gaps should be summarized within the source rather than pooled across competing food apps.
+
+
+  ## How do carbohydrates relate to calories, glucose and exercise?
+
+
+  Four kcal per gram is a rough bookkeeping check; actual label calculations can account for fiber, sugar alcohols,
+  specific factors and rounding. See [the labeling regulation](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101/subpart-A/section-101.9).
+  To compare with glucose, credible meal time and adequately timed glucose measurements are needed; simultaneous
+  database timestamps alone are insufficient. A carbohydrate entry overlapping exercise or sleep does not establish
+  ingestion during that interval, fuel availability or a response to the nutrient.
+
+
+  ## What did the database investigation support?
+
+
+  The researched **365-day reporting window** had no raw carbohydrate samples and no stored carbohydrate aggregates.
+  Measured ranges, outliers, meal gaps and associations with calories, workout or sleep context were unavailable.
+  No empirical glucose-response or dietary-pattern claim is made.
+
+
+  ## How can I improve comparisons?
+
+
+  Keep portions and carbohydrate definitions consistent. Analyze source-specific recorded daily sums and state logged-day
+  coverage. Check [Health''s data sources](https://support.apple.com/en-us/108779) for repeated imports. A change
+  in food database or net-carbohydrate settings can alter the records without proving a change in food consumption.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "String identifier for the carbohydrate source (e.g., 'rice', 'bread', 'fruit')"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Boolean indicating manual entry versus automatic capture"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from source app for synchronization"
+- key: HKMetadataKeyFoodType
+  description: 'Optional if provided by the source: String identifier for the carbohydrate source (e.g., ''rice'',
+    ''bread'', ''fruit'')'
+- key: HKMetadataKeyWasUserEntered
+  description: 'Optional if provided: indicates that the user entered the sample. Absence of this key does not prove
+    automatic measurement.'
+- key: HKMetadataKeyExternalUUID
+  description: 'Optional if provided by the source: Unique identifier from source app for synchronization'
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "Carbohydrates contribute to total caloric intake at 4 kcal/g"
-  - identifier: "HKQuantityTypeIdentifierDietaryFiber"
-    relationship: "Fiber is a subcategory of total carbohydrates"
-  - identifier: "HKQuantityTypeIdentifierDietarySugar"
-    relationship: "Sugars are a subcategory of total carbohydrates"
-  - identifier: "HKQuantityTypeIdentifierBloodGlucose"
-    relationship: "Carbohydrate intake directly affects blood glucose levels"
-  - identifier: "HKQuantityTypeIdentifierInsulinDelivery"
-    relationship: "Carbohydrate intake determines insulin dosing in diabetes"
-  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
-    relationship: "Co-macronutrient; affects carbohydrate allocation in diet"
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Related food-energy logs require matching source and logged-day coverage.
+- identifier: HKQuantityTypeIdentifierDietaryProtein
+  relationship: A nutrient component may be logged without other nutrients.
+- identifier: HKQuantityTypeIdentifierDietaryFatTotal
+  relationship: Total fat includes its subtypes; do not double count components.
+- identifier: HKQuantityTypeIdentifierDietaryWater
+  relationship: Recorded water volume is not a measurement of hydration.
+- identifier: HKQuantityTypeIdentifierDietaryCaffeine
+  relationship: Caffeine dose is distinct from beverage volume.
+- identifier: HKQuantityTypeIdentifierBodyMass
+  relationship: Body-mass comparisons require compatible timing and do not establish dietary causality.
+- identifier: HKQuantityTypeIdentifierBloodGlucose
+  relationship: A meal-response comparison requires credible meal times and adequately timed glucose measurements;
+    intake grams are not blood glucose.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryCarbohydrates"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarycarbohydrates"
-    type: "official"
-  - title: "Dietary Reference Intakes for Carbohydrates - National Academies"
-    url: "https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids"
-    type: "research"
-  - title: "American Diabetes Association - Nutrition Therapy Recommendations"
-    url: "https://diabetesjournals.org/care/article/42/5/731/40480/Nutrition-Therapy-for-Adults-With-Diabetes-or"
-    type: "medical"
-  - title: "International Society of Sports Nutrition Position Stand: Nutrient Timing"
-    url: "https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0189-4"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryCarbohydrates'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarycarbohydrates
+  type: official
+- title: 'Apple: Nutrition type identifiers'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+- title: 'FDA: Nutrition Facts label'
+  url: https://www.fda.gov/food/nutrition-facts-label/whats-nutrition-facts-label
+  type: official
+- title: 'FDA regulation: Calorie calculations'
+  url: https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101/subpart-A/section-101.9
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Carbohydrates: Total Carbs, Logs & Comparisons'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative recorded intake amount; sample size is not necessarily a serving or a daily total.
+  cadence: Source-specific logging or synchronization cadence, not continuous sensing or a validated ingestion schedule.
+  context: Timestamp overlap with workouts or recorded sleep describes logging context; consumption time and physiological
+    response remain unverified.
+  coverage: Missing logs do not establish zero intake. A source can contribute only selected nutrients or drinks.
+  aggregation: Sum compatible recorded contributions within a source and reporting window after checking units,
+    serving semantics and duplicate imports. State logged-day coverage.
+  references:
+  - title: 'Apple: Nutrition types'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'Apple: Sample time semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples
+  metadata: Food descriptions and user-entered indicators can aid serving review when present; missing metadata
+    does not identify an automatic record or a complete diet. Food correlation linkage cannot be recovered from
+    temporal coincidence alone.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-carbohydrates
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Fresh 365-day example snapshot contained no raw samples or stored aggregates for this type. Values,
+    outliers, cadence, source distributions, workout/sleep comparisons and empirical relationships were unavailable.
+    Source guidance is documented instead of measured charts. Missing records do not establish zero intake; logging
+    timestamps need not be ingestion times. Fixed America/Los_Angeles reporting calendar.

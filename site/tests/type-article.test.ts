@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { articleSections, headingAnchor } from "../src/lib/type-article";
+import { articleSections, headingAnchor, clinicalRangeDataKeys } from "../src/lib/type-article";
 
 describe("article navigation", () => {
   test("keeps introductory prose and gives repeated headings unique anchors", () => {
@@ -16,4 +16,11 @@ describe("article navigation", () => {
   test("figure section matching shares normalized anchors", () => {
     assert.equal(headingAnchor("What does **HRV** mean?"), "what-does-hrv-mean");
   });
+});
+
+test("notes-only clinical guidance does not create a broken range-table anchor", () => {
+  assert.deepEqual(clinicalRangeDataKeys([{ population: "Adults", notes: "No universal target." }]), []);
+  assert.deepEqual(clinicalRangeDataKeys([{ population: "Adults", normal: "", notes: "Context only." }]), []);
+  assert.deepEqual(clinicalRangeDataKeys([{ population: "Adults", normal: "Source-specific interval" }]), ["normal"]);
+  assert.deepEqual(clinicalRangeDataKeys(null), []);
 });

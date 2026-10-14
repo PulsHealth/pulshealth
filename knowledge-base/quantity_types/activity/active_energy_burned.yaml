@@ -1,315 +1,217 @@
-# ============================================
-# HEALTHKIT DATA TYPE: Active Energy Burned
-# ============================================
-
-# --- CORE IDENTIFICATION ---
-identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Activity"
-human_readable_name: "Active Energy Burned"
-short_description: "Measures the energy expended through physical activity and movement above resting metabolic rate."
-
-# --- APPLE HEALTH UI ---
-icon: "flame.fill"
-color: "#FF2D55"
-
-# --- UNITS & MEASUREMENT ---
-default_unit: "kcal"
+identifier: HKQuantityTypeIdentifierActiveEnergyBurned
+source: HealthKit
+type: HKQuantityType
+category: Activity
+human_readable_name: Active Energy Burned
+short_description: Measures the energy expended through physical activity and movement above resting metabolic rate.
+icon: flame.fill
+color: '#FF2D55'
+default_unit: kcal
 supported_units:
-  - "kcal"
-  - "kJ"
-  - "Cal"
-unit_description: "Kilocalories (kcal) or kilojoules (kJ) - measures energy expended through physical activity beyond basal metabolism"
-
-# --- STATISTICS ---
-aggregation_type: "cumulative"
+- kcal
+- kJ
+- Cal
+unit_description: Kilocalories (kcal) or kilojoules (kJ) - measures energy expended through physical activity beyond
+  basal metabolism
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-
-# --- TYPICAL VALUES ---
-typical_range:
-  min: 100
-  max: 2000
-  unit: "kcal/day"
-  notes: "Highly variable based on activity level. Sedentary individuals may burn 150-300 kcal/day active; very active individuals can exceed 1500 kcal/day."
-
-clinical_ranges:
-  - population: "Sedentary adults"
-    low: "<150 kcal/day"
-    average: "150-300 kcal/day"
-    high: ">400 kcal/day"
-  - population: "Moderately active adults"
-    low: "<250 kcal/day"
-    average: "300-600 kcal/day"
-    high: ">700 kcal/day"
-  - population: "Highly active adults"
-    low: "<400 kcal/day"
-    average: "500-1000 kcal/day"
-    high: ">1200 kcal/day"
-  - population: "Athletes (training days)"
-    low: "<600 kcal/day"
-    average: "800-1500 kcal/day"
-    high: ">2000 kcal/day (endurance athletes)"
-
-# --- PLATFORM & AVAILABILITY ---
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
-  notes: "Available since initial HealthKit release"
+  notes: Available since initial HealthKit release
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
-  notes: "Apple Watch primary source; drives the Move ring in Activity app"
+  notes: Apple Watch primary source; drives the Move ring in Activity app
 deprecated: false
 deprecated_in: null
-
-# --- PERMISSIONS & ACCESS ---
 writable: true
 requires_authorization: true
 sensitive_data: false
-
-# --- DATA SOURCES ---
 devices:
-  - name: "Apple Watch"
-    capability: "Continuous tracking using accelerometer, heart rate sensor, and GPS. Calculates active energy from movement intensity, heart rate elevation, and workout detection."
-    series: "All series"
-  - name: "iPhone"
-    capability: "Estimates active energy from motion coprocessor (step counting, activity classification) when Apple Watch is not worn. Less accurate than watch-based tracking."
-  - name: "Third-party wearables"
-    capability: "Various fitness trackers can write active energy data to HealthKit with their own algorithms."
-    examples: ["Fitbit", "Garmin", "Whoop", "Oura Ring"]
-  - name: "Fitness apps"
-    capability: "Workout apps can calculate and write active energy estimates based on exercise type, duration, and intensity."
-    examples: ["Strava", "Nike Run Club", "Peloton", "MapMyRun"]
-primary_source: "Apple Watch"
+- name: Apple Watch
+  capability: Automatically records cumulative energy estimates over variable intervals; samples may be condensed
+    or coalesced.
+  series: All series
+- name: Other authorized apps
+  capability: May contribute energy estimates. Inspect actual sources and interval overlap before combining.
+primary_source: Apple Watch
+description: '## What does active energy mean in Apple Health?
 
-# --- DETAILED DESCRIPTION ---
-description: |
-  ## Overview
-  Active Energy Burned represents calories expended through physical movement and exercise above the body's resting metabolic rate. This is the energy cost of activities ranging from walking to the kitchen to running a marathon. In Apple's ecosystem, Active Energy is the metric that drives the Move ring on Apple Watch, making it a central motivational tool for daily activity.
 
-  Active energy is also known as Activity Energy Expenditure (AEE) or Exercise Activity Thermogenesis (EAT) plus Non-Exercise Activity Thermogenesis (NEAT). Combined with Basal Energy Burned, it provides a comprehensive picture of daily energy expenditure, which is essential for weight management and nutritional planning.
+  Active Energy Burned is estimated energy from physical activity, above resting energy. It includes everyday movement
+  as well as exercise. On Apple Watch it contributes to the Move ring. [Apple''s HealthKit definition](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/activeenergyburned)
+  explicitly excludes the resting calories burned during the same interval.
 
-  ## How It's Measured
 
-  ### Apple Watch Calculation Method
-  Apple Watch uses multiple sensors in combination:
+  A food Calorie and a kilocalorie are the same unit here: **1 kcal = 4.184 kJ**. A 4-kcal sample means four estimated
+  calories over its recorded interval; it does not mean four calories per minute or four calories for the entire
+  day.
 
-  **Motion Sensors:**
-  - Accelerometer detects movement intensity and patterns
-  - Gyroscope determines movement type (walking, running, cycling)
-  - Motion data classified into activity types by machine learning algorithms
 
-  **Heart Rate Sensor:**
-  - Elevated heart rate indicates increased energy expenditure
-  - Heart rate data helps distinguish between light and vigorous activity
-  - Critical for accurate calorie estimation during workouts
+  | View | What it represents | How to use it |
 
-  **GPS (outdoor activities):**
-  - Provides distance and speed data
-  - Improves accuracy for running, walking, and cycling
+  |---|---|---|
 
-  **Algorithm Integration:**
-  - Combines sensor data with user profile (age, sex, height, weight)
-  - Uses MET (Metabolic Equivalent) values for different activities
-  - Applies activity-specific calorie estimation models
+  | Raw sample | Energy assigned to an interval | Inspect duration and source |
 
-  ### Total Daily Energy Expenditure (TDEE) Context
-  TDEE = Basal Energy + Active Energy + Thermic Effect of Food
+  | Daily statistics | HealthKit-computed cumulative total | Keep the requested calendar and source filter |
 
-  Components breakdown:
-  - **Basal Energy (BMR):** 60-75% of TDEE - energy for basic body functions
-  - **Active Energy:** 15-30% of TDEE - physical activity (highly variable)
-  - **Thermic Effect of Food (TEF):** ~10% of TDEE - energy to digest food
+  | Move ring | Recorded daily activity summary | Use the summary rather than reconstructing it from raw rows |
 
-  Active energy is the most modifiable component of TDEE and the primary target for increasing energy expenditure through lifestyle changes.
+  | Active plus resting energy | Two complementary estimates | Align periods and source handling before adding |
 
-  ## The Move Ring Relationship
 
-  Active Energy Burned directly powers the red Move ring on Apple Watch:
+  ## Why do calorie records arrive at different intervals?
 
-  **How the Move Ring Works:**
-  - Users set a daily Move goal in kilocalories (e.g., 500 kcal)
-  - The ring fills as active energy accumulates throughout the day
-  - "Closing the ring" means reaching 100% of the daily goal
-  - Move goal can be measured in kilocalories (kcal/Cal) or kilojoules (kJ)
 
-  **Move Goal Modes (HKActivityMoveMode):**
-  - **Active Energy mode:** Ring tracks active calories (default)
-  - **Apple Fitness+ mode:** Some features may adjust goal presentation
+  The database example contains a full reporting year and a July–September focus. The largest Apple-health source
+  group supplied **71,012 active-energy intervals across all 92 focus days**. The median interval was about **2.57
+  seconds** during workout overlap and **30.8 seconds** for other or unknown context. Some intervals lasted roughly
+  ten minutes. Stored interval boundaries describe how estimates are saved, rather than a fixed calorie-sensor sampling
+  frequency.
 
-  **Setting Appropriate Move Goals:**
-  - Beginners: 200-400 kcal/day
-  - Moderately active: 400-600 kcal/day
-  - Highly active: 600-800+ kcal/day
-  - Apple suggests personalized goals based on activity history
 
-  ## Health Significance
+  Apple notes that active-energy records can be condensed or coalesced. Software versions and competing sources
+  can therefore change both the number and size of records. Comparing the mean raw sample before and after a device
+  change can manufacture a trend even when daily activity is similar.
 
-  Active energy expenditure is a key indicator of physical activity levels and has significant health implications:
 
-  **Cardiovascular Health:**
-  - Regular physical activity reduces cardiovascular disease risk by 30-40%
-  - Higher active energy indicates more heart-protective movement
+  ## What changes during workouts and recorded sleep?
 
-  **Weight Management:**
-  - Creating energy deficit (active energy + BMR > caloric intake) leads to weight loss
-  - Maintaining high activity levels helps prevent weight regain
 
-  **Metabolic Health:**
-  - Regular activity improves insulin sensitivity
-  - Associated with better blood sugar control and lipid profiles
+  The focus sample amounts ranged from **0.001 to 73.074 kcal**. That range mostly answers how much energy an interval
+  contains. Dividing each amount by its positive duration makes the workout comparison more useful: the median interval-average
+  rate was **9.49 kcal/min** for workout overlap and **0.74 kcal/min** for other or unknown context.
 
-  **Mental Health:**
-  - Physical activity linked to reduced depression and anxiety
-  - Exercise promotes neuroplasticity and cognitive function
 
-  **Longevity:**
-  - Meeting physical activity guidelines associated with 3-7 years increased life expectancy
-  - Dose-response relationship: more activity generally means greater benefit
+  The largest selected-source amount, 73.074 kcal, covered about ten minutes: an average of 7.33 kcal/min. A large
+  amount was therefore not the largest interval-average rate.
 
-  ## Clinical Interpretation Guidelines
 
-  ### Evaluating Daily Active Energy Patterns
+  These are example estimates, not targets or validated measurements of expenditure. The figure weights each stored
+  interval equally, so densely recorded workouts contribute many more observations. A record is assigned by overlap
+  with a workout; that is not proof of a HealthKit workout association.
 
-  **Sedentary Pattern (<150-200 kcal/day active):**
-  - May indicate limited mobility, chronic illness, or behavioral issues
-  - Associated with increased health risks
-  - Target for intervention to increase movement
 
-  **Light Activity (200-400 kcal/day active):**
-  - Typical for office workers without dedicated exercise
-  - Below recommended activity levels for optimal health
-  - Opportunity for gradual activity increase
+  Recorded-sleep overlap contributed only **79 intervals on six focus days**. This is too limited to describe a
+  dependable overnight active-energy range. A small positive active-energy interval near sleep can reflect movement
+  or an interval crossing a sleep boundary; it is not evidence of a sleep disorder.
 
-  **Moderate Activity (400-600 kcal/day active):**
-  - Generally meets basic physical activity recommendations
-  - Equivalent to ~30-45 minutes moderate exercise daily
-  - Associated with significant health benefits
 
-  **High Activity (600+ kcal/day active):**
-  - Exceeds minimum recommendations
-  - Typical of those with active jobs or regular exercise routines
-  - Associated with optimal health outcomes
+  ## Why does a raw total differ from the Move ring?
 
-  ### Weekly Activity Assessment
-  - WHO recommends 150-300 minutes moderate activity OR 75-150 minutes vigorous activity weekly
-  - Translates to approximately 2,000-4,000 kcal active energy per week for most adults
-  - Muscle-strengthening activities (not fully captured in active energy) also recommended 2+ days/week
 
-  ### Red Flags for Clinical Attention
-  - **Sudden significant drop in active energy:** May indicate injury, illness, depression, or mobility issues
-  - **Consistently very low active energy despite stated exercise habits:** Could indicate tracking issues or overestimation of activity
-  - **Very high active energy with inadequate caloric intake:** Risk of Relative Energy Deficiency in Sport (RED-S)
-  - **Active energy not recovering after illness or injury:** May need rehabilitation assessment
+  There were four contributing source groups in the year. Even within the selected group, overlapping records were
+  present. Adding every source and every overlapping sample can count overlapping estimates more than once.
 
-  ## Caveats & Limitations
 
-  ### Measurement Accuracy
-  - Research shows Apple Watch calorie estimates can be off by approximately 28% on average
-  - Accuracy varies significantly by activity type:
-    - Walking/running: relatively accurate
-    - Cycling: may underestimate (less arm movement)
-    - Strength training: often underestimates
-    - Swimming: Apple Watch Series 2+ water-resistant, but accuracy variable
-  - Wrist-based heart rate less accurate during high-intensity intervals
+  The selected-source sum, assigning each complete interval to its start day, matched the recorded Move ring within
+  0.01 kcal on just **3 of 365 paired dates**. This diagnostic comparison mixes a fixed reporting calendar with
+  the phone''s recorded ring dates and omits other source groups. It does not show that the ring is wrong. Daily
+  statistics also use their own bucket boundaries and source handling; travel-related calendar differences must
+  be checked before pairing days.
 
-  ### Activities That May Be Under/Over-Counted
-  **Often Underestimated:**
-  - Weight training and resistance exercises
-  - Cycling (arm-worn device doesn't capture leg work fully)
-  - Yoga and stretching
-  - Carrying heavy loads
-  - Pushing strollers or wheelchairs
 
-  **Often Overestimated:**
-  - Activities with excessive arm movement unrelated to exertion
-  - Riding as passenger in vehicles (motion detection)
-  - Some repetitive arm movements
+  For a Move-ring question, use [Activity Summary](https://developer.apple.com/documentation/healthkit/hkactivitysummary).
+  For a raw-data question, retain sources, durations and overlap diagnostics. Do not add a workout''s calorie total
+  on top of daily active energy when the same activity is already included.
 
-  ### User Profile Importance
-  - Inaccurate height, weight, or age data significantly impacts estimates
-  - Weight changes should be updated regularly
-  - Does not account for body composition (muscle vs. fat)
 
-  ### What Active Energy Cannot Tell You
-  - Specific activity types performed
-  - Exercise quality or form
-  - Strength or fitness improvements
-  - Whether activity meets specific health guidelines
-  - Individual metabolic response to exercise
+  ## How should ranges, outliers and trends be interpreted?
 
-  ## Additional Notes
 
-  **Total Calories in Apple Health:**
-  Apple Health displays "Total Calories" which equals Basal Energy + Active Energy. This represents estimated Total Daily Energy Expenditure (minus TEF).
+  There is no universal healthy active-calorie range. Body size, activity, recording coverage and the estimation
+  model all influence the result. A large sample can simply span a longer interval. Review its duration, source
+  and neighboring records before labeling it unusual; retain it unless there is evidence of a recording problem.
 
-  **For Health Consultants:**
-  1. Use active energy trends over weeks/months rather than daily values for meaningful assessment
-  2. Consider activity context: a 300 kcal day could be due to illness, rest day, or lifestyle
-  3. Compare active energy patterns to stated exercise habits to identify discrepancies
-  4. For weight management clients, focus on the relationship between total energy (basal + active) and dietary intake
-  5. Set realistic Move goals based on current activity levels and health status
-  6. Recognize that closing the Move ring daily is an achievable motivational target, but may not meet all exercise recommendations (e.g., strength training)
-  7. Use in conjunction with Exercise minutes and Stand hours for comprehensive activity assessment
-  8. Clients with very high activity should be assessed for adequate energy and nutrient intake
 
-  **Units Setting:**
-  Users can switch between kilocalories (kcal/Cal) and kilojoules (kJ) in Watch Settings > Workout > Units of Measure. 1 kcal = 4.184 kJ.
+  [Apple recommends](https://support.apple.com/en-us/105002) keeping personal information current, checking watch
+  fit, selecting the appropriate workout and calibrating the watch. Calorie estimates are useful for comparing similarly
+  recorded weeks, but the database does not contain calorimetry against which to validate them.
 
-# --- METADATA KEYS ---
+
+  The selected-source daily sums tracked [Exercise Time](/knowledge-base/types/HKQuantityTypeIdentifierAppleExerciseTime/)
+  more closely than [Basal Energy](/knowledge-base/types/HKQuantityTypeIdentifierBasalEnergyBurned/): exploratory
+  rank correlations were 0.88 across 352 paired days and 0.33 across 365 days, respectively. Shared sensors, algorithms
+  and recording opportunity contribute to those relationships. Neither correlation identifies calories caused by
+  exercise or establishes an energy deficit from [dietary logs](/knowledge-base/types/HKQuantityTypeIdentifierDietaryEnergyConsumed/).
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the sample was entered manually by the user rather than automatically recorded"
-
-# --- RELATED TYPES ---
+- key: HKMetadataKeyWasUserEntered
+  description: Indicates whether the sample was entered manually by the user rather than automatically recorded
 related_types:
-  - identifier: "HKQuantityTypeIdentifierBasalEnergyBurned"
-    relationship: "Complementary - Combined with active energy equals total energy expenditure (minus TEF)"
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "Complementary - Comparing intake to active+basal energy determines energy balance"
-  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
-    relationship: "Complementary - Exercise minutes (green ring) tracks duration while active energy tracks caloric expenditure"
-  - identifier: "HKQuantityTypeIdentifierStepCount"
-    relationship: "Complementary - Steps contribute to active energy; provides activity volume context"
-  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
-    relationship: "Complementary - Distance traveled contributes to active energy calculation"
-  - identifier: "HKQuantityTypeIdentifierHeartRate"
-    relationship: "Input factor - Heart rate elevation used to estimate exercise intensity and energy expenditure"
-  - identifier: "HKActivitySummary"
-    relationship: "Aggregated in - Active energy is a component of daily activity summary (Move ring)"
-  - identifier: "HKWorkoutType"
-    relationship: "Detailed in - Workouts contain active energy burned during specific exercise sessions"
-
-# --- REFERENCES ---
+- identifier: HKQuantityTypeIdentifierBasalEnergyBurned
+  relationship: Complementary resting and active estimates; align periods and source handling before combining.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Related dietary intake records; incomplete logs and estimated expenditure cannot establish exact
+    energy balance.
+- identifier: HKQuantityTypeIdentifierAppleExerciseTime
+  relationship: Complementary - Exercise minutes (green ring) tracks duration while active energy tracks caloric
+    expenditure
+- identifier: HKQuantityTypeIdentifierStepCount
+  relationship: Complementary - Steps contribute to active energy; provides activity volume context
+- identifier: HKQuantityTypeIdentifierDistanceWalkingRunning
+  relationship: Complementary - Distance traveled contributes to active energy calculation
+- identifier: HKQuantityTypeIdentifierHeartRate
+  relationship: Input factor - Heart rate elevation used to estimate exercise intensity and energy expenditure
+- identifier: HKActivitySummary
+  relationship: Aggregated in - Active energy is a component of daily activity summary (Move ring)
+- identifier: HKWorkoutType
+  relationship: Detailed in - Workouts contain active energy burned during specific exercise sessions
 references:
-  - title: "Apple Developer Documentation - activeEnergyBurned"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/activeenergyburned"
-    type: "official"
-  - title: "Apple Watch - Close Your Rings"
-    url: "https://www.apple.com/watch/close-your-rings/"
-    type: "official"
-  - title: "HKActivityMoveMode - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkactivitymovemode"
-    type: "official"
-  - title: "Track daily activity with Apple Watch - Apple Support"
-    url: "https://support.apple.com/guide/watch/track-daily-activity-apd3bf6d85a6/watchos"
-    type: "official"
-  - title: "Physical Activity Guidelines - World Health Organization"
-    url: "https://www.who.int/news-room/fact-sheets/detail/physical-activity"
-    type: "medical"
-  - title: "TDEE Calculator - Understanding Total Daily Energy Expenditure"
-    url: "https://www.omnicalculator.com/health/tdee"
-    type: "medical"
-
-# --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-01-27"
-research_notes: |
-  - iOS 8.0 introduction confirmed via Apple Developer Documentation
-  - Move ring relationship confirmed via Apple Support documentation and developer docs
-  - TDEE component breakdown from standard exercise physiology and nutrition references
-  - Accuracy data from meta-analyses of wearable device validation studies
-  - Physical activity guidelines from WHO and American Heart Association
-  - HKActivityMoveMode details from Apple Developer Documentation
+- title: 'Apple HealthKit: Active Energy Burned'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/activeenergyburned
+  type: official
+- title: 'Apple: improve Watch measurements'
+  url: https://support.apple.com/en-us/105002
+  type: official
+last_updated: '2026-10-14'
+research_notes: 'Executed private snapshot investigation: all eleven standard facets, cumulative interval semantics,
+  source-selected daily sums, aggregate/ring diagnostics, duration-normalized rates, workout elapsed comparisons
+  and unverified calibration/profile effects. Observed values are examples, not population or clinical ranges.'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: batch1-energy-active-energy-burned
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example observational records; no calorimetry or longitudinal profile/calibration validation. Cumulative
+    samples can overlap or be coalesced. Source-selected sums assign complete intervals to their start day and do
+    not reconstruct HealthKit source precedence or recorded phone-local rings. Context uses temporal overlap, not
+    explicit workout linkage. Fixed reporting calendar may differ from recorded local days; unaligned/duplicate
+    daily aggregate buckets excluded from diagnostic matching. Interval-weighted rates are not instantaneous metabolism.
+    Missing records are not zero. Selected-source sleep-overlap evidence includes only 79 focus intervals on six
+    days.
+seo_title: 'Apple Health Active Energy: Calories, Workouts & Move Ring'
+figures:
+- src: /knowledge-base/figures/active-energy-burned/context-rates.svg
+  title: Recording context changes interval-average energy rates
+  alt: Source-selected interval-average energy rates grouped by workout, recorded-sleep and other or unknown overlap.
+  caption: 'Selected-source example data: 56,790 workout-overlap intervals on 48 days, 14,143 other or unknown intervals
+    on 92 days, and 79 sleep-overlap intervals on only six days. Amount divided by duration gives an interval-average
+    rate, not an instantaneous measurement or a target range.'
+  methods: July–September 2026, fixed America/Los_Angeles reporting calendar. Largest Apple-health source group
+    by record count, bundle/name grouping across source revisions. Amount divided by positive duration of at least
+    one second. Boxes span p25–p75 with median; whiskers p5–p95. Extreme intervals retained in analysis but omitted
+    from this display. Each interval weighted equally. Half-open overlap with workouts and asleep categories 1/3/4/5;
+    other/unknown is not confirmed rest or wakefulness.
+  section: What changes during workouts and recorded sleep?
+  width: 634
+  height: 346

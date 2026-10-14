@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { HealthKitType } from "@/lib/types";
-import { articleSections, headingAnchor } from "@/lib/type-article";
+import { articleSections, headingAnchor, clinicalRangeDataKeys } from "@/lib/type-article";
 
 type Figure = NonNullable<HealthKitType["figures"]>[number];
 
@@ -52,7 +52,7 @@ export function ArticleContents({ data }: { data: HealthKitType }) {
   const links = [
     ...sections.map((section) => ({ id: section.id, title: section.title! })),
     { id: "recording-behavior", title: "Understanding your records" },
-    ...(data.clinical_ranges?.length ? [{ id: "clinical-ranges", title: "Reference ranges" }] : []),
+    ...(clinicalRangeDataKeys(data.clinical_ranges).length ? [{ id: "clinical-ranges", title: "Reference ranges" }] : []),
     { id: "technical-details", title: "Technical details" },
     { id: "references", title: "Sources and review" },
   ];

@@ -2,7 +2,18 @@
 
 Plan date: 2026-10-14. Tracking: [issue #231](https://github.com/PulsHealth/pulshealth/issues/231).
 
-Refresh the remaining **173 of 178 entries in four batches**. Heart Rate, HRV SDNN, Sleep Analysis, Step Count and Running Vertical Oscillation are completed pilots and serve as the reference pattern. Their metadata remains the authority for completion. The [machine-readable assignment](../notebooks/healthkit-research/rollout-batches.json) lists every identifier exactly once, either as a completed pilot or in one batch. Batch membership is planning data, not a claim that research is finished.
+The four batches cover **173 of 178 entries**, beyond the five completed pilots. Heart Rate, HRV SDNN, Sleep Analysis, Step Count and Running Vertical Oscillation are completed pilots and serve as the reference pattern. Their metadata remains the authority for completion. The [machine-readable assignment](../notebooks/healthkit-research/rollout-batches.json) lists every identifier exactly once, either as a completed pilot or in one batch. Batch membership is planning data, not a claim that research is finished.
+
+## Batch 1 completion
+
+Batch 1 research and editorial work completed on 2026-10-14: all 36 assigned
+entries have executed private notebooks and source completion metadata. The
+fresh snapshot supported observed analyses for 19 entries, verified no
+observations for 16, and documented unsupported correlation storage for one.
+Eighteen distinct measured figures accompany the articles where supported.
+Batches 2–4 contain the remaining 137 entries. This is a dated workflow receipt;
+each YAML entry’s `data_research` remains the current completion authority.
+See [issue #233](https://github.com/PulsHealth/pulshealth/issues/233).
 
 ## Priority
 
