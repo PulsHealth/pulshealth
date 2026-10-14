@@ -4,7 +4,7 @@ Create, save, import, and schedule structured workouts on your iPhone for Apple 
 
 ## Contact
 
-Email [support@pulshealth.com](mailto:support@pulshealth.com?subject=Workout%20to%20Watch%20support) with “Watch Workout Pro” in the subject. Include your iOS version and the action that failed. Do not send connection keys, payment details, or private health information.
+Email [support@pulshealth.com](mailto:support@pulshealth.com?subject=Watch%20Workout%20Pro%20support) with “Watch Workout Pro” in the subject. Include your iOS version and the action that failed. Do not send connection keys, payment details, or private health information.
 
 ## Free and Pro
 
@@ -32,4 +32,4 @@ Export a workout file to a recipient you choose, or create a public workout link
 
 For invited collaboration, use an iCloud collection. You choose the collection workouts to upload and manage members through Apple's sharing controls. This does not automatically upload your personal workout library. Copies saved by others can remain after you stop sharing.
 
-[Privacy policy](/workout-to-watch/privacy/) · [Apple standard license agreement](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/)
+[Privacy policy](/watchworkoutpro/privacy/) · [Apple standard license agreement](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/)
