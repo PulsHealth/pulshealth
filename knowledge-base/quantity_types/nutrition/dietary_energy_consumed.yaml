@@ -1,59 +1,29 @@
-identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Energy Consumed"
-short_description: "Total caloric energy intake from food and beverages"
-icon: "flame.fill"
-color: "#FF9500"
-default_unit: "kcal"
+identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Energy Consumed
+short_description: Total caloric energy intake from food and beverages
+icon: flame.fill
+color: '#FF9500'
+default_unit: kcal
 supported_units:
-  - "kcal"
-  - "kJ"
-  - "Cal"
-unit_description: "Kilocalories (kcal) represent metabolizable energy from food. 1 kcal = 4.184 kJ. 'Calories' on food labels are actually kilocalories."
-aggregation_type: "cumulative"
+- kcal
+- kJ
+- Cal
+unit_description: Kilocalories (kcal) represent metabolizable energy from food. 1 kcal = 4.184 kJ. 'Calories' on
+  food labels are actually kilocalories.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-typical_range:
-  min: 1200
-  max: 4000
-  unit: "kcal"
-  notes: "Highly variable based on age, sex, body size, activity level, and metabolic health. Athletes may exceed 5000 kcal/day."
-clinical_ranges:
-  - population: "Adult Women (sedentary)"
-    rda: "1600-2000 kcal/day"
-    upper_limit: "Individualized based on weight goals"
-  - population: "Adult Women (active)"
-    rda: "2000-2400 kcal/day"
-    upper_limit: "Individualized based on weight goals"
-  - population: "Adult Men (sedentary)"
-    rda: "2000-2400 kcal/day"
-    upper_limit: "Individualized based on weight goals"
-  - population: "Adult Men (active)"
-    rda: "2400-3200 kcal/day"
-    upper_limit: "Individualized based on weight goals"
-  - population: "Children (4-8 years)"
-    rda: "1200-1800 kcal/day"
-    upper_limit: "Based on growth charts and activity"
-  - population: "Adolescents (14-18 years)"
-    rda: "1800-3200 kcal/day"
-    upper_limit: "Based on growth and activity"
-  - population: "Pregnancy"
-    rda: "+340 kcal/day (2nd trimester), +450 kcal/day (3rd trimester)"
-    upper_limit: "Individualized"
-  - population: "Lactation"
-    rda: "+330-400 kcal/day"
-    upper_limit: "Individualized"
-  - population: "Endurance Athletes"
-    rda: "3000-6000+ kcal/day"
-    upper_limit: "Based on training load and body composition goals"
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -61,110 +31,162 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Manual food logging, barcode scanning, meal photography with AI recognition"
-    examples:
-      - "MyFitnessPal"
-      - "Cronometer"
-      - "LoseIt"
-      - "Noom"
-      - "MacroFactor"
-  - name: "Smart scales with companion apps"
-    capability: "Weight tracking integrated with calorie recommendations"
-    examples:
-      - "Withings Body+"
-      - "Renpho Smart Scale"
-  - name: "CGM systems"
-    capability: "Some CGM apps allow meal logging alongside glucose data"
-    examples:
-      - "Levels"
-      - "Signos"
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Dietary Energy Consumed represents the total caloric intake from all food and beverages logged by the user. This is the foundational metric for nutritional assessment and weight management. Energy balance (calories in vs. calories out) remains the primary determinant of body weight changes, though the quality of calories significantly impacts metabolic health, satiety, and body composition.
+- name: Manual entry
+  capability: User-entered intake records saved to Apple Health.
+- name: Authorized logging apps
+  capability: Food, beverage or supplement amounts shared with HealthKit when the app supports the type and has
+    write authorization.
+primary_source: Manual records or authorized apps that write the specific dietary quantity to HealthKit.
+description: '## What are dietary calories in Apple Health?
 
-  ## Health Significance
-  Accurate calorie tracking enables:
-  - **Weight Management**: Creating appropriate caloric deficits (typically 500-750 kcal/day for 1-1.5 lb/week loss) or surpluses for weight goals
-  - **Metabolic Health Assessment**: Identifying potential metabolic adaptation in weight loss plateaus
-  - **Athletic Performance**: Ensuring adequate fueling for training and competition
-  - **Clinical Nutrition**: Monitoring intake in eating disorders, failure to thrive, or post-surgical nutrition
 
-  ## Clinical Interpretation Guidelines
-  When reviewing dietary energy data:
-  1. **Assess Logging Consistency**: Sporadic logging limits data utility. Look for patterns across days with complete logging.
-  2. **Compare to Estimated Needs**: Use validated equations (Mifflin-St Jeor, Harris-Benedict) adjusted for activity level.
-  3. **Evaluate Macronutrient Distribution**: Total calories without macro context provides incomplete picture.
-  4. **Consider Underreporting**: Research consistently shows 20-50% underreporting of caloric intake, even with tracking apps.
-  5. **Weekend vs. Weekday Patterns**: Many individuals consume 200-500+ additional calories on weekends.
+  Dietary Energy Consumed records energy logged from food and beverages. It is **intake**, distinct from Active
+  Energy Burned and Basal Energy Burned. HealthKit defines a cumulative energy quantity; PulsHealth stores **kcal**.
+  One food-label Calorie is one kilocalorie; 1 kcal equals 4.184 kJ. See [Apple''s definition](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryenergyconsumed).
 
-  ## Deficiency Symptoms
-  Chronic energy deficit may manifest as:
-  - Fatigue, weakness, and decreased physical performance
-  - Hair loss, brittle nails, dry skin
-  - Amenorrhea or irregular menstruation in women
-  - Decreased libido and hormonal disruption
-  - Impaired immune function
-  - Muscle wasting and decreased bone density
-  - Relative Energy Deficiency in Sport (RED-S) in athletes
-  - Cognitive impairment and mood disturbances
 
-  ## Excess/Toxicity
-  Chronic caloric surplus leads to:
-  - Weight gain and obesity
-  - Increased visceral adiposity
-  - Insulin resistance and metabolic syndrome
-  - Elevated cardiovascular disease risk
-  - Non-alcoholic fatty liver disease (NAFLD)
-  - Increased cancer risk (obesity-related cancers)
-  - Sleep apnea and joint stress
+  ## Why can recorded intake look unusually low or high?
 
-  ## Special Populations
-  - **Athletes**: Periodized nutrition with higher intakes during training blocks; may need 40-70 kcal/kg body weight
-  - **Diabetes**: Caloric control essential for glycemic management; low-calorie diets may achieve remission in Type 2
-  - **Eating Disorders**: Calorie tracking may be contraindicated; can reinforce obsessive behaviors
-  - **Elderly**: Often require lower calories but higher protein density; malnutrition risk increases
-  - **Post-Bariatric Surgery**: Severely restricted intake (800-1200 kcal) with emphasis on protein first
-  - **Pregnancy/Lactation**: Modest increases needed; quality of calories critical for fetal development
 
-  ## Caveats & Limitations
-  - **Self-Reported Data**: All food logging is subject to user error, portion estimation inaccuracies, and intentional/unintentional omissions
-  - **Database Accuracy**: Food databases contain errors; restaurant/homemade foods are estimates
-  - **Individual Variation**: Metabolizable energy varies by gut microbiome, food preparation, and individual digestion
-  - **Thermic Effect**: Not all calories are equal metabolically; protein has higher thermic effect than carbs or fat
-  - **Absorption Variability**: Fiber, food processing, and cooking methods affect actual calorie absorption
+  A food entry may represent a serving, recipe, meal or daily total. Portion estimates, food database selection
+  and duplicated imports can change the total. A missing breakfast or a day without entries is incomplete evidence,
+  not a measured calorie deficit. FDA''s [Nutrition Facts explanation](https://www.fda.gov/food/nutrition-facts-label/whats-nutrition-facts-label)
+  notes that label serving size is not a recommended portion and the 2,000-calorie reference is general guidance
+  rather than an individualized need.
+
+
+  | Before interpreting a daily sum | Check |
+
+  | --- | --- |
+
+  | Units | kcal and kJ were converted consistently |
+
+  | Portions | Amount eaten versus the package''s label serving |
+
+  | Sources | Another app did not save the same meal |
+
+  | Coverage | Meals and beverages were actually logged |
+
+
+  ## Should food calories match protein, carbohydrate and fat?
+
+
+  The rough check **4 × protein(g) + 4 × carbohydrate(g) + 9 × fat(g)** can identify a unit or serving mismatch
+  when all four logs cover the same foods and source. Exact agreement is not required. Label calculations can use
+  specific factors, fiber or sugar-alcohol adjustments and rounding. Alcohol and incomplete nutrient entries also
+  matter. [The FDA labeling regulation](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101/subpart-A/section-101.9)
+  describes permitted calorie calculations; a reconstruction cannot establish how a source app calculated its value.
+
+
+  ## How often are calorie entries recorded?
+
+
+  Cadence follows meal logging or syncing, rather than metabolic absorption. A sample''s duration is not digestion
+  time. Samples at midnight can be daily summaries; samples saved in a batch can share timestamps. Summing a daily
+  total together with its component meals can count the same intake twice.
+
+
+  ## Can I subtract exercise calories or compare sleep?
+
+
+  Food intake and energy expenditure are separate estimates with different coverage and errors. A food log minus
+  active calories alone omits resting expenditure. Even intake minus resting and active estimates should not be
+  presented as a measured energy balance unless boundaries, sources and completeness are understood. Workout or
+  sleep timestamp overlap describes records, not when energy was absorbed or used.
+
+
+  ## What did the database investigation support?
+
+
+  The researched **365-day reporting window** contained no raw consumed-energy samples and no stored consumed-energy
+  aggregates. Intake ranges, outliers, logging cadence, macro reconciliation and workout or sleep comparisons were
+  unavailable. The investigation cannot infer fasting, under-fueling or an energy deficit from those missing records.
+
+
+  ## How can I make comparisons more reliable?
+
+
+  Use consistent portions and inspect [Health''s data sources](https://support.apple.com/en-us/108779). Analyze
+  sums within a source and state how many days have usable logs. Compare trends only across similar logging periods;
+  body-weight changes do not validate individual meal estimates. Treat a sudden jump after changing apps as a provenance
+  question before interpreting it as a dietary change.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "String identifier for the type of food or meal logged (e.g., 'breakfast', 'lunch', 'dinner', 'snack')"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Boolean indicating whether the data was manually entered by the user versus automatically captured"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from the source app's database for data synchronization"
+- key: HKMetadataKeyFoodType
+  description: 'Optional if provided by the source: String identifier for the type of food or meal logged (e.g.,
+    ''breakfast'', ''lunch'', ''dinner'', ''snack'')'
+- key: HKMetadataKeyWasUserEntered
+  description: 'Optional if provided: indicates that the user entered the sample. Absence of this key does not prove
+    automatic measurement.'
+- key: HKMetadataKeyExternalUUID
+  description: 'Optional if provided by the source: Unique identifier from the source app''s database for data synchronization'
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
-    relationship: "Protein contributes 4 kcal/g to total energy intake"
-  - identifier: "HKQuantityTypeIdentifierDietaryCarbohydrates"
-    relationship: "Carbohydrates contribute 4 kcal/g to total energy intake"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
-    relationship: "Fat contributes 9 kcal/g to total energy intake"
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "Active calories burned; used to calculate energy balance"
-  - identifier: "HKQuantityTypeIdentifierBasalEnergyBurned"
-    relationship: "Resting metabolic rate; combined with active energy for total expenditure"
-  - identifier: "HKQuantityTypeIdentifierBodyMass"
-    relationship: "Body weight changes reflect long-term energy balance"
+- identifier: HKQuantityTypeIdentifierDietaryProtein
+  relationship: A nutrient component may be logged without other nutrients.
+- identifier: HKQuantityTypeIdentifierDietaryCarbohydrates
+  relationship: Carbohydrate totals and components have distinct semantics.
+- identifier: HKQuantityTypeIdentifierDietaryFatTotal
+  relationship: Total fat includes its subtypes; do not double count components.
+- identifier: HKQuantityTypeIdentifierDietaryWater
+  relationship: Recorded water volume is not a measurement of hydration.
+- identifier: HKQuantityTypeIdentifierDietaryCaffeine
+  relationship: Caffeine dose is distinct from beverage volume.
+- identifier: HKQuantityTypeIdentifierBodyMass
+  relationship: Body-mass comparisons require compatible timing and do not establish dietary causality.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryenergyconsumed"
-    type: "official"
-  - title: "Dietary Reference Intakes for Energy - National Academies"
-    url: "https://www.nationalacademies.org/our-work/dietary-reference-intakes-for-energy"
-    type: "research"
-  - title: "Dietary Guidelines for Americans 2020-2025"
-    url: "https://www.dietaryguidelines.gov/"
-    type: "official"
-  - title: "Position of the Academy of Nutrition and Dietetics: Interventions for the Treatment of Overweight and Obesity in Adults"
-    url: "https://jandonline.org/article/S2212-2672(16)00295-8/fulltext"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryEnergyConsumed'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryenergyconsumed
+  type: official
+- title: 'Apple: Nutrition type identifiers'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+- title: 'FDA: Nutrition Facts label'
+  url: https://www.fda.gov/food/nutrition-facts-label/whats-nutrition-facts-label
+  type: official
+- title: 'FDA regulation: Calorie calculations'
+  url: https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-101/subpart-A/section-101.9
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Food Calories: Intake Logs & Energy Comparisons'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative recorded intake amount; sample size is not necessarily a serving or a daily total.
+  cadence: Source-specific logging or synchronization cadence, not continuous sensing or a validated ingestion schedule.
+  context: Timestamp overlap with workouts or recorded sleep describes logging context; consumption time and physiological
+    response remain unverified.
+  coverage: Missing logs do not establish zero intake. A source can contribute only selected nutrients or drinks.
+  aggregation: Sum compatible recorded contributions within a source and reporting window after checking units,
+    serving semantics and duplicate imports. State logged-day coverage.
+  references:
+  - title: 'Apple: Nutrition types'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'Apple: Sample time semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples
+  metadata: Food descriptions and user-entered indicators can aid serving review when present; missing metadata
+    does not identify an automatic record or a complete diet. Food correlation linkage cannot be recovered from
+    temporal coincidence alone.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-energy-consumed
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Fresh 365-day example snapshot contained no raw samples or stored aggregates for this type. Values,
+    outliers, cadence, source distributions, workout/sleep comparisons and empirical relationships were unavailable.
+    Source guidance is documented instead of measured charts. Missing records do not establish zero intake; logging
+    timestamps need not be ingestion times. Fixed America/Los_Angeles reporting calendar.

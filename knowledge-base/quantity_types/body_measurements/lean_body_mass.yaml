@@ -1,49 +1,34 @@
-identifier: "HKQuantityTypeIdentifierLeanBodyMass"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Body Measurements"
-human_readable_name: "Lean Body Mass"
-short_description: "The total body mass minus all fat tissue, including muscle, bone, organs, and water."
-icon: "figure.strengthtraining.traditional"
-color: "#007AFF"
-default_unit: "kg"
+identifier: HKQuantityTypeIdentifierLeanBodyMass
+source: HealthKit
+type: HKQuantityType
+category: Body Measurements
+human_readable_name: Lean Body Mass
+short_description: The total body mass minus all fat tissue, including muscle, bone, organs, and water.
+icon: figure.strengthtraining.traditional
+color: '#007AFF'
+default_unit: kg
 supported_units:
-  - "kg"
-  - "lb"
-  - "oz"
-  - "st"
-  - "g"
-unit_description: "Lean body mass is expressed in mass units, typically kilograms (kg) or pounds (lb), representing the weight of all non-fat body tissues."
-aggregation_type: "discrete"
+- kg
+- lb
+- oz
+- st
+- g
+unit_description: Lean body mass is expressed in mass units, typically kilograms (kg) or pounds (lb), representing
+  the weight of all non-fat body tissues.
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-  - "mostRecent"
-  - "separateBySource"
-typical_range:
-  min: 25
-  max: 120
-  unit: "kg"
-  notes: "Adult lean body mass typically ranges from 35-80 kg depending on sex, height, and muscularity."
-clinical_ranges:
-  - population: "Adult Men"
-    typical_range: "50-70 kg"
-    percentage_of_body_weight: "75-85%"
-    notes: "Athletic men may have lean body mass representing 85-90% of total weight"
-  - population: "Adult Women"
-    typical_range: "35-50 kg"
-    percentage_of_body_weight: "65-75%"
-    notes: "Athletic women may have lean body mass representing 75-85% of total weight"
-  - population: "Elderly Adults (65+)"
-    notes: "Age-related muscle loss (sarcopenia) typically results in 3-8% loss of lean mass per decade after age 30; accelerates after 60"
-  - population: "Athletes"
-    notes: "May have significantly higher lean body mass due to increased skeletal muscle; important for performance and metabolism"
+- discreteAverage
+- discreteMin
+- discreteMax
+- mostRecent
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -51,167 +36,116 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Smart Scales with Body Composition"
-    capability: "Estimate lean body mass using bioelectrical impedance analysis (BIA)"
-    examples: ["Withings Body+", "Withings Body Cardio", "Garmin Index S2", "Eufy Smart Scale P2 Pro", "Renpho Smart Scale"]
-  - name: "Professional Body Composition Analyzers"
-    capability: "Multi-frequency segmental BIA for more accurate lean mass estimation"
-    examples: ["InBody 570", "InBody 770", "Tanita MC-780MA", "seca mBCA 515"]
-  - name: "Clinical Imaging"
-    capability: "Gold-standard lean body mass measurement"
-    examples: ["DEXA scanners", "CT scan body composition analysis", "MRI body composition"]
-  - name: "Research Methods"
-    capability: "Highly accurate body composition assessment"
-    examples: ["Bod Pod (air displacement plethysmography)", "Hydrostatic weighing"]
-primary_source: "Calculated from body composition measurements, typically derived from smart scales using bioelectrical impedance or clinical methods like DEXA scanning. Represents total body mass minus body fat mass."
+- name: Body composition producers
+  capability: Compatible apps can write composition estimates from a device or another assessment. Confirm the definition,
+    method and Health sharing support.
+- name: Manual or calculated entries
+  capability: An authorized app may write an entered or derived value; the quantity alone does not identify the
+    calculation or accuracy.
+primary_source: A composition estimate or assessment written by an authorized producer; method and derivation require
+  source review.
 description: |
-  ## Overview
-  Lean body mass (LBM) represents the total weight of the body excluding adipose (fat) tissue. It includes skeletal muscle, bone, organs, skin, blood, and body water. LBM is a critical metric for understanding body composition, metabolic health, and physical function. Unlike skeletal muscle mass alone, LBM encompasses all non-fat tissues, making it a comprehensive indicator of the body's metabolically active and structural components.
+  ## What does Lean Body Mass measure?
+  Lean Body Mass describes body mass apart from fat tissue. It includes more than skeletal muscle, so a change should not automatically be described as muscle gain or loss. [Apple defines a discrete mass quantity](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/leanbodymass), commonly displayed in kilograms or pounds.
 
-  ## How It's Measured
-  Lean body mass is typically calculated rather than directly measured:
+  The producer's definition and method matter. A scale's muscle-mass label is not enough to establish that its value is equivalent to the HealthKit Lean Body Mass quantity.
 
-  **Formula:**
-  Lean Body Mass = Total Body Weight - Fat Mass
+  ## Is it measured or calculated?
+  Connected scales can estimate composition using bioelectrical impedance and a model. [Withings describes estimating lean mass and fat from impedance](https://support.withings.com/hc/en-us/articles/218970957-Body-How-does-the-scale-measure-my-body-composition); this is manufacturer-specific guidance. [NIDDK explains the role of water-rich lean tissue in electrical conduction](https://www.niddk.nih.gov/research-funding/at-niddk/labs-branches/diabetes-endocrinology-obesity-branch/metabolic-clinical-research-unit/metabolic-testing).
 
-  **Consumer Methods (BIA):**
-  - Smart scales estimate body fat percentage, then calculate LBM
-  - Accuracy varies: typically ±3-5% for body fat, affecting LBM calculation
-  - Hydration status significantly impacts BIA accuracy
-  - Best measured in the morning, fasted, with consistent hydration
+  Another app might calculate a value from weight and body-fat fraction. **Weight × (1 − fat fraction)** is a useful consistency formula when the inputs are contemporaneous and compatible, but it does not prove how a particular stored record was generated.
 
-  **Clinical Methods:**
-  - **DEXA (Dual-Energy X-ray Absorptiometry)**: Gold standard; provides segmental lean mass data
-  - **Hydrostatic Weighing**: Uses water displacement to determine body density
-  - **Air Displacement Plethysmography (Bod Pod)**: Measures body volume for density calculation
-  - **CT/MRI**: Most accurate for muscle mass quantification, used in research
+  | Apparent change | Check before interpreting it |
+  |---|---|
+  | Lean mass rises while fat falls | Could share the same calculation inputs |
+  | A large change follows exercise | Review measurement conditions and hydration sensitivity |
+  | Another device reports a different number | Compare methods and definitions |
+  | Lean mass exceeds total weight | Check units, pairing and producer semantics |
 
-  **Predictive Equations:**
-  Various formulas estimate LBM from anthropometric measurements:
-  - Boer formula
-  - James formula
-  - Hume formula
-  These are less accurate but useful when direct measurement is unavailable.
+  ## What did the database research find?
+  The full reporting year contained **no raw Lean Body Mass observations and no stored aggregates**. There are no actual ranges, outliers, source changes or gaps to estimate for this type. No measured figure is included, because empty records cannot support one.
 
-  ## Health Significance
-  Lean body mass is fundamentally important for:
+  [Weight](/knowledge-base/types/HKQuantityTypeIdentifierBodyMass/) was present, while [Body Fat Percentage](/knowledge-base/types/HKQuantityTypeIdentifierBodyFatPercentage/) was absent. That prevents the proposed composition calculation from being checked against stored lean-mass data. Missing records do not imply zero lean tissue, a normal result or a failure of the measurement device.
 
-  **Metabolic Health:**
-  - LBM is the primary determinant of basal metabolic rate (BMR)
-  - Higher LBM = higher caloric expenditure at rest
-  - Muscle tissue is more metabolically active than fat
-  - Maintaining LBM is crucial for long-term weight management
+  ## How often is it recorded?
+  Cadence depends on when the producer measures or writes an estimate. It may accompany a weigh-in, but there is no HealthKit-wide fixed interval or guarantee that all composition fields are written together.
 
-  **Physical Function:**
-  - Muscle strength and functional capacity depend on skeletal muscle mass
-  - LBM correlates with mobility, balance, and independence in elderly
-  - Athletic performance is closely tied to lean mass development
+  When records are available, examine timing and source-specific cadence, distinguish repeat writes from new measurements, and keep units consistent. Averaging frequent entries gives those measurement sessions more weight; it does not estimate lean mass continuously between weigh-ins.
 
-  **Clinical Applications:**
-  - Drug dosing: Many medications (chemotherapy, anesthetics) are dosed by LBM
-  - Nutritional assessment: Low LBM indicates malnutrition or cachexia
-  - Sarcopenia diagnosis: Age-related muscle loss is identified through LBM decline
-  - Critical care outcomes: LBM predicts survival and recovery in ICU patients
-  - Dialysis adequacy: LBM is used to determine dialysis dosing
+  ## Can it show workout or sleep effects?
+  An occasional scale estimate cannot describe within-workout or sleep-stage behavior. BIA's sensitivity to electrical and fluid conditions means a short-term estimate change should not be read directly as newly gained or lost muscle tissue. Follow the producing device's measurement guidance when making repeated comparisons.
 
-  ## Clinical Interpretation Guidelines
+  No workout or sleep analysis could be measured for Lean Body Mass here. A future comparison would need actual observations at meaningful times, compatible methods and enough repeated measurements to separate a change in estimates from a change in recording conditions.
 
-  ### Lean Body Mass as Percentage of Total Weight
+  ## What range should I expect?
+  There is no universal healthy lean-mass range in kilograms: stature, body size and measurement method affect the result. Track a comparable series and interpret it with the broader assessment rather than assigning generic athlete or age-based categories.
 
-  | Category | Men | Women |
-  |----------|-----|-------|
-  | Athletes | 85-90% | 80-85% |
-  | Fit Adults | 80-85% | 75-80% |
-  | Average Adults | 75-80% | 65-75% |
-  | Overweight | 70-75% | 60-65% |
-  | Obese | <70% | <60% |
-
-  ### Elevated Lean Body Mass May Indicate
-  - Regular resistance/strength training
-  - Adequate protein intake and nutrition
-  - Good metabolic health and insulin sensitivity
-  - Athletic conditioning
-  - Genetic predisposition for muscle development
-  - Anabolic steroid use (in extreme cases)
-
-  ### Low Lean Body Mass May Indicate
-  - Sarcopenia (age-related muscle loss)
-  - Malnutrition or inadequate protein intake
-  - Cachexia (wasting from chronic disease or cancer)
-  - Sedentary lifestyle
-  - Prolonged bed rest or immobilization
-  - Chronic corticosteroid use
-  - Endocrine disorders (hypogonadism, growth hormone deficiency)
-  - Malabsorption syndromes
-
-  ### Red Flags for Consultation
-  - Progressive decline in LBM without intentional weight loss - evaluate for sarcopenia or underlying disease
-  - LBM loss during weight loss program exceeding 25% of total weight lost - adjust nutrition/exercise
-  - Low LBM combined with functional decline (weakness, falls, fatigue) - screen for sarcopenia
-  - LBM significantly below expected for height and sex - nutritional and medical evaluation
-  - Rapid LBM decline in hospitalized patients - early mobilization and nutrition intervention
-  - Athletes with declining LBM and performance - evaluate for overtraining, RED-S, or inadequate recovery
-
-  ## Caveats & Limitations
-  - **Includes more than muscle**: LBM encompasses bone, organs, and water, not just skeletal muscle; changes may reflect hydration shifts
-  - **Hydration effects**: Body water is a major component of LBM; dehydration falsely lowers apparent LBM, while over-hydration inflates it
-  - **Measurement variability**: Consumer BIA devices have significant day-to-day variation; track trends over weeks, not days
-  - **Population-specific accuracy**: BIA algorithms may be calibrated for specific populations; accuracy varies across demographics
-  - **Cannot assess distribution**: Standard LBM measurements don't show where lean mass is located (arms vs. legs vs. trunk)
-  - **Does not equal skeletal muscle mass**: LBM is always higher than skeletal muscle mass due to inclusion of other tissues
-  - **Age-related changes**: Normal aging involves LBM decline; expected trajectories differ from pathological loss
-  - **Confounded by edema**: Fluid retention (heart failure, liver disease) artificially increases apparent LBM
-
-  ## Additional Notes
-  - Preserving LBM during weight loss requires adequate protein intake (1.2-1.6 g/kg/day) and resistance training
-  - The average person loses 3-8% of muscle mass per decade after age 30; this accelerates after 60
-  - Sarcopenia is formally diagnosed using LBM thresholds plus functional assessments (grip strength, gait speed)
-  - For athletic performance, tracking segmental lean mass (arms, legs, trunk) provides more actionable data
-  - LBM-based drug dosing is more accurate than total body weight dosing, especially for obese or elderly patients
-  - The relationship between LBM and mortality is U-shaped; both very low and very high values may indicate health issues
-  - Protein distribution throughout the day (20-40g per meal) optimizes muscle protein synthesis
-  - Resistance training remains the most effective intervention for maintaining and building LBM at any age
+  Use weight and body-fat observations to investigate how the values relate when they are present. If all three are outputs from the same model, mathematical agreement provides a consistency check rather than independent validation of composition.
 metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the lean body mass value was manually entered or automatically calculated by a measurement device."
-  - key: "HKMetadataKeyDeviceSerialNumber"
-    description: "Serial number of the body composition analyzer or scale that recorded the measurement."
-  - key: "HKMetadataKeyExternalUUID"
-    description: "A unique identifier from an external data source that originally recorded this measurement."
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier used for syncing this sample across devices and platforms."
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for tracking updates to synced samples."
+- key: HKMetadataKeyWasUserEntered
+  description: Optional producer flag indicating user-entered data; false or absence does not independently verify
+    the measurement method.
+- key: HKMetadataKeyExternalUUID
+  description: Optional identifier supplied by an external producer; not an independent measurement validation.
+- key: HKMetadataKeySyncIdentifier
+  description: Optional producer-defined identifier used with sync version to manage an external sample.
+- key: HKMetadataKeySyncVersion
+  description: Optional producer-defined version for an externally synchronized sample.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierBodyMass"
-    relationship: "Lean body mass is the non-fat portion of total body mass."
-  - identifier: "HKQuantityTypeIdentifierBodyFatPercentage"
-    relationship: "Body fat percentage determines how total mass is divided between fat and lean mass."
-  - identifier: "HKQuantityTypeIdentifierBodyMassIndex"
-    relationship: "BMI does not distinguish between fat and lean mass; LBM provides additional context for interpreting BMI."
-  - identifier: "HKQuantityTypeIdentifierBasalEnergyBurned"
-    relationship: "Basal metabolic rate is primarily determined by lean body mass; more LBM means higher BMR."
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "Exercise energy expenditure is influenced by the amount of metabolically active lean tissue."
-  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
-    relationship: "Regular exercise, especially resistance training, helps maintain and build lean body mass."
+- identifier: HKQuantityTypeIdentifierBodyMass
+  relationship: Total weight provides the mass input for BMI and composition consistency checks.
+- identifier: HKQuantityTypeIdentifierBodyMassIndex
+  relationship: BMI combines weight with height; it does not separate fat from lean tissue.
+- identifier: HKQuantityTypeIdentifierBodyFatPercentage
+  relationship: Composition estimates can add method-dependent context; they are not direct validation of BMI or
+    lean mass.
+- identifier: HKQuantityTypeIdentifierHeight
+  relationship: Check the height input, units and measurement date when reviewing height-dependent quantities.
 references:
-  - title: "leanBodyMass - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/leanbodymass"
-    type: "official"
-  - title: "HealthKit Framework - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit"
-    type: "official"
-  - title: "Lean body mass: the development and validation of prediction equations in healthy adults"
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3833312/"
-    type: "research"
-  - title: "Assessing skeletal muscle mass and lean body mass: agreement among methods"
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11366593/"
-    type: "research"
-  - title: "Lean Body Mass and Muscle Mass - What's the Difference?"
-    url: "https://inbodyusa.com/blogs/inbodyblog/lean-body-mass-and-muscle-mass-whats-the-difference/"
-    type: "medical"
-  - title: "Sarcopenia: revised European consensus on definition and diagnosis"
-    url: "https://pubmed.ncbi.nlm.nih.gov/30312372/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: Apple HealthKit reference
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/leanbodymass
+  type: official
+- title: Measurement and interpretation reference
+  url: https://support.withings.com/hc/en-us/articles/218970957-Body-How-does-the-scale-measure-my-body-composition
+  type: medical
+- title: Measurement and interpretation reference
+  url: https://www.niddk.nih.gov/research-funding/at-niddk/labs-branches/diabetes-endocrinology-obesity-branch/metabolic-clinical-research-unit/metabolic-testing
+  type: medical
+last_updated: '2026-10-14'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: A discrete body measurement written by the producing app; source and measurement conditions govern interpretation.
+  cadence: Measurement or logging cadence, without a fixed HealthKit-wide schedule. Repeated entries are not necessarily
+    independent measurements.
+  context: Workout and asleep interval overlap identifies recording time only. No continuous exercise or sleep response
+    is measured by occasional body observations.
+  coverage: The year snapshot contains 0 raw records. Missing days or an absent type remain unavailable, not zero
+    measurements.
+  aggregation: Use source-specific trends or a recent observation. Summing a discrete body measurement is not meaningful;
+    sample averages can overweight repeated sessions.
+  metadata: Producer metadata may identify manual entry or import identifiers. Metadata does not independently verify
+    device calibration or the calculation method.
+  references:
+  - title: Apple quantity definition
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/leanbodymass
+seo_title: 'Apple Health Lean Body Mass: Estimates, Muscle and Recording Frequency'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: lean-body-mass
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example observational data are not population reference ranges. Source groups do not verify physical
+    device identity. No raw or aggregate records for this type were found in the bounded year; empirical ranges,
+    cadence, contexts and relationships are unavailable. Older profile inputs may exist outside this window.

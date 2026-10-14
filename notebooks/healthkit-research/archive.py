@@ -51,12 +51,32 @@ def render_static_notebook(notebook):
     return static_document(body)
 
 
-def archive(root, execute=False, only=None):
+def verify_inputs(root):
+    """Verify the immutable extraction, including empty tables, before archiving."""
+    manifest_path = root / 'input' / 'manifest.json'
+    if not manifest_path.exists():
+        return {}
+    manifest = json.loads(manifest_path.read_text())
+    verified = {}
+    for name, expected in manifest.get('files', {}).items():
+        path = root / 'input' / name
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != expected['sha256']:
+            raise ValueError(f'Original extraction changed: {name}')
+        verified[name] = digest
+    return verified
+
+
+def archive(root, execute=False, only=None, shared_kernel=False):
     root = Path(root).resolve()
     source = Path(__file__).resolve().parent
-    notebooks = sorted(root.glob('*/*.ipynb'))
+    notebooks = sorted(path for path in root.rglob('*.ipynb')
+                       if path.relative_to(root).parts[0] not in
+                       {'code', 'input', 'site-preview', 'regenerated-figures'}
+                       and '.ipynb_checkpoints' not in path.parts)
     if not notebooks:
         raise ValueError('No private notebooks found')
+    input_hashes = verify_inputs(root)
     code = root / 'code'
     code.mkdir(exist_ok=True)
     hashes = {}
@@ -68,6 +88,7 @@ def archive(root, execute=False, only=None):
         hashes[path.name] = hashlib.sha256(target.read_bytes()).hexdigest()
     receipts = []
     links = []
+    prepared = []
     for path in notebooks:
         notebook = nbformat.read(path, as_version=4)
         for cell in notebook.cells:
@@ -77,9 +98,36 @@ def archive(root, execute=False, only=None):
             # Re-running research must not overwrite public editorial assets.
             public_prefix = str(source.parents[1] / 'site/public/knowledge-base/figures')
             figure_root = root / 'regenerated-figures' if path.parent.name == 'heart-rate' else root
+            # Some notebooks display editorial figures that were rendered
+            # before notebook execution. Preserve those exact bytes privately
+            # before replacing their checkout paths for independent reruns.
+            for match in re.finditer(re.escape(public_prefix) + r"[^'\"\n]+", cell.source):
+                original = Path(match.group(0))
+                if original.is_file():
+                    target = figure_root / original.relative_to(public_prefix)
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(original, target)
             cell.source = cell.source.replace(public_prefix, str(figure_root))
-        if execute and (only is None or path.parent.name in only):
+        prepared.append((path, notebook))
+    selected = [(path, notebook) for path, notebook in prepared
+                if execute and (only is None or path.parent.name in only)]
+    if shared_kernel and selected:
+        # The setup cell of every notebook remains independently runnable; a
+        # shared kernel only avoids repeatedly loading the identical snapshot.
+        cells, spans = [], []
+        for path, notebook in selected:
+            start = len(cells)
+            cells.extend(notebook.cells)
+            spans.append((start, len(cells)))
+        combined = nbformat.v4.new_notebook(cells=cells)
+        NotebookClient(combined, timeout=900, kernel_name='python3').execute()
+        for (path, notebook), (start, end) in zip(selected, spans):
+            notebook.cells = combined.cells[start:end]
+            notebook.metadata['research_execution'] = {'status': 'executed', 'shared_kernel': True}
+    else:
+        for path, notebook in selected:
             NotebookClient(notebook, timeout=900, kernel_name='python3').execute()
+    for path, notebook in prepared:
         cells = [cell for cell in notebook.cells if cell.cell_type == 'code']
         errors = [output for cell in cells for output in cell.outputs if output.output_type == 'error']
         if errors or any(cell.execution_count is None for cell in cells):
@@ -92,13 +140,22 @@ def archive(root, execute=False, only=None):
         receipt = {'artifact_key': path.parent.name, 'notebook': str(path.relative_to(root)),
                    'executed_code_cells': len(cells), 'error_outputs': len(errors),
                    'embedded_figures': images, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+        findings_path = path.parent / 'findings.json'
+        if findings_path.exists():
+            findings = json.loads(findings_path.read_text())
+            receipt['identifier'] = findings.get('identifier')
+            receipt['findings_sha256'] = hashlib.sha256(findings_path.read_bytes()).hexdigest()
+            receipt['analysis_facets'] = sorted(findings.get('facets', {}))
+        receipt['html_sha256'] = hashlib.sha256(view.read_bytes()).hexdigest()
         receipts.append(receipt)
         key = html.escape(path.parent.name.replace('-', ' ').title())
         links.append(f'<li><a href="{html.escape(str(view.relative_to(root)))}">{key}: readable research</a> '
                      f'(<a href="{html.escape(str(path.relative_to(root)))}">notebook</a>) '
                      f'— {len(cells)} executed cells, {images} embedded figures</li>')
         print(f'{path.parent.name}: archived, {len(cells)} executed cells, {images} embedded figures', flush=True)
-    (root / 'archive-manifest.json').write_text(json.dumps({'code_sha256': hashes, 'notebooks': receipts}, indent=2) + '\n')
+    verify_inputs(root)
+    (root / 'archive-manifest.json').write_text(json.dumps({'code_sha256': hashes,
+        'input_sha256': input_hashes, 'notebooks': receipts}, indent=2) + '\n')
     (root / 'index.html').write_text(static_document('<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<title>Private HealthKit research</title><style>body{font:17px/1.6 system-ui;max-width:850px;margin:48px auto;padding:0 24px}li{margin:16px 0}a{color:#245bac}</style>'
         '</head><body>'
@@ -107,6 +164,11 @@ def archive(root, execute=False, only=None):
         '<p>Original CSV inputs and exact extraction queries: input/. Code snapshot: code/. '
         'Integrity receipts: input/manifest.json and archive-manifest.json. '
         'Public excerpts are observational cases, not population reference intervals.</p></body></html>'))
+    # The parent research directory is private too; explicit modes keep that
+    # boundary intact even when artifacts are copied outside their task checkout.
+    root.chmod(0o700)
+    for path in root.rglob('*'):
+        path.chmod(0o700 if path.is_dir() else 0o600)
 
 
 if __name__ == '__main__':
@@ -114,5 +176,6 @@ if __name__ == '__main__':
     parser.add_argument('--root', required=True, type=Path)
     parser.add_argument('--execute', action='store_true', help='rerun each notebook using the archived code')
     parser.add_argument('--only', nargs='+', help='execute only these artifact keys while preserving passing evidence for the others')
+    parser.add_argument('--shared-kernel', action='store_true', help='execute selected notebooks in one kernel; each saved notebook remains independently runnable')
     args = parser.parse_args()
-    archive(args.root, args.execute, args.only)
+    archive(args.root, args.execute, args.only, args.shared_kernel)
