@@ -170,11 +170,79 @@ Nothing in this repository reads these files as model context yet; the MCP serve
 
 ## Recording guidance and review scope
 
-`recording_behavior` is optional; when present, all fields in `schema.json` are required, including primary-source links and a `reviewed_on` date. This date applies to recording guidance, not an independent clinical review of the whole article. Keep source-specific observed rates, personal names and health measurements in private profiles, not public YAML. Do not derive population thresholds from one user's observations.
+`recording_behavior` is optional; when present, all fields in `schema.json` are required, including primary-source links and a `reviewed_on` date. This date applies to recording guidance, not an independent clinical review of the whole article. Keep raw measurements, identifying source names and external identifiers in private profiles. User-approved, deidentified case figures and clearly labeled one-person summaries may illustrate recording behavior on public pages. Do not derive population thresholds from one person's observations.
 
 The site renders the full recording guidance. The app's generated resource intentionally remains its documented compact slice; these additions do not silently expand the app's data model. Validate all entries and regenerate/check the slice after edits.
 
 Validation rejects duplicate YAML keys, duplicate identifiers/category values and malformed dates or reference URLs. Run `python -m unittest discover -s knowledge-base/tests` for the validator regression tests.
+
+## Empirical research and completion tracking
+
+The initial research examples cover heart rate (`heart-rate`), heart-rate
+variability SDNN (`hrv-sdnn`), sleep (`sleep-analysis`), steps (`step-count`)
+and running vertical oscillation (`running-vertical-oscillation`). These keys
+identify research artifacts; the existing HealthKit identifier still defines
+the page URL and relationships.
+
+A research notebook must run against the actual selected data before its
+article is revised. Keep reusable analysis code and unexecuted notebook
+sources public; persist executed notebooks, query results and detailed
+outputs privately outside the source tree. The public extraction entry point is `notebooks/healthkit-research/extract.py`:
+
+```bash
+python3 notebooks/healthkit-research/extract.py --host <host> --container <database-container> \
+  --owner-name <selected-owner> --start <date> --end <date> \
+  --timezone <iana-zone> --output <private-output-directory>
+```
+
+Resolve real connection and owner arguments privately; never commit them.
+For this first batch, executed notebooks are stored in the Git common
+directory under `pulshealth/knowledge-research/2026-10-14/<artifact_key>/research.ipynb`.
+That private location is outside the tracked source tree.
+
+Bind each run to its artifact key,
+window, timezone, calculation version and refresh date. Do not embed private
+absolute paths or account identifiers in public metadata.
+
+Each type uses the same investigation facets:
+
+| Facet | Questions to answer |
+|---|---|
+| Provenance | Which database snapshot, window, units and selection rules were used? |
+| Coverage | How many records, calendar days and observed days? What is unavailable? |
+| Sources | Are sources, devices or revisions distinguishable? Do they overlap? |
+| Values | What are the distributions and relevant categorical/interval equivalents? |
+| Outliers | What does an explicit statistical rule flag, and what remains unexplained? |
+| Cadence | What are start-to-start gaps, durations, duplicates and per-day counts? |
+| Workout context | How do values and cadence differ within matched workouts? |
+| Sleep context | How do values and cadence differ within resolved sleep intervals? |
+| Time patterns | Do local time, day and longer-term patterns change the picture? |
+| Related types | Which aligned measurements support useful descriptive comparisons? |
+| Type-specific | What special counting, overlap or measurement rules matter here? |
+
+A facet is complete when it has been investigated, including documenting an
+unavailable comparison. Use interval/category analysis in place of numeric
+value summaries where appropriate. Correlations are descriptive; timestamp
+matching and one person's repeated records do not establish causality or
+population norms.
+
+Set optional `data_research.status: complete` only after the notebook is
+executed and persisted and the article incorporates relevant findings.
+`reviewed_on` is the empirical/editorial completion date, not clinical
+certification. `workflow_version: "1"` identifies this checklist. `facets`
+contains all eleven keys; `limitations` states unavailable data and inferred
+context. An absent `data_research` means this workflow has not been completed,
+not that the page is untrustworthy or that no earlier review occurred.
+
+Optional `figures` provide same-origin SVG, PNG or WebP assets under
+`/knowledge-base/figures/<artifact-key>/`. Every figure needs a meaningful
+`alt`, `title`, `caption` and `methods`, including denominator, exclusions and
+context rules. Optional `section` matches the exact level-two Markdown heading text; omitted
+figures follow the overview. Label real case figures as one person's data,
+use anonymous source labels and relative dates where practical, and retain
+raw evidence privately. Generated illustrations may explain concepts but
+must never impersonate measured data. `seo_title` can describe the question a
+page answers without changing its identifier or URL.
 
 ## Last Updated
 

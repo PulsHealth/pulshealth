@@ -1,268 +1,234 @@
-# ============================================
-# HEALTHKIT DATA TYPE: Step Count
-# ============================================
-
-# --- CORE IDENTIFICATION ---
-identifier: "HKQuantityTypeIdentifierStepCount"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Activity"
-human_readable_name: "Step Count"
-short_description: "Measures the number of steps the user has taken."
-
-# --- APPLE HEALTH UI ---
-icon: "figure.walk"
-color: "#FF9500"
-
-# --- UNITS & MEASUREMENT ---
-default_unit: "count"
+identifier: HKQuantityTypeIdentifierStepCount
+source: HealthKit
+type: HKQuantityType
+category: Activity
+human_readable_name: Step Count
+short_description: Understand Apple Health step counts, overlapping sources, daily totals and why workout records
+  have a different cadence.
+icon: figure.walk
+color: '#FF9500'
+default_unit: count
 supported_units:
-  - "count"
-unit_description: "Dimensionless count of individual steps detected by motion sensors"
-
-# --- STATISTICS ---
-aggregation_type: "cumulative"
+- count
+unit_description: Dimensionless count of individual steps detected by motion sensors
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-
-# --- TYPICAL VALUES ---
-typical_range:
-  min: 0
-  max: 50000
-  unit: "count"
-  notes: "Daily values typically range from 2,000-15,000 steps for most adults. Values above 25,000 are uncommon but possible for ultramarathon athletes or occupations requiring extensive walking."
-
-clinical_ranges:
-  - population: "Adults"
-    sedentary: "<5,000 steps/day"
-    low_active: "5,000-7,499 steps/day"
-    somewhat_active: "7,500-9,999 steps/day"
-    active: "10,000-12,499 steps/day"
-    highly_active: ">12,500 steps/day"
-  - population: "Older Adults (65+)"
-    sedentary: "<3,000 steps/day"
-    low_active: "3,000-5,999 steps/day"
-    active: "6,000-8,000 steps/day"
-    highly_active: ">8,000 steps/day"
-  - population: "Children and Adolescents"
-    sedentary: "<6,000 steps/day"
-    active: "10,000-14,000 steps/day"
-    highly_active: ">14,000 steps/day"
-
-# --- PLATFORM & AVAILABILITY ---
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
-  notes: "Available since initial HealthKit release"
+  notes: Available since initial HealthKit release
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
-  notes: "Apple Watch provides continuous step tracking with improved accuracy"
+  notes: Apple Watch provides continuous step tracking with improved accuracy
 deprecated: false
 deprecated_in: null
-
-# --- PERMISSIONS & ACCESS ---
 writable: true
 requires_authorization: true
 sensitive_data: false
-
-# --- DATA SOURCES ---
 devices:
-  - name: "Apple Watch"
-    capability: "Continuous step counting using accelerometer and gyroscope sensors with motion coprocessor. Provides highest accuracy with wrist-based detection algorithms optimized for natural arm swing during walking and running."
-    series: "All series"
-    accuracy: "Typically within 2-5% of actual steps during normal walking."
-  - name: "iPhone"
-    capability: "Step counting via built-in accelerometer and M-series motion coprocessor. Tracks steps when phone is carried in pocket, bag, or hand. Functions as primary source when Apple Watch is not available."
-    accuracy: "Accuracy varies based on phone placement; best when in pocket."
-  - name: "Third-party wearables"
-    capability: "Various fitness trackers and smartwatches can write step data to HealthKit."
-    examples: ["Fitbit", "Garmin", "Oura Ring", "Whoop", "Samsung Galaxy Watch"]
-  - name: "Third-party apps"
-    capability: "Pedometer apps using iPhone sensors can contribute step data."
-    examples: ["Pedometer++", "Pacer", "StepsApp"]
-primary_source: "Apple Watch"
+- name: Apple Watch
+  capability: Automatically records step counts as cumulative intervals. Recording intervals and detected movement
+    vary with activity and source revision.
+  series: All series
+- name: iPhone
+  capability: Automatically counts steps. Carrying the phone and its recorded source history affect the available
+    observations.
+- name: Other apps and manual entries
+  capability: Authorized apps and manual Health entries can contribute steps; inspect their source and any available
+    metadata.
+primary_source: Apple Watch and iPhone
+description: '## Overview
 
-# --- DETAILED DESCRIPTION ---
-description: |
-  ## Overview
-  Step count measures the cumulative number of steps a user takes over a given time period. It is one of the most widely tracked health metrics globally, serving as a simple proxy for overall physical activity level. The metric gained mainstream popularity with consumer fitness trackers and has become a cornerstone of activity monitoring in digital health.
+  Step count is the number of steps recorded over a period. Apple Health can receive steps from an iPhone, Apple
+  Watch, other apps and manual entries. A useful view starts with daily totals, then checks the sources and intervals
+  behind them. [Apple explains how Health collects and prioritizes sources](https://support.apple.com/en-us/108779).
 
-  ## How It's Measured
-  Step detection on Apple devices uses a combination of hardware sensors and machine learning algorithms:
 
-  **Apple Watch:**
-  - Accelerometer detects characteristic acceleration patterns of walking
-  - Gyroscope provides orientation data to distinguish steps from other movements
-  - Motion coprocessor processes sensor data continuously with low power consumption
-  - Machine learning algorithms filter out false positives (driving, gesturing)
-  - Arm swing patterns help improve accuracy during walking and running
+  The examples below use one person''s real Apple Health data: a full reporting year, with a 92-day window for closer
+  comparisons. They illustrate recording behavior, not population activity targets or clinical reference ranges.
 
-  **iPhone:**
-  - Built-in accelerometer in M-series motion coprocessor
-  - Continuous background processing without significant battery drain
-  - Step detection even when phone is in pocket, purse, or armband
-  - Algorithms calibrated for various carrying positions
 
-  **Data Recording:**
-  - Steps are recorded as cumulative samples over time intervals
-  - Raw records from Watch, iPhone and other sources may overlap
-  - HealthKit statistics queries merge sources according to their query options; raw record sums are not equivalent to those statistics
+  ## How HealthKit stores steps
 
-  ## Health Significance
-  Step count serves as an accessible measure of physical activity with well-documented health associations:
+  Steps are a **cumulative quantity** in units of `count`. One record contains a count over its start-to-end interval;
+  one row is not one step, and its value is not necessarily a daily total. [Apple''s cumulative quantity documentation](https://developer.apple.com/documentation/healthkit/hkcumulativequantitysample)
+  describes this representation.
 
-  **Mortality Risk Reduction:**
-  A 2025 meta-analysis published in The Lancet Public Health analyzing 57 studies found that 7,000 steps per day was associated with:
-  - 47% lower risk of all-cause mortality (compared to 2,000 steps/day)
-  - 25% lower risk of cardiovascular disease incidence
-  - 47% lower risk of cardiovascular disease mortality
-  - 37% lower risk of cancer mortality
-  - 14% lower risk of type 2 diabetes
-  - 38% lower risk of dementia
 
-  **The 10,000 Steps Myth:**
-  The popular 10,000 steps per day goal originated from a 1965 Japanese marketing campaign for a pedometer called "Manpo-kei" (10,000 steps meter), not from scientific research. The device was marketed ahead of the 1964 Tokyo Olympics during increased focus on fitness. While 10,000 steps remains a viable target for active individuals, research shows significant health benefits at lower thresholds.
+  In the 92-day case window, 22,823 records contained between 1 and 1,128 steps per interval. Record duration ranged
+  from about 2.43 seconds to 10.02 minutes. Comparing counts without their durations mixes very different observations.
 
-  **Age-Related Differences:**
-  - Adults under 60: Maximum mortality benefit observed at 8,000-10,000 steps/day
-  - Adults 60 and older: Benefits plateau at approximately 6,000-8,000 steps/day
-  - Additional steps beyond these thresholds provide diminishing but not negative returns
 
-  ## Clinical Interpretation Guidelines
+  ## Why raw totals differ from Apple Health
 
-  ### Activity Level Classification (Tudor-Locke Scale)
-  - **Sedentary:** <5,000 steps/day - Associated with increased health risks
-  - **Low Active:** 5,000-7,499 steps/day - Below recommended activity levels
-  - **Somewhat Active:** 7,500-9,999 steps/day - Meets minimum health thresholds
-  - **Active:** 10,000-12,499 steps/day - Associated with optimal health outcomes
-  - **Highly Active:** >12,500 steps/day - Above average activity levels
+  Several sources can record the same period. Even within a source group, intervals and identical interval/count
+  combinations can recur. Overlap is a reason to investigate, not sufficient evidence to delete a record: source
+  revisions, interval boundaries and metadata also matter.
 
-  ### Health Outcome Associations
-  - **Cardiovascular Health:** Each additional 1,000 steps/day associated with lower cardiovascular risk up to approximately 8,000-10,000 steps
-  - **Metabolic Health:** Regular step accumulation improves insulin sensitivity and glucose regulation
-  - **Mental Health:** Walking activity associated with reduced depression symptoms; 7,000 steps/day linked to 22% lower risk of depressive symptoms
-  - **Cognitive Function:** Higher step counts associated with 38% lower dementia risk
-  - **Fall Prevention:** Regular walking improves balance and reduces fall risk by approximately 28%
 
-  ### Red Flags and Considerations
-  - Sudden significant decreases in daily step count may indicate illness, injury, or depression
-  - Very low activity (<3,000 steps/day) in previously active individuals warrants clinical attention
-  - Pain during walking that limits step count should be evaluated
-  - Inconsistent patterns (high variability day-to-day) may indicate health instability
+  The figure shows actual stored intervals from one selected day, with anonymous labels for three source groups.
+  Two watch groups had the same display name but different source identifiers. A display name alone would have hidden
+  that distinction.
 
-  ## Caveats & Limitations
 
-  ### Measurement Limitations
-  - **Undercounting scenarios:** Pushing shopping carts, baby strollers, or walkers may reduce step detection due to dampened arm swing
-  - **Overcounting scenarios:** Vigorous hand gestures while seated may register false steps
-  - **Activity type:** Steps do not capture non-ambulatory activities (swimming, cycling, rowing)
-  - **Intensity blindness:** Step count does not distinguish between casual strolling and brisk walking
+  Adding every source''s records therefore does not reproduce a source-merged HealthKit total. Use a suitable cumulative
+  statistics query, and keep its function, source/device filter and boundaries alongside the result. [Apple''s statistics
+  collection query](https://developer.apple.com/documentation/healthkit/hkstatisticscollectionquery) defines interval
+  buckets using an anchor date.
 
-  ### Interpretation Limitations
-  - **Not a complete activity measure:** Does not account for resistance training, flexibility work, or non-step cardio
-  - **Individual variation:** Optimal step count varies by age, baseline fitness, and health conditions
-  - **Context matters:** 5,000 intentional walking steps may have different health implications than 5,000 incidental steps
-  - **Terrain and conditions:** Hilly terrain or challenging surfaces provide more exercise per step but may reduce step count
 
-  ### What Step Count Cannot Tell You
-  - Caloric expenditure (requires step length, weight, and pace data)
-  - Exercise intensity
-  - Cardiovascular fitness level
-  - Muscle strength or flexibility
-  - Balance or coordination quality
+  ## What daily totals show
 
-  ## Additional Notes
+  Before treating a bucket as a reporting day, check **both boundaries** in the intended timezone. A 23:00-to-23:00
+  interval is not midnight-to-midnight in that calendar, even when its label says “day.” Daylight-saving days can
+  legitimately last 23 or 25 hours.
 
-  **Clinical Recommendations:**
-  For sedentary patients, a realistic initial goal is to increase daily steps by 1,000-2,000 above baseline. The CDC and WHO focus on minutes of moderate-to-vigorous activity (150 minutes/week) rather than step targets, as step intensity matters for cardiovascular benefits.
 
-  **Weekend Warrior Benefit:**
-  Research shows that achieving 8,000+ steps on just 1-2 days per week still provides substantial mortality risk reduction, suggesting that concentrated activity patterns can be beneficial for those unable to exercise daily.
+  The full-year audit found 2,107 candidate daily step buckets: 1,055 matched both local midnight boundaries and
+  1,052 were shifted and excluded from this calendar comparison. That is a calendar compatibility check; excluded
+  buckets remain evidence for another anchor or timezone.
 
-  **For Health Consultants:**
-  When reviewing step data:
-  1. Examine weekly averages rather than individual days
-  2. Look for trends over 4+ weeks
-  3. Consider patient's age, mobility status, and health goals
-  4. Frame recommendations around achievable incremental increases
-  5. Emphasize that any increase from sedentary baseline provides health benefits
 
-# --- METADATA KEYS ---
+  | One-person case measure | Observation in the 92-day window |
+
+  | --- | --- |
+
+  | Valid all-source daily buckets | 92 of 92 reporting days |
+
+  | Median all-source daily total | About 5,891 steps |
+
+  | Middle half of daily totals | About 4,607–8,481 steps |
+
+  | Lowest and highest daily totals | 2,106–14,715 steps |
+
+  | Valid watch-only / iPhone-only buckets | 72 days each; missing buckets are not zero |
+
+
+  The chart compares these validated daily series with the sum of raw records fully contained in each all-source
+  bucket. That raw sum was a median 1.85 times the HealthKit total. This is a mismatch diagnostic, not a deduplication
+  algorithm: boundary-crossing counts are not prorated, overlapping records remain, and device filters select different
+  data. Some HealthKit totals were fractional despite integer raw counts; preserve returned precision and round
+  only the display.
+
+
+  ## How cadence changes during workouts
+
+  Recording cadence and walking cadence answer different questions. **Recording cadence** describes how often records
+  begin. **Interval-average step rate** is count divided by the whole interval''s minutes; pauses and short intervals
+  can make it a poor estimate of actual gait cadence.
+
+
+  Within one watch source group, fully contained records from 14 running workouts had a median duration and positive
+  start-to-start gap of about 2.57 seconds. The 12,514 running records had a median interval-average rate of about
+  164 steps/minute. In 13 walking workouts from the same group, 48 fully contained records had a median duration
+  of about 9.92 minutes. These different representations make row counts a misleading activity comparison.
+
+
+  Outliers stay in the research. A short interval can produce an unusually high arithmetic rate: the year''s maximum
+  was about 842 steps/minute. That number deserves interval/source review; it is not proof of someone walking at
+  that cadence. Statistical flags identify unusual records without establishing measurement error.
+
+
+  ## What sleep overlap means
+
+  Only 52 step records in the case window overlapped an asleep-labelled interval; 51 were fully contained in a single
+  asleep stage. Most belonged to one source group. Those counts cannot establish walking during sleep: detected
+  movement, sleep classification and recording intervals all carry uncertainty. An interval touching sleep also
+  does not locate its individual steps within that overlap.
+
+
+  Avoid turning sparse overnight records into a sleep-quality score. The analysis uses asleep categories, rather
+  than including in-bed and awake records, and treats unmatched time as other or unknown.
+
+
+  ## Read steps alongside distance and energy
+
+  Walking/running distance helps explain a step total; active energy and workout type add context that steps alone
+  miss. In this case, same-source daily step and walking/running-distance sums moved together across 92 matched
+  days. The research retains overlaps in those raw diagnostic sums, so the relationship is descriptive rather than
+  an independently validated distance estimate.
+
+
+  Running workout comparisons also showed positive associations with distance and active energy, while cycling comparisons
+  did not show the same step–distance relationship. Steps are therefore an incomplete account of activity, especially
+  for cycling and other activities whose effort is not well represented by footfalls.
+
+
+  ## Make comparisons that hold up
+
+  Compare like with like: the same calendar, query options and source selection across time. Review several days
+  rather than interpreting one abrupt change in isolation, and check for a source revision or coverage change before
+  attributing the pattern to behavior. A day containing records does not establish complete device wear, and absent
+  data is different from a measured zero.
+
+
+  For an activity goal, personal circumstances matter. This page''s observed ranges describe one recording history
+  and do not define a healthy minimum, maximum or a diagnosis.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier for the sample from the originating source, useful for deduplication"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier used for syncing data across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
-
-# --- RELATED TYPES ---
+- key: HKMetadataKeyExternalUUID
+  description: Unique identifier for the sample from the originating source, useful for deduplication
+- key: HKMetadataKeySyncIdentifier
+  description: Identifier used for syncing data across devices
+- key: HKMetadataKeySyncVersion
+  description: Version number for sync conflict resolution
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDistanceWalkingRunning"
-    relationship: "Complementary - Distance provides context for step count by indicating ground covered"
-  - identifier: "HKQuantityTypeIdentifierWalkingSpeed"
-    relationship: "Complementary - Walking speed indicates intensity of steps"
-  - identifier: "HKQuantityTypeIdentifierWalkingStepLength"
-    relationship: "Complementary - Step length used to calculate distance from step count"
-  - identifier: "HKQuantityTypeIdentifierWalkingAsymmetryPercentage"
-    relationship: "Complementary - Indicates gait quality during stepping"
-  - identifier: "HKQuantityTypeIdentifierWalkingDoubleSupportPercentage"
-    relationship: "Complementary - Gait stability metric during stepping"
-  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
-    relationship: "Related - Exercise minutes often accumulated through step-based activity"
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "Related - Steps contribute to active calorie burn"
-  - identifier: "HKQuantityTypeIdentifierFlightsClimbed"
-    relationship: "Complementary - Vertical movement tracked alongside horizontal steps"
-
-# --- REFERENCES ---
+- identifier: HKQuantityTypeIdentifierDistanceWalkingRunning
+  relationship: Complementary - Distance provides context for step count by indicating ground covered
+- identifier: HKQuantityTypeIdentifierWalkingSpeed
+  relationship: Complementary - Walking speed indicates intensity of steps
+- identifier: HKQuantityTypeIdentifierWalkingStepLength
+  relationship: Complementary - Step length used to calculate distance from step count
+- identifier: HKQuantityTypeIdentifierWalkingAsymmetryPercentage
+  relationship: Complementary - Indicates gait quality during stepping
+- identifier: HKQuantityTypeIdentifierWalkingDoubleSupportPercentage
+  relationship: Complementary - Gait stability metric during stepping
+- identifier: HKQuantityTypeIdentifierAppleExerciseTime
+  relationship: Related - Exercise minutes often accumulated through step-based activity
+- identifier: HKQuantityTypeIdentifierActiveEnergyBurned
+  relationship: Related - Steps contribute to active calorie burn
+- identifier: HKQuantityTypeIdentifierFlightsClimbed
+  relationship: Complementary - Vertical movement tracked alongside horizontal steps
 references:
-  - title: "Apple Developer Documentation - stepCount"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/stepcount"
-    type: "official"
-  - title: "Daily steps and health outcomes in adults: a systematic review and dose-response meta-analysis - The Lancet Public Health (2025)"
-    url: "https://www.thelancet.com/journals/lanpub/article/PIIS2468-2667(25)00164-1/fulltext"
-    type: "research"
-  - title: "Daily steps and all-cause mortality: a meta-analysis of 15 international cohorts"
-    url: "https://www.thelancet.com/journals/lanpub/article/PIIS2468-2667(21)00302-9/fulltext"
-    type: "research"
-  - title: "Steps per Day and All-Cause Mortality in Middle-aged Adults - JAMA Network Open"
-    url: "https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2783711"
-    type: "research"
-  - title: "CDC Physical Activity Guidelines for Americans"
-    url: "https://www.cdc.gov/physical-activity-basics/guidelines/adults.html"
-    type: "medical"
-  - title: "WHO Guidelines on Physical Activity and Sedentary Behaviour"
-    url: "https://www.who.int/publications/i/item/9789240015128"
-    type: "medical"
-
-# --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-10-08"
-research_notes: |
-  - iOS 8.0 introduction confirmed via Apple Developer Documentation
-  - 10,000 steps origin: 1965 Yamasa Clock "Manpo-kei" marketing campaign (News Medical, Harvard Health)
-  - 7,000-8,000 steps research: 2025 Lancet meta-analysis of 57 studies, 2022 meta-analysis of 15 cohorts
-  - Clinical activity classifications based on Tudor-Locke step-defined sedentary lifestyle index
-  - CDC and WHO guidelines focus on minutes of activity rather than step counts
-
-# Recording and interpretation guidance; personal observations are kept separately.
+- title: Apple Developer Documentation — stepCount
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/stepcount
+  type: official
+- title: Apple — cumulative quantity samples
+  url: https://developer.apple.com/documentation/healthkit/hkcumulativequantitysample
+  type: official
+- title: Apple — statistics collection queries
+  url: https://developer.apple.com/documentation/healthkit/hkstatisticscollectionquery
+  type: official
+- title: Apple Support — Manage Health data and source priority
+  url: https://support.apple.com/en-us/108779
+  type: official
+last_updated: '2026-10-14'
+research_notes: Executed snapshot-bound empirical notebook before rewriting this article. Full-year standard facets
+  and 92-day interval, source overlap, calendar-boundary, workout, sleep and related-type diagnostics are persisted
+  privately under artifact key step-count. Public figures use anonymous sources and relative dates. Unsupported
+  population thresholds and unsourced accuracy percentages were removed.
 recording_behavior:
-  reviewed_on: '2026-10-08'
+  reviewed_on: '2026-10-14'
   shape: A cumulative sample contains a number of steps over a time interval. One database row is not one step;
     interval lengths can vary substantially.
-  cadence: Count records and inspect their duration distribution independently of total steps. Changes in row
-    frequency can reflect recording or representation changes rather than changes in activity.
-  context: Compare sources and workout versus other periods. A source display name is not a unique device identity;
-    retain source identifiers and versions.
-  coverage: A day with step samples is not proof that all movement was recorded. Missing rows, explicit empty
-    aggregate buckets and measured zero totals have different meanings.
-  aggregation: Raw intervals from multiple sources may overlap. Use a suitable HealthKit statistics result
-    for source-merged totals instead of naively summing raw records. Verify function, device filter, timezone
-    and both bucket boundaries before comparing daily totals.
-  metadata: Metadata is optional. Absence of metadata does not invalidate a step sample, and interval overlap
-    alone is not enough to identify exact duplicate steps.
+  cadence: Recording cadence varies with source and activity. In one researched case, running records from one watch
+    group were much shorter than walking-workout records. Count divided by interval duration is an interval average,
+    not directly observed gait cadence.
+  context: Use interval overlap for screening, then inspect containment and source. Steps overlapping asleep intervals
+    do not establish walking during sleep. Match workout type and compare like sources before interpreting cadence.
+  coverage: A day with step samples is not proof that all movement was recorded. Missing rows, explicit empty aggregate
+    buckets and measured zero totals have different meanings.
+  aggregation: Raw intervals from multiple sources may overlap. Use a suitable HealthKit statistics result for source-merged
+    totals instead of naively summing raw records. Verify function, device filter, timezone and both bucket boundaries
+    before comparing daily totals.
+  metadata: Metadata is optional. Absence of metadata does not invalidate a step sample, and interval overlap alone
+    is not enough to identify exact duplicate steps.
   references:
   - title: 'Apple: cumulative quantity samples'
     url: https://developer.apple.com/documentation/healthkit/hkcumulativequantitysample
@@ -270,3 +236,54 @@ recording_behavior:
     url: https://developer.apple.com/documentation/healthkit/hkstatisticsquery
   - title: 'Apple: statistics collection boundaries'
     url: https://developer.apple.com/documentation/healthkit/hkstatisticscollectionquery
+seo_title: 'Apple Health Step Count: Daily Totals, Sources and Recording Cadence'
+figures:
+- src: /knowledge-base/figures/step-count/source-overlap.svg
+  alt: Three anonymous source rows show overlapping step-count intervals across one local day.
+  title: Several sources can cover the same time
+  caption: One person's real records on a selected day. Each bar is a cumulative step-count interval, not an individual
+    step; source labels are anonymous.
+  methods: Selected the middle day by record count among the 92-day focus window days with at least two source groups.
+    All 110 records starting on that day are shown; widths use stored durations and hours since reporting-calendar
+    midnight. Groups retain bundle and source name rather than merging identical display names. No overlap deduplication
+    or count allocation.
+  section: Why raw totals differ from Apple Health
+  width: 960
+  height: 365
+- src: /knowledge-base/figures/step-count/intervals-and-rate.svg
+  alt: Validated HealthKit daily step series beside a scatter plot showing fully contained all-source raw sums generally
+    exceed the source-merged totals.
+  title: Daily HealthKit sums and raw sums answer different questions
+  caption: One person's 92-day case window. All-source daily totals have 92 validated buckets; watch and iPhone
+    have 72 each. Missing filtered buckets break the lines. The dashed line marks equal raw and HealthKit totals.
+  methods: Keep only sum, one-day buckets whose actual start and end are consecutive America/Los_Angeles midnights,
+    accepting 23/25-hour DST days. The full-year audit excludes 1,052 shifted buckets out of 2,107 candidates. The
+    right panel uses 92 all-source valid focus buckets; raw sums include only records fully contained in each bucket,
+    retaining overlaps and omitting crossing intervals rather than prorating counts. No reconstruction of Health
+    source priority is claimed.
+  section: What daily totals show
+  width: 960
+  height: 403
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: step-count
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: One-person observational examples are not clinical reference ranges. Contexts are timestamp overlaps,
+    not proof of activity or explicit workout linkage. Overlapping raw records and source revisions remain; the
+    raw sum does not reconstruct HealthKit source priority. Daily bucket validity is defined in one reporting calendar;
+    recorded travel-local dates may differ. Pre-window crossing intervals may be unavailable because the snapshot
+    is selected by start timestamp. Related-type raw sums retain overlap and are descriptive, not independently
+    validated totals.

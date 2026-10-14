@@ -2,14 +2,15 @@ import { getAllTypes, getTypeById } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ExternalLink, Calendar, Database, Info, ArrowRight } from "lucide-react";
+import { ExternalLink, Calendar, Database, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import ReactMarkdown from "react-markdown";
+import { ArticleContents, TypeArticle } from "@/components/type-article";
 import { HealthIcon } from "@/components/health-icon";
 import { ClinicalRangesTable } from "@/components/clinical-ranges-table";
 import { PageHero } from "@/components/page-hero";
 import type { Metadata } from "next";
+import { serializeJsonLd } from "@/lib/json-ld";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!data) notFound();
 
   return {
-    title: `${data.human_readable_name} - Apple HealthKit - PulsHealth`,
+    title: data.seo_title ? `${data.seo_title} | PulsHealth` : `${data.human_readable_name} - Apple HealthKit - PulsHealth`,
     description: data.short_description,
     robots: "index, follow, noai, noimageai",
     alternates: {
@@ -53,8 +54,39 @@ export default async function TypeDetailPage({ params }: PageProps) {
     { label: "Kind", value: data.type.replace(/^HK/, "").replace(/Type$/, "") },
   ];
 
+  const url = `https://pulshealth.com/knowledge-base/types/${slug}/`;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        headline: data.seo_title || data.human_readable_name,
+        description: data.short_description,
+        dateModified: data.last_updated,
+        author: { "@type": "Organization", name: "PulsHealth", url: "https://pulshealth.com/" },
+        publisher: { "@id": "https://pulshealth.com/#org" },
+        mainEntityOfPage: url,
+        ...(data.figures?.length ? { image: data.figures.map((figure) => `https://pulshealth.com${figure.src}`) } : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://pulshealth.com/" },
+          { "@type": "ListItem", position: 2, name: "Knowledge base", item: "https://pulshealth.com/knowledge-base/" },
+          { "@type": "ListItem", position: 3, name: data.human_readable_name, item: url },
+        ],
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }} />
+      <nav aria-label="Breadcrumb" className="container mx-auto max-w-6xl px-4 pt-6 text-sm text-muted-foreground">
+        <Link href="/knowledge-base/" className="underline underline-offset-4">Knowledge base</Link>
+        <span aria-hidden="true" className="px-2">/</span>
+        <span>{data.human_readable_name}</span>
+      </nav>
       <PageHero
         size="compact"
         title={
@@ -84,14 +116,20 @@ export default async function TypeDetailPage({ params }: PageProps) {
         </ul>
       </PageHero>
 
-      <main className="container mx-auto max-w-6xl px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="container mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-10 lg:grid-cols-[minmax(0,44rem)_minmax(12rem,1fr)] lg:gap-12">
+        <aside className="lg:col-start-2 lg:row-start-1 min-w-0"><ArticleContents data={data} /></aside>
 
         {/* Main Content Column */}
-        <div className="lg:col-span-2 space-y-8 min-w-0">
+        <article className="min-w-0 space-y-12 lg:col-start-1 lg:row-start-1">
+          <div className="border-b pb-5 text-sm text-muted-foreground">
+            <p>By PulsHealth. Updated <time dateTime={data.last_updated}>{data.last_updated}</time></p>
+            {data.data_research && <p className="mt-2"><Badge variant="secondary" className="mr-2">Real data example</Badge>Research reviewed <time dateTime={data.data_research.reviewed_on}>{data.data_research.reviewed_on}</time>. Figures describe one person’s records.</p>}
+          </div>
+          <TypeArticle data={data} />
 
           <section aria-labelledby="recording-behavior" className="rounded-xl border bg-card p-6 space-y-5">
             <div>
-              <h2 id="recording-behavior" className="text-xl font-semibold">Understanding your records</h2>
+              <h2 id="recording-behavior" className="scroll-mt-24 text-xl font-semibold">Understanding your records</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Recording frequency, source and coverage affect what you can conclude from this data.
                 {" "}<Link href="/docs/recording-behavior/" className="text-brand underline underline-offset-4">Read the recording guide</Link>.
@@ -129,23 +167,15 @@ export default async function TypeDetailPage({ params }: PageProps) {
             <ClinicalRangesTable ranges={data.clinical_ranges} />
           )}
 
-          {/* Description Markdown */}
-          <section className="prose max-w-none dark:prose-invert">
-            <ReactMarkdown>{data.description}</ReactMarkdown>
-          </section>
-        </div>
+        </article>
 
-        {/* Sidebar - appears after main content on mobile, in right column on desktop */}
-        <aside className="space-y-6 lg:row-start-1 lg:col-start-3 min-w-0">
+        {/* Reference material follows the article at the same reading width. */}
+        <div className="space-y-8 min-w-0 lg:col-start-1">
 
           {/* Metadata Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center">
-                <Info className="mr-2 h-4 w-4 text-brand" />
-                Technical Details
-              </CardTitle>
-            </CardHeader>
+          <details id="technical-details" className="scroll-mt-24 rounded-lg border bg-card p-5">
+            <summary className="cursor-pointer text-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-4">Technical details</summary>
+            <Card className="mt-4 border-0 bg-transparent shadow-none">
             <CardContent className="space-y-4 text-sm">
               <div>
                 <span className="text-muted-foreground block mb-1">Identifier</span>
@@ -210,13 +240,15 @@ export default async function TypeDetailPage({ params }: PageProps) {
             </CardContent>
           </Card>
 
+          </details>
+
           {/* References */}
           {data.references && data.references.length > 0 && (
-            <Card>
+            <Card id="references" className="scroll-mt-24">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center">
                   <Database className="mr-2 h-4 w-4 text-brand" />
-                  References
+                  Sources and review
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -245,11 +277,11 @@ export default async function TypeDetailPage({ params }: PageProps) {
             Last updated: {data.last_updated}
           </div>
 
-        </aside>
+        </div>
 
-        {/* Related Types - appears after sidebar on mobile, below main content on desktop */}
+        {/* Related types */}
         {data.related_types && data.related_types.length > 0 && (
-          <section className="lg:col-span-2 lg:row-start-2">
+          <section className="lg:col-start-1">
             <h3 className="text-xl font-semibold mb-4">Related Metrics</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {data.related_types.map((related) => {

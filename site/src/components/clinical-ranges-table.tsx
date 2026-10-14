@@ -12,21 +12,12 @@ interface ClinicalRangesTableProps {
   ranges: ClinicalRange[];
 }
 
-/** Columns whose value is the healthy range, shown in green. */
-const HEALTHY = new Set(["normal", "average"]);
-
 function label(key: string) {
   return key.replace(/_/g, " ");
 }
 
-function Value({ name, value }: { name: string; value?: string }) {
-  if (!value) return <span className="text-muted-foreground/40">–</span>;
-  if (!HEALTHY.has(name)) return <>{value}</>;
-  return (
-    <span className="inline-block rounded-md border border-green-200 bg-green-50 px-1.5 py-0.5 font-medium text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400">
-      {value}
-    </span>
-  );
+function Value({ value }: { value?: string }) {
+  return value ? <>{value}</> : <span className="text-muted-foreground">–</span>;
 }
 
 /**
@@ -45,11 +36,13 @@ export function ClinicalRangesTable({ ranges }: ClinicalRangesTableProps) {
   if (dataKeys.length === 0) return null;
 
   return (
-    <section>
+    <section id="clinical-ranges" className="scroll-mt-24">
       <h2 className="mb-4 flex items-center text-2xl font-semibold">
         <Ruler className="mr-2 h-5 w-5 text-brand" />
-        Clinical Ranges
+        Reference ranges
       </h2>
+
+      <p className="mb-5 text-sm leading-relaxed text-muted-foreground">These source-specific ranges provide context; they are separate from the personal values in any data examples and do not diagnose a condition.</p>
 
       {/* Phones: one card per population. */}
       <ul className="space-y-3 md:hidden">
@@ -63,7 +56,7 @@ export function ClinicalRangesTable({ ranges }: ClinicalRangesTableProps) {
                   <div key={key} className="grid grid-cols-[6rem_1fr] gap-3">
                     <dt className="capitalize text-muted-foreground">{label(key)}</dt>
                     <dd className="min-w-0 break-words">
-                      <Value name={key} value={range[key]} />
+                      <Value value={range[key]} />
                     </dd>
                   </div>
                 ))}
@@ -95,7 +88,7 @@ export function ClinicalRangesTable({ ranges }: ClinicalRangesTableProps) {
                 </th>
                 {dataKeys.map((key) => (
                   <td key={key} className="min-w-[8rem] px-4 py-3">
-                    <Value name={key} value={range[key]} />
+                    <Value value={range[key]} />
                   </td>
                 ))}
               </tr>
