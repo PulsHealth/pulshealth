@@ -1,221 +1,189 @@
-identifier: "HKQuantityTypeIdentifierDietaryVitaminB12"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Vitamin B12"
-short_description: "Water-soluble vitamin essential for DNA synthesis, neurological function, and red blood cell formation"
-
-# --- APPLE HEALTH UI ---
-icon: "pills.fill"
-color: "#FF2D55"
-
-default_unit: "mcg"
-supported_units: ["mcg", "mg"]
-aggregation_type: "cumulative"
-statistics_options: ["cumulativeSum", "separateBySource"]
-typical_range:
-  min: 0
-  max: 100
-  unit: "mcg"
-clinical_ranges:
-  - population: "Infants 0-6 months"
-    rda: "0.4 mcg (AI)"
-  - population: "Infants 7-12 months"
-    rda: "0.5 mcg (AI)"
-  - population: "Children 1-3 years"
-    rda: "0.9 mcg"
-  - population: "Children 4-8 years"
-    rda: "1.2 mcg"
-  - population: "Children 9-13 years"
-    rda: "1.8 mcg"
-  - population: "Adolescents 14-18 years"
-    rda: "2.4 mcg"
-  - population: "Adults 19+ years"
-    rda: "2.4 mcg"
-  - population: "Pregnancy (all ages)"
-    rda: "2.6 mcg"
-  - population: "Lactation (all ages)"
-    rda: "2.8 mcg"
-  - population: "All ages (Upper Limit)"
-    upper_limit: "Not established (no adverse effects from food or supplements)"
+identifier: HKQuantityTypeIdentifierDietaryVitaminB12
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Vitamin B12
+short_description: Understand Apple Health vitamin B12 intake logs, mcg units, source coverage and daily totals.
+icon: pills.fill
+color: '#FF2D55'
+default_unit: mcg
+supported_units:
+- mcg
+- mg
+- g
+aggregation_type: cumulative
+statistics_options:
+- cumulativeSum
+- separateBySource
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Log vitamin B12 intake from foods and supplements"
-    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Nutritionix"]
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Vitamin B12 (cobalamin) is a water-soluble vitamin with a complex cobalt-containing structure. It is unique among vitamins in that it is synthesized exclusively by microorganisms, making animal products and fortified foods the primary dietary sources. The body maintains substantial hepatic stores (2-5 mg), allowing deficiency to develop slowly over years. HealthKit tracks dietary vitamin B12 intake in micrograms.
+- name: Nutrition data source
+  capability: User-entered or imported food and supplement composition estimates; no direct nutrient sensing.
+primary_source: Nutrition logging sources
+description: '## What does Apple Health record?
 
-  ## Biological Functions
-  Vitamin B12 serves as a cofactor for two essential human enzymes:
 
-  - **Methionine synthase**: Converts homocysteine to methionine, regenerating tetrahydrofolate (THF) in the process. This reaction links B12 to folate metabolism and DNA synthesis.
-  - **Methylmalonyl-CoA mutase**: Converts methylmalonyl-CoA to succinyl-CoA in odd-chain fatty acid and certain amino acid metabolism. This mitochondrial enzyme is critical for energy production and myelin synthesis.
+  Vitamin B12 supports blood-cell formation, neurological function and DNA synthesis. It is available in different
+  chemical forms and in foods, fortified products and supplements. An intake mass entry cannot identify all
+  of that context. [Apple defines this type as cumulative intake in mass units](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryvitaminb12).
+  It is entered or imported through a source that supplies nutrition data. An Apple Watch does not sense the
+  nutrient amount in a meal.
 
-  **Downstream effects**:
-  - **DNA synthesis**: Via folate regeneration, B12 is essential for purine and pyrimidine synthesis
-  - **Red blood cell formation**: Adequate B12 prevents megaloblastic anemia
-  - **Neurological function**: Maintains myelin sheath integrity; deficiency causes neurological damage
-  - **Homocysteine regulation**: Helps maintain cardiovascular health
-  - **Energy metabolism**: Supports mitochondrial function
 
-  ## Health Significance
-  Vitamin B12 deficiency is common, especially in elderly populations and those following plant-based diets, with significant neurological and hematological consequences. Unlike many water-soluble vitamins, B12 deficiency can cause irreversible neurological damage if untreated. The body's storage capacity means clinical deficiency may take years to manifest after inadequate intake begins.
+  ## Can a B12 intake log show whether it was absorbed?
 
-  ## Clinical Interpretation Guidelines
-  When reviewing patient vitamin B12 intake data:
 
-  - **Intake vs. absorption**: Adequate dietary intake does not guarantee adequate status; absorption requires intrinsic factor and gastric acid
-  - **Consider absorption capacity**: Patients over 50, those with GI conditions, or on certain medications may not absorb food-bound B12 efficiently
-  - **Supplement form matters**: Crystalline B12 in supplements/fortified foods is more bioavailable than food-bound B12
-  - **Evaluate dietary pattern**: Strict vegans without supplementation will become deficient
-  - **Correlate with symptoms**: Neurological symptoms may precede anemia
-  - **Order serum testing**: Dietary intake data should be correlated with serum B12, methylmalonic acid (MMA), and homocysteine levels
+  Absorption of food-bound B12 differs from absorption of supplemental B12 and depends on factors the intake
+  log does not contain. Body stores and laboratory results are separate from recorded intake. Neither a high
+  supplement entry nor an empty chart establishes B12 status. [NIH Office of Dietary Supplements](https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/)
+  explains the nutrient background and distinctions.
 
-  ## Deficiency
-  **Hematological manifestations**:
-  - Megaloblastic (macrocytic) anemia: Large, immature red blood cells with elevated MCV
-  - Pancytopenia in severe cases
-  - Hypersegmented neutrophils on peripheral smear
-  - Elevated LDH and indirect bilirubin (ineffective erythropoiesis)
 
-  **Neurological manifestations** (may occur without anemia):
-  - Subacute combined degeneration of the spinal cord
-  - Peripheral neuropathy: Numbness, tingling, "pins and needles" (often starting in feet)
-  - Ataxia and balance problems
-  - Cognitive impairment, memory loss, dementia-like symptoms
-  - Depression, irritability, personality changes
-  - Optic neuropathy (rare)
+  | What to check | Why it changes interpretation |
 
-  **Other manifestations**:
-  - Glossitis (smooth, beefy-red tongue)
-  - Angular cheilitis
-  - Elevated homocysteine (cardiovascular risk)
+  | --- | --- |
 
-  **At-risk populations**:
-  - **Vegans and strict vegetarians**: No reliable plant sources of B12
-  - **Elderly (>60 years)**: 10-30% have food-bound B12 malabsorption due to atrophic gastritis
-  - **Patients with pernicious anemia**: Autoimmune destruction of intrinsic factor-producing parietal cells
-  - **Post-bariatric surgery patients**: Reduced intrinsic factor production and absorptive surface
-  - **Patients with GI disorders**: Crohn's disease, celiac disease, bacterial overgrowth, pancreatic insufficiency
-  - **Chronic users of metformin or PPIs/H2 blockers**: Impaired absorption
-  - **Infants of B12-deficient mothers**: Especially if exclusively breastfed
+  | Food-bound B12 | Food source and absorption context are not recoverable from mass alone. |
 
-  ## Toxicity/Excess
-  No Tolerable Upper Intake Level (UL) has been established for vitamin B12 due to its low potential for toxicity.
+  | Supplement form | Preserve the label and amount; do not assume every record represents cyanocobalamin.
+  |
 
-  **Safety profile**:
-  - Absorption decreases dramatically with increasing doses
-  - Excess B12 is excreted in urine
-  - No adverse effects have been established from food or supplements at any dose level
-  - High-dose injections (1000+ mcg) used therapeutically without toxicity
+  | Laboratory result | Intake mcg is a different quantity from a blood concentration. |
 
-  **Rare reported concerns** (causality not established):
-  - Some observational studies suggest possible association between very high serum B12 levels and certain cancers, though this may reflect disease state rather than supplementation
-  - Acne-like eruptions reported rarely with high-dose supplementation
 
-  ## Food Sources
-  **High B12 foods** (mcg per serving):
-  - Clams (3 oz cooked: ~84 mcg)
-  - Beef liver (3 oz: ~70 mcg)
-  - Nutritional yeast, fortified (1 tbsp: ~2-4 mcg)
-  - Trout (3 oz: ~3.5 mcg)
-  - Salmon (3 oz: ~2.4 mcg)
-  - Tuna (3 oz: ~2.5 mcg)
-  - Beef (3 oz: ~1.5-2 mcg)
-  - Milk (1 cup: ~1.2 mcg)
+  ## Why is the chart empty or missing some days?
 
-  **Other sources**:
-  - Eggs (~0.6 mcg per large egg, mostly in yolk)
-  - Cheese (varies by type: ~0.5-1.5 mcg/oz)
-  - Chicken (modest amounts: ~0.3 mcg/3 oz)
-  - Fortified cereals (varies widely: ~0.6-6 mcg per serving)
-  - Fortified plant milks (~0.5-2.5 mcg per cup)
 
-  **Important notes**:
-  - No naturally occurring B12 in plant foods (algae/spirulina contain inactive analogues)
-  - Fortified foods and supplements contain crystalline B12 with superior bioavailability
-  - Food-bound B12 requires gastric acid and pepsin for release
+  The reviewed example data contained no raw samples or stored aggregates for this type in the 365-day window
+  from October 2025 through September 2026. There is no measured range, recording cadence, outlier distribution
+  or daily trend to plot. Missing records do not establish zero intake, deficiency or absence of supplement
+  use.
 
-  ## Special Populations
-  **Vegans and vegetarians**: MUST supplement or consume adequate fortified foods. Recommended: 250-500 mcg/day oral supplement or 2500 mcg/week. Sublingual and standard oral forms are equally effective for most people.
 
-  **Pregnancy and lactation**: Requirements increase modestly (2.6-2.8 mcg/day). B12 deficiency during pregnancy/lactation can cause developmental delays and neurological damage in infants. All pregnant vegans should supplement.
+  This HealthKit type is not in the current PulsHealth sync catalog. An empty database result therefore does
+  not establish that Apple Health on the phone has no entries.
 
-  **Elderly (>50 years)**: Institute of Medicine recommends meeting the RDA primarily through fortified foods or supplements due to high prevalence of food-bound B12 malabsorption.
 
-  **Post-bariatric surgery**: Require lifelong supplementation, often via sublingual or parenteral routes due to impaired absorption.
+  A nutrition source can export only selected nutrients. Check the source app, its Health permissions and whether
+  the food entry contains this nutrient before treating an empty chart as a dietary finding.
 
-  **Patients with pernicious anemia**: Require high-dose oral (1000-2000 mcg/day) or intramuscular B12; dietary intake alone is insufficient.
 
-  **Infants**: Exclusively breastfed infants of B12-deficient mothers are at high risk. Deficiency causes developmental regression and failure to thrive. Immediate treatment with B12 is critical.
+  ## How should entries become daily totals?
 
-  ## Drug Interactions
-  **Drugs that decrease B12 absorption**:
-  - **Metformin**: Long-term use associated with B12 deficiency in 10-30% of users; mechanism involves calcium-dependent ileal membrane effects. Annual monitoring and supplementation recommended.
-  - **Proton pump inhibitors (PPIs)**: Reduce gastric acid, impairing release of food-bound B12. Risk increases with duration of use (>2 years).
-  - **H2-receptor antagonists**: Similar mechanism to PPIs but less pronounced effect
-  - **Colchicine**: Impairs ileal absorption
-  - **Cholestyramine**: May bind B12
-  - **Neomycin**: Reduces absorption
 
-  **Drugs potentially affected by B12**:
-  - **Chloramphenicol**: May reduce hematological response to B12 treatment
+  Keep units visible: 1 mg equals 1,000 mcg, and 1 g equals 1,000 mg. Here mcg is the presentation unit; inspect
+  the unit supplied in an export before adding values. Sum compatible contributions from a source after checking
+  serving size, repeated imports and whether each entry is a serving, meal or already a daily total.
 
-  **Important clinical note**: For patients on metformin or long-term acid suppression, consider annual B12 monitoring and recommend crystalline B12 supplements or fortified foods (which don't require gastric acid for absorption).
 
-  ## Caveats & Limitations
-  - HealthKit data reflects user-reported intake, not serum B12 levels or functional status
-  - Intake does not equal absorption; many factors affect B12 bioavailability
-  - Food databases may not distinguish between active B12 and inactive analogues
-  - High serum folate can mask hematological signs of B12 deficiency while neurological damage progresses
-  - Individual absorption capacity varies dramatically (especially in elderly and those with GI conditions)
-  - Supplement logging may be inconsistent
-  - Hepatic stores mean current intake may not reflect long-term status
+  Report both the total and how many days contain logs. An average over logged days differs from an average
+  over all calendar days; filling gaps with zero changes the question. A source switch can create an apparent
+  intake change through a different food database or export policy.
+
+
+  ## Can workouts, sleep or other nutrients explain a change?
+
+
+  A sample timestamp inside a workout or sleep interval is time assigned by the source; it does not establish
+  when the record was saved, verify ingestion or demonstrate a physiological response. Without focal nutrient
+  records, this review could not estimate workout, sleep or nutrient relationships.
+
+
+  When records are available, compare compatible sources and days with adequate logging. Similar timestamps
+  for B vitamins may indicate a shared food or supplement entry, but explicit meal membership requires a stored
+  link. Related intake types provide bookkeeping context rather than a test of absorption or health status.
+
+
+  ## What should I check before interpreting an extreme value?
+
+
+  Review the unit, serving count, source revision and duplicate candidates before drawing a health conclusion.
+  Preserve the original record while investigating it. The nutrition log can help organize a conversation about
+  food or products; its amounts are not blood-test reference ranges or individualized supplement instructions.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "Type of food contributing to vitamin B12 intake"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates if the entry was manually logged by the user"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing with external nutrition databases"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for synced nutrition data"
+- key: HKMetadataKeyFoodType
+  description: Optional food description supplied by the source; it does not establish complete meal composition.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryFolate"
-    relationship: "B12 and folate are metabolically interdependent; deficiency of either causes megaloblastic anemia"
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminB6"
-    relationship: "Both B vitamins involved in homocysteine metabolism"
-  - identifier: "HKQuantityTypeIdentifierDietaryIron"
-    relationship: "Both nutrients essential for red blood cell formation; deficiency of either causes anemia"
-  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
-    relationship: "Animal protein is the primary dietary source of B12"
-  - identifier: "HKQuantityTypeIdentifierDietaryRiboflavin"
-    relationship: "B-complex vitamin with complementary metabolic functions"
+- identifier: HKQuantityTypeIdentifierDietaryBiotin
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryFolate
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryNiacin
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryPantothenicAcid
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryRiboflavin
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryThiamin
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
+- identifier: HKQuantityTypeIdentifierDietaryVitaminB6
+  relationship: Compare compatible source and logged-day coverage; overlapping times do not prove the same
+    meal or physiological association.
 references:
-  - title: "Vitamin B12 - Dietary Reference Intakes"
-    url: "https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/"
-    type: "official"
-  - title: "Apple HealthKit Documentation - HKQuantityTypeIdentifier"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier"
-    type: "official"
-  - title: "Institute of Medicine - Dietary Reference Intakes for Vitamin B12"
-    url: "https://www.ncbi.nlm.nih.gov/books/NBK114329/"
-    type: "research"
-  - title: "Vitamin B12 - Linus Pauling Institute"
-    url: "https://lpi.oregonstate.edu/mic/vitamins/vitamin-B12"
-    type: "research"
-  - title: "Vitamin B12 Deficiency - Recognition and Management"
-    url: "https://www.aafp.org/afp/2017/0315/p384.html"
-    type: "medical"
-  - title: "Diagnosis and Treatment of Vitamin B12 Deficiency"
-    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7551072/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: Vitamin B12 intake'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryvitaminb12
+  type: official
+- title: 'Apple: Nutrition type identifiers'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'NIH ODS: Vitamin B12 fact sheet'
+  url: https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Vitamin B12: Intake Logs, Units & Daily Totals'
+unit_description: mcg is a readable intake-mass unit; inspect the exported unit and source nutrient convention
+  before converting or summing.
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative recorded nutrient mass; a sample may represent a serving, meal or source-defined contribution.
+  cadence: Source-specific logging and import cadence, not continuous nutrient sensing. No intervals were observed
+    in the reviewed data.
+  context: Workout and sleep overlap describes recorded timestamps; ingestion time and absorption remain unverified.
+  coverage: No samples or aggregates in the reviewed window. Missing entries are unavailable coverage, not
+    zero intake.
+  aggregation: Sum compatible source contributions after unit, serving and duplicate review; retain logged-day
+    counts and source nutrient conventions.
+  metadata: Optional food context cannot identify every nutrient form, ingestion time or explicit meal membership.
+  references:
+  - title: 'Apple: Vitamin B12 intake'
+    url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryvitaminb12
+  - title: 'Apple: Nutrition type identifiers'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'NIH ODS: Vitamin B12 fact sheet'
+    url: https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  review_basis: coverage_and_sources
+  artifact_key: dietary-vitamin-b12
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Fresh 365-day database coverage and primary sources reviewed; no empirical analysis was performed
+    because no raw samples or aggregates were available for this type. Values, outliers, cadence, source patterns,
+    workout/sleep context and empirical nutrient relationships were unavailable. Missing logs do not establish
+    zero intake. Chemical form, food-bound versus supplemental B12, absorption and body stores cannot be recovered
+    from intake mass. A supplement record is not a blood B12 result.

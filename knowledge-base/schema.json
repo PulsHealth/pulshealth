@@ -499,8 +499,13 @@
         "facets",
         "limitations"
       ],
-      "description": "Executed single-person data research and editorial completion, not clinical certification. Private artifacts resolve by stable key.",
+      "description": "Evidence review and editorial completion, not clinical certification. Available measurements require executed analysis; absent data can use verified coverage and primary sources. Private artifacts resolve by stable key.",
       "properties": {
+        "review_basis": {
+          "type": "string",
+          "enum": ["data_analysis", "coverage_and_sources"],
+          "description": "Distinguishes executed measurement analysis from coverage and source review when measurements are unavailable."
+        },
         "status": {
           "type": "string",
           "enum": [

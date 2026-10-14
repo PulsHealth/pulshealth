@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierProgesteroneTestResult"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Progesterone Test Result"
-short_description: "Records results from progesterone tests used to confirm ovulation and assess luteal phase function."
-icon: "testtube.2"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierProgesteroneTestResult
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Progesterone Test Result
+short_description: Understand qualitative home progesterone test results in Apple Health, PDG versus serum measurements,
+  and the limits of result timing.
+icon: testtube.2
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,20 +15,20 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "negative"
-    description: "Low progesterone levels detected, indicating ovulation has not occurred or the luteal phase is inadequate."
-  - value: 2
-    name: "positive"
-    description: "Elevated progesterone levels detected, confirming ovulation has occurred and the corpus luteum is producing progesterone."
-  - value: 3
-    name: "indeterminate"
-    description: "Test result is unclear or progesterone levels are borderline, making interpretation uncertain."
+- value: 1
+  name: negative
+  description: The home test returned a negative result; no concentration or diagnosis is encoded.
+- value: 2
+  name: positive
+  description: The home test returned a positive result; no exact ovulation date or luteal assessment is encoded.
+- value: 3
+  name: indeterminate
+  description: The home test returned an inconclusive result.
 ios_introduced:
-  version: "15.0"
+  version: '15.0'
   year: 2021
 watchos_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2021
 deprecated: false
 deprecated_in: null
@@ -35,84 +36,116 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Manual logging through Health app or fertility tracking apps"
-  - name: "Apple Watch"
-    capability: "Manual logging through Cycle Tracking app"
-  - name: "Connected testing devices"
-    capability: "Home hormone testing devices like Mira or Proov can sync progesterone results"
-  - name: "Third-party apps"
-    capability: "Fertility apps that track hormone test results"
-primary_source: "User-reported or Connected Device"
-description: |
-  ## Overview
-  Progesterone testing confirms that ovulation has occurred by detecting the hormone produced by the corpus luteum after egg release. Unlike ovulation predictor kits (OPKs) that predict upcoming ovulation via LH surge, progesterone tests provide retrospective confirmation that ovulation happened. This is valuable for fertility awareness, as a positive LH surge does not guarantee subsequent ovulation.
+- name: Manual entry or authorized source app
+  capability: Logged category observations or factor intervals; writing and metadata support depend on the source.
+primary_source: Logged qualitative home-test result
+description: '## Overview
 
-  Testing is typically performed 7 days after expected ovulation (approximately day 21 of a 28-day cycle, or 7 days post-LH surge). At-home progesterone tests using urine (detecting PdG, a progesterone metabolite) have become available, though serum blood tests remain the clinical standard for quantitative assessment.
 
-  ## Health Significance
-  Progesterone testing provides critical reproductive health information:
-  - **Ovulation confirmation**: Definitively confirms an egg was released, not just that LH surge occurred
-  - **Luteal phase assessment**: Adequate progesterone is essential for embryo implantation and early pregnancy maintenance
-  - **Luteal phase deficiency (LPD)**: Low mid-luteal progesterone may indicate inadequate corpus luteum function affecting fertility
-  - **Fertility treatment monitoring**: Used to confirm ovulation induction success and assess need for progesterone supplementation
-  - **Anovulation diagnosis**: Consistently low progesterone indicates chronic anovulation requiring evaluation
-  - **Pregnancy support**: Adequate progesterone levels are necessary to maintain early pregnancy
+  Progesterone Test Result stores the qualitative result of a home progesterone test. Apple describes these as urine
+  tests for PDG, a progesterone metabolite, used to assess whether ovulation has occurred. The HealthKit entry stores
+  a result label rather than a hormone concentration.
 
-  ## Clinical Interpretation Guidelines
-  When reviewing progesterone test data:
-  - **Testing timing**: Optimal testing occurs 7 days post-ovulation (or 7 days after positive OPK)
-    - Testing too early or late may show falsely low levels
-    - For irregular cycles, testing relative to ovulation signs is more reliable than cycle day
-  - **Serum progesterone reference values**:
-    - Pre-ovulation: < 1 ng/mL
-    - Post-ovulation (mid-luteal): > 3 ng/mL confirms ovulation; > 10 ng/mL indicates robust luteal function
-    - Pregnancy: Levels continue rising; > 10-20 ng/mL supports early pregnancy
-  - **At-home urine test interpretation**:
-    - Detects PdG (pregnanediol glucuronide), progesterone metabolite
-    - Positive result indicates ovulation occurred; multiple days of positive results suggest adequate luteal function
-  - **Clinical patterns to note**:
-    - Positive OPK followed by negative progesterone: LUF syndrome (luteinized unruptured follicle) or anovulation despite LH surge
-    - Consistently low mid-luteal progesterone: Possible luteal phase deficiency
-    - Positive progesterone with short luteal phase (< 10 days): May benefit from progesterone supplementation
-  - **Fertility treatment context**: Progesterone supplementation after IUI or IVF is common; testing during supplementation reflects exogenous sources
 
-  ## Caveats & Limitations
-  - At-home tests provide qualitative (positive/negative) results; quantitative levels require blood testing
-  - Progesterone levels fluctuate throughout the day (pulsatile secretion); single measurements may not reflect overall function
-  - Timing relative to ovulation is critical; incorrect timing leads to misinterpretation
-  - Does not measure absolute progesterone level; borderline cases require serum testing
-  - Normal progesterone does not guarantee pregnancy success; other factors affect implantation
-  - Exogenous progesterone supplementation will cause positive results regardless of ovulation
-  - Urine PdG testing is an indirect measure; not directly equivalent to serum progesterone
-  - Single positive result is less informative than multiple days of testing showing sustained levels
+  ## What do the three values mean?
+
+
+  | Code | Result | What the category records |
+
+  | --- | --- | --- |
+
+  | 1 | Negative | The test returned a negative result |
+
+  | 2 | Positive | The test returned a positive result |
+
+  | 3 | Indeterminate | The test did not provide a conclusive result |
+
+
+  These values are categories, not an increasing hormone scale. An average of codes cannot describe progesterone
+  levels. A missing record is also different from a recorded negative test.
+
+
+  ## Is this a serum progesterone measurement?
+
+
+  No. The category does not contain ng/mL, a serum assay result, or a calibrated concentration of urinary PDG. Serum
+  reference ranges therefore do not belong on this type''s chart. Test-specific instructions, assay information
+  and testing time require their own evidence; they are not recoverable from positive or negative alone.
+
+
+  A recorded positive result should remain a positive home-test result. It does not independently establish exact
+  ovulation timing, luteal-phase quality, pregnancy viability or treatment response. A negative result likewise
+  cannot diagnose anovulation or an inadequate luteal phase from this category alone.
+
+
+  ## How should repeated tests be reviewed?
+
+
+  Keep individual result labels with their dates and sources. Before counting tests, distinguish separate tests
+  from repeated saves or revisions on the same day. Time between recorded results describes the logging schedule,
+  not continuous hormone behavior. Without a record of testing opportunities, unlogged days cannot be filled with
+  negative results.
+
+
+  Ovulation Test Result records a separate home-test result, including LH or estrogen surge categories. Basal temperature
+  and cervical-mucus observations can add separately recorded context. Their dates may align with progesterone results,
+  but temporal alignment does not prove a HealthKit link or confirm a single ovulation episode.
+
+
+  ## What was available for this review?
+
+
+  No progesterone-test entries were found in the selected database window. Result frequencies, repeat-test timing
+  and relationships could not be measured. This type is absent from the current PulsHealth sync catalog; database
+  absence cannot establish whether results exist in Apple Health on the phone. The review is based on source documentation,
+  with no invented hormone curve or concentration thresholds.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+- key: HKMetadataKeySyncIdentifier
+  description: Optional writing-app-controlled identifier used with sync version to recognize revisions; not a globally
+    unique sample identity or permanent device identifier.
+- key: HKMetadataKeySyncVersion
+  description: Optional writing-app revision number associated with its sync identifier; use in example data was
+    not verified because no records were available.
 related_types:
-  - identifier: "HKCategoryTypeIdentifierOvulationTestResult"
-    relationship: "OPK predicts ovulation; progesterone test confirms it occurred afterwards"
-  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
-    relationship: "Temperature rise after ovulation correlates with progesterone production"
-  - identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
-    relationship: "Post-ovulatory mucus changes correlate with progesterone elevation"
-  - identifier: "HKCategoryTypeIdentifierPregnancyTestResult"
-    relationship: "Adequate progesterone supports implantation and early pregnancy maintenance"
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Progesterone withdrawal triggers menstruation; testing helps assess luteal phase length"
+- identifier: HKCategoryTypeIdentifierOvulationTestResult
+  relationship: Separate home-test result, including LH and estrogen surge categories; chronology does not confirm
+    a shared episode.
+- identifier: HKCategoryTypeIdentifierCervicalMucusQuality
+  relationship: Separate logged observation for descriptive date comparison.
+- identifier: HKCategoryTypeIdentifierPregnancyTestResult
+  relationship: Separate home pregnancy-test result; progesterone result codes cannot establish pregnancy status.
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Logged bleeding provides cycle-history context without identifying test timing or luteal function.
 references:
-  - title: "HKCategoryTypeIdentifierProgesteroneTestResult - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierprogesterontestresult"
-    type: "official"
-  - title: "Evaluation of the Luteal Phase - Fertility and Sterility"
-    url: "https://www.fertstert.org/article/S0015-0282(19)32382-4/fulltext"
-    type: "research"
-  - title: "Luteal Phase Deficiency - ASRM"
-    url: "https://www.asrm.org/topics/topics-index/luteal-phase-deficiency/"
-    type: "medical"
-  - title: "Progesterone and Pregnancy - ACOG"
-    url: "https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2017/11/the-use-of-progesterone-after-assisted-reproductive-technology"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Home progesterone test type — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/progesteronetestresult
+  type: official
+- title: Progesterone test result enumeration — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueprogesteronetestresult
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Progesterone test results in Apple Health: home-test categories'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  review_basis: coverage_and_sources
+  artifact_key: progesterone-test-result
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified zero database records in the selected reporting window; current PulsHealth sync catalog
+    does not include this identifier. Coverage and primary sources were reviewed; no empirical value, cadence, source,
+    workout, sleep or relationship analysis was performed. Database absence does not establish absence in Apple
+    Health on the phone. Category codes are not physiological quantities.

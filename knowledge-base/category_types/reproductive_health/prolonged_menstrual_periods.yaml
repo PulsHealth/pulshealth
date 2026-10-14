@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierProlongedMenstrualPeriods"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Prolonged Menstrual Periods"
-short_description: "System-generated notification indicating menstrual bleeding is lasting longer than typical, potentially signaling menorrhagia."
-icon: "calendar"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierProlongedMenstrualPeriods
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Prolonged Menstrual Periods
+short_description: 'Understand prolonged periods in Apple Health: verified cycle-history assessments, recording
+  intervals and interpretation limits.'
+icon: calendar
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,14 +15,15 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "notApplicable"
-    description: "Prolonged menstrual periods have been detected. This is a system notification indicating the user's logged period duration consistently exceeds typical ranges."
+- value: 0
+  name: notApplicable
+  description: Generic marker for a saved Cycle Deviation assessment after history verification; not a negative
+    result or severity.
 ios_introduced:
-  version: "16.0"
+  version: '16.0'
   year: 2022
 watchos_introduced:
-  version: "9.0"
+  version: '9.0'
   year: 2022
 deprecated: false
 deprecated_in: null
@@ -29,103 +31,140 @@ writable: false
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Automatic detection through Cycle Tracking analysis when period duration exceeds normal ranges"
-  - name: "Apple Watch"
-    capability: "Supports cycle tracking data collection for deviation detection"
-primary_source: "System-generated"
-description: |
-  ## Overview
-  Prolonged Menstrual Periods is a system-generated notification that alerts users when their logged menstrual bleeding consistently lasts longer than typical duration. While normal menstrual periods last 3-7 days, periods extending beyond 7-8 days are considered prolonged and may indicate underlying conditions requiring evaluation.
+- name: iPhone / HealthKit
+  capability: On-device analysis of logged cycle history; the user verifies history before a deviation sample
+    is saved.
+primary_source: HealthKit Cycle Deviation analysis of verified logged history
+description: '## What does a prolonged-period assessment describe?
 
-  The Cycle Tracking feature analyzes multiple months of logged menstrual flow data to identify patterns of extended bleeding. When periods consistently exceed normal duration thresholds, this notification is generated to prompt users to discuss their bleeding patterns with a healthcare provider.
 
-  ## Health Significance
-  Prolonged menstrual bleeding (menorrhagia component) has significant health implications:
-  - **Iron deficiency anemia**: Extended bleeding increases blood loss and iron depletion risk
-  - **Uterine fibroids**: Common cause of prolonged and heavy periods, affecting quality of life
-  - **Endometrial polyps**: Benign growths that can extend bleeding duration
-  - **Adenomyosis**: Endometrial tissue within uterine muscle causes prolonged, heavy periods
-  - **Coagulation disorders**: Von Willebrand disease and other bleeding disorders may manifest as prolonged periods
-  - **Endometrial hyperplasia**: Thickened uterine lining causes extended bleeding; may be precancerous
-  - **Thyroid dysfunction**: Particularly hypothyroidism can cause prolonged, heavy periods
-  - **Hormonal imbalances**: Anovulatory cycles often result in prolonged, irregular bleeding
-  - **IUD-related**: Copper IUDs commonly cause longer, heavier periods
+  Prolonged Menstrual Periods is a Cycle Deviation category about repeated long bleeding duration in logged
+  history. It is distinct from heavy bleeding: duration and amount answer different questions.
 
-  ## Clinical Interpretation Guidelines
-  When evaluating prolonged menstrual period notifications:
-  - **Duration thresholds**:
-    - Normal: 3-7 days
-    - Prolonged: > 7 days consistently
-    - Severe: > 10 days or continuous bleeding
-  - **Bleeding assessment**:
-    - Combined assessment of duration AND flow intensity provides fuller picture
-    - Prolonged light bleeding differs clinically from prolonged heavy bleeding
-    - Calculate Pictorial Blood loss Assessment Chart (PBAC) score if possible
-  - **Pattern analysis**:
-    - Single prolonged period: May be situational (stress, hormonal fluctuation)
-    - Recurrent prolonged periods: Requires systematic evaluation
-    - Progressive lengthening: May indicate evolving pathology
-  - **Clinical evaluation approach**:
-    - Complete blood count (CBC) to assess for anemia
-    - Iron studies (ferritin) to evaluate iron status
-    - TSH for thyroid function
-    - Coagulation studies if bleeding disorder suspected (especially in adolescents)
-    - Pelvic ultrasound to assess uterine structure
-    - Consider endometrial biopsy based on age and risk factors
-  - **Age-specific considerations**:
-    - Adolescents: Anovulatory cycles common in first 2 years after menarche; consider coagulation disorders
-    - Reproductive age: Structural causes (fibroids, polyps) more common
-    - Perimenopause: Hormonal fluctuation common but endometrial evaluation still important
-  - **Impact assessment**:
-    - Quality of life effects
-    - Anemia symptoms (fatigue, weakness, shortness of breath)
-    - Need for lifestyle limitations during extended periods
 
-  ## Caveats & Limitations
-  - Read-only system notification; users cannot manually create this sample
-  - Requires consistent period logging including start AND end dates for duration calculation
-  - Algorithm thresholds and specific criteria are not publicly specified
-  - Does not capture bleeding amount, only duration
-  - Light prolonged bleeding differs from heavy prolonged bleeding but notification does not distinguish
-  - Postpartum lochia (normal extended bleeding) may trigger notification inappropriately
-  - Breakthrough bleeding on hormonal contraceptives may be logged as extended period
-  - Incomplete logging of period end dates affects algorithm accuracy
-  - Perimenopause naturally causes bleeding pattern changes
-  - Does not identify underlying cause; clinical evaluation required
-  - Single prolonged period may trigger notification; clinical significance depends on pattern
-metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+  Apple''s [HealthKit definition](https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/prolongedmenstrualperiods)
+  requires bleeding lasting at least 10 days on at least two occasions in the preceding six months. This is
+  Apple''s category definition, not a general clinical cutoff for every prolonged period. A detected pattern
+  is saved as a sample after the user confirms the history.
+
+
+  ## How do duration and flow differ?
+
+
+  | Evidence | What it tells you | What it does not tell you |
+
+  | --- | --- | --- |
+
+  | Reviewed period-day history | Recorded duration of bleeding episodes | Complete duration when days were
+  not logged |
+
+  | Menstrual Flow categories | Logged qualitative flow level | Measured blood-loss volume |
+
+  | Prolonged Menstrual Periods | A verified pattern of repeated long periods | Whether every recorded day
+  was heavy |
+
+
+  A period may have several flow intervals as the amount changes. Do not sum overlapping row durations or count
+  each entry as a separate prolonged episode. Review resolved period boundaries and gaps in logging before
+  reconstructing duration. The saved deviation interval itself is not a substitute for that bleeding history.
+
+
+  ## What do the category code and cadence mean?
+
+
+  The category uses **0, notApplicable**, a generic marker rather than a duration, severity or negative result.
+  There is no physiological numeric range to chart and no valid average of the category codes.
+
+
+  Start-to-start gaps between saved assessments describe recording spacing, not period frequency. Interval
+  timestamps do not establish when the notification or confirmation occurred. Overlap with workouts or sleep
+  identifies timeline context, not repeated measurements of bleeding duration during those activities.
+
+
+  ## What did the example data show?
+
+
+  No prolonged-period category records were present in the researched year. Actual saved interval lengths,
+  source differences, cadence and context comparisons were unavailable. With the primary category absent, no
+  measured relationship to menstrual-flow duration could be established. No duration graph or bleeding-volume
+  estimate is inferred.
+
+
+  ## How should the history be used?
+
+
+  Review that all period days were recorded accurately before interpreting the pattern. [Apple Support](https://support.apple.com/en-us/120356)
+  explains that recent or ongoing logged cycle factors disable deviation detection. Discuss persistent changes
+  with a healthcare professional using the bleeding history. This assessment cannot determine anemia, blood-loss
+  volume, an underlying diagnosis or fertility status.
+
+
+  ## Is this type collected by PulsHealth?
+
+
+  This identifier is documented here but is absent from PulsHealth’s current sync catalog. An empty database
+  result cannot establish whether the phone contains this assessment.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Source data analyzed to detect prolonged bleeding patterns"
-  - identifier: "HKCategoryTypeIdentifierIrregularMenstrualCycles"
-    relationship: "Related deviation detection for cycle length variability"
-  - identifier: "HKCategoryTypeIdentifierInfrequentMenstrualCycles"
-    relationship: "Related deviation detection for cycles occurring less frequently"
-  - identifier: "HKCategoryTypeIdentifierPersistentIntermenstrualBleeding"
-    relationship: "Related deviation detection for bleeding between periods"
-  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
-    relationship: "Prolonged periods often associated with extended cramping symptoms"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Extended bleeding may contribute to anemia and fatigue"
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierIntermenstrualBleeding
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierPregnancy
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierLactation
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierContraceptive
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierInfrequentMenstrualCycles
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierIrregularMenstrualCycles
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
+- identifier: HKCategoryTypeIdentifierPersistentIntermenstrualBleeding
+  relationship: Separate cycle-history or factor context; requires available records and reviewed boundaries,
+    without assuming linkage or cause.
 references:
-  - title: "HKCategoryTypeIdentifierProlongedMenstrualPeriods - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierprolongedmenstrualperiods"
-    type: "official"
-  - title: "Cycle Tracking Deviation Notifications - Apple Support"
-    url: "https://support.apple.com/en-us/HT212899"
-    type: "official"
-  - title: "Heavy Menstrual Bleeding - ACOG"
-    url: "https://www.acog.org/womens-health/faqs/heavy-menstrual-bleeding"
-    type: "medical"
-  - title: "Abnormal Uterine Bleeding Evaluation - ACOG Practice Bulletin"
-    url: "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2021/03/abnormal-uterine-bleeding"
-    type: "medical"
-  - title: "FIGO Classification of Abnormal Uterine Bleeding"
-    url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3232027/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: Prolonged periods — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/prolongedmenstrualperiods
+  type: official
+- title: Cycle Tracking and cycle deviations — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+- title: Generic category marker — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalue/notapplicable
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Prolonged periods in Apple Health: cycle deviation meaning'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: prolonged-menstrual-periods
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; empirical analysis was skipped because there are no primary
+    category records in the selected reporting year. Measured code frequencies, source differences, saved interval
+    spans, cadence and workout/sleep or related-type comparisons are unavailable. A missing assessment does
+    not establish normal cycles or absence of bleeding. Category codes are nominal, and interval timestamps
+    do not identify notification/verification time. Detection settings, logging completeness and confirmed
+    underlying history are unavailable.

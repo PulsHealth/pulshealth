@@ -184,10 +184,15 @@ and running vertical oscillation (`running-vertical-oscillation`). These keys
 identify research artifacts; the existing HealthKit identifier still defines
 the page URL and relationships.
 
-A research notebook must run against the actual selected data before its
-article is revised. Keep reusable analysis code and unexecuted notebook
-sources public; persist executed notebooks, query results and detailed
-outputs privately outside the source tree. The public extraction entry point is `notebooks/healthkit-research/extract.py`:
+Check actual database coverage before choosing the research work. When relevant
+measurements exist, execute and persist a notebook before revising the article.
+When coverage verifies no observations, skip empirical analysis and empty
+notebooks; preserve the coverage check and primary-source review instead. An
+unsupported storage kind also needs an explicit limitation. Database absence
+does not establish absence in Apple Health or a zero intake or symptom value.
+Check the current sync catalog separately from the broader HealthKit vocabulary.
+Keep reusable analysis code public and detailed outputs private, outside the
+source tree. The public extraction entry point is `notebooks/healthkit-research/extract.py`:
 
 ```bash
 python3 notebooks/healthkit-research/extract.py --host <host> --container <database-container> \
@@ -226,8 +231,13 @@ value summaries where appropriate. Correlations are descriptive; timestamp
 matching and one person's repeated records do not establish causality or
 population norms.
 
-Set optional `data_research.status: complete` only after the notebook is
-executed and persisted and the article incorporates relevant findings.
+Set optional `data_research.status: complete` after the evidence review is
+persisted and incorporated into the article. Use `review_basis: data_analysis`
+when measurements have been analyzed in an executed notebook, or
+`review_basis: coverage_and_sources` for verified absent or unsupported data
+reviewed against primary sources. The latter does not claim empirical ranges,
+outliers, cadence or context comparisons. Older entries may omit this optional
+field; their preserved artifacts and limitations describe their evidence.
 `reviewed_on` is the empirical/editorial completion date, not clinical
 certification. `workflow_version: "1"` identifies this checklist. `facets`
 contains all eleven keys; `limitations` states unavailable data and inferred

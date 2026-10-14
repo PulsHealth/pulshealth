@@ -1,41 +1,29 @@
-identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Cholesterol"
-short_description: "Cholesterol intake from animal-based foods"
-icon: "drop.fill"
-color: "#FF9500"
-default_unit: "mg"
+identifier: HKQuantityTypeIdentifierDietaryCholesterol
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Cholesterol
+short_description: Logged cholesterol intake, its units and daily coverage; distinct from blood cholesterol
+  and LDL.
+icon: drop.fill
+color: '#FF9500'
+default_unit: mg
 supported_units:
-  - "mg"
-  - "g"
-unit_description: "Milligrams (mg) of dietary cholesterol. Cholesterol is a sterol found exclusively in animal products and is also synthesized endogenously by the liver."
-aggregation_type: "cumulative"
+- mg
+- g
+unit_description: mg of logged cholesterol; display unit for this HealthKit concept; absent from the current
+  PulsHealth collection catalog.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-typical_range:
-  min: 0
-  max: 600
-  unit: "mg"
-  notes: "Vegans consume 0mg; average American intake is 250-350mg/day. Single egg yolk contains ~186mg."
-clinical_ranges:
-  - population: "Adults (current Dietary Guidelines)"
-    rda: "No specific limit; eat as little as possible while consuming healthy eating pattern"
-  - population: "Adults (AHA/ACC recommendation)"
-    rda: "Limit dietary cholesterol for those with elevated LDL or CVD risk"
-  - population: "Historical Recommendation (pre-2015)"
-    rda: "<300mg/day general population"
-  - population: "Hyper-Responders"
-    rda: "Individual response varies; some are highly sensitive to dietary cholesterol"
-  - population: "Diabetes"
-    rda: "Limit dietary cholesterol; increased CVD risk in this population"
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -43,104 +31,169 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Cholesterol tracking from food database entries"
-    examples:
-      - "MyFitnessPal"
-      - "Cronometer"
-      - "LoseIt"
-      - "Yazio"
-  - name: "Heart health apps"
-    capability: "Cholesterol intake tracking with cardiovascular context"
-    examples:
-      - "Fooducate"
-      - "Heart Habit"
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Dietary Cholesterol represents intake of cholesterol from animal-based foods including eggs, shellfish, meat, poultry, and dairy. Cholesterol is a waxy substance essential for cell membranes, hormone synthesis, and vitamin D production. The body produces 800-1000mg cholesterol daily (endogenous synthesis), and dietary intake (exogenous) affects blood cholesterol levels in a variable, individual-dependent manner.
+- name: Manual entry
+  capability: User-entered amounts saved to Apple Health.
+- name: Authorized nutrition apps
+  capability: Food contributions shared with HealthKit when the source supports this specific type and has
+    write authorization.
+primary_source: Manual records or authorized nutrition apps; the source determines food composition and serving
+  semantics.
+description: '## Does this measure cholesterol in my blood?
 
-  The FDA Daily Value for cholesterol is 300mg based on a 2,000 calorie diet. This was retained in the 2020 update for labeling purposes, though the 2015-2020 Dietary Guidelines removed the specific 300mg limit, instead recommending to consume as little dietary cholesterol as possible within a healthy eating pattern. This shift reflects evidence that dietary cholesterol has a smaller effect on blood cholesterol than previously believed for most individuals.
 
-  ## Health Significance
-  Understanding dietary cholesterol's role:
-  - **Blood Cholesterol Relationship**: Dietary cholesterol has modest effect on blood cholesterol; saturated fat has larger impact
-  - **Individual Variation**: Hyper-responders (15-25% of population) show significant LDL increase with dietary cholesterol
-  - **Cardiovascular Disease**: Direct relationship between dietary cholesterol and CVD risk is debated
-  - **Homeostatic Regulation**: Liver adjusts endogenous production based on dietary intake (in most individuals)
-  - **Egg Controversy**: Research has shifted; moderate egg consumption not associated with CVD in healthy individuals
-  - **Food Matrix Effects**: Cholesterol in whole foods (eggs) may differ from isolated cholesterol
+  Dietary Cholesterol records the amount of cholesterol consumed as logged by a source. The entry uses **mg**
+  for display. It is a cumulative food quantity; it does not measure blood cholesterol, LDL, HDL or triglycerides.
+  [Apple defines this as consumed cholesterol](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarycholesterol).
 
-  ## Clinical Interpretation Guidelines
-  When assessing dietary cholesterol:
-  1. **Context Matters**: Cholesterol intake less important than overall dietary pattern
-  2. **Consider Saturated Fat**: Foods high in cholesterol (fatty meats) often high in saturated fat
-  3. **Identify Hyper-Responders**: Check LDL response with cholesterol intake changes
-  4. **Assess Egg Consumption**: Common high-cholesterol food; 1 egg/day generally acceptable for healthy adults
-  5. **Review Baseline CVD Risk**: Higher-risk individuals may benefit from stricter limitation
-  6. **Evaluate Total Diet Quality**: Plant-based patterns naturally low in cholesterol
-  7. **Monitor Lipid Panel**: Correlate dietary changes with LDL-C, especially in diabetes
 
-  ## Deficiency Symptoms
-  Cholesterol deficiency from diet does not occur:
-  - Body synthesizes sufficient cholesterol regardless of dietary intake
-  - No dietary cholesterol requirement exists
-  - Rare genetic disorders (Smith-Lemli-Opitz syndrome) impair cholesterol synthesis; dietary cholesterol may help
-  - Extremely low-fat diets may impair absorption of fat-soluble vitamins but not cause cholesterol deficiency
+  ## What does a cholesterol amount represent?
 
-  ## Excess/Toxicity
-  High dietary cholesterol concerns (primarily in susceptible individuals):
-  - **Elevated LDL Cholesterol**: In hyper-responders, significant LDL increase possible
-  - **Cardiovascular Risk**: Debated; older evidence stronger than recent research
-  - **Atherosclerosis**: Oxidized cholesterol may contribute to plaque formation
-  - **Gallstones**: High cholesterol intake may increase cholesterol gallstone risk
-  - **No Acute Toxicity**: Unlike some nutrients, no acute adverse effects from high single-meal intake
 
-  ## Special Populations
-  - **Familial Hypercholesterolemia**: Dietary cholesterol limitation recommended despite mixed evidence
-  - **Diabetes**: ADA recommends limiting dietary cholesterol due to increased CVD risk
-  - **Prior Cardiovascular Events**: Conservative approach with dietary cholesterol prudent
-  - **APOE4 Carriers**: May be more sensitive to dietary cholesterol's effect on LDL
-  - **Hyper-Responders**: Identified by LDL increase with egg/cholesterol consumption; limit intake
-  - **Hypo-Responders**: Majority of population; dietary cholesterol has minimal effect
-  - **Vegetarians/Vegans**: Naturally consume zero (vegan) or minimal (vegetarian) dietary cholesterol
-  - **Athletes**: Cholesterol needs for hormone synthesis met by endogenous production
+  A sample may describe one food, a recipe portion, a meal or an imported daily total. Read the source and
+  serving information before treating it as a day of intake. A large value can arise from a portion estimate
+  or unit error; the sample alone cannot establish cardiovascular risk.
 
-  ## Caveats & Limitations
-  - **Evolving Science**: Recommendations have changed significantly; 2015 removal of 300mg limit controversial
-  - **Individual Variation**: Difficult to predict who will be cholesterol hyper-responder
-  - **Confounding Factors**: High cholesterol foods often high in saturated fat (separating effects difficult)
-  - **Egg Research Funding**: Industry funding of egg studies creates potential bias concerns
-  - **Food Matrix Complexity**: Cholesterol in eggs with choline and protein differs from isolated cholesterol
-  - **Database Accuracy**: Cholesterol content varies by animal diet, cut of meat, preparation
-  - **Absorption Variability**: Only ~50% of dietary cholesterol absorbed; varies by individual
+
+  | Comparison | Correct interpretation |
+
+  | --- | --- |
+
+  | Dietary cholesterol in mg | Recorded food contribution |
+
+  | Blood cholesterol concentration | A separate laboratory measurement |
+
+  | Cholesterol alongside saturated fat | Distinct food constituents; retain separate totals |
+
+  | Cholesterol alongside food calories | Do not apply the total-fat calorie factor to cholesterol |
+
+
+  ## Is 300 mg a normal range?
+
+
+  [FDA lists a 300 mg Daily Value](https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels)
+  for cholesterol on food labels. This supports label comparison; it is not a reference range for a meal sample,
+  a minimum intake requirement or an individualized treatment target. A food log also cannot show whether a
+  dietary change caused a change in LDL.
+
+
+  ## Which other logs help explain it?
+
+
+  Look at saturated-fat and total-fat records from the same food source, along with recipe portions and overall
+  food-log coverage. Matching days is useful bookkeeping, but a common date does not prove the nutrients belong
+  to the same HealthKit food correlation. Blood-test interpretation requires separate measurements and clinical
+  context.
+
+
+  ## Can PulsHealth collect this type?
+
+
+  This HealthKit concept is documented in the knowledge base, but it is absent from the current PulsHealth
+  collection catalog. Automatic sync is not provided for this type by that catalog. Its absence from the database
+  does not establish that Apple Health contains no records.
+
+
+  ## When are entries recorded, and what does context mean?
+
+
+  Cadence follows food logging or source synchronization, not continuous sensing. A record whose timestamp
+  overlaps a workout or recorded sleep may describe an earlier meal or a daily summary. Review start times,
+  durations and source history before discussing meal timing. Missing days remain unlogged rather than zero
+  intake. [Health''s source controls](https://support.apple.com/en-us/108779) help when reviewing overlapping
+  apps.
+
+
+  ## What did the database investigation establish?
+
+
+  The researched **365-day reporting window** contained no raw samples or stored aggregates for this nutrient.
+  Recorded ranges, unusual portions, source overlap, recording intervals and workout or sleep comparisons were
+  unavailable. Related nutrient comparisons were unavailable because there were no records for this type. No
+  empirical nutrient association or measured chart is supported. These missing records do not establish zero
+  consumption or a deficient diet.
+
+
+  ## How can I make the log easier to interpret?
+
+
+  Check the represented serving, preserve source-specific daily totals and state how many days have usable
+  logs. Review duplicate food imports before summing sources. Food descriptions may clarify portions when supplied,
+  but absent metadata does not prove automatic measurement or complete recording.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "String identifier for the cholesterol source (e.g., 'egg', 'shrimp', 'liver')"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Boolean indicating manual entry versus automatic capture"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from source app for synchronization"
+- key: HKMetadataKeyFoodType
+  description: Optional food description if supplied; it does not establish portion size or complete composition.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional indication of user entry; absence does not establish automatic measurement.
+- key: HKMetadataKeyExternalUUID
+  description: Optional source external identifier; not a universal food identifier or guaranteed cross-app
+    duplicate key.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
-    relationship: "Often co-occur in animal foods; both affect lipid profiles"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
-    relationship: "High-cholesterol foods typically contain fat"
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "Cholesterol itself provides no calories"
-  - identifier: "HKQuantityTypeIdentifierDietaryProtein"
-    relationship: "Animal protein sources contain cholesterol"
+- identifier: HKQuantityTypeIdentifierDietaryFatTotal
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryFatSaturated
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryProtein
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryCholesterol"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarycholesterol"
-    type: "official"
-  - title: "Dietary Cholesterol and Cardiovascular Risk: AHA Science Advisory"
-    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000743"
-    type: "medical"
-  - title: "Dietary Guidelines for Americans 2020-2025: Cholesterol"
-    url: "https://www.dietaryguidelines.gov/"
-    type: "official"
-  - title: "Dietary Cholesterol and the Lack of Evidence in Cardiovascular Disease - Nutrients"
-    url: "https://www.mdpi.com/2072-6643/10/6/780"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryCholesterol'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarycholesterol
+  type: official
+- title: 'Apple: Nutrition type hierarchy'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'FDA: Current label Daily Values'
+  url: https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Dietary Cholesterol: Intake Logs vs Blood Cholesterol'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative logged nutrient amount; a sample may represent a food, meal or imported daily contribution.
+  cadence: Source-specific food logging or synchronization, not continuous nutrient sensing.
+  context: Workout and sleep overlap describe record timestamps; ingestion time, absorption and physiological
+    response remain unverified.
+  coverage: Missing entries are unlogged, not zero intake; sources can provide only selected nutrients.
+  aggregation: Sum compatible contributions within a source after checking serving semantics and duplicate
+    imports; report logged-day coverage.
+  metadata: Food descriptions and entry indicators are optional; temporal coincidence does not recover explicit
+    food-correlation membership.
+  references:
+  - title: 'Apple: Nutrition type identifiers'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'Apple: Sample semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-cholesterol
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified 365-day selected-user window contained no raw samples or stored aggregates for this
+    type. Coverage and primary sources were reviewed; empirical analysis was skipped because this type had
+    no observations. Value distributions, outliers, cadence, source overlap, workout/sleep comparisons and
+    empirical related-type associations were unavailable. Source guidance is presented without a measured figure.
+    Missing logs do not establish zero intake. Fixed America/Los_Angeles reporting calendar; logging timestamps
+    need not be eating times. Database absence does not establish absence in Apple Health on the phone.

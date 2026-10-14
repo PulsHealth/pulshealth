@@ -1,44 +1,30 @@
-identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Polyunsaturated Fat"
-short_description: "Polyunsaturated fatty acid intake including omega-3 and omega-6 essential fatty acids"
-icon: "drop.fill"
-color: "#5AC8FA"
-default_unit: "g"
+identifier: HKQuantityTypeIdentifierDietaryFatPolyunsaturated
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Polyunsaturated Fat
+short_description: Read polyunsaturated fat logs and understand why PUFA totals cannot resolve omega-3, omega-6,
+  EPA or DHA.
+icon: drop.fill
+color: '#5AC8FA'
+default_unit: g
 supported_units:
-  - "g"
-  - "mg"
-  - "oz"
-unit_description: "Grams (g) of polyunsaturated fatty acids (PUFA). PUFAs have two or more double bonds and include essential fatty acids that must be obtained from diet."
-aggregation_type: "cumulative"
+- g
+- mg
+- oz
+unit_description: g of logged fat (polyunsaturated); display unit for this HealthKit concept; absent from the
+  current PulsHealth collection catalog.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-typical_range:
-  min: 5
-  max: 40
-  unit: "g"
-  notes: "Average intake is 5-10% of calories. Western diets are often imbalanced with omega-6:omega-3 ratios of 15-20:1 (optimal: 4:1 or lower)."
-clinical_ranges:
-  - population: "Adults (AMDR)"
-    rda: "5-10% of total calories"
-  - population: "Linoleic Acid (omega-6) AI"
-    rda: "Men: 17g/day; Women: 12g/day"
-  - population: "Alpha-Linolenic Acid (omega-3) AI"
-    rda: "Men: 1.6g/day; Women: 1.1g/day"
-  - population: "EPA + DHA (long-chain omega-3)"
-    rda: "250-500mg/day for general health; up to 1-4g for CV disease"
-  - population: "Cardiovascular Disease"
-    rda: "1g EPA+DHA/day; consider 2-4g for elevated triglycerides"
-  - population: "Pregnancy"
-    rda: "200-300mg DHA/day minimum for fetal brain development"
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -46,112 +32,171 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "PUFA tracking; some apps differentiate omega-3 and omega-6"
-    examples:
-      - "Cronometer"
-      - "MyFitnessPal"
-      - "MacroFactor"
-  - name: "Omega-3 focused apps"
-    capability: "Specific omega-3 tracking with EPA/DHA breakdown"
-    examples:
-      - "Cronometer"
-      - "MyFitnessPal Premium"
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Dietary Polyunsaturated Fat (PUFA) represents intake of fatty acids with two or more double bonds. This category includes essential fatty acids: linoleic acid (LA, omega-6) and alpha-linolenic acid (ALA, omega-3), which cannot be synthesized by the body. Long-chain omega-3s (EPA and DHA from fatty fish) have particularly strong evidence for cardiovascular and cognitive benefits. The balance between omega-6 and omega-3 intake significantly impacts inflammatory status.
+- name: Manual entry
+  capability: User-entered amounts saved to Apple Health.
+- name: Authorized nutrition apps
+  capability: Food contributions shared with HealthKit when the source supports this specific type and has
+    write authorization.
+primary_source: Manual records or authorized nutrition apps; the source determines food composition and serving
+  semantics.
+description: '## Does polyunsaturated fat mean omega-3?
 
-  There is no established FDA Daily Value for total polyunsaturated fat. Nutrition labels are not required to list PUFA content specifically, though some products voluntarily include it. The Adequate Intake (AI) levels are set for specific essential fatty acids: linoleic acid (omega-6) and alpha-linolenic acid (omega-3).
 
-  ## Health Significance
-  Polyunsaturated fat intake impacts:
-  - **Cardiovascular Health**: Omega-3s reduce triglycerides, arrhythmia risk, and sudden cardiac death
-  - **Brain Development**: DHA is critical for fetal and infant brain and retinal development
-  - **Inflammation Regulation**: Omega-3s are anti-inflammatory; excess omega-6 relative to omega-3 may be pro-inflammatory
-  - **Cell Membrane Function**: PUFAs determine membrane fluidity and receptor function
-  - **Lipid Profiles**: Replacing saturated fat with PUFA lowers LDL cholesterol
-  - **Mental Health**: Omega-3s associated with reduced depression and cognitive decline
-  - **Immune Function**: Both omega-3 and omega-6 serve as precursors to immune signaling molecules
-  - **Skin Health**: Essential fatty acids maintain skin barrier function
+  Dietary Fat Polyunsaturated records a total logged polyunsaturated-fat amount in **g**. [Apple defines it
+  as a cumulative mass quantity](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfatpolyunsaturated).
+  It does not specify an omega-3 dose or an omega-6 amount.
 
-  ## Clinical Interpretation Guidelines
-  When assessing PUFA intake:
-  1. **Differentiate Omega-3 from Omega-6**: Total PUFA without breakdown has limited clinical utility
-  2. **Assess Omega-3 Adequacy**: Look for fatty fish intake (2+ servings/week) or supplementation
-  3. **Evaluate Omega-6:Omega-3 Ratio**: Aim for <4:1; typical Western diet is 15-20:1
-  4. **Check EPA+DHA Specifically**: ALA conversion to EPA/DHA is inefficient (5-15%)
-  5. **Consider Food Sources**: Fish oil, walnuts, flaxseed vs. soybean/corn oil
-  6. **Review Inflammatory Markers**: High PUFA imbalance may correlate with elevated hs-CRP
-  7. **Assess Oxidative Stability**: PUFAs are susceptible to oxidation; quality of oils matters
 
-  ## Deficiency Symptoms
-  Essential fatty acid deficiency (rare in developed countries) causes:
-  - Dry, scaly skin and dermatitis (omega-6 deficiency)
-  - Poor wound healing
-  - Hair loss
-  - Growth retardation in children
-  - Increased susceptibility to infections
-  - Cognitive impairment and neurological symptoms (omega-3 deficiency)
-  - Visual disturbances (DHA deficiency in infants)
-  - Reproductive issues
+  ## Which fatty-acid details are missing?
 
-  ## Excess/Toxicity
-  High PUFA intake concerns:
-  - **Oxidative Stress**: PUFAs highly susceptible to lipid peroxidation
-  - **Omega-6 Excess**: May promote inflammation if not balanced with omega-3
-  - **Bleeding Risk**: High-dose omega-3 (>3g EPA+DHA) may increase bleeding time
-  - **Fishy Taste/Odor**: High fish oil intake causes fishy burps, body odor
-  - **Mercury/Contaminants**: Large predatory fish carry heavy metals
-  - **Vitamin E Depletion**: High PUFA increases vitamin E requirements
-  - **GI Disturbance**: High fish oil doses cause nausea, diarrhea
-  - **LDL Oxidation**: Oxidized PUFA in LDL may be atherogenic
 
-  ## Special Populations
-  - **Cardiovascular Disease**: 1g/day EPA+DHA; 4g/day Vascepa (icosapent ethyl) for high TG with CVD
-  - **Elevated Triglycerides**: 2-4g/day omega-3 reduces TG 20-50%
-  - **Pregnancy/Lactation**: 200-300mg DHA daily; avoid high-mercury fish
-  - **Depression/Mental Health**: 1-2g EPA+DHA studied; EPA may be more effective than DHA
-  - **Dry Eye Disease**: Omega-3 supplementation may improve symptoms
-  - **Rheumatoid Arthritis**: 3g/day omega-3 may reduce joint inflammation
-  - **ADHD in Children**: Some evidence for omega-3 benefit; not first-line treatment
-  - **Elderly/Cognitive Decline**: Higher omega-3 intake associated with slower cognitive decline
+  [NIH describes omega-3 and omega-6 as major PUFA classes](https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/),
+  with distinct omega-3 forms including ALA, EPA and DHA. One combined HealthKit quantity cannot separate these
+  components or establish an omega-6-to-omega-3 ratio.
 
-  ## Caveats & Limitations
-  - **Total PUFA Limitation**: Without omega-3/omega-6 breakdown, difficult to assess balance
-  - **ALA vs. EPA/DHA**: Plant omega-3 (ALA) poorly converts to beneficial EPA/DHA
-  - **Supplement Quality**: Fish oil supplements vary in purity, EPA/DHA content, oxidation
-  - **Oxidation Concerns**: Rancid oils may be harmful; storage and freshness matter
-  - **Database Accuracy**: Omega-3 content varies by fish species, wild vs. farmed, season
-  - **Cooking Degradation**: High heat damages PUFAs; not suitable for high-temperature cooking
-  - **Individual Variation**: Genetic variants affect PUFA metabolism (FADS1/FADS2 genes)
+
+  | Desired answer | Additional information needed |
+
+  | --- | --- |
+
+  | Total recorded PUFA | Compatible portions and source coverage |
+
+  | Omega-3 or omega-6 amount | Verified food or supplement composition |
+
+  | EPA and DHA dose | Product-specific constituent amounts |
+
+  | Fatty-acid ratio | Both constituent amounts, not the combined PUFA total |
+
+
+  ## Should this be added to total fat?
+
+
+  PUFA is a component of total fat in [Apple''s nutrition hierarchy](https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers).
+  Adding both double counts the same contribution. Incomplete subtype composition is common enough that an
+  absent record must stay missing; it cannot establish zero PUFA in food.
+
+
+  ## Can a PUFA trend show health benefit or excess?
+
+
+  The log describes recorded intake, with food-database and portion uncertainty. It cannot establish absorption,
+  tissue fatty-acid levels or a supplement''s effect. There is no general normal range for each food sample.
+  Review supplement composition separately, and avoid applying an omega-3-specific dose recommendation to total
+  PUFA grams.
+
+
+  ## Can PulsHealth collect this type?
+
+
+  This HealthKit concept is documented in the knowledge base, but it is absent from the current PulsHealth
+  collection catalog. Automatic sync is not provided for this type by that catalog. Its absence from the database
+  does not establish that Apple Health contains no records.
+
+
+  ## When are entries recorded, and what does context mean?
+
+
+  Cadence follows food logging or source synchronization, not continuous sensing. A record whose timestamp
+  overlaps a workout or recorded sleep may describe an earlier meal or a daily summary. Review start times,
+  durations and source history before discussing meal timing. Missing days remain unlogged rather than zero
+  intake. [Health''s source controls](https://support.apple.com/en-us/108779) help when reviewing overlapping
+  apps.
+
+
+  ## What did the database investigation establish?
+
+
+  The researched **365-day reporting window** contained no raw samples or stored aggregates for this nutrient.
+  Recorded ranges, unusual portions, source overlap, recording intervals and workout or sleep comparisons were
+  unavailable. Related nutrient comparisons were unavailable because there were no records for this type. No
+  empirical nutrient association or measured chart is supported. These missing records do not establish zero
+  consumption or a deficient diet.
+
+
+  ## How can I make the log easier to interpret?
+
+
+  Check the represented serving, preserve source-specific daily totals and state how many days have usable
+  logs. Review duplicate food imports before summing sources. Food descriptions may clarify portions when supplied,
+  but absent metadata does not prove automatic measurement or complete recording.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "String identifier for the PUFA source (e.g., 'salmon', 'walnuts', 'flaxseed')"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Boolean indicating manual entry versus automatic capture"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from source app for synchronization"
+- key: HKMetadataKeyFoodType
+  description: Optional food description if supplied; it does not establish portion size or complete composition.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional indication of user entry; absence does not establish automatic measurement.
+- key: HKMetadataKeyExternalUUID
+  description: Optional source external identifier; not a universal food identifier or guaranteed cross-app
+    duplicate key.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
-    relationship: "PUFA is a component of total fat"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
-    relationship: "PUFA should preferentially replace saturated fat for cardiovascular benefit"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated"
-    relationship: "Both are unsaturated fats; PUFA less oxidatively stable than MUFA"
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "PUFA contributes to total caloric intake at 9 kcal/g"
+- identifier: HKQuantityTypeIdentifierDietaryFatTotal
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryFatMonounsaturated
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryFatSaturated
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfatpolyunsaturated"
-    type: "official"
-  - title: "Dietary Reference Intakes for Essential Fatty Acids - National Academies"
-    url: "https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids"
-    type: "research"
-  - title: "AHA Science Advisory: Omega-3 Fatty Acids and Cardiovascular Disease"
-    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000482"
-    type: "medical"
-  - title: "Omega-6/Omega-3 Essential Fatty Acid Ratio: The Scientific Evidence"
-    url: "https://pubmed.ncbi.nlm.nih.gov/12442909/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryFatPolyunsaturated'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfatpolyunsaturated
+  type: official
+- title: 'Apple: Nutrition type hierarchy'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'FDA: Current label Daily Values'
+  url: https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+- title: 'NIH: Omega-3 fatty acids'
+  url: https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Polyunsaturated Fat: PUFA, Omega-3 & Log Coverage'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative logged nutrient amount; a sample may represent a food, meal or imported daily contribution.
+  cadence: Source-specific food logging or synchronization, not continuous nutrient sensing.
+  context: Workout and sleep overlap describe record timestamps; ingestion time, absorption and physiological
+    response remain unverified.
+  coverage: Missing entries are unlogged, not zero intake; sources can provide only selected nutrients.
+  aggregation: Sum compatible contributions within a source after checking serving semantics and duplicate
+    imports; report logged-day coverage.
+  metadata: Food descriptions and entry indicators are optional; temporal coincidence does not recover explicit
+    food-correlation membership.
+  references:
+  - title: 'Apple: Nutrition type identifiers'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'Apple: Sample semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-fat-polyunsaturated
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified 365-day selected-user window contained no raw samples or stored aggregates for this
+    type. Coverage and primary sources were reviewed; empirical analysis was skipped because this type had
+    no observations. Value distributions, outliers, cadence, source overlap, workout/sleep comparisons and
+    empirical related-type associations were unavailable. Source guidance is presented without a measured figure.
+    Missing logs do not establish zero intake. Fixed America/Los_Angeles reporting calendar; logging timestamps
+    need not be eating times. Database absence does not establish absence in Apple Health on the phone.

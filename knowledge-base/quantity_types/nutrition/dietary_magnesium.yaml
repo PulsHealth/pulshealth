@@ -1,224 +1,188 @@
-identifier: "HKQuantityTypeIdentifierDietaryMagnesium"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Dietary Magnesium"
-short_description: "Magnesium intake from food and supplements, essential for energy metabolism, muscle function, and bone health."
-
-# --- APPLE HEALTH UI ---
-icon: "pills.fill"
-color: "#5856D6"
-
-default_unit: "mg"
-supported_units: ["mg", "g", "mcg"]
-aggregation_type: "cumulative"
-statistics_options: ["cumulativeSum", "separateBySource"]
-typical_range:
-  min: 0
-  max: 600
-  unit: "mg"
-clinical_ranges:
-  - population: "Infants 0-6 months"
-    rda: "30 mg/day (AI)"
-  - population: "Infants 7-12 months"
-    rda: "75 mg/day (AI)"
-  - population: "Children 1-3 years"
-    rda: "80 mg/day"
-  - population: "Children 4-8 years"
-    rda: "130 mg/day"
-  - population: "Children 9-13 years"
-    rda: "240 mg/day"
-  - population: "Teen boys 14-18 years"
-    rda: "410 mg/day"
-  - population: "Teen girls 14-18 years"
-    rda: "360 mg/day"
-  - population: "Adult men 19-30 years"
-    rda: "400 mg/day"
-  - population: "Adult men 31+ years"
-    rda: "420 mg/day"
-  - population: "Adult women 19-30 years"
-    rda: "310 mg/day"
-  - population: "Adult women 31+ years"
-    rda: "320 mg/day"
-  - population: "Pregnant women 14-18 years"
-    rda: "400 mg/day"
-  - population: "Pregnant women 19-30 years"
-    rda: "350 mg/day"
-  - population: "Pregnant women 31+ years"
-    rda: "360 mg/day"
-  - population: "Adults (supplemental magnesium only)"
-    upper_limit: "350 mg/day"
+identifier: HKQuantityTypeIdentifierDietaryMagnesium
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Dietary Magnesium
+short_description: Magnesium intake logged in Apple Health, with units, daily coverage and interpretation guidance.
+icon: pills.fill
+color: '#5856D6'
+default_unit: mg
+supported_units:
+- mg
+- g
+- mcg
+aggregation_type: cumulative
+statistics_options:
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Log dietary magnesium from foods and supplements"
-    examples: ["Cronometer", "MyFitnessPal", "Lose It!", "Yazio"]
-  - name: "Nutrition coaching platforms"
-    capability: "Track magnesium intake against personalized targets"
-    examples: ["Noom", "Nutritionix"]
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Magnesium is the fourth most abundant mineral in the body and second most abundant intracellular cation (after potassium). Approximately 60% is stored in bone, 39% in soft tissues, and only 1% in extracellular fluid. Magnesium serves as a cofactor for over 300 enzymatic reactions, making it essential for virtually every physiological process. Despite its importance, magnesium deficiency is common in Western diets due to processed food consumption and declining soil mineral content.
+- name: Manual entry
+  capability: User-entered nutrient intake saved to Health.
+- name: Authorized nutrition apps
+  capability: Recorded intake shared when the app supports this nutrient and has write authorization.
+primary_source: Manual records or authorized apps that write this dietary quantity to HealthKit.
+description: '## What does Apple Health magnesium intake record?
 
-  ## Biological Functions
-  - **ATP metabolism**: Magnesium binds to ATP; Mg-ATP complex is the active substrate for most kinases and ATPases
-  - **Protein synthesis**: Required for ribosomal function and mRNA binding
-  - **DNA/RNA synthesis**: Essential for DNA polymerase and other nucleic acid enzymes
-  - **Neuromuscular function**: Regulates calcium channels; natural calcium antagonist preventing excessive excitation
-  - **Bone structure**: About 60% of body magnesium is in bone; contributes to crystal structure
-  - **Glucose metabolism**: Required for insulin signaling; influences glucose transporter activity
-  - **Blood pressure regulation**: Modulates vascular tone through calcium channel effects
-  - **Cardiac rhythm**: Stabilizes cardiac cell membranes; prevents arrhythmias
 
-  ## Health Significance
-  Magnesium status affects cardiovascular health, metabolic function, neurological status, and bone density. Low magnesium intake is associated with increased risk of type 2 diabetes, hypertension, cardiovascular disease, osteoporosis, and migraine. The mineral also plays important roles in sleep quality, stress response, and mood regulation through its effects on the HPA axis and GABA receptors.
+  Dietary Magnesium is a cumulative mass quantity for the magnesium amount recorded as consumed. Amounts on this
+  page are expressed in **mg**. One sample can represent a food portion, a supplement entry or a source-generated
+  daily total; it is not necessarily a whole day. [Apple defines this quantity](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarymagnesium).
 
-  ## Clinical Interpretation Guidelines
-  When reviewing magnesium intake data:
-  - **Recognize widespread inadequacy**: NHANES data shows 50% of Americans consume less than the EAR
-  - **Assess total diet quality**: Magnesium-rich foods (nuts, seeds, whole grains, leafy greens) correlate with overall healthy eating
-  - **Consider absorption variability**: Gut absorption ranges from 30-50%; decreases with age and certain medications
-  - **Review related conditions**: Diabetes, alcoholism, GI disease, diuretic use all increase magnesium requirements
-  - **Note supplement forms**: Oxide is poorly absorbed but cheap; citrate, glycinate have better bioavailability
-  - **Correlate with symptoms**: Muscle cramps, poor sleep, anxiety may suggest inadequacy even with "normal" intake
 
-  ## Deficiency
-  **Causes of hypomagnesemia**:
-  - Inadequate dietary intake
-  - Alcoholism (increased renal excretion, poor diet)
-  - Diabetes mellitus (glycosuria-induced urinary losses)
-  - GI losses: Chronic diarrhea, malabsorption, short bowel syndrome
-  - Medications: Loop/thiazide diuretics, PPIs, certain antibiotics
-  - Renal diseases causing magnesium wasting
+  ## What does magnesium intake say about magnesium status?
 
-  **Symptoms**:
-  - Neuromuscular: Muscle cramps, tremor, fasciculations, tetany
-  - Cardiac: Arrhythmias (especially ventricular), prolonged QT, torsades de pointes
-  - Neurological: Seizures, altered mental status, depression, anxiety
-  - Metabolic: Hypocalcemia (impairs PTH secretion/action), hypokalemia (renal potassium wasting)
-  - General: Fatigue, weakness, loss of appetite
 
-  **Clinical pearl**: Hypomagnesemia often causes refractory hypokalemia and hypocalcemia; must correct magnesium first.
+  Magnesium supports many enzyme processes, muscle and nerve function, and energy metabolism. Logged intake measures
+  the amount entered, not its absorption or the amount in tissues. Even serum magnesium does not fully describe
+  body stores; an intake chart alone cannot diagnose a deficiency. [NIH explains magnesium assessment](https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/).
 
-  ## Toxicity/Excess
-  **Hypermagnesemia** (rare without renal impairment or iatrogenic cause):
-  - Early: Nausea, flushing, hypotension, bradycardia
-  - Moderate: Loss of deep tendon reflexes, muscle weakness
-  - Severe: Respiratory depression, cardiac arrest
 
-  **Risk populations**:
-  - Chronic kidney disease (impaired excretion)
-  - Excessive antacid/laxative use (especially in elderly with reduced renal function)
-  - IV magnesium overdose (eclampsia treatment)
+  ## Should I record magnesium or magnesium-compound weight?
 
-  **Note**: The UL of 350 mg applies only to supplemental magnesium, not food. No UL for food magnesium as no adverse effects reported from dietary sources.
 
-  ## Food Sources
-  **High magnesium foods** (>50 mg per serving):
-  - Seeds: Pumpkin seeds (156 mg/oz), chia seeds, flaxseeds
-  - Nuts: Almonds (80 mg/oz), cashews, Brazil nuts
-  - Dark chocolate (70%+ cacao): 64 mg/oz
-  - Legumes: Black beans, edamame, lima beans
-  - Whole grains: Quinoa, brown rice, oatmeal
-  - Fish: Mackerel, salmon, halibut
+  Use the elemental magnesium amount on the label. Magnesium citrate or another compound contains material besides
+  magnesium, so its compound weight is a different quantity. Foods, supplements and some medicines can contribute
+  magnesium; a food-only log may omit the other sources. Keep these contributions identifiable when the app provides
+  that detail.
 
-  **Moderate sources** (25-50 mg per serving):
-  - Leafy greens: Spinach, Swiss chard, kale
-  - Avocado
-  - Bananas
-  - Tofu
-  - Fortified cereals
 
-  **Note**: Processing removes significant magnesium (e.g., refined grains lose 80-90% of magnesium).
+  | What you see | How to read it |
 
-  ## Absorption Factors
-  **Enhancers**:
-  - Adequate protein intake
-  - Vitamin D: May increase intestinal magnesium absorption
-  - Low magnesium status: Body upregulates absorption when deficient
-  - Fermentable fibers: May increase colonic absorption
+  | --- | --- |
 
-  **Inhibitors**:
-  - Phytates: Bind magnesium (though effect less pronounced than with zinc/iron)
-  - Very high fiber intake
-  - High-dose zinc supplements: Competitive absorption
-  - Very high calcium intake (>1200 mg) may reduce magnesium absorption
-  - Oxalates: Moderate inhibitory effect
+  | Elemental magnesium | The mineral amount to record |
 
-  **Bioavailability by form**:
-  - Food sources: 30-40% absorbed
-  - Magnesium citrate: Well absorbed
-  - Magnesium glycinate: Well absorbed, less GI distress
-  - Magnesium oxide: Poorly absorbed (~4%), more likely to cause GI symptoms
-  - Magnesium sulfate: Moderate absorption
+  | Magnesium compound | Its total mass is different |
 
-  ## Special Populations
-  - **Type 2 diabetes**: Higher urinary losses; 25-38% prevalence of hypomagnesemia; adequate magnesium may improve insulin sensitivity
-  - **Alcoholics**: Multiple mechanisms of depletion; often require supplementation during recovery
-  - **Elderly**: Decreased absorption, increased renal excretion, medication effects, reduced dietary intake
-  - **Athletes**: Increased losses through sweat; may need 10-20% higher intake than RDA
-  - **GI diseases**: IBD, celiac disease, short bowel syndrome impair absorption
-  - **Diuretic users**: Loop and thiazide diuretics increase renal magnesium wasting
-  - **PPI users**: Long-term use associated with hypomagnesemia; mechanism involves reduced intestinal absorption
-  - **Pregnant women**: Requirements increase; deficiency linked to preeclampsia, preterm labor, fetal growth restriction
+  | Food versus supplement entry | Coverage and interpretation can differ |
 
-  ## Drug Interactions
-  - **Loop diuretics (furosemide)**: Increase renal magnesium excretion significantly
-  - **Thiazide diuretics**: Moderate increase in magnesium loss
-  - **Proton pump inhibitors**: Long-term use can cause hypomagnesemia
-  - **Aminoglycoside antibiotics**: Can cause renal magnesium wasting
-  - **Cisplatin**: Severe renal magnesium wasting
-  - **Amphotericin B**: Causes renal tubular damage and magnesium loss
-  - **Digoxin**: Hypomagnesemia increases digoxin toxicity risk
-  - **Bisphosphonates**: Separate from magnesium supplements by 2 hours
-  - **Tetracyclines/fluoroquinolones**: Magnesium can reduce absorption; separate by 2-4 hours
-  - **Potassium-sparing diuretics**: May reduce magnesium excretion
-  - **Calcineurin inhibitors (tacrolimus, cyclosporine)**: Increase renal magnesium loss
+  | Blood or tissue magnesium | Not measured by dietary entries |
 
-  ## Caveats & Limitations
-  - HealthKit captures intake, not serum levels or total body stores
-  - Serum magnesium represents only 1% of total body magnesium; normal levels don't exclude deficiency
-  - RBC magnesium or 24-hour urine magnesium are better status indicators than serum
-  - Supplement form significantly affects bioavailability but may not be captured in logging
-  - Processed food databases may overestimate magnesium if based on unprocessed equivalents
-  - Soil depletion has reduced magnesium in foods over decades; database values may be outdated
-  - Magnesium content in water varies significantly by region (hard vs. soft water)
-  - The UL applies only to supplemental magnesium; no upper limit for food sources
+
+  ## How often is magnesium recorded?
+
+
+  The interval between entries reflects logging or synchronization, not nutrient absorption or a validated meal
+  schedule. A midnight timestamp may be a daily summary, and multiple entries may have been added later. Review
+  source, portion and duration before summing; importing the same meal from two apps can inflate a total. A day
+  without entries is missing coverage, not zero intake.
+
+
+  ## Can I connect magnesium timing with sleep or recovery?
+
+
+  Sleep and workout timestamps offer context for reviewing a log, but a recorded overlap does not establish when
+  magnesium was taken, absorbed or had an effect. Sleep quality and recovery have many influences. First establish
+  compatible coverage and source-specific intake totals; avoid interpreting an app association as proof that magnesium
+  changed sleep.
+
+
+  ## What did the example-data investigation find?
+
+
+  The researched **365-day reporting window** contained no raw magnesium samples and no stored magnesium aggregates.
+  Recorded value ranges, unusually large entries, source-specific daily totals, logging gaps and workout or sleep
+  comparisons could not be measured. No empirical graph or nutrient-status conclusion is presented. Related measurements
+  cannot supply an intake relationship without magnesium observations.
+
+
+  ## How can I make the log more useful?
+
+
+  Check nutrient units and serving count: **1 g = 1,000 mg**, while **1 microgram = 0.001 mg**. Keep compatible
+  contributions within a source and state how many days have credible logs. [Apple allows apps to write selected
+  nutrition types](https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers), so another nutrient
+  being present does not establish complete magnesium coverage. Review [contributing Health sources](https://support.apple.com/en-us/108779)
+  after changing logging apps.
+
+
+  ## Does PulsHealth currently collect this type?
+
+
+  This HealthKit type is documented here but is not in the current PulsHealth sync catalog. The missing database
+  rows therefore cannot establish whether Apple Health on the phone contains entries. Milligrams on this page are
+  an explanatory display unit, not a promise of current sync support.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "Type of food or supplement providing magnesium"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates if value was manually entered by user"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Identifier from external nutrition tracking service"
+- key: HKMetadataKeyFoodType
+  description: Optional source-provided food description; does not establish portions, absorption or completeness.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional user-entry indicator. Absence does not prove automatic measurement.
+- key: HKMetadataKeyExternalUUID
+  description: Optional external identifier; no records were available to inspect its usage.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryCalcium"
-    relationship: "Calcium and magnesium compete for absorption; balance important for bone health"
-  - identifier: "HKQuantityTypeIdentifierDietaryPotassium"
-    relationship: "Magnesium deficiency can cause refractory hypokalemia"
-  - identifier: "HKQuantityTypeIdentifierDietaryVitaminD"
-    relationship: "Magnesium required for vitamin D activation; vitamin D may enhance magnesium absorption"
-  - identifier: "HKQuantityTypeIdentifierDietaryZinc"
-    relationship: "High-dose zinc can impair magnesium absorption"
-  - identifier: "HKQuantityTypeIdentifierDietaryPhosphorus"
-    relationship: "Both minerals contribute to bone mineralization"
+- identifier: HKQuantityTypeIdentifierDietaryCalcium
+  relationship: Related recorded context; comparisons require focal intake rows and compatible source, units and
+    reporting-day coverage.
+- identifier: HKQuantityTypeIdentifierDietaryPotassium
+  relationship: Related recorded context; comparisons require focal intake rows and compatible source, units and
+    reporting-day coverage.
+- identifier: HKQuantityTypeIdentifierDietaryWater
+  relationship: Related recorded context; comparisons require focal intake rows and compatible source, units and
+    reporting-day coverage.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryMagnesium"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietarymagnesium"
-    type: "official"
-  - title: "NIH Office of Dietary Supplements - Magnesium Fact Sheet for Health Professionals"
-    url: "https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/"
-    type: "medical"
-  - title: "American Family Physician - Magnesium Deficiency"
-    url: "https://www.aafp.org/pubs/afp/issues/2021/0901/p240.html"
-    type: "medical"
-  - title: "Nutrients Journal - Magnesium in Prevention and Therapy"
-    url: "https://www.mdpi.com/2072-6643/7/9/5388"
-    type: "research"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryMagnesium'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietarymagnesium
+  type: official
+- title: 'Apple: Nutrition type identifiers'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+- title: 'NIH Office of Dietary Supplements: Magnesium'
+  url: https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/
+  type: medical
+last_updated: '2026-10-14'
+unit_description: Milligrams of magnesium recorded as consumed; not food or compound mass, absorbed amount or blood
+  concentration.
+watchos_introduced:
+  version: '2.0'
+  year: 2015
+deprecated: false
+deprecated_in: null
+seo_title: 'Apple Health Magnesium Intake: Units, Daily Logs & Coverage'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative mineral mass logged as consumed; sample size can represent a portion or summary.
+  cadence: Source-specific entry or synchronization timing; not ingestion frequency or absorption.
+  context: Workout and sleep overlaps describe timestamps rather than physiological response.
+  coverage: Missing or partial logs do not establish zero intake or nutrient deficiency.
+  aggregation: Sum compatible contributions within a source and reporting window after reviewing units, portions
+    and duplicate imports; report logged-day coverage.
+  metadata: Optional food descriptions may aid review. Numeric amounts alone cannot establish composition, absorption
+    or completeness.
+  references:
+  - title: 'Apple: Nutrition types'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-magnesium
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified 365-day snapshot contained no raw samples or stored aggregates for this type. Ranges, outliers,
+    cadence, source distributions, workout/sleep comparisons and empirical relationships were unavailable. No measured
+    figure is presented. Missing logs are not zero intake; logging time need not be consumption time. Fixed America/Los_Angeles
+    reporting calendar.
+  review_basis: coverage_and_sources

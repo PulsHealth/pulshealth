@@ -1,44 +1,30 @@
-identifier: "HKQuantityTypeIdentifierDietaryFatSaturated"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Nutrition"
-human_readable_name: "Saturated Fat"
-short_description: "Saturated fatty acid intake from animal and tropical plant sources"
-icon: "drop.fill"
-color: "#FF3B30"
-default_unit: "g"
+identifier: HKQuantityTypeIdentifierDietaryFatSaturated
+source: HealthKit
+type: HKQuantityType
+category: Nutrition
+human_readable_name: Saturated Fat
+short_description: Read saturated-fat intake records, source coverage and the difference between grams and
+  percent of energy.
+icon: drop.fill
+color: '#FF3B30'
+default_unit: g
 supported_units:
-  - "g"
-  - "mg"
-  - "oz"
-unit_description: "Grams (g) of saturated fatty acids. Saturated fats have no double bonds in their carbon chain and are typically solid at room temperature."
-aggregation_type: "cumulative"
+- g
+- mg
+- oz
+unit_description: g of logged fat (saturated); display unit for this HealthKit concept; absent from the current
+  PulsHealth collection catalog.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-typical_range:
-  min: 5
-  max: 60
-  unit: "g"
-  notes: "Average American intake is 11-12% of calories (~25-30g). Recommendations target <10% of calories (<22g on 2000 kcal)."
-clinical_ranges:
-  - population: "Adults (Dietary Guidelines)"
-    rda: "<10% of total calories (<22g on 2000 kcal diet)"
-  - population: "Cardiovascular Disease Risk"
-    rda: "<7% of total calories (AHA recommendation)"
-  - population: "Elevated LDL Cholesterol"
-    rda: "<7% of calories; emphasize replacement with unsaturated fats"
-  - population: "Diabetes"
-    rda: "<10% of calories; focus on fat quality"
-  - population: "Ketogenic Diet"
-    rda: "Varies; often 30-50g despite high total fat"
-  - population: "Children (2-18 years)"
-    rda: "<10% of calories"
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -46,110 +32,174 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "Food tracking apps"
-    capability: "Saturated fat tracking as component of total fat"
-    examples:
-      - "MyFitnessPal"
-      - "Cronometer"
-      - "LoseIt"
-      - "Yazio"
-  - name: "Heart health focused apps"
-    capability: "Saturated fat tracking with cardiovascular risk context"
-    examples:
-      - "Fooducate"
-      - "Heart Habit"
-primary_source: "Food logging apps"
-description: |
-  ## Overview
-  Dietary Saturated Fat represents intake of fatty acids without double bonds in their carbon chain. Primary sources include animal products (meat, dairy, eggs) and tropical oils (coconut, palm). Saturated fat has been a focus of cardiovascular disease prevention guidelines for decades due to its LDL cholesterol-raising effect, though recent research has added nuance regarding saturated fat source and replacement nutrient.
+- name: Manual entry
+  capability: User-entered amounts saved to Apple Health.
+- name: Authorized nutrition apps
+  capability: Food contributions shared with HealthKit when the source supports this specific type and has
+    write authorization.
+primary_source: Manual records or authorized nutrition apps; the source determines food composition and serving
+  semantics.
+description: '## What does a saturated-fat sample measure?
 
-  The FDA Daily Value for saturated fat is 20g based on a 2,000 calorie diet (updated 2020). This represents less than 10% of total calories and is a limit rather than a target. The Dietary Guidelines recommend consuming as little saturated fat as possible within a healthy eating pattern.
 
-  ## Health Significance
-  Saturated fat intake impacts:
-  - **LDL Cholesterol**: Most potent dietary factor raising LDL; ~2 mg/dL increase per 1% energy from saturated fat
-  - **Cardiovascular Disease**: Replacement with unsaturated fats reduces CVD events
-  - **Inflammation**: Some saturated fatty acids (palmitic acid) promote inflammation
-  - **Insulin Sensitivity**: High saturated fat intake associated with insulin resistance
-  - **Cell Membrane Composition**: Affects membrane fluidity and cell function
-  - **Hepatic Fat**: May contribute to hepatic lipid accumulation
-  - **HDL Cholesterol**: Saturated fat also raises HDL, complicating risk interpretation
+  Dietary Fat Saturated records logged saturated-fat intake in **g**. [Apple defines it as a cumulative mass
+  quantity](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfatsaturated).
+  A sample may represent a food portion, recipe, meal or daily summary; it does not measure body fat or blood
+  cholesterol.
 
-  ## Clinical Interpretation Guidelines
-  When assessing saturated fat intake:
-  1. **Calculate Percentage of Calories**: g saturated fat x 9 / total calories x 100
-  2. **Compare to Guidelines**: Target <10% general population; <7% for CVD risk
-  3. **Identify Primary Sources**: Dairy, red meat, processed meat, baked goods, fried foods
-  4. **Assess Replacement Foods**: What would replace saturated fat - unsaturated fat or refined carbs?
-  5. **Review Lipid Panel**: Correlate saturated fat intake with LDL-C and triglycerides
-  6. **Consider Saturated Fat Subtypes**: Stearic acid (chocolate) is relatively neutral vs. lauric/myristic/palmitic
-  7. **Evaluate Total Dietary Pattern**: Mediterranean diet with moderate saturated fat may be acceptable
 
-  ## Deficiency Symptoms
-  Saturated fat is not essential; no deficiency syndrome exists:
-  - Body can synthesize saturated fatty acids from carbohydrates and other fats
-  - No recommended minimum intake
-  - Very low saturated fat intake (with adequate total fat) has no adverse effects
-  - Concerns about extremely low fat diets relate to total fat, not saturated specifically
+  ## How should I compare grams with dietary guidance?
 
-  ## Excess/Toxicity
-  High saturated fat intake is associated with:
-  - **Elevated LDL Cholesterol**: Primary mechanism of cardiovascular harm
-  - **Cardiovascular Disease**: Increased risk of coronary heart disease and stroke
-  - **Insulin Resistance**: Impairs insulin signaling in muscle and adipose tissue
-  - **Inflammation**: Activates inflammatory pathways via TLR4
-  - **Endothelial Dysfunction**: Impairs blood vessel function
-  - **Hepatic Steatosis**: Contributes to fatty liver development
-  - **Cognitive Decline**: Some evidence linking high saturated fat to dementia risk
-  - **Gut Microbiome Disruption**: Alters microbiome composition unfavorably
 
-  ## Special Populations
-  - **Familial Hypercholesterolemia**: Strict saturated fat limitation essential; <7% or lower
-  - **Prior Cardiovascular Events**: Very low saturated fat (<5-6% calories) recommended
-  - **Elevated Lp(a)**: Saturated fat reduction may not address Lp(a); individualized approach
-  - **Diabetes**: Replacing saturated with unsaturated fat improves insulin sensitivity
-  - **Ketogenic Diet**: Despite high total fat, quality matters; emphasize mono/polyunsaturated sources
-  - **Lean Mass Hyper-Responders**: Rare phenotype with LDL elevation on low-carb; monitoring essential
-  - **APOE4 Carriers**: May be more sensitive to saturated fat's LDL-raising effect
-  - **Elderly**: Balance CV risk reduction with adequate calorie/nutrient intake
+  [FDA uses a 20 g saturated-fat Daily Value](https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels)
+  for labels. [WHO''s dietary guidance](https://www.who.int/news-room/fact-sheets/detail/healthy-diet) limits
+  saturated fat to no more than 10% of total energy and discusses replacing it with unsaturated fats. These
+  are dietary references, not normal ranges for individual samples or personalized treatment prescriptions.
 
-  ## Caveats & Limitations
-  - **Source Matters**: Saturated fat from dairy may differ from processed meat (food matrix effects)
-  - **Replacement Nutrient Critical**: Replacing with unsaturated fat beneficial; with refined carbs neutral/harmful
-  - **Individual Variation**: LDL response to saturated fat varies (hyper-responders vs. hypo-responders)
-  - **Subtype Differences**: Not all saturated fatty acids are equivalent metabolically
-  - **Recent Controversy**: Some meta-analyses questioned saturated fat-CVD link; scientific consensus still supports limitation
-  - **Observational Limitations**: Diet studies confounded by overall dietary patterns
-  - **Food Matrix**: Cheese may have different effects than butter despite similar saturated fat content
+
+  | Comparison | What to check first |
+
+  | --- | --- |
+
+  | Grams per food | Serving size and recipe portion |
+
+  | Grams per day | Complete source-specific food logging |
+
+  | Percent of food energy | Saturated fat and calories cover compatible foods and days |
+
+  | Saturated versus total fat | Component already included in the total |
+
+
+  ## How is percent of energy calculated?
+
+
+  A rough recorded energy share is **100 × (9 × saturated-fat grams) ÷ food-energy kcal**. Only use a positive,
+  compatible food-energy denominator. Partial logs can inflate or suppress the percentage; source-specific
+  daily amounts do not guarantee a complete diet. Different units, label rounding and unmatched food coverage
+  also affect agreement.
+
+
+  ## Does a higher saturated-fat entry explain a blood result?
+
+
+  This record cannot establish a change in LDL or cardiovascular risk. A recipe portion or duplicate import
+  can create a large entry. Review the broader eating pattern and clinical measurements separately. [Apple''s
+  nutrition hierarchy](https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers) places
+  saturated fat within total fat, so adding both exaggerates intake.
+
+
+  ## Can PulsHealth collect this type?
+
+
+  This HealthKit concept is documented in the knowledge base, but it is absent from the current PulsHealth
+  collection catalog. Automatic sync is not provided for this type by that catalog. Its absence from the database
+  does not establish that Apple Health contains no records.
+
+
+  ## When are entries recorded, and what does context mean?
+
+
+  Cadence follows food logging or source synchronization, not continuous sensing. A record whose timestamp
+  overlaps a workout or recorded sleep may describe an earlier meal or a daily summary. Review start times,
+  durations and source history before discussing meal timing. Missing days remain unlogged rather than zero
+  intake. [Health''s source controls](https://support.apple.com/en-us/108779) help when reviewing overlapping
+  apps.
+
+
+  ## What did the database investigation establish?
+
+
+  The researched **365-day reporting window** contained no raw samples or stored aggregates for this nutrient.
+  Recorded ranges, unusual portions, source overlap, recording intervals and workout or sleep comparisons were
+  unavailable. Related nutrient comparisons were unavailable because there were no records for this type. No
+  empirical nutrient association or measured chart is supported. These missing records do not establish zero
+  consumption or a deficient diet.
+
+
+  ## How can I make the log easier to interpret?
+
+
+  Check the represented serving, preserve source-specific daily totals and state how many days have usable
+  logs. Review duplicate food imports before summing sources. Food descriptions may clarify portions when supplied,
+  but absent metadata does not prove automatic measurement or complete recording.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyFoodType"
-    description: "String identifier for the saturated fat source (e.g., 'butter', 'beef', 'coconut oil')"
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Boolean indicating manual entry versus automatic capture"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier from source app for synchronization"
+- key: HKMetadataKeyFoodType
+  description: Optional food description if supplied; it does not establish portion size or complete composition.
+- key: HKMetadataKeyWasUserEntered
+  description: Optional indication of user entry; absence does not establish automatic measurement.
+- key: HKMetadataKeyExternalUUID
+  description: Optional source external identifier; not a universal food identifier or guaranteed cross-app
+    duplicate key.
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDietaryFatTotal"
-    relationship: "Saturated fat is a component of total fat"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatMonounsaturated"
-    relationship: "Monounsaturated fat can replace saturated fat for CV benefit"
-  - identifier: "HKQuantityTypeIdentifierDietaryFatPolyunsaturated"
-    relationship: "Polyunsaturated fat can replace saturated fat for CV benefit"
-  - identifier: "HKQuantityTypeIdentifierDietaryCholesterol"
-    relationship: "Often co-occur in animal foods; both affect lipid profiles"
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "Saturated fat contributes to total caloric intake at 9 kcal/g"
+- identifier: HKQuantityTypeIdentifierDietaryFatTotal
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryFatMonounsaturated
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
+- identifier: HKQuantityTypeIdentifierDietaryFatPolyunsaturated
+  relationship: Compare compatible source-specific food contributions; shared timestamps alone do not establish
+    a food correlation.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierDietaryFatSaturated"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierdietaryfatsaturated"
-    type: "official"
-  - title: "Dietary Fats and Cardiovascular Disease: AHA Presidential Advisory 2017"
-    url: "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000510"
-    type: "medical"
-  - title: "Saturated Fatty Acids and Cardiovascular Disease: JACC State-of-the-Art Review"
-    url: "https://www.jacc.org/doi/10.1016/j.jacc.2020.05.077"
-    type: "research"
-  - title: "Dietary Guidelines for Americans 2020-2025: Saturated Fat"
-    url: "https://www.dietaryguidelines.gov/"
-    type: "official"
-last_updated: "2026-01-27"
+- title: 'Apple: DietaryFatSaturated'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/dietaryfatsaturated
+  type: official
+- title: 'Apple: Nutrition type hierarchy'
+  url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  type: official
+- title: 'FDA: Current label Daily Values'
+  url: https://www.fda.gov/food/nutrition-facts-label/daily-value-nutrition-and-supplement-facts-labels
+  type: official
+- title: 'Apple: Manage Health data sources'
+  url: https://support.apple.com/en-us/108779
+  type: official
+- title: 'WHO: Dietary guidance'
+  url: https://www.who.int/news-room/fact-sheets/detail/healthy-diet
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Apple Health Saturated Fat: Grams, Energy Percentage & Daily Logs'
+recording_behavior:
+  reviewed_on: '2026-10-14'
+  shape: Cumulative logged nutrient amount; a sample may represent a food, meal or imported daily contribution.
+  cadence: Source-specific food logging or synchronization, not continuous nutrient sensing.
+  context: Workout and sleep overlap describe record timestamps; ingestion time, absorption and physiological
+    response remain unverified.
+  coverage: Missing entries are unlogged, not zero intake; sources can provide only selected nutrients.
+  aggregation: Sum compatible contributions within a source after checking serving semantics and duplicate
+    imports; report logged-day coverage.
+  metadata: Food descriptions and entry indicators are optional; temporal coincidence does not recover explicit
+    food-correlation membership.
+  references:
+  - title: 'Apple: Nutrition type identifiers'
+    url: https://developer.apple.com/documentation/healthkit/nutrition-type-identifiers
+  - title: 'Apple: Sample semantics'
+    url: https://developer.apple.com/documentation/healthkit/samples
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dietary-fat-saturated
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified 365-day selected-user window contained no raw samples or stored aggregates for this
+    type. Coverage and primary sources were reviewed; empirical analysis was skipped because this type had
+    no observations. Value distributions, outliers, cadence, source overlap, workout/sleep comparisons and
+    empirical related-type associations were unavailable. Source guidance is presented without a measured figure.
+    Missing logs do not establish zero intake. Fixed America/Los_Angeles reporting calendar; logging timestamps
+    need not be eating times. Database absence does not establish absence in Apple Health on the phone.
