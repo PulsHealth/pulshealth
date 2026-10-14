@@ -318,6 +318,8 @@ describe("query semantics", () => {
       calls.push(["getSeries", `steps ${range}`, (x) => x.getSeries(USER_ID, "HKQuantityTypeIdentifierStepCount", range)]);
       calls.push(["getSeries", `sleep ${range}`, (x) => x.getSeries(USER_ID, "HKCategoryTypeIdentifierSleepAnalysis", range)]);
     }
+    calls.push(["getSleepHistory", "sleep history", (x) => x.getSleepHistory(USER_ID, 14)]);
+    calls.push(["getSleepDays", "sleep days", (x) => x.getSleepDays(USER_ID, 14)]);
     calls.push(["getDailySparklines", "sparklines", (x) => x.getDailySparklines(USER_ID, ["HKQuantityTypeIdentifierStepCount", "HKQuantityTypeIdentifierHeartRate"])]);
     calls.push(["getLatestMany", "latest", (x) => x.getLatestMany(USER_ID, ["HKQuantityTypeIdentifierHeartRate"])]);
     calls.push(["getTodayTotals", "today", (x) => x.getTodayTotals(USER_ID, ["HKQuantityTypeIdentifierStepCount"])]);
