@@ -143,3 +143,19 @@ explicit `bun --env-file` injection must also be reproduced for validation.
 A private receipt records the source, build fingerprint, invalidation and checked
 files. `--no-invalidation` deliberately leaves status `uploaded-unverified`.
 See [CONTRIBUTING.md](../CONTRIBUTING.md#task-status-and-release-evidence).
+
+## Researched knowledge-base examples
+
+The five initial researched entries carry optional `data_research` completion
+metadata and source-authored `figures`; the explorer links completed entries
+with their review dates. Type pages render question-led prose, stable section
+anchors, desktop/mobile contents navigation, static figures with captions and
+methods, full-size image links, and optional technical details. Research dates
+are distinct from article update dates and do not imply clinical certification.
+
+Figure placement uses the exact article H2 in `figures[].section`; unmatched
+figures follow the article. Actual image dimensions preserve their aspect ratio.
+Public charts use relative dates or elapsed time and explain selection, units,
+coverage, weighting and the limits of a one-person case. Raw exports, executed
+notebooks and private HTML reports stay outside the site and public repository;
+see `../notebooks/healthkit-research/README.md` for the reproducible workflow.

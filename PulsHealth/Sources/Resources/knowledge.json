@@ -1309,32 +1309,32 @@
   "HKCategoryTypeIdentifierSleepAnalysis": {
     "category_values": [
       {
-        "description": "User is in bed but sleep state is undetermined. Represents the total time from getting into bed to getting out, regardless of actual sleep.",
+        "description": "Time recorded in bed; may overlap asleep and awake intervals.",
         "name": "inBed",
         "value": 0
       },
       {
-        "description": "User is asleep but the specific sleep stage cannot be determined. Used when device lacks sleep staging capability or data is insufficient for classification.",
+        "description": "Asleep without a known stage; retain it when calculating total sleep.",
         "name": "asleepUnspecified",
         "value": 1
       },
       {
-        "description": "User is awake during a sleep session. Captures periods of wakefulness after initially falling asleep (WASO - Wake After Sleep Onset).",
+        "description": "Recorded wakefulness; Apple Watch captures Awake between sleep intervals, not necessarily at session edges.",
         "name": "awake",
         "value": 2
       },
       {
-        "description": "User is in core (light) sleep, also known as N1 and N2 NREM sleep stages. Characterized by reduced muscle activity, slower eye movements, and sleep spindles.",
+        "description": "Light or intermediate sleep; Apple maps Core to N2 and some N1.",
         "name": "asleepCore",
         "value": 3
       },
       {
-        "description": "User is in deep sleep (N3 NREM/slow-wave sleep). Most restorative stage characterized by delta brain waves, growth hormone release, and physical recovery.",
+        "description": "Recorded deep-sleep classification; an estimate rather than a clinical measurement.",
         "name": "asleepDeep",
         "value": 4
       },
       {
-        "description": "User is in REM (Rapid Eye Movement) sleep. Associated with vivid dreaming, memory consolidation, emotional processing, and temporary muscle paralysis.",
+        "description": "Recorded REM-sleep classification; an estimate rather than a clinical measurement.",
         "name": "asleepREM",
         "value": 5
       }
@@ -1342,7 +1342,7 @@
     "default_unit": null,
     "human_readable_name": "Sleep Analysis",
     "identifier": "HKCategoryTypeIdentifierSleepAnalysis",
-    "short_description": "Records sleep stages and time spent in bed, including detailed sleep architecture data.",
+    "short_description": "Understand Apple Health sleep stages, interval timing, missing nights and how to calculate time asleep without double-counting.",
     "typical_range": null
   },
   "HKCategoryTypeIdentifierSleepChanges": {
@@ -2625,11 +2625,11 @@
     "default_unit": "count/min",
     "human_readable_name": "Heart Rate",
     "identifier": "HKQuantityTypeIdentifierHeartRate",
-    "short_description": "Measures the number of times the heart beats per minute.",
+    "short_description": "Heart rate in beats per minute: understand Apple Health readings, changing recording cadence, workout and sleep context, and common interpretation pitfalls.",
     "typical_range": {
-      "max": 220,
+      "max": 210,
       "min": 30,
-      "notes": "Range encompasses bradycardia through maximum exercise heart rates. Values outside this range are physiologically rare but possible.",
+      "notes": "Apple documents this as its optical sensor's supported range. It is not a normal resting range, a population reference interval, or a hard limit for other HealthKit sources.",
       "unit": "count/min"
     }
   },
@@ -2664,11 +2664,11 @@
     "default_unit": "ms",
     "human_readable_name": "Heart Rate Variability (SDNN)",
     "identifier": "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
-    "short_description": "Measures the standard deviation of normal-to-normal heartbeat intervals, reflecting autonomic nervous system function and overall physiological resilience.",
+    "short_description": "SDNN measures variation between normal heartbeat intervals in milliseconds. Apple Watch stores short, discrete estimates; compare source, recording duration and context before interpreting a trend.",
     "typical_range": {
       "max": 200,
       "min": 10,
-      "notes": "Apple Watch typically reports short-term SDNN measurements (not 24-hour SDNN). Values vary dramatically by age, fitness, and measurement duration. Context is critical for interpretation.",
+      "notes": "Illustrative display span, not a validated clinical normal range or a measurement limit. Short SDNN estimates can fall outside it; recording duration and context matter.",
       "unit": "ms"
     }
   },
@@ -2911,13 +2911,8 @@
     "default_unit": "cm",
     "human_readable_name": "Running Vertical Oscillation",
     "identifier": "HKQuantityTypeIdentifierRunningVerticalOscillation",
-    "short_description": "The amount of vertical bounce or up-and-down movement during each running stride.",
-    "typical_range": {
-      "max": 14,
-      "min": 5,
-      "notes": "Elite runners typically exhibit 6-8 cm; recreational runners commonly show 8-12 cm. Values above 12-14 cm suggest inefficient form. Vertical oscillation tends to increase with speed but efficient runners minimize this increase.",
-      "unit": "cm"
-    }
+    "short_description": "How much your body moves up and down while running, with real Apple Health examples of ranges, recording intervals and pace context.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierSixMinuteWalkTestDistance": {
     "category_values": null,
@@ -2963,13 +2958,8 @@
     "default_unit": "count",
     "human_readable_name": "Step Count",
     "identifier": "HKQuantityTypeIdentifierStepCount",
-    "short_description": "Measures the number of steps the user has taken.",
-    "typical_range": {
-      "max": 50000,
-      "min": 0,
-      "notes": "Daily values typically range from 2,000-15,000 steps for most adults. Values above 25,000 are uncommon but possible for ultramarathon athletes or occupations requiring extensive walking.",
-      "unit": "count"
-    }
+    "short_description": "Understand Apple Health step counts, overlapping sources, daily totals and why workout records have a different cadence.",
+    "typical_range": null
   },
   "HKQuantityTypeIdentifierSwimmingStrokeCount": {
     "category_values": null,

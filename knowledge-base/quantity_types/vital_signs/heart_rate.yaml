@@ -1,284 +1,260 @@
-# ============================================
-# HEALTHKIT DATA TYPE: Heart Rate
-# ============================================
-
-# --- CORE IDENTIFICATION ---
-identifier: "HKQuantityTypeIdentifierHeartRate"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Vital Signs"
-human_readable_name: "Heart Rate"
-short_description: "Measures the number of times the heart beats per minute."
-
-# --- APPLE HEALTH UI ---
-icon: "heart.fill"
-color: "#FF2D55"
-
-# --- UNITS & MEASUREMENT ---
-default_unit: "count/min"
+identifier: HKQuantityTypeIdentifierHeartRate
+source: HealthKit
+type: HKQuantityType
+category: Vital Signs
+human_readable_name: Heart Rate
+short_description: 'Heart rate in beats per minute: understand Apple Health readings, changing recording cadence,
+  workout and sleep context, and common interpretation pitfalls.'
+icon: heart.fill
+color: '#FF2D55'
+default_unit: count/min
 supported_units:
-  - "count/min"
-  - "count/s"
-unit_description: "Beats per minute (BPM) - the standard clinical unit for heart rate measurement"
-
-# --- STATISTICS ---
-aggregation_type: "discrete"
+- count/min
+- count/s
+unit_description: Beats per minute (BPM) - the standard clinical unit for heart rate measurement
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-  - "separateBySource"
-  - "mostRecent"
-
-# --- TYPICAL VALUES ---
+- discreteAverage
+- discreteMin
+- discreteMax
+- separateBySource
+- mostRecent
 typical_range:
   min: 30
-  max: 220
-  unit: "count/min"
-  notes: "Range encompasses bradycardia through maximum exercise heart rates. Values outside this range are physiologically rare but possible."
-
+  max: 210
+  unit: count/min
+  notes: Apple documents this as its optical sensor's supported range. It is not a normal resting range, a population
+    reference interval, or a hard limit for other HealthKit sources.
 clinical_ranges:
-  - population: "Adults (resting)"
-    normal: "60-100 bpm"
-    low: "<60 bpm (bradycardia)"
-    high: ">100 bpm (tachycardia)"
-  - population: "Well-trained athletes (resting)"
-    normal: "40-60 bpm"
-    low: "<40 bpm"
-    high: ">60 bpm at rest may indicate deconditioning"
-  - population: "Children 6-15 years (resting)"
-    normal: "70-100 bpm"
-    low: "<70 bpm"
-    high: ">100 bpm"
-  - population: "Infants (resting)"
-    normal: "100-160 bpm"
-    low: "<100 bpm"
-    high: ">160 bpm"
-  - population: "Adults during moderate exercise"
-    normal: "50-70% of max HR (approx 100-140 bpm for age 40)"
-  - population: "Adults during vigorous exercise"
-    normal: "70-85% of max HR"
-    high: ">85% max HR sustained may indicate overexertion"
-
-# --- PLATFORM & AVAILABILITY ---
+- population: Adults at rest, sitting or lying calmly and feeling well
+  normal: 60–100 bpm
+  low: Below 60 bpm can occur with fitness, sleep or medication; interpret with symptoms and clinical context.
+  high: Above 100 bpm at rest can have many causes; persistent changes or symptoms warrant medical assessment.
 ios_introduced:
-  version: "8.0"
+  version: '8.0'
   year: 2014
-  notes: "Available since initial HealthKit release"
+  notes: Available since initial HealthKit release
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
-  notes: "Apple Watch has been primary heart rate data source since watchOS 2.0"
+  notes: Apple Watch has been primary heart rate data source since watchOS 2.0
 deprecated: false
 deprecated_in: null
-
-# --- PERMISSIONS & ACCESS ---
 writable: true
 requires_authorization: true
 sensitive_data: false
-
-# --- DATA SOURCES ---
 devices:
-  - name: "Apple Watch"
-    capability: "Optical heart-rate measurement using photoplethysmography (PPG). Recording cadence varies with model, settings, activity and measurement mode."
-    series: "All series"
-    accuracy: "Within 5 bpm for 98% of resting measurements (Apple internal study). Accuracy varies with activity level and movement."
-  - name: "iPhone"
-    capability: "Cannot directly measure heart rate. Acts as data aggregator from connected devices."
-  - name: "Bluetooth chest straps"
-    capability: "ECG-based measurement, generally more accurate during high-intensity exercise than optical sensors."
-    examples: ["Polar H10", "Garmin HRM-Pro", "Wahoo TICKR"]
-  - name: "Third-party wearables"
-    capability: "Various optical and ECG-based monitors can write heart rate data to HealthKit."
-    examples: ["Fitbit", "Garmin", "Whoop", "Oura Ring"]
-primary_source: "Apple Watch"
+- name: Apple Watch
+  capability: Optical photoplethysmography; supported models also provide an electrical heart sensor. Stored recording
+    cadence depends on model, settings and context.
+  series: All series
+- name: iPhone
+  capability: Cannot directly measure heart rate. Acts as data aggregator from connected devices.
+- name: Bluetooth chest straps
+  capability: ECG-based measurement, generally more accurate during high-intensity exercise than optical sensors.
+  examples:
+  - Polar H10
+  - Garmin HRM-Pro
+  - Wahoo TICKR
+- name: Third-party wearables
+  capability: Various optical and ECG-based monitors can write heart rate data to HealthKit.
+  examples:
+  - Fitbit
+  - Garmin
+  - Whoop
+  - Oura Ring
+primary_source: Apple Watch
+description: '## What does heart rate in Apple Health mean?
 
-# --- DETAILED DESCRIPTION ---
-description: |
-  ## Overview
-  Heart rate measures the number of times the heart contracts (beats) per minute. It is one of the most fundamental vital signs and provides immediate insight into cardiovascular function, fitness level, and overall physiological state. Heart rate data from consumer wearables represents the most frequently collected health metric worldwide.
+  Heart rate is the number of heartbeats per minute, usually written as bpm. Apple Health stores observations from
+  watches, connected monitors and other apps. Each record has a value and a timestamp or time interval; it is not
+  a list of every heartbeat.
 
-  ## How It's Measured
-  Apple Watch uses photoplethysmography (PPG) technology with green LED lights and light-sensitive photodiodes. The sensor detects blood volume changes in the wrist's microvasculature:
 
-  - **Green LEDs** flash hundreds of times per second
-  - Blood absorbs green light; more blood = more absorption
-  - The varying light absorption pattern corresponds to heartbeats
-  - Algorithms filter motion artifacts and calculate beat-to-beat intervals
+  Use this page to understand the shape of those records before interpreting a trend. Three questions make a large
+  difference: **which source recorded it, what was happening, and how often were readings saved?**
 
-  **Measurement contexts on Apple Watch:**
-  - Background recording varies by device model, settings and activity; it has no single universal cadence
-  - Workout recording can be more frequent; inspect stored timestamps rather than assuming a fixed interval
-  - On-demand readings when viewing the Heart Rate app
 
-  **Accuracy considerations:**
-  - Resting: 98% within 5 bpm, 99.7% within 10 bpm
-  - During exercise: 87-96% within 5 bpm depending on activity type
-  - Motion artifact significantly impacts accuracy during vigorous arm movement
+  ## How does Apple Watch measure heart rate?
 
-  ## Health Significance
-  Heart rate serves as a window into autonomic nervous system function and cardiovascular health:
+  Apple Watch''s optical sensor uses light to detect changing blood flow at the wrist. Supported models also have
+  an electrical sensor used through the Heart Rate or ECG apps. Fit, wrist blood flow, movement and some tattoos
+  can affect optical measurements; an occasional extreme value can be an anomaly. [Apple explains measurement modes](https://support.apple.com/en-us/120277)
+  and [measurement limitations](https://support.apple.com/en-us/105002).
 
-  - **Resting heart rate trends** correlate with cardiovascular fitness and mortality risk
-  - **Heart rate response to exercise** indicates cardiorespiratory fitness
-  - **Acute elevations** may signal stress, illness, dehydration, or cardiac events
-  - **Chronic elevations** associated with increased cardiovascular disease risk
 
-  Research shows that resting heart rate is an independent predictor of all-cause mortality, with each 10 bpm increase associated with a 10-20% higher mortality risk in epidemiological studies.
+  Recording behavior changes with hardware and settings. Apple''s September 2026 documentation describes daylight
+  measurements as often as every five seconds on Series 12 and Ultra 4 with continuous measurements enabled. That
+  does not make a five-second schedule universal across Apple Health history. A stored timestamp span also does
+  not describe the optical sensor''s internal sampling frequency.
 
-  ## Clinical Interpretation Guidelines
 
-  ### Normal Values
-  - **Adults at rest:** 60-100 bpm (AHA/Mayo Clinic standard)
-  - **Athletes:** 40-60 bpm is common and healthy
-  - **During sleep:** Heart rate naturally decreases 10-20% below daytime resting rate
-  - **Maximum heart rate estimate:** 220 minus age (individual variation of +/- 12 bpm)
+  ## What did real Apple Health records show?
 
-  ### Elevated Values (Tachycardia >100 bpm at rest) May Indicate
-  - Fever or infection
-  - Dehydration
-  - Anxiety or panic
-  - Stimulant use (caffeine, medications, illicit drugs)
-  - Anemia
-  - Hyperthyroidism
-  - Heart failure compensation
-  - Arrhythmias (atrial fibrillation, SVT, VT)
-  - Pain
-  - Blood loss
-  - Pulmonary embolism
+  The figures use **one consenting person''s stored Apple Health records**, analyzed over a full reporting year
+  with a 92-day focus. To avoid pooling different source groups, both charts select the source group with the most
+  heart-rate records in that focus window. They show observations, not population targets.
 
-  ### Low Values (Bradycardia <60 bpm) May Indicate
-  - High cardiovascular fitness (benign in athletes)
-  - Beta-blocker or calcium channel blocker use
-  - Hypothyroidism
-  - Sleep (normal)
-  - Sick sinus syndrome
-  - Heart block
-  - Hypothermia
-  - Increased intracranial pressure
 
-  ### Red Flags for Immediate Consultation
-  - Resting heart rate persistently >100 bpm with symptoms (palpitations, chest pain, shortness of breath)
-  - Heart rate <40 bpm with dizziness, fainting, or fatigue
-  - Sudden unexplained changes of >20 bpm from baseline
-  - Heart rate not recovering after exercise cessation
-  - Irregular rhythm detection combined with high/low heart rate
-  - Heart rate >200 bpm during exercise (especially if approaching or exceeding calculated max)
-  - New-onset tachycardia at rest without clear explanation
+  | Recorded context | Readings | Median | Middle 90% of readings |
 
-  ## Caveats & Limitations
+  | --- | ---: | ---: | ---: |
 
-  ### Measurement Limitations
-  - **Motion artifact:** Accuracy drops significantly during activities with arm movement
-  - **Tattoos:** Dark tattoos may interfere with optical sensor readings
-  - **Cold extremities:** Vasoconstriction reduces signal quality
-  - **Loose watch fit:** Poor skin contact degrades accuracy
-  - **Arrhythmias:** PPG sensors may miscount during irregular rhythms
+  | Sleep overlap | 257 | 53 bpm | 48–60 bpm |
 
-  ### Interpretation Limitations
-  - Single readings are less meaningful than trends over time
-  - Context matters: heart rate varies dramatically with activity, posture, temperature, and emotional state
-  - Consumer devices cannot diagnose arrhythmias (though Apple Watch can detect irregular rhythm patterns)
-  - Heart rate alone cannot differentiate between cardiac and non-cardiac causes of abnormal values
+  | Workout overlap | 32,248 | 118 bpm | 86–157 bpm |
 
-  ### What Heart Rate Cannot Tell You
-  - Blood pressure
-  - Cardiac output or stroke volume
-  - Presence or absence of structural heart disease
-  - Specific arrhythmia diagnosis
-  - Adequacy of tissue perfusion
+  | Other or unknown | 23,002 | 76 bpm | 60–116 bpm |
 
-  ## Additional Notes
 
-  **Metadata context:** Heart rate samples may include HKMetadataKeyHeartRateMotionContext to indicate not-set, sedentary or active context. Active includes working out; this key does not distinguish a workout session from other movement.
+  The sleep subset spans only **five observed days**, while workout readings span 48 and other readings span all
+  92. Another source supplied much of the person''s sleep data. The chart therefore illustrates both contextual
+  differences and uneven source coverage; it cannot estimate a typical person''s sleeping heart rate.
 
-  **Related notifications:** Apple Watch can generate high heart rate (>120 bpm threshold configurable), low heart rate (<40 bpm threshold configurable), and irregular rhythm notifications, which create corresponding HKCategoryType samples.
 
-  **For health consultants:** When reviewing heart rate data, always consider:
-  1. Time of day and activity context
-  2. Recent caffeine, alcohol, or medication use
-  3. Sleep quality and stress levels
-  4. Hydration status
-  5. Illness or infection
-  6. Trends over weeks/months rather than individual readings
+  Contexts use timestamp overlap with recorded workouts and asleep intervals. “Other or unknown” includes ordinary
+  movement, rest and missing context. It is not a resting-heart-rate measurement. A workout overlap is a useful
+  label, but does not prove that the workout produced the sample.
 
-# --- METADATA KEYS ---
+
+  ## How often are heart-rate readings recorded?
+
+  In the selected source, the median positive gap **within recorded workout episodes** was five seconds; the middle
+  90% was one to nine seconds. Within recorded sleep episodes, the median was about 4.1 minutes, with a middle 90%
+  of roughly 43 seconds to 8.1 minutes. These are measured distributions for this example, not promised recording
+  intervals.
+
+
+  The cadence figure shows the percentage of gaps at or below each duration. Workout and sleep curves exclude time
+  between separate episodes. The other/unknown curve uses consecutive records in that context and can include both
+  short bursts and long gaps. Comparing a single mean interval would hide these differences.
+
+
+  A day with readings does not establish continuous monitoring. A gap cannot by itself distinguish charging, non-wear,
+  unavailable readings, recording policy or missing synchronization. Keep zero-length sample durations, zero timestamp
+  gaps and missing intervals separate: they describe different things.
+
+
+  ## Why can an average heart rate be misleading?
+
+  A mean across saved readings weights each record equally. When workouts generate many more records per minute,
+  they contribute much more than their share of elapsed time.
+
+
+  In the full-year example, the mean across all 203,272 records was **81.6 bpm**. Averaging each observed day''s
+  sample mean equally gave **75.6 bpm**. Neither is a time-weighted all-day heart rate, and neither is Apple''s
+  dedicated resting-heart-rate estimate. The difference demonstrates how recording density and daily activity can
+  change a summary.
+
+
+  Use the [Resting Heart Rate entry](/knowledge-base/types/HKQuantityTypeIdentifierRestingHeartRate/) for that separate
+  estimate. For your own trends, compare like-for-like sources and contexts, and state the averaging method.
+
+
+  ## How should I interpret unusual values?
+
+  The full-year snapshot contained one stored zero. It was retained in the research and flagged as an invalid physiological
+  heart-rate observation; silently deleting it would conceal a data-quality issue. Other low or high values were
+  checked against neighboring readings, source and context. Some high readings appeared outside a recorded workout,
+  showing why lack of workout overlap is not proof of rest.
+
+
+  A statistical outlier is a prompt to inspect a record, not a diagnosis or proof of sensor error. Check the same
+  source''s nearby readings, movement context and interval duration before deciding whether an observation belongs
+  in a summary. Avoid turning a broad optical support range into a clinical normal range or a universal validation
+  rule.
+
+
+  For adults who are calmly resting and feeling well, the American Heart Association describes **60–100 bpm** as
+  a usual resting range. Fitness, medication and sleep can produce lower values; exercise normally raises heart
+  rate. Interpretation depends on the person and symptoms. [AHA''s heart-rate guidance](https://www.heart.org/en/health-topics/high-blood-pressure/the-facts-about-high-blood-pressure/all-about-heart-rate-pulse)
+  advises urgent help for a sudden very high or low rate with symptoms such as chest pain, breathlessness, dizziness
+  or fainting.
+
+
+  ## Which related measurements add useful context?
+
+  [Heart-rate variability](/knowledge-base/types/HKQuantityTypeIdentifierHeartRateVariabilitySDNN/) describes variation
+  in beat intervals, not the number of beats per minute. Sleep-stage intervals, respiratory rate and workout timing
+  can also help explain changing heart-rate patterns.
+
+
+  The research paired daily summaries with these types and compared workout phases and recorded sleep stages. These
+  are exploratory comparisons within one person. Different sampling schedules, medication, illness, movement and
+  source changes can affect both measures. An association does not establish a mechanism; pooled all-day averages
+  are especially vulnerable to recording-density effects.
+
+
+  ## What should developers preserve?
+
+  Keep canonical beats-per-minute values, original sample boundaries, source revisions and raw metadata. Heart-rate
+  motion context uses **0 = not set, 1 = sedentary, 2 = active**. Active includes movement or working out; it is
+  not an explicit workout link. [Apple documents the motion-context metadata](https://developer.apple.com/documentation/healthkit/hkmetadatakeyheartratemotioncontext).
+
+
+  Some historical exports serialized this enum as booleans. This research retained the original representation and
+  applied the database''s narrowly documented legacy decoder for this key only. Do not extend that conversion to
+  arbitrary boolean metadata or reinterpret “not set” as sedentary.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeyHeartRateMotionContext"
-    description: "Indicates the user's activity state when the heart rate sample was recorded"
-    values:
-      - "notSet (0) - Context not available"
-      - "sedentary (1) - User was stationary"
-      - "active (2) - User was in motion or working out"
-  - key: "HKMetadataKeyHeartRateSensorLocation"
-    description: "Indicates where on the body the heart rate sensor was placed"
-    values:
-      - "chest (1)"
-      - "wrist (2)"
-      - "finger (3)"
-      - "hand (4)"
-      - "earLobe (5)"
-      - "foot (6)"
-
-# --- RELATED TYPES ---
+- key: HKMetadataKeyHeartRateMotionContext
+  description: Indicates the user's activity state when the heart rate sample was recorded
+  values:
+  - notSet (0) - Context not available
+  - sedentary (1) - User was stationary
+  - active (2) - User was in motion or working out
 related_types:
-  - identifier: "HKQuantityTypeIdentifierRestingHeartRate"
-    relationship: "Derived from - Apple calculates resting HR from heart rate samples taken during periods of inactivity"
-  - identifier: "HKQuantityTypeIdentifierWalkingHeartRateAverage"
-    relationship: "Derived from - Calculated from heart rate samples taken during walking"
-  - identifier: "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
-    relationship: "Complementary - HRV is calculated from beat-to-beat interval data"
-  - identifier: "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute"
-    relationship: "Derived from - Calculated from HR at peak exercise vs. 1 minute post-exercise"
-  - identifier: "HKCategoryTypeIdentifierHighHeartRateEvent"
-    relationship: "Triggered by - Generated when heart rate exceeds user-defined threshold while inactive"
-  - identifier: "HKCategoryTypeIdentifierLowHeartRateEvent"
-    relationship: "Triggered by - Generated when heart rate drops below user-defined threshold"
-  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
-    relationship: "Complementary - Detected from analysis of heart rate rhythm patterns"
-
-# --- REFERENCES ---
+- identifier: HKQuantityTypeIdentifierRestingHeartRate
+  relationship: Derived from - Apple calculates resting HR from heart rate samples taken during periods of inactivity
+- identifier: HKQuantityTypeIdentifierWalkingHeartRateAverage
+  relationship: Derived from - Calculated from heart rate samples taken during walking
+- identifier: HKQuantityTypeIdentifierHeartRateVariabilitySDNN
+  relationship: Complementary - HRV is calculated from beat-to-beat interval data
+- identifier: HKQuantityTypeIdentifierHeartRateRecoveryOneMinute
+  relationship: Derived from - Calculated from HR at peak exercise vs. 1 minute post-exercise
+- identifier: HKCategoryTypeIdentifierHighHeartRateEvent
+  relationship: Triggered by - Generated when heart rate exceeds user-defined threshold while inactive
+- identifier: HKCategoryTypeIdentifierLowHeartRateEvent
+  relationship: Triggered by - Generated when heart rate drops below user-defined threshold
+- identifier: HKCategoryTypeIdentifierIrregularHeartRhythmEvent
+  relationship: Complementary - Detected from analysis of heart rate rhythm patterns
 references:
-  - title: "Apple Developer Documentation - heartRate"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/heartrate"
-    type: "official"
-  - title: "Heart rate: What's normal? - Mayo Clinic"
-    url: "https://www.mayoclinic.org/healthy-lifestyle/fitness/expert-answers/heart-rate/faq-20057979"
-    type: "medical"
-  - title: "All About Heart Rate - American Heart Association"
-    url: "https://www.heart.org/en/health-topics/high-blood-pressure/the-facts-about-high-blood-pressure/all-about-heart-rate-pulse"
-    type: "medical"
-  - title: "Target Heart Rates Chart - American Heart Association"
-    url: "https://www.heart.org/en/healthy-living/fitness/fitness-basics/target-heart-rates"
-    type: "medical"
-  - title: "Validity and Reliability of the Apple Watch for Measuring Heart Rate During Exercise"
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6226089/"
-    type: "research"
-
-# --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-10-08"
-research_notes: |
-  - iOS 8.0 introduction confirmed via Apple Developer Documentation
-  - Clinical ranges sourced from Mayo Clinic and AHA guidelines
-  - Apple Watch accuracy data from Apple internal study (November 2024) and PMC research articles
-  - Metadata keys confirmed via HealthKit framework headers and developer documentation
-
-# Recording and interpretation guidance; personal observations are kept separately.
+- title: 'Apple: Monitor your heart rate with Apple Watch'
+  url: https://support.apple.com/en-us/120277
+  type: official
+- title: 'Apple: Get the most accurate measurements using your Apple Watch'
+  url: https://support.apple.com/en-us/105002
+  type: official
+- title: 'Apple Developer Documentation: heartRate'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/heartrate
+  type: official
+- title: 'Apple Developer Documentation: heart-rate motion context'
+  url: https://developer.apple.com/documentation/healthkit/hkmetadatakeyheartratemotioncontext
+  type: official
+- title: 'American Heart Association: All About Heart Rate'
+  url: https://www.heart.org/en/health-topics/high-blood-pressure/the-facts-about-high-blood-pressure/all-about-heart-rate-pulse
+  type: medical
+last_updated: '2026-10-14'
+research_notes: Completed an executed, rerunnable private notebook against a full-year database snapshot. Standard
+  facets were followed by motion-metadata provenance, neighboring extreme readings, within-episode cadence, workout-phase
+  and sleep-stage comparisons, and exploratory related-type pairings. Public figures are source-selected aggregates;
+  unsupported accuracy percentages and fixed recording schedules were removed. Primary references reviewed on 2026-10-14.
 recording_behavior:
   reviewed_on: '2026-10-08'
-  shape: A numeric heart-rate observation can be a point or an interval. The stored timestamp span is not the
-    optical sensor sampling rate.
-  cadence: Recording frequency depends on device model, software, settings, activity and measurement mode.
-    Compare distributions within a source and context; do not assume one fixed background or workout schedule.
-  context: Separate recorded workouts, recorded sleep and other periods using explicit timestamp rules. Motion
-    context active (2) includes movement or working out; it does not identify a workout session by itself.
-  coverage: A day containing readings is not evidence of continuous wear or uninterrupted monitoring. A gap
-    alone does not reveal whether the device was off, unreadable, not worn or simply not recording.
-  aggregation: A mean across records gives densely sampled periods more weight. State whether a summary is
-    sample-weighted, time-weighted or computed by HealthKit; avoid treating these as interchangeable.
-  metadata: 'HKMetadataKeyHeartRateMotionContext is a numeric enum: 0 not set, 1 sedentary, 2 active. Preserve
-    unexpected representations as provenance; a known legacy serialization issue must not become a general
-    boolean-to-number conversion rule.'
+  shape: A numeric heart-rate observation can be a point or an interval. The stored timestamp span is not the optical
+    sensor sampling rate.
+  cadence: Recording frequency depends on device model, software, settings, activity and measurement mode. Compare
+    distributions within a source and context; do not assume one fixed background or workout schedule.
+  context: Separate recorded workouts, recorded sleep and other periods using explicit timestamp rules. Motion context
+    active (2) includes movement or working out; it does not identify a workout session by itself.
+  coverage: A day containing readings is not evidence of continuous wear or uninterrupted monitoring. A gap alone
+    does not reveal whether the device was off, unreadable, not worn or simply not recording.
+  aggregation: A mean across records gives densely sampled periods more weight. State whether a summary is sample-weighted,
+    time-weighted or computed by HealthKit; avoid treating these as interchangeable.
+  metadata: 'HKMetadataKeyHeartRateMotionContext is a numeric enum: 0 not set, 1 sedentary, 2 active. Preserve unexpected
+    representations as provenance; a known legacy serialization issue must not become a general boolean-to-number
+    conversion rule.'
   references:
   - title: 'Apple: heart-rate measurement modes'
     url: https://support.apple.com/en-us/120277
@@ -286,3 +262,55 @@ recording_behavior:
     url: https://developer.apple.com/documentation/healthkit/hkmetadatakeyheartratemotioncontext
   - title: 'Apple: HealthKit sample time semantics'
     url: https://developer.apple.com/documentation/healthkit/samples
+seo_title: 'Apple Health Heart Rate: Readings, Cadence, Sleep & Workouts'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: heart-rate
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: One person; observational records, not population reference ranges. Fixed America/Los_Angeles reporting
+    calendar. Source selection has only five days of recorded sleep in the 92-day focus. Interval overlap does not
+    establish workout association. Source grouping is not persistent device identity. Sample-weighted summaries
+    are affected by informative recording. First snapshot day excluded from related daily comparisons because context
+    can span the export boundary.
+figures:
+- src: /knowledge-base/figures/heart-rate/context-ranges.svg
+  alt: 'Source-selected heart-rate distributions: recorded sleep readings cluster lower than workout readings, with
+    other or unknown readings spread between them.'
+  title: Heart rate changes with recorded context
+  caption: Actual records from one consenting person's stored Apple Health data. The selected source contributes
+    257 sleep-overlap readings across only five days, 32,248 workout-overlap readings across 48 days and 23,002
+    other readings across 92 days. These distributions are examples, not healthy target ranges.
+  methods: 92-day focus, America/Los_Angeles reporting calendar. Largest heart-rate source group by bundle identifier
+    and display name; versions combined. Five-bpm histogram bins normalized within each context. Half-open timestamp
+    overlap with recorded workouts or asleep categories; dual overlap omitted. No dates, identifiers or source display
+    names shown.
+  section: What did real Apple Health records show?
+  width: 864
+  height: 442
+- src: /knowledge-base/figures/heart-rate/context-cadence.svg
+  alt: 'Cumulative positive timestamp-gap curves on a logarithmic seconds axis: selected-source workout gaps are
+    usually a few seconds, while recorded-sleep gaps are usually several minutes.'
+  title: Cadence is a distribution, not a fixed schedule
+  caption: Actual observations from the same selected source and 92-day window. Workout and sleep gaps are measured
+    within merged recorded episodes, excluding time between episodes. Other/unknown uses consecutive same-context
+    records and can include intervening episodes. Sleep coverage is limited to five observed days.
+  methods: Positive start-to-start timestamp gaps; zero gaps excluded and assessed separately in the notebook. Each
+    context normalized to 100%; x-axis logarithmic seconds. Sources are not mixed. Recorded asleep categories 1,
+    3, 4 and 5 merged for episode timing. Other/unknown is not a rest-only category. Stored cadence is not optical
+    sensor sampling frequency.
+  section: How often are heart-rate readings recorded?
+  width: 864
+  height: 442
