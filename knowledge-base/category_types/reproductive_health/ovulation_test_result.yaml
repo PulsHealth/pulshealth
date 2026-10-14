@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierOvulationTestResult"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Reproductive Health"
-human_readable_name: "Ovulation Test Result"
-short_description: "Records results from ovulation predictor kit (OPK) tests that detect the LH surge preceding ovulation."
-icon: "testtube.2"
-color: "#AF52DE"
+identifier: HKCategoryTypeIdentifierOvulationTestResult
+source: HealthKit
+type: HKCategoryType
+category: Reproductive Health
+human_readable_name: Ovulation Test Result
+short_description: Understand Apple Health LH and estrogen surge results, recorded testing cadence and limits of
+  ovulation inference.
+icon: testtube.2
+color: '#AF52DE'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,23 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 1
-    name: "negative"
-    description: "Test line is lighter than control line, indicating LH levels have not yet surged. Ovulation is not imminent."
-  - value: 2
-    name: "luteinizingHormoneSurge"
-    description: "Test line is equal to or darker than control line, indicating the LH surge has been detected. Ovulation typically occurs within 24-36 hours."
-  - value: 3
-    name: "indeterminate"
-    description: "Test result is unclear or invalid, possibly due to testing error, diluted urine, or faulty test strip."
-  - value: 4
-    name: "estrogenSurge"
-    description: "For advanced digital OPKs that detect estrogen rise before LH surge, indicating high fertility is approaching but peak has not yet been reached."
+- value: 1
+  name: negative
+  description: A negative result was recorded.
+- value: 2
+  name: luteinizingHormoneSurge
+  description: An LH surge was recorded; deprecated positive is an alias for this value.
+- value: 3
+  name: indeterminate
+  description: An inconclusive result was recorded.
+- value: 4
+  name: estrogenSurge
+  description: An estrogen surge was recorded.
 ios_introduced:
-  version: "9.0"
+  version: '9.0'
   year: 2015
 watchos_introduced:
-  version: "2.0"
+  version: '2.0'
   year: 2015
 deprecated: false
 deprecated_in: null
@@ -38,80 +39,120 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "Manual logging of OPK results through Health app or fertility apps"
-  - name: "Apple Watch"
-    capability: "Manual logging through Cycle Tracking app"
-  - name: "Connected fertility devices"
-    capability: "Smart OPK readers like Mira or Inito can automatically log results"
-  - name: "Third-party apps"
-    capability: "Fertility apps that track ovulation test results"
-primary_source: "User-reported or Connected Device"
-description: |
-  ## Overview
-  Ovulation predictor kits (OPKs) detect the surge in luteinizing hormone (LH) that occurs 24-36 hours before ovulation. This LH surge triggers the release of a mature egg from the ovary. By testing daily during the expected fertile window, users can identify their most fertile days for conception or predict ovulation timing for natural family planning.
+- name: Manual entry or authorized source app
+  capability: Stores logged observations or results; supported writing workflows depend on the source app.
+primary_source: Logged observations or test results
+description: '## Overview
 
-  Standard OPKs provide a positive/negative result based on LH detection. Advanced digital tests may also detect rising estrogen levels, which precede the LH surge by 1-2 days, providing an earlier fertility indicator. Quantitative OPK readers can measure exact hormone levels, offering more precise tracking.
+  An ovulation test result in Apple Health is a saved qualitative result from a home test. It can distinguish a
+  detected luteinizing-hormone surge from an estrogen surge, but it does not store a hormone concentration or prove
+  that ovulation occurred.
 
-  ## Health Significance
-  Ovulation test results provide objective confirmation of hormonal function and cycle timing:
-  - **Fertility optimization**: Identifies the 24-48 hour window of peak fertility for couples trying to conceive
-  - **Ovulation confirmation**: Regular positive LH tests suggest consistent ovulation is occurring
-  - **Cycle timing**: Helps establish pattern of ovulation timing within each cycle
-  - **Anovulation detection**: Persistently negative tests throughout a cycle may indicate anovulation
-  - **PCOS indicator**: Women with PCOS may have elevated baseline LH, causing false positives or prolonged positive readings
-  - **Luteal phase assessment**: Days from LH surge to next period indicates luteal phase length
 
-  ## Clinical Interpretation Guidelines
-  When reviewing ovulation test data:
-  - **Testing timing**: Tests should be performed in afternoon or evening (not first morning urine) for most accurate LH detection
-  - **Surge duration**: LH surge typically lasts 12-24 hours; testing once daily may occasionally miss the surge
-  - **Ovulation timing**: Ovulation occurs approximately 24-36 hours after LH surge detection; the day of positive test and following day are most fertile
-  - **Pattern analysis**:
-    - Consistent positive results around cycle day 12-16 suggest normal ovulatory cycles
-    - Very early or late surges may indicate hormonal imbalances
-    - Multiple surges per cycle can indicate PCOS or peri-ovulatory LH fluctuations
-  - **Negative results throughout cycle**: Consider anovulatory cycle, testing at wrong time, or testing window too narrow
-  - **Indeterminate results**: Often caused by testing too early/late in day, diluted urine, or expired tests
-  - **Estrogen surge results**: Indicates fertility is rising; expect LH surge within 1-2 days
+  ## Which results can be saved?
 
-  ## Caveats & Limitations
-  - Does not confirm ovulation occurred, only that LH surge was detected
-  - Some women have short LH surges that may be missed with once-daily testing
-  - Elevated baseline LH in PCOS can cause false positives or difficulty interpreting results
-  - Certain medications (fertility drugs, HCG injections) can affect results
-  - Recently discontinued hormonal contraceptives may cause irregular patterns
-  - Testing technique and hydration levels affect result accuracy
-  - Standard OPKs provide qualitative (yes/no) results; subtle variations in LH levels are not captured
-  - Does not indicate egg quality or whether ovulation will result in successful fertilization
-  - Perimenopause may cause erratic LH patterns
+  | Code | Result | What it records |
+
+  | --- | --- | --- |
+
+  | 1 | Negative | A negative test result |
+
+  | 2 | Luteinizing hormone surge | A detected LH surge, often labeled positive or peak |
+
+  | 3 | Indeterminate | An inconclusive result |
+
+  | 4 | Estrogen surge | A detected estrogen surge, often labeled high |
+
+
+  The deprecated positive constant is an alias for code 2, not a fifth distinct result. Device labels vary; record
+  the meaning documented for the test instead of treating every “high” result as the same hormone signal. These
+  category codes should never be averaged.
+
+
+  ## Why can the spacing between results change?
+
+  This is a testing and logging series, not automatic continuous monitoring. Testing may be concentrated into part
+  of a cycle, repeated on a day or left unrecorded. A long gap describes the saved record, not the duration of a
+  hormone surge. Follow the instructions for the particular test; the HealthKit category does not contain a universal
+  testing schedule.
+
+
+  A useful timeline would show separate result categories, distinguish sources and leave gaps visible. Counts of
+  positive results require a denominator of recorded tests; they cannot establish a hormone concentration, an ovulation
+  rate or the fraction of cycles with ovulation.
+
+
+  ## What do menstrual flow and temperature add?
+
+  Verified period-start markers can provide a recorded cycle-day reference. Basal temperature and cervical-mucus
+  entries can offer additional observations, but missing days and differing timestamps limit alignment. Same-day
+  results are descriptive neighbors, not a HealthKit linkage or independent confirmation of ovulation.
+
+
+  Sleep and workout overlap may reveal logging habits if timestamps are meaningful. They do not show that a workout
+  or sleep stage caused a result. Distinguish when a result was entered from when a test was taken if the source
+  provides that detail.
+
+
+  ## What did the example data show?
+
+  No ovulation-test results were available in the research window. Result frequencies, repeated tests, inter-test
+  cadence and relationships with period starts could not be measured; no example plot is supplied.
+
+
+  ## What should not be inferred?
+
+  A negative record does not prove that no surge occurred at another time, and a surge category does not prove egg
+  release. No record means unknown. Do not derive pregnancy chances or a contraceptive window from these labels;
+  Apple says Cycle Tracking should not be used as birth control.
+
+  '
 metadata_keys:
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Unique identifier used to sync samples across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
+- key: HKMetadataKeySyncIdentifier
+  description: Unique identifier used to sync samples across devices
+- key: HKMetadataKeySyncVersion
+  description: Version number for sync conflict resolution
 related_types:
-  - identifier: "HKCategoryTypeIdentifierCervicalMucusQuality"
-    relationship: "Cervical mucus observations complement OPK testing for fertility awareness"
-  - identifier: "HKQuantityTypeIdentifierBasalBodyTemperature"
-    relationship: "Temperature rise confirms ovulation occurred after positive OPK; used together for comprehensive tracking"
-  - identifier: "HKCategoryTypeIdentifierProgesteroneTestResult"
-    relationship: "Progesterone testing confirms ovulation occurred; should follow positive OPK by 5-7 days"
-  - identifier: "HKCategoryTypeIdentifierSexualActivity"
-    relationship: "Timing intercourse with positive OPK maximizes conception probability"
-  - identifier: "HKCategoryTypeIdentifierMenstrualFlow"
-    relationship: "Cycle tracking provides context for expected ovulation timing"
+- identifier: HKCategoryTypeIdentifierCervicalMucusQuality
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKQuantityTypeIdentifierBasalBodyTemperature
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierProgesteroneTestResult
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierSexualActivity
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
+- identifier: HKCategoryTypeIdentifierMenstrualFlow
+  relationship: Separate recorded context; date alignment does not establish linkage, cause or clinical confirmation.
 references:
-  - title: "HKCategoryTypeIdentifierOvulationTestResult - Apple Developer Documentation"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierovulationtestresult"
-    type: "official"
-  - title: "Ovulation Predictor Kits - ACOG"
-    url: "https://www.acog.org/womens-health/faqs/evaluating-infertility"
-    type: "medical"
-  - title: "Timing of Intercourse in Relation to Ovulation - NEJM"
-    url: "https://www.nejm.org/doi/full/10.1056/NEJM199512073332301"
-    type: "research"
-  - title: "Urinary LH Detection for Ovulation Prediction - Human Reproduction"
-    url: "https://academic.oup.com/humrep/article/30/7/1699/619257"
-    type: "research"
-last_updated: "2026-01-27"
+- title: Ovulation Test Result — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/ovulationtestresult
+  type: official
+- title: Category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueovulationtestresult
+  type: official
+- title: Cycle Tracking — Apple Support
+  url: https://support.apple.com/en-us/120356
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Ovulation Test Result in Apple Health: values and recording'
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: ovulation-test-result
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: 'No records in the selected reporting year: measured category frequencies, cadence, source differences,
+    workout or sleep comparisons and related-type associations are unavailable. Missing records do not establish
+    absence of events or negative results. Category codes are not physiological measurements. Start-selected bounds
+    may omit an interval beginning before the window.'

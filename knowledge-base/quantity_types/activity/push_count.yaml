@@ -1,293 +1,143 @@
-# ============================================
-# HEALTHKIT DATA TYPE: Push Count
-# ============================================
-
-# --- CORE IDENTIFICATION ---
-identifier: "HKQuantityTypeIdentifierPushCount"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Activity"
-human_readable_name: "Wheelchair Push Count"
-short_description: "Measures the number of wheelchair pushes performed by the user for mobility and exercise."
-
-# --- APPLE HEALTH UI ---
-icon: "figure.roll"
-color: "#FF9500"
-
-# --- UNITS & MEASUREMENT ---
-default_unit: "count"
+identifier: HKQuantityTypeIdentifierPushCount
+source: HealthKit
+type: HKQuantityType
+category: Activity
+human_readable_name: Wheelchair Push Count
+short_description: Measures the number of wheelchair pushes performed by the user for mobility and exercise.
+icon: figure.roll
+color: '#FF9500'
+default_unit: count
 supported_units:
-  - "count"
-unit_description: "Individual wheelchair pushes counted. Each push represents one propulsion stroke where the user's hands contact the wheel rims and push to move the wheelchair forward."
-
-# --- STATISTICS ---
-aggregation_type: "cumulative"
+- count
+unit_description: Cumulative recorded wheelchair pushes over an interval; not steps or instantaneous stroke cadence.
+aggregation_type: cumulative
 statistics_options:
-  - "cumulativeSum"
-  - "separateBySource"
-
-# --- TYPICAL VALUES ---
-typical_range:
-  min: 0
-  max: 15000
-  unit: "count/day"
-  notes: "Daily push counts vary significantly based on activity level, wheelchair type, and environmental factors. Active wheelchair users typically perform 3,000-8,000 pushes per day. Wheelchair athletes in training may exceed 10,000 pushes daily."
-
-clinical_ranges:
-  - population: "Adult Manual Wheelchair Users"
-    sedentary: "<1500 pushes/day"
-    low_active: "1500-3000 pushes/day"
-    somewhat_active: "3000-5000 pushes/day"
-    active: "5000-8000 pushes/day"
-    highly_active: ">8000 pushes/day"
-  - population: "Wheelchair Athletes (training)"
-    recreational: "4000-6000 pushes/day"
-    competitive: "6000-10000 pushes/day"
-    elite: ">10000 pushes/day"
-
-# --- PLATFORM & AVAILABILITY ---
+- cumulativeSum
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "10.0"
+  version: '10.0'
   year: 2016
-  notes: "Introduced alongside comprehensive wheelchair-specific fitness tracking features in iOS 10"
+  notes: Introduced alongside comprehensive wheelchair-specific fitness tracking features in iOS 10
 watchos_introduced:
-  version: "3.0"
+  version: '3.0'
   year: 2016
-  notes: "Part of the wheelchair mode feature set announced at WWDC 2016, making Apple Watch the first mainstream smartwatch with dedicated wheelchair fitness tracking"
+  notes: Availability verified in Apple HealthKit SDK.
 deprecated: false
 deprecated_in: null
-
-# --- PERMISSIONS & ACCESS ---
 writable: true
 requires_authorization: true
 sensitive_data: false
-
-# --- DATA SOURCES ---
 devices:
-  - name: "Apple Watch"
-    capability: "When wheelchair mode is enabled, Apple Watch uses accelerometer and gyroscope data to detect characteristic wheelchair push patterns. The watch identifies the distinctive arm motion of grabbing and pushing the wheel rims."
-    series: "All series with watchOS 3.0+"
-    examples: ["Apple Watch Series 1", "Apple Watch Series 2", "Apple Watch Ultra"]
-  - name: "iPhone"
-    capability: "Limited push tracking capability. Primary role is data aggregation and display from Apple Watch."
-    examples: ["iPhone 6s and later"]
-  - name: "Third-party wheelchair fitness apps"
-    capability: "Specialized apps for wheelchair users can write push count data to HealthKit."
-    examples: ["WheelMate", "Wheel-E"]
-primary_source: "Apple Watch with Wheelchair mode enabled"
+- name: Apple Watch
+  capability: Automatically records this cumulative quantity when wheelchair mode is enabled.
+primary_source: Apple Watch in wheelchair mode
+description: '## What is a wheelchair push count?
 
-# --- DETAILED DESCRIPTION ---
-description: |
-  ## Overview
-  Push Count measures the number of times a wheelchair user propels their wheelchair by pushing on the wheel rims. Apple introduced this metric in 2016 as part of a comprehensive effort to make Apple Watch accessible to wheelchair users, recognizing that step counting is not meaningful for this population.
 
-  Push count serves as the wheelchair equivalent of step count - a fundamental unit of movement that accumulates throughout the day. When wheelchair mode is enabled on Apple Watch, pushes replace steps throughout the Activity app and health tracking experience.
+  Push Count records wheelchair propulsion pushes as cumulative counts over an interval. [Apple documents](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/pushcount)
+  automatic Apple Watch recording when wheelchair mode is enabled. It is a movement count, rather than distance,
+  calories or a count of steps.
 
-  ## How It's Measured
 
-  **Motion Detection Algorithm:**
-  Apple Watch uses multiple sensors to identify wheelchair pushes:
+  ## What does one push-count interval tell you?
 
-  - **Accelerometer:** Detects the characteristic acceleration pattern of a push stroke
-  - **Gyroscope:** Measures wrist rotation during the push-recovery cycle
-  - **Machine Learning:** Distinguishes pushes from other arm movements (eating, gesturing, etc.)
 
-  **Push Recognition:**
-  The algorithm identifies the distinctive phases of wheelchair propulsion:
-  1. **Contact phase:** Hand grips wheel rim (deceleration)
-  2. **Push phase:** Arm extends, propelling wheelchair forward (acceleration)
-  3. **Recovery phase:** Hand releases, arm returns for next push (characteristic arc motion)
+  | Calculation | What it describes | What it cannot establish |
 
-  **Calibration:**
-  - Initial calibration based on user profile and wheelchair configuration
-  - Improves accuracy over time as algorithm learns individual pushing patterns
-  - GPS-tracked outdoor activity helps refine distance-per-push estimates
+  |---|---|---|
 
-  **Wheelchair Mode Activation:**
-  - Users enable wheelchair mode in Watch app > Health > Wheelchair
-  - Once enabled, pushes replace steps across all Activity displays
-  - Roll goal replaces Stand goal in Activity rings
+  | Interval count | Pushes assigned to the recorded time span | A fixed sensor sampling frequency |
 
-  ## Health Significance
+  | Daily source sum | Recorded pushes in a reporting day | All activity or a clinical activity category |
 
-  Push count is a critical activity metric for wheelchair users' health:
+  | Count divided by interval minutes | Average recorded push rate across the interval | Continuous stroke cadence
+  or effort |
 
-  **Physical Activity Assessment:**
-  - Primary measure of daily mobility and activity volume
-  - Correlates with cardiovascular effort and upper body conditioning
-  - Enables wheelchair users to track activity like ambulatory users track steps
+  | Distance divided by aligned pushes | Recorded travel per push | Propulsion efficiency without additional context
+  |
 
-  **Upper Body Exercise:**
-  - Each push engages chest, shoulders, arms, and core muscles
-  - Accumulated pushes represent significant upper body work
-  - Important for maintaining strength and function
 
-  **Independence Indicator:**
-  - Higher push counts often correlate with greater independence
-  - Tracks ability to self-propel vs. reliance on assistance
-  - Meaningful metric for rehabilitation progress
+  An interval can contain pauses, turns and changes in speed. Dividing its count by its duration averages all of
+  that time; it should not be presented as a measured instantaneous cadence.
 
-  **Activity Guidelines Context:**
-  While no specific push count guidelines exist, they serve as a proxy for meeting general activity recommendations:
-  - WHO recommends 150+ minutes moderate-intensity activity weekly for wheelchair users
-  - Push count helps quantify overall activity volume toward these goals
 
-  ## Clinical Interpretation Guidelines
+  ## What was available for analysis?
 
-  ### Assessing Push Count Data
 
-  **Daily Activity Levels:**
-  - **<1500 pushes/day:** Minimal mobility; may indicate significant barriers, illness, or care needs
-  - **1500-3000 pushes/day:** Basic daily mobility; typical for part-time wheelchair use or limited environments
-  - **3000-5000 pushes/day:** Moderate activity; meeting basic mobility needs
-  - **5000-8000 pushes/day:** Active lifestyle; self-propulsion throughout day
-  - **>8000 pushes/day:** Highly active; athlete-level or very active community mobility
+  The database check found **no push-count samples, daily aggregates or workout-series points** in the selected
+  reporting year. It therefore cannot supply measured push ranges, outliers, interval cadence or workout and sleep
+  comparisons. No figure is invented for missing data, and missing rows are not zero pushes or evidence about wheelchair
+  use.
 
-  **Push Efficiency:**
-  Comparing push count to distance wheelchair reveals propulsion efficiency:
-  - **High distance per push:** Efficient propulsion technique, favorable terrain
-  - **Low distance per push:** May indicate rough terrain, poor technique, or upper body weakness
-  - Efficiency trends over time can indicate improvement or decline
 
-  **Pattern Analysis:**
-  - Daily patterns reveal mobility routines (work commute, exercise, errands)
-  - Week-over-week trends show activity consistency
-  - Seasonal variations may reflect weather impacts on outdoor mobility
+  If records become available, examine source-specific interval amounts, durations, duplicate candidates and overlaps
+  before reporting daily sums. Compare recording density during workouts, and investigate sleep overlap for intervals
+  that cross context boundaries. Preserve original records while assessing unusual counts.
 
-  ### Clinical Considerations
 
-  **Upper Extremity Health:**
-  Push count must be interpreted with awareness of overuse injury risk:
-  - Shoulder impingement and rotator cuff injuries common in wheelchair users
-  - Carpal tunnel syndrome from repetitive wheel contact
-  - High push counts with poor technique increase injury risk
-  - Balance activity goals against injury prevention
+  ## How does Push Count relate to wheelchair distance?
 
-  **Rehabilitation Applications:**
-  - Track recovery progress after injury or illness
-  - Monitor return to baseline activity levels
-  - Set incremental push count goals during rehabilitation
-  - Compare to pre-injury baselines when available
 
-  **Spinal Cord Injury Level Considerations:**
-  - Push capacity varies dramatically by injury level
-  - Cervical injuries (tetraplegia) may have very limited push capability
-  - Thoracic and lumbar injuries (paraplegia) typically have full upper body function
-  - Always interpret push counts relative to individual's functional capacity
+  Use [Wheelchair Distance](/knowledge-base/types/HKQuantityTypeIdentifierDistanceWheelchair/) from the same period
+  and compatible source. Do not divide an observed distance by a missing push count. Even with both present, coasting,
+  downhill travel, power assistance and technique affect travel per recorded push. More pushes may reflect more
+  travel, more turns or a different environment; they do not by themselves prove more effective exercise.
 
-  ### Red Flags
-  - Sudden significant decrease in daily push count (may indicate injury, illness, or depression)
-  - Inability to achieve previously typical push counts despite effort
-  - Upper extremity pain limiting wheelchair propulsion
-  - Progressive decline in push efficiency (more pushes for same distance)
 
-  ## Caveats & Limitations
+  [Exercise Time](/knowledge-base/types/HKQuantityTypeIdentifierAppleExerciseTime/) and [Active Energy](/knowledge-base/types/HKQuantityTypeIdentifierActiveEnergyBurned/)
+  are separate metrics. Push counts should not be converted into exercise minutes or calories using an invented
+  fixed factor.
 
-  ### Measurement Accuracy
-  - **Push detection varies:** Algorithm may miss light pushes or count incidental arm movements
-  - **Wheelchair type affects accuracy:** Designed primarily for standard manual wheelchair propulsion patterns
-  - **Power-assist complications:** Pushes with power-assist wheels may be detected differently
-  - **Handcycle not supported:** Different propulsion mechanism not captured as pushes
 
-  ### Interpretation Challenges
-  - **Effort not captured:** One push uphill requires far more effort than on flat ground
-  - **Assistance invisible:** Pushes by caregivers vs. self-propulsion not distinguished
-  - **Technique quality unknown:** Poor technique may generate similar counts to good technique
-  - **Power wheelchair users:** Push count not applicable; different metric needed
+  ## What makes a daily total trustworthy?
 
-  ### Environmental Factors
-  - **Surface effects:** Carpet, grass, gravel require more pushes per distance
-  - **Terrain:** Hills dramatically affect push effort and count
-  - **Accessibility barriers:** Inaccessible environments limit achievable push counts regardless of user motivation
 
-  ### What Push Count Cannot Tell You
-  - Propulsion technique quality
-  - Upper extremity strain or injury risk
-  - Whether activity guidelines are being met
-  - Cardiovascular effort or intensity
-  - Environmental barriers encountered
-  - Power vs. manual wheelchair usage
+  Keep source handling and the reporting calendar explicit. Adding all sources can count overlapping estimates twice.
+  A workout-specific total may already be included in the day''s raw quantity data. Inspect recording gaps before
+  comparing weeks, and distinguish a missing day from a recorded zero.
 
-  ## Additional Notes
 
-  **Relationship to Distance Wheelchair:**
-  Push count and wheelchair distance are complementary metrics:
-  - Push count = volume of propulsion effort
-  - Distance = outcome of that effort
-  - Ratio (distance/push) = propulsion efficiency
+  This entry does not assign sedentary, active or athlete categories from a push total. The example has no measurements
+  to support a range, and equipment, terrain and functional context prevent a simple universal push target.
 
-  **Accessibility Milestone:**
-  Apple's introduction of wheelchair mode in 2016 was a significant moment for accessible fitness technology:
-  - First mainstream smartwatch with dedicated wheelchair tracking
-  - Consulted with wheelchair athletes and users during development
-  - Set industry standard for inclusive fitness tracking
-
-  **For Health Consultants:**
-  1. Recognize push count as the wheelchair equivalent of step count
-  2. Always interpret in context of individual's functional capacity and injury level
-  3. Monitor push count trends alongside distance for efficiency insights
-  4. Balance activity encouragement with upper extremity injury prevention
-  5. Consider environmental accessibility as a factor in achievable push counts
-  6. Use push data to set personalized, incremental mobility goals
-  7. Connect clients with physical therapy for technique assessment if efficiency declines
-  8. Celebrate progress while monitoring for overuse warning signs
-
-# --- METADATA KEYS ---
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the sample was entered manually by the user rather than automatically recorded"
-  - key: "HKMetadataKeyExternalUUID"
-    description: "Unique identifier for the sample from the originating source"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier used for syncing data across devices"
-  - key: "HKMetadataKeySyncVersion"
-    description: "Version number for sync conflict resolution"
-
-# --- RELATED TYPES ---
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierDistanceWheelchair"
-    relationship: "Complementary - Distance traveled complements push count; ratio indicates propulsion efficiency"
-  - identifier: "HKQuantityTypeIdentifierStepCount"
-    relationship: "Equivalent - Push count is the wheelchair analog to step count for ambulatory users"
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "Related - Wheelchair propulsion contributes to active energy expenditure"
-  - identifier: "HKQuantityTypeIdentifierAppleExerciseTime"
-    relationship: "Related - Vigorous pushing contributes to exercise minutes"
-  - identifier: "HKWorkoutTypeWheelchairWalkPace"
-    relationship: "Contains - Walking-pace wheelchair workouts include push count"
-  - identifier: "HKWorkoutTypeWheelchairRunPace"
-    relationship: "Contains - Running-pace wheelchair workouts include push count"
-  - identifier: "HKQuantityTypeIdentifierHeartRate"
-    relationship: "Complementary - Heart rate during pushing indicates cardiovascular effort"
-
-# --- REFERENCES ---
+- identifier: HKQuantityTypeIdentifierDistanceWheelchair
+  relationship: Align source-compatible periods; travel per push is contextual, not validated efficiency.
+- identifier: HKQuantityTypeIdentifierActiveEnergyBurned
+  relationship: Separate energy estimate; no fixed conversion from movement quantity.
+- identifier: HKQuantityTypeIdentifierAppleExerciseTime
+  relationship: Separate credited exercise minutes; not a fixed conversion from distance or pushes.
+- identifier: HKQuantityTypeIdentifierHeartRate
+  relationship: Complementary physiological response with separate source and coverage.
 references:
-  - title: "Apple Developer Documentation - pushCount"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/pushcount"
-    type: "official"
-  - title: "Apple Support - Use Accessibility features on Apple Watch"
-    url: "https://support.apple.com/en-us/102253"
-    type: "official"
-  - title: "Apple - Apple Watch Activity for Wheelchair Users"
-    url: "https://www.apple.com/accessibility/watch/"
-    type: "official"
-  - title: "CDC - Physical Activity for People with Disability"
-    url: "https://www.cdc.gov/disability-and-health/articles-documents/physical-activity-for-people-with-disability.html"
-    type: "medical"
-  - title: "Upper Extremity Pain and Functional Limitation in Wheelchair Users"
-    url: "https://pubmed.ncbi.nlm.nih.gov/15959543/"
-    type: "research"
-  - title: "Shoulder Pain in Wheelchair Users - ACRM"
-    url: "https://www.archives-pmr.org/article/S0003-9993(14)00355-8/fulltext"
-    type: "research"
-
-# --- KNOWLEDGE BASE METADATA ---
-last_updated: "2026-01-27"
-research_notes: |
-  - iOS 10.0/watchOS 3.0 introduction confirmed via Apple Developer Documentation
-  - Wheelchair mode features announced at WWDC 2016
-  - Apple consulted with Paralympic athletes during development
-  - Upper extremity overuse injuries affect 30-70% of manual wheelchair users
-  - Push count serves as functional equivalent of step count
-  - No established clinical guidelines specifically for push count targets
-  - Research links wheelchair propulsion patterns to shoulder injury risk
+- title: 'Apple HealthKit: Wheelchair Push Count'
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/pushcount
+  type: official
+last_updated: '2026-10-14'
+research_notes: Executed and persisted eleven-facet notebook before updating this entry. Primary-source semantics,
+  unit meaning, source/interval coverage, outliers, workout/sleep context and related-type limitations reviewed.
+  SDK availability declarations checked.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: batch2-daily-push-count
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Selected-year records absent; no empirical ranges, cadence, outliers or context associations can
+    be estimated. Missing rows are not zero. Type semantics and storage coverage investigated; no fabricated figures.
+seo_title: 'Apple Health Push Count: Wheelchair Pushes & Recording Cadence'

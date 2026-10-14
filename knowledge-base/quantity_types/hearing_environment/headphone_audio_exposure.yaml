@@ -1,41 +1,30 @@
-identifier: "HKQuantityTypeIdentifierHeadphoneAudioExposure"
-source: "HealthKit"
-type: "HKQuantityType"
-category: "Hearing and Environment"
-human_readable_name: "Headphone Audio Exposure"
-short_description: "Audio level exposure from headphones and earbuds measured in A-weighted decibels (dB(A)), tracking personal listening habits for hearing protection."
-icon: "headphones"
-color: "#5856D6"
-default_unit: "dB(A)"
+identifier: HKQuantityTypeIdentifierHeadphoneAudioExposure
+source: HealthKit
+type: HKQuantityType
+category: Hearing and Environment
+human_readable_name: Headphone Audio Exposure
+short_description: Equivalent sound-level intervals describing headphone playback exposure.
+icon: headphones
+color: '#5856D6'
+default_unit: dBASPL
 supported_units:
-  - "dB(A)"
-  - "dBASPL"
-unit_description: "A-weighted decibels (dB(A)) apply frequency weighting that matches human hearing sensitivity, providing a standardized measure of perceived loudness that correlates with hearing damage risk."
-aggregation_type: "discrete"
+- dBASPL
+unit_description: Canonical dBASPL storage; A-weighted sound pressure level displayed as dB(A). Logarithmic levels
+  require energy-aware duration weighting.
+aggregation_type: discrete
 statistics_options:
-  - "discreteAverage"
-  - "discreteMin"
-  - "discreteMax"
-  - "mostRecent"
-typical_range:
-  min: 40
-  max: 100
-  unit: "dB(A)"
-clinical_ranges:
-  - population: "General Adult"
-    safe: "Below 80 dB(A) for up to 40 hours per week"
-    concerning: "7-day average above 80 dB(A); individual sessions above 85 dB(A) for extended periods"
-  - population: "WHO Safe Listening Guidelines"
-    safe: "Weekly cumulative exposure below 80 dB(A) averaged over 40 hours"
-    concerning: "Equivalent continuous level above 85 dB(A) for more than 1 hour daily"
-  - population: "Children and Adolescents"
-    safe: "Below 75 dB(A) recommended; more conservative limits due to longer lifetime exposure"
-    concerning: "Regular exposure above 80 dB(A); high-risk group for recreational noise-induced hearing loss"
+- discreteAverage
+- discreteMin
+- discreteMax
+- mostRecent
+- separateBySource
+typical_range: null
+clinical_ranges: null
 ios_introduced:
-  version: "13.0"
+  version: '13.0'
   year: 2019
 watchos_introduced:
-  version: "6.0"
+  version: '6.0'
   year: 2019
 deprecated: false
 deprecated_in: null
@@ -43,121 +32,141 @@ writable: false
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone"
-    capability: "Estimates headphone audio levels for connected headphones/earbuds based on volume settings and audio characteristics"
-  - name: "AirPods (all models)"
-    capability: "Real-time audio level measurement at the earbud speaker"
-  - name: "Beats headphones (supported models)"
-    capability: "Audio level measurement for compatible Beats products"
-  - name: "Third-party headphones"
-    capability: "Estimated audio levels based on volume percentage; accuracy varies"
-primary_source: "iPhone with connected audio devices"
-description: |
-  ## Overview
-  Headphone Audio Exposure measures the sound levels delivered directly to a user's ears through headphones, earbuds, and other personal audio devices. Unlike environmental audio exposure, this metric captures the user's personal listening choices, which represent a significant and modifiable risk factor for hearing loss.
+- name: Supported recording devices
+  capability: Source and feature support must be checked; a record does not establish the exact headphone model
+    or configuration.
+primary_source: Supported iPhone or Apple Watch source
+description: '## What does Headphone Audio Exposure measure?
 
-  The WHO estimates that over 1 billion young adults are at risk of permanent hearing damage from unsafe listening practices. Headphone use has increased dramatically, with many users habitually listening at levels that exceed occupational safety standards. This metric enables objective tracking of a previously invisible health behavior.
+  Headphone Audio Exposure describes audio from headphones as equivalent continuous sound-level intervals. The display
+  unit is **dB(A)** and the exported canonical unit is `dBASPL`. [Apple’s HealthKit documentation](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/headphoneaudioexposure)
+  defines the interval-level quantity and automatic iPhone/Apple Watch collection.
 
-  ## How It's Measured
-  The measurement methodology varies by device:
 
-  **AirPods and Compatible Beats Products:**
-  - Audio levels are measured directly at the speaker driver
-  - Real-time dB(A) calculation based on actual audio output
-  - Accounts for the acoustic coupling between earbud and ear canal
+  This differs from a volume-slider percentage. The same percentage can produce different sound levels with different
+  headphones or content. [Apple’s measurement guide](https://support.apple.com/guide/iphone/iph0596a9152/ios) says
+  Apple and Beats headphones offer the most accurate measurements; other headphones can use estimates based on iPhone
+  volume.
 
-  **Third-Party Headphones:**
-  - iOS estimates exposure based on device volume percentage
-  - Calculations assume typical headphone sensitivity (approximately 110 dB/mW at 1 kHz)
-  - Less accurate than direct measurement but provides useful approximations
 
-  **7-Day Rolling Average:**
-  - iOS Health app prominently displays a 7-day rolling average
-  - This metric aligns with WHO weekly exposure guidelines
-  - Smooths day-to-day variation to reveal listening habits
+  ## What do example records look like?
 
-  **Notification Thresholds:**
-  - iOS sends notifications when 7-day average exceeds 80 dB(A)
-  - Users can configure the threshold between 75-100 dB(A)
-  - Notifications include estimated weekly dose as percentage of safe limit
+  The reporting year contained **2,906 records**. The largest July–September source supplied **808 intervals on
+  75 of 92 days**. Its median was **59.5 dB(A)**, the middle half **54.8–62.8**, and the observed minimum and maximum
+  **8.0 and 96.0 dB(A)**. Those extremes are retained for source and interval review, rather than discarded as inconvenient
+  observations or interpreted as a personal safety verdict.
 
-  ## Health Significance
-  **Recreational Noise-Induced Hearing Loss:**
-  - Personal audio devices are the primary source of recreational noise exposure
-  - Unlike occupational exposure, headphone use is entirely volitional and modifiable
-  - Damage accumulates silently; symptoms often don't appear until significant hearing loss has occurred
 
-  **Age-Related Vulnerability:**
-  - Adolescents and young adults are highest risk due to listening duration and volume
-  - Early damage accelerates age-related hearing decline
-  - Tinnitus prevalence increasing in younger populations, correlated with earphone use
+  | Example property | Result | Meaning |
 
-  **Psychoacoustic Factors:**
-  - Users often increase volume to overcome background noise (especially with non-isolating earbuds)
-  - Hearing adaptation: prolonged listening at moderate-high levels makes them seem "normal"
-  - Emotional arousal during music listening may override auditory discomfort signals
+  | --- | --- | --- |
 
-  ## Clinical Interpretation Guidelines
-  **For Health Consultants:**
+  | Stored durations | 0.03 seconds to about 30 minutes | Records have very different weights |
 
-  1. **Focus on 7-Day Averages:** The 7-day rolling average is the most clinically relevant metric, directly corresponding to WHO weekly dose recommendations.
+  | Median duration | About 3.85 minutes | A stored interval, not the listening session length |
 
-  2. **Calculate Weekly Dose:**
-     - 80 dB(A) for 40 hours = 100% of weekly safe dose
-     - Many users with 85+ dB averages exceed 100% in a few hours daily
-     - iOS Health app shows dose percentage directly
+  | Workout overlap | 131 records | Playback and workout timing coincide |
 
-  3. **Contextualize the Data:**
-     - Work-from-home professionals on calls may have extended but moderate exposure
-     - Music listeners, gamers, and podcast consumers may have variable patterns
-     - Commuters in noisy environments often compensate with higher volumes
+  | Sleep overlap | None in the selected source | No exported overlap; not proof of non-use |
 
-  4. **Risk Assessment Framework:**
-     - Low Risk: 7-day average below 70 dB(A)
-     - Moderate Risk: 7-day average 70-80 dB(A); counsel on volume awareness
-     - High Risk: 7-day average above 80 dB(A); recommend volume limiting strategies
-     - Urgent: Consistent averages above 85 dB(A); audiological referral
 
-  5. **Behavior Change Strategies:**
-     - Enable "Reduce Loud Sounds" feature in iOS (Settings > Sounds & Haptics > Headphone Safety)
-     - Recommend noise-canceling headphones to reduce volume compensation
-     - Suggest the 60/60 rule: 60% volume for 60 minutes, then break
-     - Encourage awareness of notification warnings
+  ## Why do louder and longer intervals matter differently?
 
-  ## Caveats & Limitations
-  - **Third-Party Accuracy:** Exposure estimates for non-Apple headphones are approximations based on assumed headphone sensitivity
-  - **Impedance Variations:** High-impedance audiophile headphones may show inaccurate readings
-  - **Bone Conduction Devices:** May not be accurately measured or supported
-  - **Speaker Audio:** Does not capture audio exposure from device speakers without headphones
-  - **Ear Fit Variability:** Even with AirPods, actual ear canal exposure depends on fit quality
-  - **External Sound Passthrough:** Transparency mode on AirPods Pro includes environmental audio but measurement attribution may vary
-  - **Multiple Device Aggregation:** Users with multiple audio devices may have incomplete picture if not all devices contribute data
-  - **No Frequency Analysis:** Cannot identify particularly harmful frequency content (e.g., high-frequency emphasis)
-metadata_keys:
-  - key: "HKMetadataKeyAudioExposureLevel"
-    description: "The measured or estimated audio level delivered to the ear in dB(A)"
-  - key: "HKMetadataKeyAudioExposureDuration"
-    description: "Duration of the headphone listening session"
-  - key: "HKMetadataKeyHeadphoneGain"
-    description: "Volume gain setting applied during playback"
+  Sound exposure depends on both level and duration. A record-count histogram shows where observations fall, but
+  a large pile of short, quiet samples can mask fewer long, loud ones. Decibels must be converted to an energy scale
+  before combining levels, with durations used as weights.
+
+
+  Coverage still matters after that calculation. **222 intervals** in the selected source began before the preceding
+  running maximum end, including small timestamp overlaps. Blindly summing durations or mixing source groups can
+  double-count time. The analysis records these overlaps and keeps its energy-based summaries descriptive; it does
+  not reconstruct the Health app’s seven-day notification budget.
+
+
+  ## How does recording differ during workouts and sleep?
+
+  Another, much sparser source supplied **96 focus-window records on ten days**, of which **88 overlapped workouts**.
+  The largest source supplied considerably more records outside workouts. This source mix changes the apparent relationship
+  between listening and exercise, so the figure uses one source rather than silently pooling devices.
+
+
+  No sleep overlap was found in the focus-window headphone records. That result cannot explain why: playback, wearing
+  patterns, source coverage and exported sleep boundaries are not fully observed. Start gaps describe recording
+  cadence, not a fixed listening schedule or continuous monitoring clock.
+
+
+  ## What is a headphone notification?
+
+  [Headphone Audio Exposure Event](/knowledge-base/types/HKCategoryTypeIdentifierHeadphoneAudioExposureEvent/) is
+  a separate notification category. [Apple’s notification guidance](https://support.apple.com/en-us/108968) gives
+  80 dB for 40 hours across seven days as an example exposure limit and distinguishes notifications from the Reduce
+  Loud Audio setting. Media exposure, rather than phone calls, contributes to that notification calculation.
+
+
+  The checked year contained headphone-level data but **no headphone notification records**. Absence of notifications
+  does not certify safe exposure: feature configuration, supported sources and observation completeness remain relevant.
+
+
+  ## How should this be combined with environmental sound?
+
+  [Environmental Audio Exposure](/knowledge-base/types/HKQuantityTypeIdentifierEnvironmentalAudioExposure/) and
+  [Environmental Sound Reduction](/knowledge-base/types/HKQuantityTypeIdentifierEnvironmentalSoundReduction/) add
+  context, but neither is an interchangeable playback measurement. Daily associations in these records are exploratory,
+  source-dependent summaries. They do not prove that attenuation causes lower volume, or provide a complete combined
+  ear-level dose.'
+metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierEnvironmentalAudioExposure"
-    relationship: "Complementary metric for ambient environmental noise; together these provide total daily noise dose"
-  - identifier: "HKCategoryTypeIdentifierHeadphoneAudioExposureEvent"
-    relationship: "Category type recording discrete events when headphone audio exceeds safety thresholds"
-  - identifier: "HKQuantityTypeIdentifierEnvironmentalSoundReduction"
-    relationship: "Related metric measuring active noise cancellation effectiveness, which can reduce the need for high volume"
+- identifier: HKQuantityTypeIdentifierEnvironmentalAudioExposure
+  relationship: Environmental sound levels; asynchronous samples do not establish combined ear exposure.
 references:
-  - title: "Apple Developer Documentation - HKQuantityTypeIdentifierHeadphoneAudioExposure"
-    url: "https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifierheadphoneaudioexposure"
-    type: "official"
-  - title: "WHO - Global Standard for Safe Listening Venues and Events"
-    url: "https://www.who.int/publications/i/item/9789240015593"
-    type: "medical"
-  - title: "Prevalence of Hearing Loss Among US Adults - JAMA"
-    url: "https://jamanetwork.com/journals/jamaotolaryngology/fullarticle/2762196"
-    type: "research"
-  - title: "Apple Support - Monitor Headphone and Environmental Sound Levels"
-    url: "https://support.apple.com/en-us/HT211903"
-    type: "tutorial"
-last_updated: "2026-01-27"
+- title: Headphone Audio Exposure type definition
+  url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/headphoneaudioexposure
+  type: official
+- title: Equivalent continuous level aggregation
+  url: https://developer.apple.com/documentation/healthkit/hkquantityaggregationstyle/discreteequivalentcontinuouslevel
+  type: official
+- title: Apple headphone measurements
+  url: https://support.apple.com/guide/iphone/iph0596a9152/ios
+  type: official
+- title: Apple headphone notifications
+  url: https://support.apple.com/en-us/108968
+  type: official
+last_updated: '2026-10-14'
+research_notes: Executed source-aware eleven-facet notebook before article revision. Primary Apple sources checked;
+  unsupported device, threshold and clinical-range claims removed.
+data_research:
+  status: complete
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: headphone-audio-exposure
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Example observational data; not population reference ranges. Source groups and recording coverage
+    vary. Missing data is unknown, not zero. Temporal overlap is not causation or explicit workout linkage. Levels
+    and attenuation are distinct; no complete hearing dose or protection certification inferred.
+seo_title: 'Headphone Audio Exposure in Apple Health: Meaning and Recording Examples'
+figures:
+- src: /knowledge-base/figures/headphone-audio-exposure/distribution.png
+  alt: Histogram of recorded headphone audio exposure values, separated by workout, recorded sleep and other or
+    unknown context.
+  title: 'Headphone Audio Exposure: observed distribution'
+  caption: Example July–September 2026 records (808 intervals) from the source group with the most observations.
+    Sample-count weighting, not duration-weighted exposure or a hearing dose. Context groups can have very different
+    coverage.
+  methods: Half-open reporting window, intervals selected by start in America/Los_Angeles. Source bundle identifier
+    plus display name, combining revisions; sources kept separate. Overlap with recorded workouts takes precedence
+    over recorded asleep intervals; other records labeled other or unknown. Boundary intervals retained without
+    prorating.
+  section: What do example records look like?
+  width: 1440
+  height: 768

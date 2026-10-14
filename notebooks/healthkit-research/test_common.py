@@ -3,11 +3,12 @@ import unittest
 import tempfile
 from pathlib import Path
 import base64
+import gzip
 
 import numpy as np
 import pandas as pd
 
-from common import describe, overlap_mask, summarize, annotate_context, write_notebook
+from common import describe, overlap_mask, summarize, annotate_context, write_notebook, load_data, input_manifest
 
 
 def frame(starts, ends):
@@ -16,6 +17,19 @@ def frame(starts, ends):
 
 
 class CommonTests(unittest.TestCase):
+    def test_compressed_snapshot_matches_plain_and_is_hashed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            text = 'identifier,start_ts,end_ts,value\nexample,2026-07-01T12:00Z,2026-07-01T12:00Z,42\n'
+            plain = root / 'quantity.csv'
+            plain.write_text(text)
+            expected = load_data(root)['quantity']
+            with gzip.open(root / 'quantity.csv.gz', 'wt') as handle:
+                handle.write(text)
+            plain.unlink()
+            pd.testing.assert_frame_equal(load_data(root)['quantity'], expected)
+            self.assertEqual(input_manifest(root)[0]['file'], 'quantity.csv.gz')
+
     def test_merged_overlap_and_point_boundaries(self):
         context = frame(["2026-07-01T01:00Z", "2026-07-01T01:30Z"],
                         ["2026-07-01T02:00Z", "2026-07-01T03:00Z"])
