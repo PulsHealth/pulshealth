@@ -1,6 +1,8 @@
 import { SearchItem } from './types';
 
 export const STATIC_PAGES: SearchItem[] = [
+  { id: 'page-pro', type: 'page', title: 'PulsHealth Pro', description: 'Optional app subscription for full available Apple Health history and sync of all supported types. Open source, with your own database.', href: '/pro/', icon: 'Heart' },
+  { id: 'page-pricing', type: 'page', title: 'PulsHealth App Pricing', description: 'Compare Free and Pro: recent exports and five sync types free, or full history and all sync types with the app subscription. Hosting is separate.', href: '/pricing/', icon: 'Info' },
   { id: 'page-watch-workout-pro', type: 'page', title: 'Watch Workout Pro', description: 'Create, save, share, and schedule structured workouts on iPhone for Apple Workout on Apple Watch. Optional on-device Apple Intelligence and Pro subscription.', href: '/watch-workout-pro/', icon: 'Activity' },
   { id: 'page-watch-workout-pro-support', type: 'page', title: 'Watch Workout Pro Support', description: 'Help with workout creation, Apple Watch scheduling, subscriptions, and sharing. Contact support@pulshealth.com.', href: '/watch-workout-pro/support/', icon: 'HelpCircle' },
   { id: 'page-watch-workout-pro-privacy', type: 'page', title: 'Watch Workout Pro Privacy Policy', description: 'Privacy for on-device creation, iCloud collections, public workout links, and the optional connector.', href: '/watch-workout-pro/privacy/', icon: 'Shield' },

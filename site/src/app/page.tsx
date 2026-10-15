@@ -92,11 +92,14 @@ export default async function HomePage() {
               </Button>
             </div>
             <p className="mt-5 text-base font-medium leading-relaxed text-foreground/85 sm:text-lg">
-              <span className="whitespace-nowrap">Free + Optional Pro</span>{" "}
+              <span className="whitespace-nowrap">Free to start</span>{" "}
               <span aria-hidden="true">·</span>{" "}
-              <span className="whitespace-nowrap">Open Source</span>{" "}
+              <span className="whitespace-nowrap">Open source</span>{" "}
               <span aria-hidden="true">·</span>{" "}
               <span className="whitespace-nowrap">No Account Required</span>
+            </p>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+              Full history and sync for all supported types with <Link href="/pro" className="text-brand hover:underline">PulsHealth Pro</Link>. Your database stays yours.
             </p>
           </div>
           <div className={styles.heroVisual}>
@@ -157,7 +160,7 @@ export default async function HomePage() {
             </div>
           </div>
         }>
-          <p>Build a personal health archive that keeps growing. Sync your Apple Health history, then keep it up to date with automatic background sync.</p>
+          <p>Build a personal health archive that keeps growing. Start free with five health data types from the last 30 days, then keep them up to date with automatic background sync.</p>
           <p>Your database powers the web app and your connected AI tools. You can also build your own dashboards or query your data directly.</p>
           <p className="text-base">Connect your own PulsHealth server or a compatible receiver. Prefer hosting? <a href={SIGNUP_URL} className="text-brand underline-offset-4 hover:underline">Request a PulsHealth account</a>.</p>
           <Link href="/server" className={textLink}>Explore self-hosting <ArrowRight className="h-4 w-4" aria-hidden /></Link>
@@ -172,7 +175,7 @@ export default async function HomePage() {
             <Phone src="/screenshots/app-export-2.1.png" alt="PulsHealth export builder, with controls for health data types, dates, and file format" />
           </div>
         }>
-          <p>Choose the measurements and time range you need. Export CSV for spreadsheets or JSON for your own tools and projects.</p>
+          <p>Choose the measurements and time range you need. Export the last 30 days free, or your full available history with Pro. Use CSV for spreadsheets or JSON for your own tools and projects.</p>
           <p>Save a personal archive, share a file, or take your data into a new workflow. No account or database required.</p>
           <a href={APP_STORE_URL} className={textLink}>Get the app <ArrowRight className="h-4 w-4" aria-hidden /></a>
         </Feature>
