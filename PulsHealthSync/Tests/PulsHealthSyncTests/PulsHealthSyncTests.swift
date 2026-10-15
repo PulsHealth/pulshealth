@@ -14,14 +14,14 @@ import Testing
         #expect(Set(defined).count == defined.count)
     }
 
-    /// `all` is exactly the definitions the running OS reaches — declarative
-    /// `minimumIOS` gates, not `#available`, so the published vocabulary can
-    /// list every definition.
+    /// `all` requires both the declared OS gate and runtime type support;
+    /// the published vocabulary still lists every definition.
     @Test func availableTypesAreTheDefinitionsThisOSReaches() {
         let expected = HealthTypeCatalog.definitions.filter { descriptor in
             descriptor.minimumIOS <= HealthTypeDescriptor.IOSVersion(
                 ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
                 ProcessInfo.processInfo.operatingSystemVersion.minorVersion)
+                && (descriptor.kind == .activitySummary || descriptor.sampleType != nil)
         }
         #expect(HealthTypeCatalog.all == expected)
         #expect(HealthTypeCatalog.all.count + HealthTypeCatalog.definitions.filter {
@@ -32,9 +32,6 @@ import Testing
             #expect(descriptor.sampleType == nil)
         }
         #expect(HealthTypeCatalog.definitions.filter { $0.minimumIOS < .baseline }.isEmpty)
-        if #available(iOS 27.0, *) {
-            #expect(HealthTypeCatalog.all.count == HealthTypeCatalog.definitions.count)
-        }
     }
 
     /// Gated quantity/category entries spell their identifiers as strings (the

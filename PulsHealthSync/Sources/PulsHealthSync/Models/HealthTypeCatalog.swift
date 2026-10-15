@@ -81,16 +81,25 @@ public struct HealthTypeDescriptor: Identifiable, Sendable, Hashable {
     public let minimumIOS: IOSVersion
 
     /// True when the running OS exposes this type.
-    public var isAvailableOnThisOS: Bool { minimumIOS.isAvailableOnThisOS }
+    public var isAvailableOnThisOS: Bool {
+        guard minimumIOS.isAvailableOnThisOS else { return false }
+        // A beta can report the expected OS version without exposing every
+        // identifier in that SDK. Rings deliberately have no sample type.
+        return kind == .activitySummary || sampleType != nil
+    }
 
     var sampleType: HKSampleType? {
         // A definition above the running OS has no resolvable HealthKit type;
         // constructing one would trap. `all` never contains such an entry, but
         // the guard keeps `definitions` safe to walk too.
-        guard isAvailableOnThisOS else { return nil }
+        guard minimumIOS.isAvailableOnThisOS else { return nil }
         switch kind {
-        case .quantity: return HKQuantityType(HKQuantityTypeIdentifier(rawValue: identifier))
-        case .category: return HKCategoryType(HKCategoryTypeIdentifier(rawValue: identifier))
+        // Keep the optional factories: the Swift nonoptional initializers
+        // raise an Objective-C exception for an unrecognized identifier.
+        case .quantity:
+            return HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier(rawValue: identifier))
+        case .category:
+            return HKObjectType.categoryType(forIdentifier: HKCategoryTypeIdentifier(rawValue: identifier))
         case .workout: return HKWorkoutType.workoutType()
         case .heartbeatSeries: return HKSeriesType.heartbeat()
         case .ecg: return HKObjectType.electrocardiogramType()
@@ -191,8 +200,8 @@ public enum HealthTypeCatalog {
         ]
 
     /// The definitions the running OS exposes — what the app offers and syncs.
-    /// An entry whose `minimumIOS` is above the running OS is absent, exactly
-    /// as it was when the gates were `#available` checks.
+    /// Requires both the declared minimum OS and a resolvable HealthKit type;
+    /// prerelease runtimes may not expose every identifier in their SDK.
     public static let all: [HealthTypeDescriptor] = definitions.filter(\.isAvailableOnThisOS)
 
     /// True for the daily activity-summary (rings) type, which is exported via
