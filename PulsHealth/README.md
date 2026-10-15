@@ -38,8 +38,12 @@ aggregate/ring/enrichment passes, preserving existing server data.
 An over-limit saved selection pauses in full; the app never picks five types
 on someone's behalf. The Export tab and Data Requests check history before
 Health permission prompts, file generation or delivery. The paywall uses
-localized App Store prices, explains renewal, and links privacy, Apple's
-standard EULA, restore and subscription management. No purchase analytics or
+localized App Store prices, separates billing selection from purchase, and
+explains renewal. It includes native offer-code redemption, restore, subscription
+management, privacy and Apple's standard EULA. Verified renewal metadata supplies
+active-plan dates; unavailable details are never guessed. A free code is described
+as complimentary without automatic charges only when verified renewal is off.
+Contextual upgrade prompts keep the person's draft for explicit review afterward. No purchase analytics or
 third-party SDK is added.
 
 ## Project generation

@@ -56,7 +56,7 @@ struct RootView: View {
                 .tag(Tab.settings)
         }
         .sheet(isPresented: $model.showsPro) {
-            NavigationStack { ProView() }.environment(model)
+            NavigationStack { ProView(context: model.proContext) }.environment(model)
         }
         .sheet(isPresented: $requests.presented, onDismiss: { model.dataRequests.close() }) {
             NavigationStack { FulfillDataRequestView() }.environment(model)

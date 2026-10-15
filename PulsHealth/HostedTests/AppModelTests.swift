@@ -153,7 +153,24 @@ final class AppModelTests: XCTestCase {
         harness.model.startExport()
         let prompted = await eventually { harness.model.showsPro }
         XCTAssertTrue(prompted)
+        XCTAssertEqual(harness.model.proContext, .exportHistory)
+        XCTAssertEqual(harness.model.export.draft.range, .allTime, "Upgrade prompt must preserve the export draft")
         XCTAssertFalse(harness.model.export.isRunning)
+        let requests = await harness.access.requests
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testHistoricalSyncDateIsKeptAsUnappliedUpgradeDraft() async throws {
+        let harness = try await makeModel(pro: false)
+        await harness.model.start()
+        let appliedStart = harness.model.appliedConfig.startDate
+        let requested = Date().addingTimeInterval(-180 * 86_400)
+        harness.model.setSyncStartDate(requested)
+        XCTAssertEqual(harness.model.proContext, .syncHistory)
+        XCTAssertTrue(harness.model.showsPro)
+        XCTAssertEqual(harness.model.config.startDate, requested)
+        XCTAssertEqual(harness.model.appliedConfig.startDate, appliedStart)
+        XCTAssertTrue(harness.model.hasPendingSettingsChanges)
         let requests = await harness.access.requests
         XCTAssertTrue(requests.isEmpty)
     }
@@ -167,6 +184,8 @@ final class AppModelTests: XCTestCase {
         let applied = await harness.model.applyConfiguration()
         XCTAssertFalse(applied)
         XCTAssertTrue(harness.model.showsPro)
+        XCTAssertEqual(harness.model.proContext, .syncTypes(6))
+        XCTAssertEqual(harness.model.config.enabledTypes.count, 6, "Upgrade prompt must preserve the sync draft")
         XCTAssertNil(harness.model.appliedConfig.serverURL)
         let requests = await harness.access.requests
         XCTAssertTrue(requests.isEmpty)

@@ -78,7 +78,22 @@ for local purchases. It does not create production products. Disable the local
 StoreKit configuration when checking real App Store Connect products on a
 sandbox device; archives never use this local configuration.
 
-The paywall lives at Settings → Plan and at upgrade prompts. It offers Restore
-Purchases, Apple's subscription-management page, the privacy policy and Apple's
-standard EULA. Unavailable products leave Free access usable and show retry copy;
-unverified and pending transactions do not unlock Pro.
+The Quiet Native plan page lives at Settings → Plan and at contextual upgrade
+prompts. Older exports, older sync history, an over-five sync selection and Data
+Requests explain the relevant limit. Billing choices select a product; a separate
+button states its localized price and billing period before starting purchase.
+The yearly option is selected initially; both durations offer the same access.
+Formats, raw readings and aggregates are explicitly included with Free.
+
+Active subscribers see their verified plan and renewal or end date rather than
+another sales pitch. A free offer-code transaction is described as complimentary
+with no automatic charge only when verified renewal information also confirms
+renewal is off. When renewal details cannot be read, the page says so and links
+to Apple; it does not guess billing dates or promise no charge. The status is
+in-memory only and follows the same verified access snapshot as engine policy.
+
+The page offers Apple's native code redemption, Restore Purchases, subscription
+management, privacy and Apple's standard EULA. Redemption completion alone never
+grants access. Upgrade and restore preserve drafts and require the person to
+return and explicitly export, send or apply settings. Unavailable products leave
+Free usable; unverified and pending transactions do not unlock Pro.

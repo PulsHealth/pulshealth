@@ -38,7 +38,7 @@ final class AppModel {
     /// outlives the screen that started it (`ExportModel`).
     let subscriptions: SubscriptionStore
     var showsPro = false
-    var proReason: String?
+    var proContext: ProContext = .plan
     let export = ExportModel()
     let dataRequests = DataRequestModel()
     /// Shared on-device review timing, independent of sync and export state.
@@ -552,10 +552,24 @@ final class AppModel {
             && !defaults.bool(forKey: Self.medicationAuthRequestedKey)
     }
 
-    func showPro(_ reason: String? = nil) {
-        proReason = reason
+    func showPro(_ context: ProContext = .plan) {
+        proContext = context
         reviews.cancelPending()
         showsPro = true
+    }
+
+    func setSyncStartDate(_ date: Date) {
+        // Keep the requested date as an unapplied draft. Free's engine policy
+        // and the picker display still clamp history until Pro is verified.
+        config.startDate = date
+        if !subscriptions.hasPro, !SyncAccessPolicy.free.allowsExport(start: date) {
+            showPro(.syncHistory)
+        }
+    }
+
+    var syncProContext: ProContext {
+        let count = appliedConfig.observedTypeIdentifiers.count
+        return count > 5 ? .syncTypes(count) : .syncHistory
     }
 
     var syncPlanNotice: String? {
@@ -571,7 +585,7 @@ final class AppModel {
         Task {
             let policy = await subscriptions.currentPolicy()
             guard policy.allowsExport(start: export.draft.dates().start) else {
-                showPro("Free exports include the most recent 30 days. Upgrade to export older history.")
+                showPro(.exportHistory)
                 return
             }
             guard !exportBlockedByBackfill, !dataRequests.isBusy, !export.isRunning else { return }
@@ -771,7 +785,7 @@ final class AppModel {
         if submitted.serverURL != nil {
             let policy = await subscriptions.currentPolicy()
             guard policy.allows(submitted) else {
-                showPro("Free automatic sync supports 5 health data types. Each type counts once across raw readings and aggregates. Reduce your selection or upgrade.")
+                showPro(.syncTypes(submitted.observedTypeIdentifiers.count))
                 return false
             }
         }
@@ -1243,7 +1257,7 @@ final class AppModel {
         // Not while a continued backfill is submitted but not yet running:
         // it is about to sweep every type itself.
         guard (await subscriptions.currentPolicy()).allows(appliedConfig) else {
-            if trigger != "foreground" { showPro(syncPlanNotice) }
+            if trigger != "foreground" { showPro(syncProContext) }
             return
         }
         guard !isUpdatingConnection, !isSyncingAll, !continuedBackfillPending, config.serverURL != nil,
@@ -1265,7 +1279,7 @@ final class AppModel {
     }
 
     func startBackfill() async {
-        guard (await subscriptions.currentPolicy()).allows(appliedConfig) else { showPro(syncPlanNotice); return }
+        guard (await subscriptions.currentPolicy()).allows(appliedConfig) else { showPro(syncProContext); return }
         guard !isUpdatingConnection, !dataRequests.isBusy else { return }
         guard !isSyncingAll else { return }
         // A continued backfill submitted or running already sweeps every type;

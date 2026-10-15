@@ -97,15 +97,26 @@ final class SubscriptionStoreTests: XCTestCase {
         XCTAssertEqual(annual.price, Decimal(string: "9.99"))
         await store.purchase(monthly)
         await assertAccess(true, store: store)
+        XCTAssertEqual(store.plan?.productID, SubscriptionStore.monthlyID)
+        XCTAssertEqual(store.plan?.renewal, .renews)
+        XCTAssertNotNil(store.plan?.date)
         let transaction = try XCTUnwrap(session.allTransactions().first)
         try session.disableAutoRenewForTransaction(identifier: transaction.identifier)
         await assertAccess(true, store: store)
+        for _ in 0..<40 {
+            await store.refreshEntitlements()
+            if store.plan?.renewal == .ends { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertEqual(store.plan?.renewal, .ends)
+        XCTAssertFalse(store.plan?.isComplimentary ?? true)
         let restored = makeStore(session: session)
         await restored.restore()
         await assertAccess(true, store: restored)
         try session.expireSubscription(productIdentifier: SubscriptionStore.monthlyID)
         await store.restore()
         await assertAccess(false, store: store)
+        XCTAssertNil(store.plan)
     }
 
     func testPendingWaitsForVerifiedPurchaseAndRefundRemovesAccess() async throws {
@@ -157,5 +168,35 @@ final class SubscriptionStoreTests: XCTestCase {
         }
         XCTAssertTrue(enteredGrace)
         await assertAccess(true, store: store)
+        XCTAssertEqual(store.plan?.renewal, .grace)
+        XCTAssertNotNil(store.plan?.date)
+    }
+
+    func testComplimentaryCopyRequiresFreeCodeAndRenewalOff() {
+        let end = Date().addingTimeInterval(3600)
+        let gift = ProPlanDetails(productID: SubscriptionStore.annualID, date: end,
+            renewal: .ends, isFreeOfferCode: true)
+        XCTAssertTrue(gift.isComplimentary)
+        XCTAssertEqual(gift.dateLabel, "Access ends")
+        XCTAssertTrue(gift.explanation.contains("no automatic charge"))
+        for renewal in [ProPlanDetails.Renewal.unknown, .renews, .grace] {
+            let uncertainOrRenewing = ProPlanDetails(productID: SubscriptionStore.annualID,
+                date: end, renewal: renewal, isFreeOfferCode: true)
+            XCTAssertFalse(uncertainOrRenewing.isComplimentary)
+            XCTAssertFalse(uncertainOrRenewing.explanation.contains("no automatic charge"))
+        }
+        let canceledPaid = ProPlanDetails(productID: SubscriptionStore.annualID,
+            date: end, renewal: .ends, isFreeOfferCode: false)
+        XCTAssertFalse(canceledPaid.isComplimentary)
+        XCTAssertEqual(canceledPaid.status, "Pro · Renewal off")
+    }
+
+    func testFreeAccessNeverKeepsStalePlanDetails() async {
+        let stale = ProPlanDetails(productID: SubscriptionStore.annualID, date: .distantPast,
+            renewal: .ends, isFreeOfferCode: true)
+        let store = SubscriptionStore(accessReader: { ProAccessSnapshot(hasPro: false, plan: stale) })
+        await store.refreshEntitlements()
+        XCTAssertFalse(store.hasPro)
+        XCTAssertNil(store.plan)
     }
 }
