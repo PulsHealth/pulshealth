@@ -111,13 +111,12 @@ seo_title: 'Apple Health Inhaler Usage: Puff Counts, Logging & Medication Contex
 recording_behavior:
   reviewed_on: '2026-10-14'
   shape: Cumulative recorded puff count; event or summary shape depends on the writing app.
-  cadence: Source-specific testing or logging cadence; row count need not equal event or test-session count.
-  context: Preserve testing conditions or reliable medication context; timestamps alone cannot establish a physiological
-    response.
+  cadence: "Source-specific puff logging and import cadence; record counts can differ from puff-event counts when entries summarize multiple puffs."
+  context: "Use documented medication identity and source-specific event or summary semantics; a puff count alone does not establish dose, technique or treatment response."
   coverage: No observations in the reviewed database window; this does not establish absence in Apple Health or
     normal physiology.
   aggregation: Sum compatible, nonduplicated puff counts; do not infer dose or adherence.
-  metadata: No sample metadata available to inspect. Raw values cannot establish test quality or medication identity.
+  metadata: "No sample metadata available to inspect. Raw puff counts cannot establish medication identity or inhalation technique."
   references:
   - title: 'Apple: Inhaler Usage'
     url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/inhalerusage

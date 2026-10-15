@@ -151,7 +151,7 @@ recording_behavior:
   shape: Cumulative recorded nutrient mass; sample scope may be a serving, supplement or source summary.
   cadence: Source-specific logging or synchronization; no documented fixed sampling frequency or confirmed meal
     schedule.
-  context: Workout and asleep timestamp overlap does not prove ingestion timing or a physiological effect.
+  context: "Check the recorded amount and label units for food or supplements before combining entries from different sources."
   coverage: Missing records do not establish zero intake; sources may record only selected nutrients.
   aggregation: Sum compatible contributions within a source and reporting window after checking units, portions,
     chemical-form basis and duplicate imports. State logged-day coverage.

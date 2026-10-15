@@ -155,7 +155,7 @@ recording_behavior:
   reviewed_on: '2026-10-14'
   shape: Cumulative mineral mass logged as consumed; sample size can represent a portion or summary.
   cadence: Source-specific entry or synchronization timing; not ingestion frequency or absorption.
-  context: Workout and sleep overlaps describe timestamps rather than physiological response.
+  context: "Retain the source’s chloride amount and nutrient definition; chloride is distinct from sodium and from the total mass of salt."
   coverage: Missing or partial logs do not establish zero intake or nutrient deficiency.
   aggregation: Sum compatible contributions within a source and reporting window after reviewing units, portions
     and duplicate imports; report logged-day coverage.
