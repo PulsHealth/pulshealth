@@ -1,6 +1,21 @@
 import Foundation
 import HealthKit
 
+/// HealthKit's activity predicates and the wire's YYYY-MM-DD use Gregorian
+/// dates, independent of the phone's preferred calendar. Keep its time zone.
+enum ActivitySummaryCalendar {
+    static func gregorian(_ calendar: Calendar) -> Calendar {
+        var result = Calendar(identifier: .gregorian)
+        result.timeZone = calendar.timeZone
+        return result
+    }
+
+    static func localDate(for date: Date, calendar: Calendar) -> String {
+        let comps = gregorian(calendar).dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", comps.year ?? 0, comps.month ?? 0, comps.day ?? 0)
+    }
+}
+
 // Daily activity-summary (HKActivitySummary — the activity rings) export.
 //
 // Activity summaries are not HKSamples: they have no UUID, there is one per
@@ -70,7 +85,7 @@ extension HealthSyncEngine {
             return
         }
 
-        let calendar = Calendar.current
+        let calendar = ActivitySummaryCalendar.gregorian(.current)
         let config = await store.configuration
         let startDay = calendar.startOfDay(for: config.startDate)
         var state = await store.activitySummaryState
@@ -219,6 +234,7 @@ extension HealthSyncEngine {
     private func fetchActivitySummaries(
         from: Date, to: Date, calendar: Calendar
     ) async throws -> [ActivitySummaryRow] {
+        let calendar = ActivitySummaryCalendar.gregorian(calendar)
         let units: Set<Calendar.Component> = [.era, .year, .month, .day]
         var startComps = calendar.dateComponents(units, from: from)
         startComps.calendar = calendar
@@ -237,10 +253,9 @@ extension HealthSyncEngine {
     private nonisolated static func row(
         from summary: HKActivitySummary, calendar: Calendar
     ) -> ActivitySummaryRow? {
+        let calendar = ActivitySummaryCalendar.gregorian(calendar)
         guard let date = calendar.date(from: summary.dateComponents(for: calendar)) else { return nil }
-        let comps = calendar.dateComponents([.year, .month, .day], from: date)
-        guard let year = comps.year, let month = comps.month, let day = comps.day else { return nil }
-        let localDate = String(format: "%04d-%02d-%02d", year, month, day)
+        let localDate = ActivitySummaryCalendar.localDate(for: date, calendar: calendar)
 
         let moveKcal = summary.activeEnergyBurned.doubleValue(for: .kilocalorie())
         let moveGoal = summary.activeEnergyBurnedGoal.doubleValue(for: .kilocalorie())
