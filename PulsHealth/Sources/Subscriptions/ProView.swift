@@ -99,6 +99,7 @@ struct ProView: View {
                     .foregroundStyle(.primary)
                     .padding(.vertical, 4)
                 }
+                .buttonStyle(.plain)
                 .disabled(store.isBusy)
                 .accessibilityAddTraits(selectedProduct?.id == product.id ? [.isSelected] : [])
                 .accessibilityIdentifier(isAnnual(product) ? "pro.annual" : "pro.monthly")
