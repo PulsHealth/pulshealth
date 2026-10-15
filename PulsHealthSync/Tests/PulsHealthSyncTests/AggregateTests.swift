@@ -661,5 +661,7 @@ import Testing
         #expect(state.totalBucketsUploaded == 5)
         #expect(state.totalBatchesUploaded == 1)
         #expect(await store.configuration.aggregates == [config])
+        // Finish the store's debounced write before removing its directory.
+        await store.persistNow()
     }
 }
