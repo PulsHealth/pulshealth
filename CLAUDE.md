@@ -617,6 +617,10 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   the first, second and last. `metric_daily` (`009`, `puls:rerun`) is shaped
   so filters on identifier, type, user and day reach both tiers — keep its
   window partitioned on those columns.
+- Reconciliation shares the raw type's claim across its local snapshot and
+  orphan deletions. Never replace it with a unique operation key: a concurrent
+  upload of a late-arriving sample could otherwise be deleted as an orphan.
+  Pending observer work drains under the same claim before release.
 - Reconciliation (digest/UUID repair) covers only quantity/category/workout
   kinds, and **never deletes from a month HealthKit returned nothing for**
   (`ReconcileDigest.orphanVerdict`): read denial is undetectable —

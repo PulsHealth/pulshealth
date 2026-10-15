@@ -169,3 +169,33 @@ import Testing
         #expect(await store.deviceID == "dev-x")
     }
 }
+
+
+@Suite struct ActivitySummaryCalendarTests {
+    @Test(arguments: [Calendar.Identifier.gregorian, .buddhist, .japanese, .hebrew])
+    func phoneCalendarDoesNotChangeTheWireDay(identifier: Calendar.Identifier) throws {
+        var preferred = Calendar(identifier: identifier)
+        preferred.timeZone = try #require(TimeZone(identifier: "Asia/Bangkok"))
+        let date = try #require(ISO8601DateFormatter().date(from: "2026-10-15T05:00:00Z"))
+        let calendar = ActivitySummaryCalendar.gregorian(preferred)
+        #expect(calendar.identifier == .gregorian)
+        #expect(calendar.timeZone == preferred.timeZone)
+        let components = calendar.dateComponents([.era, .year, .month, .day], from: date)
+        #expect(components.era == 1)
+        #expect(components.year == 2026)
+        #expect(ActivitySummaryCalendar.localDate(for: date, calendar: preferred) == "2026-10-15")
+    }
+
+    @Test func localDayAndDSTKeepTheRecordedTimeZone() throws {
+        var preferred = Calendar(identifier: .buddhist)
+        preferred.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        let midnightUTC = try #require(ISO8601DateFormatter().date(from: "2026-10-15T00:00:00Z"))
+        #expect(ActivitySummaryCalendar.localDate(for: midnightUTC, calendar: preferred) == "2026-10-14")
+        let spring = try #require(ISO8601DateFormatter().date(from: "2026-03-08T12:00:00Z"))
+        let calendar = ActivitySummaryCalendar.gregorian(preferred)
+        let start = calendar.startOfDay(for: spring)
+        let end = try #require(calendar.date(byAdding: .day, value: 1, to: start))
+        #expect(end.timeIntervalSince(start) == 23 * 3_600)
+        #expect(ActivitySummaryCalendar.localDate(for: start, calendar: preferred) == "2026-03-08")
+    }
+}

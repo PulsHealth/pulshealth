@@ -46,6 +46,12 @@ import Testing
             wakeLog: WakeLog(directory: directory), accessPolicy: { .free })
         #expect(await !engine.allowsSync())
         #expect(await store.configuration.enabledTypes.count == 6)
+        do {
+            _ = try await engine.reconcile(type: "a")
+            Issue.record("Over-limit reconciliation must stop before HealthKit or transport work")
+        } catch SyncError.accessRestricted {}
+        #expect(!(await engine.isSyncing("a")))
+        #expect(await store.configuration.enabledTypes.count == 6)
         config.enabledTypes.remove("f")
         await store.setConfiguration(config)
         #expect(await engine.allowsSync(types: ["a"]))
