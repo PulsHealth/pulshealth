@@ -164,8 +164,7 @@ recording_behavior:
   reviewed_on: '2026-10-14'
   shape: A grouped object with explicit nutritional sample membership, not a cumulative quantity.
   cadence: Source-specific food logging and synchronization; no automatic continuous measurement cadence.
-  context: Recorded timestamps can differ from ingestion time. Workout or sleep overlap does not establish
-    a physiological effect.
+  context: "Use explicit food-object membership and documented serving context; timestamps alone cannot identify a meal or when its components were consumed."
   coverage: Missing observations are unknown, not zero intake or complete capture.
   aggregation: Query food objects as groups. Sum only compatible component quantities; timestamp coincidence
     never establishes membership.

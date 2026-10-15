@@ -167,8 +167,7 @@ recording_behavior:
   reviewed_on: '2026-10-14'
   shape: Cumulative logged nutrient amount; a sample may represent a food, meal or imported daily contribution.
   cadence: Source-specific food logging or synchronization, not continuous nutrient sensing.
-  context: Workout and sleep overlap describe record timestamps; ingestion time, absorption and physiological
-    response remain unverified.
+  context: "Check portions and how the source separates saturated fat from total fat; retain the source’s nutrient definitions when comparing components."
   coverage: Missing entries are unlogged, not zero intake; sources can provide only selected nutrients.
   aggregation: Sum compatible contributions within a source after checking serving semantics and duplicate
     imports; report logged-day coverage.

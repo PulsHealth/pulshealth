@@ -115,8 +115,7 @@ recording_behavior:
   shape: A discrete body measurement written by the producing app; source and measurement conditions govern interpretation.
   cadence: Measurement or logging cadence, without a fixed HealthKit-wide schedule. Repeated entries are not necessarily
     independent measurements.
-  context: Workout and asleep interval overlap identifies recording time only. No continuous exercise or sleep response
-    is measured by occasional body observations.
+  context: "Keep the measurement or estimation method and source consistent; a change in method can change the reported lean-mass estimate."
   coverage: The year snapshot contains 0 raw records. Missing days or an absent type remain unavailable, not zero
     measurements.
   aggregation: Use source-specific trends or a recent observation. Summing a discrete body measurement is not meaningful;

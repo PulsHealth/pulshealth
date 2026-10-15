@@ -106,8 +106,7 @@ recording_behavior:
   shape: Cumulative standard-drink count; serving normalization is source-dependent.
   cadence: Manual or app logging, including point entries and retrospective totals; no continuous alcohol sensor
     cadence.
-  context: Recorded timestamps can differ from ingestion time. Workout or sleep overlap does not establish
-    a physiological effect.
+  context: "Check the source’s drink-size convention and assigned time; beverage counts do not establish standard-drink units or blood alcohol concentration."
   coverage: Missing observations are unknown, not zero intake or complete capture.
   aggregation: Sum source-compatible count contributions after duplicate/correction review. Retain fractional
     equivalents and distinguish missing days from explicitly recorded zero.
