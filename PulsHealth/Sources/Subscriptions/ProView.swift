@@ -62,19 +62,9 @@ struct ProView: View {
 
     @ViewBuilder private var upgrade: some View {
         Section {
-            VStack(alignment: .leading, spacing: 10) {
-                Image(systemName: "square.stack.3d.up")
-                    .font(.title2)
-                    .foregroundStyle(Color.accentColor)
-                    .padding(12)
-                    .background(StudioPalette.surface, in: RoundedRectangle(cornerRadius: 9))
-                    .overlay { RoundedRectangle(cornerRadius: 9).stroke(StudioPalette.line, lineWidth: 1) }
-                    .accessibilityHidden(true)
-                Text(context == .plan ? "Give your data more room." : context.title)
-                    .font(.title2.weight(.semibold))
-                Text(context.explanation).foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 6)
+            StudioLead(symbol: "square.stack.3d.up",
+                       title: context == .plan ? "Give your data more room." : context.title,
+                       detail: context.explanation)
         }
         .listRowBackground(Color.clear)
 

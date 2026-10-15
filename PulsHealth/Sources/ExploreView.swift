@@ -99,8 +99,8 @@ struct ExploreView: View {
             }
             .padding(.horizontal, 14)
             .frame(minHeight: 44)
-            .background(StudioPalette.surface, in: RoundedRectangle(cornerRadius: 9))
-            .overlay { RoundedRectangle(cornerRadius: 9).stroke(StudioPalette.line, lineWidth: 1) }
+            .background(StudioPalette.surface, in: Capsule())
+            .overlay { Capsule().stroke(StudioPalette.line, lineWidth: 1) }
             .contentShape(Rectangle())
             .onTapGesture { searchFocused = true }
             .listRowInsets(EdgeInsets())
