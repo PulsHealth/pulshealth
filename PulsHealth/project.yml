@@ -116,6 +116,8 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources:
+      - path: Configuration/Pro.storekit
+        buildPhase: resources
       - path: HostedTests
     dependencies:
       - target: PulsHealth
@@ -137,7 +139,8 @@ schemes:
       targets:
         PulsHealth: all
         PulsHealthHostedTests: [test]
-    run: {}
+    run:
+      storeKitConfiguration: Configuration/Pro.storekit
     test:
       targets:
         - PulsHealthHostedTests

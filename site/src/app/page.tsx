@@ -30,7 +30,7 @@ const appJsonLd = {
   license: "https://www.apache.org/licenses/LICENSE-2.0",
   codeRepository: GITHUB_URL,
   isAccessibleForFree: true,
-  description: "Sync, export, and control your Apple Health data. Automatic background sync to a compatible database, flexible CSV and JSON exports, and connections to compatible AI tools through your database. Free and open source.",
+  description: "Sync, export, and control your Apple Health data. Automatic background sync to a compatible database, flexible CSV and JSON exports, and connections to compatible AI tools through your database. Free to download and open source, with optional Pro subscriptions for full history and unlimited sync types.",
 };
 
 const destinations = [
@@ -92,7 +92,7 @@ export default async function HomePage() {
               </Button>
             </div>
             <p className="mt-5 text-base font-medium leading-relaxed text-foreground/85 sm:text-lg">
-              <span className="whitespace-nowrap">Free</span>{" "}
+              <span className="whitespace-nowrap">Free + Optional Pro</span>{" "}
               <span aria-hidden="true">·</span>{" "}
               <span className="whitespace-nowrap">Open Source</span>{" "}
               <span aria-hidden="true">·</span>{" "}
@@ -174,7 +174,7 @@ export default async function HomePage() {
         }>
           <p>Choose the measurements and time range you need. Export CSV for spreadsheets or JSON for your own tools and projects.</p>
           <p>Save a personal archive, share a file, or take your data into a new workflow. No account or database required.</p>
-          <a href={APP_STORE_URL} className={textLink}>Get the free app <ArrowRight className="h-4 w-4" aria-hidden /></a>
+          <a href={APP_STORE_URL} className={textLink}>Get the app <ArrowRight className="h-4 w-4" aria-hidden /></a>
         </Feature>
 
         <Feature id="iphone" title="Your health. In every detail." intro="Individual readings or custom summaries." visual={

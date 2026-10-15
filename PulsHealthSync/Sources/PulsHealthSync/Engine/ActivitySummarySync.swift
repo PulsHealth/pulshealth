@@ -78,6 +78,7 @@ extension HealthSyncEngine {
     }
 
     private func runActivitySummarySync(reason: SyncReason) async {
+        guard await allowsSync(types: [HealthTypeCatalog.activitySummaryIdentifier]) else { return }
         await ensureTransport()
         let typeID = HealthTypeCatalog.activitySummaryIdentifier
         guard let transport else {

@@ -36,6 +36,12 @@ struct ExportView: View {
         if let notice = model.export.notice {
             noticeSection(notice)
         }
+        if !model.subscriptions.hasPro {
+            Section {
+                Text("Free exports include every health data type and format for the most recent 30 days, with no limit on how often you export.").foregroundStyle(.secondary)
+                Button("Export older history with Pro") { model.showPro() }
+            }
+        }
         dataSection
         aggregatesSection
         rangeSection

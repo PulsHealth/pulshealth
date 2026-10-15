@@ -7,7 +7,21 @@ struct PulsHealthApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
-        let model = AppModel()
+        // A hosted unit-test process must install SKTestSession before the
+        // first StoreKit request. Keep its unrelated root model deterministic;
+        // subscription tests construct their own real store after that setup.
+        let subscriptions: SubscriptionStore
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            subscriptions = SubscriptionStore(entitlementReader: { false })
+        } else {
+            subscriptions = SubscriptionStore()
+        }
+        #else
+        subscriptions = SubscriptionStore()
+        #endif
+        let engine = HealthSyncEngine(accessPolicy: { await subscriptions.currentPolicy() })
+        let model = AppModel(engine: engine, subscriptions: subscriptions)
         _model = State(initialValue: model)
         // Must happen before app launch finishes so iOS can deliver
         // background task launches.

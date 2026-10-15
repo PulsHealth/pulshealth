@@ -36,6 +36,9 @@ final class AppModel {
     @ObservationIgnored private let capabilitiesReader: any ServerCapabilitiesReading
     /// The Export tab: the server-less way out. A model of its own so a run
     /// outlives the screen that started it (`ExportModel`).
+    let subscriptions: SubscriptionStore
+    var showsPro = false
+    var proReason: String?
     let export = ExportModel()
     let dataRequests = DataRequestModel()
     /// Shared on-device review timing, independent of sync and export state.
@@ -209,8 +212,10 @@ final class AppModel {
         scheduler: BackgroundSyncScheduler? = nil,
         defaults: UserDefaults = .standard,
         healthAccess: (any HealthAccessRequesting)? = nil,
-        capabilitiesReader: (any ServerCapabilitiesReading)? = nil
+        capabilitiesReader: (any ServerCapabilitiesReading)? = nil,
+        subscriptions: SubscriptionStore = SubscriptionStore()
     ) {
+        self.subscriptions = subscriptions
         self.engine = engine
         self.scheduler = scheduler ?? BackgroundSyncScheduler(engine: engine)
         self.defaults = defaults
@@ -218,6 +223,7 @@ final class AppModel {
         self.healthAccess = healthAccess ?? engine
         self.capabilitiesReader = capabilitiesReader ?? engine
         self.explore = ExploreModel(engine: engine)
+        dataRequests.accessPolicy = { [subscriptions] in await subscriptions.currentPolicy() }
         // An analysis can show the permission sheet too; what it answered
         // for history (iOS 27) is recorded the same way as after Apply's.
         explore.onHealthAccessRequested = { [weak self] in await self?.refreshReadableHistory() }
@@ -244,7 +250,7 @@ final class AppModel {
     }
 
     var reviewRequestsBlocked: Bool {
-        showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
+        showsPro || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
             || pairingAwaitsSyncTab || lastErrorMessage != nil || stateFileUnreadable
             || needsAuthorization || isSyncingAll || backfillActive || export.isRunning
             || statuses.contains(where: { $0.activity == .syncing })
@@ -268,11 +274,13 @@ final class AppModel {
         guard !started else { return }
         started = true
 
+        await subscriptions.start()
         config = await engine.store.configuration
         appliedConfig = config
         // The Export tab's draft starts from the applied selection, if the
         // user has not already started editing it.
         export.seedFromApplied(config)
+        if !subscriptions.hasPro { export.draft.range = .last30Days }
         authorizationRequested = defaults.bool(forKey: "authorizationRequested")
         // Don't trust the one-shot flag alone: types added to the catalog after
         // the first grant (or an interrupted permission sheet) stay notDetermined
@@ -544,10 +552,32 @@ final class AppModel {
             && !defaults.bool(forKey: Self.medicationAuthRequestedKey)
     }
 
+    func showPro(_ reason: String? = nil) {
+        proReason = reason
+        reviews.cancelPending()
+        showsPro = true
+    }
+
+    var syncPlanNotice: String? {
+        guard !subscriptions.hasPro else { return nil }
+        let count = appliedConfig.observedTypeIdentifiers.count
+        return count > 5
+            ? "Sync is paused. Your selection has \(count) health data types. Choose up to 5 or upgrade to Pro. Your selection and previously synced data are kept."
+            : "Free sync includes up to 5 health data types and the most recent 30 days. Pro unlocks unlimited types and all available history."
+    }
+
     func startExport() {
         guard !exportBlockedByBackfill, !dataRequests.isBusy, !exportSelection.isEmpty else { return }
-        export.start(configuration: appliedConfig, engine: engine) { [weak self] in
-            await self?.requestHealthAccessForExport()
+        Task {
+            let policy = await subscriptions.currentPolicy()
+            guard policy.allowsExport(start: export.draft.dates().start) else {
+                showPro("Free exports include the most recent 30 days. Upgrade to export older history.")
+                return
+            }
+            guard !exportBlockedByBackfill, !dataRequests.isBusy, !export.isRunning else { return }
+            export.start(configuration: appliedConfig, engine: engine) { [weak self] in
+                await self?.requestHealthAccessForExport()
+            }
         }
     }
 
@@ -738,6 +768,14 @@ final class AppModel {
     ) async -> Bool {
         guard connectionEditCanStart() else { return false }
         let submitted = config
+        if submitted.serverURL != nil {
+            let policy = await subscriptions.currentPolicy()
+            guard policy.allows(submitted) else {
+                showPro("Free automatic sync supports 5 health data types. Each type counts once across raw readings and aggregates. Reduce your selection or upgrade.")
+                return false
+            }
+        }
+        guard connectionEditCanStart() else { return false }
         isUpdatingConnection = true
         defer { isUpdatingConnection = false }
         // Nothing applied now would be saved (the store is read-only this
@@ -1194,6 +1232,7 @@ final class AppModel {
         // the empty default and skip the launch sync.
         await start()
         if trigger == "foreground" {
+            await subscriptions.refreshEntitlements()
             // Off the sync's critical path: capabilities only gate UI.
             Task { await refreshServerCapabilities() }
         }
@@ -1203,6 +1242,10 @@ final class AppModel {
         // observedTypeIdentifiers: an aggregate-only setup (no raw types) still syncs.
         // Not while a continued backfill is submitted but not yet running:
         // it is about to sweep every type itself.
+        guard (await subscriptions.currentPolicy()).allows(appliedConfig) else {
+            if trigger != "foreground" { showPro(syncPlanNotice) }
+            return
+        }
         guard !isUpdatingConnection, !isSyncingAll, !continuedBackfillPending, config.serverURL != nil,
               !config.observedTypeIdentifiers.isEmpty else { return }
         isSyncingAll = true
@@ -1222,6 +1265,7 @@ final class AppModel {
     }
 
     func startBackfill() async {
+        guard (await subscriptions.currentPolicy()).allows(appliedConfig) else { showPro(syncPlanNotice); return }
         guard !isUpdatingConnection, !dataRequests.isBusy else { return }
         guard !isSyncingAll else { return }
         // A continued backfill submitted or running already sweeps every type;

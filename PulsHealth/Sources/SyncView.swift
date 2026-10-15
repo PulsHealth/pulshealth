@@ -66,6 +66,12 @@ struct SyncView: View {
             if model.appliedConfig.serverURL == nil {
                 SyncIntro { path.append(.server(scan: false, choice: $0)) }
             } else {
+                if let notice = model.syncPlanNotice {
+                    Section {
+                        Text(notice).foregroundStyle(.secondary)
+                        Button("See PulsHealth Pro") { model.showPro() }
+                    }
+                }
                 statusCard
                 limitedHistoryNotice
                 syncNowSection

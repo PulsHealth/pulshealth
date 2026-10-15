@@ -66,13 +66,15 @@ extension HealthSyncEngine {
     /// widening HealthKit reports stands only once it has returned a sample
     /// older than `recorded` (`confirmedLimit`).
     func readableLimit(for identifier: String, recorded: Date?) async -> ReadableLimit {
-        guard let dates = await currentReadableHistory(for: [identifier]) else {
-            return ReadableLimit(since: recorded, isFresh: false)
+        guard let healthDates = await currentReadableHistory(for: [identifier]) else {
+            let policy = await accessPolicy()
+            return ReadableLimit(since: policy.limitingRecordedDate(recorded), isFresh: false)
         }
+        let dates = await syncReadableDates(healthDates, for: [identifier])
         return ReadableLimit(
             since: await confirmedLimit(for: identifier, recorded: recorded, reported: dates[identifier]),
             isFresh: true,
-            isConfirmed: dates[identifier] != nil)
+            isConfirmed: healthDates[identifier] != nil)
     }
 
     /// `reported`, unless it is a widening HealthKit cannot back with a
@@ -121,15 +123,16 @@ extension HealthSyncEngine {
     public func refreshReadableHistory(force: Bool = false) async -> [String: Date] {
         guard let configurationUse = beginConfigurationUse() else { return readableHistory }
         defer { activeSyncs.remove(configurationUse) }
-        guard ReadableHistory.isSupported else { return [:] }
-        if !force, let checkedAt = readableHistoryCheckedAt,
+        let policy = await accessPolicy()
+        if !force, policy == lastReadableAccessPolicy, let checkedAt = readableHistoryCheckedAt,
            ContinuousClock.now - checkedAt < Self.readableHistoryInterval {
             return readableHistory
         }
         let config = await store.configuration
-        guard let current = await currentReadableHistory(for: config.observedTypeIdentifiers) else {
+        guard let healthDates = await currentReadableHistory(for: config.observedTypeIdentifiers) else {
             return readableHistory
         }
+        let current = await syncReadableDates(healthDates, for: config.observedTypeIdentifiers)
         var deferred = false
         for identifier in config.enabledTypes.sorted()
         where HealthTypeCatalog.descriptor(for: identifier)?.sampleType != nil {
@@ -150,7 +153,7 @@ extension HealthSyncEngine {
                 if change == .narrowed {
                     await eventLog.log(
                         .info, type: identifier,
-                        "Health access is limited to data from \(Self.day(since)) on"
+                        "Readable history starts at \(Self.day(since)) on"
                             + (ReadableHistory.hasRawProgress(state)
                                 ? " — what was already synced stays on the server"
                                 : " — older history is not read until access is widened"))
@@ -163,13 +166,14 @@ extension HealthSyncEngine {
                 activeSyncs.remove(identifier)
                 await eventLog.log(
                     .info, type: identifier,
-                    "Health access widened (data from \(Self.day(state.readableSince)) → \(Self.day(since))) — re-reading this type's whole history; the server keeps what it already has")
+                    "Readable history widened (data from \(Self.day(state.readableSince)) → \(Self.day(since))) — re-reading this type's whole history; the server keeps what it already has")
             }
         }
-        readableHistory = current
+        lastReadableAccessPolicy = policy
+        readableHistory = healthDates
         readableHistoryCheckedAt = deferred ? nil : .now
         notifyChanged()
-        return current
+        return healthDates
     }
 
     /// "Sep 1, 2026", or "all of it" for no limit — for log lines.

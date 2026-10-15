@@ -302,6 +302,9 @@ struct FulfillDataRequestView: View {
             }
         }
         .navigationTitle("Data Request").navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .primaryAction) {
+            NavigationLink("Pro") { ProView() }
+        } }
         .interactiveDismissDisabled(requests.isBusy || requests.sharing)
         .toolbar { Button("Done") { requests.close() }.disabled(requests.isBusy || requests.sharing) }
         .background(ActivitySheet(isPresented: Binding(get: { requests.sharing }, set: { if !$0 { requests.hideShare() } }),

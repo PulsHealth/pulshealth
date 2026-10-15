@@ -63,6 +63,7 @@ extension HealthSyncEngine {
             await eventLog.log(.error, "No transport configured — set server URL and token")
             return
         }
+        guard await allowsSync(types: Set(ids)) else { return }
         let config = await store.configuration
         // A page is at most `batchSize`; keeping the pack budget at least that
         // large is what guarantees a page never has to be split across batches.
@@ -418,7 +419,7 @@ extension HealthSyncEngine {
             // `readEnd` is nil for the app's engine; an export's engine bounds
             // every page here, the recent-window stream's included.
             predicate: HKQuery.predicateForSamples(
-                withStart: start, end: readEnd, options: .strictStartDate
+                withStart: await limitedSyncStart(start), end: readEnd, options: .strictStartDate
             )
         )
         let queryDescriptor = HKAnchoredObjectQueryDescriptor(
