@@ -664,13 +664,16 @@ import Testing
         #expect(state.totalBucketsUploaded == 5)
         #expect(state.totalBatchesUploaded == 1)
         #expect(await store.configuration.aggregates == [config])
-        // Wait for the scheduled writer itself; persistNow() would leave its
-        // pending debounce task alive after this test removes the directory.
-        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
-        while !FileManager.default.fileExists(atPath: file.path), ContinuousClock.now < deadline {
+        // Wait for both scheduled writers; persistNow() leaves the store's
+        // pending task alive, and the rejection also schedules an event log.
+        let logFile = dir.appendingPathComponent("event-log.json")
+        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+        while (!FileManager.default.fileExists(atPath: file.path)
+            || !FileManager.default.fileExists(atPath: logFile.path)), ContinuousClock.now < deadline {
             try await Task.sleep(for: .milliseconds(20))
         }
         try #require(FileManager.default.fileExists(atPath: file.path))
+        try #require(FileManager.default.fileExists(atPath: logFile.path))
         let reloaded = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
         let persisted = await reloaded.aggregateState(for: config.id)
         #expect(persisted.computedThrough == watermark)
