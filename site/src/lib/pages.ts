@@ -1,6 +1,9 @@
 import { SearchItem } from './types';
 
 export const STATIC_PAGES: SearchItem[] = [
+  { id: 'page-watch-workout-pro', type: 'page', title: 'Watch Workout Pro', description: 'Create, save, share, and schedule structured workouts on iPhone for Apple Workout on Apple Watch. Optional on-device Apple Intelligence and Pro subscription.', href: '/watch-workout-pro/', icon: 'Activity' },
+  { id: 'page-watch-workout-pro-support', type: 'page', title: 'Watch Workout Pro Support', description: 'Help with workout creation, Apple Watch scheduling, subscriptions, and sharing. Contact support@pulshealth.com.', href: '/watch-workout-pro/support/', icon: 'HelpCircle' },
+  { id: 'page-watch-workout-pro-privacy', type: 'page', title: 'Watch Workout Pro Privacy Policy', description: 'Privacy for on-device creation, iCloud collections, public workout links, and the optional connector.', href: '/watch-workout-pro/privacy/', icon: 'Shield' },
   {
     id: 'page-home',
     type: 'page',
