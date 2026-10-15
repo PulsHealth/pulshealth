@@ -91,6 +91,11 @@ with no automatic charge only when verified renewal information also confirms
 renewal is off. When renewal details cannot be read, the page says so and links
 to Apple; it does not guess billing dates or promise no charge. The status is
 in-memory only and follows the same verified access snapshot as engine policy.
+If renewal status lags behind a strictly newer, verified and unexpired current
+entitlement in the same subscription group, access follows that newer purchase
+while renewal details remain unknown. Matching or newer status still controls
+expiry and revocation; an old status never supplies renewal promises for a new
+purchase.
 
 The page offers Apple's native code redemption, Restore Purchases, subscription
 management, privacy and Apple's standard EULA. Redemption completion alone never

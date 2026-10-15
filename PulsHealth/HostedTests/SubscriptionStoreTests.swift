@@ -54,6 +54,28 @@ final class SubscriptionStoreTests: XCTestCase {
             if store.hasPro == expected { break }
             try? await Task.sleep(for: .milliseconds(100))
         }
+        if store.hasPro != expected {
+            // Failure-only fixture diagnostics distinguish propagation and
+            // arbitration failures without changing the assertion or polling.
+            for id in SubscriptionStore.productIDs {
+                if case .verified(let transaction)? = await Transaction.latest(for: id) {
+                    print("StoreKit fixture latest: product=\(id) id=\(transaction.id) purchase=\(transaction.purchaseDate) expiry=\(String(describing: transaction.expirationDate)) revoked=\(String(describing: transaction.revocationDate)) upgraded=\(transaction.isUpgraded)")
+                    if let group = transaction.subscriptionGroupID,
+                       let statuses = try? await Product.SubscriptionInfo.status(for: group) {
+                        for status in statuses {
+                            if case .verified(let value) = status.transaction {
+                                print("StoreKit fixture status: state=\(status.state) product=\(value.productID) id=\(value.id) purchase=\(value.purchaseDate) expiry=\(String(describing: value.expirationDate)) revoked=\(String(describing: value.revocationDate)) upgraded=\(value.isUpgraded)")
+                            }
+                        }
+                    }
+                }
+            }
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let value) = result {
+                    print("StoreKit fixture current: product=\(value.productID) id=\(value.id) purchase=\(value.purchaseDate) expiry=\(String(describing: value.expirationDate)) revoked=\(String(describing: value.revocationDate)) upgraded=\(value.isUpgraded)")
+                }
+            }
+        }
         XCTAssertEqual(store.hasPro, expected, file: file, line: line)
         let policy = await store.currentPolicy()
         XCTAssertEqual(policy, expected ? .unrestricted : .free, file: file, line: line)
@@ -189,6 +211,31 @@ final class SubscriptionStoreTests: XCTestCase {
             date: end, renewal: .ends, isFreeOfferCode: false)
         XCTAssertFalse(canceledPaid.isComplimentary)
         XCTAssertEqual(canceledPaid.status, "Pro · Renewal off")
+    }
+
+    func testCurrentPurchaseOnlyOutranksOlderStatusInItsGroup() {
+        let now = Date()
+        let current = SubscriptionStore.EntitlementRevision(transactionID: 2, groupID: "pro",
+            purchaseDate: now.addingTimeInterval(-10), expirationDate: now.addingTimeInterval(3600))
+        let older = SubscriptionStore.EntitlementRevision(transactionID: 1, groupID: "pro",
+            purchaseDate: now.addingTimeInterval(-100), expirationDate: now.addingTimeInterval(-20))
+        XCTAssertTrue(SubscriptionStore.isNewerCurrentEntitlement(current, than: [older], now: now))
+        // Matching status remains authoritative even for forced expiry or refund.
+        var matching = current
+        matching.expirationDate = now.addingTimeInterval(-1)
+        XCTAssertFalse(SubscriptionStore.isNewerCurrentEntitlement(current, than: [matching], now: now))
+        var newer = older
+        newer.transactionID = 3
+        newer.purchaseDate = now
+        XCTAssertFalse(SubscriptionStore.isNewerCurrentEntitlement(current, than: [newer], now: now))
+        var ambiguous = older
+        ambiguous.purchaseDate = current.purchaseDate
+        XCTAssertFalse(SubscriptionStore.isNewerCurrentEntitlement(current, than: [ambiguous], now: now))
+        var expiredCurrent = current
+        expiredCurrent.expirationDate = now.addingTimeInterval(-1)
+        XCTAssertFalse(SubscriptionStore.isNewerCurrentEntitlement(expiredCurrent, than: [older], now: now))
+        newer.groupID = "other"
+        XCTAssertTrue(SubscriptionStore.isNewerCurrentEntitlement(current, than: [older, newer], now: now))
     }
 
     func testFreeAccessNeverKeepsStalePlanDetails() async {

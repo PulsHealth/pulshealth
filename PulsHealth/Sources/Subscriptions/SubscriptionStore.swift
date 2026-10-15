@@ -17,6 +17,24 @@ final class SubscriptionStore {
     private(set) var products: [Product] = []
     private(set) var isBusy = false
     private(set) var message: String?
+    struct EntitlementRevision: Sendable {
+        var transactionID: UInt64
+        var groupID: String?
+        var purchaseDate: Date
+        var expirationDate: Date?
+    }
+
+    /// StoreKit's two verified streams can catch up in either order. A
+    /// status for the same or a newer transaction remains authoritative;
+    /// an older status cannot suppress a new, still-paid purchase.
+    nonisolated static func isNewerCurrentEntitlement(
+        _ current: EntitlementRevision, than statuses: [EntitlementRevision], now: Date
+    ) -> Bool {
+        guard let expiration = current.expirationDate, expiration > now else { return false }
+        return statuses.filter { $0.groupID == current.groupID }.allSatisfy {
+            $0.transactionID != current.transactionID && $0.purchaseDate < current.purchaseDate
+        }
+    }
     @ObservationIgnored private var updates: Task<Void, Never>?
     @ObservationIgnored private var statusUpdates: Task<Void, Never>?
     @ObservationIgnored private var refreshGeneration = 0
@@ -48,6 +66,7 @@ final class SubscriptionStore {
     nonisolated static func readAccess() async -> ProAccessSnapshot {
         var currentEntitlement = false
         var fallbackPlan: ProPlanDetails?
+        var currentRevisions: [(revision: EntitlementRevision, plan: ProPlanDetails)] = []
         var groups: Set<String> = []
         let now = Date()
         for await result in Transaction.currentEntitlements {
@@ -64,6 +83,9 @@ final class SubscriptionStore {
                     productID: transaction.productID,
                     date: transaction.expirationDate.flatMap { $0 > now ? $0 : nil },
                     renewal: .unknown, isFreeOfferCode: false)
+                currentRevisions.append((EntitlementRevision(transactionID: transaction.id,
+                    groupID: transaction.subscriptionGroupID, purchaseDate: transaction.purchaseDate,
+                    expirationDate: transaction.expirationDate), candidate))
                 if fallbackPlan == nil || (candidate.date ?? .distantPast) > (fallbackPlan?.date ?? .distantPast) {
                     fallbackPlan = candidate
                 }
@@ -79,6 +101,7 @@ final class SubscriptionStore {
         var hasVerifiedStatus = false
         var statusEntitled = false
         var verifiedPlan: ProPlanDetails?
+        var statusRevisions: [EntitlementRevision] = []
         for group in groups {
             guard let statuses = try? await Product.SubscriptionInfo.status(for: group) else { continue }
             for status in statuses {
@@ -86,6 +109,9 @@ final class SubscriptionStore {
                       case .verified(let renewal) = status.renewalInfo,
                       productIDs.contains(transaction.productID) else { continue }
                 hasVerifiedStatus = true
+                statusRevisions.append(EntitlementRevision(transactionID: transaction.id,
+                    groupID: transaction.subscriptionGroupID, purchaseDate: transaction.purchaseDate,
+                    expirationDate: transaction.expirationDate))
                 guard transaction.revocationDate == nil, !transaction.isUpgraded else { continue }
                 let deadline: Date?
                 switch status.state {
@@ -109,6 +135,14 @@ final class SubscriptionStore {
                     }
                 }
             }
+        }
+        if hasVerifiedStatus,
+           let newer = currentRevisions.filter({
+               Self.isNewerCurrentEntitlement($0.revision, than: statusRevisions, now: now)
+           }).max(by: { $0.revision.purchaseDate < $1.revision.purchaseDate }) {
+            // The new purchase is verified, but its renewal details have not
+            // arrived. Do not borrow dates or renewal promises from old status.
+            return ProAccessSnapshot(hasPro: true, plan: newer.plan)
         }
         return hasVerifiedStatus
             ? ProAccessSnapshot(hasPro: statusEntitled, plan: verifiedPlan)
