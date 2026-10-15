@@ -633,6 +633,12 @@ because today's ring mutates all day and observer wakes are frequent.
 
 ## How reconciliation runs
 
+Reconciliation holds the same per-type claim as raw sync from its first read
+through its last deletion. A busy type rejects another reconciliation before
+any reads; observer updates arriving during it queue a raw pass that drains
+before the claim is released. Cancellation releases the claim and leaves any
+pending update for the next wake.
+
 HealthKit purges deletion tombstones after a while, so an observer or
 scheduled sync can miss a delete. *Reconcile with Database* on a type's sync
 detail (`HealthSyncEngine.reconcile(type:)`, quantity, category and workout
@@ -814,6 +820,12 @@ if let cached = await store.profile(for: facts.typeIdentifier),
 }
 try await store.save(profile)
 ```
+
+Cached profiles are refreshed when their calendar time zone changes. Profile
+version 6 invalidates percentiles and histograms produced by the earlier biased
+reservoir scheduler; exact counts and means were not derived from that sample.
+Activity-ring queries and wire days use the Gregorian calendar in the phone's
+time zone, including when the phone prefers Buddhist or Japanese dates.
 
 **This layer never touches sync state.** It has no engine, no
 `SyncStateStore`, no event or wake log and no transport, and that is the

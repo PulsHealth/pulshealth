@@ -41,6 +41,29 @@ import Testing
 
     // MARK: - Reservoir
 
+    @Test func reservoirCanSelectTheFirstItemAfterFilling() {
+        var replacements = 0
+        for seed in 0..<10_000 {
+            var reservoir = ReservoirQuantiles(capacity: 1, seed: UInt64(seed))
+            reservoir.add(0)
+            reservoir.add(1)
+            if reservoir.values == [1] { replacements += 1 }
+        }
+        // Fixed seeds make this deterministic; either input must get about half
+        // the selections. Previously the second input was never selected.
+        #expect((4_700...5_300).contains(replacements))
+    }
+
+    @Test func reservoirGivesEveryStreamPositionAnEqualChance() {
+        var selections = [Int](repeating: 0, count: 10)
+        for seed in 0..<10_000 {
+            var reservoir = ReservoirQuantiles(capacity: 1, seed: UInt64(seed))
+            for index in selections.indices { reservoir.add(Double(index)) }
+            selections[Int(reservoir.values[0])] += 1
+        }
+        for count in selections { #expect((850...1_150).contains(count)) }
+    }
+
     @Test func reservoirIsExactWhileTheStreamFits() {
         var r = ReservoirQuantiles(capacity: 100, seed: 1)
         for v in stride(from: 0.0, through: 99, by: 1) { r.add(v) }

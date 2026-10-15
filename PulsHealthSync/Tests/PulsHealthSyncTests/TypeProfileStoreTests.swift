@@ -17,11 +17,12 @@ import Testing
         _ identifier: String = heartRate, version: Int = TypeProfile.currentVersion,
         unit: String? = "count/min", complete: Bool = true,
         rangeStart: Date? = nil, rangeEnd: Date? = nil, lookbackDays: Int? = nil,
-        earliest: Date? = nil, latest: Date? = nil, computedAt: Date? = nil
+        earliest: Date? = nil, latest: Date? = nil, computedAt: Date? = nil,
+        timeZoneID: String = TimeZone.current.identifier
     ) -> TypeProfile {
         TypeProfile(
             version: version, typeIdentifier: identifier, kind: .quantity, unitString: unit,
-            computedAt: computedAt ?? now, scanDuration: 2, timeZoneID: "UTC",
+            computedAt: computedAt ?? now, scanDuration: 2, timeZoneID: timeZoneID,
             rangeStart: rangeStart, rangeEnd: rangeEnd, lookbackDays: lookbackDays, isComplete: complete,
             sampleCount: 3, earliestStart: earliest ?? now.addingTimeInterval(-86_400),
             latestStart: latest ?? now.addingTimeInterval(-60),
@@ -214,4 +215,18 @@ import Testing
         let p = profile(complete: false)
         #expect(TypeProfileStore.isStale(p, facts: facts(for: p), options: .init(), now: now))
     }
+    @Test func changingTimeZoneMakesUnchangedDailyCountsStale() throws {
+        let p = profile(timeZoneID: "America/Los_Angeles")
+        var options = HealthExplorer.ProfileOptions()
+        options.calendar.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        #expect(!TypeProfileStore.isStale(p, facts: facts(for: p), options: options, now: now))
+        options.calendar.timeZone = try #require(TimeZone(identifier: "Pacific/Honolulu"))
+        #expect(TypeProfileStore.isStale(p, facts: facts(for: p), options: options, now: now))
+    }
+
+    @Test func profilesFromBeforeTheSamplingFixAreStale() {
+        let old = profile(version: 5)
+        #expect(TypeProfileStore.isStale(old, facts: facts(for: old), options: .init(), now: now))
+    }
+
 }
