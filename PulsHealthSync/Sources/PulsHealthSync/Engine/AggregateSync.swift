@@ -290,6 +290,7 @@ extension HealthSyncEngine {
             return
         }
         let typeID = agg.typeIdentifier
+        guard await allowsSync(types: [typeID]) else { return }
         guard let descriptor = HealthTypeCatalog.descriptor(for: typeID),
               descriptor.kind == .quantity else {
             await eventLog.log(.error, type: typeID, "Aggregate \(agg.summaryLabel): not a quantity type")

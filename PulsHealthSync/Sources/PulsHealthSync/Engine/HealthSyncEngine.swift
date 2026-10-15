@@ -128,14 +128,19 @@ public actor HealthSyncEngine {
     var readableHistory: [String: Date] = [:]
     var readableHistoryCheckedAt: ContinuousClock.Instant?
 
+    var lastReadableAccessPolicy: SyncAccessPolicy?
+    let accessPolicy: @Sendable () async -> SyncAccessPolicy
+
     public init(
         store: SyncStateStore? = nil, eventLog: SyncEventLog? = nil, wakeLog: WakeLog? = nil,
-        recentWindowFirst: Bool = true, readEnd: Date? = nil
+        recentWindowFirst: Bool = true, readEnd: Date? = nil,
+        accessPolicy: @escaping @Sendable () async -> SyncAccessPolicy = { .unrestricted }
     ) {
         self.store = store ?? SyncStateStore()
         self.eventLog = eventLog ?? SyncEventLog()
         self.wakeLog = wakeLog ?? WakeLog()
         self.recentWindowFirst = recentWindowFirst
+        self.accessPolicy = accessPolicy
         self.readEnd = readEnd
     }
 
@@ -863,6 +868,7 @@ public actor HealthSyncEngine {
     }
 
     private func runSync(type identifier: String, reason: SyncReason) async {
+        guard await allowsSync(types: [identifier]) else { return }
         guard let descriptor = HealthTypeCatalog.descriptor(for: identifier),
               descriptor.sampleType != nil else {
             await eventLog.log(.error, type: identifier, "Unknown type identifier")
@@ -1224,6 +1230,7 @@ public actor HealthSyncEngine {
     /// a run that found nothing anywhere throws `reconciliationUnreadable`
     /// rather than record itself as in sync.
     public func reconcile(type identifier: String) async throws -> ReconciliationReport {
+        guard await allowsSync(types: [identifier]) else { throw SyncError.accessRestricted }
         let key = "reconcile:\(UUID())"
         guard !configurationMutationInProgress else { throw SyncError.configurationBusy }
         activeSyncs.insert(key)
@@ -1753,6 +1760,7 @@ enum PassFailure {
 }
 
 public enum SyncError: Error, LocalizedError {
+    case accessRestricted
     case configurationBusy
     case healthDataUnavailable
     case authorizationNotDetermined
@@ -1771,6 +1779,8 @@ public enum SyncError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
+        case .accessRestricted:
+            return "Choose up to 5 health data types or upgrade to PulsHealth Pro to sync this selection."
         case .configurationBusy:
             return "Database settings are being applied. Try again in a moment."
         case .healthDataUnavailable:

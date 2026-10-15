@@ -14,6 +14,34 @@ Published as
 Store (free). The listing material and the record of what shipped are in
 [`docs/appstore/`](../docs/appstore/README.md).
 
+## Free and Pro access
+
+The subscription implementation is prepared in source; product creation and
+release acceptance are tracked in [the subscription setup guide](../docs/appstore/subscriptions.md).
+The shipped release record remains authoritative for public availability.
+
+Free includes full Explore, unlimited manual CSV/JSON/JSONL exports of all types
+from the most recent 30 days, and automatic sync of up to five distinct types
+from the most recent 30 days. Enabled aggregates and raw readings of the same
+type count once. Pro includes unlimited types and all available history, at
+US base prices of $1.99/month or $9.99/year. No lifetime product or hosting is
+included. Apple Health permissions always apply.
+
+`SubscriptionStore` uses verified StoreKit current entitlements, observes
+transaction updates, and restores through `AppStore.sync()`. The app's engine
+receives a live `SyncAccessPolicy` provider so observer and scheduled launches
+check entitlements too. The standalone package remains unrestricted by default.
+App limits combine with HealthKit readable-history limits internally; Explore
+only receives HealthKit's own dates. Widened access reopens raw backfills and
+aggregate/ring/enrichment passes, preserving existing server data.
+
+An over-limit saved selection pauses in full; the app never picks five types
+on someone's behalf. The Export tab and Data Requests check history before
+Health permission prompts, file generation or delivery. The paywall uses
+localized App Store prices, explains renewal, and links privacy, Apple's
+standard EULA, restore and subscription management. No purchase analytics or
+third-party SDK is added.
+
 ## Project generation
 
 `PulsHealth.xcodeproj` is **generated** from `project.yml` by

@@ -20,6 +20,20 @@ struct SettingsView: View {
     /// Failures in the last Validate Aggregate Functions run; nil before one.
     @State private var aggregateValidationFailures: Int?
 
+    private var syncStartDate: Binding<Date> {
+        Binding {
+            model.subscriptions.hasPro ? model.config.startDate
+                : max(model.config.startDate, SyncAccessPolicy.free.earliestDate() ?? model.config.startDate)
+        } set: { date in
+            if !model.subscriptions.hasPro,
+               !SyncAccessPolicy.free.allowsExport(start: date) {
+                model.showPro("Free sync includes the most recent 30 days. Upgrade to sync older history.")
+            } else {
+                model.config.startDate = date
+            }
+        }
+    }
+
     var body: some View {
         @Bindable var model = model
         let analyzed = model.explore.profiles.count
@@ -30,6 +44,12 @@ struct SettingsView: View {
             Section {
                 NavigationLink(value: SettingsRoute.user) {
                     UserRow(name: model.config.userName, email: model.config.userEmail)
+                }
+            }
+
+            Section("Plan") {
+                Button { model.showPro() } label: {
+                    Label(model.subscriptions.hasPro ? "PulsHealth Pro · Active" : "PulsHealth Free · Upgrade", systemImage: "star.circle")
                 }
             }
 
@@ -47,7 +67,7 @@ struct SettingsView: View {
                         // "Sync", not "Export": the Export tab has its own time
                         // range, and this date is not it.
                         "Sync data from",
-                        selection: $model.config.startDate,
+                        selection: syncStartDate,
                         in: ...Date(),
                         displayedComponents: .date
                     )

@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-12**
+**Last updated: 2026-10-15**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
@@ -49,6 +49,26 @@ up, it exports a file when you ask for one, and it can send a one-time export to
   permission and never writes, edits, or deletes anything in Apple Health.
 - **You choose what is read.** Nothing is read until you pick the data types
   and iOS grants permission, and you can change or revoke that at any time.
+
+## PulsHealth Pro subscriptions
+
+The app offers optional auto-renewing PulsHealth Pro subscriptions through
+Apple's StoreKit framework. Apple processes payments under the Apple Account
+used for the App Store. The developer does not receive payment-card details.
+The app reads Apple's verified purchase entitlements to decide which features
+are available; it does not send health data, selections, exported files, or
+server credentials to Apple to check a subscription. No third-party purchase
+SDK, receipt server, or new PulsHealth account is used for this.
+
+Free access includes Explore, unlimited manual exports of all health data types
+and formats from the most recent 30 days, and automatic sync of up to five
+health data types from the most recent 30 days. Pro removes these app limits;
+Apple Health permissions still apply. Data Requests use the manual-export
+history limit. A health type counts once across raw readings and enabled
+aggregates. Subscription expiry keeps saved selections and existing server
+data; a selection over five types pauses syncing until reduced or upgraded.
+Purchasing Pro does not include hosting. Restore Purchases and Manage
+Subscription are available in Settings → Plan.
 
 ## App Store ratings and reviews
 
