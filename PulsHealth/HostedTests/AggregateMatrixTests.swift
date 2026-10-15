@@ -120,7 +120,25 @@ final class AggregateMatrixTests: XCTestCase {
             XCTAssertTrue(event.message.contains(
                 "\(config.function.rawValue) is not supported by this type's aggregation style"))
         }
-        await store.persistNow()
+        // Let both debounced writers finish before deleting their directory.
+        // persistNow() alone does not drain the store's pending save task.
+        let stateFile = directory.appendingPathComponent("sync-state.json")
+        let logFile = directory.appendingPathComponent("event-log.json")
+        for _ in 0..<150 {
+            if FileManager.default.fileExists(atPath: stateFile.path),
+               FileManager.default.fileExists(atPath: logFile.path) { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: stateFile.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: logFile.path))
+        let reloaded = SyncStateStore(directory: directory, tokenStore: InMemoryTokenStore())
+        let persistedConfig = await reloaded.configuration
+        XCTAssertEqual(persistedConfig.aggregates, configs)
+        for config in configs {
+            let persistedState = await reloaded.aggregateState(for: config.id)
+            let originalState = await store.aggregateState(for: config.id)
+            XCTAssertEqual(persistedState, originalState)
+        }
     }
 
     private func statisticsOption(for function: AggregateFunction) -> HKStatisticsOptions {
