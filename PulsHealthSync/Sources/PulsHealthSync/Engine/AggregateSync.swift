@@ -579,8 +579,10 @@ extension HealthSyncEngine {
                 failures.append("\(descriptor.identifier): no allowed functions (unknown aggregation style)")
                 continue
             }
-            let quantityType = HKQuantityType(
-                HKQuantityTypeIdentifier(rawValue: descriptor.identifier))
+            guard let quantityType = descriptor.sampleType as? HKQuantityType else {
+                failures.append("\(descriptor.identifier): unavailable on this runtime")
+                continue
+            }
             for function in functions {
                 combos += 1
                 let queryDescriptor = HKStatisticsCollectionQueryDescriptor(
