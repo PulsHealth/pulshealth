@@ -1,7 +1,8 @@
 # PulsHealth Pro subscription setup
 
-Source implementation for issue #251. This document is preparation, not proof
-that products exist in App Store Connect or that a subscription is released.
+Source implementation for issue #251. Both products were configured in App
+Store Connect on 2026-10-15 for internal TestFlight testing with 2.2 (23).
+They have not been submitted for App Review or publicly released.
 
 | Setting | Monthly | Annual |
 |---|---|---|
@@ -46,11 +47,17 @@ limitation, not purchase acceptance on iOS 26.5.
 
 ## Release acceptance
 
-- [ ] Create both products in App Store Connect; configure territories, tax
+- [x] Create both products in App Store Connect; configure territories, tax
       category, localizations, subscription review screenshots and descriptions.
-- [ ] Confirm the Paid Apps Agreement, tax and banking readiness.
-- [ ] Set US base prices above; confirm each localized product is returned by
-      StoreKit on a sandbox physical device.
+      Group ID `22482263`; monthly Apple ID `6823288020`, annual `6823289442`.
+      Both are level 1, available in all 175 current territories, with English
+      metadata and the parent app tax category.
+- [x] Confirm the Paid Apps Agreement, tax and banking readiness: verified
+      Active on 2026-10-15 (USD banking, U.S. W-9 and compliance also Active).
+- [x] Set US base prices above and Apple-calculated localized prices. Annual
+      billing is one upfront yearly payment, not monthly installments.
+- [ ] Confirm each localized product is returned by StoreKit on a sandbox
+      physical device.
 - [ ] Verify purchase, restore on a fresh install, cancellation retaining access
       through the paid period, expiration, refund/revocation, Ask to Buy, billing
       grace, offline launch and app relaunch for both durations.
