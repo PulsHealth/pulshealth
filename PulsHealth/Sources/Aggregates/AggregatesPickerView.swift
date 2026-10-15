@@ -20,6 +20,7 @@ struct AggregatesPickerView: View {
                 searchResultsSection
             }
         }
+        .studioScreen()
         .navigationTitle("Aggregates")
         .searchable(
             text: $searchText, placement: .navigationBarDrawer(displayMode: .always),
@@ -125,6 +126,7 @@ private struct AggregateCategoryView: View {
                 Text("Tap a type to add it with its daily total or average. Tap ⓘ to add more.")
             }
         }
+        .studioScreen()
         .navigationTitle(group.rawValue)
         .navigationBarTitleDisplayMode(.large)
         .aggregateTypeDestination(scope: scope)

@@ -41,7 +41,13 @@ struct CardSection<Content: View, Action: View>: View {
                 }
                 content()
             }
-            .padding(.vertical, 4)
+            .padding(14)
+            .background(StudioPalette.surface, in: RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10).stroke(StudioPalette.line, lineWidth: 1)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
         }
     }
 }

@@ -60,6 +60,7 @@ struct TypePageView: View {
             }
             actions
         }
+        .studioScreen()
         .navigationTitle(descriptor.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .task {

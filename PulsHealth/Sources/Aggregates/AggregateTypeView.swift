@@ -35,6 +35,7 @@ struct AggregateTypeView: View {
                 }
             }
         }
+        .studioScreen()
         .navigationTitle(descriptor.displayName)
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $addingCustom) {
@@ -239,6 +240,7 @@ private struct AggregateOptionsSheet: View {
                     }
                 }
             }
+            .studioScreen()
             .navigationTitle(config?.label ?? "Options")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

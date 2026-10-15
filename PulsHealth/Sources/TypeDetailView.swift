@@ -27,6 +27,7 @@ struct TypeDetailView: View {
             }
             TypeSyncDetailsSections(status: status)
         }
+        .studioScreen()
         .navigationTitle(status.descriptor.displayName)
         .navigationBarTitleDisplayMode(.inline)
     }

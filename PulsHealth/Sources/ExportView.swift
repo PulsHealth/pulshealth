@@ -18,14 +18,16 @@ struct ExportView: View {
         List {
             switch model.export.state {
             case .idle:
-                idleSections
+                idleSections.studioSurface()
             case .running(let progress):
-                runningSections(progress)
+                runningSections(progress).studioSurface()
             case .finished(let finished):
-                finishedSections(finished)
+                finishedSections(finished).studioSurface()
             }
         }
-        .navigationTitle("Export")
+        .studioScreen()
+        .navigationTitle("Export workspace")
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { StudioPlanButton(context: .exportHistory) } }
         .deleteExportAlert(isPresented: $confirmDelete, export: model.export)
         .reviewRequestOpportunity(.export, blocked: sharing || confirmDelete)
     }
@@ -33,14 +35,74 @@ struct ExportView: View {
     // MARK: - Idle
 
     @ViewBuilder private var idleSections: some View {
+        workspaceSummary
         if let notice = model.export.notice {
             noticeSection(notice)
         }
+        rangeSection
         dataSection
         aggregatesSection
-        rangeSection
         formatSection
+        filePlan
         exportButtonSection
+    }
+
+    private var workspaceSummary: some View {
+        let draft = model.export.draft
+        return CardSection("Build a file from Apple Health", subtitle: "Choose your data, then export on this iPhone.") {
+            StudioMetrics { selectionMetrics(draft) }
+        }
+    }
+
+    @ViewBuilder private func selectionMetrics(_ draft: ExportDraft) -> some View {
+        StudioMetric(value: draft.types.count.formatted(), label: "Raw types")
+        StudioMetric(value: AggregateList(draft.aggregates).typeIdentifiers.count.formatted(), label: "Aggregated types")
+        StudioMetric(value: draft.format.title, label: draft.zipped ? "ZIP package" : "Loose files")
+    }
+
+    /// A file plan, not fabricated sample rows. It renders only the existing
+    /// draft and does not ask for Health access or start an export.
+    private var filePlan: some View {
+        let draft = model.export.draft
+        return Section {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("File plan", systemImage: "doc.text.magnifyingglass").font(.headline)
+                Text(draft.format == .csv ? "CSV tables + manifest" : "\(draft.format.title) data + manifest")
+                    .font(.subheadline.weight(.semibold))
+                VStack(alignment: .leading, spacing: 7) {
+                    planLine("History", draft.rangeLabel())
+                    if draft.format == .csv { planLine("Layout", draft.csvOptions.layout.title) }
+                    planLine("Raw types", draft.types.count.formatted())
+                    planLine("Aggregate series", draft.aggregates.count.formatted())
+                    planLine("Package", draft.zipped ? "ZIP archive" : "Separate files")
+                }
+                .font(.caption.monospaced())
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(StudioPalette.code, in: RoundedRectangle(cornerRadius: 7))
+                Text("Structure only. File contents depend on the data Apple Health returns when you export.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.vertical, 6)
+            .accessibilityIdentifier("studio.filePlan")
+        }
+        .studioSurface()
+    }
+
+    private func planLine(_ label: String, _ value: String) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                Text(label).foregroundStyle(.secondary).fixedSize()
+                Spacer(minLength: 8)
+                Text(value).fixedSize()
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(label).foregroundStyle(.secondary)
+                Text(value).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private var dataSection: some View {
@@ -200,9 +262,11 @@ struct ExportView: View {
             Button {
                 model.startExport()
             } label: {
-                Text("Export").frame(maxWidth: .infinity)
+                Label("Export \(model.export.draft.format.title)", systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(StudioPalette.onAccent)
             .controlSize(.large)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
@@ -496,6 +560,7 @@ struct ExportView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .foregroundStyle(StudioPalette.onAccent)
                 .controlSize(.large)
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))

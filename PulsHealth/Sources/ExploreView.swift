@@ -32,6 +32,16 @@ struct ExploreView: View {
 
     var body: some View {
         List {
+            if searchText.isEmpty {
+                CardSection("Your health data", subtitle: "Browse readings, sources and history on this iPhone.") {
+                    StudioMetrics {
+                        StudioMetric(value: HealthTypeCatalog.all.count.formatted(), label: "Supported types")
+                        StudioMetric(value: model.explore.profiles.count.formatted(), label: "Types analyzed")
+                    }
+                    Text("Explore is always included with Free.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             searchField
             if searchText.isEmpty {
                 accessCards
@@ -41,8 +51,10 @@ struct ExploreView: View {
             }
         }
         .scrollDismissesKeyboard(.immediately)
-        .navigationTitle("Explore")
+        .studioScreen()
+        .navigationTitle("Explore your data")
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { StudioPlanButton() }
             ToolbarItem(placement: .topBarTrailing) { optionsMenu }
         }
         .navigationDestination(for: ExploreRoute.self) { route in
@@ -87,8 +99,9 @@ struct ExploreView: View {
             }
             .padding(.horizontal, 14)
             .frame(minHeight: 44)
-            .background(Color(.secondarySystemGroupedBackground), in: Capsule())
-            .contentShape(Capsule())
+            .background(StudioPalette.surface, in: RoundedRectangle(cornerRadius: 9))
+            .overlay { RoundedRectangle(cornerRadius: 9).stroke(StudioPalette.line, lineWidth: 1) }
+            .contentShape(Rectangle())
             .onTapGesture { searchFocused = true }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
@@ -115,6 +128,7 @@ struct ExploreView: View {
                         Task { await model.requestAccessForEnabledTypesIfNeeded() }
                     }
                     .buttonStyle(.borderedProminent)
+                    .foregroundStyle(StudioPalette.onAccent)
                     .controlSize(.small)
                     authorizationHint
                 }
@@ -323,6 +337,7 @@ struct ExploreView: View {
                 hasServer: model.appliedConfig.serverURL != nil,
                 showsCategory: showsCategory)
         }
+        .studioSurface()
     }
 }
 

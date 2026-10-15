@@ -70,7 +70,7 @@ struct OnboardingView: View {
                 // is settled: the flow's length should not change under you.
                 pageDots
             }
-            .background(Color(.systemBackground))
+            .background(StudioPalette.canvas)
             .toolbar {
                 if model.onboardingIsRerun {
                     ToolbarItem(placement: .cancellationAction) {
@@ -304,7 +304,10 @@ struct OnboardingView: View {
 
     private func pageIcon(_ symbol: String, color: Color) -> some View {
         Image(systemName: symbol)
-            .font(.system(size: 56))
+            .font(.system(size: 42, weight: .medium))
+            .padding(20)
+            .background(StudioPalette.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay { RoundedRectangle(cornerRadius: 12).stroke(StudioPalette.line, lineWidth: 1) }
             .foregroundStyle(color)
             .accessibilityHidden(true)
     }
@@ -336,6 +339,7 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
+        .foregroundStyle(StudioPalette.onAccent)
         .controlSize(.large)
         .disabled(requestingHealthAccess || finishing)
         .accessibilityLabel(title)

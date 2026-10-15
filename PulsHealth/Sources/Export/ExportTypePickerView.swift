@@ -17,6 +17,7 @@ struct ExportTypePickerView: View {
                 searchResultsSection
             }
         }
+        .studioScreen()
         .navigationTitle("Data Types")
         .searchable(
             text: $searchText, placement: .navigationBarDrawer(displayMode: .always),
@@ -115,6 +116,7 @@ struct ExportTypeCategoryView: View {
                 }
             }
         }
+        .studioScreen()
         .navigationTitle(group.rawValue)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {

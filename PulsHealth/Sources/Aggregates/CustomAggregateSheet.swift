@@ -80,6 +80,7 @@ struct CustomAggregateSheet: View {
                     Text(isDuplicate ? "\(descriptor.displayName) already has \(config.label.lowercasedFirst.withArticle)." : countText)
                 }
             }
+            .studioScreen()
             .navigationTitle("Custom Aggregate")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

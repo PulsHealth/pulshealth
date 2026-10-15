@@ -26,15 +26,15 @@ struct ProView: View {
             if !store.isLoaded {
                 Section { ProgressView("Checking your plan") }
             } else if store.hasPro {
-                activePlan
+                activePlan.studioSurface()
             } else {
-                upgrade
+                upgrade.studioSurface()
             }
             if let message = store.message {
                 Section { Text(message).accessibilityIdentifier("pro.purchaseMessage") }
             }
-            accountActions
-            if store.isLoaded && !store.hasPro { freeComparison }
+            accountActions.studioSurface()
+            if store.isLoaded && !store.hasPro { freeComparison.studioSurface() }
             Section {
                 Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy/")!)
                 Link("Terms of Use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
@@ -42,6 +42,7 @@ struct ProView: View {
                 Text("Pro unlocks app features. Database hosting is separate, and Apple Health permissions still determine what data you can read.")
             }
         }
+        .studioScreen()
         .navigationTitle(store.hasPro ? "Your plan" : "PulsHealth Pro")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
@@ -62,16 +63,24 @@ struct ProView: View {
     @ViewBuilder private var upgrade: some View {
         Section {
             VStack(alignment: .leading, spacing: 10) {
-                Text(context.title).font(.title2.bold())
+                Image(systemName: "square.stack.3d.up")
+                    .font(.title2)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(12)
+                    .background(StudioPalette.surface, in: RoundedRectangle(cornerRadius: 9))
+                    .overlay { RoundedRectangle(cornerRadius: 9).stroke(StudioPalette.line, lineWidth: 1) }
+                    .accessibilityHidden(true)
+                Text(context == .plan ? "Give your data more room." : context.title)
+                    .font(.title2.weight(.semibold))
                 Text(context.explanation).foregroundStyle(.secondary)
             }
             .padding(.vertical, 6)
         }
         .listRowBackground(Color.clear)
 
-        Section {
-            benefit("All permitted history", detail: "Export and sync beyond the latest 30 days.", symbol: "clock.arrow.circlepath")
-            benefit("Unlimited automatic-sync types", detail: "Keep every selected health data type in sync.", symbol: "arrow.triangle.2.circlepath")
+        Section("Workspace access") {
+            comparisonRow("Export history", free: "30 days", pro: "All permitted")
+            comparisonRow("Automatic-sync types", free: "5 types", pro: "Unlimited")
         }
 
         Section {
@@ -86,13 +95,13 @@ struct ProView: View {
                             Text(isAnnual(product) ? "Billed once a year" : "Billed each month")
                                 .font(.caption).foregroundStyle(.secondary)
                             if dynamicTypeSize.isAccessibilitySize {
-                                Text(product.displayPrice).font(.headline)
+                                Text(product.displayPrice).font(.title3.weight(.semibold).monospacedDigit())
                             }
                         }
                         .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                         if !dynamicTypeSize.isAccessibilitySize {
-                            Text(product.displayPrice).font(.headline)
+                            Text(product.displayPrice).font(.title3.weight(.semibold).monospacedDigit())
                                 .foregroundStyle(.primary)
                         }
                     }
@@ -100,6 +109,8 @@ struct ProView: View {
                     .padding(.vertical, 4)
                 }
                 .buttonStyle(.plain)
+                .listRowBackground(selectedProduct?.id == product.id
+                    ? Color.accentColor.opacity(0.12) : StudioPalette.surface)
                 .disabled(store.isBusy)
                 .accessibilityAddTraits(selectedProduct?.id == product.id ? [.isSelected] : [])
                 .accessibilityIdentifier(isAnnual(product) ? "pro.annual" : "pro.monthly")
@@ -125,6 +136,7 @@ struct ProView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .foregroundStyle(StudioPalette.onAccent)
                 .controlSize(.large)
                 .disabled(store.isBusy)
                 .accessibilityIdentifier("pro.subscribe")
@@ -187,6 +199,23 @@ struct ProView: View {
     }
 
     private func isAnnual(_ product: Product) -> Bool { product.id == SubscriptionStore.annualID }
+
+    private func comparisonRow(_ title: String, free: String, pro: String) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(title).font(.subheadline.weight(.semibold))
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 16) { comparisonValues(free: free, pro: pro) }
+                VStack(alignment: .leading, spacing: 5) { comparisonValues(free: free, pro: pro) }
+            }
+        }
+        .padding(.vertical, 3)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder private func comparisonValues(free: String, pro: String) -> some View {
+        Text("Free: \(free)").foregroundStyle(.secondary)
+        Text("Pro: \(pro)").foregroundStyle(Color.accentColor)
+    }
 
     private func benefit(_ title: String, detail: String, symbol: String) -> some View {
         Label {

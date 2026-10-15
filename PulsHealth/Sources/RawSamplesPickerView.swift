@@ -39,6 +39,7 @@ struct RawSamplesPickerView: View {
                 searchResultsSection
             }
         }
+        .studioScreen()
         .navigationTitle("Raw Samples")
         .searchable(
             text: $searchText, placement: .navigationBarDrawer(displayMode: .always),
@@ -133,6 +134,7 @@ private struct TypeCategoryView: View {
                 }
             }
         }
+        .studioScreen()
         .navigationTitle(group.rawValue)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
@@ -299,6 +301,7 @@ struct PendingChangesBar: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
+                    .foregroundStyle(StudioPalette.onAccent)
                     .disabled(applying)
                 }
                 .padding(.horizontal)

@@ -57,6 +57,7 @@ struct CreateDataRequestView: View {
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
+        .studioScreen()
         .navigationTitle("Create Request")
         .navigationDestination(isPresented: Binding(get: { link != nil }, set: { if !$0 { link = nil } })) {
             if let link { RequestCodeView(link: link) }
@@ -112,6 +113,7 @@ struct RequestMetricPicker: View {
                 }
             }
         }
+        .studioScreen()
         .navigationTitle("Requested Data").searchable(text: $search)
     }
 }
@@ -169,6 +171,7 @@ struct OpenDataRequestView: View {
                 Button("Scan Request QR Code", systemImage: "qrcode.viewfinder") { scanning = true }
             } footer: { Text("You’ll review the data, dates and destination before generating anything.") }
         }
+        .studioScreen()
         .navigationTitle("Open Request")
         .sheet(isPresented: $scanning, onDismiss: {
             if scanned { scanned = false; model.dataRequests.open(text) }
@@ -301,6 +304,7 @@ struct FulfillDataRequestView: View {
                 }
             }
         }
+        .studioScreen()
         .navigationTitle("Data Request").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .primaryAction) {
             NavigationLink("Plan") { ProView(context: .dataRequestHistory) }

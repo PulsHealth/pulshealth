@@ -46,8 +46,9 @@ struct TypeIcon: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(color.opacity(0.18))
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(color.opacity(0.12))
+                .overlay { RoundedRectangle(cornerRadius: 6).stroke(color.opacity(0.28), lineWidth: 1) }
             Image(systemName: symbol)
                 .font(size.font.weight(.medium))
                 .foregroundStyle(color)

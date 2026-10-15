@@ -58,6 +58,7 @@ struct SyncView: View {
 
     var body: some View {
         List {
+            workspacePlan
             if model.stateFileUnreadable {
                 StateUnreadableNotice()
             }
@@ -69,13 +70,15 @@ struct SyncView: View {
                 statusCard
                 limitedHistoryNotice
                 syncNowSection
-                planSection
-                rawSamplesSection
-                aggregatesSection
+                planSection.studioSurface()
+                rawSamplesSection.studioSurface()
+                aggregatesSection.studioSurface()
             }
-            linksSection
+            linksSection.studioSurface()
         }
+        .studioScreen()
         .navigationTitle("Sync")
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { StudioPlanButton(context: model.syncProContext) } }
         .reviewRequestOpportunity(.sync, blocked: !path.isEmpty)
         .navigationDestination(for: SyncRoute.self) { route in
             switch route {
@@ -108,6 +111,21 @@ struct SyncView: View {
     }
 
     // MARK: - Status
+
+    private var workspacePlan: some View {
+        let count = model.appliedConfig.observedTypeIdentifiers.count
+        return CardSection("Automatic sync", subtitle: "Your selected data, delivered to your database.") {
+            StudioMetrics {
+                StudioMetric(value: count.formatted(), label: "Applied types")
+                StudioMetric(value: model.subscriptions.hasPro ? "All permitted" : "30 days", label: "Plan history")
+            }
+            Text(model.subscriptions.hasPro
+                 ? "Pro supports unlimited types. Apple Health permissions still apply."
+                 : "Free supports 5 distinct types. Raw readings and aggregates of the same type count once.")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
 
     @ViewBuilder private var planSection: some View {
         if let notice = model.syncPlanNotice {

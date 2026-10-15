@@ -59,6 +59,7 @@ struct BenchmarkView: View {
                 }
             }
         }
+        .studioScreen()
         .navigationTitle("Benchmark")
         .onDisappear { benchmarkTask?.cancel() }
     }

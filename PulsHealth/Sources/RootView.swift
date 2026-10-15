@@ -55,6 +55,8 @@ struct RootView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
         }
+        .tint(Color.accentColor)
+        .toolbarBackground(StudioPalette.canvas, for: .tabBar)
         .sheet(isPresented: $model.showsPro) {
             NavigationStack { ProView(context: model.proContext) }.environment(model)
         }

@@ -28,6 +28,7 @@ struct PairingScannerView: View {
     var body: some View {
         NavigationStack {
             content
+                .studioScreen()
                 .navigationTitle("Scan Pairing Code")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -95,6 +96,7 @@ struct PairingScannerView: View {
                 Text("Allow Camera Access").frame(minWidth: 180)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(StudioPalette.onAccent)
             .disabled(requesting)
             Button("Type It Instead") { dismiss() }
         }
@@ -112,6 +114,7 @@ struct PairingScannerView: View {
                 Text("Open Settings").frame(minWidth: 180)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(StudioPalette.onAccent)
             Button("Type It Instead") { dismiss() }
         }
     }

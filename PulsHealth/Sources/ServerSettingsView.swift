@@ -56,6 +56,7 @@ struct ServerSettingsView: View {
             }
         }
         .disabled(model.isUpdatingConnection)
+        .studioScreen()
         .navigationTitle("Database")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -434,6 +435,7 @@ struct ServerSettingsView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(StudioPalette.onAccent)
             .controlSize(.large)
             .disabled(disabled)
             .listRowBackground(Color.clear)

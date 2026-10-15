@@ -16,44 +16,22 @@ struct SyncIntro: View {
     /// section, opened in Safari.
     static let selfHostURL = URL(string: "https://pulshealth.com/docs/server/#setup")!
 
-    @State private var heroAppeared = false
 
     var body: some View {
         hero
-        highlights
-        choices
+        highlights.studioSurface()
+        choices.studioSurface()
     }
 
     // MARK: - Hero
 
     private var hero: some View {
         Section {
-            VStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(.tint.opacity(0.12))
-                        .frame(width: 96, height: 96)
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 44, weight: .semibold))
-                        .foregroundStyle(.tint)
-                        .symbolEffect(.bounce, value: heroAppeared)
-                }
-                .accessibilityHidden(true)
-                Text("Always in Sync")
-                    .font(.title.bold())
-                    .accessibilityAddTraits(.isHeader)
-                Text("PulsHealth keeps a live copy of your Health data in a database. New data syncs by itself in the background, so it is always up to date and yours to use however you like.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 8)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
+            StudioLead(symbol: "externaldrive.badge.icloud", title: "Connect your data workspace",
+                       detail: "Keep a copy of your selected Health data in a database. Choose a destination, review the settings, then apply them.")
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
         }
-        .onAppear { heroAppeared = true }
     }
 
     // MARK: - What syncing does
@@ -111,6 +89,7 @@ struct SyncIntro: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(StudioPalette.onAccent)
             .controlSize(.large)
         }
         choiceCard(

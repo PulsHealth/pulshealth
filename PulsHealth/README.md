@@ -46,6 +46,16 @@ as complimentary without automatic charges only when verified renewal is off.
 Contextual upgrade prompts keep the person's draft for explicit review afterward. No purchase analytics or
 third-party SDK is added.
 
+## Data Studio design alternative
+
+This branch explores Option C separately from the Quiet Native baseline. It uses
+adaptive graphite/cobalt surfaces, compact workspace summaries, persistent plan
+affordances and a configuration-only file plan in Export. Light and dark palettes
+share native controls and adapt summaries for accessibility text sizes. No Health
+queries run for the file plan, and it never invents sample readings or file sizes.
+Subscription verification, prices, sync enforcement and staged edits remain the
+same. This alternative is retained for comparison and is not a shipped release.
+
 ## Project generation
 
 `PulsHealth.xcodeproj` is **generated** from `project.yml` by

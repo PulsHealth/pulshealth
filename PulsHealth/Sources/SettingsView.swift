@@ -33,6 +33,9 @@ struct SettingsView: View {
         @Bindable var model = model
         let analyzed = model.explore.profiles.count
         Form {
+            CardSection("Workspace settings", subtitle: "Your app plan, permissions and data controls.") {
+                EmptyView()
+            }
             if model.stateFileUnreadable {
                 StateUnreadableNotice()
             }
@@ -123,6 +126,7 @@ struct SettingsView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
+                    .foregroundStyle(StudioPalette.onAccent)
                     .controlSize(.large)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
@@ -191,7 +195,9 @@ struct SettingsView: View {
                 Link("Report an Issue", destination: URL(string: "https://github.com/PulsHealth/pulshealth/issues/new/choose")!)
             }
         }
+        .studioScreen()
         .navigationTitle("Settings")
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { StudioPlanButton() } }
         .navigationDestination(for: SettingsRoute.self) { route in
             switch route {
             case .user: UserView()
@@ -485,6 +491,7 @@ struct UserView: View {
                 .disabled(!userIDValid)
             }
         }
+        .studioScreen()
         .navigationTitle("User")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

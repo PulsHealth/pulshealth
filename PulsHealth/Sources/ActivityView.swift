@@ -20,6 +20,7 @@ struct ActivityView: View {
             case .background: BackgroundActivityView()
             }
         }
+        .studioScreen()
         .navigationTitle("Activity")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
