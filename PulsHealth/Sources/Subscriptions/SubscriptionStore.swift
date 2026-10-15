@@ -12,10 +12,29 @@ final class SubscriptionStore {
     nonisolated static let productIDs: Set<String> = [monthlyID, annualID]
 
     private(set) var hasPro = false
+    private(set) var plan: ProPlanDetails?
     private(set) var isLoaded = false
     private(set) var products: [Product] = []
     private(set) var isBusy = false
     private(set) var message: String?
+    struct EntitlementRevision: Sendable {
+        var transactionID: UInt64
+        var groupID: String?
+        var purchaseDate: Date
+        var expirationDate: Date?
+    }
+
+    /// StoreKit's two verified streams can catch up in either order. A
+    /// status for the same or a newer transaction remains authoritative;
+    /// an older status cannot suppress a new, still-paid purchase.
+    nonisolated static func isNewerCurrentEntitlement(
+        _ current: EntitlementRevision, than statuses: [EntitlementRevision], now: Date
+    ) -> Bool {
+        guard let expiration = current.expirationDate, expiration > now else { return false }
+        return statuses.filter { $0.groupID == current.groupID }.allSatisfy {
+            $0.transactionID != current.transactionID && $0.purchaseDate < current.purchaseDate
+        }
+    }
     @ObservationIgnored private var updates: Task<Void, Never>?
     @ObservationIgnored private var statusUpdates: Task<Void, Never>?
     @ObservationIgnored private var refreshGeneration = 0
@@ -24,21 +43,30 @@ final class SubscriptionStore {
     @ObservationIgnored private let purchaseAction: PurchaseAction
     @ObservationIgnored private let restoreAction: RestoreAction
     @ObservationIgnored private let observesTransactions: Bool
-    @ObservationIgnored private let entitlementReader: @Sendable () async -> Bool
+    @ObservationIgnored private let accessReader: @Sendable () async -> ProAccessSnapshot
 
     init(
         entitlementReader: (@Sendable () async -> Bool)? = nil,
+        accessReader: (@Sendable () async -> ProAccessSnapshot)? = nil,
         purchaseAction: @escaping PurchaseAction = { try await $0.purchase() },
         restoreAction: @escaping RestoreAction = { try await AppStore.sync() }
     ) {
         self.purchaseAction = purchaseAction
         self.restoreAction = restoreAction
-        self.entitlementReader = entitlementReader ?? Self.readEntitlement
-        self.observesTransactions = entitlementReader == nil
+        if let accessReader {
+            self.accessReader = accessReader
+        } else if let entitlementReader {
+            self.accessReader = { ProAccessSnapshot(hasPro: await entitlementReader()) }
+        } else {
+            self.accessReader = Self.readAccess
+        }
+        self.observesTransactions = entitlementReader == nil && accessReader == nil
     }
 
-    nonisolated static func readEntitlement() async -> Bool {
+    nonisolated static func readAccess() async -> ProAccessSnapshot {
         var currentEntitlement = false
+        var fallbackPlan: ProPlanDetails?
+        var currentRevisions: [(revision: EntitlementRevision, plan: ProPlanDetails)] = []
         var groups: Set<String> = []
         let now = Date()
         for await result in Transaction.currentEntitlements {
@@ -51,6 +79,16 @@ final class SubscriptionStore {
                 // offline if renewal status cannot be looked up, even when
                 // the paid transaction's expiration predates its grace end.
                 currentEntitlement = true
+                let candidate = ProPlanDetails(
+                    productID: transaction.productID,
+                    date: transaction.expirationDate.flatMap { $0 > now ? $0 : nil },
+                    renewal: .unknown, isFreeOfferCode: false)
+                currentRevisions.append((EntitlementRevision(transactionID: transaction.id,
+                    groupID: transaction.subscriptionGroupID, purchaseDate: transaction.purchaseDate,
+                    expirationDate: transaction.expirationDate), candidate))
+                if fallbackPlan == nil || (candidate.date ?? .distantPast) > (fallbackPlan?.date ?? .distantPast) {
+                    fallbackPlan = candidate
+                }
             }
         }
         // Status changes (expiry, grace and billing retry) can precede a
@@ -62,6 +100,8 @@ final class SubscriptionStore {
         }
         var hasVerifiedStatus = false
         var statusEntitled = false
+        var verifiedPlan: ProPlanDetails?
+        var statusRevisions: [EntitlementRevision] = []
         for group in groups {
             guard let statuses = try? await Product.SubscriptionInfo.status(for: group) else { continue }
             for status in statuses {
@@ -69,6 +109,9 @@ final class SubscriptionStore {
                       case .verified(let renewal) = status.renewalInfo,
                       productIDs.contains(transaction.productID) else { continue }
                 hasVerifiedStatus = true
+                statusRevisions.append(EntitlementRevision(transactionID: transaction.id,
+                    groupID: transaction.subscriptionGroupID, purchaseDate: transaction.purchaseDate,
+                    expirationDate: transaction.expirationDate))
                 guard transaction.revocationDate == nil, !transaction.isUpgraded else { continue }
                 let deadline: Date?
                 switch status.state {
@@ -76,10 +119,34 @@ final class SubscriptionStore {
                 case .inGracePeriod: deadline = renewal.gracePeriodExpirationDate
                 default: deadline = nil
                 }
-                if let deadline, deadline > now { statusEntitled = true }
+                if let deadline, deadline > now {
+                    statusEntitled = true
+                    let renewalState: ProPlanDetails.Renewal = status.state == .inGracePeriod
+                        ? .grace : (renewal.willAutoRenew ? .renews : .ends)
+                    var freeCode = false
+                    if #available(iOS 17.2, *) {
+                        freeCode = transaction.offer?.type == .code
+                            && transaction.offer?.paymentMode == .freeTrial
+                    }
+                    let candidate = ProPlanDetails(productID: transaction.productID,
+                        date: deadline, renewal: renewalState, isFreeOfferCode: freeCode)
+                    if verifiedPlan == nil || deadline > (verifiedPlan?.date ?? .distantPast) {
+                        verifiedPlan = candidate
+                    }
+                }
             }
         }
-        return hasVerifiedStatus ? statusEntitled : currentEntitlement
+        if hasVerifiedStatus,
+           let newer = currentRevisions.filter({
+               Self.isNewerCurrentEntitlement($0.revision, than: statusRevisions, now: now)
+           }).max(by: { $0.revision.purchaseDate < $1.revision.purchaseDate }) {
+            // The new purchase is verified, but its renewal details have not
+            // arrived. Do not borrow dates or renewal promises from old status.
+            return ProAccessSnapshot(hasPro: true, plan: newer.plan)
+        }
+        return hasVerifiedStatus
+            ? ProAccessSnapshot(hasPro: statusEntitled, plan: verifiedPlan)
+            : ProAccessSnapshot(hasPro: currentEntitlement, plan: fallbackPlan)
     }
 
     func start() async {
@@ -114,13 +181,14 @@ final class SubscriptionStore {
     func refreshEntitlements() async -> Bool {
         refreshGeneration += 1
         let generation = refreshGeneration
-        let entitled = await entitlementReader()
+        let access = await accessReader()
         if generation == refreshGeneration {
-            if entitled && !hasPro { message = nil }
-            hasPro = entitled
+            if access.hasPro && !hasPro { message = nil }
+            hasPro = access.hasPro
+            plan = access.hasPro ? access.plan : nil
             isLoaded = true
         }
-        return entitled
+        return access.hasPro
     }
 
     /// Checked by background/observer paths too, even without a foreground

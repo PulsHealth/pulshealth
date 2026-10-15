@@ -303,7 +303,7 @@ struct FulfillDataRequestView: View {
         }
         .navigationTitle("Data Request").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .primaryAction) {
-            NavigationLink("Pro") { ProView() }
+            NavigationLink("Plan") { ProView(context: .dataRequestHistory) }
         } }
         .interactiveDismissDisabled(requests.isBusy || requests.sharing)
         .toolbar { Button("Done") { requests.close() }.disabled(requests.isBusy || requests.sharing) }

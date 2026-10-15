@@ -54,6 +54,28 @@ final class SubscriptionStoreTests: XCTestCase {
             if store.hasPro == expected { break }
             try? await Task.sleep(for: .milliseconds(100))
         }
+        if store.hasPro != expected {
+            // Failure-only fixture diagnostics distinguish propagation and
+            // arbitration failures without changing the assertion or polling.
+            for id in SubscriptionStore.productIDs {
+                if case .verified(let transaction)? = await Transaction.latest(for: id) {
+                    print("StoreKit fixture latest: product=\(id) id=\(transaction.id) purchase=\(transaction.purchaseDate) expiry=\(String(describing: transaction.expirationDate)) revoked=\(String(describing: transaction.revocationDate)) upgraded=\(transaction.isUpgraded)")
+                    if let group = transaction.subscriptionGroupID,
+                       let statuses = try? await Product.SubscriptionInfo.status(for: group) {
+                        for status in statuses {
+                            if case .verified(let value) = status.transaction {
+                                print("StoreKit fixture status: state=\(status.state) product=\(value.productID) id=\(value.id) purchase=\(value.purchaseDate) expiry=\(String(describing: value.expirationDate)) revoked=\(String(describing: value.revocationDate)) upgraded=\(value.isUpgraded)")
+                            }
+                        }
+                    }
+                }
+            }
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let value) = result {
+                    print("StoreKit fixture current: product=\(value.productID) id=\(value.id) purchase=\(value.purchaseDate) expiry=\(String(describing: value.expirationDate)) revoked=\(String(describing: value.revocationDate)) upgraded=\(value.isUpgraded)")
+                }
+            }
+        }
         XCTAssertEqual(store.hasPro, expected, file: file, line: line)
         let policy = await store.currentPolicy()
         XCTAssertEqual(policy, expected ? .unrestricted : .free, file: file, line: line)
@@ -97,15 +119,26 @@ final class SubscriptionStoreTests: XCTestCase {
         XCTAssertEqual(annual.price, Decimal(string: "9.99"))
         await store.purchase(monthly)
         await assertAccess(true, store: store)
+        XCTAssertEqual(store.plan?.productID, SubscriptionStore.monthlyID)
+        XCTAssertEqual(store.plan?.renewal, .renews)
+        XCTAssertNotNil(store.plan?.date)
         let transaction = try XCTUnwrap(session.allTransactions().first)
         try session.disableAutoRenewForTransaction(identifier: transaction.identifier)
         await assertAccess(true, store: store)
+        for _ in 0..<40 {
+            await store.refreshEntitlements()
+            if store.plan?.renewal == .ends { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertEqual(store.plan?.renewal, .ends)
+        XCTAssertFalse(store.plan?.isComplimentary ?? true)
         let restored = makeStore(session: session)
         await restored.restore()
         await assertAccess(true, store: restored)
         try session.expireSubscription(productIdentifier: SubscriptionStore.monthlyID)
         await store.restore()
         await assertAccess(false, store: store)
+        XCTAssertNil(store.plan)
     }
 
     func testPendingWaitsForVerifiedPurchaseAndRefundRemovesAccess() async throws {
@@ -157,5 +190,60 @@ final class SubscriptionStoreTests: XCTestCase {
         }
         XCTAssertTrue(enteredGrace)
         await assertAccess(true, store: store)
+        XCTAssertEqual(store.plan?.renewal, .grace)
+        XCTAssertNotNil(store.plan?.date)
+    }
+
+    func testComplimentaryCopyRequiresFreeCodeAndRenewalOff() {
+        let end = Date().addingTimeInterval(3600)
+        let gift = ProPlanDetails(productID: SubscriptionStore.annualID, date: end,
+            renewal: .ends, isFreeOfferCode: true)
+        XCTAssertTrue(gift.isComplimentary)
+        XCTAssertEqual(gift.dateLabel, "Access ends")
+        XCTAssertTrue(gift.explanation.contains("no automatic charge"))
+        for renewal in [ProPlanDetails.Renewal.unknown, .renews, .grace] {
+            let uncertainOrRenewing = ProPlanDetails(productID: SubscriptionStore.annualID,
+                date: end, renewal: renewal, isFreeOfferCode: true)
+            XCTAssertFalse(uncertainOrRenewing.isComplimentary)
+            XCTAssertFalse(uncertainOrRenewing.explanation.contains("no automatic charge"))
+        }
+        let canceledPaid = ProPlanDetails(productID: SubscriptionStore.annualID,
+            date: end, renewal: .ends, isFreeOfferCode: false)
+        XCTAssertFalse(canceledPaid.isComplimentary)
+        XCTAssertEqual(canceledPaid.status, "Pro · Renewal off")
+    }
+
+    func testCurrentPurchaseOnlyOutranksOlderStatusInItsGroup() {
+        let now = Date()
+        let current = SubscriptionStore.EntitlementRevision(transactionID: 2, groupID: "pro",
+            purchaseDate: now.addingTimeInterval(-10), expirationDate: now.addingTimeInterval(3600))
+        let older = SubscriptionStore.EntitlementRevision(transactionID: 1, groupID: "pro",
+            purchaseDate: now.addingTimeInterval(-100), expirationDate: now.addingTimeInterval(-20))
+        XCTAssertTrue(SubscriptionStore.isNewerCurrentEntitlement(current, than: [older], now: now))
+        // Matching status remains authoritative even for forced expiry or refund.
+        var matching = current
+        matching.expirationDate = now.addingTimeInterval(-1)
+        XCTAssertFalse(SubscriptionStore.isNewerCurrentEntitlement(current, than: [matching], now: now))
+        var newer = older
+        newer.transactionID = 3
+        newer.purchaseDate = now
+        XCTAssertFalse(SubscriptionStore.isNewerCurrentEntitlement(current, than: [newer], now: now))
+        var ambiguous = older
+        ambiguous.purchaseDate = current.purchaseDate
+        XCTAssertFalse(SubscriptionStore.isNewerCurrentEntitlement(current, than: [ambiguous], now: now))
+        var expiredCurrent = current
+        expiredCurrent.expirationDate = now.addingTimeInterval(-1)
+        XCTAssertFalse(SubscriptionStore.isNewerCurrentEntitlement(expiredCurrent, than: [older], now: now))
+        newer.groupID = "other"
+        XCTAssertTrue(SubscriptionStore.isNewerCurrentEntitlement(current, than: [older, newer], now: now))
+    }
+
+    func testFreeAccessNeverKeepsStalePlanDetails() async {
+        let stale = ProPlanDetails(productID: SubscriptionStore.annualID, date: .distantPast,
+            renewal: .ends, isFreeOfferCode: true)
+        let store = SubscriptionStore(accessReader: { ProAccessSnapshot(hasPro: false, plan: stale) })
+        await store.refreshEntitlements()
+        XCTAssertFalse(store.hasPro)
+        XCTAssertNil(store.plan)
     }
 }

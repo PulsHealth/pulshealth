@@ -25,12 +25,7 @@ struct SettingsView: View {
             model.subscriptions.hasPro ? model.config.startDate
                 : max(model.config.startDate, SyncAccessPolicy.free.earliestDate() ?? model.config.startDate)
         } set: { date in
-            if !model.subscriptions.hasPro,
-               !SyncAccessPolicy.free.allowsExport(start: date) {
-                model.showPro("Free sync includes the most recent 30 days. Upgrade to sync older history.")
-            } else {
-                model.config.startDate = date
-            }
+            model.setSyncStartDate(date)
         }
     }
 
@@ -49,7 +44,17 @@ struct SettingsView: View {
 
             Section("Plan") {
                 Button { model.showPro() } label: {
-                    Label(model.subscriptions.hasPro ? "PulsHealth Pro · Active" : "PulsHealth Free · Upgrade", systemImage: "star.circle")
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.subscriptions.hasPro ? "PulsHealth Pro" : "PulsHealth Free")
+                            Text(model.subscriptions.hasPro
+                                 ? (model.subscriptions.plan?.status ?? "Pro is active")
+                                 : "Recent exports · 5 automatic-sync types")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: model.subscriptions.hasPro ? "checkmark.seal" : "person.crop.circle")
+                    }
                 }
             }
 
