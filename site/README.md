@@ -65,11 +65,15 @@ the same developer. They are unlisted (not in the navigation, search or
 sitemap); the policy is `content/fun100/privacy-policy.md`, rendered the same
 way as `/privacy`.
 
-Watch Workout Pro, a separate native app, has unlisted product pages at
-`/watchworkoutpro/support/` and `/watchworkoutpro/privacy/`. The base
-`/watchworkoutpro/` opens support. Legacy `/workout-to-watch/` URLs retain
-`noindex` redirect stubs with destination canonicals so old app and store
-links still work. Product content lives in `content/watchworkoutpro/`.
+Watch Workout Pro is a separate native iPhone app with its own public landing
+page at `/watch-workout-pro/`, support at `/watch-workout-pro/support/`, and
+privacy at `/watch-workout-pro/privacy/`. Support uses `support@pulshealth.com`.
+These pages are included in search and the sitemap; the footer links to the
+product. Both `/watchworkoutpro/` and `/workout-to-watch/` (including their
+support/privacy routes) retain noindex redirect stubs with destination canonicals.
+Product policy content lives in `content/watchworkoutpro/`. Marketing screenshots
+are resized from the app's approved dark source captures. App Store availability
+must be verified before replacing the launch notice with a download action.
 
 ## Develop
 

@@ -10,17 +10,19 @@ Email [support@pulshealth.com](mailto:support@pulshealth.com?subject=Watch%20Wor
 
 Free includes:
 
-- 10 saved personal workouts, with unlimited editing and reuse. Deleting one frees a slot.
-- Two successful Smart Adds per calendar month. Failed generations and canceled previews do not use an allowance.
-- Two upcoming scheduled sessions at a time. Past or completed sessions free their slots; two dates for the same workout count as two sessions.
+- 3 workout creations in total, with continued editing and sharing of saved workouts.
+- 2 AI workout creations in total. You can still generate and review drafts after this allowance is used; adding another AI workout requires Pro.
+- 1 scheduled session in total.
 
-Watch Workout Pro is an auto-renewing monthly subscription, with a planned US launch price of **$1.99 per month**. The app shows Apple's current localized price and purchase terms before you subscribe. Pro removes those app limits and adds weekly repeat scheduling. You can continue viewing, editing, exporting, and deleting existing workouts after Pro expires.
+These are lifetime allowances. Deleting workouts, completing sessions, or starting a new month does not restore them.
 
-Smart Add requires a supported device with Apple Intelligence and its on-device model available. Pro does not change device compatibility or Apple's Watch scheduling capacity. The optional assistant connector currently requires private enrollment and is not a promised subscription benefit.
+The optional Pro monthly subscription removes these app limits and adds weekly repeat scheduling. The app shows Apple's current localized price and purchase terms before you subscribe. You can continue viewing, editing, exporting, and deleting existing workouts after Pro expires.
+
+Apple Intelligence requires iOS 26 or later, a supported device, and available on-device models. Manual creation works on iOS 18 or later. Pro does not change device compatibility or Apple's Watch scheduling capacity. The optional assistant connector currently requires private enrollment and is not a promised subscription benefit.
 
 ## Restore or cancel
 
-Open Settings in the app and find the **Watch Workout Pro** section. Tap **Explore Pro** to open the purchase screen and restore purchases, or **Manage Pro subscription** to manage an active subscription. You can also [manage subscriptions with Apple](https://apps.apple.com/account/subscriptions). Canceling stops the next renewal; Pro remains available through the paid subscription period. Deleting the app does not cancel a subscription.
+Open Settings in the app and find the **Pro** section. Open the Pro screen to restore purchases, or use **Manage Pro subscription** to manage an active subscription. You can also [manage subscriptions with Apple](https://apps.apple.com/account/subscriptions). Canceling stops the next renewal; Pro remains available through the paid subscription period. Deleting the app does not cancel a subscription.
 
 ## Watch scheduling
 
@@ -32,4 +34,6 @@ Export a workout file to a recipient you choose, or create a public workout link
 
 For invited collaboration, use an iCloud collection. You choose the collection workouts to upload and manage members through Apple's sharing controls. This does not automatically upload your personal workout library. Copies saved by others can remain after you stop sharing.
 
-[Privacy policy](/watchworkoutpro/privacy/) · [Apple standard license agreement](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/)
+[Privacy policy](/watch-workout-pro/privacy/) · [Apple standard license agreement](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/)
+
+[Explore Watch Workout Pro](/watch-workout-pro/)

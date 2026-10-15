@@ -16,6 +16,7 @@ const columns: { heading: string; links: FooterLink[] }[] = [
       { title: "Sync Protocol", href: "/docs/protocol" },
       { title: "Use It With AI", href: "/docs/ai" },
       { title: "About", href: "/about" },
+      { title: "Watch Workout Pro", href: "/watch-workout-pro/" },
     ],
   },
   {
