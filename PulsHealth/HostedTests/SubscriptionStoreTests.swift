@@ -115,6 +115,7 @@ final class SubscriptionStoreTests: XCTestCase {
         // app result itself never grants access; verified StoreKit does.
         let confirmed = try await session.buyProduct(identifier: product.id)
         await assertAccess(true, store: store)
+        XCTAssertNil(store.message, "Approval must clear the pending-purchase message")
         try session.refundTransaction(identifier: UInt(confirmed.id))
         await assertAccess(false, store: store)
     }

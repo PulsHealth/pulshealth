@@ -116,6 +116,7 @@ final class SubscriptionStore {
         let generation = refreshGeneration
         let entitled = await entitlementReader()
         if generation == refreshGeneration {
+            if entitled && !hasPro { message = nil }
             hasPro = entitled
             isLoaded = true
         }
