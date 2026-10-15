@@ -34,3 +34,11 @@
   .workoutNote p { font-size: 1.15rem; }
   .workoutNote span { font-size: .8rem; }
 }
+
+.activityExamples { width: 100%; padding-bottom: 2.5rem; color: #19344d; }
+.examplesTitle { margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 600; letter-spacing: -.035em; }
+.activityExample { display: flex; align-items: center; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid #19344d26; }
+.activityExample > svg { width: 2rem; height: 2rem; flex-shrink: 0; color: #126cae; }
+.activityExample span { font-size: .875rem; }
+.activityExample h3 { margin-top: .25rem; font-size: 1.25rem; font-weight: 600; letter-spacing: -.025em; }
+.activityExample p, .examplesCaption { margin-top: .5rem; font-size: .875rem; line-height: 1.6; }
