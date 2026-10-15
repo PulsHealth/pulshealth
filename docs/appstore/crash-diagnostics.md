@@ -48,6 +48,40 @@ touching endpoints, missing reference data and valid partial/full overlap.
 The reports establish this crash cause, but do not prove that every crash
 counted in App Store Connect had the same cause.
 
+## Regression audit on 2026-10-15
+
+Tracking issues: [histogram #253](https://github.com/PulsHealth/pulshealth/issues/253)
+and [statistics options #255](https://github.com/PulsHealth/pulshealth/issues/255).
+The histogram fix `9ac154f` is already an ancestor of current `main`.
+`HistogramChartTests` covers disjoint ranges in both directions, touching
+endpoints, a missing reference, a zero-width histogram and clipped/full
+intersection. Keep this protection rather than reintroducing the old range
+expression. An installed 1.6 (19) binary still contains its original code;
+source history does not establish App Store delivery of a fix.
+
+Organizer also retains a historical TestFlight 1.0 (4) crash in
+`HKQuantityType.supportsStatisticOptions` → `HKStatistics._validateOptions`
+→ `HKStatisticsCollectionQuery.queue_validate`. It predates the current
+analytics window and must not be counted as an explanation of those events.
+Current aggregate legality derives from `HKQuantityType.aggregationStyle`:
+cumulative quantities offer sum/most-recent/duration; discrete quantities
+also offer average/min/max but exclude sum. Both the engine's aggregate sync
+and the explorer's preview revalidate the requested function before calling
+the shared query implementation. The debug matrix iterates only allowed
+functions; no other production statistics-query constructors were found in
+this audit.
+
+`AggregateMatrixTests` probes every available quantity type × function against
+HealthKit behind the test-only Objective-C exception catcher. It also tests
+public sync and preview entry points with illegal average/min/max-of-steps
+and sum-of-heart-rate configurations, including unchanged sync progress.
+Run the hosted matrix and `HistogramChartTests` on the pinned iOS runtimes;
+a declaration or successful descriptor construction alone does not prove
+that HealthKit accepts a query when executed. Record actual run results in
+the associated issue/PR. Simulator checks remain separate from testing the
+affected flows on a physical device/TestFlight and monitoring the released
+build for recurrence.
+
 ## Apple references
 
 - [Acquiring crash reports and diagnostic logs](https://developer.apple.com/documentation/xcode/acquiring-crash-reports-and-diagnostic-logs)

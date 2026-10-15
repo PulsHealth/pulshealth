@@ -72,6 +72,57 @@ final class AggregateMatrixTests: XCTestCase {
         )
     }
 
+    // Exercise the public entry points with stale/imported configurations,
+    // bypassing the pickers that normally hide these crashing combinations.
+    private var illegalConfigs: [AggregateConfig] {
+        [.average, .min, .max].map {
+            AggregateConfig(typeIdentifier: "HKQuantityTypeIdentifierStepCount", function: $0)
+        } + [AggregateConfig(typeIdentifier: "HKQuantityTypeIdentifierHeartRate", function: .sum)]
+    }
+
+    func testPreviewRejectsIllegalFunctionsBeforeExecutingHealthKitQuery() async throws {
+        let explorer = HealthExplorer()
+        let end = Date(timeIntervalSince1970: 1_750_000_000)
+        for config in illegalConfigs {
+            do {
+                _ = try await explorer.aggregatePreview(
+                    config, from: end.addingTimeInterval(-86_400), to: end)
+                XCTFail("Preview accepted illegal function: \(config.summaryLabel)")
+            } catch let error as HealthExploreError {
+                XCTAssertEqual(error, .unsupportedKind(
+                    "\(config.function.rawValue) is not allowed for \(config.typeIdentifier)"))
+            }
+        }
+    }
+
+    func testSyncSkipsIllegalFunctionsWithoutAdvancingAggregateState() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("puls-illegal-aggregate-\(UUID())", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SyncStateStore(directory: directory, tokenStore: InMemoryTokenStore())
+        let log = SyncEventLog(directory: directory)
+        let engine = HealthSyncEngine(
+            store: store, eventLog: log, wakeLog: WakeLog(directory: directory))
+        let configs = illegalConfigs
+        await store.setConfiguration(SyncConfiguration(aggregates: configs))
+
+        for config in configs {
+            let before = await store.aggregateState(for: config.id)
+            await engine.syncAggregate(configID: config.id, reason: .manual)
+            let after = await store.aggregateState(for: config.id)
+            XCTAssertEqual(after, before, "Rejected configuration must not move its watermark")
+        }
+        let events = await log.recent()
+        XCTAssertEqual(events.count, configs.count)
+        for (event, config) in zip(events, configs) {
+            XCTAssertEqual(event.level, .error)
+            XCTAssertEqual(event.type, config.typeIdentifier)
+            XCTAssertTrue(event.message.contains(
+                "\(config.function.rawValue) is not supported by this type's aggregation style"))
+        }
+        await store.persistNow()
+    }
+
     private func statisticsOption(for function: AggregateFunction) -> HKStatisticsOptions {
         switch function {
         case .sum: return .cumulativeSum
