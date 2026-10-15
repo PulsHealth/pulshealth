@@ -58,8 +58,8 @@ limitation, not purchase acceptance on iOS 26.5.
       versus old custom ranges, all file formats and Data Request delivery.
 - [ ] Verify background/observer/continued sync after expiry, preserving existing
       uploads, and historical backfill resumption after purchasing or restoring.
-- [ ] Review the transition for existing free users before release; no legacy
-      entitlement or grandfathering rule has been approved or implemented.
+- [x] Maintainer approved the transition on 2026-10-15: existing users receive
+      the new Free limits. There is no legacy entitlement or grandfathering.
 - [ ] Update store description, review notes, privacy answers and screenshots.
       Deploy the updated privacy policy before submitting.
 - [ ] Submit the first subscription group with a subscription attached to the
