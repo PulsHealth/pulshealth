@@ -19,6 +19,14 @@ private actor OverlappingEntitlements {
 @MainActor
 final class SubscriptionStoreTests: XCTestCase {
     private func session() throws -> SKTestSession {
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        if os.majorVersion == 26 && os.minorVersion == 5 {
+            // FB22237318: this runtime cannot save StoreKitTest configuration,
+            // including in an ad-hoc signed host. Lifecycle coverage is
+            // required on iOS 27; do not turn other fixture errors into skips.
+            // https://developer.apple.com/forums/thread/826971
+            throw XCTSkip("iOS 26.5 StoreKitTest regression FB22237318; lifecycle tests run on iOS 27")
+        }
         let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "Pro", withExtension: "storekit"))
         let session = try SKTestSession(contentsOf: url)
         session.resetToDefaultState()

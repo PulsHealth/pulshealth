@@ -117,7 +117,7 @@ def main():
     parser.add_argument("--ios", default="27.0", help="Pinned runtime version; select Xcode with DEVELOPER_DIR")
     parser.add_argument("--suite", choices=["all", "package", "app"], default="all")
     parser.add_argument("--download-runtime", action="store_true", help="Allow downloading the pinned runtime (CI)")
-    parser.add_argument("--signed", action="store_true", help="Ad-hoc signed simulator for Keychain acceptance")
+    parser.add_argument("--signed", action="store_true", help="Ad-hoc signed simulator for StoreKitTest and Keychain acceptance")
     parser.add_argument("--only-testing", help="Focused test identifier, requires --suite app or package")
     parser.add_argument("--artifacts", type=Path)
     args = parser.parse_args()

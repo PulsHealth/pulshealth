@@ -78,7 +78,9 @@ jobs:
         env:
           IOS_VERSION: ${{ matrix.os }}
           ARTIFACTS: ${{ runner.temp }}/ios-results
-        run: python3 scripts/test-ios.py --ios "$IOS_VERSION" --download-runtime --artifacts "$ARTIFACTS"
+        # Exercise Keychain acceptance in an ad-hoc signed simulator host.
+        # No developer certificate, team or provisioning profile is needed.
+        run: python3 scripts/test-ios.py --ios "$IOS_VERSION" --signed --download-runtime --artifacts "$ARTIFACTS"
 
       - name: Preserve simulator diagnostics and test evidence
         if: always()

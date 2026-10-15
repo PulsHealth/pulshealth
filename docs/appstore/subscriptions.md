@@ -36,6 +36,14 @@ establish that native purchase sheets or real sandbox-account restore work. Thos
 physical-device release gates below. No sandbox account credentials are needed
 for these automated tests.
 
+The iOS 26.5 runtime cannot save StoreKitTest configuration
+([Apple DTS, FB22237318](https://developer.apple.com/forums/thread/826971)).
+This was reproduced both in unsigned CI and a signed local host. Its four
+StoreKit fixture tests explicitly skip only on that runtime; the pure
+entitlement race test and all other tests remain enabled. The iOS 27 CI job
+must pass the real StoreKit lifecycle tests. These skips are a platform test
+limitation, not purchase acceptance on iOS 26.5.
+
 ## Release acceptance
 
 - [ ] Create both products in App Store Connect; configure territories, tax
