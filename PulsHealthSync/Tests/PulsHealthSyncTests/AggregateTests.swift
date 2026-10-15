@@ -641,11 +641,14 @@ import Testing
         }
     }
 
-    @Test func unavailableAggregateKeepsSavedConfigurationAndWatermark() async {
+    @Test func unavailableAggregateKeepsSavedConfigurationAndWatermark() async throws {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("puls-unsupported-type-\(UUID())", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let file = dir.appendingPathComponent("sync-state.json")
+        // A fresh store with no server or token performs no init rewrite.
+        #expect(!FileManager.default.fileExists(atPath: file.path))
         let config = AggregateConfig(typeIdentifier: unknown, function: .sum)
         var configuration = await store.configuration
         configuration.aggregates = [config]
@@ -661,7 +664,18 @@ import Testing
         #expect(state.totalBucketsUploaded == 5)
         #expect(state.totalBatchesUploaded == 1)
         #expect(await store.configuration.aggregates == [config])
-        // Finish the store's debounced write before removing its directory.
-        await store.persistNow()
+        // Wait for the scheduled writer itself; persistNow() would leave its
+        // pending debounce task alive after this test removes the directory.
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while !FileManager.default.fileExists(atPath: file.path), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        try #require(FileManager.default.fileExists(atPath: file.path))
+        let reloaded = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let persisted = await reloaded.aggregateState(for: config.id)
+        #expect(persisted.computedThrough == watermark)
+        #expect(persisted.totalBucketsUploaded == 5)
+        #expect(persisted.totalBatchesUploaded == 1)
+        #expect(await reloaded.configuration.aggregates == [config])
     }
 }
