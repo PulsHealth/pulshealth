@@ -380,6 +380,7 @@ private struct ExploreTypeRow: View {
             }
         }
         .padding(.vertical, 2)
+        .contentShape(Rectangle())
         .opacity(muted ? 0.55 : 1)
     }
 
