@@ -15,7 +15,9 @@ export type RouteClass =
    * The OAuth endpoints other servers and apps call (metadata, registration,
    * token, revocation): HTTPS, but no session and no Origin check — they
    * carry no cookie, and their callers are other origins by nature. They
-   * answer 404 unless OAuth is on (lib/oauth/config.ts, proxy.ts).
+   * OAuth paths answer 404 unless OAuth is on (lib/oauth/config.ts, proxy.ts).
+   * /api/native/profile is also a cookie-free machine endpoint: a PKCE code
+   * exchange or a live bearer session, independently of OAuth configuration.
    */
   | "oauth"
   /** Everything else: a valid session or nothing. */
@@ -43,7 +45,7 @@ export function classifyPath(pathname: string, development = false): RouteClass 
   ) {
     return "asset";
   }
-  if (pathname.startsWith("/api/health/") || (OAUTH_MACHINE_PATHS as readonly string[]).includes(pathname)) return "oauth";
+  if (pathname === "/api/native/profile" || pathname.startsWith("/api/health/") || (OAUTH_MACHINE_PATHS as readonly string[]).includes(pathname)) return "oauth";
   if ((PUBLIC_PAGES as readonly string[]).includes(pathname)) return "public";
   if ((PUBLIC_API as readonly string[]).includes(pathname)) return "public";
   // /invite/<token>: exactly one segment, the token.

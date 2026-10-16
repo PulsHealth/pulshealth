@@ -728,3 +728,16 @@ spraying. SES delivery failures never log the link or its token.
 For deployment verification, use `server/ops/verify-release.py` from the repository
 root as described in the [hosted runbook](../docs/hosted-operations.md#verify-a-backend-or-viewer-deployment).
 It binds these checks to the deployed container revisions and saves a private receipt.
+
+### Native account profile access
+
+`/connect/account` is the optional iPhone User settings handoff, separate from
+`/connect/iphone` database pairing. Its protected POST issues a five-minute,
+one-use PKCE code. The app exchanges it at `POST /api/native/profile`; the
+resulting account session authorizes GET/PUT/DELETE there using Bearer only.
+Cookies never authorize this machine route. Profile reads are user scoped;
+profile writes use `auth.set_my_profile`, and login-email changes require the
+current password and invalidate pending recovery/invitation links. The account
+UUID is fixed. No device sync token is issued and no Health upload is enabled.
+Apply migrations 029 and 100 before deploying this viewer; ship the iOS client
+after the viewer is available. These endpoints require accounts mode and HTTPS.

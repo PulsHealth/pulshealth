@@ -1250,3 +1250,8 @@ Normal installs and baseline recovery use the migrator's complete ordered set.
 ## Hosted operations
 
 For an operator storing other people's health data, [the hosted operations runbook](../docs/hosted-operations.md) covers daily checks, deletion escalation, retention, restore protection and launch acceptance. Run `python3 server/ops/hosted-check.py` from the repository root on the Docker host; it checks the hosted seven-day retention policy and exits nonzero when attention is needed. It reports counts, never health data or credentials. These hosted checks do not change independent self-hosters' configuration defaults.
+
+Optional native account profile access requires migration `029_account_profile.sql`
+and the rerunnable `100_account_profile_grants.sh`. They add one-use PKCE
+handoffs and a session-authorized profile writer; deploy schema and viewer
+before the iOS screen. They do not change ingest or the read-only product API.

@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 import PulsHealthSync
 
 /// Screens pushed from Settings.
@@ -410,100 +411,178 @@ extension View {
 struct UserView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.webAuthenticationSession) private var webAuthenticationSession
+    @State private var account = UserAccount()
+    @State private var signingIn = false
+    @State private var currentPassword = ""
     @State private var userIDText = ""
     @State private var userIDLoaded = false
 
-    private var userIDValid: Bool { AppModel.normalizedUserID(userIDText) != nil }
+    init(account: UserAccount = UserAccount()) {
+        _account = State(initialValue: account)
+    }
+
+    private var signedIn: Bool { account.hasSession }
+    private var userIDValid: Bool { signedIn || AppModel.normalizedUserID(userIDText) != nil }
+    private var name: Binding<String> {
+        Binding(get: { signedIn ? account.profile?.name ?? "" : model.config.userName ?? "" }, set: {
+            if signedIn { account.profile?.name = $0.isEmpty ? nil : $0 }
+            else { model.config.userName = $0.isEmpty ? nil : $0 }
+        })
+    }
+    private var email: Binding<String> {
+        Binding(get: { signedIn ? account.profile?.email ?? "" : model.config.userEmail ?? "" }, set: {
+            if signedIn { account.profile?.email = $0 }
+            else { model.config.userEmail = $0.isEmpty ? nil : $0 }
+        })
+    }
+    private var dateOfBirth: Binding<Date?> {
+        Binding(get: { signedIn ? account.profile?.dateOfBirth : model.config.userDateOfBirth }, set: {
+            if signedIn { account.profile?.dateOfBirth = $0 }
+            else { model.config.userDateOfBirth = $0 }
+        })
+    }
+    private var biologicalSex: Binding<String?> {
+        Binding(get: { signedIn ? account.profile?.biologicalSex : model.config.userBiologicalSex }, set: {
+            if signedIn { account.profile?.biologicalSex = $0 }
+            else { model.config.userBiologicalSex = $0 }
+        })
+    }
 
     var body: some View {
-        @Bindable var model = model
         Form {
-            Section("Identity") {
-                TextField("Name", text: Binding(
-                    get: { model.config.userName ?? "" },
-                    set: { model.config.userName = $0.isEmpty ? nil : $0 }
-                ))
-                .textContentType(.name)
-                TextField("Email", text: Binding(
-                    get: { model.config.userEmail ?? "" },
-                    set: { model.config.userEmail = $0.isEmpty ? nil : $0 }
-                ))
-                .textContentType(.emailAddress)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
+            Section {
+                if signedIn {
+                    Label("Signed in to PulsHealth", systemImage: "person.crop.circle.badge.checkmark")
+                    if let email = account.savedProfile?.email { Text(email).foregroundStyle(.secondary) }
+                    Button("Sign Out", role: .destructive) {
+                        currentPassword = ""
+                        Task { await account.signOut() }
+                    }
+                    if account.profile == nil {
+                        Button("Reload Account") { Task { await account.restore() } }
+                    }
+                } else {
+                    Button("Sign In to PulsHealth") { signIn() }
+                }
+                if account.busy || signingIn { ProgressView() }
+                if let problem = account.problem {
+                    Text(problem).font(.caption).foregroundStyle(.red)
+                }
+            } header: { Text("PulsHealth Account") } footer: {
+                Text(signedIn
+                    ? "Changes here are saved to your PulsHealth account. Signing in does not turn on Health data sync."
+                    : "Sign-in is optional. You can use PulsHealth and enter your details below without an account.")
             }
+            .disabled(account.busy || signingIn)
 
             Section {
-                if let dob = model.config.userDateOfBirth {
+                TextField("Name", text: name).textContentType(.name)
+                TextField("Email", text: email)
+                    .textContentType(.emailAddress).keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                if signedIn, account.profile?.email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() != account.savedProfile?.email {
+                    SecureField("Current password", text: $currentPassword).textContentType(.password)
+                    Text("Enter your current password to change your sign-in email.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } header: { Text("Identity") } footer: {
+                if !signedIn { Text("Name and email are optional.") }
+            }
+            .disabled(account.busy || (signedIn && account.profile == nil))
+
+            Section {
+                if let dob = dateOfBirth.wrappedValue {
                     DatePicker("Date of birth", selection: Binding(
-                        get: { model.config.userDateOfBirth ?? dob },
-                        set: { model.config.userDateOfBirth = $0 }
+                        get: { dateOfBirth.wrappedValue ?? dob },
+                        set: { dateOfBirth.wrappedValue = $0 }
                     ), in: ...Date(), displayedComponents: .date)
-                    Button("Clear date of birth", role: .destructive) {
-                        model.config.userDateOfBirth = nil
-                    }
+                    .environment(\.timeZone, signedIn ? TimeZone(secondsFromGMT: 0)! : .current)
+                    Button("Clear date of birth", role: .destructive) { dateOfBirth.wrappedValue = nil }
                 } else {
                     LabeledContent("Date of birth") {
                         Button("Set") {
-                            // Seed the picker with a plausible adult age; the
-                            // user adjusts from there.
-                            model.config.userDateOfBirth = Calendar.current.date(
-                                byAdding: .year, value: -30, to: Date()) ?? Date()
+                            var calendar = Calendar(identifier: .gregorian)
+                            calendar.timeZone = signedIn ? TimeZone(secondsFromGMT: 0)! : .current
+                            dateOfBirth.wrappedValue = calendar.startOfDay(for: calendar.date(byAdding: .year, value: -30, to: Date()) ?? Date())
                         }
                     }
                 }
-                Picker("Biological sex", selection: $model.config.userBiologicalSex) {
+                Picker("Biological sex", selection: biologicalSex) {
                     Text("Not set").tag(String?.none)
                     Text("Female").tag(String?.some("female"))
                     Text("Male").tag(String?.some("male"))
                     Text("Other").tag(String?.some("other"))
                 }
-            } header: {
-                Text("Characteristics")
-            } footer: {
-                Text("Optional. Used for heart-rate zones.")
+            } header: { Text("Characteristics") } footer: {
+                Text("These details are optional. You can leave them blank.")
             }
+            .disabled(account.busy || (signedIn && account.profile == nil))
 
-            Section {
-                TextField("User ID (UUID)", text: $userIDText)
-                    .font(.footnote.monospaced())
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .onChange(of: userIDText) { _, text in
-                        // Only a valid UUID reaches the draft; an in-progress
-                        // edit leaves the applied ID untouched.
-                        if let normalized = AppModel.normalizedUserID(text) {
-                            model.config.userID = normalized
-                        }
+            Section("Advanced") {
+                if signedIn {
+                    if let userID = account.profile?.userID {
+                        LabeledContent("User ID") { Text(userID).font(.footnote.monospaced()).textSelection(.enabled) }
                     }
-                if !userIDValid {
-                    Text("Not a valid UUID.")
-                        .font(.caption).foregroundStyle(.red)
+                } else {
+                    TextField("User ID (UUID)", text: $userIDText)
+                        .font(.footnote.monospaced()).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .onChange(of: userIDText) { _, text in
+                            if let normalized = AppModel.normalizedUserID(text) { model.config.userID = normalized }
+                        }
+                    if !userIDValid { Text("Not a valid UUID.").font(.caption).foregroundStyle(.red) }
+                    Button("Generate New ID") { userIDText = UUID().uuidString.lowercased() }
                 }
-                Button("Generate New ID") {
-                    userIDText = UUID().uuidString.lowercased()
-                }
-            } header: {
-                Text("Advanced")
-            } footer: {
-                Text("Each person sharing a database needs their own ID.")
             }
+            .disabled(account.busy)
 
             Section {
-                Button("Save & Apply") {
-                    Task { await model.applyConfiguration() }
-                    dismiss()
+                Button(signedIn ? "Save to Account" : "Save & Apply") {
+                    Task {
+                        if signedIn {
+                            guard await account.save(currentPassword: currentPassword) else { return }
+                            currentPassword = ""
+                            // Keep this account's active sync profile consistent with the edit.
+                            // A different database or user retains its separate local identity.
+                            if let profile = account.savedProfile, model.appliedConfig.userID == profile.userID,
+                               model.usesPulsHealthDatabase {
+                                guard await model.updateAppliedAccountProfile(profile) else {
+                                    account.problem = "Your account was saved. Wait for the current sync to finish, then save again to update this iPhone’s sync profile."
+                                    return
+                                }
+                            }
+                            dismiss()
+                        } else if await model.applyConfiguration() { dismiss() }
+                    }
                 }
-                .disabled(!userIDValid)
+                .disabled(!userIDValid || account.busy || signingIn || (signedIn && account.profile == nil))
             }
         }
-        .navigationTitle("User")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
+        .navigationTitle("User").navigationBarTitleDisplayMode(.inline)
+        .task {
             guard !userIDLoaded else { return }
             userIDLoaded = true
             userIDText = model.config.userID
+            await account.restore()
+        }
+    }
+
+    private func signIn() {
+        guard !signingIn else { return }
+        signingIn = true
+        account.problem = nil
+        let attempt = UserAccount.SignIn()
+        Task {
+            defer { signingIn = false }
+            do {
+                let callback = try await webAuthenticationSession.authenticate(
+                    using: attempt.url, callbackURLScheme: PulsHealthDatabase.callbackScheme,
+                    preferredBrowserSession: .shared)
+                await account.finishSignIn(callback, attempt: attempt)
+            } catch {
+                if case .cancelled = PulsHealthDatabase.outcome(ofError: error) { return }
+                account.problem = "Sign-in did not finish. Try again."
+            }
         }
     }
 }
