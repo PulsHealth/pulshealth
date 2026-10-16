@@ -602,12 +602,14 @@ final class AppModel {
         return count > 5 ? .syncTypes(count) : .syncHistory
     }
 
+    var syncPausedByPlan: Bool {
+        !subscriptions.hasPro && !SyncAccessPolicy.free.allows(appliedConfig)
+    }
+
     var syncPlanNotice: String? {
-        guard !subscriptions.hasPro else { return nil }
+        guard syncPausedByPlan else { return nil }
         let count = appliedConfig.observedTypeIdentifiers.count
-        return count > 5
-            ? "Sync is paused. Your selection has \(count) health data types. Choose up to 5 or upgrade to Pro. Your selection and previously synced data are kept."
-            : "Free sync includes up to 5 health data types and the most recent 30 days. Pro unlocks unlimited types and all available history."
+        return "Sync is paused. Your saved selection has \(count) health data types; Free supports 5. Choose up to 5 types or upgrade to Pro to resume. Your selection and previously synced data are kept."
     }
 
     func startExport() {

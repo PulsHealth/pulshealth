@@ -305,6 +305,22 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(h.model.syncTypeRequiresPro(extra))
     }
 
+    func testExistingOverLimitFreeSelectionIsPausedAndExplained() async throws {
+        var saved = SyncConfiguration()
+        saved.serverURL = mine
+        saved.enabledTypes = Set(HealthTypeCatalog.all.prefix(80).map(\.identifier))
+        let h = try await makeModel(stored: saved, pro: false)
+        await h.model.start()
+        XCTAssertTrue(h.model.syncPausedByPlan)
+        XCTAssertTrue(h.model.syncPlanNotice?.contains("80 health data types") == true)
+        await h.model.syncNow(trigger: "manual")
+        XCTAssertTrue(h.model.showsPro)
+        XCTAssertFalse(h.model.isSyncingAll)
+        XCTAssertEqual(h.model.appliedConfig.enabledTypes, saved.enabledTypes)
+        let synced = await h.access.syncedTypes
+        XCTAssertTrue(synced.isEmpty)
+    }
+
     func testFreeExportRangePromptsWithoutChangingSelection() async throws {
         let h = try await makeModel(pro: false)
         await h.model.subscriptions.refreshEntitlements()

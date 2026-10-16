@@ -587,3 +587,7 @@ reject additions beyond five distinct types, counting raw and enabled aggregates
 once per type; unavailable additions appear gray and open Pro when tapped.
 Existing selections can still be removed. Onboarding explains Export and Sync
 before its final, required Health permission step.
+An older saved selection over Free's limit stays visible, with an explicit
+Sync paused status and an explanation beside Sync Now. That section offers
+raw/aggregate editing and Pro so a connected database is not mistaken for an
+actively syncing selection.
