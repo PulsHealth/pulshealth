@@ -12,6 +12,8 @@ enum SettingsRoute: Hashable {
 /// database is not here — it is the Sync tab's (`ServerSettingsView`).
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
+    @AppStorage("settings.developerMode") private var developerMode = false
+    @State private var confirmDeveloperMode = false
     @State private var confirmResetAll = false
     @State private var confirmBackfill = false
     @State private var confirmDeleteExport = false
@@ -152,34 +154,18 @@ struct SettingsView: View {
                     .tint(.red)
             }
 
-            Section("Diagnostics") {
-                NavigationLink("Run Throughput Benchmark", value: SettingsRoute.benchmark)
-                Button {
-                    runAggregateValidation()
-                } label: {
-                    HStack {
-                        Text("Validate Aggregate Functions")
-                        Spacer()
-                        if validatingAggregates {
-                            ProgressView()
-                        } else if let failures = aggregateValidationFailures {
-                            // Each failure is logged under Sync → Activity.
-                            if failures == 0 {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .accessibilityLabel("All passed")
-                            } else {
-                                Text("\(failures) failed").foregroundStyle(.red)
-                            }
-                        }
-                    }
-                }
-                .disabled(validatingAggregates)
-                Button("Show Onboarding Again") { model.restartOnboarding() }
+            if developerMode {
+                developerSection
             }
 
             Section("About") {
                 LabeledContent("Version", value: Self.versionString)
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 7) {
+                        guard !developerMode else { return }
+                        confirmDeveloperMode = true
+                    }
+                Button("Show Onboarding Again") { model.restartOnboarding() }
                 Link("Write a Review", destination: ReviewRequests.writeReviewURL)
                 Link("Documentation", destination: URL(string: "https://pulshealth.com/docs/")!)
                 Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy")!)
@@ -191,8 +177,15 @@ struct SettingsView: View {
         .navigationDestination(for: SettingsRoute.self) { route in
             switch route {
             case .user: UserView()
-            case .benchmark: BenchmarkView()
+            case .benchmark:
+                if developerMode { BenchmarkView() }
             }
+        }
+        .alert("Enable Developer Mode?", isPresented: $confirmDeveloperMode) {
+            Button("Enable") { developerMode = true }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Show throughput benchmarks and aggregate validation tools in Settings.")
         }
         .alert("Reset all anchors?", isPresented: $confirmResetAll) {
             Button("Reset All", role: .destructive) {
@@ -219,6 +212,35 @@ struct SettingsView: View {
         }
     }
 
+    private var developerSection: some View {
+        Section("Developer") {
+            NavigationLink("Run Throughput Benchmark", value: SettingsRoute.benchmark)
+            Button {
+                runAggregateValidation()
+            } label: {
+                HStack {
+                    Text("Validate Aggregate Functions")
+                    Spacer()
+                    if validatingAggregates {
+                        ProgressView()
+                    } else if let failures = aggregateValidationFailures {
+                        // Each failure is logged under Sync → Activity.
+                        if failures == 0 {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .accessibilityLabel("All passed")
+                        } else {
+                            Text("\(failures) failed").foregroundStyle(.red)
+                        }
+                    }
+                }
+            }
+            .disabled(validatingAggregates)
+            Button("Disable Developer Mode") { developerMode = false }
+                .disabled(validatingAggregates)
+        }
+    }
+
     /// "1.6 (17)", from the bundle so it can never disagree with what shipped.
     private static var versionString: String {
         let info = Bundle.main.infoDictionary
@@ -228,6 +250,7 @@ struct SettingsView: View {
     }
 
     private func runAggregateValidation() {
+        guard developerMode, !validatingAggregates else { return }
         validatingAggregates = true
         aggregateValidationFailures = nil
         Task {
