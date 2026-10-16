@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PulsHealth · Motion studies</title>
+    <meta
+      name="description"
+      content="A standalone collection of looping PulsHealth graphics: Apple Health, phones, databases, exports, and workouts."
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0a0a;
+        --panel: #101010;
+        --fg: #fafafa;
+        --muted: #a1a1a1;
+        --blue: #4ca9ff;
+        --soft: #78bdff;
+        --line: #ffffff1a;
+        --pink: #d7a3b4;
+        --lilac: #b3a6d8;
+        --mint: #9ecfc1;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          Geist,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      button {
+        font: inherit;
+      }
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 5px;
+      }
+      header {
+        max-width: 1480px;
+        margin: auto;
+        padding: 38px 40px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .brand {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .brand svg {
+        width: 27px;
+        height: 27px;
+        color: var(--blue);
+      }
+      .controls {
+        display: flex;
+        gap: 22px;
+        align-items: center;
+      }
+      .controls a {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .pause {
+        background: transparent;
+        color: #c7c7c7;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        font-size: 12px;
+        padding: 9px 12px;
+        cursor: pointer;
+      }
+      .intro {
+        max-width: 1480px;
+        margin: auto;
+        padding: 88px 40px 50px;
+      }
+      .intro h1 {
+        font-size: clamp(38px, 5vw, 68px);
+        font-weight: 450;
+        letter-spacing: -0.055em;
+        line-height: 1.06;
+        margin: 0 0 20px;
+      }
+      .intro p {
+        max-width: 610px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.7;
+        margin: 0;
+      }
+      .intro nav {
+        display: flex;
+        flex-wrap: wrap;
+        row-gap: 12px;
+        gap: 26px;
+        margin-top: 30px;
+        font-size: 13px;
+        color: #c5c5c5;
+      }
+      .intro nav a:hover,
+      .controls a:hover {
+        color: var(--blue);
+      }
+      main {
+        max-width: 1480px;
+        padding: 0 40px 80px;
+        margin: auto;
+      }
+      .collection {
+        scroll-margin-top: 24px;
+        margin-bottom: 64px;
+      }
+      .section-title {
+        font-size: 20px;
+        font-weight: 450;
+        letter-spacing: -0.025em;
+        margin: 0 0 22px;
+      }
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 38px 28px;
+      }
+      .study {
+        min-width: 0;
+      }
+      .art {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        aspect-ratio: 12/7;
+        position: relative;
+      }
+      .art svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      .caption {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        margin-top: 17px;
+      }
+      .caption h3 {
+        margin: 0 0 7px;
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .caption p {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+        margin: 0;
+        max-width: 38em;
+      }
+      .asset-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .solo-link {
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        color: #a3a3a3;
+        font-size: 12px;
+        white-space: nowrap;
+        padding: 2px 0;
+        border-bottom: 1px solid #ffffff25;
+      }
+      .solo-link:hover {
+        color: var(--blue);
+      }
+      footer {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 0 40px 35px;
+        color: #797979;
+        font-size: 12px;
+      }
+      svg {
+        font-family:
+          Geist,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+      .svg-label {
+        font-size: 13px;
+        fill: #a1a1a1;
+      }
+      .svg-value {
+        font-size: 19px;
+        fill: #dedede;
+        font-weight: 450;
+      }
+      .svg-micro {
+        font-size: 10px;
+        fill: #858585;
+      }
+      .frame {
+        fill: #121212;
+        stroke: #454545;
+        stroke-width: 1.2;
+      }
+      .screen {
+        fill: #0c0c0c;
+      }
+      .divider {
+        stroke: #ffffff10;
+        fill: none;
+      }
+      .wire {
+        fill: none;
+        stroke-width: 1;
+        stroke: var(--blue);
+        opacity: 0.2;
+      }
+      .packet {
+        fill: none;
+        stroke: var(--blue);
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-dasharray: 3 97;
+        animation: flow var(--speed, 3.5s) linear infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .packet.small {
+        stroke-width: 2;
+        stroke-dasharray: 1 99;
+      }
+      .glow-dot {
+        animation: blink 3.5s ease-in-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .tier {
+        animation: tier 4.5s ease-in-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .wave-shift {
+        animation: waveShift 4s linear infinite;
+      }
+      .bar {
+        transform-box: fill-box;
+        transform-origin: 50% 100%;
+        animation: bar 3s ease-in-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .paper {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: paper 7s ease-in-out infinite;
+      }
+      .file-csv {
+        animation: csv 10s linear infinite;
+      }
+      .file-json {
+        animation: json 10s linear infinite;
+      }
+      .file-appear {
+        animation: fileIn 6s ease-in-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .runner-bob {
+        animation: bob 0.65s ease-in-out infinite;
+      }
+      .limb-a {
+        animation: limbA 0.65s ease-in-out infinite;
+        transform-origin: 0 0;
+      }
+      .limb-b {
+        animation: limbB 0.65s ease-in-out infinite;
+        transform-origin: 0 0;
+      }
+      .road {
+        stroke-dasharray: 5 15;
+        animation: road 0.9s linear infinite;
+      }
+      .route {
+        stroke-dasharray: 100;
+        animation: drawRoute 7s ease-in-out infinite;
+      }
+      .route-dot {
+        stroke-dasharray: 0.5 99.5;
+        animation: routeDot 7s ease-in-out infinite;
+        stroke-linecap: round;
+      }
+      .scan {
+        animation: scan 5s linear infinite;
+      }
+      .halo {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: halo 5s ease-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .spin {
+        animation: spin 24s linear infinite;
+        transform-origin: 360px 210px;
+      }
+      .counter-spin {
+        animation: spin 24s linear infinite reverse;
+        transform-origin: 0 0;
+      }
+      .numeric {
+        opacity: 0;
+        animation: numeric 8s steps(1, end) infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .offscreen *,
+      body.paused .art * {
+        animation-play-state: paused !important;
+      }
+      @keyframes flow {
+        0% {
+          stroke-dashoffset: 3;
+          opacity: 0;
+        }
+        8%,
+        85% {
+          opacity: 1;
+        }
+        100% {
+          stroke-dashoffset: -100;
+          opacity: 0;
+        }
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 0.25;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      @keyframes tier {
+        0%,
+        100% {
+          opacity: 0.2;
+        }
+        45%,
+        65% {
+          opacity: 1;
+        }
+      }
+      @keyframes waveShift {
+        to {
+          transform: translateX(-180px);
+        }
+      }
+      @keyframes bar {
+        0%,
+        100% {
+          transform: scaleY(0.6);
+          opacity: 0.4;
+        }
+        50% {
+          transform: scaleY(1);
+          opacity: 1;
+        }
+      }
+      @keyframes paper {
+        0%,
+        100% {
+          transform: translateY(3px) rotate(3deg);
+        }
+        50% {
+          transform: translateY(-4px) rotate(1deg);
+        }
+      }
+      @keyframes csv {
+        0%,
+        42%,
+        100% {
+          opacity: 1;
+        }
+        48%,
+        94% {
+          opacity: 0;
+        }
+      }
+      @keyframes json {
+        0%,
+        42%,
+        100% {
+          opacity: 0;
+        }
+        48%,
+        94% {
+          opacity: 1;
+        }
+      }
+      @keyframes fileIn {
+        0%,
+        100% {
+          opacity: 0.35;
+          transform: translateY(6px);
+        }
+        35%,
+        70% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes limbA {
+        0%,
+        100% {
+          transform: rotate(-23deg);
+        }
+        50% {
+          transform: rotate(27deg);
+        }
+      }
+      @keyframes limbB {
+        0%,
+        100% {
+          transform: rotate(27deg);
+        }
+        50% {
+          transform: rotate(-23deg);
+        }
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+      @keyframes road {
+        to {
+          stroke-dashoffset: 20;
+        }
+      }
+      @keyframes drawRoute {
+        0%,
+        8% {
+          stroke-dashoffset: 100;
+          opacity: 0.5;
+        }
+        75%,
+        92% {
+          stroke-dashoffset: 0;
+          opacity: 1;
+        }
+        100% {
+          stroke-dashoffset: 0;
+          opacity: 0;
+        }
+      }
+      @keyframes routeDot {
+        0%,
+        8% {
+          stroke-dashoffset: 0;
+          opacity: 0;
+        }
+        12%,
+        90% {
+          opacity: 1;
+        }
+        92%,
+        100% {
+          stroke-dashoffset: -100;
+          opacity: 0;
+        }
+      }
+      @keyframes scan {
+        0% {
+          transform: translateY(0);
+          opacity: 0;
+        }
+        10%,
+        80% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(155px);
+          opacity: 0;
+        }
+      }
+      @keyframes halo {
+        0% {
+          transform: scale(0.75);
+          opacity: 0.4;
+        }
+        100% {
+          transform: scale(1.3);
+          opacity: 0;
+        }
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes numeric {
+        0%,
+        24% {
+          opacity: 1;
+        }
+        25%,
+        100% {
+          opacity: 0;
+        }
+      }
+      .isolated header,
+      .isolated .intro,
+      .isolated .section-title,
+      .isolated .caption,
+      .isolated footer {
+        display: none;
+      }
+      .isolated main {
+        max-width: none;
+        padding: 0;
+      }
+      .isolated .collection {
+        margin: 0;
+      }
+      .isolated .gallery {
+        display: block;
+      }
+      .isolated .art {
+        height: 100dvh;
+        width: 100%;
+        border: 0;
+        border-radius: 0;
+        background: var(--bg);
+        aspect-ratio: auto;
+      }
+      .isolated .art svg {
+        object-fit: contain;
+      }
+      .isolated .study {
+        display: none;
+      }
+      .isolated .study.selected {
+        display: block;
+      }
+      .isolate-controls {
+        display: none;
+      }
+      .isolated .isolate-controls {
+        display: flex;
+        position: fixed;
+        right: 20px;
+        bottom: 18px;
+        gap: 16px;
+        align-items: center;
+        z-index: 2;
+      }
+      .isolate-controls a {
+        font-size: 12px;
+        color: #a1a1a1;
+      }
+      .isolated .collection:not(:has(.selected)) {
+        display: none;
+      }
+      @media (max-width: 800px) {
+        .brand > span {
+          display: none;
+        }
+        header {
+          padding: 24px 22px 0;
+        }
+        .intro {
+          padding: 64px 22px 38px;
+        }
+        main {
+          padding: 0 22px 50px;
+        }
+        .gallery {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+        .collection {
+          margin-bottom: 42px;
+        }
+        .intro p {
+          font-size: 15px;
+        }
+        .intro nav {
+          gap: 22px;
+        }
+        .controls a {
+          display: none;
+        }
+        footer {
+          padding: 0 22px 25px;
+        }
+        .art {
+          border-radius: 10px;
+        }
+        .caption p {
+          font-size: 12px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+        }
+        .packet,
+        .route-dot,
+        .scan,
+        .file-json {
+          opacity: 0;
+        }
+        .file-csv {
+          opacity: 1;
+        }
+        .numeric {
+          opacity: 0;
+        }
+        .numeric:first-child {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="./"
+        ><svg viewBox="0 0 28 28" aria-hidden="true">
+          <path
+            d="M1 15H7L11 5L14 23L19 10L22 15H27"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          /></svg
+        >PulsHealth<span style="font-weight: 400; color: #777; margin-left: 8px"
+          >Motion studies</span
+        ></a
+      >
+      <div class="controls">
+        <a href="https://pulshealth.com/" target="_blank" rel="noopener"
+          >pulshealth.com</a
+        ><button class="pause" type="button" data-pause aria-pressed="false">
+          Pause motion
+        </button>
+      </div>
+    </header>
+    <div class="intro">
+      <h1>Apple Health, in motion.</h1>
+      <p>
+        A collection of looping graphics to explore. Phones, personal archives,
+        portable files, and the signals that connect them. Everything runs on
+        its own.
+      </p>
+      <nav aria-label="Animation collections">
+        <a href="#sync">Sync & devices</a><a href="#export">Export & organize</a
+        ><a href="#live">Workouts & live data</a>
+      </nav>
+    </div>
+    <main id="studies"></main>
+    <footer>
+      Illustrative data throughout. No connection to your health data. Motion
+      respects your device’s reduced-motion setting.
+    </footer>
+    <div class="isolate-controls">
+      <a href="./">All studies</a
+      ><button class="pause" type="button" data-pause aria-pressed="false">
+        Pause motion
+      </button>
+    </div>
+    <script>
+      /* Each study is an SVG + shared CSS. No framework, dependencies, requests, or real health data. */
+      const C = {
+        blue: "#4ca9ff",
+        soft: "#78bdff",
+        pink: "#d7a3b4",
+        lilac: "#b3a6d8",
+        mint: "#9ecfc1",
+      };
+      const values = [18, 32, 23, 46, 30, 52, 34, 60, 40, 55, 32, 43];
+      const text = (x, y, t, cls = "svg-label", extra = "") =>
+        `<text x="${x}" y="${y}" class="${cls}" ${extra}>${t}</text>`;
+      const wire = (d, color = C.blue, delay = 0, speed = 3.5) =>
+        `<path d="${d}" class="wire" style="stroke:${color}"/><path d="${d}" pathLength="100" class="packet" style="stroke:${color};--delay:${delay}s;--speed:${speed}s"/>`;
+      function heart(x, y, s = 1, color = C.pink) {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M12 22L3 13C-5 4 6-3 12 5C18-3 29 4 21 13Z" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/></g>`;
+      }
+      function runner(x, y, s = 1) {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><g class="runner-bob" fill="none" stroke="${C.blue}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="-35" r="5" fill="${C.blue}" stroke="none"/><path d="M1-24L-8-2"/><g transform="translate(0 -22)"><g class="limb-a"><path d="M0 0L13 10L24 0"/></g><g class="limb-b" opacity=".45"><path d="M0 0L-15 9L-24 2"/></g></g><g transform="translate(-8 -2)"><g class="limb-b"><path d="M0 0L18 17L30 12"/></g><g class="limb-a" opacity=".55"><path d="M0 0L-7 22L-25 29"/></g></g></g></g>`;
+      }
+      function wave(x, y, color = C.blue, s = 1) {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 25L10 5L20 14L29 0L39 32L50 12L61 20L70 9L81 27L92 20L103 6L114 15" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/></g>`;
+      }
+      function bars(x, y, color = C.blue, s = 1) {
+        return `<g transform="translate(${x} ${y}) scale(${s})">${values.map((v, i) => `<rect class="bar" x="${i * 9}" y="${65 - v}" width="3.5" height="${v}" rx="1.75" fill="${color}" style="--delay:${i * -0.18}s"/>`).join("")}</g>`;
+      }
+      function database(id, x, y, s = 1) {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="90" cy="196" rx="117" ry="25" fill="none" stroke="#ffffff05"/><ellipse cx="90" cy="196" rx="93" ry="18" fill="none" stroke="#ffffff08"/><path d="M0 22V158C0 192 180 192 180 158V22" fill="url(#${id}-db)" stroke="#78bdff60"/>${[58, 92, 126, 158].map((v, i) => `<g class="tier" style="--delay:${i * -0.8}s"><path d="M0 ${v}C0 ${v + 32} 180 ${v + 32} 180 ${v}" fill="none" stroke="${C.soft}" stroke-opacity=".65"/><circle cx="157" cy="${v + 8}" r="2.5" fill="${C.soft}"/></g>`).join("")}<ellipse cx="90" cy="22" rx="90" ry="24" fill="#142235" stroke="#85baff80"/><ellipse cx="90" cy="22" rx="67" ry="13" fill="none" stroke="#78bdff30"/></g>`;
+      }
+      function phone(x, y, s = 1, kind = "health") {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-4" y="70" width="3" height="28" rx="1" fill="#444"/><rect x="151" y="83" width="3" height="44" rx="1" fill="#444"/><rect class="frame" x="0" y="0" width="150" height="288" rx="24"/><rect class="screen" x="6" y="6" width="138" height="276" rx="20"/><rect x="49" y="12" width="52" height="12" rx="6" fill="#242424"/>${text(17, 53, kind === "workout" ? "Workout" : kind === "sync" ? "Sync" : "Your health", "svg-label", 'style="font-size:13px;fill:#ddd"')}${kind === "workout" ? `${runner(76, 126, 0.9)}${text(75, 181, "Live workout", "svg-micro", 'text-anchor="middle"')}${text(75, 211, "04:32", "svg-value", 'text-anchor="middle" style="fill:#ededed;font-size:24px"')}${wave(24, 234, C.pink, 0.85)}` : kind === "sync" ? `<circle cx="75" cy="113" r="32" fill="none" stroke="#4ca9ff25"/><circle cx="75" cy="113" r="32" fill="none" stroke="${C.blue}" stroke-dasharray="24 177" class="packet" pathLength="100"/><path d="M63 113L72 122L89 104" fill="none" stroke="${C.blue}" stroke-width="2"/>${text(75, 174, "Keeping up to date", "svg-micro", 'text-anchor="middle"')}${[196, 218, 240].map((yy, i) => `<circle cx="22" cy="${yy}" r="2" fill="${[C.pink, C.lilac, C.blue][i]}"/><rect x="33" y="${yy - 3}" width="${78 - i * 12}" height="4" rx="2" fill="#ffffff16"/>`).join("")}` : `${heart(18, 76, 0.55)}${text(20, 116, "64", "svg-value")}${text(51, 115, "bpm", "svg-micro")}${wave(18, 132, C.pink, 0.98)}<path d="M18 179H132" class="divider"/>${bars(22, 188, C.blue, 0.9)}${text(20, 265, "Activity", "svg-micro")}${text(130, 265, "8,420", "svg-micro", 'text-anchor="end"')}`}<path d="M53 275H97" stroke="#777" stroke-width="3" stroke-linecap="round"/></g>`;
+      }
+      function file(x, y, s = 1, format = "csv", extra = "") {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><g class="${extra}"><path d="M18 14H166L188 36V235Q188 249 174 249H18Q4 249 4 235V28Q4 14 18 14" fill="#111923" stroke="#54728f70"/><path d="M28 26H176L198 48V247Q198 261 184 261H28Q14 261 14 247V40Q14 26 28 26" fill="#0e151e" stroke="#54728f30" transform="translate(0 -20)"/><path d="M14 0H162L188 26V222Q188 236 174 236H14Q0 236 0 222V14Q0 0 14 0" fill="#172230" stroke="#6686a970"/><path d="M162 0V21Q162 26 168 26H188" fill="#30465e"/>${text(23, 43, format === "csv" ? "≡" : "{ }", "svg-value", 'style="fill:#a9c9e2;font-size:18px"')}${text(165, 46, "." + format, "svg-value", 'text-anchor="end" style="font-size:21px;fill:#c9d9eb"')}${format === "csv" ? `${text(22, 88, "time", "svg-micro")}${text(89, 88, "value", "svg-micro")}${text(148, 88, "unit", "svg-micro")}${[103, 124, 145, 166].map((v) => `<path d="M22 ${v}H167" stroke="#ffffff0b"/><path d="M22 ${v + 8}H60M89 ${v + 8}H113M148 ${v + 8}H163" stroke="#78bdff60" stroke-width="2"/>`).join("")}` : `${text(22, 92, "{", "svg-label")}${text(34, 117, '"type": "steps",', "svg-micro", 'style="fill:#a4bdd7"')}${text(34, 142, '"value": 8420', "svg-micro", 'style="fill:#a4bdd7"')}${text(22, 167, "}", "svg-label")}`}<path d="M23 207L28 212L37 203" stroke="${C.mint}" fill="none"/>${text(45, 212, "Yours to keep", "svg-micro", 'style="fill:#a7c2bf"')}</g></g>`;
+      }
+      function svg(id, label, body) {
+        return `<svg viewBox="0 0 720 420" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${id}-db"><stop stop-color="#172c44"/><stop offset=".55" stop-color="#102035"/><stop offset="1" stop-color="#203a55"/></linearGradient><clipPath id="${id}-wave"><rect x="0" y="0" width="180" height="65"/></clipPath></defs>${body}</svg>`;
+      }
+      const studies = [
+        {
+          id: "signal-archive",
+          group: "sync",
+          name: "Signals into an archive",
+          description:
+            "The original three streams, simplified. Readings keep arriving; the archive keeps growing.",
+          draw: (id) =>
+            `${[C.pink, C.lilac, C.blue].map((c, i) => `${wave(65, 90 + i * 84, c)}<circle cx="208" cy="${108 + i * 84}" r="3" fill="${c}"/>${wire(`M208 ${108 + i * 84}C320 ${108 + i * 84} 330 ${181 + i * 25} 456 ${181 + i * 25}`, c, -i * 1.2, 4.8)}`).join("")}${database(id, 456, 122, 1)}${text(122, 365, "Apple Health", "svg-label", 'text-anchor="middle"')}${text(546, 365, "Your database", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "phone-archive",
+          group: "sync",
+          name: "Your phone, your database",
+          description:
+            "A quiet, direct connection. Three types of readings leave the phone and land in the database.",
+          draw: (id) =>
+            `${phone(83, 62, 1)}${[C.pink, C.lilac, C.blue].map((c, i) => wire(`M233 ${155 + i * 46}C325 ${155 + i * 46} 347 ${181 + i * 24} 463 ${181 + i * 24}`, c, -i * 1.1, 4)).join("")}${database(id, 463, 123, 0.96)}${text(158, 383, "PulsHealth on iPhone", "svg-label", 'text-anchor="middle"')}${text(550, 383, "Your destination", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "many-phones",
+          group: "sync",
+          name: "More devices, one destination",
+          description:
+            "A small constellation of phones with independent streams. The destination stays in focus.",
+          draw: (id) =>
+            `${phone(69, 52, 0.65)}${phone(235, 147, 0.65)}${phone(60, 238, 0.5)}${wire("M167 144C300 144 315 174 485 174", C.pink, -1, 5)}${wire("M333 236C395 236 398 201 485 201", C.blue, -2, 4.3)}${wire("M135 308C310 308 327 231 485 231", C.lilac, 0, 5.3)}${database(id, 485, 128, 0.95)}`,
+        },
+        {
+          id: "quiet-sync",
+          group: "sync",
+          name: "Background, without the noise",
+          description:
+            "A restrained orbit around the phone. A softer option for a small feature section.",
+          draw: (id) =>
+            `<g fill="none" stroke="${C.blue}"><ellipse cx="360" cy="210" rx="250" ry="93" opacity=".1" transform="rotate(-16 360 210)"/><ellipse cx="360" cy="210" rx="250" ry="93" opacity=".1" transform="rotate(16 360 210)"/><ellipse cx="360" cy="210" rx="250" ry="93" pathLength="100" class="packet small" transform="rotate(-16 360 210)"/><ellipse cx="360" cy="210" rx="250" ry="93" pathLength="100" class="packet small" style="--delay:-2s;--speed:5s" transform="rotate(16 360 210)"/></g>${phone(285, 66, 1, "sync")}`,
+        },
+        {
+          id: "signal-files",
+          group: "export",
+          name: "A signal becomes a file",
+          description:
+            "The export study you picked, with no controls. CSV and JSON take turns in one gentle loop.",
+          draw: (id) =>
+            `${bars(87, 161, C.blue, 1.1)}${text(145, 289, "Your readings", "svg-label", 'text-anchor="middle"')}${[0, 1, 2, 3, 4].map((i) => wire(`M237 ${118 + i * 42}C340 ${118 + i * 42} 350 210 451 210`, C.blue, -i * 0.65, 4.5)).join("")}<g class="paper"><g class="file-csv">${file(452, 82, 1.02, "csv")}</g><g class="file-json">${file(452, 82, 1.02, "json")}</g></g>`,
+        },
+        {
+          id: "phone-files",
+          group: "export",
+          name: "From your pocket to your files",
+          description:
+            "A phone sends data into two portable formats. The files are the destination, not a code block.",
+          draw: (id) =>
+            `${phone(63, 65, 0.98)}${wire("M210 183C305 183 315 123 427 123", C.blue, -0.8, 4.7)}${wire("M210 230C315 230 320 283 498 283", C.lilac, -2.1, 4.7)}${file(425, 49, 0.68, "csv", "file-appear")}${file(493, 214, 0.63, "json", "file-appear")}`,
+        },
+        {
+          id: "readings-summary",
+          group: "export",
+          name: "Readings become patterns",
+          description:
+            "Individual points gather into a clean summary. A visual metaphor for choosing the right level of detail.",
+          draw: (id) =>
+            `${Array.from({ length: 24 }, (_, i) => `<circle cx="${65 + (i % 6) * 22}" cy="${107 + Math.floor(i / 6) * 52 + (i % 3) * 8}" r="3" fill="${[C.blue, C.soft, C.lilac][i % 3]}" opacity="${0.25 + (i % 5) * 0.13}" class="glow-dot" style="--delay:${i * -0.15}s"/>`).join("")}${[0, 1, 2, 3].map((i) => wire(`M207 ${123 + i * 49}C325 ${123 + i * 49} 343 ${240 - i * 29} 443 ${240 - i * 29}`, C.blue, -i * 0.8, 4.5)).join("")}${[74, 125, 99, 170, 140, 183].map((h, i) => `<rect class="bar" x="${448 + i * 31}" y="${303 - h}" width="16" height="${h}" rx="4" fill="${C.blue}" opacity="${0.35 + i * 0.1}" style="--delay:${i * -0.3}s"/>`).join("")}<path d="M433 310H645" stroke="#ffffff12"/>${text(123, 367, "Individual readings", "svg-label", 'text-anchor="middle"')}${text(541, 367, "Custom summaries", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "archive-export",
+          group: "export",
+          name: "Keep it, then take it anywhere",
+          description:
+            "A stored history flows into files. An alternative composition for the database and export story.",
+          draw: (id) =>
+            `${database(id, 76, 128, 0.88)}${wire("M235 187C340 187 342 129 470 129", C.blue, -1.3, 4.2)}${wire("M235 235C340 235 343 275 526 275", C.mint, -3.4, 4.8)}${file(468, 49, 0.66, "csv", "file-appear")}${file(521, 217, 0.61, "json", "file-appear")}${text(155, 363, "Your archive", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "workout-live",
+          group: "live",
+          name: "A workout, flowing live",
+          description:
+            "A running figure, a workout on the phone, and new readings reaching the archive.",
+          draw: (id) =>
+            `${runner(106, 192, 1.7)}<path d="M43 259H172" class="road" stroke="#4ca9ff35"/>${wave(45, 286, C.pink, 0.9)}${wire("M176 198H275", C.pink, -1, 2.9)}${phone(276, 62, 0.97, "workout")}${wire("M422 194C479 194 486 198 537 198", C.blue, -2, 3)}${database(id, 539, 146, 0.72)}${text(106, 365, "Workout", "svg-label", 'text-anchor="middle"')}${text(349, 365, "PulsHealth", "svg-label", 'text-anchor="middle"')}${text(604, 365, "Live sync", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "route-sync",
+          group: "live",
+          name: "Every turn, preserved",
+          description:
+            "A route draws itself and travels into the archive. A workout illustration with a little more movement.",
+          draw: (id) =>
+            `<g fill="none" stroke="#ffffff07">${[80, 140, 200, 260, 320].map((y) => `<path d="M50 ${y}H383"/>`).join("")}${[70, 130, 190, 250, 310, 370].map((x) => `<path d="M${x} 60V346"/>`).join("")}</g><path d="M80 286C70 202 134 243 151 185S206 72 258 112S225 207 282 237S368 198 355 155" fill="none" stroke="#4ca9ff1a" stroke-width="2"/><path d="M80 286C70 202 134 243 151 185S206 72 258 112S225 207 282 237S368 198 355 155" class="route" pathLength="100" fill="none" stroke="${C.blue}" stroke-width="2"/><path d="M80 286C70 202 134 243 151 185S206 72 258 112S225 207 282 237S368 198 355 155" class="route-dot" pathLength="100" fill="none" stroke="${C.soft}" stroke-width="7"/><circle cx="80" cy="286" r="4" fill="${C.blue}"/>${wire("M357 157C425 157 434 210 493 210", C.blue, -1, 4)}${database(id, 491, 137, 0.88)}${text(208, 376, "Your route", "svg-label", 'text-anchor="middle"')}${text(569, 376, "Your history", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "heart-live",
+          group: "live",
+          name: "A living stream",
+          description:
+            "A scrolling heart-rate trace and a steady destination. Minimal enough for a compact product graphic.",
+          draw: (id) =>
+            `${heart(79, 98, 0.9)}${text(118, 116, "Heart rate", "svg-label")}<g transform="translate(68 157)"><g clip-path="url(#${id}-wave)"><g class="wave-shift">${[0, 180, 360].map((x) => wave(x, 5, C.pink, 1.58)).join("")}</g></g></g><g>${[64, 66, 65, 64].map((n, i) => `<g class="numeric" style="--delay:${i * 2}s">${text(69, 281, String(n), "svg-value", 'style="font-size:38px"')}</g>`).join("")}</g>${text(125, 280, "bpm", "svg-label")}${wire("M280 198C370 198 384 205 471 205", C.pink, -0.6, 4)}${database(id, 471, 125, 0.95)}<circle cx="320" cy="340" r="2.5" fill="${C.blue}" class="glow-dot"/>${text(334, 344, "New readings, automatically", "svg-micro")}`,
+        },
+        {
+          id: "health-orbit",
+          group: "live",
+          name: "A day in motion",
+          description:
+            "Sleep, movement, and heart rate orbit a single phone. An abstract option with a recognizable center.",
+          draw: (id) =>
+            `<ellipse cx="360" cy="210" rx="170" ry="170" fill="none" stroke="#ffffff0c"/><ellipse cx="360" cy="210" rx="292" ry="107" fill="none" stroke="#ffffff06" transform="rotate(-22 360 210)"/><g class="spin">${[
+              { x: 190, y: 210, c: C.blue },
+              { x: 445, y: 63, c: C.lilac },
+              { x: 445, y: 357, c: C.pink },
+            ]
+              .map(
+                ({ x, y, c }, i) =>
+                  `<g transform="translate(${x} ${y})"><g class="counter-spin"><circle r="25" fill="#101010" stroke="${c}55"/>${i === 0 ? `<path d="M-10 0H-5L-1-9L3 9L7-2H12" stroke="${c}" fill="none" stroke-width="1.5"/>` : i === 1 ? `<path d="M6-12A13 13 0 1 0 12 7A14 14 0 0 1 6-12" fill="none" stroke="${c}" stroke-width="1.5"/>` : heart(-9, -9, 0.75, c)}</g></g>`,
+              )
+              .join("")}</g>${phone(285, 66, 1)}`,
+        },
+      ];
+      const collections = [
+        { id: "sync", title: "Sync & devices" },
+        { id: "export", title: "Export & organize" },
+        { id: "live", title: "Workouts & live data" },
+      ];
+      const root = document.getElementById("studies");
+      for (const group of collections) {
+        const section = document.createElement("section");
+        section.className = "collection";
+        section.id = group.id;
+        section.innerHTML = `<h2 class="section-title">${group.title}</h2><div class="gallery">${studies
+          .filter((s) => s.group === group.id)
+          .map(
+            (s) =>
+              `<article class="study" id="${s.id}"><div class="art">${svg(s.id, s.description, s.draw(s.id))}</div><div class="caption"><div><h3>${s.name}</h3><p>${s.description}</p></div><div class="asset-actions"><a class="solo-link" href="?scene=${s.id}">View alone</a><button class="solo-link" type="button" data-save="${s.id}" aria-label="Save animated SVG: ${s.name}">Save SVG</button></div></div></article>`,
+          )
+          .join("")}</div>`;
+        root.append(section);
+      }
+      const scene = new URLSearchParams(location.search).get("scene");
+      if (scene && studies.some((s) => s.id === scene)) {
+        document.body.classList.add("isolated");
+        document.getElementById(scene).classList.add("selected");
+        document.title =
+          studies.find((s) => s.id === scene).name + " · PulsHealth";
+      }
+      for (const button of document.querySelectorAll("[data-pause]"))
+        button.addEventListener("click", () => {
+          const paused = document.body.classList.toggle("paused");
+          for (const control of document.querySelectorAll("[data-pause]")) {
+            control.setAttribute("aria-pressed", String(paused));
+            control.textContent = paused ? "Resume motion" : "Pause motion";
+          }
+        });
+      for (const button of document.querySelectorAll("[data-save]")) {
+        button.addEventListener("click", () => {
+          const source = document
+            .getElementById(button.dataset.save)
+            .querySelector("svg");
+          const exported = source.cloneNode(true);
+          exported.setAttribute("width", "720");
+          exported.setAttribute("height", "420");
+          const style = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "style",
+          );
+          style.textContent = document.querySelector("style").textContent;
+          exported.insertBefore(style, exported.firstChild);
+          const url = URL.createObjectURL(
+            new Blob([new XMLSerializer().serializeToString(exported)], {
+              type: "image/svg+xml",
+            }),
+          );
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "pulshealth-" + button.dataset.save + ".svg";
+          link.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+      }
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries)
+              entry.target.classList.toggle("offscreen", !entry.isIntersecting);
+          },
+          { rootMargin: "120px" },
+        );
+        document.querySelectorAll(".art").forEach((el) => observer.observe(el));
+      }
+    </script>
+  </body>
+</html>
