@@ -609,7 +609,7 @@ final class AppModel {
     var syncPlanNotice: String? {
         guard syncPausedByPlan else { return nil }
         let count = appliedConfig.observedTypeIdentifiers.count
-        return "Sync is paused. Your saved selection has \(count) health data types; Free supports 5. Choose up to 5 types or upgrade to Pro to resume. Your selection and previously synced data are kept."
+        return "\(count) health data types selected. Free sync includes 5."
     }
 
     func startExport() {

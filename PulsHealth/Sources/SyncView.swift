@@ -66,9 +66,14 @@ struct SyncView: View {
             if model.appliedConfig.serverURL == nil {
                 SyncIntro { path.append(.server(scan: false, choice: $0)) }
             } else {
+                if model.syncPausedByPlan {
+                    planLimitCard
+                }
                 statusCard
                 limitedHistoryNotice
-                syncNowSection
+                if !model.syncPausedByPlan {
+                    syncNowSection
+                }
                 rawSamplesSection
                 aggregatesSection
             }
@@ -112,23 +117,21 @@ struct SyncView: View {
         let lastSync = model.statuses.compactMap(\.state.lastSyncAt).max()
         let connection = connectionSummary
         return CardSection(host, subtitle: lastSync.map { "Last sync \($0.relativeString)" } ?? "Not synced yet") {
-            if model.syncPausedByPlan {
-                StatusPill(text: "Sync paused", color: .orange)
-            } else if model.typesFailed > 0 {
+            if model.typesFailed > 0 {
                 StatusPill(text: "\(model.typesFailed) failing", color: .red)
             }
         } content: {
             VStack(alignment: .leading, spacing: 3) {
                 StatusDot(
-                    text: model.syncPausedByPlan ? "Sync paused" : connection.label,
-                    color: model.syncPausedByPlan ? .orange : connection.color)
+                    text: connection.label,
+                    color: connection.color)
                 if let detail = connection.detail {
                     Text(detail)
                         .font(.caption)
                         .foregroundStyle(connection.color == .red ? Color.red : .secondary)
                         .lineLimit(3)
                 }
-                if let paused = pausedSummary {
+                if !model.syncPausedByPlan, let paused = pausedSummary {
                     Text(paused)
                         .font(.caption)
                         .foregroundStyle(.orange)
@@ -238,6 +241,36 @@ struct SyncView: View {
             .formatted(.interval.day().month(.abbreviated).year())
     }
 
+    /// One explanation and two ways forward; connection health stays in the
+    /// database card instead of repeating the plan's pause state there.
+    private var planLimitCard: some View {
+        CardSection("Sync paused", subtitle: model.syncPlanNotice) {
+            Image(systemName: "pause.circle")
+                .font(.title3)
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+        } content: {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) { planLimitActions }
+                VStack(alignment: .leading, spacing: 12) { planLimitActions }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    @ViewBuilder private var planLimitActions: some View {
+        Menu {
+            Button("Raw Samples", systemImage: "list.bullet.rectangle") { path.append(.rawSamples) }
+            Button("Aggregates", systemImage: "chart.bar.xaxis") { path.append(.aggregates) }
+        } label: {
+            Text("Choose types")
+        }
+        .buttonStyle(.bordered)
+
+        Button("View Pro") { model.showPro(model.syncProContext) }
+            .buttonStyle(.borderedProminent)
+    }
+
     private var syncNowSection: some View {
         Section {
             Button {
@@ -252,15 +285,6 @@ struct SyncView: View {
                 }
             }
             .disabled(model.backfillActive || !model.configured)
-            if model.syncPausedByPlan {
-                NavigationLink("Choose up to 5 types", value: SyncRoute.rawSamples)
-                NavigationLink("Edit aggregated types", value: SyncRoute.aggregates)
-                Button("Resume all types with Pro") { model.showPro(model.syncProContext) }
-            }
-        } footer: {
-            if let notice = model.syncPlanNotice {
-                Text(notice).foregroundStyle(.orange)
-            }
         }
     }
 
