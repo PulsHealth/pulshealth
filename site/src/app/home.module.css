@@ -1,62 +1,17 @@
-/* Style A translated to the site: charcoal surroundings, one clear blue
-   hero, mint export and lilac detail panels. Geist headlines and body;
-   genuine app imagery carries the story, without animated copy. */
-.home {
-  --ink: #152b46;
-  --blue-paper: #dceeff;
-  --mint-paper: #dbf5ea;
-  --lilac-paper: #ece6fc;
-  --blue-accent: #147cbd;
-  --paper: #ffffff;
-}
-.phone {
-  overflow: hidden;
-  border: 5px solid #303238;
-  border-radius: 2rem;
-  background: #111;
-  box-shadow: 0 20px 40px #10233c30;
-}
-.heroVisual {
-  overflow: hidden;
-  border-radius: 2rem;
-  background: var(--blue-paper);
-  color: var(--ink);
-  padding: 2rem 1.75rem 0;
-}
-.visualTitle { max-width: 14em; font-size: 1.6rem; font-weight: 600; letter-spacing: -.04em; line-height: 1.15; }
-.heroFlow { display: grid; grid-template-columns: 1.05fr 1fr; align-items: center; gap: 1.3rem; margin-top: 2rem; }
-.heroFlow > .phone { margin-bottom: -3.5rem; transform: rotate(-5deg); }
-.destinations { position: relative; display: flex; flex-direction: column; gap: 1.8rem; padding-bottom: 2rem; }
-.destination { position: relative; padding-left: 1.15rem; border-left: 2px solid #147cbd40; }
-.destination > svg { margin-bottom: .5rem; color: var(--blue-accent); }
-.destination > p { font-size: 1.1rem; font-weight: 650; line-height: 1.2; }
-.destination > span { display: block; max-width: 12em; font-size: .85rem; line-height: 1.35; margin-top: .35rem; }
-.featureLink { display: inline-flex; align-items: center; gap: 1rem; }
-.featureLink > svg { width: 1.1rem; height: 1.1rem; color: var(--brand); }
-.featureLink:hover { color: var(--brand); }
-.syncVisual { overflow: hidden; border-radius: 1.5rem; background: var(--blue-paper); color: var(--ink); padding: clamp(1.5rem, 4vw, 3rem); }
-.exportVisual, .detailVisual { position: relative; overflow: hidden; min-height: 490px; border-radius: 1.5rem; color: var(--ink); }
-.exportVisual { background: var(--mint-paper); display: grid; grid-template-columns: 1fr 1.15fr; gap: 1rem; align-items: center; padding: 2rem 1.75rem 0; }
-.exportVisual > .phone { align-self: start; margin-bottom: -5rem; transform: translateY(2rem) rotate(5deg); }
-.fileFormats { padding-bottom: 2rem; }
-.fileFormats > div + div { margin-top: 3rem; }
-.fileFormats span { display: inline-block; font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 650; letter-spacing: -.045em; border-bottom: 2px solid #152b4630; padding-bottom: .5rem; }
-.fileFormats p { margin-top: .75rem; font-size: 1rem; line-height: 1.4; }
-.detailVisual { background: var(--lilac-paper); padding: 1.75rem 1.75rem 0; display: grid; grid-template-columns: 1fr 1.2fr; gap: 1rem; }
-.detailVisual > .phone { align-self: start; margin-bottom: -5rem; transform: translateY(2rem) rotate(4deg); }
-.categories { display: flex; flex-direction: column; justify-content: center; gap: 1.5rem; padding-bottom: 2rem; }
-.categories > div { display: flex; align-items: center; gap: .65rem; font-weight: 550; }
-.categories svg { flex-shrink: 0; }
-@media (max-width: 639px) {
-  .heroVisual { padding: 1.5rem 1.25rem 0; border-radius: 1.5rem; }
-  .visualTitle { font-size: 1.45rem; }
-  .heroFlow { gap: 1rem; margin-top: 1.75rem; }
-  .destinations { gap: 1.35rem; }
-  .destination { padding-left: .8rem; }
-  .destination > p { font-size: 1rem; }
-  .destination > span { font-size: .8rem; }
-  .phone { border-radius: 1.5rem; border-width: 4px; }
-  .exportVisual, .detailVisual { min-height: 380px; padding-inline: 1.25rem; }
-  .categories { gap: 1.25rem; font-size: .9rem; }
-  .fileFormats p { font-size: .9rem; }
-}
+/* Motion lab: health signals as the visual material. Midnight, glacier,
+   cornflower, periwinkle, and chalk. Geist is set wide and quiet; the
+   signal sculpture carries the expressive movement, not the typography. */
+.home { --signal-ink: #08101d; background: var(--signal-ink); color: #ecf2ff; }
+.hero { position: relative; border-bottom: 1px solid #ffffff16; background: radial-gradient(ellipse at 80% 35%, #15285370, transparent 55%); }
+.hero > div:first-child { min-height: min(800px, 85vh); }
+.hero h1 { max-width: 7.7em; }
+.hero nav { color: #b7c8e3; border-color: #ffffff16; }
+.featureLink { display: inline-flex; align-items: center; gap: 1rem; font-size: .9rem; }
+.featureLink > svg { width: 1rem; height: 1rem; color: #9ac1ff; }
+.featureLink:hover { color: #fff; }
+.feature { padding-block: 1rem; }
+.feature h2 { font-weight: 450; letter-spacing: -.05em; }
+.control { border-block: 1px solid #ffffff16; background: #0c182a; }
+.control h2, .closing h2 { font-weight: 450; letter-spacing: -.05em; }
+.closing { border-top: 1px solid #ffffff16; background: radial-gradient(ellipse at 50% 100%, #233c6b60, transparent 70%); }
+@media (max-width: 1023px) { .hero > div:first-child { gap: 1rem; padding-bottom: 1rem; } .hero h1 { max-width: 9em; } }
