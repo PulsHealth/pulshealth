@@ -59,9 +59,13 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Data Requests") {
+            Section {
                 NavigationLink { CreateDataRequestView() } label: { Label("Create Request", systemImage: "qrcode") }
                 NavigationLink { OpenDataRequestView() } label: { Label("Open or Scan Request", systemImage: "qrcode.viewfinder") }
+            } header: {
+                Text("Data Requests")
+            } footer: {
+                Text("Create health data requests for research participants, teams, or other groups.")
             }
 
             // Keyed on the *applied* server, like the Sync tab's first-time screen:
@@ -457,9 +461,11 @@ struct UserView: View {
                     Text(problem).font(.caption).foregroundStyle(.red)
                 }
             } header: { Text("PulsHealth Account") } footer: {
-                Text(signedIn
-                    ? "Changes here are saved to your PulsHealth account. Signing in does not turn on Health data sync."
-                    : "Sign-in is optional. You can use PulsHealth and enter your details below without an account.")
+                if signedIn {
+                    Text("Changes here are saved to your PulsHealth account. Signing in does not turn on Health data sync.")
+                } else {
+                    Text("Optional").font(.caption)
+                }
             }
             .disabled(account.busy || signingIn)
 
@@ -473,9 +479,7 @@ struct UserView: View {
                     Text("Enter your current password to change your sign-in email.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-            } header: { Text("Identity") } footer: {
-                if !signedIn { Text("Name and email are optional.") }
-            }
+            } header: { Text("Identity") }
             .disabled(account.busy || (signedIn && account.profile == nil))
 
             Section {
@@ -501,9 +505,7 @@ struct UserView: View {
                     Text("Male").tag(String?.some("male"))
                     Text("Other").tag(String?.some("other"))
                 }
-            } header: { Text("Characteristics") } footer: {
-                Text("These details are optional. You can leave them blank.")
-            }
+            } header: { Text("Characteristics") }
             .disabled(account.busy || (signedIn && account.profile == nil))
 
             Section("Advanced") {
