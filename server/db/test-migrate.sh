@@ -155,6 +155,7 @@ refuse "with different content" postgres "$work/edited"
 eq "$(sql postgres 'SELECT puls_time_zone()')" "Europe/Berlin" "puls_time_zone()"
 sql postgres 'SELECT count(*) FROM metric_daily' >/dev/null
 sql postgres "$(cat "$here/test-account-time-zones.sql")" >/dev/null
+sql postgres "$(cat "$here/test-account-profile.sql")" >/dev/null
 [[ $(sql postgres 'SELECT count(*) FROM category_labels') -gt 0 ]] || fail "category_labels is empty"
 eq "$(sql postgres "SELECT string_agg(rolname, ',' ORDER BY rolname) FROM pg_roles WHERE rolname IN ('grafana','api_reader','ingest')")" \
   "api_reader,grafana,ingest" "scoped roles"

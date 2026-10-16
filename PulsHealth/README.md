@@ -46,6 +46,17 @@ as complimentary without automatic charges only when verified renewal is off.
 Contextual upgrade prompts keep the person's draft for explicit review afterward. No purchase analytics or
 third-party SDK is added.
 
+## User settings and account identity
+
+Settings → User offers optional PulsHealth account sign-in without enabling
+Health sync or changing the chosen database. Signed out, identity and
+characteristics stay optional local settings and Advanced permits editing the
+UUID. Signed in, the page loads the account's identity and optional profile,
+saves edits to that account, and displays its fixed UUID. Changing the sign-in
+email requires the current password. Signing out returns to the local settings.
+The account session is a separate device-only Keychain credential. Deploy the
+viewer and migrations 029/100 before shipping this screen.
+
 ## Project generation
 
 `PulsHealth.xcodeproj` is **generated** from `project.yml` by

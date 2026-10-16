@@ -646,6 +646,60 @@ final class AppModelTests: XCTestCase {
         XCTAssertNil(try reopened.token())
     }
 
+    func testAccountProfileSavePreservesDifferentDestinationDraftWithoutHealthRequests() async throws {
+        var stored = SyncConfiguration()
+        stored.serverURL = URL(string: "https://sync.pulshealth.com")!
+        stored.authToken = "fixture-sync-token"
+        stored.userID = user
+        stored.signedInDatabaseURL = stored.serverURL
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: stored)
+        await h.model.start()
+        h.model.config.serverURL = mine
+        h.model.config.userName = "Different draft"
+        let profile = AccountProfile(userID: user, name: "Account name", email: "person@example.test")
+        let saved = await h.model.updateAppliedAccountProfile(profile)
+        XCTAssertTrue(saved)
+        XCTAssertEqual(h.model.config.serverURL, mine)
+        XCTAssertEqual(h.model.config.userName, "Different draft")
+        XCTAssertEqual(h.model.appliedConfig.userName, "Account name")
+        let persisted = await h.engine.store.configuration
+        XCTAssertEqual(persisted.userName, "Account name")
+        let requests = await h.access.requests
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testUserPageRendersOptionalLocalAndAccountProfiles() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        for signedIn in [false, true] {
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.protocolClasses = [AccountFixtureProtocol.self]
+            let account = UserAccount(credentials: InMemoryTokenStore(token: signedIn ? "fixture-account-session" : nil),
+                                      session: URLSession(configuration: configuration))
+            await account.restore()
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 1100)
+            let controller = UIHostingController(rootView: NavigationStack { UserView(account: account) }.environment(h.model))
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.frame = window.bounds
+            window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(250))
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { context in
+                controller.view.layer.render(in: context.cgContext)
+            }
+            XCTAssertNotNil(image.cgImage)
+            let attachment = XCTAttachment(image: image)
+            attachment.name = signedIn ? "User settings signed in" : "User settings optional local profile"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            XCTAssertEqual(account.hasSession, signedIn)
+            XCTAssertNil(h.model.config.serverURL)
+            window.isHidden = true
+        }
+    }
+
     func testSavedDatabaseScreenRendersOnPhoneAndPadAfterSwitchAndUnpair() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true])
         await h.model.start()

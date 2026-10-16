@@ -377,3 +377,19 @@ The reference sync ingest endpoint is not a request ZIP receiver. See
 ## Hosted operating procedures
 
 The [hosted operations runbook](docs/hosted-operations.md) defines operator access, deletion escalation, backup expiry, restore-ledger checks and incident handling. The hosted service is not end-to-end encrypted; database administrators remain trusted. Per-account views protect viewer access, not against a compromised application or operator. Late diagnostic writes hold the user lock and require an existing owner, so they cannot recreate account diagnostics after erasure.
+
+## Optional iPhone account access
+
+Settings → User signs in independently of Health sync. A same-origin protected
+browser POST issues a five-minute one-use code with a SHA-256 PKCE challenge;
+the handoff is bound to the live authorizing browser session and cascades away
+on its revocation or password reset. Exchange locks the account before a fresh
+session check, serializing it with resets. The fixed `puls://account` callback carries that code and state, never a session
+credential. The iPhone checks state and exchanges the code with its verifier.
+The resulting normal account session is stored in a separate device-only
+Keychain item, never in sync state. Native profile calls use only a bearer
+session over HTTPS, ignore cookies, and refuse redirects. Database-scoped reads
+and `auth.set_my_profile` authorize the session's own user; demo mutations are
+refused. Login email edits require the current password and invalidate pending
+recovery and invitation links. Account UUIDs cannot be edited. Deploy migration
+029 and the 100 grant script, then the viewer, before shipping the client.
