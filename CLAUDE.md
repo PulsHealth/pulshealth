@@ -357,15 +357,14 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   an install with a database, types or a prior Apply must **never** see it.
   Four pages in a paging horizontal `ScrollView` (a paged `TabView` swallows
   the drag past its last page). The draft holds `TypePresets.common`
-  (`preselectCommonTypesIfUnset`); only Start Exploring applies it
-  (`finishOnboarding()` → `applyConfiguration(syncNewTypes: true)`). **Page 2
-  is the pre-permission screen App Review judges under guideline 5.1.1(iv)**:
-  one neutral Continue, no skip. Until `onboardingHealthAccessPending()`
-  reports nothing left to ask (it awaits `start()`, since an empty draft reads
-  as settled) the pager holds only pages 1–2; Continue or a swipe past page 2
-  (`onPullPastEnd`, iOS 18+) presents the sheet, and any answer, Don't Allow
-  included, moves on. Never add a page, link or gesture that reaches page 3
-  around that. The medication picker is scheduled after the cover is down,
+  (`preselectCommonTypesIfUnset`). Welcome, Export and Sync explain the app
+  before **the final Health page**, the pre-permission screen App Review
+  judges under guideline 5.1.1(iv): one neutral Continue, no skip.
+  Continue or a swipe past the final page (`onPullPastEnd`, iOS 18+) presents
+  the sheet when `onboardingHealthAccessPending()` reports undetermined data.
+  Any answer, Don't Allow included, precedes `finishOnboarding()` and Apply.
+  There is no page past Health, and first run cannot close before its answer.
+  The medication picker is scheduled after the cover is down,
   never awaited (see Gotchas); a pairing link accepted during the flow waits
   in `confirmedPairing` until then (`pairingAwaitsSyncTab`), when RootView
   opens Sync → Database with it.

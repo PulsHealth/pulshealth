@@ -47,10 +47,10 @@ struct RawSamplesPickerView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button("All Types") {
-                        model.config.enabledTypes = Set(HealthTypeCatalog.all.map(\.identifier))
+                        model.setSyncRawTypes(Set(HealthTypeCatalog.all.map(\.identifier)))
                     }
                     Button {
-                        model.config.enabledTypes = TypePresets.common
+                        model.setSyncRawTypes(TypePresets.common)
                     } label: {
                         Text("Common Set")
                         Text("Steps, heart, sleep, workouts and more")
@@ -139,7 +139,7 @@ private struct TypeCategoryView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button("Turn All On", systemImage: "checkmark.circle") {
-                        model.config.enabledTypes.formUnion(types.map(\.identifier))
+                        model.setSyncRawTypes(model.config.enabledTypes.union(types.map(\.identifier)))
                     }
                     Button("Turn All Off", systemImage: "xmark.circle", role: .destructive) {
                         model.config.enabledTypes.subtract(types.map(\.identifier))
@@ -172,6 +172,16 @@ private struct TypeToggleRow: View {
                 }
             }
         }
+        .disabled(model.syncTypeRequiresPro(descriptor.identifier))
+        .overlay {
+            if model.syncTypeRequiresPro(descriptor.identifier) {
+                Color.clear.contentShape(Rectangle())
+                    .onTapGesture { model.showPro(.syncTypes(model.config.observedTypeIdentifiers.count + 1)) }
+                    .accessibilityElement()
+                    .accessibilityLabel("Unlock \(descriptor.displayName) with Pro")
+                    .accessibilityAddTraits(.isButton)
+            }
+        }
         .padding(.vertical, 2)
     }
 
@@ -180,7 +190,7 @@ private struct TypeToggleRow: View {
             get: { model.config.enabledTypes.contains(descriptor.identifier) },
             set: { enabled in
                 if enabled {
-                    model.config.enabledTypes.insert(descriptor.identifier)
+                    model.setSyncRawTypes(model.config.enabledTypes.union([descriptor.identifier]))
                 } else {
                     model.config.enabledTypes.remove(descriptor.identifier)
                 }

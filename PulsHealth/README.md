@@ -313,17 +313,14 @@ Sources/
 │                         database is not here; it is the Sync tab's.
 ├── OnboardingView.swift  First run: four pages swiped in a paging ScrollView,
 │                         no database asked for. "Unlock your Health Data"
-│                         (Explore, Export, Sync); "Which Health data would
-│                         you like to use?" (iOS's sheet for the preselected
-│                         TypePresets.common, behind one Continue button);
-│                         one-time exports; "Always in sync" (the
-│                         PulsHealth database or your own, both set up from
-│                         the Sync tab; Learn more → pulshealth.com/#ways
-│                         in Safari) with Start Exploring, which applies the
-│                         selection. Page 2 cannot be skipped: until iOS has
-│                         been asked, pages 3 and 4 are not in the pager, and
-│                         Continue or a swipe past the end presents the sheet
-│                         (root CLAUDE.md). A puls:// link accepted during the
+│                         (Explore, Export, Sync); one-time exports; "Always
+│                         in sync" (database setup is later in the Sync tab);
+│                         then "Which Health data would you like to use?"
+│                         (iOS's sheet for TypePresets.common). The final
+│                         Health page cannot be skipped: its neutral Continue
+│                         button or a swipe past the end presents the sheet,
+│                         then applies the selection and finishes only after
+│                         an answer (root CLAUDE.md). A puls:// link during the
 │                         flow waits until it ends, then Sync → Database
 │                         opens with the fields filled. Settings →
 │                         Diagnostics → "Show Onboarding Again" replays it
@@ -583,3 +580,14 @@ or QR code. Settings → Open or Scan Request and `puls://request` links open a
 review screen. Generate & Share opens the share sheet; Generate & Send creates
 and delivers the ZIP in one action. Partial extractions require an explicit
 Send Available Data choice. See [the request format](../docs/requests.md).
+
+Export range controls remain fully editable. Selecting history beyond Free's
+latest 30 days presents Pro immediately and preserves the draft. Sync pickers
+reject additions beyond five distinct types, counting raw and enabled aggregates
+once per type; unavailable additions appear gray and open Pro when tapped.
+Existing selections can still be removed. Onboarding explains Export and Sync
+before its final, required Health permission step.
+An older saved selection over Free's limit stays visible, with an explicit
+Sync paused status and an explanation beside Sync Now. That section offers
+raw/aggregate editing and Pro so a connected database is not mistaken for an
+actively syncing selection.
