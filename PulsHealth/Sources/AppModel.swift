@@ -156,7 +156,7 @@ final class AppModel {
     /// configuration has actually been read.
     var showsOnboarding = false
     /// Whether the flow is a replay on an install that already finished it
-    /// (Settings → Diagnostics). Only a replay gets a Close button — a genuine
+    /// (Settings → About). Only a replay gets a Close button — a genuine
     /// first run walks forward through the steps instead.
     private(set) var onboardingIsRerun = false
     /// A Save & Apply that would point the sync at a different server or user
@@ -461,7 +461,7 @@ final class AppModel {
     }
 
     /// Marks the first run done and leaves the flow. Durable, so the flow is
-    /// shown exactly once per install; Settings → Diagnostics can replay it.
+    /// shown exactly once per install; Settings → About can replay it.
     func completeOnboarding() {
         defaults.set(true, forKey: Self.onboardingCompletedKey)
         showsOnboarding = false
@@ -481,7 +481,7 @@ final class AppModel {
         onboardingIsRerun = false
     }
 
-    /// Settings → Diagnostics: replay the flow on a configured install. Nothing
+    /// Settings → About: replay the flow on a configured install. Nothing
     /// is reset — the existing selection and server stay in the draft.
     func restartOnboarding() {
         onboardingIsRerun = true

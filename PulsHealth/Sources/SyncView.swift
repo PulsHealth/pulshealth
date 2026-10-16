@@ -287,15 +287,6 @@ struct SyncView: View {
                 }
             }
             .disabled(model.backfillActive || !model.configured)
-            if model.syncPausedByPlan {
-                NavigationLink("Choose up to 5 types", value: SyncRoute.rawSamples)
-                NavigationLink("Edit aggregated types", value: SyncRoute.aggregates)
-                Button("Resume all types with Pro") { model.showPro(model.syncProContext) }
-            }
-        } footer: {
-            if let notice = model.syncPlanNotice {
-                Text(notice).foregroundStyle(.orange)
-            }
         }
     }
 
