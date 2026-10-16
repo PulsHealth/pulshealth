@@ -383,9 +383,10 @@ Gaps in the spec go in the "Backend implementer question" issue template.
 
 ## Performance expectations
 
-Measure your own device with **Settings → Diagnostics → Run Throughput
-Benchmark** (reads real HealthKit data through a discarding transport; does
-not touch sync state). Planning numbers:
+Enable Developer Mode by tapping **Settings → About → Version** seven times
+and confirming, then open **Settings → Developer → Run Throughput Benchmark**
+(reads real HealthKit data through a discarding transport; does not touch sync
+state). Planning numbers:
 
 **Initial backfill** (foreground, plugged in, LAN or VPN to the server):
 

@@ -85,7 +85,7 @@ history limit. A health type counts once across raw readings and enabled
 aggregates. Subscription expiry keeps saved selections and existing server
 data; a selection over five types pauses syncing until reduced or upgraded.
 Purchasing Pro does not include hosting. Restore Purchases and Manage
-Subscription are available in Settings → Plan.
+Subscription are available from the PulsHealth Free/Pro row in Settings.
 
 ## App Store ratings and reviews
 

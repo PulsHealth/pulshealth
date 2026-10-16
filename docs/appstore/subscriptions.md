@@ -78,8 +78,8 @@ for local purchases. It does not create production products. Disable the local
 StoreKit configuration when checking real App Store Connect products on a
 sandbox device; archives never use this local configuration.
 
-The Quiet Native plan page lives at Settings → Plan and at contextual upgrade
-prompts. Older exports, older sync history, an over-five sync selection and Data
+The Quiet Native plan page opens from the PulsHealth Free/Pro row in Settings
+and from contextual upgrade prompts. Older exports, older sync history, an over-five sync selection and Data
 Requests explain the relevant limit. Billing choices select a product; a separate
 button states its localized price and billing period before starting purchase.
 The yearly option is selected initially; both durations offer the same access.

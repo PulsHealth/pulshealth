@@ -306,21 +306,25 @@ Sources/
 │                         (`TypeSyncStatus.cooldownUntil`) reads "Paused until
 │                         <time>" here, in its TypeRow and on the status card,
 │                         next to its error, and Sync Now is the way out.
-├── SettingsView.swift    User row, Sync (start date, backfill trigger, reset
+├── SettingsView.swift    PulsHealth Free/Pro plan row, User row, Data Requests
+│                         (create or open/scan a request, with a group-use
+│                         explanation), Sync (start date, backfill trigger, reset
 │                         all anchors — shown only once a server is applied),
 │                         Performance (concurrency, batch size), Save & Apply
 │                         (only while those or the User page have unapplied
 │                         edits), Privacy & Data (Health Access, which opens
 │                         the app's page in iOS Settings; delete a staged
-│                         export; Delete Analysis — every stored type
-│                         summary), Diagnostics (benchmark, "Validate
-│                         Aggregate Functions", replay onboarding) and About
-│                         (version, and four Links — the documentation, the
+│                         export), Developer (benchmark and "Validate Aggregate
+│                         Functions", visible only in Developer Mode) and About
+│                         (version, replay onboarding, Write a Review and four
+│                         Links — the documentation, the
 │                         privacy policy, the GitHub repository and its issue
 │                         tracker — that open in Safari). Privacy & Data also
-│                         carries Delete PulsHealth Account, always. No
-│                         footers. Also
-│                         UserView and the server-change prompt. The
+│                         carries Delete PulsHealth Account, always. Tap Version
+│                         seven times and confirm to enable Developer Mode;
+│                         its section includes Disable Developer Mode. Stored
+│                         analysis summaries are removed when deleting the app.
+│                         Also UserView and the server-change prompt. The
 │                         database is not here; it is the Sync tab's.
 ├── OnboardingView.swift  First run: four pages swiped in a paging ScrollView,
 │                         no database asked for. "Unlock your Health Data"
@@ -334,7 +338,7 @@ Sources/
 │                         an answer (root CLAUDE.md). A puls:// link during the
 │                         flow waits until it ends, then Sync → Database
 │                         opens with the fields filled. Settings →
-│                         Diagnostics → "Show Onboarding Again" replays it
+│                         About → "Show Onboarding Again" replays it
 │                         (with a Close button) for testing.
 ├── SyncIntro.swift       The Sync tab with no database applied: "Always in
 │                         Sync" (automatic, whole history, use it your way,
