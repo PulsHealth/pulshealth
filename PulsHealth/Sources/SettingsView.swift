@@ -42,20 +42,24 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Plan") {
+            Section {
                 Button { model.showPro() } label: {
-                    Label {
-                        VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Label {
                             Text(model.subscriptions.hasPro ? "PulsHealth Pro" : "PulsHealth Free")
-                            Text(model.subscriptions.hasPro
-                                 ? (model.subscriptions.plan?.status ?? "Pro is active")
-                                 : "Recent exports · 5 automatic-sync types")
-                                .font(.caption).foregroundStyle(.secondary)
+                                .foregroundStyle(.primary)
+                        } icon: {
+                            Image(systemName: model.subscriptions.hasPro ? "checkmark.seal" : "sparkles")
+                                .foregroundStyle(.tint)
                         }
-                    } icon: {
-                        Image(systemName: model.subscriptions.hasPro ? "checkmark.seal" : "person.crop.circle")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                            .accessibilityHidden(true)
                     }
                 }
+                .buttonStyle(.plain)
             }
 
             Section("Data Requests") {
