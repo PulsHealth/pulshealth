@@ -217,10 +217,6 @@ struct ProView: View {
         .background(
             highlighted ? Color.accentColor.opacity(0.08) : Color(.secondarySystemGroupedBackground),
             in: RoundedRectangle(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(highlighted ? Color.accentColor.opacity(0.3) : .clear, lineWidth: 1)
-        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(title)
     }
