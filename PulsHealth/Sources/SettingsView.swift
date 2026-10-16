@@ -63,9 +63,13 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
 
-            Section("Data Requests") {
+            Section {
                 NavigationLink { CreateDataRequestView() } label: { Label("Create Request", systemImage: "qrcode") }
                 NavigationLink { OpenDataRequestView() } label: { Label("Open or Scan Request", systemImage: "qrcode.viewfinder") }
+            } header: {
+                Text("Data Requests")
+            } footer: {
+                Text("Create health data requests for research participants, teams, or other groups.")
             }
 
             // Keyed on the *applied* server, like the Sync tab's first-time screen:
