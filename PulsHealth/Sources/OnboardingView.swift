@@ -186,8 +186,6 @@ struct OnboardingView: View {
                         "chart.bar.xaxis", "Aggregates",
                         "Hourly or daily summaries, like steps per day.")
                 }
-                bodyText("No account or database is required for file exports.")
-                    .font(.footnote)
             }
         }
     }
@@ -208,8 +206,6 @@ struct OnboardingView: View {
                         "sparkles", "Use it your way",
                         "Ask your AI assistant about it, or browse it on the web.")
                 }
-                bodyText("Optional. Set it up any time from the Sync tab.")
-                    .font(.footnote)
                 // Opens in Safari, outside the app.
                 Link(destination: URL(string: "https://pulshealth.com/#ways")!) {
                     Label("Learn more", systemImage: "arrow.up.right.square")
