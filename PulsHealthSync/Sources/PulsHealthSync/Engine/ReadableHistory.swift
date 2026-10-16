@@ -309,6 +309,7 @@ public enum ReadableHistory {
         do {
             return try await withTimeout {
                 if HealthTypeCatalog.isActivitySummary(identifier) {
+                    let calendar = ActivitySummaryCalendar.gregorian(calendar)
                     let units: Set<Calendar.Component> = [.era, .year, .month, .day]
                     guard let lastDay = calendar.date(
                         byAdding: .day, value: -1, to: calendar.startOfDay(for: date))

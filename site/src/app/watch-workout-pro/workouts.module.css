@@ -1,0 +1,44 @@
+.product { overflow: clip; }
+.product a:focus-visible { outline: 2px solid var(--brand); outline-offset: 6px; }
+.hero { display: grid; align-items: center; gap: 3rem; padding-block: 4.5rem; }
+.name { font-size: 1.25rem; font-weight: 600; letter-spacing: -.025em; }
+.headline { margin-top: 1.5rem; font-size: clamp(3.1rem, 6.5vw, 5.5rem); font-weight: 600; line-height: 1.02; letter-spacing: -.055em; }
+.heroVisual { display: flex; align-items: center; justify-content: center; min-width: 0; gap: 1.5rem; padding: 2.5rem 1.25rem; background: #ddecfb; border-radius: 2rem; }
+.phone { width: min(100%, 265px); flex-shrink: 0; border: 7px solid #252729; border-radius: 2.5rem; overflow: hidden; background: #000; box-shadow: 0 20px 35px #0003; }
+.phone img { display: block; width: 100%; height: auto; }
+.workoutNote { max-width: 155px; color: #19344d; }
+.workoutNote > svg { width: 36px; height: 36px; color: #126cae; }
+.workoutNote p { margin-top: 1.5rem; font-size: 1.65rem; line-height: 1.15; font-weight: 600; letter-spacing: -.035em; }
+.workoutNote span { display: block; margin-top: 1rem; font-size: .95rem; line-height: 1.5; }
+.intervals { margin-top: 1.5rem; display: flex; align-items: end; gap: 5px; height: 60px; }
+.intervals i { flex: 1; border-radius: 3px; background: #126cae; }
+.intervals i:nth-child(odd) { background: #6997b6; }
+.sectionTitle { max-width: 700px; font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.1; font-weight: 600; letter-spacing: -.04em; text-wrap: balance; }
+.feature { display: grid; align-items: center; gap: 2.5rem; scroll-margin-top: 6rem; }
+.featureVisual { display: flex; justify-content: center; border-radius: 2rem; padding: 2.5rem 1.5rem 0; overflow: hidden; }
+.featureVisual .phone { margin-bottom: -105px; }
+.blue { background: #ddecfb; }
+.lilac { background: #e6defa; }
+.mint { background: #dcf1e9; }
+@media (min-width: 900px) {
+  .hero { grid-template-columns: 1fr 1fr; gap: 4rem; padding-block: 5.5rem; }
+  .feature { grid-template-columns: 1fr 1fr; gap: 5rem; }
+  .copyAfter { order: 2; }
+}
+@media (max-width: 1100px) and (min-width: 900px) { .workoutNote { display: none; } }
+@media (max-width: 480px) {
+  .hero { padding-block: 2.5rem; }
+  .heroVisual { padding: 2rem 1rem; gap: .85rem; }
+  .heroVisual .phone { width: 63%; border-width: 5px; border-radius: 1.8rem; }
+  .workoutNote { flex: 1; }
+  .workoutNote p { font-size: 1.15rem; }
+  .workoutNote span { font-size: .8rem; }
+}
+
+.activityExamples { width: 100%; padding-bottom: 2.5rem; color: #19344d; }
+.examplesTitle { margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 600; letter-spacing: -.035em; }
+.activityExample { display: flex; align-items: center; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid #19344d26; }
+.activityExample > svg { width: 2rem; height: 2rem; flex-shrink: 0; color: #126cae; }
+.activityExample span { font-size: .875rem; }
+.activityExample h3 { margin-top: .25rem; font-size: 1.25rem; font-weight: 600; letter-spacing: -.025em; }
+.activityExample p, .examplesCaption { margin-top: .5rem; font-size: .875rem; line-height: 1.6; }

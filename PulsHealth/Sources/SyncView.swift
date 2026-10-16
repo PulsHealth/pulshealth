@@ -69,6 +69,7 @@ struct SyncView: View {
                 statusCard
                 limitedHistoryNotice
                 syncNowSection
+                planSection
                 rawSamplesSection
                 aggregatesSection
             }
@@ -107,6 +108,22 @@ struct SyncView: View {
     }
 
     // MARK: - Status
+
+    @ViewBuilder private var planSection: some View {
+        if let notice = model.syncPlanNotice {
+            let count = model.appliedConfig.observedTypeIdentifiers.count
+            Section {
+                LabeledContent(count > 5 ? "Sync paused" : "Free sync types", value: "\(count) of 5")
+                if count > 5 {
+                    NavigationLink("Edit raw types", value: SyncRoute.rawSamples)
+                    NavigationLink("Edit aggregated types", value: SyncRoute.aggregates)
+                }
+                Button("See Pro options") { model.showPro(model.syncProContext) }
+            } footer: {
+                Text(notice)
+            }
+        }
+    }
 
     private var statusCard: some View {
         let lastSync = model.statuses.compactMap(\.state.lastSyncAt).max()

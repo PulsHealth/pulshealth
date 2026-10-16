@@ -85,12 +85,10 @@ description: '## What does Apple Health record?
   intake change through a different food database or export policy.
 
 
-  ## Can workouts, sleep or other nutrients explain a change?
+  ## How can related nutrient logs be compared?
 
 
-  A sample timestamp inside a workout or sleep interval is time assigned by the source; it does not establish
-  when the record was saved, verify ingestion or demonstrate a physiological response. Without focal nutrient
-  records, this review could not estimate workout, sleep or nutrient relationships.
+  Without records for this nutrient, the review could not estimate relationships with other nutrient logs.
 
 
   When records are available, compare compatible sources and days with adequate logging. Similar timestamps
@@ -150,7 +148,7 @@ recording_behavior:
   shape: Cumulative recorded nutrient mass; a sample may represent a serving, meal or source-defined contribution.
   cadence: Source-specific logging and import cadence, not continuous nutrient sensing. No intervals were observed
     in the reviewed data.
-  context: Workout and sleep overlap describes recorded timestamps; ingestion time and absorption remain unverified.
+  context: "Retain the logged folate form and label convention when available; a generic mass value does not establish dietary folate equivalents."
   coverage: No samples or aggregates in the reviewed window. Missing entries are unavailable coverage, not
     zero intake.
   aggregation: Sum compatible source contributions after unit, serving and duplicate review; retain logged-day

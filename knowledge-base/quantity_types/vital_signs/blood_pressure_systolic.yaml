@@ -76,9 +76,9 @@ description: |
 
   Ten successive automation-source starts had zero timestamp gaps. The shortest positive tracking-app gap was one second, and the longest automation-source gap was about 79 days. Such patterns call for checking entry/import behavior before treating every row as a fresh cuff inflation.
 
-  ## Do workouts and sleep change the readings?
+  ## How can I make home readings comparable?
 
-  None of the stored examples overlapped a recorded workout or asleep interval. That leaves workout-versus-sleep differences **unmeasured**, rather than showing no physiological effect. Recording in the morning also does not prove a standardized resting measurement.
+  Recording in the morning does not prove a standardized resting measurement. The saved observations do not supply all of the measurement conditions needed for a like-for-like comparison.
 
   For comparable home readings, the [American Heart Association](https://www.heart.org/en/health-topics/high-blood-pressure/monitoring-your-blood-pressure-at-home) recommends a validated monitor, correct cuff size, a quiet seated rest, supported positioning and repeated readings. Record the conditions consistently; exercise-adjacent measurements should not be pooled indiscriminately with rested home measurements.
 

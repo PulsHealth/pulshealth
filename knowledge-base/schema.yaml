@@ -176,8 +176,9 @@ recording_behavior:
 # Optional article search title. Preserve the identifier and existing public URL.
 # seo_title: "Example Metric in Apple Health: Values and Recording Cadence"
 
-# Optional completed empirical research. Add only after executing and persisting
-# the notebook and incorporating its relevant findings into the article.
+# Optional completed research. Persist applicable measured analysis or a
+# coverage/source review before incorporating findings into the article.
+# Private facets are an applicability checklist, not mandatory public headings.
 # The key resolves private artifacts without exposing a filesystem path.
 # A facet with no available evidence is still investigated; explain it in limitations.
 # data_research:
@@ -197,6 +198,6 @@ recording_behavior:
 #     width: 1200  # Optional actual image dimensions in pixels
 #     height: 720
 #     section: "Recording cadence"  # Optional exact level-two heading text
-#     title: "Recorded values in one person's data"
-#     caption: "Label the window, unit, source selection and one-person scope."
+#     title: "Recorded values in example user data"
+#     caption: "Label the window, unit, source selection and example-data scope."
 #     methods: "Explain the calculation, denominator, exclusions and contextual matching rule."

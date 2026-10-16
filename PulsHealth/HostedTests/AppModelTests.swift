@@ -102,7 +102,8 @@ final class AppModelTests: XCTestCase {
         stored: SyncConfiguration? = nil,
         progress: Bool = false,
         unreadable: Bool = false,
-        access: FakeHealthAccess = FakeHealthAccess()
+        access: FakeHealthAccess = FakeHealthAccess(),
+        pro: Bool = true
     ) async throws -> Harness {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("puls-appmodel-\(UUID())", isDirectory: true)
@@ -135,13 +136,59 @@ final class AppModelTests: XCTestCase {
                 backfillTaskIdentifier: "org.example.appmodeltests.backfill"),
             defaults: defaults,
             healthAccess: access,
-            capabilitiesReader: NoCapabilities())
+            capabilitiesReader: NoCapabilities(),
+            subscriptions: SubscriptionStore(entitlementReader: { pro }))
         cleanups.append {
             await engine.stopObserving()
             defaults.removePersistentDomain(forName: suite)
             try? FileManager.default.removeItem(at: dir)
         }
         return Harness(model: model, engine: engine, defaults: defaults, access: access)
+    }
+
+    func testFreeHistoricalExportPromptsBeforeHealthAccess() async throws {
+        let harness = try await makeModel(pro: false)
+        await harness.model.start()
+        harness.model.export.draft.range = .allTime
+        harness.model.startExport()
+        let prompted = await eventually { harness.model.showsPro }
+        XCTAssertTrue(prompted)
+        XCTAssertEqual(harness.model.proContext, .exportHistory)
+        XCTAssertEqual(harness.model.export.draft.range, .allTime, "Upgrade prompt must preserve the export draft")
+        XCTAssertFalse(harness.model.export.isRunning)
+        let requests = await harness.access.requests
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testHistoricalSyncDateIsKeptAsUnappliedUpgradeDraft() async throws {
+        let harness = try await makeModel(pro: false)
+        await harness.model.start()
+        let appliedStart = harness.model.appliedConfig.startDate
+        let requested = Date().addingTimeInterval(-180 * 86_400)
+        harness.model.setSyncStartDate(requested)
+        XCTAssertEqual(harness.model.proContext, .syncHistory)
+        XCTAssertTrue(harness.model.showsPro)
+        XCTAssertEqual(harness.model.config.startDate, requested)
+        XCTAssertEqual(harness.model.appliedConfig.startDate, appliedStart)
+        XCTAssertTrue(harness.model.hasPendingSettingsChanges)
+        let requests = await harness.access.requests
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testFreeSixTypeSelectionDoesNotApplyOrRequestHealthAccess() async throws {
+        let harness = try await makeModel(pro: false)
+        await harness.model.start()
+        harness.model.config.serverURL = mine
+        harness.model.config.enabledTypes = Set(HealthTypeCatalog.all.prefix(6).map(\.identifier))
+        XCTAssertEqual(harness.model.config.enabledTypes.count, 6)
+        let applied = await harness.model.applyConfiguration()
+        XCTAssertFalse(applied)
+        XCTAssertTrue(harness.model.showsPro)
+        XCTAssertEqual(harness.model.proContext, .syncTypes(6))
+        XCTAssertEqual(harness.model.config.enabledTypes.count, 6, "Upgrade prompt must preserve the sync draft")
+        XCTAssertNil(harness.model.appliedConfig.serverURL)
+        let requests = await harness.access.requests
+        XCTAssertTrue(requests.isEmpty)
     }
 
     /// Polls until `condition` holds; bounded by iterations so a broken build

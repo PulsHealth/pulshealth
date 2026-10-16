@@ -12,6 +12,7 @@ and when, is the [Release record](#release-record) at the bottom.
 |---|---|
 | [`2.1-copy.md`](2.1-copy.md) | Approved 2.1 copy and the five-card advertising campaign; preparation, not a submission record. |
 | [`concepts/review.html`](concepts/review.html) | Offline review gallery: three visual directions, 15 advertising cards, and saved selections. See [`concepts/README.md`](concepts/README.md) for sources and rebuild instructions. |
+| [`subscriptions.md`](subscriptions.md) | Pro product IDs, US prices, feature limits and release acceptance gates; source preparation only. |
 | [`listing.md`](listing.md) | The App Store Connect record: name, subtitle, promotional text, description, keywords, URLs, category, age-rating answers, the App Privacy answer ("Data Linked to You" since 2026-10-02) and its reasoning, and what to do about screenshots. |
 | [`review-notes.md`](review-notes.md) | The App Review Information → Notes text, ready to paste once its placeholders are filled in (a demo account on the PulsHealth database, and optionally the review backend), plus prepared answers for the questions this app invites. |
 | [`review-backend.md`](review-backend.md) | How to stand up the throwaway public server for the notes' optional your-own-database block, and how to tear it down afterwards. |
@@ -235,6 +236,31 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.2 (23) internal TestFlight (2026-10-15)
+
+Build **2.2 (23)** was archived from clean source
+`527a2373065b377ed73c7decf9d8105eb67d642c`, whose tree was merged through
+[PR #263](https://github.com/PulsHealth/pulshealth/pull/263). Both iOS SDK
+checks passed. Apple accepted and processed build
+`58290525-2c53-46ae-8611-04818f02f367`; the existing **PulsHealth** internal
+group (two testers) visibly reports **Testing**. The build's What to Test notes
+cover Free/Pro limits, purchase, restore, cancellation, expiration, offline
+access and background/backfill behavior. The signed archive, matching symbols,
+source receipt and upload diagnostics are retained privately.
+
+The **PulsHealth Pro** group and monthly/annual products are configured with
+US prices of **$1.99/month** and **$9.99/year upfront**, Apple-calculated
+localized prices, availability in all 175 current territories, English display
+metadata, review notes and an actual app paywall screenshot. Both products are
+at service level 1 and inherit the app's tax category. Paid Apps Agreement,
+USD banking, U.S. W-9 and compliance statuses were verified **Active**.
+
+This is an internal beta upload. **No app or subscription was submitted for
+App Review, and physical-device purchase/restore acceptance is unverified.**
+No backend or website deployment was performed. See
+[subscription acceptance](subscriptions.md#release-acceptance).
+
+
 ### 2.1 (22) submission (2026-10-12)
 
 Build **2.1 (22)** was archived from clean source
@@ -251,7 +277,9 @@ are retained privately. Apple processed uploaded build
 `49dfb242-1ebb-49e1-8769-85e16e35d525` was submitted on **2026-10-13 at
 01:04 UTC** (October 12, 18:04 PDT) and visibly reports **Waiting for Review**.
 Automatic release after approval, to all users immediately, is selected.
-**Approval and public release remain pending.** Existing ratings are preserved.
+App Store Connect was rechecked on **2026-10-15** and reports **Ready for
+Distribution** for 2.1 (22); the Waiting for Review status above is historical.
+Existing ratings are preserved.
 
 The submission includes the approved subtitle, promotional text, description,
 94-character keywords and version-specific release notes from `listing.md`.

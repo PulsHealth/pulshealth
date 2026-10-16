@@ -126,6 +126,10 @@ struct ExportView: View {
             if !export.draft.customRange {
                 Text(rangeFootnote(export.draft.range))
             }
+            if !model.subscriptions.hasPro {
+                Text("Free includes the latest 30 days for all types and formats, as often as you like.")
+                Button("Export older history with Pro") { model.showPro(.exportHistory) }
+            }
         }
     }
 

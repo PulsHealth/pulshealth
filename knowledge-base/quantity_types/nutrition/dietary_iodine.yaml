@@ -77,16 +77,15 @@ description: '## What does Apple Health dietary iodine measure?
   Sample start and end times describe the source''s interval; they do not independently verify ingestion time.
 
 
-  Workout and sleep overlap can identify timestamps for review, but cannot show nutrient loss, absorption or a sleep
-  effect. A late-night entry may simply be delayed logging. Investigate source behavior before comparing intervals
-  or assigning a physiological explanation.
+  A late-night entry may simply be delayed logging. Investigate source behavior before assigning a meal time
+  or combining records from different sources.
 
 
   ## Is example data available?
 
 
-  The **365-day reporting window** contained no raw iodine samples, stored aggregates or workout-series observations
-  for this type. Ranges, outliers, logging intervals, workout and sleep comparisons, and empirical relationships
+  The **365-day reporting window** contained no raw iodine samples, stored aggregates
+  for this type. Ranges, outliers, logging intervals and empirical nutrient relationships
   were therefore unavailable. No measured distribution or graph is presented. Missing records do not establish zero
   intake or deficiency.
 
@@ -146,8 +145,7 @@ recording_behavior:
   cadence: Source logging or import intervals; ingestion cadence is unverified.
   coverage: Nutrient availability varies by source food database and export support. No records does not establish
     zero intake.
-  context: Workout and sleep timestamp overlap is logging context, not evidence of consumption or physiological
-    response.
+  context: "Check food or supplement items, serving quantities and mass units before combining sources; the log describes recorded intake rather than measured nutrient status."
   aggregation: Sum compatible contributions by source and reporting day after checking servings, units and duplicate
     imports; report logged-day coverage.
   metadata: Optional food descriptions cannot recover missing serving details, chemical forms, fortification or

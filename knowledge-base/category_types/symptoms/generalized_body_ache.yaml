@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierGeneralizedBodyAche"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Generalized Body Ache"
-short_description: "Tracks episodes of widespread muscle aches and body pain."
-icon: "figure.stand"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierGeneralizedBodyAche
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Generalized Body Ache
+short_description: 'Understand generalized body ache in Apple Health: severity labels, useful symptom history
+  and recording limitations.'
+icon: figure.stand
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not an absent report.
+- value: 1
+  name: notPresent
+  description: Symptom explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Subjectively mild symptom severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate symptom severity.
+- value: 4
+  name: severe
+  description: Subjectively severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,106 +42,117 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Generalized body ache (myalgia) refers to widespread muscle pain affecting multiple body areas, often described as aching, soreness, or stiffness. This HealthKit category type enables users to track episodes of diffuse body pain, helping identify patterns related to illness, overexertion, or chronic conditions.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging interfaces depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Generalized body aches are a common symptom with diverse causes ranging from benign (post-exercise soreness) to serious (systemic infections or autoimmune conditions). Pattern recognition helps clinicians identify underlying causes and guide appropriate evaluation.
 
-  Common causes include:
+  Generalized Body Ache records a reported overall aching sensation. It is a subjective symptom category, not
+  a muscle-damage measurement, pain map or recovery score.
 
-  **Infectious causes:**
-  - Viral infections (influenza, COVID-19, common cold)
-  - Bacterial infections
-  - Lyme disease
-  - Mononucleosis
 
-  **Inflammatory and autoimmune conditions:**
-  - Fibromyalgia
-  - Polymyalgia rheumatica
-  - Rheumatoid arthritis
-  - Systemic lupus erythematosus
-  - Dermatomyositis/Polymyositis
+  ## What do the severity labels mean?
 
-  **Metabolic and endocrine causes:**
-  - Hypothyroidism
-  - Vitamin D deficiency
-  - Electrolyte imbalances (hypokalemia, hypocalcemia)
-  - Adrenal insufficiency
 
-  **Medication-related:**
-  - Statin-induced myopathy
-  - ACE inhibitors
-  - Chemotherapy
-  - Withdrawal syndromes
+  | Code | Label | Interpretation |
 
-  **Other causes:**
-  - Overexertion and delayed onset muscle soreness (DOMS)
-  - Chronic fatigue syndrome
-  - Stress and tension
-  - Dehydration
+  | --- | --- | --- |
 
-  ## When to Seek Medical Attention
-  Users should seek immediate medical care when body aches:
-  - Are accompanied by high fever and neck stiffness
-  - Occur with difficulty breathing
-  - Are associated with severe weakness or inability to move
-  - Follow a tick bite or are accompanied by rash (Lyme disease)
-  - Are accompanied by dark urine (rhabdomyolysis)
-  - Occur with swelling of limbs
+  | 0 | unspecified | Severity was not specified |
 
-  Seek routine evaluation when:
-  - Body aches persist for more than 1-2 weeks
-  - Pain significantly affects daily activities
-  - Aches are accompanied by fatigue and unrefreshing sleep
-  - There is associated weight loss or night sweats
-  - Pain is worsening over time
-  - New medications were recently started (especially statins)
+  | 1 | notPresent | Explicitly reported absent |
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Post-exercise patterns (DOMS timing)
-  - Illness onset and progression
-  - Medication-related onset
-  - Fibromyalgia flare patterns
-  - Stress and sleep quality correlations
-  - Seasonal patterns
-  - Response to treatment
+  | 2 | mild | Subjectively mild |
 
-  ## Caveats & Limitations
-  - Does not specify locations of pain
-  - Cannot differentiate between muscle, joint, and bone pain
-  - Does not capture pain quality (aching, burning, sharp)
-  - Severity is subjective and varies between individuals
-  - Cannot assess for weakness (distinct from pain)
-  - Associated symptoms not directly linked
-  - Does not replace objective examination findings
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | 3 | moderate | Subjectively moderate |
+
+  | 4 | severe | Subjectively severe |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified and notPresent mean different things. The codes
+  identify labels; an average such as 2.5 is not a symptom measurement or a validated clinical score. Missing
+  entries are unknown, not automatically notPresent.
+
+
+  ## How is a body ache different from localized pain?
+
+
+  This type describes a generalized experience. Lower Back Pain and Pelvic Pain have separate HealthKit identifiers
+  for more localized reports. The code does not identify affected muscles, injury mechanism, inflammation or
+  whether discomfort began after physical activity. Additional notes about location and impact are often more
+  informative than comparing raw category numbers.
+
+
+  Fever, Chills and Fatigue can provide useful accompanying symptom history. The NHS lists aching as one possible
+  flu symptom, but this pattern is not specific enough to diagnose flu. A high Body Temperature quantity and
+  a Fever symptom report are also different kinds of evidence. Summaries should preserve each source rather
+  than convert one into another.
+
+
+  ## How should repeated entries be read?
+
+
+  This is a logged observation, with no guaranteed recording frequency. Gaps between start times describe the
+  saved logging history, not symptom-free intervals. Source changes, retrospective entry and overlapping records
+  can change the apparent pattern. A sample''s start and end describe the interval the source saved; they do
+  not establish a distinct clinical episode or continuous symptom duration.
+
+
+  When summarizing a history, keep the category labels, reporting dates and source visible. Count explicitly
+  absent observations separately from missing days. Review unexpected labels or repeated overlapping records
+  before treating them as changes in health.
+
+
+  ## What can the available example establish?
+
+
+  No records of this type were found in the database research window, so severity frequencies, source differences
+  and logging patterns could not be measured. This HealthKit type is not listed in the current PulsHealth sync
+  catalog. Database coverage therefore cannot establish whether corresponding records exist in Apple Health,
+  and an empty timeline does not establish symptom absence.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierFever"
-    relationship: "Body aches commonly accompany febrile illness"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Fatigue and body aches often co-occur"
-  - identifier: "HKCategoryTypeIdentifierChills"
-    relationship: "Chills with body aches suggest infection"
-  - identifier: "HKCategoryTypeIdentifierHeadache"
-    relationship: "Headache often accompanies generalized body aches in viral illness"
-  - identifier: "HKQuantityTypeIdentifierActiveEnergyBurned"
-    relationship: "High activity may precede exercise-related body aches"
+- identifier: HKCategoryTypeIdentifierLowerBackPain
+  relationship: Localized pain report, distinct from generalized aching.
+- identifier: HKCategoryTypeIdentifierFever
+  relationship: Separate symptom context; does not diagnose an infection.
+- identifier: HKCategoryTypeIdentifierFatigue
+  relationship: Separate subjective symptom, not a severity conversion.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierGeneralizedBodyAche"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiergeneralizedbodyache"
-    type: "official"
-  - title: "Muscle Pain - Mayo Clinic"
-    url: "https://www.mayoclinic.org/symptoms/muscle-pain/basics/causes/sym-20050866"
-    type: "medical"
-  - title: "Fibromyalgia - American College of Rheumatology"
-    url: "https://www.rheumatology.org/I-Am-A/Patient-Caregiver/Diseases-Conditions/Fibromyalgia"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Generalized Body Ache — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/generalizedbodyache
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Flu symptoms — NHS
+  url: https://www.nhs.uk/conditions/flu/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Generalized Body Ache in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: generalized-body-ache
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; empirical analysis skipped because no focal records were
+    present in the bounded database inventory. Type is not listed in the current sync catalog; database absence
+    cannot establish phone or symptom absence. Severity codes are labels, not numeric clinical measurements.
+    Cadence, source comparisons and related-type associations remain unmeasured; saved intervals do not establish
+    clinical episodes.

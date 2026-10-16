@@ -216,7 +216,7 @@ The app-hosted tests need the HealthKit entitlement (they execute every
 aggregate function × type combination against HealthKit) and are XCTest:
 
 ```bash
-python3 scripts/test-ios.py --ios 27.0 --suite app
+python3 scripts/test-ios.py --ios 27.0 --signed --suite app
 ```
 
 Set `DEVELOPER_DIR` to the intended Xcode installation; the wrapper never
@@ -228,6 +228,11 @@ failures remain failures. Inspect the retained evidence before retrying a job.
 For scoped Keychain acceptance, use `--signed --suite app --only-testing
 PulsHealthHostedTests/AppModelTests/testScopedKeychainCredentialsSurviveReopenAndUnpairIndividually`
 with the test identifier reported by Xcode. A skipped test is not acceptance.
+CI uses `--signed` without a developer team, certificate or provisioning
+profile. StoreKit lifecycle tests run on iOS 27; the iOS 26.5 runtime has a
+known StoreKitTest configuration failure (FB22237318), so only its four
+StoreKit fixtures explicitly skip. The pure entitlement race test and all
+other app tests still run on both runtimes. See `docs/appstore/subscriptions.md`.
 Signed simulator evidence does not establish physical HealthKit/background behavior.
 
 

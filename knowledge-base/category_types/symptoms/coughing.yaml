@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierCoughing"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Coughing"
-short_description: "Tracks coughing episodes and their severity."
-icon: "lungs.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierCoughing
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Coughing
+short_description: 'Coughing in Apple Health: understand severity labels, logging intervals and the difference
+  between reported symptoms and measurements.'
+icon: lungs.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not a negative observation.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,94 +42,120 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Coughing is a protective reflex that clears the airways of irritants, secretions, and foreign particles. This HealthKit category type allows users to track coughing episodes and their severity, providing valuable data for monitoring respiratory illness progression, identifying triggers, and assessing treatment effectiveness.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Cough is classified by duration:
-  - **Acute cough**: Less than 3 weeks (usually infectious)
-  - **Subacute cough**: 3-8 weeks (often post-infectious)
-  - **Chronic cough**: Greater than 8 weeks (requires investigation)
 
-  Common causes of acute cough:
-  - Upper respiratory tract infections (common cold)
-  - Influenza and COVID-19
-  - Acute bronchitis
-  - Pneumonia
-  - Pertussis (whooping cough)
+  Coughing in Apple Health stores a reported symptom and its severity. It is not an automatic cough counter,
+  audio recording or lung-function test.
 
-  Common causes of chronic cough:
-  - Postnasal drip / Upper airway cough syndrome
-  - Asthma and cough-variant asthma
-  - Gastroesophageal reflux disease (GERD)
-  - ACE inhibitor-induced cough
-  - Chronic bronchitis / COPD
-  - Bronchiectasis
 
-  Concerning causes:
-  - Lung cancer
-  - Tuberculosis
-  - Interstitial lung disease
-  - Heart failure
+  ## What do the saved values mean?
 
-  ## When to Seek Medical Attention
-  Users should seek medical evaluation when cough:
-  - Persists for more than 3 weeks
-  - Produces blood or bloody mucus (hemoptysis)
-  - Is accompanied by unexplained weight loss
-  - Is associated with fever lasting more than a week
-  - Causes shortness of breath or wheezing
-  - Disrupts sleep significantly
-  - Is accompanied by chest pain
-  - Occurs with night sweats
-  - Is progressively worsening
-  - Occurs in smokers or former smokers
-  - Is associated with voice changes
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Illness progression and resolution
-  - Nocturnal patterns (GERD, asthma, postnasal drip)
-  - Seasonal patterns (allergies, asthma)
-  - Environmental triggers (occupational, pollution)
-  - Response to treatment (bronchodilators, acid suppression)
-  - Post-infectious cough duration
-  - Correlation with medication changes (ACE inhibitors)
+  | Code | Label | Interpretation |
 
-  ## Caveats & Limitations
-  - Does not capture cough characteristics (dry vs. productive)
-  - Sputum color and quantity not recorded
-  - Frequency of coughing episodes not quantified
-  - Cannot differentiate between cough triggers
-  - Associated symptoms (wheezing, dyspnea) not captured
-  - Time of day patterns require careful logging
-  - Does not replace pulmonary function testing
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Reported mild severity |
+
+  | 3 | moderate | Reported moderate severity |
+
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified is not the same as notPresent, and a missing
+  record is neither. The integers identify labels; numerical averages and physiological reference ranges do
+  not apply.
+
+
+  ## Does an entry count coughs?
+
+
+  No. One category sample is one saved observation, which may cover a moment or an interval chosen by the source.
+  Its severity does not encode how many times a user coughed, whether the cough was dry or productive, or what
+  caused it. Record those details separately when they matter.
+
+
+  Several mild entries and one severe entry cannot be compared by multiplying their integer codes. Category
+  frequencies describe logging; they do not measure cough frequency.
+
+
+  ## Which accompanying records are useful?
+
+
+  [Wheezing](/knowledge-base/types/HKCategoryTypeIdentifierWheezing/) and [Shortness of Breath](/knowledge-base/types/HKCategoryTypeIdentifierShortnessOfBreath/)
+  can document different aspects of breathing symptoms. [Peak Expiratory Flow Rate](/knowledge-base/types/HKQuantityTypeIdentifierPeakExpiratoryFlowRate/)
+  is a separate measurement. A cough label cannot supply a missing peak-flow reading or diagnose asthma.
+
+
+  If coughing is reported as waking a user, that reported disruption is more specific than simply matching
+  a cough record to a sleep interval. A sleep record does not detect coughs or establish why an awakening occurred.
+
+
+  ## How should recording intervals be interpreted?
+
+
+  This is a logged symptom, with no fixed sensor sampling schedule. Start-to-start gaps describe when observations
+  were saved. A sample’s start and end times describe the interval supplied by its source; their difference
+  does not establish the full duration of a clinical episode. Repeated or overlapping records need review before
+  counting episodes.
+
+
+  This category is not currently listed in the PulsHealth sync catalog. No observations were present in the
+  reviewed user data, so recorded severity frequencies, source differences and logging intervals could not
+  be measured. That database coverage does not establish whether entries exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
-    relationship: "Respiratory conditions often cause both cough and dyspnea"
-  - identifier: "HKCategoryTypeIdentifierFever"
-    relationship: "Fever with cough suggests infection"
-  - identifier: "HKCategoryTypeIdentifierChills"
-    relationship: "Chills with cough indicate infectious etiology"
-  - identifier: "HKCategoryTypeIdentifierSoreThroat"
-    relationship: "Upper respiratory infections cause both symptoms"
-  - identifier: "HKCategoryTypeIdentifierRunnyNose"
-    relationship: "Postnasal drip is a common cause of chronic cough"
+- identifier: HKCategoryTypeIdentifierWheezing
+  relationship: Different reported breathing symptom; preserve its separate severity label.
+- identifier: HKCategoryTypeIdentifierShortnessOfBreath
+  relationship: Reported breathing difficulty, distinct from a cough count or severity.
+- identifier: HKQuantityTypeIdentifierPeakExpiratoryFlowRate
+  relationship: Separate measured airflow result, not derivable from coughing labels.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierCoughing"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiercoughing"
-    type: "official"
-  - title: "Cough - American College of Chest Physicians"
-    url: "https://www.chestnet.org/topic-collections/cough"
-    type: "medical"
-  - title: "Chronic Cough - Mayo Clinic"
-    url: "https://www.mayoclinic.org/diseases-conditions/chronic-cough/symptoms-causes/syc-20351575"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Coughing — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/coughing
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Category samples — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorysample
+  type: official
+- title: Asthma symptoms and diagnosis — NHS
+  url: https://www.nhs.uk/conditions/asthma/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Coughing in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: coughing
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: No focal observations in the verified database snapshot; empirical label frequencies, sources,
+    cadence and relationships are unavailable. Type is not in the current sync catalog; database absence does
+    not establish Apple Health absence. Category codes are subjective labels, not physiological measurements.
+    Source intervals are not verified clinical episodes. Workout and sleep facets have no measured comparison;
+    public discussion is included only where specifically useful.

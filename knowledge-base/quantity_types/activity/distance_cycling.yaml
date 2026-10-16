@@ -93,7 +93,7 @@ description: '## What does cycling distance measure?
   rather than an observed speed stream.
 
 
-  ## What changes during workouts or sleep?
+  ## How closely do distance records align with workouts?
 
 
   Of the 83,165 selected intervals, 83,016 overlapped a recorded workout and none overlapped recorded asleep intervals.
@@ -101,8 +101,7 @@ description: '## What does cycling distance measure?
   outside recorded workouts do not establish that cycling stopped or that the records were wrong.
 
 
-  Sleep context contained no distance intervals to compare. A gap is unknown recording coverage, not evidence of
-  zero cycling or continuous watch wear.
+  A gap is unknown recording coverage, not evidence of zero cycling or continuous watch wear.
 
 
   ## Why can totals differ from Apple Health?

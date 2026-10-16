@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Archive a coverage and primary-source review when measured data is unavailable.
+"""Archive absence/source reviews and checks of current profile availability.
 
 Required paths are explicit. This reads an immutable private inventory and final
 articles; it neither connects to a database nor creates analysis notebooks.
@@ -52,11 +52,24 @@ def review_entry(article, coverage, catalog):
     required = {'quantity_samples', 'category_samples', 'aggregate_samples', 'workout_series_points'}
     if not required.issubset(tables):
         raise ValueError(f'{identifier}: incomplete coverage inventory')
-    if entry['status'] not in ('no_observations_in_snapshot', 'unsupported_storage') or any(
+    profile_available = entry['status'] == 'profile_value_available'
+    expected_columns = {'HKCharacteristicTypeIdentifierDateOfBirth': 'dob',
+                        'HKCharacteristicTypeIdentifierBiologicalSex': 'biological_sex'}
+    profile = entry.get('profile', {})
+    if profile_available and (entry.get('kind') != 'characteristic'
+            or identifier not in expected_columns
+            or profile.get('column') != expected_columns[identifier]
+            or type(profile.get('profiles')) is not int or profile.get('profiles') != 1
+            or type(profile.get('values_present')) is not int or profile.get('values_present') != 1
+            or profile.get('value_exported') is not False
+            or profile.get('measured_sample_analysis_applicable') is not False):
+        raise ValueError(f'{identifier}: incomplete or invalid profile snapshot evidence')
+    if entry['status'] not in ('no_observations_in_snapshot', 'unsupported_storage', 'profile_value_available') or any(
             table.get('records') != 0 for table in tables.values()):
         raise ValueError(f'{identifier}: measured data requires analysis review')
     research = article.get('data_research', {})
-    if research.get('review_basis') != 'coverage_and_sources' or research.get('status') != 'complete':
+    basis = 'coverage_and_sources'
+    if research.get('review_basis') != basis or research.get('status') != 'complete':
         raise ValueError(f'{identifier}: final article lacks coverage/source completion metadata')
     if set(research.get('facets', [])) != set(FACETS):
         raise ValueError(f'{identifier}: missing standard facets')
@@ -73,17 +86,23 @@ def review_entry(article, coverage, catalog):
                'article_limitations': research.get('limitations')}
     # The recorded catalog snapshot is authoritative; retain the exact article
     # support statement as reviewed evidence without inferring support from SQL.
-    reason = ('No observations in the bounded example snapshot. Missing records do not establish zero events or intake.'
+    reason = ('Current profile property available; it is not a timestamped HealthKit sample and no revision history is stored.'
+              if profile_available else 'No observations in the bounded example snapshot. Missing records do not establish zero events or intake.'
               if entry['status'] == 'no_observations_in_snapshot' else entry.get('storage_note', 'Storage unsupported.'))
     facets = {name: {'status': 'unavailable', 'reason': reason} for name in FACETS}
     facets['provenance'] = {'status': 'verified', 'reason': 'Immutable extraction and inventory hashes verified.'}
     facets['coverage'] = {'status': entry['status'], 'evidence': entry}
+    if entry.get('kind') == 'characteristic':
+        for name in ('values', 'outliers', 'cadence', 'workout_context', 'sleep_context', 'time_patterns', 'related_types'):
+            facets[name] = {'status': 'not_applicable', 'reason': reason}
     for name in ('sources', 'type_specific'):
         facets[name] = {'status': 'source_reviewed', 'reason': 'Primary-source documentation reviewed; no measured evidence claimed.',
                         'references': references}
     return {'identifier': identifier, 'name': article['human_readable_name'],
-            'artifact_key': research['artifact_key'], 'review_basis': 'coverage_and_sources',
+            'artifact_key': research['artifact_key'], 'review_basis': basis,
             'status': 'complete', 'reviewed_on': research['reviewed_on'], 'facets': facets,
+            'profile_availability': {'status': 'verified', 'evidence': profile,
+                'reason': 'Current field presence checked privately; no actual property value or revision history exported.'} if profile_available else None,
             'recording_behavior': article.get('recording_behavior'), 'catalog_support': support,
             'sync_catalog': {'supported': bool(catalog_entries), 'entry': catalog_entries[0] if catalog_entries else None},
             'references': references, 'limitations': research.get('limitations')}
@@ -129,7 +148,7 @@ def archive(repo, input_dir, output_dir, assignments, catalog_path):
         data_path = directory / 'coverage-source-review.json'
         data_path.write_text(json.dumps(report, indent=2) + '\n')
         view_path = directory / 'coverage-source-review.html'
-        body = '<h1>' + html.escape(report['name']) + '</h1><p>Coverage and source review. No data analysis was required because measured records were unavailable.</p><pre>' + html.escape(json.dumps(report, indent=2)) + '</pre>'
+        body = '<h1>' + html.escape(report['name']) + '</h1><p>' + ('Current profile availability and source review; no personal values or time-series claims reported.' if report['facets']['coverage']['status'] == 'profile_value_available' else 'Coverage and source review; measured records or relevant storage were unavailable.') + '</p><pre>' + html.escape(json.dumps(report, indent=2)) + '</pre>'
         view_path.write_text(document(report['name'], body))
         receipts.append({'identifier': report['identifier'], 'artifact_key': report['artifact_key'],
                          'review_basis': report['review_basis'], 'article_sha256': report['article_sha256'],
@@ -137,17 +156,20 @@ def archive(repo, input_dir, output_dir, assignments, catalog_path):
                          'facets': list(report['facets'])})
         links.append('<li><a href="' + html.escape(report['artifact_key'], quote=True) + '/coverage-source-review.html">' + html.escape(report['name']) + '</a></li>')
     verify_inputs(root)
-    receipt = {'review_basis': 'coverage_and_sources', 'completed_entries': len(receipts),
+    disposition_counts = {status: sum(report['facets']['coverage']['status'] == status for report in reports)
+                          for status in ('no_observations_in_snapshot', 'unsupported_storage', 'profile_value_available')}
+    receipt = {'review_basis': 'coverage_and_sources', 'coverage_dispositions': disposition_counts,
+               'completed_entries': len(receipts),
                'review_code_sha256': digest(__file__),
                'input_manifest_sha256': digest(root / 'manifest.json'), 'input_sha256': hashes,
                'sync_catalog_sha256': digest(catalog_path), 'entries': receipts,
-               'note': 'Completion covers verified database absence or unsupported storage and primary-source editorial review. No measured ranges, cadence or relationships were inferred. Earlier optional notebooks are preserved separately and are not required completion evidence.'}
+               'note': 'Completion covers verified database absence, unsupported storage, primary-source editorial review, and current-profile availability checks when present. No measured ranges, cadence or relationships were inferred. Earlier optional notebooks are preserved separately and are not required completion evidence.'}
     (output / 'coverage-source-completion.json').write_text(json.dumps(receipt, indent=2) + '\n')
     optional = ('<p><a href="optional-notebooks.html">Optional prior coverage notebooks</a>: '
                 'preserved before the scope change; not required completion evidence.</p>'
                 if (output / 'optional-notebooks.html').exists() else '')
-    (output / 'index.html').write_text(document('Private HealthKit coverage and source reviews',
-        '<h1>Private HealthKit coverage and source reviews</h1><p>' + str(len(receipts)) + ' entries reviewed. No measured analysis required: all requested types lack observations or supported correlation storage in this bounded snapshot.</p><ul>' + ''.join(links) + '</ul><p>Integrity evidence: coverage-source-completion.json. Earlier optional notebooks remain private; this review does not rerun them.</p>' + optional))
+    (output / 'index.html').write_text(document('Private HealthKit research reviews',
+        '<h1>Private HealthKit research reviews</h1><p>' + str(len(receipts)) + ' entries reviewed: ' + str(disposition_counts['no_observations_in_snapshot']) + ' lack sampled observations, ' + str(disposition_counts['unsupported_storage']) + ' lack relevant storage, and ' + str(disposition_counts['profile_value_available']) + ' have current profile fields available. Property availability checks do not expose personal values or infer time-series behavior.</p><ul>' + ''.join(links) + '</ul><p>Integrity evidence: coverage-source-completion.json. Earlier optional notebooks remain private; this review does not rerun them.</p>' + optional))
     output.chmod(0o700)
     for path in output.rglob('*'):
         if path.is_symlink():

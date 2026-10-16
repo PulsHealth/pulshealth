@@ -1,33 +1,33 @@
-identifier: "HKCharacteristicTypeIdentifierWheelchairUse"
-source: "HealthKit"
-type: "HKCharacteristicType"
-category: "Characteristics"
-human_readable_name: "Wheelchair Use"
-short_description: "Indicates whether the user uses a wheelchair, enabling appropriate activity tracking and metrics."
-icon: "figure.roll"
-color: "#007AFF"
+identifier: HKCharacteristicTypeIdentifierWheelchairUse
+source: HealthKit
+type: HKCharacteristicType
+category: Characteristics
+human_readable_name: Wheelchair Use
+short_description: A current Health profile setting indicating wheelchair use, with a separate unavailable state.
+icon: figure.roll
+color: '#007AFF'
 default_unit: null
 supported_units: null
-unit_description: "Enumerated value representing wheelchair use status"
+unit_description: Enumerated value representing wheelchair use status
 aggregation_type: null
 statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notSet"
-    description: "The user has not specified their wheelchair use status"
-  - value: 1
-    name: "no"
-    description: "The user does not use a wheelchair"
-  - value: 2
-    name: "yes"
-    description: "The user uses a wheelchair as their primary means of mobility"
+- value: 0
+  name: notSet
+  description: The field is unset or unavailable because read permission was denied.
+- value: 1
+  name: 'no'
+  description: The user does not use a wheelchair
+- value: 2
+  name: 'yes'
+  description: The user uses a wheelchair as their primary means of mobility
 ios_introduced:
-  version: "10.0"
+  version: '10.0'
   year: 2016
 watchos_introduced:
-  version: "3.0"
+  version: '3.0'
   year: 2016
 deprecated: false
 deprecated_in: null
@@ -35,117 +35,82 @@ writable: false
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone"
-    capability: "User manually sets value in Health app profile (Settings > Health > Health Details) or Apple Watch app"
-  - name: "Apple Watch"
-    capability: "User sets during initial setup or in Settings; enables wheelchair-specific activity tracking"
-primary_source: "User Input"
+- name: iPhone
+  capability: User-controlled Health profile information; read access requires authorization.
+primary_source: User-entered Health profile
 description: |
-  ## Overview
+  ## What does Wheelchair Use tell an app?
 
-  HKCharacteristicTypeIdentifierWheelchairUse indicates whether the user primarily uses a wheelchair
-  for mobility. When enabled, this characteristic fundamentally changes how Apple Watch tracks and
-  reports activity metrics. Instead of counting steps and standing hours, the watch tracks push count
-  and roll hours, using wheelchair-specific motion algorithms optimized for arm movements and wheel
-  propulsion patterns.
+  Wheelchair Use is the current user-entered Health profile characteristic indicating whether the user uses a wheelchair. An authorized app reads it through `HKHealthStore.wheelchairUse()`. Apps cannot write the characteristic.
 
-  ## Health Significance
+  It describes profile information. It does not mean the user was using a wheelchair at a particular timestamp, and does not specify a diagnosis, mobility level, chair type or assistance needs.
 
-  Accurate activity tracking for wheelchair users has important health implications:
+  ## How should the values be interpreted?
 
-  - **Physical activity measurement**: Wheelchair users expend energy differently than ambulatory
-    individuals. Push-based metrics more accurately reflect actual activity levels and caloric expenditure.
+  | Raw value | HealthKit label | Meaning |
+  | --- | --- | --- |
+  | 0 | `notSet` | Unset or unavailable because read permission was denied |
+  | 1 | `no` | The profile indicates no wheelchair use |
+  | 2 | `yes` | The profile indicates wheelchair use |
 
-  - **Upper extremity health**: Wheelchair propulsion involves significant upper body work. Tracking
-    pushes helps monitor activity patterns that affect shoulder health, a common concern for manual
-    wheelchair users.
+  Keep `notSet` separate from `no`. A result unavailable to an app cannot establish that the user does not use a wheelchair. These category codes are labels, not an activity count or mobility score.
 
-  - **Cardiovascular fitness**: Regular wheeling/pushing maintains cardiovascular health. Activity
-    ring goals motivate consistent daily movement.
+  ## Is this the same as pushes or wheelchair distance?
 
-  - **Sedentary behavior monitoring**: "Roll hours" replace "Stand hours," encouraging position changes
-    and movement throughout the day to prevent pressure injuries and promote circulation.
+  No. [Push Count](/knowledge-base/types/HKQuantityTypeIdentifierPushCount/) records counted pushes, while [Wheelchair Distance](/knowledge-base/types/HKQuantityTypeIdentifierDistanceWheelchair/) records distance. Those are timestamped quantities; the characteristic is a profile setting.
 
-  - **Rehabilitation tracking**: For users recovering from injury or adapting to wheelchair use,
-    tracking progress in daily activity provides motivation and objective improvement measures.
+  A missing push or distance record does not establish a profile setting. Likewise, a `yes` setting does not prove how far the user traveled on a particular day, or whether every movement was made using a wheelchair. Compare separately recorded activity only when its source and coverage support the question.
 
-  - **Research and population health**: Aggregated (anonymized) data helps researchers understand
-    activity patterns in wheelchair users, an historically under-studied population.
+  ## Why is a current setting different from historical context?
 
-  ## Clinical Interpretation
+  HealthKit's getter provides the current value, without dated samples or a revision history. Applying that value to every older workout would assume the setting was unchanged, which the getter does not demonstrate. If an app needs historical context, it needs separately retained information about when the profile was read or changed.
 
-  When reviewing data from wheelchair users, clinicians should consider:
+  PulsHealth's current sample sync catalog and profile schema do not store this characteristic. This is a storage limitation, rather than evidence about what is configured in the user's Health profile.
 
-  - **Metric differences**: Activity data will show pushes instead of steps, roll hours instead of
-    stand hours. These aren't directly comparable to ambulatory metrics but are valid measures of
-    activity for this population.
+  ## What should remain separate?
 
-  - **Calorie calculations**: Energy expenditure algorithms account for wheelchair propulsion
-    biomechanics, but individual variation is significant based on wheelchair type, terrain, and
-    user fitness.
-
-  - **Workout types**: Wheelchair-specific workout types become available (Wheelchair Walk Pace,
-    Wheelchair Run Pace) when this is enabled, providing appropriate intensity tracking.
-
-  - **Upper body strain**: High push counts or sudden increases may indicate overexertion risk.
-    Shoulder injuries are common in long-term manual wheelchair users.
-
-  - **Consistency of use**: Some users may use wheelchairs part-time or have variable mobility. The
-    binary nature of this setting doesn't capture this complexity.
-
-  - **Activity goals**: Default activity goals may need adjustment. Clinicians can help patients set
-    appropriate, motivating targets based on their condition and capabilities.
-
-  ## Caveats & Limitations
-
-  - **Binary classification**: The yes/no option doesn't accommodate part-time wheelchair users or
-    those with variable mobility (e.g., MS patients with fluctuating symptoms).
-
-  - **Manual wheelchair assumption**: Activity tracking algorithms are optimized for manual wheelchair
-    propulsion. Power wheelchair users may not see accurate activity tracking.
-
-  - **Read-only access**: Apps cannot set or modify this value - only the user can change it through
-    device settings.
-
-  - **Device requirement**: Wheelchair-specific tracking requires Apple Watch. iPhone-only users don't
-    get push counting functionality.
-
-  - **Algorithm limitations**: Push detection may be affected by terrain, wheelchair type, pushing
-    style, and assistive device use. Accuracy varies by user.
-
-  - **Not a medical record**: This is user-selected preference, not a clinical diagnosis of mobility
-    impairment. It shouldn't be used to infer disability status or medical conditions.
-
-  - **Switching complexity**: If a user's mobility status changes (temporary injury, recovery),
-    changing this setting affects all activity tracking, and historical comparisons become difficult.
-
-  - **Privacy sensitivity**: Wheelchair use is considered sensitive health information that could
-    indicate disability status.
+  [Step Count](/knowledge-base/types/HKQuantityTypeIdentifierStepCount/) and wheelchair activity can reflect different forms of movement. Neither should be used to guess this setting from a quiet day. [Activity Move Mode](/knowledge-base/types/HKCharacteristicTypeIdentifierActivityMoveMode/) determines the Move ring's metric; it is another distinct setting, rather than a wheelchair-use code.
 metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierPushCount"
-    relationship: "wheelchair_activity_metric"
-  - identifier: "HKQuantityTypeIdentifierDistanceWheelchair"
-    relationship: "wheelchair_activity_metric"
-  - identifier: "HKCategoryTypeIdentifierAppleStandHour"
-    relationship: "replaced_by_roll_hour"
-  - identifier: "HKQuantityTypeIdentifierStepCount"
-    relationship: "replaced_by_push_count"
-  - identifier: "HKWorkoutActivityTypeWheelchairWalkPace"
-    relationship: "enabled_workout_type"
-  - identifier: "HKWorkoutActivityTypeWheelchairRunPace"
-    relationship: "enabled_workout_type"
+- identifier: HKQuantityTypeIdentifierPushCount
+  relationship: Separately recorded push measurements.
+- identifier: HKQuantityTypeIdentifierDistanceWheelchair
+  relationship: Separately recorded wheelchair distance.
+- identifier: HKQuantityTypeIdentifierStepCount
+  relationship: Separate movement measurement; does not establish wheelchair-use status.
+- identifier: HKCharacteristicTypeIdentifierActivityMoveMode
+  relationship: Distinct setting determining the Move ring metric.
 references:
-  - title: "Apple Developer Documentation - HKCharacteristicTypeIdentifierWheelchairUse"
-    url: "https://developer.apple.com/documentation/healthkit/hkcharacteristictypeidentifierwheelchairuse"
-    type: "official"
-  - title: "Apple Developer Documentation - HKWheelchairUse"
-    url: "https://developer.apple.com/documentation/healthkit/hkwheelchairuse"
-    type: "official"
-  - title: "Apple Support - Use Apple Watch as a wheelchair user"
-    url: "https://support.apple.com/guide/watch/wheelchair-users-apd89ca0d2e8/watchos"
-    type: "tutorial"
-  - title: "Apple Accessibility - Mobility Features"
-    url: "https://www.apple.com/accessibility/mobility/"
-    type: "official"
-last_updated: "2026-01-27"
+- title: Wheelchair-use values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkwheelchairuse
+  type: official
+- title: Unavailable wheelchair-use value — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkwheelchairuse/notset
+  type: official
+- title: Wheelchair-use characteristic — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcharacteristictypeidentifier/wheelchairuse
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Wheelchair Use in Apple Health: profile setting versus activity data'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: wheelchair-use
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: This current characteristic has no supported profile field or sample storage in the reviewed schema.
+    Its absence from sampled tables does not establish absence in Apple Health. Current characteristics do not supply
+    measurement distributions, sample cadence or historical revisions; workout/sleep matching and time-series comparisons
+    are not applicable.

@@ -1,0 +1,76 @@
+{
+  "identifier": "0D67671E-E330-4384-A4A5-80D18FB67B71",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_applicationInternalID": "",
+    "_developerTeamID": "",
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [
+    {
+      "id": "10000001",
+      "localizations": [
+        {
+          "description": "Full history and unlimited health data types",
+          "displayName": "PulsHealth Pro",
+          "locale": "en_US"
+        }
+      ],
+      "name": "PulsHealth Pro",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "1.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "10000002",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Full history and unlimited health data types",
+              "displayName": "PulsHealth Pro Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.pulsHealth.PulsHealth.pro.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Pro monthly",
+          "subscriptionGroupID": "10000001",
+          "type": "RecurringSubscription",
+          "winBackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "9.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "10000003",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Full history and unlimited health data types",
+              "displayName": "PulsHealth Pro Annual",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "com.pulsHealth.PulsHealth.pro.annual",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Pro annual",
+          "subscriptionGroupID": "10000001",
+          "type": "RecurringSubscription",
+          "winBackOffers": []
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

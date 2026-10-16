@@ -72,10 +72,8 @@ description: |
 
   When records are available, examine timing and source-specific cadence, distinguish repeat writes from new measurements, and keep units consistent. Averaging frequent entries gives those measurement sessions more weight; it does not estimate lean mass continuously between weigh-ins.
 
-  ## Can it show workout or sleep effects?
-  An occasional scale estimate cannot describe within-workout or sleep-stage behavior. BIA's sensitivity to electrical and fluid conditions means a short-term estimate change should not be read directly as newly gained or lost muscle tissue. Follow the producing device's measurement guidance when making repeated comparisons.
-
-  No workout or sleep analysis could be measured for Lean Body Mass here. A future comparison would need actual observations at meaningful times, compatible methods and enough repeated measurements to separate a change in estimates from a change in recording conditions.
+  ## Why can short-term estimates vary?
+  BIA's sensitivity to electrical and fluid conditions means a short-term estimate change should not be read directly as newly gained or lost muscle tissue. Follow the producing device's measurement guidance when making repeated comparisons.
 
   ## What range should I expect?
   There is no universal healthy lean-mass range in kilograms: stature, body size and measurement method affect the result. Track a comparable series and interpret it with the broader assessment rather than assigning generic athlete or age-based categories.
@@ -117,8 +115,7 @@ recording_behavior:
   shape: A discrete body measurement written by the producing app; source and measurement conditions govern interpretation.
   cadence: Measurement or logging cadence, without a fixed HealthKit-wide schedule. Repeated entries are not necessarily
     independent measurements.
-  context: Workout and asleep interval overlap identifies recording time only. No continuous exercise or sleep response
-    is measured by occasional body observations.
+  context: "Keep the measurement or estimation method and source consistent; a change in method can change the reported lean-mass estimate."
   coverage: The year snapshot contains 0 raw records. Missing days or an absent type remain unavailable, not zero
     measurements.
   aggregation: Use source-specific trends or a recent observation. Summing a discrete body measurement is not meaningful;

@@ -93,11 +93,11 @@ description: '## Does this measure cholesterol in my blood?
   does not establish that Apple Health contains no records.
 
 
-  ## When are entries recorded, and what does context mean?
+  ## Do entry timestamps establish meal timing?
 
 
-  Cadence follows food logging or source synchronization, not continuous sensing. A record whose timestamp
-  overlaps a workout or recorded sleep may describe an earlier meal or a daily summary. Review start times,
+  Entry timing follows food logging or source synchronization. A timestamp may describe an earlier meal
+  or a daily summary. Review start times,
   durations and source history before discussing meal timing. Missing days remain unlogged rather than zero
   intake. [Health''s source controls](https://support.apple.com/en-us/108779) help when reviewing overlapping
   apps.
@@ -107,7 +107,7 @@ description: '## Does this measure cholesterol in my blood?
 
 
   The researched **365-day reporting window** contained no raw samples or stored aggregates for this nutrient.
-  Recorded ranges, unusual portions, source overlap, recording intervals and workout or sleep comparisons were
+  Recorded ranges, unusual portions, source overlap, recording intervals were
   unavailable. Related nutrient comparisons were unavailable because there were no records for this type. No
   empirical nutrient association or measured chart is supported. These missing records do not establish zero
   consumption or a deficient diet.
@@ -161,8 +161,7 @@ recording_behavior:
   reviewed_on: '2026-10-14'
   shape: Cumulative logged nutrient amount; a sample may represent a food, meal or imported daily contribution.
   cadence: Source-specific food logging or synchronization, not continuous nutrient sensing.
-  context: Workout and sleep overlap describe record timestamps; ingestion time, absorption and physiological
-    response remain unverified.
+  context: "Review recorded food items and portions; dietary cholesterol intake is distinct from a blood cholesterol measurement."
   coverage: Missing entries are unlogged, not zero intake; sources can provide only selected nutrients.
   aggregation: Sum compatible contributions within a source after checking serving semantics and duplicate
     imports; report logged-day coverage.

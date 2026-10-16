@@ -96,7 +96,7 @@ description: '## What does Apple Health cardio fitness measure?
   change as training adaptation.
 
 
-  ## Does the timestamp mean it was measured during exercise or sleep?
+  ## How closely do estimates align with recorded workouts?
 
 
   All example estimates were stored as points. Only **3 of 28** focus timestamps fell inside a recorded workout,
@@ -105,8 +105,7 @@ description: '## What does Apple Health cardio fitness measure?
   workout does not imply a resting VO2 max test.
 
 
-  No focus estimate overlapped a recorded asleep interval. That result does not create a separate sleeping VO2 max
-  measure: the type summarizes aerobic capacity, rather than continuously measuring sleep physiology.
+  The type summarizes aerobic capacity; its timestamp does not represent a continuous physiological measurement.
 
 
   ## How should I compare it with other fitness measures?

@@ -77,7 +77,7 @@ description: '## Overview
   but temporal proximity does not establish cause.
 
 
-  ## What does recording cadence tell you?
+  ## How should logged intervals be read?
 
   This is a logged observation, rather than a regularly sampled sensor reading. Start-to-start gaps describe
   the saved history and the source’s logging habits. An interval’s length describes what the source saved;
@@ -85,8 +85,7 @@ description: '## Overview
   and repeated or overlapping entries before interpreting a timeline.
 
 
-  A record overlapping a workout or a sleep interval supplies time context. It is not evidence that the symptom
-  was continuously measured during that activity, and it does not identify onset or a cause. Numeric averages,
+  These intervals do not establish continuously measured symptoms or identify a cause. Numeric averages,
   physiological reference ranges and numeric outlier thresholds do not apply to the category codes.
 
 
@@ -95,7 +94,7 @@ description: '## Overview
   This HealthKit category is not listed in the current PulsHealth sync catalog. No sleep changes records were
   found in the selected database research window; that coverage cannot establish whether corresponding entries
   exist in Apple Health. Category frequencies, source differences, logging cadence, interval patterns and relationships
-  with sleep, workouts or other types could not be measured. The absence of records does not establish the
+  with other logged observations could not be measured. The absence of records does not establish the
   absence of the symptom. There is no measured figure or population estimate to infer from this coverage.
 
   '

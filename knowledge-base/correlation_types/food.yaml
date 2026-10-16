@@ -116,9 +116,9 @@ description: |
 
   This type is also absent from the reviewed PulsHealth sync catalog. Database availability therefore does not establish what is present in the phone’s HealthKit store.
 
-  ## What can timing tell me about workouts and sleep?
+  ## Do food timestamps identify meal times?
 
-  Food entries follow logging and synchronization behavior. Their start and end times need not mark the beginning and end of eating. Workout or recorded-sleep overlap can describe timestamp context once records exist, but cannot establish meal timing or a response to a particular food.
+  Food entries follow logging and synchronization behavior. Their start and end times need not mark the beginning and end of eating. A timestamp alone cannot establish meal timing or a response to a particular food.
 
   A useful meal-level comparison needs verified ingestion times, explicit grouping and adequate recording coverage. Blood glucose, body mass and activity energy also have their own measurement schedules. Nearby values do not prove that a meal caused a change, and activity energy alone is not total energy expenditure.
 
@@ -164,8 +164,7 @@ recording_behavior:
   reviewed_on: '2026-10-14'
   shape: A grouped object with explicit nutritional sample membership, not a cumulative quantity.
   cadence: Source-specific food logging and synchronization; no automatic continuous measurement cadence.
-  context: Recorded timestamps can differ from ingestion time. Workout or sleep overlap does not establish
-    a physiological effect.
+  context: "Use explicit food-object membership and documented serving context; timestamps alone cannot identify a meal or when its components were consumed."
   coverage: Missing observations are unknown, not zero intake or complete capture.
   aggregation: Query food objects as groups. Sum only compatible component quantities; timestamp coincidence
     never establishes membership.

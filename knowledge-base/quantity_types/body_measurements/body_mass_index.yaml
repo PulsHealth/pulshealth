@@ -77,10 +77,9 @@ description: |
 
   No raw height records were available within the year. This is a mathematical consistency check rather than a verified measurement of stature or proof of how the source calculated BMI. If BMI changes unexpectedly while weight stays similar, check the source app's height setting, units and dates before attributing the difference to body composition.
 
-  ## What about workouts, sleep and missing records?
-  None of these BMI observations overlapped recorded workouts or asleep intervals. BMI is an occasional calculated measurement, so these records cannot show exercise-phase or sleep-stage behavior. Workout habits may be relevant to a broader assessment, but the timing overlap does not estimate their effect on BMI.
-
+  ## Why might BMI be missing when weight is present?
   Missing BMI can coexist with present weight if an app writes only weight or lacks the inputs needed to calculate BMI. Check the producer's settings and Health sharing permission. [Body Fat Percentage](/knowledge-base/types/HKQuantityTypeIdentifierBodyFatPercentage/) supplies a different measurement when available; it cannot be inferred from BMI alone.
+
 metadata_keys:
 - key: HKMetadataKeyWasUserEntered
   description: Optional producer flag indicating user-entered data; false or absence does not independently verify
@@ -118,8 +117,7 @@ recording_behavior:
   shape: A discrete body measurement written by the producing app; source and measurement conditions govern interpretation.
   cadence: Measurement or logging cadence, without a fixed HealthKit-wide schedule. Repeated entries are not necessarily
     independent measurements.
-  context: Workout and asleep interval overlap identifies recording time only. No continuous exercise or sleep response
-    is measured by occasional body observations.
+  context: "Interpret the value alongside its documented height and weight inputs; matching timestamps alone do not verify how a source calculated BMI."
   coverage: The year snapshot contains 218 raw records. Missing days or an absent type remain unavailable, not zero
     measurements.
   aggregation: Use source-specific trends or a recent observation. Summing a discrete body measurement is not meaningful;

@@ -28,6 +28,13 @@ Style A campaign while preserving the site's dark shell. Regenerate the tracked
 social sharing card with `cd site && bun scripts/gen-social-card.tsx` when that
 message changes.
 
+Subscription details stay out of the primary navigation: a short homepage note
+links to `/pro/`, and the footer links to Pro and `/pricing/`. These two compact
+pages explain full available history, all supported sync types, and the Free
+limits. Prices follow `docs/appstore/subscriptions.md`; the app displays Apple’s
+localized price. Hosting is separate, and the database remains open source and
+free to run yourself. Keep the shared home/support FAQ aligned with these plans.
+
 The main site is always dark and has no theme selector. Blog articles retain
 a light/dark toggle, default to dark, and save their choice separately in
 `pulshealth-blog-theme`; neither follows the system theme. The app's theme
@@ -64,6 +71,16 @@ the App Store support and privacy-policy URLs for Fun100, a separate app by
 the same developer. They are unlisted (not in the navigation, search or
 sitemap); the policy is `content/fun100/privacy-policy.md`, rendered the same
 way as `/privacy`.
+
+Watch Workout Pro is a separate native iPhone app with its own public landing
+page at `/watch-workout-pro/`, support at `/watch-workout-pro/support/`, and
+privacy at `/watch-workout-pro/privacy/`. Support uses `support@pulshealth.com`.
+These pages are included in search and the sitemap; the footer links to the
+product. Both `/watchworkoutpro/` and `/workout-to-watch/` (including their
+support/privacy routes) retain noindex redirect stubs with destination canonicals.
+Product policy content lives in `content/watchworkoutpro/`. Marketing screenshots
+are resized from the app's approved dark source captures. App Store availability
+must be verified before replacing the launch notice with a download action.
 
 ## Develop
 

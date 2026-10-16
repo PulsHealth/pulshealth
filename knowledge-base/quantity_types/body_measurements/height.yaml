@@ -71,10 +71,6 @@ description: |
 
   There is no universal healthy height interval. Population percentiles describe a reference distribution, while growth assessment requires age-appropriate charts and repeated measurements. A broad number range should not be treated as a diagnostic boundary or a rule for discarding data.
 
-  ## What happens during workouts or sleep?
-  Height is not ordinarily a continuously sensed workout or sleep quantity. A timestamp overlap would show when an entry occurred rather than establish how stature changed during the episode. No such comparison was possible with the absent observations here.
-
-  For repeated measurement research, use a consistent method and time of day, retain measurement uncertainty, and review actual paired records rather than assigning changes to recorded workout or sleep intervals.
 
   ## What other types depend on height?
   [BMI](/knowledge-base/types/HKQuantityTypeIdentifierBodyMassIndex/) uses height squared with [weight](/knowledge-base/types/HKQuantityTypeIdentifierBodyMass/). Body-composition producers may also use profile inputs in their own models. Those dependencies do not establish that HealthKit has a contemporaneous height observation or that the input has been recently verified.
@@ -115,8 +111,7 @@ recording_behavior:
   shape: A discrete body measurement written by the producing app; source and measurement conditions govern interpretation.
   cadence: Measurement or logging cadence, without a fixed HealthKit-wide schedule. Repeated entries are not necessarily
     independent measurements.
-  context: Workout and asleep interval overlap identifies recording time only. No continuous exercise or sleep response
-    is measured by occasional body observations.
+  context: "Check measurement method, posture and units; a repeated profile entry or import does not necessarily represent a new height measurement."
   coverage: The year snapshot contains 0 raw records. Missing days or an absent type remain unavailable, not zero
     measurements.
   aggregation: Use source-specific trends or a recent observation. Summing a discrete body measurement is not meaningful;

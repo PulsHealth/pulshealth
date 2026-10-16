@@ -15,7 +15,7 @@ export interface FaqItem {
 export const faq: FaqItem[] = [
   {
     q: "Is the app really free?",
-    a: "Yes. There are no in-app purchases, and exploring and exporting need no account. The open-source stack is free to run yourself: one command on any Docker host. Or use the PulsHealth database, where we run the database, viewer and AI connection for you.",
+    a: "Yes. Explore is free, with unlimited file exports of all supported types from the last 30 days and automatic sync of up to five types from that period. Exploring and exporting need no account. The optional Pro app subscription adds full available history and sync for all supported types. The open-source database stack is free to run yourself; hosting is separate.",
     home: true,
   },
   {
@@ -72,7 +72,7 @@ export const faq: FaqItem[] = [
   },
   {
     q: "Blood pressure never shows up in the permission sheet.",
-    a: "On iOS 26 the Health permission sheet silently omits blood pressure systolic and diastolic, so they can never be granted from within the app (Apple Feedback FB22735935; iOS 27 fixes it). Grant them yourself in Settings, Privacy & Security, Health, PulsHealth. The app shows a hint when it detects the situation and backfills the full history once access exists.",
+    a: "On iOS 26 the Health permission sheet silently omits blood pressure systolic and diastolic, so they can never be granted from within the app (Apple Feedback FB22735935; iOS 27 fixes it). Grant them yourself in Settings, Privacy & Security, Health, PulsHealth. The app shows a hint when it detects the situation and backfills the history available to your app plan once access exists.",
     topic: "sync",
   },
   {

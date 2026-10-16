@@ -22,6 +22,7 @@ final class DataRequestModel {
 
     typealias Generator = @Sendable (ExportRequest, ExportProgressHandler?) async throws -> ExportResult
     typealias Sender = @Sendable (URL, DataRequest, UUID) async throws -> RequestUploader.Receipt
+    @ObservationIgnored var accessPolicy: @MainActor () async -> SyncAccessPolicy = { .free }
     @ObservationIgnored private let generate: Generator
     @ObservationIgnored private let upload: Sender
 
@@ -73,6 +74,11 @@ final class DataRequestModel {
             }
             do {
                 try request.validate()
+                let requestedRange = try request.bounds()
+                guard (await accessPolicy()).allowsExport(start: requestedRange.start) else {
+                    error = "This request includes data older than the most recent 30 days. PulsHealth Pro is required. Nothing was exported or sent."
+                    return
+                }
                 await authorize(request.selection())
                 try Task.checkCancellation()
                 let range = try request.bounds()

@@ -100,6 +100,7 @@ public actor TypeProfileStore {
     ) -> Bool {
         guard profile.version == TypeProfile.currentVersion else { return true }
         guard profile.isComplete else { return true }
+        guard profile.timeZoneID == options.calendar.timeZone.identifier else { return true }
         if profile.unitString != HealthTypeCatalog.descriptor(for: profile.typeIdentifier)?.unitString {
             return true
         }

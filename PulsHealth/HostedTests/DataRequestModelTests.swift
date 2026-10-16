@@ -34,9 +34,11 @@ final class DataRequestModelTests: XCTestCase {
             destination: delivery ? .init(name: "Test receiver", url: URL(string: "https://example.org/upload")!) : nil)
     }
     private func model(_ spy: RequestDeliverySpy, partial: Bool = false) -> DataRequestModel {
-        DataRequestModel(clearStaging: false,
+        let subject = DataRequestModel(clearStaging: false,
             generate: { request, _ in try await spy.generated(request, partial: partial) },
             upload: { file, request, id in try await spy.send(file, request, id) })
+        subject.accessPolicy = { .unrestricted }
+        return subject
     }
     private func finish(_ model: DataRequestModel) async throws {
         for _ in 0..<500 {
@@ -46,6 +48,23 @@ final class DataRequestModelTests: XCTestCase {
         XCTFail("Request did not finish")
         model.cancel()
     }
+    func testFreeRequestForOlderHistoryDoesNotReadOrSend() async throws {
+        let spy = RequestDeliverySpy()
+        let subject = model(spy)
+        subject.accessPolicy = { .free }
+        subject.open(try request().link().absoluteString)
+        var authorized = false
+        subject.start(configuration: SyncConfiguration()) { _ in authorized = true }
+        try await finish(subject)
+        XCTAssertFalse(authorized)
+        let configurations = await spy.configurations
+        let ids = await spy.ids
+        XCTAssertTrue(configurations.isEmpty)
+        XCTAssertTrue(ids.isEmpty)
+        XCTAssertNotNil(subject.error)
+        subject.close()
+    }
+
     func testSharedQRCodeDecodesToTheExactRequest() throws {
         let link = try request().link()
         let image = try XCTUnwrap(RequestQRCode.image(for: link)?.cgImage)

@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierChills"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Chills"
-short_description: "Tracks episodes of chills and shivering."
-icon: "thermometer.snowflake"
-color: "#5AC8FA"
+identifier: HKCategoryTypeIdentifierChills
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Chills
+short_description: 'Chills in Apple Health: understand severity labels, logging intervals and the difference
+  between reported symptoms and measurements.'
+icon: thermometer.snowflake
+color: '#5AC8FA'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not a negative observation.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,85 +42,113 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Chills are episodes of shivering and feeling cold, often accompanied by goosebumps (piloerection). They occur when muscles rapidly contract and relax to generate heat, typically in response to infection, cold exposure, or other physiological triggers. This HealthKit category type allows users to log chills episodes, providing valuable data for tracking illness onset and progression.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Chills most commonly indicate the body's response to infection as the hypothalamus raises the body's temperature setpoint. They can be an early warning sign of developing illness and help clinicians track disease progression and treatment response.
 
-  Common causes include:
-  - Bacterial infections (UTI, pneumonia, sepsis)
-  - Viral infections (influenza, COVID-19, common cold)
-  - Malaria and other parasitic infections
-  - Inflammatory conditions
-  - Medication reactions
-  - Blood transfusion reactions
-  - Anesthesia recovery
-  - Hypoglycemia
-  - Hyperthyroidism
-  - Anxiety and panic attacks
+  Chills in Apple Health records a reported symptom, with a severity label. It does not measure shivering frequency,
+  room temperature or body temperature.
 
-  Rigors (severe chills with violent shaking) are particularly significant and often indicate:
-  - Bacteremia or sepsis
-  - Pyelonephritis
-  - Pneumonia
-  - Malaria
-  - Abscess formation
 
-  ## When to Seek Medical Attention
-  Users should seek medical evaluation when chills:
-  - Are accompanied by high fever (>101.3F/38.5C)
-  - Are severe (rigors with uncontrollable shaking)
-  - Occur after recent surgery or invasive procedure
-  - Are accompanied by confusion or altered mental status
-  - Occur with shortness of breath or chest pain
-  - Follow travel to malaria-endemic areas
-  - Are accompanied by rash or skin changes
-  - Persist or recur without clear cause
-  - Occur in immunocompromised individuals
+  ## What do the saved values mean?
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Illness onset and progression
-  - Cyclic patterns (suggesting malaria in endemic areas)
-  - Correlation with fever episodes
-  - Treatment response to antibiotics or antivirals
-  - Post-procedure infection development
-  - Medication-related reactions
 
-  ## Caveats & Limitations
-  - Does not measure body temperature objectively
-  - Cannot differentiate between infection and other causes
-  - Severity assessment is subjective
-  - Cold exposure-related chills may be logged alongside pathological chills
-  - Does not capture associated symptoms comprehensively
-  - Limited value without concurrent temperature measurements
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | Code | Label | Interpretation |
+
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Reported mild severity |
+
+  | 3 | moderate | Reported moderate severity |
+
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified is not the same as notPresent, and a missing
+  record is neither. The integers identify labels; numerical averages and physiological reference ranges do
+  not apply.
+
+
+  ## Are chills and fever the same record?
+
+
+  Chills and [Fever](/knowledge-base/types/HKCategoryTypeIdentifierFever/) are separate symptom categories. A chills
+  entry does not automatically create a fever entry or a thermometer reading. [Body Temperature](/knowledge-base/types/HKQuantityTypeIdentifierBodyTemperature/)
+  stores a separate numerical measurement. Keep these histories distinct even when they occur on the same day.
+
+
+  A useful note can distinguish feeling cold from noticeable shaking and include any measured temperature.
+  The category label alone does not contain those details or identify a cause.
+
+
+  ## How can a chills timeline stay useful?
+
+
+  Keep symptom observations separate from ordinary changes in ambient temperature. Report which days were logged
+  and which were not, rather than treating a gap as recovery. Repeated records may describe follow-up observations
+  of one experience; their count is not automatically a count of separate episodes.
+
+
+  ## How should recording intervals be interpreted?
+
+
+  This is a logged symptom, with no fixed sensor sampling schedule. Start-to-start gaps describe when observations
+  were saved. A sample’s start and end times describe the interval supplied by its source; their difference
+  does not establish the full duration of a clinical episode. Repeated or overlapping records need review before
+  counting episodes.
+
+
+  This category is not currently listed in the PulsHealth sync catalog. No observations were present in the
+  reviewed user data, so recorded severity frequencies, source differences and logging intervals could not
+  be measured. That database coverage does not establish whether entries exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierFever"
-    relationship: "Chills typically precede or accompany fever"
-  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
-    relationship: "Objective temperature measurement complements chills tracking"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Fatigue commonly accompanies infectious illness with chills"
-  - identifier: "HKCategoryTypeIdentifierGeneralizedBodyAche"
-    relationship: "Body aches often occur with infection-related chills"
-  - identifier: "HKCategoryTypeIdentifierCoughing"
-    relationship: "Respiratory infections cause both chills and coughing"
+- identifier: HKCategoryTypeIdentifierFever
+  relationship: Separate symptom report; neither category automatically supplies the other.
+- identifier: HKQuantityTypeIdentifierBodyTemperature
+  relationship: Numerical temperature measurement, distinct from subjective symptom severity.
+- identifier: HKCategoryTypeIdentifierGeneralizedBodyAche
+  relationship: Separately logged accompanying symptom, without an automatic episode link.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierChills"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierchills"
-    type: "official"
-  - title: "Fever and Chills - MedlinePlus"
-    url: "https://medlineplus.gov/ency/article/003091.htm"
-    type: "medical"
-  - title: "Sepsis Recognition - CDC"
-    url: "https://www.cdc.gov/sepsis/what-is-sepsis.html"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Chills — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/chills
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Category samples — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorysample
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Chills in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: chills
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: No focal observations in the verified database snapshot; empirical label frequencies, sources,
+    cadence and relationships are unavailable. Type is not in the current sync catalog; database absence does
+    not establish Apple Health absence. Category codes are subjective labels, not physiological measurements.
+    Source intervals are not verified clinical episodes. Workout and sleep facets have no measured comparison;
+    public discussion is included only where specifically useful.

@@ -128,14 +128,19 @@ public actor HealthSyncEngine {
     var readableHistory: [String: Date] = [:]
     var readableHistoryCheckedAt: ContinuousClock.Instant?
 
+    var lastReadableAccessPolicy: SyncAccessPolicy?
+    let accessPolicy: @Sendable () async -> SyncAccessPolicy
+
     public init(
         store: SyncStateStore? = nil, eventLog: SyncEventLog? = nil, wakeLog: WakeLog? = nil,
-        recentWindowFirst: Bool = true, readEnd: Date? = nil
+        recentWindowFirst: Bool = true, readEnd: Date? = nil,
+        accessPolicy: @escaping @Sendable () async -> SyncAccessPolicy = { .unrestricted }
     ) {
         self.store = store ?? SyncStateStore()
         self.eventLog = eventLog ?? SyncEventLog()
         self.wakeLog = wakeLog ?? WakeLog()
         self.recentWindowFirst = recentWindowFirst
+        self.accessPolicy = accessPolicy
         self.readEnd = readEnd
     }
 
@@ -819,6 +824,12 @@ public actor HealthSyncEngine {
     /// the claim is released. The caller must hold the claim.
     private func runClaimed(type identifier: String, reason: SyncReason) async {
         defer { activeSyncs.remove(identifier) }
+        await drainClaimedSync(type: identifier, reason: reason)
+    }
+
+    /// Drain queued observer work without releasing a claim owned by a caller
+    /// that also uses it for reconciliation's snapshot and deletion lifetime.
+    private func drainClaimedSync(type identifier: String, reason: SyncReason) async {
         var nextReason = reason
         repeat {
             await runSync(type: identifier, reason: nextReason)
@@ -863,6 +874,7 @@ public actor HealthSyncEngine {
     }
 
     private func runSync(type identifier: String, reason: SyncReason) async {
+        guard await allowsSync(types: [identifier]) else { return }
         guard let descriptor = HealthTypeCatalog.descriptor(for: identifier),
               descriptor.sampleType != nil else {
             await eventLog.log(.error, type: identifier, "Unknown type identifier")
@@ -1224,10 +1236,32 @@ public actor HealthSyncEngine {
     /// a run that found nothing anywhere throws `reconciliationUnreadable`
     /// rather than record itself as in sync.
     public func reconcile(type identifier: String) async throws -> ReconciliationReport {
-        let key = "reconcile:\(UUID())"
+        try await withReconciliationClaim(identifier) {
+            try await self.reconcileClaimed(type: identifier)
+        }
+    }
+
+    /// The snapshot and its orphan deletions must exclude normal uploads for
+    /// this type. An observer arriving meanwhile queues a pass for this owner.
+    func withReconciliationClaim<T: Sendable>(
+        _ identifier: String, operation: @Sendable () async throws -> T
+    ) async throws -> T {
         guard !configurationMutationInProgress else { throw SyncError.configurationBusy }
-        activeSyncs.insert(key)
-        defer { activeSyncs.remove(key) }
+        guard !activeSyncs.contains(identifier) else { throw SyncError.typeBusy(identifier) }
+        activeSyncs.insert(identifier)
+        defer { activeSyncs.remove(identifier) }
+        let outcome: Result<T, Error>
+        do { outcome = .success(try await operation()) }
+        catch { outcome = .failure(error) }
+        if !Task.isCancelled, pendingResync.remove(identifier) != nil {
+            await sendRecentWindows([identifier], reason: .incremental)
+            await drainClaimedSync(type: identifier, reason: .incremental)
+        }
+        return try outcome.get()
+    }
+
+    private func reconcileClaimed(type identifier: String) async throws -> ReconciliationReport {
+        guard await allowsSync(types: [identifier]) else { throw SyncError.accessRestricted }
         guard let descriptor = HealthTypeCatalog.descriptor(for: identifier),
               let sampleType = descriptor.sampleType else {
             throw SyncError.unknownType(identifier)
@@ -1753,7 +1787,9 @@ enum PassFailure {
 }
 
 public enum SyncError: Error, LocalizedError {
+    case accessRestricted
     case configurationBusy
+    case typeBusy(String)
     case healthDataUnavailable
     case authorizationNotDetermined
     case unknownType(String)
@@ -1771,8 +1807,12 @@ public enum SyncError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
+        case .accessRestricted:
+            return "Choose up to 5 health data types or upgrade to PulsHealth Pro to sync this selection."
         case .configurationBusy:
             return "Database settings are being applied. Try again in a moment."
+        case .typeBusy(let identifier):
+            return "A sync or reconciliation is already running for \(identifier). Try again when it finishes."
         case .healthDataUnavailable:
             return "HealthKit is not available on this device"
         case .authorizationNotDetermined:

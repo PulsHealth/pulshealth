@@ -20,6 +20,15 @@ struct SettingsView: View {
     /// Failures in the last Validate Aggregate Functions run; nil before one.
     @State private var aggregateValidationFailures: Int?
 
+    private var syncStartDate: Binding<Date> {
+        Binding {
+            model.subscriptions.hasPro ? model.config.startDate
+                : max(model.config.startDate, SyncAccessPolicy.free.earliestDate() ?? model.config.startDate)
+        } set: { date in
+            model.setSyncStartDate(date)
+        }
+    }
+
     var body: some View {
         @Bindable var model = model
         let analyzed = model.explore.profiles.count
@@ -30,6 +39,22 @@ struct SettingsView: View {
             Section {
                 NavigationLink(value: SettingsRoute.user) {
                     UserRow(name: model.config.userName, email: model.config.userEmail)
+                }
+            }
+
+            Section("Plan") {
+                Button { model.showPro() } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.subscriptions.hasPro ? "PulsHealth Pro" : "PulsHealth Free")
+                            Text(model.subscriptions.hasPro
+                                 ? (model.subscriptions.plan?.status ?? "Pro is active")
+                                 : "Recent exports · 5 automatic-sync types")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: model.subscriptions.hasPro ? "checkmark.seal" : "person.crop.circle")
+                    }
                 }
             }
 
@@ -47,7 +72,7 @@ struct SettingsView: View {
                         // "Sync", not "Export": the Export tab has its own time
                         // range, and this date is not it.
                         "Sync data from",
-                        selection: $model.config.startDate,
+                        selection: syncStartDate,
                         in: ...Date(),
                         displayedComponents: .date
                     )

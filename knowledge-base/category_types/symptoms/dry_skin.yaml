@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierDrySkin"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Dry Skin"
-short_description: "Tracks episodes of dry, rough, or flaky skin."
-icon: "hand.raised.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierDrySkin
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Dry Skin
+short_description: 'Dry Skin in Apple Health: saved category values, useful reporting context and limits of
+  symptom histories.'
+icon: hand.raised.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent.
+- value: 2
+  name: mild
+  description: Subjectively mild severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate severity.
+- value: 4
+  name: severe
+  description: Subjectively severe severity.
 ios_introduced:
-  version: "13.6"
+  version: '14.0'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,88 +42,106 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Dry skin (xerosis) is characterized by rough, scaly, flaky, or cracked skin that may feel tight or itchy. This HealthKit category type enables users to track dry skin episodes, helping identify triggers, seasonal patterns, and underlying conditions that may require treatment.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; available logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  While often a benign cosmetic concern, dry skin can indicate underlying medical conditions, nutritional deficiencies, or environmental factors requiring attention. Chronic dry skin can lead to complications like eczematous dermatitis or skin infections.
 
-  Common causes include:
-  - Environmental factors (low humidity, cold weather, indoor heating)
-  - Frequent bathing or use of harsh soaps
-  - Aging (sebaceous gland activity decreases)
-  - Dehydration
-  - Atopic dermatitis (eczema)
-  - Psoriasis
-  - Contact dermatitis
+  Dry Skin records a user-reported symptom severity. It is not a measurement of skin hydration, a measure of
+  fluid intake or a diagnosis of eczema.
 
-  Medical conditions associated with dry skin:
-  - Hypothyroidism
-  - Diabetes mellitus
-  - Chronic kidney disease
-  - Malnutrition (essential fatty acid deficiency, zinc deficiency)
-  - Sjögren's syndrome
-  - Ichthyosis (genetic conditions)
 
-  Medication-related causes:
-  - Diuretics
-  - Retinoids
-  - Statins
-  - Chemotherapy agents
+  ## What do the saved values mean?
 
-  ## When to Seek Medical Attention
-  Users should consult a healthcare provider when dry skin:
-  - Does not improve with regular moisturizing
-  - Is accompanied by intense itching disrupting sleep
-  - Becomes cracked, bleeding, or shows signs of infection
-  - Is widespread and persistent
-  - Is associated with other symptoms (fatigue, cold intolerance, weight changes)
-  - Appears suddenly without clear cause
-  - Is accompanied by hair loss or nail changes
-  - Significantly affects quality of life
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Seasonal patterns (winter exacerbations)
-  - Correlation with environmental humidity levels
-  - Response to moisturizing interventions
-  - Medication-related onset
-  - Association with systemic symptoms (suggesting thyroid or metabolic causes)
-  - Stress-related flares
-  - Diet and hydration correlations
+  | Code | Label | Meaning |
 
-  ## Caveats & Limitations
-  - Location of dry skin not captured
-  - Cannot differentiate between dry skin types (xerosis vs. eczema vs. psoriasis)
-  - Does not record associated symptoms (itching, cracking, bleeding)
-  - Severity is subjective
-  - Environmental context not captured
-  - Cannot assess for underlying systemic conditions
-  - Limited value without laboratory correlation when systemic cause suspected
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Subjectively mild severity |
+
+  | 3 | moderate | Subjectively moderate severity |
+
+  | 4 | severe | Subjectively severe severity |
+
+
+  Unspecified is not notPresent. The mild, moderate and severe labels reflect the report; their integer codes
+  are not a calibrated clinical scale and should not be averaged as measurements.
+
+
+  ## What detail is missing from a dry-skin entry?
+
+
+  The category has no dedicated field for affected body area, itch, cracking or a suspected irritant. Two reports
+  with the same severity can describe very different experiences. A separate note about location and product
+  changes can make the history easier to interpret without changing the category’s meaning.
+
+
+  [Dietary Water](/knowledge-base/types/HKQuantityTypeIdentifierDietaryWater/) records logged water intake;
+  it cannot be converted into a dry-skin score or used to diagnose dehydration from these reports. The American
+  Academy of Dermatology advises seeking dermatology care when dryness persists despite recommended skin care,
+  and mentioning products that cause burning or irritation.
+
+
+  ## How should a recorded history be read?
+
+
+  Entries follow the source’s logging behavior, with no fixed sensor sampling interval. Missing dates mean
+  no available report, rather than an explicit negative observation. A saved interval need not describe a continuous
+  episode, and overlapping records from different sources should be reviewed before counting reports or days.
+
+
+  ## Is this type available in PulsHealth?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. The selected database review contained
+  no corresponding records; that does not establish whether entries exist in Apple Health. No example distribution
+  or logging cadence could be measured.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierHairLoss"
-    relationship: "Hair loss and dry skin may indicate thyroid dysfunction"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Fatigue with dry skin suggests systemic conditions like hypothyroidism"
-  - identifier: "HKCategoryTypeIdentifierBrittleNails"
-    relationship: "Nail changes often accompany systemic causes of dry skin"
-  - identifier: "HKQuantityTypeIdentifierDietaryWater"
-    relationship: "Hydration status affects skin moisture"
+- identifier: HKCategoryTypeIdentifierAcne
+  relationship: Separate skin symptom; neither category identifies a shared cause.
+- identifier: HKQuantityTypeIdentifierDietaryWater
+  relationship: Water-intake entries do not measure skin hydration.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierDrySkin"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierdryskin"
-    type: "official"
-  - title: "Dry Skin - Mayo Clinic"
-    url: "https://www.mayoclinic.org/diseases-conditions/dry-skin/symptoms-causes/syc-20353885"
-    type: "medical"
-  - title: "Xerosis - American Academy of Dermatology"
-    url: "https://www.aad.org/public/everyday-care/skin-care-basics/dry/dermatologists-tips-relieve-dry-skin"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Dry Skin — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/dryskin
+  type: official
+- title: Symptom severity values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Dry skin guidance — American Academy of Dermatology
+  url: https://www.aad.org/public/everyday-care/skin-care-basics/dry/dermatologists-tips-relieve-dry-skin
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Dry Skin in Apple Health: severity, location and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: dry-skin
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified no observations across bounded quantity, category, aggregate and workout-series inventories;
+    this identifier is not listed in the current sync catalog. Apple Health absence cannot be inferred. No
+    empirical frequencies, source differences, cadence, outliers or related-type comparisons are available.
+    Category codes are labels, not measurements; recorded intervals do not establish clinical episode duration.
+    Generic workout or sleep comparisons are not applicable to this review.

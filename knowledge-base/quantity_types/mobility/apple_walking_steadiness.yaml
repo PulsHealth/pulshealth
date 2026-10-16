@@ -64,15 +64,15 @@ description: '## What does Walking Steadiness measure?
 
   | Is a blank week a score of zero? | No. A missing estimate is missing coverage. |
 
-  | Does a weekly record describe sleep or a workout? | Its timing describes an estimate''s reporting window; overlap
-  alone does not establish when the contributing walking happened. |
+  | Does the timestamp identify one walking bout? | It describes the estimate''s reporting window, not when every
+  contributing walking observation happened. |
 
 
   ## What did the example-data investigation find?
 
   The selected reporting year contained **no Walking Steadiness quantity records**. The stored-data investigation
-  checked coverage, value ranges, outliers, source differences, intervals, workout and sleep context, time patterns
-  and related types. Without records, it cannot establish an example cadence, distribution or context comparison.
+  checked measurement coverage. Without records, it cannot establish an example cadence, distribution or relationship
+  with other mobility measures.
   No graph or synthetic score is substituted.
 
 

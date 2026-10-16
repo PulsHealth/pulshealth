@@ -73,16 +73,14 @@ description: '## Overview
   every valid sample has the same code.
 
 
-  ## How can cycle or activity context help?
+  ## What can related cycle entries add?
 
   Menstrual-flow starts, mucus observations and ovulation tests can be aligned by recorded dates. Those records
   have their own gaps and uncertainty, and sharing a date does not make them an explicit association or yield a
   conception probability.
 
 
-  Workout or sleep overlap can describe the timing of a logged interval. It does not mean sexual activity was measured
-  by a workout sensor, nor does it explain changes in heart rate or sleep. Interval duration may reflect how the
-  source stores the entry rather than the duration of an event.
+  Interval duration may reflect how the source stores the entry rather than the duration of an event.
 
 
   ## What did the example data show?

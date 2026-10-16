@@ -79,16 +79,14 @@ description: '## Overview
 
 
   A verified factor interval can provide context for separately recorded menstrual flow, sleep or activity. A broad
-  interval may overlap many nights and workouts; those overlaps do not identify night feeds or measure their effect
-  on sleep. The data also cannot establish exclusive breastfeeding, infant nutritional adequacy or lactational contraceptive
+  factor interval does not identify individual feeds or measure their effect on sleep. The data also cannot establish exclusive breastfeeding, infant nutritional adequacy or lactational contraceptive
   effectiveness.
 
 
   ## What was available for this review?
 
 
-  The selected database window contained no lactation records. Factor lengths, source differences and feeding-session
-  cadence could not be measured. Lactation is absent from the current PulsHealth sync catalog, so database absence
+  The selected database window contained no lactation records. Recorded factor lengths and source differences could not be measured. Lactation is absent from the current PulsHealth sync catalog, so database absence
   says nothing definitive about what is stored in Apple Health on the phone. This source-based review includes no
   milk-output or feeding-frequency chart.
 

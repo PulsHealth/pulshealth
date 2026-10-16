@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierFever"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Fever"
-short_description: "Tracks episodes of fever or elevated body temperature."
-icon: "thermometer.high"
-color: "#FF3B30"
+identifier: HKCategoryTypeIdentifierFever
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Fever
+short_description: 'Fever in Apple Health: understand severity labels, logging intervals and the difference
+  between reported symptoms and measurements.'
+icon: thermometer.high
+color: '#FF3B30'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not a negative observation.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,96 +42,122 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Fever is defined as an elevation of body temperature above the normal range (typically >100.4F/38C). This HealthKit category type allows users to log perceived fever episodes, providing valuable data for tracking illness onset, progression, and resolution. Note that this is distinct from the quantitative body temperature measurement.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Fever is a fundamental physiological response to infection and inflammation. It represents the body's immune system activating to fight pathogens. Tracking fever patterns helps clinicians assess illness severity and treatment response.
 
-  Fever is classified by temperature:
-  - **Low-grade fever**: 100.4-102.2F (38-39C)
-  - **Moderate fever**: 102.2-104F (39-40C)
-  - **High fever**: 104-106F (40-41C)
-  - **Hyperpyrexia**: >106F (>41C) - medical emergency
+  Fever in Apple Health is a symptom category with a reported severity. It contains no temperature value and
+  is separate from the Body Temperature quantity type.
 
-  Common causes include:
-  - Viral infections (influenza, COVID-19, common cold)
-  - Bacterial infections (UTI, pneumonia, strep throat)
-  - Inflammatory conditions (autoimmune diseases)
-  - Medication reactions (drug fever)
-  - Post-vaccination response
-  - Heat stroke
-  - Malignancy (lymphoma, leukemia)
-  - Deep vein thrombosis
 
-  Fever of unknown origin (FUO) categories:
-  - Classic FUO (>3 weeks, undiagnosed after evaluation)
-  - Nosocomial FUO (hospital-acquired)
-  - Neutropenic FUO (in immunocompromised patients)
-  - HIV-associated FUO
+  ## What do the saved values mean?
 
-  ## When to Seek Medical Attention
-  Seek immediate medical care when fever:
-  - Exceeds 104F (40C) in adults
-  - Is accompanied by severe headache, stiff neck, confusion (meningitis signs)
-  - Is associated with difficulty breathing
-  - Occurs with rash, especially if rapidly spreading
-  - Is accompanied by severe abdominal pain
-  - Occurs in infants under 3 months (any fever)
-  - Is present in immunocompromised individuals
-  - Is accompanied by decreased urination or signs of dehydration
 
-  Seek routine evaluation when:
-  - Fever persists more than 3 days
-  - Temperature repeatedly exceeds 103F (39.4C)
-  - Fever returns after resolving
-  - Associated with localized symptoms (urinary, respiratory)
-  - No clear source is identified
+  | Code | Label | Interpretation |
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Illness onset and duration
-  - Response to antipyretic medications
-  - Fever patterns (continuous, remittent, intermittent)
-  - Post-vaccination reactions
-  - Recurring fevers suggesting chronic conditions
-  - Treatment response to antibiotics
-  - Cyclic patterns (malaria, cyclic neutropenia)
+  | --- | --- | --- |
 
-  ## Caveats & Limitations
-  - Subjective perception of fever may not correlate with measured temperature
-  - Does not replace objective temperature measurement
-  - Temperature value not captured (use HKQuantityTypeIdentifierBodyTemperature)
-  - Time of fever spike not precisely recorded
-  - Associated symptoms not linked directly
-  - Antipyretic use may mask fever patterns
-  - Elderly and immunocompromised may not mount typical fever response
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Reported mild severity |
+
+  | 3 | moderate | Reported moderate severity |
+
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified is not the same as notPresent, and a missing
+  record is neither. The integers identify labels; numerical averages and physiological reference ranges do
+  not apply.
+
+
+  ## Does severe mean a particular temperature?
+
+
+  No. Mild, moderate and severe are symptom labels, not temperature bands. A severe fever entry cannot be converted
+  to degrees Celsius or Fahrenheit. Store a thermometer result as [Body Temperature](/knowledge-base/types/HKQuantityTypeIdentifierBodyTemperature/)
+  and preserve how and when it was measured.
+
+
+  For adults, NHS guidance commonly describes a high temperature as 38°C or above, while also noting that a
+  user can feel feverish below that reading. That clinical context does not change the HealthKit category codes
+  or create a universal conversion from symptom severity to temperature.
+
+
+  ## What belongs in a useful fever history?
+
+
+  Separate the time a user felt feverish from the time a thermometer reading was taken. Record [Chills](/knowledge-base/types/HKCategoryTypeIdentifierChills/)
+  or other accompanying symptoms independently. A shared reporting day helps organize observations, but does
+  not prove that every record belongs to the same illness.
+
+
+  A numerical temperature trend needs actual temperature measurements. Symptom entries alone cannot show a
+  fever peak, response to treatment or a change in core temperature. If a high temperature is getting worse
+  or not improving, seek medical advice rather than relying on the history chart.
+
+
+  ## How should recording intervals be interpreted?
+
+
+  This is a logged symptom, with no fixed sensor sampling schedule. Start-to-start gaps describe when observations
+  were saved. A sample’s start and end times describe the interval supplied by its source; their difference
+  does not establish the full duration of a clinical episode. Repeated or overlapping records need review before
+  counting episodes.
+
+
+  This category is not currently listed in the PulsHealth sync catalog. No observations were present in the
+  reviewed user data, so recorded severity frequencies, source differences and logging intervals could not
+  be measured. That database coverage does not establish whether entries exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
-    relationship: "Objective temperature measurement complements fever tracking"
-  - identifier: "HKCategoryTypeIdentifierChills"
-    relationship: "Chills typically accompany rising fever"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Fatigue commonly accompanies febrile illness"
-  - identifier: "HKCategoryTypeIdentifierGeneralizedBodyAche"
-    relationship: "Body aches often occur with fever"
-  - identifier: "HKCategoryTypeIdentifierHeadache"
-    relationship: "Headache frequently accompanies fever"
+- identifier: HKQuantityTypeIdentifierBodyTemperature
+  relationship: Measured temperature; symptom severity has no conversion to °C or °F.
+- identifier: HKCategoryTypeIdentifierChills
+  relationship: Separate symptom that can be logged alongside a fever report.
+- identifier: HKCategoryTypeIdentifierGeneralizedBodyAche
+  relationship: Separately recorded accompanying symptom, not diagnostic of an illness.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierFever"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierfever"
-    type: "official"
-  - title: "Fever - Mayo Clinic"
-    url: "https://www.mayoclinic.org/diseases-conditions/fever/symptoms-causes/syc-20352759"
-    type: "medical"
-  - title: "Fever of Unknown Origin - AAFP"
-    url: "https://www.aafp.org/pubs/afp/issues/2014/1001/p465.html"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Fever — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/fever
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Category samples — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorysample
+  type: official
+- title: High temperature in adults — NHS
+  url: https://www.nhs.uk/symptoms/fever-in-adults/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Fever in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: fever
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: No focal observations in the verified database snapshot; empirical label frequencies, sources,
+    cadence and relationships are unavailable. Type is not in the current sync catalog; database absence does
+    not establish Apple Health absence. Category codes are subjective labels, not physiological measurements.
+    Source intervals are not verified clinical episodes. Workout and sleep facets have no measured comparison;
+    public discussion is included only where specifically useful.

@@ -69,8 +69,7 @@ description: '## What does Stair Descent Speed describe?
   ## What did the example-data investigation find?
 
   The selected reporting year contained **no Stair Descent Speed quantity records**. The database coverage check
-  therefore supplies no empirical range, outlier distribution, interval duration, recording cadence, workout comparison
-  or sleep comparison. No graph is fabricated. Other activity data being present does not prove that this particular
+  therefore supplies no empirical range, outlier distribution, interval duration, recording cadence or comparison across stair bouts. No graph is fabricated. Other activity data being present does not prove that this particular
   measurement was collected.
 
 
@@ -90,9 +89,8 @@ description: '## What does Stair Descent Speed describe?
   ## What makes comparisons more useful?
 
   Keep direction, source and conditions as consistent as possible. Inspect record counts and interval lengths alongside
-  values: a weekly average drawn from a few selected bouts may differ from one drawn from many. Workout or sleep
-  overlap is a timestamp check, not a confirmed HealthKit linkage; a stair-speed record overlapping sleep deserves
-  a timing and source review rather than a claim about movement during sleep.
+  values: a weekly average drawn from a few selected bouts may differ from one drawn from many. Timestamp overlap
+  with a workout is not a confirmed HealthKit linkage.
 
 
   A sustained change together with new mobility difficulty can be discussed with a healthcare professional. This

@@ -209,7 +209,12 @@ Bind each run to its artifact key,
 window, timezone, calculation version and refresh date. Do not embed private
 absolute paths or account identifiers in public metadata.
 
-Each type uses the same investigation facets:
+Use the same private review facets to check applicability. These are not mandatory
+public article sections: omit questions that do not fit the measurement.
+Characteristics need current-value availability and provenance, not artificial
+workout, sleep, outlier or cadence analysis.
+
+The private review checklist is:
 
 | Facet | Questions to answer |
 |---|---|
@@ -226,15 +231,15 @@ Each type uses the same investigation facets:
 | Type-specific | What special counting, overlap or measurement rules matter here? |
 
 A facet is complete when it has been investigated, including documenting an
-unavailable comparison. Use interval/category analysis in place of numeric
+unavailable or inapplicable comparison, with the reason. Use interval/category analysis in place of numeric
 value summaries where appropriate. Correlations are descriptive; timestamp
-matching and one person's repeated records do not establish causality or
+matching and repeated user records do not establish causality or
 population norms.
 
 Set optional `data_research.status: complete` after the evidence review is
 persisted and incorporated into the article. Use `review_basis: data_analysis`
 when measurements have been analyzed in an executed notebook, or
-`review_basis: coverage_and_sources` for verified absent or unsupported data
+`review_basis: coverage_and_sources` for verified absent or unsupported data, or current profile-field availability,
 reviewed against primary sources. The latter does not claim empirical ranges,
 outliers, cadence or context comparisons. Older entries may omit this optional
 field; their preserved artifacts and limitations describe their evidence.

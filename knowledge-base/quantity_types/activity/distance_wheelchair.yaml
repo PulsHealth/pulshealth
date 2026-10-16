@@ -78,13 +78,12 @@ description: '## What does wheelchair distance measure?
 
 
   The selected reporting year contained **no wheelchair-distance records, daily aggregates or workout-series points**.
-  Consequently, no observed distance range, outliers, recording cadence, workout-versus-sleep comparison or empirical
+  Consequently, no observed distance range, outliers, recording cadence or empirical
   graph can be reported. This absence does not establish wheelchair status, non-use or zero travel.
 
 
   For a populated export, start with source and interval coverage, then compare amounts and interval lengths during
-  recorded workouts and other periods. Sleep overlap deserves inspection for intervals crossing a sleep boundary;
-  overlap alone would not prove propulsion during sleep.
+  recorded workouts and other periods. Keep interval boundaries visible when assigning records to those periods.
 
 
   ## Can distance and pushes show how efficiently a chair moves?

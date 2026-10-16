@@ -84,14 +84,13 @@ description: '## What does Apple Health protein intake measure?
   Retain those distinctions when grouping protein into meals or reporting days.
 
 
-  ## How does protein relate to calories, body mass and workouts?
+  ## How does protein relate to calories and body mass?
 
 
   Multiplying recorded protein grams by four is a rough calorie contribution, not a way to recover total food energy.
   An exploratory comparison with consumed-energy logs must use compatible source and day coverage. A grams-per-kilogram
   comparison also requires an appropriate body-mass measurement and credible daily intake. Avoid silently carrying
-  an old weight across a long gap. Workout or sleep overlap of food timestamps does not demonstrate timed ingestion
-  or muscle recovery.
+  an old weight across a long gap. Food timestamps do not demonstrate timed ingestion or muscle recovery.
 
 
   ## What did the database investigation support?
@@ -155,8 +154,7 @@ recording_behavior:
   reviewed_on: '2026-10-14'
   shape: Cumulative recorded intake amount; sample size is not necessarily a serving or a daily total.
   cadence: Source-specific logging or synchronization cadence, not continuous sensing or a validated ingestion schedule.
-  context: Timestamp overlap with workouts or recorded sleep describes logging context; consumption time and physiological
-    response remain unverified.
+  context: "Review food or supplement items, portion sizes and logging coverage; recorded protein intake does not establish absorption or muscle gain."
   coverage: Missing logs do not establish zero intake. A source can contribute only selected nutrients or drinks.
   aggregation: Sum compatible recorded contributions within a source and reporting window after checking units,
     serving semantics and duplicate imports. State logged-day coverage.

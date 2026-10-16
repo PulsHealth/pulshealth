@@ -71,7 +71,7 @@ description: '## What does cycling speed measure?
   The example database held 365 daily-average cycling-speed buckets for October 2025–September 2026. Every bucket
   value was null, and no raw speed samples or linked cycling-speed series were available. Those rows establish a
   stored summary schedule, not 365 measurements, zero-speed days or a once-daily sensor cadence. No value distribution
-  or workout/sleep comparison can be recovered from them.
+  or comparison across rides can be recovered from them.
 
 
   ## Can speed be calculated from cycling distance?

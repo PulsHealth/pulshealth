@@ -77,8 +77,7 @@ description: '## What does persistent spotting mean in Apple Health?
 
 
   Spacing between assessment intervals is not spacing between spotting episodes. The exported timestamps do
-  not independently establish notification or verification time. Sleep and workout overlap cannot show that
-  bleeding began during either activity, so context comparisons require the underlying logged observations.
+  not independently establish notification or verification time. Episode timing requires the underlying logged bleeding observations.
 
 
   ## What did the example data show?

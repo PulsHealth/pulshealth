@@ -28,7 +28,16 @@ enum AggregateQuery {
         chunk: DateInterval,
         healthStore: HKHealthStore
     ) async throws -> [AggregateSampleRow] {
-        let quantityType = HKQuantityType(HKQuantityTypeIdentifier(rawValue: config.typeIdentifier))
+        // Never turn an unavailable type into empty buckets: callers upload
+        // those as nulls and advance progress, erasing previously stored data.
+        guard let quantityType = HealthTypeCatalog.descriptor(for: config.typeIdentifier)?
+            .sampleType as? HKQuantityType else {
+            throw HealthExploreError.unknownType(config.typeIdentifier)
+        }
+        guard HealthTypeCatalog.allowedAggregateFunctions(for: config.typeIdentifier)
+            .contains(config.function) else {
+            throw HealthExploreError.unsupportedKind(config.typeIdentifier)
+        }
         var predicate = HKQuery.predicateForSamples(
             withStart: chunk.start, end: chunk.end, options: .strictStartDate
         )
