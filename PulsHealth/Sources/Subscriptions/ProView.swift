@@ -34,7 +34,6 @@ struct ProView: View {
                 Section { Text(message).accessibilityIdentifier("pro.purchaseMessage") }
             }
             accountActions
-            if store.isLoaded && !store.hasPro { freeComparison }
             Section {
                 Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy/")!)
                 Link("Terms of Use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
@@ -62,17 +61,14 @@ struct ProView: View {
     @ViewBuilder private var upgrade: some View {
         Section {
             VStack(alignment: .leading, spacing: 10) {
-                Text(context.title).font(.title2.bold())
+                Text(context.title).font(.largeTitle.bold())
                 Text(context.explanation).foregroundStyle(.secondary)
             }
             .padding(.vertical, 6)
         }
         .listRowBackground(Color.clear)
 
-        Section {
-            benefit("All permitted history", detail: "Export and sync beyond the latest 30 days.", symbol: "clock.arrow.circlepath")
-            benefit("Unlimited automatic-sync types", detail: "Keep every selected health data type in sync.", symbol: "arrow.triangle.2.circlepath")
-        }
+        planComparison
 
         Section {
             ForEach(choices) { product in
@@ -83,8 +79,6 @@ struct ProView: View {
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(isAnnual(product) ? "Yearly" : "Monthly").font(.headline)
-                            Text(isAnnual(product) ? "Billed once a year" : "Billed each month")
-                                .font(.caption).foregroundStyle(.secondary)
                             if dynamicTypeSize.isAccessibilitySize {
                                 Text(product.displayPrice).font(.headline)
                             }
@@ -177,13 +171,58 @@ struct ProView: View {
         }
     }
 
-    private var freeComparison: some View {
-        Section("Included with Free") {
-            benefit("Explore all your data", detail: "All the history Apple Health permits.", symbol: "heart.text.square")
-            benefit("Unlimited recent exports", detail: "Every type from the latest 30 days, as often as you like.", symbol: "square.and.arrow.up")
-            benefit("Raw readings and aggregates", detail: "CSV, JSON and JSONL are all included.", symbol: "chart.bar.xaxis")
-            benefit("Automatic sync", detail: "Up to 5 distinct types from the latest 30 days. Each type counts once across raw readings and aggregates.", symbol: "arrow.triangle.2.circlepath")
+    private var planComparison: some View {
+        Section {
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(spacing: 12) { comparisonCards }
+                } else {
+                    HStack(alignment: .top, spacing: 12) { comparisonCards }
+                }
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        } footer: {
+            Text("Unlimited means all history Apple Health permits. Both plans include all formats and unlimited file exports.")
         }
+    }
+
+    @ViewBuilder private var comparisonCards: some View {
+        comparisonCard("Free", history: "30 days", types: "Up to 5", highlighted: false)
+        comparisonCard("Pro", history: "Unlimited", types: "Unlimited", highlighted: true)
+    }
+
+    private func comparisonCard(_ title: String, history: String, types: String, highlighted: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(highlighted ? Color.accentColor : .secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(history).font(.title2.bold())
+                Text("Export & sync history")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+            Divider()
+            VStack(alignment: .leading, spacing: 4) {
+                Text(types).font(.headline)
+                Text("Sync data types")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            highlighted ? Color.accentColor.opacity(0.08) : Color(.secondarySystemGroupedBackground),
+            in: RoundedRectangle(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(highlighted ? Color.accentColor.opacity(0.3) : .clear, lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(title)
     }
 
     private func isAnnual(_ product: Product) -> Bool { product.id == SubscriptionStore.annualID }
