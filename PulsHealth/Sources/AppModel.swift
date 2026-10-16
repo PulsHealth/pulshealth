@@ -799,6 +799,30 @@ final class AppModel {
         defaults.set(true, forKey: "authorizationRequested")
     }
 
+    /// The server has already saved this account edit. Update only the matching
+    /// active destination's profile, preserving unrelated settings drafts and
+    /// without starting sync or requesting Health permissions.
+    func updateAppliedAccountProfile(_ profile: AccountProfile) async -> Bool {
+        guard usesPulsHealthDatabase, appliedConfig.userID == profile.userID else { return true }
+        guard connectionEditCanStart(), !stateFileUnreadable else { return false }
+        isUpdatingConnection = true
+        defer { isUpdatingConnection = false }
+        var updated = appliedConfig
+        updated.userName = profile.name
+        updated.userEmail = profile.email
+        updated.userDateOfBirth = profile.dateOfBirth
+        updated.userBiologicalSex = profile.biologicalSex
+        guard await engine.configure(updated) else { return false }
+        appliedConfig = await engine.store.configuration
+        if ServerIdentity(configuration: config) == ServerIdentity(configuration: appliedConfig) {
+            config.userName = profile.name
+            config.userEmail = profile.email
+            config.userDateOfBirth = profile.dateOfBirth
+            config.userBiologicalSex = profile.biologicalSex
+        }
+        return true
+    }
+
     /// Push the draft to the engine. Returns false when nothing was applied
     /// because the draft points at a different server or user ID than the
     /// stored sync progress belongs to: the prompt is raised instead, and the
