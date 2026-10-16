@@ -574,7 +574,8 @@ or satisfaction question. A request is offered only at a completed task:
 `ReviewRequests` shares a 120-day cooldown and one attempt per marketing
 version across all tabs. A two-second pause precedes the API call. Navigation,
 interaction, backgrounding, an inactive scene or a presented sheet/alert
-cancels it. Onboarding, permission/setup issues, pending edits, failed types,
+cancels it. A passive UIKit touch observer rejects every touch after notifying
+the timing policy, so it never competes with list navigation or scrolling. Onboarding, permission/setup issues, pending edits, failed types,
 and running sync/backfill/export work suppress it. Cancelled opportunities
 consume no cooldown. Apple controls whether its prompt appears; an API call
 records an **attempt**, never a submitted rating or review. TestFlight does
