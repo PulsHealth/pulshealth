@@ -23,10 +23,20 @@ consistent with the App Store copy in `docs/appstore/2.1-copy.md`, the About pag
 footer, and search metadata. Local exploration and exports need no account;
 database sync needs a compatible destination; AI tools connect through the
 database. Hosted account calls to action say “Request” because access requires
-approval. The pale blue, mint, and lilac product illustrations echo the approved
-Style A campaign while preserving the site's dark shell. Regenerate the tracked
-social sharing card with `cd site && bun scripts/gen-social-card.tsx` when that
-message changes.
+approval. The experimental `site/motion-lab` branch replaces homepage product pictures
+with original SVG signal art and interactive, explicitly illustrative chart and
+export previews. The visual system uses midnight (#08101d), deep slate
+(#101b2d), glacier (#85baff), periwinkle (#b7a5f5), and chalk (#ecf2ff).
+Geist headlines use generous scale and restrained weight. A single animated
+signal sculpture carries the motion; it has a pause control and respects
+reduced-motion preferences. Sync and export scenes play once when they enter
+the viewport, then respond to signal, range, format, and replay controls. Colored
+traces converge into a layered database; selected signals assemble into file
+previews. The detail chart switches between individual readings and grouped
+averages. All example values are illustrative; export previews create no files.
+Shared page heroes use left-aligned type and static signal contours. No animation library, health-data requests, or new tracking is added.
+Real product screenshots remain available in the dashboard demo and on other
+product pages. This is a design experiment, not a deployed release.
 
 Subscription details stay out of the primary navigation: a short homepage note
 links to `/pro/`, and the footer links to Pro and `/pricing/`. These two compact

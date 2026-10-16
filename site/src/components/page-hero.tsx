@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import styles from "./page-hero.module.css";
 
 interface PageHeroProps {
   title: ReactNode;
@@ -29,15 +30,16 @@ export function PageHero({
   return (
     <section
       className={cn(
-        "w-full border-b bg-gradient-to-b from-background to-muted/40",
+        styles.hero,
+        "w-full border-b",
         size === "default" ? "pt-20 pb-24 md:pb-28" : "pt-16 pb-14",
         className,
       )}
     >
-      <div className="container mx-auto flex max-w-7xl flex-col items-center space-y-6 px-4 text-center">
+      <div className="container mx-auto flex max-w-7xl flex-col items-start space-y-6 px-6 text-left">
         <h1
           className={cn(
-            "max-w-4xl font-bold tracking-tight text-foreground text-balance",
+            "max-w-4xl font-medium tracking-tight text-foreground text-balance",
             size === "default" ? "text-4xl md:text-6xl" : "text-4xl md:text-5xl",
           )}
         >
@@ -51,7 +53,7 @@ export function PageHero({
         )}
 
         {children && (
-          <div className="flex flex-col items-center gap-4 pt-2 sm:flex-row">
+          <div className="flex flex-col items-start gap-4 pt-2 sm:flex-row">
             {children}
           </div>
         )}

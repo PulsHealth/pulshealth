@@ -1,0 +1,5 @@
+.hero { position: relative; isolation: isolate; overflow: hidden; background: #0c172a; }
+.hero::before { content: ""; pointer-events: none; position: absolute; z-index: -1; width: 44rem; height: 44rem; right: -12rem; top: -20rem; border: 1px solid #7dabff26; border-radius: 43% 57% 62% 38%; transform: rotate(-25deg); box-shadow: 0 0 0 20px #7dabff08, 0 0 0 40px #7dabff0a, 0 0 0 60px #7dabff0a, 0 0 0 80px #7dabff08, 0 0 0 100px #7dabff06, 0 0 0 120px #7dabff04; }
+.hero h1 { letter-spacing: -.055em; line-height: 1.04; }
+.hero p { max-width: 40rem; }
+@media (max-width: 640px) { .hero::before { opacity: .5; right: -32rem; } }

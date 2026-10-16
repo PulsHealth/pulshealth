@@ -1,13 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import {
-  ArrowRight, Bot, Database, FileJson, Heart, Lock, Moon,
-  Footprints, Activity, Utensils, EyeOff, SlidersHorizontal, LayoutDashboard, Smartphone,
-} from "lucide-react";
+import { ArrowRight, Lock, EyeOff, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
-import { WebAppPreview } from "@/components/web-app-preview";
+import { SignalLab } from "@/components/signal-lab";
 import { AiChatPreview } from "@/components/ai-chat-preview";
 import { FaqList } from "@/components/faq-list";
 import { getAllTypes } from "@/lib/api";
@@ -33,30 +29,11 @@ const appJsonLd = {
   description: "Sync, export, and control your Apple Health data. Automatic background sync to a compatible database, flexible CSV and JSON exports, and connections to compatible AI tools through your database. Free to download and open source, with optional Pro subscriptions for full history and unlimited sync types.",
 };
 
-const destinations = [
-  { icon: LayoutDashboard, title: "Your dashboard", detail: "Daily metrics & trends" },
-  { icon: FileJson, title: "Your files", detail: "CSV · JSON" },
-  { icon: Bot, title: "Your AI tools", detail: "Connected through your database" },
-];
-const categories = [
-  { icon: Moon, name: "Sleep" }, { icon: Heart, name: "Heart rate" },
-  { icon: Footprints, name: "Activity" }, { icon: Activity, name: "Workouts" },
-  { icon: Utensils, name: "Nutrition" }, { icon: SlidersHorizontal, name: "And more" },
-];
-
-function Phone({ src, alt, className = "", priority = false }: { src: string; alt: string; className?: string; priority?: boolean }) {
-  return (
-    <div className={`${styles.phone} ${className}`}>
-      <Image src={src} alt={alt} width={600} height={1304} priority={priority} className="block w-full" />
-    </div>
-  );
-}
-
 function Feature({ id, title, intro, children, visual, flip = false }: {
   id: string; title: string; intro: string; children: ReactNode; visual: ReactNode; flip?: boolean;
 }) {
   return (
-    <section id={id} className="grid scroll-mt-24 items-center gap-10 lg:grid-cols-2 lg:gap-20">
+    <section id={id} className={`${styles.feature} grid scroll-mt-24 items-center gap-10 lg:grid-cols-2 lg:gap-20`}>
       <div className={flip ? "lg:order-2" : undefined}>
         <h2 className="max-w-lg text-4xl font-semibold leading-[1.08] tracking-tight text-balance md:text-5xl">{title}</h2>
         <p className="mt-5 text-xl font-medium text-foreground">{intro}</p>
@@ -73,11 +50,11 @@ export default async function HomePage() {
     <main className={styles.home}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
 
-      <section className="border-b">
+      <section className={styles.hero}>
         <div className="container mx-auto grid max-w-7xl items-center gap-12 px-5 py-14 md:py-20 lg:grid-cols-[1fr_1.05fr] lg:gap-14 lg:py-24">
           <div>
-            <h1 className="max-w-xl text-[clamp(3.5rem,7vw,5.75rem)] font-semibold leading-[0.98] tracking-[-0.055em]">
-              Unlock your <span className="text-brand">health data.</span>
+            <h1 className="max-w-xl text-[clamp(3.5rem,7vw,6.5rem)] font-medium leading-[0.98] tracking-[-0.065em]">
+              Unlock your health data.
             </h1>
             <p className="mt-7 max-w-lg text-2xl font-medium leading-snug text-balance">
               Sync, export, and control your Apple Health data.
@@ -102,21 +79,7 @@ export default async function HomePage() {
               Full history and sync for all supported types with <Link href="/pro" className="text-brand hover:underline">PulsHealth Pro</Link>. Your database stays yours.
             </p>
           </div>
-          <div className={styles.heroVisual}>
-            <p className={styles.visualTitle}>Your health. More possibilities.</p>
-            <div className={styles.heroFlow}>
-              <Phone src="/screenshots/app-explore.webp" alt="PulsHealth on iPhone, showing Apple Health measurements grouped by category" priority />
-              <div className={styles.destinations}>
-                {destinations.map(({ icon: Icon, title, detail }) => (
-                  <div key={title} className={styles.destination}>
-                    <Icon className="h-7 w-7" aria-hidden />
-                    <p>{title}</p>
-                    <span>{detail}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <SignalLab />
         </div>
         <nav aria-label="Explore PulsHealth features" className="container mx-auto flex max-w-7xl flex-wrap justify-between gap-4 border-t px-5 py-6 text-base font-medium md:text-lg">
           <a href="#web-app" className={styles.featureLink}>Explore the dashboard <ArrowRight aria-hidden /></a>
@@ -138,7 +101,7 @@ export default async function HomePage() {
               <Button asChild size="lg" variant="outline"><a href={SIGNUP_URL}>Request an account</a></Button>
             </div>
           </div>
-          <WebAppPreview />
+          <SignalLab variant="chart" />
           <div className="mt-9 grid gap-8 md:grid-cols-3">
             <div><h3 className="text-xl font-semibold">Your day, at a glance</h3><p className="mt-2 leading-relaxed text-muted-foreground">Activity rings, sleep, heart rate, and your latest readings together in one dashboard.</p></div>
             <div><h3 className="text-xl font-semibold">See the bigger picture</h3><p className="mt-2 leading-relaxed text-muted-foreground">Explore interactive charts across days, months, or years. Zoom in on the details that interest you.</p></div>
@@ -148,17 +111,7 @@ export default async function HomePage() {
         </section>
 
         <Feature id="sync" title="Keep your database in sync." intro="Your history, with new data flowing in." visual={
-          <div className={styles.syncVisual}>
-            <p className="text-2xl font-semibold tracking-tight">Automatic background sync</p>
-            <div className="my-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
-              <div><Smartphone className="mx-auto mb-4 h-14 w-14" strokeWidth={1.5} aria-hidden /><p className="text-lg font-semibold">Apple Health</p></div>
-              <ArrowRight className="h-8 w-8" aria-hidden />
-              <div><Database className="mx-auto mb-4 h-14 w-14" strokeWidth={1.5} aria-hidden /><p className="text-lg font-semibold">Your database</p></div>
-            </div>
-            <div className="space-y-3 border-t border-current/15 pt-6 text-lg">
-              {["Your health history", "New readings", "Custom summaries"].map(label => <p key={label} className="flex items-center justify-between gap-4">{label}<ArrowRight className="h-5 w-5" aria-hidden /></p>)}
-            </div>
-          </div>
+          <SignalLab variant="sync" />
         }>
           <p>Build a personal health archive that keeps growing. Start free with five health data types from the last 30 days, then keep them up to date with automatic background sync.</p>
           <p>Your database powers the web app and your connected AI tools. You can also build your own dashboards or query your data directly.</p>
@@ -167,13 +120,7 @@ export default async function HomePage() {
         </Feature>
 
         <Feature id="export" title="Export what matters." intro="Your data, dates, and format." flip visual={
-          <div className={styles.exportVisual}>
-            <div className={styles.fileFormats} aria-label="Export formats: CSV and JSON">
-              <div><span>CSV</span><p>Ready for your spreadsheet.</p></div>
-              <div><span>JSON</span><p>Ready for your next project.</p></div>
-            </div>
-            <Phone src="/screenshots/app-export-2.1.png" alt="PulsHealth export builder, with controls for health data types, dates, and file format" />
-          </div>
+          <SignalLab variant="export" />
         }>
           <p>Choose the measurements and time range you need. Export the last 30 days free, or your full available history with Pro. Use CSV for spreadsheets or JSON for your own tools and projects.</p>
           <p>Save a personal archive, share a file, or take your data into a new workflow. No account or database required.</p>
@@ -181,12 +128,7 @@ export default async function HomePage() {
         </Feature>
 
         <Feature id="iphone" title="Your health. In every detail." intro="Individual readings or custom summaries." visual={
-          <div className={styles.detailVisual}>
-            <div className={styles.categories}>
-              {categories.map(({ icon: Icon, name }) => <div key={name}><Icon className="h-5 w-5" aria-hidden /><span>{name}</span></div>)}
-            </div>
-            <Phone src="/screenshots/app-type-page.webp" alt="Heart rate details in PulsHealth, including charts, sample counts, sources, and the value distribution" />
-          </div>
+          <SignalLab variant="detail" />
         }>
           <p>Sleep, heart rate, activity, workouts, nutrition, and more. Explore what Apple Health records and choose what you want to keep.</p>
           <p>Keep individual readings or create custom aggregations, from hourly averages to daily totals. Get the level of detail that works for you.</p>
@@ -201,7 +143,7 @@ export default async function HomePage() {
         </Feature>
       </div>
 
-      <section className="border-y bg-muted/25">
+      <section className={styles.control}>
         <div className="container mx-auto max-w-7xl px-5 py-20 md:py-24">
           <h2 className="text-4xl font-semibold tracking-tight md:text-5xl">Built for control.</h2>
           <p className="mt-5 max-w-2xl text-xl leading-relaxed text-muted-foreground">Choose what to sync, what to export, and where it goes.</p>
@@ -223,7 +165,7 @@ export default async function HomePage() {
         <p className="mt-6 text-muted-foreground">More answers on the <Link href="/support" className="text-brand hover:underline">support page</Link>.</p>
       </section>
 
-      <section className="border-t">
+      <section className={styles.closing}>
         <div className="container mx-auto max-w-7xl px-5 py-20 text-center md:py-24">
           <h2 className="text-4xl font-semibold tracking-tight md:text-6xl">Your data. Your next possibility.</h2>
           <p className="mx-auto mb-8 mt-5 max-w-xl text-xl leading-relaxed text-muted-foreground">Start with a single export. Build your own health archive. Make more of the data you already have.</p>
