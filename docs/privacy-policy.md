@@ -191,8 +191,8 @@ uploaded server data or revoke credentials on the server.
   an individual sample, a timestamp paired with a value, a sample identifier
   or any metadata. These files carry the same protection as the sync state
   (unreadable until the first unlock after a restart, excluded from backups),
-  are rewritten when the type's data changes, and Settings → Privacy & Data →
-  Delete Analysis removes all of them at once.
+  are rewritten when the type's data changes, and are removed when you delete
+  the app.
 - **Logs and background-activity telemetry** — an in-app event log and a record
   of each background wake (when it ran, how long, how many samples moved). They
   stay on the device unless *you* share them from the Activity

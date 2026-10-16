@@ -1622,8 +1622,7 @@ final class AppModel {
         Task { await engine.syncAggregate(configID: id, reason: .manual) }
     }
 
-    /// Settings → Delete Analysis: every stored type profile. Summaries,
-    /// never samples, but still about health data, so there is one switch.
+    /// Remove every stored type profile. These are summaries, never samples.
     func deleteAnalysis() async {
         await explore.deleteAll()
         await engine.eventLog.log(.info, "Stored type analyses deleted")

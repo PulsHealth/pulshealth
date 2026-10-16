@@ -15,7 +15,6 @@ struct SettingsView: View {
     @State private var confirmResetAll = false
     @State private var confirmBackfill = false
     @State private var confirmDeleteExport = false
-    @State private var confirmDeleteAnalysis = false
     @State private var validatingAggregates = false
     /// Failures in the last Validate Aggregate Functions run; nil before one.
     @State private var aggregateValidationFailures: Int?
@@ -31,7 +30,6 @@ struct SettingsView: View {
 
     var body: some View {
         @Bindable var model = model
-        let analyzed = model.explore.profiles.count
         Form {
             if model.stateFileUnreadable {
                 StateUnreadableNotice()
@@ -145,12 +143,6 @@ struct SettingsView: View {
                 if case .finished(let finished) = model.export.state, !finished.filesRemoved {
                     Button("Delete Export", role: .destructive) { confirmDeleteExport = true }
                 }
-                // The per-type summaries the Explore tab keeps
-                // (`TypeProfileStore`): derived numbers, never samples, but
-                // health-derived data at rest, so the privacy policy promises
-                // this one-tap way to remove all of them.
-                Button("Delete Analysis", role: .destructive) { confirmDeleteAnalysis = true }
-                    .disabled(analyzed == 0 || !model.explore.running.isEmpty)
                 // App Review 5.1.1(v): the account the PulsHealth database
                 // needs can be deleted from the app. Sync → Database has it
                 // too; this is where people look for it. Always shown: an
@@ -209,12 +201,6 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Re-sends everything from the start date for every synced type. Your database skips what it already has.")
-        }
-        .alert("Delete all analysis?", isPresented: $confirmDeleteAnalysis) {
-            Button("Delete", role: .destructive) { Task { await model.deleteAnalysis() } }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Removes the stored summaries for \(analyzed) type\(analyzed == 1 ? "" : "s"). Nothing in Apple Health changes.")
         }
         .deleteExportAlert(isPresented: $confirmDeleteExport, export: model.export)
         .alert("Start initial backfill?", isPresented: $confirmBackfill) {
